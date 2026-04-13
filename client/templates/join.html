@@ -527,6 +527,7 @@
         name: t.name,
         color: t.color,
         shape: t.shape,
+        tokenImageUrl: String(t.image_url || '').trim(),
         mine: likelyMine,
         ownerLabel: likelyMine ? '✓ Looks like yours' : t.owner_name ? ('Played by ' + t.owner_name) : 'Unclaimed',
       };

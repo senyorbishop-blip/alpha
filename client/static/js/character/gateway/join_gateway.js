@@ -52,7 +52,10 @@
           if (!item) return false;
           if (!item.mine) return true;
           const key = normalizeName(item.name);
-          return !key || !libraryNameKeys.has(key);
+          if (!key || !libraryNameKeys.has(key)) return true;
+          const hasImage = !!String(item.tokenImageUrl || '').trim();
+          const hasClass = !!String(item.classSummary || '').trim();
+          return hasImage && hasClass;
         }));
       const deduped = [];
       const seen = new Set();
@@ -63,6 +66,8 @@
           normalizeName(item.name),
           normalizeName(item.classSummary),
           String(item.level || ''),
+          String(item.libraryId || ''),
+          String(item.claimTokenId || item.id || ''),
         ].join('|');
         if (signature && seenSignature.has(signature)) return;
         seen.add(item.id);
