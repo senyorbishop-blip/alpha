@@ -105,6 +105,7 @@ def normalize_map_settings(raw: dict | None) -> dict:
         'world': {
             'show_grid': bool(world.get('show_grid', False)),
             'terrain_opacity': _clamp_float(world.get('terrain_opacity', 0.82), 0.82, 0.35, 1.0),
+            'allow_player_ping': bool(world.get('allow_player_ping', True)),
         },
         'weather': {
             'enabled': bool(weather.get('enabled', False)),
