@@ -14,10 +14,9 @@
   };
   // Gender system: male and female only. All aliases resolve to 'male' or 'female'.
   const GENDER_ALIASES = {
-    male: 'male', he: 'male', him: 'male', hehim: 'male', masculine: 'male', man: 'male',
-    female: 'female', she: 'female', her: 'female', sheher: 'female', feminine: 'female', woman: 'female',
-    // Neutral/non-binary aliases fall back to female for portrait purposes
-    neutral: 'female', theythem: 'female', androgynous: 'female', nonbinary: 'female',
+    male: 'masculine', he: 'masculine', him: 'masculine', hehim: 'masculine', masculine: 'masculine', man: 'masculine',
+    female: 'feminine', she: 'feminine', her: 'feminine', sheher: 'feminine', feminine: 'feminine', woman: 'feminine',
+    neutral: 'neutral', theythem: 'neutral', androgynous: 'neutral', nonbinary: 'neutral',
   };
 
   // Classes that have portraits for random female fallback on species step
@@ -45,10 +44,39 @@
   const base = '/static/importer/portraits';
   const defaultManifest = {
     combos: {
-      'human__fighter__male': `${base}/combos/human__fighter__male.png`,
-      'human__fighter__female': `${base}/combos/human__fighter__female.png`,
-      'elf__warlock__male': `${base}/combos/elf__warlock__male.png`,
-      'elf__warlock__female': `${base}/combos/elf__warlock__female.png`,
+      'human__barbarian__masculine': `${base}/combos/Human Male Barbarian.png`,
+      'human__barbarian__feminine': `${base}/combos/Human Female Barbarian.png`,
+      'human__bard__masculine': `${base}/combos/Human Male Bard.png`,
+      'human__bard__feminine': `${base}/combos/Human Female Bard.png`,
+      'human__cleric__masculine': `${base}/combos/Human Male Cleric.png`,
+      'human__cleric__feminine': `${base}/combos/Human Female Cleric.png`,
+      'human__druid__masculine': `${base}/combos/Human Male Druid.png`,
+      'human__druid__feminine': `${base}/combos/Human Female Druid.png`,
+      'human__fighter__masculine': `${base}/combos/Human Male Fighter.png`,
+      'human__fighter__feminine': `${base}/combos/Human Female Fighter.png`,
+      'human__monk__masculine': `${base}/combos/Human Male Monk.png`,
+      'human__monk__feminine': `${base}/combos/Human Female Monk.png`,
+      'human__paladin__masculine': `${base}/combos/Human Male Paladin.png`,
+      'human__paladin__feminine': `${base}/combos/Human Female Paladin.png`,
+      'human__pirate__masculine': `${base}/combos/Human Male Pirate.png`,
+      'human__ranger__masculine': `${base}/combos/Human Male Ranger.png`,
+      'human__ranger__feminine': `${base}/combos/Human Female Ranger.png`,
+      'human__rogue__masculine': `${base}/combos/Human Male Rogue.png`,
+      'human__rogue__feminine': `${base}/combos/Human Female Rogue.png`,
+      'human__sorcerer__masculine': `${base}/combos/Human Male Sorcerer.png`,
+      'human__sorcerer__feminine': `${base}/combos/Human Female Sorcerer.png`,
+      'human__tinker__masculine': `${base}/combos/Human Tinker Male.png`,
+      'human__tinker__feminine': `${base}/combos/Human Female Tinker.png`,
+      'human__warlock__masculine': `${base}/combos/Human Male Warlock.png`,
+      'human__warlock__feminine': `${base}/combos/Human Female Warlock.png`,
+      'human__wizard__masculine': `${base}/combos/Human Wizard Male.png`,
+      'human__wizard__feminine': `${base}/combos/Human Female Wizard.png`,
+      'elf__barbarian__masculine': `${base}/combos/Elf Male Barbarian.png`,
+      'elf__barbarian__feminine': `${base}/combos/Elf Female Barbarian.png`,
+      'elf__fighter__masculine': `${base}/combos/Elf Male Fighter.png`,
+      'elf__monk__masculine': `${base}/combos/Elf Male Monk.png`,
+      'dragonborn__fighter__masculine': `${base}/combos/Dragonborn Male Fighter.png`,
+      'halfling__pirate__feminine': `${base}/combos/Halfling Female Pirate.png`,
     },
     species: {
       human: `${base}/species/human.png`,
@@ -60,7 +88,7 @@
     },
     species_order: ['human', 'elf', 'aasimar', 'dwarf', 'dragonborn', 'tiefling', 'goliath'],
     class_order: ['barbarian','bard','cleric','druid','fighter','monk','paladin','ranger','rogue','sorcerer','warlock','wizard'],
-    presentation_order: ['female', 'male'],
+    presentation_order: ['feminine', 'masculine', 'neutral'],
   };
 
   const state = { manifest: defaultManifest, loaded: false, loading: false };
@@ -100,10 +128,10 @@
     const exact = `${sp}__${cls}__${gender}`;
     if (manifest.combos[exact]) return manifest.combos[exact];
 
-    // 2. Female → fall back to male if no female portrait found
-    if (gender === 'female') {
-      const maleFallback = `${sp}__${cls}__male`;
-      if (manifest.combos[maleFallback]) return manifest.combos[maleFallback];
+    // 2. Feminine or neutral → fall back to masculine if no match found
+    if (gender === 'feminine' || gender === 'neutral') {
+      const mascFallback = `${sp}__${cls}__masculine`;
+      if (manifest.combos[mascFallback]) return manifest.combos[mascFallback];
     }
 
     // 3. Try any combo for this species+class regardless of gender
