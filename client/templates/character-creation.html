@@ -392,7 +392,7 @@
             <span class="stat-badge" id="badge-species">Species · Unset</span>
           </div>
         </div>
-        <div class="feedback" id="feedback">Importer-style creation loaded. Build your hero, then step directly into the realm.</div>
+        <div class="feedback" id="feedback"></div>
         <section class="step-view" id="step-view"></section>
         <div class="button-row">
           <button class="btn btn-secondary" type="button" id="back-step">Previous step</button>
@@ -795,21 +795,38 @@ function renderPreview() {
     }
 
     
+function renderSpeciesListItem(item, selectedId) {
+  const id = item.id;
+  const isSelected = id === selectedId;
+  const name = speciesDisplayName(item);
+  const size = item.size || 'Medium';
+  const speed = item.speed || 30;
+  const benefits = Array.isArray(item.gameplayBenefits) ? item.gameplayBenefits.slice(0, 2) : [];
+  return `<button type="button" class="option-card class-card compact${isSelected ? ' selected' : ''}" data-option-type="species" data-option-id="${escapeHtml(id)}" style="padding:14px 16px;flex-direction:column;gap:6px;align-items:flex-start">
+    <h3 style="margin:0;font-size:1.05rem">${escapeHtml(name)}</h3>
+    <div class="card-tags">
+      <span class="tag">${escapeHtml(size)}</span>
+      <span class="tag">${speed} ft</span>
+      ${benefits.map(b => `<span class="tag">${escapeHtml(String(b))}</span>`).join('')}
+    </div>
+  </button>`;
+}
+
 function renderStepMarkup() {
   const step = STEPS[state.step].key;
   const hero = state.hero;
   if (step === 'hero') {
     return `
       <div class="form-grid">
-        <div class="field"><label>Hero Name</label><input class="input" id="hero-name" value="${escapeHtml(hero.name)}" placeholder="Name your adventurer" /></div>
+        <div class="field full"><label>Hero Name</label><input class="input" id="hero-name" value="${escapeHtml(hero.name)}" placeholder="Name your adventurer" /></div>
         <div class="field"><label>Pronouns</label><select class="select" id="hero-pronouns">${GENDERS.map(g => `<option value="${g.pronouns}" ${hero.pronouns === g.pronouns ? 'selected' : ''}>${g.pronouns}</option>`).join('')}</select></div>
-        <div class="field full"><label>Identity Style</label><p class="rules-note" style="margin:0 0 10px;">This drive the portrait set. When a matching species + class + presentation portrait exists, the creator now uses it directly instead of the old placeholder doll art.</p><div class="card-grid">${GENDERS.map(g => `<button type="button" class="option-card${hero.gender===g.id ? ' selected' : ''}" data-gender="${g.id}"><div class="mini-portrait">${renderMiniGlyph('background',{id:g.id}, '#a787de')}</div><div><h3>${g.label}</h3><p>${g.pronouns}</p></div><div class="card-tags"><span class="tag">Preview style</span><span class="tag">Hero card art</span></div></button>`).join('')}</div></div>
+        <div class="field"><label>Identity Style</label><select class="select" id="hero-gender">${GENDERS.map(g => `<option value="${g.id}" ${hero.gender===g.id ? 'selected' : ''}>${g.label} — ${g.pronouns}</option>`).join('')}</select></div>
         <div class="field"><label>Homeland</label><input class="input" id="hero-homeland" value="${escapeHtml(hero.homeland)}" placeholder="Where are they from?" /></div>
         <div class="field"><label>Patron / Deity</label><input class="input" id="hero-deity" value="${escapeHtml(hero.deity)}" placeholder="Optional faith or patron" /></div>
       </div>`;
   }
   if (step === 'species') {
-    return `<div class="class-stage"><div class="class-browser"><div class="class-list">${state.species.map(item => renderOptionCard(item, 'species', hero.speciesId).replace('option-card', 'option-card class-card compact')).join('')}</div></div><div class="class-detail">${renderSpeciesDetail(selectedSpecies())}</div></div>`;
+    return `<div class="class-stage"><div class="class-browser"><div class="class-list">${state.species.map(item => renderSpeciesListItem(item, hero.speciesId)).join('')}</div></div><div class="class-detail">${renderSpeciesDetail(selectedSpecies())}</div></div>`;
   }
   if (step === 'class') {
     const cls = selectedClass();
@@ -866,7 +883,7 @@ function renderClassDetail(cls) {
 function renderAbilityStep() {
   const mode = state.hero.abilityMode || 'standard_array';
   const remainingText = mode === 'standard_array' ? `${state.hero.remaining.length} scores left to place` : mode === 'point_buy' ? `${pointBuyRemaining()} points remaining` : 'Enter or roll your values';
-  return `<div class="ability-shell"><div class="ability-method-bar"><div class="ability-method-controls"><div class="field"><label>Generation Method</label><select class="select" id="ability-mode"><option value="standard_array" ${mode==='standard_array'?'selected':''}>Standard Array</option><option value="point_buy" ${mode==='point_buy'?'selected':''}>Point Buy</option><option value="manual" ${mode==='manual'?'selected':''}>Manual / Rolled</option></select></div></div><div class="ability-summary"><span class="tag">${escapeHtml(remainingText)}</span><span class="tag">Start Level ${Number(state.hero.startingLevel || 1)}</span><span class="tag">${escapeHtml(classDisplayName(selectedClass() || {}))}</span></div></div><p class="rules-note">This section now starts with the generation method first so the flow reads closer to D&D Beyond. Standard Array, Point Buy, and Manual all stay visible instead of feeling hidden or half-built.</p><div class="ability-grid detailed">${STATS.map(([key,label]) => renderAbilityCard(key,label,mode)).join('')}</div></div>`;
+  return `<div class="ability-shell"><div class="ability-method-bar"><div class="ability-method-controls"><div class="field"><label>Generation Method</label><select class="select" id="ability-mode"><option value="standard_array" ${mode==='standard_array'?'selected':''}>Standard Array</option><option value="point_buy" ${mode==='point_buy'?'selected':''}>Point Buy</option><option value="manual" ${mode==='manual'?'selected':''}>Manual / Rolled</option></select></div></div><div class="ability-summary"><span class="tag">${escapeHtml(remainingText)}</span><span class="tag">Start Level ${Number(state.hero.startingLevel || 1)}</span><span class="tag">${escapeHtml(classDisplayName(selectedClass() || {}))}</span></div></div><div class="ability-grid detailed">${STATS.map(([key,label]) => renderAbilityCard(key,label,mode)).join('')}</div></div>`;
 }
 function renderAbilityCard(key, label, mode) {
   const score = Number(state.hero.stats[key] || (mode === 'point_buy' ? 8 : 10));
@@ -886,7 +903,16 @@ function bindStepMarkup() {
     document.getElementById('hero-pronouns')?.addEventListener('change', e => { state.hero.pronouns = e.target.value; });
     document.getElementById('hero-homeland')?.addEventListener('input', e => { state.hero.homeland = e.target.value; });
     document.getElementById('hero-deity')?.addEventListener('input', e => { state.hero.deity = e.target.value; });
-    document.querySelectorAll('[data-gender]').forEach(btn => btn.addEventListener('click', () => { state.hero.gender = btn.getAttribute('data-gender'); renderStepView(); }));
+    document.getElementById('hero-gender')?.addEventListener('change', e => {
+      const g = GENDERS.find(g => g.id === e.target.value);
+      state.hero.gender = e.target.value;
+      if (g) {
+        state.hero.pronouns = g.pronouns;
+        const pronounsEl = document.getElementById('hero-pronouns');
+        if (pronounsEl) pronounsEl.value = g.pronouns;
+      }
+      renderPreview();
+    });
   } else if (step === 'species' || step === 'class' || step === 'background') {
     document.querySelectorAll('[data-option-id]').forEach(btn => btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-option-id');
@@ -1139,7 +1165,7 @@ function canProceed() {
         rememberPlayerInviteRoute();
         await Promise.all([loadCatalog(), loadSessionInfo()]);
         renderAll();
-        setFeedback('Importer-style hero forge ready. This version uses the new visual species and class flow before entering play.', 'success');
+        setFeedback('', '');
       } catch (err) {
         setFeedback(err.message || 'Could not prepare the hero forge.', 'error');
       }
