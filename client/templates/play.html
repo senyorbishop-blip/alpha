@@ -11216,6 +11216,10 @@ let pings = [];
 let _pingToolPointer = { active: false, startX: 0, startY: 0, startedAt: 0 };
 let _lastPingSentAt = 0;
 let _lastPointSentAt = 0;
+const _PING_POINT_TTL_MS = 280;
+const _PING_PULSE_TTL_MS = 980;
+const _PING_STACK_SOFT_CAP = 16;
+const _PING_STACK_HARD_CAP = 28;
 
 // Combat state (declared early to avoid TDZ errors in drawToken / canMoveToken)
 let _combat = { active: false, turn: 0, combatants: [], movement: null, selected_target_id: '', pending_attack: null };
@@ -17197,58 +17201,82 @@ function drawFrame() {
   safeClientCall('draw editor walls', () => drawEditorWalls());
 
   const now = Date.now();
+  const activeMapContext = _currentMapContextKey();
   pings = pings.filter(p => {
-    const ttl = p.mode === 'point' ? 240 : 1100;
+    const ttl = p.mode === 'point' ? _PING_POINT_TTL_MS : _PING_PULSE_TTL_MS;
     return now - p.born < ttl;
   });
   safeClientCall('draw pings', () => {
     pings.forEach(p => {
+      if (String(p.map_context || 'world') !== activeMapContext) return;
+      const color = p.color || '#f1c40f';
       if (p.mode === 'point') {
-        const t = Math.min(1, (now - p.born) / 240);
+        const t = Math.min(1, (now - p.born) / _PING_POINT_TTL_MS);
         const alpha = 0.9 * (1 - t);
-        const radius = (8 + 10 * t) / cam.zoom;
+        const radius = (8 + 8 * t) / cam.zoom;
         ctx.save();
         ctx.globalAlpha = alpha;
-        ctx.fillStyle = p.color || '#f1c40f';
-        ctx.shadowColor = p.color || '#f1c40f';
-        ctx.shadowBlur = 12 / cam.zoom;
+        ctx.fillStyle = '#fff8d6';
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 14 / cam.zoom;
         ctx.beginPath();
         ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
         ctx.fill();
+        ctx.globalAlpha = alpha * 0.75;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, (14 + 12 * t) / cam.zoom, 0, Math.PI * 2);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.2 / cam.zoom;
+        ctx.stroke();
         ctx.restore();
         return;
       }
-      const t = Math.min(1, (now - p.born) / 1100);
+      const t = Math.min(1, (now - p.born) / _PING_PULSE_TTL_MS);
+      const eased = 1 - Math.pow(1 - t, 3);
       const alpha = 1 - t;
-      const color = p.color || '#f1c40f';
-      const ringRadii = [8 + (48 * t), 8 + (36 * t), 8 + (24 * t)];
+      const ringRadii = [10 + (72 * eased), 10 + (56 * eased), 10 + (40 * eased)];
       ctx.save();
-      ctx.globalAlpha = alpha;
+      ctx.globalAlpha = Math.max(0, alpha);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 8 / cam.zoom, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.fill();
       ringRadii.forEach((r, idx) => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, r / cam.zoom, 0, Math.PI * 2);
         ctx.strokeStyle = color;
-        ctx.lineWidth = Math.max(1.2, (3 - idx * 0.55) / cam.zoom);
+        ctx.lineWidth = Math.max(1.3, (3.4 - idx * 0.7) / cam.zoom);
         ctx.shadowColor = color;
-        ctx.shadowBlur = (14 - idx * 3) / cam.zoom;
+        ctx.shadowBlur = (18 - idx * 4) / cam.zoom;
         ctx.stroke();
       });
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 5.5 / cam.zoom, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
+      ctx.arc(p.x, p.y, 4.6 / cam.zoom, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff7cc';
       ctx.shadowColor = color;
-      ctx.shadowBlur = 16 / cam.zoom;
+      ctx.shadowBlur = 18 / cam.zoom;
       ctx.fill();
       if (p.user_name) {
         const label = String(p.user_name).slice(0, 18);
-        ctx.font = `${Math.max(9, 12 / cam.zoom)}px 'Cinzel', serif`;
+        const labelY = p.y - (20 / cam.zoom);
+        ctx.font = `${Math.max(9, 11.5 / cam.zoom)}px 'Cinzel', serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
+        const textMetrics = ctx.measureText(label);
+        const labelW = Math.max((textMetrics.width + 12) / cam.zoom, 26 / cam.zoom);
+        const labelH = 14 / cam.zoom;
+        ctx.fillStyle = 'rgba(0,0,0,0.56)';
+        ctx.beginPath();
+        ctx.roundRect?.(p.x - (labelW / 2), labelY - labelH, labelW, labelH, 4 / cam.zoom);
+        if (!ctx.roundRect) {
+          ctx.rect(p.x - (labelW / 2), labelY - labelH, labelW, labelH);
+        }
+        ctx.fill();
         ctx.strokeStyle = 'rgba(0,0,0,0.75)';
-        ctx.lineWidth = Math.max(1, 2 / cam.zoom);
-        ctx.strokeText(label, p.x, p.y - (16 / cam.zoom));
+        ctx.lineWidth = Math.max(1, 1.8 / cam.zoom);
+        ctx.strokeText(label, p.x, labelY - (2 / cam.zoom));
         ctx.fillStyle = '#f8f0d8';
-        ctx.fillText(label, p.x, p.y - (16 / cam.zoom));
+        ctx.fillText(label, p.x, labelY - (2 / cam.zoom));
       }
       ctx.restore();
     });
@@ -25536,7 +25564,7 @@ function sendPing(wx, wy, color) {
   const safeColor = String(color || '#f1c40f');
   const payload = { x: wx, y: wy, color: safeColor, map_context: _currentMapContextKey(), mode: 'ping' };
   sendWS({ type: 'ping_map', payload });
-  addPing(wx, wy, safeColor, { mode: 'ping', user_name: NAME || '' });
+  addPing(wx, wy, safeColor, { mode: 'ping', user_name: NAME || '', user_role: ROLE || 'player', map_context: payload.map_context });
 }
 
 function sendPoint(wx, wy, color) {
@@ -25547,21 +25575,40 @@ function sendPoint(wx, wy, color) {
   const safeColor = String(color || '#f1c40f');
   const payload = { x: wx, y: wy, color: safeColor, map_context: _currentMapContextKey(), mode: 'point' };
   sendWS({ type: 'ping_map', payload });
-  addPing(wx, wy, safeColor, { mode: 'point', user_name: NAME || '' });
+  addPing(wx, wy, safeColor, { mode: 'point', user_name: NAME || '', user_role: ROLE || 'player', map_context: payload.map_context });
 }
 
 function addPing(x, y, color, opts) {
   const mode = String(opts?.mode || 'ping') === 'point' ? 'point' : 'ping';
   const user_name = String(opts?.user_name || '').trim().slice(0, 24);
+  const user_role = String(opts?.user_role || '').trim().toLowerCase();
+  const map_context = String(opts?.map_context || _currentMapContextKey() || 'world').trim().slice(0, 80) || 'world';
+  const resolvedColor = color
+    || (user_role === 'dm' ? '#ffd166' : (user_role === 'viewer' ? '#cba6f7' : '#2ee8ff'));
   const now = Date.now();
-  pings = pings.filter(p => {
+  const next = pings.filter(p => {
+    if (String(p.map_context || 'world') !== map_context) return true;
     const dx = Number(p.x || 0) - Number(x || 0);
     const dy = Number(p.y || 0) - Number(y || 0);
     const sameSpot = (dx * dx + dy * dy) < 900;
+    if (mode === 'point' && p.mode === 'point' && String(p.user_name || '') === user_name) return false;
     return !(sameSpot && String(p.user_name || '') === user_name && p.mode === mode && (now - Number(p.born || now)) < 350);
   });
-  pings.push({ x, y, color, born: now, mode, user_name });
-  if (pings.length > 24) pings = pings.slice(-24);
+  const contextPings = next.filter(p => String(p.map_context || 'world') === map_context);
+  if (contextPings.length > _PING_STACK_SOFT_CAP) {
+    let overshoot = contextPings.length - _PING_STACK_SOFT_CAP + 1;
+    pings = next.filter(p => {
+      if (overshoot <= 0) return true;
+      if (String(p.map_context || 'world') !== map_context) return true;
+      if (p.mode === 'point') return false;
+      overshoot -= 1;
+      return false;
+    });
+  } else {
+    pings = next;
+  }
+  pings.push({ x, y, color: resolvedColor, born: now, mode, user_name, user_role, map_context });
+  if (pings.length > _PING_STACK_HARD_CAP) pings = pings.slice(-_PING_STACK_HARD_CAP);
 }
 
 function refreshPingPermissionUi() {
@@ -31002,7 +31049,17 @@ function handleLegacyMessage(msg) {
     }
 
     case 'map_ping': {
-      addPing(p.x, p.y, p.color || '#f1c40f', { mode: p.mode || 'ping', user_name: p.user_name || '' });
+      addPing(
+        p.x,
+        p.y,
+        p.color || '#f1c40f',
+        {
+          mode: p.mode || 'ping',
+          user_name: p.user_name || '',
+          user_role: p.user_role || '',
+          map_context: p.map_context || _currentMapContextKey(),
+        }
+      );
       break;
     }
 
@@ -41368,7 +41425,7 @@ function _sendColoredPing(wx, wy, color) {
   const safeColor = String(color || '#f1c40f');
   if (!canCurrentUserPingMap(true)) return;
   sendWS({ type: 'ping_map', payload: { x: wx, y: wy, color: safeColor, map_context: _currentMapContextKey(), mode: 'ping' } });
-  addPing(wx, wy, safeColor, { mode: 'ping', user_name: NAME || '' });
+  addPing(wx, wy, safeColor, { mode: 'ping', user_name: NAME || '', user_role: ROLE || 'player', map_context: _currentMapContextKey() });
 }
 
 function _sendOffturnPartySignal(message) {

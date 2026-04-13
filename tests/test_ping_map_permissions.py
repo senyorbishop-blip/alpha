@@ -42,3 +42,20 @@ def test_handle_ping_map_allows_dm_and_relays_mode(monkeypatch):
     assert excluded == dm.id
     assert message["type"] == "map_ping"
     assert message["payload"]["mode"] == "point"
+    assert message["payload"]["user_role"] == "dm"
+
+
+def test_handle_ping_map_throttles_spam(monkeypatch):
+    from server.handlers.map_editor import handle_ping_map
+    from server.session import Session, User
+
+    session = Session(id="ping-perm-3")
+    dm = User(id="dm2", name="DM", role="dm")
+    session.users[dm.id] = dm
+
+    sent = _patch_broadcast(monkeypatch)
+    payload = {"x": 50, "y": 75, "mode": "ping", "map_context": "world"}
+    asyncio.run(handle_ping_map(payload, session, dm))
+    asyncio.run(handle_ping_map(payload, session, dm))
+
+    assert len(sent) == 1
