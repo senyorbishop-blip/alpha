@@ -8,7 +8,8 @@
     fighter: '#C0392B', wizard: '#2471A3', rogue: '#7F8C8D',
     barbarian: '#884EA0', paladin: '#F0B27A', bard: '#1ABC9C',
     cleric: '#F4D03F', monk: '#A9CCE3', warlock: '#8E44AD',
-    druid: '#58D68D', sorcerer: '#E74C3C', ranger: '#27AE60'
+    druid: '#58D68D', sorcerer: '#E74C3C', ranger: '#27AE60',
+    tinker: '#E67E22', pirate: '#2980B9',
   };
 
   function escHtml(value) {
@@ -44,14 +45,6 @@
     document.head.appendChild(link);
   }
 
-  function spellcastingLabel(value) {
-    var key = normalizeId(value);
-    if (key === 'full') return 'Full';
-    if (key === 'half') return 'Half';
-    if (key === 'pact') return 'Pact';
-    return 'None';
-  }
-
   function getClassCatalogEntries() {
     var api = global.CharacterBuilderAPI;
     if (!api || typeof api.getCachedCatalog !== 'function') {
@@ -82,77 +75,24 @@
     });
   }
 
-  function getProgressionSummaryAt(entry, level) {
-    var rows = Array.isArray(entry && entry.progressionSummary) ? entry.progressionSummary : [];
-    var match = rows.find(function findRow(row) {
-      return row && parseInt(row.level, 10) === level;
-    });
-    if (!match) return '—';
-    return String(match.summary || '').trim() || '—';
-  }
-
   function getClassColor(entry) {
     var key = normalizeId(entry && entry.id);
     return CLASS_COLORS[key] || '#c9a84c';
-  }
-
-  function getSpellcasterBadge(entry) {
-    var type = normalizeId(entry.spellcastingType);
-    if (type === 'none' || !type) return '';
-    var label = type === 'full' ? 'Full Caster' : type === 'half' ? 'Half Caster' : 'Pact Magic';
-    return '<div class="cc-spellcaster ' + escHtml(type) + '">' + escHtml(label) + '</div>';
   }
 
   function getFeatureDefinitionMap(entry) {
     return (entry && entry.featureDefinitions && typeof entry.featureDefinitions === 'object') ? entry.featureDefinitions : {};
   }
 
-  function getLevelOneFeatures(entry) {
-    var features = [];
-    var table = Array.isArray(entry.progressionTable) ? entry.progressionTable : [];
-    var row = table.find(function findLv1(r) { return r && parseInt(r.level, 10) === 1; });
-    if (row && Array.isArray(row.features)) {
-      features = row.features.slice();
-    }
-    var defs = entry.featureDefinitions;
-    if (!features.length && defs && typeof defs === 'object') {
-      var keys = Object.keys(defs);
-      for (var i = 0; i < keys.length && features.length < 4; i++) {
-        var def = defs[keys[i]];
-        if (def && (parseInt(def.level, 10) === 1 || !def.level)) {
-          features.push(String(def.displayName || keys[i]).trim());
-        }
-      }
-    }
-    return features.slice(0, 4);
-  }
-
-  function buildArmorTag(entry) {
-    var armor = entry.armorProficiencies;
-    if (!armor || !armor.length) {
-      return '<span class="cc-tag" style="color:#fc8181;border-color:#fc818140">No armor</span>';
-    }
-    return '<span class="cc-tag">' + escHtml(armor.slice(0, 2).join(' · ')) + '</span>';
-  }
-
-  function showClassDetailPanel(root, classId) {
-    var entries = getClassCatalogEntries();
-    var entry = entries.find(function findEntry(e) { return normalizeId(e.id) === normalizeId(classId); });
-    var panel = root.querySelector('#builder-class-detail');
-    if (!panel) return;
-    if (!entry) { panel.className = 'class-detail'; panel.innerHTML = ''; return; }
-
+  function renderDetailPane(entry) {
     var color = getClassColor(entry);
-    panel.className = 'class-detail visible';
-    panel.style.borderColor = color + '66';
-
     var casterType = normalizeId(entry.spellcastingType);
     var spellStatHtml;
     if (casterType && casterType !== 'none') {
       var casterLabel = casterType === 'full' ? 'Full' : casterType === 'half' ? 'Half' : 'Pact';
       spellStatHtml = '<div class="cd-stat"><div class="cd-stat-val" style="color:#5ba3d0">' + escHtml(casterLabel) + '</div><div class="cd-stat-lbl">Caster</div></div>';
     } else {
-      spellStatHtml = '<div class="cd-stat"><div class="cd-stat-val" style="color:var(--text-dim)">None</div><div class="cd-stat-lbl">Spellcasting</div></div>';
+      spellStatHtml = '<div class="cd-stat"><div class="cd-stat-val" style="color:var(--cb-text-dim)">None</div><div class="cd-stat-lbl">Spellcasting</div></div>';
     }
 
     var primaryStr = entry.primaryAbilities.map(function(a) { return String(a || '').toUpperCase(); }).join('/') || '—';
@@ -195,7 +135,7 @@
     }).join('');
 
     var featureDefs = getFeatureDefinitionMap(entry);
-    var spotlight = Object.keys(featureDefs).slice(0, 8).map(function(id) {
+    var spotlight = Object.keys(featureDefs).slice(0, 6).map(function(id) {
       var def = featureDefs[id] || {};
       var levelBadge = parseInt(def.level, 10) > 0 ? '<span class="cc-tag">Lv ' + escHtml(def.level) + '</span>' : '';
       var typeBadge = def.type ? '<span class="cc-tag">' + escHtml(String(def.type).replace(/_/g, ' ')) + '</span>' : '';
@@ -205,29 +145,39 @@
         '<div style="font-size:0.7rem;line-height:1.55;color:rgba(220,214,200,0.88)">' + escHtml(def.description || 'Unlocks as part of this class progression.') + '</div>' +
       '</div>';
     }).join('');
-    panel.innerHTML =
-      '<div class="cd-header">' +
-        '<div>' +
-          '<div style="font-family:var(--font-display);font-size:1.5rem;color:' + color + ';font-weight:600">' + escHtml(entry.name) + '</div>' +
-          '<div class="cd-stats" style="margin-top:12px">' +
-            '<div class="cd-stat"><div class="cd-stat-val">d' + escHtml(entry.hitDie) + '</div><div class="cd-stat-lbl">Hit Die</div></div>' +
-            '<div class="cd-stat"><div class="cd-stat-val">' + escHtml(primaryStr) + '</div><div class="cd-stat-lbl">Primary</div></div>' +
-            '<div class="cd-stat"><div class="cd-stat-val">' + escHtml(savesStr) + '</div><div class="cd-stat-lbl">Saves</div></div>' +
-            spellStatHtml +
-          '</div>' +
-        '</div>' +
-        descHtml +
+
+    return '<div class="cls-detail-inner">' +
+      '<div class="cls-detail-title" style="color:' + color + '">' + escHtml(entry.name) + '</div>' +
+      '<div class="cd-stats" style="margin:12px 0 16px">' +
+        '<div class="cd-stat"><div class="cd-stat-val">d' + escHtml(entry.hitDie) + '</div><div class="cd-stat-lbl">Hit Die</div></div>' +
+        '<div class="cd-stat"><div class="cd-stat-val">' + escHtml(primaryStr) + '</div><div class="cd-stat-lbl">Primary</div></div>' +
+        '<div class="cd-stat"><div class="cd-stat-val">' + escHtml(savesStr) + '</div><div class="cd-stat-lbl">Saves</div></div>' +
+        spellStatHtml +
       '</div>' +
-      '<div style="overflow-x:auto">' +
+      (descHtml ? '<div style="padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.06)">' + descHtml + '</div>' : '') +
+      '<div style="overflow-x:auto;margin-bottom:20px">' +
         '<table class="prog-table">' +
           '<thead><tr><th>Lvl</th><th>Prof</th><th>Features</th></tr></thead>' +
           '<tbody>' + tableBody + '</tbody>' +
         '</table>' +
       '</div>' +
-      '<div style="margin-top:12px;border:1px solid rgba(201,168,76,0.14);border-radius:10px;background:rgba(6,8,10,0.38)">' +
-        '<div style="padding:10px 12px;border-bottom:1px solid rgba(201,168,76,0.12);font-family:var(--font-display);font-size:0.82rem;color:#E8C97A">Feature Spotlight</div>' +
+      '<div style="border:1px solid rgba(201,168,76,0.14);border-radius:10px;background:rgba(6,8,10,0.38)">' +
+        '<div style="padding:10px 12px;border-bottom:1px solid rgba(201,168,76,0.12);font-family:var(--cb-font-display);font-size:0.82rem;color:#E8C97A">Feature Spotlight</div>' +
         (spotlight || '<div style="padding:10px 12px;color:rgba(168,159,142,0.88);font-size:0.7rem;">Detailed feature text will appear here as the class data expands.</div>') +
-      '</div>';
+      '</div>' +
+    '</div>';
+  }
+
+  function showClassDetailPanel(root, classId) {
+    var entries = getClassCatalogEntries();
+    var entry = entries.find(function findEntry(e) { return normalizeId(e.id) === normalizeId(classId); });
+    var panel = root.querySelector('#builder-class-detail');
+    if (!panel) return;
+    if (!entry) {
+      panel.innerHTML = '<div class="cls-detail-empty"><div style="font-size:2.5rem;opacity:0.25">⚔</div><div>Select a class to view details</div></div>';
+      return;
+    }
+    panel.innerHTML = renderDetailPane(entry);
   }
 
   registerStep({
@@ -241,60 +191,55 @@
       var selectedId = String(classData.id || '').trim();
       var entries = getClassCatalogEntries();
 
-      var cards = entries.map(function toCard(entry) {
+      var listItems = entries.map(function toListItem(entry) {
         var isSelected = normalizeId(entry.id) === normalizeId(selectedId);
-        var selectedClass = isSelected ? ' selected' : '';
         var color = getClassColor(entry);
-        var role = entry.roleIdentity || 'No role identity listed.';
-        if (role.length > 80) role = role.substring(0, 80) + '…';
+        var casterType = normalizeId(entry.spellcastingType);
+        var casterDot = '';
+        if (casterType === 'full') casterDot = '<span class="cls-caster-dot full" title="Full Caster"></span>';
+        else if (casterType === 'half') casterDot = '<span class="cls-caster-dot half" title="Half Caster"></span>';
+        else if (casterType === 'pact') casterDot = '<span class="cls-caster-dot pact" title="Pact Magic"></span>';
 
-        var saveTags = entry.savingThrows.map(function(s) {
-          return '<span class="cc-tag">' + escHtml(String(s || '').toUpperCase()) + ' save</span>';
-        }).join('');
-        var armorTag = buildArmorTag(entry);
-
-        var featureItems = getLevelOneFeatures(entry).map(function(f) {
-          return '<div class="cc-feature">' + escHtml(f) + '</div>';
-        }).join('');
-
-        return '<div class="class-card' + selectedClass + '" data-class-id="' + escHtml(entry.id) + '" style="--class-color:' + color + '">' +
-          getSpellcasterBadge(entry) +
-          '<div class="cc-header">' +
-            '<div class="cc-name" style="color:' + color + '">' + escHtml(entry.name) + '</div>' +
-            '<div class="cc-die">d' + escHtml(entry.hitDie) + '</div>' +
-          '</div>' +
-          '<div class="cc-role">' + escHtml(role) + '</div>' +
-          '<div class="cc-tags">' + saveTags + armorTag + '</div>' +
-          '<div class="cc-features">' + featureItems + '</div>' +
+        return '<div class="cls-list-item' + (isSelected ? ' selected' : '') + '" data-class-id="' + escHtml(entry.id) + '" style="--class-color:' + color + '">' +
+          '<span class="cls-list-dot" style="background:' + color + '"></span>' +
+          '<span class="cls-list-name">' + escHtml(entry.name) + '</span>' +
+          casterDot +
+          '<span class="cls-list-die">d' + escHtml(entry.hitDie) + '</span>' +
         '</div>';
       }).join('');
+
+      var detailContent = selectedId
+        ? (function() {
+            var sel = entries.find(function(e) { return normalizeId(e.id) === normalizeId(selectedId); });
+            return sel ? renderDetailPane(sel) : '<div class="cls-detail-empty"><div style="font-size:2.5rem;opacity:0.25">⚔</div><div>Select a class to view details</div></div>';
+          })()
+        : '<div class="cls-detail-empty"><div style="font-size:2.5rem;opacity:0.25">⚔</div><div>Select a class to view details</div></div>';
 
       return '<div class="screen-header">' +
           '<div class="screen-title">Choose Your Class</div>' +
           '<div class="screen-divider"></div>' +
-          '<div class="screen-subtitle">Your class is your calling — it determines your powers, fighting style, and journey</div>' +
+          '<div class="screen-subtitle">Your class is your calling — it defines your powers, fighting style, and path forward</div>' +
         '</div>' +
         '<input type="hidden" data-builder-path="class.id" value="' + escHtml(selectedId) + '" />' +
-        '<div class="class-grid">' + cards + '</div>' +
-        '<div class="class-detail" id="builder-class-detail"></div>';
+        '<div class="cls-picker-layout">' +
+          '<nav class="cls-sidebar" aria-label="Class list">' + listItems + '</nav>' +
+          '<div class="cls-detail-pane" id="builder-class-detail">' + detailContent + '</div>' +
+        '</div>';
     },
     bind: function bindClassStep(root, context) {
-      root.querySelectorAll('.class-card').forEach(function(card) {
-        card.addEventListener('click', function() {
-          var id = card.dataset.classId;
+      root.querySelectorAll('.cls-list-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+          var id = item.dataset.classId;
           var hiddenInput = root.querySelector('[data-builder-path="class.id"]');
           if (hiddenInput) hiddenInput.value = id;
           if (context && typeof context.onSetField === 'function') {
             context.onSetField(['class', 'id'], id);
           }
-          root.querySelectorAll('.class-card').forEach(function(c) { c.classList.remove('selected'); });
-          card.classList.add('selected');
+          root.querySelectorAll('.cls-list-item').forEach(function(i) { i.classList.remove('selected'); });
+          item.classList.add('selected');
           showClassDetailPanel(root, id);
         });
       });
-      var draft = context && context.draft || {};
-      var currentId = draft.class && draft.class.id;
-      if (currentId) showClassDetailPanel(root, currentId);
     },
     getCatalog: function getCatalog() {
       return {
