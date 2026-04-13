@@ -48,6 +48,7 @@
       identity: {
         name: '',
         displayName: '',
+        gender: 'male',
         pronouns: '',
         age: '',
         height: '',

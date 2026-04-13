@@ -454,7 +454,6 @@
     const GENDERS = [
       { id: 'male', label: 'Male', pronouns: 'He / Him' },
       { id: 'female', label: 'Female', pronouns: 'She / Her' },
-      { id: 'nonbinary', label: 'Non-binary', pronouns: 'They / Them' },
     ];
     const STAT_ARRAY = [15, 14, 13, 12, 10, 8];
     const ALIGNMENT_OPTIONS = ['Lawful Good','Neutral Good','Chaotic Good','Lawful Neutral','True Neutral','Chaotic Neutral','Lawful Evil','Neutral Evil','Chaotic Evil'];
@@ -940,8 +939,7 @@ function renderStepMarkup() {
     return `
       <div class="form-grid">
         <div class="field full"><label>Hero Name</label><input class="input" id="hero-name" value="${escapeHtml(hero.name)}" placeholder="Name your adventurer" /></div>
-        <div class="field"><label>Pronouns</label><select class="select" id="hero-pronouns">${GENDERS.map(g => `<option value="${g.pronouns}" ${hero.pronouns === g.pronouns ? 'selected' : ''}>${g.pronouns}</option>`).join('')}</select></div>
-        <div class="field"><label>Identity Style</label><select class="select" id="hero-gender">${GENDERS.map(g => `<option value="${g.id}" ${hero.gender===g.id ? 'selected' : ''}>${g.label} — ${g.pronouns}</option>`).join('')}</select></div>
+        <div class="field"><label>Sex</label><select class="select" id="hero-gender">${GENDERS.map(g => `<option value="${g.id}" ${hero.gender===g.id ? 'selected' : ''}>${g.label}</option>`).join('')}</select></div>
         <div class="field"><label>Homeland</label><input class="input" id="hero-homeland" value="${escapeHtml(hero.homeland)}" placeholder="Where are they from?" /></div>
         <div class="field"><label>Patron / Deity</label><input class="input" id="hero-deity" value="${escapeHtml(hero.deity)}" placeholder="Optional faith or patron" /></div>
       </div>`;
@@ -1022,17 +1020,12 @@ function bindStepMarkup() {
   const step = STEPS[state.step].key;
   if (step === 'hero') {
     document.getElementById('hero-name')?.addEventListener('input', e => { state.hero.name = e.target.value; renderPreview(); });
-    document.getElementById('hero-pronouns')?.addEventListener('change', e => { state.hero.pronouns = e.target.value; });
     document.getElementById('hero-homeland')?.addEventListener('input', e => { state.hero.homeland = e.target.value; });
     document.getElementById('hero-deity')?.addEventListener('input', e => { state.hero.deity = e.target.value; });
     document.getElementById('hero-gender')?.addEventListener('change', e => {
       const g = GENDERS.find(g => g.id === e.target.value);
       state.hero.gender = e.target.value;
-      if (g) {
-        state.hero.pronouns = g.pronouns;
-        const pronounsEl = document.getElementById('hero-pronouns');
-        if (pronounsEl) pronounsEl.value = g.pronouns;
-      }
+      if (g) state.hero.pronouns = g.pronouns;
       renderPreview();
     });
   } else if (step === 'species' || step === 'class' || step === 'background') {
