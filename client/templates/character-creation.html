@@ -546,6 +546,7 @@
         speciesId: '', classId: '', backgroundId: '', alignment: '',
         personalityTraits: '', ideals: '', bonds: '', flaws: '', backstory: '',
         notes: '',
+        abilityRolls: {},
         stats: { strength: 10, dexterity: 10, constitution: 10, intelligence: 10, wisdom: 10, charisma: 10 },
         assigned: { strength: null, dexterity: null, constitution: null, intelligence: null, wisdom: null, charisma: null },
         remaining: [...STAT_ARRAY],
@@ -633,8 +634,8 @@ function traitDescription(trait) {
 }
     function equipmentForClass(item) {
       const raw = item && (item.startingEquipment || item.starting_equipment || item.starting_items || item.equipmentPicks || item.equipment_picks || []);
-      if (Array.isArray(raw) && raw.length) return raw.map(v => typeof v === 'string' ? v : (v.name || v.id || '')).filter(Boolean);
-      return ['Traveler clothes', 'Starter pack'];
+      if (Array.isArray(raw) && raw.length) return raw.map(v => typeof v === 'string' ? v : (v.name || v.id || v.label || '')).map(v => String(v||'').trim()).filter(Boolean);
+      return ['Class kit (catalog pending)', 'Primary weapon (catalog pending)'];
     }
     function classAccent(item) { return item.accentColor || item.accent_color || '#d0a65f'; }
     
@@ -673,6 +674,22 @@ function normalizeCatalogSpecies(items) {
     traits: Array.isArray(item.traits) ? item.traits : [],
   })).filter(item => item.id);
 }
+
+function normalizeCatalogBackgrounds(items) {
+  const rows = (Array.isArray(items) ? items : []).map((item) => ({
+    id: String(item.id || item.name || '').trim().toLowerCase().replace(/\s+/g, '-'),
+    name: item.displayName || item.name || item.id || 'Background',
+    summary: item.summary || item.featureSummary || item.description || 'Background data loaded from rules catalog.',
+    skillProficiencies: Array.isArray(item.skillProficiencies) ? item.skillProficiencies : [],
+    toolProficiencies: Array.isArray(item.toolProficiencies) ? item.toolProficiencies : (item.toolProficiency ? [item.toolProficiency] : []),
+    languages: Array.isArray(item.languages) ? item.languages : [],
+    originFeat: item.originFeat || '',
+    startingGold: Number(item.startingGold || 0) || 0,
+    featureSummary: item.featureSummary || '',
+  })).filter((row) => row.id);
+  return rows;
+}
+
 function classMaxLevel(item) {
   const table = Array.isArray(item && item.progressionTable) ? item.progressionTable : [];
   const byLevels = Array.isArray(item && item.featuresByLevel) ? item.featuresByLevel : [];
@@ -699,6 +716,50 @@ function featuresAtLevel(item, level) {
 function featuresUpToLevel(item, level) {
   const rows = Array.isArray(item && item.featuresByLevel) ? item.featuresByLevel : [];
   return rows.filter(r => Number((r && r.level) || 0) <= Number(level || 1)).flatMap(r => Array.isArray(r.features) ? r.features.map(f => ({...f, __unlockLevel: Number(r.level || 0)})) : []);
+}
+
+function normalizeFeatureName(value) { return String(value || '').trim().toLowerCase(); }
+function normalizedClassFeaturesAtLevel(item, level) {
+  const target = Number(level || 1);
+  const defs = item && item.featureDefinitions && typeof item.featureDefinitions === 'object' ? item.featureDefinitions : {};
+  const rows = Array.isArray(item && item.featuresByLevel) ? item.featuresByLevel : [];
+  const table = Array.isArray(item && item.progressionTable) ? item.progressionTable : [];
+  const out = [];
+  const seen = new Set();
+
+  const byLevel = rows.find(r => Number((r && r.level) || 0) === target);
+  if (byLevel && Array.isArray(byLevel.features)) {
+    byLevel.features.forEach((feature) => {
+      const name = String((feature && (feature.displayName || feature.name)) || '').trim();
+      const key = normalizeFeatureName(name);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      out.push(Object.assign({}, feature || {}, { displayName: name, level: target, source: 'featuresByLevel' }));
+    });
+  }
+
+  const progRow = table.find(r => Number((r && r.level) || 0) === target);
+  if (progRow) {
+    const unlockIds = Array.isArray(progRow.unlockIds) ? progRow.unlockIds : [];
+    const labels = Array.isArray(progRow.features) ? progRow.features : [];
+    labels.forEach((label, idx) => {
+      const unlockId = String(unlockIds[idx] || '').trim();
+      const def = unlockId && defs[unlockId] ? defs[unlockId] : null;
+      const name = String((def && (def.displayName || def.name)) || label || unlockId || '').trim();
+      const key = normalizeFeatureName(name);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      out.push({
+        displayName: name,
+        description: (def && def.description) || 'Feature details come from the class progression table for this level.',
+        summary: (def && (def.summary || def.shortDescription)) || '',
+        type: (def && def.type) || 'class_feature',
+        level: target,
+        source: def ? 'featureDefinitions' : 'progressionTable',
+      });
+    });
+  }
+  return out;
 }
 function formatAbilityList(values) {
   return (Array.isArray(values) ? values : []).map(v => String(v || '').toUpperCase()).join(', ') || '—';
@@ -833,6 +894,27 @@ function renderPreview() {
     }
 
     
+
+function renderBackgroundListItem(item, selectedId) {
+  const id = item.id;
+  const isSelected = id === selectedId;
+  const summary = item.summary || item.description || 'Background details available after selection.';
+  return `<button type="button" class="option-card class-card compact${isSelected ? ' selected' : ''}" data-option-type="background" data-option-id="${escapeHtml(id)}" style="padding:16px;min-height:170px">
+    <div><h3 style="margin:0 0 6px;font-size:1.02rem">${escapeHtml(backgroundDisplayName(item))}</h3><p style="margin:0">${escapeHtml(summary)}</p></div>
+    <div class="card-tags"><span class="tag">Origin</span>${item.originFeat ? `<span class="tag">Feat · ${escapeHtml(item.originFeat)}</span>` : ''}${item.startingGold ? `<span class="tag">${Number(item.startingGold)} GP</span>` : ''}</div>
+  </button>`;
+}
+function renderBackgroundDetail(bg) {
+  if (!bg) return '<div class="detail-block"><h4>No background selected</h4><p>Select a background to preview proficiencies and notes.</p></div>';
+  const skills = Array.isArray(bg.skillProficiencies) ? bg.skillProficiencies : [];
+  const tools = Array.isArray(bg.toolProficiencies) ? bg.toolProficiencies : [];
+  const langs = Array.isArray(bg.languages) ? bg.languages : [];
+  return `<div class="detail-block"><h4>${escapeHtml(backgroundDisplayName(bg))}</h4><p>${escapeHtml(bg.summary || bg.description || 'Origin details for this background.')}</p></div>
+    <div class="class-sections"><div class="detail-block"><h4>Proficiencies</h4><p>${escapeHtml(skills.join(', ') || 'No listed skill proficiencies in current rules data.')}</p><p>${escapeHtml(tools.join(', ') || 'No listed tool proficiencies.')}</p></div>
+    <div class="detail-block"><h4>Roleplay hooks</h4><p>${escapeHtml(bg.featureSummary || bg.originFeat || 'Background roleplay hook data is not yet populated in this rules source.')}</p><p>${escapeHtml(langs.length ? ('Suggested languages: ' + langs.join(', ')) : 'Add custom notes below to carry this origin into sheet notes.')}</p>
+    <div class="field" style="margin-top:10px"><label>Background Notes</label><textarea class="textarea" id="hero-notes" placeholder="How does this background shape your goals in this campaign?">${escapeHtml(state.hero.notes || '')}</textarea></div></div></div>`;
+}
+
 function renderSpeciesListItem(item, selectedId) {
   const id = item.id;
   const isSelected = id === selectedId;
@@ -872,7 +954,8 @@ function renderStepMarkup() {
     return `<div class="class-stage"><div class="class-browser"><div class="class-list">${state.classes.map(item => renderOptionCard(item, 'class', hero.classId).replace('option-card', 'option-card class-card compact')).join('')}</div></div><div class="class-detail">${renderClassDetail(cls)}</div></div>`;
   }
   if (step === 'background') {
-    return `<div class="card-grid">${state.backgrounds.map(item => renderOptionCard(item, 'background', hero.backgroundId)).join('')}</div>`;
+    const currentBg = selectedBackground();
+    return `<div class="class-stage"><div class="class-browser"><div class="class-list">${state.backgrounds.map(item => renderBackgroundListItem(item, hero.backgroundId)).join('')}</div></div><div class="class-detail">${renderBackgroundDetail(currentBg)}</div></div>`;
   }
   if (step === 'abilities') {
     return renderAbilityStep();
@@ -890,7 +973,7 @@ function renderStepMarkup() {
   const bg = selectedBackground();
   const equipment = equipmentForClass(cls || {});
   const unlocked = featuresUpToLevel(cls || {}, state.hero.startingLevel || 1).slice(0, 8);
-  return `<div class="review-list"><div class="review-item"><strong>Name</strong><span>${escapeHtml(hero.name || 'Unnamed Hero')}</span></div><div class="review-item"><strong>Species</strong><span>${escapeHtml(sp ? speciesDisplayName(sp) : 'Unset')}</span></div><div class="review-item"><strong>Class</strong><span>${escapeHtml(cls ? classDisplayName(cls) : 'Unset')}</span></div><div class="review-item"><strong>Starting Level</strong><span>Level ${Number(state.hero.startingLevel || 1)}</span></div><div class="review-item"><strong>Background</strong><span>${escapeHtml(bg ? backgroundDisplayName(bg) : 'Unset')}</span></div><div class="review-item"><strong>Ability Total</strong><span>${scoreSum()} across the six core stats</span></div><div class="review-item"><strong>Starting Gold</strong><span>50 GP</span></div><div class="review-item"><strong>Starter Gear</strong><span>${escapeHtml(equipment.join(', '))}</span></div><div class="review-item"><strong>Unlocked Class Features</strong><span>${escapeHtml(unlocked.map(f => f.displayName || f.name).join(', ') || 'Level 1 core features')}</span></div><div class="review-item"><strong>Backstory</strong><span>${escapeHtml(hero.backstory || 'No backstory yet')}</span></div></div>`;
+  return `<div class="review-list"><div class="review-item"><strong>Name</strong><span>${escapeHtml(hero.name || 'Unnamed Hero')}</span></div><div class="review-item"><strong>Species</strong><span>${escapeHtml(sp ? speciesDisplayName(sp) : 'Unset')}</span></div><div class="review-item"><strong>Class</strong><span>${escapeHtml(cls ? classDisplayName(cls) : 'Unset')}</span></div><div class="review-item"><strong>Starting Level</strong><span>Level ${Number(state.hero.startingLevel || 1)}</span></div><div class="review-item"><strong>Background</strong><span>${escapeHtml(bg ? backgroundDisplayName(bg) : 'Unset')}</span></div><div class="review-item"><strong>Ability Total</strong><span>${scoreSum()} across the six core stats</span></div><div class="review-item"><strong>Starting Gold</strong><span>50 GP</span></div><div class="review-item"><strong>Starter Gear</strong><span>${escapeHtml(equipment.join(', ') || 'Class starter package')}</span></div><div class="review-item"><strong>Unlocked Class Features</strong><span>${escapeHtml(unlocked.map(f => f.displayName || f.name).join(', ') || 'Level 1 core features')}</span></div><div class="review-item"><strong>Backstory</strong><span>${escapeHtml(hero.backstory || 'No backstory yet')}</span></div></div>`;
 }
 
 function renderSpeciesDetail(sp) {
@@ -912,7 +995,7 @@ function renderClassDetail(cls) {
   if (!cls) return '<div class="detail-block"><h4>No class selected</h4><p>Pick a class to see its starting package, level roadmap, and feature details.</p></div>';
   ensureStartingLevelInRange();
   const level = Number(state.hero.startingLevel || 1);
-  const currentFeatures = featuresAtLevel(cls, level);
+  const currentFeatures = normalizedClassFeaturesAtLevel(cls, level);
   const roadmapRows = classRowsAroundLevel(cls, level);
   const tips = [];
   if (cls.buildTips && typeof cls.buildTips === 'object') Object.values(cls.buildTips).forEach(v => { if (typeof v === 'string' && v.trim()) tips.push(v.trim()); });
@@ -921,13 +1004,13 @@ function renderClassDetail(cls) {
 }
 function renderAbilityStep() {
   const mode = state.hero.abilityMode || 'standard_array';
-  const remainingText = mode === 'standard_array' ? `${state.hero.remaining.length} scores left to place` : mode === 'point_buy' ? `${pointBuyRemaining()} points remaining` : 'Enter or roll your values';
-  return `<div class="ability-shell"><div class="ability-method-bar"><div class="ability-method-controls"><div class="field"><label>Generation Method</label><select class="select" id="ability-mode"><option value="standard_array" ${mode==='standard_array'?'selected':''}>Standard Array</option><option value="point_buy" ${mode==='point_buy'?'selected':''}>Point Buy</option><option value="manual" ${mode==='manual'?'selected':''}>Manual / Rolled</option></select></div></div><div class="ability-summary"><span class="tag">${escapeHtml(remainingText)}</span><span class="tag">Start Level ${Number(state.hero.startingLevel || 1)}</span><span class="tag">${escapeHtml(classDisplayName(selectedClass() || {}))}</span></div></div><div class="ability-grid detailed">${STATS.map(([key,label]) => renderAbilityCard(key,label,mode)).join('')}</div></div>`;
+  const remainingText = mode === 'standard_array' ? `${state.hero.remaining.length} scores left to place` : mode === 'point_buy' ? `${pointBuyRemaining()} points remaining` : mode === 'rolled' ? 'Rolled values ready to assign manually' : 'Enter your values directly';
+  return `<div class="ability-shell"><div class="ability-method-bar"><div class="ability-method-controls"><div class="field"><label>Generation Method</label><select class="select" id="ability-mode"><option value="standard_array" ${mode==='standard_array'?'selected':''}>Standard Array</option><option value="point_buy" ${mode==='point_buy'?'selected':''}>Point Buy</option><option value="manual" ${mode==='manual'?'selected':''}>Manual Entry</option><option value="rolled" ${mode==='rolled'?'selected':''}>Roll 4d6 (drop lowest)</option></select></div></div><div class="ability-summary"><span class="tag">${escapeHtml(remainingText)}</span><span class="tag">Start Level ${Number(state.hero.startingLevel || 1)}</span><span class="tag">${escapeHtml(classDisplayName(selectedClass() || {}))}</span></div></div><div class="ability-grid detailed">${STATS.map(([key,label]) => renderAbilityCard(key,label,mode)).join('')}</div></div>`;
 }
 function renderAbilityCard(key, label, mode) {
   const score = Number(state.hero.stats[key] || (mode === 'point_buy' ? 8 : 10));
   if (mode === 'point_buy') return `<div class="ability-card detailed"><div class="ability-head"><strong>${label}</strong><span class="ability-score">${score} (${modStr(score)})</span></div><div class="pointbuy-controls"><div class="stepper"><button type="button" data-pointbuy="minus" data-stat="${key}">−</button><span class="score-big">${score}</span><button type="button" data-pointbuy="plus" data-stat="${key}">+</button></div><span class="tag">Cost ${costForPointBuy(score)}</span></div><p class="rules-note">Adjust this score between 8 and 15. Point buy remaining updates live.</p></div>`;
-  if (mode === 'manual') return `<div class="ability-card detailed"><div class="ability-head"><strong>${label}</strong><span class="ability-score">${score} (${modStr(score)})</span></div><div class="manual-score"><input class="input" type="number" min="1" max="20" value="${score}" data-manual-stat="${key}" /><p class="rules-note">Enter the rolled or custom value for ${label}.</p></div></div>`;
+  if (mode === 'manual' || mode === 'rolled') return `<div class="ability-card detailed"><div class="ability-head"><strong>${label}</strong><span class="ability-score">${score} (${modStr(score)})</span></div><div class="manual-score"><input class="input" type="number" min="1" max="20" value="${score}" data-manual-stat="${key}" /><p class="rules-note">Enter the rolled or custom value for ${label}.</p></div></div>`;
   return `<div class="ability-card detailed"><div class="ability-head"><strong>${label}</strong><span class="ability-score">${score} (${modStr(score)})</span></div><div class="score-chip-row">${STAT_ARRAY.map(v => {
     const used = state.hero.assigned[key] !== v && !state.hero.remaining.includes(v);
     const active = state.hero.assigned[key] === v;
@@ -961,6 +1044,7 @@ function bindStepMarkup() {
       renderStepView();
     }));
     if (step === 'class') document.getElementById('starting-level')?.addEventListener('change', e => { state.hero.startingLevel = Number(e.target.value || 1); renderStepView(); });
+    if (step === 'background') document.getElementById('hero-notes')?.addEventListener('input', e => { state.hero.notes = e.target.value; });
   } else if (step === 'abilities') {
     document.getElementById('ability-mode')?.addEventListener('change', e => { resetScoresForMode(e.target.value || 'standard_array'); renderStepView(); });
     document.querySelectorAll('[data-stat][data-value]').forEach(btn => btn.addEventListener('click', () => {
@@ -995,20 +1079,37 @@ function bindStepMarkup() {
       state.hero.stats[stat] = value;
       renderStepView();
     }));
-    if (state.hero.abilityMode === 'manual') {
+    if (state.hero.abilityMode === 'rolled' || state.hero.abilityMode === 'manual') {
+      const wrap = document.createElement('div');
+      wrap.style.marginTop = '8px';
+      wrap.style.display = 'flex';
+      wrap.style.gap = '10px';
+      wrap.style.alignItems = 'center';
       const hint = document.createElement('button');
       hint.type = 'button';
       hint.className = 'btn btn-secondary';
-      hint.style.marginTop = '6px';
-      hint.textContent = 'Roll all stats';
+      hint.textContent = state.hero.abilityMode === 'rolled' ? 'Re-roll 4d6 set' : 'Roll all stats';
       hint.addEventListener('click', () => {
+        const log = {};
         STATS.forEach(([stat]) => {
           const rolls = [0,0,0,0].map(() => 1 + Math.floor(Math.random() * 6)).sort((a,b) => b - a);
           state.hero.stats[stat] = rolls[0] + rolls[1] + rolls[2];
+          log[stat] = { dice: rolls, total: state.hero.stats[stat] };
         });
+        state.hero.abilityRolls = log;
         renderStepView();
       });
-      els.stepView.appendChild(hint);
+      wrap.appendChild(hint);
+      if (state.hero.abilityMode === 'rolled' && state.hero.abilityRolls && Object.keys(state.hero.abilityRolls).length) {
+        const note = document.createElement('span');
+        note.className = 'subtle';
+        note.textContent = STATS.map(([stat,label]) => {
+          const row = state.hero.abilityRolls[stat];
+          return row ? `${label} ${row.dice.join('/')}` : '';
+        }).filter(Boolean).join(' · ');
+        wrap.appendChild(note);
+      }
+      els.stepView.appendChild(wrap);
     }
   } else if (step === 'backstory') {
     document.getElementById('hero-alignment')?.addEventListener('input', e => { state.hero.alignment = e.target.value; });
@@ -1030,7 +1131,7 @@ function canProceed() {
   if (step === 'abilities') {
     if (state.hero.abilityMode === 'standard_array') return state.hero.remaining.length === 0;
     if (state.hero.abilityMode === 'point_buy') return STATS.every(([key]) => Number(state.hero.stats[key] || 8) >= 8 && Number(state.hero.stats[key] || 8) <= 15) && pointBuyRemaining() >= 0;
-    return STATS.every(([key]) => Number(state.hero.stats[key] || 0) >= 1);
+    return STATS.every(([key]) => Number(state.hero.stats[key] || 0) >= 1 && Number(state.hero.stats[key] || 0) <= 20);
   }
   return true;
 }
@@ -1180,11 +1281,16 @@ function canProceed() {
     }
     async function loadCatalog() {
       try {
-        const data = await fetchJson('/api/character/content/catalog?rules_mode=casual');
+        const [data, bgData] = await Promise.all([
+          fetchJson('/api/character/content/catalog?rules_mode=casual'),
+          fetchJson('/api/rules/backgrounds').catch(() => ({ backgrounds: [] })),
+        ]);
         const classes = normalizeCatalogClasses(data && data.classes);
         const species = normalizeCatalogSpecies(data && data.species);
+        const backgrounds = normalizeCatalogBackgrounds(bgData && bgData.backgrounds);
         state.classes = classes.length ? classes : normalizeCatalogClasses(FALLBACK_CLASSES);
         state.species = species.length ? species : normalizeCatalogSpecies(FALLBACK_SPECIES);
+        state.backgrounds = backgrounds.length ? backgrounds : FALLBACK_BACKGROUNDS;
         if (!state.hero.classId && state.classes[0]) state.hero.classId = state.classes[0].id;
         if (!state.hero.speciesId && state.species[0]) state.hero.speciesId = state.species[0].id;
         if (!state.hero.backgroundId && state.backgrounds[0]) state.hero.backgroundId = state.backgrounds[0].id;
@@ -1192,6 +1298,7 @@ function canProceed() {
       } catch (_) {
         state.classes = normalizeCatalogClasses(FALLBACK_CLASSES);
         state.species = normalizeCatalogSpecies(FALLBACK_SPECIES);
+        state.backgrounds = FALLBACK_BACKGROUNDS;
         if (!state.hero.classId && state.classes[0]) state.hero.classId = state.classes[0].id;
         if (!state.hero.speciesId && state.species[0]) state.hero.speciesId = state.species[0].id;
         if (!state.hero.backgroundId && state.backgrounds[0]) state.hero.backgroundId = state.backgrounds[0].id;
