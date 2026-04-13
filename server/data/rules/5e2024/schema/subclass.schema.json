@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "casualdnd://rules/5e2024/schema/subclass.schema.json",
+  "title": "Subclass Catalog Entry",
+  "type": "object",
+  "required": ["id", "classId", "displayName", "featureUnlocksByLevel"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "classId": { "type": "string", "minLength": 1 },
+    "displayName": { "type": "string", "minLength": 1 },
+    "featureUnlocksByLevel": {
+      "type": "object",
+      "patternProperties": {
+        "^(?:[1-9]|1[0-9]|20)$": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "future": {
+      "type": "object",
+      "description": "Reserved for subclass-specific talents, awakening interactions, spell grants, and guided choices.",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

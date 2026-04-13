@@ -1,0 +1,107 @@
+{
+  "id": "fiend-patron",
+  "displayName": "The Fiend",
+  "classId": "warlock",
+  "parentClassId": "warlock",
+  "flavorText": "Fiend warlocks bargain with infernal powers for destructive magic and ruthless survivability.",
+  "featureUnlocksByLevel": {
+    "1": [
+      "fiend-expanded-spells",
+      "fiend-dark-ones-blessing"
+    ],
+    "6": [
+      "fiend-dark-ones-own-luck"
+    ],
+    "10": [
+      "fiend-fiendish-resilience"
+    ],
+    "14": [
+      "fiend-hurl-through-hell"
+    ]
+  },
+  "features": [
+    {
+      "level": 1,
+      "id": "fiend-expanded-spells",
+      "displayName": "Expanded Spells",
+      "description": "You add spells to your warlock list: 1st (Burning Hands, Command), 3rd (Blindness/Deafness, Scorching Ray), 5th (Fireball, Stinking Cloud), 7th (Fire Shield, Wall of Fire), 9th (Flame Strike, Hallow)."
+    },
+    {
+      "level": 1,
+      "id": "fiend-dark-ones-blessing",
+      "displayName": "Dark One's Blessing",
+      "description": "When you reduce a hostile creature to 0 hit points, gain temporary hit points equal to your Charisma modifier + warlock level."
+    },
+    {
+      "level": 6,
+      "id": "fiend-dark-ones-own-luck",
+      "displayName": "Dark One's Own Luck",
+      "description": "Once per long rest, add 1d10 to an ability check or saving throw after seeing the roll."
+    },
+    {
+      "level": 10,
+      "id": "fiend-fiendish-resilience",
+      "displayName": "Fiendish Resilience",
+      "description": "Choose one damage type and gain resistance to it; you may change the chosen type when you finish a short or long rest."
+    },
+    {
+      "level": 14,
+      "id": "fiend-hurl-through-hell",
+      "displayName": "Hurl Through Hell",
+      "description": "Once per long rest when you hit with an attack, banish the target through nightmare planes; it returns at end of your next turn and takes 10d10 psychic damage."
+    }
+  ],
+  "featureDefinitions": {
+    "fiend-expanded-spells": {
+      "summary": "Your expanded list leans toward fire, domination, punishment, and infernal battlefield pressure.",
+      "description": "Expanded Spells here should signal that the patron grants aggressive, destructive magic and a darker resource profile than many other warlocks.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "expanded-list"
+      ]
+    },
+    "fiend-dark-ones-blessing": {
+      "summary": "When enemies fall, your patron rewards the carnage by hardening you with temporary hit points.",
+      "description": "Dark One's Blessing pushes the Fiend warlock toward momentum-based combat where kills feed survival and encourage aggression.",
+      "tags": [
+        "subclass",
+        "survival",
+        "combat"
+      ]
+    },
+    "fiend-dark-ones-own-luck": {
+      "summary": "Call on infernal favor to bend a crucial check or saving throw after seeing the roll.",
+      "description": "Dark One's Own Luck is a clutch reliability feature. It makes the subclass feel like its patron is always ready to tip fate at the exact wrong moment for everyone else.",
+      "resourceName": "Dark One's Own Luck",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "resource",
+        "clutch"
+      ]
+    },
+    "fiend-fiendish-resilience": {
+      "summary": "Adapt your defenses to the punishment you expect and become harder to burn down cleanly.",
+      "description": "Fiendish Resilience is a tactical defense feature, not just passive text. It rewards anticipating the threat profile of the coming fight.",
+      "tags": [
+        "subclass",
+        "defense",
+        "adaptation"
+      ]
+    },
+    "fiend-hurl-through-hell": {
+      "section": "Actions",
+      "type": "special",
+      "summary": "Momentarily cast a struck enemy through nightmare planes and return it broken by the experience.",
+      "description": "Hurl Through Hell is one of the subclass’s most iconic moments: a brutal, cinematic punishment that drags a target through nightmare planes before returning it broken by the experience.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "punishment"
+      ],
+      "effect": "The target is dragged through nightmare planes, returns at the end of your next turn, and takes 10d10 psychic damage.",
+      "dice": "10d10"
+    }
+  }
+}

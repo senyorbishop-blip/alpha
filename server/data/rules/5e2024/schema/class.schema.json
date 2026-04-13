@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "casualdnd://rules/5e2024/schema/class.schema.json",
+  "title": "Class Catalog Entry",
+  "type": "object",
+  "required": [
+    "id",
+    "displayName",
+    "hitDie",
+    "primaryAbilities",
+    "savingThrows",
+    "subclassLevel",
+    "progressionSummary",
+    "levelUnlockIds"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "displayName": { "type": "string", "minLength": 1 },
+    "hitDie": { "type": "integer", "minimum": 4, "maximum": 20 },
+    "primaryAbilities": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 3 },
+      "minItems": 1
+    },
+    "savingThrows": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 3 },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "subclassLevel": { "type": "integer", "minimum": 1, "maximum": 20 },
+    "progressionSummary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["level", "summary"],
+        "properties": {
+          "level": { "type": "integer", "minimum": 1, "maximum": 20 },
+          "summary": { "type": "string", "minLength": 1 },
+          "unlockIds": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "levelUnlockIds": {
+      "type": "object",
+      "description": "Level keyed unlock map; values can include features, spell grants, choice groups, future talents, and future awakening hooks.",
+      "patternProperties": {
+        "^(?:[1-9]|1[0-9]|20)$": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "future": {
+      "type": "object",
+      "description": "Optional future-friendly section for talent trees, awakening tracks, spell grant catalogs, and advanced builder choice groups.",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

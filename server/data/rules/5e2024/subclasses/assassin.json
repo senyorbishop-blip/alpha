@@ -1,0 +1,85 @@
+{
+  "id": "assassin",
+  "displayName": "Assassin",
+  "classId": "rogue",
+  "parentClassId": "rogue",
+  "flavorText": "Assassins are masters of infiltration and lethal opening strikes.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "assassin-assassinate"
+    ],
+    "9": [
+      "assassin-infiltration-expertise"
+    ],
+    "13": [
+      "assassin-imposter"
+    ],
+    "17": [
+      "assassin-death-strike"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "assassin-assassinate",
+      "displayName": "Assassinate",
+      "description": "You have advantage on attack rolls against creatures that have not yet acted in combat, and any hit against a surprised creature is a critical hit."
+    },
+    {
+      "level": 9,
+      "id": "assassin-infiltration-expertise",
+      "displayName": "Infiltration Expertise",
+      "description": "You can create false identities and establish convincing personas for infiltration."
+    },
+    {
+      "level": 13,
+      "id": "assassin-imposter",
+      "displayName": "Imposter",
+      "description": "After studying a creature for 3 hours, you can flawlessly mimic its speech, writing, and behavior."
+    },
+    {
+      "level": 17,
+      "id": "assassin-death-strike",
+      "displayName": "Death Strike",
+      "description": "When you hit a surprised creature, it must make a Constitution save or take double damage from your attack."
+    }
+  ],
+  "featureDefinitions": {
+    "assassin-assassinate": {
+      "summary": "Exploit the first moments of a fight to hit harder and punish targets before they are fully ready.",
+      "description": "Assassinate is about opening pressure. It rewards planning, ambush play, and striking before the enemy has stabilized the battlefield.",
+      "tags": [
+        "subclass",
+        "combat",
+        "burst"
+      ]
+    },
+    "assassin-infiltration-expertise": {
+      "summary": "You become markedly better at maintaining cover identities and operating inside hostile territory.",
+      "description": "Infiltration Expertise reinforces that Assassin is not only about damage; it is also about mission setup, false roles, and controlled entry into dangerous spaces.",
+      "tags": [
+        "subclass",
+        "social",
+        "infiltration"
+      ]
+    },
+    "assassin-imposter": {
+      "summary": "Your disguise and imitation game reaches a level that supports long-form deception rather than quick bluffs alone.",
+      "description": "Imposter is an identity feature that should matter heavily in intrigue or covert campaigns where being believable is as valuable as dealing damage.",
+      "tags": [
+        "subclass",
+        "deception",
+        "utility"
+      ]
+    },
+    "assassin-death-strike": {
+      "summary": "When you catch a creature truly off guard, the payoff becomes devastating.",
+      "description": "Death Strike is the subclass’s late-game assassination spike. It should feel like the culmination of patience, setup, and ruthless timing.",
+      "tags": [
+        "subclass",
+        "burst",
+        "capstone"
+      ]
+    }
+  }
+}

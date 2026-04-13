@@ -1,0 +1,819 @@
+{
+  "id": "wizard",
+  "displayName": "Wizard",
+  "hitDie": 6,
+  "primaryAbilities": [
+    "int"
+  ],
+  "savingThrows": [
+    "int",
+    "wis"
+  ],
+  "subclassLevel": 3,
+  "subclassDisplayName": "Arcane Tradition",
+  "armorProficiencies": [],
+  "weaponProficiencies": [
+    "daggers",
+    "darts",
+    "slings",
+    "quarterstaffs",
+    "light-crossbows"
+  ],
+  "toolProficiencies": [],
+  "skillChoices": {
+    "count": 2,
+    "from": [
+      "Arcana",
+      "History",
+      "Insight",
+      "Investigation",
+      "Medicine",
+      "Religion"
+    ]
+  },
+  "startingEquipmentChoices": [],
+  "spellcastingType": "full",
+  "spellcastingAbility": "int",
+  "spellSlots": {
+    "1": {
+      "1st": 2
+    },
+    "2": {
+      "1st": 3
+    },
+    "3": {
+      "1st": 4,
+      "2nd": 2
+    },
+    "4": {
+      "1st": 4,
+      "2nd": 3
+    },
+    "5": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 2
+    },
+    "6": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3
+    },
+    "7": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 1
+    },
+    "8": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 2
+    },
+    "9": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 1
+    },
+    "10": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2
+    },
+    "11": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1
+    },
+    "12": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1
+    },
+    "13": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1
+    },
+    "14": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1
+    },
+    "15": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1
+    },
+    "16": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1
+    },
+    "17": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1,
+      "9th": 1
+    },
+    "18": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 3,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1,
+      "9th": 1
+    },
+    "19": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 3,
+      "6th": 2,
+      "7th": 1,
+      "8th": 1,
+      "9th": 1
+    },
+    "20": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 3,
+      "6th": 2,
+      "7th": 2,
+      "8th": 1,
+      "9th": 1
+    }
+  },
+  "classDescription": "A scholar of arcane theory and prepared spellcraft.",
+  "roleIdentity": "Highly flexible full caster with best ritual and utility breadth.",
+  "progressionTable": [
+    {
+      "level": 1,
+      "proficiencyBonus": 2,
+      "features": [
+        "Spellcasting",
+        "Arcane Recovery"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellbookSpells": 6,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-spellcasting",
+        "wizard-arcane-recovery"
+      ]
+    },
+    {
+      "level": 2,
+      "proficiencyBonus": 2,
+      "features": [
+        "Scholar"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellbookSpells": 8,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-scholar"
+      ]
+    },
+    {
+      "level": 3,
+      "proficiencyBonus": 2,
+      "features": [
+        "Arcane Tradition (Subclass)",
+        "Memorize Spell",
+        "2nd-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellbookSpells": 10,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-arcane-tradition-subclass",
+        "wizard-memorize-spell",
+        "wizard-spell-level-2"
+      ]
+    },
+    {
+      "level": 4,
+      "proficiencyBonus": 2,
+      "features": [
+        "Ability Score Improvement",
+        "Cantrips Known: 4"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellbookSpells": 12,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-ability-score-improvement-4",
+        "wizard-cantrips-known-4"
+      ]
+    },
+    {
+      "level": 5,
+      "proficiencyBonus": 3,
+      "features": [
+        "3rd-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellbookSpells": 14,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-spell-level-3"
+      ]
+    },
+    {
+      "level": 6,
+      "proficiencyBonus": 3,
+      "features": [
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellbookSpells": 16,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-subclass-feature-6"
+      ]
+    },
+    {
+      "level": 7,
+      "proficiencyBonus": 3,
+      "features": [
+        "4th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellbookSpells": 18,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-spell-level-4"
+      ]
+    },
+    {
+      "level": 8,
+      "proficiencyBonus": 3,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellbookSpells": 20,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-ability-score-improvement-8"
+      ]
+    },
+    {
+      "level": 9,
+      "proficiencyBonus": 4,
+      "features": [
+        "5th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellbookSpells": 22,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-spell-level-5"
+      ]
+    },
+    {
+      "level": 10,
+      "proficiencyBonus": 4,
+      "features": [
+        "Subclass Feature",
+        "Cantrip Formulas",
+        "Cantrips Known: 5"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellbookSpells": 24,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-subclass-feature-10",
+        "wizard-cantrip-formulas",
+        "wizard-cantrips-known-5"
+      ]
+    },
+    {
+      "level": 11,
+      "proficiencyBonus": 4,
+      "features": [
+        "6th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellbookSpells": 26,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-spell-level-6"
+      ]
+    },
+    {
+      "level": 12,
+      "proficiencyBonus": 4,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellbookSpells": 28,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-ability-score-improvement-12"
+      ]
+    },
+    {
+      "level": 13,
+      "proficiencyBonus": 5,
+      "features": [
+        "7th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellbookSpells": 30,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-spell-level-7"
+      ]
+    },
+    {
+      "level": 14,
+      "proficiencyBonus": 5,
+      "features": [
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellbookSpells": 32,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-subclass-feature-14"
+      ]
+    },
+    {
+      "level": 15,
+      "proficiencyBonus": 5,
+      "features": [
+        "8th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellbookSpells": 34,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-spell-level-8"
+      ]
+    },
+    {
+      "level": 16,
+      "proficiencyBonus": 5,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellbookSpells": 36,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-ability-score-improvement-16"
+      ]
+    },
+    {
+      "level": 17,
+      "proficiencyBonus": 6,
+      "features": [
+        "9th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellbookSpells": 38,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-spell-level-9"
+      ]
+    },
+    {
+      "level": 18,
+      "proficiencyBonus": 6,
+      "features": [
+        "Spell Mastery"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellbookSpells": 40,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-spell-mastery"
+      ]
+    },
+    {
+      "level": 19,
+      "proficiencyBonus": 6,
+      "features": [
+        "Epic Boon"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellbookSpells": 42,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-epic-boon"
+      ]
+    },
+    {
+      "level": 20,
+      "proficiencyBonus": 6,
+      "features": [
+        "Signature Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellbookSpells": 44,
+        "spellsPreparedFormula": "int_mod + wizard_level"
+      },
+      "unlockIds": [
+        "wizard-signature-spells"
+      ]
+    }
+  ],
+  "featureDefinitions": {
+    "wizard-spellcasting": {
+      "summary": "Maintain a spellbook, prepare arcane tools from it, and solve problems through the broadest magical list in the game.",
+      "description": "Wizard spellcasting is about breadth, planning, and precision. You maintain a spellbook, prepare a subset of spells for the day, and then answer encounters with exactly the right arcane tool when you read the situation well.\n\nThe sheet should make this feel distinct from spontaneous casters: a wizard is rewarded for knowledge, preparation, and using the spellbook as a real resource.",
+      "tags": [
+        "spellcasting",
+        "arcane",
+        "control",
+        "utility"
+      ]
+    },
+    "wizard-arcane-recovery": {
+      "summary": "Restore part of your spell economy during a short rest so the wizard can stay useful across a full adventuring day.",
+      "description": "Arcane Recovery helps the wizard avoid spending all meaningful spell power in the first major encounter. It should be surfaced as a rest-phase decision that rewards smart slot management rather than panic casting.",
+      "resourceName": "Arcane Recovery",
+      "trackUses": true,
+      "usage": "1 use available",
+      "recovery": "You can use this once per day after finishing a Short Rest.",
+      "tags": [
+        "spellcasting",
+        "resource",
+        "recovery"
+      ]
+    },
+    "wizard-scholar": {
+      "summary": "Your training is not just magical talent — it is practiced, studied expertise in arcane knowledge and careful problem solving.",
+      "description": "Scholar is the wizard identity reminder that knowledge matters. It should communicate that this class solves scenes through preparation, research, recall, and careful arcane understanding, not only damage output.",
+      "tags": [
+        "knowledge",
+        "utility",
+        "arcane"
+      ]
+    },
+    "wizard-arcane-tradition-subclass": {
+      "summary": "Your chosen school or specialty changes the shape of your wizardry and the kinds of magical advantages you build around.",
+      "description": "Arcane Tradition is the subclass gate for wizard. This is where the class stops being a generic spellcaster and becomes an Abjurer, Diviner, Evoker, or Illusionist with a focused play pattern and a reason to approach encounters differently.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "identity",
+        "build"
+      ]
+    },
+    "wizard-memorize-spell": {
+      "summary": "Reconfigure part of your prepared toolkit more flexibly than most casters, keeping the wizard adaptable between problems.",
+      "description": "Memorize Spell reinforces the wizard fantasy of careful preparation and mid-adventure adaptation. The point is not raw power; it is the ability to pivot when new information changes which spell will matter next.",
+      "tags": [
+        "spellcasting",
+        "utility",
+        "preparation"
+      ]
+    },
+    "wizard-cantrip-formulas": {
+      "summary": "Your basic magical routines become easier to swap and refine so your fallback toolkit stays useful.",
+      "description": "Cantrip Formulas matters because cantrips are used constantly. This feature should feel like wizard flexibility scaled down to the at-will level: a small but meaningful quality-of-life advantage that makes daily preparation less rigid.",
+      "tags": [
+        "spellcasting",
+        "cantrip",
+        "flexibility"
+      ]
+    },
+    "wizard-spell-mastery": {
+      "summary": "Choose signature lower-level spells that become part of your permanent operating rhythm instead of your precious daily budget.",
+      "description": "Spell Mastery is one of the clearest high-level wizard payoffs. It turns a couple of dependable spells into tools you can lean on repeatedly, freeing your main slots for more dramatic effects and making the class feel truly seasoned.",
+      "tags": [
+        "spellcasting",
+        "mastery",
+        "endgame"
+      ]
+    },
+    "wizard-signature-spells": {
+      "summary": "Your most iconic prepared spells become effortless enough that they define how this wizard approaches every serious adventuring day.",
+      "description": "Signature Spells is the capstone-level expression of wizard mastery. By this point, the character has favorite spells that are woven so deeply into their routine that they feel almost reflexive, and the sheet should present that as a real class identity payoff.",
+      "tags": [
+        "spellcasting",
+        "capstone",
+        "identity",
+        "endgame"
+      ]
+    }
+  },
+  "levelUnlockIds": {
+    "1": [
+      "wizard-l1-1",
+      "wizard-l1-2"
+    ],
+    "2": [
+      "wizard-l2-1"
+    ],
+    "3": [
+      "wizard-l3-1",
+      "wizard-l3-2",
+      "wizard-l3-3"
+    ],
+    "4": [
+      "wizard-l4-1",
+      "wizard-l4-2"
+    ],
+    "5": [
+      "wizard-l5-1"
+    ],
+    "6": [
+      "wizard-l6-1"
+    ],
+    "7": [
+      "wizard-l7-1"
+    ],
+    "8": [
+      "wizard-l8-1"
+    ],
+    "9": [
+      "wizard-l9-1"
+    ],
+    "10": [
+      "wizard-l10-1",
+      "wizard-l10-2",
+      "wizard-l10-3"
+    ],
+    "11": [
+      "wizard-l11-1"
+    ],
+    "12": [
+      "wizard-l12-1"
+    ],
+    "13": [
+      "wizard-l13-1"
+    ],
+    "14": [
+      "wizard-l14-1"
+    ],
+    "15": [
+      "wizard-l15-1"
+    ],
+    "16": [
+      "wizard-l16-1"
+    ],
+    "17": [
+      "wizard-l17-1"
+    ],
+    "18": [
+      "wizard-l18-1"
+    ],
+    "19": [
+      "wizard-l19-1"
+    ],
+    "20": [
+      "wizard-l20-1"
+    ]
+  },
+  "progressionSummary": [
+    {
+      "level": 1,
+      "summary": "Spellcasting, Arcane Recovery.",
+      "unlockIds": [
+        "wizard-l1-1",
+        "wizard-l1-2"
+      ]
+    },
+    {
+      "level": 2,
+      "summary": "Scholar.",
+      "unlockIds": [
+        "wizard-l2-1"
+      ]
+    },
+    {
+      "level": 3,
+      "summary": "Arcane Tradition (Subclass), Memorize Spell, 2nd-level Spells.",
+      "unlockIds": [
+        "wizard-l3-1",
+        "wizard-l3-2",
+        "wizard-l3-3"
+      ]
+    },
+    {
+      "level": 4,
+      "summary": "Ability Score Improvement, Cantrips Known: 4.",
+      "unlockIds": [
+        "wizard-l4-1",
+        "wizard-l4-2"
+      ]
+    },
+    {
+      "level": 5,
+      "summary": "3rd-level Spells.",
+      "unlockIds": [
+        "wizard-l5-1"
+      ]
+    },
+    {
+      "level": 6,
+      "summary": "Subclass Feature.",
+      "unlockIds": [
+        "wizard-l6-1"
+      ]
+    },
+    {
+      "level": 7,
+      "summary": "4th-level Spells.",
+      "unlockIds": [
+        "wizard-l7-1"
+      ]
+    },
+    {
+      "level": 8,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "wizard-l8-1"
+      ]
+    },
+    {
+      "level": 9,
+      "summary": "5th-level Spells.",
+      "unlockIds": [
+        "wizard-l9-1"
+      ]
+    },
+    {
+      "level": 10,
+      "summary": "Subclass Feature, Cantrip Formulas, Cantrips Known: 5.",
+      "unlockIds": [
+        "wizard-l10-1",
+        "wizard-l10-2",
+        "wizard-l10-3"
+      ]
+    },
+    {
+      "level": 11,
+      "summary": "6th-level Spells.",
+      "unlockIds": [
+        "wizard-l11-1"
+      ]
+    },
+    {
+      "level": 12,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "wizard-l12-1"
+      ]
+    },
+    {
+      "level": 13,
+      "summary": "7th-level Spells.",
+      "unlockIds": [
+        "wizard-l13-1"
+      ]
+    },
+    {
+      "level": 14,
+      "summary": "Subclass Feature.",
+      "unlockIds": [
+        "wizard-l14-1"
+      ]
+    },
+    {
+      "level": 15,
+      "summary": "8th-level Spells.",
+      "unlockIds": [
+        "wizard-l15-1"
+      ]
+    },
+    {
+      "level": 16,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "wizard-l16-1"
+      ]
+    },
+    {
+      "level": 17,
+      "summary": "9th-level Spells.",
+      "unlockIds": [
+        "wizard-l17-1"
+      ]
+    },
+    {
+      "level": 18,
+      "summary": "Spell Mastery.",
+      "unlockIds": [
+        "wizard-l18-1"
+      ]
+    },
+    {
+      "level": 19,
+      "summary": "Epic Boon.",
+      "unlockIds": [
+        "wizard-l19-1"
+      ]
+    },
+    {
+      "level": 20,
+      "summary": "Signature Spells.",
+      "unlockIds": [
+        "wizard-l20-1"
+      ]
+    }
+  ],
+  "future": {
+    "talentGroupId": "wizard-core-talents",
+    "awakeningHookIds": [
+      "wizard-awakening-archmage"
+    ]
+  },
+  "buildTips": {
+    "primaryFocus": "Intelligence",
+    "primaryReason": "powers your spell attacks and save DC",
+    "secondaryFocus": "Constitution",
+    "secondaryReason": "helps with HP and Concentration on critical spells",
+    "avoidDump": "Dexterity",
+    "avoidDumpReason": "wizards are fragile, so AC and Dexterity saves matter a lot"
+  }
+}

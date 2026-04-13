@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "casualdnd://rules/5e2024/schema/catalog.schema.json",
+  "title": "Casual D&D 5e 2024 Rules Catalog",
+  "description": "Top-level schema notes for native data-driven character building catalogs.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "rulesetId",
+    "classes",
+    "species",
+    "subclasses",
+    "talents",
+    "awakenings"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "rulesetId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "classes": {
+      "type": "array",
+      "items": {
+        "$ref": "class.schema.json"
+      }
+    },
+    "species": {
+      "type": "array",
+      "items": {
+        "$ref": "species.schema.json"
+      }
+    },
+    "subclasses": {
+      "type": "array",
+      "items": {
+        "$ref": "subclass.schema.json"
+      }
+    },
+    "talents": {
+      "type": "array",
+      "items": {
+        "$ref": "talent.schema.json"
+      }
+    },
+    "awakenings": {
+      "type": "array",
+      "items": {
+        "$ref": "awakening.schema.json"
+      }
+    },
+    "futureNotes": {
+      "type": "object",
+      "description": "Reserved extension point for talents, awakenings, spell grants, and guided choice groups."
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#0d0900" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+<g filter="url(#shadow)">
+<line x1="38" y1="84" x2="20" y2="114" stroke="#4a4a55" stroke-width="4"/>
+<line x1="90" y1="84" x2="108" y2="114" stroke="#4a4a55" stroke-width="4"/>
+<line x1="64" y1="86" x2="64" y2="114" stroke="#4a4a55" stroke-width="4"/>
+<polygon points="28,54 100,54 94,90 34,90" fill="#4a4a55" stroke="#2a1f0e" stroke-width="2"/>
+<polygon points="32,58 96,58 92,86 36,86" fill="#8888a0" stroke="#2a1f0e" stroke-width="2"/>
+<rect x="24" y="48" width="80" height="12" fill="#4a4a55" stroke="#2a1f0e" stroke-width="2" rx="3"/>
+<path d="M24 54 Q64 34 104 54" fill="none" stroke="#8888a0" stroke-width="4"/>
+<path d="M50 48 Q46 36 50 24" fill="none" stroke="#e0e0ff" stroke-width="2"/>
+<path d="M78 48 Q82 36 78 24" fill="none" stroke="#e0e0ff" stroke-width="2"/>
+</g>
+</svg>

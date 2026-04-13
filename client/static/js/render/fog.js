@@ -1,0 +1,267 @@
+(function(){
+  // Stage 5 fog shell owner:
+  // - owns map-context fog selection, UI sync, batching, toggle/reveal helpers,
+  //   and fog overlay rendering through env/state compatibility wrappers
+  // - deliberately does NOT own gameplay collections or the broader draw loop,
+  //   which still live in play.html during the staged migration
+  function fogCurrentCtx(env) {
+    return env.currentPoi ? (env.currentPoi.id || '__local__') : 'world';
+  }
+  function fogSaveCurrentMap(state) {
+    if (!state.fogMaps[state.fogMapCtx]) state.fogMaps[state.fogMapCtx] = {};
+    state.fogMaps[state.fogMapCtx].enabled = state.fogEnabled;
+    state.fogMaps[state.fogMapCtx].cols = state.fogCols;
+    state.fogMaps[state.fogMapCtx].rows = state.fogRows;
+    if (state.fogCells) state.fogMaps[state.fogMapCtx].cells = state.fogCells.slice();
+  }
+  function _fogRevealPercent(state) {
+    if (!state.fogEnabled || !state.fogCells || !state.fogCells.length) return 100;
+    let revealed = 0;
+    for (let i = 0; i < state.fogCells.length; i++) if (state.fogCells[i] === 1) revealed += 1;
+    return Math.round((revealed / state.fogCells.length) * 100);
+  }
+  function _isFogPainterActive(state, env) {
+    if (env.ROLE !== 'dm' || !state.fogEnabled || !state.fogMouseWorld) return false;
+    const doc = (env && env.document) || document;
+    const fogFlyout = doc.getElementById('flyout-fog');
+    return !!(fogFlyout && fogFlyout.classList && fogFlyout.classList.contains('open'));
+  }
+  function _syncFogStatus(state, env) {
+    const doc = (env && env.document) || document;
+    const statusEl = doc.getElementById('fog-status-text');
+    if (!statusEl) return;
+    if (!state.fogEnabled) {
+      statusEl.textContent = 'Fog is OFF · players can see the full map.';
+      return;
+    }
+    const pct = _fogRevealPercent(state);
+    statusEl.textContent = `Fog is ON · players can currently see about ${pct}% of this map.`;
+  }
+  function syncFogUI(state, env, handlers) {
+    const doc = (env && env.document) || document;
+    const chk = doc.getElementById('fog-enable-chk');
+    const toolsDiv = doc.getElementById('fog-tools');
+    const brushDiv = doc.getElementById('fog-brush-row');
+    if (chk) {
+      chk.removeEventListener('change', handlers.onFogCheckboxChange);
+      chk.checked = state.fogEnabled;
+      chk.addEventListener('change', handlers.onFogCheckboxChange);
+    }
+    if (toolsDiv) toolsDiv.style.display = state.fogEnabled ? 'flex' : 'none';
+    if (brushDiv) brushDiv.style.display = state.fogEnabled ? 'block' : 'none';
+    const toolGrid = doc.getElementById('fog-tool-grid');
+    if (toolGrid) toolGrid.style.display = state.fogEnabled ? 'grid' : 'none';
+    const advancedTools = doc.getElementById('fog-advanced-tools');
+    if (advancedTools) advancedTools.style.display = state.fogEnabled ? 'block' : 'none';
+    const revealBtn = doc.getElementById('fog-btn-reveal');
+    const hideBtn = doc.getElementById('fog-btn-hide');
+    if (revealBtn) revealBtn.classList.toggle('active', !!state.fogReveal);
+    if (hideBtn) hideBtn.classList.toggle('active', !state.fogReveal);
+    _syncFogStatus(state, env);
+  }
+  function fogLoadMap(state, env, ctx) {
+    state.fogMapCtx = ctx;
+    const entry = state.fogMaps[ctx];
+    if (entry) {
+      state.fogEnabled = entry.enabled || false;
+      state.fogCols = entry.cols || 64;
+      state.fogRows = entry.rows || 64;
+      if (entry.cells && entry.cells.length) {
+        state.fogCells = entry.cells instanceof Uint8Array ? new Uint8Array(entry.cells) : (() => {
+          const arr = new Uint8Array(state.fogCols * state.fogRows);
+          for (let i = 0; i < Math.min(entry.cells.length, arr.length); i++) arr[i] = entry.cells[i] === 1 || entry.cells[i] === '1' ? 1 : 0;
+          return arr;
+        })();
+      } else {
+        state.fogCells = state.fogEnabled ? new Uint8Array(state.fogCols * state.fogRows) : null;
+      }
+      if (state.fogCanvas && state.fogEnabled) { state.fogCanvas.width = state.fogCols; state.fogCanvas.height = state.fogRows; }
+    } else {
+      state.fogEnabled = false;
+      state.fogCols = 64; state.fogRows = 64;
+      state.fogCells = null;
+    }
+    env.invalidateFogCache();
+    syncFogUI(state, env, env.handlers);
+    if (typeof env.syncShellState === 'function') env.syncShellState(state);
+  }
+  function fogInitCells(state, cols, rows, cells) {
+    state.fogCols = cols || 64;
+    state.fogRows = rows || 64;
+    const total = state.fogCols * state.fogRows;
+    state.fogCells = new Uint8Array(total);
+    if (cells) {
+      const len = Math.min(cells.length, total);
+      for (let i = 0; i < len; i++) state.fogCells[i] = cells[i] === '1' ? 1 : 0;
+    }
+    if (state.fogCanvas) {
+      state.fogCanvas.width = state.fogCols;
+      state.fogCanvas.height = state.fogRows;
+    }
+  }
+  function drawFogOverlay(state, env, W, H) {
+    const bgImage = env.activeBackgroundImage();
+    if (!state.fogCells || !bgImage) return;
+    const mw = bgImage.naturalWidth;
+    const mh = bgImage.naturalHeight;
+    const ctx = env.ctx;
+    const cam = env.cam;
+    const fogCanvas = state.fogCanvas;
+    const fogCtx = state.fogCtx;
+    if (fogCanvas.width !== state.fogCols || fogCanvas.height !== state.fogRows) {
+      fogCanvas.width = state.fogCols;
+      fogCanvas.height = state.fogRows;
+      state.fogImageDirty = true;
+    }
+    if (state.fogImageDirty) {
+      const idata = fogCtx.createImageData(state.fogCols, state.fogRows);
+      const buf = idata.data;
+      const isDM = env.ROLE === 'dm';
+      const settings = env.currentMapSettings();
+      const dmAlpha = Math.max(0, Math.min(1, Number(settings.fog_dm_alpha ?? 0.66)));
+      const playerAlpha = Math.max(0, Math.min(1, Number(settings.fog_player_alpha ?? 1.0)));
+      const alpha = Math.round((isDM ? dmAlpha : playerAlpha) * 255);
+      for (let i = 0; i < state.fogCols * state.fogRows; i++) {
+        const base = i * 4;
+        if (state.fogCells[i] === 1) {
+          buf[base + 0] = 0; buf[base + 1] = 0; buf[base + 2] = 0; buf[base + 3] = 0;
+        } else if (isDM) {
+          buf[base + 0] = 30; buf[base + 1] = 40; buf[base + 2] = 55; buf[base + 3] = alpha;
+        } else {
+          buf[base + 0] = 0; buf[base + 1] = 0; buf[base + 2] = 0; buf[base + 3] = alpha;
+        }
+      }
+      fogCtx.putImageData(idata, 0, 0);
+      state.fogImageDirty = false;
+    }
+    ctx.save();
+    ctx.translate(W/2, H/2);
+    ctx.scale(cam.zoom, cam.zoom);
+    ctx.translate(cam.x, cam.y);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(fogCanvas, -mw/2, -mh/2, mw, mh);
+    ctx.imageSmoothingEnabled = true;
+    ctx.restore();
+
+    const doc = env.document || document;
+    if (_isFogPainterActive(state, env)) {
+      const cellW = (mw / state.fogCols) * cam.zoom;
+      const brushR = Math.max(state.fogBrushSize - 1, 0);
+      const brushPx = (brushR + 0.5) * cellW;
+      const sw = env.worldToScreen(state.fogMouseWorld.x, state.fogMouseWorld.y);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(sw.x, sw.y, brushPx, 0, Math.PI*2);
+      ctx.strokeStyle = state.fogReveal ? 'rgba(46,204,113,0.9)' : 'rgba(231,76,60,0.9)';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([5, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 0.12;
+      ctx.fillStyle = state.fogReveal ? '#2ecc71' : '#e74c3c';
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+  function fogWorldToCell(state, env, wx, wy) {
+    const bgImage = env.activeBackgroundImage();
+    if (!bgImage) return null;
+    const mw = bgImage.naturalWidth, mh = bgImage.naturalHeight;
+    const col = Math.floor((wx + mw/2) / mw * state.fogCols);
+    const row = Math.floor((wy + mh/2) / mh * state.fogRows);
+    if (col < 0 || col >= state.fogCols || row < 0 || row >= state.fogRows) return null;
+    return { col, row, idx: row * state.fogCols + col };
+  }
+  function fogPaintAt(state, env, wx, wy) {
+    if (!state.fogEnabled || !state.fogCells || !env.mapImage) return;
+    const center = fogWorldToCell(state, env, wx, wy);
+    if (!center) return;
+    const r = Math.max(0, state.fogBrushSize - 1);
+    let changed = false;
+    for (let dr = -r; dr <= r; dr++) {
+      for (let dc = -r; dc <= r; dc++) {
+        if (dc*dc + dr*dr > r*r + r*0.5) continue;
+        const col = center.col + dc, row = center.row + dr;
+        if (col < 0 || col >= state.fogCols || row < 0 || row >= state.fogRows) continue;
+        const idx = row * state.fogCols + col;
+        const newVal = state.fogReveal ? 1 : 0;
+        if (state.fogCells[idx] !== newVal) {
+          state.fogCells[idx] = newVal;
+          state.fogDirtyBatch.add(idx);
+          changed = true;
+        }
+      }
+    }
+    if (changed) env.invalidateFogCache();
+    if (state.fogPaintTimer) clearTimeout(state.fogPaintTimer);
+    state.fogPaintTimer = setTimeout(() => fogFlushBatch(state, env), 80);
+  }
+  function fogFlushBatch(state, env) {
+    if (state.fogDirtyBatch.size === 0) return;
+    const cells = Array.from(state.fogDirtyBatch);
+    state.fogDirtyBatch.clear();
+    env.sendWS({ type: 'fog_paint', payload: { reveal: state.fogReveal, cells, map_ctx: state.fogMapCtx } });
+  }
+  function fogToggle(state, env, enabled) {
+    state.fogEnabled = enabled;
+    if (typeof env.syncShellState === 'function') env.syncShellState(state);
+    if (!state.fogMaps[state.fogMapCtx]) state.fogMaps[state.fogMapCtx] = { enabled: false, cols: 64, rows: 64, cells: null };
+    state.fogMaps[state.fogMapCtx].enabled = enabled;
+    if (enabled && !state.fogMaps[state.fogMapCtx].cells) {
+      state.fogMaps[state.fogMapCtx].cells = new Uint8Array(state.fogCols * state.fogRows);
+      state.fogCells = state.fogMaps[state.fogMapCtx].cells;
+      if (state.fogCanvas) { state.fogCanvas.width = state.fogCols; state.fogCanvas.height = state.fogRows; }
+    } else if (!enabled) {
+      state.fogCells = null;
+    }
+    env.invalidateFogCache();
+    syncFogUI(state, env, env.handlers);
+    env.sendWS({ type: 'fog_toggle', payload: { enabled } });
+  }
+  function setFogMode(state, env, reveal) {
+    state.fogReveal = reveal;
+    const doc = (env && env.document) || document;
+    const revealBtn = doc.getElementById('fog-btn-reveal');
+    const hideBtn = doc.getElementById('fog-btn-hide');
+    if (revealBtn) revealBtn.classList.toggle('active', !!reveal);
+    if (hideBtn) hideBtn.classList.toggle('active', !reveal);
+    if (env && typeof env.syncShellState === 'function') env.syncShellState(state);
+  }
+  function fogRevealAll(state, env) {
+    if (!state.fogCells) fogInitCells(state, state.fogCols, state.fogRows, '');
+    const all = Array.from({length: state.fogCols * state.fogRows}, (_, i) => i);
+    state.fogCells.fill(1);
+    env.invalidateFogCache();
+    env.sendWS({ type: 'fog_paint', payload: { reveal: true, cells: all, map_ctx: state.fogMapCtx } });
+  }
+  function fogHideAll(state, env) {
+    if (!state.fogCells) fogInitCells(state, state.fogCols, state.fogRows, '');
+    const all = Array.from({length: state.fogCols * state.fogRows}, (_, i) => i);
+    state.fogCells.fill(0);
+    env.invalidateFogCache();
+    env.sendWS({ type: 'fog_paint', payload: { reveal: false, cells: all, map_ctx: state.fogMapCtx } });
+  }
+  function fogApplyState(state, env, p) {
+    if (p.fog_maps) {
+      state.fogMaps = {};
+      Object.entries(p.fog_maps).forEach(([ctx, entry]) => {
+        const total = (entry.cols || 64) * (entry.rows || 64);
+        const arr = new Uint8Array(total);
+        const str = entry.cells || '';
+        for (let i = 0; i < Math.min(str.length, total); i++) arr[i] = str[i] === '1' ? 1 : 0;
+        state.fogMaps[ctx] = { enabled: entry.enabled || false, cols: entry.cols || 64, rows: entry.rows || 64, cells: arr };
+      });
+    }
+    if (p.map_ctx !== undefined) {
+      const total = (p.fog_cols || 64) * (p.fog_rows || 64);
+      const arr = new Uint8Array(total);
+      const str = p.fog_cells || '';
+      for (let i = 0; i < Math.min(str.length, total); i++) arr[i] = str[i] === '1' ? 1 : 0;
+      state.fogMaps[p.map_ctx] = { enabled: p.fog_enabled || false, cols: p.fog_cols || 64, rows: p.fog_rows || 64, cells: arr };
+    }
+    const ctx = fogCurrentCtx(env);
+    if (p.map_ctx !== undefined && p.map_ctx !== ctx) return;
+    fogLoadMap(state, env, ctx);
+  }
+  window.AppFog = { fogCurrentCtx, fogSaveCurrentMap, syncFogUI, fogLoadMap, fogInitCells, drawFogOverlay, fogWorldToCell, fogPaintAt, fogFlushBatch, fogToggle, setFogMode, fogRevealAll, fogHideAll, fogApplyState };
+})();

@@ -1,0 +1,206 @@
+{
+  "id": "totem-warrior",
+  "displayName": "Path of the Wild Heart",
+  "classId": "barbarian",
+  "parentClassId": "barbarian",
+  "flavorText": "You channel primal spirits of the wild, adopting totemic adaptations as your rage deepens.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "wild-heart-animal-speaker",
+      "wild-heart-spirit-seeker-3"
+    ],
+    "6": [
+      "wild-heart-spirit-seeker-6"
+    ],
+    "10": [
+      "wild-heart-spirit-seeker-10"
+    ],
+    "14": [
+      "wild-heart-spirit-seeker-14"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "wild-heart-animal-speaker",
+      "displayName": "Animal Speaker",
+      "description": "You can cast Speak with Animals as a ritual. You can also cast Beast Sense once per long rest without a spell slot."
+    },
+    {
+      "level": 3,
+      "id": "wild-heart-spirit-seeker-3",
+      "displayName": "Spirit Seeker (3rd Level Choice)",
+      "description": "Choose one spirit adaptation: Bear (resistance to all damage except psychic while raging), Eagle (cannot be surprised and can Dash for free while raging), Elk (+15 feet speed while raging), Tiger (+5 feet reach while raging and pounce knock-prone utility), or Wolf (allies have advantage on attacks against creatures adjacent to you while raging)."
+    },
+    {
+      "level": 6,
+      "id": "wild-heart-spirit-seeker-6",
+      "displayName": "Spirit Seeker (6th Level Choice)",
+      "description": "Choose one spirit adaptation from Bear, Eagle, Elk, Tiger, or Wolf; gain the corresponding rage benefit."
+    },
+    {
+      "level": 10,
+      "id": "wild-heart-spirit-seeker-10",
+      "displayName": "Spirit Seeker (10th Level Choice)",
+      "description": "Choose one spirit adaptation from Bear, Eagle, Elk, Tiger, or Wolf; gain the corresponding rage benefit."
+    },
+    {
+      "level": 14,
+      "id": "wild-heart-spirit-seeker-14",
+      "displayName": "Spirit Seeker (14th Level Choice)",
+      "description": "Choose one spirit adaptation from Bear, Eagle, Elk, Tiger, or Wolf; gain the corresponding rage benefit."
+    }
+  ],
+  "featureDefinitions": {
+    "wild-heart-animal-speaker": {
+      "id": "wild-heart-animal-speaker",
+      "displayName": "Animal Speaker",
+      "name": "Animal Speaker",
+      "summary": "Your spiritual path gives you a calmer line of communication with beasts and the natural world.",
+      "description": "You can cast Speak with Animals as a ritual. You can also cast Beast Sense once per long rest without a spell slot.\n\nAnimal Speaker pushes the totem barbarian toward exploration and wilderness utility so the subclass contributes more than raw damage outside combat.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 3,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "barbarian",
+        "spiritual",
+        "utility",
+        "exploration"
+      ],
+      "sourceKind": "subclass",
+      "className": "Barbarian",
+      "subclassName": "Path of the Wild Heart",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "once per long rest",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "wild-heart-spirit-seeker-3": {
+      "id": "wild-heart-spirit-seeker-3",
+      "displayName": "Spirit Seeker (3rd Level Choice)",
+      "name": "Spirit Seeker (3rd Level Choice)",
+      "summary": "Your totem path keeps opening new spirit-guided choices as you level.",
+      "description": "Choose one spirit adaptation: Bear (resistance to all damage except psychic while raging), Eagle (cannot be surprised and can Dash for free while raging), Elk (+15 feet speed while raging), Tiger (+5 feet reach while raging and pounce knock-prone utility), or Wolf (allies have advantage on attacks against creatures adjacent to you while raging).\n\nSpirit Seeker is the branching identity engine for the subclass. The player should be able to tell that later subclass levels are not just number bumps but meaningful animal-themed choices.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 3,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "barbarian",
+        "spiritual",
+        "customization",
+        "exploration"
+      ],
+      "sourceKind": "subclass",
+      "className": "Barbarian",
+      "subclassName": "Path of the Wild Heart",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "wild-heart-spirit-seeker-6": {
+      "id": "wild-heart-spirit-seeker-6",
+      "displayName": "Spirit Seeker (6th Level Choice)",
+      "name": "Spirit Seeker (6th Level Choice)",
+      "summary": "Your totem path keeps opening new spirit-guided choices as you level.",
+      "description": "Choose one spirit adaptation from Bear, Eagle, Elk, Tiger, or Wolf; gain the corresponding rage benefit.\n\nSpirit Seeker is the branching identity engine for the subclass. The player should be able to tell that later subclass levels are not just number bumps but meaningful animal-themed choices.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 6,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "Rage",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "barbarian",
+        "spiritual",
+        "customization",
+        "exploration"
+      ],
+      "sourceKind": "subclass",
+      "className": "Barbarian",
+      "subclassName": "Path of the Wild Heart",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "wild-heart-spirit-seeker-10": {
+      "id": "wild-heart-spirit-seeker-10",
+      "displayName": "Spirit Seeker (10th Level Choice)",
+      "name": "Spirit Seeker (10th Level Choice)",
+      "summary": "Your totem path keeps opening new spirit-guided choices as you level.",
+      "description": "Choose one spirit adaptation from Bear, Eagle, Elk, Tiger, or Wolf; gain the corresponding rage benefit.\n\nSpirit Seeker is the branching identity engine for the subclass. The player should be able to tell that later subclass levels are not just number bumps but meaningful animal-themed choices.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 10,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "Rage",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "barbarian",
+        "spiritual",
+        "customization",
+        "exploration"
+      ],
+      "sourceKind": "subclass",
+      "className": "Barbarian",
+      "subclassName": "Path of the Wild Heart",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "wild-heart-spirit-seeker-14": {
+      "id": "wild-heart-spirit-seeker-14",
+      "displayName": "Spirit Seeker (14th Level Choice)",
+      "name": "Spirit Seeker (14th Level Choice)",
+      "summary": "Your totem path keeps opening new spirit-guided choices as you level.",
+      "description": "Choose one spirit adaptation from Bear, Eagle, Elk, Tiger, or Wolf; gain the corresponding rage benefit.\n\nSpirit Seeker is the branching identity engine for the subclass. The player should be able to tell that later subclass levels are not just number bumps but meaningful animal-themed choices.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 14,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "Rage",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "barbarian",
+        "spiritual",
+        "customization",
+        "exploration"
+      ],
+      "sourceKind": "subclass",
+      "className": "Barbarian",
+      "subclassName": "Path of the Wild Heart",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    }
+  }
+}

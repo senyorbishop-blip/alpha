@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#0d0900" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+<g filter="url(#shadow)">
+<rect x="14" y="68" width="22" height="40" fill="#7a7060" stroke="#2a1f0e" stroke-width="2" rx="2"/>
+<rect x="20" y="58" width="10" height="14" fill="#b0a898" stroke="#2a1f0e" stroke-width="2" rx="1"/>
+<rect x="90" y="72" width="24" height="36" fill="#7a7060" stroke="#2a1f0e" stroke-width="2" rx="2"/>
+<rect x="94" y="58" width="14" height="18" fill="#b0a898" stroke="#2a1f0e" stroke-width="2" rx="1"/>
+<polygon points="40,80 74,72 80,88 44,96" fill="#7a7060" stroke="#2a1f0e" stroke-width="2"/>
+<circle cx="58" cy="100" r="10" fill="#b0a898" stroke="#2a1f0e" stroke-width="2"/>
+<circle cx="76" cy="96" r="8" fill="#7a7060" stroke="#2a1f0e" stroke-width="2"/>
+<circle cx="42" cy="94" r="6" fill="#b0a898" stroke="#2a1f0e" stroke-width="2"/>
+</g>
+</svg>

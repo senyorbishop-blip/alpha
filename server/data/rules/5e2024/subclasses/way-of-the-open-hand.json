@@ -1,0 +1,170 @@
+{
+  "id": "way-of-the-open-hand",
+  "displayName": "Way of the Open Hand",
+  "classId": "monk",
+  "parentClassId": "monk",
+  "flavorText": "Open Hand monks turn precision strikes and inner discipline into control, recovery, and terrifying finishing pressure.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "open-hand-open-hand-technique"
+    ],
+    "6": [
+      "open-hand-wholeness-of-body"
+    ],
+    "11": [
+      "open-hand-tranquility"
+    ],
+    "17": [
+      "open-hand-quivering-palm"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "open-hand-open-hand-technique",
+      "displayName": "Open Hand Technique",
+      "description": "Your Flurry of Blows gains control riders that can push, drop, or disrupt enemies, turning basic monk pressure into a battlefield-shaping toolkit."
+    },
+    {
+      "level": 6,
+      "id": "open-hand-wholeness-of-body",
+      "displayName": "Wholeness of Body",
+      "description": "As an action, you draw on inner discipline to restore your own vitality, giving the subclass a reliable self-heal that keeps you in the fight."
+    },
+    {
+      "level": 11,
+      "id": "open-hand-tranquility",
+      "displayName": "Tranquility",
+      "description": "Your centered presence makes it harder for enemies to commit violence against you until they break the calm, creating strong pre-fight and control value."
+    },
+    {
+      "level": 17,
+      "id": "open-hand-quivering-palm",
+      "displayName": "Quivering Palm",
+      "description": "You plant a devastating delayed vibration in a foe and can later trigger it for massive internal damage, giving the subclass a signature high-tier finisher."
+    }
+  ],
+  "featureDefinitions": {
+    "open-hand-open-hand-technique": {
+      "id": "open-hand-open-hand-technique",
+      "displayName": "Open Hand Technique",
+      "name": "Open Hand Technique",
+      "summary": "Your flurry pressure carries control riders that push, drop, or disrupt foes instead of only adding damage.",
+      "description": "Your Flurry of Blows gains control riders that can push, drop, or disrupt enemies, turning basic monk pressure into a battlefield-shaping toolkit.\n\nOpen Hand Technique is why the subclass feels like a battlefield controller. The sheet should tell the player these are real rider choices, not flavor attached to Flurry of Blows.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 3,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "monk",
+        "unarmed",
+        "combat",
+        "control"
+      ],
+      "sourceKind": "subclass",
+      "className": "Monk",
+      "subclassName": "Way of the Open Hand",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "open-hand-wholeness-of-body": {
+      "id": "open-hand-wholeness-of-body",
+      "displayName": "Wholeness of Body",
+      "name": "Wholeness of Body",
+      "summary": "Use disciplined breathing and inner focus to restore your own vitality mid-adventure or mid-fight.",
+      "description": "As an action, you draw on inner discipline to restore your own vitality, giving the subclass a reliable self-heal that keeps you in the fight.\n\nWholeness of Body is a real sustain tool for the Open Hand monk. It matters because self-healing changes whether you can stay aggressive without immediate support.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 6,
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Wholeness of Body",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "monk",
+        "unarmed",
+        "healing",
+        "focus"
+      ],
+      "sourceKind": "subclass",
+      "className": "Monk",
+      "subclassName": "Way of the Open Hand",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "open-hand-tranquility": {
+      "id": "open-hand-tranquility",
+      "displayName": "Tranquility",
+      "name": "Tranquility",
+      "summary": "Your centered presence discourages violence until enemies deliberately break the peace around you.",
+      "description": "Your centered presence makes it harder for enemies to commit violence against you until they break the calm, creating strong pre-fight and control value.\n\nTranquility is about control before the first punch lands. It should stand out in scouting, negotiation, and tense pre-combat scenes where initiative has not yet exploded.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 11,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "monk",
+        "unarmed",
+        "defense",
+        "social"
+      ],
+      "sourceKind": "subclass",
+      "className": "Monk",
+      "subclassName": "Way of the Open Hand",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "open-hand-quivering-palm": {
+      "id": "open-hand-quivering-palm",
+      "displayName": "Quivering Palm",
+      "name": "Quivering Palm",
+      "summary": "Plant a hidden lethal vibration in a target and trigger it later for a terrifying finishing burst.",
+      "description": "You plant a devastating delayed vibration in a foe and can later trigger it for massive internal damage, giving the subclass a signature high-tier finisher.\n\nQuivering Palm is the Open Hand monk’s signature endgame finisher. It should feel like a major setup-and-payoff mechanic, not a one-line damage rider.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 17,
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "monk",
+        "unarmed",
+        "capstone",
+        "combat",
+        "focus"
+      ],
+      "sourceKind": "subclass",
+      "className": "Monk",
+      "subclassName": "Way of the Open Hand",
+      "range": "",
+      "duration": "",
+      "save": "Constitution",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    }
+  }
+}

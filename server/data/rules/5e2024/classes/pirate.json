@@ -1,0 +1,843 @@
+{
+  "id": "pirate",
+  "displayName": "Pirate",
+  "hitDie": 10,
+  "primaryAbilities": [
+    "dex",
+    "cha"
+  ],
+  "savingThrows": [
+    "dex",
+    "cha"
+  ],
+  "subclassLevel": 3,
+  "subclassDisplayName": "Pirate Calling",
+  "armorProficiencies": [
+    "light",
+    "medium",
+    "shields"
+  ],
+  "weaponProficiencies": [
+    "simple",
+    "martial",
+    "firearms"
+  ],
+  "toolProficiencies": [
+    "navigator-tools",
+    "thieves-tools",
+    "vehicles-water"
+  ],
+  "skillChoices": {
+    "count": 3,
+    "from": [
+      "Acrobatics",
+      "Athletics",
+      "Deception",
+      "Insight",
+      "Intimidation",
+      "Perception",
+      "Performance",
+      "Persuasion",
+      "Sleight of Hand",
+      "Stealth",
+      "Survival"
+    ]
+  },
+  "startingEquipmentChoices": [],
+  "spellcastingType": "none",
+  "spellcastingAbility": null,
+  "spellSlots": {},
+  "classDescription": "A swaggering raider, duelist, and sea-scoundrel who wins through mobility, pressure, dirty tricks, and presence.",
+  "roleIdentity": "Dexterity/Charisma martial controller who mixes movement, debuffs, leadership, and opportunistic burst damage.",
+  "progressionTable": [
+    {
+      "level": 1,
+      "proficiencyBonus": 2,
+      "features": [
+        "Sea Legs",
+        "Swagger Dice",
+        "Dirty Fighting"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d6",
+        "swaggerUses": 2,
+        "trickOptions": 2
+      },
+      "unlockIds": [
+        "pirate-sea-legs",
+        "pirate-swagger-dice",
+        "pirate-dirty-fighting"
+      ]
+    },
+    {
+      "level": 2,
+      "proficiencyBonus": 2,
+      "features": [
+        "Cunning Footwork",
+        "Boarding Action"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d6",
+        "swaggerUses": 2,
+        "trickOptions": 2
+      },
+      "unlockIds": [
+        "pirate-cunning-footwork",
+        "pirate-boarding-action"
+      ]
+    },
+    {
+      "level": 3,
+      "proficiencyBonus": 2,
+      "features": [
+        "Pirate Calling (Subclass)",
+        "Marked Quarry"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d6",
+        "swaggerUses": 3,
+        "trickOptions": 3
+      },
+      "unlockIds": [
+        "pirate-pirate-calling-subclass",
+        "pirate-marked-quarry"
+      ]
+    },
+    {
+      "level": 4,
+      "proficiencyBonus": 2,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d6",
+        "swaggerUses": 3,
+        "trickOptions": 3
+      },
+      "unlockIds": [
+        "pirate-ability-score-improvement-1"
+      ],
+      "asiOrFeat": true
+    },
+    {
+      "level": 5,
+      "proficiencyBonus": 3,
+      "features": [
+        "Extra Attack",
+        "Swagger Dice (d8)"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d8",
+        "swaggerUses": 3,
+        "trickOptions": 3
+      },
+      "unlockIds": [
+        "pirate-extra-attack",
+        "pirate-swagger-dice-d8"
+      ]
+    },
+    {
+      "level": 6,
+      "proficiencyBonus": 3,
+      "features": [
+        "No Quarter"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d8",
+        "swaggerUses": 3,
+        "trickOptions": 4
+      },
+      "unlockIds": [
+        "pirate-no-quarter"
+      ]
+    },
+    {
+      "level": 7,
+      "proficiencyBonus": 3,
+      "features": [
+        "Uncanny Balance"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d8",
+        "swaggerUses": 4,
+        "trickOptions": 4
+      },
+      "unlockIds": [
+        "pirate-uncanny-balance"
+      ]
+    },
+    {
+      "level": 8,
+      "proficiencyBonus": 3,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d8",
+        "swaggerUses": 4,
+        "trickOptions": 4
+      },
+      "unlockIds": [
+        "pirate-ability-score-improvement-2"
+      ],
+      "asiOrFeat": true
+    },
+    {
+      "level": 9,
+      "proficiencyBonus": 4,
+      "features": [
+        "Menacing Reputation"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d8",
+        "swaggerUses": 4,
+        "trickOptions": 4
+      },
+      "unlockIds": [
+        "pirate-menacing-reputation"
+      ]
+    },
+    {
+      "level": 10,
+      "proficiencyBonus": 4,
+      "features": [
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d8",
+        "swaggerUses": 4,
+        "trickOptions": 5
+      },
+      "unlockIds": [
+        "pirate-subclass-feature-10"
+      ]
+    },
+    {
+      "level": 11,
+      "proficiencyBonus": 4,
+      "features": [
+        "Press the Advantage"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d10",
+        "swaggerUses": 4,
+        "trickOptions": 5
+      },
+      "unlockIds": [
+        "pirate-press-the-advantage"
+      ]
+    },
+    {
+      "level": 12,
+      "proficiencyBonus": 4,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d10",
+        "swaggerUses": 4,
+        "trickOptions": 5
+      },
+      "unlockIds": [
+        "pirate-ability-score-improvement-3"
+      ],
+      "asiOrFeat": true
+    },
+    {
+      "level": 13,
+      "proficiencyBonus": 5,
+      "features": [
+        "Swagger Dice (d10)",
+        "Master of the Boarding Line"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d10",
+        "swaggerUses": 5,
+        "trickOptions": 5
+      },
+      "unlockIds": [
+        "pirate-swagger-dice-d10",
+        "pirate-master-of-the-boarding-line"
+      ]
+    },
+    {
+      "level": 14,
+      "proficiencyBonus": 5,
+      "features": [
+        "Legend of the Waves"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d10",
+        "swaggerUses": 5,
+        "trickOptions": 6
+      },
+      "unlockIds": [
+        "pirate-legend-of-the-waves"
+      ]
+    },
+    {
+      "level": 15,
+      "proficiencyBonus": 5,
+      "features": [
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d10",
+        "swaggerUses": 5,
+        "trickOptions": 6
+      },
+      "unlockIds": [
+        "pirate-subclass-feature-15"
+      ]
+    },
+    {
+      "level": 16,
+      "proficiencyBonus": 5,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d10",
+        "swaggerUses": 5,
+        "trickOptions": 6
+      },
+      "unlockIds": [
+        "pirate-ability-score-improvement-4"
+      ],
+      "asiOrFeat": true
+    },
+    {
+      "level": 17,
+      "proficiencyBonus": 6,
+      "features": [
+        "Dread Volley"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d12",
+        "swaggerUses": 6,
+        "trickOptions": 6
+      },
+      "unlockIds": [
+        "pirate-dread-volley"
+      ]
+    },
+    {
+      "level": 18,
+      "proficiencyBonus": 6,
+      "features": [
+        "Indomitable Swagger"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d12",
+        "swaggerUses": 6,
+        "trickOptions": 6
+      },
+      "unlockIds": [
+        "pirate-indomitable-swagger"
+      ]
+    },
+    {
+      "level": 19,
+      "proficiencyBonus": 6,
+      "features": [
+        "Epic Boon"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d12",
+        "swaggerUses": 6,
+        "trickOptions": 6
+      },
+      "unlockIds": [
+        "pirate-epic-boon"
+      ],
+      "asiOrFeat": true
+    },
+    {
+      "level": 20,
+      "proficiencyBonus": 6,
+      "features": [
+        "King of the Black Flag"
+      ],
+      "classMechanics": {
+        "swaggerDice": "d12",
+        "swaggerUses": 6,
+        "trickOptions": 7
+      },
+      "unlockIds": [
+        "pirate-king-of-the-black-flag"
+      ]
+    }
+  ],
+  "featureDefinitions": {
+    "pirate-sea-legs": {
+      "summary": "Your movement, balance, and footing stay reliable on unstable ground, rigging, and decks.",
+      "description": "Sea Legs is the class foundation. A Pirate should feel immediately harder to pin down in messy spaces: gangplanks, ropes, rocking decks, tavern tables, and cluttered battlefields. Even before the class becomes flashy, the player should feel like they belong in motion.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": [
+        "mobility",
+        "exploration",
+        "pirate"
+      ]
+    },
+    "pirate-swagger-dice": {
+      "summary": "Gain Swagger Dice, a renewable pool of daring that powers tricks, pressure, and leadership.",
+      "description": "Swagger Dice are the class resource and social signature. They represent nerve, bravado, timing, and the way a Pirate seizes a room or a fight. The sheet should surface them like a real spendable currency with obvious use buttons later attached to subclass and class tricks.",
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "Swagger Dice",
+      "trackUses": true,
+      "tags": [
+        "resource",
+        "support",
+        "combat"
+      ]
+    },
+    "pirate-dirty-fighting": {
+      "summary": "Unlock dirty tricks that reward positioning, distraction, and mean little advantages.",
+      "description": "Dirty Fighting is what keeps the Pirate from feeling like a generic rogue-fighter hybrid. The class should encourage opportunistic play: blind the mark, shove them into bad footing, yank them out of position, or set up the crew for a better turn.",
+      "section": "Actions",
+      "type": "special",
+      "tags": [
+        "combat",
+        "control",
+        "tactics"
+      ]
+    },
+    "pirate-cunning-footwork": {
+      "summary": "Move through threatened spaces and awkward angles more freely than most warriors.",
+      "description": "This feature pushes the class into mobile skirmisher territory. It should read like clean, practical mobility rather than magic, helping the Pirate get to ladders, rails, cover, and flank lanes without the player feeling trapped.",
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "tags": [
+        "mobility",
+        "combat"
+      ]
+    },
+    "pirate-boarding-action": {
+      "summary": "Explode into a fight with a burst of movement or pressure when you close the distance.",
+      "description": "Boarding Action is a tempo feature. When the Pirate commits, the turn should feel dramatic and forward-moving, like a leap over a rail or a rush through smoke into the center of a melee.",
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "tags": [
+        "mobility",
+        "burst",
+        "combat"
+      ]
+    },
+    "pirate-pirate-calling-subclass": {
+      "summary": "Choose the style of Pirate you became: duelist, captain, infiltrator, or terror of the seas.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": [
+        "subclass",
+        "identity"
+      ]
+    },
+    "pirate-marked-quarry": {
+      "summary": "Single out a target and pressure them with relentless pursuit and opportunistic punishment.",
+      "description": "Marked Quarry gives the Pirate a target-priority engine. It is less about mystical hunting and more about reading the table, calling the shot, and making one enemy feel hunted by timing and presence.",
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "tags": [
+        "combat",
+        "focus",
+        "control"
+      ]
+    },
+    "pirate-ability-score-improvement-1": {
+      "summary": "Increase ability scores or take a feat.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": [
+        "progression",
+        "feat"
+      ]
+    },
+    "pirate-ability-score-improvement-2": {
+      "summary": "Increase ability scores or take a feat.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": [
+        "progression",
+        "feat"
+      ]
+    },
+    "pirate-ability-score-improvement-3": {
+      "summary": "Increase ability scores or take a feat.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": [
+        "progression",
+        "feat"
+      ]
+    },
+    "pirate-ability-score-improvement-4": {
+      "summary": "Increase ability scores or take a feat.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": [
+        "progression",
+        "feat"
+      ]
+    },
+    "pirate-extra-attack": {
+      "summary": "Attack twice whenever you take the Attack action.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": [
+        "combat"
+      ]
+    },
+    "pirate-swagger-dice-d8": {
+      "summary": "Your Swagger Dice improve to d8s, making your tricks and support sharper.",
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "Swagger Dice",
+      "trackUses": true,
+      "tags": [
+        "resource",
+        "progression"
+      ]
+    },
+    "pirate-no-quarter": {
+      "summary": "Capitalize on fear and disarray when an enemy is already under pressure.",
+      "description": "No Quarter gives the class a vicious midgame identity. Once a Pirate has momentum, they should feel excellent at turning hesitation into collapse, especially against wounded, frightened, or cornered foes.",
+      "section": "Class Features",
+      "type": "special",
+      "tags": [
+        "combat",
+        "pressure"
+      ]
+    },
+    "pirate-uncanny-balance": {
+      "summary": "Stay upright, mobile, and dangerous even in terrain that should slow everyone else down.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": [
+        "mobility",
+        "defense"
+      ]
+    },
+    "pirate-menacing-reputation": {
+      "summary": "Your name starts affecting scenes before the fight even begins.",
+      "description": "This is the class\u2019s social inflection point. A veteran Pirate should not only win on a map; they should bend negotiations, intimidation, and morale by showing up with a reputation that matters.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": [
+        "social",
+        "exploration",
+        "presence"
+      ]
+    },
+    "pirate-subclass-feature-10": {
+      "summary": "Gain your next major subclass feature.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": [
+        "subclass",
+        "progression"
+      ]
+    },
+    "pirate-press-the-advantage": {
+      "summary": "When your crew gains momentum, chain that advantage into extra pressure or support.",
+      "description": "This is the feature that makes the Pirate feel like a battlefield opportunist rather than a rotation class. A good turn should create the next good turn, whether that means more damage, a shove, a reposition, or a setup for an ally.",
+      "section": "Class Features",
+      "type": "special",
+      "tags": [
+        "combat",
+        "support",
+        "momentum"
+      ]
+    },
+    "pirate-swagger-dice-d10": {
+      "summary": "Your Swagger Dice improve to d10s.",
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "Swagger Dice",
+      "trackUses": true,
+      "tags": [
+        "resource",
+        "progression"
+      ]
+    },
+    "pirate-master-of-the-boarding-line": {
+      "summary": "Own ladders, rails, gangways, and other narrow spaces where movement decides the fight.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": [
+        "mobility",
+        "control",
+        "terrain"
+      ]
+    },
+    "pirate-legend-of-the-waves": {
+      "summary": "Your sheer confidence and seamanship let you dictate the flow of chaotic battles.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": [
+        "presence",
+        "mobility",
+        "high-level"
+      ]
+    },
+    "pirate-subclass-feature-15": {
+      "summary": "Gain your capstone subclass feature.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": [
+        "subclass",
+        "capstone"
+      ]
+    },
+    "pirate-dread-volley": {
+      "summary": "Unload a decisive flurry of attacks, shots, or thrown weapons when the moment breaks open.",
+      "description": "At high level, the Pirate should finally get a legendary burst turn that feels like pistols, blades, thrown steel, and ruthless precision all going off in one cinematic sequence.",
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Swagger Dice",
+      "trackUses": true,
+      "tags": [
+        "combat",
+        "burst",
+        "finisher"
+      ]
+    },
+    "pirate-indomitable-swagger": {
+      "summary": "Refuse to fold when fear, pain, or bad odds should make lesser fighters break.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": [
+        "defense",
+        "willpower",
+        "capstone"
+      ]
+    },
+    "pirate-epic-boon": {
+      "summary": "Gain an Epic Boon.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": [
+        "epic",
+        "progression"
+      ]
+    },
+    "pirate-king-of-the-black-flag": {
+      "summary": "Become the definitive pirate legend: impossible to ignore, hard to pin down, and deadly once you commit.",
+      "description": "King of the Black Flag is the final statement of the class. At this point the Pirate should feel like the center of a boarding scene or sea duel, combining leadership, panic, movement, and brutal opportunism into one finished fantasy.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": [
+        "capstone",
+        "legendary",
+        "social",
+        "combat"
+      ]
+    }
+  },
+  "levelUnlockIds": {
+    "1": [
+      "pirate-sea-legs",
+      "pirate-swagger-dice",
+      "pirate-dirty-fighting"
+    ],
+    "2": [
+      "pirate-cunning-footwork",
+      "pirate-boarding-action"
+    ],
+    "3": [
+      "pirate-pirate-calling-subclass",
+      "pirate-marked-quarry"
+    ],
+    "4": [
+      "pirate-ability-score-improvement-1"
+    ],
+    "5": [
+      "pirate-extra-attack",
+      "pirate-swagger-dice-d8"
+    ],
+    "6": [
+      "pirate-no-quarter"
+    ],
+    "7": [
+      "pirate-uncanny-balance"
+    ],
+    "8": [
+      "pirate-ability-score-improvement-2"
+    ],
+    "9": [
+      "pirate-menacing-reputation"
+    ],
+    "10": [
+      "pirate-subclass-feature-10"
+    ],
+    "11": [
+      "pirate-press-the-advantage"
+    ],
+    "12": [
+      "pirate-ability-score-improvement-3"
+    ],
+    "13": [
+      "pirate-swagger-dice-d10",
+      "pirate-master-of-the-boarding-line"
+    ],
+    "14": [
+      "pirate-legend-of-the-waves"
+    ],
+    "15": [
+      "pirate-subclass-feature-15"
+    ],
+    "16": [
+      "pirate-ability-score-improvement-4"
+    ],
+    "17": [
+      "pirate-dread-volley"
+    ],
+    "18": [
+      "pirate-indomitable-swagger"
+    ],
+    "19": [
+      "pirate-epic-boon"
+    ],
+    "20": [
+      "pirate-king-of-the-black-flag"
+    ]
+  },
+  "progressionSummary": [
+    {
+      "level": 1,
+      "features": [
+        "Sea Legs",
+        "Swagger Dice",
+        "Dirty Fighting"
+      ]
+    },
+    {
+      "level": 2,
+      "features": [
+        "Cunning Footwork",
+        "Boarding Action"
+      ]
+    },
+    {
+      "level": 3,
+      "features": [
+        "Pirate Calling (Subclass)",
+        "Marked Quarry"
+      ]
+    },
+    {
+      "level": 4,
+      "features": [
+        "Ability Score Improvement"
+      ]
+    },
+    {
+      "level": 5,
+      "features": [
+        "Extra Attack",
+        "Swagger Dice (d8)"
+      ]
+    },
+    {
+      "level": 6,
+      "features": [
+        "No Quarter"
+      ]
+    },
+    {
+      "level": 7,
+      "features": [
+        "Uncanny Balance"
+      ]
+    },
+    {
+      "level": 8,
+      "features": [
+        "Ability Score Improvement"
+      ]
+    },
+    {
+      "level": 9,
+      "features": [
+        "Menacing Reputation"
+      ]
+    },
+    {
+      "level": 10,
+      "features": [
+        "Subclass Feature"
+      ]
+    },
+    {
+      "level": 11,
+      "features": [
+        "Press the Advantage"
+      ]
+    },
+    {
+      "level": 12,
+      "features": [
+        "Ability Score Improvement"
+      ]
+    },
+    {
+      "level": 13,
+      "features": [
+        "Swagger Dice (d10)",
+        "Master of the Boarding Line"
+      ]
+    },
+    {
+      "level": 14,
+      "features": [
+        "Legend of the Waves"
+      ]
+    },
+    {
+      "level": 15,
+      "features": [
+        "Subclass Feature"
+      ]
+    },
+    {
+      "level": 16,
+      "features": [
+        "Ability Score Improvement"
+      ]
+    },
+    {
+      "level": 17,
+      "features": [
+        "Dread Volley"
+      ]
+    },
+    {
+      "level": 18,
+      "features": [
+        "Indomitable Swagger"
+      ]
+    },
+    {
+      "level": 19,
+      "features": [
+        "Epic Boon"
+      ]
+    },
+    {
+      "level": 20,
+      "features": [
+        "King of the Black Flag"
+      ]
+    }
+  ],
+  "future": [
+    "Surface dirty tricks as actionable buttons in the Actions tab and map-side quick panel.",
+    "Add stronger ship-combat integrations for rigging, boarding, morale, and cannon-adjacent play."
+  ],
+  "buildTips": [
+    "Dexterity is your main combat stat; Charisma sharpens many class themes and makes the social side sing.",
+    "Fight where movement matters: ladders, bridges, doors, rails, corners, and cover all favor you.",
+    "Use Swagger Dice proactively; the class feels best when you keep pressure high rather than hoarding resources."
+  ]
+}

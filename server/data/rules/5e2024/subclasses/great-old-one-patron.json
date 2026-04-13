@@ -1,0 +1,103 @@
+{
+  "id": "great-old-one-patron",
+  "displayName": "The Great Old One",
+  "classId": "warlock",
+  "parentClassId": "warlock",
+  "flavorText": "Great Old One warlocks draw on alien intellect, telepathy, and mind-breaking control.",
+  "featureUnlocksByLevel": {
+    "1": [
+      "goo-expanded-spells",
+      "goo-awakened-mind"
+    ],
+    "6": [
+      "goo-entropic-ward"
+    ],
+    "10": [
+      "goo-thought-shield"
+    ],
+    "14": [
+      "goo-create-thrall"
+    ]
+  },
+  "features": [
+    {
+      "level": 1,
+      "id": "goo-expanded-spells",
+      "displayName": "Expanded Spells",
+      "description": "You add spells to your warlock list: 1st (Dissonant Whispers, Tasha's Hideous Laughter), 3rd (Detect Thoughts, Phantasmal Force), 5th (Clairvoyance, Hunger of Hadar), 7th (Evard's Black Tentacles, Dominate Beast), 9th (Dominate Person, Telekinesis)."
+    },
+    {
+      "level": 1,
+      "id": "goo-awakened-mind",
+      "displayName": "Awakened Mind",
+      "description": "You can communicate telepathically with any creature you can see within 30 feet."
+    },
+    {
+      "level": 6,
+      "id": "goo-entropic-ward",
+      "displayName": "Entropic Ward",
+      "description": "As a reaction, impose disadvantage on an attack against you; if it misses, you gain advantage on your next attack against that creature."
+    },
+    {
+      "level": 10,
+      "id": "goo-thought-shield",
+      "displayName": "Thought Shield",
+      "description": "Your mind is warded: resistance to psychic damage and immunity to telepathic intrusion you do not permit."
+    },
+    {
+      "level": 14,
+      "id": "goo-create-thrall",
+      "displayName": "Create Thrall",
+      "description": "Touch an incapacitated humanoid to charm it indefinitely until the effect is broken."
+    }
+  ],
+  "featureDefinitions": {
+    "goo-expanded-spells": {
+      "summary": "Your expanded list leans into alien knowledge, distortion, and mind pressure.",
+      "description": "Expanded Spells here should imply that the subclass solves problems through thought, madness, and impossible perception rather than elemental force.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "expanded-list"
+      ]
+    },
+    "goo-awakened-mind": {
+      "summary": "You can speak directly into minds, reinforcing the subclass as unsettling, invasive, and quietly powerful.",
+      "description": "Awakened Mind is one of the easiest features for players to understand in-fiction. It turns the warlock into a presence that bypasses normal communication entirely.",
+      "tags": [
+        "subclass",
+        "telepathy",
+        "utility"
+      ]
+    },
+    "goo-entropic-ward": {
+      "section": "Reactions",
+      "type": "reaction",
+      "summary": "Warp fate around an incoming attack, then seize the opening it creates.",
+      "description": "Entropic Ward is a reaction-based defense that fits the patron’s reality-bending theme and rewards timing.",
+      "tags": [
+        "subclass",
+        "reaction",
+        "defense"
+      ]
+    },
+    "goo-thought-shield": {
+      "summary": "Mental intrusion becomes far less safe against you, and psychic pressure can rebound onto those who try it.",
+      "description": "Thought Shield helps the subclass feel like a mind too strange to attack cleanly on psychic terms.",
+      "tags": [
+        "subclass",
+        "psychic",
+        "defense"
+      ]
+    },
+    "goo-create-thrall": {
+      "summary": "Your patron’s influence can burrow into another creature so deeply that domination becomes long-term and unsettling.",
+      "description": "Create Thrall is the capstone social-control fantasy of the subclass, and it should read as eerie, manipulative, and profoundly invasive.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "control"
+      ]
+    }
+  }
+}

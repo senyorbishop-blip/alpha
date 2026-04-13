@@ -1,0 +1,173 @@
+{
+  "id": "battlemaster",
+  "displayName": "Battle Master",
+  "classId": "fighter",
+  "parentClassId": "fighter",
+  "flavorText": "Battle Masters are students of war who employ martial techniques called maneuvers to dominate the battlefield.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "battlemaster-combat-superiority"
+    ],
+    "7": [
+      "battlemaster-student-of-war"
+    ],
+    "10": [
+      "battlemaster-know-your-enemy"
+    ],
+    "15": [
+      "battlemaster-relentless"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "battlemaster-combat-superiority",
+      "displayName": "Combat Superiority",
+      "description": "You learn maneuvers fueled by Superiority Dice. You have four d8 Superiority Dice, regain all expended dice on a short or long rest, and learn three maneuvers from the Battle Master list. Maneuver save DC = 8 + proficiency bonus + STR or DEX modifier (your choice).",
+      "maneuvers": [
+        {
+          "id": "ambush",
+          "displayName": "Ambush",
+          "description": "Add a Superiority Die to a Stealth check or Initiative roll."
+        },
+        {
+          "id": "bait-and-switch",
+          "displayName": "Bait and Switch",
+          "description": "Swap places with a willing ally and add the die to one creature's AC until your next turn."
+        },
+        {
+          "id": "brace",
+          "displayName": "Brace",
+          "description": "When a creature enters your reach, use your reaction to make one attack and add the die to damage."
+        },
+        {
+          "id": "commanders-strike",
+          "displayName": "Commander's Strike",
+          "description": "Forego one attack to direct an ally to strike using their reaction, adding the die to damage."
+        },
+        {
+          "id": "commanding-presence",
+          "displayName": "Commanding Presence",
+          "description": "Add a Superiority Die to Intimidation, Performance, or Persuasion checks."
+        },
+        {
+          "id": "disarming-attack",
+          "displayName": "Disarming Attack",
+          "description": "Add the die to damage and force a STR save or the target drops one held item."
+        },
+        {
+          "id": "distracting-strike",
+          "displayName": "Distracting Strike",
+          "description": "Add the die to damage; the next attack roll against the target by another creature has advantage."
+        },
+        {
+          "id": "evasive-footwork",
+          "displayName": "Evasive Footwork",
+          "description": "When you move, add the die to AC until you stop moving."
+        },
+        {
+          "id": "feinting-attack",
+          "displayName": "Feinting Attack",
+          "description": "Use a bonus action and one die to gain advantage on your next attack this turn; add the die to damage on hit."
+        },
+        {
+          "id": "goading-attack",
+          "displayName": "Goading Attack",
+          "description": "Add the die to damage; target makes a WIS save or has disadvantage on attacks against creatures other than you."
+        },
+        {
+          "id": "lunging-attack",
+          "displayName": "Lunging Attack",
+          "description": "When you attack, expend a die to increase reach by 5 feet and add the die to damage on hit."
+        },
+        {
+          "id": "maneuvering-attack",
+          "displayName": "Maneuvering Attack",
+          "description": "Add the die to damage and let an ally move up to half speed without provoking opportunity attacks from the target."
+        },
+        {
+          "id": "menacing-attack",
+          "displayName": "Menacing Attack",
+          "description": "Add the die to damage; target makes a WIS save or is frightened of you until end of your next turn."
+        },
+        {
+          "id": "parry",
+          "displayName": "Parry",
+          "description": "Use your reaction to reduce melee damage by the die + your DEX modifier."
+        },
+        {
+          "id": "precision-attack",
+          "displayName": "Precision Attack",
+          "description": "Add the die to an attack roll after seeing the roll but before knowing whether it hits."
+        },
+        {
+          "id": "pushing-attack",
+          "displayName": "Pushing Attack",
+          "description": "Add the die to damage; Large or smaller target makes a STR save or is pushed up to 15 feet."
+        }
+      ]
+    },
+    {
+      "level": 7,
+      "id": "battlemaster-student-of-war",
+      "displayName": "Student of War",
+      "description": "Gain proficiency with one type of artisan's tools of your choice, or learn one additional maneuver from the Battle Master list."
+    },
+    {
+      "level": 10,
+      "id": "battlemaster-know-your-enemy",
+      "displayName": "Know Your Enemy",
+      "description": "By observing or interacting with a creature outside combat, you can discern key combat statistics such as Strength, Dexterity, Constitution, Armor Class, current Hit Points, and class levels relative to your own."
+    },
+    {
+      "level": 15,
+      "id": "battlemaster-relentless",
+      "displayName": "Relentless",
+      "description": "When you roll Initiative and have no Superiority Dice remaining, you regain one Superiority Die."
+    }
+  ],
+  "featureDefinitions": {
+    "battlemaster-combat-superiority": {
+      "summary": "Gain Superiority Dice, maneuvers, and a tactical save DC that turn the subclass into a real battlefield control engine.",
+      "description": "Combat Superiority is the whole Battle Master engine. The fighter is no longer only making ordinary attacks; they are choosing the right maneuver, spending the right die, and shaping movement, fear, accuracy, or ally positioning on purpose.",
+      "resourceName": "Superiority Dice",
+      "trackUses": true,
+      "usage": "4d8 Superiority Dice",
+      "recovery": "Regain all expended Superiority Dice on a Short or Long Rest.",
+      "effect": "Maneuvers add control, protection, pressure, or precision to weapon play.",
+      "tags": [
+        "subclass",
+        "combat",
+        "resource",
+        "maneuvers"
+      ]
+    },
+    "battlemaster-student-of-war": {
+      "summary": "Battle study expands your identity beyond attack math by adding a practical tool edge or a broader maneuver menu.",
+      "tags": [
+        "subclass",
+        "utility",
+        "combat-study"
+      ]
+    },
+    "battlemaster-know-your-enemy": {
+      "summary": "Read a target before the fight and learn what kind of problem you are actually about to engage.",
+      "tags": [
+        "subclass",
+        "analysis",
+        "utility"
+      ]
+    },
+    "battlemaster-relentless": {
+      "summary": "Even when you start a fight dry on tactical fuel, the subclass gives you enough back to matter.",
+      "resourceName": "Superiority Dice",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "resource",
+        "recovery"
+      ],
+      "description": "When you roll Initiative and have no Superiority Dice remaining, you regain one Superiority Die. Relentless protects the Battle Master from starting a fight dry on tactical fuel and keeps maneuvers relevant in the next encounter."
+    }
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "id": "wild-magic",
+  "displayName": "Wild Magic",
+  "classId": "sorcerer",
+  "parentClassId": "sorcerer",
+  "flavorText": "Wild Magic sorcerers tap chaotic arcana that produces unpredictable surges.",
+  "featureUnlocksByLevel": {
+    "1": [
+      "wild-magic-surge",
+      "wild-tides-of-chaos"
+    ],
+    "6": [
+      "wild-bend-luck"
+    ],
+    "14": [
+      "wild-controlled-chaos"
+    ],
+    "18": [
+      "wild-spell-bombardment"
+    ]
+  },
+  "features": [
+    {
+      "level": 1,
+      "id": "wild-magic-surge",
+      "displayName": "Wild Magic Surge",
+      "description": "After casting a spell of 1st level or higher, roll a d20; on a 1, roll on the Wild Magic Surge table of 50 effects."
+    },
+    {
+      "level": 1,
+      "id": "wild-tides-of-chaos",
+      "displayName": "Tides of Chaos",
+      "description": "Gain advantage on one attack roll, ability check, or saving throw. The DM can then trigger a Wild Magic Surge to reset this feature."
+    },
+    {
+      "level": 6,
+      "id": "wild-bend-luck",
+      "displayName": "Bend Luck",
+      "description": "Spend 2 Sorcery Points to roll 1d4 and add or subtract it from another creature's attack roll, ability check, or saving throw."
+    },
+    {
+      "level": 14,
+      "id": "wild-controlled-chaos",
+      "displayName": "Controlled Chaos",
+      "description": "Whenever you roll on the Wild Magic Surge table, roll twice and choose either result."
+    },
+    {
+      "level": 18,
+      "id": "wild-spell-bombardment",
+      "displayName": "Spell Bombardment",
+      "description": "When you roll damage for a spell and any die shows its maximum, roll one additional damage die and add it to the damage."
+    }
+  ],
+  "featureDefinitions": {
+    "wild-magic-surge": {
+      "summary": "Unstable magic erupts around your spells, making every big cast feel thrilling and slightly dangerous.",
+      "description": "Wild Magic Surge is the subclass identity in one feature: explosive, unpredictable, and table-shaping. It should feel exciting, not like a hidden footnote.",
+      "tags": [
+        "subclass",
+        "chaos",
+        "signature"
+      ]
+    },
+    "wild-tides-of-chaos": {
+      "summary": "Bend fate toward success now, knowing the chaos may answer back later.",
+      "description": "Tides of Chaos is the best expression of this subclass’s bargain: immediate advantage in exchange for inviting the storm to come looking for you later.",
+      "resourceName": "Tides of Chaos",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "chaos",
+        "risk-reward"
+      ]
+    },
+    "wild-bend-luck": {
+      "section": "Reactions",
+      "type": "reaction",
+      "summary": "Spend sorcery to skew another creature’s roll at the last second.",
+      "description": "Bend Luck is a clutch manipulation button. It lets the wild mage interfere with fate directly, which is exactly what this subclass should feel like when chaos is under partial control.",
+      "resourceName": "Sorcery Points",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "reaction",
+        "chaos",
+        "resource"
+      ]
+    },
+    "wild-controlled-chaos": {
+      "summary": "You do not remove the chaos—you steer it into outcomes that are less likely to ruin your own plans.",
+      "description": "Controlled Chaos is a maturity point for the subclass. The magic is still wild, but now the sorcerer feels like someone surfing the wave instead of being dragged by it.",
+      "tags": [
+        "subclass",
+        "chaos",
+        "control"
+      ]
+    },
+    "wild-spell-bombardment": {
+      "summary": "When your spell hits hard, unstable force can cascade into even more punishment.",
+      "description": "Spell Bombardment is the wild mage’s late-game payoff: the subclass remains swingy, but the highs become genuinely explosive.",
+      "tags": [
+        "subclass",
+        "damage",
+        "chaos"
+      ]
+    }
+  }
+}

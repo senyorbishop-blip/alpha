@@ -1,0 +1,129 @@
+{
+  "id": "oath-of-vengeance",
+  "displayName": "Oath of Vengeance",
+  "classId": "paladin",
+  "parentClassId": "paladin",
+  "flavorText": "Vengeance paladins pursue sworn foes with ruthless focus and unrelenting punishment.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "vengeance-tenets",
+      "vengeance-abjure-enemy",
+      "vengeance-vow-of-enmity"
+    ],
+    "7": [
+      "vengeance-relentless-avenger"
+    ],
+    "15": [
+      "vengeance-soul-of-vengeance"
+    ],
+    "20": [
+      "vengeance-avenging-angel"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "vengeance-tenets",
+      "displayName": "Tenets of Vengeance",
+      "description": "Your oath emphasizes Fight the Greater Evil, No Mercy for the Wicked, By Any Means Necessary, and Restitution."
+    },
+    {
+      "level": 3,
+      "id": "vengeance-abjure-enemy",
+      "displayName": "Channel Divinity: Abjure Enemy",
+      "description": "A creature you present your symbol to must make a Wisdom save or become frightened, with speed reduced to 0 for up to 1 minute."
+    },
+    {
+      "level": 3,
+      "id": "vengeance-vow-of-enmity",
+      "displayName": "Channel Divinity: Vow of Enmity",
+      "description": "Choose one creature you can see; you gain advantage on attack rolls against it for 1 minute."
+    },
+    {
+      "level": 7,
+      "id": "vengeance-relentless-avenger",
+      "displayName": "Relentless Avenger",
+      "description": "When you hit with an opportunity attack, you can move up to half your speed toward the attacker without provoking opportunity attacks."
+    },
+    {
+      "level": 15,
+      "id": "vengeance-soul-of-vengeance",
+      "displayName": "Soul of Vengeance",
+      "description": "When your Vow of Enmity target makes an attack, you can use your reaction to make a melee weapon attack against it."
+    },
+    {
+      "level": 20,
+      "id": "vengeance-avenging-angel",
+      "displayName": "Avenging Angel",
+      "description": "You assume a terrifying angelic form that lets you fly and frighten enemies as divine retribution manifests."
+    }
+  ],
+  "featureDefinitions": {
+    "vengeance-tenets": {
+      "summary": "Your oath is about pursuing the guilty without hesitation and ending threats decisively.",
+      "description": "Vengeance is the relentless hunter version of paladin. Its tenets justify a more aggressive, pursuit-driven playstyle than many holy orders.",
+      "tags": [
+        "subclass",
+        "identity",
+        "roleplay"
+      ]
+    },
+    "vengeance-abjure-enemy": {
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Channel Divinity",
+      "trackUses": true,
+      "summary": "Overwhelm a foe with divine judgment and strip away its ability to act freely.",
+      "description": "Abjure Enemy is the subclass’s hard-control oath option. It is strongest when used to pin a priority threat before it can dominate the encounter.",
+      "save": "Wisdom save",
+      "tags": [
+        "subclass",
+        "control",
+        "resource"
+      ]
+    },
+    "vengeance-vow-of-enmity": {
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "Channel Divinity",
+      "trackUses": true,
+      "summary": "Swear yourself against a chosen enemy and gain the accuracy needed to finish the hunt.",
+      "description": "Vow of Enmity is a premier boss-target button. It pushes the subclass toward single-target execution and makes your next several turns much more lethal against the marked foe.",
+      "duration": "1 minute",
+      "tags": [
+        "subclass",
+        "combat",
+        "resource"
+      ]
+    },
+    "vengeance-relentless-avenger": {
+      "summary": "When a marked foe tries to escape you, your oath helps you stay on top of the chase.",
+      "description": "Relentless Avenger supports the subclass fantasy of a divine pursuer who does not let prey disengage or reposition safely.",
+      "tags": [
+        "subclass",
+        "mobility",
+        "combat"
+      ]
+    },
+    "vengeance-soul-of-vengeance": {
+      "summary": "Your oath gives even more payoff when fighting the one enemy you swore to destroy.",
+      "description": "Soul of Vengeance deepens the subclass’s single-target obsession and makes its marked duel pattern much harder for an enemy to weather.",
+      "tags": [
+        "subclass",
+        "combat",
+        "upgrade"
+      ]
+    },
+    "vengeance-avenging-angel": {
+      "section": "Actions",
+      "type": "action",
+      "summary": "Unleash a terrifying avenger form that dominates the battlefield through fear and divine presence.",
+      "description": "Avenging Angel is the late-game expression of the subclass fantasy: relentless judgment descending from above, impossible to ignore.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "fear"
+      ]
+    }
+  }
+}

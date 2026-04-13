@@ -1,0 +1,26 @@
+{
+  "id": "wizard-arcane-frugality",
+  "displayName": "Arcane Frugality",
+  "classRestrictions": ["wizard"],
+  "minimumLevel": 2,
+  "grants": [
+    {
+      "id": "wizard-frugality-slot",
+      "type": "resource_bonus",
+      "scope": "long_rest",
+      "value": {
+        "resourceId": "arcane_frugality_recovery",
+        "label": "Arcane Frugality",
+        "max": 1
+      }
+    },
+    {
+      "id": "wizard-frugality-tag",
+      "type": "derived_tag",
+      "value": "talent:frugal-caster"
+    }
+  ],
+  "tags": ["arcane", "resource", "starter"],
+  "source": "casualdnd_talent",
+  "version": 1
+}

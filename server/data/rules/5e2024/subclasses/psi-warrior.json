@@ -1,0 +1,103 @@
+{
+  "id": "psi-warrior",
+  "displayName": "Psi Warrior",
+  "classId": "fighter",
+  "parentClassId": "fighter",
+  "flavorText": "Psi Warriors augment martial skill with psionic force, projecting telekinetic and protective power in battle.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "psi-warrior-psionic-power"
+    ],
+    "7": [
+      "psi-warrior-telekinetic-adept"
+    ],
+    "10": [
+      "psi-warrior-guarded-mind"
+    ],
+    "15": [
+      "psi-warrior-bulwark-of-force"
+    ],
+    "18": [
+      "psi-warrior-telekinetic-master"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "psi-warrior-psionic-power",
+      "displayName": "Psionic Power",
+      "description": "You gain Psionic Energy dice equal to twice your proficiency bonus. These dice fuel Protective Field, Psionic Strike, and Telekinetic Movement, and you regain all expended dice when you finish a long rest."
+    },
+    {
+      "level": 7,
+      "id": "psi-warrior-telekinetic-adept",
+      "displayName": "Telekinetic Adept",
+      "description": "You refine your psionics, improving your mobility and control with options such as Psi-Powered Leap and Telekinetic Thrust."
+    },
+    {
+      "level": 10,
+      "id": "psi-warrior-guarded-mind",
+      "displayName": "Guarded Mind",
+      "description": "Your mind is shielded. You gain resistance to psychic damage and can end one charmed or frightened condition on yourself by expending a Psionic Energy die."
+    },
+    {
+      "level": 15,
+      "id": "psi-warrior-bulwark-of-force",
+      "displayName": "Bulwark of Force",
+      "description": "You can create a telekinetic field that grants half cover to chosen creatures for 1 minute, protecting allies from incoming attacks."
+    },
+    {
+      "level": 18,
+      "id": "psi-warrior-telekinetic-master",
+      "displayName": "Telekinetic Master",
+      "description": "Your telekinetic power peaks. You can cast telekinesis without components and can make an extra weapon attack as a bonus action while concentrating on it."
+    }
+  ],
+  "featureDefinitions": {
+    "psi-warrior-psionic-power": {
+      "summary": "Gain a psionic resource pool that fuels protective, forceful, and movement-focused battlefield tricks.",
+      "description": "Psionic Power is the heart of the subclass. It should feel like disciplined mental force made practical in combat rather than vague flavor text.",
+      "resourceName": "Psionic Energy Dice",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "psionics",
+        "resource",
+        "combat"
+      ]
+    },
+    "psi-warrior-telekinetic-adept": {
+      "summary": "Your telekinetic toolkit broadens into movement, shove, and object-control utility that can matter in and out of combat.",
+      "tags": [
+        "subclass",
+        "psionics",
+        "utility"
+      ]
+    },
+    "psi-warrior-guarded-mind": {
+      "summary": "Mental discipline helps you resist or recover from hostile psychic pressure.",
+      "tags": [
+        "subclass",
+        "defense",
+        "psionics"
+      ]
+    },
+    "psi-warrior-bulwark-of-force": {
+      "summary": "Project psionic protection over multiple allies when the group needs a real defensive answer.",
+      "tags": [
+        "subclass",
+        "support",
+        "defense",
+        "psionics"
+      ]
+    },
+    "psi-warrior-telekinetic-master": {
+      "summary": "Your late-game telekinesis becomes a headline capability rather than a side trick.",
+      "tags": [
+        "subclass",
+        "psionics",
+        "capstone"
+      ]
+    }
+  }
+}

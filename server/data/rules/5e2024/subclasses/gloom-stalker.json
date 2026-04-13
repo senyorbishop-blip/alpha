@@ -1,0 +1,104 @@
+{
+  "id": "gloom-stalker",
+  "displayName": "Gloom Stalker",
+  "classId": "ranger",
+  "parentClassId": "ranger",
+  "flavorText": "Gloom Stalkers are hunters of darkness who strike first and vanish into shadow.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "gloom-dread-ambusher",
+      "gloom-umbral-sight"
+    ],
+    "7": [
+      "gloom-iron-mind"
+    ],
+    "11": [
+      "gloom-stalkers-flurry"
+    ],
+    "15": [
+      "gloom-shadowy-dodge"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "gloom-dread-ambusher",
+      "displayName": "Dread Ambusher",
+      "description": "On the first round of combat, you gain an extra attack that deals an extra 1d8 damage; add your Intelligence modifier to Initiative; and on the first round you can make one additional attack as a bonus action."
+    },
+    {
+      "level": 3,
+      "id": "gloom-umbral-sight",
+      "displayName": "Umbral Sight",
+      "description": "Gain darkvision out to 60 feet, and while in darkness you are invisible to creatures that rely on darkvision to see you."
+    },
+    {
+      "level": 7,
+      "id": "gloom-iron-mind",
+      "displayName": "Iron Mind",
+      "description": "Gain proficiency in Wisdom saving throws if you do not already have it."
+    },
+    {
+      "level": 11,
+      "id": "gloom-stalkers-flurry",
+      "displayName": "Stalker's Flurry",
+      "description": "Once per turn, when you miss with a weapon attack, you can make another attack roll."
+    },
+    {
+      "level": 15,
+      "id": "gloom-shadowy-dodge",
+      "displayName": "Shadowy Dodge",
+      "description": "When a creature attacks you, you can use your reaction to impose disadvantage on that attack roll."
+    }
+  ],
+  "featureDefinitions": {
+    "gloom-dread-ambusher": {
+      "summary": "Hit hardest in the opening heartbeat of a fight, before the enemy properly understands the danger.",
+      "description": "Dread Ambusher is the iconic Gloom Stalker opener. It should feel like first-round violence delivered from the dark before the battle has fully settled.",
+      "tags": [
+        "subclass",
+        "ambush",
+        "combat"
+      ]
+    },
+    "gloom-umbral-sight": {
+      "summary": "Darkness becomes a natural hunting ground for you rather than a limitation.",
+      "description": "Umbral Sight is both stealth identity and battlefield identity. It is one of the reasons the subclass feels so different from a generic archer or skirmisher.",
+      "tags": [
+        "subclass",
+        "stealth",
+        "darkness"
+      ]
+    },
+    "gloom-iron-mind": {
+      "summary": "Your mind hardens against manipulation, making you harder to turn aside from the hunt.",
+      "description": "Iron Mind gives the subclass a mental resilience layer that fits its lone-stalker identity and keeps it operating under pressure.",
+      "tags": [
+        "subclass",
+        "defense",
+        "mind"
+      ]
+    },
+    "gloom-stalkers-flurry": {
+      "summary": "A missed strike is less likely to waste your moment because the subclass stays relentless once it commits.",
+      "description": "Stalker’s Flurry helps the subclass preserve offensive tempo instead of losing it to one bad roll.",
+      "tags": [
+        "subclass",
+        "combat",
+        "pressure"
+      ]
+    },
+    "gloom-shadowy-dodge": {
+      "section": "Reactions",
+      "type": "reaction",
+      "summary": "Slip partly into shadow at the moment of danger to make the attack line far less certain.",
+      "description": "Shadowy Dodge is a reactive survival tool that fits the subclass perfectly: elusive, hard to pin down, and strongest when the enemy thought they finally had you.",
+      "tags": [
+        "subclass",
+        "reaction",
+        "stealth",
+        "defense"
+      ]
+    }
+  }
+}

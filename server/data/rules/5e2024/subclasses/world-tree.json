@@ -1,0 +1,167 @@
+{
+  "id": "world-tree",
+  "displayName": "Path of the World Tree",
+  "classId": "barbarian",
+  "parentClassId": "barbarian",
+  "flavorText": "You draw on the cosmic strength of Yggdrasil, shaping space and vitality through your rage.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "world-tree-vitality-of-the-tree"
+    ],
+    "6": [
+      "world-tree-branches-of-the-tree"
+    ],
+    "10": [
+      "world-tree-battering-roots"
+    ],
+    "14": [
+      "world-tree-travel-along-the-tree"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "world-tree-vitality-of-the-tree",
+      "displayName": "Vitality of the Tree",
+      "description": "At the start of your rage, you gain temporary hit points equal to your proficiency bonus."
+    },
+    {
+      "level": 6,
+      "id": "world-tree-branches-of-the-tree",
+      "displayName": "Branches of the Tree",
+      "description": "When a creature misses you with an attack, you can use your reaction to teleport that creature to an unoccupied space adjacent to you."
+    },
+    {
+      "level": 10,
+      "id": "world-tree-battering-roots",
+      "displayName": "Battering Roots",
+      "description": "While raging, your melee weapon gains the Reach property, and you can apply the Topple mastery property without expending additional resources."
+    },
+    {
+      "level": 14,
+      "id": "world-tree-travel-along-the-tree",
+      "displayName": "Travel Along the Tree",
+      "description": "While raging, you can teleport up to 60 feet to a space you can see and bring up to six willing allies. You can use this feature once per long rest."
+    }
+  ],
+  "featureDefinitions": {
+    "world-tree-vitality-of-the-tree": {
+      "id": "world-tree-vitality-of-the-tree",
+      "displayName": "Vitality of the Tree",
+      "name": "Vitality of the Tree",
+      "summary": "The World Tree path makes your barbarian feel rooted, sustaining, and difficult to wear down.",
+      "description": "At the start of your rage, you gain temporary hit points equal to your proficiency bonus.\n\nVitality of the Tree is the opening expression of the subclass: durable presence, team-oriented support, and a sturdier front line than the base class alone suggests.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 3,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "Rage",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "barbarian",
+        "support",
+        "defense"
+      ],
+      "sourceKind": "subclass",
+      "className": "Barbarian",
+      "subclassName": "Path of the World Tree",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "world-tree-branches-of-the-tree": {
+      "id": "world-tree-branches-of-the-tree",
+      "displayName": "Branches of the Tree",
+      "name": "Branches of the Tree",
+      "summary": "You project World Tree influence outward to reposition, support, or control the shape of the fight.",
+      "description": "When a creature misses you with an attack, you can use your reaction to teleport that creature to an unoccupied space adjacent to you.\n\nBranches of the Tree should read like a real battlefield tool, not a vague lore line. Use it when controlling space or helping allies matters more than a plain weapon swing.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 6,
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "barbarian",
+        "support",
+        "control"
+      ],
+      "sourceKind": "subclass",
+      "className": "Barbarian",
+      "subclassName": "Path of the World Tree",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "When a creature misses you with an attack",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "world-tree-battering-roots": {
+      "id": "world-tree-battering-roots",
+      "displayName": "Battering Roots",
+      "name": "Battering Roots",
+      "summary": "Your World Tree power turns movement and impact into a heavier form of battlefield disruption.",
+      "description": "While raging, your melee weapon gains the Reach property, and you can apply the Topple mastery property without expending additional resources.\n\nBattering Roots makes the subclass better at shoving the fight where it wants it. This should feel like map-control power layered onto barbarian aggression.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 10,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "barbarian",
+        "support",
+        "control",
+        "combat"
+      ],
+      "sourceKind": "subclass",
+      "className": "Barbarian",
+      "subclassName": "Path of the World Tree",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "While raging",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "world-tree-travel-along-the-tree": {
+      "id": "world-tree-travel-along-the-tree",
+      "displayName": "Travel Along the Tree",
+      "name": "Travel Along the Tree",
+      "summary": "You gain a high-tier movement trick that makes the World Tree path feel mythic instead of merely tough.",
+      "description": "While raging, you can teleport up to 60 feet to a space you can see and bring up to six willing allies. You can use this feature once per long rest.\n\nTravel Along the Tree is a dramatic mobility payoff. The sheet should make it clear this is a premium repositioning or traversal feature, not a passive note hidden in the subclass list.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 14,
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "barbarian",
+        "support",
+        "mobility",
+        "capstone"
+      ],
+      "sourceKind": "subclass",
+      "className": "Barbarian",
+      "subclassName": "Path of the World Tree",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "While raging",
+      "usage": "once per long rest",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    }
+  }
+}

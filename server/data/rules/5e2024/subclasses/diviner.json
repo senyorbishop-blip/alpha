@@ -1,0 +1,104 @@
+{
+  "id": "diviner",
+  "displayName": "Diviner",
+  "classId": "wizard",
+  "parentClassId": "wizard",
+  "flavorText": "Diviners pierce fate and manipulate outcomes with prophetic insight.",
+  "featureUnlocksByLevel": {
+    "2": [
+      "diviner-divination-savant",
+      "diviner-portent"
+    ],
+    "6": [
+      "diviner-expert-divination"
+    ],
+    "10": [
+      "diviner-third-eye"
+    ],
+    "14": [
+      "diviner-greater-portent"
+    ]
+  },
+  "features": [
+    {
+      "level": 2,
+      "id": "diviner-divination-savant",
+      "displayName": "Divination Savant",
+      "description": "The gold and time to copy Divination spells into your spellbook are halved."
+    },
+    {
+      "level": 2,
+      "id": "diviner-portent",
+      "displayName": "Portent",
+      "description": "After each long rest, roll two d20s and record the numbers. You can replace any attack roll, saving throw, or ability check made by a creature you can see with one of these foretelling rolls."
+    },
+    {
+      "level": 6,
+      "id": "diviner-expert-divination",
+      "displayName": "Expert Divination",
+      "description": "When you cast a Divination spell of 2nd level or higher, recover one expended spell slot of a lower level."
+    },
+    {
+      "level": 10,
+      "id": "diviner-third-eye",
+      "displayName": "The Third Eye",
+      "description": "As a bonus action, gain one benefit for 10 minutes: Darkvision 60 feet, Ethereal Sight, Comprehend Languages, or See Invisibility. Usable once per short rest."
+    },
+    {
+      "level": 14,
+      "id": "diviner-greater-portent",
+      "displayName": "Greater Portent",
+      "description": "Your Portent feature now grants three d20 rolls after each long rest."
+    }
+  ],
+  "featureDefinitions": {
+    "diviner-divination-savant": {
+      "summary": "Your spellbook growth encourages a playstyle built around information, foresight, and prediction.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "specialist"
+      ]
+    },
+    "diviner-portent": {
+      "summary": "Store foreseen d20 results and replace future rolls with them at the exact moment fate needs a push.",
+      "description": "Portent is one of the most distinctive wizard subclass features in the game. It should feel like loaded future d20 results and stored rolls: planning ahead, remembering the stored numbers, and deciding exactly which roll matters enough to replace.",
+      "resourceName": "Portent",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "resource",
+        "prediction",
+        "spellcasting"
+      ]
+    },
+    "diviner-expert-divination": {
+      "summary": "Divination magic starts feeding your spell economy back, rewarding the subclass for playing to theme.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "resource"
+      ]
+    },
+    "diviner-the-third-eye": {
+      "summary": "Open extra supernatural senses when information is more valuable than raw damage.",
+      "tags": [
+        "subclass",
+        "utility",
+        "perception",
+        "spellcasting"
+      ]
+    },
+    "diviner-greater-portent": {
+      "summary": "You see even more of the future, making your stored-roll control harder for the table to ignore.",
+      "resourceName": "Portent",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "resource",
+        "capstone",
+        "prediction"
+      ]
+    }
+  }
+}

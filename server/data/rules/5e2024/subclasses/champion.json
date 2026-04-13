@@ -1,0 +1,84 @@
+{
+  "id": "champion",
+  "classId": "fighter",
+  "displayName": "Champion",
+  "featureUnlocksByLevel": {
+    "3": [
+      "champion-improved-critical"
+    ],
+    "7": [
+      "champion-athletic-adept"
+    ],
+    "10": [
+      "champion-fighting-style-plus"
+    ],
+    "15": [
+      "champion-survivor"
+    ]
+  },
+  "future": {
+    "choiceGroupIds": [
+      "champion-style-branches"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "champion-improved-critical",
+      "displayName": "Improved Critical",
+      "description": "Your weapon attacks threaten decisive hits more often, letting the Champion turn steady offense into explosive weapon spikes over the course of a fight."
+    },
+    {
+      "level": 7,
+      "id": "champion-athletic-adept",
+      "displayName": "Athletic Adept",
+      "description": "Your physical training sharpens your movement, jumps, climbs, and athletic confidence so the subclass feels like a complete combat athlete, not just a crit machine."
+    },
+    {
+      "level": 10,
+      "id": "champion-fighting-style-plus",
+      "displayName": "Fighting Style Plus",
+      "description": "Your straightforward martial approach deepens with additional style support, reinforcing the Champion as the subclass of polished fundamentals and relentless weapon discipline."
+    },
+    {
+      "level": 15,
+      "id": "champion-survivor",
+      "displayName": "Survivor",
+      "description": "In longer battles you recover your footing automatically, making it dramatically harder for attrition to wear you down once the Champion gets rolling."
+    }
+  ],
+  "featureDefinitions": {
+    "champion-improved-critical": {
+      "summary": "Your crit range expands, making repeated clean attacks more threatening over the course of a long session.",
+      "tags": [
+        "subclass",
+        "combat",
+        "passive"
+      ]
+    },
+    "champion-athletic-adept": {
+      "summary": "The Champion reads like a complete athlete, not only a crit-focused damage chassis.",
+      "tags": [
+        "subclass",
+        "mobility",
+        "utility"
+      ]
+    },
+    "champion-fighting-style-plus": {
+      "summary": "Double down on fundamentals and become even more defined by excellent martial basics.",
+      "tags": [
+        "subclass",
+        "combat",
+        "passive"
+      ]
+    },
+    "champion-survivor": {
+      "summary": "Recover steady staying power in drawn-out fights so enemies have a harder time grinding you down.",
+      "tags": [
+        "subclass",
+        "healing",
+        "survival"
+      ]
+    }
+  }
+}

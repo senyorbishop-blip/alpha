@@ -1,0 +1,129 @@
+{
+  "id": "eldritch-knight",
+  "displayName": "Eldritch Knight",
+  "classId": "fighter",
+  "parentClassId": "fighter",
+  "flavorText": "Eldritch Knights blend martial discipline with arcane study to become heavily armored battle mages.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "eldritch-knight-spellcasting",
+      "eldritch-knight-weapon-bond"
+    ],
+    "7": [
+      "eldritch-knight-war-magic"
+    ],
+    "10": [
+      "eldritch-knight-eldritch-strike"
+    ],
+    "15": [
+      "eldritch-knight-arcane-charge"
+    ],
+    "18": [
+      "eldritch-knight-improved-war-magic"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "eldritch-knight-spellcasting",
+      "displayName": "Spellcasting",
+      "description": "You are a one-third caster who uses Intelligence for your fighter spells, drawing from the wizard spell list with a focus on Abjuration and Evocation spells.",
+      "spellSlotTable": {
+        "3": "2 first-level",
+        "4": "3 first-level",
+        "7": "4 first-level, 2 second-level",
+        "10": "4 first-level, 3 second-level",
+        "13": "4 first-level, 3 second-level, 2 third-level",
+        "16": "4 first-level, 3 second-level, 3 third-level",
+        "19": "4 first-level, 3 second-level, 3 third-level, 1 fourth-level",
+        "20": "4 first-level, 3 second-level, 3 third-level, 2 fourth-level"
+      }
+    },
+    {
+      "level": 3,
+      "id": "eldritch-knight-weapon-bond",
+      "displayName": "Weapon Bond",
+      "description": "You bond with up to two weapons. You can summon a bonded weapon to your hand as a bonus action, and you cannot be disarmed of a bonded weapon unless incapacitated."
+    },
+    {
+      "level": 7,
+      "id": "eldritch-knight-war-magic",
+      "displayName": "War Magic",
+      "description": "When you cast a cantrip, you can make one weapon attack as a bonus action."
+    },
+    {
+      "level": 10,
+      "id": "eldritch-knight-eldritch-strike",
+      "displayName": "Eldritch Strike",
+      "description": "When you hit a creature with a weapon attack, that creature has disadvantage on the next saving throw it makes against a spell you cast before the end of your next turn."
+    },
+    {
+      "level": 15,
+      "id": "eldritch-knight-arcane-charge",
+      "displayName": "Arcane Charge",
+      "description": "When you use Action Surge, you can teleport up to 30 feet to an unoccupied space you can see."
+    },
+    {
+      "level": 18,
+      "id": "eldritch-knight-improved-war-magic",
+      "displayName": "Improved War Magic",
+      "description": "When you cast a spell using your action, you can make one weapon attack as a bonus action."
+    }
+  ],
+  "featureDefinitions": {
+    "eldritch-knight-spellcasting": {
+      "summary": "Blend fighter fundamentals with a restricted wizard spell package built for protection, control, and combat rhythm.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "combat"
+      ]
+    },
+    "eldritch-knight-weapon-bond": {
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "summary": "Bonded weapons resist disarm pressure and can be recalled when you need them back in hand.",
+      "tags": [
+        "subclass",
+        "combat",
+        "utility"
+      ]
+    },
+    "eldritch-knight-war-magic": {
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "summary": "Keep weapon pressure online during cantrip turns so the subclass plays like a real battle-mage.",
+      "tags": [
+        "subclass",
+        "combat",
+        "spellcasting"
+      ]
+    },
+    "eldritch-knight-eldritch-strike": {
+      "summary": "A weapon hit softens the target for the save-based spell you land next.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "control"
+      ]
+    },
+    "eldritch-knight-arcane-charge": {
+      "summary": "Action Surge now doubles as an aggressive reposition tool, letting you burst and appear where it hurts most.",
+      "tags": [
+        "subclass",
+        "mobility",
+        "burst"
+      ]
+    },
+    "eldritch-knight-improved-war-magic": {
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "summary": "Cast real spells and still keep steel in the same round, completing the subclass loop.",
+      "tags": [
+        "subclass",
+        "combat",
+        "spellcasting"
+      ]
+    }
+  }
+}

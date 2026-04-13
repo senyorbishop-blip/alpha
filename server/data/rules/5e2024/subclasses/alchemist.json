@@ -1,0 +1,98 @@
+{
+  "id": "alchemist",
+  "displayName": "Alchemist",
+  "classId": "tinker",
+  "parentClassId": "tinker",
+  "flavorText": "Alchemists solve problems with brews, catalysts, restoratives, toxins, and volatile reactions prepared ahead of time.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "alchemist-experimental-elixirs",
+      "alchemist-restorative-spells"
+    ],
+    "6": [
+      "alchemist-adaptive-catalyst"
+    ],
+    "10": [
+      "alchemist-panacea-kit"
+    ],
+    "15": [
+      "alchemist-master-transmutation"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "alchemist-experimental-elixirs",
+      "displayName": "Experimental Elixirs",
+      "description": "Prepare adaptable brews that can heal, enhance movement, steady a mind, or twist the flow of a fight depending on what the party needs."
+    },
+    {
+      "level": 3,
+      "id": "alchemist-restorative-spells",
+      "displayName": "Restorative Spells",
+      "description": "Your subclass grants a stronger healing, antidote, and condition-management spell package."
+    },
+    {
+      "level": 6,
+      "id": "alchemist-adaptive-catalyst",
+      "displayName": "Adaptive Catalyst",
+      "description": "Your brews react to the target and situation more cleanly, making them better at stabilizing or empowering allies in motion."
+    },
+    {
+      "level": 10,
+      "id": "alchemist-panacea-kit",
+      "displayName": "Panacea Kit",
+      "description": "Your laboratory methods become reliable enough to answer poison, disease, collapse, and long-fight attrition with confidence."
+    },
+    {
+      "level": 15,
+      "id": "alchemist-master-transmutation",
+      "displayName": "Master Transmutation",
+      "description": "Your late-game formulae let you reshape bodies, properties, and battlefield conditions like a true chemical virtuoso."
+    }
+  ],
+  "featureDefinitions": {
+    "alchemist-experimental-elixirs": {
+      "summary": "Carry a menu of brews that turn preparation into flexible support.",
+      "description": "Experimental Elixirs are why the subclass exists. You should feel like every rest gives you a fresh set of answers for healing, mobility, resilience, or tactical utility.",
+      "tags": [
+        "subclass",
+        "support",
+        "brews",
+        "resource"
+      ]
+    },
+    "alchemist-restorative-spells": {
+      "summary": "Your spell identity leans hard into recovery, cleansing, and adaptive chemistry.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "healing"
+      ]
+    },
+    "alchemist-adaptive-catalyst": {
+      "summary": "Your formulae become smarter and more responsive once the fight turns chaotic.",
+      "tags": [
+        "subclass",
+        "support",
+        "tempo"
+      ]
+    },
+    "alchemist-panacea-kit": {
+      "summary": "You become the party\u2019s premium answer to long-fight attrition and harsh conditions.",
+      "tags": [
+        "subclass",
+        "restoration",
+        "utility"
+      ]
+    },
+    "alchemist-master-transmutation": {
+      "summary": "Your highest-tier chemistry changes the rules of the encounter instead of just patching around them.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "alchemy"
+      ]
+    }
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "id": "illusionist",
+  "displayName": "Illusionist",
+  "classId": "wizard",
+  "parentClassId": "wizard",
+  "flavorText": "Illusionists bend perception, creating convincing deceptions and temporary realities.",
+  "featureUnlocksByLevel": {
+    "2": [
+      "illusionist-illusion-savant",
+      "illusionist-improved-minor-illusion"
+    ],
+    "6": [
+      "illusionist-malleable-illusions"
+    ],
+    "10": [
+      "illusionist-illusory-self"
+    ],
+    "14": [
+      "illusionist-illusory-reality"
+    ]
+  },
+  "features": [
+    {
+      "level": 2,
+      "id": "illusionist-illusion-savant",
+      "displayName": "Illusion Savant",
+      "description": "The gold and time to copy Illusion spells into your spellbook are halved."
+    },
+    {
+      "level": 2,
+      "id": "illusionist-improved-minor-illusion",
+      "displayName": "Improved Minor Illusion",
+      "description": "You learn Minor Illusion if you do not already know it, and you can create both sound and image with one casting."
+    },
+    {
+      "level": 6,
+      "id": "illusionist-malleable-illusions",
+      "displayName": "Malleable Illusions",
+      "description": "When concentrating on an illusion spell, you can use your action to alter the illusion's nature within the spell's limits."
+    },
+    {
+      "level": 10,
+      "id": "illusionist-illusory-self",
+      "displayName": "Illusory Self",
+      "description": "As a reaction when attacked, interpose an illusory duplicate and cause one attack to miss you. Usable once per short rest."
+    },
+    {
+      "level": 14,
+      "id": "illusionist-illusory-reality",
+      "displayName": "Illusory Reality",
+      "description": "Once per turn, make one non-creature object in an illusion spell real for 1 minute."
+    }
+  ],
+  "featureDefinitions": {
+    "illusionist-illusion-savant": {
+      "summary": "Your spellbook growth rewards committing to deception, sensory control, and trickery.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "specialist"
+      ]
+    },
+    "illusionist-improved-minor-illusion": {
+      "summary": "Your baseline illusion cantrip becomes a real creative tool instead of a tiny novelty.",
+      "tags": [
+        "subclass",
+        "illusion",
+        "cantrip"
+      ]
+    },
+    "illusionist-malleable-illusions": {
+      "summary": "Adapt active illusions on the fly so they keep pace with a changing scene.",
+      "tags": [
+        "subclass",
+        "illusion",
+        "control"
+      ]
+    },
+    "illusionist-illusory-self": {
+      "section": "Reactions",
+      "type": "reaction",
+      "summary": "Project a false self at the key moment so an attack or threat is wasted on the wrong target.",
+      "tags": [
+        "subclass",
+        "illusion",
+        "defense",
+        "reaction"
+      ]
+    },
+    "illusionist-illusory-reality": {
+      "summary": "For a brief moment, part of your illusion stops being fake and starts affecting the world for real.",
+      "description": "Illusory Reality is the late-game payoff for a creative illusionist. It rewards players who think spatially and use trickery as a problem-solving engine rather than only as decoration.",
+      "tags": [
+        "subclass",
+        "illusion",
+        "capstone",
+        "utility"
+      ]
+    }
+  }
+}

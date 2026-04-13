@@ -1,0 +1,74 @@
+{
+  "id": "half-orc",
+  "displayName": "Half-Orc",
+  "size": "Medium",
+  "movement": {
+    "walk": 30,
+    "swim": 0,
+    "fly": 0,
+    "climb": 0
+  },
+  "senses": {
+    "darkvision": 60,
+    "tremorsense": 0,
+    "blindsight": 0
+  },
+  "tags": [
+    "humanoid",
+    "orc"
+  ],
+  "languages": [
+    "Common",
+    "Orc"
+  ],
+  "abilityBonuses": "flexible",
+  "proficiencies": {
+    "skills": [],
+    "weapons": [],
+    "tools": [],
+    "armor": []
+  },
+  "traits": [
+    {
+      "id": "half-orc-darkvision",
+      "displayName": "Darkvision",
+      "summary": "You can see in dim light and darkness out to 60 feet.",
+      "description": "You have Darkvision with a range of 60 feet.",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited",
+        "range": "60"
+      }
+    },
+    {
+      "id": "half-orc-adrenaline-rush",
+      "displayName": "Adrenaline Rush",
+      "summary": "As a Bonus Action, gain temporary hit points equal to your proficiency bonus.",
+      "description": "As a Bonus Action, you gain Temporary Hit Points equal to your Proficiency Bonus. You can use this trait a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.",
+      "mechanics": {
+        "actionType": "BonusAction",
+        "usesPerRest": "LongRest",
+        "range": "Self",
+        "scalingNote": "Temporary hit points and total uses both scale with proficiency bonus."
+      }
+    },
+    {
+      "id": "half-orc-savage-attacks",
+      "displayName": "Savage Attacks",
+      "summary": "Critical hits with melee weapons deal one extra weapon damage die.",
+      "description": "When you score a critical hit with a melee weapon attack, you can roll one of the weapon's damage dice one additional time and add it to the extra damage of the critical hit.",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited"
+      }
+    }
+  ],
+  "flavorText": "Half-orcs are known for determination, bold emotion, and indomitable presence in battle. Many balance fierce instincts with deep loyalty to chosen family and allies. Their reputations are often shaped by others, but their identities are always their own.",
+  "roleplayNotes": "Choose what fuels your intensity: protection, pride, redemption, or a vow.",
+  "recommendedClasses": [
+    "Barbarian",
+    "Fighter",
+    "Paladin",
+    "Ranger"
+  ]
+}

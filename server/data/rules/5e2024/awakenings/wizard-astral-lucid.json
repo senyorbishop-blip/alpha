@@ -1,0 +1,47 @@
+{
+  "id": "wizard-astral-lucid",
+  "displayName": "Astral Lucid",
+  "classRestrictions": ["wizard"],
+  "minimumLevel": 15,
+  "grants": [
+    {
+      "id": "wizard-astral-lucid-thoughtform",
+      "type": "passive_unlock",
+      "name": "Thoughtform Casting",
+      "value": {
+        "summary": "After initiative, your first prepared spell each combat is cast with +10 ft range.",
+        "rulesHint": "awakening-passive"
+      }
+    },
+    {
+      "id": "wizard-astral-lucid-focus",
+      "type": "resource_bonus",
+      "name": "Lucid Focus",
+      "value": {
+        "resourceId": "lucid_focus",
+        "label": "Lucid Focus",
+        "max": 2,
+        "scope": "long_rest"
+      }
+    }
+  ],
+  "tiers": [
+    {
+      "stage": 2,
+      "grants": [
+        {
+          "id": "wizard-astral-lucid-rewrite",
+          "type": "action_unlock",
+          "name": "Moment Rewrite",
+          "value": {
+            "summary": "Spend 1 Lucid Focus to reroll one spell attack or force a save reroll.",
+            "activation": "reaction"
+          }
+        }
+      ]
+    }
+  ],
+  "tags": ["arcane", "awakening", "tiered"],
+  "source": "casualdnd_awakening",
+  "version": 1
+}

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#0d0900" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+<g filter="url(#shadow)">
+<rect x="12" y="72" width="104" height="40" fill="#2a6a6a" stroke="#2a1f0e" stroke-width="2" rx="4"/>
+<path d="M12 82 Q34 72 56 82 Q78 92 100 82 Q110 78 116 82 L116 112 L12 112 Z" fill="#2a8aaa" stroke="none" stroke-width="2"/>
+<rect x="50" y="52" width="28" height="52" fill="#5a3614" stroke="#2a1f0e" stroke-width="2" rx="2"/>
+<polygon points="28,66 100,66 106,80 22,80" fill="#8b5c2a" stroke="#2a1f0e" stroke-width="2"/>
+<line x1="64" y1="40" x2="64" y2="66" stroke="#5a3614" stroke-width="3"/>
+<polygon points="66,42 94,52 94,64 66,64" fill="#e8d8b0" stroke="#2a1f0e" stroke-width="2"/>
+</g>
+</svg>

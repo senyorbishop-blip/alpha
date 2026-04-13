@@ -1,0 +1,86 @@
+{
+  "id": "aasimar",
+  "displayName": "Aasimar",
+  "size": "Medium",
+  "movement": {
+    "walk": 30,
+    "swim": 0,
+    "fly": 0,
+    "climb": 0
+  },
+  "senses": {
+    "darkvision": 60,
+    "tremorsense": 0,
+    "blindsight": 0
+  },
+  "tags": [
+    "humanoid",
+    "celestial-touched"
+  ],
+  "languages": [
+    "Common",
+    "Celestial"
+  ],
+  "abilityBonuses": "flexible",
+  "proficiencies": {
+    "skills": [],
+    "weapons": [],
+    "tools": [],
+    "armor": []
+  },
+  "traits": [
+    {
+      "id": "aasimar-darkvision",
+      "displayName": "Darkvision",
+      "summary": "You can see in dim light and darkness out to 60 feet.",
+      "description": "You have Darkvision with a range of 60 feet.",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited",
+        "range": "60"
+      }
+    },
+    {
+      "id": "aasimar-light-bearer",
+      "displayName": "Light Bearer",
+      "summary": "You know the Light cantrip using Charisma.",
+      "description": "You know the Light cantrip. Charisma is your spellcasting ability for it.",
+      "mechanics": {
+        "actionType": "Action",
+        "usesPerRest": "Unlimited",
+        "range": "60"
+      }
+    },
+    {
+      "id": "aasimar-celestial-revelation",
+      "displayName": "Celestial Revelation",
+      "summary": "At level 3, transform for 1 minute using one of three revelations.",
+      "description": "Starting at 3rd level, as a Bonus Action you transform for 1 minute and choose one revelation each time: Healing Hands, Necrotic Shroud, or Radiant Consumption. Once you activate Celestial Revelation, you can't do so again until you finish a Long Rest.",
+      "mechanics": {
+        "actionType": "BonusAction",
+        "usesPerRest": "LongRest",
+        "range": "Self",
+        "scalingNote": "Unlocked at character level 3; choose Healing Hands, Necrotic Shroud, or Radiant Consumption when activated."
+      }
+    },
+    {
+      "id": "aasimar-heavenly-wings",
+      "displayName": "Heavenly Wings",
+      "summary": "While Celestial Revelation is active, you gain a fly speed equal to your walk speed.",
+      "description": "While your Celestial Revelation transformation is active, you have a Fly Speed equal to your Speed.",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited",
+        "range": "Self"
+      }
+    }
+  ],
+  "flavorText": "Aasimar are mortals touched by celestial power, often marked by radiant presence or uncanny calm. Their gifts can inspire hope or fear depending on how they are used. Many struggle to reconcile personal desire with a sense of higher calling.",
+  "roleplayNotes": "Decide whether your celestial spark feels like a blessing, a burden, or a mystery you still interpret.",
+  "recommendedClasses": [
+    "Paladin",
+    "Cleric",
+    "Sorcerer",
+    "Warlock"
+  ]
+}

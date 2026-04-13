@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Casual D&D — Campaigns</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cyan: #00e5cc;
+      --cyan-dim: #00b8a4;
+      --cyan-glow: rgba(0,229,204,0.25);
+      --cyan-faint: rgba(0,229,204,0.08);
+      --dark-bg: #0a0b0f;
+      --panel-bg: #13160f;
+      --wood-dark: #1a1208;
+      --wood-mid: #2a1e08;
+      --wood-light: #3d2c10;
+      --wood-highlight: #5c3f18;
+      --parchment: #c8a96e;
+      --parchment-dim: #a07840;
+      --gold: #d4a637;
+      --gold-dim: #8a6820;
+      --text-main: #e8dcc8;
+      --text-muted: #8a7d6a;
+      --red-accent: #c04a3a;
+      --border: rgba(0,229,204,0.18);
+      --panel: linear-gradient(160deg, #16120a 0%, #1c1608 40%, #13100a 100%);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: var(--dark-bg);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      font-family: 'Crimson Pro', Georgia, serif;
+      color: var(--text-main);
+      padding: 2rem 1rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* ── Dungeon background ── */
+    .bg-scene {
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 100%, rgba(20,12,5,0.95) 0%, transparent 70%),
+        radial-gradient(ellipse 80% 60% at 50% 0%,   rgba(0,40,35,0.4)  0%, transparent 70%),
+        radial-gradient(ellipse 100% 100% at 50% 50%, #0d1008 0%, #070809 60%, #040506 100%);
+    }
+    .bg-scene::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        repeating-linear-gradient(0deg,   transparent, transparent 59px, rgba(0,0,0,0.3) 60px),
+        repeating-linear-gradient(90deg,  transparent, transparent 119px, rgba(0,0,0,0.2) 120px),
+        repeating-linear-gradient(180deg, rgba(255,255,255,0.015) 0px, transparent 1px);
+      background-size: 120px 60px, 120px 60px, 100% 3px;
+      opacity: 0.7;
+    }
+    .torch-left, .torch-right {
+      position: fixed; bottom: 20%; width: 220px; height: 400px;
+      pointer-events: none; z-index: 1;
+      animation: flicker 3s ease-in-out infinite alternate;
+    }
+    .torch-left  { left: 0;  background: radial-gradient(ellipse at 0% 80%, rgba(180,90,20,0.35) 0%, transparent 70%); }
+    .torch-right { right: 0; background: radial-gradient(ellipse at 100% 80%, rgba(180,90,20,0.35) 0%, transparent 70%); animation-delay: 1.5s; }
+    @keyframes flicker {
+      0%   { opacity: 0.7; }
+      30%  { opacity: 1;   }
+      60%  { opacity: 0.8; }
+      100% { opacity: 0.95;}
+    }
+    .motes { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+    .mote {
+      position: absolute;
+      width: 2px; height: 2px; border-radius: 50%;
+      background: rgba(0,229,204,0.6);
+      animation: drift linear infinite;
+    }
+    @keyframes drift {
+      0%   { transform: translateY(100vh) translateX(0);   opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 0.6; }
+      100% { transform: translateY(-10vh) translateX(30px); opacity: 0; }
+    }
+
+    .container { width: 100%; max-width: 700px; position: relative; z-index: 10; }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    h1 {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(1.3rem, 4vw, 2rem);
+      font-weight: 900;
+      color: var(--cyan);
+      text-shadow: 0 0 30px var(--cyan-glow), 0 0 60px rgba(0,229,204,0.15);
+      margin-bottom: 0.3rem;
+    }
+    .subtitle { color: var(--text-muted); font-style: italic; font-size: 0.95rem; }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: rgba(0,229,204,0.55);
+      text-decoration: none;
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--cyan); }
+
+    .panel {
+      background: linear-gradient(160deg, #16120a 0%, #1c1608 40%, #13100a 100%);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.8rem;
+      box-shadow:
+        0 0 0 2px #2a1e08,
+        0 0 0 4px #1a1208,
+        0 20px 60px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 1.2rem;
+    }
+    .panel::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      opacity: 0.35;
+    }
+    .panel-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--cyan-dim);
+      opacity: 0.8;
+      margin-bottom: 1.2rem;
+    }
+
+    /* New campaign form */
+    .new-form { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .new-form input {
+      flex: 1;
+      min-width: 160px;
+      background: linear-gradient(135deg, #1e1508 0%, #251a08 40%, #1a1208 100%);
+      border: 1px solid var(--wood-highlight);
+      border-radius: 3px;
+      color: var(--text-main);
+      padding: 0.65rem 0.9rem;
+      font-family: 'Crimson Pro', serif;
+      font-size: 1rem;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .new-form input::placeholder { color: var(--text-muted); font-style: italic; }
+    .new-form input:focus {
+      outline: none;
+      border-color: rgba(0,229,204,0.4);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,229,204,0.15);
+    }
+    .row-2 { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.6rem; }
+    .row-2 input { flex: 1; min-width: 140px; }
+    .btn {
+      padding: 0.65rem 1.2rem;
+      border-radius: 3px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      white-space: nowrap;
+      position: relative; overflow: hidden;
+    }
+    .btn::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, #00c4ae 0%, #008f80 50%, #006b60 100%);
+      color: #001a17;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,229,204,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+    .btn-gold:hover {
+      background: linear-gradient(135deg, #00e5cc 0%, #00b4a0 50%, #008070 100%);
+      box-shadow: 0 4px 16px rgba(0,229,204,0.3), 0 0 0 1px rgba(0,229,204,0.5);
+      transform: translateY(-1px);
+    }
+    .btn-blood {
+      background: linear-gradient(135deg, #7a2318 0%, #4a1410 50%, #2a0c0a 100%);
+      color: #e8a09a;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 0 1px rgba(192,74,58,0.4);
+    }
+    .btn-blood:hover {
+      background: linear-gradient(135deg, #a02e22, #6a1e18, #3a1210);
+      color: #ffb8b0;
+      box-shadow: 0 4px 12px rgba(192,74,58,0.3), 0 0 0 1px rgba(192,74,58,0.6);
+    }
+    .btn-ghost {
+      background: linear-gradient(135deg, var(--wood-highlight) 0%, var(--wood-mid) 50%, var(--wood-dark) 100%);
+      border: 1px solid rgba(92,63,24,0.6) !important;
+      color: var(--parchment);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .btn-ghost:hover {
+      background: linear-gradient(135deg, #6e4c20, #3d2c10, #2a1e08);
+      color: var(--gold);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6), 0 0 0 1px rgba(212,166,55,0.4);
+    }
+    .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.58rem; }
+
+    /* Campaign list */
+    .campaign-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .campaign-card {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(0,229,204,0.12);
+      border-radius: 3px;
+      padding: 1rem 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .campaign-card:hover { border-color: rgba(0,229,204,0.3); background: rgba(0,229,204,0.04); }
+    .campaign-icon { font-size: 1.8rem; flex-shrink: 0; }
+    .campaign-info { flex: 1; min-width: 0; }
+    .campaign-name {
+      font-family: 'Cinzel', serif;
+      font-size: 0.9rem;
+      color: var(--gold);
+      margin-bottom: 0.2rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .campaign-meta {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+    .campaign-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+    .empty-state {
+      text-align: center;
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 1.5rem;
+      font-size: 0.9rem;
+    }
+    .loading { opacity: 0.5; font-style: italic; text-align: center; padding: 1rem; font-size: 0.85rem; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: linear-gradient(160deg, #16120a 0%, #1c1608 40%, #13100a 100%);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.8rem;
+      min-width: 320px;
+      max-width: 480px;
+      width: 90%;
+      box-shadow:
+        0 0 0 2px #2a1e08,
+        0 0 0 4px #1a1208,
+        0 20px 60px rgba(0,0,0,0.9),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+      position: relative;
+    }
+    .modal::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      opacity: 0.35;
+    }
+    .modal h3 {
+      font-family: 'Cinzel', serif;
+      color: var(--cyan);
+      margin-bottom: 1.2rem;
+      font-size: 0.85rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-shadow: 0 0 12px var(--cyan-glow);
+    }
+    .invite-row {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.7rem 0;
+      border-bottom: 1px solid rgba(0,229,204,0.1);
+    }
+    .invite-row:last-of-type { border-bottom: none; }
+    .invite-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .invite-role-name {
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      color: var(--gold);
+      flex: 1;
+    }
+    .invite-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-top: 0.1rem;
+    }
+    .copy-btn {
+      flex-shrink: 0;
+      background: rgba(0,229,204,0.08);
+      border: 1px solid rgba(0,229,204,0.25);
+      border-radius: 3px;
+      color: var(--cyan-dim);
+      font-family: 'Cinzel', serif;
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      padding: 0.35rem 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+    .copy-btn:hover { background: rgba(0,229,204,0.18); border-color: rgba(0,229,204,0.5); color: var(--cyan); }
+    .copy-btn.flashed { background: rgba(46,204,113,0.2); border-color: rgba(46,204,113,0.5); color: #2ecc71; }
+    .modal-btns { display: flex; gap: 0.5rem; margin-top: 1.2rem; justify-content: flex-end; }
+    .toast {
+      position: fixed;
+      bottom: 2rem; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--panel-bg);
+      border: 1px solid var(--cyan-dim);
+      border-radius: 3px;
+      padding: 0.5rem 1.2rem;
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      color: var(--cyan);
+      box-shadow: 0 0 20px var(--cyan-glow);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,229,204,0.2); border-radius: 2px; }
+  </style>
+</head>
+<body>
+<!-- Background -->
+<div class="bg-scene"></div>
+<div class="torch-left"></div>
+<div class="torch-right"></div>
+<div class="motes" id="motes"></div>
+
+<div class="container">
+  <a class="back-link" href="/">← Back to Tavern</a>
+  <div class="header">
+    <h1>⚔ Campaigns</h1>
+    <p class="subtitle">Your saved adventures await
+      <button id="camp-help-btn" title="How to use Campaigns"
+        onclick="showCampaignWalkthrough()"
+        style="display:inline-flex;align-items:center;justify-content:center;
+               width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-left:6px;
+               background:rgba(0,229,204,0.08);border:1px solid rgba(0,229,204,0.3);
+               color:rgba(0,229,204,0.65);font-size:0.6rem;font-family:'Cinzel',serif;
+               font-weight:700;cursor:pointer;transition:all 0.15s;">?</button>
+    </p>
+  </div>
+
+  <!-- New Campaign -->
+  <div class="panel session-frame">
+    <div class="panel-title" style="display:flex;align-items:center;gap:6px;">
+      Begin a New Campaign
+      <button onclick="showCampaignWalkthrough()"
+        style="display:inline-flex;align-items:center;justify-content:center;
+               width:15px;height:15px;border-radius:50%;
+               background:rgba(0,229,204,0.08);border:1px solid rgba(0,229,204,0.25);
+               color:rgba(0,229,204,0.6);font-size:0.55rem;font-family:'Cinzel',serif;
+               font-weight:700;cursor:pointer;transition:all 0.15s;flex-shrink:0;"
+        title="How campaigns work">?</button>
+    </div>
+    <div class="new-form">
+      <input type="text" id="new-campaign-name" placeholder="Campaign name…" maxlength="60" />
+    </div>
+    <div class="row-2">
+      <input type="text" id="new-dm-name" placeholder="DM name…" maxlength="40" />
+      <button class="btn btn-gold" onclick="createCampaign()">⚔ Create Campaign</button>
+    </div>
+  </div>
+
+  <!-- Saved Campaigns (legacy / non-DM view) -->
+  <div class="panel session-frame" id="panel-all-campaigns">
+    <div class="panel-title">Saved Campaigns</div>
+    <div id="campaign-list" class="campaign-list">
+      <div class="loading">Loading campaigns…</div>
+    </div>
+  </div>
+
+  <!-- My Campaigns (authenticated DM) -->
+  <div class="panel session-frame" id="panel-my-campaigns" style="display:none">
+    <div class="panel-title">My Campaigns</div>
+    <div id="my-campaign-list" class="campaign-list">
+      <div class="loading">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Uncollected / Shared Pool (authenticated DM) -->
+  <div class="panel session-frame" id="panel-unclaimed" style="display:none">
+    <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Uncollected Campaigns</span>
+      <span style="font-size:0.6rem;color:var(--gold);opacity:0.6;letter-spacing:0.08em;">SHARED POOL</span>
+    </div>
+    <div id="unclaimed-list" class="campaign-list">
+      <div class="loading">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- Invite Modal -->
+<div class="modal-overlay" id="invite-modal">
+  <div class="modal">
+    <h3 id="modal-title">Campaign Created!</h3>
+    <div class="invite-row">
+      <span class="invite-icon">🛡</span>
+      <div>
+        <div class="invite-role-name">Player Link</div>
+        <div class="invite-sub">For adventurers joining the session</div>
+      </div>
+      <button class="copy-btn" id="copy-player-btn" onclick="copyLink('player')">Copy</button>
+    </div>
+    <div class="invite-row">
+      <span class="invite-icon">👁</span>
+      <div>
+        <div class="invite-role-name">Viewer Link</div>
+        <div class="invite-sub">For spectators watching the session</div>
+      </div>
+      <button class="copy-btn" id="copy-viewer-btn" onclick="copyLink('viewer')">Copy</button>
+    </div>
+    <span id="modal-player-link" style="display:none"></span>
+    <span id="modal-viewer-link" style="display:none"></span>
+    <div class="modal-btns">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">Close</button>
+      <button class="btn btn-blood btn-sm" id="enter-btn" onclick="enterCampaign()">Enter the Hall →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/static/js/core/csrf.js"></script>
+<script>
+  let _pendingSession = null;
+  let _currentUser = null;
+
+  function showToast(msg, duration) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), duration || 2200);
+  }
+
+  async function getPublicBase(forceRefresh = false) {
+    if (window._publicBase && !forceRefresh) return window._publicBase;
+    try {
+      const res = await fetch('/api/config');
+      const data = await res.json();
+      if (data.public_domain) {
+        const proto = data.port === 443 ? 'https' : 'http';
+        const omitPort = data.port === 80 || data.port === 443;
+        window._publicBase = omitPort
+          ? `${proto}://${data.public_domain}`
+          : `${proto}://${data.public_domain}:${data.port}`;
+      } else {
+        window._publicBase = location.origin;
+      }
+    } catch (e) {
+      window._publicBase = location.origin;
+    }
+    return window._publicBase;
+  }
+
+  async function makeJoinLink(sessionId, inviteCode, role, forceRefresh = false) {
+    const base = await getPublicBase(forceRefresh);
+    return `${base}/join?session=${sessionId}&code=${inviteCode}&role=${role}`;
+  }
+
+  async function createCampaign() {
+    const name   = document.getElementById('new-campaign-name').value.trim() || 'My Campaign';
+    const dmName = document.getElementById('new-dm-name').value.trim() || 'Dungeon Master';
+
+    const res  = await fetch('/api/session/create', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ dm_name: dmName, campaign_name: name })
+    });
+    const data = await res.json();
+    if (data.error) { showToast('Error: ' + data.error); return; }
+
+    _pendingSession = data;
+    await showInviteModal(name, data);
+    loadCampaigns();
+  }
+
+  async function showInviteModal(campaignName, data) {
+    document.getElementById('modal-title').textContent = `"${campaignName}" Created!`;
+    document.getElementById('modal-player-link').textContent = await makeJoinLink(data.session_id, data.player_invite, 'player');
+    document.getElementById('modal-viewer-link').textContent = await makeJoinLink(data.session_id, data.viewer_invite, 'viewer');
+    document.getElementById('invite-modal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('invite-modal').classList.remove('open');
+  }
+
+  async function copyLink(type) {
+    if (!_pendingSession) return;
+    
+    // Regenerate link with current public domain config (force refresh)
+    const link = await makeJoinLink(
+      _pendingSession.session_id,
+      type === 'player' ? _pendingSession.player_invite : _pendingSession.viewer_invite,
+      type,
+      true // Force refresh to get latest config
+    );
+    
+    // Update displayed link
+    document.getElementById('modal-' + type + '-link').textContent = link;
+    
+    navigator.clipboard.writeText(link).then(() => {
+      const btn = document.getElementById('copy-' + type + '-btn');
+      if (btn) {
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.classList.add('flashed');
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove('flashed'); }, 1500);
+      }
+    });
+  }
+
+  function enterCampaign() {
+    if (!_pendingSession) return;
+    const p = new URLSearchParams({
+      session_id: _pendingSession.session_id,
+      user_id:    _pendingSession.user_id,
+      role:       'dm',
+      name:       _pendingSession.dm_name || _pendingSession.name,
+    });
+    window.location.href = `/play?${p}`;
+  }
+
+  // ── Auth-aware campaign loading ─────────────────────────────────────────
+
+  async function fetchCurrentUser() {
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.user || null;
+    } catch (_) { return null; }
+  }
+
+  async function loadCampaigns() {
+    _currentUser = await fetchCurrentUser();
+
+    if (_currentUser && _currentUser.role === 'dm') {
+      // Show split DM view
+      document.getElementById('panel-all-campaigns').style.display = 'none';
+      document.getElementById('panel-my-campaigns').style.display = '';
+      document.getElementById('panel-unclaimed').style.display = '';
+      await Promise.all([loadMyCampaigns(), loadUnclaimedCampaigns()]);
+    } else {
+      // Fallback: legacy unauthenticated view
+      document.getElementById('panel-all-campaigns').style.display = '';
+      document.getElementById('panel-my-campaigns').style.display = 'none';
+      document.getElementById('panel-unclaimed').style.display = 'none';
+      await loadAllCampaigns();
+    }
+  }
+
+  async function loadAllCampaigns() {
+    const list = document.getElementById('campaign-list');
+    const res  = await fetch('/api/campaigns');
+    const campaigns = await res.json();
+
+    if (!campaigns.length) {
+      list.innerHTML = '<div class="empty-state">No campaigns yet. Create one above!</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    campaigns.forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'campaign-card';
+      const updated = new Date(c.updated_at * 1000).toLocaleDateString('en-AU', {
+        day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'
+      });
+      card.innerHTML = `
+        <span class="campaign-icon">📜</span>
+        <div class="campaign-info">
+          <div class="campaign-name">${escHtml(c.name)}</div>
+          <div class="campaign-meta">DM: ${escHtml(c.dm_name)} · Last saved: ${updated}</div>
+        </div>
+        <div class="campaign-actions">
+          <button class="btn btn-ghost btn-sm" onclick="resumeCampaign('${c.id}')">Resume</button>
+          <button class="btn btn-ghost btn-sm" onclick="showCampaignLinks('${c.id}')">🔗 Links</button>
+          <button class="btn btn-ghost btn-sm" style="color:#e07070;" onclick="deleteCampaign('${c.id}', '${escHtml(c.name)}')">✕</button>
+        </div>
+      `;
+      list.appendChild(card);
+    });
+  }
+
+  async function loadMyCampaigns() {
+    const list = document.getElementById('my-campaign-list');
+    try {
+      const res = await fetch('/api/campaigns/mine', { credentials: 'same-origin' });
+      const data = await res.json();
+      const campaigns = data.campaigns || [];
+
+      if (!campaigns.length) {
+        list.innerHTML = '<div class="empty-state">You have not claimed any campaigns yet.</div>';
+        return;
+      }
+      list.innerHTML = '';
+      campaigns.forEach(c => renderMyCampaignCard(c, list));
+    } catch (_) {
+      list.innerHTML = '<div class="empty-state">Could not load your campaigns.</div>';
+    }
+  }
+
+  function renderMyCampaignCard(c, container) {
+    const card = document.createElement('div');
+    card.className = 'campaign-card';
+    card.dataset.campaignId = c.id;
+    const updated = c.updated_at
+      ? new Date(c.updated_at * 1000).toLocaleDateString('en-AU', {
+          day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'
+        })
+      : '—';
+    card.innerHTML = `
+      <span class="campaign-icon">📜</span>
+      <div class="campaign-info">
+        <div class="campaign-name">${escHtml(c.name)}</div>
+        <div class="campaign-meta">DM: You · Last saved: ${updated}</div>
+      </div>
+      <div class="campaign-actions">
+        <button class="btn btn-ghost btn-sm" onclick="resumeCampaign('${c.id}')">Resume</button>
+        <button class="btn btn-ghost btn-sm" onclick="showCampaignLinks('${c.id}')">🔗 Links</button>
+        <button class="btn btn-ghost btn-sm" style="color:#e07070;" onclick="deleteCampaign('${c.id}', '${escHtml(c.name)}')">✕</button>
+      </div>
+    `;
+    container.appendChild(card);
+  }
+
+  async function loadUnclaimedCampaigns() {
+    const list = document.getElementById('unclaimed-list');
+    try {
+      const res = await fetch('/api/campaigns/unclaimed', { credentials: 'same-origin' });
+      if (!res.ok) { list.innerHTML = '<div class="empty-state">—</div>'; return; }
+      const data = await res.json();
+      const campaigns = data.campaigns || [];
+
+      if (!campaigns.length) {
+        list.innerHTML = '<div class="empty-state">No uncollected campaigns.</div>';
+        return;
+      }
+      list.innerHTML = '';
+      campaigns.forEach(c => {
+        const card = renderUnclaimedCard(c);
+        list.appendChild(card);
+      });
+    } catch (_) {
+      list.innerHTML = '<div class="empty-state">Could not load uncollected campaigns.</div>';
+    }
+  }
+
+  function renderUnclaimedCard(c) {
+    const card = document.createElement('div');
+    card.className = 'campaign-card';
+    card.dataset.unclaimedId = c.id;
+    const updated = c.updated_at
+      ? new Date(c.updated_at * 1000).toLocaleDateString('en-AU', {
+          day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'
+        })
+      : '—';
+    card.innerHTML = `
+      <span class="campaign-icon">📜</span>
+      <div class="campaign-info">
+        <div class="campaign-name">${escHtml(c.name)}</div>
+        <div class="campaign-meta">DM: Unclaimed · Last saved: ${updated}</div>
+      </div>
+      <div class="campaign-actions">
+        <button class="btn btn-ghost btn-sm" onclick="resumeCampaign('${c.id}')">View</button>
+        <button class="btn btn-gold btn-sm claim-btn" data-id="${c.id}">Claim ⚑</button>
+      </div>
+    `;
+    card.querySelector('.claim-btn').addEventListener('click', () => claimCampaign(c.id, card));
+    return card;
+  }
+
+  async function claimCampaign(campaignId, card) {
+    const btn = card && card.querySelector('.claim-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Claiming…'; }
+    try {
+      const res = await fetch(`/api/campaigns/${encodeURIComponent(campaignId)}/claim`, {
+        method: 'PATCH',
+        credentials: 'same-origin',
+      });
+      if (res.ok) {
+        // Animate out of uncollected, reload my campaigns
+        if (card) {
+          card.style.transition = 'background 0.3s, box-shadow 0.3s';
+          card.style.background = 'rgba(212,166,55,0.18)';
+          card.style.boxShadow  = '0 0 16px rgba(212,166,55,0.5)';
+          setTimeout(() => {
+            card.style.transition = 'opacity 0.4s, transform 0.4s';
+            card.style.opacity   = '0';
+            card.style.transform = 'translateY(-10px) scale(0.97)';
+            setTimeout(() => { if (card.parentNode) card.parentNode.removeChild(card); }, 420);
+          }, 350);
+        }
+        showToast('Campaign claimed! Refreshing your list…', 2000);
+        setTimeout(loadMyCampaigns, 500);
+      } else if (res.status === 409) {
+        showToast('Claimed by another DM just now — refreshing list.', 2500);
+        setTimeout(loadUnclaimedCampaigns, 300);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast('Claim failed: ' + (data.detail || 'Unknown error'));
+        if (btn) { btn.disabled = false; btn.textContent = 'Claim ⚑'; }
+      }
+    } catch (err) {
+      showToast('Network error claiming campaign.');
+      if (btn) { btn.disabled = false; btn.textContent = 'Claim ⚑'; }
+    }
+  }
+
+  // ── Existing resume / delete / links ─────────────────────────────────────
+
+  async function resumeCampaign(id) {
+    const res  = await fetch(`/api/campaigns/${id}/resume`, { method: 'POST' });
+    const data = await res.json();
+    if (data.error) { showToast('Error: ' + data.error); return; }
+
+    _pendingSession = { ...data, name: data.dm_name };
+
+    // Show invite links so DM can share with players before entering
+    document.getElementById('modal-title').textContent = 'Resume Campaign';
+    document.getElementById('modal-player-link').textContent = await makeJoinLink(data.session_id, data.player_invite, 'player');
+    document.getElementById('modal-viewer-link').textContent = await makeJoinLink(data.session_id, data.viewer_invite, 'viewer');
+    document.getElementById('enter-btn').style.display = '';
+    document.getElementById('invite-modal').classList.add('open');
+  }
+
+  async function showCampaignLinks(id) {
+    const res  = await fetch(`/api/campaigns/${id}/resume`, { method: 'POST' });
+    const data = await res.json();
+    if (data.error) { showToast('Error: ' + data.error); return; }
+    document.getElementById('modal-title').textContent = 'Invite Links';
+    document.getElementById('modal-player-link').textContent = await makeJoinLink(data.session_id, data.player_invite, 'player');
+    document.getElementById('modal-viewer-link').textContent = await makeJoinLink(data.session_id, data.viewer_invite, 'viewer');
+    document.getElementById('enter-btn').style.display = 'none';
+    document.getElementById('invite-modal').classList.add('open');
+  }
+
+  async function deleteCampaign(id, name) {
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    await fetch(`/api/campaigns/${id}`, {
+      method: 'DELETE',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({})
+    });
+    showToast(`"${name}" deleted.`);
+    loadCampaigns();
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Close modal on background click
+  document.getElementById('invite-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('invite-modal')) closeModal();
+  });
+
+  loadCampaigns();
+
+  // Floating motes
+  const motesEl = document.getElementById('motes');
+  if (motesEl) {
+    for (let i = 0; i < 14; i++) {
+      const m = document.createElement('div');
+      m.className = 'mote';
+      const left     = (Math.random() * 100).toFixed(1);
+      const duration = (8 + Math.random() * 14).toFixed(1);
+      const delay    = -(Math.random() * 16).toFixed(1);
+      const size     = (1 + Math.random() * 2).toFixed(1);
+      const opacity  = (0.2 + Math.random() * 0.4).toFixed(2);
+      m.style.cssText = `left:${left}%;animation-duration:${duration}s;animation-delay:${delay}s;width:${size}px;height:${size}px;opacity:${opacity};`;
+      motesEl.appendChild(m);
+    }
+  }
+
+  // ── DM Campaign-Page Onboarding ──────────────────────────────────────────
+  const CAMP_OB_KEY = 'tavern_camp_onboard_seen' + (_currentUser ? '_' + _currentUser.id : '');
+
+  const CAMP_STEPS = [
+    {
+      icon: '⚔',
+      title: 'Welcome, Dungeon Master',
+      accent: '#d4a637',
+      body: 'This is your Campaign Hall. Here you create and manage your D&D campaigns. Each campaign is a separate adventure with its own map, tokens, journal and player roster.',
+      tip: 'New to Tavern Tabletop? This 3-step guide will get you running your first session in minutes.',
+    },
+    {
+      icon: '🗺',
+      title: 'Create Your First Campaign',
+      accent: '#00e5cc',
+      body: 'Type a campaign name and your DM name above, then click <strong>Create Campaign</strong>. You\'ll receive a <strong>Player link</strong> and a <strong>Viewer link</strong> — share these with your players and spectators so they can join.',
+      tip: 'Campaign data is saved automatically. You can resume any campaign at any time from the list below.',
+    },
+    {
+      icon: '🛡',
+      title: 'Enter the Hall & Start Playing',
+      accent: '#2ecc71',
+      body: 'Click <strong>Enter the Hall</strong> after creating or resuming a campaign. You\'ll land on the full tabletop with the map canvas, token controls, dice, combat tracker, DM assistant, and more ready to go.',
+      tip: 'Hit the <strong>?</strong> button in the top bar of the tabletop at any time to reopen the in-game walkthrough.',
+    },
+  ];
+
+  let _campObStep = 0;
+  let _campObOpen = false;
+
+  function _campObEl(id) { return document.getElementById(id); }
+
+  function _renderCampOb() {
+    const data = CAMP_STEPS[_campObStep];
+    const modal = _campObEl('camp-ob-modal');
+    if (!modal) return;
+
+    modal.style.setProperty('--ob-accent', data.accent);
+
+    // Icon animation
+    const iconEl = _campObEl('camp-ob-icon');
+    if (iconEl) { iconEl.style.animation='none'; void iconEl.offsetHeight; iconEl.style.animation=''; iconEl.textContent = data.icon; }
+
+    const bodyEl = _campObEl('camp-ob-body');
+    if (bodyEl) { bodyEl.style.animation='none'; void bodyEl.offsetHeight; bodyEl.style.animation='camp-ob-step-in 0.28s ease forwards'; }
+
+    const titleEl = _campObEl('camp-ob-title');
+    if (titleEl) titleEl.textContent = data.title;
+    const textEl = _campObEl('camp-ob-text');
+    if (textEl) textEl.innerHTML = data.body;
+    const tipEl = _campObEl('camp-ob-tip');
+    if (tipEl) tipEl.innerHTML = data.tip || '';
+
+    // Dots
+    const dotsEl = _campObEl('camp-ob-dots');
+    if (dotsEl) {
+      let dhtml = '';
+      CAMP_STEPS.forEach((_,i) => {
+        const cls = i === _campObStep ? 'camp-ob-dot camp-ob-dot-active' : (i < _campObStep ? 'camp-ob-dot camp-ob-dot-done' : 'camp-ob-dot');
+        dhtml += `<span class="${cls}" onclick="campObGoTo(${i})"></span>`;
+      });
+      dotsEl.innerHTML = dhtml;
+    }
+
+    // Footer
+    const prevBtn = _campObEl('camp-ob-prev');
+    const nextBtn = _campObEl('camp-ob-next');
+    if (prevBtn) prevBtn.disabled = (_campObStep === 0);
+    if (nextBtn) {
+      nextBtn.textContent = (_campObStep === CAMP_STEPS.length - 1) ? 'Start Adventuring ⚔' : 'Next →';
+      nextBtn.style.background = `linear-gradient(135deg,${data.accent},${data.accent}99)`;
+    }
+
+    // Progress
+    const fill = _campObEl('camp-ob-progress-fill');
+    if (fill) { fill.style.width = ((_campObStep + 1) / CAMP_STEPS.length * 100) + '%'; fill.style.background = data.accent; }
+  }
+
+  function campObGoTo(i) {
+    _campObStep = Math.max(0, Math.min(i, CAMP_STEPS.length - 1));
+    _renderCampOb();
+  }
+
+  function showCampaignWalkthrough() {
+    _campObStep = 0;
+    const overlay = _campObEl('camp-ob-overlay');
+    if (overlay) { overlay.style.display = 'flex'; _campObOpen = true; }
+    _renderCampOb();
+  }
+
+  function closeCampaignWalkthrough(markSeen) {
+    const overlay = _campObEl('camp-ob-overlay');
+    if (overlay) overlay.style.display = 'none';
+    _campObOpen = false;
+    if (markSeen) {
+      try { localStorage.setItem(CAMP_OB_KEY, '1'); } catch(_) {}
+    }
+  }
+
+  window.campObGoTo = campObGoTo;
+  window.showCampaignWalkthrough = showCampaignWalkthrough;
+  window.closeCampaignWalkthrough = closeCampaignWalkthrough;
+
+  // Auto-show on first DM visit (after campaigns load)
+  setTimeout(() => {
+    if (_currentUser && _currentUser.role === 'dm') {
+      let seen = false;
+      try { seen = !!localStorage.getItem(CAMP_OB_KEY); } catch(_) {}
+      if (!seen) showCampaignWalkthrough();
+    }
+  }, 1200);
+</script>
+
+<!-- ── DM Campaign Onboarding Modal ── -->
+<style>
+  #camp-ob-overlay {
+    display:none; position:fixed; inset:0; z-index:10000;
+    background:rgba(0,0,0,0.82); align-items:center; justify-content:center;
+    backdrop-filter:blur(3px);
+  }
+  #camp-ob-modal {
+    --ob-accent: #d4a637;
+    position:relative; width:min(500px,92vw);
+    background:linear-gradient(160deg,#16120a 0%,#1c1608 45%,#13100a 100%);
+    border:1px solid rgba(212,166,55,0.25); border-radius:8px;
+    padding:2rem 2rem 1.5rem;
+    box-shadow:0 0 0 2px #2a1e08,0 0 0 4px #1a1208,0 32px 80px rgba(0,0,0,0.9),inset 0 1px 0 rgba(255,255,255,0.04);
+    overflow:hidden;
+    animation:camp-ob-slide-up 0.35s cubic-bezier(0.34,1.3,0.64,1);
+  }
+  #camp-ob-modal::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg,transparent,var(--ob-accent),transparent); opacity:0.5;
+  }
+  #camp-ob-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
+  #camp-ob-badge {
+    font-family:'Cinzel',serif; font-size:0.58rem; letter-spacing:0.22em; text-transform:uppercase;
+    padding:0.2rem 0.65rem; border-radius:2px; border:1px solid var(--ob-accent);
+    color:var(--ob-accent); background:rgba(0,0,0,0.35);
+  }
+  #camp-ob-close {
+    background:none; border:none; color:rgba(200,169,110,0.4); font-size:1.4rem;
+    cursor:pointer; line-height:1; transition:color 0.15s;
+  }
+  #camp-ob-close:hover { color:rgba(200,169,110,0.9); }
+  #camp-ob-dots { display:flex; gap:0.45rem; justify-content:center; margin-bottom:1.4rem; }
+  .camp-ob-dot {
+    width:7px; height:7px; border-radius:50%;
+    background:rgba(200,169,110,0.15); border:1px solid rgba(200,169,110,0.22);
+    transition:all 0.3s; cursor:pointer;
+  }
+  .camp-ob-dot.camp-ob-dot-active {
+    background:var(--ob-accent); border-color:var(--ob-accent);
+    box-shadow:0 0 8px var(--ob-accent); transform:scale(1.3);
+  }
+  .camp-ob-dot.camp-ob-dot-done { background:rgba(212,166,55,0.35); border-color:rgba(212,166,55,0.4); }
+  #camp-ob-body { text-align:center; }
+  #camp-ob-icon {
+    font-size:2.8rem; line-height:1; margin-bottom:0.55rem;
+    filter:drop-shadow(0 0 10px var(--ob-accent));
+    animation:camp-ob-icon-pop 0.4s cubic-bezier(0.34,1.5,0.64,1);
+  }
+  #camp-ob-title {
+    font-family:'Cinzel Decorative','Cinzel',serif; font-size:1.15rem; font-weight:700;
+    color:var(--ob-accent); margin-bottom:0.7rem; letter-spacing:0.04em;
+  }
+  #camp-ob-text {
+    font-family:'Crimson Pro',Georgia,serif; font-size:1rem;
+    color:rgba(232,220,200,0.88); line-height:1.65; margin-bottom:0.9rem;
+  }
+  #camp-ob-tip-box {
+    display:flex; align-items:flex-start; gap:0.5rem;
+    background:rgba(212,166,55,0.06); border:1px solid rgba(212,166,55,0.18);
+    border-radius:4px; padding:0.55rem 0.75rem; text-align:left;
+    font-family:'Crimson Pro',Georgia,serif; font-size:0.88rem;
+    color:rgba(200,169,110,0.7); line-height:1.5; margin-bottom:0;
+  }
+  #camp-ob-footer {
+    display:flex; gap:0.6rem; margin-top:1.3rem; align-items:center;
+  }
+  #camp-ob-prev, #camp-ob-next {
+    flex:1; padding:0.6rem 0.8rem; font-family:'Cinzel',serif; font-size:0.62rem;
+    letter-spacing:0.15em; text-transform:uppercase; cursor:pointer;
+    border-radius:3px; transition:all 0.2s; border:none;
+  }
+  #camp-ob-next { color:#001a17; font-weight:700; box-shadow:0 2px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.15); }
+  #camp-ob-next:hover { filter:brightness(1.12); transform:translateY(-1px); box-shadow:0 4px 16px rgba(212,166,55,0.3); }
+  #camp-ob-prev { background:linear-gradient(135deg,#3d2c10,#2a1e08); color:rgba(200,169,110,0.7); border:1px solid rgba(92,63,24,0.5); }
+  #camp-ob-prev:hover { color:rgba(200,169,110,1); filter:brightness(1.1); }
+  #camp-ob-prev:disabled { opacity:0.3; cursor:default; }
+  #camp-ob-skip { background:none; border:none; color:rgba(200,169,110,0.32); font-family:'Cinzel',serif; font-size:0.54rem; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; transition:color 0.15s; white-space:nowrap; padding:0.4rem; }
+  #camp-ob-skip:hover { color:rgba(200,169,110,0.6); }
+  #camp-ob-progress { position:absolute; bottom:0; left:0; right:0; height:2px; background:rgba(255,255,255,0.05); }
+  #camp-ob-progress-fill { height:100%; background:var(--ob-accent); transition:width 0.4s ease; box-shadow:0 0 6px var(--ob-accent); }
+  @keyframes camp-ob-slide-up {
+    from { opacity:0; transform:translateY(24px) scale(0.96); }
+    to   { opacity:1; transform:translateY(0) scale(1); }
+  }
+  @keyframes camp-ob-icon-pop {
+    from { transform:scale(0.4) rotate(-12deg); opacity:0; }
+    to   { transform:scale(1) rotate(0deg); opacity:1; }
+  }
+  @keyframes camp-ob-step-in {
+    from { opacity:0; transform:translateX(12px); }
+    to   { opacity:1; transform:translateX(0); }
+  }
+</style>
+
+<div id="camp-ob-overlay" onclick="if(event.target===this)closeCampaignWalkthrough(true)">
+  <div id="camp-ob-modal">
+    <div id="camp-ob-header">
+      <div id="camp-ob-badge">Dungeon Master</div>
+      <button id="camp-ob-close" onclick="closeCampaignWalkthrough(true)" title="Close">&times;</button>
+    </div>
+    <div id="camp-ob-dots"></div>
+    <div id="camp-ob-body">
+      <div id="camp-ob-icon">⚔</div>
+      <h2 id="camp-ob-title">Welcome, Dungeon Master</h2>
+      <p id="camp-ob-text"></p>
+      <div id="camp-ob-tip-box">
+        <span>💡</span>
+        <span id="camp-ob-tip"></span>
+      </div>
+    </div>
+    <div id="camp-ob-footer">
+      <button id="camp-ob-prev" onclick="campObGoTo(_campObStep-1)">← Back</button>
+      <button id="camp-ob-skip" onclick="closeCampaignWalkthrough(true)">Skip</button>
+      <button id="camp-ob-next" onclick="_campObStep<2?campObGoTo(_campObStep+1):closeCampaignWalkthrough(true)">Next →</button>
+    </div>
+    <div id="camp-ob-progress"><div id="camp-ob-progress-fill"></div></div>
+  </div>
+</div>
+
+</body>
+</html>

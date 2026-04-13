@@ -1,0 +1,85 @@
+{
+  "id": "beast-master",
+  "displayName": "Beast Master",
+  "classId": "ranger",
+  "parentClassId": "ranger",
+  "flavorText": "Beast Masters forge a magical partnership with a primal companion that grows in strength beside them.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "beast-master-rangers-companion"
+    ],
+    "7": [
+      "beast-master-exceptional-training"
+    ],
+    "11": [
+      "beast-master-bestial-fury"
+    ],
+    "15": [
+      "beast-master-share-spells"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "beast-master-rangers-companion",
+      "displayName": "Ranger's Companion",
+      "description": "You gain a Primal Beast companion (Land, Sea, or Sky). It obeys your commands, acts on your turn when commanded with a bonus action, or defaults to Initiative count 20 when not commanded. Its statistics scale with your ranger level and proficiency bonus."
+    },
+    {
+      "level": 7,
+      "id": "beast-master-exceptional-training",
+      "displayName": "Exceptional Training",
+      "description": "Your companion gains improved utility actions and responsiveness to your commands."
+    },
+    {
+      "level": 11,
+      "id": "beast-master-bestial-fury",
+      "displayName": "Bestial Fury",
+      "description": "Your companion can make additional attacks and strikes with heightened ferocity."
+    },
+    {
+      "level": 15,
+      "id": "beast-master-share-spells",
+      "displayName": "Share Spells",
+      "description": "When you cast a spell targeting yourself, it can also affect your beast companion if the beast is within 30 feet."
+    }
+  ],
+  "featureDefinitions": {
+    "beast-master-rangers-companion": {
+      "summary": "Fight and travel with a trained companion so the ranger’s battlefield presence becomes truly two-bodied.",
+      "description": "Ranger’s Companion is the defining Beast Master feature. It should feel like a real partnership with its own action economy and tactical presence, not a cosmetic pet.",
+      "tags": [
+        "subclass",
+        "companion",
+        "signature"
+      ]
+    },
+    "beast-master-exceptional-training": {
+      "summary": "Your companion becomes more dependable and responsive as your partnership deepens.",
+      "description": "Exceptional Training is about coordination. It tells the player this subclass scales by improving the team-up, not by abandoning the beast.",
+      "tags": [
+        "subclass",
+        "companion",
+        "training"
+      ]
+    },
+    "beast-master-bestial-fury": {
+      "summary": "Your companion’s offense ramps up so it remains a meaningful combat contributor at higher levels.",
+      "description": "Bestial Fury is essential to keeping the companion threatening into later tiers of play.",
+      "tags": [
+        "subclass",
+        "companion",
+        "combat"
+      ]
+    },
+    "beast-master-share-spells": {
+      "summary": "Your magic and your companion’s presence intertwine more closely, turning the pair into a stronger unified hunter.",
+      "description": "Share Spells is one of the subclass’s late-game rewards for sticking with the companion fantasy. It makes the beast feel like part of the ranger’s magic footprint, not just an extra body.",
+      "tags": [
+        "subclass",
+        "companion",
+        "spellcasting"
+      ]
+    }
+  }
+}

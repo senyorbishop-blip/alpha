@@ -1,0 +1,63 @@
+{
+  "id": "gnome",
+  "displayName": "Gnome",
+  "size": "Small",
+  "movement": {
+    "walk": 30,
+    "swim": 0,
+    "fly": 0,
+    "climb": 0
+  },
+  "senses": {
+    "darkvision": 60,
+    "tremorsense": 0,
+    "blindsight": 0
+  },
+  "tags": [
+    "humanoid",
+    "gnome"
+  ],
+  "languages": [
+    "Common",
+    "Gnomish"
+  ],
+  "abilityBonuses": "flexible",
+  "proficiencies": {
+    "skills": [],
+    "weapons": [],
+    "tools": [
+      "Artisan's Tools (Rock Gnome lineage)"
+    ],
+    "armor": []
+  },
+  "traits": [
+    {
+      "id": "gnome-cunning",
+      "displayName": "Gnomish Cunning",
+      "summary": "Advantage on Intelligence, Wisdom, and Charisma saves against magic.",
+      "description": "You have Advantage on Intelligence, Wisdom, and Charisma saving throws against spells and other magical effects.",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited"
+      }
+    },
+    {
+      "id": "gnome-lineages",
+      "displayName": "Gnome Lineages",
+      "summary": "Choose Forest Gnome or Rock Gnome lineage traits.",
+      "description": "Choose a lineage at character creation. Forest Gnome: Speak with Small Animals (you can communicate simple ideas with Small or Tiny Beasts) and Natural Illusionist (you know the Minor Illusion cantrip, and Intelligence is your spellcasting ability for it). Rock Gnome: Artificer's Lore (add double your proficiency bonus to Intelligence (History) checks related to magic items, alchemical objects, or technological devices) and Tinker (you gain proficiency with Artisan's Tools and can spend 1 hour and raw materials of wood, metal, or stone to construct one Tiny clockwork device that functions for 24 hours).",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited"
+      }
+    }
+  ],
+  "flavorText": "Gnomes are inventive, curious, and endlessly fascinated by hidden workings of the world. Whether through illusion, engineering, or storytelling, they delight in clever solutions. Their communities prize both playful wonder and practical craftsmanship.",
+  "roleplayNotes": "Play up curiosity and experimentation\u2014your gnome likely asks questions others ignore.",
+  "recommendedClasses": [
+    "Wizard",
+    "Artificer",
+    "Rogue",
+    "Bard"
+  ]
+}

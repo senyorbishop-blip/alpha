@@ -1,0 +1,99 @@
+{
+  "id": "privateer",
+  "displayName": "Privateer",
+  "classId": "pirate",
+  "parentClassId": "pirate",
+  "flavorText": "Privateers are lawful raiders, officers, and banner-bearers who turn crew coordination into battlefield advantage.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "privateer-letters-of-marque",
+      "privateer-command-presence"
+    ],
+    "6": [
+      "privateer-ordered-volley"
+    ],
+    "10": [
+      "privateer-hold-the-line"
+    ],
+    "15": [
+      "privateer-admirals-demand"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "privateer-letters-of-marque",
+      "displayName": "Letters of Marque",
+      "description": "Bring authority and legitimacy to your pressure, whether in combat or tense negotiations."
+    },
+    {
+      "level": 3,
+      "id": "privateer-command-presence",
+      "displayName": "Command Presence",
+      "description": "Spend swagger to reposition allies or steady their nerves under fire."
+    },
+    {
+      "level": 6,
+      "id": "privateer-ordered-volley",
+      "displayName": "Ordered Volley",
+      "description": "Coordinate clean pressure from a crew that listens when you bark an order."
+    },
+    {
+      "level": 10,
+      "id": "privateer-hold-the-line",
+      "displayName": "Hold the Line",
+      "description": "Turn choke points and organized defense into a weapon."
+    },
+    {
+      "level": 15,
+      "id": "privateer-admirals-demand",
+      "displayName": "Admiral\u2019s Demand",
+      "description": "At your highest tier, your commands can decide the tone of the whole encounter."
+    }
+  ],
+  "featureDefinitions": {
+    "privateer-letters-of-marque": {
+      "summary": "Project authority in social scenes and structured conflicts.",
+      "tags": [
+        "subclass",
+        "social",
+        "exploration"
+      ]
+    },
+    "privateer-command-presence": {
+      "summary": "Use Swagger Dice to support allies with movement, confidence, or cleaner attacks.",
+      "description": "This is the leadership subclass. It should feel like the Pirate who shouts one line and the whole fight sharpens around it.",
+      "resourceName": "Swagger Dice",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "support",
+        "resource"
+      ]
+    },
+    "privateer-ordered-volley": {
+      "summary": "Reward coordinated attacks and disciplined pressure.",
+      "tags": [
+        "subclass",
+        "support",
+        "combat"
+      ]
+    },
+    "privateer-hold-the-line": {
+      "summary": "Make doors, rails, and chokepoints easier for your side to own.",
+      "tags": [
+        "subclass",
+        "control",
+        "defense"
+      ]
+    },
+    "privateer-admirals-demand": {
+      "summary": "Command the field like an officer whose presence cannot be ignored.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "leadership"
+      ]
+    }
+  }
+}

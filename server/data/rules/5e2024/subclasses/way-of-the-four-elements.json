@@ -1,0 +1,166 @@
+{
+  "id": "way-of-the-four-elements",
+  "displayName": "Way of the Four Elements",
+  "classId": "monk",
+  "parentClassId": "monk",
+  "flavorText": "Four Elements monks channel disciplined focus into elemental blasts, movement, and battlefield control.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "four-elements-disciple-of-the-elements"
+    ],
+    "6": [
+      "four-elements-elemental-disciplines"
+    ],
+    "11": [
+      "four-elements-elemental-flow"
+    ],
+    "17": [
+      "four-elements-avatar-of-the-four-winds"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "four-elements-disciple-of-the-elements",
+      "displayName": "Disciple of the Elements",
+      "description": "You begin shaping fire, water, air, and stone through disciplined practice, opening a menu of elemental techniques fueled by your focus resource."
+    },
+    {
+      "level": 6,
+      "id": "four-elements-elemental-disciplines",
+      "displayName": "Elemental Disciplines",
+      "description": "Your elemental techniques broaden into stronger blasts, walls, and movement options so the subclass can solve problems with more than fists alone."
+    },
+    {
+      "level": 11,
+      "id": "four-elements-elemental-flow",
+      "displayName": "Elemental Flow",
+      "description": "You move through the battlefield with growing mastery over the elements, chaining mobility and area pressure in ways that make positioning itself part of the subclass identity."
+    },
+    {
+      "level": 17,
+      "id": "four-elements-avatar-of-the-four-winds",
+      "displayName": "Avatar of the Four Winds",
+      "description": "At the height of the path, you can unleash large-scale elemental presence that makes you feel like a walking storm rather than a simple skirmisher."
+    }
+  ],
+  "featureDefinitions": {
+    "four-elements-disciple-of-the-elements": {
+      "id": "four-elements-disciple-of-the-elements",
+      "displayName": "Disciple of the Elements",
+      "name": "Disciple of the Elements",
+      "summary": "Your focus training opens an elemental technique list so the monk can solve problems with air, fire, water, and stone as well as fists.",
+      "description": "You begin shaping fire, water, air, and stone through disciplined practice, opening a menu of elemental techniques fueled by your focus resource.\n\nDisciple of the Elements is the subclass fork that turns the monk into a hybrid martial-caster style character. The player should see immediately that focus now fuels more than mobility and strikes.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 3,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "Focus Points",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "monk",
+        "elemental",
+        "focus"
+      ],
+      "sourceKind": "subclass",
+      "className": "Monk",
+      "subclassName": "Way of the Four Elements",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "four-elements-elemental-disciplines": {
+      "id": "four-elements-elemental-disciplines",
+      "displayName": "Elemental Disciplines",
+      "name": "Elemental Disciplines",
+      "summary": "Spend focus on elemental techniques that can blast, shape space, or solve traversal problems.",
+      "description": "Your elemental techniques broaden into stronger blasts, walls, and movement options so the subclass can solve problems with more than fists alone.\n\nElemental Disciplines are the functional heart of the subclass. They should feel like a menu of real tools rather than a vague promise of elemental flavor.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 6,
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Focus Points",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "monk",
+        "elemental",
+        "resource",
+        "control"
+      ],
+      "sourceKind": "subclass",
+      "className": "Monk",
+      "subclassName": "Way of the Four Elements",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "four-elements-elemental-flow": {
+      "id": "four-elements-elemental-flow",
+      "displayName": "Elemental Flow",
+      "name": "Elemental Flow",
+      "summary": "Your mastery over the elements starts blending mobility, area control, and rhythm into a smoother combat pattern.",
+      "description": "You move through the battlefield with growing mastery over the elements, chaining mobility and area pressure in ways that make positioning itself part of the subclass identity.\n\nElemental Flow is about the subclass becoming less clunky and more expressive. The monk should feel like a living conduit of the battlefield’s natural forces.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 11,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "monk",
+        "elemental",
+        "mobility"
+      ],
+      "sourceKind": "subclass",
+      "className": "Monk",
+      "subclassName": "Way of the Four Elements",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "four-elements-avatar-of-the-four-winds": {
+      "id": "four-elements-avatar-of-the-four-winds",
+      "displayName": "Avatar of the Four Winds",
+      "name": "Avatar of the Four Winds",
+      "summary": "At the height of the path, you become a major elemental presence rather than a martial artist with a few themed tricks.",
+      "description": "At the height of the path, you can unleash large-scale elemental presence that makes you feel like a walking storm rather than a simple skirmisher.\n\nAvatar of the Four Winds is the capstone fantasy payoff for the subclass. It should read big, mobile, and scene-shaping.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 17,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "monk",
+        "elemental",
+        "capstone"
+      ],
+      "sourceKind": "subclass",
+      "className": "Monk",
+      "subclassName": "Way of the Four Elements",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    }
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "id": "half-elf",
+  "displayName": "Half-Elf",
+  "size": "Medium",
+  "movement": {
+    "walk": 30,
+    "swim": 0,
+    "fly": 0,
+    "climb": 0
+  },
+  "senses": {
+    "darkvision": 60,
+    "tremorsense": 0,
+    "blindsight": 0
+  },
+  "tags": [
+    "humanoid",
+    "elf",
+    "human"
+  ],
+  "languages": [
+    "Common",
+    "Elvish",
+    "One language of your choice"
+  ],
+  "abilityBonuses": "flexible",
+  "proficiencies": {
+    "skills": [
+      "Two skills of your choice"
+    ],
+    "weapons": [],
+    "tools": [],
+    "armor": []
+  },
+  "traits": [
+    {
+      "id": "half-elf-fey-ancestry",
+      "displayName": "Fey Ancestry",
+      "summary": "Advantage on saves against Charmed and immunity to magical sleep.",
+      "description": "You have Advantage on saving throws you make to avoid or end the Charmed condition, and magic can't put you to sleep.",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited"
+      }
+    },
+    {
+      "id": "half-elf-skill-versatility",
+      "displayName": "Skill Versatility",
+      "summary": "Gain proficiency in two skills of your choice.",
+      "description": "You gain proficiency in two skills of your choice.",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited"
+      }
+    },
+    {
+      "id": "half-elf-versatility",
+      "displayName": "Half-Elf Versatility",
+      "summary": "Gain one extra Origin feat at character creation.",
+      "description": "You gain one extra Origin feat at character creation, the same type of early versatility that Humans receive.",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited"
+      }
+    }
+  ],
+  "flavorText": "Half-elves often bridge cultures, languages, and traditions with unusual ease. Their mixed heritage can grant social flexibility and a broad worldview. In many stories, they become translators between worlds\u2014literal or metaphorical.",
+  "roleplayNotes": "Explore which communities shaped you and where you feel most at home.",
+  "recommendedClasses": [
+    "Bard",
+    "Paladin",
+    "Warlock",
+    "Ranger"
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "id": "saboteur",
+  "displayName": "Saboteur",
+  "classId": "tinker",
+  "parentClassId": "tinker",
+  "flavorText": "Saboteurs weaponize stealth, disruption, traps, and battlefield misdirection through hidden devices and careful planning.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "saboteur-ghost-tools",
+      "saboteur-infiltration-spells"
+    ],
+    "6": [
+      "saboteur-chain-reaction"
+    ],
+    "10": [
+      "saboteur-silent-breach"
+    ],
+    "15": [
+      "saboteur-perfect-ambush"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "saboteur-ghost-tools",
+      "displayName": "Ghost Tools",
+      "description": "Build hidden tools and trap logic that let you infiltrate, disable, and misdirect before enemies understand what is happening."
+    },
+    {
+      "level": 3,
+      "id": "saboteur-infiltration-spells",
+      "displayName": "Infiltration Spells",
+      "description": "You always have a set of stealth, concealment, and misdirection formulae available."
+    },
+    {
+      "level": 6,
+      "id": "saboteur-chain-reaction",
+      "displayName": "Chain Reaction",
+      "description": "A successful disruption opens the next angle\u2014your devices reward preparation by cascading pressure across a turn or zone."
+    },
+    {
+      "level": 10,
+      "id": "saboteur-silent-breach",
+      "displayName": "Silent Breach",
+      "description": "Your entries and extractions become cleaner, quieter, and more likely to leave the enemy line compromised before the fight begins."
+    },
+    {
+      "level": 15,
+      "id": "saboteur-perfect-ambush",
+      "displayName": "Perfect Ambush",
+      "description": "At your peak, hidden setup and exact timing let you dictate the opening exchange of major encounters."
+    }
+  ],
+  "featureDefinitions": {
+    "saboteur-ghost-tools": {
+      "summary": "Turn subtle gear and hidden rigging into a true infiltration toolkit.",
+      "description": "Ghost Tools should make the subclass feel smart, patient, and dangerous. You are winning before initiative by preparing the angle no one else noticed.",
+      "tags": [
+        "subclass",
+        "stealth",
+        "traps",
+        "utility"
+      ]
+    },
+    "saboteur-infiltration-spells": {
+      "summary": "Your granted spells keep stealth, concealment, and setup pressure online every day.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "stealth"
+      ]
+    },
+    "saboteur-chain-reaction": {
+      "summary": "Successful disruptions create follow-up pressure instead of ending as one-off tricks.",
+      "tags": [
+        "subclass",
+        "tempo",
+        "control"
+      ]
+    },
+    "saboteur-silent-breach": {
+      "summary": "Your team gets cleaner entries, exits, and setup windows thanks to disciplined sabotage craft.",
+      "tags": [
+        "subclass",
+        "infiltration",
+        "mobility"
+      ]
+    },
+    "saboteur-perfect-ambush": {
+      "summary": "Your endgame sabotage tools let you shape the opening of a fight almost like a script.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "ambush"
+      ]
+    }
+  }
+}

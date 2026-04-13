@@ -1,0 +1,26 @@
+{
+  "id": "fighter-bulwark-stance",
+  "displayName": "Bulwark Stance",
+  "classRestrictions": ["fighter"],
+  "minimumLevel": 2,
+  "grants": [
+    {
+      "id": "fighter-bulwark-temp-hp",
+      "type": "resource_bonus",
+      "scope": "short_rest",
+      "value": {
+        "resourceId": "bulwark_guard",
+        "label": "Bulwark Guard",
+        "max": 1
+      }
+    },
+    {
+      "id": "fighter-bulwark-tag",
+      "type": "derived_tag",
+      "value": "talent:bulwark"
+    }
+  ],
+  "tags": ["martial", "defense", "starter"],
+  "source": "casualdnd_talent",
+  "version": 1
+}

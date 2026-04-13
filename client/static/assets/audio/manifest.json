@@ -1,0 +1,291 @@
+{
+  "version": "20260328",
+  "tracks": {
+    "forest": {
+      "label": "Forest",
+      "files": [
+        "/static/assets/audio/forest_loop_20260328.wav"
+      ],
+      "family": "forest",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_forest"
+    },
+    "wilderness_night": {
+      "label": "Wilderness Night",
+      "files": [
+        "/static/assets/audio/forest_loop_20260328.wav"
+      ],
+      "family": "forest",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_forest"
+    },
+    "swamp": {
+      "label": "Swamp",
+      "files": [
+        "/static/assets/audio/forest_loop_20260328.wav"
+      ],
+      "family": "forest",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_forest"
+    },
+    "mountain_pass": {
+      "label": "Mountain Pass",
+      "files": [
+        "/static/assets/audio/forest_loop_20260328.wav"
+      ],
+      "family": "forest",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_forest"
+    },
+    "rain": {
+      "label": "Rain",
+      "files": [
+        "/static/assets/audio/forest_loop_20260328.wav"
+      ],
+      "family": "forest",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_forest"
+    },
+    "tavern": {
+      "label": "Tavern",
+      "files": [
+        "/static/assets/audio/tavern_loop_20260328.wav"
+      ],
+      "family": "tavern",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_tavern"
+    },
+    "inn_night": {
+      "label": "Inn Night",
+      "files": [
+        "/static/assets/audio/tavern_loop_20260328.wav"
+      ],
+      "family": "tavern",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_tavern"
+    },
+    "marketplace": {
+      "label": "Marketplace",
+      "files": [
+        "/static/assets/audio/tavern_loop_20260328.wav"
+      ],
+      "family": "tavern",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_tavern"
+    },
+    "city": {
+      "label": "City",
+      "files": [
+        "/static/assets/audio/tavern_loop_20260328.wav"
+      ],
+      "family": "tavern",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_tavern"
+    },
+    "harbor": {
+      "label": "Harbor",
+      "files": [
+        "/static/assets/audio/tavern_loop_20260328.wav"
+      ],
+      "family": "tavern",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_tavern"
+    },
+    "campfire": {
+      "label": "Campfire",
+      "files": [
+        "/static/assets/audio/tavern_loop_20260328.wav"
+      ],
+      "family": "tavern",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_tavern"
+    },
+    "dungeon": {
+      "label": "Dungeon",
+      "files": [
+        "/static/assets/audio/dungeon_loop_20260328.wav"
+      ],
+      "family": "dungeon",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_dungeon"
+    },
+    "crypt": {
+      "label": "Crypt",
+      "files": [
+        "/static/assets/audio/dungeon_loop_20260328.wav"
+      ],
+      "family": "dungeon",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_dungeon"
+    },
+    "cave": {
+      "label": "Cave",
+      "files": [
+        "/static/assets/audio/dungeon_loop_20260328.wav"
+      ],
+      "family": "dungeon",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_dungeon"
+    },
+    "temple": {
+      "label": "Temple",
+      "files": [
+        "/static/assets/audio/dungeon_loop_20260328.wav"
+      ],
+      "family": "dungeon",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_dungeon"
+    },
+    "castle_hall": {
+      "label": "Castle Hall",
+      "files": [
+        "/static/assets/audio/dungeon_loop_20260328.wav"
+      ],
+      "family": "dungeon",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_dungeon"
+    },
+    "tension": {
+      "label": "Tension / Stealth",
+      "files": [
+        "/static/assets/audio/dungeon_loop_20260328.wav"
+      ],
+      "family": "dungeon",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_dungeon"
+    },
+    "battle": {
+      "label": "Battle",
+      "files": [
+        "/static/assets/audio/battle_loop_20260328.wav"
+      ],
+      "family": "battle",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_battle"
+    },
+    "boss_battle": {
+      "label": "Boss Battle",
+      "files": [
+        "/static/assets/audio/battle_loop_20260328.wav"
+      ],
+      "family": "battle",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_battle"
+    },
+    "storm": {
+      "label": "Storm",
+      "files": [
+        "/static/assets/audio/battle_loop_20260328.wav"
+      ],
+      "family": "battle",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_battle"
+    },
+    "coastal": {
+      "label": "Coastal",
+      "files": [
+        "/static/assets/audio/battle_loop_20260328.wav"
+      ],
+      "family": "battle",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_battle"
+    },
+    "auto": {
+      "label": "Auto",
+      "files": [
+        "/static/assets/audio/battle_loop_20260328.wav"
+      ],
+      "family": "battle",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_battle"
+    }
+  }
+}

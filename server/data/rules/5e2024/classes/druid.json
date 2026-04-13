@@ -1,0 +1,878 @@
+{
+  "id": "druid",
+  "displayName": "Druid",
+  "hitDie": 8,
+  "primaryAbilities": [
+    "wis"
+  ],
+  "savingThrows": [
+    "int",
+    "wis"
+  ],
+  "subclassLevel": 3,
+  "subclassDisplayName": "Circle",
+  "armorProficiencies": [
+    "light",
+    "medium",
+    "shields"
+  ],
+  "weaponProficiencies": [
+    "clubs",
+    "daggers",
+    "darts",
+    "javelins",
+    "maces",
+    "quarterstaffs",
+    "scimitars",
+    "sickles",
+    "slings",
+    "spears"
+  ],
+  "toolProficiencies": [
+    "herbalism-kit"
+  ],
+  "skillChoices": {
+    "count": 2,
+    "from": [
+      "Arcana",
+      "Animal Handling",
+      "Insight",
+      "Medicine",
+      "Nature",
+      "Perception",
+      "Religion",
+      "Survival"
+    ]
+  },
+  "startingEquipmentChoices": [],
+  "spellcastingType": "full",
+  "spellcastingAbility": "wis",
+  "spellSlots": {
+    "1": {
+      "1st": 2
+    },
+    "2": {
+      "1st": 3
+    },
+    "3": {
+      "1st": 4,
+      "2nd": 2
+    },
+    "4": {
+      "1st": 4,
+      "2nd": 3
+    },
+    "5": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 2
+    },
+    "6": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3
+    },
+    "7": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 1
+    },
+    "8": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 2
+    },
+    "9": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 1
+    },
+    "10": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2
+    },
+    "11": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1
+    },
+    "12": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1
+    },
+    "13": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1
+    },
+    "14": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1
+    },
+    "15": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1
+    },
+    "16": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1
+    },
+    "17": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1,
+      "9th": 1
+    },
+    "18": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 3,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1,
+      "9th": 1
+    },
+    "19": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 3,
+      "6th": 2,
+      "7th": 1,
+      "8th": 1,
+      "9th": 1
+    },
+    "20": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 3,
+      "6th": 2,
+      "7th": 2,
+      "8th": 1,
+      "9th": 1
+    }
+  },
+  "classDescription": "A primal spellcaster who embodies nature's cycles.",
+  "roleIdentity": "Flexible controller-healer with beast transformation utility.",
+  "progressionTable": [
+    {
+      "level": 1,
+      "proficiencyBonus": 2,
+      "features": [
+        "Druidic",
+        "Spellcasting",
+        "Primal Order"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1/4"
+      },
+      "unlockIds": [
+        "druid-l1-1",
+        "druid-l1-2",
+        "druid-l1-3"
+      ]
+    },
+    {
+      "level": 2,
+      "proficiencyBonus": 2,
+      "features": [
+        "Wild Shape",
+        "Wild Companion"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1/4"
+      },
+      "unlockIds": [
+        "druid-l2-1",
+        "druid-l2-2"
+      ]
+    },
+    {
+      "level": 3,
+      "proficiencyBonus": 2,
+      "features": [
+        "Druid Circle (Subclass)",
+        "2nd-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1/4"
+      },
+      "unlockIds": [
+        "druid-l3-1",
+        "druid-l3-2"
+      ]
+    },
+    {
+      "level": 4,
+      "proficiencyBonus": 2,
+      "features": [
+        "Ability Score Improvement",
+        "Wild Shape (CR 1/2, swim)",
+        "Cantrips Known: 4"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1/2"
+      },
+      "unlockIds": [
+        "druid-l4-1",
+        "druid-l4-2",
+        "druid-l4-3"
+      ]
+    },
+    {
+      "level": 5,
+      "proficiencyBonus": 3,
+      "features": [
+        "3rd-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1/2"
+      },
+      "unlockIds": [
+        "druid-l5-1"
+      ]
+    },
+    {
+      "level": 6,
+      "proficiencyBonus": 3,
+      "features": [
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1/2"
+      },
+      "unlockIds": [
+        "druid-l6-1"
+      ]
+    },
+    {
+      "level": 7,
+      "proficiencyBonus": 3,
+      "features": [
+        "4th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1/2"
+      },
+      "unlockIds": [
+        "druid-l7-1"
+      ]
+    },
+    {
+      "level": 8,
+      "proficiencyBonus": 3,
+      "features": [
+        "Ability Score Improvement",
+        "Wild Shape (CR 1, fly)"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1"
+      },
+      "unlockIds": [
+        "druid-l8-1",
+        "druid-l8-2"
+      ]
+    },
+    {
+      "level": 9,
+      "proficiencyBonus": 4,
+      "features": [
+        "5th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1"
+      },
+      "unlockIds": [
+        "druid-l9-1"
+      ]
+    },
+    {
+      "level": 10,
+      "proficiencyBonus": 4,
+      "features": [
+        "Subclass Feature",
+        "Cantrips Known: 5"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1"
+      },
+      "unlockIds": [
+        "druid-l10-1",
+        "druid-l10-2"
+      ]
+    },
+    {
+      "level": 11,
+      "proficiencyBonus": 4,
+      "features": [
+        "6th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1"
+      },
+      "unlockIds": [
+        "druid-l11-1"
+      ]
+    },
+    {
+      "level": 12,
+      "proficiencyBonus": 4,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1"
+      },
+      "unlockIds": [
+        "druid-l12-1"
+      ]
+    },
+    {
+      "level": 13,
+      "proficiencyBonus": 5,
+      "features": [
+        "7th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1"
+      },
+      "unlockIds": [
+        "druid-l13-1"
+      ]
+    },
+    {
+      "level": 14,
+      "proficiencyBonus": 5,
+      "features": [
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1"
+      },
+      "unlockIds": [
+        "druid-l14-1"
+      ]
+    },
+    {
+      "level": 15,
+      "proficiencyBonus": 5,
+      "features": [
+        "8th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1"
+      },
+      "unlockIds": [
+        "druid-l15-1"
+      ]
+    },
+    {
+      "level": 16,
+      "proficiencyBonus": 5,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1"
+      },
+      "unlockIds": [
+        "druid-l16-1"
+      ]
+    },
+    {
+      "level": 17,
+      "proficiencyBonus": 6,
+      "features": [
+        "9th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1"
+      },
+      "unlockIds": [
+        "druid-l17-1"
+      ]
+    },
+    {
+      "level": 18,
+      "proficiencyBonus": 6,
+      "features": [
+        "Timeless Body",
+        "Beast Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1"
+      },
+      "unlockIds": [
+        "druid-l18-1",
+        "druid-l18-2"
+      ]
+    },
+    {
+      "level": 19,
+      "proficiencyBonus": 6,
+      "features": [
+        "Epic Boon"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": 2,
+        "wildShapeMaxCR": "1"
+      },
+      "unlockIds": [
+        "druid-l19-1"
+      ]
+    },
+    {
+      "level": 20,
+      "proficiencyBonus": 6,
+      "features": [
+        "Archdruid"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + druid_level",
+        "wildShapeUses": "Unlimited",
+        "wildShapeMaxCR": "1"
+      },
+      "unlockIds": [
+        "druid-l20-1"
+      ]
+    }
+  ],
+  "featureDefinitions": {
+    "druid-l1-1": {
+      "summary": "You speak the secret language of druids, marking you as part of an old primal tradition.",
+      "description": "Druidic is mostly campaign-facing rather than combat-facing, but it matters for hidden signs, sacred circles, coded warnings, and moments where primal identity should matter in the world.",
+      "tags": [
+        "identity",
+        "utility",
+        "roleplay"
+      ]
+    },
+    "druid-l1-2": {
+      "summary": "Prepare primal spells that let you heal, control terrain, summon nature, and answer problems with flexible magic.",
+      "description": "Druid spellcasting is broad and adaptive. It should feel like a prepared toolkit built around terrain, transformation, healing, battlefield control, and primal problem-solving instead of pure arcane blasting.",
+      "tags": [
+        "spellcasting",
+        "primal",
+        "support",
+        "control"
+      ]
+    },
+    "druid-l1-3": {
+      "summary": "Choose the direction of your druid early so the class leans either toward mystic lore or battlefield durability.",
+      "description": "Primal Order is a build-shaping choice. It tells the sheet whether this druid should read more like a front-line natural anchor or a deeper primal scholar, and it should influence the way later features are presented.",
+      "tags": [
+        "build",
+        "identity",
+        "primal"
+      ]
+    },
+    "druid-l2-1": {
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "Wild Shape",
+      "trackUses": true,
+      "summary": "Spend a Wild Shape use to change form, scout, adapt, or solve problems with beast utility.",
+      "description": "Wild Shape is one of the druid’s defining systems. It is not just a combat toggle: it is scouting, infiltration, movement, utility, survival, and sometimes front-line pressure depending on circle. The sheet should make uses, valid forms, and the active form state obvious.",
+      "usage": "Spend 1 use of Wild Shape.",
+      "recovery": "Wild Shape uses refresh on a Short or Long Rest when supported by the current rules layer.",
+      "tags": [
+        "resource",
+        "transformation",
+        "signature",
+        "utility"
+      ]
+    },
+    "druid-l2-2": {
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Wild Shape",
+      "trackUses": true,
+      "summary": "Trade a Wild Shape use for a familiar-like primal helper that extends your utility and action economy.",
+      "description": "Wild Companion gives the druid a softer support use for Wild Shape charges. It matters when scouting, delivering touch effects, or extending your utility without fully changing shape yourself.",
+      "tags": [
+        "summon",
+        "resource",
+        "utility"
+      ]
+    },
+    "druid-l3-1": {
+      "summary": "Your circle determines whether your druid leans harder into forms, terrain mastery, support, summoning, or another primal identity.",
+      "description": "Druid Circle is the subclass gate for druid. It should immediately tell the player how this druid solves problems: shapechanger, land sage, sea mystic, lunar beast, stars seer, and so on.",
+      "tags": [
+        "subclass",
+        "identity",
+        "primal"
+      ]
+    },
+    "druid-l18-1": {
+      "summary": "Age and ordinary time sit more lightly on you, reinforcing the druid’s connection to a deeper natural cycle.",
+      "description": "Timeless Body is not a combat spike. It is an identity spike that marks the druid as someone who has moved into an older, steadier relationship with the natural world.",
+      "tags": [
+        "passive",
+        "identity",
+        "capstone-adjacent"
+      ]
+    },
+    "druid-l18-2": {
+      "summary": "You can keep using magic while shaped, removing one of the biggest tensions in the druid class fantasy.",
+      "description": "Beast Spells is a huge quality jump for shape-based druids because it lets form play and spellcasting cooperate instead of competing. It should feel like the class fantasy finally clicking into place.",
+      "tags": [
+        "spellcasting",
+        "transformation",
+        "signature"
+      ]
+    },
+    "druid-l20-1": {
+      "summary": "Your primal mastery reaches its peak, making both your forms and spellcasting feel endlessly available.",
+      "description": "Archdruid is the final expression of druid identity. It should read like constant readiness: wild shape pressure, spellcasting freedom, and primal control that no longer feels rationed like a low-level adventurer.",
+      "tags": [
+        "capstone",
+        "primal",
+        "signature"
+      ]
+    }
+  },
+  "levelUnlockIds": {
+    "1": [
+      "druid-l1-1",
+      "druid-l1-2",
+      "druid-l1-3"
+    ],
+    "2": [
+      "druid-l2-1",
+      "druid-l2-2"
+    ],
+    "3": [
+      "druid-l3-1",
+      "druid-l3-2"
+    ],
+    "4": [
+      "druid-l4-1",
+      "druid-l4-2",
+      "druid-l4-3"
+    ],
+    "5": [
+      "druid-l5-1"
+    ],
+    "6": [
+      "druid-l6-1"
+    ],
+    "7": [
+      "druid-l7-1"
+    ],
+    "8": [
+      "druid-l8-1",
+      "druid-l8-2"
+    ],
+    "9": [
+      "druid-l9-1"
+    ],
+    "10": [
+      "druid-l10-1",
+      "druid-l10-2"
+    ],
+    "11": [
+      "druid-l11-1"
+    ],
+    "12": [
+      "druid-l12-1"
+    ],
+    "13": [
+      "druid-l13-1"
+    ],
+    "14": [
+      "druid-l14-1"
+    ],
+    "15": [
+      "druid-l15-1"
+    ],
+    "16": [
+      "druid-l16-1"
+    ],
+    "17": [
+      "druid-l17-1"
+    ],
+    "18": [
+      "druid-l18-1",
+      "druid-l18-2"
+    ],
+    "19": [
+      "druid-l19-1"
+    ],
+    "20": [
+      "druid-l20-1"
+    ]
+  },
+  "progressionSummary": [
+    {
+      "level": 1,
+      "summary": "Druidic, Spellcasting, Primal Order.",
+      "unlockIds": [
+        "druid-l1-1",
+        "druid-l1-2",
+        "druid-l1-3"
+      ]
+    },
+    {
+      "level": 2,
+      "summary": "Wild Shape, Wild Companion.",
+      "unlockIds": [
+        "druid-l2-1",
+        "druid-l2-2"
+      ]
+    },
+    {
+      "level": 3,
+      "summary": "Druid Circle (Subclass), 2nd-level Spells.",
+      "unlockIds": [
+        "druid-l3-1",
+        "druid-l3-2"
+      ]
+    },
+    {
+      "level": 4,
+      "summary": "Ability Score Improvement, Wild Shape (CR 1/2, swim), Cantrips Known: 4.",
+      "unlockIds": [
+        "druid-l4-1",
+        "druid-l4-2",
+        "druid-l4-3"
+      ]
+    },
+    {
+      "level": 5,
+      "summary": "3rd-level Spells.",
+      "unlockIds": [
+        "druid-l5-1"
+      ]
+    },
+    {
+      "level": 6,
+      "summary": "Subclass Feature.",
+      "unlockIds": [
+        "druid-l6-1"
+      ]
+    },
+    {
+      "level": 7,
+      "summary": "4th-level Spells.",
+      "unlockIds": [
+        "druid-l7-1"
+      ]
+    },
+    {
+      "level": 8,
+      "summary": "Ability Score Improvement, Wild Shape (CR 1, fly).",
+      "unlockIds": [
+        "druid-l8-1",
+        "druid-l8-2"
+      ]
+    },
+    {
+      "level": 9,
+      "summary": "5th-level Spells.",
+      "unlockIds": [
+        "druid-l9-1"
+      ]
+    },
+    {
+      "level": 10,
+      "summary": "Subclass Feature, Cantrips Known: 5.",
+      "unlockIds": [
+        "druid-l10-1",
+        "druid-l10-2"
+      ]
+    },
+    {
+      "level": 11,
+      "summary": "6th-level Spells.",
+      "unlockIds": [
+        "druid-l11-1"
+      ]
+    },
+    {
+      "level": 12,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "druid-l12-1"
+      ]
+    },
+    {
+      "level": 13,
+      "summary": "7th-level Spells.",
+      "unlockIds": [
+        "druid-l13-1"
+      ]
+    },
+    {
+      "level": 14,
+      "summary": "Subclass Feature.",
+      "unlockIds": [
+        "druid-l14-1"
+      ]
+    },
+    {
+      "level": 15,
+      "summary": "8th-level Spells.",
+      "unlockIds": [
+        "druid-l15-1"
+      ]
+    },
+    {
+      "level": 16,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "druid-l16-1"
+      ]
+    },
+    {
+      "level": 17,
+      "summary": "9th-level Spells.",
+      "unlockIds": [
+        "druid-l17-1"
+      ]
+    },
+    {
+      "level": 18,
+      "summary": "Timeless Body, Beast Spells.",
+      "unlockIds": [
+        "druid-l18-1",
+        "druid-l18-2"
+      ]
+    },
+    {
+      "level": 19,
+      "summary": "Epic Boon.",
+      "unlockIds": [
+        "druid-l19-1"
+      ]
+    },
+    {
+      "level": 20,
+      "summary": "Archdruid.",
+      "unlockIds": [
+        "druid-l20-1"
+      ]
+    }
+  ],
+  "future": {
+    "talentGroupId": "druid-core-talents",
+    "awakeningHookIds": [
+      "druid-awakening-primeval"
+    ]
+  },
+  "buildTips": {
+    "primaryFocus": "Wisdom",
+    "primaryReason": "powers your spellcasting and many class features",
+    "secondaryFocus": "Constitution",
+    "secondaryReason": "helps maintain Concentration and survive in melee forms",
+    "avoidDump": "Dexterity",
+    "avoidDumpReason": "initiative, AC, and Dexterity saves are still very important"
+  }
+}

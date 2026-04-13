@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "casualdnd://rules/5e2024/schema/awakening.schema.json",
+  "title": "Casual D&D 5e 2024 Awakening Path",
+  "description": "Native Casual D&D Awakening layer unlocked at high levels and resolved independently from subclass progression.",
+  "type": "object",
+  "required": [
+    "id",
+    "displayName",
+    "classRestrictions",
+    "minimumLevel",
+    "grants",
+    "source"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "classRestrictions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "minimumLevel": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20
+    },
+    "grants": {
+      "$ref": "#/definitions/grantArray"
+    },
+    "tiers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stage", "grants"],
+        "properties": {
+          "stage": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "grants": {
+            "$ref": "#/definitions/grantArray"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "allowedRulesModes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source": {
+      "const": "casualdnd_awakening"
+    }
+  },
+  "definitions": {
+    "grantArray": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string"
+          },
+          "value": {},
+          "scope": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

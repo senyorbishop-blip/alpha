@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "casualdnd://rules/5e2024/schema/species.schema.json",
+  "title": "Species Catalog Entry",
+  "type": "object",
+  "required": ["id", "displayName", "movement", "senses", "tags", "traits"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "displayName": { "type": "string", "minLength": 1 },
+    "movement": {
+      "type": "object",
+      "required": ["walk"],
+      "properties": {
+        "walk": { "type": "integer", "minimum": 0 },
+        "fly": { "type": "integer", "minimum": 0 },
+        "swim": { "type": "integer", "minimum": 0 },
+        "climb": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "senses": {
+      "type": "object",
+      "properties": {
+        "darkvision": { "type": "integer", "minimum": 0 },
+        "blindsight": { "type": "integer", "minimum": 0 },
+        "tremorsense": { "type": "integer", "minimum": 0 },
+        "truesight": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "traits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "displayName", "summary"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "displayName": { "type": "string", "minLength": 1 },
+          "summary": { "type": "string", "minLength": 1 },
+          "future": {
+            "type": "object",
+            "description": "Optional extensibility point for talent/awakening spell grant hooks.",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

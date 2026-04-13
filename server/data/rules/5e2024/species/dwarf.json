@@ -1,0 +1,92 @@
+{
+  "id": "dwarf",
+  "displayName": "Dwarf",
+  "size": "Medium",
+  "movement": {
+    "walk": 25,
+    "swim": 0,
+    "fly": 0,
+    "climb": 0
+  },
+  "senses": {
+    "darkvision": 60,
+    "tremorsense": 0,
+    "blindsight": 0
+  },
+  "tags": [
+    "humanoid",
+    "dwarf"
+  ],
+  "languages": [
+    "Common",
+    "Dwarvish"
+  ],
+  "abilityBonuses": "flexible",
+  "proficiencies": {
+    "skills": [],
+    "weapons": [
+      "Battleaxe",
+      "Handaxe",
+      "Light Hammer",
+      "Warhammer"
+    ],
+    "tools": [
+      "Smith's Tools or Brewer's Supplies or Mason's Tools"
+    ],
+    "armor": []
+  },
+  "traits": [
+    {
+      "id": "dwarf-darkvision",
+      "displayName": "Darkvision",
+      "summary": "You can see in dim light and darkness out to 60 feet.",
+      "description": "You have Darkvision with a range of 60 feet.",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited",
+        "range": "60"
+      }
+    },
+    {
+      "id": "dwarf-resilience",
+      "displayName": "Dwarven Resilience",
+      "summary": "Advantage on poison saves, resistance to poison damage, and your Speed is not reduced by heavy armor.",
+      "description": "You have Advantage on saving throws you make to avoid or end the Poisoned condition, and you have Resistance to Poison damage. In addition, your Speed is not reduced by wearing Heavy armor.",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited"
+      }
+    },
+    {
+      "id": "dwarf-toughness",
+      "displayName": "Dwarven Toughness",
+      "summary": "Your Hit Point maximum increases by 1 per level.",
+      "description": "Your Hit Point maximum increases by 1, and it increases by 1 again whenever you gain a level. By level 20, this provides +20 Hit Points.",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited",
+        "scalingNote": "+1 maximum hit point per character level (up to +20 at level 20)."
+      }
+    },
+    {
+      "id": "dwarf-stonecunning",
+      "displayName": "Stonecunning",
+      "summary": "Gain Tremorsense 60 feet for 10 minutes, usable PB times per Long Rest.",
+      "description": "As a Bonus Action, you gain Tremorsense with a range of 60 feet for 10 minutes. You can use this trait a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest. While using this Tremorsense to detect hidden creatures or structures in contact with stone, make associated detection checks using Wisdom.",
+      "mechanics": {
+        "actionType": "BonusAction",
+        "usesPerRest": "LongRest",
+        "range": "60",
+        "scalingNote": "Usable a number of times equal to your proficiency bonus per Long Rest."
+      }
+    }
+  ],
+  "flavorText": "Dwarves are steadfast folk of stone halls, mountain fortresses, and old clan traditions. Their endurance and craftsmanship are legendary across the realms. Many carry a deep respect for ancestry, oaths, and hard-won skill.",
+  "roleplayNotes": "Think about your clan craft\u2014smith, brewer, mason, soldier\u2014and the oath or legacy that drives you.",
+  "recommendedClasses": [
+    "Fighter",
+    "Cleric",
+    "Paladin",
+    "Barbarian"
+  ]
+}

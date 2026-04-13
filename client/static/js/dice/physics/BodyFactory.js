@@ -1,0 +1,138 @@
+import * as CANNON from 'cannon-es';
+import { world, diceMaterial } from './PhysicsWorld.js';
+
+/**
+ * BodyFactory — creates cannon-es rigid bodies for dice.
+ * Physics shapes are shared (read-only) — geometries are cached externally.
+ */
+
+/** Die mass table (heavier = less bouncy acceleration, more satisfying) */
+const DIE_MASSES = {
+  d4:   180,
+  d6:   210,
+  d8:   190,
+  d10:  185,
+  d12:  200,
+  d20:  220,
+  d100: 185,
+};
+
+/**
+ * Create a physics body for a die and add it to the world.
+ *
+ * @param {CANNON.Shape}  shape      Physics shape (Box or ConvexPolyhedron)
+ * @param {string}        dieType    e.g. 'd6', 'd20'
+ * @param {number}        index      Die index in the current throw (0-based)
+ * @param {number}        totalCount Total dice in this throw
+ * @param {number}        seed       Deterministic seed for spawn position/orientation
+ * @param {Object}        [spawnPos] Optional {x, y, z} override
+ * @returns {CANNON.Body}
+ */
+export function createDieBody(shape, dieType, index, totalCount, seed = 1, spawnPos = null, launchRecipe = null) {
+  // Pool-size-aware damping: large throws should settle faster and cost less.
+  const poolFactor = totalCount >= 16 ? 3.9 : (totalCount >= 12 ? 3.0 : (totalCount >= 8 ? 2.15 : (totalCount >= 5 ? 1.40 : 1.0)));
+  // D12 and D4 benefit from a little more angular damping because they are more likely
+  // to hover on edges/corners than cubic dice.
+  const baseAngDamping = (dieType === 'd12') ? 0.18 : (dieType === 'd4' ? 0.15 : (dieType === 'd10' || dieType === 'd100' ? 0.18 : 0.11));
+  const angDamping = Math.min(0.32, baseAngDamping * poolFactor);
+  const linDamping = Math.min(0.24, 0.095 * poolFactor);
+
+  const body = new CANNON.Body({
+    mass:           DIE_MASSES[dieType] ?? 200,
+    material:       diceMaterial,
+    linearDamping:  linDamping,
+    angularDamping: angDamping,
+    sleepTimeLimit: totalCount >= 16 ? 0.10 : (totalCount >= 12 ? 0.14 : (totalCount >= 8 ? 0.20 : 0.32)),
+    sleepSpeedLimit: totalCount >= 16 ? 0.28 : (totalCount >= 12 ? 0.24 : (totalCount >= 8 ? 0.19 : 0.12)),
+  });
+  body.addShape(shape);
+
+  // ── Spawn position ────────────────────────────────────────────────
+  let pos;
+  if (launchRecipe?.spawnPos) {
+    pos = launchRecipe.spawnPos;
+  } else if (spawnPos) {
+    pos = spawnPos;
+  } else {
+    // Grid layout: up to 5 columns, rows behind first
+    // Wider spread + more jitter → dice land more separated → more readable
+    const cols   = Math.min(totalCount, 5);
+    const col    = index % 5;
+    const row    = Math.floor(index / 5);
+    // Keep throws readable and contained in-frame; large pools stay tighter.
+    // Historical containment tuning baseline kept for audit traceability: spread = totalCount > 10 ? 1.35 : 1.75
+    const spread = totalCount > 12 ? 1.24 : (totalCount > 8 ? 1.36 : 1.5);
+    pos = {
+      x: (col - (cols - 1) / 2) * spread + (pseudoRand(seed + index) - 0.5) * 0.6,
+      y: 8.0 + row * 0.5 + pseudoRand(index) * 0.52,
+      z: -0.4 - row * 1.52 + (pseudoRand(seed + 99 + index) - 0.5) * 0.42,
+    };
+  }
+  body.position.set(pos.x, pos.y, pos.z);
+
+  // ── Initial orientation ──────────────────────────────────────────
+  if (launchRecipe?.quaternion) {
+    const q = launchRecipe.quaternion;
+    body.quaternion.set(q.x, q.y, q.z, q.w);
+  } else {
+    body.quaternion.setFromEuler(
+      pseudoRand(index + seed)     * Math.PI * 2,
+      pseudoRand(index + seed * 2) * Math.PI * 2,
+      pseudoRand(index + seed * 3) * Math.PI * 2
+    );
+  }
+
+  // ── Throw velocity — angled inward toward table centre ───────────
+  // More lateral variance → dice scatter wider → less clustering
+  // Historical readability baseline kept for audit traceability: * 4.8 lateral X and * 2.8 lateral Z
+  if (launchRecipe?.velocity) {
+    const v = launchRecipe.velocity;
+    body.velocity.set(v.x, v.y, v.z);
+  } else {
+    body.velocity.set(
+      (pseudoRand(index * 3 + seed) - 0.5) * (totalCount >= 10 ? 1.4 : 4.0),
+      -4.7 - pseudoRand(index + 8) * (totalCount >= 10 ? 0.45 : 2.0),
+      (pseudoRand(index * 7 + seed) - 0.5) * (totalCount >= 10 ? 0.7 : 2.4),
+    );
+  }
+
+  // ── Tumble velocity ───────────────────────────────────────────────
+  // Reduce angular velocity for large throws (>10 dice) to limit the
+  // physics CPU load; many ConvexPolyhedron bodies spinning at high
+  // angular velocity stress the solver and can freeze the browser.
+  const angScale = totalCount > 14 ? 0.04 : (totalCount > 10 ? 0.09 : (totalCount > 6 ? 0.28 : 1.0));
+  if (launchRecipe?.angularVelocity) {
+    const w = launchRecipe.angularVelocity;
+    body.angularVelocity.set(w.x * angScale, w.y * angScale, w.z * angScale);
+  } else {
+    body.angularVelocity.set(
+      (pseudoRand(index + 2) - 0.5) * 28 * angScale,
+      (18 + pseudoRand(index + 3) * 14) * angScale,
+      (pseudoRand(index + 4) - 0.5) * 24 * angScale,
+    );
+  }
+
+  body.allowSleep = true;
+  world.addBody(body);
+  return body;
+}
+
+/**
+ * Apply a sweeping impulse to push existing dice off screen.
+ * @param {CANNON.Body} body
+ */
+export function sweepBody(body) {
+  body.applyImpulse(
+    new CANNON.Vec3(
+      (Math.random() - 0.5) * 40,
+      15,
+      (Math.random() - 0.5) * 40,
+    ),
+    body.position
+  );
+}
+
+// ── Deterministic PRNG (identical to original dice3d.js) ─────────────
+function pseudoRand(seed) {
+  return Math.abs(Math.sin(seed) * 10000) % 1;
+}

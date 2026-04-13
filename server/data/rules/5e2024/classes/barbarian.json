@@ -1,0 +1,1379 @@
+{
+  "id": "barbarian",
+  "displayName": "Barbarian",
+  "hitDie": 12,
+  "primaryAbilities": [
+    "str",
+    "con"
+  ],
+  "savingThrows": [
+    "str",
+    "con"
+  ],
+  "subclassLevel": 3,
+  "subclassDisplayName": "Primal Path",
+  "armorProficiencies": [
+    "light",
+    "medium",
+    "shields"
+  ],
+  "weaponProficiencies": [
+    "simple",
+    "martial"
+  ],
+  "toolProficiencies": [],
+  "skillChoices": {
+    "count": 2,
+    "from": [
+      "Animal Handling",
+      "Athletics",
+      "Intimidation",
+      "Nature",
+      "Perception",
+      "Survival"
+    ]
+  },
+  "startingEquipmentChoices": [],
+  "spellcastingType": "none",
+  "spellcastingAbility": null,
+  "spellSlots": {},
+  "classDescription": "A furious warrior channeling primal rage.",
+  "roleIdentity": "High durability bruiser with rage-based damage and resilience.",
+  "progressionTable": [
+    {
+      "level": 1,
+      "proficiencyBonus": 2,
+      "features": [
+        "Rage",
+        "Unarmored Defense",
+        "Weapon Mastery (2 weapons)"
+      ],
+      "classMechanics": {
+        "rageUses": 2,
+        "rageDamageBonus": 2,
+        "extraAttacks": 1
+      },
+      "unlockIds": [
+        "barbarian-rage",
+        "barbarian-unarmored-defense",
+        "barbarian-weapon-mastery-2-weapons"
+      ]
+    },
+    {
+      "level": 2,
+      "proficiencyBonus": 2,
+      "features": [
+        "Reckless Attack",
+        "Danger Sense"
+      ],
+      "classMechanics": {
+        "rageUses": 2,
+        "rageDamageBonus": 2,
+        "extraAttacks": 1
+      },
+      "unlockIds": [
+        "barbarian-reckless-attack",
+        "barbarian-danger-sense"
+      ]
+    },
+    {
+      "level": 3,
+      "proficiencyBonus": 2,
+      "features": [
+        "Primal Path (Subclass)",
+        "Primal Knowledge"
+      ],
+      "classMechanics": {
+        "rageUses": 3,
+        "rageDamageBonus": 2,
+        "extraAttacks": 1
+      },
+      "unlockIds": [
+        "barbarian-primal-path-subclass",
+        "barbarian-primal-knowledge"
+      ]
+    },
+    {
+      "level": 4,
+      "proficiencyBonus": 2,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "rageUses": 3,
+        "rageDamageBonus": 2,
+        "extraAttacks": 1
+      },
+      "unlockIds": [
+        "barbarian-ability-score-improvement"
+      ]
+    },
+    {
+      "level": 5,
+      "proficiencyBonus": 3,
+      "features": [
+        "Extra Attack",
+        "Fast Movement"
+      ],
+      "classMechanics": {
+        "rageUses": 3,
+        "rageDamageBonus": 2,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "barbarian-extra-attack",
+        "barbarian-fast-movement"
+      ]
+    },
+    {
+      "level": 6,
+      "proficiencyBonus": 3,
+      "features": [
+        "Subclass Feature",
+        "Feral Instinct"
+      ],
+      "classMechanics": {
+        "rageUses": 4,
+        "rageDamageBonus": 2,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "barbarian-subclass-feature",
+        "barbarian-feral-instinct"
+      ]
+    },
+    {
+      "level": 7,
+      "proficiencyBonus": 3,
+      "features": [
+        "Instinctive Pounce"
+      ],
+      "classMechanics": {
+        "rageUses": 4,
+        "rageDamageBonus": 2,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "barbarian-instinctive-pounce"
+      ]
+    },
+    {
+      "level": 8,
+      "proficiencyBonus": 3,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "rageUses": 4,
+        "rageDamageBonus": 2,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "barbarian-ability-score-improvement-2"
+      ]
+    },
+    {
+      "level": 9,
+      "proficiencyBonus": 4,
+      "features": [
+        "Brutal Strike (1d10 + effect)"
+      ],
+      "classMechanics": {
+        "rageUses": 4,
+        "rageDamageBonus": 3,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "barbarian-brutal-strike-1d10-effect"
+      ]
+    },
+    {
+      "level": 10,
+      "proficiencyBonus": 4,
+      "features": [
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "rageUses": 4,
+        "rageDamageBonus": 3,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "barbarian-subclass-feature-2"
+      ]
+    },
+    {
+      "level": 11,
+      "proficiencyBonus": 4,
+      "features": [
+        "Relentless Rage"
+      ],
+      "classMechanics": {
+        "rageUses": 4,
+        "rageDamageBonus": 3,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "barbarian-relentless-rage"
+      ]
+    },
+    {
+      "level": 12,
+      "proficiencyBonus": 4,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "rageUses": 5,
+        "rageDamageBonus": 3,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "barbarian-ability-score-improvement-3"
+      ]
+    },
+    {
+      "level": 13,
+      "proficiencyBonus": 5,
+      "features": [
+        "Brutal Strike (2 effects)"
+      ],
+      "classMechanics": {
+        "rageUses": 5,
+        "rageDamageBonus": 3,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "barbarian-brutal-strike-2-effects"
+      ]
+    },
+    {
+      "level": 14,
+      "proficiencyBonus": 5,
+      "features": [
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "rageUses": 5,
+        "rageDamageBonus": 3,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "barbarian-subclass-feature-3"
+      ]
+    },
+    {
+      "level": 15,
+      "proficiencyBonus": 5,
+      "features": [
+        "Persistent Rage"
+      ],
+      "classMechanics": {
+        "rageUses": 5,
+        "rageDamageBonus": 3,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "barbarian-persistent-rage"
+      ]
+    },
+    {
+      "level": 16,
+      "proficiencyBonus": 5,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "rageUses": 5,
+        "rageDamageBonus": 4,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "barbarian-ability-score-improvement-4"
+      ]
+    },
+    {
+      "level": 17,
+      "proficiencyBonus": 6,
+      "features": [
+        "Brutal Strike (3d10)"
+      ],
+      "classMechanics": {
+        "rageUses": 6,
+        "rageDamageBonus": 4,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "barbarian-brutal-strike-3d10"
+      ]
+    },
+    {
+      "level": 18,
+      "proficiencyBonus": 6,
+      "features": [
+        "Indomitable Might"
+      ],
+      "classMechanics": {
+        "rageUses": 6,
+        "rageDamageBonus": 4,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "barbarian-indomitable-might"
+      ]
+    },
+    {
+      "level": 19,
+      "proficiencyBonus": 6,
+      "features": [
+        "Epic Boon"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "rageUses": 6,
+        "rageDamageBonus": 4,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "barbarian-epic-boon"
+      ]
+    },
+    {
+      "level": 20,
+      "proficiencyBonus": 6,
+      "features": [
+        "Primal Champion"
+      ],
+      "classMechanics": {
+        "rageUses": "Unlimited",
+        "rageDamageBonus": 4,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "barbarian-primal-champion"
+      ]
+    }
+  ],
+  "featureDefinitions": {
+    "barbarian-rage": {
+      "id": "barbarian-rage",
+      "displayName": "Rage",
+      "name": "Rage",
+      "summary": "Enter a rage to hit harder, stay dangerous, and soak punishment in front-line fights.",
+      "description": "As a bonus action, you enter a Rage that turns you into a durable melee threat. While raging, your weapon attacks hit harder, you gain strong durability against common physical punishment, and many barbarian features start keying off the rage state.\n\nIn play, Rage is your default combat opener when a hard fight starts. Trigger it early, then stay aggressive so you keep the benefits rolling while you pressure the enemy line.\n\nUse this when the fight is live and a round-to-round choice matters.\n\nRegain uses on a Long Rest; some tables may also use short-rest recovery text surfaced elsewhere in the sheet.\n\nPractical effect: Bonus damage, defensive staying power, and access to rage-linked barbarian features.",
+      "level": 1,
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "Rage",
+      "trackUses": true,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "combat",
+        "resource",
+        "defense"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "Regain uses on a Long Rest; some tables may also use short-rest recovery text surfaced elsewhere in the sheet.",
+      "effect": "Bonus damage, defensive staying power, and access to rage-linked barbarian features.",
+      "dice": ""
+    },
+    "barbarian-unarmored-defense": {
+      "id": "barbarian-unarmored-defense",
+      "displayName": "Unarmored Defense",
+      "name": "Unarmored Defense",
+      "summary": "Your Armor Class comes from your body and stats instead of needing armor.",
+      "description": "This feature replaces the default armor math with a class-specific formula, letting your build stay effective even when you are not wearing armor. It matters every time your Dexterity, Constitution, or Wisdom changes depending on class.\n\nIn play, this is passive but important: the sheet should recalculate AC correctly and keep that value stable across rests, reloads, and equipment changes.\n\nPressure this in fights where surviving a key hit, effect, or save changes the encounter.",
+      "level": 1,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "defense",
+        "passive"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-weapon-mastery-2-weapons": {
+      "id": "barbarian-weapon-mastery-2-weapons",
+      "displayName": "Weapon Mastery (2 weapons)",
+      "name": "Weapon Mastery (2 weapons)",
+      "summary": "You unlock weapon rider properties that make attacks do more than just deal damage.",
+      "description": "Weapon Mastery gives trained weapons additional tactical texture. The important thing is not just knowing you have mastery, but understanding which weapons can trigger which rider and when that matters in a fight.\n\nUse this when the fight is live and a round-to-round choice matters.",
+      "level": 1,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "combat",
+        "weapons"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-reckless-attack": {
+      "id": "barbarian-reckless-attack",
+      "displayName": "Reckless Attack",
+      "name": "Reckless Attack",
+      "summary": "Trade defense for accuracy by going all-in on your offense.",
+      "description": "When you attack recklessly, you swing with full commitment to improve your chance to hit, but you expose yourself in return. This is a voluntary risk-reward toggle, not a free passive buff.\n\nUse it when landing the hit matters more than staying safe, especially while raging or when you want to push advantage-based damage.\n\nUse this when the fight is live and a round-to-round choice matters.\n\nPractical effect: Improves melee attack reliability while increasing the danger of incoming attacks.",
+      "level": 2,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "combat",
+        "risk-reward"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "When you attack recklessly",
+      "usage": "",
+      "recovery": "",
+      "effect": "Improves melee attack reliability while increasing the danger of incoming attacks.",
+      "dice": ""
+    },
+    "barbarian-danger-sense": {
+      "id": "barbarian-danger-sense",
+      "displayName": "Danger Sense",
+      "name": "Danger Sense",
+      "summary": "You react quickly to visible threats and effects that can be dodged.",
+      "description": "Danger Sense is a defensive awareness feature that improves your odds against hazards, blasts, and similar threats you can actually notice. It does not replace all saving throw defenses, but it makes you much harder to catch flat-footed in obvious danger zones.\n\nIn play, pressure this during trap checks, spell bursts, and breath-weapon style tests where visibility and reaction matter.\n\nPressure this in fights where surviving a key hit, effect, or save changes the encounter.",
+      "level": 2,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "defense",
+        "awareness"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "All save",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-primal-path-subclass": {
+      "id": "barbarian-primal-path-subclass",
+      "displayName": "Primal Path (Subclass)",
+      "name": "Primal Path (Subclass)",
+      "summary": "Choose your path and unlock a stronger identity for the rest of the build.",
+      "description": "This is the subclass gate for the barbarian. Once chosen, your path should drive later feature cards, action buttons, resource hooks, and playstyle expectations instead of sitting as a hidden background choice.",
+      "level": 3,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "subclass",
+        "progression",
+        "build"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-primal-knowledge": {
+      "id": "barbarian-primal-knowledge",
+      "displayName": "Primal Knowledge",
+      "name": "Primal Knowledge",
+      "summary": "Your barbarian instincts now support exploration and survival as well as combat.",
+      "description": "Primal Knowledge expands the barbarian beyond pure damage. It adds utility-facing competence so the class contributes more cleanly in tracking, movement, scouting, or wilderness-adjacent scenes depending on the exact build.\n\nThis matters most in exploration, travel, scouting, or social scenes rather than raw damage races.",
+      "level": 3,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "utility",
+        "exploration"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-ability-score-improvement": {
+      "id": "barbarian-ability-score-improvement",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "summary": "Improve key ability scores or take a feat to reshape the build.",
+      "description": "Ability Score Improvement is one of the biggest character-shaping progression points. It can either raise the numbers your class depends on most or open a feat that changes what the character can do.\n\nThis should read clearly enough that the player can tell when it is worth using without opening another app.",
+      "level": 4,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "build",
+        "progression"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-extra-attack": {
+      "id": "barbarian-extra-attack",
+      "displayName": "Extra Attack",
+      "name": "Extra Attack",
+      "summary": "When you take the Attack action, you can now make up to 2 attacks within that action.",
+      "description": "This progression point changes your basic turn structure by increasing how many attacks fit inside a normal Attack action. It should be reflected everywhere the sheet explains attack cadence.\n\nUse this when the fight is live and a round-to-round choice matters.",
+      "level": 5,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "combat",
+        "progression"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-fast-movement": {
+      "id": "barbarian-fast-movement",
+      "displayName": "Fast Movement",
+      "name": "Fast Movement",
+      "summary": "You move faster than most front-line warriors, helping you stick to priority targets.",
+      "description": "This passive speed increase makes it easier to start fights on your terms, close gaps, and keep pressure on fragile targets. The value should apply automatically in the sheet and remain visible in combat movement surfaces.\n\nThink about map pressure, escape lanes, and which target you need to reach this turn.",
+      "level": 5,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "mobility",
+        "passive"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-subclass-feature": {
+      "id": "barbarian-subclass-feature",
+      "displayName": "Subclass Feature",
+      "name": "Subclass Feature",
+      "summary": "This level opens or advances your subclass path, adding themed powers unique to your chosen specialization.",
+      "description": "A subclass unlock means the base class starts branching into a more specific identity. The sheet should surface the actual subclass feature rows beside this progression point so the player can tell what changed.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 6,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "subclass",
+        "progression"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-feral-instinct": {
+      "id": "barbarian-feral-instinct",
+      "displayName": "Feral Instinct",
+      "name": "Feral Instinct",
+      "summary": "Your battlefield instincts make it harder to catch you slow or unready.",
+      "description": "Feral Instinct is about acting early and staying combat-ready. It should noticeably improve how often the barbarian gets to set the tone of an encounter instead of reacting late.\n\nUse this when the fight is live and a round-to-round choice matters.",
+      "level": 6,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "initiative",
+        "combat"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-instinctive-pounce": {
+      "id": "barbarian-instinctive-pounce",
+      "displayName": "Instinctive Pounce",
+      "name": "Instinctive Pounce",
+      "summary": "When you ignite your combat state, you also gain immediate pressure and repositioning power.",
+      "description": "This feature turns your rage opener into a movement tool as well as a damage setup. It is there to help you actually reach the target that matters when the fight starts.\n\nThink about map pressure, escape lanes, and which target you need to reach this turn.",
+      "level": 7,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "Rage",
+      "trackUses": true,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "mobility",
+        "combat"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-ability-score-improvement-2": {
+      "id": "barbarian-ability-score-improvement-2",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "summary": "Improve key ability scores or take a feat to reshape the build.",
+      "description": "Ability Score Improvement is one of the biggest character-shaping progression points. It can either raise the numbers your class depends on most or open a feat that changes what the character can do.\n\nThis should read clearly enough that the player can tell when it is worth using without opening another app.",
+      "level": 8,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "build",
+        "progression"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-brutal-strike-1d10-effect": {
+      "id": "barbarian-brutal-strike-1d10-effect",
+      "displayName": "Brutal Strike (1d10 + effect)",
+      "name": "Brutal Strike (1d10 + effect)",
+      "summary": "Turn a heavy hit into extra control, pressure, or raw damage when you really need the swing to matter.",
+      "description": "Brutal Strike upgrades your strongest melee hits into bigger momentum plays. Depending on the level row, it either adds more damage, lets you layer on extra riders, or both.\n\nIn play, use this when a normal hit is not enough and you want the attack to shift the fight, not just shave off a few hit points.\n\nUse this when the fight is live and a round-to-round choice matters.\n\nPractical effect: Adds extra brutality to a successful hit, with stronger payoff as the barbarian levels.",
+      "level": 9,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "combat",
+        "burst",
+        "control"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "Adds extra brutality to a successful hit, with stronger payoff as the barbarian levels.",
+      "dice": ""
+    },
+    "barbarian-subclass-feature-2": {
+      "id": "barbarian-subclass-feature-2",
+      "displayName": "Subclass Feature",
+      "name": "Subclass Feature",
+      "summary": "This level opens or advances your subclass path, adding themed powers unique to your chosen specialization.",
+      "description": "A subclass unlock means the base class starts branching into a more specific identity. The sheet should surface the actual subclass feature rows beside this progression point so the player can tell what changed.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 10,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "subclass",
+        "progression"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-relentless-rage": {
+      "id": "barbarian-relentless-rage",
+      "displayName": "Relentless Rage",
+      "name": "Relentless Rage",
+      "summary": "Dropping you is much harder once your fury is fully awake.",
+      "description": "Relentless Rage is a survival backstop. When a normal fighter would fall, you get a chance to stay upright and keep controlling the front line. This should feel like a dramatic durability feature, not a minor note buried in text.\n\nPressure this in fights where surviving a key hit, effect, or save changes the encounter.",
+      "level": 11,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "Rage",
+      "trackUses": true,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "defense",
+        "survival"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-ability-score-improvement-3": {
+      "id": "barbarian-ability-score-improvement-3",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "summary": "Improve key ability scores or take a feat to reshape the build.",
+      "description": "Ability Score Improvement is one of the biggest character-shaping progression points. It can either raise the numbers your class depends on most or open a feat that changes what the character can do.\n\nThis should read clearly enough that the player can tell when it is worth using without opening another app.",
+      "level": 12,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "build",
+        "progression"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-brutal-strike-2-effects": {
+      "id": "barbarian-brutal-strike-2-effects",
+      "displayName": "Brutal Strike (2 effects)",
+      "name": "Brutal Strike (2 effects)",
+      "summary": "Turn a heavy hit into extra control, pressure, or raw damage when you really need the swing to matter.",
+      "description": "Brutal Strike upgrades your strongest melee hits into bigger momentum plays. Depending on the level row, it either adds more damage, lets you layer on extra riders, or both.\n\nIn play, use this when a normal hit is not enough and you want the attack to shift the fight, not just shave off a few hit points.\n\nUse this when the fight is live and a round-to-round choice matters.\n\nPractical effect: Adds extra brutality to a successful hit, with stronger payoff as the barbarian levels.",
+      "level": 13,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "combat",
+        "burst",
+        "control"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "Adds extra brutality to a successful hit, with stronger payoff as the barbarian levels.",
+      "dice": ""
+    },
+    "barbarian-subclass-feature-3": {
+      "id": "barbarian-subclass-feature-3",
+      "displayName": "Subclass Feature",
+      "name": "Subclass Feature",
+      "summary": "This level opens or advances your subclass path, adding themed powers unique to your chosen specialization.",
+      "description": "A subclass unlock means the base class starts branching into a more specific identity. The sheet should surface the actual subclass feature rows beside this progression point so the player can tell what changed.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 14,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "subclass",
+        "progression"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-persistent-rage": {
+      "id": "barbarian-persistent-rage",
+      "displayName": "Persistent Rage",
+      "name": "Persistent Rage",
+      "summary": "Your rage is easier to maintain, making the combat state more reliable over long exchanges.",
+      "description": "Persistent Rage reduces the chance that your signature state drops off at the wrong time. It mainly matters in multi-round fights, disruptive control situations, and any encounter where momentum matters.\n\nUse this when the fight is live and a round-to-round choice matters.",
+      "level": 15,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "Rage",
+      "trackUses": true,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "combat",
+        "resource"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-ability-score-improvement-4": {
+      "id": "barbarian-ability-score-improvement-4",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "summary": "Improve key ability scores or take a feat to reshape the build.",
+      "description": "Ability Score Improvement is one of the biggest character-shaping progression points. It can either raise the numbers your class depends on most or open a feat that changes what the character can do.\n\nThis should read clearly enough that the player can tell when it is worth using without opening another app.",
+      "level": 16,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "build",
+        "progression"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-brutal-strike-3d10": {
+      "id": "barbarian-brutal-strike-3d10",
+      "displayName": "Brutal Strike (3d10)",
+      "name": "Brutal Strike (3d10)",
+      "summary": "Turn a heavy hit into extra control, pressure, or raw damage when you really need the swing to matter.",
+      "description": "Brutal Strike upgrades your strongest melee hits into bigger momentum plays. Depending on the level row, it either adds more damage, lets you layer on extra riders, or both.\n\nIn play, use this when a normal hit is not enough and you want the attack to shift the fight, not just shave off a few hit points.\n\nUse this when the fight is live and a round-to-round choice matters.\n\nPractical effect: Adds extra brutality to a successful hit, with stronger payoff as the barbarian levels.",
+      "level": 17,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "combat",
+        "burst",
+        "control"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "Adds extra brutality to a successful hit, with stronger payoff as the barbarian levels.",
+      "dice": ""
+    },
+    "barbarian-indomitable-might": {
+      "id": "barbarian-indomitable-might",
+      "displayName": "Indomitable Might",
+      "name": "Indomitable Might",
+      "summary": "Your physical strength becomes so reliable that brute-force checks stop feeling swingy.",
+      "description": "Indomitable Might turns peak Strength into dependable performance whenever the barbarian is trying to overpower, break through, hold fast, or force a physical solution.\n\nThis is not flashy, but it matters every time the scene asks whether sheer power can solve the problem.\n\nThis matters most in exploration, travel, scouting, or social scenes rather than raw damage races.",
+      "level": 18,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "Indomitable",
+      "trackUses": true,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "strength",
+        "passive",
+        "utility"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-epic-boon": {
+      "id": "barbarian-epic-boon",
+      "displayName": "Epic Boon",
+      "name": "Epic Boon",
+      "summary": "Gain an endgame reward that pushes the build into truly legendary territory.",
+      "description": "Epic Boons are late-game progression spikes that add a high-power identity capstone beyond ordinary class scaling.\n\nThis should read clearly enough that the player can tell when it is worth using without opening another app.",
+      "level": 19,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "capstone",
+        "progression"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "barbarian-primal-champion": {
+      "id": "barbarian-primal-champion",
+      "displayName": "Primal Champion",
+      "name": "Primal Champion",
+      "summary": "Your body reaches a legendary peak of raw physical dominance.",
+      "description": "This capstone massively improves the barbarian’s raw physical profile and pushes the class into true endgame bruiser territory. The sheet should reflect the stat impact directly in attacks, saves, checks, hit points, and any other derived totals that depend on it.\n\nThis should read clearly enough that the player can tell when it is worth using without opening another app.",
+      "level": 20,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "barbarian",
+        "martial",
+        "frontline",
+        "capstone",
+        "stats"
+      ],
+      "sourceKind": "class",
+      "className": "Barbarian",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    }
+  },
+  "levelUnlockIds": {
+    "1": [
+      "barbarian-l1-1",
+      "barbarian-l1-2",
+      "barbarian-l1-3"
+    ],
+    "2": [
+      "barbarian-l2-1",
+      "barbarian-l2-2"
+    ],
+    "3": [
+      "barbarian-l3-1",
+      "barbarian-l3-2"
+    ],
+    "4": [
+      "barbarian-l4-1"
+    ],
+    "5": [
+      "barbarian-l5-1",
+      "barbarian-l5-2"
+    ],
+    "6": [
+      "barbarian-l6-1",
+      "barbarian-l6-2"
+    ],
+    "7": [
+      "barbarian-l7-1"
+    ],
+    "8": [
+      "barbarian-l8-1"
+    ],
+    "9": [
+      "barbarian-l9-1"
+    ],
+    "10": [
+      "barbarian-l10-1"
+    ],
+    "11": [
+      "barbarian-l11-1"
+    ],
+    "12": [
+      "barbarian-l12-1"
+    ],
+    "13": [
+      "barbarian-l13-1"
+    ],
+    "14": [
+      "barbarian-l14-1"
+    ],
+    "15": [
+      "barbarian-l15-1"
+    ],
+    "16": [
+      "barbarian-l16-1"
+    ],
+    "17": [
+      "barbarian-l17-1"
+    ],
+    "18": [
+      "barbarian-l18-1"
+    ],
+    "19": [
+      "barbarian-l19-1"
+    ],
+    "20": [
+      "barbarian-l20-1"
+    ]
+  },
+  "progressionSummary": [
+    {
+      "level": 1,
+      "summary": "Rage, Unarmored Defense, Weapon Mastery (2 weapons).",
+      "unlockIds": [
+        "barbarian-l1-1",
+        "barbarian-l1-2",
+        "barbarian-l1-3"
+      ]
+    },
+    {
+      "level": 2,
+      "summary": "Reckless Attack, Danger Sense.",
+      "unlockIds": [
+        "barbarian-l2-1",
+        "barbarian-l2-2"
+      ]
+    },
+    {
+      "level": 3,
+      "summary": "Primal Path (Subclass), Primal Knowledge.",
+      "unlockIds": [
+        "barbarian-l3-1",
+        "barbarian-l3-2"
+      ]
+    },
+    {
+      "level": 4,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "barbarian-l4-1"
+      ]
+    },
+    {
+      "level": 5,
+      "summary": "Extra Attack, Fast Movement.",
+      "unlockIds": [
+        "barbarian-l5-1",
+        "barbarian-l5-2"
+      ]
+    },
+    {
+      "level": 6,
+      "summary": "Subclass Feature, Feral Instinct.",
+      "unlockIds": [
+        "barbarian-l6-1",
+        "barbarian-l6-2"
+      ]
+    },
+    {
+      "level": 7,
+      "summary": "Instinctive Pounce.",
+      "unlockIds": [
+        "barbarian-l7-1"
+      ]
+    },
+    {
+      "level": 8,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "barbarian-l8-1"
+      ]
+    },
+    {
+      "level": 9,
+      "summary": "Brutal Strike (1d10 + effect).",
+      "unlockIds": [
+        "barbarian-l9-1"
+      ]
+    },
+    {
+      "level": 10,
+      "summary": "Subclass Feature.",
+      "unlockIds": [
+        "barbarian-l10-1"
+      ]
+    },
+    {
+      "level": 11,
+      "summary": "Relentless Rage.",
+      "unlockIds": [
+        "barbarian-l11-1"
+      ]
+    },
+    {
+      "level": 12,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "barbarian-l12-1"
+      ]
+    },
+    {
+      "level": 13,
+      "summary": "Brutal Strike (2 effects).",
+      "unlockIds": [
+        "barbarian-l13-1"
+      ]
+    },
+    {
+      "level": 14,
+      "summary": "Subclass Feature.",
+      "unlockIds": [
+        "barbarian-l14-1"
+      ]
+    },
+    {
+      "level": 15,
+      "summary": "Persistent Rage.",
+      "unlockIds": [
+        "barbarian-l15-1"
+      ]
+    },
+    {
+      "level": 16,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "barbarian-l16-1"
+      ]
+    },
+    {
+      "level": 17,
+      "summary": "Brutal Strike (3d10).",
+      "unlockIds": [
+        "barbarian-l17-1"
+      ]
+    },
+    {
+      "level": 18,
+      "summary": "Indomitable Might.",
+      "unlockIds": [
+        "barbarian-l18-1"
+      ]
+    },
+    {
+      "level": 19,
+      "summary": "Epic Boon.",
+      "unlockIds": [
+        "barbarian-l19-1"
+      ]
+    },
+    {
+      "level": 20,
+      "summary": "Primal Champion.",
+      "unlockIds": [
+        "barbarian-l20-1"
+      ]
+    }
+  ],
+  "future": {
+    "talentGroupId": "barbarian-core-talents",
+    "awakeningHookIds": [
+      "barbarian-awakening-primal"
+    ]
+  },
+  "buildTips": {
+    "primaryFocus": "Strength",
+    "primaryReason": "powers your melee attacks and grappling",
+    "secondaryFocus": "Constitution",
+    "secondaryReason": "boosts your HP and keeps you standing while raging",
+    "avoidDump": "Dexterity",
+    "avoidDumpReason": "you still need decent initiative and armor class even as a bruiser"
+  }
+}

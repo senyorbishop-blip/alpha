@@ -1,0 +1,97 @@
+{
+  "id": "dread-captain",
+  "displayName": "Dread Captain",
+  "classId": "pirate",
+  "parentClassId": "pirate",
+  "flavorText": "Dread Captains rule through fear, momentum, and the terrifying certainty that surrender might be the safer choice.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "dread-captain-black-flag",
+      "dread-captain-fearsome-boarding"
+    ],
+    "6": [
+      "dread-captain-crack-their-will"
+    ],
+    "10": [
+      "dread-captain-terrible-repute"
+    ],
+    "15": [
+      "dread-captain-kingmaker-of-panic"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "dread-captain-black-flag",
+      "displayName": "Black Flag",
+      "description": "Raise your presence into something enemies read as immediate danger."
+    },
+    {
+      "level": 3,
+      "id": "dread-captain-fearsome-boarding",
+      "displayName": "Fearsome Boarding",
+      "description": "Open fights with menace strong enough to rattle weaker opposition."
+    },
+    {
+      "level": 6,
+      "id": "dread-captain-crack-their-will",
+      "displayName": "Crack Their Will",
+      "description": "Punish frightened, hesitant, or cornered enemies even harder."
+    },
+    {
+      "level": 10,
+      "id": "dread-captain-terrible-repute",
+      "displayName": "Terrible Repute",
+      "description": "Your name itself becomes a battlefield effect."
+    },
+    {
+      "level": 15,
+      "id": "dread-captain-kingmaker-of-panic",
+      "displayName": "Kingmaker of Panic",
+      "description": "At peak play, fear and momentum spread outward from you like fire on tar."
+    }
+  ],
+  "featureDefinitions": {
+    "dread-captain-black-flag": {
+      "summary": "Project a fear-based battlefield identity from the moment combat starts.",
+      "tags": [
+        "subclass",
+        "fear",
+        "presence"
+      ]
+    },
+    "dread-captain-fearsome-boarding": {
+      "summary": "Reward opening with raw intimidation and direct pressure.",
+      "tags": [
+        "subclass",
+        "combat",
+        "fear"
+      ]
+    },
+    "dread-captain-crack-their-will": {
+      "summary": "Exploit enemies once they start to hesitate or break.",
+      "tags": [
+        "subclass",
+        "control",
+        "damage"
+      ]
+    },
+    "dread-captain-terrible-repute": {
+      "summary": "Your reputation stops being flavor and starts shaping encounters.",
+      "tags": [
+        "subclass",
+        "social",
+        "fear"
+      ]
+    },
+    "dread-captain-kingmaker-of-panic": {
+      "summary": "Your capstone spreads collapse through enemy lines once you gain momentum.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "fear",
+        "momentum"
+      ]
+    }
+  }
+}

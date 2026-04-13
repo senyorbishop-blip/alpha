@@ -1,0 +1,749 @@
+{
+  "id": "ranger",
+  "displayName": "Ranger",
+  "hitDie": 10,
+  "primaryAbilities": [
+    "dex",
+    "wis"
+  ],
+  "savingThrows": [
+    "str",
+    "dex"
+  ],
+  "subclassLevel": 3,
+  "subclassDisplayName": "Ranger Conclave",
+  "armorProficiencies": [
+    "light",
+    "medium",
+    "shields"
+  ],
+  "weaponProficiencies": [
+    "simple",
+    "martial"
+  ],
+  "toolProficiencies": [],
+  "skillChoices": {
+    "count": 3,
+    "from": [
+      "Animal Handling",
+      "Athletics",
+      "Insight",
+      "Investigation",
+      "Nature",
+      "Perception",
+      "Stealth",
+      "Survival"
+    ]
+  },
+  "startingEquipmentChoices": [],
+  "spellcastingType": "half",
+  "spellcastingAbility": "wis",
+  "spellSlots": {
+    "2": {
+      "1st": 2
+    },
+    "3": {
+      "1st": 3
+    },
+    "4": {
+      "1st": 3
+    },
+    "5": {
+      "1st": 4,
+      "2nd": 2
+    },
+    "6": {
+      "1st": 4,
+      "2nd": 2
+    },
+    "7": {
+      "1st": 4,
+      "2nd": 3
+    },
+    "8": {
+      "1st": 4,
+      "2nd": 3
+    },
+    "9": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 2
+    },
+    "10": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 2
+    },
+    "11": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3
+    },
+    "13": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 1
+    },
+    "15": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 2
+    },
+    "17": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 1
+    },
+    "19": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2
+    },
+    "20": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2
+    }
+  },
+  "classDescription": "A wilderness hunter and skirmisher with primal magic.",
+  "roleIdentity": "Mobile striker and scout with sustained utility and control tools.",
+  "progressionTable": [
+    {
+      "level": 1,
+      "proficiencyBonus": 2,
+      "features": [
+        "Favored Enemy",
+        "Weapon Mastery (2 weapons)"
+      ],
+      "classMechanics": {
+        "spellsKnown": 0,
+        "extraAttacks": 1
+      },
+      "unlockIds": [
+        "ranger-l1-1",
+        "ranger-l1-2"
+      ]
+    },
+    {
+      "level": 2,
+      "proficiencyBonus": 2,
+      "features": [
+        "Deft Explorer",
+        "Spellcasting",
+        "Fighting Style"
+      ],
+      "classMechanics": {
+        "spellsKnown": 2,
+        "extraAttacks": 1
+      },
+      "unlockIds": [
+        "ranger-l2-1",
+        "ranger-l2-2",
+        "ranger-l2-3"
+      ]
+    },
+    {
+      "level": 3,
+      "proficiencyBonus": 2,
+      "features": [
+        "Ranger Conclave (Subclass)",
+        "Roving"
+      ],
+      "classMechanics": {
+        "spellsKnown": 2,
+        "extraAttacks": 1
+      },
+      "unlockIds": [
+        "ranger-l3-1",
+        "ranger-l3-2"
+      ]
+    },
+    {
+      "level": 4,
+      "proficiencyBonus": 2,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "spellsKnown": 3,
+        "extraAttacks": 1
+      },
+      "unlockIds": [
+        "ranger-l4-1"
+      ]
+    },
+    {
+      "level": 5,
+      "proficiencyBonus": 3,
+      "features": [
+        "Extra Attack"
+      ],
+      "classMechanics": {
+        "spellsKnown": 4,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "ranger-l5-1"
+      ]
+    },
+    {
+      "level": 6,
+      "proficiencyBonus": 3,
+      "features": [
+        "Subclass Feature",
+        "Expertise (2nd skill)"
+      ],
+      "classMechanics": {
+        "spellsKnown": 4,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "ranger-l6-1",
+        "ranger-l6-2"
+      ]
+    },
+    {
+      "level": 7,
+      "proficiencyBonus": 3,
+      "features": [
+        "Conjure Barrage (1/LR)"
+      ],
+      "classMechanics": {
+        "spellsKnown": 5,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "ranger-l7-1"
+      ]
+    },
+    {
+      "level": 8,
+      "proficiencyBonus": 3,
+      "features": [
+        "Ability Score Improvement",
+        "Land's Stride"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "spellsKnown": 6,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "ranger-l8-1",
+        "ranger-l8-2"
+      ]
+    },
+    {
+      "level": 9,
+      "proficiencyBonus": 4,
+      "features": [
+        "3rd-level Spell Slots"
+      ],
+      "classMechanics": {
+        "spellsKnown": 7,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "ranger-l9-1"
+      ]
+    },
+    {
+      "level": 10,
+      "proficiencyBonus": 4,
+      "features": [
+        "Subclass Feature",
+        "Tireless"
+      ],
+      "classMechanics": {
+        "spellsKnown": 7,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "ranger-l10-1",
+        "ranger-l10-2"
+      ]
+    },
+    {
+      "level": 11,
+      "proficiencyBonus": 4,
+      "features": [
+        "Conjure Volley (1/LR)"
+      ],
+      "classMechanics": {
+        "spellsKnown": 8,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "ranger-l11-1"
+      ]
+    },
+    {
+      "level": 12,
+      "proficiencyBonus": 4,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "spellsKnown": 9,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "ranger-l12-1"
+      ]
+    },
+    {
+      "level": 13,
+      "proficiencyBonus": 5,
+      "features": [
+        "4th-level Spell Slots"
+      ],
+      "classMechanics": {
+        "spellsKnown": 9,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "ranger-l13-1"
+      ]
+    },
+    {
+      "level": 14,
+      "proficiencyBonus": 5,
+      "features": [
+        "Subclass Feature",
+        "Nature's Veil"
+      ],
+      "classMechanics": {
+        "spellsKnown": 10,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "ranger-l14-1",
+        "ranger-l14-2"
+      ]
+    },
+    {
+      "level": 15,
+      "proficiencyBonus": 5,
+      "features": [
+        "Conjure Barrage Improvement"
+      ],
+      "classMechanics": {
+        "spellsKnown": 11,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "ranger-l15-1"
+      ]
+    },
+    {
+      "level": 16,
+      "proficiencyBonus": 5,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "spellsKnown": 12,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "ranger-l16-1"
+      ]
+    },
+    {
+      "level": 17,
+      "proficiencyBonus": 6,
+      "features": [
+        "5th-level Spell Slots"
+      ],
+      "classMechanics": {
+        "spellsKnown": 12,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "ranger-l17-1"
+      ]
+    },
+    {
+      "level": 18,
+      "proficiencyBonus": 6,
+      "features": [
+        "Feral Senses"
+      ],
+      "classMechanics": {
+        "spellsKnown": 13,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "ranger-l18-1"
+      ]
+    },
+    {
+      "level": 19,
+      "proficiencyBonus": 6,
+      "features": [
+        "Epic Boon"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "spellsKnown": 14,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "ranger-l19-1"
+      ]
+    },
+    {
+      "level": 20,
+      "proficiencyBonus": 6,
+      "features": [
+        "Foe Slayer"
+      ],
+      "classMechanics": {
+        "spellsKnown": 15,
+        "extraAttacks": 2
+      },
+      "unlockIds": [
+        "ranger-l20-1"
+      ]
+    }
+  ],
+  "featureDefinitions": {
+    "ranger-l1-1": {
+      "summary": "Mark dangerous prey and study enemy patterns so your damage and tracking feel purposeful rather than generic.",
+      "description": "Favored Enemy should make the ranger feel like a hunter with intent. It is about target pressure, tracking, and tactical focus instead of simply being a passive lore note.",
+      "tags": [
+        "combat",
+        "tracking",
+        "identity"
+      ]
+    },
+    "ranger-l1-2": {
+      "summary": "Your chosen weapons carry tactical mastery properties that make attacks feel more distinctive than simple swings.",
+      "description": "Weapon Mastery is an attack-surface feature. It matters because it changes how the ranger approaches weapon turns and should be visible wherever weapon actions are shown.",
+      "tags": [
+        "martial",
+        "combat",
+        "weapons"
+      ]
+    },
+    "ranger-l2-1": {
+      "summary": "You become a stronger explorer and traveler so the ranger contributes clearly between fights as well as during them.",
+      "description": "Deft Explorer is utility identity for ranger. It should help the class feel like a guide, scout, and endurance specialist instead of only a bow user with spells.",
+      "tags": [
+        "exploration",
+        "utility",
+        "identity"
+      ]
+    },
+    "ranger-l2-2": {
+      "summary": "Ranger spellcasting supports the hunt with movement, marking, control, and survival tools rather than replacing your martial core.",
+      "description": "Ranger spells should feel like practical field magic: mobility, tracking, control, self-buffs, and the occasional decisive strike instead of full-caster breadth.",
+      "tags": [
+        "spellcasting",
+        "martial",
+        "primal"
+      ]
+    },
+    "ranger-l2-3": {
+      "summary": "Choose the combat style that defines how your ranger pressures the battlefield.",
+      "description": "Fighting Style is a structural class choice. It should clearly influence whether the ranger reads as ranged pressure, defensive skirmisher, two-weapon attacker, or another martial angle.",
+      "tags": [
+        "build",
+        "combat",
+        "identity"
+      ]
+    },
+    "ranger-l3-1": {
+      "summary": "Your conclave determines how you hunt, survive, and shape your battlefield presence as the class progresses.",
+      "description": "Ranger Conclave is the subclass gate for ranger. It should instantly tell the player whether this character is a stalker, companion master, focused slayer, fey wanderer, or another specialist hunter.",
+      "tags": [
+        "subclass",
+        "identity",
+        "hunt"
+      ]
+    },
+    "ranger-l3-2": {
+      "summary": "Your movement becomes more fluid, letting you cross the field and rough terrain like a practiced scout.",
+      "description": "Roving is a quality-of-life mobility feature, but it matters constantly because it improves how the ranger approaches pursuit, kiting, and difficult approaches.",
+      "tags": [
+        "mobility",
+        "exploration",
+        "passive"
+      ]
+    },
+    "ranger-l10-2": {
+      "summary": "You can shake off fatigue and keep moving, reinforcing the ranger as a long-haul survivor.",
+      "description": "Tireless is an endurance feature. It should matter on travel-heavy days, attrition-heavy adventuring, and any campaign where the ranger’s staying power matters as much as their aim.",
+      "tags": [
+        "survival",
+        "rest",
+        "identity"
+      ]
+    },
+    "ranger-l14-2": {
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "summary": "Slip from sight with primal subtlety so you can reposition, disengage attention, or open a cleaner line.",
+      "description": "Nature’s Veil is a strong tactical button. It helps the ranger take control of line-of-sight and positioning, which is exactly where the class often wants to fight.",
+      "tags": [
+        "stealth",
+        "mobility",
+        "combat"
+      ]
+    },
+    "ranger-l20-1": {
+      "summary": "Your greatest hunts end with deadly certainty, turning focused pressure into a true capstone threat.",
+      "description": "Foe Slayer is the ranger capstone identity and a true hunter payoff: when the quarry matters, the class becomes precise and deadly enough to finish the hunt with real certainty.",
+      "tags": [
+        "capstone",
+        "combat",
+        "hunt"
+      ]
+    }
+  },
+  "levelUnlockIds": {
+    "1": [
+      "ranger-l1-1",
+      "ranger-l1-2"
+    ],
+    "2": [
+      "ranger-l2-1",
+      "ranger-l2-2",
+      "ranger-l2-3"
+    ],
+    "3": [
+      "ranger-l3-1",
+      "ranger-l3-2"
+    ],
+    "4": [
+      "ranger-l4-1"
+    ],
+    "5": [
+      "ranger-l5-1"
+    ],
+    "6": [
+      "ranger-l6-1",
+      "ranger-l6-2"
+    ],
+    "7": [
+      "ranger-l7-1"
+    ],
+    "8": [
+      "ranger-l8-1",
+      "ranger-l8-2"
+    ],
+    "9": [
+      "ranger-l9-1"
+    ],
+    "10": [
+      "ranger-l10-1",
+      "ranger-l10-2"
+    ],
+    "11": [
+      "ranger-l11-1"
+    ],
+    "12": [
+      "ranger-l12-1"
+    ],
+    "13": [
+      "ranger-l13-1"
+    ],
+    "14": [
+      "ranger-l14-1",
+      "ranger-l14-2"
+    ],
+    "15": [
+      "ranger-l15-1"
+    ],
+    "16": [
+      "ranger-l16-1"
+    ],
+    "17": [
+      "ranger-l17-1"
+    ],
+    "18": [
+      "ranger-l18-1"
+    ],
+    "19": [
+      "ranger-l19-1"
+    ],
+    "20": [
+      "ranger-l20-1"
+    ]
+  },
+  "progressionSummary": [
+    {
+      "level": 1,
+      "summary": "Favored Enemy, Weapon Mastery (2 weapons).",
+      "unlockIds": [
+        "ranger-l1-1",
+        "ranger-l1-2"
+      ]
+    },
+    {
+      "level": 2,
+      "summary": "Deft Explorer, Spellcasting, Fighting Style.",
+      "unlockIds": [
+        "ranger-l2-1",
+        "ranger-l2-2",
+        "ranger-l2-3"
+      ]
+    },
+    {
+      "level": 3,
+      "summary": "Ranger Conclave (Subclass), Roving.",
+      "unlockIds": [
+        "ranger-l3-1",
+        "ranger-l3-2"
+      ]
+    },
+    {
+      "level": 4,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "ranger-l4-1"
+      ]
+    },
+    {
+      "level": 5,
+      "summary": "Extra Attack.",
+      "unlockIds": [
+        "ranger-l5-1"
+      ]
+    },
+    {
+      "level": 6,
+      "summary": "Subclass Feature, Expertise (2nd skill).",
+      "unlockIds": [
+        "ranger-l6-1",
+        "ranger-l6-2"
+      ]
+    },
+    {
+      "level": 7,
+      "summary": "Conjure Barrage (1/LR).",
+      "unlockIds": [
+        "ranger-l7-1"
+      ]
+    },
+    {
+      "level": 8,
+      "summary": "Ability Score Improvement, Land's Stride.",
+      "unlockIds": [
+        "ranger-l8-1",
+        "ranger-l8-2"
+      ]
+    },
+    {
+      "level": 9,
+      "summary": "3rd-level Spell Slots.",
+      "unlockIds": [
+        "ranger-l9-1"
+      ]
+    },
+    {
+      "level": 10,
+      "summary": "Subclass Feature, Tireless.",
+      "unlockIds": [
+        "ranger-l10-1",
+        "ranger-l10-2"
+      ]
+    },
+    {
+      "level": 11,
+      "summary": "Conjure Volley (1/LR).",
+      "unlockIds": [
+        "ranger-l11-1"
+      ]
+    },
+    {
+      "level": 12,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "ranger-l12-1"
+      ]
+    },
+    {
+      "level": 13,
+      "summary": "4th-level Spell Slots.",
+      "unlockIds": [
+        "ranger-l13-1"
+      ]
+    },
+    {
+      "level": 14,
+      "summary": "Subclass Feature, Nature's Veil.",
+      "unlockIds": [
+        "ranger-l14-1",
+        "ranger-l14-2"
+      ]
+    },
+    {
+      "level": 15,
+      "summary": "Conjure Barrage Improvement.",
+      "unlockIds": [
+        "ranger-l15-1"
+      ]
+    },
+    {
+      "level": 16,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "ranger-l16-1"
+      ]
+    },
+    {
+      "level": 17,
+      "summary": "5th-level Spell Slots.",
+      "unlockIds": [
+        "ranger-l17-1"
+      ]
+    },
+    {
+      "level": 18,
+      "summary": "Feral Senses.",
+      "unlockIds": [
+        "ranger-l18-1"
+      ]
+    },
+    {
+      "level": 19,
+      "summary": "Epic Boon.",
+      "unlockIds": [
+        "ranger-l19-1"
+      ]
+    },
+    {
+      "level": 20,
+      "summary": "Foe Slayer.",
+      "unlockIds": [
+        "ranger-l20-1"
+      ]
+    }
+  ],
+  "future": {
+    "talentGroupId": "ranger-core-talents",
+    "awakeningHookIds": [
+      "ranger-awakening-primal"
+    ]
+  },
+  "buildTips": {
+    "primaryFocus": "Dexterity",
+    "primaryReason": "powers your weapon accuracy, damage, and stealth options",
+    "secondaryFocus": "Wisdom",
+    "secondaryReason": "improves key ranger spells and class utilities",
+    "avoidDump": "Constitution",
+    "avoidDumpReason": "you still need staying power and better Concentration checks"
+  }
+}

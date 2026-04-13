@@ -1,0 +1,75 @@
+{
+  "id": "tiefling",
+  "displayName": "Tiefling",
+  "size": "Medium",
+  "movement": {
+    "walk": 30,
+    "swim": 0,
+    "fly": 0,
+    "climb": 0
+  },
+  "senses": {
+    "darkvision": 60,
+    "tremorsense": 0,
+    "blindsight": 0
+  },
+  "tags": [
+    "humanoid",
+    "tiefling",
+    "fiend-touched"
+  ],
+  "languages": [
+    "Common",
+    "Infernal"
+  ],
+  "abilityBonuses": "flexible",
+  "proficiencies": {
+    "skills": [],
+    "weapons": [],
+    "tools": [],
+    "armor": []
+  },
+  "traits": [
+    {
+      "id": "tiefling-darkvision",
+      "displayName": "Darkvision",
+      "summary": "You can see in dim light and darkness out to 60 feet.",
+      "description": "You have Darkvision with a range of 60 feet.",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited",
+        "range": "60"
+      }
+    },
+    {
+      "id": "tiefling-hellish-resistance",
+      "displayName": "Hellish Resistance",
+      "summary": "You have resistance to Fire damage.",
+      "description": "You have Resistance to Fire damage.",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited"
+      }
+    },
+    {
+      "id": "tiefling-infernal-legacy",
+      "displayName": "Infernal Legacy",
+      "summary": "Gain lineage cantrips and level-gated spells cast with Charisma.",
+      "description": "You know Thaumaturgy. Starting at 3rd level, you can cast Hellish Rebuke as a 2nd-level spell once per Long Rest. Starting at 5th level, you can cast Darkness once per Long Rest. Charisma is your spellcasting ability for these spells, and your spell save DC is 8 + your Proficiency Bonus + your Charisma modifier. Optional 2024 lineages: Asmodeus (Thaumaturgy, Hellish Rebuke, Darkness); Mephistopheles (Mage Hand, Burning Hands at 3rd, Flame Blade at 5th); Zariel (Friends, Searing Smite at 3rd, Branding Smite at 5th).",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "LongRest",
+        "saveDC": "8 + proficiency + CHA",
+        "scalingNote": "Legacy spells unlock at character levels 3 and 5."
+      }
+    }
+  ],
+  "flavorText": "Tieflings bear infernal echoes in their bloodlines, but their identities are forged by choices, not destiny. Across the realms they are known for resilience, wit, and striking presence. Many learn early how to turn suspicion into strength.",
+  "roleplayNotes": "Consider how your character navigates reputation, heritage, and self-defined purpose.",
+  "recommendedClasses": [
+    "Warlock",
+    "Sorcerer",
+    "Paladin",
+    "Bard"
+  ]
+}

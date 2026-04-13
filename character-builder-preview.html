@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tavern Tabletop — Character Forge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#C9A84C;--gold-light:#E8C97A;--gold-dim:#7A6030;
+  --teal:#00D4B8;--teal-dim:#00897a;--teal-glow:rgba(0,212,184,0.18);
+  --obsidian:#06080a;--dark1:#0b0e12;--dark2:#111519;--dark3:#181d23;--dark4:#1e252e;
+  --surface:#1a2028;--surface2:#212830;--surface3:#27303a;
+  --text-primary:#e8e0d0;--text-secondary:#a89f8e;--text-dim:#6b6258;
+  --border:#2a3340;--border-gold:rgba(201,168,76,0.3);--border-teal:rgba(0,212,184,0.25);
+  --red:#C0392B;--blue:#2471A3;--green:#1E8449;--purple:#6C3483;--orange:#CA6F1E;
+  --white-mana:#C8D6E5;
+  --font-title:'Cinzel Decorative',serif;
+  --font-display:'Cinzel',serif;
+  --font-body:'Crimson Pro',serif;
+  --r:8px;--r-lg:14px;--r-xl:20px;
+  --shadow-gold:0 0 20px rgba(201,168,76,0.15);
+  --shadow-teal:0 0 20px rgba(0,212,184,0.12);
+}
+
+html,body{height:100%;background:var(--obsidian);color:var(--text-primary);font-family:var(--font-body);font-size:16px;overflow-x:hidden}
+
+/* ── CANVAS BACKGROUND ── */
+#bg-canvas{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.35}
+
+/* ── APP SHELL ── */
+#app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;max-width:1280px;margin:0 auto;padding:0 24px}
+
+/* ── HEADER ── */
+header{display:flex;align-items:center;justify-content:space-between;padding:20px 0 16px;border-bottom:1px solid var(--border)}
+.logo{font-family:var(--font-title);font-size:1.1rem;color:var(--gold);letter-spacing:0.08em;text-shadow:0 0 24px rgba(201,168,76,0.4)}
+.header-right{display:flex;align-items:center;gap:16px}
+.char-name-display{font-family:var(--font-display);font-size:0.75rem;color:var(--text-secondary);letter-spacing:0.05em}
+.char-name-display span{color:var(--gold-light)}
+.btn-close{background:none;border:1px solid var(--border);color:var(--text-secondary);padding:6px 14px;border-radius:var(--r);font-size:0.7rem;cursor:pointer;letter-spacing:0.05em;transition:all 0.2s}
+.btn-close:hover{border-color:var(--gold-dim);color:var(--gold)}
+
+/* ── STEP PROGRESS ── */
+#step-progress{padding:24px 0 0}
+.step-track{display:flex;align-items:center;gap:0;position:relative}
+.step-item{display:flex;align-items:center;flex:1;position:relative}
+.step-item:last-child{flex:0}
+.step-dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:0.6rem;color:var(--text-dim);background:var(--dark2);cursor:pointer;transition:all 0.3s;flex-shrink:0;position:relative;z-index:2}
+.step-dot.done{border-color:var(--gold-dim);background:rgba(201,168,76,0.1);color:var(--gold)}
+.step-dot.done::after{content:'✓';font-size:0.65rem}
+.step-dot.active{border-color:var(--gold);background:rgba(201,168,76,0.15);color:var(--gold);box-shadow:0 0 12px rgba(201,168,76,0.3)}
+.step-dot.active:not(.done){}
+.step-connector{flex:1;height:2px;background:var(--border);margin:0;position:relative;top:-1px}
+.step-connector.done{background:linear-gradient(90deg,var(--gold-dim),var(--gold-dim))}
+.step-label{position:absolute;top:36px;left:50%;transform:translateX(-50%);font-size:0.55rem;font-family:var(--font-display);letter-spacing:0.06em;color:var(--text-dim);white-space:nowrap}
+.step-dot.active .step-label,.step-dot.done .step-label{color:var(--gold-dim)}
+.step-progress-bar{height:2px;background:linear-gradient(90deg,var(--gold),var(--teal));margin-top:52px;border-radius:1px;transition:width 0.5s ease}
+
+/* ── MAIN CONTENT ── */
+#content{flex:1;padding:32px 0 40px}
+
+/* ── SCREEN TRANSITIONS ── */
+.screen{display:none;animation:screenIn 0.4s ease}
+.screen.active{display:block}
+@keyframes screenIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── SCREEN HEADERS ── */
+.screen-header{margin-bottom:28px}
+.screen-title{font-family:var(--font-display);font-size:1.8rem;color:var(--gold-light);letter-spacing:0.04em;font-weight:600;line-height:1.2}
+.screen-subtitle{font-size:1rem;color:var(--text-secondary);margin-top:6px;font-style:italic;font-weight:300}
+.screen-divider{width:60px;height:2px;background:linear-gradient(90deg,var(--gold),transparent);margin:12px 0}
+
+/* ── SPECIES CARDS ── */
+.species-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.species-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;cursor:pointer;transition:all 0.25s;position:relative;overflow:hidden}
+.species-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,168,76,0.04),transparent);opacity:0;transition:opacity 0.25s}
+.species-card:hover{border-color:rgba(201,168,76,0.45);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.4),0 0 0 1px rgba(201,168,76,0.1)}
+.species-card:hover::before{opacity:1}
+.species-card.selected{border-color:var(--gold);background:rgba(201,168,76,0.07);box-shadow:0 0 20px rgba(201,168,76,0.15),0 0 0 1px rgba(201,168,76,0.3)}
+.species-card.selected::before{opacity:1}
+.sc-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:10px;background:rgba(255,255,255,0.04);border:1px solid var(--border)}
+.sc-name{font-family:var(--font-display);font-size:0.9rem;font-weight:600;color:var(--text-primary);margin-bottom:6px;letter-spacing:0.03em}
+.sc-badges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.sc-badge{font-size:0.55rem;padding:2px 7px;border-radius:999px;letter-spacing:0.04em;font-family:var(--font-display)}
+.sc-badge.speed{background:rgba(0,212,184,0.1);border:1px solid rgba(0,212,184,0.25);color:var(--teal)}
+.sc-badge.darkvision{background:rgba(108,52,131,0.15);border:1px solid rgba(108,52,131,0.4);color:#b07fd4}
+.sc-badge.size{background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);color:var(--gold-dim)}
+.sc-flavor{font-size:0.68rem;color:var(--text-dim);line-height:1.5;font-style:italic;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:8px}
+.sc-traits{display:flex;flex-direction:column;gap:3px}
+.sc-trait{font-size:0.6rem;color:var(--text-secondary);display:flex;align-items:center;gap:5px}
+.sc-trait::before{content:'◆';font-size:0.4rem;color:var(--gold-dim);flex-shrink:0}
+.sc-selected-check{position:absolute;top:10px;right:10px;width:18px;height:18px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:var(--dark1);opacity:0;transition:opacity 0.2s}
+.species-card.selected .sc-selected-check{opacity:1}
+
+/* ── SPECIES DETAIL PANEL ── */
+.species-detail{background:var(--surface);border:1px solid var(--border-gold);border-radius:var(--r-xl);padding:24px;margin-top:20px;animation:screenIn 0.3s ease;display:none}
+.species-detail.visible{display:block}
+.sd-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.sd-name{font-family:var(--font-display);font-size:1.4rem;color:var(--gold-light);font-weight:600}
+.sd-meta{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.sd-traits-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.sd-trait{background:var(--dark3);border:1px solid var(--border);border-radius:var(--r);padding:12px}
+.sd-trait-name{font-family:var(--font-display);font-size:0.72rem;color:var(--gold);margin-bottom:5px;letter-spacing:0.03em}
+.sd-trait-desc{font-size:0.7rem;color:var(--text-secondary);line-height:1.6}
+.sd-trait-mech{margin-top:6px;font-size:0.62rem;color:var(--teal);background:rgba(0,212,184,0.06);padding:4px 8px;border-radius:4px;border-left:2px solid var(--teal-dim)}
+
+/* ── CLASS CARDS ── */
+.class-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.class-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;cursor:pointer;transition:all 0.25s;position:relative;overflow:hidden}
+.class-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--class-color,var(--gold));opacity:0.4;transition:opacity 0.25s}
+.class-card:hover::after,.class-card.selected::after{opacity:1}
+.class-card:hover{border-color:rgba(255,255,255,0.15);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.class-card.selected{border-color:var(--class-color,var(--gold));box-shadow:0 0 20px rgba(0,0,0,0.3),0 0 0 1px rgba(255,255,255,0.05)}
+.cc-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.cc-name{font-family:var(--font-display);font-size:1rem;font-weight:600;letter-spacing:0.03em}
+.cc-die{font-family:var(--font-display);font-size:0.7rem;padding:3px 8px;border-radius:4px;background:var(--dark3);border:1px solid var(--border);color:var(--text-secondary)}
+.cc-role{font-size:0.67rem;color:var(--text-dim);font-style:italic;margin-bottom:10px;line-height:1.4}
+.cc-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.cc-tag{font-size:0.55rem;padding:2px 7px;border-radius:999px;letter-spacing:0.04em;font-family:var(--font-display);background:var(--dark3);border:1px solid var(--border);color:var(--text-secondary)}
+.cc-features{display:flex;flex-direction:column;gap:3px}
+.cc-feature{font-size:0.6rem;color:var(--text-secondary);display:flex;align-items:center;gap:5px}
+.cc-feature::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--class-color,var(--gold));flex-shrink:0;opacity:0.7}
+.cc-spellcaster{position:absolute;top:12px;right:12px;font-size:0.5rem;padding:2px 6px;border-radius:3px;font-family:var(--font-display);letter-spacing:0.05em}
+.cc-spellcaster.full{background:rgba(36,113,163,0.2);border:1px solid rgba(36,113,163,0.4);color:#5ba3d0}
+.cc-spellcaster.half{background:rgba(30,132,73,0.2);border:1px solid rgba(30,132,73,0.4);color:#52be80}
+.cc-spellcaster.pact{background:rgba(108,52,131,0.2);border:1px solid rgba(108,52,131,0.4);color:#b07fd4}
+
+/* ── CLASS PROGRESSION PANEL ── */
+.class-detail{background:var(--surface);border:1px solid var(--border-gold);border-radius:var(--r-xl);padding:24px;margin-top:20px;animation:screenIn 0.3s ease;display:none}
+.class-detail.visible{display:block}
+.cd-header{display:flex;align-items:flex-start;gap:20px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.cd-stats{display:flex;gap:20px;flex-wrap:wrap}
+.cd-stat{text-align:center}
+.cd-stat-val{font-family:var(--font-display);font-size:1.1rem;color:var(--gold-light);font-weight:600}
+.cd-stat-lbl{font-size:0.58rem;color:var(--text-dim);font-family:var(--font-display);letter-spacing:0.05em;margin-top:2px}
+.cd-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.7;font-style:italic;flex:1;border-left:2px solid var(--gold-dim);padding-left:16px}
+.prog-table{width:100%;border-collapse:collapse;font-size:0.67rem}
+.prog-table thead th{font-family:var(--font-display);font-size:0.6rem;letter-spacing:0.06em;color:var(--text-dim);padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);background:var(--dark3)}
+.prog-table tbody tr{transition:background 0.15s}
+.prog-table tbody tr:hover{background:rgba(255,255,255,0.02)}
+.prog-table tbody tr.current-level{background:rgba(201,168,76,0.06)}
+.prog-table tbody tr.asi-row td{color:#E8C97A}
+.prog-table tbody tr.subclass-row td:last-child{color:#b07fd4}
+.prog-table td{padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.03);color:var(--text-secondary);vertical-align:top}
+.prog-table td:first-child{font-family:var(--font-display);font-size:0.6rem;color:var(--text-dim);width:40px}
+.prog-table td:nth-child(2){color:var(--gold-dim);width:30px}
+.prog-level-badge{display:inline-block;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);padding:1px 6px;border-radius:3px;font-family:var(--font-display);font-size:0.55rem}
+.feature-tag{display:inline-block;background:rgba(0,212,184,0.07);border:1px solid rgba(0,212,184,0.15);padding:1px 6px;border-radius:3px;color:var(--teal);font-size:0.58rem;margin:1px 2px 1px 0}
+.feature-tag.asi{background:rgba(201,168,76,0.08);border-color:rgba(201,168,76,0.2);color:var(--gold)}
+.feature-tag.subclass{background:rgba(108,52,131,0.1);border-color:rgba(108,52,131,0.3);color:#b07fd4}
+
+/* ── ABILITIES SCREEN ── */
+.ability-layout{display:grid;grid-template-columns:1fr 340px;gap:24px}
+.ability-method-tabs{display:flex;gap:6px;margin-bottom:20px}
+.method-tab{padding:7px 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);font-size:0.65rem;font-family:var(--font-display);letter-spacing:0.04em;cursor:pointer;transition:all 0.2s}
+.method-tab.active{border-color:var(--gold);background:rgba(201,168,76,0.1);color:var(--gold)}
+.method-tab:hover:not(.active){border-color:rgba(201,168,76,0.3);color:var(--text-primary)}
+.ability-grid-6{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ability-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;text-align:center;transition:all 0.2s;position:relative}
+.ability-block:hover{border-color:rgba(201,168,76,0.3)}
+.ability-block.boosted{border-color:rgba(0,212,184,0.4);background:rgba(0,212,184,0.04)}
+.ability-label{font-family:var(--font-display);font-size:0.6rem;letter-spacing:0.08em;color:var(--text-dim);margin-bottom:6px}
+.ability-mod{font-family:var(--font-display);font-size:2rem;font-weight:600;color:var(--text-primary);line-height:1;margin-bottom:4px}
+.ability-mod.pos{color:#68d391}
+.ability-mod.neg{color:#fc8181}
+.ability-score-box{background:var(--dark3);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:space-between;padding:4px 8px;margin-top:6px}
+.ability-score-val{font-family:var(--font-display);font-size:1rem;color:var(--text-primary);min-width:24px;text-align:center}
+.ability-btn{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:0.8rem;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:3px;transition:all 0.15s}
+.ability-btn:hover{background:rgba(201,168,76,0.1);color:var(--gold)}
+.ability-btn:disabled{opacity:0.25;cursor:not-allowed}
+.ability-cost-indicator{position:absolute;top:6px;right:6px;font-size:0.52rem;font-family:var(--font-display);color:var(--gold-dim);background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.15);padding:1px 5px;border-radius:3px}
+.point-buy-budget{background:var(--surface);border:1px solid var(--border-gold);border-radius:var(--r-lg);padding:16px;margin-bottom:16px;text-align:center}
+.pb-points{font-family:var(--font-display);font-size:2.4rem;color:var(--gold-light);font-weight:600;line-height:1}
+.pb-points span{font-size:1rem;color:var(--text-dim)}
+.pb-label{font-size:0.65rem;color:var(--text-secondary);margin-top:4px;font-family:var(--font-display);letter-spacing:0.05em}
+.pb-bar{height:4px;background:var(--dark3);border-radius:2px;margin-top:10px;overflow:hidden}
+.pb-bar-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--gold));border-radius:2px;transition:width 0.3s}
+.class-tip{background:var(--dark3);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-top:16px}
+.class-tip-header{font-family:var(--font-display);font-size:0.65rem;color:var(--gold);margin-bottom:8px;letter-spacing:0.04em}
+.class-tip-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:10px}
+.class-tip-ability{font-family:var(--font-display);font-size:0.62rem;color:var(--text-secondary)}
+.class-tip-ability strong{color:var(--gold-light)}
+.class-tip-reason{font-size:0.6rem;color:var(--text-dim);font-style:italic;text-align:right}
+
+/* ── STAT BLOCK REVIEW ── */
+.statblock{background:var(--surface);border:1px solid var(--border-gold);border-radius:var(--r-xl);overflow:hidden}
+.sb-banner{background:linear-gradient(135deg,var(--dark3),rgba(201,168,76,0.06));padding:24px;display:flex;align-items:center;gap:20px;border-bottom:1px solid var(--border-gold)}
+.sb-portrait{width:72px;height:72px;border-radius:50%;background:var(--dark3);border:2px solid var(--border-gold);display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0}
+.sb-identity{}
+.sb-char-name{font-family:var(--font-display);font-size:1.5rem;color:var(--gold-light);font-weight:600;letter-spacing:0.03em}
+.sb-char-sub{font-size:0.8rem;color:var(--text-secondary);margin-top:4px;font-style:italic}
+.sb-char-sub2{font-size:0.7rem;color:var(--text-dim);margin-top:2px;font-family:var(--font-display);letter-spacing:0.03em}
+.sb-xp-bar{height:3px;background:var(--dark3);margin-top:8px;border-radius:1px;width:200px;overflow:hidden}
+.sb-xp-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));width:0%}
+.sb-combat-bar{display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid var(--border)}
+.sb-stat{padding:14px;text-align:center;border-right:1px solid var(--border);position:relative}
+.sb-stat:last-child{border-right:none}
+.sb-stat-val{font-family:var(--font-display);font-size:1.5rem;font-weight:600;color:var(--text-primary);line-height:1}
+.sb-stat-val.good{color:#68d391}
+.sb-stat-lbl{font-size:0.55rem;color:var(--text-dim);font-family:var(--font-display);letter-spacing:0.06em;margin-top:4px}
+.sb-stat-sub{font-size:0.58rem;color:var(--text-dim);margin-top:2px}
+.sb-body{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border)}
+.sb-section{padding:16px;border-right:1px solid var(--border)}
+.sb-section:last-child{border-right:none}
+.sb-section-title{font-family:var(--font-display);font-size:0.6rem;letter-spacing:0.08em;color:var(--gold-dim);margin-bottom:10px;text-transform:uppercase}
+.ability-row-sb{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.ability-row-sb:last-child{border-bottom:none}
+.ars-name{font-size:0.65rem;color:var(--text-secondary);font-family:var(--font-display);letter-spacing:0.04em;width:32px}
+.ars-score{font-size:0.65rem;color:var(--text-dim)}
+.ars-mod{font-family:var(--font-display);font-size:0.75rem;color:var(--text-primary);text-align:right;min-width:28px}
+.ars-mod.pos{color:#68d391}
+.ars-mod.neg{color:#fc8181}
+.save-row{display:flex;align-items:center;padding:3px 0;gap:6px}
+.save-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.save-dot.proficient{background:var(--gold)}
+.save-dot.normal{background:var(--border);border:1px solid rgba(255,255,255,0.1)}
+.save-name{font-size:0.63rem;color:var(--text-secondary);flex:1}
+.save-val{font-family:var(--font-display);font-size:0.65rem;color:var(--text-primary);text-align:right}
+.save-val.prof{color:var(--gold)}
+.feature-list-sb{}
+.fl-feature{padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;align-items:flex-start;gap:6px}
+.fl-feature:last-child{border-bottom:none}
+.fl-dot{width:5px;height:5px;border-radius:50%;background:var(--teal);flex-shrink:0;margin-top:5px}
+.fl-name{font-size:0.65rem;color:var(--text-secondary);line-height:1.4}
+.fl-name strong{color:var(--gold-light);font-weight:600;display:block;font-family:var(--font-display);font-size:0.62rem;letter-spacing:0.02em}
+.sb-spell-bar{padding:14px 16px;background:rgba(36,113,163,0.08);border-bottom:1px solid var(--border);display:flex;gap:24px;align-items:center}
+.sbs-item{text-align:center}
+.sbs-val{font-family:var(--font-display);font-size:1rem;color:var(--white-mana);font-weight:600}
+.sbs-lbl{font-size:0.55rem;color:rgba(91,163,208,0.7);font-family:var(--font-display);letter-spacing:0.05em}
+.spell-slot-bar{display:flex;gap:6px;padding:14px 16px;flex-wrap:wrap;border-bottom:1px solid var(--border)}
+.ss-level-group{display:flex;flex-direction:column;align-items:center;gap:4px}
+.ss-level-lbl{font-size:0.5rem;font-family:var(--font-display);color:var(--text-dim);letter-spacing:0.04em}
+.ss-slots{display:flex;gap:3px}
+.ss-slot{width:14px;height:14px;border-radius:50%;border:1px solid rgba(91,163,208,0.4);background:rgba(91,163,208,0.12)}
+.ss-slot.used{background:transparent;border-color:rgba(255,255,255,0.1)}
+.sb-validation{padding:16px;display:flex;align-items:center;gap:10px}
+.val-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;flex-shrink:0}
+.val-icon.ready{background:rgba(104,211,145,0.15);border:1px solid rgba(104,211,145,0.3);color:#68d391}
+.val-text{font-size:0.72rem;color:var(--text-secondary)}
+.val-text strong{color:#68d391;display:block;font-family:var(--font-display);font-size:0.68rem;letter-spacing:0.03em;margin-bottom:2px}
+
+/* ── BOTTOM NAVIGATION ── */
+#bottom-nav{padding:20px 0 32px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border)}
+.btn-nav{padding:10px 24px;border-radius:var(--r);font-family:var(--font-display);font-size:0.72rem;letter-spacing:0.06em;cursor:pointer;transition:all 0.2s}
+.btn-prev{background:none;border:1px solid var(--border);color:var(--text-secondary)}
+.btn-prev:hover{border-color:rgba(201,168,76,0.3);color:var(--text-primary)}
+.btn-next{background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.1));border:1px solid var(--gold-dim);color:var(--gold-light)}
+.btn-next:hover{background:linear-gradient(135deg,rgba(201,168,76,0.3),rgba(201,168,76,0.15));box-shadow:0 0 20px rgba(201,168,76,0.2)}
+.btn-save{background:linear-gradient(135deg,rgba(0,212,184,0.2),rgba(0,212,184,0.1));border:1px solid var(--teal-dim);color:var(--teal)}
+.btn-save:hover{background:linear-gradient(135deg,rgba(0,212,184,0.3),rgba(0,212,184,0.15));box-shadow:0 0 20px rgba(0,212,184,0.2)}
+.step-counter{font-size:0.65rem;color:var(--text-dim);font-family:var(--font-display);letter-spacing:0.05em}
+.step-counter span{color:var(--gold)}
+
+/* ── TOOLTIP BTN ── */
+.help-btn{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid rgba(201,168,76,0.35);font-size:0.55rem;color:var(--gold-dim);cursor:pointer;background:none;margin-left:5px;vertical-align:middle;font-family:var(--font-display);transition:all 0.15s;flex-shrink:0}
+.help-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.08)}
+
+/* ── ROADMAP ── */
+.roadmap-toggle{display:flex;align-items:center;gap:8px;background:none;border:1px solid var(--border);color:var(--text-secondary);padding:6px 14px;border-radius:var(--r);font-size:0.62rem;font-family:var(--font-display);letter-spacing:0.04em;cursor:pointer;transition:all 0.2s;margin-bottom:16px}
+.roadmap-toggle:hover{border-color:rgba(201,168,76,0.3);color:var(--gold)}
+.roadmap-content{background:var(--dark3);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;margin-bottom:20px;display:none}
+.roadmap-content.open{display:block;animation:screenIn 0.25s ease}
+.roadmap-row{display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.roadmap-row:last-child{border-bottom:none}
+.roadmap-lvl{font-family:var(--font-display);font-size:0.6rem;color:var(--text-dim);width:28px;flex-shrink:0;padding-top:1px}
+.roadmap-feature{font-size:0.65rem;color:var(--text-secondary);line-height:1.4}
+.roadmap-row.asi .roadmap-feature{color:#E8C97A}
+.roadmap-row.subclass .roadmap-feature{color:#b07fd4}
+.roadmap-row.major .roadmap-lvl,.roadmap-row.major .roadmap-feature{color:var(--gold)}
+
+/* ── SEARCH INPUT ── */
+.search-input{width:100%;background:var(--dark3);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;color:var(--text-primary);font-family:var(--font-body);font-size:0.8rem;transition:border 0.2s;outline:none}
+.search-input:focus{border-color:rgba(201,168,76,0.4)}
+.search-input::placeholder{color:var(--text-dim)}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--dark1)}
+::-webkit-scrollbar-thumb{background:var(--dark4);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--surface)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border-gold);border-radius:var(--r-lg);padding:12px 18px;font-size:0.72rem;color:var(--text-primary);z-index:9999;animation:toastIn 0.3s ease;max-width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.5)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.toast-title{font-family:var(--font-display);font-size:0.65rem;color:var(--gold);margin-bottom:3px;letter-spacing:0.04em}
+
+/* ── PREVIEW BANNER ── */
+.preview-banner{background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:var(--r);padding:8px 14px;margin-bottom:16px;font-size:0.65rem;color:var(--gold-dim);display:flex;align-items:center;gap:8px}
+.preview-banner strong{color:var(--gold)}
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<div id="app">
+  <header>
+    <div class="logo">⚔ Tavern Tabletop</div>
+    <div class="header-right">
+      <div class="char-name-display">Forging: <span id="hdr-name">New Character</span></div>
+      <button class="btn-close">✕ Exit Forge</button>
+    </div>
+  </header>
+
+  <div id="step-progress">
+    <div class="step-track" id="step-track"></div>
+    <div class="step-progress-bar" id="prog-bar"></div>
+  </div>
+
+  <div id="content">
+    <div class="preview-banner">
+      <strong>⚡ UI Preview Mode</strong> — Click through all 6 screens. This is the proposed design before production implementation.
+    </div>
+
+    <!-- ─── SCREEN 1: SPECIES ─── -->
+    <div class="screen active" id="screen-species">
+      <div class="screen-header">
+        <div class="screen-title">Choose Your Species</div>
+        <div class="screen-divider"></div>
+        <div class="screen-subtitle">Your ancestry shapes your innate traits, senses, and place in the world <button class="help-btn" onclick="showHelp('species')">?</button></div>
+      </div>
+
+      <button class="roadmap-toggle" onclick="toggleRoadmap()">📜 Level Roadmap — see what's ahead</button>
+      <div class="roadmap-content" id="roadmap">
+        <div class="roadmap-row major"><div class="roadmap-lvl">Lv.1</div><div class="roadmap-feature">Fighting Style, Second Wind, Weapon Mastery</div></div>
+        <div class="roadmap-row"><div class="roadmap-lvl">Lv.2</div><div class="roadmap-feature">Action Surge — take an extra action once per short rest</div></div>
+        <div class="roadmap-row subclass"><div class="roadmap-lvl">Lv.3</div><div class="roadmap-feature">Choose Martial Archetype (Champion, Battlemaster, Eldritch Knight...)</div></div>
+        <div class="roadmap-row asi"><div class="roadmap-lvl">Lv.4</div><div class="roadmap-feature">⭐ Ability Score Improvement or Feat</div></div>
+        <div class="roadmap-row major"><div class="roadmap-lvl">Lv.5</div><div class="roadmap-feature">Extra Attack — strike twice with every Attack action</div></div>
+      </div>
+
+      <div class="species-grid" id="species-grid"></div>
+      <div class="species-detail" id="species-detail"></div>
+    </div>
+
+    <!-- ─── SCREEN 2: CLASS ─── -->
+    <div class="screen" id="screen-class">
+      <div class="screen-header">
+        <div class="screen-title">Choose Your Class</div>
+        <div class="screen-divider"></div>
+        <div class="screen-subtitle">Your class is your calling — it determines your powers, fighting style, and journey <button class="help-btn" onclick="showHelp('class')">?</button></div>
+      </div>
+      <div class="class-grid" id="class-grid"></div>
+      <div class="class-detail" id="class-detail"></div>
+    </div>
+
+    <!-- ─── SCREEN 3: ABILITIES ─── -->
+    <div class="screen" id="screen-abilities">
+      <div class="screen-header">
+        <div class="screen-title">Set Ability Scores</div>
+        <div class="screen-divider"></div>
+        <div class="screen-subtitle">These six scores define your character's strengths and weaknesses <button class="help-btn" onclick="showHelp('abilities')">?</button></div>
+      </div>
+      <div class="ability-method-tabs">
+        <button class="method-tab" onclick="setMethod('standard')">Standard Array</button>
+        <button class="method-tab active" onclick="setMethod('pointbuy')">Point Buy</button>
+        <button class="method-tab" onclick="setMethod('roll')">Roll (4d6)</button>
+        <button class="method-tab" onclick="setMethod('manual')">Manual Entry</button>
+      </div>
+      <div class="ability-layout">
+        <div>
+          <div class="ability-grid-6" id="ability-grid"></div>
+        </div>
+        <div>
+          <div class="point-buy-budget" id="pb-budget">
+            <div class="pb-points" id="pb-val">27<span> pts</span></div>
+            <div class="pb-label">Points Remaining</div>
+            <div class="pb-bar"><div class="pb-bar-fill" id="pb-fill" style="width:100%"></div></div>
+          </div>
+          <div class="class-tip" id="class-tip">
+            <div class="class-tip-header">💡 Fighter Build Tips</div>
+            <div class="class-tip-row">
+              <div class="class-tip-ability">Priority 1 — <strong>Strength (STR)</strong></div>
+              <div class="class-tip-reason">Powers weapon attacks & Athletics</div>
+            </div>
+            <div class="class-tip-row">
+              <div class="class-tip-ability">Priority 2 — <strong>Constitution (CON)</strong></div>
+              <div class="class-tip-reason">Hit points & Concentration saves</div>
+            </div>
+            <div class="class-tip-row">
+              <div class="class-tip-ability">Safe Dump — <strong>Intelligence (INT)</strong></div>
+              <div class="class-tip-reason">Rarely used by Fighters</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── SCREEN 4: ORIGINS ─── -->
+    <div class="screen" id="screen-origins">
+      <div class="screen-header">
+        <div class="screen-title">Background & Origins</div>
+        <div class="screen-divider"></div>
+        <div class="screen-subtitle">Your background defines who you were before you became an adventurer</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px" id="bg-grid"></div>
+    </div>
+
+    <!-- ─── SCREEN 5: IDENTITY ─── -->
+    <div class="screen" id="screen-identity">
+      <div class="screen-header">
+        <div class="screen-title">Character Identity</div>
+        <div class="screen-divider"></div>
+        <div class="screen-subtitle">Name your hero and shape their story</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:700px">
+        <div>
+          <div style="margin-bottom:14px">
+            <label style="font-family:var(--font-display);font-size:0.65rem;letter-spacing:0.06em;color:var(--text-dim);display:block;margin-bottom:6px">CHARACTER NAME</label>
+            <input class="search-input" id="char-name-input" placeholder="Enter your hero's name..." oninput="updateCharName(this.value)" style="font-size:1rem;padding:10px 14px">
+          </div>
+          <div style="margin-bottom:14px">
+            <label style="font-family:var(--font-display);font-size:0.65rem;letter-spacing:0.06em;color:var(--text-dim);display:block;margin-bottom:6px">PRONOUNS</label>
+            <select class="search-input" style="font-size:0.85rem">
+              <option>He / Him</option><option>She / Her</option><option>They / Them</option><option>Custom...</option>
+            </select>
+          </div>
+          <div style="margin-bottom:14px">
+            <label style="font-family:var(--font-display);font-size:0.65rem;letter-spacing:0.06em;color:var(--text-dim);display:block;margin-bottom:6px">ALIGNMENT</label>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px" id="alignment-grid"></div>
+          </div>
+        </div>
+        <div>
+          <label style="font-family:var(--font-display);font-size:0.65rem;letter-spacing:0.06em;color:var(--text-dim);display:block;margin-bottom:6px">CHARACTER PORTRAIT URL</label>
+          <div style="background:var(--dark3);border:1px solid var(--border);border-radius:var(--r-lg);height:180px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;cursor:pointer;transition:border-color 0.2s" onmouseover="this.style.borderColor='rgba(201,168,76,0.4)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="font-size:2rem;opacity:0.3">🎭</div>
+            <div style="font-size:0.65rem;color:var(--text-dim);font-family:var(--font-display);letter-spacing:0.04em">PASTE IMAGE URL</div>
+            <div style="font-size:0.58rem;color:var(--text-dim);font-style:italic">or drag & drop</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── SCREEN 6: REVIEW ─── -->
+    <div class="screen" id="screen-review">
+      <div class="screen-header">
+        <div class="screen-title">Character Sheet Preview</div>
+        <div class="screen-divider"></div>
+        <div class="screen-subtitle">Review your hero before entering the world</div>
+      </div>
+      <div class="statblock" id="statblock"></div>
+    </div>
+
+  </div>
+
+  <div id="bottom-nav">
+    <button class="btn-nav btn-prev" id="btn-prev" onclick="navigate(-1)">← Previous</button>
+    <div class="step-counter">Step <span id="step-num">1</span> of 6</div>
+    <button class="btn-nav btn-next" id="btn-next" onclick="navigate(1)">Next Step →</button>
+  </div>
+</div>
+
+<!-- Help overlay -->
+<div id="help-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center" onclick="closeHelp()">
+  <div style="background:var(--surface2);border:1px solid var(--border-gold);border-radius:var(--r-xl);padding:24px;max-width:380px;margin:20px;position:relative" onclick="event.stopPropagation()">
+    <div style="font-family:var(--font-display);font-size:1rem;color:var(--gold-light);margin-bottom:10px" id="help-title"></div>
+    <div style="font-size:0.78rem;color:var(--text-secondary);line-height:1.7" id="help-body"></div>
+    <button onclick="closeHelp()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text-dim);font-size:1.2rem;cursor:pointer">×</button>
+  </div>
+</div>
+
+<script>
+// ── AMBIENT PARTICLE CANVAS ──
+(function(){
+  const c=document.getElementById('bg-canvas'),ctx=c.getContext('2d');
+  let W,H,pts=[];
+  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight;pts=[];for(let i=0;i<50;i++)pts.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+0.3,vx:(Math.random()-.5)*0.15,vy:(Math.random()-.5)*0.15,a:Math.random(),gold:Math.random()>.5})}
+  window.addEventListener('resize',resize);resize();
+  function draw(){ctx.clearRect(0,0,W,H);pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;p.a+=0.01;const a=0.15+0.1*Math.sin(p.a);ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.28);ctx.fillStyle=p.gold?`rgba(201,168,76,${a})`:`rgba(0,212,184,${a*0.6})`;ctx.fill()});requestAnimationFrame(draw)}
+  draw();
+})();
+
+// ── DATA ──
+const SPECIES=[
+  {id:'human',name:'Human',icon:'👤',size:'Medium',speed:30,darkvision:0,color:'#C9A84C',
+   flavor:'Ambitious and adaptable, humans build empires and explore every corner of the multiverse.',
+   traits:[{n:'Resourceful',d:'Gain the Lucky feat and regain Heroic Inspiration on every Long Rest.',m:'Origin Feat at Lv.1'},{n:'Skillful',d:'Gain proficiency in one skill of your choice.',m:'Any skill'},{n:'Versatile',d:'Gain an additional Origin feat at character creation.',m:'+1 Feat at creation'}]},
+  {id:'elf',name:'Elf',icon:'🌙',size:'Medium',speed:30,darkvision:60,color:'#7FB3D3',
+   flavor:'Ancient and fey-touched, elves perceive the world through centuries of memory and keen awareness.',
+   traits:[{n:'Darkvision',d:'See in dim light as bright light up to 60 ft; darkness as dim light.',m:'60 ft'},{n:'Fey Ancestry',d:'Advantage on saving throws vs. Charmed. Immune to magical sleep.',m:'Passive'},{n:'Keen Senses',d:'You have proficiency in the Perception skill.',m:'Proficiency'},{n:'Trance',d:'4-hour meditation replaces a full Long Rest.',m:'4 hours'}]},
+  {id:'dwarf',name:'Dwarf',icon:'⛏',size:'Medium',speed:25,darkvision:60,color:'#A0826D',
+   flavor:'Hardy and resolute, dwarves endure centuries of tradition, forging their legacy in stone and steel.',
+   traits:[{n:'Darkvision',d:'See in darkness to 60 ft.',m:'60 ft'},{n:'Dwarven Resilience',d:'Advantage on saves vs. Poison. Resistance to Poison damage.',m:'Passive'},{n:'Dwarven Toughness',d:'HP maximum increases by 1 for each character level.',m:'+1 HP/level'},{n:'Stonecunning',d:'Tremorsense 60 ft for 10 minutes. Proficiency bonus uses per LR.',m:'Tremorsense 60 ft'}]},
+  {id:'halfling',name:'Halfling',icon:'🍀',size:'Small',speed:25,darkvision:0,color:'#82E0AA',
+   flavor:'Small in stature but enormous in spirit, halflings carry an ancient luck that defies the odds.',
+   traits:[{n:'Lucky',d:'When you roll a 1 on any d20, reroll it and use the new result.',m:'Passive (best trait in D&D)'},{n:'Brave',d:'You have advantage on saving throws against the Frightened condition.',m:'Passive'},{n:'Halfling Nimbleness',d:'Move through the space of any creature that is one size larger without penalty.',m:'Movement'}]},
+  {id:'dragonborn',name:'Dragonborn',icon:'🐉',size:'Medium',speed:30,darkvision:60,color:'#E74C3C',
+   flavor:'Heirs to the power of ancient dragons, dragonborn carry ancestral fire — or frost, or lightning — within their blood.',
+   traits:[{n:'Draconic Ancestry',d:'Choose one of 11 dragon types. Determines your Breath Weapon damage type and Damage Resistance.',m:'11 options'},{n:'Breath Weapon',d:'Action: exhale destructive energy. 1d10/level damage. Proficiency bonus uses per LR. CON or DEX save.',m:'Scales w/ level'},{n:'Damage Resistance',d:'Resistance to the damage type matching your draconic ancestry.',m:'Passive'},{n:'Draconic Flight',d:'At 5th level, Bonus Action: manifest wings. Fly speed = walk speed for 10 min.',m:'Unlocks at Lv.5'}]},
+  {id:'tiefling',name:'Tiefling',icon:'😈',size:'Medium',speed:30,darkvision:60,color:'#C0392B',
+   flavor:'Born of infernal bloodlines, tieflings carry the mark of the Nine Hells — but their destiny is their own.',
+   traits:[{n:'Hellish Resistance',d:'You have resistance to fire damage.',m:'Passive'},{n:'Darkvision',d:'See in darkness to 60 ft.',m:'60 ft'},{n:'Infernal Legacy',d:'Thaumaturgy cantrip. At 3rd: Hellish Rebuke 1/LR. At 5th: Darkness 1/LR. Uses CHA modifier.',m:'CHA spellcasting'}]},
+  {id:'gnome',name:'Gnome',icon:'🔬',size:'Small',speed:30,darkvision:60,color:'#48C9B0',
+   flavor:'Clever, curious, and endlessly inventive, gnomes see the world as an endless puzzle to solve.',
+   traits:[{n:'Gnomish Cunning',d:'Advantage on INT, WIS, and CHA saving throws against magic.',m:'vs spells only'},{n:'Darkvision',d:'See in darkness to 60 ft.',m:'60 ft'},{n:'Forest Gnome',d:'Speak with small animals. Know Minor Illusion cantrip (INT).',m:'Or Rock Gnome'}]},
+  {id:'half-orc',name:'Half-Orc',icon:'💪',size:'Medium',speed:30,darkvision:60,color:'#27AE60',
+   flavor:'Where humans see obstacles, half-orcs charge through them. Their orcish heritage forges a relentless warrior spirit.',
+   traits:[{n:'Adrenaline Rush',d:'Bonus Action: gain Temp HP = proficiency bonus. Use prof bonus times per LR.',m:'Bonus Action'},{n:'Savage Attacks',d:'On a critical hit with a melee weapon, roll one extra weapon damage die.',m:'Critical hits'},{n:'Darkvision',d:'See in darkness to 60 ft.',m:'60 ft'}]},
+  {id:'aasimar',name:'Aasimar',icon:'✨',size:'Medium',speed:30,darkvision:60,color:'#F7DC6F',
+   flavor:'Touched by celestial power, aasimar walk the mortal world as living bridges between the mundane and divine.',
+   traits:[{n:'Celestial Revelation',d:'At 3rd level, choose Healing Hands, Necrotic Shroud, or Radiant Consumption. Bonus Action transformation 1/LR for 1 minute.',m:'Unlocks at Lv.3'},{n:'Darkvision',d:'60 ft.',m:'60 ft'},{n:'Light Bearer',d:'Know the Light cantrip. CHA is your spellcasting ability.',m:'CHA cantrip'}]},
+];
+
+const CLASSES=[
+  {id:'fighter',name:'Fighter',icon:'⚔️',die:'d10',color:'#C0392B',type:null,role:'Frontline warrior — highest sustained damage, best armor options',primary:['STR','DEX'],saves:['STR','CON'],armor:['Light','Medium','Heavy','Shields'],features:['Fighting Style','Second Wind','Action Surge','Extra Attack (×4 at 20)','Indomitable'],
+   desc:'A master of martial combat, skilled with a variety of weapons and armor. The Fighter\'s unmatched mastery of weapons and tactical brilliance makes every encounter a winnable fight.',
+   progression:[
+     {l:1,p:'+2',f:'Fighting Style, Second Wind, Weapon Mastery'},
+     {l:2,p:'+2',f:'Action Surge (1/SR)'},
+     {l:3,p:'+2',f:'Subclass Choice',sub:true},
+     {l:4,p:'+2',f:'Ability Score Improvement',asi:true},
+     {l:5,p:'+3',f:'Extra Attack (×2)'},
+     {l:6,p:'+3',f:'Ability Score Improvement',asi:true},
+     {l:7,p:'+3',f:'Subclass Feature, Weapon Mastery (4)',sub:true},
+     {l:8,p:'+3',f:'Ability Score Improvement',asi:true},
+     {l:9,p:'+4',f:'Indomitable (1/LR), Tactical Shift'},
+     {l:10,p:'+4',f:'Subclass Feature',sub:true},
+     {l:11,p:'+4',f:'Extra Attack (×3), Studied Attacks'},
+     {l:12,p:'+4',f:'Ability Score Improvement',asi:true},
+     {l:13,p:'+5',f:'Indomitable (2/LR), Subclass Feature',sub:true},
+     {l:14,p:'+5',f:'Ability Score Improvement',asi:true},
+     {l:15,p:'+5',f:'Subclass Feature',sub:true},
+     {l:16,p:'+5',f:'Ability Score Improvement',asi:true},
+     {l:17,p:'+6',f:'Action Surge (2/SR), Indomitable (3/LR)'},
+     {l:18,p:'+6',f:'Subclass Feature',sub:true},
+     {l:19,p:'+6',f:'Epic Boon',asi:true},
+     {l:20,p:'+6',f:'Extra Attack (×4), Subclass Capstone'},
+   ]},
+  {id:'wizard',name:'Wizard',icon:'📖',die:'d6',color:'#2471A3',type:'full',role:'Arcane spellcaster — most versatile magic, largest spell list, tactical control',primary:['INT'],saves:['INT','WIS'],armor:[],features:['Spellbook','Arcane Recovery','Subclass Tradition','Spell Mastery','Signature Spells'],
+   desc:'Students of arcane magic who define the impossible. Wizards harness the mathematical underpinning of reality itself, bending it to their will through preparation, intellect, and sheer brilliance.',
+   progression:[
+     {l:1,p:'+2',f:'Spellcasting (Spellbook), Arcane Recovery'},
+     {l:2,p:'+2',f:'Scholar (Expertise in Arcana or History)'},
+     {l:3,p:'+2',f:'Subclass Choice (Arcane Tradition)',sub:true},
+     {l:4,p:'+2',f:'Ability Score Improvement',asi:true},
+     {l:5,p:'+3',f:'3rd-level Spells Unlocked'},
+     {l:6,p:'+3',f:'Subclass Feature',sub:true},
+     {l:7,p:'+3',f:'4th-level Spells Unlocked'},
+     {l:9,p:'+4',f:'5th-level Spells Unlocked'},
+     {l:10,p:'+4',f:'Subclass Feature, Cantrip Formulas',sub:true},
+     {l:11,p:'+4',f:'6th-level Spells Unlocked'},
+     {l:12,p:'+4',f:'Ability Score Improvement',asi:true},
+     {l:17,p:'+6',f:'9th-level Spells Unlocked'},
+     {l:18,p:'+6',f:'Spell Mastery (free 1st & 2nd level spells)'},
+     {l:19,p:'+6',f:'Epic Boon',asi:true},
+     {l:20,p:'+6',f:'Signature Spells (2 free 3rd-level spells/SR)'},
+   ]},
+  {id:'rogue',name:'Rogue',icon:'🗡️',die:'d8',color:'#7F8C8D',type:null,role:'Precision striker — massive burst damage, skill monkey, unseen operator',primary:['DEX'],saves:['DEX','INT'],armor:['Light'],features:['Sneak Attack (10d6 at 20)','Cunning Action','Evasion','Reliable Talent','Stroke of Luck'],
+   desc:'A scoundrel who lives by their wits, reflexes, and the ever-present element of surprise. Rogues solve problems — combat, social, or puzzle — with efficiency and style.',
+   progression:[
+     {l:1,p:'+2',f:'Expertise (×2), Sneak Attack (1d6), Thieves\' Cant'},
+     {l:2,p:'+2',f:'Cunning Action (Dash/Disengage/Hide as BA)'},
+     {l:3,p:'+2',f:'Subclass Choice, Steady Aim',sub:true},
+     {l:4,p:'+2',f:'Ability Score Improvement',asi:true},
+     {l:5,p:'+3',f:'Cunning Strike, Uncanny Dodge'},
+     {l:6,p:'+3',f:'Expertise (×2 more)'},
+     {l:7,p:'+3',f:'Evasion, Reliable Talent'},
+     {l:10,p:'+4',f:'Subclass Feature',sub:true},
+     {l:11,p:'+4',f:'Improved Cunning Strike (use twice per Sneak Attack)'},
+     {l:14,p:'+5',f:'Subclass Feature, Slippery Mind (WIS + CHA saves)',sub:true},
+     {l:17,p:'+6',f:'Subtle Strikes (no longer need advantage for Sneak Attack)'},
+     {l:18,p:'+6',f:'Elusive (no attack has advantage against you)'},
+     {l:20,p:'+6',f:'Stroke of Luck (1/SR: turn miss into hit)'},
+   ]},
+  {id:'barbarian',name:'Barbarian',icon:'🪓',die:'d12',color:'#884EA0',type:null,role:'Primal tank — most HP, unlimited rage damage at 20, front-line fury',primary:['STR','CON'],saves:['STR','CON'],armor:['Light','Medium','Shields'],features:['Rage (Unlimited at 20)','Reckless Attack','Brutal Strike','Relentless Rage','Primal Champion'],
+   desc:'A fierce warrior of primitive background who channels nearly unstoppable rage. While raging, a barbarian is nigh indestructible — and utterly terrifying.',
+   progression:[
+     {l:1,p:'+2',f:'Rage (2/LR), Unarmored Defense (CON), Weapon Mastery'},
+     {l:2,p:'+2',f:'Reckless Attack, Danger Sense'},
+     {l:3,p:'+2',f:'Subclass Choice (Primal Path)',sub:true},
+     {l:4,p:'+2',f:'Ability Score Improvement',asi:true},
+     {l:5,p:'+3',f:'Extra Attack, Fast Movement (+10 ft)'},
+     {l:9,p:'+4',f:'Brutal Strike (extra 1d10 + special effect on Reckless Attack)'},
+     {l:11,p:'+4',f:'Relentless Rage (drop to 1 HP instead of 0 while raging)'},
+     {l:20,p:'+6',f:'Primal Champion (+4 STR, +4 CON, unlimited Rage)'},
+   ]},
+  {id:'paladin',name:'Paladin',icon:'🛡️',die:'d10',color:'#F0B27A',type:'half',role:'Holy warrior — divine smite burst damage, aura support, lay on hands healing',primary:['STR','CHA'],saves:['WIS','CHA'],armor:['Light','Medium','Heavy','Shields'],features:['Divine Smite','Lay on Hands','Aura of Protection (best in game)','Channel Divinity','Radiant Strikes'],
+   desc:'A holy warrior bound by a sacred oath. The paladin\'s Aura of Protection is one of the most powerful class features in D&D — and at level 6, it protects the whole party.',
+   progression:[
+     {l:1,p:'+2',f:'Lay on Hands (5×level HP pool), Divine Smite, Spellcasting'},
+     {l:2,p:'+2',f:'Fighting Style, Channel Divinity (1/LR)'},
+     {l:3,p:'+2',f:'Sacred Oath (Subclass), Divine Health',sub:true},
+     {l:5,p:'+3',f:'Extra Attack, Faithful Steed (Find Steed 1/day)'},
+     {l:6,p:'+3',f:'Aura of Protection (CHA mod to all saves for party in 10 ft)'},
+     {l:7,p:'+3',f:'Aura of Courage (immune to Frightened in aura)',sub:true},
+     {l:14,p:'+5',f:'Restoring Touch (Lay on Hands removes conditions)'},
+     {l:17,p:'+6',f:'Aura range extends to 30 ft'},
+   ]},
+  {id:'bard',name:'Bard',icon:'🎵',die:'d8',color:'#1ABC9C',type:'full',role:'Jack of all trades — party buffer, crowd control, universal spell access',primary:['CHA'],saves:['DEX','CHA'],armor:['Light'],features:['Bardic Inspiration (d12 at 15)','Jack of All Trades','Expertise','Magical Secrets','Superior Inspiration'],
+   desc:'A magical performer whose music rewires reality. The Bard\'s Magical Secrets allows them to poach the most powerful spells from any class list — making them the most flexible caster in the game.',
+   progression:[
+     {l:1,p:'+2',f:'Spellcasting, Bardic Inspiration (d6, CHA mod/LR)'},
+     {l:2,p:'+2',f:'Jack of All Trades, Song of Rest (d6)'},
+     {l:3,p:'+2',f:'Subclass Choice (College), Expertise (×2)',sub:true},
+     {l:5,p:'+3',f:'Font of Inspiration (regain BI on short rest), BI upgrades to d8'},
+     {l:6,p:'+3',f:'Subclass Feature, Countercharm',sub:true},
+     {l:7,p:'+3',f:'Magical Secrets — steal 2 spells from ANY class list'},
+     {l:10,p:'+4',f:'Expertise (×2 more), Magical Secrets ×2, BI → d10'},
+     {l:15,p:'+5',f:'Bardic Inspiration upgrades to d12'},
+     {l:20,p:'+6',f:'Superior Inspiration (never run out of BI in combat)'},
+   ]},
+  {id:'cleric',name:'Cleric',icon:'⚕️',die:'d8',color:'#F4D03F',type:'full',role:'Divine healer & caster — prepared spells, Channel Divinity, domain powers',primary:['WIS'],saves:['WIS','CHA'],armor:['Light','Medium','Shields'],features:['Spellcasting (Prepared)','Channel Divinity','Blessed Strikes','Divine Intervention','Greater Intervention'],
+   desc:'A holy figure who draws power from their deity. Clerics have the largest heal toolkit in the game and access to heavy armor depending on their Divine Domain choice.',
+   progression:[
+     {l:1,p:'+2',f:'Divine Order choice (Protector or Thaumaturge), Spellcasting'},
+     {l:2,p:'+2',f:'Channel Divinity (Divine Spark, Turn Undead)'},
+     {l:3,p:'+2',f:'Subclass Choice (Divine Domain)',sub:true},
+     {l:6,p:'+3',f:'Subclass Feature, Channel Divinity (2 uses)',sub:true},
+     {l:8,p:'+3',f:'Blessed Strikes (+1d8 radiant/necrotic on hit)',sub:true},
+     {l:10,p:'+4',f:'Divine Intervention (call upon your deity for a miracle)'},
+     {l:18,p:'+6',f:'Channel Divinity (3 uses)'},
+     {l:20,p:'+6',f:'Greater Divine Intervention (near-guaranteed miracle)'},
+   ]},
+  {id:'monk',name:'Monk',icon:'🥋',die:'d8',color:'#A9CCE3',type:null,role:'Mobile striker — unarmored speed demon, discipline point economy, stunning strikes',primary:['DEX','WIS'],saves:['STR','DEX'],armor:[],features:['Martial Arts (d12 at 17)','Discipline Points','Flurry of Blows','Stunning Strike','Quivering Palm'],
+   desc:'A master of martial arts who harnesses the body as a weapon. The Monk\'s Stunning Strike can neutralize even the most powerful enemies, and at high levels, Quivering Palm can kill outright.',
+   progression:[
+     {l:1,p:'+2',f:'Martial Arts (d6), Unarmored Defense (WIS), Weapon Mastery'},
+     {l:2,p:'+2',f:'Monk\'s Focus (Flurry of Blows, Patient Defense, Step of the Wind)'},
+     {l:3,p:'+2',f:'Subclass Choice, Deflect Attacks',sub:true},
+     {l:5,p:'+3',f:'Extra Attack, Stunning Strike (CON save or Stunned)'},
+     {l:11,p:'+4',f:'Martial Arts die upgrades to d10'},
+     {l:17,p:'+6',f:'Martial Arts die upgrades to d12, Superior Defense'},
+     {l:20,p:'+6',f:'Quivering Palm (CON save vs death)'},
+   ]},
+  {id:'warlock',name:'Warlock',icon:'🔮',die:'d8',color:'#8E44AD',type:'pact',role:'Pact caster — short-rest slots, Eldritch Blast, powerful Invocations',primary:['CHA'],saves:['WIS','CHA'],armor:['Light'],features:['Pact Magic (Short Rest)','Eldritch Blast','Eldritch Invocations (10)','Pact Boon','Mystic Arcanum'],
+   desc:'A spellcaster who draws power from a pact with an otherworldly patron. The Warlock recovers all spell slots on a short rest — making them uniquely powerful in resource-drained scenarios.',
+   progression:[
+     {l:1,p:'+2',f:'Patron (Subclass), Pact Magic (1 slot/SR), Eldritch Blast',sub:true},
+     {l:2,p:'+2',f:'Eldritch Invocations (2), Magical Cunning'},
+     {l:3,p:'+2',f:'Pact Boon (Blade, Chain, Tome, or Talisman)'},
+     {l:5,p:'+3',f:'3rd-level Pact Slots, Mystic Arcanum (6th-level spell 1/LR)'},
+     {l:7,p:'+3',f:'Mystic Arcanum (7th-level)'},
+     {l:9,p:'+4',f:'Mystic Arcanum (8th-level), 5th-level Pact Slots'},
+     {l:11,p:'+4',f:'Mystic Arcanum (9th-level)'},
+     {l:20,p:'+6',f:'Eldritch Master (regain all Pact slots in 5 min ritual)'},
+   ]},
+  {id:'druid',name:'Druid',icon:'🌿',die:'d8',color:'#58D68D',type:'full',role:'Shape-shifter & nature caster — Wild Shape battlefield control, versatile prep',primary:['WIS'],saves:['INT','WIS'],armor:['Light','Medium','Shields'],features:['Wild Shape','Spellcasting (Prepared)','Wildshape (unlimited at 20)','Beast Spells','Archdruid'],
+   desc:'A guardian of the natural world who channels primal magic. The Druid\'s Wild Shape ability lets them become any beast, enabling infiltration, scouting, and combat — all in one package.',
+   progression:[
+     {l:1,p:'+2',f:'Druidic Language, Spellcasting, Primal Order choice'},
+     {l:2,p:'+2',f:'Wild Shape (CR 1/4 beast), Wild Companion'},
+     {l:3,p:'+2',f:'Subclass Choice (Circle)',sub:true},
+     {l:4,p:'+2',f:'Wild Shape (CR 1/2, swim speed)'},
+     {l:8,p:'+3',f:'Wild Shape (CR 1, fly speed)'},
+     {l:18,p:'+6',f:'Timeless Body (age 10× slower), Beast Spells (cast while Wild Shaped)'},
+     {l:20,p:'+6',f:'Archdruid (unlimited Wild Shape, no component costs)'},
+   ]},
+  {id:'sorcerer',name:'Sorcerer',icon:'⚡',die:'d6',color:'#E74C3C',type:'full',role:'Metamagic caster — raw arcane power with unique spell-twisting abilities',primary:['CHA'],saves:['CON','CHA'],armor:[],features:['Innate Sorcery','Sorcery Points','Metamagic (4 options)','Flexible Casting','Arcane Apotheosis'],
+   desc:'Arcane power flows in the Sorcerer\'s blood from birth. While they know fewer spells than Wizards, their Metamagic options let them bend and amplify spells in ways no other caster can match.',
+   progression:[
+     {l:1,p:'+2',f:'Innate Sorcery (2/LR, +1 save DC), Spellcasting'},
+     {l:2,p:'+2',f:'Font of Magic (Sorcery Points), Flexible Casting'},
+     {l:3,p:'+2',f:'Subclass Choice (Sorcerous Origin), Metamagic (2 options)',sub:true},
+     {l:5,p:'+3',f:'Sorcerous Vitality (spend points to heal)'},
+     {l:10,p:'+4',f:'Metamagic (3rd option)'},
+     {l:17,p:'+6',f:'Metamagic (4th option)'},
+     {l:18,p:'+6',f:'Arcane Apotheosis (free Metamagic each turn in Innate Sorcery)'},
+   ]},
+  {id:'ranger',name:'Ranger',icon:'🏹',die:'d10',color:'#27AE60',type:'half',role:'Wilderness striker — Favored Enemy, precision damage, half-caster utility',primary:['DEX','WIS'],saves:['STR','DEX'],armor:['Light','Medium','Shields'],features:['Favored Enemy','Deft Explorer','Fighting Style','Spellcasting','Nature\'s Veil'],
+   desc:'A warrior of the wilderness, at home in the wild places where civilization ends. Rangers combine martial prowess with half-caster magic for devastating tactical flexibility.',
+   progression:[
+     {l:1,p:'+2',f:'Favored Enemy, Weapon Mastery (2)'},
+     {l:2,p:'+2',f:'Deft Explorer (Expertise), Spellcasting, Fighting Style'},
+     {l:3,p:'+2',f:'Subclass Choice, Roving (+10 ft speed + climb/swim)',sub:true},
+     {l:5,p:'+3',f:'Extra Attack'},
+     {l:10,p:'+4',f:'Subclass Feature, Tireless (regain Temp HP)',sub:true},
+     {l:14,p:'+5',f:'Subclass Feature, Nature\'s Veil (Invisible 1 round)',sub:true},
+     {l:20,p:'+6',f:'Foe Slayer (add WIS mod to hit or damage vs Favored Enemy)'},
+   ]},
+];
+
+const BACKGROUNDS=[
+  {id:'soldier',name:'Soldier',icon:'🪖',skills:['Athletics','Intimidation'],tool:'Gaming Set',feat:'Savage Attacker',gold:50},
+  {id:'criminal',name:'Criminal',icon:'🗝️',skills:['Sleight of Hand','Stealth'],tool:"Thieves' Tools",feat:'Alert',gold:50},
+  {id:'sage',name:'Sage',icon:'📚',skills:['Arcana','History'],tool:"Calligrapher's Supplies",feat:'Magic Initiate',gold:50},
+  {id:'acolyte',name:'Acolyte',icon:'⛪',skills:['Insight','Religion'],tool:"Calligrapher's Supplies",feat:'Magic Initiate (Divine)',gold:50},
+  {id:'noble',name:'Noble',icon:'👑',skills:['History','Persuasion'],tool:'Musical Instrument',feat:'Skilled',gold:150},
+  {id:'hermit',name:'Hermit',icon:'🏔️',skills:['Medicine','Religion'],tool:'Herbalism Kit',feat:'Magic Initiate (Primal)',gold:25},
+  {id:'entertainer',name:'Entertainer',icon:'🎭',skills:['Acrobatics','Performance'],tool:'Musical Instrument',feat:'Tavern Brawler',gold:50},
+  {id:'farmer',name:'Farmer',icon:'🌾',skills:['Animal Handling','Nature'],tool:"Carpenter's Tools",feat:'Tough',gold:30},
+  {id:'guard',name:'Guard',icon:'🛡️',skills:['Athletics','Perception'],tool:'Musical Instrument',feat:'Alert',gold:50},
+  {id:'sailor',name:'Sailor',icon:'⚓',skills:['Acrobatics','Perception'],tool:"Navigator's Tools",feat:'Tavern Brawler',gold:50},
+  {id:'merchant',name:'Merchant',icon:'💰',skills:['Animal Handling','Persuasion'],tool:"Navigator's Tools",feat:'Lucky',gold:100},
+  {id:'wayfarer',name:'Wayfarer',icon:'🎒',skills:['Insight','Stealth'],tool:"Thieves' Tools",feat:'Lucky',gold:16},
+];
+
+const ALIGNMENTS=['Lawful Good','Neutral Good','Chaotic Good','Lawful Neutral','True Neutral','Chaotic Neutral','Lawful Evil','Neutral Evil','Chaotic Evil'];
+
+const HELP_TEXT={
+  species:{title:'What is a Species?',body:'Your species (called "race" in older editions) determines your character\'s ancestry — Elf, Human, Dwarf, etc. It grants permanent traits, affects your speed and senses, and shapes your character\'s innate abilities. Species traits don\'t change as you level up.'},
+  class:{title:'What is a Class?',body:'Your class is your character\'s profession and primary power source. A Fighter masters weapons; a Wizard commands arcane magic; a Rogue excels at stealth and precision. Your class determines which abilities you gain as you level up, your hit points, and whether you can cast spells.'},
+  abilities:{title:'What are Ability Scores?',body:'Six scores — Strength, Dexterity, Constitution, Intelligence, Wisdom, and Charisma — measure your natural aptitudes. Each score (usually 8–18) generates a modifier: (score − 10) ÷ 2, rounded down. STR 15 = +2 modifier, added to attack rolls, saves, and checks that use Strength. Modifiers are what actually matter in play.'},
+};
+
+// ── STATE ──
+let state={
+  screen:0,
+  species:null, classId:'fighter', background:null,
+  abilities:{str:8,dex:8,con:8,int:8,wis:8,cha:8},
+  pointsRemaining:27,
+  method:'pointbuy',
+  charName:'',
+};
+
+const SCREENS=['species','class','abilities','origins','identity','review'];
+const STEP_LABELS=['Species','Class','Abilities','Origins','Identity','Review'];
+
+// ── NAVIGATION ──
+function navigate(dir){
+  const next=state.screen+dir;
+  if(next<0||next>=SCREENS.length)return;
+  if(next===SCREENS.length-1)renderStatBlock();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+SCREENS[next]).classList.add('active');
+  state.screen=next;
+  updateProgress();
+  updateNav();
+  window.scrollTo(0,0);
+}
+
+function goToScreen(idx){state.screen=idx-1;navigate(1);}
+
+function updateProgress(){
+  const track=document.getElementById('step-track');
+  track.innerHTML='';
+  STEP_LABELS.forEach((label,i)=>{
+    const dot=document.createElement('div');dot.className='step-item';
+    const d=document.createElement('button');
+    d.className='step-dot'+(i<state.screen?' done':i===state.screen?' active':'');
+    d.innerHTML=i<state.screen?'':(i+1);
+    const lbl=document.createElement('span');lbl.className='step-label';lbl.textContent=label;
+    d.appendChild(lbl);
+    d.onclick=()=>{state.screen=i-1;navigate(1)};
+    dot.appendChild(d);
+    if(i<STEP_LABELS.length-1){const line=document.createElement('div');line.className='step-connector'+(i<state.screen?' done':'');dot.appendChild(line);}
+    track.appendChild(dot);
+  });
+  const pct=((state.screen)/(SCREENS.length-1))*100;
+  document.getElementById('prog-bar').style.width=pct+'%';
+  document.getElementById('step-num').textContent=state.screen+1;
+}
+
+function updateNav(){
+  const prev=document.getElementById('btn-prev');
+  const next=document.getElementById('btn-next');
+  prev.style.visibility=state.screen===0?'hidden':'visible';
+  if(state.screen===SCREENS.length-1){
+    next.textContent='⚔ Enter the World';
+    next.className='btn-nav btn-save';
+    next.onclick=()=>{showToast('Character Saved!','Your hero has been forged and is ready for adventure.');};
+  } else {
+    next.textContent='Next Step →';
+    next.className='btn-nav btn-next';
+    next.onclick=()=>navigate(1);
+  }
+}
+
+function updateCharName(v){
+  state.charName=v;
+  document.getElementById('hdr-name').textContent=v||'New Character';
+}
+
+// ── SPECIES ──
+function renderSpecies(){
+  const grid=document.getElementById('species-grid');
+  grid.innerHTML='';
+  SPECIES.forEach(s=>{
+    const card=document.createElement('div');
+    card.className='species-card'+(state.species===s.id?' selected':'');
+    card.innerHTML=`
+      <div class="sc-selected-check">✓</div>
+      <div class="sc-icon" style="border-color:${s.color}33;background:${s.color}11">${s.icon}</div>
+      <div class="sc-name">${s.name}</div>
+      <div class="sc-badges">
+        <span class="sc-badge speed">⚡ ${s.speed} ft</span>
+        ${s.darkvision?`<span class="sc-badge darkvision">👁 ${s.darkvision} ft</span>`:''}
+        <span class="sc-badge size">${s.size}</span>
+      </div>
+      <div class="sc-flavor">${s.flavor}</div>
+      <div class="sc-traits">${s.traits.slice(0,3).map(t=>`<div class="sc-trait">${t.n}</div>`).join('')}</div>
+    `;
+    card.onclick=()=>selectSpecies(s.id);
+    grid.appendChild(card);
+  });
+  if(state.species)showSpeciesDetail(state.species);
+}
+
+function selectSpecies(id){
+  state.species=id;
+  document.querySelectorAll('.species-card').forEach(c=>c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  showSpeciesDetail(id);
+  showToast('Species Selected',`You have chosen the ${SPECIES.find(s=>s.id===id).name}. Scroll down for full details.`);
+}
+
+function showSpeciesDetail(id){
+  const s=SPECIES.find(x=>x.id===id);if(!s)return;
+  const panel=document.getElementById('species-detail');
+  panel.className='species-detail visible';
+  panel.innerHTML=`
+    <div class="sd-header">
+      <div>
+        <div class="sd-name" style="color:${s.color}">${s.icon} ${s.name}</div>
+        <div class="sd-meta">
+          <span class="sc-badge speed">⚡ ${s.speed} ft walk</span>
+          ${s.darkvision?`<span class="sc-badge darkvision">👁 Darkvision ${s.darkvision} ft</span>`:''}
+          <span class="sc-badge size">${s.size}</span>
+        </div>
+      </div>
+      <div style="font-size:0.7rem;color:var(--text-secondary);font-style:italic;max-width:300px;line-height:1.6">${s.flavor}</div>
+    </div>
+    <div class="sd-traits-grid">
+      ${s.traits.map(t=>`
+        <div class="sd-trait">
+          <div class="sd-trait-name">◆ ${t.n}</div>
+          <div class="sd-trait-desc">${t.d}</div>
+          ${t.m?`<div class="sd-trait-mech">${t.m}</div>`:''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ── CLASSES ──
+function renderClasses(){
+  const grid=document.getElementById('class-grid');
+  grid.innerHTML='';
+  CLASSES.forEach(c=>{
+    const card=document.createElement('div');
+    card.className='class-card'+(state.classId===c.id?' selected':'');
+    card.style.setProperty('--class-color',c.color);
+    card.innerHTML=`
+      ${c.type?`<div class="cc-spellcaster ${c.type}">${c.type==='full'?'Full Caster':c.type==='half'?'Half Caster':'Pact Magic'}</div>`:''}
+      <div class="cc-header">
+        <div class="cc-name" style="color:${c.color}">${c.icon} ${c.name}</div>
+        <div class="cc-die">${c.die}</div>
+      </div>
+      <div class="cc-role">${c.role}</div>
+      <div class="cc-tags">
+        ${c.saves.map(s=>`<span class="cc-tag">${s} save</span>`).join('')}
+        ${c.armor.length?`<span class="cc-tag">${c.armor.slice(0,2).join(' · ')}</span>`:'<span class="cc-tag" style="color:#fc8181;border-color:#fc818140">No armor</span>'}
+      </div>
+      <div class="cc-features">${c.features.slice(0,4).map(f=>`<div class="cc-feature">${f}</div>`).join('')}</div>
+    `;
+    card.onclick=()=>selectClass(c.id);
+    grid.appendChild(card);
+  });
+  showClassDetail(state.classId);
+}
+
+function selectClass(id){
+  state.classId=id;
+  document.querySelectorAll('.class-card').forEach(c=>c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  showClassDetail(id);
+  updateClassTip(id);
+}
+
+function showClassDetail(id){
+  const c=CLASSES.find(x=>x.id===id);if(!c)return;
+  const panel=document.getElementById('class-detail');
+  panel.className='class-detail visible';
+  panel.style.borderColor=c.color+'66';
+  const spellInfo=c.type?`<div class="cd-stat"><div class="cd-stat-val" style="color:#5ba3d0">${c.type==='full'?'Full':c.type==='half'?'Half':'Pact'}</div><div class="cd-stat-lbl">Caster</div></div>`:'<div class="cd-stat"><div class="cd-stat-val" style="color:var(--text-dim)">None</div><div class="cd-stat-lbl">Spellcasting</div></div>';
+  panel.innerHTML=`
+    <div class="cd-header">
+      <div>
+        <div style="font-family:var(--font-display);font-size:1.5rem;color:${c.color};font-weight:600">${c.icon} ${c.name}</div>
+        <div class="cd-stats" style="margin-top:12px">
+          <div class="cd-stat"><div class="cd-stat-val">${c.die}</div><div class="cd-stat-lbl">Hit Die</div></div>
+          <div class="cd-stat"><div class="cd-stat-val">${c.primary.join('/')}</div><div class="cd-stat-lbl">Primary</div></div>
+          <div class="cd-stat"><div class="cd-stat-val">${c.saves.join('/')}</div><div class="cd-stat-lbl">Saves</div></div>
+          ${spellInfo}
+        </div>
+      </div>
+      <div class="cd-desc">${c.desc}</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="prog-table">
+        <thead><tr><th>Lvl</th><th>Prof</th><th>Features</th></tr></thead>
+        <tbody>
+          ${c.progression.map(row=>`
+            <tr class="${row.asi?'asi-row':row.sub?'subclass-row':''}">
+              <td><span class="prog-level-badge">${row.l}</span></td>
+              <td>${row.p}</td>
+              <td>${row.f.split(',').map(f=>`<span class="feature-tag${row.asi&&f.includes('Score')?' asi':row.sub?' subclass':''}">${f.trim()}</span>`).join('')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function updateClassTip(id){
+  const tips={
+    fighter:{p:'Strength',pr:'weapon attacks & Athletics',s:'Constitution',sr:'HP and Concentration saves',d:'Intelligence',dr:'rarely used by Fighters'},
+    wizard:{p:'Intelligence',pr:'spell save DC & attack bonus',s:'Constitution',sr:'Concentration saving throws',d:'Strength',dr:'Wizards avoid melee entirely'},
+    rogue:{p:'Dexterity',pr:'attacks, stealth, and AC',s:'Constitution',sr:'bonus HP for survivability',d:'Strength',dr:'DEX rogues ignore STR entirely'},
+    barbarian:{p:'Strength',pr:'weapon attacks and grappling',s:'Constitution',sr:'HP, Concentration, and Rage defense',d:'Intelligence',dr:'Barbarians are wisdom of the body, not mind'},
+    paladin:{p:'Strength',pr:'weapon attacks and Athletics',s:'Charisma',sr:'Aura of Protection save bonus + spells',d:'Intelligence',dr:'Safe to keep at 10 or below'},
+    bard:{p:'Charisma',pr:'Bardic Inspiration, spells, and social skills',s:'Dexterity',sr:'AC, initiative, and DEX save',d:'Strength',dr:'Bards rarely pick up weapons'},
+    cleric:{p:'Wisdom',pr:'spell save DC and attack, Channel Divinity',s:'Constitution',sr:'Concentration spells and HP',d:'Strength',dr:'Unless you chose the Protector divine order'},
+    monk:{p:'Dexterity',pr:'AC, attack rolls, and initiative',s:'Wisdom',sr:'Unarmored Defense AC bonus and saves',d:'Strength',dr:'Monks use DEX for everything STR usually does'},
+    warlock:{p:'Charisma',pr:'Eldritch Blast, spells, and Aura of Protection',s:'Constitution',sr:'Concentration and HP',d:'Strength',dr:'You have Eldritch Blast from range'},
+    druid:{p:'Wisdom',pr:'spell save DC, attack, and Wild Shape checks',s:'Constitution',sr:'Concentration spells',d:'Strength',dr:'You can Wild Shape for physical tasks'},
+    sorcerer:{p:'Charisma',pr:'spell save DC and spell attack bonus',s:'Constitution',sr:'Concentration — you need this for Metamagic',d:'Strength',dr:'You never need to be near an enemy'},
+    ranger:{p:'Dexterity',pr:'attacks, AC, and stealth',s:'Wisdom',pr2:'spell save DC and Nature/Survival',d:'Intelligence',dr:'Rarely used in Ranger gameplay'},
+  };
+  const t=tips[id]||tips.fighter;
+  const tip=document.getElementById('class-tip');
+  if(tip)tip.innerHTML=`
+    <div class="class-tip-header">💡 ${CLASSES.find(c=>c.id===id)?.name} Build Tips</div>
+    <div class="class-tip-row"><div class="class-tip-ability">Priority 1 — <strong>${t.p}</strong></div><div class="class-tip-reason">${t.pr}</div></div>
+    <div class="class-tip-row"><div class="class-tip-ability">Priority 2 — <strong>${t.s}</strong></div><div class="class-tip-reason">${t.sr}</div></div>
+    <div class="class-tip-row"><div class="class-tip-ability">Safe Dump — <strong>${t.d}</strong></div><div class="class-tip-reason">${t.dr}</div></div>
+  `;
+}
+
+// ── ABILITIES ──
+const PB_COST={8:0,9:1,10:2,11:3,12:4,13:5,14:7,15:9};
+const STANDARD=[15,14,13,12,10,8];
+const ABILITY_LABELS=['STR','DEX','CON','INT','WIS','CHA'];
+const ABILITY_KEYS=['str','dex','con','int','wis','cha'];
+
+function calcPBRemaining(){
+  return 27-ABILITY_KEYS.reduce((t,k)=>t+(PB_COST[state.abilities[k]]||0),0);
+}
+
+function abilityMod(score){return Math.floor((score-10)/2);}
+function fmtMod(m){return m>=0?'+'+m:m;}
+
+function renderAbilities(){
+  const grid=document.getElementById('ability-grid');
+  grid.innerHTML='';
+  const rem=calcPBRemaining();
+  ABILITY_KEYS.forEach((key,i)=>{
+    const score=state.abilities[key];
+    const mod=abilityMod(score);
+    const cost=PB_COST[score]||0;
+    const canUp=score<15&&rem>=(PB_COST[score+1]||99)-cost;
+    const canDown=score>8;
+    const div=document.createElement('div');
+    div.className='ability-block'+(score>=14?' boosted':'');
+    div.innerHTML=`
+      <div class="ability-label">${ABILITY_LABELS[i]}</div>
+      <div class="ability-mod ${mod>0?'pos':mod<0?'neg':''}">${fmtMod(mod)}</div>
+      <div class="ability-score-box">
+        <button class="ability-btn" onclick="changeAbility('${key}',-1)" ${!canDown?'disabled':''}'>−</button>
+        <span class="ability-score-val">${score}</span>
+        <button class="ability-btn" onclick="changeAbility('${key}',1)" ${!canUp?'disabled':''}'>+</button>
+      </div>
+      <div class="ability-cost-indicator">${cost}pt</div>
+    `;
+    grid.appendChild(div);
+  });
+  const rem2=calcPBRemaining();
+  document.getElementById('pb-val').innerHTML=`${rem2}<span> pts</span>`;
+  const pct=(rem2/27)*100;
+  document.getElementById('pb-fill').style.width=pct+'%';
+  document.getElementById('pb-fill').style.background=pct>50?'linear-gradient(90deg,var(--teal),var(--gold))':pct>20?'linear-gradient(90deg,var(--gold),#E8C97A)':'linear-gradient(90deg,#E74C3C,#E74C3C)';
+}
+
+function changeAbility(key,delta){
+  const cur=state.abilities[key];
+  const next=cur+delta;
+  if(next<8||next>15)return;
+  const curCost=PB_COST[cur]||0;
+  const nextCost=PB_COST[next]||0;
+  const diff=nextCost-curCost;
+  const rem=calcPBRemaining();
+  if(diff>rem)return;
+  state.abilities[key]=next;
+  renderAbilities();
+}
+
+function setMethod(method){
+  state.method=method;
+  document.querySelectorAll('.method-tab').forEach(t=>t.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  if(method==='standard'){ABILITY_KEYS.forEach((k,i)=>{state.abilities[k]=STANDARD[i]});renderAbilities();}
+  else if(method==='roll'){ABILITY_KEYS.forEach(k=>{const d=[0,0,0,0].map(()=>Math.floor(Math.random()*6)+1).sort((a,b)=>b-a);state.abilities[k]=d[0]+d[1]+d[2]});renderAbilities();showToast('Dice Rolled','Your ability scores have been rolled using 4d6, drop lowest.');}
+  else if(method==='pointbuy'){ABILITY_KEYS.forEach(k=>state.abilities[k]=8);renderAbilities();}
+  const pb=document.getElementById('pb-budget');
+  if(pb)pb.style.display=method==='pointbuy'?'block':'none';
+}
+
+// ── BACKGROUNDS ──
+function renderBackgrounds(){
+  const grid=document.getElementById('bg-grid');
+  if(!grid)return;
+  grid.innerHTML='';
+  BACKGROUNDS.forEach(bg=>{
+    const card=document.createElement('div');
+    card.className='species-card'+(state.background===bg.id?' selected':'');
+    card.innerHTML=`
+      <div class="sc-selected-check">✓</div>
+      <div style="font-size:1.5rem;margin-bottom:8px">${bg.icon}</div>
+      <div class="sc-name">${bg.name}</div>
+      <div class="sc-badges" style="margin-bottom:6px">
+        <span class="sc-badge speed" style="background:rgba(201,168,76,0.08);border-color:rgba(201,168,76,0.2);color:var(--gold-dim)">⭐ ${bg.feat}</span>
+      </div>
+      <div class="sc-traits">
+        ${bg.skills.map(s=>`<div class="sc-trait">${s}</div>`).join('')}
+        <div class="sc-trait" style="color:var(--text-dim)">${bg.tool}</div>
+        <div class="sc-trait" style="color:var(--gold-dim)">${bg.gold} GP</div>
+      </div>
+    `;
+    card.onclick=()=>{state.background=bg.id;document.querySelectorAll('#bg-grid .species-card').forEach(c=>c.classList.remove('selected'));card.classList.add('selected');showToast('Background Selected',`${bg.name} grants ${bg.skills.join(' and ')} proficiency and the ${bg.feat} feat.`)};
+    grid.appendChild(card);
+  });
+}
+
+// ── ALIGNMENT ──
+function renderAlignment(){
+  const grid=document.getElementById('alignment-grid');
+  if(!grid)return;
+  ALIGNMENTS.forEach(a=>{
+    const btn=document.createElement('button');
+    btn.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:6px 4px;font-size:0.55rem;font-family:var(--font-display);color:var(--text-secondary);cursor:pointer;transition:all 0.2s;letter-spacing:0.02em;text-align:center';
+    btn.textContent=a;
+    btn.onmouseover=()=>{btn.style.borderColor='rgba(201,168,76,0.4)';btn.style.color='var(--gold)'};
+    btn.onmouseout=()=>{if(!btn.classList.contains('sel')){btn.style.borderColor='var(--border)';btn.style.color='var(--text-secondary)'}};
+    btn.onclick=()=>{document.querySelectorAll('#alignment-grid button').forEach(b=>{b.classList.remove('sel');b.style.borderColor='var(--border)';b.style.color='var(--text-secondary)';b.style.background='var(--surface)'});btn.classList.add('sel');btn.style.borderColor='var(--gold)';btn.style.color='var(--gold)';btn.style.background='rgba(201,168,76,0.1)'};
+    grid.appendChild(btn);
+  });
+}
+
+// ── STAT BLOCK ──
+function renderStatBlock(){
+  const cls=CLASSES.find(c=>c.id===state.classId)||CLASSES[0];
+  const sp=SPECIES.find(s=>s.id===state.species)||{name:'Unknown',size:'Medium',speed:30,darkvision:0};
+  const bg=BACKGROUNDS.find(b=>b.id===state.background)||{name:'Unknown'};
+  const abs=state.abilities;
+  const mod=k=>abilityMod(abs[k]);
+  const level=1;const prof=2;
+  const ac=10+mod('dex')+(state.classId==='barbarian'?mod('con'):0)+(state.classId==='monk'?mod('wis'):0);
+  const hitDie={fighter:10,barbarian:12,paladin:10,ranger:10,bard:8,cleric:8,druid:8,monk:8,rogue:8,warlock:8,sorcerer:6,wizard:6}[state.classId]||8;
+  const maxHp=hitDie+mod('con');
+  const initiative=mod('dex');
+  const passPerc=10+mod('wis')+prof;
+  const saves={str:mod('str'),dex:mod('dex'),con:mod('con'),int:mod('int'),wis:mod('wis'),cha:mod('cha')};
+  const profSaves=cls.saves.map(s=>s.toLowerCase());
+  profSaves.forEach(s=>{saves[s]+=prof});
+  const spellcastingAbility={wizard:'int',bard:'cha',cleric:'wis',druid:'wis',sorcerer:'cha',warlock:'cha',paladin:'cha',ranger:'wis'}[state.classId];
+  const isCaster=!!spellcastingAbility;
+  const spellMod=spellcastingAbility?mod(spellcastingAbility):0;
+  const spellDC=isCaster?8+prof+spellMod:null;
+  const spellAtk=isCaster?prof+spellMod:null;
+  const charName=state.charName||'Your Hero';
+  const spStr=sp.name+' '+cls.name;
+
+  const sb=document.getElementById('statblock');
+  sb.innerHTML=`
+    <div class="sb-banner" style="border-bottom-color:${cls.color}44">
+      <div class="sb-portrait" style="border-color:${cls.color}44">${cls.icon}</div>
+      <div class="sb-identity">
+        <div class="sb-char-name" style="color:${cls.color}">${charName}</div>
+        <div class="sb-char-sub">${spStr} · Level ${level}</div>
+        <div class="sb-char-sub2">${bg.name} · ${sp.size} · ${sp.speed} ft</div>
+        <div class="sb-xp-bar"><div class="sb-xp-fill" style="width:5%;background:${cls.color}"></div></div>
+      </div>
+    </div>
+    ${isCaster?`<div class="sb-spell-bar">
+      <div class="sbs-item"><div class="sbs-val">${spellDC}</div><div class="sbs-lbl">Spell Save DC</div></div>
+      <div class="sbs-item"><div class="sbs-val">+${spellAtk}</div><div class="sbs-lbl">Spell Attack</div></div>
+      <div class="sbs-item"><div class="sbs-val">${spellcastingAbility.toUpperCase()}</div><div class="sbs-lbl">Casting Ability</div></div>
+    </div>`:''}
+    <div class="sb-combat-bar">
+      ${[['AC',ac,''],['HP',maxHp,'Max'],['Initiative',fmtMod(initiative),''],['Speed',sp.speed+' ft',''],['Passive\u00a0Perc.',passPerc,''],['Prof.','+'+prof,'Bonus']].map(([l,v,s])=>`
+        <div class="sb-stat">
+          <div class="sb-stat-val ${typeof v==='number'&&v>=15?'good':''}">${v}</div>
+          <div class="sb-stat-lbl">${l}</div>
+          ${s?`<div class="sb-stat-sub">${s}</div>`:''}
+        </div>
+      `).join('')}
+    </div>
+    <div class="sb-body">
+      <div class="sb-section">
+        <div class="sb-section-title">Ability Scores</div>
+        ${ABILITY_KEYS.map((k,i)=>{const s=abs[k];const m=mod(k);return`<div class="ability-row-sb"><span class="ars-name">${ABILITY_LABELS[i]}</span><span class="ars-score">${s}</span><span class="ars-mod ${m>=0?'pos':'neg'}">${fmtMod(m)}</span></div>`}).join('')}
+      </div>
+      <div class="sb-section">
+        <div class="sb-section-title">Saving Throws</div>
+        ${ABILITY_KEYS.map((k,i)=>{const p=profSaves.includes(k);return`<div class="save-row"><div class="save-dot ${p?'proficient':'normal'}"></div><span class="save-name">${['Strength','Dexterity','Constitution','Intelligence','Wisdom','Charisma'][i]}</span><span class="save-val ${p?'prof':''}">${fmtMod(saves[k])}</span></div>`}).join('')}
+        ${sp.darkvision?`<div style="margin-top:10px;font-size:0.62rem;color:#b07fd4;background:rgba(108,52,131,0.1);border:1px solid rgba(108,52,131,0.2);border-radius:4px;padding:5px 8px">👁 Darkvision ${sp.darkvision} ft</div>`:''}
+      </div>
+      <div class="sb-section">
+        <div class="sb-section-title">Level 1 Features</div>
+        <div class="feature-list-sb">
+          ${cls.features.slice(0,5).map(f=>`<div class="fl-feature"><div class="fl-dot" style="background:${cls.color}"></div><div class="fl-name"><strong>${f}</strong></div></div>`).join('')}
+        </div>
+      </div>
+    </div>
+    ${isCaster?`<div class="spell-slot-bar">
+      ${[['1st',4],[' 2nd',0]].map(([l,n])=>n>0?`<div class="ss-level-group"><div class="ss-level-lbl">${l}</div><div class="ss-slots">${Array(n).fill('<div class="ss-slot"></div>').join('')}</div></div>`:'')}
+    </div>`:''}
+    <div class="sb-validation">
+      <div class="val-icon ready">✓</div>
+      <div class="val-text"><strong>Ready to Forge</strong>${state.species?`${sp.name} ${cls.name} is ready for adventure.`:'Select a species to finalize your character.'}</div>
+    </div>
+  `;
+}
+
+// ── TOOLTIP ──
+function showHelp(key){
+  const h=HELP_TEXT[key];if(!h)return;
+  document.getElementById('help-title').textContent=h.title;
+  document.getElementById('help-body').textContent=h.body;
+  const ov=document.getElementById('help-overlay');ov.style.display='flex';
+}
+function closeHelp(){document.getElementById('help-overlay').style.display='none';}
+
+// ── ROADMAP ──
+function toggleRoadmap(){
+  const r=document.getElementById('roadmap');
+  r.classList.toggle('open');
+  event.currentTarget.textContent=r.classList.contains('open')?'📜 Level Roadmap ▲':'📜 Level Roadmap — see what\'s ahead';
+}
+
+// ── TOAST ──
+function showToast(title,msg){
+  const t=document.createElement('div');t.className='toast';
+  t.innerHTML=`<div class="toast-title">${title}</div><div>${msg}</div>`;
+  document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(20px)';t.style.transition='all 0.3s';setTimeout(()=>t.remove(),300)},2800);
+}
+
+// ── INIT ──
+function init(){
+  renderSpecies();
+  renderClasses();
+  renderAbilities();
+  renderBackgrounds();
+  renderAlignment();
+  updateProgress();
+  updateNav();
+  updateClassTip('fighter');
+  // start with point buy budget visible
+  document.getElementById('pb-budget').style.display='block';
+}
+
+init();
+</script>
+</body>
+</html>

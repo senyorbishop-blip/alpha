@@ -1,0 +1,18 @@
+# Casual DnD / Tavern Tabletop config.txt template
+#
+# This file is optional. Environment variables override these values.
+# Keep secrets out of version control.
+
+# Public domain for player links (leave blank for local-only).
+PUBLIC_DOMAIN=
+
+# Local server port.
+PORT=8000
+
+# Optional ngrok static domain.
+NGROK_DOMAIN=
+
+# Optional stable JWT/admin values if you choose config.txt over .env.
+# Prefer setting these in .env for founder beta ops.
+DND_JWT_SECRET=
+DND_ADMIN_KEY=

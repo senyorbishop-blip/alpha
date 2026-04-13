@@ -1,0 +1,852 @@
+"""
+server/handlers/tokens.py — Token creation, movement, and state handlers.
+"""
+from server.session import create_token, assistant_dm_has_scope
+from server.map_logic import find_movement_blocker
+from server.handlers.common import (
+    Session, User, manager,
+    save_campaign_async,
+    _sanitize_token_vision_payload,
+    _broadcast_token_event,
+    _broadcast_token_state_sync,
+    _broadcast_token_visibility,
+    _sync_combatant_token_state,
+    _broadcast_combat,
+    _sanitize_save_bonuses,
+)
+from server.session import normalize_profile_owner_key
+from server.handlers.conditions import (
+    _prune_token_condition_timers,
+    _set_token_condition,
+    _clear_token_condition,
+    _broadcast_token_condition_state,
+)
+from server.handlers.combat import (
+    _enforce_player_combat_movement,
+    _broadcast_combat_move_state,
+    _send_token_move_denied,
+    _can_act_current_turn,
+)
+from server.handlers.hazards import _process_hazard_triggers_for_token
+from server.handlers.content import handle_discovery_trigger
+from server.handlers.narration import broadcast_narration_hook
+from server.ambient_audio import normalize_ambient_profile
+from server.living_world_events import emit_world_event, consume_world_event
+import time
+
+
+_TOKEN_EMOTE_DEFS = {
+    "question": {"icon": "❓", "label": "Question"},
+    "danger": {"icon": "⚠️", "label": "Danger"},
+    "laugh": {"icon": "😂", "label": "Laugh"},
+    "help": {"icon": "🆘", "label": "Help"},
+    "ready": {"icon": "✅", "label": "Ready"},
+    "angry": {"icon": "😠", "label": "Angry"},
+    "stealth": {"icon": "🕵️", "label": "Stealth"},
+    "prayer": {"icon": "🙏", "label": "Prayer"},
+    "arcane_focus": {"icon": "✨", "label": "Arcane Focus"},
+}
+_TOKEN_EMOTE_COOLDOWN_SEC = 2.0
+_TOKEN_EMOTE_TTL_SEC = 2.8
+
+
+def _point_in_scene_trigger_bounds(x: float, y: float, bounds: dict) -> bool:
+    shape = str((bounds or {}).get("shape") or "rect").strip().lower()
+    bx = float((bounds or {}).get("x", 0.0) or 0.0)
+    by = float((bounds or {}).get("y", 0.0) or 0.0)
+    if shape == "circle":
+        radius = max(1.0, float((bounds or {}).get("radius", 1.0) or 1.0))
+        dx = x - bx
+        dy = y - by
+        return (dx * dx + dy * dy) <= (radius * radius)
+    bw = max(1.0, float((bounds or {}).get("width", 1.0) or 1.0))
+    bh = max(1.0, float((bounds or {}).get("height", 1.0) or 1.0))
+    return bx <= x <= (bx + bw) and by <= y <= (by + bh)
+
+
+def _zone_audience_user_ids(session: Session, zone: dict, actor: User) -> set[str]:
+    users = dict(getattr(session, "users", {}) or {})
+    mode = str(((zone.get("visibility") or {}).get("mode")) or "party").strip().lower()
+    allow_viewers = bool(((zone.get("visibility") or {}).get("allow_viewers")))
+    actor_id = str(getattr(actor, "id", "") or "")
+    out: set[str] = set()
+    for uid, user in users.items():
+        role = str(getattr(user, "role", "") or "").strip().lower()
+        if mode == "dm_only" and role != "dm":
+            continue
+        if mode == "players_only" and role != "player":
+            continue
+        if mode == "owner_only" and uid not in {actor_id, str(getattr(session, "dm_id", "") or "")}:
+            continue
+        if mode == "party" and role not in {"dm", "player"}:
+            continue
+        if role == "viewer" and not allow_viewers:
+            continue
+        out.add(str(uid))
+    return out
+
+
+async def _apply_scene_trigger_action(session: Session, zone: dict, action: dict, actor: User, token, *, phase: str):
+    action_type = str((action or {}).get("type") or "").strip().lower()
+    payload = dict((action or {}).get("payload") or {})
+    audience = _zone_audience_user_ids(session, zone, actor)
+    map_ctx = str((zone.get("map_context") or getattr(token, "map_context", "world") or "world"))
+
+    if action_type == "ambient_profile":
+        track = normalize_ambient_profile(payload.get("track") or payload.get("profile") or "silence")
+        volume = max(0.0, min(1.0, float(payload.get("volume", 0.7) or 0.7)))
+        fade_ms = max(0, min(5000, int(payload.get("fade_ms", 1200) or 1200)))
+        session.sound_state = {"track": track, "volume": volume, "fade_ms": fade_ms}
+        await manager.broadcast(session.id, {"type": "sound_set_ambient", "payload": {"track": track, "volume": volume, "fade_ms": fade_ms}})
+        return
+
+    if action_type == "weather_preset":
+        weather_cfg = {
+            "weather_type": str(payload.get("weather_type") or payload.get("preset") or "none").strip().lower()[:24] or "none",
+            "intensity": max(0.0, min(1.0, float(payload.get("intensity", 0.5) or 0.5))),
+            "wind_angle": max(0.0, min(360.0, float(payload.get("wind_angle", 0.0) or 0.0))),
+            "wind_speed": max(0.0, min(1.0, float(payload.get("wind_speed", 0.3) or 0.3))),
+            "map_context": map_ctx,
+        }
+        session.weather_state = dict(weather_cfg)
+        settings = dict((getattr(session, "map_settings", {}) or {}))
+        row = dict(settings.get(map_ctx) or {})
+        row["weather"] = {k: weather_cfg[k] for k in ("weather_type", "intensity", "wind_angle", "wind_speed")}
+        settings[map_ctx] = row
+        session.map_settings = settings
+        await manager.broadcast(session.id, {"type": "weather_sync", "payload": weather_cfg})
+        return
+
+    if action_type == "narration_hook":
+        hook_payload = {
+            "zone_id": str(zone.get("id") or ""),
+            "phase": phase,
+            "map_context": map_ctx,
+            "title": str(payload.get("title") or "Narration Hook")[:120],
+            "prompt": str(payload.get("prompt") or payload.get("text") or "")[:500],
+            "token_id": str(getattr(token, "id", "") or ""),
+            "actor_user_id": str(getattr(actor, "id", "") or ""),
+        }
+        if bool(((zone.get("visibility") or {}).get("dm_only_narration", False))):
+            dm_id = str(getattr(session, "dm_id", "") or "")
+            await broadcast_narration_hook(session, hook_payload, {dm_id} if dm_id else None)
+        else:
+            await broadcast_narration_hook(session, hook_payload, audience)
+        return
+
+    if action_type == "unlock_discovery":
+        discovery_payload = {
+            "id": str(payload.get("id") or f"zone-{zone.get('id', 'unknown')}-discovery")[:48],
+            "title": str(payload.get("title") or "New Discovery")[:120],
+            "body": str(payload.get("body") or payload.get("text") or "")[:1200],
+            "kind": str(payload.get("kind") or "clue")[:40],
+            "tone": str(payload.get("tone") or "mystic")[:24],
+            "visibility": str(payload.get("visibility") or "party_public")[:32],
+            "target_user_id": str(payload.get("target_user_id") or getattr(actor, "id", ""))[:64],
+            "source": str(payload.get("source") or f"scene_trigger:{zone.get('id')}")[:80],
+        }
+        dm = (getattr(session, "users", {}) or {}).get(getattr(session, "dm_id", ""))
+        if dm:
+            await handle_discovery_trigger(discovery_payload, session, dm)
+        return
+
+    if action_type == "set_world_state_flag":
+        key = str(payload.get("key") or payload.get("flag") or "").strip()[:80]
+        if key:
+            world_state = dict(getattr(session, "world_state", {}) or {})
+            flags = dict(world_state.get("world_state_flags") or {})
+            flags[key] = payload.get("value", True)
+            world_state["world_state_flags"] = flags
+            session.world_state = world_state
+        return
+
+    if action_type == "living_world_event":
+        event_type = str(payload.get("event_type") or "world_state_flag_set").strip().lower()[:64] or "world_state_flag_set"
+        summary = str(payload.get("summary") or f"Scene trigger {zone.get('id')} fired.")[:240]
+        event = emit_world_event(session, event_type, {
+            "source": f"scene_trigger:{zone.get('id')}",
+            "actor_user_id": str(getattr(actor, "id", "") or ""),
+            "summary": summary,
+            "meta": {"zone_id": str(zone.get("id") or ""), "phase": phase, "map_context": map_ctx},
+        })
+        consume_world_event(session, event, dict(payload.get("reaction_bundle") or {}))
+        notice = {"type": "world_event_notice", "payload": event}
+        if audience:
+            for user_id in audience:
+                await manager.send_to(session.id, user_id, notice)
+        else:
+            await manager.broadcast(session.id, notice)
+
+
+async def _process_scene_triggers_for_token(session: Session, token, user: User, *, old_x: float, old_y: float) -> bool:
+    if str(getattr(token, "owner_id", "") or "").strip() == "":
+        return False
+    if user.role == "dm" and not bool(getattr(token, "owner_id", None)):
+        return False
+    zones = dict((session.scene_trigger_zones() if hasattr(session, "scene_trigger_zones") else {}) or {})
+    if not zones:
+        return False
+    token_ctx = str(getattr(token, "map_context", "world") or "world")
+    world_state = dict(getattr(session, "world_state", {}) or {})
+    runtime = dict(world_state.get("scene_trigger_runtime") or {})
+    consumed_ids = set(str(v) for v in (runtime.get("consumed_zone_ids") or []) if str(v))
+    last_trigger_at = dict(runtime.get("last_trigger_at") or {})
+    now = time.time()
+
+    triggered_any = False
+    for zone in zones.values():
+        if not zone or not bool(zone.get("enabled", True)):
+            continue
+        if str(zone.get("map_context") or "world") != token_ctx:
+            continue
+        if user.role == "dm" and not bool(zone.get("allow_dm_trigger", False)):
+            continue
+        zone_id = str(zone.get("id") or "")
+        if not zone_id:
+            continue
+        was_inside = _point_in_scene_trigger_bounds(old_x, old_y, zone.get("bounds") or {})
+        is_inside = _point_in_scene_trigger_bounds(float(getattr(token, "x", 0.0) or 0.0), float(getattr(token, "y", 0.0) or 0.0), zone.get("bounds") or {})
+        if was_inside == is_inside:
+            continue
+        phase = "on_enter" if is_inside else "on_exit"
+        if phase == "on_enter" and bool(zone.get("trigger_once")) and zone_id in consumed_ids:
+            continue
+        key = f"{zone_id}:{phase}:{getattr(token, 'id', '')}"
+        cooldown_ms = max(0, int(zone.get("cooldown_ms", 0) or 0))
+        debounce_ms = max(0, int(zone.get("debounce_ms", 0) or 0))
+        wait_sec = max(cooldown_ms, debounce_ms) / 1000.0
+        if wait_sec > 0 and (now - float(last_trigger_at.get(key, 0.0) or 0.0)) < wait_sec:
+            continue
+        for action in (zone.get(phase) or []):
+            await _apply_scene_trigger_action(session, zone, action, user, token, phase=phase)
+        triggered_any = True
+        last_trigger_at[key] = now
+        if phase == "on_enter" and bool(zone.get("trigger_once")):
+            consumed_ids.add(zone_id)
+
+    runtime["consumed_zone_ids"] = sorted(consumed_ids)
+    runtime["last_trigger_at"] = last_trigger_at
+    merged_world_state = dict(getattr(session, "world_state", {}) or {})
+    merged_world_state["scene_trigger_runtime"] = runtime
+    session.world_state = merged_world_state
+    return triggered_any
+
+
+def _token_cr_as_float(token) -> float:
+    raw = getattr(token, "cr", None)
+    if raw is None:
+        return 0.0
+    text = str(raw).strip().lower()
+    if not text:
+        return 0.0
+    if "/" in text:
+        parts = text.split("/", 1)
+        try:
+            num = float(parts[0])
+            den = float(parts[1] or 1.0)
+            if den > 0:
+                return max(0.0, num / den)
+        except Exception:
+            return 0.0
+    try:
+        return max(0.0, float(text))
+    except Exception:
+        return 0.0
+
+
+def _ensure_corpse_state_for_token(session: Session, token):
+    if not token:
+        return
+    token_kind = str(getattr(token, "token_type", "player") or "player").strip().lower()
+    if token_kind not in {"monster", "npc"}:
+        return
+    if int(getattr(token, "hp", 1) or 0) > 0:
+        return
+    corpse_states = dict(getattr(session, "corpse_states", {}) or {})
+    corpse_id = str(getattr(token, "id", "") or "").strip()
+    if not corpse_id:
+        return
+    if corpse_id in corpse_states:
+        return
+    now = time.time()
+    corpse_states[corpse_id] = {
+        "corpse_id": corpse_id,
+        "token_id": corpse_id,
+        "token_name": str(getattr(token, "name", "Corpse") or "Corpse")[:120],
+        "map_context": str(getattr(token, "map_context", "world") or "world"),
+        "defeated_at": now,
+        "depleted": False,
+        "search_attempts": {},
+        "harvest_attempts": {},
+        "creature_ref": {
+            "creature_id": str(getattr(token, "creature_id", "") or ""),
+            "creature_type": str(getattr(token, "creature_type", "") or ""),
+            "monster_type": str(getattr(token, "monster_type", "") or ""),
+            "cr": str(getattr(token, "cr", "") or ""),
+            "cr_num": _token_cr_as_float(token),
+            "token_type": token_kind,
+        },
+    }
+    session.corpse_states = corpse_states
+
+
+def _owner_matches_user(owner_id, user: User) -> bool:
+    owner = str(owner_id or "").strip()
+    if not owner:
+        return False
+    if owner == str(user.id):
+        return True
+    owner_key = normalize_profile_owner_key(owner)
+    if not owner_key:
+        return False
+    return owner_key == normalize_profile_owner_key(getattr(user, "name", ""))
+
+
+
+
+def _assistant_can_control_token(session: Session, user: User, token) -> bool:
+    if not token:
+        return False
+    token_kind = str(getattr(token, "token_type", "player") or "player").strip().lower()
+    if token_kind not in {"npc", "monster"}:
+        return False
+    return assistant_dm_has_scope(session, user, "tokens.control_npc", token_id=str(getattr(token, "id", "") or ""))
+
+def _player_active_owned_tokens(session: Session, owner_id: str, *, exclude_token_id: str | None = None) -> list:
+    owner = str(owner_id or "").strip()
+    exclude = str(exclude_token_id or "").strip()
+    if not owner:
+        return []
+    active = []
+    for tok in (getattr(session, "tokens", {}) or {}).values():
+        tok_owner = str(getattr(tok, "owner_id", "") or "").strip()
+        if tok_owner != owner:
+            continue
+        if bool(getattr(tok, "staged", False)):
+            continue
+        tok_id = str(getattr(tok, "id", "") or "")
+        if exclude and tok_id == exclude:
+            continue
+        active.append(tok)
+    return active
+
+
+async def _deny_player_single_token_limit(session: Session, user: User, *, token_name: str = "token"):
+    await manager.send_to(session.id, user.id, {
+        "type": "error",
+        "payload": {"message": f"You can only have one active token on the field. Remove or stage your current token before creating or claiming another {token_name}."}
+    })
+
+
+async def handle_token_move(payload: dict, session: Session, user: User):
+    token_id = payload.get("token_id")
+    token = session.tokens.get(token_id)
+    if not token:
+        return
+
+    assistant_token_control = _assistant_can_control_token(session, user, token)
+    if not assistant_token_control and not token.can_move(user.id, user.role) and not (user.role == "player" and _owner_matches_user(getattr(token, "owner_id", ""), user)):
+        await manager.send_to(session.id, user.id, {
+            "type": "error",
+            "payload": {"message": "You don't have permission to move this token."}
+        })
+        return
+
+    try:
+        new_x = float(payload.get("x", token.x))
+    except Exception:
+        new_x = float(getattr(token, "x", 0.0) or 0.0)
+    try:
+        new_y = float(payload.get("y", token.y))
+    except Exception:
+        new_y = float(getattr(token, "y", 0.0) or 0.0)
+
+    movement_updated = False
+    old_x = float(getattr(token, "x", 0.0) or 0.0)
+    old_y = float(getattr(token, "y", 0.0) or 0.0)
+    if user.role != "dm" and not assistant_token_control:
+        blocker = None
+        try:
+            blocker = find_movement_blocker(session, str(getattr(token, "map_context", "world") or "world"), float(getattr(token, "x", 0.0) or 0.0), float(getattr(token, "y", 0.0) or 0.0), new_x, new_y)
+        except Exception:
+            blocker = None
+        if blocker:
+            await _send_token_move_denied(session, user, token, f"Movement blocked by {str(getattr(blocker, 'source', 'terrain')).replace('_', ' ')}.")
+            return
+        allowed = await _enforce_player_combat_movement(session, user, token, new_x, new_y)
+        if not allowed:
+            return
+        movement_updated = bool((getattr(session, "combat", None) or {}).get("movement"))
+
+    token.x = new_x
+    token.y = new_y
+
+    await _broadcast_token_event(manager, session, "token_moved", {
+        "token_id": token_id,
+        "x": token.x,
+        "y": token.y,
+        "moved_by": user.name,
+    }, token, exclude_user=user.id)
+    await _process_hazard_triggers_for_token(session, token, trigger='enter', old_x=old_x, old_y=old_y)
+    scene_triggered = await _process_scene_triggers_for_token(session, token, user, old_x=old_x, old_y=old_y)
+    if scene_triggered:
+        await save_campaign_async(session)
+    if movement_updated:
+        await _broadcast_combat_move_state(session)
+
+
+async def handle_token_create(payload: dict, session: Session, user: User):
+    session.enforce_single_active_player_token_rule()
+    owner_id = payload.get("owner_id")
+    if owner_id:
+        owner_user = session.users.get(owner_id)
+        if not owner_user or owner_user.role != "player":
+            owner_id = None
+    if user.role == "player":
+        if owner_id != user.id:
+            await manager.send_to(session.id, user.id, {
+                "type": "error",
+                "payload": {"message": "Players can only create tokens they own."}
+            })
+            return
+        if _player_active_owned_tokens(session, user.id):
+            await _deny_player_single_token_limit(session, user, token_name="token")
+            return
+    elif user.role == "viewer":
+        await manager.send_to(session.id, user.id, {
+            "type": "error",
+            "payload": {"message": "Viewers cannot create tokens."}
+        })
+        return
+    if owner_id and not bool(payload.get("staged", False)):
+        if _player_active_owned_tokens(session, owner_id):
+            await manager.send_to(session.id, user.id, {
+                "type": "error",
+                "payload": {"message": "That player already has an active token on the field."}
+            })
+            return
+
+    token_type = str(payload.get("tokenType", payload.get("token_type", "player")) or "player")
+    vision_cfg = _sanitize_token_vision_payload(payload, owner_id=owner_id, token_type=token_type, existing=None)
+
+    token = create_token(
+        session=session,
+        dm_id=user.id,
+        name=payload.get("name", "Token"),
+        x=payload.get("x", 100),
+        y=payload.get("y", 100),
+        color=payload.get("color", "#e74c3c"),
+        shape=payload.get("shape", "circle"),
+        width=payload.get("width", 40),
+        height=payload.get("height", 40),
+        owner_id=owner_id,
+        hp=payload.get("hp"),
+        max_hp=payload.get("maxHp"),
+        temp_hp=int(payload.get("tempHp", 0) or 0),
+        map_context=payload.get("map_context", "world"),
+        hidden_hp=bool(payload.get("hidden_hp", False)),
+        hidden=bool(payload.get("hidden", False)),
+        initiative_mod=int(payload.get("initiativeMod", 0) or 0),
+        ac=(int(payload.get("ac")) if payload.get("ac") is not None else None),
+        speed=(int(payload.get("speed")) if payload.get("speed") is not None else None),
+        token_type=token_type,
+        notes=str(payload.get("notes", "") or ""),
+        level=(int(payload.get("level")) if payload.get("level") is not None else None),
+        faction=str(payload.get("faction", "") or ""),
+        passive_perception=(int(payload.get("passivePerception", payload.get("passive_perception"))) if payload.get("passivePerception", payload.get("passive_perception")) is not None else None),
+        staged=bool(payload.get("staged", False)),
+        image_url=(str(payload.get("image_url", payload.get("imageUrl", "")) or "")[:300] or None),
+        save_bonuses=_sanitize_save_bonuses(payload.get("saveBonuses") or payload.get("save_bonuses") or {}),
+        creature_id=str(payload.get("creature_id", payload.get("creatureId", "")) or "")[:120],
+        creature_type=str(payload.get("creature_type", payload.get("creatureType", "")) or "")[:40],
+        monster_type=str(payload.get("monster_type", payload.get("monsterType", "")) or "")[:60],
+        cr=str(payload.get("cr", ""))[:16],
+        **vision_cfg,
+    )
+
+    log_entry = session.add_log(f"{user.name} created token '{token.name}'.", "system")
+
+    await _broadcast_token_event(
+        manager,
+        session,
+        "token_created",
+        {"token": token.to_dict(), "log": log_entry, "client_nonce": payload.get("client_nonce")},
+        token,
+    )
+    await _broadcast_token_state_sync(session)
+    await save_campaign_async(session)
+
+
+async def handle_token_delete(payload: dict, session: Session, user: User):
+    token_id = payload.get("token_id")
+    token = session.tokens.get(token_id)
+    if not token:
+        return
+    owner_user_delete = bool(user.role == "player" and _owner_matches_user(getattr(token, "owner_id", ""), user))
+    if user.role != "dm" and not owner_user_delete:
+        return
+    session.tokens.pop(token_id, None)
+    corpse_states = dict(getattr(session, "corpse_states", {}) or {})
+    corpse_states.pop(str(token_id), None)
+    session.corpse_states = corpse_states
+    if token:
+        log_entry = session.add_log(f"{user.name} removed token '{token.name}'.", "system")
+        if token.owner_id:
+            await manager.broadcast(session.id, {
+                "type": "token_deleted",
+                "payload": {"token_id": token_id, "log": log_entry}
+            })
+        else:
+            await manager.broadcast_to_role(session.id, {
+                "type": "token_deleted",
+                "payload": {"token_id": token_id, "log": log_entry}
+            }, {"dm"}, session)
+        await _broadcast_token_state_sync(session)
+        await save_campaign_async(session)
+
+
+async def handle_token_hp_update(payload: dict, session: Session, user: User):
+    token_id = payload.get("token_id")
+    token = session.tokens.get(token_id)
+    if not token:
+        return
+    if user.role != "dm" and not _owner_matches_user(getattr(token, "owner_id", ""), user) and not _assistant_can_control_token(session, user, token):
+        return
+    previous_hp = token.hp
+    new_hp = max(0, int(payload.get("hp", token.hp or 0)))
+    if "max_hp" in payload and payload["max_hp"]:
+        token.max_hp = max(1, int(payload["max_hp"]))
+    token.hp = min(new_hp, token.max_hp) if token.max_hp else new_hp
+    if int(token.hp or 0) <= 0:
+        _ensure_corpse_state_for_token(session, token)
+    combat_changed = _sync_combatant_token_state(session, token, previous_hp=previous_hp)
+    log_entry = None
+    token_kind = str(getattr(token, "token_type", "player") or "player").strip().lower()
+    if token_kind == "player" or getattr(token, "owner_id", None):
+        log_msg = f"{user.name} set {token.name} HP to {token.hp}/{token.max_hp}"
+        log_entry = session.add_log(log_msg, "system", user.name)
+    corpse_state_payload = None
+    if int(token.hp or 0) <= 0 and token_kind in {"monster", "npc"}:
+        corpse_state_payload = (getattr(session, "corpse_states", None) or {}).get(str(token_id))
+    await _broadcast_token_event(manager, session, "token_hp_updated",
+        {"token_id": token_id, "hp": token.hp, "maxHp": token.max_hp,
+         "hidden_hp": token.hidden_hp, "log": log_entry,
+         "corpse_state": corpse_state_payload}, token)
+    if combat_changed:
+        await _broadcast_combat(session)
+    await save_campaign_async(session)
+
+
+async def handle_token_edit(payload: dict, session: Session, user: User):
+    session.enforce_single_active_player_token_rule()
+    token_id = payload.get("token_id")
+    token = session.tokens.get(token_id)
+    if not token:
+        return
+
+    is_dm = user.role == "dm"
+    assistant_can_control = _assistant_can_control_token(session, user, token)
+    is_owner = _owner_matches_user(getattr(token, "owner_id", ""), user)
+    if not is_dm and not is_owner and not assistant_can_control:
+        return
+
+    if assistant_can_control and not is_dm:
+        if payload.get("hp") is not None:
+            token.hp = max(0, int(payload.get("hp") or 0))
+        if payload.get("maxHp") is not None:
+            token.max_hp = max(1, int(payload.get("maxHp") or 1))
+        if payload.get("x") is not None:
+            token.x = float(payload.get("x"))
+        if payload.get("y") is not None:
+            token.y = float(payload.get("y"))
+
+    if is_dm:
+        if payload.get("name"):   token.name   = payload["name"]
+        if payload.get("color"):  token.color  = payload["color"]
+        if "owner_id" in payload:
+            new_owner_id = payload.get("owner_id")
+            if new_owner_id:
+                owner_user = session.users.get(new_owner_id)
+                if owner_user and owner_user.role == "player":
+                    if not bool(getattr(token, "staged", False)) and _player_active_owned_tokens(session, new_owner_id, exclude_token_id=token.id):
+                        await manager.send_to(session.id, user.id, {
+                            "type": "error",
+                            "payload": {"message": "That player already has an active token on the field."}
+                        })
+                        return
+                    token.owner_id = new_owner_id
+                else:
+                    token.owner_id = None
+            else:
+                token.owner_id = None
+        if payload.get("width"):  token.width  = float(payload["width"])
+        if payload.get("height"): token.height = float(payload["height"])
+        if payload.get("maxHp"):  token.max_hp = int(payload["maxHp"])
+        if payload.get("hp") is not None:
+            token.hp = max(0, int(payload["hp"]))
+        token.hidden_hp = bool(payload.get("hidden_hp", token.hidden_hp))
+        if "hidden" in payload:
+            token.hidden = bool(payload["hidden"])
+        if "tokenType" in payload or "token_type" in payload:
+            token.token_type = str(payload.get("tokenType", payload.get("token_type", token.token_type)) or "player")
+
+    if "tempHp" in payload:
+        token.temp_hp = max(0, int(payload.get("tempHp", 0) or 0))
+    if "initiativeMod" in payload:
+        token.initiative_mod = int(payload.get("initiativeMod", 0) or 0)
+    if "ac" in payload:
+        token.ac = int(payload["ac"]) if payload.get("ac") is not None else None
+        token.ac_from_equipment = False  # manually set — equipment should not overwrite
+    if "speed" in payload:
+        token.speed = int(payload["speed"]) if payload.get("speed") is not None else None
+    if "notes" in payload:
+        token.notes = str(payload.get("notes", "") or "")[:2000]
+    if "level" in payload:
+        token.level = int(payload["level"]) if payload.get("level") is not None else None
+    if "faction" in payload:
+        token.faction = str(payload.get("faction", "") or "")[:100]
+    if "passivePerception" in payload or "passive_perception" in payload:
+        _pp = payload.get("passivePerception", payload.get("passive_perception"))
+        token.passive_perception = int(_pp) if _pp is not None else None
+    if "image_url" in payload or "imageUrl" in payload:
+        token.image_url = (str(payload.get("image_url", payload.get("imageUrl", "")) or "")[:300] or None)
+    if "saveBonuses" in payload or "save_bonuses" in payload:
+        token.save_bonuses = _sanitize_save_bonuses(payload.get("saveBonuses") or payload.get("save_bonuses") or {})
+    if is_dm and ("creature_id" in payload or "creatureId" in payload):
+        token.creature_id = str(payload.get("creature_id", payload.get("creatureId", "")) or "")[:120]
+    if is_dm and ("creature_type" in payload or "creatureType" in payload):
+        token.creature_type = str(payload.get("creature_type", payload.get("creatureType", "")) or "")[:40]
+    if is_dm and ("monster_type" in payload or "monsterType" in payload):
+        token.monster_type = str(payload.get("monster_type", payload.get("monsterType", "")) or "")[:60]
+    if is_dm and "cr" in payload:
+        token.cr = str(payload.get("cr", "") or "")[:16]
+
+    if is_dm and any(k in payload for k in ("visionEnabled", "vision_enabled", "visionRadius", "vision_radius", "brightRadius", "bright_radius", "dimRadius", "dim_radius", "hasDarkvision", "has_darkvision", "darkvisionRadius", "darkvision_radius", "owner_id", "tokenType", "token_type")):
+        vision_cfg = _sanitize_token_vision_payload(payload, owner_id=token.owner_id, token_type=token.token_type, existing=token)
+        token.vision_enabled = vision_cfg['vision_enabled']
+        token.vision_radius = vision_cfg['vision_radius']
+        token.bright_radius = vision_cfg['bright_radius']
+        token.dim_radius = vision_cfg['dim_radius']
+        token.has_darkvision = vision_cfg['has_darkvision']
+        token.darkvision_radius = vision_cfg['darkvision_radius']
+
+    combat_changed = _sync_combatant_token_state(session, token, previous_hp=None)
+    await _broadcast_token_visibility(session, token, "token_hidden_changed")
+    await _broadcast_token_state_sync(session)
+    if combat_changed:
+        await _broadcast_combat(session)
+    if int(getattr(token, "hp", 1) or 0) <= 0:
+        _ensure_corpse_state_for_token(session, token)
+    await save_campaign_async(session)
+
+
+async def handle_token_placed(payload: dict, session: Session, user: User):
+    """Token moved from staging panel onto the map — update position + map_context, broadcast to all."""
+    session.enforce_single_active_player_token_rule()
+    token_id = payload.get("token_id")
+    token = session.tokens.get(token_id)
+    if not token:
+        return
+    if user.role == "player" and not _owner_matches_user(getattr(token, "owner_id", ""), user):
+        await manager.send_to(session.id, user.id, {
+            "type": "error",
+            "payload": {"message": "You can only place your own token from staging."}
+        })
+        return
+    owner_id = str(getattr(token, "owner_id", "") or "").strip()
+    if owner_id and _player_active_owned_tokens(session, owner_id, exclude_token_id=token.id):
+        msg = "That player already has an active token on the field."
+        if user.role == "player" and _owner_matches_user(owner_id, user):
+            await _deny_player_single_token_limit(session, user, token_name="token")
+        else:
+            await manager.send_to(session.id, user.id, {
+                "type": "error",
+                "payload": {"message": msg}
+            })
+        return
+    token.x = payload.get("x", token.x)
+    token.y = payload.get("y", token.y)
+    token.map_context = payload.get("map_context", token.map_context)
+    token.staged = False
+
+    placed_payload = {
+        **payload,
+        "token": token.to_dict(),
+    }
+    await manager.broadcast(session.id, {"type": "token_placed", "payload": placed_payload})
+    await _broadcast_token_state_sync(session)
+    await save_campaign_async(session)
+
+
+async def handle_token_send_to_staging(payload: dict, session: Session, user: User):
+    """Move a token into the waiting-to-place tray without changing its owning map."""
+    token_id = payload.get("token_id")
+    token = session.tokens.get(token_id)
+    if not token:
+        return
+    if user.role != "dm" and token.owner_id != user.id and not _assistant_can_control_token(session, user, token):
+        return
+
+    token.staged = True
+    await manager.broadcast(session.id, {
+        "type": "token_sent_to_staging",
+        "payload": {"token": token.to_dict()}
+    })
+    await _broadcast_token_state_sync(session)
+    await save_campaign_async(session)
+
+
+async def handle_toggle_hidden(payload: dict, session: Session, user: User):
+    """DM toggles a token's hidden-from-players state."""
+    if user.role != 'dm':
+        return
+    token_id = payload.get('token_id')
+    token = session.tokens.get(token_id)
+    if not token:
+        return
+    token.hidden = bool(payload.get('hidden', not token.hidden))
+    await _broadcast_token_visibility(session, token, "token_hidden_changed")
+    await save_campaign_async(session)
+
+
+async def handle_token_condition(payload: dict, session: Session, user: User):
+    token_id = payload.get("token_id")
+    condition = payload.get("condition")
+    token = session.tokens.get(token_id)
+    if not token or not condition:
+        return
+    if user.role != "dm" and token.owner_id != user.id:
+        return
+    _prune_token_condition_timers(token)
+    if condition in (getattr(token, 'conditions', None) or []):
+        _clear_token_condition(token, condition)
+    else:
+        _set_token_condition(token, condition, 0)
+    await save_campaign_async(session)
+    await _broadcast_token_condition_state(session, token)
+
+
+async def handle_char_hp_update(payload: dict, session: Session, user: User):
+    """Broadcast HP change to all connected users (DM + other players can see)."""
+    await manager.broadcast(session.id, {
+        "type": "char_hp_update",
+        "payload": payload,
+    })
+
+
+_VALID_MARK_KINDS = {"hunters_mark", "hex"}
+
+
+async def handle_mark_target(payload: dict, session: Session, user: User):
+    """Player places a Hunter's Mark or Hex marker on a target token.
+
+    Outside combat: applied immediately.
+    During combat: only allowed on the player's own turn.
+    """
+    if user.role not in ("player", "dm"):
+        return
+
+    mark_kind = str(payload.get("mark_kind") or "").strip().lower()
+    if mark_kind not in _VALID_MARK_KINDS:
+        await manager.send_to(session.id, user.id, {
+            "type": "error",
+            "payload": {"message": "Invalid mark kind."}
+        })
+        return
+
+    target_token_id = str(payload.get("target_token_id") or "").strip()
+    token = (session.tokens or {}).get(target_token_id)
+    if not token or getattr(token, "hidden", False):
+        await manager.send_to(session.id, user.id, {
+            "type": "error",
+            "payload": {"message": "Choose a visible target token."}
+        })
+        return
+
+    from server.handlers.common import _token_map_context
+    map_context = _token_map_context(token)
+    if map_context != str(getattr(session, "dm_map_context", "world") or "world"):
+        await manager.send_to(session.id, user.id, {
+            "type": "error",
+            "payload": {"message": "That target is not on the active map."}
+        })
+        return
+
+    combat = getattr(session, "combat", None) or {}
+    if combat.get("active"):
+        allowed, err_msg = _can_act_current_turn(session, user)
+        if not allowed and user.role != "dm":
+            await manager.send_to(session.id, user.id, {
+                "type": "error",
+                "payload": {"message": err_msg or "You must wait for your turn to place a mark."}
+            })
+            return
+
+    _prune_token_condition_timers(token)
+    _set_token_condition(token, mark_kind, 0)
+    await save_campaign_async(session)
+    await _broadcast_token_condition_state(session, token)
+
+    mark_label = "Hunter's Mark" if mark_kind == "hunters_mark" else "Hex"
+    actor_name = user.name or "Player"
+    session.add_log(f"{actor_name} placed {mark_label} on {token.name}.", "system", actor_name)
+    await manager.broadcast(session.id, {
+        "type": "mark_target_result",
+        "payload": {
+            "ok": True,
+            "message": f"{mark_label} placed on {token.name}.",
+            "mark_kind": mark_kind,
+            "token_id": token.id,
+            "token_name": token.name,
+        }
+    })
+
+
+async def handle_token_emote(payload: dict, session: Session, user: User):
+    """Broadcast a short-lived token-side emote for a player-owned token."""
+    if user.role not in ("player", "dm"):
+        return
+
+    token_id = str(payload.get("token_id") or "").strip()
+    emote_id = str(payload.get("emote_id") or "").strip().lower()
+    token = session.tokens.get(token_id)
+    emote_def = _TOKEN_EMOTE_DEFS.get(emote_id)
+    if not token or not emote_def:
+        return
+
+    if user.role != "dm":
+        if str(getattr(token, "owner_id", "") or "").strip() != str(user.id):
+            await manager.send_to(session.id, user.id, {
+                "type": "token_emote_denied",
+                "payload": {"token_id": token_id, "message": "You can only emote on your own token."}
+            })
+            return
+
+    now = time.time()
+    last_used = float(getattr(user, "last_token_emote_at", 0.0) or 0.0)
+    remaining = _TOKEN_EMOTE_COOLDOWN_SEC - (now - last_used)
+    if remaining > 0:
+        await manager.send_to(session.id, user.id, {
+            "type": "token_emote_denied",
+            "payload": {
+                "token_id": token_id,
+                "message": "Quick reaction is cooling down.",
+                "cooldown_remaining_ms": int(max(1, round(remaining * 1000))),
+            }
+        })
+        return
+    user.last_token_emote_at = now
+
+    await manager.broadcast(session.id, {
+        "type": "token_emote",
+        "payload": {
+            "token_id": token_id,
+            "emote_id": emote_id,
+            "icon": emote_def["icon"],
+            "label": emote_def["label"],
+            "actor_user_id": user.id,
+            "actor_name": user.name,
+            "expires_at": now + _TOKEN_EMOTE_TTL_SEC,
+            "map_context": str(getattr(token, "map_context", "world") or "world"),
+        }
+    })

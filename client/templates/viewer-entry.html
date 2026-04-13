@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Casual D&amp;D — Viewer Entry</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Crimson+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090504;
+      --panel: rgba(19, 11, 10, 0.76);
+      --line: rgba(226, 197, 152, 0.18);
+      --gold: #edd8b5;
+      --text: #f6ecdc;
+      --muted: rgba(240, 226, 205, 0.72);
+      --accent: #a9b8ff;
+      --good: #9ce0db;
+      --danger: #ff9b9b;
+      --radius: 30px;
+      --shadow: 0 26px 84px rgba(0,0,0,0.44);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: 'Crimson Pro', serif;
+      background:
+        radial-gradient(circle at 24% 18%, rgba(244, 188, 126, 0.2), transparent 28%),
+        radial-gradient(circle at 76% 20%, rgba(150, 165, 255, 0.16), transparent 26%),
+        linear-gradient(180deg, rgba(7,3,2,0.24), rgba(7,3,2,0.82)),
+        url('/static/importer/tavern-bg.png') center/cover no-repeat fixed;
+      padding: 36px 24px 46px;
+      position: relative;
+      isolation: isolate;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 30%, rgba(255,238,202,0.12), transparent 38%);
+      mix-blend-mode: screen;
+      z-index: -1;
+    }
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 520px;
+      gap: 32px;
+      align-items: stretch;
+    }
+    .hero, .card {
+      background: linear-gradient(180deg, rgba(22,12,10,0.72), rgba(10,5,4,0.84));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before, .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent 28%, transparent 72%, rgba(255,255,255,0.03));
+    }
+    .hero { padding: 34px; min-height: calc(100vh - 92px); display: flex; flex-direction: column; justify-content: space-between; }
+    .eyebrow {
+      display: inline-flex;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(237, 216, 181, 0.12);
+      background: rgba(8,4,4,0.34);
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(246, 237, 219, 0.86);
+    }
+    h1 {
+      margin: 22px 0 14px;
+      font-family: 'Cinzel', serif;
+      font-size: clamp(3rem, 6vw, 5.7rem);
+      line-height: 0.95;
+      color: var(--gold);
+      text-shadow: 0 12px 36px rgba(0,0,0,0.32);
+    }
+    .hero p {
+      margin: 0;
+      max-width: 640px;
+      color: var(--muted);
+      font-size: clamp(1.15rem, 2vw, 1.55rem);
+      line-height: 1.55;
+    }
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 34px;
+    }
+    .pill {
+      padding: 12px 15px;
+      border-radius: 999px;
+      border: 1px solid rgba(237, 216, 181, 0.12);
+      background: rgba(8,4,3,0.42);
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      color: rgba(248, 237, 220, 0.86);
+    }
+    .card {
+      padding: 28px;
+      min-height: calc(100vh - 92px);
+      display: grid;
+      grid-template-rows: auto auto auto 1fr auto;
+      gap: 18px;
+    }
+    .card h2 {
+      margin: 0;
+      font-family: 'Cinzel', serif;
+      font-size: clamp(2rem, 3vw, 2.6rem);
+      color: var(--gold);
+    }
+    .subtext { margin: 0; color: var(--muted); font-size: 1.05rem; line-height: 1.5; }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .info-box {
+      padding: 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(237, 216, 181, 0.12);
+      background: rgba(10,5,4,0.46);
+    }
+    .info-box strong {
+      display: block;
+      margin-bottom: 6px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.82rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(250, 243, 230, 0.9);
+    }
+    .info-box span { color: var(--muted); }
+    .status {
+      padding: 16px 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(237, 216, 181, 0.12);
+      background: rgba(10,5,4,0.46);
+      color: var(--muted);
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+    }
+    .status.error { color: var(--danger); border-color: rgba(255,155,155,0.24); background: rgba(70,16,14,0.38); }
+    .status.success { color: var(--good); border-color: rgba(156,224,219,0.24); background: rgba(10,28,29,0.42); }
+    .actions { display: grid; gap: 12px; }
+    button, a.btn-link {
+      appearance: none;
+      border: none;
+      text-decoration: none;
+      cursor: pointer;
+      font-family: 'Cinzel', serif;
+      border-radius: 18px;
+      padding: 17px 18px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.85rem;
+      transition: transform 140ms ease, opacity 140ms ease;
+      text-align: center;
+    }
+    button:hover, a.btn-link:hover { transform: translateY(-1px); }
+    .primary { background: linear-gradient(180deg, #a7b6ff, #6977d8); color: #16152d; }
+    .secondary { background: rgba(255,255,255,0.03); color: var(--gold); border: 1px solid rgba(237, 216, 181, 0.18); }
+    button:disabled { opacity: 0.5; cursor: wait; transform: none; }
+    .auto-note {
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.5;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px dashed rgba(237,216,181,0.14);
+      background: rgba(10,5,4,0.34);
+    }
+    @media (max-width: 1080px) {
+      .wrap { grid-template-columns: 1fr; }
+      .hero, .card { min-height: auto; }
+    }
+    @media (max-width: 640px) {
+      body { padding: 18px 14px 24px; }
+      .hero, .card { padding: 22px; border-radius: 24px; }
+      .info-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Viewer Invite Route · New Watch Entry</div>
+        <h1>Enter the<br>Gallery</h1>
+        <p id="hero-copy">Viewer links should sign you in, show the campaign you are about to watch, and take you cleanly into spectator mode without dumping you onto the realm board.</p>
+        <div class="pill-row">
+          <div class="pill"><span>Role</span><strong>Viewer</strong></div>
+          <div class="pill"><span>Route</span><strong>Invite → Watch</strong></div>
+          <div class="pill"><span>Mode</span><strong>Spectator</strong></div>
+        </div>
+      </div>
+      <div class="pill-row">
+        <div class="pill"><span>Campaign</span><strong id="campaign-name">Resolving realm…</strong></div>
+        <div class="pill"><span>Status</span><strong id="campaign-status">Checking link…</strong></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div>
+        <h2 id="panel-title">Spectator Entry</h2>
+        <p class="subtext" id="panel-copy">Sign in, verify the invite, then step directly into viewer mode.</p>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-box"><strong>Account</strong><span id="account-status">Checking sign-in…</span></div>
+        <div class="info-box"><strong>Invite</strong><span id="invite-status">Validating…</span></div>
+      </div>
+
+      <div id="status" class="status">Preparing viewer entry…</div>
+
+      <div class="auto-note" id="auto-note">Once this viewer invite is verified, you can enter watch mode immediately. No DM tools, no character page, no realm board detour.</div>
+
+      <div class="actions">
+        <button id="enter-btn" class="primary" type="button" disabled>Enter Watch Mode</button>
+        <button id="refresh-btn" class="secondary" type="button">Refresh Invite</button>
+        <a class="btn-link secondary" href="/campaigns">Go to Realm Board</a>
+      </div>
+    </section>
+  </div>
+
+  <script src="/static/js/core/csrf.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const SESSION_ID = String(params.get('session') || '').trim().toUpperCase();
+    const INVITE = String(params.get('code') || '').trim();
+    const ROLE = 'viewer';
+    const NEXT_LOGIN = location.pathname + location.search;
+    let authUser = null;
+    let campaignName = 'Campaign';
+
+    const els = {
+      campaignName: document.getElementById('campaign-name'),
+      campaignStatus: document.getElementById('campaign-status'),
+      panelTitle: document.getElementById('panel-title'),
+      panelCopy: document.getElementById('panel-copy'),
+      accountStatus: document.getElementById('account-status'),
+      inviteStatus: document.getElementById('invite-status'),
+      status: document.getElementById('status'),
+      enterBtn: document.getElementById('enter-btn'),
+      refreshBtn: document.getElementById('refresh-btn'),
+      autoNote: document.getElementById('auto-note'),
+      heroCopy: document.getElementById('hero-copy'),
+    };
+
+    function setStatus(message, kind = 'info') {
+      els.status.textContent = message;
+      els.status.className = 'status' + (kind === 'error' ? ' error' : kind === 'success' ? ' success' : '');
+    }
+
+    function redirectToLogin() {
+      sessionStorage.setItem('dnd_login_next', NEXT_LOGIN);
+      location.href = '/viewer?next=' + encodeURIComponent(NEXT_LOGIN);
+    }
+
+    function buildViewerInviteUrl(sessionId, inviteCode) {
+      const q = new URLSearchParams({ session: String(sessionId || '').trim().toUpperCase(), code: String(inviteCode || '').trim(), role: ROLE });
+      return '/viewer/watch?' + q.toString();
+    }
+
+    function rememberViewerInviteRoute(sessionId, inviteCode) {
+      const sessionValue = String(sessionId || '').trim().toUpperCase();
+      const inviteValue = String(inviteCode || '').trim();
+      if (!sessionValue || !inviteValue) return;
+      try {
+        localStorage.setItem('dnd_last_viewer_invite', buildViewerInviteUrl(sessionValue, inviteValue));
+      } catch (_) {}
+    }
+
+    function restoreViewerInviteRoute() {
+      try {
+        return String(localStorage.getItem('dnd_last_viewer_invite') || '').trim();
+      } catch (_) {
+        return '';
+      }
+    }
+
+    async function fetchJson(url, options) {
+      const res = await fetch(url, Object.assign({ credentials: 'same-origin' }, options || {}));
+      let data = {};
+      try { data = await res.json(); } catch (_) {}
+      if (!res.ok) throw new Error(data.error || data.detail || data.message || 'Request failed');
+      return data;
+    }
+
+    async function loadInvite() {
+      const data = await fetchJson(`/api/session/${encodeURIComponent(SESSION_ID)}/lobby?role=${ROLE}`);
+      campaignName = data.campaign_name || 'Campaign';
+      els.campaignName.textContent = campaignName;
+      els.campaignStatus.textContent = 'Invite verified';
+      els.inviteStatus.textContent = 'Viewer link ready';
+      els.panelTitle.textContent = 'Watch ' + campaignName;
+      els.panelCopy.textContent = 'You are about to enter ' + campaignName + ' as a spectator.';
+      els.heroCopy.textContent = 'Viewer links now route through a dedicated watch page, then straight into spectator mode for ' + campaignName + '.';
+      els.autoNote.textContent = 'This viewer route is intentionally lightweight: verify the invite, then enter watch mode immediately.';
+      els.enterBtn.disabled = false;
+    }
+
+    async function joinViewer() {
+      try {
+        els.enterBtn.disabled = true;
+        setStatus('Opening spectator view…');
+        const data = await fetchJson('/api/session/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: SESSION_ID, invite_code: INVITE }),
+        });
+        const search = new URLSearchParams({
+          session_id: data.session_id,
+          user_id: data.user_id,
+          role: data.role,
+          name: data.name,
+          returning: data.returning ? '1' : '0',
+        });
+        rememberViewerInviteRoute(data.session_id, INVITE);
+        location.href = '/play?' + search.toString();
+      } catch (err) {
+        els.enterBtn.disabled = false;
+        setStatus(err.message || 'Could not enter watch mode.', 'error');
+      }
+    }
+
+    async function init() {
+      if (!SESSION_ID || !INVITE) {
+        const fallbackInvite = restoreViewerInviteRoute();
+        if (fallbackInvite && fallbackInvite !== (location.pathname + location.search)) {
+          location.replace(fallbackInvite);
+          return;
+        }
+        els.campaignName.textContent = 'No realm selected';
+        els.campaignStatus.textContent = 'Invite needed';
+        els.inviteStatus.textContent = 'Missing session data';
+        setStatus('Open a viewer invite to enter spectator mode, or reuse your most recent viewer link when available.', 'error');
+        return;
+      }
+      try {
+        const me = await fetch('/api/auth/me', { credentials: 'same-origin' });
+        if (!me.ok) { redirectToLogin(); return; }
+        const auth = await me.json();
+        authUser = auth && auth.user ? auth.user : null;
+        if (!authUser) { redirectToLogin(); return; }
+        els.accountStatus.textContent = (authUser.username || 'Signed in') + ' · ' + (authUser.role || 'viewer');
+        await loadInvite();
+        rememberViewerInviteRoute(SESSION_ID, INVITE);
+        setStatus('Viewer entry ready. Continue into spectator mode.', 'success');
+      } catch (err) {
+        setStatus(err.message || 'Could not open viewer entry.', 'error');
+      }
+    }
+
+    els.enterBtn.addEventListener('click', joinViewer);
+    els.refreshBtn.addEventListener('click', init);
+    init();
+  </script>
+</body>
+</html>

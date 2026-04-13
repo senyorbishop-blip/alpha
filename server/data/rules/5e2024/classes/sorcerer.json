@@ -1,0 +1,896 @@
+{
+  "id": "sorcerer",
+  "displayName": "Sorcerer",
+  "hitDie": 6,
+  "primaryAbilities": [
+    "cha"
+  ],
+  "savingThrows": [
+    "con",
+    "cha"
+  ],
+  "subclassLevel": 3,
+  "subclassDisplayName": "Sorcerous Origin",
+  "armorProficiencies": [],
+  "weaponProficiencies": [
+    "daggers",
+    "darts",
+    "slings",
+    "quarterstaffs",
+    "light-crossbows"
+  ],
+  "toolProficiencies": [],
+  "skillChoices": {
+    "count": 2,
+    "from": [
+      "Arcana",
+      "Deception",
+      "Insight",
+      "Intimidation",
+      "Persuasion",
+      "Religion"
+    ]
+  },
+  "startingEquipmentChoices": [],
+  "spellcastingType": "full",
+  "spellcastingAbility": "cha",
+  "spellSlots": {
+    "1": {
+      "1st": 2
+    },
+    "2": {
+      "1st": 3
+    },
+    "3": {
+      "1st": 4,
+      "2nd": 2
+    },
+    "4": {
+      "1st": 4,
+      "2nd": 3
+    },
+    "5": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 2
+    },
+    "6": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3
+    },
+    "7": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 1
+    },
+    "8": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 2
+    },
+    "9": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 1
+    },
+    "10": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2
+    },
+    "11": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1
+    },
+    "12": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1
+    },
+    "13": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1
+    },
+    "14": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1
+    },
+    "15": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1
+    },
+    "16": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1
+    },
+    "17": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1,
+      "9th": 1
+    },
+    "18": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 3,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1,
+      "9th": 1
+    },
+    "19": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 3,
+      "6th": 2,
+      "7th": 1,
+      "8th": 1,
+      "9th": 1
+    },
+    "20": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 3,
+      "6th": 2,
+      "7th": 2,
+      "8th": 1,
+      "9th": 1
+    }
+  },
+  "classDescription": "An innate arcane caster whose power wells from bloodline or cosmic gift.",
+  "roleIdentity": "Explosive blaster-controller with metamagic spell shaping.",
+  "progressionTable": [
+    {
+      "level": 1,
+      "proficiencyBonus": 2,
+      "features": [
+        "Innate Sorcery",
+        "Spellcasting"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 2,
+        "sorceryPoints": 0
+      },
+      "unlockIds": [
+        "sorcerer-l1-1",
+        "sorcerer-l1-2"
+      ]
+    },
+    {
+      "level": 2,
+      "proficiencyBonus": 2,
+      "features": [
+        "Font of Magic",
+        "Flexible Casting"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 2,
+        "sorceryPoints": 2
+      },
+      "unlockIds": [
+        "sorcerer-l2-1",
+        "sorcerer-l2-2"
+      ]
+    },
+    {
+      "level": 3,
+      "proficiencyBonus": 2,
+      "features": [
+        "Sorcerous Origin (Subclass)",
+        "Metamagic (2 options)"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 3,
+        "sorceryPoints": 3
+      },
+      "unlockIds": [
+        "sorcerer-l3-1",
+        "sorcerer-l3-2"
+      ]
+    },
+    {
+      "level": 4,
+      "proficiencyBonus": 2,
+      "features": [
+        "Ability Score Improvement",
+        "Cantrips Known: 5"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsKnown": 4,
+        "sorceryPoints": 4
+      },
+      "unlockIds": [
+        "sorcerer-l4-1",
+        "sorcerer-l4-2"
+      ]
+    },
+    {
+      "level": 5,
+      "proficiencyBonus": 3,
+      "features": [
+        "Sorcerous Vitality"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsKnown": 4,
+        "sorceryPoints": 5
+      },
+      "unlockIds": [
+        "sorcerer-l5-1"
+      ]
+    },
+    {
+      "level": 6,
+      "proficiencyBonus": 3,
+      "features": [
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsKnown": 5,
+        "sorceryPoints": 6
+      },
+      "unlockIds": [
+        "sorcerer-l6-1"
+      ]
+    },
+    {
+      "level": 7,
+      "proficiencyBonus": 3,
+      "features": [
+        "Sorcery Incarnate"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsKnown": 6,
+        "sorceryPoints": 7
+      },
+      "unlockIds": [
+        "sorcerer-l7-1"
+      ]
+    },
+    {
+      "level": 8,
+      "proficiencyBonus": 3,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsKnown": 6,
+        "sorceryPoints": 8
+      },
+      "unlockIds": [
+        "sorcerer-l8-1"
+      ]
+    },
+    {
+      "level": 9,
+      "proficiencyBonus": 4,
+      "features": [
+        "5th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsKnown": 7,
+        "sorceryPoints": 9
+      },
+      "unlockIds": [
+        "sorcerer-l9-1"
+      ]
+    },
+    {
+      "level": 10,
+      "proficiencyBonus": 4,
+      "features": [
+        "Metamagic (3rd option)",
+        "Cantrips Known: 6"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 6,
+        "spellsKnown": 8,
+        "sorceryPoints": 10
+      },
+      "unlockIds": [
+        "sorcerer-l10-1",
+        "sorcerer-l10-2"
+      ]
+    },
+    {
+      "level": 11,
+      "proficiencyBonus": 4,
+      "features": [
+        "6th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 6,
+        "spellsKnown": 8,
+        "sorceryPoints": 11
+      },
+      "unlockIds": [
+        "sorcerer-l11-1"
+      ]
+    },
+    {
+      "level": 12,
+      "proficiencyBonus": 4,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 6,
+        "spellsKnown": 9,
+        "sorceryPoints": 12
+      },
+      "unlockIds": [
+        "sorcerer-l12-1"
+      ]
+    },
+    {
+      "level": 13,
+      "proficiencyBonus": 5,
+      "features": [
+        "7th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 6,
+        "spellsKnown": 10,
+        "sorceryPoints": 13
+      },
+      "unlockIds": [
+        "sorcerer-l13-1"
+      ]
+    },
+    {
+      "level": 14,
+      "proficiencyBonus": 5,
+      "features": [
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 6,
+        "spellsKnown": 10,
+        "sorceryPoints": 14
+      },
+      "unlockIds": [
+        "sorcerer-l14-1"
+      ]
+    },
+    {
+      "level": 15,
+      "proficiencyBonus": 5,
+      "features": [
+        "8th-level Spells",
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 6,
+        "spellsKnown": 11,
+        "sorceryPoints": 15
+      },
+      "unlockIds": [
+        "sorcerer-l15-1",
+        "sorcerer-l15-2"
+      ]
+    },
+    {
+      "level": 16,
+      "proficiencyBonus": 5,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 6,
+        "spellsKnown": 12,
+        "sorceryPoints": 16
+      },
+      "unlockIds": [
+        "sorcerer-l16-1"
+      ]
+    },
+    {
+      "level": 17,
+      "proficiencyBonus": 6,
+      "features": [
+        "9th-level Spells",
+        "Metamagic (4th option)"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 6,
+        "spellsKnown": 12,
+        "sorceryPoints": 17
+      },
+      "unlockIds": [
+        "sorcerer-l17-1",
+        "sorcerer-l17-2"
+      ]
+    },
+    {
+      "level": 18,
+      "proficiencyBonus": 6,
+      "features": [
+        "Arcane Apotheosis"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 6,
+        "spellsKnown": 13,
+        "sorceryPoints": 18
+      },
+      "unlockIds": [
+        "sorcerer-l18-1"
+      ]
+    },
+    {
+      "level": 19,
+      "proficiencyBonus": 6,
+      "features": [
+        "Epic Boon"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 6,
+        "spellsKnown": 14,
+        "sorceryPoints": 19
+      },
+      "unlockIds": [
+        "sorcerer-l19-1"
+      ]
+    },
+    {
+      "level": 20,
+      "proficiencyBonus": 6,
+      "features": [
+        "Arcane Apotheosis (Improved)"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 6,
+        "spellsKnown": 15,
+        "sorceryPoints": 20
+      },
+      "unlockIds": [
+        "sorcerer-l20-1"
+      ]
+    }
+  ],
+  "featureDefinitions": {
+    "metamagicOptions": [
+      {
+        "id": "careful-spell",
+        "name": "Careful Spell",
+        "cost": "1"
+      },
+      {
+        "id": "distant-spell",
+        "name": "Distant Spell",
+        "cost": "1"
+      },
+      {
+        "id": "empowered-spell",
+        "name": "Empowered Spell",
+        "cost": "1"
+      },
+      {
+        "id": "extended-spell",
+        "name": "Extended Spell",
+        "cost": "1"
+      },
+      {
+        "id": "heightened-spell",
+        "name": "Heightened Spell",
+        "cost": "3"
+      },
+      {
+        "id": "quickened-spell",
+        "name": "Quickened Spell",
+        "cost": "2"
+      },
+      {
+        "id": "seeking-spell",
+        "name": "Seeking Spell",
+        "cost": "1"
+      },
+      {
+        "id": "subtle-spell",
+        "name": "Subtle Spell",
+        "cost": "1"
+      },
+      {
+        "id": "transmuted-spell",
+        "name": "Transmuted Spell",
+        "cost": "1"
+      },
+      {
+        "id": "twinned-spell",
+        "name": "Twinned Spell",
+        "cost": "1+ per spell level"
+      }
+    ],
+    "sorcerer-l1-1": {
+      "summary": "Awaken a heightened magical state that makes your innate power feel sharper, louder, and more dangerous.",
+      "description": "Innate Sorcery is a signature identity button. It tells the player this magic comes from within, and it should read like a heightened casting state rather than a wizard-style study engine.",
+      "resourceName": "Innate Sorcery",
+      "trackUses": true,
+      "tags": [
+        "signature",
+        "arcane",
+        "resource"
+      ]
+    },
+    "sorcerer-l1-2": {
+      "summary": "Your spells are known instinctively rather than prepared from study, making your list narrower but more personal.",
+      "description": "Sorcerer spellcasting should feel intimate and identity-driven. You know fewer tools than a wizard, but the spells you carry should feel like they belong to your bloodline, chaos, or innate magical force.",
+      "tags": [
+        "spellcasting",
+        "arcane",
+        "identity"
+      ]
+    },
+    "sorcerer-l2-1": {
+      "summary": "You gain Sorcery Points, the core resource that fuels your most flexible class tricks.",
+      "description": "Font of Magic is the backbone of the sorcerer. It establishes Sorcery Points as your personal magic economy and should clearly surface your current points, spenders, and recovery assumptions.",
+      "resourceName": "Sorcery Points",
+      "trackUses": true,
+      "tags": [
+        "resource",
+        "signature",
+        "arcane"
+      ]
+    },
+    "sorcerer-l2-2": {
+      "summary": "Trade between spell slots and Sorcery Points so your magic adapts to the fight in front of you.",
+      "description": "Flexible Casting is what turns Sorcery Points into real decision-making. It lets the sorcerer reshape resources on the fly instead of following a fixed casting pattern.",
+      "resourceName": "Sorcery Points",
+      "trackUses": true,
+      "tags": [
+        "resource",
+        "conversion",
+        "spellcasting"
+      ]
+    },
+    "sorcerer-l3-1": {
+      "summary": "Your origin explains where your magic comes from and what kind of instability or legacy it carries.",
+      "description": "Sorcerous Origin is the subclass gate for sorcerer. It should immediately tell the player whether this power comes from chaos, draconic ancestry, aberrant influence, clockwork structure, or something else.",
+      "tags": [
+        "subclass",
+        "identity",
+        "arcane"
+      ]
+    },
+    "sorcerer-l3-2": {
+      "summary": "Shape your spells with metamagic so the same spell list can play very differently from one sorcerer to another.",
+      "description": "Metamagic is one of the most important sorcerer systems. It should feel like expressive spell customization, not just another passive list entry.",
+      "resourceName": "Sorcery Points",
+      "trackUses": true,
+      "tags": [
+        "spellcasting",
+        "customization",
+        "resource"
+      ]
+    },
+    "sorcerer-l5-1": {
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "summary": "Steady yourself with a burst of restored vigor so your fragile caster chassis stays in the fight longer.",
+      "description": "Sorcerous Vitality gives the class a self-stabilizing button. It matters because sorcerers often feel exposed once pressure reaches them, and this feature helps them recover tempo.",
+      "tags": [
+        "survival",
+        "self-heal",
+        "arcane"
+      ]
+    },
+    "sorcerer-l7-1": {
+      "summary": "Push your innate state to a more complete form so your signature magic feels fully online in major encounters.",
+      "description": "Sorcery Incarnate is a dramatic identity spike. It should read like the sorcerer no longer merely has power, but actively becomes the vessel for it during a key fight.",
+      "tags": [
+        "signature",
+        "arcane",
+        "power-state"
+      ]
+    },
+    "sorcerer-l18-1": {
+      "summary": "Your mastery of raw magic reaches a rarefied peak where high-end casting feels effortless and overwhelming.",
+      "description": "Arcane Apotheosis is the late-game sorcerer fantasy: raw magical force refined to the point that the class feels almost mythic in its command of personal power.",
+      "tags": [
+        "capstone-adjacent",
+        "arcane",
+        "signature"
+      ]
+    },
+    "sorcerer-l20-1": {
+      "summary": "Your apotheosis sharpens even further, turning your innate magic into something close to a living magical phenomenon.",
+      "description": "Arcane Apotheosis (Improved) is the final expression of the sorcerer fantasy. It should feel like relentless magical presence rather than one more number bump.",
+      "tags": [
+        "capstone",
+        "arcane",
+        "mythic"
+      ]
+    }
+  },
+  "levelUnlockIds": {
+    "1": [
+      "sorcerer-l1-1",
+      "sorcerer-l1-2"
+    ],
+    "2": [
+      "sorcerer-l2-1",
+      "sorcerer-l2-2"
+    ],
+    "3": [
+      "sorcerer-l3-1",
+      "sorcerer-l3-2"
+    ],
+    "4": [
+      "sorcerer-l4-1",
+      "sorcerer-l4-2"
+    ],
+    "5": [
+      "sorcerer-l5-1"
+    ],
+    "6": [
+      "sorcerer-l6-1"
+    ],
+    "7": [
+      "sorcerer-l7-1"
+    ],
+    "8": [
+      "sorcerer-l8-1"
+    ],
+    "9": [
+      "sorcerer-l9-1"
+    ],
+    "10": [
+      "sorcerer-l10-1",
+      "sorcerer-l10-2"
+    ],
+    "11": [
+      "sorcerer-l11-1"
+    ],
+    "12": [
+      "sorcerer-l12-1"
+    ],
+    "13": [
+      "sorcerer-l13-1"
+    ],
+    "14": [
+      "sorcerer-l14-1"
+    ],
+    "15": [
+      "sorcerer-l15-1",
+      "sorcerer-l15-2"
+    ],
+    "16": [
+      "sorcerer-l16-1"
+    ],
+    "17": [
+      "sorcerer-l17-1",
+      "sorcerer-l17-2"
+    ],
+    "18": [
+      "sorcerer-l18-1"
+    ],
+    "19": [
+      "sorcerer-l19-1"
+    ],
+    "20": [
+      "sorcerer-l20-1"
+    ]
+  },
+  "progressionSummary": [
+    {
+      "level": 1,
+      "summary": "Innate Sorcery, Spellcasting.",
+      "unlockIds": [
+        "sorcerer-l1-1",
+        "sorcerer-l1-2"
+      ]
+    },
+    {
+      "level": 2,
+      "summary": "Font of Magic, Flexible Casting.",
+      "unlockIds": [
+        "sorcerer-l2-1",
+        "sorcerer-l2-2"
+      ]
+    },
+    {
+      "level": 3,
+      "summary": "Sorcerous Origin (Subclass), Metamagic (2 options).",
+      "unlockIds": [
+        "sorcerer-l3-1",
+        "sorcerer-l3-2"
+      ]
+    },
+    {
+      "level": 4,
+      "summary": "Ability Score Improvement, Cantrips Known: 5.",
+      "unlockIds": [
+        "sorcerer-l4-1",
+        "sorcerer-l4-2"
+      ]
+    },
+    {
+      "level": 5,
+      "summary": "Sorcerous Vitality.",
+      "unlockIds": [
+        "sorcerer-l5-1"
+      ]
+    },
+    {
+      "level": 6,
+      "summary": "Subclass Feature.",
+      "unlockIds": [
+        "sorcerer-l6-1"
+      ]
+    },
+    {
+      "level": 7,
+      "summary": "Sorcery Incarnate.",
+      "unlockIds": [
+        "sorcerer-l7-1"
+      ]
+    },
+    {
+      "level": 8,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "sorcerer-l8-1"
+      ]
+    },
+    {
+      "level": 9,
+      "summary": "5th-level Spells.",
+      "unlockIds": [
+        "sorcerer-l9-1"
+      ]
+    },
+    {
+      "level": 10,
+      "summary": "Metamagic (3rd option), Cantrips Known: 6.",
+      "unlockIds": [
+        "sorcerer-l10-1",
+        "sorcerer-l10-2"
+      ]
+    },
+    {
+      "level": 11,
+      "summary": "6th-level Spells.",
+      "unlockIds": [
+        "sorcerer-l11-1"
+      ]
+    },
+    {
+      "level": 12,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "sorcerer-l12-1"
+      ]
+    },
+    {
+      "level": 13,
+      "summary": "7th-level Spells.",
+      "unlockIds": [
+        "sorcerer-l13-1"
+      ]
+    },
+    {
+      "level": 14,
+      "summary": "Subclass Feature.",
+      "unlockIds": [
+        "sorcerer-l14-1"
+      ]
+    },
+    {
+      "level": 15,
+      "summary": "8th-level Spells, Subclass Feature.",
+      "unlockIds": [
+        "sorcerer-l15-1",
+        "sorcerer-l15-2"
+      ]
+    },
+    {
+      "level": 16,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "sorcerer-l16-1"
+      ]
+    },
+    {
+      "level": 17,
+      "summary": "9th-level Spells, Metamagic (4th option).",
+      "unlockIds": [
+        "sorcerer-l17-1",
+        "sorcerer-l17-2"
+      ]
+    },
+    {
+      "level": 18,
+      "summary": "Arcane Apotheosis.",
+      "unlockIds": [
+        "sorcerer-l18-1"
+      ]
+    },
+    {
+      "level": 19,
+      "summary": "Epic Boon.",
+      "unlockIds": [
+        "sorcerer-l19-1"
+      ]
+    },
+    {
+      "level": 20,
+      "summary": "Arcane Apotheosis (Improved).",
+      "unlockIds": [
+        "sorcerer-l20-1"
+      ]
+    }
+  ],
+  "future": {
+    "talentGroupId": "sorcerer-core-talents",
+    "awakeningHookIds": [
+      "sorcerer-awakening-arcane"
+    ]
+  },
+  "buildTips": {
+    "primaryFocus": "Charisma",
+    "primaryReason": "powers your spells, save DC, and spell attacks",
+    "secondaryFocus": "Constitution",
+    "secondaryReason": "protects your low HP and Concentration on key spells",
+    "avoidDump": "Dexterity",
+    "avoidDumpReason": "Dexterity improves AC and critical saves against area effects"
+  }
+}

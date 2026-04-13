@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Casual D&D — Enter the Forest Gate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c0712;
+      --panel: rgba(16, 10, 20, 0.70);
+      --panel-strong: rgba(24, 16, 30, 0.86);
+      --text: #f2e8d4;
+      --muted: rgba(235, 214, 176, 0.72);
+      --gold: #d7b36a;
+      --gold-strong: #f0cf88;
+      --cyan: #8ee9d6;
+      --danger: #d9827c;
+      --border: rgba(244, 204, 120, 0.25);
+      --shadow: 0 24px 80px rgba(0,0,0,0.55);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: 'Libre Baskerville', serif;
+      color: var(--text);
+      background: var(--bg);
+      overflow-x: hidden;
+    }
+    .scene {
+      min-height: 100vh;
+      position: relative;
+      isolation: isolate;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(255,216,140,0.12), transparent 25%),
+        radial-gradient(circle at 50% 80%, rgba(255,177,63,0.10), transparent 28%),
+        linear-gradient(180deg, rgba(7,4,12,0.72), rgba(7,4,12,0.9)),
+        url('/static/importer/forest-bg.png') center center / cover no-repeat;
+    }
+    .scene::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 50% 34%, rgba(255,214,123,0.28), transparent 20%),
+        radial-gradient(ellipse at 20% 50%, rgba(255,173,74,0.12), transparent 25%),
+        radial-gradient(ellipse at 80% 52%, rgba(255,173,74,0.12), transparent 25%),
+        linear-gradient(180deg, rgba(5,4,12,0.25), rgba(5,4,12,0.55));
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: -1;
+    }
+    .scene::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 28%, rgba(0,0,0,0.58) 80%, rgba(0,0,0,0.8) 100%);
+      pointer-events: none;
+      z-index: -1;
+    }
+    .motes { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+    .mote {
+      position: absolute;
+      bottom: -20px;
+      width: 3px; height: 3px;
+      border-radius: 999px;
+      background: rgba(255, 223, 151, 0.82);
+      box-shadow: 0 0 10px rgba(255, 223, 151, 0.5);
+      animation: floatUp linear infinite;
+      opacity: 0.6;
+    }
+    @keyframes floatUp { from { transform: translateY(0); opacity: 0; } 15% { opacity: .5; } to { transform: translateY(-110vh); opacity: 0; } }
+    .shell {
+      width: min(1180px, calc(100vw - 32px));
+      min-height: 100vh;
+      padding: 40px 0;
+      display: grid;
+      grid-template-columns: minmax(280px, 1.05fr) minmax(360px, 520px);
+      gap: 28px;
+      align-items: center;
+    }
+    .story {
+      padding: 24px 16px 24px 8px;
+      text-shadow: 0 4px 24px rgba(0,0,0,0.65);
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border: 1px solid rgba(255,231,180,0.22);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(19, 13, 23, 0.36);
+      backdrop-filter: blur(6px);
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    h1 {
+      margin: 0 0 14px;
+      font-family: 'Cinzel', serif;
+      font-size: clamp(34px, 5.4vw, 66px);
+      line-height: 0.96;
+      letter-spacing: 0.04em;
+      color: #fff3d5;
+      text-wrap: balance;
+    }
+    .lead {
+      max-width: 620px;
+      margin: 0 0 24px;
+      font-size: clamp(15px, 1.7vw, 18px);
+      line-height: 1.72;
+      color: rgba(247, 229, 197, 0.82);
+    }
+    .pillars {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      max-width: 720px;
+    }
+    .pillar {
+      padding: 16px 18px;
+      background: rgba(18, 12, 22, 0.36);
+      border: 1px solid rgba(243, 206, 132, 0.16);
+      border-radius: 18px;
+      backdrop-filter: blur(8px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .pillar strong {
+      display: block;
+      margin-bottom: 6px;
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      color: var(--gold-strong);
+      text-transform: uppercase;
+    }
+    .pillar span { font-size: 13px; line-height: 1.55; color: rgba(247,229,197,0.7); }
+    .panel {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      background:
+        linear-gradient(180deg, rgba(42,28,18,0.58), rgba(19,13,23,0.88)),
+        rgba(19, 13, 23, 0.82);
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.08);
+      overflow: hidden;
+    }
+    .panel::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(255,220,150,0.06), transparent 18%, transparent 82%, rgba(255,220,150,0.03));
+      pointer-events: none;
+    }
+    .panel-header {
+      padding: 24px 26px 16px;
+      border-bottom: 1px solid rgba(255,230,180,0.08);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .panel-title { font-family: 'Cinzel', serif; font-size: 28px; margin: 0; color: #fff2cf; }
+    .panel-subtitle { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .mode-tabs { display: flex; gap: 8px; }
+    .mode-tab {
+      appearance: none; border: 1px solid rgba(255,228,178,0.14); background: rgba(255,255,255,0.03);
+      color: rgba(250,237,212,0.76); border-radius: 999px; padding: 10px 14px; cursor: pointer;
+      font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+      transition: .2s ease;
+    }
+    .mode-tab.is-active, .mode-tab:hover { color: #16110b; background: linear-gradient(135deg, #f0cd86, #c99b45); border-color: rgba(255,225,160,0.38); }
+    .panel-body { padding: 24px 26px 28px; }
+    .hidden { display: none !important; }
+    .feedback {
+      margin-bottom: 16px; padding: 12px 14px; border-radius: 14px; font-size: 13px; line-height: 1.6;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: var(--text);
+    }
+    .feedback.error { background: rgba(147, 34, 34, 0.16); border-color: rgba(224, 113, 113, 0.26); color: #ffd1cc; }
+    .feedback.success { background: rgba(17, 94, 89, 0.18); border-color: rgba(94, 234, 212, 0.22); color: #d4fff6; }
+    form { display: grid; gap: 14px; }
+    .field { display: grid; gap: 8px; }
+    .field label {
+      font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,225,173,0.76);
+    }
+    .field input, .field select {
+      width: 100%;
+      padding: 14px 15px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 221, 163, 0.12);
+      background: rgba(6, 5, 10, 0.28);
+      color: var(--text);
+      font: inherit;
+      outline: none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+      transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+    .field input:focus, .field select:focus {
+      border-color: rgba(255,221,163,0.34);
+      background: rgba(8,6,12,0.44);
+      box-shadow: 0 0 0 4px rgba(214, 179, 106, 0.12);
+    }
+    .meta-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12px; color: var(--muted); }
+    .meta-row button, .meta-row a { color: var(--cyan); background: none; border: 0; padding: 0; cursor: pointer; font: inherit; text-decoration: none; }
+    .cta {
+      appearance: none; border: 0; cursor: pointer; border-radius: 16px; padding: 14px 18px; width: 100%;
+      font-family: 'Cinzel', serif; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: #1e1308; background: linear-gradient(135deg, #f2d597, #c98f39 58%, #b67c2f); box-shadow: 0 16px 32px rgba(0,0,0,0.28);
+      transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+    }
+    .cta:hover { transform: translateY(-1px); filter: brightness(1.03); box-shadow: 0 20px 38px rgba(0,0,0,0.34); }
+    .cta[disabled] { opacity: .55; cursor: wait; transform: none; }
+    .divider { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; margin: 8px 0 0; color: rgba(245,229,200,0.42); font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; }
+    .divider::before, .divider::after { content:''; height:1px; background: linear-gradient(90deg, transparent, rgba(255,222,167,0.16), transparent); }
+    .footnote { margin-top: 16px; color: rgba(247,229,197,0.62); font-size: 12px; line-height: 1.6; }
+    .reset-box {
+      margin-top: 10px; padding: 14px; border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,235,191,0.08);
+    }
+    .reset-box strong { color: #fff1ca; font-family: 'Cinzel', serif; font-size: 13px; }
+    .top-links {
+      position: absolute; inset: 18px 18px auto auto; display: flex; gap: 10px; z-index: 5;
+    }
+    .top-links a {
+      text-decoration: none; color: rgba(255,236,200,0.8); font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 10px 13px; border-radius: 999px; border: 1px solid rgba(255,225,173,0.16); background: rgba(10, 8, 14, 0.36); backdrop-filter: blur(6px);
+    }
+    .top-links a:hover { background: rgba(255,255,255,0.08); }
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; width: min(680px, calc(100vw - 24px)); padding-top: 74px; }
+      .story { padding: 8px 4px; }
+      .pillars { grid-template-columns: 1fr; }
+      .top-links { right: 12px; top: 12px; }
+    }
+    @media (max-width: 640px) {
+      .scene { align-items: flex-start; }
+      .shell { padding: 70px 0 20px; }
+      .panel-header { flex-direction: column; align-items: stretch; }
+      .mode-tabs { width: 100%; }
+      .mode-tab { flex: 1; }
+      .panel-body, .panel-header { padding-left: 18px; padding-right: 18px; }
+      h1 { font-size: 36px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="scene">
+    <div class="motes" id="motes"></div>
+    <div class="top-links">
+      <a href="/campaigns">Realm Board</a>
+      <a href="/campaigns">Campaign Worlds</a>
+    </div>
+    <div class="shell">
+      <section class="story" aria-label="Story introduction">
+        <div class="eyebrow">New entry flow • HTML Importer connected to Dice</div>
+        <h1>Enter the Forest Gate</h1>
+        <p class="lead">
+          This is the new sign-in path for Dice. Players, Dungeon Masters, and viewers now enter through a shared premium gateway,
+          then continue into the realm board, roster, or join portal from one connected flow.
+        </p>
+        <div class="pillars">
+          <div class="pillar"><strong>Login & Register</strong><span>One clean front door for every role, backed by Dice’s live auth endpoints.</span></div>
+          <div class="pillar"><strong>Campaign Worlds</strong><span>Successful entry routes straight into the realm board instead of dropping you into a utility page.</span></div>
+          <div class="pillar"><strong>Reset Support</strong><span>Built-in password reset request and completion flow for development and host-managed recovery.</span></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Authentication panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Casual D&amp;D</h2>
+            <p class="panel-subtitle">Sign in, register, or reset access. Once authenticated, you move directly into the Dice realm board.</p>
+          </div>
+          <div class="mode-tabs" role="tablist" aria-label="Authentication modes">
+            <button class="mode-tab is-active" type="button" data-mode-tab="login">Login</button>
+            <button class="mode-tab" type="button" data-mode-tab="register">Register</button>
+            <button class="mode-tab" type="button" data-mode-tab="forgot">Reset</button>
+          </div>
+        </div>
+
+        <div class="panel-body">
+          <div id="feedback" class="feedback hidden"></div>
+
+          <form id="login-form" data-mode-panel="login">
+            <div class="field">
+              <label for="login-identifier">Username or Email</label>
+              <input id="login-identifier" name="identifier" autocomplete="username" placeholder="Enter your username or email" required>
+            </div>
+            <div class="field">
+              <label for="login-password">Password</label>
+              <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+            </div>
+            <div class="meta-row">
+              <span>Existing Dice accounts work here. Older accounts are auto-migrated on startup when found in a legacy local database.</span>
+              <button type="button" data-switch-mode="forgot">Need a reset?</button>
+            </div>
+            <button class="cta" type="submit">Enter the Realm Board</button>
+            <div class="divider">or</div>
+            <div class="meta-row"><span>Need an account?</span><button type="button" data-switch-mode="register">Create one now</button></div>
+          </form>
+
+          <form id="register-form" data-mode-panel="register" class="hidden">
+            <div class="field">
+              <label for="register-username">Username</label>
+              <input id="register-username" name="username" autocomplete="username" placeholder="Choose a username" required>
+            </div>
+            <div class="field">
+              <label for="register-email">Email</label>
+              <input id="register-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+            </div>
+            <div class="field">
+              <label for="register-password">Password</label>
+              <input id="register-password" name="password" type="password" autocomplete="new-password" placeholder="At least 6 characters" required>
+            </div>
+            <div class="field">
+              <label for="register-role">Starting Role</label>
+              <select id="register-role" name="role">
+                <option value="player">Player</option>
+                <option value="dm">Dungeon Master</option>
+                <option value="viewer">Viewer</option>
+              </select>
+            </div>
+            <button class="cta" type="submit">Create Account & Enter</button>
+            <div class="meta-row"><span>Already have an account?</span><button type="button" data-switch-mode="login">Back to login</button></div>
+          </form>
+
+          <form id="forgot-form" data-mode-panel="forgot" class="hidden">
+            <div class="field">
+              <label for="reset-username">Username</label>
+              <input id="reset-username" name="username" autocomplete="username" placeholder="Your username" required>
+            </div>
+            <div class="field">
+              <label for="reset-email">Email</label>
+              <input id="reset-email" name="email" type="email" autocomplete="email" placeholder="Account email" required>
+            </div>
+            <button class="cta" type="submit">Request Reset Code</button>
+            <div class="footnote">In development, Dice returns the reset code here so you can finish the reset immediately. In hosted use, the host/admin can deliver the code separately.</div>
+            <div id="reset-box" class="reset-box hidden">
+              <strong>Complete Password Reset</strong>
+              <div id="complete-reset-form" style="margin-top:10px; display:grid; gap:12px;">
+                <div class="field">
+                  <label for="reset-token">Reset Code</label>
+                  <input id="reset-token" name="token" placeholder="Paste the reset code" required>
+                </div>
+                <div class="field">
+                  <label for="reset-new-password">New Password</label>
+                  <input id="reset-new-password" name="new_password" type="password" autocomplete="new-password" placeholder="Enter a new password" required>
+                </div>
+                <button class="cta" type="button" id="complete-reset-btn">Set New Password</button>
+              </div>
+            </div>
+            <div class="meta-row"><span>Remembered it?</span><button type="button" data-switch-mode="login">Back to login</button></div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const ROUTE_ROLE = {{ route_role|tojson|default('""') }};
+    const DEFAULT_POST_AUTH_TARGET = {{ post_auth_target|tojson|default('"/campaigns"') }};
+    const NEXT_PARAM = new URLSearchParams(window.location.search).get('next') || '';
+    const state = { mode: 'login', resetUsername: '', resetEmail: '' };
+    const feedback = document.getElementById('feedback');
+    const tabs = Array.from(document.querySelectorAll('[data-mode-tab]'));
+    const panels = Array.from(document.querySelectorAll('[data-mode-panel]'));
+    const resetBox = document.getElementById('reset-box');
+
+    function showFeedback(message, kind='info') {
+      feedback.textContent = message;
+      feedback.className = 'feedback ' + (kind === 'error' ? 'error' : kind === 'success' ? 'success' : '');
+      feedback.classList.remove('hidden');
+    }
+    function clearFeedback() {
+      feedback.className = 'feedback hidden';
+      feedback.textContent = '';
+    }
+    function setMode(mode) {
+      state.mode = mode;
+      tabs.forEach(tab => tab.classList.toggle('is-active', tab.dataset.modeTab === mode));
+      panels.forEach(panel => panel.classList.toggle('hidden', panel.dataset.modePanel !== mode));
+      clearFeedback();
+    }
+    tabs.forEach(tab => tab.addEventListener('click', () => setMode(tab.dataset.modeTab)));
+    document.querySelectorAll('[data-switch-mode]').forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.switchMode)));
+
+    function sanitizeNextPath(raw) {
+      const value = String(raw || '').trim();
+      if (!value) return '';
+      if (!value.startsWith('/')) return '';
+      if (value.startsWith('//')) return '';
+      return value;
+    }
+
+    function storedInviteDestination(role) {
+      const key = role === 'viewer' ? 'dnd_last_viewer_invite' : 'dnd_last_player_invite';
+      try {
+        const value = sanitizeNextPath(localStorage.getItem(key) || '');
+        return value || '';
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function roleDefaultDestination(user) {
+      const userRole = String((user && user.role) || ROUTE_ROLE || '').trim().toLowerCase();
+      if (userRole === 'dm') return '/campaigns';
+      if (userRole === 'viewer') return storedInviteDestination('viewer') || '/viewer/watch';
+      if (userRole === 'player') return storedInviteDestination('player') || '/player/characters';
+      return DEFAULT_POST_AUTH_TARGET || '/campaigns';
+    }
+
+    function resolvePostAuthDestination(user) {
+      const next = sanitizeNextPath(NEXT_PARAM);
+      if (next) return next;
+      return roleDefaultDestination(user);
+    }
+
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data.user) window.location.href = resolvePostAuthDestination(data.user);
+      } catch (_) {}
+    }
+
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return '';
+    }
+
+    async function jsonFetch(url, payload) {
+      const csrfToken = getCookie('csrf_token');
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload),
+      });
+      let data = {};
+      try { data = await res.json(); } catch (_) {}
+      if (!res.ok) throw new Error(data.detail || data.error || data.message || 'Request failed');
+      return data;
+    }
+
+    function lockButton(form, locked, loadingText) {
+      const btn = form.querySelector('.cta');
+      if (!btn) return;
+      if (!btn.dataset.originalText) btn.dataset.originalText = btn.textContent;
+      btn.disabled = !!locked;
+      btn.textContent = locked ? loadingText : btn.dataset.originalText;
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearFeedback();
+      const form = e.currentTarget;
+      lockButton(form, true, 'Opening Gate…');
+      try {
+        const identifier = form.identifier.value.trim();
+        const password = form.password.value;
+        const data = await jsonFetch('/api/auth/login', { username_or_email: identifier, password });
+        const user = data && data.user ? data.user : null;
+        showFeedback('Welcome back. Opening your route…', 'success');
+        window.location.href = resolvePostAuthDestination(user);
+      } catch (err) {
+        showFeedback(err.message || 'Login failed.', 'error');
+      } finally {
+        lockButton(form, false);
+      }
+    });
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearFeedback();
+      const form = e.currentTarget;
+      lockButton(form, true, 'Creating Account…');
+      try {
+        const username = form.username.value.trim();
+        const email = form.email.value.trim();
+        const password = form.password.value;
+        const role = form.role.value;
+        await jsonFetch('/api/auth/register', { username, email, password, role });
+        showFeedback('Account created. Opening your route…', 'success');
+        window.location.href = resolvePostAuthDestination({ role });
+      } catch (err) {
+        showFeedback(err.message || 'Registration failed.', 'error');
+      } finally {
+        lockButton(form, false);
+      }
+    });
+
+    document.getElementById('forgot-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearFeedback();
+      const form = e.currentTarget;
+      lockButton(form, true, 'Requesting Code…');
+      try {
+        state.resetUsername = form.username.value.trim();
+        state.resetEmail = form.email.value.trim();
+        const data = await jsonFetch('/api/auth/request-password-reset', { username: state.resetUsername, email: state.resetEmail });
+        showFeedback(data.message || 'Reset request sent.', 'success');
+        resetBox.classList.remove('hidden');
+        if (data.dev_reset_code) {
+          document.getElementById('reset-token').value = data.dev_reset_code;
+          showFeedback((data.message || 'Reset request sent.') + ' Development code inserted below.', 'success');
+        }
+      } catch (err) {
+        showFeedback(err.message || 'Reset request failed.', 'error');
+      } finally {
+        lockButton(form, false);
+      }
+    });
+
+    document.getElementById('complete-reset-btn').addEventListener('click', async () => {
+      clearFeedback();
+      const btn = document.getElementById('complete-reset-btn');
+      if (btn && !btn.dataset.originalText) btn.dataset.originalText = btn.textContent;
+      if (btn) { btn.disabled = true; btn.textContent = 'Updating Password…'; }
+      try {
+        await jsonFetch('/api/auth/complete-password-reset', {
+          username: state.resetUsername || document.getElementById('reset-username').value.trim(),
+          token: document.getElementById('reset-token').value.trim(),
+          new_password: document.getElementById('reset-new-password').value,
+        });
+        showFeedback('Password updated. You can log in now.', 'success');
+        setMode('login');
+      } catch (err) {
+        showFeedback(err.message || 'Password reset failed.', 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = btn.dataset.originalText; }
+      }
+    });
+
+    if (ROUTE_ROLE) {
+      const registerRole = document.querySelector('#register-form select[name="role"]');
+      if (registerRole) registerRole.value = ROUTE_ROLE;
+    }
+
+    const motes = document.getElementById('motes');
+    for (let i = 0; i < 18; i++) {
+      const mote = document.createElement('span');
+      mote.className = 'mote';
+      const left = Math.random() * 100;
+      const duration = 10 + Math.random() * 14;
+      const delay = Math.random() * -duration;
+      const size = 1.5 + Math.random() * 2.4;
+      mote.style.left = left + '%';
+      mote.style.animationDuration = duration + 's';
+      mote.style.animationDelay = delay + 's';
+      mote.style.width = mote.style.height = size + 'px';
+      motes.appendChild(mote);
+    }
+
+    checkAuth();
+  </script>
+</body>
+</html>

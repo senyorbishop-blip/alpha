@@ -1,0 +1,167 @@
+{
+  "id": "college-of-glamour",
+  "displayName": "College of Glamour",
+  "classId": "bard",
+  "parentClassId": "bard",
+  "flavorText": "Glamour Bards channel fey majesty to command attention and shape the flow of battle.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "glamour-mantle-of-inspiration",
+      "glamour-enthralling-performance"
+    ],
+    "6": [
+      "glamour-mantle-of-majesty"
+    ],
+    "14": [
+      "glamour-unbreakable-majesty"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "glamour-mantle-of-inspiration",
+      "displayName": "Mantle of Inspiration",
+      "description": "As a bonus action, expend a Bardic Inspiration die. A number of creatures within 60 feet up to your Charisma modifier gain temporary hit points equal to the roll + your Charisma modifier and can use reactions to move up to their speed without provoking opportunity attacks."
+    },
+    {
+      "level": 3,
+      "id": "glamour-enthralling-performance",
+      "displayName": "Enthralling Performance",
+      "description": "After a 1-minute performance, choose a number of humanoids up to your Charisma modifier who watched and listened. They are charmed by you for 1 hour."
+    },
+    {
+      "level": 6,
+      "id": "glamour-mantle-of-majesty",
+      "displayName": "Mantle of Majesty",
+      "description": "As a bonus action, you cloak yourself in majesty for 1 minute. While active, you can cast Command as a bonus action on each of your turns without expending a spell slot. Usable once per long rest."
+    },
+    {
+      "level": 14,
+      "id": "glamour-unbreakable-majesty",
+      "displayName": "Unbreakable Majesty",
+      "description": "As a bonus action, assume an awe-inspiring form. Until your next turn, creatures attempting to attack you must succeed on a Charisma save or choose another target or lose the attack."
+    }
+  ],
+  "featureDefinitions": {
+    "glamour-mantle-of-inspiration": {
+      "id": "glamour-mantle-of-inspiration",
+      "displayName": "Mantle of Inspiration",
+      "name": "Mantle of Inspiration",
+      "summary": "Spend inspiration to reposition and protect allies in one flashy support move.",
+      "description": "As a bonus action, expend a Bardic Inspiration die. A number of creatures within 60 feet up to your Charisma modifier gain temporary hit points equal to the roll + your Charisma modifier and can use reactions to move up to their speed without provoking opportunity attacks.\n\nMantle of Inspiration turns Bardic Inspiration into a tempo tool. It matters because it can rescue positioning, create aggression windows, and make the Glamour bard feel like a battle conductor.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 3,
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "Bardic Inspiration",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "bard",
+        "support",
+        "mobility",
+        "resource"
+      ],
+      "sourceKind": "subclass",
+      "className": "Bard",
+      "subclassName": "College of Glamour",
+      "range": "60 ft",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "glamour-enthralling-performance": {
+      "id": "glamour-enthralling-performance",
+      "displayName": "Enthralling Performance",
+      "name": "Enthralling Performance",
+      "summary": "A strong performance can leave onlookers charmed, captivated, or socially exposed.",
+      "description": "After a 1-minute performance, choose a number of humanoids up to your Charisma modifier who watched and listened. They are charmed by you for 1 hour.\n\nEnthralling Performance is a scene-control feature for social and downtime play. The important thing is helping the player see when performance can be the opener to a negotiation, infiltration, or manipulation plan.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 3,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "bard",
+        "support",
+        "social",
+        "control"
+      ],
+      "sourceKind": "subclass",
+      "className": "Bard",
+      "subclassName": "College of Glamour",
+      "range": "",
+      "duration": "1 hour",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "glamour-mantle-of-majesty": {
+      "id": "glamour-mantle-of-majesty",
+      "displayName": "Mantle of Majesty",
+      "name": "Mantle of Majesty",
+      "summary": "You project overwhelming courtly command, turning your presence into direct pressure on the field.",
+      "description": "As a bonus action, you cloak yourself in majesty for 1 minute. While active, you can cast Command as a bonus action on each of your turns without expending a spell slot. Usable once per long rest.\n\nMantle of Majesty is one of the Glamour bard’s signature swing turns. It should feel like a premium control state, not just another passive line in the feature list.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 6,
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "bard",
+        "support",
+        "control",
+        "social"
+      ],
+      "sourceKind": "subclass",
+      "className": "Bard",
+      "subclassName": "College of Glamour",
+      "range": "",
+      "duration": "1 minute",
+      "save": "",
+      "trigger": "",
+      "usage": "once per long rest",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "glamour-unbreakable-majesty": {
+      "id": "glamour-unbreakable-majesty",
+      "displayName": "Unbreakable Majesty",
+      "name": "Unbreakable Majesty",
+      "summary": "Enemies find it genuinely harder to commit violence against you once your glamour peaks.",
+      "description": "As a bonus action, assume an awe-inspiring form. Until your next turn, creatures attempting to attack you must succeed on a Charisma save or choose another target or lose the attack.\n\nUnbreakable Majesty is both defense and presence. It should read like a high-level answer to focused fire, hostile attention, and social intimidation all at once.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 14,
+      "section": "Subclass Features",
+      "type": "bonus action",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "bard",
+        "support",
+        "defense",
+        "social"
+      ],
+      "sourceKind": "subclass",
+      "className": "Bard",
+      "subclassName": "College of Glamour",
+      "range": "",
+      "duration": "Until your next turn",
+      "save": "Charisma save",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    }
+  }
+}

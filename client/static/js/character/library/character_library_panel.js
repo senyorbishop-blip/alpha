@@ -1,0 +1,124 @@
+(function initCharacterLibraryPanel(global) {
+  function safeInt(value, fallback) {
+    const parsed = parseInt(value, 10);
+    if (Number.isFinite(parsed)) return parsed;
+    return fallback;
+  }
+
+  function resolveLevel(entry) {
+    if (!entry || typeof entry !== 'object') return null;
+    if (entry.level != null) {
+      return safeInt(entry.level, 1);
+    }
+
+    const charBook = entry.charBook && typeof entry.charBook === 'object' ? entry.charBook : {};
+    if (charBook.level != null) {
+      return safeInt(charBook.level, 1);
+    }
+
+    const charSheet = entry.charSheet && typeof entry.charSheet === 'object' ? entry.charSheet : {};
+    if (charSheet.totalLevel != null) {
+      return safeInt(charSheet.totalLevel, 1);
+    }
+    if (charSheet.level != null) {
+      return safeInt(charSheet.level, 1);
+    }
+
+    const classes = Array.isArray(charSheet.classes) ? charSheet.classes : [];
+    if (!classes.length) return null;
+
+    let total = 0;
+    let seen = false;
+    classes.forEach((cls) => {
+      if (!cls || typeof cls !== 'object') return;
+      if (cls.level == null) return;
+      seen = true;
+      total += safeInt(cls.level, 0);
+    });
+
+    return seen ? total : null;
+  }
+
+  function resolveClassSummary(entry) {
+    if (!entry || typeof entry !== 'object') return '';
+    const direct = String(entry.classSummary || '').trim();
+    if (direct) return direct;
+
+    const charBook = entry.charBook && typeof entry.charBook === 'object' ? entry.charBook : {};
+    const className = String(charBook.className || '').trim();
+    const subclass = String(charBook.subclass || '').trim();
+    if (className && subclass) return className + ' (' + subclass + ')';
+    if (className) return className;
+
+    const charSheet = entry.charSheet && typeof entry.charSheet === 'object' ? entry.charSheet : {};
+    const classes = Array.isArray(charSheet.classes) ? charSheet.classes : [];
+    const labels = classes
+      .map((cls) => (cls && typeof cls === 'object' ? String(cls.name || '').trim() : ''))
+      .filter(Boolean);
+
+    return labels.join(' / ');
+  }
+
+  function resolveSourceMode(entry) {
+    if (!entry || typeof entry !== 'object') return 'legacy';
+
+    const direct = String(entry.sourceMode || '').trim().toLowerCase();
+    if (direct) return direct;
+
+    const native = entry.nativeCharacter && typeof entry.nativeCharacter === 'object' ? entry.nativeCharacter : {};
+    const nativeMode = String(native.sourceMode || '').trim().toLowerCase();
+    if (nativeMode) return nativeMode;
+
+    const importMeta = entry.importMeta && typeof entry.importMeta === 'object' ? entry.importMeta : {};
+    const source = String(importMeta.source || '').trim().toLowerCase();
+    if (source.includes('ddb') || source.includes('d&d beyond')) return 'ddb';
+    if (source) return source;
+
+    return 'legacy';
+  }
+
+  function formatSourceBadge(mode) {
+    const key = String(mode || 'legacy').toLowerCase();
+    if (key === 'native') return 'Casual D&D';
+    if (key === 'ddb') return 'D&D Beyond';
+    if (key === 'legacy') return 'Legacy';
+    return key;
+  }
+
+  function normalizeCharacterEntries(entries) {
+    const list = Array.isArray(entries) ? entries : [];
+    return list
+      .map((entry, index) => {
+        if (!entry || typeof entry !== 'object') return null;
+        const id = String(entry.id || 'library-' + (index + 1)).trim();
+        if (!id) return null;
+
+        const sourceMode = resolveSourceMode(entry);
+        const classSummary = resolveClassSummary(entry);
+        const level = resolveLevel(entry);
+
+        return {
+          id: 'library:' + id,
+          libraryId: id,
+          kind: 'library-profile',
+          selectable: true,
+          canUseExisting: true,
+          claimTokenId: 'profile:' + id,
+          name: String(entry.name || 'Unnamed Character').trim() || 'Unnamed Character',
+          classSummary: classSummary,
+          level: level,
+          sourceMode: sourceMode,
+          sourceBadge: formatSourceBadge(sourceMode),
+          ownerLabel: classSummary || 'Saved in your profile library',
+          nativeCharacter: entry.nativeCharacter && typeof entry.nativeCharacter === 'object' ? entry.nativeCharacter : null,
+          color: '#5a4f8f',
+          shape: 'rect',
+        };
+      })
+      .filter(Boolean);
+  }
+
+  global.CharacterLibraryPanel = {
+    normalizeCharacterEntries,
+  };
+})(window);

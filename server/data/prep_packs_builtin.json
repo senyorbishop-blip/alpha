@@ -1,0 +1,140 @@
+[
+  {
+    "pack_id": "starter-town-brightwater",
+    "name": "Starter Town: Brightwater",
+    "summary": "A ready-to-run frontier town with key hooks, handouts, and a first-night encounter.",
+    "category": "starter_region",
+    "tags": ["starter", "town", "sandbox"],
+    "map_references": ["world", "poi:brightwater-square", "poi:old-watchtower"],
+    "npc_references": ["innkeeper-marla", "captain-renn", "curator-ven"],
+    "quests": [
+      {
+        "id": "brightwater-lost-ledger",
+        "title": "The Lost Ledger",
+        "summary": "Recover the mayor's stolen ledger before dawn.",
+        "description": "A guild courier was ambushed near the old watchtower. Recover the ledger, identify the thieves, and return it quietly.",
+        "category": "investigation",
+        "difficulty_tier": "Tier 1",
+        "objective_list": [
+          "Question witnesses in Brightwater Square",
+          "Track muddy boot prints to the watchtower",
+          "Recover ledger and identify ringleader"
+        ],
+        "linked_poi_ids": ["brightwater-square", "old-watchtower"],
+        "linked_map_ids": ["world", "old-watchtower"],
+        "linked_handout_ids": ["notice-ledger-reward"],
+        "linked_npc_ids": ["captain-renn", "innkeeper-marla"],
+        "linked_encounter_template_ids": ["street-cutpurses"],
+        "reward_bundle": {"gold": 120, "xp": 220, "items": ["Town Favor Token"]}
+      }
+    ],
+    "handouts": [
+      {
+        "id": "notice-ledger-reward",
+        "title": "Guild Notice: Missing Ledger",
+        "public_text": "A black-bound ledger was stolen from the guild courier route. Return by sunrise for reward and discretion.",
+        "dm_secret_text": "The ledger also contains a coded smuggling route linked to Captain Renn's rival."
+      }
+    ],
+    "pois": [
+      {
+        "id": "brightwater-square",
+        "name": "Brightwater Square",
+        "description": "Market square and rumor hub.",
+        "poi_type": "city",
+        "map_context": "world",
+        "x": 420,
+        "y": 260
+      },
+      {
+        "id": "old-watchtower",
+        "name": "Old Watchtower",
+        "description": "A crumbling watchtower used by smugglers.",
+        "poi_type": "dungeon",
+        "map_context": "world",
+        "x": 610,
+        "y": 190
+      }
+    ],
+    "encounters": [
+      {
+        "id": "street-cutpurses",
+        "name": "Street Cutpurses",
+        "notes": "Use as opening pressure in alleys near the square.",
+        "map_context": "world",
+        "entries": [
+          {"creature_id": "bandit", "name": "Bandit", "qty": 3, "entry_type": "monster", "source_type": "srd", "cr": "1/8"},
+          {"creature_id": "bandit-captain", "name": "Bandit Captain", "qty": 1, "entry_type": "monster", "source_type": "srd", "cr": "2"}
+        ]
+      }
+    ]
+  },
+  {
+    "pack_id": "one-shot-ruined-shrine",
+    "name": "One-Shot: Ruined Shrine Crawl",
+    "summary": "Compact evening adventure with clue trail, shrine POI, and two escalating encounter groups.",
+    "category": "one_shot",
+    "tags": ["one-shot", "dungeon", "investigation"],
+    "map_references": ["world", "poi:ruined-shrine"],
+    "npc_references": ["acolyte-selan"],
+    "quests": [
+      {
+        "id": "shrine-echoes",
+        "title": "Echoes Beneath the Shrine",
+        "summary": "Find the source of night-time bell tolls at a ruined shrine.",
+        "description": "Villagers hear ghostly bell sounds from a shrine sealed decades ago. Investigate, recover the relic, and stop the restless guardians.",
+        "category": "dungeon_crawl",
+        "difficulty_tier": "Tier 1",
+        "objective_list": [
+          "Speak with Acolyte Selan about the shrine history",
+          "Open the lower crypt and survive the guardian ambush",
+          "Recover the Dawn Bell and return it to the village"
+        ],
+        "linked_poi_ids": ["ruined-shrine"],
+        "linked_map_ids": ["ruined-shrine"],
+        "linked_handout_ids": ["shrine-rubbing"],
+        "linked_npc_ids": ["acolyte-selan"],
+        "linked_encounter_template_ids": ["crypt-guardians", "bone-warden"],
+        "reward_bundle": {"gold": 180, "xp": 300, "items": ["Dawn Bell Relic"]}
+      }
+    ],
+    "handouts": [
+      {
+        "id": "shrine-rubbing",
+        "title": "Stone Rubbing: Bell Inscription",
+        "public_text": "When dawn is silenced, ring thrice where roots embrace stone.",
+        "dm_secret_text": "Hint points to hidden switch behind root-covered wall tile in shrine map."
+      }
+    ],
+    "pois": [
+      {
+        "id": "ruined-shrine",
+        "name": "Ruined Shrine",
+        "description": "Collapsed shrine with an accessible lower crypt.",
+        "poi_type": "dungeon",
+        "map_context": "world",
+        "x": 760,
+        "y": 340
+      }
+    ],
+    "encounters": [
+      {
+        "id": "crypt-guardians",
+        "name": "Crypt Guardians",
+        "map_context": "ruined-shrine",
+        "entries": [
+          {"creature_id": "skeleton", "name": "Skeleton", "qty": 4, "entry_type": "monster", "source_type": "srd", "cr": "1/4"}
+        ]
+      },
+      {
+        "id": "bone-warden",
+        "name": "Bone Warden",
+        "map_context": "ruined-shrine",
+        "entries": [
+          {"creature_id": "wight", "name": "Wight", "qty": 1, "entry_type": "monster", "source_type": "srd", "cr": "3"},
+          {"creature_id": "zombie", "name": "Zombie", "qty": 2, "entry_type": "monster", "source_type": "srd", "cr": "1/4"}
+        ]
+      }
+    ]
+  }
+]

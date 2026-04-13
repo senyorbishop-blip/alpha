@@ -1,0 +1,860 @@
+{
+  "id": "cleric",
+  "displayName": "Cleric",
+  "hitDie": 8,
+  "primaryAbilities": [
+    "wis"
+  ],
+  "savingThrows": [
+    "wis",
+    "cha"
+  ],
+  "subclassLevel": 3,
+  "subclassDisplayName": "Divine Domain",
+  "armorProficiencies": [
+    "light",
+    "medium",
+    "shields"
+  ],
+  "weaponProficiencies": [
+    "simple"
+  ],
+  "toolProficiencies": [],
+  "skillChoices": {
+    "count": 2,
+    "from": [
+      "History",
+      "Insight",
+      "Medicine",
+      "Persuasion",
+      "Religion"
+    ]
+  },
+  "startingEquipmentChoices": [],
+  "spellcastingType": "full",
+  "spellcastingAbility": "wis",
+  "spellSlots": {
+    "1": {
+      "1st": 2
+    },
+    "2": {
+      "1st": 3
+    },
+    "3": {
+      "1st": 4,
+      "2nd": 2
+    },
+    "4": {
+      "1st": 4,
+      "2nd": 3
+    },
+    "5": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 2
+    },
+    "6": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3
+    },
+    "7": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 1
+    },
+    "8": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 2
+    },
+    "9": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 1
+    },
+    "10": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2
+    },
+    "11": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1
+    },
+    "12": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1
+    },
+    "13": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1
+    },
+    "14": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1
+    },
+    "15": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1
+    },
+    "16": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1
+    },
+    "17": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1,
+      "9th": 1
+    },
+    "18": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 3,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1,
+      "9th": 1
+    },
+    "19": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 3,
+      "6th": 2,
+      "7th": 1,
+      "8th": 1,
+      "9th": 1
+    },
+    "20": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 3,
+      "6th": 2,
+      "7th": 2,
+      "8th": 1,
+      "9th": 1
+    }
+  },
+  "classDescription": "A divine conduit of a deity's power.",
+  "roleIdentity": "Durable support caster with healing, buffs, and radiant control.",
+  "progressionTable": [
+    {
+      "level": 1,
+      "proficiencyBonus": 2,
+      "features": [
+        "Spellcasting",
+        "Divine Order"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 1
+      },
+      "unlockIds": [
+        "cleric-spellcasting",
+        "cleric-divine-order"
+      ]
+    },
+    {
+      "level": 2,
+      "proficiencyBonus": 2,
+      "features": [
+        "Channel Divinity (1 use)",
+        "Divine Spark",
+        "Turn Undead"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 1
+      },
+      "unlockIds": [
+        "cleric-channel-divinity-1-use",
+        "cleric-divine-spark",
+        "cleric-turn-undead"
+      ]
+    },
+    {
+      "level": 3,
+      "proficiencyBonus": 2,
+      "features": [
+        "Divine Domain (Subclass)",
+        "2nd-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 1
+      },
+      "unlockIds": [
+        "cleric-divine-domain-subclass",
+        "cleric-spell-level-2"
+      ]
+    },
+    {
+      "level": 4,
+      "proficiencyBonus": 2,
+      "features": [
+        "Ability Score Improvement",
+        "Cantrips Known: 4"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 1
+      },
+      "unlockIds": [
+        "cleric-ability-score-improvement-4",
+        "cleric-cantrips-known-4"
+      ]
+    },
+    {
+      "level": 5,
+      "proficiencyBonus": 3,
+      "features": [
+        "3rd-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 1
+      },
+      "unlockIds": [
+        "cleric-spell-level-3"
+      ]
+    },
+    {
+      "level": 6,
+      "proficiencyBonus": 3,
+      "features": [
+        "Subclass Feature",
+        "Channel Divinity (2 uses)"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 2
+      },
+      "unlockIds": [
+        "cleric-subclass-feature-6",
+        "cleric-channel-divinity-2-uses"
+      ]
+    },
+    {
+      "level": 7,
+      "proficiencyBonus": 3,
+      "features": [
+        "4th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 2
+      },
+      "unlockIds": [
+        "cleric-spell-level-4"
+      ]
+    },
+    {
+      "level": 8,
+      "proficiencyBonus": 3,
+      "features": [
+        "Ability Score Improvement",
+        "Subclass Feature",
+        "Blessed Strikes"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 2
+      },
+      "unlockIds": [
+        "cleric-ability-score-improvement-8",
+        "cleric-subclass-feature-8",
+        "cleric-blessed-strikes"
+      ]
+    },
+    {
+      "level": 9,
+      "proficiencyBonus": 4,
+      "features": [
+        "5th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 2
+      },
+      "unlockIds": [
+        "cleric-spell-level-5"
+      ]
+    },
+    {
+      "level": 10,
+      "proficiencyBonus": 4,
+      "features": [
+        "Divine Intervention",
+        "Cantrips Known: 5"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 2
+      },
+      "unlockIds": [
+        "cleric-divine-intervention",
+        "cleric-cantrips-known-5"
+      ]
+    },
+    {
+      "level": 11,
+      "proficiencyBonus": 4,
+      "features": [
+        "6th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 2
+      },
+      "unlockIds": [
+        "cleric-spell-level-6"
+      ]
+    },
+    {
+      "level": 12,
+      "proficiencyBonus": 4,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 2
+      },
+      "unlockIds": [
+        "cleric-ability-score-improvement-12"
+      ]
+    },
+    {
+      "level": 13,
+      "proficiencyBonus": 5,
+      "features": [
+        "7th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 2
+      },
+      "unlockIds": [
+        "cleric-spell-level-7"
+      ]
+    },
+    {
+      "level": 14,
+      "proficiencyBonus": 5,
+      "features": [
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 2
+      },
+      "unlockIds": [
+        "cleric-subclass-feature-14"
+      ]
+    },
+    {
+      "level": 15,
+      "proficiencyBonus": 5,
+      "features": [
+        "8th-level Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 2
+      },
+      "unlockIds": [
+        "cleric-spell-level-8"
+      ]
+    },
+    {
+      "level": 16,
+      "proficiencyBonus": 5,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 2
+      },
+      "unlockIds": [
+        "cleric-ability-score-improvement-16"
+      ]
+    },
+    {
+      "level": 17,
+      "proficiencyBonus": 6,
+      "features": [
+        "9th-level Spells",
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 2
+      },
+      "unlockIds": [
+        "cleric-spell-level-9",
+        "cleric-subclass-feature-17"
+      ]
+    },
+    {
+      "level": 18,
+      "proficiencyBonus": 6,
+      "features": [
+        "Channel Divinity (3 uses)"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 3
+      },
+      "unlockIds": [
+        "cleric-channel-divinity-3-uses"
+      ]
+    },
+    {
+      "level": 19,
+      "proficiencyBonus": 6,
+      "features": [
+        "Epic Boon"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 3
+      },
+      "unlockIds": [
+        "cleric-epic-boon"
+      ]
+    },
+    {
+      "level": 20,
+      "proficiencyBonus": 6,
+      "features": [
+        "Greater Divine Intervention"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 5,
+        "spellsPreparedFormula": "wis_mod + cleric_level",
+        "channelDivinityUses": 3
+      },
+      "unlockIds": [
+        "cleric-greater-divine-intervention"
+      ]
+    }
+  ],
+  "featureDefinitions": {
+    "cleric-spellcasting": {
+      "summary": "Prepare and wield divine magic from the full cleric list using Wisdom as your casting ability.",
+      "description": "Cleric spellcasting is the backbone of the class. You prepare spells from the cleric list each day, use Wisdom for your spell attacks and save DC, and pivot between healing, protection, control, and radiant pressure depending on what the party needs.\n\nIn play, this should feel flexible rather than narrow: the same cleric can solve attrition with healing, anchor the front line with buffs, or answer undead and hostile magic with the right prepared list.",
+      "tags": [
+        "spellcasting",
+        "divine",
+        "support",
+        "control"
+      ]
+    },
+    "cleric-divine-order": {
+      "summary": "Choose the side of clerical training you want to emphasize so the class starts with a clearer battlefield and role identity.",
+      "description": "Divine Order is the first big fork in how your cleric plays. It decides whether your build leans harder into scholarship, discipline, and sacred study or into a more armored, battle-ready priest style.\n\nThis choice should be visible in the sheet because it affects how the player understands the class from level 1 onward: support caster, battle priest, or a hybrid of both.",
+      "tags": [
+        "build",
+        "divine",
+        "identity"
+      ]
+    },
+    "cleric-channel-divinity-1-use": {
+      "summary": "Spend Channel Divinity to power major cleric or domain effects when the moment really matters.",
+      "description": "Channel Divinity is your premier class resource. It fuels signature cleric buttons such as Divine Spark, Turn Undead, and subclass-specific options like Radiance of the Dawn or Invoke Duplicity.\n\nIn play, this should feel like a high-value tactical choice rather than background text. The player should always understand how many uses remain, which actions consume a use, and whether the current fight is worth spending one now.",
+      "resourceName": "Channel Divinity",
+      "trackUses": true,
+      "section": "Actions",
+      "type": "action",
+      "usage": "1 use available",
+      "recovery": "Regain all expended uses on a Short or Long Rest.",
+      "tags": [
+        "divine",
+        "resource",
+        "action"
+      ]
+    },
+    "cleric-divine-spark": {
+      "summary": "Release focused divine power to either restore an ally or punish a target with radiant or necrotic force.",
+      "description": "Divine Spark is your dependable Channel Divinity option when you need immediate impact. It turns the class resource into direct healing or damage instead of a passive aura or setup effect.\n\nUse it when a single creature needs to swing now: lift an ally, finish a threatening target, or force a visible turn in momentum without spending a spell slot.",
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Channel Divinity",
+      "trackUses": true,
+      "effect": "Immediate healing or divine damage with no spell-slot cost.",
+      "tags": [
+        "divine",
+        "healing",
+        "damage",
+        "resource"
+      ]
+    },
+    "cleric-turn-undead": {
+      "summary": "Drive undead back with holy force and break the shape of an encounter that depends on them closing in.",
+      "description": "Turn Undead is a battlefield control Channel Divinity, not just lore flavor. Against undead-heavy encounters it can buy space, protect weaker allies, and stop the enemy line from playing the fight it wanted.\n\nThis feature matters most when the cleric reads the room early and spends it before the undead horde has already collapsed onto the party.",
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Channel Divinity",
+      "trackUses": true,
+      "save": "Wisdom save",
+      "effect": "Undead creatures that fail are repelled and lose tempo.",
+      "tags": [
+        "divine",
+        "control",
+        "resource",
+        "undead"
+      ]
+    },
+    "cleric-divine-domain-subclass": {
+      "summary": "Your chosen domain defines what kind of cleric you really are and which signature powers start shaping the build.",
+      "description": "Divine Domain is the subclass gate for cleric. It is where the class stops being a generic divine caster and becomes a Light cleric, Trickery cleric, War cleric, or Life cleric with a distinct play pattern.\n\nFrom this point on, the sheet should surface domain actions, passive riders, and any domain-specific uses of Channel Divinity clearly enough that the subclass feels like a real identity shift.",
+      "tags": [
+        "subclass",
+        "divine",
+        "identity",
+        "build"
+      ]
+    },
+    "cleric-blessed-strikes": {
+      "summary": "Your regular offense gains a reliable divine rider so your turns stay meaningful even when you are not spending top resources.",
+      "description": "Blessed Strikes keeps the cleric’s baseline pressure relevant by adding divine payoff to weapon attacks or cantrip damage. It matters because not every turn is a perfect high-level spell turn; sometimes you need dependable value while preserving slots.",
+      "tags": [
+        "combat",
+        "divine",
+        "passive"
+      ]
+    },
+    "cleric-divine-intervention": {
+      "summary": "Call on your deity for a dramatic answer when the situation is too important for ordinary magic to cover alone.",
+      "description": "Divine Intervention is the cleric fantasy spike. It should read like a momentous plea for direct aid rather than a generic spell-like button.\n\nIn play, it belongs in boss fights, desperate rescues, or scenes where the party needs more than efficient math and wants the cleric to ask for something greater than routine casting.",
+      "section": "Actions",
+      "type": "action",
+      "tags": [
+        "divine",
+        "capstone",
+        "miracle"
+      ]
+    },
+    "cleric-greater-divine-intervention": {
+      "summary": "Your god answers with far greater certainty, turning Divine Intervention from a gamble into a true endgame class payoff.",
+      "description": "Greater Divine Intervention is the high-level reward for a lifetime of service. By this point the cleric should feel like a chosen instrument of divine power, and the sheet should treat this as a major class-defining button rather than a footnote at level 20.",
+      "tags": [
+        "divine",
+        "capstone",
+        "miracle",
+        "endgame"
+      ]
+    }
+  },
+  "levelUnlockIds": {
+    "1": [
+      "cleric-l1-1",
+      "cleric-l1-2"
+    ],
+    "2": [
+      "cleric-l2-1",
+      "cleric-l2-2",
+      "cleric-l2-3"
+    ],
+    "3": [
+      "cleric-l3-1",
+      "cleric-l3-2"
+    ],
+    "4": [
+      "cleric-l4-1",
+      "cleric-l4-2"
+    ],
+    "5": [
+      "cleric-l5-1"
+    ],
+    "6": [
+      "cleric-l6-1",
+      "cleric-l6-2"
+    ],
+    "7": [
+      "cleric-l7-1"
+    ],
+    "8": [
+      "cleric-l8-1",
+      "cleric-l8-2",
+      "cleric-l8-3"
+    ],
+    "9": [
+      "cleric-l9-1"
+    ],
+    "10": [
+      "cleric-l10-1",
+      "cleric-l10-2"
+    ],
+    "11": [
+      "cleric-l11-1"
+    ],
+    "12": [
+      "cleric-l12-1"
+    ],
+    "13": [
+      "cleric-l13-1"
+    ],
+    "14": [
+      "cleric-l14-1"
+    ],
+    "15": [
+      "cleric-l15-1"
+    ],
+    "16": [
+      "cleric-l16-1"
+    ],
+    "17": [
+      "cleric-l17-1",
+      "cleric-l17-2"
+    ],
+    "18": [
+      "cleric-l18-1"
+    ],
+    "19": [
+      "cleric-l19-1"
+    ],
+    "20": [
+      "cleric-l20-1"
+    ]
+  },
+  "progressionSummary": [
+    {
+      "level": 1,
+      "summary": "Spellcasting, Divine Order.",
+      "unlockIds": [
+        "cleric-l1-1",
+        "cleric-l1-2"
+      ]
+    },
+    {
+      "level": 2,
+      "summary": "Channel Divinity (1 use), Divine Spark, Turn Undead.",
+      "unlockIds": [
+        "cleric-l2-1",
+        "cleric-l2-2",
+        "cleric-l2-3"
+      ]
+    },
+    {
+      "level": 3,
+      "summary": "Divine Domain (Subclass), 2nd-level Spells.",
+      "unlockIds": [
+        "cleric-l3-1",
+        "cleric-l3-2"
+      ]
+    },
+    {
+      "level": 4,
+      "summary": "Ability Score Improvement, Cantrips Known: 4.",
+      "unlockIds": [
+        "cleric-l4-1",
+        "cleric-l4-2"
+      ]
+    },
+    {
+      "level": 5,
+      "summary": "3rd-level Spells.",
+      "unlockIds": [
+        "cleric-l5-1"
+      ]
+    },
+    {
+      "level": 6,
+      "summary": "Subclass Feature, Channel Divinity (2 uses).",
+      "unlockIds": [
+        "cleric-l6-1",
+        "cleric-l6-2"
+      ]
+    },
+    {
+      "level": 7,
+      "summary": "4th-level Spells.",
+      "unlockIds": [
+        "cleric-l7-1"
+      ]
+    },
+    {
+      "level": 8,
+      "summary": "Ability Score Improvement, Subclass Feature, Blessed Strikes.",
+      "unlockIds": [
+        "cleric-l8-1",
+        "cleric-l8-2",
+        "cleric-l8-3"
+      ]
+    },
+    {
+      "level": 9,
+      "summary": "5th-level Spells.",
+      "unlockIds": [
+        "cleric-l9-1"
+      ]
+    },
+    {
+      "level": 10,
+      "summary": "Divine Intervention, Cantrips Known: 5.",
+      "unlockIds": [
+        "cleric-l10-1",
+        "cleric-l10-2"
+      ]
+    },
+    {
+      "level": 11,
+      "summary": "6th-level Spells.",
+      "unlockIds": [
+        "cleric-l11-1"
+      ]
+    },
+    {
+      "level": 12,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "cleric-l12-1"
+      ]
+    },
+    {
+      "level": 13,
+      "summary": "7th-level Spells.",
+      "unlockIds": [
+        "cleric-l13-1"
+      ]
+    },
+    {
+      "level": 14,
+      "summary": "Subclass Feature.",
+      "unlockIds": [
+        "cleric-l14-1"
+      ]
+    },
+    {
+      "level": 15,
+      "summary": "8th-level Spells.",
+      "unlockIds": [
+        "cleric-l15-1"
+      ]
+    },
+    {
+      "level": 16,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "cleric-l16-1"
+      ]
+    },
+    {
+      "level": 17,
+      "summary": "9th-level Spells, Subclass Feature.",
+      "unlockIds": [
+        "cleric-l17-1",
+        "cleric-l17-2"
+      ]
+    },
+    {
+      "level": 18,
+      "summary": "Channel Divinity (3 uses).",
+      "unlockIds": [
+        "cleric-l18-1"
+      ]
+    },
+    {
+      "level": 19,
+      "summary": "Epic Boon.",
+      "unlockIds": [
+        "cleric-l19-1"
+      ]
+    },
+    {
+      "level": 20,
+      "summary": "Greater Divine Intervention.",
+      "unlockIds": [
+        "cleric-l20-1"
+      ]
+    }
+  ],
+  "future": {
+    "talentGroupId": "cleric-core-talents",
+    "awakeningHookIds": [
+      "cleric-awakening-divine"
+    ]
+  },
+  "buildTips": {
+    "primaryFocus": "Wisdom",
+    "primaryReason": "powers your spells, healing, and save DC",
+    "secondaryFocus": "Constitution",
+    "secondaryReason": "improves survivability and Concentration on key buffs",
+    "avoidDump": "Dexterity",
+    "avoidDumpReason": "even armored clerics benefit from initiative and Dexterity saves"
+  }
+}

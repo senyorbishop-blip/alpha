@@ -1,0 +1,101 @@
+{
+  "id": "dragonborn",
+  "displayName": "Dragonborn",
+  "size": "Medium",
+  "movement": {
+    "walk": 30,
+    "swim": 0,
+    "fly": 0,
+    "climb": 0
+  },
+  "senses": {
+    "darkvision": 60,
+    "tremorsense": 0,
+    "blindsight": 0
+  },
+  "tags": [
+    "humanoid",
+    "dragonborn",
+    "draconic"
+  ],
+  "languages": [
+    "Common",
+    "Draconic"
+  ],
+  "abilityBonuses": "flexible",
+  "proficiencies": {
+    "skills": [],
+    "weapons": [],
+    "tools": [],
+    "armor": []
+  },
+  "traits": [
+    {
+      "id": "dragonborn-ancestry",
+      "displayName": "Draconic Ancestry",
+      "summary": "Choose a dragon ancestry that sets your breath weapon and resistance type.",
+      "description": "Choose one ancestry: Black (Acid, Line 5 by 30), Blue (Lightning, Line 5 by 30), Brass (Fire, Line 5 by 30), Bronze (Lightning, Line 5 by 30), Copper (Acid, Line 5 by 30), Gold (Fire, Cone 15), Green (Poison, Cone 15), Red (Fire, Cone 15), Silver (Cold, Cone 15), White (Cold, Cone 15). Your chosen ancestry determines your Breath Weapon damage type and your Damage Resistance type.",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited"
+      }
+    },
+    {
+      "id": "dragonborn-breath-weapon",
+      "displayName": "Breath Weapon",
+      "summary": "Exhale destructive energy; damage is 1d10 per character level.",
+      "description": "When you take the Attack action on your turn, you can replace one of your attacks with an exhalation of magical energy in a Line (5 by 30 feet) or Cone (15 feet) based on your ancestry. Each creature in the area makes a saving throw: Dexterity for a Line, Constitution for a Cone. The DC equals 8 + your Proficiency Bonus + your Constitution modifier. On a failed save, a creature takes 1d10 damage per character level of your ancestry's type; on a successful save, it takes half as much. You can use this trait a number of times equal to your Proficiency Bonus, regaining all uses when you finish a Long Rest.",
+      "mechanics": {
+        "actionType": "Action",
+        "usesPerRest": "LongRest",
+        "saveDC": "8 + proficiency + CON",
+        "damageFormula": "1d10 per character level",
+        "range": "30",
+        "areaShape": "Line",
+        "areaSize": 30,
+        "scalingNote": "Damage scales automatically with character level: 1d10 at level 1 up to 20d10 at level 20."
+      }
+    },
+    {
+      "id": "dragonborn-damage-resistance",
+      "displayName": "Damage Resistance",
+      "summary": "Gain resistance to your ancestry's associated damage type.",
+      "description": "You have Resistance to the damage type associated with your Draconic Ancestry.",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited"
+      }
+    },
+    {
+      "id": "dragonborn-darkvision",
+      "displayName": "Darkvision",
+      "summary": "You can see in dim light and darkness out to 60 feet.",
+      "description": "You have Darkvision with a range of 60 feet.",
+      "mechanics": {
+        "actionType": "None",
+        "usesPerRest": "Unlimited",
+        "range": "60"
+      }
+    },
+    {
+      "id": "dragonborn-draconic-flight",
+      "displayName": "Draconic Flight",
+      "summary": "At level 5, manifest spectral wings to gain a fly speed.",
+      "description": "Starting at 5th level, as a Bonus Action you can manifest spectral wings on your back for 10 minutes or until you dismiss them (no action). While active, you have a Fly Speed equal to your Speed. Once you use this trait, you can't use it again until you finish a Long Rest.",
+      "mechanics": {
+        "actionType": "BonusAction",
+        "usesPerRest": "LongRest",
+        "range": "Self",
+        "scalingNote": "Unlocked at character level 5."
+      }
+    }
+  ],
+  "flavorText": "Dragonborn carry draconic power in body and spirit, often expressing pride through oath, legacy, or personal code. Their ancestry shapes both elemental might and cultural identity. Many seek to prove themselves through deeds worthy of their line.",
+  "roleplayNotes": "Define your dragon lineage's social expectations and how your character embraces\u2014or rejects\u2014them.",
+  "recommendedClasses": [
+    "Paladin",
+    "Fighter",
+    "Sorcerer",
+    "Barbarian"
+  ]
+}

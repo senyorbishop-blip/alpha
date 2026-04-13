@@ -1,0 +1,97 @@
+{
+  "id": "corsair",
+  "displayName": "Corsair",
+  "classId": "pirate",
+  "parentClassId": "pirate",
+  "flavorText": "Corsairs are aggressive duelists and boarding predators who live for the first hard impact of a fight.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "corsair-boarding-flurry",
+      "corsair-duelist-instinct"
+    ],
+    "6": [
+      "corsair-brutal-boarding"
+    ],
+    "10": [
+      "corsair-iron-broadcast"
+    ],
+    "15": [
+      "corsair-red-wake"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "corsair-boarding-flurry",
+      "displayName": "Boarding Flurry",
+      "description": "Explode into close quarters with a burst of steel, movement, and confidence the moment you commit."
+    },
+    {
+      "level": 3,
+      "id": "corsair-duelist-instinct",
+      "displayName": "Duelist Instinct",
+      "description": "Read one-on-one fights instantly and turn tight melee exchanges into your comfort zone."
+    },
+    {
+      "level": 6,
+      "id": "corsair-brutal-boarding",
+      "displayName": "Brutal Boarding",
+      "description": "Punish cramped fights and any enemy who cannot easily disengage from you."
+    },
+    {
+      "level": 10,
+      "id": "corsair-iron-broadcast",
+      "displayName": "Iron Broadcast",
+      "description": "Your violence sends a message; nearby enemies feel the cost of standing their ground."
+    },
+    {
+      "level": 15,
+      "id": "corsair-red-wake",
+      "displayName": "Red Wake",
+      "description": "Leave behind a terrifying trail of momentum whenever you drop or rout a foe."
+    }
+  ],
+  "featureDefinitions": {
+    "corsair-boarding-flurry": {
+      "summary": "Gain a front-loaded boarding burst that rewards closing distance first.",
+      "description": "This is the subclass opener for players who want the Pirate to feel like an all-in deck fighter. It should create cinematic turns built around leaping in, drawing steel, and immediately putting a target on the back foot.",
+      "tags": [
+        "subclass",
+        "combat",
+        "burst"
+      ]
+    },
+    "corsair-duelist-instinct": {
+      "summary": "Become better at isolated duels, challenge pressure, and tight melee reads.",
+      "tags": [
+        "subclass",
+        "duelist",
+        "combat"
+      ]
+    },
+    "corsair-brutal-boarding": {
+      "summary": "Turn cramped spaces and close-quarters pressure into extra punishment.",
+      "tags": [
+        "subclass",
+        "control",
+        "damage"
+      ]
+    },
+    "corsair-iron-broadcast": {
+      "summary": "Your committed aggression starts affecting more than just the first target.",
+      "tags": [
+        "subclass",
+        "presence",
+        "area"
+      ]
+    },
+    "corsair-red-wake": {
+      "summary": "When you break one enemy, you immediately become a problem for the next.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "momentum"
+      ]
+    }
+  }
+}

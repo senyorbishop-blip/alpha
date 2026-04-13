@@ -1,0 +1,103 @@
+{
+  "id": "thief",
+  "displayName": "Thief",
+  "classId": "rogue",
+  "parentClassId": "rogue",
+  "flavorText": "Thieves excel at speed, precision, and exploiting objects or opportunities in the moment.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "thief-fast-hands",
+      "thief-second-story-work"
+    ],
+    "9": [
+      "thief-supreme-sneak"
+    ],
+    "13": [
+      "thief-use-magic-device"
+    ],
+    "17": [
+      "thief-thiefs-reflexes"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "thief-fast-hands",
+      "displayName": "Fast Hands",
+      "description": "You can use your bonus action for Use an Object, thieves' tools interactions, or a pickpocket attempt."
+    },
+    {
+      "level": 3,
+      "id": "thief-second-story-work",
+      "displayName": "Second-Story Work",
+      "description": "Climbing no longer costs extra movement, and your running jump distance increases by a number of feet equal to your Dexterity modifier."
+    },
+    {
+      "level": 9,
+      "id": "thief-supreme-sneak",
+      "displayName": "Supreme Sneak",
+      "description": "You have advantage on Stealth checks when you move at no more than half your speed."
+    },
+    {
+      "level": 13,
+      "id": "thief-use-magic-device",
+      "displayName": "Use Magic Device",
+      "description": "You can use scrolls, wands, and staves even if class, race, or level requirements would normally prevent it."
+    },
+    {
+      "level": 17,
+      "id": "thief-thiefs-reflexes",
+      "displayName": "Thief's Reflexes",
+      "description": "In the first round of combat, you can take two turns: one at your normal initiative and one at initiative minus 10."
+    }
+  ],
+  "featureDefinitions": {
+    "thief-fast-hands": {
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "summary": "Handle objects, tools, and interaction tricks faster than most characters could ever manage.",
+      "description": "Fast Hands turns the Thief into a battlefield opportunist who can exploit items, gadgets, and environmental interactions more efficiently than other rogues.",
+      "tags": [
+        "subclass",
+        "utility",
+        "mobility"
+      ]
+    },
+    "thief-second-story-work": {
+      "summary": "Climbing and urban movement become much easier, reinforcing the subclass’s classic nimble burglar fantasy.",
+      "description": "Second-Story Work is quiet but important. It changes how the rogue approaches vertical spaces, windows, roofs, and escape routes.",
+      "tags": [
+        "subclass",
+        "mobility",
+        "exploration"
+      ]
+    },
+    "thief-supreme-sneak": {
+      "summary": "Slow, careful movement lets you push stealth beyond normal rogue competence.",
+      "description": "Supreme Sneak rewards patient infiltration and keeps the Thief excellent at the kind of cautious movement many dungeons actually demand.",
+      "tags": [
+        "subclass",
+        "stealth",
+        "utility"
+      ]
+    },
+    "thief-use-magic-device": {
+      "summary": "Magic items become easier for you to exploit even when they were not designed with you in mind.",
+      "description": "Use Magic Device is a strong expression of the Thief fantasy: if there is a tool worth stealing, borrowing, or activating, this rogue finds a way to make it work.",
+      "tags": [
+        "subclass",
+        "items",
+        "utility"
+      ]
+    },
+    "thief-thiefs-reflexes": {
+      "summary": "Your reactions and battlefield timing become extraordinary, making you feel almost impossibly quick.",
+      "description": "Thief's Reflexes is the capstone-style speed payoff for a subclass built around movement, timing, and opportunism.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "initiative"
+      ]
+    }
+  }
+}

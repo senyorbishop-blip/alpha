@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#0d0900" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+<g filter="url(#shadow)">
+<rect x="38" y="28" width="52" height="80" fill="#b0a898" stroke="#2a1f0e" stroke-width="2" rx="2"/>
+<rect x="36" y="18" width="12" height="14" fill="#b0a898" stroke="#2a1f0e" stroke-width="2" rx="1"/>
+<rect x="54" y="18" width="12" height="14" fill="#b0a898" stroke="#2a1f0e" stroke-width="2" rx="1"/>
+<rect x="72" y="18" width="12" height="14" fill="#b0a898" stroke="#2a1f0e" stroke-width="2" rx="1"/>
+<rect x="36" y="22" width="56" height="8" fill="#7a7060" stroke="#2a1f0e" stroke-width="2" rx="1"/>
+<rect x="52" y="46" width="6" height="18" fill="#5a3614" stroke="#2a1f0e" stroke-width="2" rx="1"/>
+<rect x="70" y="46" width="6" height="18" fill="#5a3614" stroke="#2a1f0e" stroke-width="2" rx="1"/>
+<rect x="54" y="82" width="20" height="26" fill="#5a3614" stroke="#2a1f0e" stroke-width="2" rx="2"/>
+<path d="M54 94 Q64 80 74 94" fill="#5a3614" stroke="#2a1f0e" stroke-width="1"/>
+</g>
+</svg>

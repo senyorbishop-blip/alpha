@@ -1,0 +1,105 @@
+{
+  "id": "circle-of-the-land",
+  "displayName": "Circle of the Land",
+  "classId": "druid",
+  "parentClassId": "druid",
+  "flavorText": "Land druids bond with a chosen terrain and draw restorative and defensive power from nature.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "land-circle-spells"
+    ],
+    "6": [
+      "land-natural-recovery"
+    ],
+    "10": [
+      "land-lands-aid"
+    ],
+    "14": [
+      "land-natures-ward",
+      "land-natures-sanctuary"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "land-circle-spells",
+      "displayName": "Circle Spells",
+      "description": "Choose a terrain—Arctic, Coast, Desert, Forest, Grassland, Mountain, Swamp, or Underdark. You gain always-prepared bonus spells by level based on that terrain."
+    },
+    {
+      "level": 6,
+      "id": "land-natural-recovery",
+      "displayName": "Natural Recovery",
+      "description": "During a short rest, recover expended spell slots with combined levels up to half your druid level (rounded up)."
+    },
+    {
+      "level": 10,
+      "id": "land-lands-aid",
+      "displayName": "Land's Aid",
+      "description": "You can invoke Channel Divinity-like natural power to restore and bolster allies tied to your terrain bond."
+    },
+    {
+      "level": 14,
+      "id": "land-natures-ward",
+      "displayName": "Nature's Ward",
+      "description": "You are immune to being charmed or frightened by elementals and fey."
+    },
+    {
+      "level": 14,
+      "id": "land-natures-sanctuary",
+      "displayName": "Nature's Sanctuary",
+      "description": "Creatures attempting to attack you must first succeed on a Wisdom saving throw."
+    }
+  ],
+  "featureDefinitions": {
+    "land-circle-spells": {
+      "summary": "Your circle gives you terrain-flavored spell access that makes the subclass feel like a true regional sage.",
+      "description": "Circle Spells should make the subclass feel tied to a place, not just a generic druid with extra entries. The bonus list is one of the cleanest ways the subclass communicates its biome identity.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "terrain"
+      ]
+    },
+    "land-natural-recovery": {
+      "summary": "Recover part of your spell economy during rest so your circle stays effective across longer adventuring days.",
+      "description": "Natural Recovery is a slot economy feature. It matters because it lets Circle of the Land feel like the druid most capable of stretching magic through a full day of exploration and multiple fights.",
+      "resourceName": "Spell Recovery",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "resource",
+        "spellcasting"
+      ]
+    },
+    "land-lands-aid": {
+      "section": "Actions",
+      "type": "action",
+      "summary": "Call on your bond with the land to support allies and shift local momentum in your favor.",
+      "description": "Land’s Aid should read like a direct expression of your terrain bond: restorative, stabilizing, and practical rather than flashy.",
+      "tags": [
+        "subclass",
+        "support",
+        "primal"
+      ]
+    },
+    "land-natures-ward": {
+      "summary": "The natural world hardens you against control and corruption that would break lesser wanderers.",
+      "description": "Nature’s Ward is a defense identity feature. It reinforces Circle of the Land as the seasoned druid who belongs outdoors so completely that hostile influences struggle to take hold.",
+      "tags": [
+        "subclass",
+        "defense",
+        "nature"
+      ]
+    },
+    "land-natures-sanctuary": {
+      "summary": "Wild creatures hesitate to harm you, reflecting how deeply your circle is accepted by the natural world.",
+      "description": "Nature’s Sanctuary is a late-game identity feature more than a raw damage tool. It should feel like the world itself acknowledging your place within it.",
+      "tags": [
+        "subclass",
+        "identity",
+        "nature"
+      ]
+    }
+  }
+}

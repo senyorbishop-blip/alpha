@@ -1,0 +1,1664 @@
+"""
+server/session.py — In-memory session + state management for Phase 1
+"""
+import secrets
+import time
+from typing import Dict, List, Optional, Any
+from dataclasses import dataclass, field
+from copy import deepcopy
+from server.encumbrance import auto_tag_extradimensional
+from server.quest_premium_progression import build_premium_progression_snapshot
+
+
+
+
+ASSISTANT_DM_SCOPE_KEYS = frozenset({
+    "tokens.control_npc",
+    "maps.fog",
+    "narration.broadcast",
+    "handouts.manage",
+    "quests.manage",
+    "combat.manage_limited",
+})
+
+
+def _assistant_dm_store(session: "Session") -> dict:
+    world_state = dict(getattr(session, "world_state", {}) or {})
+    block = world_state.get("assistant_dm") if isinstance(world_state.get("assistant_dm"), dict) else {}
+    users = block.get("users") if isinstance(block.get("users"), dict) else {}
+    normalized_users = {}
+    for uid, raw in users.items():
+        if not isinstance(raw, dict):
+            continue
+        scopes = sorted({str(scope or "").strip() for scope in (raw.get("scopes") or []) if str(scope or "").strip() in ASSISTANT_DM_SCOPE_KEYS})
+        token_ids = sorted({str(v or "").strip()[:64] for v in (raw.get("token_ids") or []) if str(v or "").strip()})
+        map_contexts = sorted({str(v or "").strip()[:80] or "world" for v in (raw.get("map_contexts") or []) if str(v or "").strip()})
+        normalized_users[str(uid)] = {
+            "enabled": bool(raw.get("enabled", True)),
+            "scopes": scopes,
+            "token_ids": token_ids,
+            "map_contexts": map_contexts,
+            "updated_at": float(raw.get("updated_at") or time.time()),
+            "updated_by": str(raw.get("updated_by") or "")[:64],
+        }
+    block = {"users": normalized_users}
+    world_state["assistant_dm"] = block
+    session.world_state = world_state
+    return block
+
+
+def assistant_dm_permissions_for_user(session: "Session", user_id: str) -> dict:
+    users = _assistant_dm_store(session).get("users", {})
+    return dict(users.get(str(user_id or ""), {}))
+
+
+def assistant_dm_has_scope(session: "Session", user: "User", scope: str, *, map_ctx: str | None = None, token_id: str | None = None) -> bool:
+    if not user:
+        return False
+    role = str(getattr(user, "role", "") or "").strip().lower()
+    if role == "dm":
+        return True
+    if role != "assistant_dm":
+        return False
+    perms = assistant_dm_permissions_for_user(session, str(getattr(user, "id", "") or ""))
+    if not perms or not perms.get("enabled", True):
+        return False
+    scopes = set(perms.get("scopes") or [])
+    if scope not in scopes:
+        return False
+    if map_ctx is not None:
+        allowed = set(perms.get("map_contexts") or [])
+        if allowed and str(map_ctx or "world") not in allowed:
+            return False
+    if token_id is not None:
+        allowed_tokens = set(perms.get("token_ids") or [])
+        if allowed_tokens and str(token_id or "") not in allowed_tokens:
+            return False
+    return True
+
+
+def set_assistant_dm_permissions(session: "Session", *, actor: "User", target_user_id: str, enabled: bool, scopes: list[str], token_ids: list[str], map_contexts: list[str]) -> dict:
+    block = _assistant_dm_store(session)
+    users = dict(block.get("users") or {})
+    target_id = str(target_user_id or "").strip()[:64]
+    if not target_id:
+        return {}
+    clean_scopes = sorted({str(scope or "").strip() for scope in (scopes or []) if str(scope or "").strip() in ASSISTANT_DM_SCOPE_KEYS})
+    clean_token_ids = sorted({str(v or "").strip()[:64] for v in (token_ids or []) if str(v or "").strip()})
+    clean_map_ctx = sorted({str(v or "").strip()[:80] or "world" for v in (map_contexts or []) if str(v or "").strip()})
+    users[target_id] = {
+        "enabled": bool(enabled),
+        "scopes": clean_scopes,
+        "token_ids": clean_token_ids,
+        "map_contexts": clean_map_ctx,
+        "updated_at": time.time(),
+        "updated_by": str(getattr(actor, "id", "") or "")[:64],
+    }
+    block["users"] = users
+    world_state = dict(getattr(session, "world_state", {}) or {})
+    world_state["assistant_dm"] = block
+    session.world_state = world_state
+    return dict(users[target_id])
+
+INTERACTABLE_ACTIONS = {
+    "inspect",
+    "interact",
+    "mark_for_party",
+    "ask_party",
+    "attempt_skill_action",
+    "open",
+    "loot",
+    "disable",
+    "reveal",
+    "exhaust",
+}
+INTERACTABLE_STATE_IDS = {"closed", "opened", "looted", "disabled", "revealed", "exhausted"}
+
+SCENE_TRIGGER_VISIBILITY_MODES = {
+    "public",
+    "party",
+    "players_only",
+    "dm_only",
+    "owner_only",
+}
+
+SCENE_TRIGGER_ACTIONS = {
+    "ambient_profile",
+    "weather_preset",
+    "narration_hook",
+    "unlock_discovery",
+    "set_world_state_flag",
+    "living_world_event",
+}
+
+
+def normalize_interactable(raw: Any) -> dict | None:
+    if not isinstance(raw, dict):
+        return None
+    enabled = bool(raw.get("enabled"))
+    interaction_id = str(raw.get("id") or "").strip()[:48]
+    kind = str(raw.get("kind") or raw.get("type") or "").strip().lower()[:40]
+    prompt = str(raw.get("prompt") or raw.get("prompt_text") or "").strip()[:240]
+    discovery_hook = str(raw.get("discovery_hook") or "").strip()[:80]
+    permissions_src = raw.get("permissions") if isinstance(raw.get("permissions"), dict) else {}
+    visibility_src = raw.get("visibility") if isinstance(raw.get("visibility"), dict) else {}
+
+    actions = []
+    seen = set()
+    for entry in raw.get("actions") or []:
+        if isinstance(entry, dict):
+            action_id = str(entry.get("id") or "").strip().lower()[:40]
+            if action_id not in INTERACTABLE_ACTIONS or action_id in seen:
+                continue
+            action = {"id": action_id, "label": str(entry.get("label") or action_id.replace("_", " ").title()).strip()[:80]}
+            if entry.get("skill"):
+                action["skill"] = str(entry.get("skill") or "").strip().lower()[:40]
+            seen.add(action_id)
+            actions.append(action)
+            continue
+        action_id = str(entry or "").strip().lower()[:40]
+        if action_id not in INTERACTABLE_ACTIONS or action_id in seen:
+            continue
+        seen.add(action_id)
+        actions.append({"id": action_id, "label": action_id.replace("_", " ").title()})
+
+    states_src = raw.get("states") if isinstance(raw.get("states"), dict) else {}
+    states = {}
+    for state_id, state_raw in states_src.items():
+        clean_state = str(state_id or "").strip().lower()[:32]
+        if clean_state not in INTERACTABLE_STATE_IDS or not isinstance(state_raw, dict):
+            continue
+        state_actions = []
+        state_seen = set()
+        for entry in state_raw.get("available_actions") or []:
+            if isinstance(entry, dict):
+                action_id = str(entry.get("id") or "").strip().lower()[:40]
+                if action_id not in INTERACTABLE_ACTIONS or action_id in state_seen:
+                    continue
+                row = {"id": action_id, "label": str(entry.get("label") or action_id.replace("_", " ").title()).strip()[:80]}
+                if entry.get("skill"):
+                    row["skill"] = str(entry.get("skill") or "").strip().lower()[:40]
+                state_seen.add(action_id)
+                state_actions.append(row)
+            else:
+                action_id = str(entry or "").strip().lower()[:40]
+                if action_id not in INTERACTABLE_ACTIONS or action_id in state_seen:
+                    continue
+                state_seen.add(action_id)
+                state_actions.append({"id": action_id, "label": action_id.replace("_", " ").title()})
+        next_state_by_action = {}
+        for action_id, next_state in dict(state_raw.get("next_state_by_action") or {}).items():
+            clean_action = str(action_id or "").strip().lower()[:40]
+            mapped_state = str(next_state or "").strip().lower()[:32]
+            if clean_action in INTERACTABLE_ACTIONS and mapped_state in INTERACTABLE_STATE_IDS:
+                next_state_by_action[clean_action] = mapped_state
+        states[clean_state] = {
+            "label_override": str(state_raw.get("label_override") or "").strip()[:120],
+            "asset_key_override": str(state_raw.get("asset_key_override") or state_raw.get("art_override") or "").strip()[:120],
+            "available_actions": state_actions,
+            "one_time_flags": [str(v).strip()[:80] for v in list(state_raw.get("one_time_flags") or [])[:30] if str(v).strip()],
+            "world_state_flags": {str(k).strip()[:80]: v for k, v in dict(state_raw.get("world_state_flags") or {}).items() if str(k).strip()},
+            "discovery_hook": str(state_raw.get("discovery_hook") or "").strip()[:80],
+            "discovery_visibility": str(state_raw.get("discovery_visibility") or "").strip().lower()[:32],
+            "handout_unlock_ids": [str(v).strip()[:80] for v in list(state_raw.get("handout_unlock_ids") or [])[:30] if str(v).strip()],
+            "next_state": str(state_raw.get("next_state") or "").strip().lower()[:32],
+            "next_state_by_action": next_state_by_action,
+        }
+    current_state = str(raw.get("current_state") or raw.get("state") or "").strip().lower()[:32]
+    if current_state not in INTERACTABLE_STATE_IDS:
+        current_state = ""
+    if not current_state and states:
+        current_state = "closed" if "closed" in states else next(iter(states.keys()), "")
+
+    if not enabled and not actions and not kind and not interaction_id and not prompt and not discovery_hook and not states:
+        return None
+
+    permissions = {
+        "dm_only": bool(permissions_src.get("dm_only", False)),
+        "requires_token": bool(permissions_src.get("requires_token", False)),
+        "allow_players": bool(permissions_src.get("allow_players", True)),
+        "allow_viewers": bool(permissions_src.get("allow_viewers", False)),
+    }
+    visibility = {
+        "mode": str(visibility_src.get("mode") or "public").strip().lower()[:24] or "public",
+        "discovery_visibility": str(visibility_src.get("discovery_visibility") or "").strip().lower()[:32],
+    }
+    raw_cooldown = raw.get("cooldown_ms", 0)
+    raw_debounce = raw.get("debounce_ms", 250)
+    out = {
+        "enabled": enabled or bool(actions),
+        "id": interaction_id,
+        "kind": kind,
+        "prompt": prompt,
+        "actions": actions,
+        "permissions": permissions,
+        "visibility": visibility,
+        "discovery_hook": discovery_hook,
+        "cooldown_ms": max(0, min(120000, int(0 if raw_cooldown is None else raw_cooldown))),
+        "debounce_ms": max(0, min(10000, int(250 if raw_debounce is None else raw_debounce))),
+    }
+    if states:
+        out["states"] = states
+        if current_state:
+            out["current_state"] = current_state
+        used_flags = sorted({str(v).strip()[:80] for v in list(raw.get("used_one_time_flags") or [])[:80] if str(v).strip()})
+        if used_flags:
+            out["used_one_time_flags"] = used_flags
+    return out
+
+
+def normalize_scene_trigger_zone(raw: Any) -> dict | None:
+    if not isinstance(raw, dict):
+        return None
+    zone_id = str(raw.get("id") or "").strip()[:64]
+    bounds_src = raw.get("bounds") if isinstance(raw.get("bounds"), dict) else {}
+    shape = str(bounds_src.get("shape") or "rect").strip().lower()[:16]
+    if shape not in {"rect", "circle"}:
+        shape = "rect"
+    bounds = {
+        "shape": shape,
+        "x": float(bounds_src.get("x", 0.0) or 0.0),
+        "y": float(bounds_src.get("y", 0.0) or 0.0),
+        "width": max(1.0, float(bounds_src.get("width", 1.0) or 1.0)),
+        "height": max(1.0, float(bounds_src.get("height", 1.0) or 1.0)),
+        "radius": max(1.0, float(bounds_src.get("radius", 1.0) or 1.0)),
+    }
+    visibility_src = raw.get("visibility") if isinstance(raw.get("visibility"), dict) else {}
+    visibility_mode = str(visibility_src.get("mode") or "party").strip().lower()[:24] or "party"
+    if visibility_mode not in SCENE_TRIGGER_VISIBILITY_MODES:
+        visibility_mode = "party"
+    actions = {"on_enter": [], "on_exit": []}
+    for phase in ("on_enter", "on_exit"):
+        for item in (raw.get(phase) or []):
+            if not isinstance(item, dict):
+                continue
+            action_type = str(item.get("type") or "").strip().lower()[:40]
+            if action_type not in SCENE_TRIGGER_ACTIONS:
+                continue
+            actions[phase].append({
+                "type": action_type,
+                "payload": dict(item.get("payload") or {}),
+            })
+    if not zone_id or (not actions["on_enter"] and not actions["on_exit"]):
+        return None
+    raw_cooldown = raw.get("cooldown_ms", 0)
+    raw_debounce = raw.get("debounce_ms", 250)
+    return {
+        "id": zone_id,
+        "map_context": str(raw.get("map_context") or "world").strip()[:80] or "world",
+        "enabled": bool(raw.get("enabled", True)),
+        "trigger_once": bool(raw.get("trigger_once", False)),
+        "repeatable": bool(raw.get("repeatable", True)),
+        "allow_dm_trigger": bool(raw.get("allow_dm_trigger", False)),
+        "cooldown_ms": max(0, min(120000, int(0 if raw_cooldown is None else raw_cooldown))),
+        "debounce_ms": max(0, min(10000, int(250 if raw_debounce is None else raw_debounce))),
+        "bounds": bounds,
+        "visibility": {
+            "mode": visibility_mode,
+            "allow_viewers": bool(visibility_src.get("allow_viewers", False)),
+            "dm_only_narration": bool(visibility_src.get("dm_only_narration", False)),
+        },
+        "on_enter": actions["on_enter"],
+        "on_exit": actions["on_exit"],
+    }
+
+
+def generate_code(length: int = 8) -> str:
+    """Generate a cryptographically random invite code."""
+    return secrets.token_urlsafe(length)[:length].upper()
+
+
+@dataclass
+class POI:
+    id: str
+    x: float
+    y: float
+    name: str
+    description: str = ""
+    dm_notes: str = ""
+    poi_type: str = "city"
+    local_map_url: Optional[str] = None
+    map_context: str = "world"   # "world" or poi_id of local map this belongs to
+    revealed_to_players: bool = True
+    interactable: Optional[dict] = None
+
+    def to_dict(self, include_dm_notes: bool = False) -> dict:
+        d = {
+            "id": self.id, "x": self.x, "y": self.y,
+            "name": self.name, "description": self.description,
+            "poi_type": self.poi_type,
+            "local_map_url": self.local_map_url,
+            "map_context": self.map_context,
+            "revealed_to_players": self.revealed_to_players,
+        }
+        interactable = normalize_interactable(self.interactable)
+        if interactable:
+            d["interactable"] = interactable
+        if include_dm_notes:
+            d["dm_notes"] = self.dm_notes
+        return d
+
+
+@dataclass
+class Token:
+    id: str
+    name: str
+    x: float
+    y: float
+    width: float
+    height: float
+    color: str
+    shape: str  # "circle" | "rect"
+    owner_id: Optional[str]  # None = DM-only token
+    temp_permissions: Dict[str, float] = field(default_factory=dict)
+    hp: Optional[int] = None
+    max_hp: Optional[int] = None
+    temp_hp: int = 0
+    hidden_hp: bool = False
+    hidden: bool = False      # hidden from players/viewers
+    initiative_mod: int = 0
+    ac: Optional[int] = None
+    ac_from_equipment: bool = False   # True when AC was last set by equipment calculation
+    speed: Optional[int] = None
+    token_type: str = "player"  # player | npc | monster
+    notes: str = ""
+    conditions: list = field(default_factory=list)
+    condition_timers: dict = field(default_factory=dict)
+    level: Optional[int] = None
+    faction: str = ""
+    passive_perception: Optional[int] = None
+    map_context: str = "world"  # which map this token was placed on
+    staged: bool = False          # waiting to be placed from the staging tray
+    image_url: Optional[str] = None
+    save_bonuses: dict = field(default_factory=dict)
+    vision_enabled: bool = False
+    vision_radius: int = 0
+    bright_radius: int = 0
+    dim_radius: int = 0
+    has_darkvision: bool = False
+    darkvision_radius: int = 0
+    creature_id: str = ""
+    creature_type: str = ""
+    monster_type: str = ""
+    cr: str = ""
+
+    def to_dict(self) -> dict:
+        d = {
+            "id": self.id,
+            "name": self.name,
+            "x": self.x,
+            "y": self.y,
+            "width": self.width,
+            "height": self.height,
+            "color": self.color,
+            "shape": self.shape,
+            "owner_id": self.owner_id,
+            "temp_permissions": {k: v for k, v in self.temp_permissions.items() if v > time.time()},
+        }
+        if self.hp is not None:    d["hp"]    = self.hp
+        if self.max_hp is not None: d["maxHp"] = self.max_hp
+        d["tempHp"] = int(self.temp_hp or 0)
+        d["hidden_hp"] = self.hidden_hp
+        d["hidden"]    = self.hidden
+        d["initiativeMod"] = int(self.initiative_mod or 0)
+        if self.ac is not None: d["ac"] = int(self.ac)
+        d["ac_from_equipment"] = bool(self.ac_from_equipment)
+        if self.speed is not None: d["speed"] = int(self.speed)
+        d["tokenType"] = str(self.token_type or "player")
+        d["notes"] = str(self.notes or "")
+        d["conditions"] = list(self.conditions or [])
+        d["condition_timers"] = dict(self.condition_timers or {})
+        if self.level is not None: d["level"] = int(self.level)
+        d["faction"] = str(self.faction or "")
+        if self.passive_perception is not None: d["passivePerception"] = int(self.passive_perception)
+        d["map_context"] = self.map_context
+        d["staged"] = self.staged
+        if self.image_url:
+            d["image_url"] = str(self.image_url)
+        d["saveBonuses"] = dict(self.save_bonuses or {})
+        d["visionEnabled"] = bool(self.vision_enabled)
+        d["visionRadius"] = int(self.vision_radius or 0)
+        d["brightRadius"] = int(self.bright_radius or 0)
+        d["dimRadius"] = int(self.dim_radius or 0)
+        d["hasDarkvision"] = bool(self.has_darkvision)
+        d["darkvisionRadius"] = int(self.darkvision_radius or 0)
+        if self.creature_id:
+            d["creature_id"] = str(self.creature_id)
+        if self.creature_type:
+            d["creature_type"] = str(self.creature_type)
+        if self.monster_type:
+            d["monster_type"] = str(self.monster_type)
+        if self.cr:
+            d["cr"] = str(self.cr)
+        return d
+
+    def can_move(self, user_id: str, role: str) -> bool:
+        if role == "dm":
+            return True
+        if role == "player":
+            owner = str(self.owner_id or "").strip()
+            user_id_norm = str(user_id or "").strip()
+            if owner and owner == user_id_norm:
+                return True
+            # Backward compatibility: older campaigns and some reconnect paths
+            # can persist token owner_id as a normalized profile key.
+            if owner and normalize_profile_owner_key(owner) == normalize_profile_owner_key(user_id_norm):
+                return True
+        # Check temporary permission
+        expiry = self.temp_permissions.get(user_id, 0)
+        return time.time() < expiry
+
+
+@dataclass
+class User:
+    id: str
+    name: str
+    role: str  # "dm" | "assistant_dm" | "player" | "viewer"
+    connected: bool = True
+    connected_at: float = field(default_factory=time.time)
+    last_emote_at: float = 0.0
+    last_token_emote_at: float = 0.0
+    subgroup_id: str = "main"
+
+    def __post_init__(self):
+        normalized = str(self.role or "viewer").strip().lower() or "viewer"
+        if normalized not in {"dm", "assistant_dm", "player", "viewer"}:
+            normalized = "viewer"
+        self.role = normalized
+
+
+@dataclass
+class Session:
+    id: str
+    dm_id: Optional[str] = None
+    player_invite: str = field(default_factory=lambda: generate_code(8))
+    viewer_invite: str = field(default_factory=lambda: generate_code(8))
+    users: Dict[str, User] = field(default_factory=dict)
+    tokens: Dict[str, Token] = field(default_factory=dict)
+    log: List[dict] = field(default_factory=list)
+    created_at: float = field(default_factory=time.time)
+    map_image_url: Optional[str] = None   # relative URL to uploaded map
+    pois: Dict[str, 'POI'] = field(default_factory=dict)
+    dm_map_context: str = 'world'  # tracks which map the DM is currently on
+    dm_current_map_url: Optional[str] = None  # local map URL the DM is currently viewing
+    map_nav_version: int = 0  # monotonic nav counter so stale POI/world sync cannot win
+    dm_nav_intent: int = 0  # latest DM client-side nav intent; stale queued enter/exit messages are ignored
+    fog_maps: dict = None  # keyed by map_ctx
+    combat: dict = None  # {active: bool, turn: int, combatants: [{id,name,initiative,token_id,hp,max_hp}]} ('world' or poi_id) → {enabled, cols, rows, cells}
+    journal_entries: list = field(default_factory=list)
+    # library_entries: preserved for campaign backward-compatibility only.
+    # The legacy in-session creature library has been removed; all creatures
+    # now live in the DB-backed user_creature_library (see /api/library/creatures).
+    # Old saved campaigns still carry this field; it is loaded but never written.
+    library_entries: list = field(default_factory=list)
+    item_library_entries: list = field(default_factory=list)
+    char_profiles: dict = field(default_factory=dict)
+    active_char_profiles: dict = field(default_factory=dict)
+    player_inventories: dict = field(default_factory=dict)
+    player_gold: dict = field(default_factory=dict)
+    party_loot_log: list = field(default_factory=list)
+    editor_layers: dict = field(default_factory=dict)
+    editor_walls: dict = field(default_factory=dict)
+    editor_props: dict = field(default_factory=dict)
+    map_settings: dict = field(default_factory=dict)
+    editor_paths: dict = field(default_factory=dict)
+    editor_labels: dict = field(default_factory=dict)
+    editor_markers: dict = field(default_factory=dict)
+    editor_lights: dict = field(default_factory=dict)
+    map_documents: dict = field(default_factory=dict)
+    viewer_profiles: dict = field(default_factory=dict)
+    viewer_pending_actions: dict = field(default_factory=dict)
+    viewer_power_catalog: dict = field(default_factory=dict)
+    hazard_zones: dict = field(default_factory=dict)
+    handouts: list = field(default_factory=list)
+    discovery_cards: list = field(default_factory=list)
+    private_story_hooks: list = field(default_factory=list)
+    encounter_templates: list = field(default_factory=list)
+    quest_templates: list = field(default_factory=list)
+    session_quests: list = field(default_factory=list)
+    quest_board_bindings: list = field(default_factory=list)
+    sound_state: dict = field(default_factory=dict)
+    weather_state: dict = field(default_factory=dict)
+    world_state: dict = field(default_factory=dict)
+    active_poll: dict = None
+    show_viewer_presence: bool = False
+    party_memory_log: list = field(default_factory=list)
+    camp_rest: dict = None  # {active, label, available_activities, player_activities}
+    conversation_mode: dict = None  # {active, npc_id, npc_name, participants, speak_queue, reaction_cue, started_at}
+    dm_notes: str = field(default="")
+    # Encumbrance: settings persisted, speed-penalty cache is transient (not saved)
+    encumbrance_settings: dict = field(default_factory=dict)
+    # DM-set per-player STR/size overrides (persisted); keyed by user_id → {strength, size}
+    enc_str_overrides: dict = field(default_factory=dict)
+    corpse_states: dict = field(default_factory=dict)
+    corpse_dm_config: dict = field(default_factory=dict)
+    # _encumbrance_cache is set dynamically; keyed by user_id → {state, speed_penalty}
+    # Not declared here so it doesn't show up in persistence serialisation.
+
+    def __post_init__(self):
+        if self.fog_maps is None:
+            self.fog_maps = {}
+        if self.combat is None:
+            self.combat = {"active": False, "turn": 0, "combatants": []}
+        if self.camp_rest is None:
+            self.camp_rest = {"active": False, "label": "", "available_activities": [], "player_activities": {}}
+        if not isinstance(self.corpse_dm_config, dict) or not self.corpse_dm_config:
+            self.corpse_dm_config = {
+                "search_attempts_per_corpse": 2,
+                "harvest_attempts_per_corpse": 1,
+                "allow_humanoid_salvage": False,
+                "fail_by_5_consequence": False,
+                "reward_destination": "player_inventory",
+                "crafting_enabled": True,
+                "selling_enabled": True,
+            }
+
+    def add_log(self, message: str, msg_type: str = "system", user_name: str = "System") -> dict:
+        entry = {
+            "id": secrets.token_hex(4),
+            "timestamp": time.time(),
+            "type": msg_type,
+            "user": user_name,
+            "message": message,
+        }
+        self.log.append(entry)
+        # Keep log bounded
+        if len(self.log) > 500:
+            self.log = self.log[-500:]
+        return entry
+
+    def _split_party_store(self) -> dict:
+        world_state = dict(getattr(self, "world_state", {}) or {})
+        raw = world_state.get("split_party") if isinstance(world_state.get("split_party"), dict) else {}
+        assignments_src = raw.get("assignments") if isinstance(raw.get("assignments"), dict) else {}
+        subgroup_ctx_src = raw.get("subgroup_contexts") if isinstance(raw.get("subgroup_contexts"), dict) else {}
+
+        assignments: dict[str, str] = {}
+        for uid, subgroup_id in assignments_src.items():
+            user_id = str(uid or "").strip()[:64]
+            subgroup = str(subgroup_id or "").strip().lower()[:48] or "main"
+            if not user_id:
+                continue
+            assignments[user_id] = subgroup
+
+        subgroup_contexts: dict[str, dict] = {}
+        for subgroup_id, entry in subgroup_ctx_src.items():
+            subgroup = str(subgroup_id or "").strip().lower()[:48] or "main"
+            row = dict(entry or {}) if isinstance(entry, dict) else {}
+            map_context = str(row.get("map_context") or "world").strip()[:80] or "world"
+            subgroup_contexts[subgroup] = {
+                "map_context": map_context,
+                "updated_at": float(row.get("updated_at") or 0.0),
+                "updated_by": str(row.get("updated_by") or "").strip()[:64],
+            }
+        if "main" not in subgroup_contexts:
+            subgroup_contexts["main"] = {"map_context": "world", "updated_at": 0.0, "updated_by": ""}
+
+        out = {"assignments": assignments, "subgroup_contexts": subgroup_contexts}
+        world_state["split_party"] = out
+        self.world_state = world_state
+        return out
+
+    def get_user_subgroup_id(self, user_id: str | None) -> str:
+        uid = str(user_id or "").strip()[:64]
+        if not uid:
+            return "main"
+        subgroup = str((self._split_party_store().get("assignments") or {}).get(uid) or "main").strip().lower()[:48] or "main"
+        user = (self.users or {}).get(uid)
+        if user is not None:
+            user.subgroup_id = subgroup
+        return subgroup
+
+    def set_user_subgroup_id(self, user_id: str, subgroup_id: str, *, actor_id: str = "") -> str:
+        uid = str(user_id or "").strip()[:64]
+        if not uid:
+            return "main"
+        subgroup = str(subgroup_id or "main").strip().lower()[:48] or "main"
+        store = self._split_party_store()
+        assignments = dict(store.get("assignments") or {})
+        assignments[uid] = subgroup
+        store["assignments"] = assignments
+        subgroup_contexts = dict(store.get("subgroup_contexts") or {})
+        if subgroup not in subgroup_contexts:
+            subgroup_contexts[subgroup] = {"map_context": "world", "updated_at": time.time(), "updated_by": str(actor_id or "")[:64]}
+        store["subgroup_contexts"] = subgroup_contexts
+        world_state = dict(getattr(self, "world_state", {}) or {})
+        world_state["split_party"] = store
+        self.world_state = world_state
+        user = (self.users or {}).get(uid)
+        if user is not None:
+            user.subgroup_id = subgroup
+        return subgroup
+
+    def set_subgroup_map_context(self, subgroup_id: str, map_context: str, *, actor_id: str = "") -> dict:
+        subgroup = str(subgroup_id or "main").strip().lower()[:48] or "main"
+        target_map_ctx = str(map_context or "world").strip()[:80] or "world"
+        store = self._split_party_store()
+        subgroup_contexts = dict(store.get("subgroup_contexts") or {})
+        subgroup_contexts[subgroup] = {
+            "map_context": target_map_ctx,
+            "updated_at": time.time(),
+            "updated_by": str(actor_id or "")[:64],
+        }
+        store["subgroup_contexts"] = subgroup_contexts
+        world_state = dict(getattr(self, "world_state", {}) or {})
+        world_state["split_party"] = store
+        self.world_state = world_state
+        return dict(subgroup_contexts[subgroup])
+
+    def get_subgroup_map_context(self, subgroup_id: str | None) -> str:
+        subgroup = str(subgroup_id or "main").strip().lower()[:48] or "main"
+        subgroup_contexts = dict(self._split_party_store().get("subgroup_contexts") or {})
+        entry = subgroup_contexts.get(subgroup) if isinstance(subgroup_contexts.get(subgroup), dict) else {}
+        return str((entry or {}).get("map_context") or "world").strip()[:80] or "world"
+
+    def split_party_state(self) -> dict:
+        store = self._split_party_store()
+        return {
+            "enabled": bool((store.get("assignments") or {})),
+            "assignments": dict(store.get("assignments") or {}),
+            "subgroup_contexts": dict(store.get("subgroup_contexts") or {}),
+        }
+
+    def visible_map_contexts_for_user(self, user_id: str | None) -> set[str]:
+        subgroup_id = self.get_user_subgroup_id(user_id)
+        subgroup_ctx = self.get_subgroup_map_context(subgroup_id)
+        contexts = {"world"}
+        if subgroup_ctx:
+            contexts.add(subgroup_ctx)
+        participant = (self.users or {}).get(str(user_id or ""))
+        if participant and str(getattr(participant, "role", "") or "").strip().lower() == "viewer":
+            dm_ctx = str(getattr(self, "dm_map_context", "world") or "world").strip()[:80] or "world"
+            contexts.add(dm_ctx)
+        return {str(ctx).strip()[:80] or "world" for ctx in contexts}
+
+    def get_connected_users(self) -> List[User]:
+        return [u for u in self.users.values() if u.connected]
+
+    def scene_trigger_zones(self) -> dict[str, dict]:
+        world_state = dict(getattr(self, "world_state", {}) or {})
+        raw = world_state.get("scene_trigger_zones") if isinstance(world_state.get("scene_trigger_zones"), dict) else {}
+        normalized: dict[str, dict] = {}
+        for _, entry in raw.items():
+            zone = normalize_scene_trigger_zone(entry)
+            if zone:
+                normalized[str(zone["id"])] = zone
+        world_state["scene_trigger_zones"] = normalized
+        self.world_state = world_state
+        return normalized
+
+    def to_state_dict(self) -> dict:
+        """Full state snapshot for new joiners."""
+        return {
+            "session_id": self.id,
+            "tokens": {tid: t.to_dict() for tid, t in self.tokens.items()},
+            "users": {
+                uid: {"id": u.id, "name": u.name, "role": u.role, "connected": u.connected, "subgroup_id": self.get_user_subgroup_id(uid)}
+                for uid, u in self.users.items()
+            },
+            "log": self.log[-100:],
+            "map_image_url": self.map_image_url,
+            "world_map_layers": list((((self.map_documents or {}).get('world') or {}).get('assets', {}) or {}).get('background_layers') or []),
+            "pois": {pid: p.to_dict(include_dm_notes=False) for pid, p in self.pois.items()},
+            "dm_map_context": self.dm_map_context,
+            "dm_current_map_url": self.dm_current_map_url,
+            "map_nav_version": int(self.map_nav_version or 0),
+            "dm_nav_intent": int(self.dm_nav_intent or 0),
+            "fog_maps": self.fog_maps,
+            "combat": self.combat,
+            "journal_entries": list(self.journal_entries or []),
+            "party_memory_log": list(self.party_memory_log or []),
+            "library_entries": list(self.library_entries or []),
+            "item_library_entries": list(self.item_library_entries or []),
+            "char_profiles": dict(self.char_profiles or {}),
+            "active_char_profiles": dict(self.active_char_profiles or {}),
+            "player_gold": dict(self.player_gold or {}),
+            "editor_layers": dict(self.editor_layers or {}),
+            "editor_walls": dict(self.editor_walls or {}),
+            "editor_props": dict(self.editor_props or {}),
+            "map_settings": dict(self.map_settings or {}),
+            "editor_paths": dict(self.editor_paths or {}),
+            "editor_labels": dict(self.editor_labels or {}),
+            "editor_markers": dict(self.editor_markers or {}),
+            "editor_lights": dict(self.editor_lights or {}),
+            "viewer_profiles": dict(self.viewer_profiles or {}),
+            "viewer_pending_actions": dict(self.viewer_pending_actions or {}),
+            "viewer_power_catalog": dict(self.viewer_power_catalog or {}),
+            "hazard_zones": dict(self.hazard_zones or {}),
+            "scene_trigger_zones": dict(self.scene_trigger_zones() or {}),
+            "handouts": list(self.handouts or []),
+            "private_story_hooks": list(self.private_story_hooks or []),
+            "encounter_templates": list(self.encounter_templates or []),
+            "sound_state": dict(self.sound_state or {}),
+            "weather_state": dict(self.weather_state or {}),
+            "active_poll": self.active_poll,
+            "show_viewer_presence": bool(self.show_viewer_presence),
+            "premium_progression": build_premium_progression_snapshot(self, role="dm"),
+            "camp_rest": dict(self.camp_rest or {}),
+            "conversation_mode": dict(self.conversation_mode or {"active": False}),
+            "corpse_states": dict(self.corpse_states or {}),
+            "corpse_dm_config": dict(self.corpse_dm_config or {}),
+            "assistant_dm_permissions": dict(((_assistant_dm_store(self) or {}).get("users") or {})),
+            "split_party": self.split_party_state(),
+        }
+
+    def _normalize_orphan_token_owners(self) -> None:
+        """Re-link legacy owner keys to active players without stripping unresolved ownership."""
+        valid_player_ids = {uid for uid, u in self.users.items() if u.role == "player"}
+        player_name_keys = {
+            normalize_profile_owner_key(getattr(u, "name", "")): uid
+            for uid, u in self.users.items()
+            if getattr(u, "role", "") == "player"
+        }
+        player_keys = {
+            str(getattr(u, "player_key", "") or "").strip(): uid
+            for uid, u in self.users.items()
+            if getattr(u, "role", "") == "player" and str(getattr(u, "player_key", "") or "").strip()
+        }
+        for t in self.tokens.values():
+            owner_id = str(getattr(t, "owner_id", "") or "").strip()
+            if not owner_id or owner_id in valid_player_ids:
+                continue
+            mapped_user_id = player_keys.get(owner_id) or player_name_keys.get(normalize_profile_owner_key(owner_id))
+            if mapped_user_id:
+                t.owner_id = mapped_user_id
+
+    def enforce_single_active_player_token_rule(self) -> dict:
+        """Ensure each player has at most one active (non-staged) owned token.
+
+        Legacy campaigns can contain duplicate active player-owned tokens.
+        We keep one deterministic active token per player and stage any extras.
+        Combat entries pointing at newly-staged tokens are removed to keep
+        combat state coherent.
+        """
+        self._normalize_orphan_token_owners()
+        valid_player_ids = {uid for uid, u in (self.users or {}).items() if getattr(u, "role", "") == "player"}
+        if not valid_player_ids:
+            return {"staged_token_ids": [], "removed_combatant_token_ids": []}
+
+        combat = self.combat if isinstance(self.combat, dict) else {"active": False, "turn": 0, "combatants": []}
+        combatants = list(combat.get("combatants") or [])
+        combat_order = {
+            str((entry or {}).get("token_id") or "").strip(): idx
+            for idx, entry in enumerate(combatants)
+            if str((entry or {}).get("token_id") or "").strip()
+        }
+
+        owned_active: dict[str, list[Token]] = {}
+        for token in (self.tokens or {}).values():
+            owner_id = str(getattr(token, "owner_id", "") or "").strip()
+            if not owner_id or owner_id not in valid_player_ids:
+                continue
+            if bool(getattr(token, "staged", False)):
+                continue
+            owned_active.setdefault(owner_id, []).append(token)
+
+        staged_token_ids: list[str] = []
+        for owner_id, owner_tokens in owned_active.items():
+            if len(owner_tokens) <= 1:
+                continue
+            ordered = sorted(
+                owner_tokens,
+                key=lambda tok: (
+                    0 if str(getattr(tok, "id", "") or "") in combat_order else 1,
+                    combat_order.get(str(getattr(tok, "id", "") or ""), 999999),
+                    str(getattr(tok, "id", "") or ""),
+                ),
+            )
+            keep_id = str(getattr(ordered[0], "id", "") or "")
+            for tok in ordered[1:]:
+                tok.staged = True
+                tok_id = str(getattr(tok, "id", "") or "")
+                if tok_id and tok_id != keep_id:
+                    staged_token_ids.append(tok_id)
+
+        removed_combatant_token_ids: list[str] = []
+        if staged_token_ids and combatants:
+            staged_set = set(staged_token_ids)
+            filtered = []
+            for entry in combatants:
+                token_id = str((entry or {}).get("token_id") or "").strip()
+                if token_id and token_id in staged_set:
+                    removed_combatant_token_ids.append(token_id)
+                    continue
+                filtered.append(entry)
+            if len(filtered) != len(combatants):
+                turn = int(combat.get("turn", 0) or 0)
+                combat["combatants"] = filtered
+                if not filtered:
+                    combat["active"] = False
+                    combat["turn"] = 0
+                    combat["movement"] = {}
+                else:
+                    if turn >= len(filtered):
+                        combat["turn"] = max(0, len(filtered) - 1)
+                    elif turn < 0:
+                        combat["turn"] = 0
+                self.combat = combat
+
+        return {
+            "staged_token_ids": staged_token_ids,
+            "removed_combatant_token_ids": removed_combatant_token_ids,
+        }
+
+    def _visible_discovery_cards_for_role(self, role: str, user_id: str | None = None) -> list[dict]:
+        cards = list(getattr(self, "discovery_cards", []) or [])
+        if role == "dm":
+            return [dict(card or {}) for card in cards]
+        if role != "player" or not user_id:
+            return []
+        visible = []
+        for card in cards:
+            entry = dict(card or {})
+            visibility = str(entry.get("visibility") or "").strip().lower()
+            acknowledged_by = [str(uid) for uid in (entry.get("acknowledged_by") or []) if str(uid).strip()]
+            if user_id in acknowledged_by:
+                continue
+            subgroup_ids = {
+                str(v or "").strip().lower()[:48]
+                for v in (entry.get("subgroup_ids") or [])
+                if str(v or "").strip()
+            }
+            if subgroup_ids and self.get_user_subgroup_id(user_id) not in subgroup_ids:
+                continue
+            if visibility == "party_public":
+                visible.append(entry)
+                continue
+            if visibility == "subgroup_public":
+                visible.append(entry)
+                continue
+            if visibility == "private_player" and str(entry.get("target_user_id") or "").strip() == user_id:
+                visible.append(entry)
+        return visible
+
+
+    def _saved_discovery_cards_for_user(self, user_id: str | None = None) -> list[dict]:
+        if not user_id:
+            return []
+        saved = []
+        for card in list(getattr(self, "discovery_cards", []) or []):
+            entry = dict(card or {})
+            saved_by = [str(uid) for uid in (entry.get("saved_by") or []) if str(uid).strip()]
+            if user_id in saved_by:
+                saved.append(entry)
+        saved.sort(key=lambda entry: float(entry.get("created_at") or 0.0), reverse=True)
+        return saved
+
+    def _visible_private_story_hooks_for_role(self, role: str, user_id: str | None = None) -> list[dict]:
+        hooks = list(getattr(self, "private_story_hooks", []) or [])
+        if role == "dm":
+            visible = [dict(hook or {}) for hook in hooks]
+            visible.sort(key=lambda entry: float(entry.get("updated_at") or entry.get("created_at") or 0.0), reverse=True)
+            return visible
+        if role != "player" or not user_id:
+            return []
+        visible = []
+        for hook in hooks:
+            entry = dict(hook or {})
+            target_user_id = str(entry.get("target_user_id") or "").strip()
+            if not target_user_id or target_user_id != str(user_id):
+                continue
+            visible.append(entry)
+        visible.sort(key=lambda entry: float(entry.get("updated_at") or entry.get("created_at") or 0.0), reverse=True)
+        return visible
+
+    def _visible_session_quests_for_role(self, role: str, user_id: str | None = None) -> list[dict]:
+        quests = list(getattr(self, "session_quests", []) or [])
+        if role == "dm":
+            return [deepcopy(dict(entry or {})) for entry in quests]
+
+        role_norm = str(role or "viewer").strip().lower() or "viewer"
+        user_norm = str(user_id or "").strip()
+        visible: list[dict] = []
+        for quest in quests:
+            entry = deepcopy(dict(quest or {}))
+            visibility = dict(entry.get("visibility") or {})
+            mode = str(visibility.get("mode") or "dm_only").strip().lower() or "dm_only"
+            roles = {
+                str(r or "").strip().lower()
+                for r in (visibility.get("roles") or [])
+                if str(r or "").strip()
+            }
+            player_ids = {
+                str(pid or "").strip()
+                for pid in (visibility.get("player_ids") or [])
+                if str(pid or "").strip()
+            }
+            subgroup_ids = {
+                str(sid or "").strip().lower()[:48]
+                for sid in (visibility.get("subgroup_ids") or [])
+                if str(sid or "").strip()
+            }
+
+            allowed = False
+            if mode in {"dm_only", "hidden", "hidden_locked"}:
+                allowed = False
+            elif mode in {"locked"}:
+                allowed = role_norm in {"player", "viewer"}
+            elif mode in {"private_player", "player_private", "personal"}:
+                allowed = bool(user_norm and user_norm in player_ids)
+            elif mode in {"party_public", "party", "public", "shared", "player_public"}:
+                allowed = role_norm in {"player", "viewer"}
+            elif mode in {"viewer_public", "viewers"}:
+                allowed = role_norm == "viewer"
+            elif mode in {"players", "player_only"}:
+                allowed = role_norm == "player"
+
+            if roles and role_norm not in roles:
+                allowed = False
+            if role_norm == "player" and player_ids and user_norm not in player_ids:
+                allowed = False
+            if role_norm == "player" and subgroup_ids and self.get_user_subgroup_id(user_norm) not in subgroup_ids:
+                allowed = False
+            if not allowed:
+                continue
+
+            if mode == "locked":
+                entry["description"] = ""
+                entry["objective_list"] = []
+                entry["progress"] = {
+                    "objective_status": {},
+                    "objective_counts": {},
+                    "completed_objectives": 0,
+                    "total_objectives": 0,
+                    "summary": "Locked quest",
+                }
+                entry["reward_bundle"] = {}
+                entry["linked_handout_ids"] = []
+                entry["linked_poi_ids"] = []
+                entry["linked_map_ids"] = []
+                entry["linked_npc_ids"] = []
+                entry["linked_encounter_template_ids"] = []
+
+            hidden_objective_ids = {
+                str(oid or "").strip()
+                for oid in (visibility.get("hidden_objective_ids") or [])
+                if str(oid or "").strip()
+            }
+            if hidden_objective_ids:
+                entry["objective_list"] = [
+                    objective
+                    for objective in (entry.get("objective_list") or [])
+                    if str((objective or {}).get("id") or "").strip() not in hidden_objective_ids
+                ]
+                progress = dict(entry.get("progress") or {})
+                objective_status = dict(progress.get("objective_status") or {})
+                if objective_status:
+                    progress["objective_status"] = {
+                        oid: status
+                        for oid, status in objective_status.items()
+                        if str(oid or "").strip() not in hidden_objective_ids
+                    }
+                entry["progress"] = progress
+
+            visible.append(entry)
+        return visible
+
+    def to_state_dict_for_role(self, role: str, user_id: str = None) -> dict:
+        """State snapshot filtered by role."""
+        self._normalize_orphan_token_owners()
+        self.enforce_single_active_player_token_rule()
+        role = str(role or "viewer").strip().lower() or "viewer"
+        d = self.to_state_dict()
+        visible_contexts = self.visible_map_contexts_for_user(user_id) if role != "dm" else set()
+        visible_hazards = {
+            zid: dict(zone or {})
+            for zid, zone in (self.hazard_zones or {}).items()
+            if not bool((zone or {}).get("hidden_from_players"))
+        }
+        if role == "dm":
+            d["pois"] = {pid: p.to_dict(include_dm_notes=True) for pid, p in self.pois.items()}
+            d["journal_entries"] = list(self.journal_entries or [])
+            d["library_entries"] = list(self.library_entries or [])
+            d["item_library_entries"] = list(self.item_library_entries or [])
+            d["char_profiles"] = dict(self.char_profiles or {})
+            d["player_inventories"] = build_player_inventory_payload_for_dm(self)
+            d["party_stash"] = get_party_stash_inventory(self)
+            d["party_loot_log"] = list(self.party_loot_log or [])[-120:]
+            d["player_gold"] = dict(self.player_gold or {})
+            d["editor_layers"] = dict(self.editor_layers or {})
+            d["editor_walls"] = dict(self.editor_walls or {})
+            d["editor_props"] = filter_editor_props_for_role(self.editor_props, "dm")
+            d["map_settings"] = dict(self.map_settings or {})
+            d["editor_paths"] = dict(self.editor_paths or {})
+            d["editor_labels"] = dict(self.editor_labels or {})
+            d["editor_markers"] = dict(self.editor_markers or {})
+            d["editor_lights"] = dict(self.editor_lights or {})
+            d["viewer_profiles"] = dict(self.viewer_profiles or {})
+            d["viewer_pending_actions"] = dict(self.viewer_pending_actions or {})
+            d["viewer_power_catalog"] = dict(self.viewer_power_catalog or {})
+            d["hazard_zones"] = dict(self.hazard_zones or {})
+            d["scene_trigger_zones"] = dict(self.scene_trigger_zones() or {})
+            d["handouts"] = list(self.handouts or [])
+            d["discovery_cards"] = self._visible_discovery_cards_for_role("dm", user_id)
+            d["private_story_hooks"] = self._visible_private_story_hooks_for_role("dm", user_id)
+            d["encounter_templates"] = list(self.encounter_templates or [])
+            d["session_quests"] = self._visible_session_quests_for_role("dm", user_id)
+            d["dm_notes"] = str(self.dm_notes or "")
+            d["assistant_dm_permissions"] = dict(((_assistant_dm_store(self) or {}).get("users") or {}))
+        else:
+            d.pop("active_char_profiles", None)
+            # Players and viewers can see any token that is not hidden by the DM.
+            d["tokens"] = {
+                tid: t.to_dict()
+                for tid, t in self.tokens.items()
+                if (not t.hidden) and (str(getattr(t, "map_context", "world") or "world") in visible_contexts)
+            }
+            d["journal_entries"] = [entry for entry in (self.journal_entries or []) if entry.get("shared")]
+            d["library_entries"] = []
+            d["item_library_entries"] = list(self.item_library_entries or [])
+            if role == "player" and user_id:
+                user = self.users.get(user_id)
+                owner_key = normalize_profile_owner_key(user.name if user else "")
+                profiles = dict(self.char_profiles or {})
+                mine = list(profiles.get(owner_key, []) or [])
+                if not mine and user_id in profiles:
+                    mine = list(profiles.get(user_id, []) or [])
+                d["char_profiles"] = mine
+            else:
+                d["char_profiles"] = []
+            if role == "player" and user_id:
+                d["player_inventory"] = get_player_inventory_for_user(self, user_id)
+                d["party_stash"] = get_party_stash_inventory(self)
+                d["player_gold"] = get_player_gold_for_user(self, user_id)
+                d["active_char_profile_id"] = str((self.active_char_profiles or {}).get(user_id) or "")
+                d["party_loot_log"] = list(self.party_loot_log or [])[-120:]
+                d["saved_discoveries"] = self._saved_discovery_cards_for_user(user_id)
+            else:
+                d["player_inventory"] = []
+                d["party_stash"] = []
+                d["player_gold"] = 0
+                d["active_char_profile_id"] = ""
+                d["party_loot_log"] = []
+                d["saved_discoveries"] = []
+            d["editor_layers"] = {ctx: val for ctx, val in dict(self.editor_layers or {}).items() if str(ctx) in visible_contexts}
+            d["editor_walls"] = {ctx: val for ctx, val in dict(self.editor_walls or {}).items() if str(ctx) in visible_contexts}
+            d["editor_props"] = {
+                ctx: val for ctx, val in filter_editor_props_for_role(self.editor_props, role).items()
+                if str(ctx) in visible_contexts
+            }
+            d["map_settings"] = {ctx: val for ctx, val in dict(self.map_settings or {}).items() if str(ctx) in visible_contexts}
+            d["editor_paths"] = {ctx: val for ctx, val in dict(self.editor_paths or {}).items() if str(ctx) in visible_contexts}
+            d["editor_labels"] = {ctx: val for ctx, val in dict(self.editor_labels or {}).items() if str(ctx) in visible_contexts}
+            d["editor_markers"] = {ctx: val for ctx, val in dict(self.editor_markers or {}).items() if str(ctx) in visible_contexts}
+            d["editor_lights"] = {ctx: val for ctx, val in dict(self.editor_lights or {}).items() if str(ctx) in visible_contexts}
+            d["hazard_zones"] = {
+                zid: zone for zid, zone in visible_hazards.items()
+                if str((zone or {}).get("map_context") or "world") in visible_contexts
+            }
+            d["scene_trigger_zones"] = {}
+            d["fog_maps"] = {ctx: val for ctx, val in dict(self.fog_maps or {}).items() if str(ctx) in visible_contexts}
+            d["split_party"] = self.split_party_state()
+            d["user_subgroup_id"] = self.get_user_subgroup_id(user_id)
+            d["subgroup_map_context"] = self.get_subgroup_map_context(d["user_subgroup_id"])
+            # Players see handouts targeted to them or to "all"
+            d["handouts"] = [
+                h for h in (self.handouts or [])
+                if h.get("recipients") == "all" or (isinstance(h.get("recipients"), list) and user_id in h["recipients"])
+            ]
+            d["discovery_cards"] = self._visible_discovery_cards_for_role(role, user_id)
+            d["private_story_hooks"] = self._visible_private_story_hooks_for_role(role, user_id)
+            d["encounter_templates"] = []
+            d["session_quests"] = self._visible_session_quests_for_role(role, user_id)
+            if role == "viewer" and user_id:
+                user = self.users.get(user_id)
+                # Use the same key fallback as _viewer_key_for_user in viewer_powers.py
+                raw_key = str(getattr(user, "player_key", "") or "").strip()[:64] if user else ""
+                viewer_key = raw_key or (f"user:{user.id}" if user else "")
+                profiles = dict(self.viewer_profiles or {})
+                viewer_profile = profiles.get(viewer_key) or {}
+                if not viewer_profile and user:
+                    legacy_keys = []
+                    for candidate in (f"user:{user.id}", str(getattr(user, "id", "") or "").strip()[:64]):
+                        key = str(candidate or "").strip()[:64]
+                        if key and key not in legacy_keys:
+                            legacy_keys.append(key)
+                    for legacy_key in legacy_keys:
+                        if legacy_key in profiles:
+                            viewer_profile = profiles.get(legacy_key) or {}
+                            break
+                d["viewer_profiles"] = {viewer_key: viewer_profile} if viewer_key else {}
+                d["viewer_power_catalog"] = dict(self.viewer_power_catalog or {})
+                all_pending = dict(self.viewer_pending_actions or {})
+                if viewer_key:
+                    d["viewer_pending_actions"] = {pid: entry for pid, entry in all_pending.items() if str((entry or {}).get("viewer_key") or "") == viewer_key}
+                    if not d["viewer_pending_actions"] and user:
+                        legacy_pending = {}
+                        legacy_keys = []
+                        for candidate in (f"user:{user.id}", str(getattr(user, "id", "") or "").strip()[:64]):
+                            key = str(candidate or "").strip()[:64]
+                            if key and key not in legacy_keys:
+                                legacy_keys.append(key)
+                        if legacy_keys:
+                            for pid, entry in all_pending.items():
+                                entry_key = str((entry or {}).get("viewer_key") or "")
+                                if entry_key in legacy_keys:
+                                    legacy_pending[pid] = entry
+                        d["viewer_pending_actions"] = legacy_pending
+                else:
+                    d["viewer_pending_actions"] = {}
+            else:
+                d["viewer_profiles"] = {}
+                d["viewer_pending_actions"] = {}
+                d["viewer_power_catalog"] = dict(self.viewer_power_catalog or {})
+                if role != "player":
+                    d["saved_discoveries"] = []
+            d["assistant_dm_permissions"] = assistant_dm_permissions_for_user(self, user_id) if role == "assistant_dm" and user_id else {}
+        d["premium_progression"] = build_premium_progression_snapshot(self, role=role, user_id=user_id)
+        # active_poll: DM sees full data; others see vote counts (not per-user breakdown)
+        poll = self.active_poll
+        # Filter viewer-channel messages from state log for players who shouldn't see them
+        if role == "player":
+            d["log"] = [e for e in d.get("log", []) if e.get("channel") != "viewers"]
+        if poll:
+            votes = poll.get("votes") or {}
+            options = poll.get("options") or []
+            counts = [0] * len(options)
+            for opt_idx in votes.values():
+                if isinstance(opt_idx, int) and 0 <= opt_idx < len(counts):
+                    counts[opt_idx] += 1
+            if role == "dm":
+                full_poll = dict(poll)
+                full_poll.setdefault("title", "Party Vote")
+                full_poll["vote_counts"] = counts
+                full_poll["total_votes"] = len(votes)
+                full_poll["results_mode"] = str(full_poll.get("results_mode") or "live")
+                full_poll["authority_note"] = str(full_poll.get("authority_note") or "The DM keeps final say.")
+                full_poll["closed_by"] = str(full_poll.get("closed_by") or "dm")
+                full_poll["closed_reason"] = str(full_poll.get("closed_reason") or ("dm_closed" if full_poll.get("closed") else "active"))
+                d["active_poll"] = full_poll
+            else:
+                d["active_poll"] = {
+                    "id": poll.get("id"),
+                    "title": poll.get("title") or "Party Vote",
+                    "question": poll.get("question"),
+                    "options": list(options),
+                    "vote_counts": counts,
+                    "total_votes": len(votes),
+                    "created_at": poll.get("created_at"),
+                    "closes_at": poll.get("closes_at"),
+                    "closed": bool(poll.get("closed")),
+                    "results_mode": str(poll.get("results_mode") or "live"),
+                    "authority_note": str(poll.get("authority_note") or "The DM keeps final say."),
+                    "closed_by": str(poll.get("closed_by") or "dm"),
+                    "closed_reason": str(poll.get("closed_reason") or ("dm_closed" if poll.get("closed") else "active")),
+                    "user_vote": votes.get(user_id) if user_id else None,
+                }
+        else:
+            d["active_poll"] = None
+        return d
+
+
+def normalize_profile_owner_key(name: str) -> str:
+    return " ".join(str(name or "").strip().lower().split())
+
+
+ACTIVE_PROFILE_ID_KEY_LIMIT = 80
+
+
+def _user_bucket_key(user) -> str:
+    key = normalize_profile_owner_key(getattr(user, "name", ""))
+    return key or str(getattr(user, "id", "") or "")
+
+
+def _inventory_owner_key(session, user) -> str:
+    base_key = _user_bucket_key(user)
+    active_map = dict(getattr(session, "active_char_profiles", {}) or {})
+    profile_id = str(active_map.get(getattr(user, "id", "")) or "").strip()[:ACTIVE_PROFILE_ID_KEY_LIMIT]
+    if not profile_id:
+        return base_key
+    return f"{base_key}::profile::{profile_id}"
+
+
+def _legacy_inventory_keys(user, user_id: str) -> tuple[str, ...]:
+    keys: list[str] = []
+    owner_key = _user_bucket_key(user)
+    if owner_key:
+        keys.append(owner_key)
+    user_key = str(user_id or "").strip()
+    if user_key and user_key not in keys:
+        keys.append(user_key)
+    return tuple(keys)
+
+
+PARTY_STASH_KEY = "__party_stash__"
+
+
+def _normalize_inventory_entry(entry: Any) -> dict | None:
+    if not isinstance(entry, dict):
+        return None
+    name = str(entry.get("name") or "").strip()[:80]
+    if not name:
+        return None
+    qty = int(entry.get("qty") or 1)
+    qty = max(1, min(9999, qty))
+    notes = str(entry.get("notes") or "").strip()[:160]
+    price = str(entry.get("price") or "").strip()[:32]
+    out = {"name": name, "qty": qty, "notes": notes}
+    if price:
+        out["price"] = price
+    source = str(entry.get("source") or "").strip()[:60]
+    if source:
+        out["source"] = source
+    entry_id = str(entry.get("id") or "").strip()[:64]
+    if entry_id:
+        out["id"] = entry_id
+    for key, limit in (
+        ("category", 40),
+        ("icon", 300),
+        ("rarity", 32),
+        ("magic_item_id", 64),
+        ("item_type", 32),
+        ("effect", 400),
+        ("unidentified_description", 400),
+    ):
+        value = str(entry.get(key) or "").strip()[:limit]
+        if value:
+            out[key] = value
+    if "is_magic" in entry:
+        out["is_magic"] = bool(entry.get("is_magic"))
+    if "is_identified" in entry:
+        out["is_identified"] = bool(entry.get("is_identified"))
+    if "attunement_required" in entry:
+        out["attunement_required"] = bool(entry.get("attunement_required"))
+    # ── Encumbrance / extradimensional container fields ──
+    if "weight_lbs" in entry:
+        try:
+            out["weight_lbs"] = max(0.0, float(entry["weight_lbs"]))
+        except Exception:
+            pass
+    if entry.get("extradimensional") or entry.get("is_container") or entry.get("capacity_lbs") is not None or isinstance(entry.get("bag_contents"), list):
+        if entry.get("extradimensional"):
+            out["extradimensional"] = True
+        if entry.get("is_container"):
+            out["is_container"] = True
+        for k in ("own_weight_lbs", "capacity_lbs", "volume_ft3"):
+            if entry.get(k) is not None:
+                try:
+                    out[k] = float(entry[k])
+                except Exception:
+                    pass
+        if "is_devouring" in entry:
+            out["is_devouring"] = bool(entry["is_devouring"])
+        if isinstance(entry.get("bag_contents"), list):
+            cleaned = []
+            for sub in entry["bag_contents"]:
+                norm = _normalize_inventory_entry(sub)
+                if norm:
+                    cleaned.append(norm)
+            out["bag_contents"] = cleaned
+
+    equipment_kind = str(entry.get("equipment_kind") or "").strip().lower()
+    if equipment_kind in {"armor", "shield", "weapon", "gear"}:
+        out["equipment_kind"] = equipment_kind
+    armor_type = str(entry.get("armor_type") or "").strip().lower()
+    if armor_type in {"light", "medium", "heavy"}:
+        out["armor_type"] = armor_type
+    handedness = str(entry.get("handedness") or "").strip().lower()
+    if handedness in {"one_handed", "two_handed", "shield"}:
+        out["handedness"] = handedness
+    equip_slot = str(entry.get("equip_slot") or "").strip().lower()
+    if equip_slot in {"armor", "shield", "main_hand", "off_hand"}:
+        out["equip_slot"] = equip_slot
+    if "equipped" in entry:
+        out["equipped"] = bool(entry.get("equipped"))
+    for int_key, minimum, maximum in (("base_ac", 0, 99), ("dex_cap", -5, 20), ("ac_bonus", -20, 20), ("strength_requirement", 0, 30)):
+        if entry.get(int_key) is None or str(entry.get(int_key)).strip() == "":
+            continue
+        try:
+            out[int_key] = max(minimum, min(maximum, int(entry.get(int_key))))
+        except Exception:
+            pass
+    for text_key, limit in (("damage_dice", 20), ("damage_type", 24), ("versatile_damage", 20)):
+        value = str(entry.get(text_key) or "").strip()[:limit]
+        if value:
+            out[text_key] = value
+    if "stealth_disadvantage" in entry:
+        out["stealth_disadvantage"] = bool(entry.get("stealth_disadvantage"))
+    if isinstance(entry.get("weapon_properties"), list):
+        cleaned_props = []
+        for prop in entry.get("weapon_properties") or []:
+            txt = str(prop or "").strip()[:32]
+            if txt and txt not in cleaned_props:
+                cleaned_props.append(txt)
+        if cleaned_props:
+            out["weapon_properties"] = cleaned_props
+    return out
+
+
+def get_player_inventory_for_user(session, user_id: str) -> list:
+    inventories = dict(getattr(session, "player_inventories", {}) or {})
+    user = (getattr(session, "users", {}) or {}).get(user_id)
+    if not user:
+        return []
+    owner_key = _inventory_owner_key(session, user)
+    mine = list(inventories.get(owner_key, []) or [])
+    if not mine:
+        for legacy_key in _legacy_inventory_keys(user, user_id):
+            if not legacy_key or legacy_key == owner_key:
+                continue
+            legacy_items = list(inventories.get(legacy_key, []) or [])
+            if not legacy_items:
+                continue
+            mine = legacy_items
+            inventories[owner_key] = mine
+            inventories.pop(legacy_key, None)
+            session.player_inventories = inventories
+            break
+    return [auto_tag_extradimensional(entry) for entry in (_normalize_inventory_entry(x) for x in mine) if entry]
+
+
+def get_party_stash_inventory(session) -> list:
+    inventories = dict(getattr(session, "player_inventories", {}) or {})
+    stash = list(inventories.get(PARTY_STASH_KEY, []) or [])
+    return [entry for entry in (_normalize_inventory_entry(x) for x in stash) if entry]
+
+
+def get_player_gold_for_user(session, user_id: str) -> int:
+    balances = dict(getattr(session, "player_gold", {}) or {})
+    user = (getattr(session, "users", {}) or {}).get(user_id)
+    if not user:
+        return 0
+    owner_key = _inventory_owner_key(session, user)
+    value = balances.get(owner_key, None)
+    migrated_from = None
+    if value is None:
+        for legacy_key in _legacy_inventory_keys(user, user_id):
+            if not legacy_key or legacy_key == owner_key:
+                continue
+            if legacy_key in balances:
+                value = balances.get(legacy_key, 0)
+                migrated_from = legacy_key
+                break
+    if value is None:
+        value = 0
+    try:
+        amount = int(round(float(value or 0)))
+    except Exception:
+        amount = 0
+    amount = max(0, min(999999999, amount))
+    if migrated_from:
+        balances.pop(migrated_from, None)
+        balances[owner_key] = amount
+        session.player_gold = balances
+    return amount
+
+
+def set_player_gold_for_user(session, user_id: str, amount: int) -> int:
+    balances = dict(getattr(session, "player_gold", {}) or {})
+    user = (getattr(session, "users", {}) or {}).get(user_id)
+    if not user:
+        return 0
+    owner_key = _inventory_owner_key(session, user)
+    try:
+        clean = int(round(float(amount or 0)))
+    except Exception:
+        clean = 0
+    clean = max(0, min(999999999, clean))
+    if clean > 0:
+        balances[owner_key] = clean
+    else:
+        balances.pop(owner_key, None)
+    for legacy_key in _legacy_inventory_keys(user, user_id):
+        if legacy_key and legacy_key != owner_key:
+            balances.pop(legacy_key, None)
+    session.player_gold = balances
+    return clean
+
+
+def build_player_inventory_payload_for_dm(session) -> list:
+    inventories = dict(getattr(session, "player_inventories", {}) or {})
+    payload = []
+    seen = set()
+    users = dict(getattr(session, "users", {}) or {})
+    for uid, user in users.items():
+        if getattr(user, "role", "viewer") == "viewer":
+            continue
+        owner_key = _inventory_owner_key(session, user)
+        seen.add(owner_key)
+        items = get_player_inventory_for_user(session, uid)
+        payload.append({
+            "owner_key": owner_key,
+            "user_id": uid,
+            "name": getattr(user, "name", "Unknown") or "Unknown",
+            "role": getattr(user, "role", "player"),
+            "active_char_profile_id": str((getattr(session, "active_char_profiles", {}) or {}).get(uid) or ""),
+            "gold": get_player_gold_for_user(session, uid),
+            "items": items,
+        })
+    for owner_key, raw_items in inventories.items():
+        if owner_key == PARTY_STASH_KEY:
+            continue
+        if owner_key in seen:
+            continue
+        items = [entry for entry in (_normalize_inventory_entry(x) for x in list(raw_items or [])) if entry]
+        if not items:
+            continue
+        payload.append({
+            "owner_key": str(owner_key),
+            "user_id": "",
+            "name": str(owner_key).title() or "Unknown",
+            "role": "player",
+            "gold": 0,
+            "items": items,
+        })
+    payload.sort(key=lambda entry: (0 if entry.get("role") == "dm" else 1, str(entry.get("name") or "").lower()))
+    return payload
+
+
+def build_editor_prop_interaction_model(item: dict, role: str) -> dict:
+    raw = dict(item or {})
+    custom_model = normalize_interactable(raw.get("interactable"))
+    if custom_model:
+        return custom_model
+    kind = str(raw.get("kind") or "").strip().lower()
+    normalized_role = str(role or "viewer").strip().lower() or "viewer"
+    is_dm = normalized_role == "dm"
+    is_shop = kind in {"merchant", "store", "tavern", "blacksmith", "market_stall", "inn", "shop", "shop_front"}
+    is_chest = kind == "chest"
+    is_door = kind == "door"
+    hidden = bool(raw.get("hidden")) if kind in {"chest", "merchant", "store", "tavern", "blacksmith", "market_stall", "inn", "shop", "shop_front"} else False
+    actions = []
+
+    if is_chest:
+        actions.append({
+            "id": "open_contents",
+            "label": "Open Chest" if is_dm else "Browse Chest",
+            "intent": "contents",
+            "requires_dm": False,
+            "visible": not hidden or is_dm,
+        })
+        if is_dm:
+            actions.append({
+                "id": "toggle_visibility",
+                "label": "Reveal Chest" if hidden else "Hide Chest",
+                "intent": "visibility",
+                "requires_dm": True,
+                "visible": True,
+            })
+    elif is_shop:
+        actions.append({
+            "id": "open_contents",
+            "label": "Manage Stock" if is_dm else "Browse Stock",
+            "intent": "contents",
+            "requires_dm": False,
+            "visible": not hidden or is_dm,
+        })
+        if is_dm:
+            actions.append({
+                "id": "toggle_visibility",
+                "label": "Reveal Shop" if hidden else "Hide Shop",
+                "intent": "visibility",
+                "requires_dm": True,
+                "visible": True,
+            })
+    elif is_door and is_dm:
+        is_open = str(raw.get("state") or "closed").strip().lower() == "open"
+        is_locked = bool(raw.get("locked"))
+        actions.extend([
+            {
+                "id": "toggle_door",
+                "label": "Close Door" if is_open else "Open Door",
+                "intent": "door_state",
+                "requires_dm": True,
+                "visible": True,
+            },
+            {
+                "id": "toggle_lock",
+                "label": "Unlock Door" if is_locked else "Lock Door",
+                "intent": "door_lock",
+                "requires_dm": True,
+                "visible": True,
+            },
+        ])
+
+    return {
+        "kind": kind or "prop",
+        "role": normalized_role,
+        "hidden_from_players": hidden,
+        "supports_contents": bool(is_chest or is_shop),
+        "supports_shop": bool(is_shop),
+        "supports_door": bool(is_door),
+        "actions": [action for action in actions if action.get("visible")],
+    }
+
+
+def filter_editor_props_for_role(editor_props: dict, role: str) -> dict:
+    data = dict(editor_props or {})
+    filtered: dict = {}
+    for ctx, items in data.items():
+        safe_items = []
+        for item in list(items or []):
+            if not isinstance(item, dict):
+                continue
+            kind = str(item.get("kind") or "").strip().lower()
+            _can_be_hidden = {"chest", "merchant", "store", "tavern", "blacksmith", "market_stall", "inn", "shop"}
+            hidden = bool(item.get("hidden")) if kind in _can_be_hidden else False
+            if role != "dm" and hidden:
+                continue
+            item_copy = dict(item)
+            # Normalize hidden=False for prop kinds that shouldn't be hidden (fix legacy data)
+            if kind not in _can_be_hidden:
+                item_copy["hidden"] = False
+            item_copy["interactable"] = build_editor_prop_interaction_model(item_copy, role)
+            safe_items.append(item_copy)
+        filtered[str(ctx)] = safe_items
+    return filtered
+
+
+# Global session store (Phase 1: in-memory only)
+_sessions: Dict[str, Session] = {}
+
+
+def create_session(dm_name: str) -> tuple[Session, User]:
+    session_id = generate_code(12)
+    session = Session(id=session_id)
+    dm_id = secrets.token_hex(8)
+    dm = User(id=dm_id, name=dm_name, role="dm")
+    session.users[dm_id] = dm
+    session.dm_id = dm_id
+    _sessions[session_id] = session
+    session.add_log(f"{dm_name} created the session as DM.", "system")
+    return session, dm
+
+
+def get_session(session_id: str) -> Optional[Session]:
+    return _sessions.get(session_id)
+
+
+def join_session(session_id: str, invite_code: str, user_name: str, player_key: str = "") -> tuple[Optional[Session], Optional[User], str]:
+    """Returns (session, user, error_message).
+    player_key: stable browser fingerprint — lets returning players reclaim their identity.
+    """
+    session = _sessions.get(session_id)
+    if not session:
+        return None, None, "Session not found."
+
+    invite_code = invite_code.strip().upper()
+    if invite_code == session.player_invite:
+        role = "player"
+    elif invite_code == session.viewer_invite:
+        role = "viewer"
+    else:
+        return None, None, "Invalid invite code."
+
+    # Check if this player is returning (same player_key or same name+role)
+    returning_user = None
+    if player_key:
+        # Match by stable key first
+        returning_user = next(
+            (u for u in session.users.values()
+             if u.role == role and getattr(u, 'player_key', '') == player_key),
+            None
+        )
+    if not returning_user:
+        # Fallback: match by name + role (reconnect by name)
+        returning_user = next(
+            (u for u in session.users.values()
+             if u.role == role and u.name.lower() == user_name.lower() and not u.connected),
+            None
+        )
+
+    if returning_user:
+        returning_user.connected = False  # will be set True on WS connect
+        session.add_log(f"{returning_user.name} returned to the session.", "system")
+        return session, returning_user, ""
+
+    # New player
+    user_id = secrets.token_hex(8)
+    user = User(id=user_id, name=user_name, role=role)
+    if player_key:
+        user.player_key = player_key
+    session.users[user_id] = user
+    return session, user, ""
+
+
+def create_token(session: Session, dm_id: str, name: str, x: float, y: float,
+                 color: str = "#e74c3c", shape: str = "circle",
+                 width: float = 40, height: float = 40,
+                 owner_id: Optional[str] = None,
+             hp: Optional[int] = None,
+             max_hp: Optional[int] = None,
+             temp_hp: int = 0,
+             hidden_hp: bool = False,
+             hidden: bool = False,
+             initiative_mod: int = 0,
+             ac: Optional[int] = None,
+             speed: Optional[int] = None,
+             token_type: str = "player",
+             notes: str = "",
+             conditions: list = None,
+             condition_timers: dict | None = None,
+             level: Optional[int] = None,
+             faction: str = "",
+             passive_perception: Optional[int] = None,
+             map_context: str = "world",
+             staged: bool = False,
+             image_url: Optional[str] = None,
+             save_bonuses: dict | None = None,
+             vision_enabled: bool = False,
+             vision_radius: int = 0,
+             bright_radius: int = 0,
+             dim_radius: int = 0,
+             has_darkvision: bool = False,
+             darkvision_radius: int = 0,
+             creature_id: str = "",
+             creature_type: str = "",
+             monster_type: str = "",
+             cr: str = "") -> Token:
+    token_id = secrets.token_hex(6)
+    token = Token(
+        id=token_id, name=name, x=x, y=y,
+        width=width, height=height, color=color,
+        shape=shape, owner_id=owner_id, hp=hp, max_hp=max_hp, temp_hp=int(temp_hp or 0), hidden_hp=hidden_hp, hidden=hidden, initiative_mod=int(initiative_mod or 0), ac=(int(ac) if ac is not None else None), speed=(int(speed) if speed is not None else None), token_type=str(token_type or "player"), notes=str(notes or "")[:2000], conditions=list(conditions or []), condition_timers=dict(condition_timers or {}), level=(int(level) if level is not None else None), faction=str(faction or "")[:100], passive_perception=(int(passive_perception) if passive_perception is not None else None), map_context=map_context, staged=staged, image_url=(str(image_url or "")[:300] or None), save_bonuses=dict(save_bonuses or {}), vision_enabled=bool(vision_enabled), vision_radius=max(0, int(vision_radius or 0)), bright_radius=max(0, int(bright_radius or 0)), dim_radius=max(0, int(dim_radius or 0)), has_darkvision=bool(has_darkvision), darkvision_radius=max(0, int(darkvision_radius or 0)), creature_id=str(creature_id or "")[:120], creature_type=str(creature_type or "")[:40], monster_type=str(monster_type or "")[:60], cr=str(cr or "")[:16],
+    )
+    session.tokens[token_id] = token
+    return token
+
+
+def grant_temp_permission(session: Session, token_id: str, user_id: str, duration: int = 30) -> bool:
+    token = session.tokens.get(token_id)
+    if not token:
+        return False
+    token.temp_permissions[user_id] = time.time() + duration
+    return True

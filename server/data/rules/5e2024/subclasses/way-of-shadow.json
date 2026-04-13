@@ -1,0 +1,166 @@
+{
+  "id": "way-of-shadow",
+  "displayName": "Way of Shadow",
+  "classId": "monk",
+  "parentClassId": "monk",
+  "flavorText": "Shadow monks blend stealth, mobility, and battlefield misdirection into a disciplined martial path.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "shadow-shadow-arts"
+    ],
+    "6": [
+      "shadow-shadow-step"
+    ],
+    "11": [
+      "shadow-cloak-of-shadows"
+    ],
+    "17": [
+      "shadow-opportunist"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "shadow-shadow-arts",
+      "displayName": "Shadow Arts",
+      "description": "You learn to spend focus on stealthy tricks, darkness control, and mobility magic so the subclass feels like a true infiltrator instead of only an unarmed striker."
+    },
+    {
+      "level": 6,
+      "id": "shadow-shadow-step",
+      "displayName": "Shadow Step",
+      "description": "As a bonus action, you move between patches of dim light or darkness, letting you reposition hard and threaten angles other characters cannot safely take."
+    },
+    {
+      "level": 11,
+      "id": "shadow-cloak-of-shadows",
+      "displayName": "Cloak of Shadows",
+      "description": "When the light is in your favor, you can vanish from sight and break enemy targeting lines before striking from a safer position."
+    },
+    {
+      "level": 17,
+      "id": "shadow-opportunist",
+      "displayName": "Opportunist",
+      "description": "When another creature leaves an opening, you answer instantly with a punishing reaction attack, rewarding team coordination and battlefield awareness."
+    }
+  ],
+  "featureDefinitions": {
+    "shadow-shadow-arts": {
+      "id": "shadow-shadow-arts",
+      "displayName": "Shadow Arts",
+      "name": "Shadow Arts",
+      "summary": "Spend focus on stealth, darkness, and infiltration tricks that make the monk feel like a true shadow operative.",
+      "description": "You learn to spend focus on stealthy tricks, darkness control, and mobility magic so the subclass feels like a true infiltrator instead of only an unarmed striker.\n\nShadow Arts is the opening identity statement for the Way of Shadow. It matters because it gives the monk non-standard tools for map access, stealth setups, and disappearing from obvious lines.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 3,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "Focus Points",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "monk",
+        "stealth",
+        "magic"
+      ],
+      "sourceKind": "subclass",
+      "className": "Monk",
+      "subclassName": "Way of Shadow",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "shadow-shadow-step": {
+      "id": "shadow-shadow-step",
+      "displayName": "Shadow Step",
+      "name": "Shadow Step",
+      "summary": "Teleport through dim light or darkness so your positioning becomes a weapon in its own right.",
+      "description": "As a bonus action, you move between patches of dim light or darkness, letting you reposition hard and threaten angles other characters cannot safely take.\n\nShadow Step is one of the subclass’s biggest tactical spikes. It should feel like a premium ambush and escape button rather than a tiny mobility note.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 6,
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "monk",
+        "stealth",
+        "mobility"
+      ],
+      "sourceKind": "subclass",
+      "className": "Monk",
+      "subclassName": "Way of Shadow",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "shadow-cloak-of-shadows": {
+      "id": "shadow-cloak-of-shadows",
+      "displayName": "Cloak of Shadows",
+      "name": "Cloak of Shadows",
+      "summary": "Slip out of sight through shadow, trickery, or disciplined stillness when visibility itself is the problem.",
+      "description": "When the light is in your favor, you can vanish from sight and break enemy targeting lines before striking from a safer position.\n\nCloak of Shadows is about vanishing at the right moment to break targeting, reposition, or set up a better next turn. The exact expression depends on the subclass, but it should always feel like a real stealth-state button.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 11,
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "monk",
+        "stealth",
+        "defense"
+      ],
+      "sourceKind": "subclass",
+      "className": "Monk",
+      "subclassName": "Way of Shadow",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "When the light is in your favor",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "shadow-opportunist": {
+      "id": "shadow-opportunist",
+      "displayName": "Opportunist",
+      "name": "Opportunist",
+      "summary": "When another creature creates an opening, you strike immediately and punish the lapse.",
+      "description": "When another creature leaves an opening, you answer instantly with a punishing reaction attack, rewarding team coordination and battlefield awareness.\n\nOpportunist rewards attention and team sequencing. It should appear as a real reaction option so the player can capitalize on ally-created openings.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 17,
+      "section": "Reactions",
+      "type": "reaction",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "monk",
+        "stealth",
+        "reaction",
+        "combat"
+      ],
+      "sourceKind": "subclass",
+      "className": "Monk",
+      "subclassName": "Way of Shadow",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "When another creature leaves an opening",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    }
+  }
+}

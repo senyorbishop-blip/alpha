@@ -1,0 +1,425 @@
+{
+  "category": "general",
+  "feats": [
+    {
+      "id": "actor",
+      "displayName": "Actor",
+      "prerequisite": null,
+      "description": "Skilled at mimicry and dramatics. Gain +1 CHA. You have Advantage on Deception and Performance checks when trying to pass yourself off as a different person, and you can mimic speech or sounds after hearing them for at least 1 minute.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "athlete",
+      "displayName": "Athlete",
+      "prerequisite": null,
+      "description": "Gain +1 STR or DEX. Standing from prone costs only 5 feet of movement, climbing no longer costs extra movement, and you can make a running long jump or high jump after moving only 5 feet.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "charger",
+      "displayName": "Charger",
+      "prerequisite": null,
+      "description": "Gain +1 STR or DEX. When you take the Dash action, your movement does not provoke opportunity attacks from the creature you attack this turn, and if you move at least 10 feet straight before a melee hit you can add 1d8 damage or push the target 10 feet.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "chef",
+      "displayName": "Chef",
+      "prerequisite": null,
+      "description": "Gain +1 CON or WIS. You gain proficiency with Cook's Utensils. During a Short Rest you can cook treats equal to your proficiency bonus; a creature can eat one as a Bonus Action to gain temporary HP equal to your proficiency bonus.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "crossbow-expert",
+      "displayName": "Crossbow Expert",
+      "prerequisite": null,
+      "description": "Crossbow Expert: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "crusher",
+      "displayName": "Crusher",
+      "prerequisite": null,
+      "description": "Crusher: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "defensive-duelist",
+      "displayName": "Defensive Duelist",
+      "prerequisite": null,
+      "description": "Defensive Duelist: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "dual-wielder",
+      "displayName": "Dual Wielder",
+      "prerequisite": null,
+      "description": "Dual Wielder: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "dungeon-delver",
+      "displayName": "Dungeon Delver",
+      "prerequisite": null,
+      "description": "Dungeon Delver: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "durable",
+      "displayName": "Durable",
+      "prerequisite": null,
+      "description": "Durable: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "elemental-adept",
+      "displayName": "Elemental Adept",
+      "prerequisite": null,
+      "description": "Elemental Adept: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "fey-touched",
+      "displayName": "Fey Touched",
+      "prerequisite": null,
+      "description": "Fey Touched: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "grappler",
+      "displayName": "Grappler",
+      "prerequisite": null,
+      "description": "Grappler: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "great-weapon-master",
+      "displayName": "Great Weapon Master",
+      "prerequisite": null,
+      "description": "Great Weapon Master: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "gunner",
+      "displayName": "Gunner",
+      "prerequisite": null,
+      "description": "Gunner: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "inspiring-leader",
+      "displayName": "Inspiring Leader",
+      "prerequisite": null,
+      "description": "Inspiring Leader: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "keen-mind",
+      "displayName": "Keen Mind",
+      "prerequisite": null,
+      "description": "Keen Mind: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "lightly-armored",
+      "displayName": "Lightly Armored",
+      "prerequisite": null,
+      "description": "Lightly Armored: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "linguist",
+      "displayName": "Linguist",
+      "prerequisite": null,
+      "description": "Linguist: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "mage-slayer",
+      "displayName": "Mage Slayer",
+      "prerequisite": null,
+      "description": "Mage Slayer: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "martial-adept",
+      "displayName": "Martial Adept",
+      "prerequisite": null,
+      "description": "Martial Adept: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "medium-armor-master",
+      "displayName": "Medium Armor Master",
+      "prerequisite": null,
+      "description": "Medium Armor Master: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "mobile",
+      "displayName": "Mobile",
+      "prerequisite": null,
+      "description": "Mobile: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "moderately-armored",
+      "displayName": "Moderately Armored",
+      "prerequisite": null,
+      "description": "Moderately Armored: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "mounted-combatant",
+      "displayName": "Mounted Combatant",
+      "prerequisite": null,
+      "description": "Mounted Combatant: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "observant",
+      "displayName": "Observant",
+      "prerequisite": null,
+      "description": "Observant: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "piercer",
+      "displayName": "Piercer",
+      "prerequisite": null,
+      "description": "Piercer: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "polearm-master",
+      "displayName": "Polearm Master",
+      "prerequisite": null,
+      "description": "Polearm Master: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "resilient",
+      "displayName": "Resilient",
+      "prerequisite": null,
+      "description": "Resilient: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "ritual-caster",
+      "displayName": "Ritual Caster",
+      "prerequisite": null,
+      "description": "Ritual Caster: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "sentinel",
+      "displayName": "Sentinel",
+      "prerequisite": null,
+      "description": "Sentinel: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "shadow-touched",
+      "displayName": "Shadow Touched",
+      "prerequisite": null,
+      "description": "Shadow Touched: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "sharpshooter",
+      "displayName": "Sharpshooter",
+      "prerequisite": null,
+      "description": "Sharpshooter: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "shield-master",
+      "displayName": "Shield Master",
+      "prerequisite": null,
+      "description": "Shield Master: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "skill-expert",
+      "displayName": "Skill Expert",
+      "prerequisite": null,
+      "description": "Skill Expert: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "slasher",
+      "displayName": "Slasher",
+      "prerequisite": null,
+      "description": "Slasher: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "speedy",
+      "displayName": "Speedy",
+      "prerequisite": null,
+      "description": "Speedy: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "spell-sniper",
+      "displayName": "Spell Sniper",
+      "prerequisite": null,
+      "description": "Spell Sniper: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "telekinetic",
+      "displayName": "Telekinetic",
+      "prerequisite": null,
+      "description": "Telekinetic: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "telepathic",
+      "displayName": "Telepathic",
+      "prerequisite": null,
+      "description": "Telepathic: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "war-caster",
+      "displayName": "War Caster",
+      "prerequisite": null,
+      "description": "War Caster: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "weapon-master",
+      "displayName": "Weapon Master",
+      "prerequisite": null,
+      "description": "Weapon Master: Gain a +1 ability increase where noted and the feat's listed combat or utility benefits per 2024 PHB rules text.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    }
+  ]
+}

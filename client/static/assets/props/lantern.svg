@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#0d0900" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+<g filter="url(#shadow)">
+<line x1="64" y1="8" x2="64" y2="22" stroke="#4a4a55" stroke-width="3"/>
+<circle cx="64" cy="10" r="5" fill="#4a4a55" stroke="#2a1f0e" stroke-width="2"/>
+<circle cx="64" cy="22" r="7" fill="#4a4a55" stroke="#2a1f0e" stroke-width="3"/>
+<polygon points="46,26 82,26 88,36 40,36" fill="#4a4a55" stroke="#2a1f0e" stroke-width="2"/>
+<polygon points="40,36 88,36 92,88 36,88" fill="#ffe05a" stroke="#2a1f0e" stroke-width="2"/>
+<line x1="40" y1="36" x2="36" y2="88" stroke="#4a4a55" stroke-width="2"/>
+<line x1="88" y1="36" x2="92" y2="88" stroke="#4a4a55" stroke-width="2"/>
+<line x1="64" y1="36" x2="64" y2="88" stroke="#4a4a55" stroke-width="2"/>
+<line x1="38" y1="62" x2="90" y2="62" stroke="#4a4a55" stroke-width="2"/>
+<polygon points="36,88 92,88 86,100 42,100" fill="#4a4a55" stroke="#2a1f0e" stroke-width="2"/>
+<circle cx="54" cy="94" r="3" fill="#5a3614" stroke="none" stroke-width="2"/>
+<circle cx="64" cy="94" r="3" fill="#5a3614" stroke="none" stroke-width="2"/>
+<circle cx="74" cy="94" r="3" fill="#5a3614" stroke="none" stroke-width="2"/>
+<polygon points="64,40 74,68 64,60 54,68" fill="#f08030" stroke="none" stroke-width="2"/>
+<polygon points="64,40 71,62 64,55" fill="#ffe05a" stroke="none" stroke-width="2"/>
+<polygon points="42,38 60,38 58,60 40,60" fill="rgba(255,240,100,0.18)" stroke="none" stroke-width="2"/>
+</g>
+</svg>

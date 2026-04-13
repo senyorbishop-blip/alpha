@@ -1,0 +1,886 @@
+{
+  "id": "tinker",
+  "displayName": "Tinker",
+  "hitDie": 8,
+  "primaryAbilities": [
+    "int",
+    "dex"
+  ],
+  "savingThrows": [
+    "con",
+    "int"
+  ],
+  "subclassLevel": 3,
+  "subclassDisplayName": "Field Specialization",
+  "armorProficiencies": [
+    "light",
+    "medium",
+    "shields"
+  ],
+  "weaponProficiencies": [
+    "simple"
+  ],
+  "toolProficiencies": [
+    "tinkers-tools",
+    "thieves-tools",
+    "alchemists-supplies"
+  ],
+  "skillChoices": {
+    "count": 2,
+    "from": [
+      "Arcana",
+      "History",
+      "Investigation",
+      "Medicine",
+      "Nature",
+      "Perception",
+      "Sleight of Hand"
+    ]
+  },
+  "startingEquipmentChoices": [],
+  "spellcastingType": "half",
+  "spellcastingAbility": "int",
+  "spellSlots": {
+    "1": {
+      "1st": 2
+    },
+    "2": {
+      "1st": 2
+    },
+    "3": {
+      "1st": 3
+    },
+    "4": {
+      "1st": 3
+    },
+    "5": {
+      "1st": 4,
+      "2nd": 2
+    },
+    "6": {
+      "1st": 4,
+      "2nd": 2
+    },
+    "7": {
+      "1st": 4,
+      "2nd": 3
+    },
+    "8": {
+      "1st": 4,
+      "2nd": 3
+    },
+    "9": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 2
+    },
+    "10": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 2
+    },
+    "11": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3
+    },
+    "12": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3
+    },
+    "13": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 1
+    },
+    "14": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 1
+    },
+    "15": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 2
+    },
+    "16": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 2
+    },
+    "17": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 1
+    },
+    "18": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 1
+    },
+    "19": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2
+    },
+    "20": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2
+    }
+  },
+  "classDescription": "An inventive engineer who solves problems with devices, formulae, deployables, and battlefield improvisation.",
+  "roleIdentity": "Intelligence-based half-caster who mixes support, control, utility, and deployable gadget play.",
+  "progressionTable": [
+    {
+      "level": 1,
+      "proficiencyBonus": 2,
+      "features": [
+        "Tinkercraft",
+        "Prototype Rig",
+        "Spellcasting"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 2,
+        "spellsKnown": 2,
+        "gadgetCharges": 2,
+        "infusionSlots": 0
+      },
+      "unlockIds": [
+        "tinker-tinkercraft",
+        "tinker-prototype-rig",
+        "tinker-spellcasting"
+      ]
+    },
+    {
+      "level": 2,
+      "proficiencyBonus": 2,
+      "features": [
+        "Quick Deployment",
+        "Tool Expertise"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 2,
+        "spellsKnown": 3,
+        "gadgetCharges": 2,
+        "infusionSlots": 2
+      },
+      "unlockIds": [
+        "tinker-quick-deployment",
+        "tinker-tool-expertise"
+      ]
+    },
+    {
+      "level": 3,
+      "proficiencyBonus": 2,
+      "features": [
+        "Field Specialization (Subclass)",
+        "Specialty Spells"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 2,
+        "spellsKnown": 4,
+        "gadgetCharges": 3,
+        "infusionSlots": 2
+      },
+      "unlockIds": [
+        "tinker-field-specialization-subclass",
+        "tinker-specialty-spells"
+      ]
+    },
+    {
+      "level": 4,
+      "proficiencyBonus": 2,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 2,
+        "spellsKnown": 5,
+        "gadgetCharges": 3,
+        "infusionSlots": 2
+      },
+      "unlockIds": [
+        "tinker-ability-score-improvement"
+      ],
+      "asiOrFeat": true
+    },
+    {
+      "level": 5,
+      "proficiencyBonus": 3,
+      "features": [
+        "Overclocked Device"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 2,
+        "spellsKnown": 6,
+        "gadgetCharges": 3,
+        "infusionSlots": 3
+      },
+      "unlockIds": [
+        "tinker-overclocked-device"
+      ]
+    },
+    {
+      "level": 6,
+      "proficiencyBonus": 3,
+      "features": [
+        "Modular Infusions"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 2,
+        "spellsKnown": 6,
+        "gadgetCharges": 4,
+        "infusionSlots": 3
+      },
+      "unlockIds": [
+        "tinker-modular-infusions"
+      ]
+    },
+    {
+      "level": 7,
+      "proficiencyBonus": 3,
+      "features": [
+        "Reactive Countermeasure"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 2,
+        "spellsKnown": 7,
+        "gadgetCharges": 4,
+        "infusionSlots": 3
+      },
+      "unlockIds": [
+        "tinker-reactive-countermeasure"
+      ]
+    },
+    {
+      "level": 8,
+      "proficiencyBonus": 3,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 2,
+        "spellsKnown": 8,
+        "gadgetCharges": 4,
+        "infusionSlots": 3
+      },
+      "unlockIds": [
+        "tinker-ability-score-improvement"
+      ],
+      "asiOrFeat": true
+    },
+    {
+      "level": 9,
+      "proficiencyBonus": 4,
+      "features": [
+        "Improved Rig"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 2,
+        "spellsKnown": 9,
+        "gadgetCharges": 5,
+        "infusionSlots": 4
+      },
+      "unlockIds": [
+        "tinker-improved-rig"
+      ]
+    },
+    {
+      "level": 10,
+      "proficiencyBonus": 4,
+      "features": [
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsKnown": 10,
+        "gadgetCharges": 5,
+        "infusionSlots": 4
+      },
+      "unlockIds": [
+        "tinker-subclass-feature"
+      ]
+    },
+    {
+      "level": 11,
+      "proficiencyBonus": 4,
+      "features": [
+        "Signature Device"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsKnown": 10,
+        "gadgetCharges": 5,
+        "infusionSlots": 4
+      },
+      "unlockIds": [
+        "tinker-signature-device"
+      ]
+    },
+    {
+      "level": 12,
+      "proficiencyBonus": 4,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsKnown": 11,
+        "gadgetCharges": 5,
+        "infusionSlots": 4
+      },
+      "unlockIds": [
+        "tinker-ability-score-improvement"
+      ],
+      "asiOrFeat": true
+    },
+    {
+      "level": 13,
+      "proficiencyBonus": 5,
+      "features": [
+        "Emergency Repairs"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsKnown": 12,
+        "gadgetCharges": 6,
+        "infusionSlots": 5
+      },
+      "unlockIds": [
+        "tinker-emergency-repairs"
+      ]
+    },
+    {
+      "level": 14,
+      "proficiencyBonus": 5,
+      "features": [
+        "Masterwork Infusions"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsKnown": 12,
+        "gadgetCharges": 6,
+        "infusionSlots": 5
+      },
+      "unlockIds": [
+        "tinker-masterwork-infusions"
+      ]
+    },
+    {
+      "level": 15,
+      "proficiencyBonus": 5,
+      "features": [
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsKnown": 13,
+        "gadgetCharges": 6,
+        "infusionSlots": 5
+      },
+      "unlockIds": [
+        "tinker-subclass-feature"
+      ]
+    },
+    {
+      "level": 16,
+      "proficiencyBonus": 5,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsKnown": 14,
+        "gadgetCharges": 6,
+        "infusionSlots": 5
+      },
+      "unlockIds": [
+        "tinker-ability-score-improvement"
+      ],
+      "asiOrFeat": true
+    },
+    {
+      "level": 17,
+      "proficiencyBonus": 6,
+      "features": [
+        "Overcharge"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 14,
+        "gadgetCharges": 7,
+        "infusionSlots": 6
+      },
+      "unlockIds": [
+        "tinker-overcharge"
+      ]
+    },
+    {
+      "level": 18,
+      "proficiencyBonus": 6,
+      "features": [
+        "Dual Deployment"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 15,
+        "gadgetCharges": 7,
+        "infusionSlots": 6
+      },
+      "unlockIds": [
+        "tinker-dual-deployment"
+      ]
+    },
+    {
+      "level": 19,
+      "proficiencyBonus": 6,
+      "features": [
+        "Epic Boon"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 15,
+        "gadgetCharges": 7,
+        "infusionSlots": 6
+      },
+      "unlockIds": [
+        "tinker-epic-boon"
+      ],
+      "asiOrFeat": true
+    },
+    {
+      "level": 20,
+      "proficiencyBonus": 6,
+      "features": [
+        "Grand Invention"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 16,
+        "gadgetCharges": 8,
+        "infusionSlots": 6
+      },
+      "unlockIds": [
+        "tinker-grand-invention"
+      ]
+    }
+  ],
+  "featureDefinitions": {
+    "tinker-tinkercraft": {
+      "summary": "Turn tools, scraps, and practical engineering into dependable field solutions.",
+      "description": "Tinkercraft is the class foundation. You are not casting like a scholar or praying like a priest; you solve problems by building, calibrating, patching, and re-routing devices in the middle of the adventure. In play, this should feel like you always have a practical answer close at hand, whether that answer is utility, control, protection, or clever positioning.",
+      "tags": [
+        "core",
+        "utility",
+        "crafting"
+      ]
+    },
+    "tinker-prototype-rig": {
+      "summary": "Carry a configurable rig of tools, housings, and active modules that defines your battlefield presence.",
+      "description": "Your Prototype Rig is the hardware backbone of the class. It represents the gauntlet, backpack, satchel, drone frame, alchemical harness, or collapsible toolkit you fight through. The rig is where your infusions, specialty modules, and quick deployments live, so it should read like real loadout identity on the sheet.",
+      "effect": "Enables specialty modules, rig upgrades, and deployable-style class play.",
+      "tags": [
+        "core",
+        "loadout",
+        "equipment"
+      ]
+    },
+    "tinker-spellcasting": {
+      "summary": "Use prepared formulae, calibrated tools, and device housings to produce repeatable magical effects.",
+      "description": "Tinker spellcasting is practical magic expressed through engineering. Your spells are formulae, cartridges, brews, emitters, and tuned devices rather than purely academic gestures. The sheet should present these as reliable tools in a kit, with Intelligence driving the quality of your work.",
+      "tags": [
+        "spellcasting",
+        "intelligence",
+        "core"
+      ]
+    },
+    "tinker-quick-deployment": {
+      "summary": "Deploy or swap a prepared device fast enough to matter once initiative starts.",
+      "description": "Quick Deployment is the first real tempo feature of the class. It pushes the Tinker away from slow prep-only fantasy and into active combat problem-solving by letting you get a rig, charge, or deployable online without losing your whole turn.",
+      "type": "bonus action",
+      "tags": [
+        "tempo",
+        "combat",
+        "bonus-action"
+      ]
+    },
+    "tinker-tool-expertise": {
+      "summary": "Your hands know the job\u2014tools become a real source of advantage and party utility.",
+      "description": "Tool Expertise makes your proficiencies meaningful. The class should feel like the party member who can bypass locks, stabilize damaged gear, identify the right part, and improvise a solution when everyone else is stuck.",
+      "tags": [
+        "utility",
+        "skills",
+        "tools"
+      ]
+    },
+    "tinker-field-specialization-subclass": {
+      "summary": "Choose the engineering discipline that shapes how your rig fights and supports the party.",
+      "description": "At 3rd level you commit to a field specialization. This is your subclass moment and it should sharply change your action cards, granted spells, and battlefield identity.",
+      "tags": [
+        "subclass",
+        "choice"
+      ]
+    },
+    "tinker-specialty-spells": {
+      "summary": "Your specialization unlocks a curated list of always-ready formulae that match your engineering discipline.",
+      "description": "Specialty spells do not just pad your list; they define your lane. Artillerists should feel explosive, Alchemists adaptive, Mechanists methodical, and Saboteurs surgical.",
+      "tags": [
+        "subclass",
+        "spellcasting"
+      ]
+    },
+    "tinker-ability-score-improvement": {
+      "summary": "Improve your key stats or take a feat to sharpen your engineering style.",
+      "tags": [
+        "progression",
+        "feat"
+      ]
+    },
+    "tinker-overclocked-device": {
+      "summary": "Push a device beyond safe tolerances for a stronger burst of offense, protection, or reach.",
+      "description": "Overclocked Device is a signature mid-tier Tinker move. You deliberately stress a module to get more out of it right now, accepting the fantasy that your gear is powerful because you know exactly how far you can push it before it fails.",
+      "resourceName": "Gadget Charges",
+      "trackUses": true,
+      "tags": [
+        "combat",
+        "resource",
+        "burst"
+      ]
+    },
+    "tinker-modular-infusions": {
+      "summary": "Maintain more tuned upgrades at once so your rig evolves with the day\u2019s challenges.",
+      "description": "Modular Infusions expands your passive engineering footprint. By this point the class should feel like it brings a real pre-combat loadout puzzle to the table, not just a list of spells.",
+      "tags": [
+        "loadout",
+        "passive",
+        "crafting"
+      ]
+    },
+    "tinker-reactive-countermeasure": {
+      "summary": "Answer incoming danger with a prepared defensive trick, interruption, or stabilizing tool.",
+      "description": "Reactive Countermeasure is your defensive identity check. When pressure spikes, you answer with a shield pulse, emergency patch, flash charge, or similar response instead of just absorbing the hit.",
+      "type": "reaction",
+      "tags": [
+        "reaction",
+        "defense",
+        "combat"
+      ]
+    },
+    "tinker-improved-rig": {
+      "summary": "Your rig becomes tougher, smarter, and better at holding multiple combat-ready solutions at once.",
+      "tags": [
+        "equipment",
+        "upgrade",
+        "passive"
+      ]
+    },
+    "tinker-subclass-feature": {
+      "summary": "Your specialization deepens with a more advanced module, formula package, or combat behavior.",
+      "tags": [
+        "subclass",
+        "progression"
+      ]
+    },
+    "tinker-signature-device": {
+      "summary": "Build one flagship tool that represents your best work and anchors your turn-to-turn identity.",
+      "description": "A Signature Device should feel like the class equivalent of a legendary technique: a trusted turret core, mutagen injector, scout frame, or sabotage engine that players recognize as the center of the build.",
+      "tags": [
+        "signature",
+        "combat",
+        "identity"
+      ]
+    },
+    "tinker-emergency-repairs": {
+      "summary": "Keep allies, gear, or constructs in the fight with rapid battlefield repair work.",
+      "description": "Emergency Repairs widens your support identity and lets the class recover value in messy fights where ordinary healing or maintenance would be too slow.",
+      "tags": [
+        "support",
+        "repair",
+        "utility"
+      ]
+    },
+    "tinker-masterwork-infusions": {
+      "summary": "Your upgrades become polished, efficient, and worth shaping a whole build around.",
+      "tags": [
+        "upgrade",
+        "passive",
+        "crafting"
+      ]
+    },
+    "tinker-overcharge": {
+      "summary": "Spend deep reserves to unleash a dramatic, high-output version of one of your devices.",
+      "description": "Overcharge is your late-game burst switch. It is the moment where a Tinker stops feeling like a careful problem-solver and briefly feels like a controlled disaster aimed in the party\u2019s favor.",
+      "resourceName": "Gadget Charges",
+      "trackUses": true,
+      "tags": [
+        "burst",
+        "resource",
+        "late-game"
+      ]
+    },
+    "tinker-dual-deployment": {
+      "summary": "Run two meaningful device states or battlefield tools at once without collapsing your action economy.",
+      "tags": [
+        "tempo",
+        "loadout",
+        "high-level"
+      ]
+    },
+    "tinker-epic-boon": {
+      "summary": "Gain a final feat-style capstone upgrade from the epic boon layer.",
+      "tags": [
+        "progression",
+        "epic"
+      ]
+    },
+    "tinker-grand-invention": {
+      "summary": "Complete a masterpiece of engineering that makes the whole class fantasy peak at level 20.",
+      "description": "Grand Invention should read like the culmination of everything the class stands for: layered preparation, practical genius, and a machine or formula that changes encounters when it comes online.",
+      "tags": [
+        "capstone",
+        "identity",
+        "engineering"
+      ]
+    }
+  },
+  "levelUnlockIds": {
+    "1": [
+      "tinker-l1-1",
+      "tinker-l1-2",
+      "tinker-l1-3"
+    ],
+    "2": [
+      "tinker-l2-1",
+      "tinker-l2-2"
+    ],
+    "3": [
+      "tinker-l3-1",
+      "tinker-l3-2"
+    ],
+    "4": [
+      "tinker-l4-1"
+    ],
+    "5": [
+      "tinker-l5-1"
+    ],
+    "6": [
+      "tinker-l6-1"
+    ],
+    "7": [
+      "tinker-l7-1"
+    ],
+    "8": [
+      "tinker-l8-1"
+    ],
+    "9": [
+      "tinker-l9-1"
+    ],
+    "10": [
+      "tinker-l10-1"
+    ],
+    "11": [
+      "tinker-l11-1"
+    ],
+    "12": [
+      "tinker-l12-1"
+    ],
+    "13": [
+      "tinker-l13-1"
+    ],
+    "14": [
+      "tinker-l14-1"
+    ],
+    "15": [
+      "tinker-l15-1"
+    ],
+    "16": [
+      "tinker-l16-1"
+    ],
+    "17": [
+      "tinker-l17-1"
+    ],
+    "18": [
+      "tinker-l18-1"
+    ],
+    "19": [
+      "tinker-l19-1"
+    ],
+    "20": [
+      "tinker-l20-1"
+    ]
+  },
+  "progressionSummary": [
+    {
+      "level": 1,
+      "summary": "Tinkercraft, Prototype Rig, Spellcasting.",
+      "unlockIds": [
+        "tinker-l1-1",
+        "tinker-l1-2",
+        "tinker-l1-3"
+      ]
+    },
+    {
+      "level": 2,
+      "summary": "Quick Deployment, Tool Expertise.",
+      "unlockIds": [
+        "tinker-l2-1",
+        "tinker-l2-2"
+      ]
+    },
+    {
+      "level": 3,
+      "summary": "Field Specialization (Subclass), Specialty Spells.",
+      "unlockIds": [
+        "tinker-l3-1",
+        "tinker-l3-2"
+      ]
+    },
+    {
+      "level": 4,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "tinker-l4-1"
+      ]
+    },
+    {
+      "level": 5,
+      "summary": "Overclocked Device.",
+      "unlockIds": [
+        "tinker-l5-1"
+      ]
+    },
+    {
+      "level": 6,
+      "summary": "Modular Infusions.",
+      "unlockIds": [
+        "tinker-l6-1"
+      ]
+    },
+    {
+      "level": 7,
+      "summary": "Reactive Countermeasure.",
+      "unlockIds": [
+        "tinker-l7-1"
+      ]
+    },
+    {
+      "level": 8,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "tinker-l8-1"
+      ]
+    },
+    {
+      "level": 9,
+      "summary": "Improved Rig.",
+      "unlockIds": [
+        "tinker-l9-1"
+      ]
+    },
+    {
+      "level": 10,
+      "summary": "Subclass Feature.",
+      "unlockIds": [
+        "tinker-l10-1"
+      ]
+    },
+    {
+      "level": 11,
+      "summary": "Signature Device.",
+      "unlockIds": [
+        "tinker-l11-1"
+      ]
+    },
+    {
+      "level": 12,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "tinker-l12-1"
+      ]
+    },
+    {
+      "level": 13,
+      "summary": "Emergency Repairs.",
+      "unlockIds": [
+        "tinker-l13-1"
+      ]
+    },
+    {
+      "level": 14,
+      "summary": "Masterwork Infusions.",
+      "unlockIds": [
+        "tinker-l14-1"
+      ]
+    },
+    {
+      "level": 15,
+      "summary": "Subclass Feature.",
+      "unlockIds": [
+        "tinker-l15-1"
+      ]
+    },
+    {
+      "level": 16,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "tinker-l16-1"
+      ]
+    },
+    {
+      "level": 17,
+      "summary": "Overcharge.",
+      "unlockIds": [
+        "tinker-l17-1"
+      ]
+    },
+    {
+      "level": 18,
+      "summary": "Dual Deployment.",
+      "unlockIds": [
+        "tinker-l18-1"
+      ]
+    },
+    {
+      "level": 19,
+      "summary": "Epic Boon.",
+      "unlockIds": [
+        "tinker-l19-1"
+      ]
+    },
+    {
+      "level": 20,
+      "summary": "Grand Invention.",
+      "unlockIds": [
+        "tinker-l20-1"
+      ]
+    }
+  ],
+  "future": {
+    "talentGroupId": "tinker-core-talents",
+    "awakeningHookIds": [
+      "tinker-awakening-masterwork"
+    ]
+  },
+  "buildTips": {
+    "primaryFocus": "Intelligence",
+    "primaryReason": "powers your gadgets, spell attacks, and engineering checks",
+    "secondaryFocus": "Constitution",
+    "secondaryReason": "keeps you upright while you operate in the danger zone",
+    "avoidDump": "Dexterity",
+    "avoidDumpReason": "you still care about initiative, AC, and precise field work"
+  }
+}

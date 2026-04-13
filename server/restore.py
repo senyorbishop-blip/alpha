@@ -1,0 +1,225 @@
+"""
+server/restore.py — Rebuild in-memory Session objects from persisted DB data.
+
+This module is used when the server restarts or a WS client connects to a session
+that is no longer in the in-memory store.
+"""
+import secrets
+from server.session import _sessions, Session, Token, User, POI, normalize_interactable
+from server.map_document import build_map_documents_from_session, hydrate_session_from_map_documents
+from server.persistence_schema import normalize_persisted_campaign_data
+from server.quest_progression import resolve_session_quest_progression
+
+
+def _valid_map_contexts(session: Session) -> set[str]:
+    contexts = {"world"}
+    contexts.update(str(k or "").strip() for k in (getattr(session, "pois", {}) or {}).keys())
+    contexts.update(str(k or "").strip() for k in (getattr(session, "map_documents", {}) or {}).keys())
+    contexts.discard("")
+    return contexts
+
+
+def _normalize_token_map_context(session: Session, raw_ctx) -> str:
+    ctx = str(raw_ctx or "world").strip()[:80] or "world"
+    return ctx if ctx in _valid_map_contexts(session) else "world"
+
+
+def _normalize_restored_dm_map_state(session: Session, data: dict) -> None:
+    raw_ctx = str(data.get("dm_map_context") or "world").strip()[:80] or "world"
+    if raw_ctx != "world":
+        pois = dict(getattr(session, "pois", {}) or {})
+        docs = dict(getattr(session, "map_documents", {}) or {})
+        if raw_ctx not in pois and raw_ctx not in docs:
+            raw_ctx = "world"
+
+    if raw_ctx == "world":
+        session.dm_map_context = "world"
+        session.dm_current_map_url = None
+    else:
+        poi = (getattr(session, "pois", {}) or {}).get(raw_ctx)
+        poi_url = str(getattr(poi, "local_map_url", "") or "").strip()
+        doc = (getattr(session, "map_documents", {}) or {}).get(raw_ctx)
+        doc_assets = doc.get("assets") if isinstance(doc, dict) else {}
+        doc_url = str((doc_assets or {}).get("background_url") or "").strip()
+        persisted_url = str(data.get("dm_current_map_url") or "").strip()
+        session.dm_map_context = raw_ctx
+        session.dm_current_map_url = poi_url or doc_url or persisted_url or None
+
+    # Keep nav counters monotonic after restore so stale queued messages can't win.
+    try:
+        map_nav_version = int(data.get("map_nav_version", 0) or 0)
+    except Exception:
+        map_nav_version = 0
+    map_nav_version = max(0, map_nav_version)
+    if session.dm_map_context != "world":
+        map_nav_version = max(1, map_nav_version)
+    session.map_nav_version = map_nav_version
+
+    try:
+        restored_intent = int(data.get("dm_nav_intent", 0) or 0)
+    except Exception:
+        restored_intent = 0
+    session.dm_nav_intent = max(int(session.map_nav_version or 0), max(0, restored_intent))
+
+
+def restore_session_from_db(data: dict):
+    """Rebuild a full Session object from persisted DB data.
+
+    Returns (session, dm_id) tuple.
+    """
+    data = normalize_persisted_campaign_data(data)
+
+    session = Session(
+        id=data["id"],
+        player_invite=data["player_invite"],
+        viewer_invite=data["viewer_invite"],
+        created_at=data["created_at"],
+    )
+    session.name = data.get("name", "Campaign")
+    session.map_image_url = data.get("map_image_url")
+    session.fog_maps = data.get("fog_maps", {}) or {}
+    raw_combat = data.get("combat", {}) or {}
+    session.combat = (
+        raw_combat
+        if isinstance(raw_combat, dict) and "combatants" in raw_combat
+        else {"active": False, "turn": 0, "combatants": []}
+    )
+    session.journal_entries = data.get("journal_entries", []) or []
+    session.library_entries = data.get("library_entries", []) or []
+    session.item_library_entries = data.get("item_library_entries", []) or []
+    session.char_profiles = data.get("char_profiles", {}) or {}
+    session.active_char_profiles = data.get("active_char_profiles", {}) or {}
+    session.player_inventories = data.get("player_inventories", {}) or {}
+    session.player_gold = data.get("player_gold", {}) or {}
+    session.party_loot_log = data.get("party_loot_log", []) or []
+    session.viewer_profiles = data.get("viewer_profiles", {}) or {}
+    session.viewer_pending_actions = data.get("viewer_pending_actions", {}) or {}
+    session.viewer_power_catalog = data.get("viewer_power_catalog", {}) or {}
+    session.hazard_zones = data.get("hazard_zones", {}) or {}
+    session.corpse_states = data.get("corpse_states", {}) or {}
+    session.corpse_dm_config = data.get("corpse_dm_config", {}) or {}
+    session.handouts = data.get("handouts", []) or []
+    session.discovery_cards = data.get("discovery_cards", []) or []
+    session.private_story_hooks = data.get("private_story_hooks", []) or []
+    session.encounter_templates = data.get("encounter_templates", []) or []
+    session.quest_templates = data.get("quest_templates", []) or []
+    session.session_quests = data.get("session_quests", []) or []
+    session.session_quests = resolve_session_quest_progression(session)
+    session.quest_board_bindings = data.get("quest_board_bindings", []) or []
+    session.sound_state = data.get("sound_state", {}) or {}
+    session.weather_state = data.get("weather_state", {}) or {}
+    session.world_state = data.get("world_state", {}) or {}
+    session.active_poll = data.get("active_poll")
+    session.show_viewer_presence = bool(data.get("show_viewer_presence", False))
+
+    map_documents = data.get("map_documents", {}) or {}
+    if map_documents:
+        hydrate_session_from_map_documents(session, map_documents)
+    else:
+        session.editor_layers = data.get("editor_layers", {}) or {}
+        session.editor_walls = data.get("editor_walls", {}) or {}
+        session.editor_props = data.get("editor_props", {}) or {}
+        session.map_settings = data.get("map_settings", {}) or {}
+        session.editor_paths = data.get("editor_paths", {}) or {}
+        session.editor_labels = data.get("editor_labels", {}) or {}
+        session.editor_markers = data.get("editor_markers", {}) or {}
+        session.editor_lights = data.get("editor_lights", {}) or {}
+        session.map_documents = build_map_documents_from_session(session)
+
+    # Restore DM slot — use persisted dm_id so returning DMs reconnect correctly
+    dm_id = data.get("dm_id") or secrets.token_hex(8)
+    dm = User(id=dm_id, name=data["dm_name"], role="dm", connected=False)
+    session.users[dm_id] = dm
+    session.dm_id = dm_id
+
+    # Restore saved players/viewers with their original IDs
+    for p in data.get("players", []):
+        u = User(id=p["id"], name=p["name"], role=p["role"], connected=False)
+        if p.get("player_key"):
+            u.player_key = p["player_key"]
+        session.users[p["id"]] = u
+
+    # Restore POIs
+    for p in data.get("pois", []):
+        poi = POI(
+            id=p["id"],
+            x=p["x"],
+            y=p["y"],
+            name=p["name"],
+            description=p.get("description", ""),
+            dm_notes=p.get("dm_notes", ""),
+            poi_type=p.get("poi_type", "city"),
+            local_map_url=p.get("local_map_url"),
+            map_context=p.get("map_context", "world"),
+            revealed_to_players=bool(p.get("revealed_to_players", True)),
+            interactable=normalize_interactable(p.get("interactable")),
+        )
+        session.pois[poi.id] = poi
+
+    _normalize_restored_dm_map_state(session, data)
+
+    # Restore tokens (owner_id links back to restored player IDs)
+    for t in data["tokens"]:
+        raw_cond = t.get("conditions") or []
+        if not isinstance(raw_cond, list):
+            raw_cond = []
+        safe_cond = [str(c)[:50] for c in raw_cond if isinstance(c, str)][:20]
+        tok = Token(
+            id=t["id"],
+            name=t["name"],
+            x=t["x"],
+            y=t["y"],
+            width=t["width"],
+            height=t["height"],
+            color=t["color"],
+            shape=t["shape"],
+            owner_id=t.get("owner_id"),
+            hp=t.get("hp"),
+            max_hp=t.get("max_hp") or t.get("maxHp"),
+            temp_hp=int(t.get("temp_hp", t.get("tempHp", 0)) or 0),
+            hidden_hp=bool(t.get("hidden_hp", 0)),
+            hidden=bool(t.get("hidden", 0)),
+            initiative_mod=int(t.get("initiative_mod", t.get("initiativeMod", 0)) or 0),
+            ac=(int(t.get("ac")) if t.get("ac") is not None else None),
+            ac_from_equipment=bool(t.get("ac_from_equipment", False)),
+            speed=(int(t.get("speed")) if t.get("speed") is not None else None),
+            token_type=t.get("token_type", t.get("tokenType", "player")),
+            notes=str(t.get("notes", "") or ""),
+            conditions=safe_cond,
+            condition_timers=(
+                t.get("condition_timers")
+                if isinstance(t.get("condition_timers"), dict)
+                else {}
+            ),
+            level=(int(t.get("level")) if t.get("level") is not None else None),
+            faction=str(t.get("faction", "") or ""),
+            passive_perception=(
+                int(t.get("passive_perception", t.get("passivePerception")))
+                if t.get("passive_perception", t.get("passivePerception")) is not None
+                else None
+            ),
+            save_bonuses=(
+                t.get("save_bonuses")
+                if isinstance(t.get("save_bonuses"), dict)
+                else (
+                    t.get("saveBonuses")
+                    if isinstance(t.get("saveBonuses"), dict)
+                    else {}
+                )
+            ),
+            map_context=_normalize_token_map_context(session, t.get("map_context", "world")),
+            staged=bool(t.get("staged", False)),
+            image_url=(str(t.get("image_url") or t.get("imageUrl") or "")[:300] or None),
+            creature_id=str(t.get("creature_id") or "")[:120],
+            creature_type=str(t.get("creature_type") or "")[:40],
+            monster_type=str(t.get("monster_type") or "")[:60],
+            cr=str(t.get("cr") or "")[:16],
+        )
+        session.tokens[tok.id] = tok
+
+    # Restore logs
+    session.log = data.get("logs", [])
+    session.enforce_single_active_player_token_rule()
+
+    _sessions[session.id] = session
+    return session, dm_id

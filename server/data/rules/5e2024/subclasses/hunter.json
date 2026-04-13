@@ -1,0 +1,89 @@
+{
+  "id": "hunter",
+  "displayName": "Hunter",
+  "classId": "ranger",
+  "parentClassId": "ranger",
+  "flavorText": "Hunters adapt specialized tactics to stalk and eliminate dangerous prey.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "hunter-hunters-prey"
+    ],
+    "7": [
+      "hunter-defensive-tactics"
+    ],
+    "11": [
+      "hunter-multiattack"
+    ],
+    "15": [
+      "hunter-stand-against-the-tide"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "hunter-hunters-prey",
+      "displayName": "Hunter's Prey",
+      "description": "Choose one option: Colossus Slayer (+1d8 damage to an already-damaged target), Giant Killer (reaction attack when a Large or larger creature misses you), or Horde Breaker (extra attack against a different adjacent creature)."
+    },
+    {
+      "level": 7,
+      "id": "hunter-defensive-tactics",
+      "displayName": "Defensive Tactics",
+      "description": "Choose one option: Escape the Horde (Disengage avoids opportunity attacks), Multiattack Defense (+4 AC against subsequent attacks by same creature after first hit), or Steel Will (advantage on saves against being frightened)."
+    },
+    {
+      "level": 11,
+      "id": "hunter-multiattack",
+      "displayName": "Multiattack",
+      "description": "Gain either Volley (ranged area attack) or Whirlwind Attack (melee attack against multiple nearby creatures)."
+    },
+    {
+      "level": 15,
+      "id": "hunter-stand-against-the-tide",
+      "displayName": "Stand Against the Tide",
+      "description": "When a hostile creature misses you, you can force that attack to target another creature (other than the attacker) of your choice."
+    }
+  ],
+  "featureDefinitions": {
+    "hunter-hunters-prey": {
+      "summary": "Choose how you specialize in dropping prey so the subclass has a clear offensive identity from the start.",
+      "description": "Hunter’s Prey is the subclass fork that tells the sheet what kind of slayer this ranger is trying to be. It should feel like a real tactical choice, not a hidden setup detail.",
+      "tags": [
+        "subclass",
+        "combat",
+        "hunt"
+      ]
+    },
+    "hunter-defensive-tactics": {
+      "summary": "Your experience against dangerous creatures sharpens the defensive instincts that keep a hunter alive.",
+      "description": "Defensive Tactics reinforces the subclass as a seasoned predator-hunter who survives by reading the fight correctly, not by standing still and trading.",
+      "tags": [
+        "subclass",
+        "defense",
+        "combat"
+      ]
+    },
+    "hunter-multiattack": {
+      "section": "Actions",
+      "type": "action",
+      "summary": "Apply your hunting style across multiple foes or multiple strikes when the battlefield opens up.",
+      "description": "Multiattack is the subclass’s battlefield pressure spike. It should feel like a practiced technique for capitalizing on target-rich encounters.",
+      "tags": [
+        "subclass",
+        "action",
+        "combat"
+      ]
+    },
+    "hunter-stand-against-the-tide": {
+      "section": "Reactions",
+      "type": "reaction",
+      "summary": "Turn an enemy’s momentum against them when they overcommit around you.",
+      "description": "Stand Against the Tide is a veteran hunter trick—measured, punishing, and built around letting the foe make the wrong move first.",
+      "tags": [
+        "subclass",
+        "reaction",
+        "combat"
+      ]
+    }
+  }
+}

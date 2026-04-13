@@ -1,0 +1,164 @@
+{
+  "id": "college-of-valor",
+  "displayName": "College of Valor",
+  "classId": "bard",
+  "parentClassId": "bard",
+  "flavorText": "Valor Bards inspire from the front lines, blending martial prowess and heroic performance.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "valor-bonus-proficiencies",
+      "valor-combat-inspiration"
+    ],
+    "6": [
+      "valor-extra-attack"
+    ],
+    "14": [
+      "valor-battle-magic"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "valor-bonus-proficiencies",
+      "displayName": "Bonus Proficiencies",
+      "description": "Gain proficiency with medium armor, shields, and martial weapons."
+    },
+    {
+      "level": 3,
+      "id": "valor-combat-inspiration",
+      "displayName": "Combat Inspiration",
+      "description": "A creature that has your Bardic Inspiration can use the die to increase weapon damage or as a reaction to increase AC against one attack."
+    },
+    {
+      "level": 6,
+      "id": "valor-extra-attack",
+      "displayName": "Extra Attack",
+      "description": "You can attack twice, instead of once, whenever you take the Attack action on your turn."
+    },
+    {
+      "level": 14,
+      "id": "valor-battle-magic",
+      "displayName": "Battle Magic",
+      "description": "When you cast a bard spell using your action, you can make one weapon attack as a bonus action."
+    }
+  ],
+  "featureDefinitions": {
+    "valor-bonus-proficiencies": {
+      "id": "valor-bonus-proficiencies",
+      "displayName": "Bonus Proficiencies",
+      "name": "Bonus Proficiencies",
+      "summary": "This subclass grants extra training so your sheet reflects a broader skill, tool, or weapon identity than the base class alone.",
+      "description": "Gain proficiency with medium armor, shields, and martial weapons.\n\nBonus Proficiencies is not glamorous on its own, but it changes what the character can reliably contribute. The important thing is surfacing the added proficiencies clearly so they affect real rolls.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 3,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "bard",
+        "combat",
+        "skills",
+        "passive"
+      ],
+      "sourceKind": "subclass",
+      "className": "Bard",
+      "subclassName": "College of Valor",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "valor-combat-inspiration": {
+      "id": "valor-combat-inspiration",
+      "displayName": "Combat Inspiration",
+      "name": "Combat Inspiration",
+      "summary": "Your inspiration now helps allies fight, not just pass checks and saves.",
+      "description": "A creature that has your Bardic Inspiration can use the die to increase weapon damage or as a reaction to increase AC against one attack.\n\nCombat Inspiration makes Valor bard support more martial. It matters because the bard can turn inspiration into direct attack or defense swing value instead of purely out-of-combat utility.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 3,
+      "section": "Subclass Features",
+      "type": "reaction",
+      "resourceName": "Bardic Inspiration",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "bard",
+        "combat",
+        "support"
+      ],
+      "sourceKind": "subclass",
+      "className": "Bard",
+      "subclassName": "College of Valor",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "valor-extra-attack": {
+      "id": "valor-extra-attack",
+      "displayName": "Extra Attack",
+      "name": "Extra Attack",
+      "summary": "When you take the Attack action, you can now make up to 2 attacks within that action.",
+      "description": "You can attack twice, instead of once, whenever you take the Attack action on your turn.\n\nThis progression point changes your basic turn structure by increasing how many attacks fit inside a normal Attack action. It should be reflected everywhere the sheet explains attack cadence.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 6,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "bard",
+        "combat",
+        "progression"
+      ],
+      "sourceKind": "subclass",
+      "className": "Bard",
+      "subclassName": "College of Valor",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "valor-battle-magic": {
+      "id": "valor-battle-magic",
+      "displayName": "Battle Magic",
+      "name": "Battle Magic",
+      "summary": "Casting and striking start linking together so your turn can mix spell pressure with weapon follow-through.",
+      "description": "When you cast a bard spell using your action, you can make one weapon attack as a bonus action.\n\nBattle Magic should feel like a genuine action-economy payoff. It matters most when the bard wants to keep spell presence without giving up on weapon tempo entirely.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 14,
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "bard",
+        "combat",
+        "spellcasting"
+      ],
+      "sourceKind": "subclass",
+      "className": "Bard",
+      "subclassName": "College of Valor",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "When you cast a bard spell using your action",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    }
+  }
+}

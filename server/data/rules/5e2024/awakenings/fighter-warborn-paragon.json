@@ -1,0 +1,47 @@
+{
+  "id": "fighter-warborn-paragon",
+  "displayName": "Warborn Paragon",
+  "classRestrictions": ["fighter"],
+  "minimumLevel": 15,
+  "grants": [
+    {
+      "id": "fighter-warborn-iron-mind",
+      "type": "passive_unlock",
+      "name": "Iron Mind",
+      "value": {
+        "summary": "Advantage on saves against frightened while you can act.",
+        "rulesHint": "awakening-passive"
+      }
+    },
+    {
+      "id": "fighter-warborn-battle-surge",
+      "type": "action_unlock",
+      "name": "Battle Surge",
+      "value": {
+        "summary": "Once per long rest, gain one extra weapon attack this turn.",
+        "activation": "action"
+      }
+    }
+  ],
+  "tiers": [
+    {
+      "stage": 2,
+      "grants": [
+        {
+          "id": "fighter-warborn-resolve",
+          "type": "resource_bonus",
+          "name": "Paragon Resolve",
+          "value": {
+            "resourceId": "paragon_resolve",
+            "label": "Paragon Resolve",
+            "max": 1,
+            "scope": "long_rest"
+          }
+        }
+      ]
+    }
+  ],
+  "tags": ["martial", "awakening", "tiered"],
+  "source": "casualdnd_awakening",
+  "version": 1
+}

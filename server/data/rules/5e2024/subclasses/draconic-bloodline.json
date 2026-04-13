@@ -1,0 +1,104 @@
+{
+  "id": "draconic-bloodline",
+  "displayName": "Draconic Bloodline",
+  "classId": "sorcerer",
+  "parentClassId": "sorcerer",
+  "flavorText": "Draconic sorcerers inherit ancient dragon magic manifesting in resilience, elemental might, and wings.",
+  "featureUnlocksByLevel": {
+    "1": [
+      "draconic-dragon-ancestor",
+      "draconic-resilience"
+    ],
+    "6": [
+      "draconic-elemental-affinity"
+    ],
+    "14": [
+      "draconic-dragon-wings"
+    ],
+    "18": [
+      "draconic-presence"
+    ]
+  },
+  "features": [
+    {
+      "level": 1,
+      "id": "draconic-dragon-ancestor",
+      "displayName": "Dragon Ancestor",
+      "description": "Choose your draconic ancestry, determining an associated damage type and granting the dragon language."
+    },
+    {
+      "level": 1,
+      "id": "draconic-resilience",
+      "displayName": "Draconic Resilience",
+      "description": "Your hit point maximum increases by 1 per sorcerer level, and while unarmored your AC equals 13 + Dexterity modifier."
+    },
+    {
+      "level": 6,
+      "id": "draconic-elemental-affinity",
+      "displayName": "Elemental Affinity",
+      "description": "Add your Charisma modifier to one damage roll of spells matching your ancestry damage type. You can spend 1 Sorcery Point to gain resistance to that type for 1 hour."
+    },
+    {
+      "level": 14,
+      "id": "draconic-dragon-wings",
+      "displayName": "Dragon Wings",
+      "description": "You sprout draconic wings and gain a 60-foot flying speed."
+    },
+    {
+      "level": 18,
+      "id": "draconic-presence",
+      "displayName": "Draconic Presence",
+      "description": "Once per long rest, emit a 60-foot aura that forces creatures to make Wisdom saves or become charmed or frightened by you."
+    }
+  ],
+  "featureDefinitions": {
+    "draconic-dragon-ancestor": {
+      "summary": "Your bloodline ties your magic to a draconic heritage that shapes damage flavor, personality, and magical identity.",
+      "description": "Dragon Ancestor is the fantasy anchor for the subclass. It tells the player what kind of dragon legacy they carry and what emotional or elemental tone their magic should have.",
+      "tags": [
+        "subclass",
+        "identity",
+        "draconic"
+      ]
+    },
+    "draconic-resilience": {
+      "summary": "Your body and magic carry the hardiness of dragonkind, making you tougher than most sorcerers.",
+      "description": "Draconic Resilience is why this subclass often feels more comfortable nearer the fight. It changes survivability in a way players should notice immediately.",
+      "tags": [
+        "subclass",
+        "defense",
+        "draconic"
+      ]
+    },
+    "draconic-elemental-affinity": {
+      "summary": "Your chosen element becomes a sharper extension of your bloodline, rewarding spells that match your dragon heritage.",
+      "description": "Elemental Affinity is the damage identity spike for draconic sorcerers. It should make matching-element spells feel especially satisfying and on-theme.",
+      "tags": [
+        "subclass",
+        "damage",
+        "draconic"
+      ]
+    },
+    "draconic-dragon-wings": {
+      "summary": "Your lineage manifests physically, granting the mobility and presence of true dragon blood.",
+      "description": "Dragon Wings is one of the subclass’s most visible fantasy moments. It turns the bloodline from a story into something everyone at the table can see.",
+      "tags": [
+        "subclass",
+        "mobility",
+        "draconic"
+      ]
+    },
+    "draconic-presence": {
+      "section": "Actions",
+      "type": "action",
+      "summary": "Unleash the overwhelming majesty of dragonkind to dominate the emotional space of the fight.",
+      "description": "Draconic Presence is a dramatic control feature. It should feel like the room remembering that dragons are apex beings and your blood remembers it too.",
+      "tags": [
+        "subclass",
+        "control",
+        "draconic",
+        "capstone"
+      ]
+    }
+  }
+}

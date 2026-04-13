@@ -1,0 +1,96 @@
+{
+  "id": "smuggler",
+  "displayName": "Smuggler",
+  "classId": "pirate",
+  "parentClassId": "pirate",
+  "flavorText": "Smugglers turn stealth, concealment, deceit, and improvised tools into a complete survival package.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "smuggler-hidden-compartments",
+      "smuggler-slip-away"
+    ],
+    "6": [
+      "smuggler-shadow-transaction"
+    ],
+    "10": [
+      "smuggler-smoke-and-salt"
+    ],
+    "15": [
+      "smuggler-never-caught"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "smuggler-hidden-compartments",
+      "displayName": "Hidden Compartments",
+      "description": "Always seem to have one more trick, stash, or backup item than anyone expected."
+    },
+    {
+      "level": 3,
+      "id": "smuggler-slip-away",
+      "displayName": "Slip Away",
+      "description": "Disappear from the obvious angle and reappear where the heat is lower."
+    },
+    {
+      "level": 6,
+      "id": "smuggler-shadow-transaction",
+      "displayName": "Shadow Transaction",
+      "description": "Create opportunities through deception, contraband, and quiet exchanges."
+    },
+    {
+      "level": 10,
+      "id": "smuggler-smoke-and-salt",
+      "displayName": "Smoke and Salt",
+      "description": "Turn visual clutter, terrain, and confusion into your preferred battlefield."
+    },
+    {
+      "level": 15,
+      "id": "smuggler-never-caught",
+      "displayName": "Never Caught",
+      "description": "At your peak, pinning you down becomes one of the hardest jobs on the table."
+    }
+  ],
+  "featureDefinitions": {
+    "smuggler-hidden-compartments": {
+      "summary": "Gain superior concealment, stash-space fantasy, and improvised resourcefulness.",
+      "tags": [
+        "subclass",
+        "utility",
+        "items"
+      ]
+    },
+    "smuggler-slip-away": {
+      "summary": "Break lines of sight and disengage with deceptive movement.",
+      "tags": [
+        "subclass",
+        "mobility",
+        "stealth"
+      ]
+    },
+    "smuggler-shadow-transaction": {
+      "summary": "Leverage underworld instincts for infiltration, bribery, and setup scenes.",
+      "tags": [
+        "subclass",
+        "social",
+        "infiltration"
+      ]
+    },
+    "smuggler-smoke-and-salt": {
+      "summary": "Chaos and clutter become cover for your best turns.",
+      "tags": [
+        "subclass",
+        "control",
+        "terrain"
+      ]
+    },
+    "smuggler-never-caught": {
+      "summary": "Your capstone is the fantasy of always having an exit and a backup plan.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "escape"
+      ]
+    }
+  }
+}

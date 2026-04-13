@@ -1,0 +1,107 @@
+{
+  "id": "archfey-patron",
+  "displayName": "The Archfey",
+  "classId": "warlock",
+  "parentClassId": "warlock",
+  "flavorText": "Archfey warlocks wield glamour, trickery, and fear granted by capricious fey powers.",
+  "featureUnlocksByLevel": {
+    "1": [
+      "archfey-expanded-spells",
+      "archfey-fey-presence"
+    ],
+    "6": [
+      "archfey-misty-escape"
+    ],
+    "10": [
+      "archfey-beguiling-defenses"
+    ],
+    "14": [
+      "archfey-dark-delirium"
+    ]
+  },
+  "features": [
+    {
+      "level": 1,
+      "id": "archfey-expanded-spells",
+      "displayName": "Expanded Spells",
+      "description": "You add spells to your warlock list: 1st (Faerie Fire, Sleep), 3rd (Calm Emotions, Phantasmal Force), 5th (Blink, Plant Growth), 7th (Dominate Beast, Greater Invisibility), 9th (Dominate Person, Seeming)."
+    },
+    {
+      "level": 1,
+      "id": "archfey-fey-presence",
+      "displayName": "Fey Presence",
+      "description": "As an action, creatures in a 10-foot cube make a Wisdom save or are charmed or frightened (your choice) until end of your next turn. Usable once per short rest."
+    },
+    {
+      "level": 6,
+      "id": "archfey-misty-escape",
+      "displayName": "Misty Escape",
+      "description": "When you take damage, use your reaction to turn invisible and teleport up to 60 feet to an unoccupied space you can see. Usable once per long rest."
+    },
+    {
+      "level": 10,
+      "id": "archfey-beguiling-defenses",
+      "displayName": "Beguiling Defenses",
+      "description": "You are immune to being charmed, and when a creature attempts to charm you, you can reflect the charm back onto it for up to 1 minute (Wisdom save negates)."
+    },
+    {
+      "level": 14,
+      "id": "archfey-dark-delirium",
+      "displayName": "Dark Delirium",
+      "description": "As an action, force one creature to make a save or be charmed or frightened in a dreamlike realm for up to 1 minute. Usable once per long rest."
+    }
+  ],
+  "featureDefinitions": {
+    "archfey-expanded-spells": {
+      "summary": "Your patron adds elusive, manipulative, and illusion-adjacent spells that suit fey power.",
+      "description": "Expanded Spells should tell the player that this patron leans toward charm, displacement, confusion, and battlefield distortion rather than brute force.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "expanded-list"
+      ]
+    },
+    "archfey-fey-presence": {
+      "section": "Actions",
+      "type": "action",
+      "summary": "Project beguiling or terrifying fey force to disrupt nearby creatures in a burst.",
+      "description": "Fey Presence is the subclass’s immediate social-combat crossover button: charming or frightening creatures by sheer supernatural presence.",
+      "tags": [
+        "subclass",
+        "control",
+        "fey"
+      ]
+    },
+    "archfey-misty-escape": {
+      "section": "Reactions",
+      "type": "reaction",
+      "summary": "Slip away in a burst of glamour when hurt, denying enemies a clean follow-up.",
+      "description": "Misty Escape makes the subclass feel slippery and irritating to pin down, which is exactly right for an Archfey pact.",
+      "tags": [
+        "subclass",
+        "mobility",
+        "reaction"
+      ]
+    },
+    "archfey-beguiling-defenses": {
+      "summary": "The magic that twists minds has a harder time taking hold of you and can be turned back outward.",
+      "description": "Beguiling Defenses reinforces the subclass as a creature of glamour rather than a victim of it.",
+      "tags": [
+        "subclass",
+        "defense",
+        "charm"
+      ]
+    },
+    "archfey-dark-delirium": {
+      "section": "Actions",
+      "type": "action",
+      "summary": "Trap a target inside a private nightmare-glamour and dominate the psychological terms of the encounter.",
+      "description": "Dark Delirium is a capstone-style control feature that should feel eerie, isolating, and distinctly fey rather than just another generic debuff.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "control"
+      ]
+    }
+  }
+}

@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Casual D&D — Join Session</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cyan: #00e5cc;
+      --cyan-dim: #00b8a4;
+      --cyan-glow: rgba(0,229,204,0.25);
+      --dark-bg: #0a0b0f;
+      --wood-dark: #1a1208;
+      --wood-mid: #2a1e08;
+      --wood-light: #3d2c10;
+      --wood-highlight: #5c3f18;
+      --parchment: #c8a96e;
+      --gold: #d4a637;
+      --gold-dim: #8a6820;
+      --text-main: #e8dcc8;
+      --text-muted: #8a7d6a;
+      --blood: #8b1a1a;
+      --border: rgba(0,229,204,0.18);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: var(--dark-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Crimson Pro', Georgia, serif;
+      color: var(--text-main);
+      padding: 1.5rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+    /* ── Dungeon background ── */
+    .bg-scene {
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 100%, rgba(20,12,5,0.95) 0%, transparent 70%),
+        radial-gradient(ellipse 80% 60% at 50% 0%,   rgba(0,40,35,0.4)  0%, transparent 70%),
+        radial-gradient(ellipse 100% 100% at 50% 50%, #0d1008 0%, #070809 60%, #040506 100%);
+    }
+    .bg-scene::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        repeating-linear-gradient(0deg,   transparent, transparent 59px, rgba(0,0,0,0.3) 60px),
+        repeating-linear-gradient(90deg,  transparent, transparent 119px, rgba(0,0,0,0.2) 120px),
+        repeating-linear-gradient(180deg, rgba(255,255,255,0.015) 0px, transparent 1px);
+      background-size: 120px 60px, 120px 60px, 100% 3px;
+      opacity: 0.7;
+    }
+    .torch-left, .torch-right {
+      position: fixed; bottom: 20%; width: 180px; height: 350px;
+      pointer-events: none; z-index: 1;
+      animation: flicker 3s ease-in-out infinite alternate;
+    }
+    .torch-left  { left: 0;  background: radial-gradient(ellipse at 0% 80%, rgba(180,90,20,0.3) 0%, transparent 70%); }
+    .torch-right { right: 0; background: radial-gradient(ellipse at 100% 80%, rgba(180,90,20,0.3) 0%, transparent 70%); animation-delay: 1.5s; }
+    @keyframes flicker {
+      0%   { opacity: 0.7; } 30% { opacity: 1; } 60% { opacity: 0.8; } 100% { opacity: 0.95; }
+    }
+
+    .container { width: 100%; max-width: 560px; position: relative; z-index: 10; }
+    .header { text-align: center; margin-bottom: 2rem; }
+    .header-icon { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; filter: drop-shadow(0 0 15px var(--cyan-glow)); }
+    h1 {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(1.2rem, 4vw, 1.8rem);
+      font-weight: 900;
+      color: var(--cyan);
+      text-shadow: 0 0 25px var(--cyan-glow);
+      margin-bottom: 0.3rem;
+    }
+    .subtitle { color: var(--text-muted); font-style: italic; font-size: 0.9rem; }
+
+    .panel {
+      background: linear-gradient(160deg, #16120a 0%, #1c1608 40%, #13100a 100%);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.8rem;
+      box-shadow:
+        0 0 0 2px #2a1e08,
+        0 0 0 4px #1a1208,
+        0 20px 60px rgba(0,0,0,0.7),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+      position: relative;
+      margin-bottom: 1rem;
+    }
+    .panel::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      opacity: 0.3;
+    }
+    .panel-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--cyan-dim);
+      opacity: 0.75;
+      margin-bottom: 1.2rem;
+    }
+
+    /* Name input step */
+    .step { display: none; }
+    .step.active { display: block; animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+    .field { margin-bottom: 1rem; }
+    label {
+      display: block;
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--cyan-dim);
+      opacity: 0.75;
+      margin-bottom: 0.4rem;
+    }
+    input[type="text"] {
+      width: 100%;
+      background: linear-gradient(135deg, #1e1508 0%, #251a08 40%, #1a1208 100%);
+      border: 1px solid var(--wood-highlight);
+      border-radius: 3px;
+      color: var(--text-main);
+      padding: 0.65rem 0.9rem;
+      font-family: 'Crimson Pro', serif;
+      font-size: 1rem;
+      outline: none;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input[type="text"]:focus {
+      border-color: rgba(0,229,204,0.4);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,229,204,0.15);
+    }
+    input::placeholder { color: var(--text-muted); font-style: italic; }
+
+    .btn {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 3px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      position: relative; overflow: hidden;
+    }
+    .btn::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .btn-blood {
+      background: linear-gradient(135deg, #7a2318 0%, #4a1410 50%, #2a0c0a 100%);
+      color: #e8a09a;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 0 1px rgba(192,74,58,0.4);
+    }
+    .btn-blood:hover {
+      background: linear-gradient(135deg, #a02e22, #6a1e18, #3a1210);
+      color: #ffb8b0;
+      box-shadow: 0 4px 12px rgba(192,74,58,0.3), 0 0 0 1px rgba(192,74,58,0.6);
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, #00c4ae 0%, #008f80 50%, #006b60 100%);
+      color: #001a17;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,229,204,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+    .btn-gold:hover {
+      background: linear-gradient(135deg, #00e5cc 0%, #00b4a0 50%, #008070 100%);
+      box-shadow: 0 4px 16px rgba(0,229,204,0.3), 0 0 0 1px rgba(0,229,204,0.5);
+      transform: translateY(-1px);
+    }
+    .btn-ghost {
+      background: linear-gradient(135deg, var(--wood-highlight) 0%, var(--wood-mid) 50%, var(--wood-dark) 100%);
+      border: 1px solid rgba(92,63,24,0.6) !important;
+      color: var(--parchment);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+      margin-top: 0.5rem;
+    }
+    .btn-ghost:hover {
+      background: linear-gradient(135deg, #6e4c20, #3d2c10, #2a1e08);
+      color: var(--gold);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6), 0 0 0 1px rgba(212,166,55,0.4);
+    }
+
+    /* Character cards */
+    .char-grid { display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 1rem; }
+    .char-card {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.9rem 1rem;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(0,229,204,0.12);
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .char-card:hover { border-color: rgba(0,229,204,0.35); background: rgba(0,229,204,0.05); }
+    .char-card.selected { border-color: var(--cyan); background: rgba(0,229,204,0.1); }
+    .char-token {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Cinzel', serif; font-size: 0.7rem;
+      font-weight: 600; color: #fff; flex-shrink: 0;
+      box-shadow: 0 0 12px rgba(0,0,0,0.5);
+    }
+    .char-token.rect { border-radius: 6px; }
+    .char-info { flex: 1; }
+    .char-name { font-family: 'Cinzel', serif; font-size: 0.9rem; color: var(--gold); margin-bottom: 0.15rem; }
+    .char-owner {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+    .char-owner.mine { color: rgba(0,229,204,0.6); }
+    .char-card .check { font-size: 1.2rem; opacity: 0; transition: opacity 0.2s; }
+    .char-card.selected .check { opacity: 1; }
+
+    .new-char-section {
+      border-top: 1px solid rgba(0,229,204,0.1);
+      padding-top: 1rem;
+      margin-top: 0.5rem;
+    }
+    .new-char-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 0.8rem;
+    }
+    .gateway-empty-hint {
+      text-align: center;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 1rem;
+    }
+    .gateway-actions {
+      border-top: 1px solid rgba(0,229,204,0.1);
+      padding-top: 1rem;
+      margin-top: 0.5rem;
+      display: grid;
+      gap: 0.5rem;
+    }
+    .gateway-actions-prominent {
+      border-top: 0;
+      margin-top: 0;
+      padding-top: 0;
+    }
+
+    /* Viewer join (no character select) */
+    .viewer-join { text-align: center; }
+    .viewer-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+    .viewer-text { color: var(--text-muted); font-style: italic; margin-bottom: 1.2rem; }
+
+    .error-msg { color: #e07070; font-size: 0.85rem; text-align: center; margin-top: 0.5rem; display: none; }
+    .error-msg.visible { display: block; }
+    .loading-msg { text-align: center; color: var(--text-muted); font-style: italic; padding: 1.5rem; }
+
+    .toast {
+      position: fixed; bottom: 2rem; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #13100a; border: 1px solid rgba(0,229,204,0.4);
+      border-radius: 3px; padding: 0.5rem 1.2rem;
+      font-family: 'Cinzel', serif; font-size: 0.7rem; color: var(--cyan);
+      opacity: 0; pointer-events: none; transition: all 0.3s; z-index: 999;
+      box-shadow: 0 0 20px var(--cyan-glow);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+<!-- Background -->
+<div class="bg-scene"></div>
+<div class="torch-left"></div>
+<div class="torch-right"></div>
+
+<div class="container">
+  <div class="header">
+    <span class="header-icon">⚔️</span>
+    <h1>Casual D&D</h1>
+    <p class="subtitle" id="campaign-subtitle">Joining session…</p>
+    <p class="subtitle" id="role-subtitle" style="margin-top:0.3rem;font-size:0.8rem;"></p>
+  </div>
+
+  <div class="panel" id="main-panel" style="display:none;">
+
+    <!-- Step 1: Enter name -->
+    <div class="step active" id="step-name">
+      <div class="panel-title">Who are you?</div>
+      <div class="field">
+        <label>Your Name</label>
+        <input type="text" id="input-name" placeholder="Enter your name…" maxlength="40" autofocus />
+      </div>
+      <button class="btn btn-blood" onclick="submitName()">Continue →</button>
+      <div class="error-msg" id="name-error"></div>
+    </div>
+
+    <!-- Step 2a: Character select (players) -->
+    <div class="step" id="step-character">
+      <div class="panel-title">Character Gateway</div>
+      <div id="gateway-existing-section">
+        <div class="new-char-label">Use Existing Character</div>
+        <div class="char-grid" id="char-grid">
+          <div class="loading-msg">Loading characters…</div>
+        </div>
+        <button class="btn btn-gold" id="claim-btn" disabled style="opacity:0.4;">Enter as Selected Character</button>
+      </div>
+      <div class="gateway-empty-hint" id="gateway-empty-hint" style="display:none;">
+        No existing characters were found. Start by creating one or importing from D&amp;D Beyond.
+      </div>
+      <div class="gateway-actions" id="gateway-actions">
+        <div id="gateway-actions-default">
+          <div class="new-char-label">Create or Import</div>
+          <button class="btn btn-ghost" id="gateway-create-native-btn">Create with Casual D&amp;D</button>
+          <button class="btn btn-ghost" id="gateway-import-ddb-btn">Import from D&amp;D Beyond</button>
+        </div>
+      </div>
+      <div class="error-msg" id="char-error"></div>
+    </div>
+
+    <!-- Step 2b: Viewer join -->
+    <div class="step" id="step-viewer">
+      <div class="viewer-join">
+        <div class="viewer-icon">👁️</div>
+        <div class="viewer-text">You're joining as a spectator.<br>You can watch and chat but not move tokens.</div>
+        <button class="btn btn-blood" onclick="joinAsViewer()">Watch the Session</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/static/js/core/csrf.js"></script>
+<script src="/static/js/character/gateway/gateway_state.js"></script>
+<script src="/static/js/character/gateway/gateway_modal.js"></script>
+<script src="/static/js/character/library/character_library_panel.js"></script>
+<script src="/static/js/character/library/character_levelup_modal.js"></script>
+<script src="/static/js/character/gateway/join_gateway.js"></script>
+<script>
+  const params     = new URLSearchParams(location.search);
+  const SESSION_ID = (params.get('session') || '').toUpperCase();
+  const INVITE     = params.get('code') || '';
+  const ROLE       = params.get('role') || 'player';
+
+  let _sessionTokens = [];
+  let _selectedTokenId = null;
+  let _selectedProfileId = '';
+  let _userName = '';
+  let _authUser = null;
+  let _joinGateway = null;
+
+  // ── Auth check: require login before joining ──────────────────────────────
+  (async function checkAuth() {
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
+      if (res.ok) {
+        const data = await res.json();
+        _authUser = data.user || null;
+        if (_authUser) {
+          // Pre-fill name from account
+          const nameInput = document.getElementById('input-name');
+          if (nameInput && !nameInput.value) {
+            nameInput.value = _authUser.character_name || _authUser.username || '';
+          }
+          _userName = nameInput ? nameInput.value : (_authUser.username || '');
+        }
+      }
+    } catch(_) {}
+
+    if (!_authUser) {
+      // Redirect to login, preserving the join URL so we return after auth
+      const joinUrl = location.pathname + location.search;
+      const roleSlug = ROLE === 'viewer' ? '/viewer' : '/player';
+      sessionStorage.setItem('dnd_login_next', joinUrl);
+      window.location.href = roleSlug + '?next=' + encodeURIComponent(joinUrl);
+      return;
+    }
+
+    // Authenticated — reveal the panel now (was hidden to prevent form flash)
+    const panel = document.getElementById('main-panel');
+    if (panel) panel.style.display = '';
+
+    // Auto-advance: skip the name step since we have an account name
+    if (_userName) {
+      if (ROLE === 'viewer') {
+        showStep('step-viewer');
+      } else {
+        await loadSessionInfo();
+        buildCharGrid();
+        showStep('step-character');
+      }
+    }
+  })();
+
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+  }
+
+  function showStep(id) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function showError(elId, msg) {
+    const el = document.getElementById(elId);
+    el.textContent = msg;
+    el.classList.add('visible');
+    setTimeout(() => el.classList.remove('visible'), 4000);
+  }
+
+  function redirectToLogin() {
+    const joinUrl = location.pathname + location.search;
+    const roleSlug = ROLE === 'viewer' ? '/viewer' : '/player';
+    sessionStorage.setItem('dnd_login_next', joinUrl);
+    window.location.href = roleSlug + '?next=' + encodeURIComponent(joinUrl);
+  }
+
+  // Load session info (tokens, campaign name)
+  async function loadSessionInfo() {
+    try {
+      const qs = new URLSearchParams({
+        role: ROLE || '',
+        player_key: getPlayerKey(),
+        user_name: _userName || '',
+      });
+      const res = await fetch(`/api/session/${SESSION_ID}/lobby?${qs.toString()}`, { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const data = await res.json();
+      document.getElementById('campaign-subtitle').textContent =
+        data.campaign_name ? `"${data.campaign_name}"` : 'A D&D Adventure';
+      _sessionTokens = data.tokens || [];
+    } catch(e) {}
+  }
+
+  // Fetch campaign name immediately (no auth needed for just the name)
+  if (SESSION_ID) loadSessionInfo();
+
+  // Show role label
+  (function() {
+    const roleEl = document.getElementById('role-subtitle');
+    if (roleEl) {
+      if (ROLE === 'viewer') {
+        roleEl.textContent = '👁 Joining as Viewer';
+        roleEl.style.color = '#9b88aa';
+      } else if (ROLE === 'player') {
+        roleEl.textContent = '🛡 Joining as Player';
+        roleEl.style.color = '#00e5cc';
+      }
+    }
+  })();
+
+  // Step 1 — name submitted
+  async function submitName() {
+    const name = document.getElementById('input-name').value.trim();
+    if (!name) { showError('name-error', 'Please enter your name.'); return; }
+    _userName = name;
+
+    if (ROLE === 'viewer') {
+      showStep('step-viewer');
+      return;
+    }
+
+    // Load tokens and show character select
+    await loadSessionInfo();
+    buildCharGrid();
+    showStep('step-character');
+  }
+
+  function setupJoinGateway() {
+    if (_joinGateway || !window.CharacterGatewayState || !window.CharacterGatewayModal || !window.CharacterJoinGateway) {
+      return;
+    }
+    const state = window.CharacterGatewayState.createGatewayState();
+    _joinGateway = window.CharacterJoinGateway.createJoinGateway({
+      state,
+      modal: window.CharacterGatewayModal,
+      hooks: {
+        onUseExisting: onUseExisting,
+        onCreateNative: onCreateNative,
+        onNativeSaved: onNativeSaved,
+        onImportDDB: onImportDDB,
+        onError: function onGatewayError(msg) { showToast(msg); },
+      },
+      elements: {
+        charGrid: document.getElementById('char-grid'),
+        useExistingBtn: document.getElementById('claim-btn'),
+        createNativeBtn: document.getElementById('gateway-create-native-btn'),
+        importDdbBtn: document.getElementById('gateway-import-ddb-btn'),
+        existingSection: document.getElementById('gateway-existing-section'),
+        actionsSection: document.getElementById('gateway-actions'),
+        gatewayButtonsWrap: document.getElementById('gateway-actions-default'),
+        emptyHint: document.getElementById('gateway-empty-hint'),
+      },
+    });
+    _joinGateway.init();
+  }
+
+  function buildCharGrid() {
+    setupJoinGateway();
+
+    const mappedCharacters = _sessionTokens.map(t => {
+      const ownerName = String(t.owner_name || '').trim().toLowerCase();
+      const userName = String(_userName || '').trim().toLowerCase();
+      const likelyMine = !ownerName || (userName && ownerName === userName);
+      return {
+        id: t.id,
+        name: t.name,
+        color: t.color,
+        shape: t.shape,
+        mine: likelyMine,
+        ownerLabel: likelyMine ? '✓ Looks like yours' : t.owner_name ? ('Played by ' + t.owner_name) : 'Unclaimed',
+      };
+    });
+
+    const preferred = mappedCharacters.find(c => c.mine);
+    if (_joinGateway) {
+      _joinGateway.loadCharacters(mappedCharacters, preferred ? preferred.id : null);
+    }
+  }
+
+  function onUseExisting(profileId, selectedEntry) {
+    const selectedId = String(profileId || '').trim();
+    const profileMatch = selectedId.match(/^profile:(.+)$/);
+    const selectedProfileId = profileMatch ? String(profileMatch[1] || '').trim() : '';
+    if (selectedProfileId) {
+      _selectedProfileId = selectedProfileId;
+      _selectedTokenId = null;
+      joinAsNew();
+      return;
+    }
+
+    _selectedProfileId = selectedEntry && selectedEntry.libraryId
+      ? String(selectedEntry.libraryId).trim()
+      : '';
+    _selectedTokenId = selectedId;
+    claimCharacter();
+  }
+
+  function onCreateNative() {
+    joinAsNew();
+  }
+
+  function onNativeSaved(savedProfile) {
+    if (!savedProfile || !savedProfile.id) return;
+    showToast('Saved to profile library: ' + (savedProfile.name || 'Character'));
+  }
+
+  function onImportDDB() {
+    showToast('D&D Beyond import gateway is coming next. For now, use Create with Casual D&D.');
+  }
+
+  async function claimCharacter() {
+    if (!_selectedTokenId) return;
+    try {
+      const res = await fetch('/api/session/join', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          session_id:  SESSION_ID,
+          invite_code: INVITE,
+          claim_token: _selectedTokenId,
+        })
+      });
+      if (res.status === 401) { redirectToLogin(); return; }
+      const data = await res.json();
+      if (data.error) { showError('char-error', data.error); return; }
+      saveAndEnter(data);
+    } catch(e) { showError('char-error', 'Server error. Is the server running?'); }
+  }
+
+  async function joinAsNew() {
+    try {
+      const res = await fetch('/api/session/join', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          session_id:  SESSION_ID,
+          invite_code: INVITE,
+          claim_token: null,
+        })
+      });
+      if (res.status === 401) { redirectToLogin(); return; }
+      const data = await res.json();
+      if (data.error) { showError('char-error', data.error); return; }
+      saveAndEnter(data);
+    } catch(e) { showError('char-error', 'Server error.'); }
+  }
+
+  async function joinAsViewer() {
+    try {
+      const res = await fetch('/api/session/join', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          session_id:  SESSION_ID,
+          invite_code: INVITE,
+        })
+      });
+      if (res.status === 401) { redirectToLogin(); return; }
+      const data = await res.json();
+      if (data.error) { showToast('Error: ' + data.error); return; }
+      saveAndEnter(data);
+    } catch(e) { showToast('Server error.'); }
+  }
+
+  function saveAndEnter(data) {
+    rememberJoinSelectedProfile(data);
+    localStorage.setItem('tavern_last_session', JSON.stringify({
+      session_id: data.session_id,
+      invite_code: INVITE,
+      name: _userName,
+      role: ROLE,
+    }));
+    const p = new URLSearchParams({
+      session_id: data.session_id,
+      user_id:    data.user_id,
+      role:       data.role,
+      name:       data.name,
+      returning:  data.returning ? '1' : '0',
+    });
+    window.location.href = `/play?${p}`;
+  }
+
+  function rememberJoinSelectedProfile(data) {
+    const profileId = String(_selectedProfileId || '').trim();
+    if (!profileId || !data || !data.session_id) return;
+    const identitySeed = String(data.user_id || data.name || _userName || 'player')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_');
+    const identity = identitySeed || 'player';
+    const key = `tavern_char_profile_${String(data.session_id).trim().toUpperCase()}_${identity}`;
+    try {
+      localStorage.setItem(key, profileId);
+    } catch (_) {}
+  }
+
+  function getPlayerKey() {
+    // Use the auth user's ID as the stable player key when logged in
+    if (_authUser && _authUser.id) {
+      return 'auth_' + _authUser.id;
+    }
+    let key = localStorage.getItem('tavern_player_key');
+    if (!key) {
+      key = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+      localStorage.setItem('tavern_player_key', key);
+    }
+    return key;
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Enter key on name field
+  document.getElementById('input-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitName();
+  });
+
+  // Redirect to home if no session params
+  if (!SESSION_ID || !INVITE) {
+    document.getElementById('campaign-subtitle').textContent = 'Invalid invite link.';
+    const panel = document.getElementById('main-panel');
+    if (panel) {
+      panel.style.display = '';
+      panel.innerHTML = '<div class="loading-msg" style="color:#e07070;">⚠ This invite link is invalid or incomplete.<br>Please ask your DM for a valid link.</div>';
+    }
+  }
+</script>
+</body>
+</html>

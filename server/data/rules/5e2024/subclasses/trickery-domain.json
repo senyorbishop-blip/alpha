@@ -1,0 +1,116 @@
+{
+  "id": "trickery-domain",
+  "displayName": "Trickery Domain",
+  "classId": "cleric",
+  "parentClassId": "cleric",
+  "flavorText": "Trickery clerics wield misdirection and illusion to confound enemies.",
+  "featureUnlocksByLevel": {
+    "1": [
+      "trickery-blessing-of-the-trickster"
+    ],
+    "2": [
+      "trickery-invoke-duplicity"
+    ],
+    "6": [
+      "trickery-cloak-of-shadows"
+    ],
+    "8": [
+      "trickery-divine-strike"
+    ],
+    "17": [
+      "trickery-improved-duplicity"
+    ]
+  },
+  "features": [
+    {
+      "level": 1,
+      "id": "trickery-blessing-of-the-trickster",
+      "displayName": "Blessing of the Trickster",
+      "description": "As an action, grant a willing creature advantage on Dexterity (Stealth) checks for 1 hour."
+    },
+    {
+      "level": 2,
+      "id": "trickery-invoke-duplicity",
+      "displayName": "Invoke Duplicity",
+      "description": "As Channel Divinity, create an illusory duplicate that moves with you. You can cast spells from the duplicate's space, and attacks benefit when you and the duplicate flank a target."
+    },
+    {
+      "level": 6,
+      "id": "trickery-cloak-of-shadows",
+      "displayName": "Cloak of Shadows",
+      "description": "As Channel Divinity, become invisible until the end of your next turn."
+    },
+    {
+      "level": 8,
+      "id": "trickery-divine-strike",
+      "displayName": "Divine Strike",
+      "description": "Once on each of your turns when you hit with a weapon attack, deal extra poison damage."
+    },
+    {
+      "level": 17,
+      "id": "trickery-improved-duplicity",
+      "displayName": "Improved Duplicity",
+      "description": "You can create up to four duplicates with Invoke Duplicity."
+    }
+  ],
+  "featureDefinitions": {
+    "trickery-blessing-of-the-trickster": {
+      "section": "Actions",
+      "type": "action",
+      "summary": "Give an ally stealth-focused help before an infiltration, ambush, or careful repositioning play.",
+      "description": "Blessing of the Trickster is a clean setup tool for scouting and infiltration. It should encourage pre-combat planning rather than being forgotten because the effect is quiet.\n\nUse it when one creature needs to slip, scout, shadow, or set up the party’s opening move.",
+      "duration": "1 hour",
+      "tags": [
+        "subclass",
+        "support",
+        "stealth"
+      ]
+    },
+    "trickery-invoke-duplicity": {
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Channel Divinity",
+      "trackUses": true,
+      "summary": "Create an illusion double that bends line-of-origin, positioning, and attention in your favor.",
+      "description": "Invoke Duplicity is the signature Trickery Domain button. It should feel like battlefield misdirection, not only an image effect. The duplicate changes where pressure appears to come from and can create far trickier angles for spell play and distraction.",
+      "duration": "1 minute",
+      "tags": [
+        "subclass",
+        "illusion",
+        "control",
+        "resource"
+      ]
+    },
+    "trickery-cloak-of-shadows": {
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Channel Divinity",
+      "trackUses": true,
+      "summary": "Disappear briefly and reset how the battlefield sees you.",
+      "description": "Cloak of Shadows is a short, tactical invisibility burst for escapes, repositioning, and sudden setup. It is strongest when used to break target lock or create an immediate opening for the next play.",
+      "duration": "Until the end of your next turn",
+      "tags": [
+        "subclass",
+        "stealth",
+        "resource"
+      ]
+    },
+    "trickery-divine-strike": {
+      "summary": "Layer extra poison pressure onto weapon hits so the domain stays dangerous without always consuming top resources.",
+      "tags": [
+        "subclass",
+        "combat",
+        "damage"
+      ]
+    },
+    "trickery-improved-duplicity": {
+      "summary": "Your signature misdirection engine scales into a larger board-control problem for the enemy.",
+      "description": "Improved Duplicity takes the domain’s defining trick and makes it much harder for enemies to parse where the real threat is. High-level Trickery should feel like battlefield deception at scale.",
+      "tags": [
+        "subclass",
+        "illusion",
+        "capstone"
+      ]
+    }
+  }
+}

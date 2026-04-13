@@ -1,0 +1,288 @@
+/*
+ * client/static/css/spotlight.css
+ * Class-flavored presentation & spotlight moment styling.
+ * Keeps animations subtle and tasteful — no noise.
+ */
+
+/* ── Class Flavor CSS Variables ──────────────────────────────────────────── */
+:root {
+  /* Rogue — stealth / precision / shadow */
+  --class-rogue:        #16a085;
+  --class-rogue-glow:   rgba(22, 160, 133, 0.35);
+  --class-rogue-bg:     rgba(22, 160, 133, 0.08);
+
+  /* Fighter — impact / steel / stance */
+  --class-fighter:      #c0392b;
+  --class-fighter-glow: rgba(192, 57, 43, 0.35);
+  --class-fighter-bg:   rgba(192, 57, 43, 0.08);
+
+  /* Cleric — blessing / radiance / prayer */
+  --class-cleric:       #f39c12;
+  --class-cleric-glow:  rgba(243, 156, 18, 0.35);
+  --class-cleric-bg:    rgba(243, 156, 18, 0.08);
+
+  /* Wizard — arcane / ritual / analysis */
+  --class-wizard:       #8e44ad;
+  --class-wizard-glow:  rgba(142, 68, 173, 0.35);
+  --class-wizard-bg:    rgba(142, 68, 173, 0.08);
+
+  /* Ranger — hunt / tracking / survival */
+  --class-ranger:       #27ae60;
+  --class-ranger-glow:  rgba(39, 174, 96, 0.35);
+  --class-ranger-bg:    rgba(39, 174, 96, 0.08);
+
+  /* Bard — flourish / inspiration / charm */
+  --class-bard:         #2980b9;
+  --class-bard-glow:    rgba(41, 128, 185, 0.35);
+  --class-bard-bg:      rgba(41, 128, 185, 0.08);
+
+  /* Paladin — holy / oath / valor */
+  --class-paladin:      #d4ac0d;
+  --class-paladin-glow: rgba(212, 172, 13, 0.35);
+  --class-paladin-bg:   rgba(212, 172, 13, 0.08);
+
+  /* Barbarian — fury / rage / primal */
+  --class-barbarian:      #e74c3c;
+  --class-barbarian-glow: rgba(231, 76, 60, 0.35);
+  --class-barbarian-bg:   rgba(231, 76, 60, 0.08);
+
+  /* Druid — nature / wild / grove */
+  --class-druid:        #1e8449;
+  --class-druid-glow:   rgba(30, 132, 73, 0.35);
+  --class-druid-bg:     rgba(30, 132, 73, 0.08);
+
+  /* Sorcerer — raw magic / innate / chaos */
+  --class-sorcerer:       #9b59b6;
+  --class-sorcerer-glow:  rgba(155, 89, 182, 0.35);
+  --class-sorcerer-bg:    rgba(155, 89, 182, 0.08);
+
+  /* Warlock — pact / eldritch / shadow */
+  --class-warlock:        #6c3483;
+  --class-warlock-glow:   rgba(108, 52, 131, 0.35);
+  --class-warlock-bg:     rgba(108, 52, 131, 0.08);
+
+  /* Monk — discipline / flow / ki */
+  --class-monk:         #3498db;
+  --class-monk-glow:    rgba(52, 152, 219, 0.35);
+  --class-monk-bg:      rgba(52, 152, 219, 0.08);
+
+  /* Fallback — neutral accent */
+  --class-default:      #00e5cc;
+  --class-default-glow: rgba(0, 229, 204, 0.35);
+  --class-default-bg:   rgba(0, 229, 204, 0.08);
+}
+
+/* ── Spotlight Banner ────────────────────────────────────────────────────── */
+/* Full-width cinematic banner for big moments (crit, clutch, boss kill)    */
+
+.spotlight-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 19990;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1.2rem;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-100%);
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.1em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.spotlight-banner--enter {
+  animation: spotlightSlideIn 0.38s cubic-bezier(.18,.74,.18,1) forwards;
+}
+
+.spotlight-banner--exit {
+  animation: spotlightSlideOut 0.32s ease forwards;
+}
+
+@keyframes spotlightSlideIn {
+  from { opacity: 0; transform: translateY(-100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spotlightSlideOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-14px); }
+}
+
+.spotlight-banner-icon {
+  font-size: 1.3rem;
+  filter: drop-shadow(0 0 6px currentColor);
+  flex-shrink: 0;
+}
+
+.spotlight-banner-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.spotlight-banner-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+}
+
+.spotlight-banner-subtitle {
+  font-size: 0.58rem;
+  color: rgba(255, 255, 255, 0.72);
+  letter-spacing: 0.06em;
+  text-transform: none;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ── Spotlight Class Themes ──────────────────────────────────────────────── */
+/* Each class gets a themed gradient background and border accent            */
+
+.spotlight-banner[data-class="rogue"] {
+  background: linear-gradient(90deg, rgba(22,160,133,0.92), rgba(10,60,52,0.94));
+  border-bottom: 2px solid var(--class-rogue);
+  box-shadow: 0 4px 24px var(--class-rogue-glow), inset 0 -1px 0 rgba(255,255,255,0.06);
+}
+
+.spotlight-banner[data-class="fighter"] {
+  background: linear-gradient(90deg, rgba(192,57,43,0.92), rgba(80,20,14,0.94));
+  border-bottom: 2px solid var(--class-fighter);
+  box-shadow: 0 4px 24px var(--class-fighter-glow), inset 0 -1px 0 rgba(255,255,255,0.06);
+}
+
+.spotlight-banner[data-class="cleric"] {
+  background: linear-gradient(90deg, rgba(243,156,18,0.88), rgba(90,55,8,0.94));
+  border-bottom: 2px solid var(--class-cleric);
+  box-shadow: 0 4px 24px var(--class-cleric-glow), inset 0 -1px 0 rgba(255,255,255,0.06);
+}
+
+.spotlight-banner[data-class="wizard"] {
+  background: linear-gradient(90deg, rgba(142,68,173,0.92), rgba(52,22,68,0.94));
+  border-bottom: 2px solid var(--class-wizard);
+  box-shadow: 0 4px 24px var(--class-wizard-glow), inset 0 -1px 0 rgba(255,255,255,0.06);
+}
+
+.spotlight-banner[data-class="ranger"] {
+  background: linear-gradient(90deg, rgba(39,174,96,0.92), rgba(14,68,36,0.94));
+  border-bottom: 2px solid var(--class-ranger);
+  box-shadow: 0 4px 24px var(--class-ranger-glow), inset 0 -1px 0 rgba(255,255,255,0.06);
+}
+
+.spotlight-banner[data-class="bard"] {
+  background: linear-gradient(90deg, rgba(41,128,185,0.92), rgba(14,48,72,0.94));
+  border-bottom: 2px solid var(--class-bard);
+  box-shadow: 0 4px 24px var(--class-bard-glow), inset 0 -1px 0 rgba(255,255,255,0.06);
+}
+
+.spotlight-banner[data-class="paladin"] {
+  background: linear-gradient(90deg, rgba(212,172,13,0.88), rgba(80,64,6,0.94));
+  border-bottom: 2px solid var(--class-paladin);
+  box-shadow: 0 4px 24px var(--class-paladin-glow), inset 0 -1px 0 rgba(255,255,255,0.06);
+}
+
+.spotlight-banner[data-class="barbarian"] {
+  background: linear-gradient(90deg, rgba(231,76,60,0.92), rgba(90,28,22,0.94));
+  border-bottom: 2px solid var(--class-barbarian);
+  box-shadow: 0 4px 24px var(--class-barbarian-glow), inset 0 -1px 0 rgba(255,255,255,0.06);
+}
+
+.spotlight-banner[data-class="druid"] {
+  background: linear-gradient(90deg, rgba(30,132,73,0.92), rgba(10,52,28,0.94));
+  border-bottom: 2px solid var(--class-druid);
+  box-shadow: 0 4px 24px var(--class-druid-glow), inset 0 -1px 0 rgba(255,255,255,0.06);
+}
+
+.spotlight-banner[data-class="sorcerer"] {
+  background: linear-gradient(90deg, rgba(155,89,182,0.92), rgba(58,32,68,0.94));
+  border-bottom: 2px solid var(--class-sorcerer);
+  box-shadow: 0 4px 24px var(--class-sorcerer-glow), inset 0 -1px 0 rgba(255,255,255,0.06);
+}
+
+.spotlight-banner[data-class="warlock"] {
+  background: linear-gradient(90deg, rgba(108,52,131,0.92), rgba(40,18,52,0.94));
+  border-bottom: 2px solid var(--class-warlock);
+  box-shadow: 0 4px 24px var(--class-warlock-glow), inset 0 -1px 0 rgba(255,255,255,0.06);
+}
+
+.spotlight-banner[data-class="monk"] {
+  background: linear-gradient(90deg, rgba(52,152,219,0.92), rgba(18,56,84,0.94));
+  border-bottom: 2px solid var(--class-monk);
+  box-shadow: 0 4px 24px var(--class-monk-glow), inset 0 -1px 0 rgba(255,255,255,0.06);
+}
+
+/* Fallback / unknown class */
+.spotlight-banner[data-class="default"],
+.spotlight-banner:not([data-class]) {
+  background: linear-gradient(90deg, rgba(0,229,204,0.82), rgba(6,42,38,0.94));
+  border-bottom: 2px solid var(--class-default);
+  box-shadow: 0 4px 24px var(--class-default-glow), inset 0 -1px 0 rgba(255,255,255,0.06);
+}
+
+/* ── Spotlight Vignette ──────────────────────────────────────────────────── */
+/* Subtle edge-darken overlay for dramatic moments                          */
+
+.spotlight-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 19989;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.spotlight-vignette--active {
+  opacity: 1;
+}
+
+/* ── Class-flavored log accent ───────────────────────────────────────────── */
+/* Tiny left-border accent on log entries for class-identified characters     */
+
+.log-entry.class-accent {
+  border-left: 2px solid var(--log-class-color, transparent);
+  padding-left: 0.45rem;
+}
+
+/* ── Class-flavored combat entry accent ──────────────────────────────────── */
+/* Subtle left-border tint on the active combatant based on class            */
+
+.combat-entry.current.class-accent-fighter  { border-left-color: var(--class-fighter); }
+.combat-entry.current.class-accent-rogue    { border-left-color: var(--class-rogue); }
+.combat-entry.current.class-accent-cleric   { border-left-color: var(--class-cleric); }
+.combat-entry.current.class-accent-wizard   { border-left-color: var(--class-wizard); }
+.combat-entry.current.class-accent-ranger   { border-left-color: var(--class-ranger); }
+.combat-entry.current.class-accent-bard     { border-left-color: var(--class-bard); }
+.combat-entry.current.class-accent-paladin  { border-left-color: var(--class-paladin); }
+.combat-entry.current.class-accent-barbarian{ border-left-color: var(--class-barbarian); }
+.combat-entry.current.class-accent-druid    { border-left-color: var(--class-druid); }
+.combat-entry.current.class-accent-sorcerer { border-left-color: var(--class-sorcerer); }
+.combat-entry.current.class-accent-warlock  { border-left-color: var(--class-warlock); }
+.combat-entry.current.class-accent-monk     { border-left-color: var(--class-monk); }
+
+/* ── Spotlight toast variant ─────────────────────────────────────────────── */
+/* Reuses the parchment notification system with a spotlight-specific style  */
+
+.parchment-notif--spotlight {
+  border-color: rgba(255, 215, 0, 0.4);
+  background:
+    linear-gradient(135deg,
+      rgba(42, 36, 18, 0.97) 0%,
+      rgba(28, 24, 12, 0.98) 100%);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 215, 0, 0.08),
+    0 0 18px rgba(255, 215, 0, 0.06);
+}
+
+.parchment-notif--spotlight .parchment-seal {
+  background: linear-gradient(135deg, #b8860b, #daa520);
+  color: #1a1408;
+}
+
+.parchment-notif--spotlight .parchment-notif-title {
+  color: #daa520;
+}

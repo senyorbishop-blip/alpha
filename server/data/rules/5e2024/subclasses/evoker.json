@@ -1,0 +1,101 @@
+{
+  "id": "evoker",
+  "displayName": "Evoker",
+  "classId": "wizard",
+  "parentClassId": "wizard",
+  "flavorText": "Evokers shape raw magical energy into devastating elemental and force effects.",
+  "featureUnlocksByLevel": {
+    "2": [
+      "evoker-evocation-savant",
+      "evoker-sculpt-spells"
+    ],
+    "6": [
+      "evoker-potent-cantrip"
+    ],
+    "10": [
+      "evoker-empowered-evocation"
+    ],
+    "14": [
+      "evoker-overchannel"
+    ]
+  },
+  "features": [
+    {
+      "level": 2,
+      "id": "evoker-evocation-savant",
+      "displayName": "Evocation Savant",
+      "description": "The gold and time you must spend to copy an Evocation spell into your spellbook are halved."
+    },
+    {
+      "level": 2,
+      "id": "evoker-sculpt-spells",
+      "displayName": "Sculpt Spells",
+      "description": "When you cast an Evocation spell that affects other creatures you can see, you can protect a number of them equal to 1 + the spell's level from full effect."
+    },
+    {
+      "level": 6,
+      "id": "evoker-potent-cantrip",
+      "displayName": "Potent Cantrip",
+      "description": "Your damaging cantrips affect even creatures that succeed on their saving throws, taking half damage if they would normally take none."
+    },
+    {
+      "level": 10,
+      "id": "evoker-empowered-evocation",
+      "displayName": "Empowered Evocation",
+      "description": "Add your Intelligence modifier to one damage roll of any wizard Evocation spell you cast."
+    },
+    {
+      "level": 14,
+      "id": "evoker-overchannel",
+      "displayName": "Overchannel",
+      "description": "When casting a wizard spell of 5th level or lower that deals damage, you can deal maximum damage. Repeated uses before a long rest deal increasing necrotic damage to you."
+    }
+  ],
+  "featureDefinitions": {
+    "evoker-evocation-savant": {
+      "summary": "Your spellbook growth rewards committing to destructive arcane force rather than dabbling.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "specialist"
+      ]
+    },
+    "evoker-sculpt-spells": {
+      "summary": "Shape area blasts around allies so the wizard can cast aggressively without wrecking the party line.",
+      "description": "Sculpt Spells is one of the reasons Evoker works at a real table. It gives the subclass permission to use splash damage magic boldly instead of spending every round apologizing for friendly fire.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "control",
+        "damage"
+      ]
+    },
+    "evoker-potent-cantrip": {
+      "summary": "Even your at-will damage magic remains relevant against targets that normally blunt save-based cantrips.",
+      "tags": [
+        "subclass",
+        "cantrip",
+        "damage",
+        "spellcasting"
+      ]
+    },
+    "evoker-empowered-evocation": {
+      "summary": "Your Intelligence starts directly pushing destructive spell damage higher.",
+      "tags": [
+        "subclass",
+        "damage",
+        "spellcasting"
+      ]
+    },
+    "evoker-overchannel": {
+      "summary": "Force a lower-level damage spell to hit at maximum output when a huge spike matters more than your own comfort.",
+      "description": "Overchannel is the Evoker’s boss-fight lever. It trades safety for certainty and should feel like a dangerous choice to force a blast to peak efficiency.",
+      "tags": [
+        "subclass",
+        "damage",
+        "capstone",
+        "spellcasting"
+      ]
+    }
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "id": "mechanist",
+  "displayName": "Mechanist",
+  "classId": "tinker",
+  "parentClassId": "tinker",
+  "flavorText": "Mechanists build assistant frames, scout drones, and disciplined automata that extend their reach across the battlefield.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "mechanist-companion-frame",
+      "mechanist-systems-spells"
+    ],
+    "6": [
+      "mechanist-linked-actions"
+    ],
+    "10": [
+      "mechanist-hardened-frame"
+    ],
+    "15": [
+      "mechanist-swarm-directive"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "mechanist-companion-frame",
+      "displayName": "Companion Frame",
+      "description": "Assemble a mechanical companion or modular helper frame that scouts, assists, and shares the risk of front-line operations."
+    },
+    {
+      "level": 3,
+      "id": "mechanist-systems-spells",
+      "displayName": "Systems Spells",
+      "description": "You gain always-ready spells focused on motion control, force projection, and engineered utility."
+    },
+    {
+      "level": 6,
+      "id": "mechanist-linked-actions",
+      "displayName": "Linked Actions",
+      "description": "You and your frame coordinate better, letting one unit create openings for the other instead of acting like disconnected pieces."
+    },
+    {
+      "level": 10,
+      "id": "mechanist-hardened-frame",
+      "displayName": "Hardened Frame",
+      "description": "Your construct chassis becomes more resilient, letting it stay relevant deeper into dangerous encounters."
+    },
+    {
+      "level": 15,
+      "id": "mechanist-swarm-directive",
+      "displayName": "Swarm Directive",
+      "description": "Your command architecture scales up into true battlefield control through coordinated devices and overlapping automation."
+    }
+  ],
+  "featureDefinitions": {
+    "mechanist-companion-frame": {
+      "summary": "Gain a real mechanical partner that expands your board presence and utility.",
+      "description": "Companion Frame should feel like a premium class identity feature, not a cosmetic pet. It scouts, helps, blocks space, and gives the subclass a tangible second body in play.",
+      "tags": [
+        "subclass",
+        "companion",
+        "construct",
+        "utility"
+      ]
+    },
+    "mechanist-systems-spells": {
+      "summary": "Your granted spells support force projection, positioning, and machine-minded problem solving.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "control"
+      ]
+    },
+    "mechanist-linked-actions": {
+      "summary": "Your turn becomes a coordinated sequence between inventor and frame.",
+      "tags": [
+        "subclass",
+        "tempo",
+        "companion"
+      ]
+    },
+    "mechanist-hardened-frame": {
+      "summary": "Your construct becomes sturdy enough to stay meaningful into tougher fights.",
+      "tags": [
+        "subclass",
+        "defense",
+        "companion"
+      ]
+    },
+    "mechanist-swarm-directive": {
+      "summary": "Your command net expands from one frame to a full battlefield system.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "control",
+        "automation"
+      ]
+    }
+  }
+}

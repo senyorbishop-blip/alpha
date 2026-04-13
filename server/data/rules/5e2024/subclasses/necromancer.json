@@ -1,0 +1,54 @@
+{
+  "id": "necromancer",
+  "displayName": "Necromancer",
+  "classId": "wizard",
+  "parentClassId": "wizard",
+  "flavorText": "Necromancers command life and death energies, sustaining themselves and ruling undead servants.",
+  "featureUnlocksByLevel": {
+    "2": [
+      "necromancer-necromancy-savant",
+      "necromancer-grim-harvest"
+    ],
+    "6": [
+      "necromancer-undead-thralls"
+    ],
+    "10": [
+      "necromancer-inured-to-undead"
+    ],
+    "14": [
+      "necromancer-command-undead"
+    ]
+  },
+  "features": [
+    {
+      "level": 2,
+      "id": "necromancer-necromancy-savant",
+      "displayName": "Necromancy Savant",
+      "description": "The gold and time to copy Necromancy spells into your spellbook are halved."
+    },
+    {
+      "level": 2,
+      "id": "necromancer-grim-harvest",
+      "displayName": "Grim Harvest",
+      "description": "Once per turn when you kill one or more creatures with a spell, regain hit points equal to twice the spell's level (or three times if it is a Necromancy spell)."
+    },
+    {
+      "level": 6,
+      "id": "necromancer-undead-thralls",
+      "displayName": "Undead Thralls",
+      "description": "When you cast animate dead, create one extra undead. Your undead add your proficiency bonus to damage rolls."
+    },
+    {
+      "level": 10,
+      "id": "necromancer-inured-to-undead",
+      "displayName": "Inured to Undead",
+      "description": "Gain resistance to necrotic damage, and your hit point maximum cannot be reduced by undead effects."
+    },
+    {
+      "level": 14,
+      "id": "necromancer-command-undead",
+      "displayName": "Command Undead",
+      "description": "As an action, target one undead you can see. It must make a Charisma save (DC 8 + proficiency bonus + Intelligence modifier) or fall under your control for 24 hours."
+    }
+  ]
+}

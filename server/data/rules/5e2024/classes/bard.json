@@ -1,0 +1,1715 @@
+{
+  "id": "bard",
+  "displayName": "Bard",
+  "hitDie": 8,
+  "primaryAbilities": [
+    "cha"
+  ],
+  "savingThrows": [
+    "dex",
+    "cha"
+  ],
+  "subclassLevel": 3,
+  "subclassDisplayName": "College",
+  "armorProficiencies": [
+    "light"
+  ],
+  "weaponProficiencies": [
+    "simple",
+    "hand-crossbows",
+    "longswords",
+    "rapiers",
+    "shortswords"
+  ],
+  "toolProficiencies": [
+    "musical-instruments"
+  ],
+  "skillChoices": {
+    "count": 3,
+    "from": [
+      "Acrobatics",
+      "Animal Handling",
+      "Arcana",
+      "Athletics",
+      "Deception",
+      "History",
+      "Insight",
+      "Intimidation",
+      "Investigation",
+      "Medicine",
+      "Nature",
+      "Perception",
+      "Performance",
+      "Persuasion",
+      "Religion",
+      "Sleight of Hand",
+      "Stealth",
+      "Survival"
+    ]
+  },
+  "startingEquipmentChoices": [],
+  "spellcastingType": "full",
+  "spellcastingAbility": "cha",
+  "spellSlots": {
+    "1": {
+      "1st": 2
+    },
+    "2": {
+      "1st": 3
+    },
+    "3": {
+      "1st": 4,
+      "2nd": 2
+    },
+    "4": {
+      "1st": 4,
+      "2nd": 3
+    },
+    "5": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 2
+    },
+    "6": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3
+    },
+    "7": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 1
+    },
+    "8": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 2
+    },
+    "9": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 1
+    },
+    "10": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2
+    },
+    "11": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1
+    },
+    "12": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1
+    },
+    "13": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1
+    },
+    "14": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1
+    },
+    "15": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1
+    },
+    "16": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1
+    },
+    "17": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1,
+      "9th": 1
+    },
+    "18": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 3,
+      "6th": 1,
+      "7th": 1,
+      "8th": 1,
+      "9th": 1
+    },
+    "19": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 3,
+      "6th": 2,
+      "7th": 1,
+      "8th": 1,
+      "9th": 1
+    },
+    "20": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 3,
+      "6th": 2,
+      "7th": 2,
+      "8th": 1,
+      "9th": 1
+    }
+  },
+  "classDescription": "An inspiring spellcaster, performer, and lorekeeper.",
+  "roleIdentity": "Support-controller hybrid with broad utility and magical flexibility.",
+  "progressionTable": [
+    {
+      "level": 1,
+      "proficiencyBonus": 2,
+      "features": [
+        "Spellcasting",
+        "Bardic Inspiration (d6)"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 2,
+        "spellsKnown": 4,
+        "bardicInspirationDie": "d6",
+        "bardicInspirationRefresh": "LongRest"
+      },
+      "unlockIds": [
+        "bard-spellcasting",
+        "bard-bardic-inspiration-d6"
+      ]
+    },
+    {
+      "level": 2,
+      "proficiencyBonus": 2,
+      "features": [
+        "Jack of All Trades",
+        "Song of Rest (d6)"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 2,
+        "spellsKnown": 5,
+        "bardicInspirationDie": "d6",
+        "bardicInspirationRefresh": "LongRest"
+      },
+      "unlockIds": [
+        "bard-jack-of-all-trades",
+        "bard-song-of-rest-d6"
+      ]
+    },
+    {
+      "level": 3,
+      "proficiencyBonus": 2,
+      "features": [
+        "Bard College (Subclass)",
+        "Expertise"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 2,
+        "spellsKnown": 6,
+        "bardicInspirationDie": "d6",
+        "bardicInspirationRefresh": "LongRest"
+      },
+      "unlockIds": [
+        "bard-bard-college-subclass",
+        "bard-expertise"
+      ]
+    },
+    {
+      "level": 4,
+      "proficiencyBonus": 2,
+      "features": [
+        "Ability Score Improvement",
+        "Cantrips Known: 3"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsKnown": 7,
+        "bardicInspirationDie": "d6",
+        "bardicInspirationRefresh": "LongRest"
+      },
+      "unlockIds": [
+        "bard-ability-score-improvement",
+        "bard-cantrips-known-3"
+      ]
+    },
+    {
+      "level": 5,
+      "proficiencyBonus": 3,
+      "features": [
+        "Font of Inspiration",
+        "Bardic Inspiration (d8)"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsKnown": 8,
+        "bardicInspirationDie": "d8",
+        "bardicInspirationRefresh": "ShortOrLongRest"
+      },
+      "unlockIds": [
+        "bard-font-of-inspiration",
+        "bard-bardic-inspiration-d8"
+      ]
+    },
+    {
+      "level": 6,
+      "proficiencyBonus": 3,
+      "features": [
+        "Subclass Feature",
+        "Countercharm"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsKnown": 9,
+        "bardicInspirationDie": "d8",
+        "bardicInspirationRefresh": "ShortOrLongRest"
+      },
+      "unlockIds": [
+        "bard-subclass-feature",
+        "bard-countercharm"
+      ]
+    },
+    {
+      "level": 7,
+      "proficiencyBonus": 3,
+      "features": [
+        "Magical Secrets"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsKnown": 10,
+        "bardicInspirationDie": "d8",
+        "bardicInspirationRefresh": "ShortOrLongRest"
+      },
+      "unlockIds": [
+        "bard-magical-secrets"
+      ]
+    },
+    {
+      "level": 8,
+      "proficiencyBonus": 3,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsKnown": 11,
+        "bardicInspirationDie": "d8",
+        "bardicInspirationRefresh": "ShortOrLongRest"
+      },
+      "unlockIds": [
+        "bard-ability-score-improvement-2"
+      ]
+    },
+    {
+      "level": 9,
+      "proficiencyBonus": 4,
+      "features": [
+        "Song of Rest (d8)"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 3,
+        "spellsKnown": 12,
+        "bardicInspirationDie": "d8",
+        "bardicInspirationRefresh": "ShortOrLongRest"
+      },
+      "unlockIds": [
+        "bard-song-of-rest-d8"
+      ]
+    },
+    {
+      "level": 10,
+      "proficiencyBonus": 4,
+      "features": [
+        "Expertise",
+        "Magical Secrets",
+        "Bardic Inspiration (d10)",
+        "Cantrips Known: 4"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 13,
+        "bardicInspirationDie": "d10",
+        "bardicInspirationRefresh": "ShortOrLongRest"
+      },
+      "unlockIds": [
+        "bard-expertise-2",
+        "bard-magical-secrets-2",
+        "bard-bardic-inspiration-d10",
+        "bard-cantrips-known-4"
+      ]
+    },
+    {
+      "level": 11,
+      "proficiencyBonus": 4,
+      "features": [
+        "Magical Secrets"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 14,
+        "bardicInspirationDie": "d10",
+        "bardicInspirationRefresh": "ShortOrLongRest"
+      },
+      "unlockIds": [
+        "bard-magical-secrets-3"
+      ]
+    },
+    {
+      "level": 12,
+      "proficiencyBonus": 4,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 15,
+        "bardicInspirationDie": "d10",
+        "bardicInspirationRefresh": "ShortOrLongRest"
+      },
+      "unlockIds": [
+        "bard-ability-score-improvement-3"
+      ]
+    },
+    {
+      "level": 13,
+      "proficiencyBonus": 5,
+      "features": [
+        "Song of Rest (d10)",
+        "Magical Secrets"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 16,
+        "bardicInspirationDie": "d10",
+        "bardicInspirationRefresh": "ShortOrLongRest"
+      },
+      "unlockIds": [
+        "bard-song-of-rest-d10",
+        "bard-magical-secrets-4"
+      ]
+    },
+    {
+      "level": 14,
+      "proficiencyBonus": 5,
+      "features": [
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 17,
+        "bardicInspirationDie": "d10",
+        "bardicInspirationRefresh": "ShortOrLongRest"
+      },
+      "unlockIds": [
+        "bard-subclass-feature-2"
+      ]
+    },
+    {
+      "level": 15,
+      "proficiencyBonus": 5,
+      "features": [
+        "Bardic Inspiration (d12)"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 18,
+        "bardicInspirationDie": "d12",
+        "bardicInspirationRefresh": "ShortOrLongRest"
+      },
+      "unlockIds": [
+        "bard-bardic-inspiration-d12"
+      ]
+    },
+    {
+      "level": 16,
+      "proficiencyBonus": 5,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 19,
+        "bardicInspirationDie": "d12",
+        "bardicInspirationRefresh": "ShortOrLongRest"
+      },
+      "unlockIds": [
+        "bard-ability-score-improvement-4"
+      ]
+    },
+    {
+      "level": 17,
+      "proficiencyBonus": 6,
+      "features": [
+        "Song of Rest (d12)",
+        "Magical Secrets"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 20,
+        "bardicInspirationDie": "d12",
+        "bardicInspirationRefresh": "ShortOrLongRest"
+      },
+      "unlockIds": [
+        "bard-song-of-rest-d12",
+        "bard-magical-secrets-5"
+      ]
+    },
+    {
+      "level": 18,
+      "proficiencyBonus": 6,
+      "features": [
+        "Magical Secrets"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 21,
+        "bardicInspirationDie": "d12",
+        "bardicInspirationRefresh": "ShortOrLongRest"
+      },
+      "unlockIds": [
+        "bard-magical-secrets-6"
+      ]
+    },
+    {
+      "level": 19,
+      "proficiencyBonus": 6,
+      "features": [
+        "Epic Boon"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 22,
+        "bardicInspirationDie": "d12",
+        "bardicInspirationRefresh": "ShortOrLongRest"
+      },
+      "unlockIds": [
+        "bard-epic-boon"
+      ]
+    },
+    {
+      "level": 20,
+      "proficiencyBonus": 6,
+      "features": [
+        "Superior Inspiration"
+      ],
+      "classMechanics": {
+        "cantripsKnown": 4,
+        "spellsKnown": 22,
+        "bardicInspirationDie": "d12",
+        "bardicInspirationRefresh": "ShortOrLongRest"
+      },
+      "unlockIds": [
+        "bard-superior-inspiration"
+      ]
+    }
+  ],
+  "featureDefinitions": {
+    "bard-spellcasting": {
+      "id": "bard-spellcasting",
+      "displayName": "Spellcasting",
+      "name": "Spellcasting",
+      "summary": "You gain access to spell slots, a spellcasting ability, and a growing library of magical options.",
+      "description": "Spellcasting is the rules engine that turns this class into a caster. It should clearly define your spell ability, slot progression, preparation or known-spell rules, and where those spells are surfaced in the sheet.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 1,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "core"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-bardic-inspiration-d6": {
+      "id": "bard-bardic-inspiration-d6",
+      "displayName": "Bardic Inspiration (d6)",
+      "name": "Bardic Inspiration (d6)",
+      "summary": "Grant an ally a die they can spend later to swing a key roll in your party’s favor.",
+      "description": "As a bonus action, you inspire a creature so it can add the Bardic Inspiration die to an important future roll. This is one of the bard’s core support tools and should feel visible, easy to spend, and easy to track.\n\nIn play, use it before decisive attacks, saves, or ability checks instead of hoarding it too long. The sheet should make the die size, remaining uses, and refresh timing obvious.\n\nThis shines most when it helps the party pass an important check, save, or attack.\n\nRefresh depends on level; later bard progression improves how often this comes back.\n\nPractical effect: Creates a flexible support resource that helps the party pass important rolls.",
+      "level": 1,
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "Bardic Inspiration",
+      "trackUses": true,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "resource",
+        "social"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "Refresh depends on level; later bard progression improves how often this comes back.",
+      "effect": "Creates a flexible support resource that helps the party pass important rolls.",
+      "dice": ""
+    },
+    "bard-jack-of-all-trades": {
+      "id": "bard-jack-of-all-trades",
+      "displayName": "Jack of All Trades",
+      "name": "Jack of All Trades",
+      "summary": "You are broadly competent even outside your best skills.",
+      "description": "Jack of All Trades raises the bard floor on many checks, making the class feel smart, flexible, and rarely useless outside its primary proficiencies. This should influence derived skill math across the sheet, not just live as flavor text.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 2,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "skills",
+        "utility"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-song-of-rest-d6": {
+      "id": "bard-song-of-rest-d6",
+      "displayName": "Song of Rest (d6)",
+      "name": "Song of Rest (d6)",
+      "summary": "Your party gets better value from downtime healing during rests.",
+      "description": "Song of Rest improves short-rest recovery for the group. It is not an action button you spam in combat; it is a rest-phase quality boost that should be visible when the table is reviewing recovery options.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 2,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "healing",
+        "rest"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-bard-college-subclass": {
+      "id": "bard-bard-college-subclass",
+      "displayName": "Bard College (Subclass)",
+      "name": "Bard College (Subclass)",
+      "summary": "Choose your college and unlock a stronger identity for the rest of the build.",
+      "description": "This is the subclass gate for the bard. Once chosen, your college should drive later feature cards, action buttons, resource hooks, and playstyle expectations instead of sitting as a hidden background choice.",
+      "level": 3,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "subclass",
+        "progression",
+        "build"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-expertise": {
+      "id": "bard-expertise",
+      "displayName": "Expertise",
+      "name": "Expertise",
+      "summary": "You push chosen skills into true specialty territory.",
+      "description": "Expertise doubles down on a few signature proficiencies so your character becomes exceptional instead of merely trained. In the sheet, the chosen skills should clearly jump above ordinary proficiency math.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 3,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "skills",
+        "passive"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-ability-score-improvement": {
+      "id": "bard-ability-score-improvement",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "summary": "Improve key ability scores or take a feat to reshape the build.",
+      "description": "Ability Score Improvement is one of the biggest character-shaping progression points. It can either raise the numbers your class depends on most or open a feat that changes what the character can do.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 4,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "build",
+        "progression"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-cantrips-known-3": {
+      "id": "bard-cantrips-known-3",
+      "displayName": "Cantrips Known: 3",
+      "name": "Cantrips Known: 3",
+      "summary": "Your known cantrip count is now 3.",
+      "description": "This progression point raises your total known cantrips to 3, giving you more at-will magical options in and out of combat.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 4,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-font-of-inspiration": {
+      "id": "bard-font-of-inspiration",
+      "displayName": "Font of Inspiration",
+      "name": "Font of Inspiration",
+      "summary": "Your inspiration engine is now much easier to keep online.",
+      "description": "This progression point changes the cadence of Bardic Inspiration recovery. It matters because it decides whether the bard can treat inspiration as a premium panic button or as a regular combat rhythm tool.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 5,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "Bardic Inspiration",
+      "trackUses": true,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "resource"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-bardic-inspiration-d8": {
+      "id": "bard-bardic-inspiration-d8",
+      "displayName": "Bardic Inspiration (d8)",
+      "name": "Bardic Inspiration (d8)",
+      "summary": "Grant an ally a die they can spend later to swing a key roll in your party’s favor.",
+      "description": "As a bonus action, you inspire a creature so it can add the Bardic Inspiration die to an important future roll. This is one of the bard’s core support tools and should feel visible, easy to spend, and easy to track.\n\nIn play, use it before decisive attacks, saves, or ability checks instead of hoarding it too long. The sheet should make the die size, remaining uses, and refresh timing obvious.\n\nThis shines most when it helps the party pass an important check, save, or attack.\n\nRefresh depends on level; later bard progression improves how often this comes back.\n\nPractical effect: Creates a flexible support resource that helps the party pass important rolls.",
+      "level": 5,
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "Bardic Inspiration",
+      "trackUses": true,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "resource",
+        "social"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "Refresh depends on level; later bard progression improves how often this comes back.",
+      "effect": "Creates a flexible support resource that helps the party pass important rolls.",
+      "dice": ""
+    },
+    "bard-subclass-feature": {
+      "id": "bard-subclass-feature",
+      "displayName": "Subclass Feature",
+      "name": "Subclass Feature",
+      "summary": "This level opens or advances your subclass path, adding themed powers unique to your chosen specialization.",
+      "description": "A subclass unlock means the base class starts branching into a more specific identity. The sheet should surface the actual subclass feature rows beside this progression point so the player can tell what changed.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 6,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "subclass",
+        "progression"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-countercharm": {
+      "id": "bard-countercharm",
+      "displayName": "Countercharm",
+      "name": "Countercharm",
+      "summary": "Use performance or force of presence to protect allies against mental disruption.",
+      "description": "Countercharm is a defensive support action for situations where fear, charm, or similar control effects are threatening the party. It is a situational feature, but when the right fight appears it should feel like a real answer, not dead text.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 6,
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "defense",
+        "action"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-magical-secrets": {
+      "id": "bard-magical-secrets",
+      "displayName": "Magical Secrets",
+      "name": "Magical Secrets",
+      "summary": "You learn powerful off-list magic, widening what your bard can solve.",
+      "description": "Magical Secrets is one of the bard’s biggest identity spikes. It lets you poach spells that radically change your support, control, or burst toolkit. The sheet should make those extra spell choices feel first-class, not like a hidden exception.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 7,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "customization"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-ability-score-improvement-2": {
+      "id": "bard-ability-score-improvement-2",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "summary": "Improve key ability scores or take a feat to reshape the build.",
+      "description": "Ability Score Improvement is one of the biggest character-shaping progression points. It can either raise the numbers your class depends on most or open a feat that changes what the character can do.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 8,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "build",
+        "progression"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-song-of-rest-d8": {
+      "id": "bard-song-of-rest-d8",
+      "displayName": "Song of Rest (d8)",
+      "name": "Song of Rest (d8)",
+      "summary": "Your party gets better value from downtime healing during rests.",
+      "description": "Song of Rest improves short-rest recovery for the group. It is not an action button you spam in combat; it is a rest-phase quality boost that should be visible when the table is reviewing recovery options.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 9,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "healing",
+        "rest"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-expertise-2": {
+      "id": "bard-expertise-2",
+      "displayName": "Expertise",
+      "name": "Expertise",
+      "summary": "You push chosen skills into true specialty territory.",
+      "description": "Expertise doubles down on a few signature proficiencies so your character becomes exceptional instead of merely trained. In the sheet, the chosen skills should clearly jump above ordinary proficiency math.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 10,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "skills",
+        "passive"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-magical-secrets-2": {
+      "id": "bard-magical-secrets-2",
+      "displayName": "Magical Secrets",
+      "name": "Magical Secrets",
+      "summary": "You learn powerful off-list magic, widening what your bard can solve.",
+      "description": "Magical Secrets is one of the bard’s biggest identity spikes. It lets you poach spells that radically change your support, control, or burst toolkit. The sheet should make those extra spell choices feel first-class, not like a hidden exception.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 10,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "customization"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-bardic-inspiration-d10": {
+      "id": "bard-bardic-inspiration-d10",
+      "displayName": "Bardic Inspiration (d10)",
+      "name": "Bardic Inspiration (d10)",
+      "summary": "Grant an ally a die they can spend later to swing a key roll in your party’s favor.",
+      "description": "As a bonus action, you inspire a creature so it can add the Bardic Inspiration die to an important future roll. This is one of the bard’s core support tools and should feel visible, easy to spend, and easy to track.\n\nIn play, use it before decisive attacks, saves, or ability checks instead of hoarding it too long. The sheet should make the die size, remaining uses, and refresh timing obvious.\n\nThis shines most when it helps the party pass an important check, save, or attack.\n\nRefresh depends on level; later bard progression improves how often this comes back.\n\nPractical effect: Creates a flexible support resource that helps the party pass important rolls.",
+      "level": 10,
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "Bardic Inspiration",
+      "trackUses": true,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "resource",
+        "social"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "Refresh depends on level; later bard progression improves how often this comes back.",
+      "effect": "Creates a flexible support resource that helps the party pass important rolls.",
+      "dice": ""
+    },
+    "bard-cantrips-known-4": {
+      "id": "bard-cantrips-known-4",
+      "displayName": "Cantrips Known: 4",
+      "name": "Cantrips Known: 4",
+      "summary": "Your known cantrip count is now 4.",
+      "description": "This progression point raises your total known cantrips to 4, giving you more at-will magical options in and out of combat.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 10,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-magical-secrets-3": {
+      "id": "bard-magical-secrets-3",
+      "displayName": "Magical Secrets",
+      "name": "Magical Secrets",
+      "summary": "You learn powerful off-list magic, widening what your bard can solve.",
+      "description": "Magical Secrets is one of the bard’s biggest identity spikes. It lets you poach spells that radically change your support, control, or burst toolkit. The sheet should make those extra spell choices feel first-class, not like a hidden exception.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 11,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "customization"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-ability-score-improvement-3": {
+      "id": "bard-ability-score-improvement-3",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "summary": "Improve key ability scores or take a feat to reshape the build.",
+      "description": "Ability Score Improvement is one of the biggest character-shaping progression points. It can either raise the numbers your class depends on most or open a feat that changes what the character can do.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 12,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "build",
+        "progression"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-song-of-rest-d10": {
+      "id": "bard-song-of-rest-d10",
+      "displayName": "Song of Rest (d10)",
+      "name": "Song of Rest (d10)",
+      "summary": "Your party gets better value from downtime healing during rests.",
+      "description": "Song of Rest improves short-rest recovery for the group. It is not an action button you spam in combat; it is a rest-phase quality boost that should be visible when the table is reviewing recovery options.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 13,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "healing",
+        "rest"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-magical-secrets-4": {
+      "id": "bard-magical-secrets-4",
+      "displayName": "Magical Secrets",
+      "name": "Magical Secrets",
+      "summary": "You learn powerful off-list magic, widening what your bard can solve.",
+      "description": "Magical Secrets is one of the bard’s biggest identity spikes. It lets you poach spells that radically change your support, control, or burst toolkit. The sheet should make those extra spell choices feel first-class, not like a hidden exception.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 13,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "customization"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-subclass-feature-2": {
+      "id": "bard-subclass-feature-2",
+      "displayName": "Subclass Feature",
+      "name": "Subclass Feature",
+      "summary": "This level opens or advances your subclass path, adding themed powers unique to your chosen specialization.",
+      "description": "A subclass unlock means the base class starts branching into a more specific identity. The sheet should surface the actual subclass feature rows beside this progression point so the player can tell what changed.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 14,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "subclass",
+        "progression"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-bardic-inspiration-d12": {
+      "id": "bard-bardic-inspiration-d12",
+      "displayName": "Bardic Inspiration (d12)",
+      "name": "Bardic Inspiration (d12)",
+      "summary": "Grant an ally a die they can spend later to swing a key roll in your party’s favor.",
+      "description": "As a bonus action, you inspire a creature so it can add the Bardic Inspiration die to an important future roll. This is one of the bard’s core support tools and should feel visible, easy to spend, and easy to track.\n\nIn play, use it before decisive attacks, saves, or ability checks instead of hoarding it too long. The sheet should make the die size, remaining uses, and refresh timing obvious.\n\nThis shines most when it helps the party pass an important check, save, or attack.\n\nRefresh depends on level; later bard progression improves how often this comes back.\n\nPractical effect: Creates a flexible support resource that helps the party pass important rolls.",
+      "level": 15,
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "Bardic Inspiration",
+      "trackUses": true,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "resource",
+        "social"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "Refresh depends on level; later bard progression improves how often this comes back.",
+      "effect": "Creates a flexible support resource that helps the party pass important rolls.",
+      "dice": ""
+    },
+    "bard-ability-score-improvement-4": {
+      "id": "bard-ability-score-improvement-4",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "summary": "Improve key ability scores or take a feat to reshape the build.",
+      "description": "Ability Score Improvement is one of the biggest character-shaping progression points. It can either raise the numbers your class depends on most or open a feat that changes what the character can do.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 16,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "build",
+        "progression"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-song-of-rest-d12": {
+      "id": "bard-song-of-rest-d12",
+      "displayName": "Song of Rest (d12)",
+      "name": "Song of Rest (d12)",
+      "summary": "Your party gets better value from downtime healing during rests.",
+      "description": "Song of Rest improves short-rest recovery for the group. It is not an action button you spam in combat; it is a rest-phase quality boost that should be visible when the table is reviewing recovery options.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 17,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "healing",
+        "rest"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-magical-secrets-5": {
+      "id": "bard-magical-secrets-5",
+      "displayName": "Magical Secrets",
+      "name": "Magical Secrets",
+      "summary": "You learn powerful off-list magic, widening what your bard can solve.",
+      "description": "Magical Secrets is one of the bard’s biggest identity spikes. It lets you poach spells that radically change your support, control, or burst toolkit. The sheet should make those extra spell choices feel first-class, not like a hidden exception.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 17,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "customization"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-magical-secrets-6": {
+      "id": "bard-magical-secrets-6",
+      "displayName": "Magical Secrets",
+      "name": "Magical Secrets",
+      "summary": "You learn powerful off-list magic, widening what your bard can solve.",
+      "description": "Magical Secrets is one of the bard’s biggest identity spikes. It lets you poach spells that radically change your support, control, or burst toolkit. The sheet should make those extra spell choices feel first-class, not like a hidden exception.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 18,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "customization"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-epic-boon": {
+      "id": "bard-epic-boon",
+      "displayName": "Epic Boon",
+      "name": "Epic Boon",
+      "summary": "Gain an endgame reward that pushes the build into truly legendary territory.",
+      "description": "Epic Boons are late-game progression spikes that add a high-power identity capstone beyond ordinary class scaling.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 19,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "capstone",
+        "progression"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "bard-superior-inspiration": {
+      "id": "bard-superior-inspiration",
+      "displayName": "Superior Inspiration",
+      "name": "Superior Inspiration",
+      "summary": "Even when running dry, you are less likely to start an important scene empty-handed.",
+      "description": "Superior Inspiration is an endgame reliability feature. It exists so the bard’s signature support economy feels online more often at the start of high-level encounters.\n\nThis shines most when it helps the party pass an important check, save, or attack.",
+      "level": 20,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "bard",
+        "support",
+        "spellcasting",
+        "capstone",
+        "resource"
+      ],
+      "sourceKind": "class",
+      "className": "Bard",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    }
+  },
+  "levelUnlockIds": {
+    "1": [
+      "bard-l1-1",
+      "bard-l1-2"
+    ],
+    "2": [
+      "bard-l2-1",
+      "bard-l2-2"
+    ],
+    "3": [
+      "bard-l3-1",
+      "bard-l3-2"
+    ],
+    "4": [
+      "bard-l4-1",
+      "bard-l4-2"
+    ],
+    "5": [
+      "bard-l5-1",
+      "bard-l5-2"
+    ],
+    "6": [
+      "bard-l6-1",
+      "bard-l6-2"
+    ],
+    "7": [
+      "bard-l7-1"
+    ],
+    "8": [
+      "bard-l8-1"
+    ],
+    "9": [
+      "bard-l9-1"
+    ],
+    "10": [
+      "bard-l10-1",
+      "bard-l10-2",
+      "bard-l10-3",
+      "bard-l10-4"
+    ],
+    "11": [
+      "bard-l11-1"
+    ],
+    "12": [
+      "bard-l12-1"
+    ],
+    "13": [
+      "bard-l13-1",
+      "bard-l13-2"
+    ],
+    "14": [
+      "bard-l14-1"
+    ],
+    "15": [
+      "bard-l15-1"
+    ],
+    "16": [
+      "bard-l16-1"
+    ],
+    "17": [
+      "bard-l17-1",
+      "bard-l17-2"
+    ],
+    "18": [
+      "bard-l18-1"
+    ],
+    "19": [
+      "bard-l19-1"
+    ],
+    "20": [
+      "bard-l20-1"
+    ]
+  },
+  "progressionSummary": [
+    {
+      "level": 1,
+      "summary": "Spellcasting, Bardic Inspiration (d6).",
+      "unlockIds": [
+        "bard-l1-1",
+        "bard-l1-2"
+      ]
+    },
+    {
+      "level": 2,
+      "summary": "Jack of All Trades, Song of Rest (d6).",
+      "unlockIds": [
+        "bard-l2-1",
+        "bard-l2-2"
+      ]
+    },
+    {
+      "level": 3,
+      "summary": "Bard College (Subclass), Expertise.",
+      "unlockIds": [
+        "bard-l3-1",
+        "bard-l3-2"
+      ]
+    },
+    {
+      "level": 4,
+      "summary": "Ability Score Improvement, Cantrips Known: 3.",
+      "unlockIds": [
+        "bard-l4-1",
+        "bard-l4-2"
+      ]
+    },
+    {
+      "level": 5,
+      "summary": "Font of Inspiration, Bardic Inspiration (d8).",
+      "unlockIds": [
+        "bard-l5-1",
+        "bard-l5-2"
+      ]
+    },
+    {
+      "level": 6,
+      "summary": "Subclass Feature, Countercharm.",
+      "unlockIds": [
+        "bard-l6-1",
+        "bard-l6-2"
+      ]
+    },
+    {
+      "level": 7,
+      "summary": "Magical Secrets.",
+      "unlockIds": [
+        "bard-l7-1"
+      ]
+    },
+    {
+      "level": 8,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "bard-l8-1"
+      ]
+    },
+    {
+      "level": 9,
+      "summary": "Song of Rest (d8).",
+      "unlockIds": [
+        "bard-l9-1"
+      ]
+    },
+    {
+      "level": 10,
+      "summary": "Expertise, Magical Secrets, Bardic Inspiration (d10), Cantrips Known: 4.",
+      "unlockIds": [
+        "bard-l10-1",
+        "bard-l10-2",
+        "bard-l10-3",
+        "bard-l10-4"
+      ]
+    },
+    {
+      "level": 11,
+      "summary": "Magical Secrets.",
+      "unlockIds": [
+        "bard-l11-1"
+      ]
+    },
+    {
+      "level": 12,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "bard-l12-1"
+      ]
+    },
+    {
+      "level": 13,
+      "summary": "Song of Rest (d10), Magical Secrets.",
+      "unlockIds": [
+        "bard-l13-1",
+        "bard-l13-2"
+      ]
+    },
+    {
+      "level": 14,
+      "summary": "Subclass Feature.",
+      "unlockIds": [
+        "bard-l14-1"
+      ]
+    },
+    {
+      "level": 15,
+      "summary": "Bardic Inspiration (d12).",
+      "unlockIds": [
+        "bard-l15-1"
+      ]
+    },
+    {
+      "level": 16,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "bard-l16-1"
+      ]
+    },
+    {
+      "level": 17,
+      "summary": "Song of Rest (d12), Magical Secrets.",
+      "unlockIds": [
+        "bard-l17-1",
+        "bard-l17-2"
+      ]
+    },
+    {
+      "level": 18,
+      "summary": "Magical Secrets.",
+      "unlockIds": [
+        "bard-l18-1"
+      ]
+    },
+    {
+      "level": 19,
+      "summary": "Epic Boon.",
+      "unlockIds": [
+        "bard-l19-1"
+      ]
+    },
+    {
+      "level": 20,
+      "summary": "Superior Inspiration.",
+      "unlockIds": [
+        "bard-l20-1"
+      ]
+    }
+  ],
+  "future": {
+    "talentGroupId": "bard-core-talents",
+    "awakeningHookIds": [
+      "bard-awakening-legend"
+    ]
+  },
+  "buildTips": {
+    "primaryFocus": "Charisma",
+    "primaryReason": "powers your spells and social skills",
+    "secondaryFocus": "Dexterity",
+    "secondaryReason": "improves your armor class, initiative, and finesse/ranged attacks",
+    "avoidDump": "Constitution",
+    "avoidDumpReason": "low HP and weak Concentration saves can make a Bard feel fragile"
+  }
+}

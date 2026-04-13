@@ -1,0 +1,46 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Data directories (runtime-generated)
+data/
+!server/data/
+!server/data/prep_packs_builtin.json
+
+# Log files
+*.log
+
+# Environment files
+.env
+
+# Runtime-generated ambient loop assets
+client/static/assets/audio/*_loop_*.wav

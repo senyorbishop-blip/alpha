@@ -1,0 +1,123 @@
+TAVERN TABLETOP — END USER LICENSE AGREEMENT (EULA)
+Copyright (c) 2026 SenyorBishop. All rights reserved.
+
+By downloading, installing, or using Tavern Tabletop ("the Software"),
+you agree to the terms of this license. If you do not agree, do not
+use the Software.
+
+────────────────────────────────────────────────────────────────────────
+1. GRANT OF LICENSE
+────────────────────────────────────────────────────────────────────────
+
+SenyorBishop grants you a non-exclusive, non-transferable, personal
+license to install and use the Software for the following permitted
+purposes:
+
+  a) Personal use on your own hardware.
+  b) Hosting private sessions for friends, family, or a small group
+     (e.g. a gaming club, tabletop group, or similar non-paying
+     audience of no more than 20 concurrent users).
+
+────────────────────────────────────────────────────────────────────────
+2. PERMITTED SHARING
+────────────────────────────────────────────────────────────────────────
+
+You MAY share the Software with others provided that:
+
+  a) You share it free of charge — no payment, subscription, donation
+     requirement, or other compensation may be requested or accepted
+     in exchange for access to the Software or sessions hosted by it.
+  b) This license file is included, unmodified, with any copy you share.
+  c) You do not misrepresent the origin of the Software. Credit to
+     SenyorBishop must be preserved in any shared copy.
+
+────────────────────────────────────────────────────────────────────────
+3. RESTRICTIONS
+────────────────────────────────────────────────────────────────────────
+
+You may NOT:
+
+  a) Sell, sublicense, rent, lease, or otherwise transfer the Software
+     or any rights to it, in whole or in part, for any form of
+     compensation.
+  b) Use the Software to operate a paid service, subscription platform,
+     hosted VTT service, or any commercial offering.
+  c) Remove, alter, or obscure this license notice or any copyright
+     attribution within the Software.
+  d) Claim ownership or authorship of the Software or any substantial
+     portion of it.
+  e) Use the name "SenyorBishop" or "Tavern Tabletop" to endorse or
+     promote derivative products without prior written permission.
+
+────────────────────────────────────────────────────────────────────────
+4. MODIFICATIONS
+────────────────────────────────────────────────────────────────────────
+
+You MAY modify the Software for your own personal use. Modified versions:
+
+  a) May not be distributed or shared publicly without written permission
+     from SenyorBishop.
+  b) Must not be presented as the original or official Tavern Tabletop.
+
+────────────────────────────────────────────────────────────────────────
+5. THIRD-PARTY COMPONENTS
+────────────────────────────────────────────────────────────────────────
+
+The Software incorporates third-party open-source components, each
+governed by their own licenses:
+
+  - FastAPI, Uvicorn       MIT License
+  - Three.js               MIT License
+  - Chatterbox TTS         MIT License — Resemble AI
+  - Dia-1.6B TTS           Apache License 2.0 — Nari Labs
+  - Kokoro ONNX            Apache License 2.0
+  - PyJWT, bcrypt          MIT License
+  - Pillow                 HPND License (PIL)
+
+These components are not owned by SenyorBishop. Their respective
+licenses apply to those components. This EULA covers only the original
+code and creative work produced by SenyorBishop.
+
+────────────────────────────────────────────────────────────────────────
+6. DISCLAIMER OF WARRANTIES
+────────────────────────────────────────────────────────────────────────
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.
+
+SenyorBishop does not warrant that the Software will be error-free,
+uninterrupted, or compatible with any particular hardware or software
+configuration.
+
+────────────────────────────────────────────────────────────────────────
+7. LIMITATION OF LIABILITY
+────────────────────────────────────────────────────────────────────────
+
+IN NO EVENT SHALL SENYORBISHOP BE LIABLE FOR ANY INDIRECT, INCIDENTAL,
+SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING OUT OF OR IN CONNECTION WITH
+THE USE OR INABILITY TO USE THE SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGES.
+
+────────────────────────────────────────────────────────────────────────
+8. TERMINATION
+────────────────────────────────────────────────────────────────────────
+
+This license is effective until terminated. It terminates automatically
+if you breach any of its terms. Upon termination you must cease all use
+of the Software and destroy all copies in your possession.
+
+────────────────────────────────────────────────────────────────────────
+9. GOVERNING LAW
+────────────────────────────────────────────────────────────────────────
+
+This license shall be governed by and construed in accordance with
+applicable law. Any disputes shall be resolved in the jurisdiction
+where SenyorBishop is domiciled.
+
+────────────────────────────────────────────────────────────────────────
+
+For permissions beyond the scope of this license, or to inquire about
+commercial licensing, contact SenyorBishop directly.
+
+Copyright (c) 2026 SenyorBishop. All rights reserved.

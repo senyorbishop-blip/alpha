@@ -1,0 +1,91 @@
+{
+  "id": "circle-of-the-moon",
+  "displayName": "Circle of the Moon",
+  "classId": "druid",
+  "parentClassId": "druid",
+  "flavorText": "Moon druids master powerful shapeshifting forms for frontline combat.",
+  "featureUnlocksByLevel": {
+    "2": [
+      "moon-combat-wild-shape"
+    ],
+    "6": [
+      "moon-circle-forms"
+    ],
+    "10": [
+      "moon-elemental-wild-shape"
+    ],
+    "14": [
+      "moon-thousand-forms"
+    ]
+  },
+  "features": [
+    {
+      "level": 2,
+      "id": "moon-combat-wild-shape",
+      "displayName": "Combat Wild Shape",
+      "description": "You can use Wild Shape as a bonus action, cast certain spells while shifted, and expend spell slots to heal 1d8 hit points per slot level while in Wild Shape."
+    },
+    {
+      "level": 6,
+      "id": "moon-circle-forms",
+      "displayName": "Circle Forms",
+      "description": "Your Wild Shape CR limit increases to CR 3 at 6th level, CR 5 at 10th level, and follows the Moon cap at 14th level (starting from CR 1 at 2nd level)."
+    },
+    {
+      "level": 10,
+      "id": "moon-elemental-wild-shape",
+      "displayName": "Elemental Wild Shape",
+      "description": "Expend two uses of Wild Shape to transform into an air, earth, fire, or water elemental."
+    },
+    {
+      "level": 14,
+      "id": "moon-thousand-forms",
+      "displayName": "Thousand Forms",
+      "description": "You can cast alter self at will, showcasing complete mastery over mutable form."
+    }
+  ],
+  "featureDefinitions": {
+    "moon-combat-wild-shape": {
+      "summary": "Use Wild Shape as a true battle form instead of mostly an exploration tool.",
+      "description": "Combat Wild Shape is the feature that tells the player this circle fights through transformation. It should make beast form feel like a frontline mode, not a side utility option.",
+      "resourceName": "Wild Shape",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "transformation",
+        "combat"
+      ]
+    },
+    "moon-circle-forms": {
+      "summary": "Your available beast forms grow stronger sooner, letting the subclass stay relevant as a shape-based combatant.",
+      "description": "Circle Forms keeps the Moon druid from falling behind in form quality. It is crucial to making the subclass feel like a real shapeshifting bruiser.",
+      "tags": [
+        "subclass",
+        "transformation",
+        "scaling"
+      ]
+    },
+    "moon-elemental-wild-shape": {
+      "summary": "Your transformations escalate beyond beasts into primal elemental force.",
+      "description": "Elemental Wild Shape is a major fantasy spike. It should feel like the subclass breaking through ordinary beast limits into something more mythic and dangerous.",
+      "resourceName": "Wild Shape",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "transformation",
+        "elemental"
+      ]
+    },
+    "moon-thousand-forms": {
+      "section": "Actions",
+      "type": "action",
+      "summary": "Alter your appearance with effortless primal fluidity whenever disguise or adaptation matters.",
+      "description": "Thousand Forms is a high-level expression of shapeshifting mastery. It expands the circle beyond combat and into social infiltration, mystery, and constant adaptive identity.",
+      "tags": [
+        "subclass",
+        "utility",
+        "transformation"
+      ]
+    }
+  }
+}

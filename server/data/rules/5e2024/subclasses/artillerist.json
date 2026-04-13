@@ -1,0 +1,100 @@
+{
+  "id": "artillerist",
+  "displayName": "Artillerist",
+  "classId": "tinker",
+  "parentClassId": "tinker",
+  "flavorText": "Artillerists turn their rigs into compact siege engines, pressure cannons, and explosive support platforms.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "artillerist-arc-cannon",
+      "artillerist-bombardment-spells"
+    ],
+    "6": [
+      "artillerist-stabilized-battery"
+    ],
+    "10": [
+      "artillerist-shatter-field"
+    ],
+    "15": [
+      "artillerist-ordinance-mastery"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "artillerist-arc-cannon",
+      "displayName": "Arc Cannon",
+      "description": "Deploy or shoulder a compact cannon module that projects force, flame, or concussive energy. The cannon gives the subclass a real ranged identity and should feel like a named battlefield tool rather than a generic damage rider."
+    },
+    {
+      "level": 3,
+      "id": "artillerist-bombardment-spells",
+      "displayName": "Bombardment Spells",
+      "description": "You always have specialty explosive and protective formulae prepared as part of your artillery package."
+    },
+    {
+      "level": 6,
+      "id": "artillerist-stabilized-battery",
+      "displayName": "Stabilized Battery",
+      "description": "Your power cells become more efficient, letting you sustain firing solutions for longer and hold accuracy under pressure."
+    },
+    {
+      "level": 10,
+      "id": "artillerist-shatter-field",
+      "displayName": "Shatter Field",
+      "description": "Your devices reshape the battlefield with overlapping blast zones, cover-breaking force, and pressure that keeps enemies moving."
+    },
+    {
+      "level": 15,
+      "id": "artillerist-ordinance-mastery",
+      "displayName": "Ordinance Mastery",
+      "description": "Your heaviest modules hit harder, reach farther, and become easier to bring online during decisive encounters."
+    }
+  ],
+  "featureDefinitions": {
+    "artillerist-arc-cannon": {
+      "summary": "Anchor your subclass around a real weaponized device that projects repeatable battlefield pressure.",
+      "description": "Arc Cannon is the subclass thesis statement. It should feel like you built a weapon system the rest of the party can play around, whether that means zone pressure, crackling force, or controlled blasts.",
+      "resourceName": "Gadget Charges",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "device",
+        "combat",
+        "ranged"
+      ]
+    },
+    "artillerist-bombardment-spells": {
+      "summary": "Gain always-ready explosive and defensive formulae that keep your subclass spell identity sharp.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "prepared"
+      ]
+    },
+    "artillerist-stabilized-battery": {
+      "summary": "Your firing rig wastes less power and keeps delivering pressure over longer fights.",
+      "tags": [
+        "subclass",
+        "resource",
+        "sustain"
+      ]
+    },
+    "artillerist-shatter-field": {
+      "summary": "Turn your deployed tech into an area-denial and cover-cracking toolset.",
+      "tags": [
+        "subclass",
+        "control",
+        "area"
+      ]
+    },
+    "artillerist-ordinance-mastery": {
+      "summary": "Your endgame artillery package becomes the loudest and most reliable answer in the room.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "damage"
+      ]
+    }
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "category": "origin",
+  "feats": [
+    {
+      "id": "alert",
+      "displayName": "Alert",
+      "prerequisite": null,
+      "description": "Always on the lookout for danger. You gain the following benefits: Initiative +5, you can't be Surprised while conscious, other creatures don't gain Advantage on attack rolls against you as a result of being unseen by you.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "crafter",
+      "displayName": "Crafter",
+      "prerequisite": null,
+      "description": "You gain proficiency with 3 Artisan's Tools. Whenever you make a purchase, you receive a 20% discount. Once per LR you can craft a nonmagical item of 20 GP or less in 1 hour.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "healer",
+      "displayName": "Healer",
+      "prerequisite": null,
+      "description": "You gain proficiency with Healer's Kit. As an Action, spend one use from Kit to restore 1d6+4 + creature's level HP to a creature at 0 HP (stabilizes them at that HP, not 0). Can only use on each creature once per battle.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "lucky",
+      "displayName": "Lucky",
+      "prerequisite": null,
+      "description": "You have 3 Luck Points per Long Rest. Whenever you make an attack roll, ability check, or saving throw, you can spend one Luck Point to roll an additional d20 and choose which d20 to use. You can also spend a Luck Point when an attack is made against you, applying the same choice.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "magic-initiate-arcane",
+      "displayName": "Magic Initiate (Arcane)",
+      "prerequisite": null,
+      "description": "Choose Bard, Sorcerer, or Wizard. You learn 2 cantrips from that list and one 1st-level spell. Cast the 1st-level spell once per Long Rest (or with spell slots if you have them). INT or WIS or CHA determines your spellcasting ability (choose when you take this feat).",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "magic-initiate-divine",
+      "displayName": "Magic Initiate (Divine)",
+      "prerequisite": null,
+      "description": "Choose Cleric or Paladin. You learn 2 cantrips and one 1st-level spell from that list. Same mechanics as Arcane variant.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "magic-initiate-primal",
+      "displayName": "Magic Initiate (Primal)",
+      "prerequisite": null,
+      "description": "Choose Druid or Ranger. You learn 2 cantrips and one 1st-level spell from that list.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "savage-attacker",
+      "displayName": "Savage Attacker",
+      "prerequisite": null,
+      "description": "You've trained to deal particularly grievous wounds in battle. Once per turn when you hit a target with a weapon, you can roll the weapon's damage dice twice and use either roll.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "skilled",
+      "displayName": "Skilled",
+      "prerequisite": null,
+      "description": "Gain proficiency in any combination of 3 skills or tools of your choice.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "tavern-brawler",
+      "displayName": "Tavern Brawler",
+      "prerequisite": null,
+      "description": "Your unarmed strikes deal 1d4 + STR bludgeoning damage. When you hit a creature with an unarmed strike, you can use a Bonus Action to attempt to grapple them. You can use furniture and environment as improvised weapons.",
+      "abilityBonus": {
+        "ability": "str_or_con",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "tough",
+      "displayName": "Tough",
+      "prerequisite": null,
+      "description": "Your HP maximum increases by 2 for each level you've taken (this means +2 at 1st level, and you gain an additional +2 whenever you gain a level). Essentially adds +20 HP by level 10.",
+      "abilityBonus": {
+        "ability": "any",
+        "bonus": 1
+      }
+    }
+  ]
+}

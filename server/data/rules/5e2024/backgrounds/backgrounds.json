@@ -1,0 +1,311 @@
+{
+  "backgrounds": [
+    {
+      "id": "acolyte",
+      "displayName": "Acolyte",
+      "description": "You have spent your life in service to a temple, learning sacred rites and providing services to worshippers.",
+      "skillProficiencies": [
+        "Insight",
+        "Religion"
+      ],
+      "toolProficiency": "Calligrapher's Supplies",
+      "languages": 1,
+      "originFeat": "magic-initiate-divine",
+      "startingGold": 50,
+      "equipment": [
+        "Calligrapher's Supplies",
+        "Book (Holy Texts)",
+        "Holy Symbol",
+        "Parchment (10 sheets)",
+        "Robe",
+        "25 GP"
+      ],
+      "featureTitle": "Shelter of the Faithful",
+      "featureDescription": "As an Acolyte, you command the respect of those who share your faith, and you can perform the religious ceremonies of your deity. You and your companions can receive free healing and care at temples of your faith."
+    },
+    {
+      "id": "artisan",
+      "displayName": "Artisan",
+      "skillProficiencies": [
+        "Investigation",
+        "Persuasion"
+      ],
+      "toolProficiency": "Any Artisan's Tools",
+      "languages": 1,
+      "originFeat": "crafter",
+      "startingGold": 50,
+      "equipment": [
+        "Artisan's Tools (one set)",
+        "Letter of Introduction",
+        "Traveler's Clothes",
+        "15 GP"
+      ]
+    },
+    {
+      "id": "charlatan",
+      "displayName": "Charlatan",
+      "skillProficiencies": [
+        "Deception",
+        "Sleight of Hand"
+      ],
+      "toolProficiency": "Forgery Kit",
+      "languages": 1,
+      "originFeat": "skilled",
+      "startingGold": 50,
+      "equipment": [
+        "Forgery Kit",
+        "Costume",
+        "Fine Clothes",
+        "15 GP"
+      ]
+    },
+    {
+      "id": "criminal",
+      "displayName": "Criminal",
+      "skillProficiencies": [
+        "Sleight of Hand",
+        "Stealth"
+      ],
+      "toolProficiency": "Thieves' Tools",
+      "languages": 1,
+      "originFeat": "alert",
+      "startingGold": 50,
+      "equipment": [
+        "Thieves' Tools",
+        "Crowbar",
+        "Dark Clothes with Hood",
+        "15 GP"
+      ]
+    },
+    {
+      "id": "entertainer",
+      "displayName": "Entertainer",
+      "skillProficiencies": [
+        "Acrobatics",
+        "Performance"
+      ],
+      "toolProficiency": "Musical Instrument (one of your choice)",
+      "languages": 1,
+      "originFeat": "tavern-brawler",
+      "startingGold": 50,
+      "equipment": [
+        "Musical Instrument",
+        "Costume",
+        "Perfume",
+        "15 GP"
+      ]
+    },
+    {
+      "id": "farmer",
+      "displayName": "Farmer",
+      "skillProficiencies": [
+        "Animal Handling",
+        "Nature"
+      ],
+      "toolProficiency": "Carpenter's Tools",
+      "languages": 1,
+      "originFeat": "tough",
+      "startingGold": 30,
+      "equipment": [
+        "Carpenter's Tools",
+        "Sickle",
+        "Healer's Kit",
+        "Iron Pot",
+        "Shovel",
+        "30 GP"
+      ]
+    },
+    {
+      "id": "guard",
+      "displayName": "Guard",
+      "skillProficiencies": [
+        "Athletics",
+        "Perception"
+      ],
+      "toolProficiency": "Musical Instrument (one of your choice)",
+      "languages": 1,
+      "originFeat": "alert",
+      "startingGold": 50,
+      "equipment": [
+        "Spear",
+        "Light Crossbow",
+        "20 Bolts",
+        "Uniform",
+        "Horn",
+        "Manacles",
+        "Quiver",
+        "15 GP"
+      ]
+    },
+    {
+      "id": "guide",
+      "displayName": "Guide",
+      "skillProficiencies": [
+        "Stealth",
+        "Survival"
+      ],
+      "toolProficiency": "Cartographer's Tools",
+      "languages": 1,
+      "originFeat": "magic-initiate-primal",
+      "startingGold": 50,
+      "equipment": [
+        "Cartographer's Tools",
+        "Traveler's Clothes",
+        "Staff",
+        "Tent",
+        "Waterskin",
+        "15 GP"
+      ]
+    },
+    {
+      "id": "hermit",
+      "displayName": "Hermit",
+      "skillProficiencies": [
+        "Medicine",
+        "Religion"
+      ],
+      "toolProficiency": "Herbalism Kit",
+      "languages": 1,
+      "originFeat": "magic-initiate-primal",
+      "startingGold": 25,
+      "equipment": [
+        "Herbalism Kit",
+        "Scroll of Parchment",
+        "Winter Blanket",
+        "Common Clothes",
+        "5 GP"
+      ]
+    },
+    {
+      "id": "merchant",
+      "displayName": "Merchant",
+      "skillProficiencies": [
+        "Animal Handling",
+        "Persuasion"
+      ],
+      "toolProficiency": "Navigator's Tools",
+      "languages": 1,
+      "originFeat": "lucky",
+      "startingGold": 100,
+      "equipment": [
+        "Navigator's Tools",
+        "Fine Clothes",
+        "Letter of Credit (worth 100 GP)"
+      ]
+    },
+    {
+      "id": "noble",
+      "displayName": "Noble",
+      "skillProficiencies": [
+        "History",
+        "Persuasion"
+      ],
+      "toolProficiency": "Musical Instrument or Gaming Set",
+      "languages": 1,
+      "originFeat": "skilled",
+      "startingGold": 150,
+      "equipment": [
+        "Fine Clothes",
+        "Signet Ring",
+        "Scroll of Pedigree",
+        "25 GP"
+      ]
+    },
+    {
+      "id": "sage",
+      "displayName": "Sage",
+      "skillProficiencies": [
+        "Arcana",
+        "History"
+      ],
+      "toolProficiency": "Calligrapher's Supplies",
+      "languages": 2,
+      "originFeat": "magic-initiate-arcane",
+      "startingGold": 50,
+      "equipment": [
+        "Calligrapher's Supplies",
+        "Book (research notes)",
+        "Parchment (8 sheets)",
+        "Common Clothes",
+        "5 GP"
+      ]
+    },
+    {
+      "id": "sailor",
+      "displayName": "Sailor",
+      "skillProficiencies": [
+        "Acrobatics",
+        "Perception"
+      ],
+      "toolProficiency": "Navigator's Tools",
+      "languages": 1,
+      "originFeat": "tavern-brawler",
+      "startingGold": 50,
+      "equipment": [
+        "Navigator's Tools",
+        "Traveler's Clothes",
+        "Rope (50 ft)",
+        "Lucky Charm",
+        "10 GP"
+      ]
+    },
+    {
+      "id": "scribe",
+      "displayName": "Scribe",
+      "skillProficiencies": [
+        "Investigation",
+        "Perception"
+      ],
+      "toolProficiency": "Calligrapher's Supplies",
+      "languages": 1,
+      "originFeat": "skilled",
+      "startingGold": 40,
+      "equipment": [
+        "Calligrapher's Supplies",
+        "Fine Ink (1 vial)",
+        "Parchment (12 sheets)",
+        "Common Clothes",
+        "10 GP"
+      ]
+    },
+    {
+      "id": "soldier",
+      "displayName": "Soldier",
+      "skillProficiencies": [
+        "Athletics",
+        "Intimidation"
+      ],
+      "toolProficiency": "Gaming Set (Dice or Playing Cards)",
+      "languages": 1,
+      "originFeat": "savage-attacker",
+      "startingGold": 50,
+      "equipment": [
+        "Gaming Set",
+        "Traveler's Clothes",
+        "Military Rank Insignia",
+        "Trophy from Fallen Enemy",
+        "15 GP"
+      ]
+    },
+    {
+      "id": "wayfarer",
+      "displayName": "Wayfarer",
+      "skillProficiencies": [
+        "Insight",
+        "Stealth"
+      ],
+      "toolProficiency": "Thieves' Tools",
+      "languages": 1,
+      "originFeat": "lucky",
+      "startingGold": 16,
+      "equipment": [
+        "Thieves' Tools",
+        "Traveler's Clothes",
+        "Gaming Set",
+        "Waterskin",
+        "Bedroll",
+        "2 GP"
+      ]
+    }
+  ]
+}

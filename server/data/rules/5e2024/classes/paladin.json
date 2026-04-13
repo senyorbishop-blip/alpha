@@ -1,0 +1,814 @@
+{
+  "id": "paladin",
+  "displayName": "Paladin",
+  "hitDie": 10,
+  "primaryAbilities": [
+    "str",
+    "cha"
+  ],
+  "savingThrows": [
+    "wis",
+    "cha"
+  ],
+  "subclassLevel": 3,
+  "subclassDisplayName": "Sacred Oath",
+  "armorProficiencies": [
+    "light",
+    "medium",
+    "heavy",
+    "shields"
+  ],
+  "weaponProficiencies": [
+    "simple",
+    "martial"
+  ],
+  "toolProficiencies": [],
+  "skillChoices": {
+    "count": 2,
+    "from": [
+      "Athletics",
+      "Insight",
+      "Intimidation",
+      "Medicine",
+      "Persuasion",
+      "Religion"
+    ]
+  },
+  "startingEquipmentChoices": [],
+  "spellcastingType": "half",
+  "spellcastingAbility": "cha",
+  "spellSlots": {
+    "2": {
+      "1st": 2
+    },
+    "3": {
+      "1st": 3
+    },
+    "4": {
+      "1st": 3
+    },
+    "5": {
+      "1st": 4,
+      "2nd": 2
+    },
+    "6": {
+      "1st": 4,
+      "2nd": 2
+    },
+    "7": {
+      "1st": 4,
+      "2nd": 3
+    },
+    "8": {
+      "1st": 4,
+      "2nd": 3
+    },
+    "9": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 2
+    },
+    "10": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 2
+    },
+    "11": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3
+    },
+    "13": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 1
+    },
+    "15": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 2
+    },
+    "17": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 1
+    },
+    "19": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2
+    },
+    "20": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 2
+    }
+  },
+  "classDescription": "A holy champion bound by sacred oath.",
+  "roleIdentity": "Frontline protector blending weapon combat and radiant magic.",
+  "progressionTable": [
+    {
+      "level": 1,
+      "proficiencyBonus": 2,
+      "features": [
+        "Lay on Hands",
+        "Spellcasting",
+        "Divine Smite"
+      ],
+      "classMechanics": {
+        "layOnHandsPool": 5,
+        "extraAttacks": 1,
+        "auraRangeFeet": 0
+      },
+      "unlockIds": [
+        "paladin-lay-on-hands",
+        "paladin-spellcasting",
+        "paladin-divine-smite"
+      ]
+    },
+    {
+      "level": 2,
+      "proficiencyBonus": 2,
+      "features": [
+        "Fighting Style",
+        "Channel Divinity (1 use)"
+      ],
+      "classMechanics": {
+        "layOnHandsPool": 10,
+        "extraAttacks": 1,
+        "auraRangeFeet": 0
+      },
+      "unlockIds": [
+        "paladin-fighting-style",
+        "paladin-channel-divinity-1-use"
+      ]
+    },
+    {
+      "level": 3,
+      "proficiencyBonus": 2,
+      "features": [
+        "Sacred Oath (Subclass)",
+        "Divine Health"
+      ],
+      "classMechanics": {
+        "layOnHandsPool": 15,
+        "extraAttacks": 1,
+        "auraRangeFeet": 0
+      },
+      "unlockIds": [
+        "paladin-sacred-oath-subclass",
+        "paladin-divine-health"
+      ]
+    },
+    {
+      "level": 4,
+      "proficiencyBonus": 2,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "layOnHandsPool": 20,
+        "extraAttacks": 1,
+        "auraRangeFeet": 0
+      },
+      "unlockIds": [
+        "paladin-l4-1"
+      ]
+    },
+    {
+      "level": 5,
+      "proficiencyBonus": 3,
+      "features": [
+        "Extra Attack",
+        "Faithful Steed"
+      ],
+      "classMechanics": {
+        "layOnHandsPool": 25,
+        "extraAttacks": 2,
+        "auraRangeFeet": 0
+      },
+      "unlockIds": [
+        "paladin-extra-attack",
+        "paladin-faithful-steed"
+      ]
+    },
+    {
+      "level": 6,
+      "proficiencyBonus": 3,
+      "features": [
+        "Aura of Protection (10 ft)",
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "layOnHandsPool": 30,
+        "extraAttacks": 2,
+        "auraRangeFeet": 10
+      },
+      "unlockIds": [
+        "paladin-l6-1",
+        "paladin-l6-2"
+      ]
+    },
+    {
+      "level": 7,
+      "proficiencyBonus": 3,
+      "features": [
+        "Aura of Courage (10 ft)"
+      ],
+      "classMechanics": {
+        "layOnHandsPool": 35,
+        "extraAttacks": 2,
+        "auraRangeFeet": 10
+      },
+      "unlockIds": [
+        "paladin-l7-1"
+      ]
+    },
+    {
+      "level": 8,
+      "proficiencyBonus": 3,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "layOnHandsPool": 40,
+        "extraAttacks": 2,
+        "auraRangeFeet": 10
+      },
+      "unlockIds": [
+        "paladin-l8-1"
+      ]
+    },
+    {
+      "level": 9,
+      "proficiencyBonus": 4,
+      "features": [
+        "Aura Improvements"
+      ],
+      "classMechanics": {
+        "layOnHandsPool": 45,
+        "extraAttacks": 2,
+        "auraRangeFeet": 10
+      },
+      "unlockIds": [
+        "paladin-l9-1"
+      ]
+    },
+    {
+      "level": 10,
+      "proficiencyBonus": 4,
+      "features": [
+        "Aura of Courage Extension",
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "layOnHandsPool": 50,
+        "extraAttacks": 2,
+        "auraRangeFeet": 10
+      },
+      "unlockIds": [
+        "paladin-l10-1",
+        "paladin-l10-2"
+      ]
+    },
+    {
+      "level": 11,
+      "proficiencyBonus": 4,
+      "features": [
+        "Radiant Strikes"
+      ],
+      "classMechanics": {
+        "layOnHandsPool": 55,
+        "extraAttacks": 2,
+        "auraRangeFeet": 10
+      },
+      "unlockIds": [
+        "paladin-radiant-strikes"
+      ]
+    },
+    {
+      "level": 12,
+      "proficiencyBonus": 4,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "layOnHandsPool": 60,
+        "extraAttacks": 2,
+        "auraRangeFeet": 10
+      },
+      "unlockIds": [
+        "paladin-l12-1"
+      ]
+    },
+    {
+      "level": 13,
+      "proficiencyBonus": 5,
+      "features": [
+        "4th-level Spell Slots"
+      ],
+      "classMechanics": {
+        "layOnHandsPool": 65,
+        "extraAttacks": 2,
+        "auraRangeFeet": 10
+      },
+      "unlockIds": [
+        "paladin-l13-1"
+      ]
+    },
+    {
+      "level": 14,
+      "proficiencyBonus": 5,
+      "features": [
+        "Restoring Touch"
+      ],
+      "classMechanics": {
+        "layOnHandsPool": 70,
+        "extraAttacks": 2,
+        "auraRangeFeet": 10
+      },
+      "unlockIds": [
+        "paladin-restoring-touch"
+      ]
+    },
+    {
+      "level": 15,
+      "proficiencyBonus": 5,
+      "features": [
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "layOnHandsPool": 75,
+        "extraAttacks": 2,
+        "auraRangeFeet": 10
+      },
+      "unlockIds": [
+        "paladin-l15-1"
+      ]
+    },
+    {
+      "level": 16,
+      "proficiencyBonus": 5,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "layOnHandsPool": 80,
+        "extraAttacks": 2,
+        "auraRangeFeet": 10
+      },
+      "unlockIds": [
+        "paladin-l16-1"
+      ]
+    },
+    {
+      "level": 17,
+      "proficiencyBonus": 6,
+      "features": [
+        "Aura of Protection (30 ft)"
+      ],
+      "classMechanics": {
+        "layOnHandsPool": 85,
+        "extraAttacks": 2,
+        "auraRangeFeet": 30
+      },
+      "unlockIds": [
+        "paladin-l17-1"
+      ]
+    },
+    {
+      "level": 18,
+      "proficiencyBonus": 6,
+      "features": [
+        "Aura of Courage (30 ft)"
+      ],
+      "classMechanics": {
+        "layOnHandsPool": 90,
+        "extraAttacks": 2,
+        "auraRangeFeet": 30
+      },
+      "unlockIds": [
+        "paladin-l18-1"
+      ]
+    },
+    {
+      "level": 19,
+      "proficiencyBonus": 6,
+      "features": [
+        "Epic Boon"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "layOnHandsPool": 95,
+        "extraAttacks": 2,
+        "auraRangeFeet": 30
+      },
+      "unlockIds": [
+        "paladin-epic-boon"
+      ]
+    },
+    {
+      "level": 20,
+      "proficiencyBonus": 6,
+      "features": [
+        "Subclass Capstone"
+      ],
+      "classMechanics": {
+        "layOnHandsPool": 100,
+        "extraAttacks": 2,
+        "auraRangeFeet": 30
+      },
+      "unlockIds": [
+        "paladin-l20-1"
+      ]
+    }
+  ],
+  "featureDefinitions": {
+    "paladin-lay-on-hands": {
+      "summary": "Spend points from a healing pool to restore allies, stabilize the fight, or clear a few nasty conditions without using a spell slot.",
+      "description": "Lay on Hands is one of the paladin's signature support tools. It gives you a pool of healing that can be split across multiple uses, making it perfect for emergency pickups, topping up a key ally, or solving attrition without touching your prepared spell slots.\n\nIn play, this should feel like reliable battlefield triage: not flashy, but one of the safest ways to keep the party functioning when momentum starts to slip.",
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Lay on Hands",
+      "trackUses": true,
+      "usage": "Spend points from the Lay on Hands pool.",
+      "recovery": "The pool refills on a Long Rest.",
+      "tags": [
+        "healing",
+        "resource",
+        "support"
+      ]
+    },
+    "paladin-spellcasting": {
+      "summary": "Prepare divine spells that reinforce your oath with healing, protection, control, and burst damage.",
+      "description": "Paladin spellcasting supports the class rather than replacing its martial core. Your slots are precious, your prepared list is narrower than a full caster's, and every spell choice should feel like a statement about how your oath fights and protects.\n\nIn play, this means the class swings between weapon pressure and timely divine utility instead of trying to cast every round.",
+      "tags": [
+        "spellcasting",
+        "divine",
+        "support",
+        "martial"
+      ]
+    },
+    "paladin-divine-smite": {
+      "summary": "Turn a weapon hit into explosive radiant punishment by spending a spell slot after you know you connected.",
+      "description": "Divine Smite is the paladin's iconic damage spike. Because it triggers from a hit, it rewards discipline and timing instead of blind slot dumping.\n\nUse it when a dangerous target must drop now, when a critical hit lands, or when radiant burst matters more than conserving resources for later.",
+      "section": "Class Features",
+      "type": "special",
+      "effect": "Convert a landed weapon hit into extra radiant damage by spending a spell slot.",
+      "tags": [
+        "combat",
+        "burst",
+        "divine"
+      ]
+    },
+    "paladin-fighting-style": {
+      "summary": "Choose the combat discipline that shapes how your oath actually fights on the field.",
+      "description": "Fighting Style is where your paladin becomes more than a holy generalist. It clarifies whether you are defending allies, leaning into weapon consistency, or building around a specific battlefield role.",
+      "tags": [
+        "build",
+        "combat",
+        "identity"
+      ]
+    },
+    "paladin-channel-divinity-1-use": {
+      "summary": "Your oath grants a limited-use divine button that fuels subclass-defining miracles and battlefield swings.",
+      "description": "Channel Divinity is the first major payoff for choosing a Sacred Oath. Unlike generic class passives, this is a visible tactical resource tied directly to your subclass identity.\n\nThe sheet should always make it obvious how many uses remain and which oath options spend one.",
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Channel Divinity",
+      "trackUses": true,
+      "usage": "1 use available.",
+      "recovery": "Regain all expended uses on a Short or Long Rest.",
+      "tags": [
+        "divine",
+        "resource",
+        "subclass"
+      ]
+    },
+    "paladin-sacred-oath-subclass": {
+      "summary": "Your oath defines what you stand for, how you channel divine power, and which battlefield tools become uniquely yours.",
+      "description": "Sacred Oath is the subclass gate for paladin. From this point on, the class should stop feeling like a generic holy warrior and start feeling specifically Devotion, Ancients, or Vengeance with distinct Channel Divinity options, aura payoffs, and late-game identity.",
+      "tags": [
+        "subclass",
+        "divine",
+        "identity",
+        "build"
+      ]
+    },
+    "paladin-divine-health": {
+      "summary": "Your connection to divine power hardens you against ordinary corruption and disease.",
+      "description": "Divine Health is passive reliability. It is not a flashy combat button, but it reinforces the feeling that a paladin's body is difficult for mundane sickness to break.",
+      "tags": [
+        "passive",
+        "defense",
+        "divine"
+      ]
+    },
+    "paladin-extra-attack": {
+      "summary": "Your martial tempo rises so your turn stays threatening without needing to burn a spell every round.",
+      "description": "Extra Attack is what keeps the paladin's baseline turns dangerous. It matters because the class is a weapon user first and a divine spell-user second; your ordinary action should still command respect even before smites and oath powers enter the picture.",
+      "tags": [
+        "combat",
+        "martial",
+        "passive"
+      ]
+    },
+    "paladin-faithful-steed": {
+      "summary": "Call a loyal mount or companion presence that expands your mobility, presence, and oath fantasy.",
+      "description": "Faithful Steed reinforces the paladin as a mobile champion rather than a static bruiser. Whether used for travel, positioning, or theme, it should read as a meaningful class identity beat instead of a side note.",
+      "tags": [
+        "mobility",
+        "summon",
+        "identity"
+      ]
+    },
+    "paladin-aura-of-protection": {
+      "summary": "Your conviction steadies allies nearby, turning your presence into one of the class's biggest defensive payoffs.",
+      "description": "Aura of Protection is a major power spike. It turns positioning into defense and makes the paladin feel like the center of a formation.\n\nIn play, this should always be surfaced clearly because it changes how the party wants to stand when danger is coming.",
+      "tags": [
+        "aura",
+        "defense",
+        "support"
+      ]
+    },
+    "paladin-radiant-strikes": {
+      "summary": "Weapon hits start carrying dependable radiant pressure even before you decide whether to spend more resources.",
+      "description": "Radiant Strikes gives the paladin a more constant divine edge in ordinary combat turns. It matters because not every encounter justifies repeated smites, but the class should still feel infused with holy force.",
+      "tags": [
+        "combat",
+        "damage",
+        "divine"
+      ]
+    },
+    "paladin-restoring-touch": {
+      "summary": "Use your holy presence to clear debilitating effects and keep key allies operational.",
+      "description": "Restoring Touch shifts some of the paladin's support power away from pure hit-point recovery and into condition management. It is a strong answer to fights that try to shut characters down instead of merely wearing them down.",
+      "tags": [
+        "support",
+        "cleanse",
+        "divine"
+      ]
+    },
+    "paladin-aura-expansion": {
+      "summary": "Your protective presence reaches farther across the battlefield, letting more allies benefit from your oath.",
+      "description": "This level expands the practical footprint of your aura package. It should be visible in the sheet and token support because it changes how the party wants to position around you.",
+      "tags": [
+        "aura",
+        "support",
+        "upgrade"
+      ]
+    },
+    "paladin-epic-boon": {
+      "summary": "Your paladin path culminates in a final major reward that rounds out the endgame build.",
+      "description": "At this point the class should feel complete: martial core, divine support, aura presence, and oath identity all reinforced by an endgame boon.",
+      "tags": [
+        "capstone",
+        "endgame"
+      ]
+    }
+  },
+  "levelUnlockIds": {
+    "1": [
+      "paladin-lay-on-hands",
+      "paladin-spellcasting",
+      "paladin-divine-smite"
+    ],
+    "2": [
+      "paladin-fighting-style",
+      "paladin-channel-divinity-1-use"
+    ],
+    "3": [
+      "paladin-sacred-oath-subclass",
+      "paladin-divine-health"
+    ],
+    "4": [
+      "paladin-l4-1"
+    ],
+    "5": [
+      "paladin-extra-attack",
+      "paladin-faithful-steed"
+    ],
+    "6": [
+      "paladin-l6-1",
+      "paladin-l6-2"
+    ],
+    "7": [
+      "paladin-l7-1"
+    ],
+    "8": [
+      "paladin-l8-1"
+    ],
+    "9": [
+      "paladin-l9-1"
+    ],
+    "10": [
+      "paladin-l10-1",
+      "paladin-l10-2"
+    ],
+    "11": [
+      "paladin-radiant-strikes"
+    ],
+    "12": [
+      "paladin-l12-1"
+    ],
+    "13": [
+      "paladin-l13-1"
+    ],
+    "14": [
+      "paladin-restoring-touch"
+    ],
+    "15": [
+      "paladin-l15-1"
+    ],
+    "16": [
+      "paladin-l16-1"
+    ],
+    "17": [
+      "paladin-l17-1"
+    ],
+    "18": [
+      "paladin-l18-1"
+    ],
+    "19": [
+      "paladin-epic-boon"
+    ],
+    "20": [
+      "paladin-l20-1"
+    ]
+  },
+  "progressionSummary": [
+    {
+      "level": 1,
+      "summary": "Lay on Hands, Spellcasting, Divine Smite.",
+      "unlockIds": [
+        "paladin-lay-on-hands",
+        "paladin-spellcasting",
+        "paladin-divine-smite"
+      ]
+    },
+    {
+      "level": 2,
+      "summary": "Fighting Style, Channel Divinity (1 use).",
+      "unlockIds": [
+        "paladin-fighting-style",
+        "paladin-channel-divinity-1-use"
+      ]
+    },
+    {
+      "level": 3,
+      "summary": "Sacred Oath (Subclass), Divine Health.",
+      "unlockIds": [
+        "paladin-sacred-oath-subclass",
+        "paladin-divine-health"
+      ]
+    },
+    {
+      "level": 4,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "paladin-l4-1"
+      ]
+    },
+    {
+      "level": 5,
+      "summary": "Extra Attack, Faithful Steed.",
+      "unlockIds": [
+        "paladin-extra-attack",
+        "paladin-faithful-steed"
+      ]
+    },
+    {
+      "level": 6,
+      "summary": "Aura of Protection (10 ft), Subclass Feature.",
+      "unlockIds": [
+        "paladin-l6-1",
+        "paladin-l6-2"
+      ]
+    },
+    {
+      "level": 7,
+      "summary": "Aura of Courage (10 ft).",
+      "unlockIds": [
+        "paladin-l7-1"
+      ]
+    },
+    {
+      "level": 8,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "paladin-l8-1"
+      ]
+    },
+    {
+      "level": 9,
+      "summary": "Aura Improvements.",
+      "unlockIds": [
+        "paladin-l9-1"
+      ]
+    },
+    {
+      "level": 10,
+      "summary": "Aura of Courage Extension, Subclass Feature.",
+      "unlockIds": [
+        "paladin-l10-1",
+        "paladin-l10-2"
+      ]
+    },
+    {
+      "level": 11,
+      "summary": "Radiant Strikes.",
+      "unlockIds": [
+        "paladin-radiant-strikes"
+      ]
+    },
+    {
+      "level": 12,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "paladin-l12-1"
+      ]
+    },
+    {
+      "level": 13,
+      "summary": "4th-level Spell Slots.",
+      "unlockIds": [
+        "paladin-l13-1"
+      ]
+    },
+    {
+      "level": 14,
+      "summary": "Restoring Touch.",
+      "unlockIds": [
+        "paladin-restoring-touch"
+      ]
+    },
+    {
+      "level": 15,
+      "summary": "Subclass Feature.",
+      "unlockIds": [
+        "paladin-l15-1"
+      ]
+    },
+    {
+      "level": 16,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "paladin-l16-1"
+      ]
+    },
+    {
+      "level": 17,
+      "summary": "Aura of Protection (30 ft).",
+      "unlockIds": [
+        "paladin-l17-1"
+      ]
+    },
+    {
+      "level": 18,
+      "summary": "Aura of Courage (30 ft).",
+      "unlockIds": [
+        "paladin-l18-1"
+      ]
+    },
+    {
+      "level": 19,
+      "summary": "Epic Boon.",
+      "unlockIds": [
+        "paladin-epic-boon"
+      ]
+    },
+    {
+      "level": 20,
+      "summary": "Subclass Capstone.",
+      "unlockIds": [
+        "paladin-l20-1"
+      ]
+    }
+  ],
+  "future": {
+    "talentGroupId": "paladin-core-talents",
+    "awakeningHookIds": [
+      "paladin-awakening-oath"
+    ]
+  },
+  "buildTips": {
+    "primaryFocus": "Strength",
+    "primaryReason": "powers your weapon attacks and Divine Smite delivery",
+    "secondaryFocus": "Charisma",
+    "secondaryReason": "improves your spells and powerful aura features",
+    "avoidDump": "Constitution",
+    "avoidDumpReason": "frontline paladins rely on HP and Concentration durability"
+  }
+}

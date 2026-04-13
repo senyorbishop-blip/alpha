@@ -1,0 +1,104 @@
+import * as THREE from 'three';
+
+const WORLD_UP = new THREE.Vector3(0, 1, 0);
+
+function pseudoRand(seed) {
+  return Math.abs(Math.sin(seed) * 10000) % 1;
+}
+
+function normalizeTargetValue(dieType, targetValue) {
+  if (targetValue == null) return null;
+  if (dieType === 'd100') {
+    return typeof targetValue === 'number'
+      ? String(targetValue).padStart(2, '0')
+      : String(targetValue);
+  }
+  const asNumber = Number(targetValue);
+  if (dieType === 'd10') {
+    if (asNumber === 10) return 0;
+    return Number.isNaN(asNumber) ? targetValue : asNumber;
+  }
+  return Number.isNaN(asNumber) ? targetValue : asNumber;
+}
+
+/**
+ * Build deterministic launch parameters from target value + seed.
+ * The resulting throw is "born aiming" for the desired top face.
+ */
+export function planLaunchRecipe({
+  dieType,
+  targetValue,
+  seed = 1,
+  index = 0,
+  totalCount = 1,
+  faceDefinitions = [],
+  fallbackSpawn,
+}) {
+  const normalizedTarget = normalizeTargetValue(dieType, targetValue);
+  const targetFace = (faceDefinitions || []).find(f => String(f?.value) === String(normalizedTarget));
+  if (!targetFace?.normal) return null;
+
+  const cols = Math.min(totalCount, 5);
+  const col = index % 5;
+  const row = Math.floor(index / 5);
+  const spread = totalCount > 12 ? 1.12 : (totalCount > 8 ? 1.28 : 1.6);
+  const baseSpawn = fallbackSpawn || {
+    x: (col - (cols - 1) / 2) * spread,
+    y: 8.0 + row * 0.6,
+    z: -0.4 - row * 1.45,
+  };
+
+  const r0 = pseudoRand(seed + index * 31 + 1);
+  const r1 = pseudoRand(seed + index * 31 + 2);
+  const r2 = pseudoRand(seed + index * 31 + 3);
+  const r3 = pseudoRand(seed + index * 31 + 4);
+  const r4 = pseudoRand(seed + index * 31 + 5);
+
+  const spawnPos = {
+    x: baseSpawn.x + (r0 - 0.5) * 0.45,
+    y: baseSpawn.y + r1 * 0.45,
+    z: baseSpawn.z + (r2 - 0.5) * 0.42,
+  };
+
+  const targetNormal = targetFace.normal.clone().normalize();
+  const qAlign = new THREE.Quaternion().setFromUnitVectors(targetNormal, WORLD_UP);
+
+  const isNarrowFaceDie = dieType === 'd10' || dieType === 'd100';
+  const yaw = (r3 - 0.5) * Math.PI * (isNarrowFaceDie ? 0.52 : 0.9);
+  const qYaw = new THREE.Quaternion().setFromAxisAngle(WORLD_UP, yaw);
+
+  let tiltAxis = new THREE.Vector3(r0 - 0.5, 0, r1 - 0.5);
+  if (tiltAxis.lengthSq() < 1e-6) tiltAxis.set(1, 0, 0);
+  tiltAxis.normalize();
+  const tilt = isNarrowFaceDie ? (0.08 + r4 * 0.11) : (0.18 + r4 * 0.22);
+  const qTilt = new THREE.Quaternion().setFromAxisAngle(tiltAxis, tilt);
+
+  const q = qYaw.multiply(qTilt).multiply(qAlign).normalize();
+
+  const inward = new THREE.Vector3(-spawnPos.x * 0.22, 0, -spawnPos.z * 0.15);
+  const velocity = {
+    x: inward.x + (r1 - 0.5) * (isNarrowFaceDie ? 0.62 : 1.15),
+    y: (isNarrowFaceDie ? -5.25 : -5.9) - r2 * (isNarrowFaceDie ? 0.85 : 1.7),
+    z: inward.z + (r3 - 0.5) * (isNarrowFaceDie ? 0.58 : 1.0),
+  };
+
+  const worldNormal = targetNormal.clone().applyQuaternion(q);
+  let correctiveAxis = worldNormal.clone().cross(WORLD_UP);
+  if (correctiveAxis.lengthSq() < 1e-6) correctiveAxis.set(1, 0, 0);
+  correctiveAxis.normalize();
+
+  const angBase = isNarrowFaceDie ? (4.4 + r0 * 1.9) : (7.8 + r0 * 5.2);
+  const angularVelocity = {
+    x: correctiveAxis.x * angBase + (r2 - 0.5) * (isNarrowFaceDie ? 1.5 : 4.0),
+    y: (r4 - 0.5) * (isNarrowFaceDie ? 1.35 : 4.0),
+    z: correctiveAxis.z * angBase + (r3 - 0.5) * (isNarrowFaceDie ? 1.5 : 4.0),
+  };
+
+  return {
+    spawnPos,
+    quaternion: { x: q.x, y: q.y, z: q.z, w: q.w },
+    velocity,
+    angularVelocity,
+  };
+}
+

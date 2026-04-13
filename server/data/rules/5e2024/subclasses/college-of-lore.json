@@ -1,0 +1,166 @@
+{
+  "id": "college-of-lore",
+  "displayName": "College of Lore",
+  "classId": "bard",
+  "parentClassId": "bard",
+  "flavorText": "Lore Bards gather secrets from every tradition and weaponize words with biting precision.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "lore-bonus-proficiencies",
+      "lore-cutting-words"
+    ],
+    "6": [
+      "lore-magical-discoveries"
+    ],
+    "14": [
+      "lore-peerless-skill"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "lore-bonus-proficiencies",
+      "displayName": "Bonus Proficiencies",
+      "description": "Gain proficiency in three skills of your choice."
+    },
+    {
+      "level": 3,
+      "id": "lore-cutting-words",
+      "displayName": "Cutting Words",
+      "description": "When a creature you can see within 60 feet makes an attack roll, ability check, or damage roll, you can use your reaction to expend a Bardic Inspiration die and subtract the die from that roll."
+    },
+    {
+      "level": 6,
+      "id": "lore-magical-discoveries",
+      "displayName": "Magical Discoveries",
+      "description": "Learn two spells of your choice from any class spell list."
+    },
+    {
+      "level": 14,
+      "id": "lore-peerless-skill",
+      "displayName": "Peerless Skill",
+      "description": "When you make an ability check, you can expend a Bardic Inspiration die and add the roll to your check."
+    }
+  ],
+  "featureDefinitions": {
+    "lore-bonus-proficiencies": {
+      "id": "lore-bonus-proficiencies",
+      "displayName": "Bonus Proficiencies",
+      "name": "Bonus Proficiencies",
+      "summary": "This subclass grants extra training so your sheet reflects a broader skill, tool, or weapon identity than the base class alone.",
+      "description": "Gain proficiency in three skills of your choice.\n\nBonus Proficiencies is not glamorous on its own, but it changes what the character can reliably contribute. The important thing is surfacing the added proficiencies clearly so they affect real rolls.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 3,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "bard",
+        "skills",
+        "passive"
+      ],
+      "sourceKind": "subclass",
+      "className": "Bard",
+      "subclassName": "College of Lore",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "lore-cutting-words": {
+      "id": "lore-cutting-words",
+      "displayName": "Cutting Words",
+      "name": "Cutting Words",
+      "summary": "Spend inspiration as a reaction to spoil an enemy’s key roll at exactly the right time.",
+      "description": "When a creature you can see within 60 feet makes an attack roll, ability check, or damage roll, you can use your reaction to expend a Bardic Inspiration die and subtract the die from that roll.\n\nCutting Words is one of the strongest support reactions a bard gets. The sheet should make it obvious that this can swing attacks, checks, and other contested moments before it is too late.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 3,
+      "section": "Reactions",
+      "type": "reaction",
+      "resourceName": "Bardic Inspiration",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "bard",
+        "skills",
+        "reaction",
+        "support",
+        "resource"
+      ],
+      "sourceKind": "subclass",
+      "className": "Bard",
+      "subclassName": "College of Lore",
+      "range": "60 ft",
+      "duration": "",
+      "save": "",
+      "trigger": "When a creature you can see within 60 feet makes an attack roll",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "lore-magical-discoveries": {
+      "id": "lore-magical-discoveries",
+      "displayName": "Magical Discoveries",
+      "name": "Magical Discoveries",
+      "summary": "Your college widens the bard spell list with carefully stolen or studied off-list magic.",
+      "description": "Learn two spells of your choice from any class spell list.\n\nMagical Discoveries should point the player toward real spell selection impact, because it changes the kinds of problems your bard can solve for the whole party.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 6,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "bard",
+        "skills",
+        "spellcasting",
+        "customization"
+      ],
+      "sourceKind": "subclass",
+      "className": "Bard",
+      "subclassName": "College of Lore",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "lore-peerless-skill": {
+      "id": "lore-peerless-skill",
+      "displayName": "Peerless Skill",
+      "name": "Peerless Skill",
+      "summary": "You can spend inspiration on yourself when a crucial skill check absolutely must land.",
+      "description": "When you make an ability check, you can expend a Bardic Inspiration die and add the roll to your check.\n\nPeerless Skill is the Lore bard’s statement that expertise scenes belong to them. It should feel visible any time the table reaches for a decisive social, knowledge, or infiltration roll.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 14,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "Bardic Inspiration",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "bard",
+        "skills",
+        "resource"
+      ],
+      "sourceKind": "subclass",
+      "className": "Bard",
+      "subclassName": "College of Lore",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "When you make an ability check",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    }
+  }
+}

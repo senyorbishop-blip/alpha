@@ -1,0 +1,165 @@
+{
+  "id": "berserker",
+  "displayName": "Berserker",
+  "classId": "barbarian",
+  "parentClassId": "barbarian",
+  "flavorText": "Berserkers abandon caution in pursuit of relentless rage and brutal retaliation.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "berserker-frenzy"
+    ],
+    "6": [
+      "berserker-mindless-rage"
+    ],
+    "10": [
+      "berserker-intimidating-presence"
+    ],
+    "14": [
+      "berserker-retaliation"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "berserker-frenzy",
+      "displayName": "Frenzy",
+      "description": "While raging, you can make one extra unarmed strike as a bonus action on each of your turns. When your rage ends, you gain one level of Exhaustion."
+    },
+    {
+      "level": 6,
+      "id": "berserker-mindless-rage",
+      "displayName": "Mindless Rage",
+      "description": "While raging, you are immune to the charmed and frightened conditions."
+    },
+    {
+      "level": 10,
+      "id": "berserker-intimidating-presence",
+      "displayName": "Intimidating Presence",
+      "description": "As an action, choose a creature within 30 feet that can see or hear you. It must succeed on a Wisdom save (DC 8 + proficiency bonus + Charisma modifier) or be frightened of you."
+    },
+    {
+      "level": 14,
+      "id": "berserker-retaliation",
+      "displayName": "Retaliation",
+      "description": "When a creature within your reach damages you, you can use your reaction to make a melee weapon attack against that creature."
+    }
+  ],
+  "featureDefinitions": {
+    "berserker-frenzy": {
+      "id": "berserker-frenzy",
+      "displayName": "Frenzy",
+      "name": "Frenzy",
+      "summary": "Your rage can convert spare momentum into an extra burst of close-range violence.",
+      "description": "While raging, you can make one extra unarmed strike as a bonus action on each of your turns. When your rage ends, you gain one level of Exhaustion.\n\nFrenzy turns an already-aggressive barbarian turn into even more pressure by chaining additional offense into your rage state. The important in-app job is making it clear that this is a real turn-shaping button, not just a subclass label.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 3,
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "Rage",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "barbarian",
+        "combat",
+        "rage"
+      ],
+      "sourceKind": "subclass",
+      "className": "Barbarian",
+      "subclassName": "Berserker",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "While raging",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "berserker-mindless-rage": {
+      "id": "berserker-mindless-rage",
+      "displayName": "Mindless Rage",
+      "name": "Mindless Rage",
+      "summary": "While raging, mental interference is far less likely to take you out of the fight.",
+      "description": "While raging, you are immune to the charmed and frightened conditions.\n\nMindless Rage protects the berserker from fear, charm, and similar control at the exact moment front-line commitment matters most.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 6,
+      "section": "Subclass Features",
+      "type": "passive",
+      "resourceName": "Rage",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "barbarian",
+        "defense",
+        "mind"
+      ],
+      "sourceKind": "subclass",
+      "className": "Barbarian",
+      "subclassName": "Berserker",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "While raging",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "berserker-intimidating-presence": {
+      "id": "berserker-intimidating-presence",
+      "displayName": "Intimidating Presence",
+      "name": "Intimidating Presence",
+      "summary": "Project primal menace so hard that enemies can buckle under a fear effect.",
+      "description": "As an action, choose a creature within 30 feet that can see or hear you. It must succeed on a Wisdom save (DC 8 + proficiency bonus + Charisma modifier) or be frightened of you.\n\nIntimidating Presence is a control action, not flavor text. Use it when shutting down a key enemy is worth more than one more normal attack.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 10,
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "barbarian",
+        "control",
+        "fear"
+      ],
+      "sourceKind": "subclass",
+      "className": "Barbarian",
+      "subclassName": "Berserker",
+      "range": "30 ft",
+      "duration": "",
+      "save": "Wisdom",
+      "trigger": "",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    },
+    "berserker-retaliation": {
+      "id": "berserker-retaliation",
+      "displayName": "Retaliation",
+      "name": "Retaliation",
+      "summary": "When foes hurt you in melee, you can answer with immediate violence instead of waiting for your next turn.",
+      "description": "When a creature within your reach damages you, you can use your reaction to make a melee weapon attack against that creature.\n\nRetaliation makes the berserker punishing to engage and rewards enemies for choosing the wrong target. The sheet should surface this as a real reaction option during combat.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "level": 14,
+      "section": "Reactions",
+      "type": "reaction",
+      "resourceName": "",
+      "trackUses": false,
+      "tags": [
+        "subclass",
+        "barbarian",
+        "reaction",
+        "combat"
+      ],
+      "sourceKind": "subclass",
+      "className": "Barbarian",
+      "subclassName": "Berserker",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "A creature within reach damages you.",
+      "usage": "",
+      "recovery": "",
+      "effect": "",
+      "dice": ""
+    }
+  }
+}

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#0d0900" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+<g filter="url(#shadow)">
+<rect x="16" y="70" width="96" height="30" fill="#7a7060" stroke="#2a1f0e" stroke-width="2" rx="3"/>
+<rect x="20" y="74" width="88" height="22" fill="#4a4a55" stroke="#2a1f0e" stroke-width="2" rx="2"/>
+<line x1="38" y1="74" x2="38" y2="96" stroke="#7a7060" stroke-width="3"/>
+<line x1="56" y1="74" x2="56" y2="96" stroke="#7a7060" stroke-width="3"/>
+<line x1="74" y1="74" x2="74" y2="96" stroke="#7a7060" stroke-width="3"/>
+<line x1="92" y1="74" x2="92" y2="96" stroke="#7a7060" stroke-width="3"/>
+<circle cx="46" cy="46" r="26" fill="#3a7a3a" stroke="none" stroke-width="2"/>
+<circle cx="74" cy="38" r="22" fill="#2a9a2a" stroke="none" stroke-width="2"/>
+<circle cx="62" cy="56" r="20" fill="#1a7a1a" stroke="none" stroke-width="2"/>
+<circle cx="42" cy="40" r="10" fill="#5acc5a" stroke="none" stroke-width="2"/>
+<circle cx="70" cy="34" r="8" fill="#5acc5a" stroke="none" stroke-width="2"/>
+</g>
+</svg>

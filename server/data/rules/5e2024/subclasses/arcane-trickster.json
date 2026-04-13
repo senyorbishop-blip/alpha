@@ -1,0 +1,105 @@
+{
+  "id": "arcane-trickster",
+  "displayName": "Arcane Trickster",
+  "classId": "rogue",
+  "parentClassId": "rogue",
+  "flavorText": "Arcane Tricksters mix subtle magic with stealth and misdirection.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "arcane-trickster-spellcasting",
+      "arcane-trickster-mage-hand-legerdemain"
+    ],
+    "9": [
+      "arcane-trickster-magical-ambush"
+    ],
+    "13": [
+      "arcane-trickster-versatile-trickster"
+    ],
+    "17": [
+      "arcane-trickster-spell-thief"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "arcane-trickster-spellcasting",
+      "displayName": "Spellcasting",
+      "description": "You are a one-third caster using Intelligence, drawing primarily from the wizard Illusion and Enchantment schools."
+    },
+    {
+      "level": 3,
+      "id": "arcane-trickster-mage-hand-legerdemain",
+      "displayName": "Mage Hand Legerdemain",
+      "description": "Your Mage Hand is invisible and can pick pockets, stow objects, unlock locks, and disarm traps at range."
+    },
+    {
+      "level": 9,
+      "id": "arcane-trickster-magical-ambush",
+      "displayName": "Magical Ambush",
+      "description": "If you are hidden from a target when casting a spell on it, the target has disadvantage on any saving throw it makes against the spell."
+    },
+    {
+      "level": 13,
+      "id": "arcane-trickster-versatile-trickster",
+      "displayName": "Versatile Trickster",
+      "description": "As a bonus action, use your Mage Hand to distract a creature and gain advantage on attack rolls against it."
+    },
+    {
+      "level": 17,
+      "id": "arcane-trickster-spell-thief",
+      "displayName": "Spell Thief",
+      "description": "When you succeed on a save against a spell targeting you, you can use your reaction to negate it and steal knowledge of the spell temporarily."
+    }
+  ],
+  "featureDefinitions": {
+    "arcane-trickster-spellcasting": {
+      "summary": "Blend rogue precision with selective wizard magic, especially illusion and enchantment tools.",
+      "description": "Arcane Trickster spellcasting is about control, setup, and utility rather than trying to out-wizard a full caster. The subclass should feel sneaky, clever, and opportunistic with its magic.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "utility"
+      ]
+    },
+    "arcane-trickster-mage-hand-legerdemain": {
+      "summary": "Your Mage Hand becomes a true burglar’s tool for theft, trap work, and subtle manipulation at range.",
+      "description": "Mage Hand Legerdemain is one of the subclass’s signature identity pieces. It turns a familiar cantrip into a rogue-flavored infiltration and setup engine.",
+      "tags": [
+        "subclass",
+        "utility",
+        "stealth"
+      ]
+    },
+    "arcane-trickster-magical-ambush": {
+      "summary": "Hidden casting becomes more dangerous because your target has a harder time resisting the trick.",
+      "description": "Magical Ambush rewards the subclass for combining stealth and spellcasting correctly instead of casting openly like a normal mage.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "stealth"
+      ]
+    },
+    "arcane-trickster-versatile-trickster": {
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "summary": "Use your spectral hand to create a distraction and open a cleaner attack line.",
+      "description": "Versatile Trickster lets your Mage Hand create the distraction itself, turning a familiar utility spell into a combat setup piece that helps land the rogue’s precision damage.",
+      "tags": [
+        "subclass",
+        "combat",
+        "setup"
+      ]
+    },
+    "arcane-trickster-spell-thief": {
+      "section": "Reactions",
+      "type": "reaction",
+      "summary": "Turn a successful defense against enemy magic into a moment of theft and denial.",
+      "description": "Spell Thief is a standout late-game trick because it feels uniquely rogue: you do not merely resist the spell, you steal the edge for yourself.",
+      "tags": [
+        "subclass",
+        "reaction",
+        "spellcasting"
+      ]
+    }
+  }
+}

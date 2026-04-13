@@ -1,0 +1,27 @@
+# requirements_tts.txt — NEW TTS dependencies only
+# Install AFTER the base requirements.txt
+#
+# Step 1: Install PyTorch with CUDA 12.x for RTX 5070 Ti
+#   See CUDA_SETUP.md for the exact torch install command.
+#
+# Step 2: pip install -r requirements_tts.txt
+
+# ── GPU TTS Engines ───────────────────────────────────────────────────────────
+
+# Chatterbox (Resemble AI) — cinematic narrator
+chatterbox-tts
+
+# Dia (Nari Labs) — NPC dialogue + nonverbal sounds
+dia-tts
+
+# ── CPU TTS Engine ────────────────────────────────────────────────────────────
+
+# Kokoro ONNX — instant CPU fallback (~150ms latency)
+kokoro-onnx
+
+# ── Audio utilities ───────────────────────────────────────────────────────────
+
+# Numpy & soundfile: used internally by all three TTS engines for
+# audio array manipulation and WAV I/O
+numpy>=1.24.0
+soundfile>=0.12.1

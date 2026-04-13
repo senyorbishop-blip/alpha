@@ -1,0 +1,129 @@
+{
+  "id": "war-domain",
+  "displayName": "War Domain",
+  "classId": "cleric",
+  "parentClassId": "cleric",
+  "flavorText": "War clerics embody divine battle mastery and empower allies at pivotal moments.",
+  "featureUnlocksByLevel": {
+    "1": [
+      "war-bonus-proficiency",
+      "war-war-priest"
+    ],
+    "2": [
+      "war-guided-strike"
+    ],
+    "6": [
+      "war-wars-gods-blessing"
+    ],
+    "8": [
+      "war-divine-strike"
+    ],
+    "17": [
+      "war-avatar-of-battle"
+    ]
+  },
+  "features": [
+    {
+      "level": 1,
+      "id": "war-bonus-proficiency",
+      "displayName": "Bonus Proficiency",
+      "description": "Gain proficiency with heavy armor and martial weapons."
+    },
+    {
+      "level": 1,
+      "id": "war-war-priest",
+      "displayName": "War Priest",
+      "description": "When you take the Attack action, you can make one weapon attack as a bonus action a number of times equal to your Wisdom modifier per long rest."
+    },
+    {
+      "level": 2,
+      "id": "war-guided-strike",
+      "displayName": "Guided Strike",
+      "description": "As Channel Divinity, when you miss an attack roll, you can add +10 to the roll."
+    },
+    {
+      "level": 6,
+      "id": "war-wars-gods-blessing",
+      "displayName": "War God's Blessing",
+      "description": "When an ally within 30 feet misses an attack roll, you can use your reaction to grant +10 to that roll via Channel Divinity."
+    },
+    {
+      "level": 8,
+      "id": "war-divine-strike",
+      "displayName": "Divine Strike",
+      "description": "Once on each of your turns when you hit with a weapon attack, deal extra weapon damage of your deity's type."
+    },
+    {
+      "level": 17,
+      "id": "war-avatar-of-battle",
+      "displayName": "Avatar of Battle",
+      "description": "You gain resistance to bludgeoning, piercing, and slashing damage from nonmagical weapons."
+    }
+  ],
+  "featureDefinitions": {
+    "war-domain-bonus-proficiency": {
+      "summary": "Start ready for a frontline battle-priest style with sturdier equipment expectations.",
+      "tags": [
+        "subclass",
+        "combat",
+        "defense"
+      ]
+    },
+    "war-domain-war-priest": {
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "summary": "Turn martial momentum into extra weapon pressure during the rounds that matter most.",
+      "description": "War Priest helps the domain feel like a genuine battle cleric instead of a caster wearing armor. It rewards stepping into weapon range and staying involved in physical offense.",
+      "resourceName": "War Priest",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "combat",
+        "resource"
+      ]
+    },
+    "war-domain-guided-strike": {
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Channel Divinity",
+      "trackUses": true,
+      "summary": "Invoke divine certainty to turn an important attack into a much more reliable hit.",
+      "tags": [
+        "subclass",
+        "combat",
+        "resource",
+        "accuracy"
+      ]
+    },
+    "war-domain-war-gods-blessing": {
+      "section": "Reactions",
+      "type": "reaction",
+      "resourceName": "Channel Divinity",
+      "trackUses": true,
+      "summary": "Use divine warcraft to help an ally land the attack that matters.",
+      "tags": [
+        "subclass",
+        "support",
+        "combat",
+        "resource"
+      ]
+    },
+    "war-domain-divine-strike": {
+      "summary": "Add extra weapon damage so the domain’s martial identity stays real as levels rise.",
+      "tags": [
+        "subclass",
+        "combat",
+        "damage"
+      ]
+    },
+    "war-domain-avatar-of-battle": {
+      "summary": "You become much harder to overwhelm in the middle of a brutal melee.",
+      "description": "Avatar of Battle is the late-game payoff for the heavily armored war-priest fantasy. It should read as a real survivability jump, not only a line of resistance text.",
+      "tags": [
+        "subclass",
+        "defense",
+        "capstone"
+      ]
+    }
+  }
+}

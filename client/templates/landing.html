@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>D&D Tabletop — Session</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --parchment: #cdd9e5;
+      --ink: #0d1117;
+      --blood: #8b1a1a;
+      --gold: #00d4d4;
+      --gold-light: #33e0e0;
+      --shadow: #060a0f;
+      --stone: #1a2030;
+      --mist: rgba(180,200,220,0.06);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--shadow);
+      background-image:
+        radial-gradient(ellipse at 20% 20%, rgba(139,26,26,0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(0,212,212,0.08) 0%, transparent 50%),
+        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9a84c' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Crimson Pro', Georgia, serif;
+      color: var(--parchment);
+      overflow: hidden;
+    }
+
+    .crest {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .crest-icon {
+      font-size: 3.5rem;
+      display: block;
+      filter: drop-shadow(0 0 20px rgba(0,212,212,0.6));
+      animation: float 4s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+      padding: 1.5rem;
+    }
+
+    h1 {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(1.4rem, 5vw, 2.2rem);
+      color: var(--gold);
+      text-align: center;
+      letter-spacing: 0.05em;
+      text-shadow: 0 0 30px rgba(0,212,212,0.4), 0 2px 4px rgba(0,0,0,0.8);
+      line-height: 1.2;
+      margin-bottom: 0.4rem;
+    }
+    .subtitle {
+      text-align: center;
+      color: rgba(180,200,220,0.5);
+      font-style: italic;
+      font-size: 1rem;
+      margin-bottom: 2.5rem;
+      letter-spacing: 0.1em;
+    }
+
+    /* Panel card */
+    .panel {
+      background: linear-gradient(160deg, rgba(42,34,24,0.95), rgba(26,16,8,0.98));
+      border: 1px solid rgba(0,212,212,0.25);
+      border-radius: 4px;
+      padding: 2rem;
+      box-shadow:
+        0 0 0 1px rgba(0,212,212,0.08),
+        0 20px 60px rgba(0,0,0,0.7),
+        inset 0 1px 0 rgba(0,212,212,0.1);
+      margin-bottom: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .panel::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      opacity: 0.4;
+    }
+
+    .panel-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--gold);
+      opacity: 0.7;
+      margin-bottom: 1.2rem;
+      text-align: center;
+    }
+
+    /* Role buttons */
+    .role-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 0;
+    }
+
+    .role-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1.2rem 0.5rem;
+      background: rgba(0,212,212,0.05);
+      border: 1px solid rgba(0,212,212,0.2);
+      border-radius: 3px;
+      color: var(--parchment);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .role-btn:hover {
+      background: rgba(0,212,212,0.12);
+      border-color: rgba(0,212,212,0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0,212,212,0.15);
+    }
+    .role-btn.active {
+      background: rgba(0,212,212,0.15);
+      border-color: var(--gold);
+      box-shadow: 0 0 15px rgba(0,212,212,0.2);
+    }
+    .role-btn .icon { font-size: 1.8rem; }
+
+    /* Forms */
+    .form-section {
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+    .form-section.visible { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,212,212,0.2), transparent);
+      margin: 1.5rem 0;
+    }
+
+    .field { margin-bottom: 1rem; }
+    label {
+      display: block;
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--gold);
+      opacity: 0.7;
+      margin-bottom: 0.4rem;
+    }
+    input[type="text"] {
+      width: 100%;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(0,212,212,0.25);
+      border-radius: 3px;
+      color: var(--parchment);
+      padding: 0.65rem 0.9rem;
+      font-family: 'Crimson Pro', serif;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus {
+      border-color: rgba(0,212,212,0.6);
+      box-shadow: 0 0 0 2px rgba(0,212,212,0.1);
+    }
+    input[type="text"]::placeholder { color: rgba(180,200,220,0.25); }
+
+    .btn {
+      width: 100%;
+      padding: 0.8rem;
+      background: linear-gradient(135deg, var(--blood) 0%, #6b1010 100%);
+      border: 1px solid rgba(139,26,26,0.6);
+      border-radius: 3px;
+      color: var(--parchment);
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 0.5rem;
+    }
+    .btn:hover {
+      background: linear-gradient(135deg, #a01e1e 0%, #7d1414 100%);
+      box-shadow: 0 4px 20px rgba(139,26,26,0.4);
+      transform: translateY(-1px);
+    }
+    .btn:active { transform: translateY(0); }
+    .btn.gold {
+      background: linear-gradient(135deg, #007a7a 0%, #005a5a 100%);
+      border-color: rgba(0,212,212,0.4);
+    }
+    .btn.gold:hover {
+      background: linear-gradient(135deg, #009898 0%, #006868 100%);
+      box-shadow: 0 4px 20px rgba(0,212,212,0.3);
+    }
+
+    .error-msg {
+      color: #e07070;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      text-align: center;
+      display: none;
+    }
+    .error-msg.visible { display: block; }
+
+    .code-display {
+      display: none;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(0,212,212,0.3);
+      border-radius: 3px;
+      padding: 1.2rem;
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .code-display.visible { display: block; }
+    .code-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: var(--gold);
+      opacity: 0.6;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .code-value {
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+      font-weight: 600;
+    }
+    .session-id-small {
+      font-size: 0.7rem;
+      color: rgba(180,200,220,0.35);
+      margin-top: 0.3rem;
+      font-family: monospace;
+    }
+
+    .loading { opacity: 0.6; pointer-events: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="crest">
+    <span class="crest-icon">⚔️</span>
+  </div>
+  <h1>Casual D&D</h1>
+  <p class="subtitle">A Roll20-style D&D board for adventurers</p>
+  <a href="/campaigns" style="display:inline-block;margin-top:0.8rem;font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(0,212,212,0.55);text-decoration:none;border:1px solid rgba(0,212,212,0.2);padding:0.3rem 0.9rem;border-radius:3px;transition:all 0.2s;" onmouseover="this.style.color='var(--gold)';this.style.borderColor='rgba(0,212,212,0.45)'" onmouseout="this.style.color='rgba(0,212,212,0.55)';this.style.borderColor='rgba(0,212,212,0.2)'">📜 My Campaigns</a>
+
+  <div class="panel">
+    <div class="panel-title">Choose Your Role</div>
+    <div id="rejoin-bar" style="display:none;margin-bottom:1rem;padding:0.7rem;background:rgba(0,212,212,0.07);border:1px solid rgba(0,212,212,0.2);border-radius:3px;text-align:center;">
+      <div style="font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:0.15em;color:rgba(0,212,212,0.6);text-transform:uppercase;margin-bottom:0.5rem;">Continue Your Adventure</div>
+      <button onclick="rejoinLast()" style="background:linear-gradient(135deg,#0f1923,#0a1520);border:1px solid rgba(0,212,212,0.35);border-radius:3px;color:var(--gold);font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.1em;padding:0.5rem 1.2rem;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='linear-gradient(135deg,#152030,#0f1a28)'" onmouseout="this.style.background='linear-gradient(135deg,#0f1923,#0a1520)'">⚔ Rejoin as <span id="rejoin-name">—</span></button>
+    </div>
+    <div class="role-grid">
+      <button class="role-btn" id="btn-dm" onclick="selectRole('dm')">
+        <span class="icon">🧙</span>
+        <span>Dungeon<br>Master</span>
+      </button>
+      <button class="role-btn" id="btn-player" onclick="selectRole('player')">
+        <span class="icon">🛡️</span>
+        <span>Player</span>
+      </button>
+      <button class="role-btn" id="btn-viewer" onclick="selectRole('viewer')">
+        <span class="icon">👁️</span>
+        <span>Chat<br>Viewer</span>
+      </button>
+    </div>
+
+    <!-- DM Form -->
+    <div class="form-section" id="form-dm">
+      <div class="divider"></div>
+      <div class="field">
+        <label>Your Name</label>
+        <input type="text" id="dm-name" placeholder="Dungeon Master" maxlength="40" />
+      </div>
+      <button class="btn gold" onclick="createSession()">⚔ Begin the Session</button>
+      <div class="code-display" id="dm-codes">
+        <div style="margin-bottom:0.8rem;">
+          <div class="code-label">Player Join Link</div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <div class="session-id-small" id="code-player" style="font-size:0.65rem;flex:1;word-break:break-all;">—</div>
+            <button onclick="copyLink('player')" style="flex-shrink:0;background:rgba(0,212,212,0.1);border:1px solid rgba(0,212,212,0.25);border-radius:2px;color:var(--gold);font-family:'Cinzel',serif;font-size:0.55rem;padding:0.2rem 0.5rem;cursor:pointer;letter-spacing:0.1em;">COPY</button>
+          </div>
+        </div>
+        <div style="margin-bottom:1rem;">
+          <div class="code-label">Viewer Join Link</div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <div class="session-id-small" id="code-viewer" style="font-size:0.65rem;flex:1;word-break:break-all;">—</div>
+            <button onclick="copyLink('viewer')" style="flex-shrink:0;background:rgba(0,212,212,0.1);border:1px solid rgba(0,212,212,0.25);border-radius:2px;color:var(--gold);font-family:'Cinzel',serif;font-size:0.55rem;padding:0.2rem 0.5rem;cursor:pointer;letter-spacing:0.1em;">COPY</button>
+          </div>
+        </div>
+        <button class="btn" id="dm-enter-btn" onclick="enterSession()" style="margin-top:0.5rem;">Enter the Hall →</button>
+      </div>
+      <div class="error-msg" id="dm-error"></div>
+    </div>
+
+    <!-- Player Form -->
+    <div class="form-section" id="form-player">
+      <div class="divider"></div>
+      <div class="field">
+        <label>Your Name</label>
+        <input type="text" id="player-name" placeholder="Brave Adventurer" maxlength="40" />
+      </div>
+      <div class="field">
+        <label>Session ID</label>
+        <input type="text" id="player-session" placeholder="XXXXXXXXXXXX" maxlength="20" style="text-transform:uppercase;" />
+      </div>
+      <div class="field">
+        <label>Player Invite Code</label>
+        <input type="text" id="player-code" placeholder="XXXXXXXX" maxlength="12" style="text-transform:uppercase;" />
+      </div>
+      <button class="btn" onclick="joinSession('player')">🛡 Join as Player</button>
+      <div class="error-msg" id="player-error"></div>
+    </div>
+
+    <!-- Viewer Form -->
+    <div class="form-section" id="form-viewer">
+      <div class="divider"></div>
+      <div class="field">
+        <label>Your Name (or Twitch Handle)</label>
+        <input type="text" id="viewer-name" placeholder="Spectator" maxlength="40" />
+      </div>
+      <div class="field">
+        <label>Session ID</label>
+        <input type="text" id="viewer-session" placeholder="XXXXXXXXXXXX" maxlength="20" style="text-transform:uppercase;" />
+      </div>
+      <div class="field">
+        <label>Viewer Invite Code</label>
+        <input type="text" id="viewer-code" placeholder="XXXXXXXX" maxlength="12" style="text-transform:uppercase;" />
+      </div>
+      <button class="btn" onclick="joinSession('viewer')">👁 Watch the Session</button>
+      <div class="error-msg" id="viewer-error"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/core/csrf.js"></script>
+<script>
+  let _sessionData = null;
+
+  function selectRole(role) {
+    ['dm','player','viewer'].forEach(r => {
+      document.getElementById(`btn-${r}`).classList.toggle('active', r === role);
+      document.getElementById(`form-${r}`).classList.toggle('visible', r === role);
+    });
+  }
+
+  async function getPublicBase(forceRefresh = false) {
+    if (window._publicBase && !forceRefresh) return window._publicBase;
+    try {
+      const res = await fetch('/api/config');
+      const data = await res.json();
+      if (data.public_domain) {
+        const proto = data.port === 443 ? 'https' : 'http';
+        const omitPort = data.port === 80 || data.port === 443;
+        window._publicBase = omitPort
+          ? `${proto}://${data.public_domain}`
+          : `${proto}://${data.public_domain}:${data.port}`;
+      } else {
+        window._publicBase = location.origin;
+      }
+    } catch (e) {
+      window._publicBase = location.origin;
+    }
+    return window._publicBase;
+  }
+
+  async function createSession() {
+    const name = document.getElementById('dm-name').value.trim() || 'Dungeon Master';
+    const errEl = document.getElementById('dm-error');
+    errEl.classList.remove('visible');
+    try {
+      const res = await fetch('/api/session/create', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ dm_name: name })
+      });
+      const data = await res.json();
+      if (data.error) { errEl.textContent = data.error; errEl.classList.add('visible'); return; }
+
+      _sessionData = data;
+      const base = await getPublicBase();
+      document.getElementById('code-player').textContent = base + '/join?session=' + data.session_id + '&code=' + data.player_invite + '&role=player';
+      document.getElementById('code-viewer').textContent = base + '/join?session=' + data.session_id + '&code=' + data.viewer_invite + '&role=viewer';
+      document.getElementById('dm-codes').classList.add('visible');
+    } catch(e) {
+      errEl.textContent = 'Server error. Is the backend running?';
+      errEl.classList.add('visible');
+    }
+  }
+
+  function enterSession() {
+    if (!_sessionData) return;
+    const p = new URLSearchParams({
+      session_id: _sessionData.session_id,
+      user_id: _sessionData.user_id,
+      role: _sessionData.role,
+      name: _sessionData.name,
+    });
+    window.location.href = `/play?${p}`;
+  }
+
+  // Stable player key — stored in localStorage so same browser = same identity
+  function getPlayerKey() {
+    let key = localStorage.getItem('tavern_player_key');
+    if (!key) {
+      key = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+      localStorage.setItem('tavern_player_key', key);
+    }
+    return key;
+  }
+
+  async function joinSession(formRole) {
+    const nameEl = document.getElementById(`${formRole}-name`);
+    const sessEl = document.getElementById(`${formRole}-session`);
+    const codeEl = document.getElementById(`${formRole}-code`);
+    const errEl  = document.getElementById(`${formRole}-error`);
+    errEl.classList.remove('visible');
+
+    const name = nameEl.value.trim() || (formRole === 'viewer' ? 'Spectator' : 'Adventurer');
+    const session_id = sessEl.value.trim().toUpperCase();
+    const invite_code = codeEl.value.trim().toUpperCase();
+
+    if (!session_id || !invite_code) {
+      errEl.textContent = 'Please fill in all fields.';
+      errEl.classList.add('visible');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/session/join', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ session_id, invite_code, user_name: name, player_key: getPlayerKey() })
+      });
+      const data = await res.json();
+      if (data.error) { errEl.textContent = data.error; errEl.classList.add('visible'); return; }
+
+      // Store last session for quick rejoin
+      localStorage.setItem('tavern_last_session', JSON.stringify({
+        session_id: data.session_id,
+        invite_code,
+        name,
+        role: formRole,
+      }));
+
+      const p = new URLSearchParams({
+        session_id: data.session_id,
+        user_id: data.user_id,
+        role: data.role,
+        name: data.name,
+        returning: data.returning ? '1' : '0',
+      });
+      window.location.href = `/play?${p}`;
+    } catch(e) {
+      errEl.textContent = 'Server error. Is the backend running?';
+      errEl.classList.add('visible');
+    }
+  }
+
+  // Copy link helper - regenerates link with current public domain
+  async function copyLink(type) {
+    if (!_sessionData) return;
+    
+    const inviteCode = type === 'player' ? _sessionData.player_invite : _sessionData.viewer_invite;
+    const base = await getPublicBase(true); // Force refresh to get current config
+    const link = `${base}/join?session=${_sessionData.session_id}&code=${inviteCode}&role=${type}`;
+    
+    // Also update the displayed link
+    const el = document.getElementById('code-' + type);
+    el.textContent = link;
+    
+    navigator.clipboard.writeText(link).then(() => {
+      showToast(type + ' link copied!');
+    });
+  }
+
+  function showToast(msg) {
+    let t = document.getElementById('landing-toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'landing-toast';
+      t.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(20px);background:#161b22;border:1px solid rgba(0,212,212,0.4);border-radius:3px;padding:0.5rem 1.2rem;font-family:Cinzel,serif;font-size:0.7rem;color:#00d4d4;opacity:0;pointer-events:none;transition:all 0.3s;z-index:999;';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)';
+    setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(20px)'; }, 2200);
+  }
+
+  // Show rejoin bar if previous session exists
+  (function checkRejoin() {
+    try {
+      const last = JSON.parse(localStorage.getItem('tavern_last_session') || 'null');
+      if (last && last.name) {
+        document.getElementById('rejoin-name').textContent = last.name;
+        document.getElementById('rejoin-bar').style.display = 'block';
+      }
+    } catch(e) {}
+  })();
+
+  async function rejoinLast() {
+    try {
+      const last = JSON.parse(localStorage.getItem('tavern_last_session') || 'null');
+      if (!last) return;
+      const res = await fetch('/api/session/join', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          session_id: last.session_id,
+          invite_code: last.invite_code,
+          user_name: last.name,
+          player_key: getPlayerKey(),
+        })
+      });
+      const data = await res.json();
+      if (data.error) { showToast('Session expired or not found. Start a new one.'); localStorage.removeItem('tavern_last_session'); return; }
+      const p = new URLSearchParams({
+        session_id: data.session_id,
+        user_id: data.user_id,
+        role: data.role,
+        name: data.name,
+        returning: data.returning ? '1' : '0',
+      });
+      window.location.href = `/play?${p}`;
+    } catch(e) { showToast('Could not rejoin. Start a new session.'); }
+  }
+
+  // Auto-join from magic link (?session=...&code=...&role=...)
+  (function autoJoin() {
+    const p = new URLSearchParams(location.search);
+    const session = p.get('session');
+    const code    = p.get('code');
+    const role    = p.get('role');
+    if (!session || !code || !role) return;
+
+    if (role === 'player') {
+      selectRole('player');
+      document.getElementById('player-session').value = session;
+      document.getElementById('player-code').value    = code;
+    } else if (role === 'viewer') {
+      selectRole('viewer');
+      document.getElementById('viewer-session').value = session;
+      document.getElementById('viewer-code').value    = code;
+    }
+  })();
+
+  // Allow Enter key
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const active = document.querySelector('.form-section.visible');
+    if (!active) return;
+    const id = active.id;
+    if (id === 'form-dm') { if (_sessionData) enterSession(); else createSession(); }
+    else if (id === 'form-player') joinSession('player');
+    else if (id === 'form-viewer') joinSession('viewer');
+  });
+</script>
+</body>
+</html>

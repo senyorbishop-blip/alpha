@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Casual D&amp;D — Choose Your Hero</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Crimson+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0a08;
+      --panel: rgba(18, 10, 8, 0.72);
+      --panel-strong: rgba(28, 16, 12, 0.86);
+      --line: rgba(223, 191, 141, 0.16);
+      --line-strong: rgba(229, 198, 151, 0.28);
+      --gold: #e6cfaa;
+      --gold-strong: #f2deb9;
+      --muted: rgba(235, 222, 196, 0.72);
+      --text: #f6ecdd;
+      --accent: #9ce0db;
+      --danger: #ff8d8d;
+      --shadow: 0 24px 80px rgba(0,0,0,0.45);
+      --radius: 28px;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      font-family: 'Crimson Pro', serif;
+      color: var(--text);
+      background: var(--bg);
+      overflow-x: hidden;
+    }
+    .scene {
+      min-height: 100vh;
+      position: relative;
+      isolation: isolate;
+      padding: 42px 28px 56px;
+      background:
+        radial-gradient(circle at 22% 20%, rgba(247, 224, 165, 0.24), transparent 26%),
+        radial-gradient(circle at 76% 18%, rgba(127, 173, 255, 0.18), transparent 24%),
+        linear-gradient(180deg, rgba(5, 3, 2, 0.22), rgba(7, 3, 2, 0.86)),
+        url('/static/importer/forest-bg.png') center/cover no-repeat fixed;
+    }
+    .scene::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(255,255,255,0.12), transparent 30%),
+        linear-gradient(180deg, rgba(4,2,2,0.1), rgba(6,3,2,0.56) 45%, rgba(5,2,1,0.82));
+      z-index: -2;
+    }
+    .scene::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 35%, rgba(255, 214, 158, 0.14), transparent 46%);
+      mix-blend-mode: screen;
+      z-index: -1;
+    }
+    .layout {
+      max-width: 1360px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 0.94fr 1.06fr;
+      gap: 32px;
+      align-items: start;
+    }
+    .hero, .panel {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(29,16,13,0.64), rgba(13,8,7,0.78));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before, .panel::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent 28%, transparent 72%, rgba(255,255,255,0.03));
+    }
+    .hero {
+      min-height: calc(100vh - 98px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 34px 34px 30px;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 16px;
+      border: 1px solid rgba(230, 208, 171, 0.14);
+      border-radius: 999px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(244, 230, 206, 0.88);
+      background: rgba(7, 4, 3, 0.32);
+    }
+    h1 {
+      margin: 18px 0 14px;
+      font-family: 'Cinzel', serif;
+      font-size: clamp(3rem, 6vw, 5.75rem);
+      line-height: 0.92;
+      letter-spacing: -0.03em;
+      color: var(--gold-strong);
+      text-shadow: 0 12px 32px rgba(0,0,0,0.34);
+    }
+    .hero p {
+      max-width: 650px;
+      margin: 0;
+      font-size: clamp(1.18rem, 2vw, 1.6rem);
+      line-height: 1.5;
+      color: var(--muted);
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 34px;
+    }
+    .summary-card {
+      padding: 18px 18px 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(229, 198, 151, 0.14);
+      background: linear-gradient(180deg, rgba(15,8,6,0.56), rgba(10,6,4,0.74));
+    }
+    .summary-card strong {
+      display: block;
+      font-family: 'Cinzel', serif;
+      font-size: 0.95rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--gold-strong);
+      margin-bottom: 8px;
+    }
+    .summary-card span {
+      display: block;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 1rem;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 36px;
+      color: rgba(243, 229, 205, 0.8);
+      font-size: 1rem;
+    }
+    .meta-pill {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(229, 198, 151, 0.12);
+      background: rgba(9, 5, 4, 0.4);
+    }
+    .panel {
+      padding: 28px;
+      min-height: calc(100vh - 98px);
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 20px;
+    }
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+      border-bottom: 1px solid rgba(229, 198, 151, 0.1);
+      padding-bottom: 18px;
+    }
+    .panel-head h2 {
+      margin: 0 0 8px;
+      font-family: 'Cinzel', serif;
+      font-size: clamp(2rem, 3vw, 2.65rem);
+      color: var(--gold-strong);
+    }
+    .panel-head p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 1.08rem;
+    }
+    .status-stack {
+      display: grid;
+      gap: 10px;
+      min-width: 200px;
+    }
+    .status-pill {
+      padding: 12px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(229, 198, 151, 0.16);
+      background: rgba(10, 6, 5, 0.56);
+      text-align: right;
+    }
+    .status-pill strong {
+      display: block;
+      font-family: 'Cinzel', serif;
+      font-size: 0.82rem;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: rgba(247, 236, 217, 0.92);
+    }
+    .status-pill span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+    .feedback {
+      border-radius: 18px;
+      padding: 14px 16px;
+      border: 1px solid rgba(229, 198, 151, 0.14);
+      background: rgba(10, 6, 5, 0.5);
+      color: var(--muted);
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .feedback.error {
+      color: var(--danger);
+      border-color: rgba(255, 141, 141, 0.24);
+      background: rgba(64, 14, 14, 0.38);
+    }
+    .feedback.success {
+      color: var(--accent);
+      border-color: rgba(156, 224, 219, 0.24);
+      background: rgba(12, 31, 29, 0.45);
+    }
+    .character-list {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+    .character-card {
+      position: relative;
+      border-radius: 24px;
+      border: 1px solid rgba(229, 198, 151, 0.12);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01) 14%, rgba(11, 6, 5, 0.78) 14%, rgba(8, 4, 3, 0.92)),
+        linear-gradient(180deg, rgba(58,33,22,0.14), rgba(18,10,8,0));
+      padding: 18px 18px 16px;
+      display: grid;
+      grid-template-columns: 108px 1fr auto;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+      text-align:left;
+    }
+    .character-card:hover {
+      transform: translateY(-1px);
+      border-color: rgba(229, 198, 151, 0.28);
+      box-shadow: 0 14px 32px rgba(0,0,0,0.24);
+    }
+    .character-card.selected {
+      border-color: rgba(156, 224, 219, 0.5);
+      box-shadow: 0 18px 40px rgba(17, 53, 51, 0.28);
+    }
+    .token {
+      width: 108px;
+      height: 118px;
+      border-radius: 24px;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(255,239,207,0.12), transparent 36%),
+        linear-gradient(180deg, rgba(18,9,7,0.86), rgba(7,3,2,0.94));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 16px 30px rgba(0,0,0,0.26);
+      overflow: hidden;
+      border:1px solid rgba(229,198,151,0.08);
+    }
+    .token img { width:100%; height:100%; object-fit:cover; display:block; }
+    .avatar-render.token { width:100%; height:100%; object-fit:cover; display:block; }
+    .avatar-render.mini { width:108px; height:118px; object-fit:contain; display:block; }
+    .character-main {
+      min-width: 0;
+    }
+    .character-name {
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      color: var(--gold-strong);
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .character-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+    .character-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(229, 198, 151, 0.1);
+    }
+    .character-check {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid rgba(229, 198, 151, 0.18);
+      display: grid;
+      place-items: center;
+      color: transparent;
+      font-weight: 700;
+      transition: all 160ms ease;
+    }
+    .character-card.selected .character-check {
+      color: #091010;
+      background: linear-gradient(180deg, #b7f1ec, #78d6cc);
+      border-color: transparent;
+    }
+    .empty {
+      padding: 28px;
+      text-align: center;
+      border-radius: 22px;
+      border: 1px dashed rgba(229, 198, 151, 0.16);
+      background: rgba(11, 7, 5, 0.44);
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    button, .link-btn {
+      appearance: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Cinzel', serif;
+    }
+    .primary-btn, .secondary-btn {
+      padding: 17px 18px;
+      border-radius: 18px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      transition: transform 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+    }
+    .primary-btn {
+      background: linear-gradient(180deg, #e2b15a, #b87c2f);
+      color: #231106;
+      box-shadow: 0 18px 36px rgba(111, 63, 20, 0.28);
+    }
+    .secondary-btn {
+      background: rgba(255,255,255,0.03);
+      color: var(--gold-strong);
+      border: 1px solid rgba(229, 198, 151, 0.18);
+    }
+    .primary-btn:hover, .secondary-btn:hover { transform: translateY(-1px); }
+    .primary-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .footer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+    .footer-row a {
+      color: var(--accent);
+      text-decoration: none;
+      font-family: 'Cinzel', serif;
+      font-size: 0.92rem;
+    }
+    .subtle {
+      color: var(--muted);
+      font-size: 0.96rem;
+    }
+    @media (max-width: 1120px) {
+      .layout { grid-template-columns: 1fr; }
+      .hero, .panel { min-height: auto; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .status-stack { min-width: 0; }
+      .panel-head { flex-direction: column; }
+      .status-pill { text-align: left; }
+    }
+    @media (max-width: 720px) {
+      .scene { padding: 20px 16px 28px; }
+      .hero, .panel { padding: 22px; border-radius: 24px; }
+      .actions { grid-template-columns: 1fr; }
+      .character-card { grid-template-columns: 84px 1fr; }
+      .character-check { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="scene">
+    <div class="layout">
+      <section class="hero">
+        <div>
+          <div class="eyebrow">Player Invite Route · New Hero Gateway</div>
+          <h1>Choose<br>Your Hero</h1>
+          <p id="hero-copy">Sign in, review the characters tied to your account, pick the one you want for this campaign, or build a new one without getting dumped into the old join page.</p>
+          <div class="summary-grid">
+            <div class="summary-card">
+              <strong>Invite first</strong>
+              <span>The campaign link should bring the player straight here after sign-in, not to the DM realm board.</span>
+            </div>
+            <div class="summary-card">
+              <strong>Homebrew included</strong>
+              <span>Library characters and session-owned characters both surface here so custom classes stay available.</span>
+            </div>
+            <div class="summary-card">
+              <strong>Enter cleanly</strong>
+              <span>Choose a hero, then move straight into play with the right session and role already attached.</span>
+            </div>
+          </div>
+        </div>
+        <div class="meta">
+          <div class="meta-pill"><span>Campaign</span><strong id="campaign-name">Resolving realm…</strong></div>
+          <div class="meta-pill"><span>Role</span><strong>Player</strong></div>
+          <div class="meta-pill"><span>Route</span><strong>Invite → Hero → Play</strong></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2 id="panel-title">Hero Roster</h2>
+            <p id="panel-copy">Pick an existing character, create a native one, or import before entering the campaign.</p>
+          </div>
+          <div class="status-stack">
+            <div class="status-pill"><strong>Account</strong><span id="account-status">Checking sign-in…</span></div>
+            <div class="status-pill"><strong>Campaign Link</strong><span id="invite-status">Validating…</span></div>
+          </div>
+        </div>
+
+        <div id="feedback" class="feedback">Loading invite and character data…</div>
+
+        <div id="character-list" class="character-list"></div>
+
+        <div class="actions" id="action-buttons">
+          <button id="enter-btn" class="primary-btn" type="button" disabled>Enter with Selected Hero</button>
+          <button id="create-btn" class="secondary-btn" type="button">Create New Character</button>
+          <button id="import-btn" class="secondary-btn" type="button">Import Character</button>
+          <button id="refresh-btn" class="secondary-btn" type="button">Refresh Roster</button>
+        </div>
+
+        <div id="builder-host"></div>
+
+        <div class="footer-row">
+          <span class="subtle" id="footer-copy">This page replaces the old player join screen for invite links.</span>
+          <a href="/campaigns">Go to Realm Board</a>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="/static/js/core/csrf.js"></script>
+  <script src="/static/js/importer/avatar_renderer.js"></script>
+  <script src="/static/js/importer/portrait_library.js"></script>
+  <script src="/static/js/character/gateway/gateway_state.js"></script>
+  <script src="/static/js/character/gateway/gateway_modal.js"></script>
+  <script src="/static/js/character/library/character_library_panel.js"></script>
+  <script src="/static/js/character/library/character_levelup_modal.js"></script>
+  <script src="/static/js/character/gateway/join_gateway.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const SESSION_ID = String(params.get('session') || '').trim().toUpperCase();
+    const INVITE = String(params.get('code') || '').trim();
+    const ROLE = 'player';
+    const CREATED_PROFILE = String(params.get('created') || '').trim();
+    const NEXT_LOGIN = location.pathname + location.search;
+
+    let authUser = null;
+    let sessionTokens = [];
+    let selectedTokenId = null;
+    let selectedProfileId = '';
+    let joinGateway = null;
+    let gatewayState = null;
+    let campaignName = 'Campaign';
+
+    const els = {
+      campaignName: document.getElementById('campaign-name'),
+      accountStatus: document.getElementById('account-status'),
+      inviteStatus: document.getElementById('invite-status'),
+      feedback: document.getElementById('feedback'),
+      characterList: document.getElementById('character-list'),
+      enterBtn: document.getElementById('enter-btn'),
+      createBtn: document.getElementById('create-btn'),
+      importBtn: document.getElementById('import-btn'),
+      refreshBtn: document.getElementById('refresh-btn'),
+      builderHost: document.getElementById('builder-host'),
+      actionButtons: document.getElementById('action-buttons'),
+      panelTitle: document.getElementById('panel-title'),
+      panelCopy: document.getElementById('panel-copy'),
+      heroCopy: document.getElementById('hero-copy'),
+      footerCopy: document.getElementById('footer-copy'),
+    };
+
+    function setFeedback(message, kind = 'info') {
+      els.feedback.textContent = message;
+      els.feedback.className = 'feedback' + (kind === 'error' ? ' error' : kind === 'success' ? ' success' : '');
+    }
+
+    function redirectToLogin() {
+      sessionStorage.setItem('dnd_login_next', NEXT_LOGIN);
+      location.href = '/player?next=' + encodeURIComponent(NEXT_LOGIN);
+    }
+
+    function buildPlayerInviteUrl(sessionId, inviteCode, extraParams) {
+      const q = new URLSearchParams({ session: String(sessionId || '').trim().toUpperCase(), code: String(inviteCode || '').trim(), role: ROLE });
+      const extras = extraParams || {};
+      Object.keys(extras).forEach((key) => {
+        const value = String(extras[key] || '').trim();
+        if (value) q.set(key, value);
+      });
+      return '/player/characters?' + q.toString();
+    }
+
+    function getCreateUrl() {
+      const q = new URLSearchParams({ session: SESSION_ID, code: INVITE, role: ROLE });
+      return '/player/characters/create?' + q.toString();
+    }
+
+    function rememberInviteRoute(sessionId, inviteCode) {
+      const sessionValue = String(sessionId || '').trim().toUpperCase();
+      const inviteValue = String(inviteCode || '').trim();
+      if (!sessionValue || !inviteValue) return;
+      const url = buildPlayerInviteUrl(sessionValue, inviteValue);
+      try {
+        localStorage.setItem('dnd_last_player_invite', url);
+      } catch (_) {}
+    }
+
+    function restoreInviteRouteFromStorage() {
+      try {
+        return String(localStorage.getItem('dnd_last_player_invite') || '').trim();
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function getPlayerKey() {
+      if (authUser && authUser.id) return 'auth_' + authUser.id;
+      let key = localStorage.getItem('tavern_player_key');
+      if (!key) {
+        key = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+        localStorage.setItem('tavern_player_key', key);
+      }
+      return key;
+    }
+
+    async function fetchJson(url, options) {
+      const res = await fetch(url, Object.assign({ credentials: 'same-origin' }, options || {}));
+      let data = {};
+      try { data = await res.json(); } catch (_) {}
+      if (!res.ok) {
+        throw new Error(data.error || data.detail || data.message || 'Request failed');
+      }
+      return data;
+    }
+
+    function buildAvatarOptions(entry) {
+      const classLabel = String(entry.classSummary || entry.classId || '').trim();
+      return {
+        name: entry.name || 'Hero',
+        className: classLabel || 'Adventurer',
+        classId: classLabel.toLowerCase(),
+        species: entry.speciesLabel || entry.speciesName || '',
+        speciesId: String(entry.speciesId || entry.species || '').trim().toLowerCase(),
+        gender: entry.gender || 'neutral',
+        accentColor: entry.color || '',
+        level: entry.level || 1,
+      };
+    }
+
+    function renderCharacterCard(entry) {
+      const card = document.createElement('button');
+      card.type = 'button';
+      const selectedId = joinGateway && joinGateway.getSelectedProfileId ? joinGateway.getSelectedProfileId() : '';
+      card.className = 'character-card' + (entry.id === selectedId ? ' selected' : '');
+      card.dataset.profileId = entry.id;
+      const renderer = window.CasualDnDAvatarRenderer;
+      const avatarMarkup = renderer
+        ? renderer.renderImgMarkup(buildAvatarOptions(entry), 110, 'mini', 'mini')
+        : `<span>${(entry.name || '?').slice(0, 2).toUpperCase()}</span>`;
+      card.innerHTML = `
+        <div class="token">${avatarMarkup}</div>
+        <div class="character-main">
+          <div class="character-name">${escapeHtml(entry.name || 'Unnamed Hero')}</div>
+          <div class="character-meta">
+            <span class="character-tag">${escapeHtml(entry.ownerLabel || (entry.mine ? 'Your character' : 'Campaign character'))}</span>
+            ${entry.classSummary ? `<span class="character-tag">${escapeHtml(entry.classSummary)}</span>` : ''}
+            ${entry.level ? `<span class="character-tag">Level ${escapeHtml(String(entry.level))}</span>` : ''}
+            ${entry.libraryId ? '<span class="character-tag">Library</span>' : '<span class="character-tag">Session</span>'}
+          </div>
+        </div>
+        <div class="character-check">✓</div>
+      `;
+      card.addEventListener('click', () => {
+        if (joinGateway && typeof joinGateway.selectProfile === 'function') {
+          joinGateway.selectProfile(entry.id);
+          renderRosterFromState();
+        }
+      });
+      return card;
+    }
+
+    function renderEmptyState(message) {
+      els.characterList.innerHTML = `<div class="empty">${message}</div>`;
+    }
+
+    function setupJoinGateway() {
+      if (joinGateway || !window.CharacterGatewayState || !window.CharacterGatewayModal || !window.CharacterJoinGateway) return;
+      gatewayState = window.CharacterGatewayState.createGatewayState();
+      joinGateway = window.CharacterJoinGateway.createJoinGateway({
+        state: gatewayState,
+        modal: window.CharacterGatewayModal,
+        hooks: {
+          onUseExisting(profileId, selectedEntry) {
+            const selectedId = String(profileId || '').trim();
+            const profileMatch = selectedId.match(/^profile:(.+)$/);
+            const selectedLibraryProfileId = profileMatch ? String(profileMatch[1] || '').trim() : '';
+            if (selectedLibraryProfileId) {
+              selectedProfileId = selectedLibraryProfileId;
+              selectedTokenId = null;
+              joinAsNew();
+              return;
+            }
+            selectedProfileId = selectedEntry && selectedEntry.libraryId ? String(selectedEntry.libraryId).trim() : '';
+            selectedTokenId = selectedId;
+            claimCharacter();
+          },
+          onCreateNative() {
+            location.href = getCreateUrl();
+          },
+          onNativeSaved(savedProfile) {
+            if (savedProfile && savedProfile.name) {
+              setFeedback('Saved ' + savedProfile.name + ' to your character library.', 'success');
+            }
+          },
+          onImportDDB() {
+            setFeedback('Import ready. Finish the import and then choose the new hero to enter.', 'success');
+          },
+          onError(message) {
+            setFeedback(message || 'Something went wrong in the hero gateway.', 'error');
+          },
+        },
+        elements: {
+          charGrid: els.characterList,
+          useExistingBtn: els.enterBtn,
+          createNativeBtn: els.createBtn,
+          importDdbBtn: els.importBtn,
+          existingSection: null,
+          actionsSection: els.builderHost,
+          gatewayButtonsWrap: els.actionButtons,
+          emptyHint: null,
+        },
+      });
+      const originalLoadCharacters = joinGateway.loadCharacters.bind(joinGateway);
+      joinGateway.loadCharacters = function patchedLoadCharacters(entries, preferredId) {
+        originalLoadCharacters(entries, preferredId);
+        renderRosterFromState();
+      };
+      const originalSelectProfile = joinGateway.selectProfile ? joinGateway.selectProfile.bind(joinGateway) : null;
+      if (originalSelectProfile) {
+        joinGateway.selectProfile = function patchedSelectProfile(id) {
+          originalSelectProfile(id);
+          renderRosterFromState();
+        };
+      }
+      joinGateway.init();
+    }
+
+    function renderRosterFromState() {
+      if (!joinGateway || !gatewayState) return;
+      const snapshot = gatewayState.getState ? gatewayState.getState() : { characters: [] };
+      const entries = Array.isArray(snapshot.characters) ? snapshot.characters : [];
+      const selectedId = joinGateway.getSelectedProfileId ? joinGateway.getSelectedProfileId() : '';
+      els.enterBtn.disabled = !selectedId;
+      if (!entries.length) {
+        renderEmptyState('No existing hero matched this invite yet. Create a new one or import your build to continue.');
+        return;
+      }
+      els.characterList.innerHTML = '';
+      entries.forEach((entry) => {
+        const row = renderCharacterCard(entry);
+        if (entry.id === selectedId) row.classList.add('selected');
+        els.characterList.appendChild(row);
+      });
+    }
+
+    async function loadSessionInfo() {
+      const qs = new URLSearchParams({ role: ROLE, player_key: getPlayerKey(), user_name: authUser ? (authUser.character_name || authUser.username || '') : '' });
+      const data = await fetchJson(`/api/session/${encodeURIComponent(SESSION_ID)}/lobby?${qs.toString()}`);
+      campaignName = data.campaign_name || 'Campaign';
+      sessionTokens = Array.isArray(data.tokens) ? data.tokens : [];
+      els.campaignName.textContent = campaignName;
+      els.inviteStatus.textContent = 'Invite verified';
+      els.panelTitle.textContent = 'Hero Roster for ' + campaignName;
+      els.panelCopy.textContent = 'Choose the character you want to bring into ' + campaignName + ', or create/import one before entering.';
+      els.heroCopy.textContent = 'The player invite now lands on the new hero page. Sign in, choose from native or homebrew-ready characters, then head straight into ' + campaignName + '.';
+      els.footerCopy.textContent = 'Invite links now route players through this hero page instead of the old join screen.';
+    }
+
+    function mapCharacters() {
+      const userName = String((authUser && (authUser.character_name || authUser.username)) || '').trim().toLowerCase();
+      const mapped = sessionTokens.map((t) => {
+        const ownerName = String(t.owner_name || '').trim().toLowerCase();
+        const likelyMine = !ownerName || (userName && ownerName === userName);
+        return {
+          id: t.id,
+          name: t.name,
+          color: t.color,
+          shape: t.shape,
+          mine: likelyMine,
+          ownerLabel: likelyMine ? 'Already linked to your account' : (t.owner_name ? ('Played by ' + t.owner_name) : 'Available in session'),
+          classSummary: String(t.class_summary || '').trim(),
+          level: Number(t.level || 0) || null,
+        };
+      });
+      const preferred = mapped.find((c) => c.mine) || mapped[0] || null;
+      joinGateway.loadCharacters(mapped, preferred ? preferred.id : null);
+    }
+
+    async function claimCharacter() {
+      try {
+        setFeedback('Binding the selected hero to this session…');
+        const data = await fetchJson('/api/session/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: SESSION_ID, invite_code: INVITE, claim_token: selectedTokenId, profile_id: selectedProfileId }),
+        });
+        saveAndEnter(data);
+      } catch (err) {
+        setFeedback(err.message || 'Could not enter with that hero.', 'error');
+      }
+    }
+
+    async function joinAsNew() {
+      try {
+        setFeedback('Creating your session entry…');
+        const data = await fetchJson('/api/session/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: SESSION_ID, invite_code: INVITE, claim_token: null, profile_id: selectedProfileId }),
+        });
+        saveAndEnter(data);
+      } catch (err) {
+        setFeedback(err.message || 'Could not join the session.', 'error');
+      }
+    }
+
+    function rememberSelectedProfile(data) {
+      const profileId = String(selectedProfileId || '').trim();
+      if (!profileId || !data || !data.session_id) return;
+      const identitySeed = String(data.user_id || data.name || (authUser && authUser.username) || 'player').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      const identity = identitySeed || 'player';
+      const key = `tavern_char_profile_${String(data.session_id).trim().toUpperCase()}_${identity}`;
+      try { localStorage.setItem(key, profileId); } catch (_) {}
+    }
+
+    function saveAndEnter(data) {
+      rememberSelectedProfile(data);
+      localStorage.setItem('tavern_last_session', JSON.stringify({
+        session_id: data.session_id,
+        invite_code: INVITE,
+        name: data.name,
+        role: data.role,
+      }));
+      rememberInviteRoute(data.session_id, INVITE);
+      const search = new URLSearchParams({
+        session_id: data.session_id,
+        user_id: data.user_id,
+        role: data.role,
+        name: data.name,
+        returning: data.returning ? '1' : '0',
+      });
+      location.href = '/play?' + search.toString();
+    }
+
+    function escapeHtml(input) {
+      return String(input || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    async function init() {
+      if (!SESSION_ID || !INVITE) {
+        const fallbackInvite = restoreInviteRouteFromStorage();
+        if (fallbackInvite && fallbackInvite !== (location.pathname + location.search)) {
+          location.replace(fallbackInvite);
+          return;
+        }
+        els.inviteStatus.textContent = 'Invite needed';
+        els.campaignName.textContent = 'No realm selected';
+        setFeedback('Open a player invite to choose a hero for a campaign, or use your most recent invite when available.', 'error');
+        renderEmptyState('No player invite is attached to this page yet. Open a player realm link or switch campaigns from the realm board.');
+        return;
+      }
+      try {
+        const me = await fetch('/api/auth/me', { credentials: 'same-origin' });
+        if (!me.ok) {
+          redirectToLogin();
+          return;
+        }
+        const auth = await me.json();
+        authUser = auth && auth.user ? auth.user : null;
+        if (!authUser) {
+          redirectToLogin();
+          return;
+        }
+        els.accountStatus.textContent = (authUser.username || 'Signed in') + ' · ' + (authUser.role || 'player');
+        setupJoinGateway();
+        await loadSessionInfo();
+        rememberInviteRoute(SESSION_ID, INVITE);
+        mapCharacters();
+        if (CREATED_PROFILE) {
+          selectedProfileId = CREATED_PROFILE;
+          if (joinGateway && typeof joinGateway.selectProfile === 'function') {
+            joinGateway.selectProfile('library:' + CREATED_PROFILE);
+            renderRosterFromState();
+          }
+          setFeedback('Your new hero has been forged. Choose them to enter the realm, or create another.', 'success');
+        } else {
+          setFeedback('Hero gateway ready. Pick your character or build one before entering.', 'success');
+        }
+      } catch (err) {
+        setFeedback(err.message || 'Could not open the hero gateway.', 'error');
+        renderEmptyState('The hero roster could not be loaded. Refresh the page or request a new invite link.');
+      }
+    }
+
+    els.createBtn.addEventListener('click', () => {
+      location.href = getCreateUrl();
+    });
+
+    els.refreshBtn.addEventListener('click', async () => {
+      setFeedback('Refreshing roster…');
+      try {
+        await loadSessionInfo();
+        rememberInviteRoute(SESSION_ID, INVITE);
+        mapCharacters();
+        setFeedback('Roster refreshed.', 'success');
+      } catch (err) {
+        setFeedback(err.message || 'Could not refresh the roster.', 'error');
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>

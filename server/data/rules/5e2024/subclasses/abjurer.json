@@ -1,0 +1,103 @@
+{
+  "id": "abjurer",
+  "displayName": "Abjurer",
+  "classId": "wizard",
+  "parentClassId": "wizard",
+  "flavorText": "Abjurers specialize in warding magic, protection, and negation of hostile spells.",
+  "featureUnlocksByLevel": {
+    "2": [
+      "abjurer-abjuration-savant",
+      "abjurer-arcane-ward"
+    ],
+    "6": [
+      "abjurer-projected-ward"
+    ],
+    "10": [
+      "abjurer-improved-abjuration"
+    ],
+    "14": [
+      "abjurer-spell-resistance"
+    ]
+  },
+  "features": [
+    {
+      "level": 2,
+      "id": "abjurer-abjuration-savant",
+      "displayName": "Abjuration Savant",
+      "description": "The gold and time to copy Abjuration spells into your spellbook are halved."
+    },
+    {
+      "level": 2,
+      "id": "abjurer-arcane-ward",
+      "displayName": "Arcane Ward",
+      "description": "When you cast an Abjuration spell of 1st level or higher, create a magical ward with hit points equal to 2 × spell level + Intelligence modifier. The ward absorbs damage first and can be recharged by casting more Abjuration spells."
+    },
+    {
+      "level": 6,
+      "id": "abjurer-projected-ward",
+      "displayName": "Projected Ward",
+      "description": "When a creature within 30 feet takes damage, you can use your reaction to have your Arcane Ward absorb that damage instead."
+    },
+    {
+      "level": 10,
+      "id": "abjurer-improved-abjuration",
+      "displayName": "Improved Abjuration",
+      "description": "Add your proficiency bonus to ability checks made as part of Abjuration spells such as Counterspell and Dispel Magic."
+    },
+    {
+      "level": 14,
+      "id": "abjurer-spell-resistance",
+      "displayName": "Spell Resistance",
+      "description": "You have advantage on saving throws against spells and resistance to damage from spells."
+    }
+  ],
+  "featureDefinitions": {
+    "abjurer-abjuration-savant": {
+      "summary": "Your spellbook growth rewards leaning hard into protective abjuration magic.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "specialist"
+      ]
+    },
+    "abjurer-arcane-ward": {
+      "summary": "Build a protective ward that soaks incoming punishment before it reaches your real hit points.",
+      "description": "Arcane Ward is what makes the Abjurer feel distinct on the table. You are not only denying magic conceptually; you are carrying a visible defensive buffer that changes how safely you can stand in dangerous scenes.",
+      "resourceName": "Arcane Ward",
+      "trackUses": true,
+      "tags": [
+        "subclass",
+        "defense",
+        "resource",
+        "spellcasting"
+      ]
+    },
+    "abjurer-projected-ward": {
+      "section": "Reactions",
+      "type": "reaction",
+      "summary": "Spend your ward to protect someone else when they are about to take the hit instead of you.",
+      "tags": [
+        "subclass",
+        "support",
+        "defense",
+        "reaction"
+      ]
+    },
+    "abjurer-improved-abjuration": {
+      "summary": "Your mastery of countering and unmaking magic becomes much more dependable.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "control"
+      ]
+    },
+    "abjurer-spell-resistance": {
+      "summary": "You become markedly harder for hostile spells to land on cleanly.",
+      "tags": [
+        "subclass",
+        "defense",
+        "spellcasting"
+      ]
+    }
+  }
+}

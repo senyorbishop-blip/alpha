@@ -1,0 +1,121 @@
+{
+  "id": "life-domain",
+  "displayName": "Life Domain",
+  "classId": "cleric",
+  "parentClassId": "cleric",
+  "flavorText": "Life clerics preserve and restore vitality with unmatched divine healing.",
+  "featureUnlocksByLevel": {
+    "1": [
+      "life-bonus-proficiency",
+      "life-disciple-of-life"
+    ],
+    "2": [
+      "life-preserve-life"
+    ],
+    "6": [
+      "life-blessed-healer"
+    ],
+    "8": [
+      "life-divine-strike"
+    ],
+    "17": [
+      "life-supreme-healing"
+    ]
+  },
+  "features": [
+    {
+      "level": 1,
+      "id": "life-bonus-proficiency",
+      "displayName": "Bonus Proficiency",
+      "description": "Gain proficiency with heavy armor."
+    },
+    {
+      "level": 1,
+      "id": "life-disciple-of-life",
+      "displayName": "Disciple of Life",
+      "description": "When you cast a spell that restores hit points, the creature regains extra hit points equal to 2 + the spell's level."
+    },
+    {
+      "level": 2,
+      "id": "life-preserve-life",
+      "displayName": "Preserve Life",
+      "description": "As Channel Divinity, restore hit points among creatures within 30 feet equal to 5 × your cleric level; this can't restore a creature above half its hit point maximum."
+    },
+    {
+      "level": 6,
+      "id": "life-blessed-healer",
+      "displayName": "Blessed Healer",
+      "description": "When you cast a healing spell on others, you regain hit points equal to 2 + the spell's level."
+    },
+    {
+      "level": 8,
+      "id": "life-divine-strike",
+      "displayName": "Divine Strike",
+      "description": "Once on each of your turns when you hit with a weapon attack, deal an extra 1d8 radiant damage (2d8 at 14th level)."
+    },
+    {
+      "level": 17,
+      "id": "life-supreme-healing",
+      "displayName": "Supreme Healing",
+      "description": "When you would roll dice to restore hit points with a spell, use the highest number possible for each die instead."
+    }
+  ],
+  "featureDefinitions": {
+    "life-domain-bonus-proficiency": {
+      "summary": "Start better armored and more comfortable standing in the middle of the party you are protecting.",
+      "tags": [
+        "subclass",
+        "defense",
+        "support"
+      ]
+    },
+    "life-domain-disciple-of-life": {
+      "summary": "Your healing spells become materially stronger, turning every slot into better party stabilization.",
+      "description": "Disciple of Life is what makes the Life cleric feel like a true specialist instead of “just another cleric who heals sometimes.” It should make healing choices visibly more efficient.",
+      "tags": [
+        "subclass",
+        "healing",
+        "support"
+      ]
+    },
+    "life-domain-preserve-life": {
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Channel Divinity",
+      "trackUses": true,
+      "summary": "Redistribute a strong burst of emergency healing across the team when attrition starts breaking the party line.",
+      "description": "Preserve Life is the domain’s major save-the-party button. Use it when several allies are sliding at once and one quick mass correction matters more than flashy offense.",
+      "tags": [
+        "subclass",
+        "healing",
+        "resource",
+        "support"
+      ]
+    },
+    "life-domain-blessed-healer": {
+      "summary": "When you heal others, you also keep yourself steadier, helping the healer stay active in the same fight.",
+      "tags": [
+        "subclass",
+        "healing",
+        "survival"
+      ]
+    },
+    "life-domain-divine-strike": {
+      "summary": "Even the healing-focused domain keeps a bit of divine weapon pressure in reserve.",
+      "tags": [
+        "subclass",
+        "combat",
+        "damage"
+      ]
+    },
+    "life-domain-supreme-healing": {
+      "summary": "Your healing magic becomes far more reliable when big recovery numbers truly matter.",
+      "description": "Supreme Healing turns swingy healing into dependable stabilization. It matters most in dangerous late-game fights where every spell slot has to convert into meaningful recovery.",
+      "tags": [
+        "subclass",
+        "healing",
+        "endgame"
+      ]
+    }
+  }
+}

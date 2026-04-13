@@ -1,0 +1,125 @@
+{
+  "id": "oath-of-devotion",
+  "displayName": "Oath of Devotion",
+  "classId": "paladin",
+  "parentClassId": "paladin",
+  "flavorText": "Paladins of Devotion swear to embody virtue and radiant justice.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "devotion-tenets",
+      "devotion-channel-divinity-sacred-weapon"
+    ],
+    "7": [
+      "devotion-aura-of-devotion",
+      "devotion-holy-nimbus"
+    ],
+    "15": [
+      "devotion-purity-of-spirit"
+    ],
+    "20": [
+      "devotion-sacred-weapon-improvement"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "devotion-tenets",
+      "displayName": "Tenets of Devotion",
+      "description": "Your oath is defined by Honesty, Courage, Compassion, Honor, and Duty."
+    },
+    {
+      "level": 3,
+      "id": "devotion-channel-divinity-sacred-weapon",
+      "displayName": "Channel Divinity: Sacred Weapon",
+      "description": "As Channel Divinity, your weapon becomes magical and gains a bonus to attack rolls equal to your Charisma modifier for 1 minute."
+    },
+    {
+      "level": 7,
+      "id": "devotion-aura-of-devotion",
+      "displayName": "Aura of Devotion",
+      "description": "You and friendly creatures within your aura are immune to the charmed condition."
+    },
+    {
+      "level": 7,
+      "id": "devotion-holy-nimbus",
+      "displayName": "Holy Nimbus",
+      "description": "You can emit bright light in a 30-foot radius, dealing 10 radiant damage to foes that start their turn in the light."
+    },
+    {
+      "level": 15,
+      "id": "devotion-purity-of-spirit",
+      "displayName": "Purity of Spirit",
+      "description": "You are always under the effects of protection from evil and good."
+    },
+    {
+      "level": 20,
+      "id": "devotion-sacred-weapon-improvement",
+      "displayName": "Sacred Weapon Improvement",
+      "description": "At 18th–20th tier, your sacred aura reaches farther and your Sacred Weapon presence is further enhanced."
+    }
+  ],
+  "featureDefinitions": {
+    "devotion-tenets": {
+      "summary": "Your oath is built on honesty, courage, compassion, honor, and duty, giving the subclass a clear knightly moral core.",
+      "description": "Tenets of Devotion are not just flavor text; they explain why the subclass fights in a direct, protective, radiant style instead of through trickery or vengeance.",
+      "tags": [
+        "subclass",
+        "identity",
+        "roleplay"
+      ]
+    },
+    "devotion-channel-divinity-sacred-weapon": {
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Channel Divinity",
+      "trackUses": true,
+      "summary": "Imbue your weapon with radiant certainty so your attacks become far more reliable during a key exchange.",
+      "description": "Sacred Weapon is a classic Devotion paladin moment: draw the line, raise the weapon, and fight with unmistakable divine authority. Use it when accuracy matters more than surprise and you need to own the center of the fight.",
+      "duration": "1 minute",
+      "tags": [
+        "subclass",
+        "divine",
+        "combat",
+        "resource"
+      ]
+    },
+    "devotion-aura-of-devotion": {
+      "summary": "Your aura protects nearby allies from being charmed, reinforcing the subclass as a moral anchor against manipulation.",
+      "description": "Aura of Devotion turns the paladin into a stabilizing presence in enchantment-heavy encounters and makes positioning around you materially safer for allies.",
+      "tags": [
+        "subclass",
+        "aura",
+        "defense"
+      ]
+    },
+    "devotion-holy-nimbus": {
+      "section": "Actions",
+      "type": "action",
+      "summary": "Break into blazing holy radiance that punishes nearby foes and declares your presence unmistakably.",
+      "description": "Holy Nimbus is a dramatic escalation button. It should feel like the paladin stepping fully into angelic battlefield presence rather than merely turning on a light source.",
+      "tags": [
+        "subclass",
+        "radiant",
+        "capstone"
+      ]
+    },
+    "devotion-purity-of-spirit": {
+      "summary": "Hostile supernatural corruption has a far harder time taking hold of you.",
+      "description": "Purity of Spirit reinforces Devotion as the paladin who stands unbent against malign outside influence.",
+      "tags": [
+        "subclass",
+        "defense",
+        "passive"
+      ]
+    },
+    "devotion-sacred-weapon-improvement": {
+      "summary": "Your iconic oath technique scales so it remains worthy of late-game encounters.",
+      "description": "This improvement keeps Sacred Weapon relevant into the higher tiers, ensuring the subclass’s signature buff remains a real payoff instead of early-level nostalgia.",
+      "tags": [
+        "subclass",
+        "upgrade",
+        "combat"
+      ]
+    }
+  }
+}

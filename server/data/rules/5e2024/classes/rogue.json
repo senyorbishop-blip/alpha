@@ -1,0 +1,841 @@
+{
+  "id": "rogue",
+  "displayName": "Rogue",
+  "hitDie": 8,
+  "primaryAbilities": [
+    "dex"
+  ],
+  "savingThrows": [
+    "dex",
+    "int"
+  ],
+  "subclassLevel": 3,
+  "subclassDisplayName": "Roguish Archetype",
+  "armorProficiencies": [
+    "light"
+  ],
+  "weaponProficiencies": [
+    "simple",
+    "hand-crossbows",
+    "longswords",
+    "rapiers",
+    "shortswords"
+  ],
+  "toolProficiencies": [
+    "thieves-tools"
+  ],
+  "skillChoices": {
+    "count": 4,
+    "from": [
+      "Acrobatics",
+      "Athletics",
+      "Deception",
+      "Insight",
+      "Intimidation",
+      "Investigation",
+      "Perception",
+      "Performance",
+      "Persuasion",
+      "Sleight of Hand",
+      "Stealth"
+    ]
+  },
+  "startingEquipmentChoices": [],
+  "spellcastingType": "none",
+  "spellcastingAbility": null,
+  "spellSlots": {},
+  "classDescription": "A precise opportunist relying on mobility and cunning.",
+  "roleIdentity": "Skill specialist and burst-damage striker built around Sneak Attack.",
+  "progressionTable": [
+    {
+      "level": 1,
+      "proficiencyBonus": 2,
+      "features": [
+        "Expertise",
+        "Sneak Attack (1d6)",
+        "Thieves' Cant"
+      ],
+      "classMechanics": {
+        "sneakAttackDice": "1d6"
+      },
+      "unlockIds": [
+        "rogue-expertise-1",
+        "rogue-sneak-attack-1d6",
+        "rogue-thieves-cant"
+      ]
+    },
+    {
+      "level": 2,
+      "proficiencyBonus": 2,
+      "features": [
+        "Cunning Action"
+      ],
+      "classMechanics": {
+        "sneakAttackDice": "1d6"
+      },
+      "unlockIds": [
+        "rogue-cunning-action"
+      ]
+    },
+    {
+      "level": 3,
+      "proficiencyBonus": 2,
+      "features": [
+        "Roguish Archetype (Subclass)",
+        "Steady Aim",
+        "Sneak Attack (2d6)"
+      ],
+      "classMechanics": {
+        "sneakAttackDice": "2d6"
+      },
+      "unlockIds": [
+        "rogue-roguish-archetype-subclass",
+        "rogue-steady-aim",
+        "rogue-sneak-attack-l3"
+      ]
+    },
+    {
+      "level": 4,
+      "proficiencyBonus": 2,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "sneakAttackDice": "2d6"
+      },
+      "unlockIds": [
+        "rogue-l4-1"
+      ]
+    },
+    {
+      "level": 5,
+      "proficiencyBonus": 3,
+      "features": [
+        "Cunning Strike",
+        "Sneak Attack (3d6)"
+      ],
+      "classMechanics": {
+        "sneakAttackDice": "3d6"
+      },
+      "unlockIds": [
+        "rogue-cunning-strike",
+        "rogue-sneak-attack-l5"
+      ]
+    },
+    {
+      "level": 6,
+      "proficiencyBonus": 3,
+      "features": [
+        "Expertise"
+      ],
+      "classMechanics": {
+        "sneakAttackDice": "3d6"
+      },
+      "unlockIds": [
+        "rogue-expertise-2"
+      ]
+    },
+    {
+      "level": 7,
+      "proficiencyBonus": 3,
+      "features": [
+        "Evasion",
+        "Reliable Talent",
+        "Sneak Attack (4d6)"
+      ],
+      "classMechanics": {
+        "sneakAttackDice": "4d6"
+      },
+      "unlockIds": [
+        "rogue-evasion",
+        "rogue-reliable-talent",
+        "rogue-sneak-attack-l7"
+      ]
+    },
+    {
+      "level": 8,
+      "proficiencyBonus": 3,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "sneakAttackDice": "4d6"
+      },
+      "unlockIds": [
+        "rogue-l8-1"
+      ]
+    },
+    {
+      "level": 9,
+      "proficiencyBonus": 4,
+      "features": [
+        "Sneak Attack (5d6)"
+      ],
+      "classMechanics": {
+        "sneakAttackDice": "5d6"
+      },
+      "unlockIds": [
+        "rogue-sneak-attack-l9"
+      ]
+    },
+    {
+      "level": 10,
+      "proficiencyBonus": 4,
+      "features": [
+        "Subclass Feature"
+      ],
+      "classMechanics": {
+        "sneakAttackDice": "5d6"
+      },
+      "unlockIds": [
+        "rogue-l10-1"
+      ]
+    },
+    {
+      "level": 11,
+      "proficiencyBonus": 4,
+      "features": [
+        "Improved Cunning Strike",
+        "Sneak Attack (6d6)"
+      ],
+      "classMechanics": {
+        "sneakAttackDice": "6d6"
+      },
+      "unlockIds": [
+        "rogue-improved-cunning-strike",
+        "rogue-sneak-attack-l11"
+      ]
+    },
+    {
+      "level": 12,
+      "proficiencyBonus": 4,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "sneakAttackDice": "6d6"
+      },
+      "unlockIds": [
+        "rogue-l12-1"
+      ]
+    },
+    {
+      "level": 13,
+      "proficiencyBonus": 5,
+      "features": [
+        "Devious Strikes",
+        "Sneak Attack (7d6)"
+      ],
+      "classMechanics": {
+        "sneakAttackDice": "7d6"
+      },
+      "unlockIds": [
+        "rogue-devious-strikes",
+        "rogue-sneak-attack-l13"
+      ]
+    },
+    {
+      "level": 14,
+      "proficiencyBonus": 5,
+      "features": [
+        "Subclass Feature",
+        "Slippery Mind"
+      ],
+      "classMechanics": {
+        "sneakAttackDice": "7d6"
+      },
+      "unlockIds": [
+        "rogue-l14-1",
+        "rogue-slippery-mind"
+      ]
+    },
+    {
+      "level": 15,
+      "proficiencyBonus": 5,
+      "features": [
+        "Subclass Feature",
+        "Sneak Attack (8d6)"
+      ],
+      "classMechanics": {
+        "sneakAttackDice": "8d6"
+      },
+      "unlockIds": [
+        "rogue-l15-1",
+        "rogue-sneak-attack-l15"
+      ]
+    },
+    {
+      "level": 16,
+      "proficiencyBonus": 5,
+      "features": [
+        "Ability Score Improvement"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "sneakAttackDice": "8d6"
+      },
+      "unlockIds": [
+        "rogue-l16-1"
+      ]
+    },
+    {
+      "level": 17,
+      "proficiencyBonus": 6,
+      "features": [
+        "Subtle Strikes",
+        "Sneak Attack (9d6)"
+      ],
+      "classMechanics": {
+        "sneakAttackDice": "9d6"
+      },
+      "unlockIds": [
+        "rogue-subtle-strikes",
+        "rogue-sneak-attack-l17"
+      ]
+    },
+    {
+      "level": 18,
+      "proficiencyBonus": 6,
+      "features": [
+        "Elusive"
+      ],
+      "classMechanics": {
+        "sneakAttackDice": "9d6"
+      },
+      "unlockIds": [
+        "rogue-elusive"
+      ]
+    },
+    {
+      "level": 19,
+      "proficiencyBonus": 6,
+      "features": [
+        "Epic Boon",
+        "Sneak Attack (10d6)"
+      ],
+      "asiOrFeat": true,
+      "classMechanics": {
+        "sneakAttackDice": "10d6"
+      },
+      "unlockIds": [
+        "rogue-l19-1",
+        "rogue-sneak-attack-l19"
+      ]
+    },
+    {
+      "level": 20,
+      "proficiencyBonus": 6,
+      "features": [
+        "Stroke of Luck",
+        "Sneak Attack (10d6)"
+      ],
+      "classMechanics": {
+        "sneakAttackDice": "10d6"
+      },
+      "unlockIds": [
+        "rogue-stroke-of-luck",
+        "rogue-sneak-attack-l20"
+      ]
+    }
+  ],
+  "featureDefinitions": {
+    "rogue-expertise-1": {
+      "summary": "Push chosen proficiencies into elite territory so your rogue feels exceptional, not just trained.",
+      "description": "Expertise is one of the rogue's defining out-of-combat and scouting strengths. It makes the class feel dependable in the scenes that set fights up or solve problems before steel is drawn.",
+      "tags": [
+        "skills",
+        "identity",
+        "passive"
+      ]
+    },
+    "rogue-sneak-attack-1d6": {
+      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
+      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
+      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "tags": [
+        "combat",
+        "precision",
+        "signature"
+      ]
+    },
+    "rogue-thieves-cant": {
+      "summary": "You understand and communicate through covert criminal shorthand, signs, and coded speech.",
+      "description": "Thieves' Cant reinforces the rogue fantasy outside combat. It matters in infiltration, underworld scenes, and any campaign where hidden information and coded messages matter.",
+      "tags": [
+        "social",
+        "utility",
+        "identity"
+      ]
+    },
+    "rogue-cunning-action": {
+      "summary": "Turn movement and repositioning into a regular part of your round instead of a luxury.",
+      "description": "Cunning Action is what lets rogue feel slippery. It keeps the class mobile, evasive, and much better at claiming the exact angle Sneak Attack wants.",
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "tags": [
+        "mobility",
+        "combat",
+        "signature"
+      ]
+    },
+    "rogue-roguish-archetype-subclass": {
+      "summary": "Your archetype defines what kind of rogue you really are: killer, thief, arcane trickster, or another style of precision operator.",
+      "description": "Roguish Archetype is the subclass gate for rogue. It should immediately shift how the sheet reads the character by introducing a stronger fantasy lane and the tools to support it.",
+      "tags": [
+        "subclass",
+        "identity",
+        "build"
+      ]
+    },
+    "rogue-steady-aim": {
+      "summary": "Slow down, line up the strike, and trade movement freedom for a cleaner chance to land your damage spike.",
+      "description": "Steady Aim is a risk-reward setup button. It is there for the turns where accuracy matters more than movement and you need a reliable way to enable precision damage.",
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "tags": [
+        "combat",
+        "setup",
+        "precision"
+      ]
+    },
+    "rogue-cunning-strike": {
+      "summary": "Spend part of your Sneak Attack pressure on control or utility riders instead of raw damage alone.",
+      "description": "Cunning Strike expands rogue decision-making. It turns the class from pure damage math into a toolkit that can disrupt, reposition, or pressure enemies in more varied ways.",
+      "tags": [
+        "combat",
+        "control",
+        "choice"
+      ]
+    },
+    "rogue-evasion": {
+      "summary": "Explosive effects that would ruin most characters become much less reliable against you.",
+      "description": "Evasion is a signature rogue defensive passive. It rewards high Dexterity and reinforces the idea that the class survives by skillful movement rather than raw durability.",
+      "tags": [
+        "defense",
+        "passive",
+        "mobility"
+      ]
+    },
+    "rogue-reliable-talent": {
+      "summary": "Your practiced skills become difficult to sabotage with bad luck alone.",
+      "description": "Reliable Talent is one of the rogue's biggest quality-of-life spikes for noncombat play. It turns trained expertise into true consistency and should be reflected clearly in how the sheet explains skill outcomes.",
+      "tags": [
+        "skills",
+        "passive",
+        "consistency"
+      ]
+    },
+    "rogue-improved-cunning-strike": {
+      "summary": "Your precision damage riders become more flexible and punishing as your control options deepen.",
+      "description": "Improved Cunning Strike means the rogue's tactical choices keep scaling instead of plateauing at mid levels.",
+      "tags": [
+        "combat",
+        "control",
+        "upgrade"
+      ]
+    },
+    "rogue-devious-strikes": {
+      "summary": "Your dirty-fighting toolkit becomes nastier and more layered, pushing the rogue deeper into battlefield manipulation.",
+      "description": "Devious Strikes reinforces the class as an opportunist who wins through pressure points, not stand-up trading.",
+      "tags": [
+        "combat",
+        "control",
+        "identity"
+      ]
+    },
+    "rogue-slippery-mind": {
+      "summary": "Your mental defenses harden so hostile influence has a harder time pinning you down.",
+      "description": "Slippery Mind is a late-game defensive upgrade that helps rogues stay functional against spell-heavy encounters and mental pressure.",
+      "tags": [
+        "defense",
+        "mental",
+        "passive"
+      ]
+    },
+    "rogue-subtle-strikes": {
+      "summary": "You find cleaner openings against distracted enemies and turn pressure into easier precision damage.",
+      "description": "Subtle Strikes improves how often the rogue can cash in on the class's signature damage engine without needing perfect circumstances every round.",
+      "tags": [
+        "combat",
+        "precision",
+        "upgrade"
+      ]
+    },
+    "rogue-elusive": {
+      "summary": "You become frustratingly hard to pin down, making direct offense against you less reliable.",
+      "description": "Elusive is a high-level defensive identity feature. By this point the rogue should feel like a nightmare target to read and punish cleanly.",
+      "tags": [
+        "defense",
+        "capstone",
+        "evasion"
+      ]
+    },
+    "rogue-stroke-of-luck": {
+      "summary": "When the moment is too important to leave to chance, you can simply force success where it matters most.",
+      "description": "Stroke of Luck is the rogue capstone fantasy: supreme clutch reliability when a key attack misses or a vital check nearly fails.",
+      "tags": [
+        "capstone",
+        "clutch",
+        "signature"
+      ]
+    },
+    "rogue-expertise-2": {
+      "summary": "Double down on two more signature proficiencies so your skill ceiling stays exceptional deep into the campaign.",
+      "description": "The rogue gets a second wave of Expertise because the class is meant to stay the table's specialist, not flatten into generic competence at higher levels.",
+      "tags": [
+        "skills",
+        "identity",
+        "passive"
+      ]
+    },
+    "rogue-sneak-attack-l3": {
+      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
+      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
+      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "tags": [
+        "combat",
+        "precision",
+        "signature"
+      ]
+    },
+    "rogue-sneak-attack-l5": {
+      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
+      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
+      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "tags": [
+        "combat",
+        "precision",
+        "signature"
+      ]
+    },
+    "rogue-sneak-attack-l7": {
+      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
+      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
+      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "tags": [
+        "combat",
+        "precision",
+        "signature"
+      ]
+    },
+    "rogue-sneak-attack-l9": {
+      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
+      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
+      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "tags": [
+        "combat",
+        "precision",
+        "signature"
+      ]
+    },
+    "rogue-sneak-attack-l11": {
+      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
+      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
+      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "tags": [
+        "combat",
+        "precision",
+        "signature"
+      ]
+    },
+    "rogue-sneak-attack-l13": {
+      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
+      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
+      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "tags": [
+        "combat",
+        "precision",
+        "signature"
+      ]
+    },
+    "rogue-sneak-attack-l15": {
+      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
+      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
+      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "tags": [
+        "combat",
+        "precision",
+        "signature"
+      ]
+    },
+    "rogue-sneak-attack-l17": {
+      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
+      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
+      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "tags": [
+        "combat",
+        "precision",
+        "signature"
+      ]
+    },
+    "rogue-sneak-attack-l19": {
+      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
+      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
+      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "tags": [
+        "combat",
+        "precision",
+        "signature"
+      ]
+    },
+    "rogue-sneak-attack-l20": {
+      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
+      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
+      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "tags": [
+        "combat",
+        "precision",
+        "signature"
+      ]
+    }
+  },
+  "levelUnlockIds": {
+    "1": [
+      "rogue-expertise-1",
+      "rogue-sneak-attack-1d6",
+      "rogue-thieves-cant"
+    ],
+    "2": [
+      "rogue-cunning-action"
+    ],
+    "3": [
+      "rogue-roguish-archetype-subclass",
+      "rogue-steady-aim",
+      "rogue-sneak-attack-l3"
+    ],
+    "4": [
+      "rogue-l4-1"
+    ],
+    "5": [
+      "rogue-cunning-strike",
+      "rogue-sneak-attack-l5"
+    ],
+    "6": [
+      "rogue-expertise-2"
+    ],
+    "7": [
+      "rogue-evasion",
+      "rogue-reliable-talent",
+      "rogue-sneak-attack-l7"
+    ],
+    "8": [
+      "rogue-l8-1"
+    ],
+    "9": [
+      "rogue-sneak-attack-l9"
+    ],
+    "10": [
+      "rogue-l10-1"
+    ],
+    "11": [
+      "rogue-improved-cunning-strike",
+      "rogue-sneak-attack-l11"
+    ],
+    "12": [
+      "rogue-l12-1"
+    ],
+    "13": [
+      "rogue-devious-strikes",
+      "rogue-sneak-attack-l13"
+    ],
+    "14": [
+      "rogue-l14-1",
+      "rogue-slippery-mind"
+    ],
+    "15": [
+      "rogue-l15-1",
+      "rogue-sneak-attack-l15"
+    ],
+    "16": [
+      "rogue-l16-1"
+    ],
+    "17": [
+      "rogue-subtle-strikes",
+      "rogue-sneak-attack-l17"
+    ],
+    "18": [
+      "rogue-elusive"
+    ],
+    "19": [
+      "rogue-l19-1",
+      "rogue-sneak-attack-l19"
+    ],
+    "20": [
+      "rogue-stroke-of-luck",
+      "rogue-sneak-attack-l20"
+    ]
+  },
+  "progressionSummary": [
+    {
+      "level": 1,
+      "summary": "Expertise, Sneak Attack (1d6), Thieves' Cant.",
+      "unlockIds": [
+        "rogue-expertise-1",
+        "rogue-sneak-attack-1d6",
+        "rogue-thieves-cant"
+      ]
+    },
+    {
+      "level": 2,
+      "summary": "Cunning Action.",
+      "unlockIds": [
+        "rogue-cunning-action"
+      ]
+    },
+    {
+      "level": 3,
+      "summary": "Roguish Archetype (Subclass), Steady Aim, Sneak Attack (2d6).",
+      "unlockIds": [
+        "rogue-roguish-archetype-subclass",
+        "rogue-steady-aim",
+        "rogue-sneak-attack-l3"
+      ]
+    },
+    {
+      "level": 4,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "rogue-l4-1"
+      ]
+    },
+    {
+      "level": 5,
+      "summary": "Cunning Strike, Sneak Attack (3d6).",
+      "unlockIds": [
+        "rogue-cunning-strike",
+        "rogue-sneak-attack-l5"
+      ]
+    },
+    {
+      "level": 6,
+      "summary": "Expertise.",
+      "unlockIds": [
+        "rogue-expertise-2"
+      ]
+    },
+    {
+      "level": 7,
+      "summary": "Evasion, Reliable Talent, Sneak Attack (4d6).",
+      "unlockIds": [
+        "rogue-evasion",
+        "rogue-reliable-talent",
+        "rogue-sneak-attack-l7"
+      ]
+    },
+    {
+      "level": 8,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "rogue-l8-1"
+      ]
+    },
+    {
+      "level": 9,
+      "summary": "Sneak Attack (5d6).",
+      "unlockIds": [
+        "rogue-sneak-attack-l9"
+      ]
+    },
+    {
+      "level": 10,
+      "summary": "Subclass Feature.",
+      "unlockIds": [
+        "rogue-l10-1"
+      ]
+    },
+    {
+      "level": 11,
+      "summary": "Improved Cunning Strike, Sneak Attack (6d6).",
+      "unlockIds": [
+        "rogue-improved-cunning-strike",
+        "rogue-sneak-attack-l11"
+      ]
+    },
+    {
+      "level": 12,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "rogue-l12-1"
+      ]
+    },
+    {
+      "level": 13,
+      "summary": "Devious Strikes, Sneak Attack (7d6).",
+      "unlockIds": [
+        "rogue-devious-strikes",
+        "rogue-sneak-attack-l13"
+      ]
+    },
+    {
+      "level": 14,
+      "summary": "Subclass Feature, Slippery Mind.",
+      "unlockIds": [
+        "rogue-l14-1",
+        "rogue-slippery-mind"
+      ]
+    },
+    {
+      "level": 15,
+      "summary": "Subclass Feature, Sneak Attack (8d6).",
+      "unlockIds": [
+        "rogue-l15-1",
+        "rogue-sneak-attack-l15"
+      ]
+    },
+    {
+      "level": 16,
+      "summary": "Ability Score Improvement.",
+      "unlockIds": [
+        "rogue-l16-1"
+      ]
+    },
+    {
+      "level": 17,
+      "summary": "Subtle Strikes, Sneak Attack (9d6).",
+      "unlockIds": [
+        "rogue-subtle-strikes",
+        "rogue-sneak-attack-l17"
+      ]
+    },
+    {
+      "level": 18,
+      "summary": "Elusive.",
+      "unlockIds": [
+        "rogue-elusive"
+      ]
+    },
+    {
+      "level": 19,
+      "summary": "Epic Boon, Sneak Attack (10d6).",
+      "unlockIds": [
+        "rogue-l19-1",
+        "rogue-sneak-attack-l19"
+      ]
+    },
+    {
+      "level": 20,
+      "summary": "Stroke of Luck, Sneak Attack (10d6).",
+      "unlockIds": [
+        "rogue-stroke-of-luck",
+        "rogue-sneak-attack-l20"
+      ]
+    }
+  ],
+  "future": {
+    "talentGroupId": "rogue-core-talents",
+    "awakeningHookIds": [
+      "rogue-awakening-shadow"
+    ]
+  },
+  "buildTips": {
+    "primaryFocus": "Dexterity",
+    "primaryReason": "powers attacks, Armor Class, stealth, and initiative",
+    "secondaryFocus": "Constitution",
+    "secondaryReason": "extra HP helps you survive when plans go wrong",
+    "avoidDump": "Wisdom",
+    "avoidDumpReason": "Perception and common saves use Wisdom more than many new rogues expect"
+  }
+}

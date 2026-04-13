@@ -1,0 +1,129 @@
+{
+  "id": "oath-of-the-ancients",
+  "displayName": "Oath of the Ancients",
+  "classId": "paladin",
+  "parentClassId": "paladin",
+  "flavorText": "Ancients paladins serve life, light, and joy against encroaching darkness.",
+  "featureUnlocksByLevel": {
+    "3": [
+      "ancients-tenets",
+      "ancients-natures-wrath",
+      "ancients-vow-of-enmity"
+    ],
+    "7": [
+      "ancients-aura-of-warding"
+    ],
+    "15": [
+      "ancients-undying-sentinel"
+    ],
+    "20": [
+      "ancients-elder-champion"
+    ]
+  },
+  "features": [
+    {
+      "level": 3,
+      "id": "ancients-tenets",
+      "displayName": "Tenets of the Ancients",
+      "description": "You uphold Kindle the Light, Shelter the Light, Preserve Your Own Light, and Be the Light."
+    },
+    {
+      "level": 3,
+      "id": "ancients-natures-wrath",
+      "displayName": "Channel Divinity: Nature's Wrath",
+      "description": "Invoke spectral vines; a creature must make a Constitution save or be restrained."
+    },
+    {
+      "level": 3,
+      "id": "ancients-vow-of-enmity",
+      "displayName": "Channel Divinity: Vow of Enmity",
+      "description": "As a sacred challenge, you gain advantage on attacks against a chosen foe for 1 minute."
+    },
+    {
+      "level": 7,
+      "id": "ancients-aura-of-warding",
+      "displayName": "Aura of Warding",
+      "description": "You and allies within 10 feet gain resistance to damage from spells."
+    },
+    {
+      "level": 15,
+      "id": "ancients-undying-sentinel",
+      "displayName": "Undying Sentinel",
+      "description": "When reduced to 0 hit points, you can drop to 1 hit point instead (once per long rest)."
+    },
+    {
+      "level": 20,
+      "id": "ancients-elder-champion",
+      "displayName": "Elder Champion",
+      "description": "You become an avatar of nature for 1 minute, regaining 10 hit points each turn, enhancing druidic casting, and imposing disadvantage on hostile saves within 10 feet."
+    }
+  ],
+  "featureDefinitions": {
+    "ancients-tenets": {
+      "summary": "Your oath protects light, life, beauty, and hope against the forces that would smother them.",
+      "description": "The Ancients oath frames the paladin less as a strict judge and more as a defender of living joy and sacred natural wonder.",
+      "tags": [
+        "subclass",
+        "identity",
+        "nature"
+      ]
+    },
+    "ancients-natures-wrath": {
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Channel Divinity",
+      "trackUses": true,
+      "summary": "Call on primal divine force to restrain a foe and stop the fight from unfolding on its terms.",
+      "description": "Nature's Wrath is a control-oriented Channel Divinity that gives the subclass real battlefield lockdown rather than pure damage.",
+      "save": "Strength or Dexterity save",
+      "tags": [
+        "subclass",
+        "control",
+        "resource"
+      ]
+    },
+    "ancients-vow-of-enmity": {
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "Channel Divinity",
+      "trackUses": true,
+      "summary": "Mark a single enemy for relentless pursuit so your pressure against that target becomes much more reliable.",
+      "description": "Vow of Enmity is the focused-duelist side of the subclass. It should feel like picking the creature that matters most and refusing to let it breathe.",
+      "duration": "1 minute",
+      "tags": [
+        "subclass",
+        "combat",
+        "resource"
+      ]
+    },
+    "ancients-aura-of-warding": {
+      "summary": "Your aura blunts hostile magic, making your group far harder to break with spells alone.",
+      "description": "Aura of Warding is one of the subclass’s biggest team defenses. In spell-heavy fights it can reshape how much punishment the party can realistically absorb.",
+      "tags": [
+        "subclass",
+        "aura",
+        "defense"
+      ]
+    },
+    "ancients-undying-sentinel": {
+      "summary": "When most champions would fall, your oath keeps you standing and difficult to kill cleanly.",
+      "description": "Undying Sentinel adds late-game resilience and makes the subclass feel stubbornly luminous even under overwhelming pressure.",
+      "tags": [
+        "subclass",
+        "survival",
+        "defense"
+      ]
+    },
+    "ancients-elder-champion": {
+      "section": "Actions",
+      "type": "action",
+      "summary": "Take on a mythic guardian state that turns your oath into a visible force of living power.",
+      "description": "Elder Champion is the capstone expression of the subclass: radiant, durable, and suffused with ancient natural divinity.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "nature"
+      ]
+    }
+  }
+}
