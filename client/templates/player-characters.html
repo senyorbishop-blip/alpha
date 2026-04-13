@@ -594,9 +594,12 @@
       card.className = 'character-card' + (entry.id === selectedId ? ' selected' : '');
       card.dataset.profileId = entry.id;
       const renderer = window.CasualDnDAvatarRenderer;
-      const avatarMarkup = renderer
-        ? renderer.renderImgMarkup(buildAvatarOptions(entry), 110, 'mini', 'mini')
-        : `<span>${(entry.name || '?').slice(0, 2).toUpperCase()}</span>`;
+      const tokenImageUrl = String(entry.tokenImageUrl || '').trim();
+      const avatarMarkup = tokenImageUrl
+        ? `<img class="avatar-render mini" src="${escapeHtml(tokenImageUrl)}" alt="${escapeHtml(entry.name || 'Hero')}">`
+        : (renderer
+          ? renderer.renderImgMarkup(buildAvatarOptions(entry), 110, 'mini', 'mini')
+          : `<span>${(entry.name || '?').slice(0, 2).toUpperCase()}</span>`);
       card.innerHTML = `
         <div class="token">${avatarMarkup}</div>
         <div class="character-main">
@@ -730,6 +733,10 @@
           ownerLabel: likelyMine ? 'Already linked to your account' : (t.owner_name ? ('Played by ' + t.owner_name) : 'Available in session'),
           classSummary: String(t.class_summary || '').trim(),
           level: Number(t.level || 0) || null,
+          tokenImageUrl: String(t.image_url || '').trim(),
+          speciesId: String(t.species_id || '').trim().toLowerCase(),
+          speciesLabel: String(t.species_name || '').trim(),
+          classId: String(t.class_id || '').trim().toLowerCase(),
         };
       });
       const preferred = mapped.find((c) => c.mine) || mapped[0] || null;

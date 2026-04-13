@@ -142,7 +142,9 @@
       background: radial-gradient(circle at 50% 20%, rgba(255,235,196,0.14), transparent 36%), linear-gradient(180deg, rgba(11,6,5,0.66), rgba(8,4,3,0.86));
       min-height: 380px;
       display: grid;
-      place-items: center;
+      align-content: start;
+      justify-items: center;
+      padding-top: 14px;
       position: relative;
       overflow: hidden;
     }
@@ -266,7 +268,7 @@
     }
     .class-detail::before { content:''; position:absolute; inset:0; pointer-events:none; background: radial-gradient(circle at 78% 0%, rgba(255,255,255,0.08), transparent 26%), linear-gradient(180deg, rgba(244,223,184,0.04), transparent 18%); }
     .class-detail-head { display:flex; justify-content:space-between; gap: 16px; align-items:flex-start; }
-    .class-detail-head h3 { margin: 0 0 8px; font-family:'Cinzel',serif; color: var(--gold-strong); font-size: 2rem; }
+    .class-detail-head h3 { margin: 0 0 8px; font-family:'Cinzel',serif; color: var(--gold-strong); font-size: clamp(1.35rem, 2.2vw, 1.85rem); }
     .class-detail-head p { margin: 0; color: var(--muted); line-height: 1.6; }
     .class-quickfacts { display:flex; flex-wrap:wrap; gap: 10px; }
     .class-quickfacts .tag { background: rgba(255,255,255,0.04); }
@@ -280,6 +282,38 @@
     }
     .detail-block h4 { margin:0; font-family:'Cinzel',serif; color: var(--gold-strong); font-size: 1rem; letter-spacing: .03em; }
     .detail-block p { margin:0; color: rgba(240,231,216,0.8); line-height:1.58; }
+    .collapsible {
+      border: 1px solid rgba(229,198,151,0.14);
+      border-radius: 16px;
+      background: rgba(10,6,5,0.38);
+      padding: 10px 12px;
+    }
+    .collapsible summary {
+      cursor: pointer;
+      list-style: none;
+      font-family: 'Cinzel', serif;
+      color: var(--gold-strong);
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .collapsible summary::-webkit-details-marker { display: none; }
+    .collapsible summary::after {
+      content: '+';
+      color: var(--accent);
+      font-size: 1rem;
+      font-family: inherit;
+    }
+    .collapsible[open] summary::after { content: '−'; }
+    .collapsible-content {
+      margin-top: 10px;
+      color: var(--muted);
+      line-height: 1.5;
+      display: grid;
+      gap: 10px;
+    }
     .feature-stack { display:grid; gap: 10px; }
     .feature-card {
       border:1px solid rgba(156,224,219,0.14); border-radius: 18px;
@@ -423,6 +457,9 @@
       { id: 'nonbinary', label: 'Non-binary', pronouns: 'They / Them' },
     ];
     const STAT_ARRAY = [15, 14, 13, 12, 10, 8];
+    const ALIGNMENT_OPTIONS = ['Lawful Good','Neutral Good','Chaotic Good','Lawful Neutral','True Neutral','Chaotic Neutral','Lawful Evil','Neutral Evil','Chaotic Evil'];
+    const PERSONALITY_OPTIONS = ['Brave','Calm','Cautious','Curious','Honorable','Loyal','Reckless','Skeptical'];
+    const FLAW_OPTIONS = ['Impulsive','Greedy','Arrogant','Distrustful','Cowardly','Stubborn','Hot-headed','Secretive'];
     const STATS = [
       ['strength', 'STR'], ['dexterity', 'DEX'], ['constitution', 'CON'],
       ['intelligence', 'INT'], ['wisdom', 'WIS'], ['charisma', 'CHA']
@@ -508,6 +545,7 @@
         name: '', gender: 'male', pronouns: 'He / Him', deity: '', homeland: '',
         speciesId: '', classId: '', backgroundId: '', alignment: '',
         personalityTraits: '', ideals: '', bonds: '', flaws: '', backstory: '',
+        notes: '',
         stats: { strength: 10, dexterity: 10, constitution: 10, intelligence: 10, wisdom: 10, charisma: 10 },
         assigned: { strength: null, dexterity: null, constitution: null, intelligence: null, wisdom: null, charisma: null },
         remaining: [...STAT_ARRAY],
@@ -802,7 +840,8 @@ function renderSpeciesListItem(item, selectedId) {
   const size = item.size || 'Medium';
   const speed = item.speed || 30;
   const benefits = Array.isArray(item.gameplayBenefits) ? item.gameplayBenefits.slice(0, 2) : [];
-  return `<button type="button" class="option-card class-card compact${isSelected ? ' selected' : ''}" data-option-type="species" data-option-id="${escapeHtml(id)}" style="padding:14px 16px;flex-direction:column;gap:6px;align-items:flex-start">
+  return `<button type="button" class="option-card class-card compact${isSelected ? ' selected' : ''}" data-option-type="species" data-option-id="${escapeHtml(id)}" style="padding:14px 16px;flex-direction:column;gap:8px;align-items:flex-start">
+    <div class="mini-portrait">${renderMiniGlyph('species', item, '#8eb8d8')}</div>
     <h3 style="margin:0;font-size:1.05rem">${escapeHtml(name)}</h3>
     <div class="card-tags">
       <span class="tag">${escapeHtml(size)}</span>
@@ -844,7 +883,7 @@ function renderStepMarkup() {
     return `<div class="equipment-list"><div class="equipment-item"><strong>Starting Gold</strong><span>50 GP</span></div><div class="equipment-item"><strong>Starting Level</strong><span>Level ${Number(state.hero.startingLevel || 1)}</span></div>${equipment.map(item => `<div class="equipment-item"><strong>${escapeHtml(item)}</strong><span>Class starter gear</span></div>`).join('')}</div>`;
   }
   if (step === 'backstory') {
-    return `<div class="form-grid"><div class="field"><label>Alignment</label><input class="input" id="hero-alignment" value="${escapeHtml(hero.alignment)}" placeholder="Neutral Good, Chaotic Neutral, etc." /></div><div class="field"><label>Personality Traits</label><input class="input" id="hero-traits" value="${escapeHtml(hero.personalityTraits)}" placeholder="Short personality notes" /></div><div class="field"><label>Ideals</label><input class="input" id="hero-ideals" value="${escapeHtml(hero.ideals)}" placeholder="What drives them?" /></div><div class="field"><label>Bonds</label><input class="input" id="hero-bonds" value="${escapeHtml(hero.bonds)}" placeholder="What ties them down?" /></div><div class="field full"><label>Flaws</label><input class="input" id="hero-flaws" value="${escapeHtml(hero.flaws)}" placeholder="Weaknesses, fears, habits" /></div><div class="field full"><label>Backstory</label><textarea class="textarea" id="hero-backstory" placeholder="Write the opening chapter of this hero.">${escapeHtml(hero.backstory)}</textarea></div></div>`;
+    return `<div class="form-grid"><div class="field"><label>Alignment</label><select class="select" id="hero-alignment"><option value="">Choose alignment</option>${ALIGNMENT_OPTIONS.map(v => `<option value="${escapeHtml(v)}" ${hero.alignment===v?'selected':''}>${escapeHtml(v)}</option>`).join('')}</select></div><div class="field"><label>Personality Traits</label><select class="select" id="hero-traits"><option value="">Choose trait</option>${PERSONALITY_OPTIONS.map(v => `<option value="${escapeHtml(v)}" ${hero.personalityTraits===v?'selected':''}>${escapeHtml(v)}</option>`).join('')}</select></div><div class="field"><label>Ideals</label><input class="input" id="hero-ideals" value="${escapeHtml(hero.ideals)}" placeholder="What drives them?" /></div><div class="field"><label>Bonds</label><input class="input" id="hero-bonds" value="${escapeHtml(hero.bonds)}" placeholder="What ties them down?" /></div><div class="field full"><label>Flaws</label><select class="select" id="hero-flaws"><option value="">Choose flaw</option>${FLAW_OPTIONS.map(v => `<option value="${escapeHtml(v)}" ${hero.flaws===v?'selected':''}>${escapeHtml(v)}</option>`).join('')}</select></div><div class="field full"><label>Backstory</label><textarea class="textarea" id="hero-backstory" placeholder="Write the opening chapter of this hero.">${escapeHtml(hero.backstory)}</textarea></div><div class="field full"><label>Player Notes (syncs to character notes)</label><textarea class="textarea" id="hero-notes" placeholder="Goals, reminders, secrets, links to campaign notes...">${escapeHtml(hero.notes || '')}</textarea></div></div>`;
   }
   const cls = selectedClass();
   const sp = selectedSpecies();
@@ -860,7 +899,7 @@ function renderSpeciesDetail(sp) {
   const traits = Array.isArray(sp.traits) && sp.traits.length ? sp.traits.slice(0, 5) : [];
   const roleplay = sp.description || sp.summary || 'Choose this species for its identity, movement, and feel in the world.';
   const spotlight = traits[0] || benefits[0] || null;
-  return `<div class="class-detail-head"><div><h3>${escapeHtml(speciesDisplayName(sp))}</h3><p>${escapeHtml(roleplay)}</p></div><div class="class-quickfacts"><span class="tag">${escapeHtml(sp.size || 'Medium')}</span><span class="tag">${escapeHtml(String(sp.speed || 30))} ft speed</span></div></div><div class="trait-hero"><div class="detail-block"><h4>Core benefits</h4><div class="feature-stack">${benefits.length ? benefits.map(v => `<div class="feature-card"><h5>${escapeHtml(traitLabel(v))}</h5><p>${escapeHtml(traitDescription(v))}</p></div>`).join('') : '<p>No species feature notes surfaced yet.</p>'}</div></div><div class="detail-block"><h4>What this means in play</h4>${spotlight ? `<div class="trait-highlight"><h5>${escapeHtml(traitLabel(spotlight))}</h5><p>${escapeHtml(traitDescription(spotlight))}</p></div>` : ''}<p>${escapeHtml(roleplay)}</p></div></div><div class="class-sections"><div class="detail-block"><h4>Roleplay and style</h4><p>${escapeHtml(roleplay)}</p></div><div class="detail-block"><h4>Feature details</h4>${traits.length ? `<div class="feature-stack">${traits.map(v => `<div class="feature-card"><h5>${escapeHtml(traitLabel(v))}</h5><p>${escapeHtml(traitDescription(v))}</p></div>`).join('')}</div>` : '<p>No species trait breakdown surfaced yet.</p>'}</div></div>`;
+  return `<div class="class-detail-head"><div><h3>${escapeHtml(speciesDisplayName(sp))}</h3><p>${escapeHtml(roleplay)}</p></div><div class="class-quickfacts"><span class="tag">${escapeHtml(sp.size || 'Medium')}</span><span class="tag">${escapeHtml(String(sp.speed || 30))} ft speed</span></div></div><div class="detail-block"><h4>Species summary</h4>${spotlight ? `<div class="trait-highlight"><h5>${escapeHtml(traitLabel(spotlight))}</h5><p>${escapeHtml(traitDescription(spotlight))}</p></div>` : ''}<p>${escapeHtml(roleplay)}</p></div><div class="class-sections"><div class="detail-block"><h4>Core benefits</h4><div class="feature-stack">${benefits.length ? benefits.map(v => `<details class="collapsible"><summary>${escapeHtml(traitLabel(v))}</summary><div class="collapsible-content"><p>${escapeHtml(traitDescription(v))}</p></div></details>`).join('') : '<p>No species feature notes surfaced yet.</p>'}</div></div><div class="detail-block"><h4>Feature details</h4>${traits.length ? `<div class="feature-stack">${traits.map(v => `<details class="collapsible"><summary>${escapeHtml(traitLabel(v))}</summary><div class="collapsible-content"><p>${escapeHtml(traitDescription(v))}</p></div></details>`).join('')}</div>` : '<p>No species trait breakdown surfaced yet.</p>'}</div></div>`;
 }
 function renderFeatureCard(feature, level) {
   const name = feature.displayName || feature.name || 'Feature';
@@ -956,6 +995,21 @@ function bindStepMarkup() {
       state.hero.stats[stat] = value;
       renderStepView();
     }));
+    if (state.hero.abilityMode === 'manual') {
+      const hint = document.createElement('button');
+      hint.type = 'button';
+      hint.className = 'btn btn-secondary';
+      hint.style.marginTop = '6px';
+      hint.textContent = 'Roll all stats';
+      hint.addEventListener('click', () => {
+        STATS.forEach(([stat]) => {
+          const rolls = [0,0,0,0].map(() => 1 + Math.floor(Math.random() * 6)).sort((a,b) => b - a);
+          state.hero.stats[stat] = rolls[0] + rolls[1] + rolls[2];
+        });
+        renderStepView();
+      });
+      els.stepView.appendChild(hint);
+    }
   } else if (step === 'backstory') {
     document.getElementById('hero-alignment')?.addEventListener('input', e => { state.hero.alignment = e.target.value; });
     document.getElementById('hero-traits')?.addEventListener('input', e => { state.hero.personalityTraits = e.target.value; });
@@ -963,6 +1017,7 @@ function bindStepMarkup() {
     document.getElementById('hero-bonds')?.addEventListener('input', e => { state.hero.bonds = e.target.value; });
     document.getElementById('hero-flaws')?.addEventListener('input', e => { state.hero.flaws = e.target.value; });
     document.getElementById('hero-backstory')?.addEventListener('input', e => { state.hero.backstory = e.target.value; });
+    document.getElementById('hero-notes')?.addEventListener('input', e => { state.hero.notes = e.target.value; });
   }
 }
     
@@ -997,6 +1052,7 @@ function canProceed() {
           deity: state.hero.deity,
           homeland: state.hero.homeland,
           backstory: state.hero.backstory,
+          notes: state.hero.notes,
           personalityTraits: state.hero.personalityTraits,
           ideals: state.hero.ideals,
           bonds: state.hero.bonds,
@@ -1052,6 +1108,9 @@ function canProceed() {
           level: Number(state.hero.startingLevel || 1),
         }],
         progression: { level: Number(state.hero.startingLevel || 1) },
+        charSheet: {
+          campaignNotes: state.hero.notes || '',
+        },
         equipment: {
           currency: { cp: 0, sp: 0, ep: 0, gp: 50, pp: 0 },
           choices: equipment,
