@@ -4,6 +4,7 @@ server/handlers/map_editor.py — Map editor helpers and handlers.
 import logging
 import posixpath
 import secrets
+import time
 
 logger = logging.getLogger(__name__)
 from server.session import normalize_interactable, assistant_dm_has_scope
@@ -1012,6 +1013,13 @@ async def handle_ruler_broadcast(payload: dict, session: Session, user: User):
 async def handle_ping_map(payload: dict, session: Session, user: User):
     if user.role == "viewer":
         return
+    try:
+        x = float(payload.get("x"))
+        y = float(payload.get("y"))
+    except Exception:
+        return
+    if not (-100000.0 <= x <= 100000.0 and -100000.0 <= y <= 100000.0):
+        return
     map_ctx = str(payload.get("map_context") or session.dm_map_context or "world").strip()[:80] or "world"
     if user.role == "player":
         settings_all = dict(getattr(session, "map_settings", {}) or {})
@@ -1022,15 +1030,24 @@ async def handle_ping_map(payload: dict, session: Session, user: User):
     mode = str(payload.get("mode") or "ping").strip().lower()
     if mode not in {"ping", "point"}:
         mode = "ping"
+    now_ms = int(time.time() * 1000)
+    throttle = dict(getattr(session, "_ping_throttle", {}) or {})
+    user_key = f"{user.id}:{mode}"
+    min_gap = 80 if mode == "point" else 260
+    if now_ms - int(throttle.get(user_key, 0) or 0) < min_gap:
+        return
+    throttle[user_key] = now_ms
+    session._ping_throttle = throttle
     color = str(payload.get("color") or "#f1c40f").strip()[:16] or "#f1c40f"
     await manager.broadcast(session.id, {
         "type": "map_ping",
         "payload": {
-            "x": payload.get("x"),
-            "y": payload.get("y"),
+            "x": x,
+            "y": y,
             "user_name": user.name,
             "color": color,
             "mode": mode,
+            "user_role": user.role,
             "map_context": map_ctx,
         }
     }, exclude_user=user.id)
