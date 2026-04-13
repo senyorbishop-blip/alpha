@@ -2,8 +2,12 @@
   const SPECIES_ALIASES = {
     'dragon-born': 'dragonborn',
     'half-elf': 'halfelf',
+    woodelf: 'elf',
+    highelf: 'elf',
+    halfelf: 'elf',
     'half-orc': 'halforc',
     'genasi-air': 'airgenasi',
+    halfling: 'halfling',
   };
   const CLASS_ALIASES = {
     warrior: 'fighter',
@@ -142,11 +146,10 @@
 
     // 4. Species-only portrait
     if (manifest.species[sp]) return manifest.species[sp];
-
-    // 5. Class-only portrait
-    if (manifest.classes[cls]) return manifest.classes[cls];
-
-    return '';
+    // 4b. Conventional species portrait drop-in path
+    return `${base}/species/${sp}.png`;
+    // 5. Class-only portrait (kept for legacy manifest support)
+    // if (manifest.classes[cls]) return manifest.classes[cls];
   }
 
   // Returns a random female class portrait URL for use on species step
@@ -171,10 +174,14 @@
 
   function renderImgMarkup(options, size, variant, className) {
     const src = resolve(options);
+    const manifest = currentManifest();
+    const cls = classKey(options && (options.classId || options.className));
+    const classFallback = manifest.classes && manifest.classes[cls] ? manifest.classes[cls] : '';
+    const fallbackList = [classFallback].filter(Boolean).join('|');
     if (src) {
       const cls = ['avatar-render', className || '', variant || 'portrait'].filter(Boolean).join(' ');
       const label = String(options && (options.name || options.className || options.species || 'Hero portrait')).replace(/"/g, '&quot;');
-      return `<img class="${cls}" alt="${label}" src="${src}">`;
+      return `<img class="${cls}" alt="${label}" src="${src}" data-fallbacks="${fallbackList}" onerror="(function(img){var list=(img.dataset.fallbacks||'').split('|').filter(Boolean);var next=list.shift();img.dataset.fallbacks=list.join('|');if(next){img.src=next;return;}img.onerror=null;img.style.display='none';})(this)">`;
     }
     const fallback = window.CasualDnDAvatarRenderer;
     return fallback

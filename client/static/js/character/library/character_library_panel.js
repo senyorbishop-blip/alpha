@@ -97,6 +97,12 @@
         const classSummary = resolveClassSummary(entry);
         const level = resolveLevel(entry);
 
+        const native = entry.nativeCharacter && typeof entry.nativeCharacter === 'object' ? entry.nativeCharacter : {};
+        const identity = native.identity && typeof native.identity === 'object' ? native.identity : {};
+        const species = native.species && typeof native.species === 'object' ? native.species : {};
+        const classes = Array.isArray(native.classes) ? native.classes : [];
+        const firstClass = classes[0] && typeof classes[0] === 'object' ? classes[0] : {};
+
         return {
           id: 'library:' + id,
           libraryId: id,
@@ -110,7 +116,12 @@
           sourceMode: sourceMode,
           sourceBadge: formatSourceBadge(sourceMode),
           ownerLabel: classSummary || 'Saved in your profile library',
-          nativeCharacter: entry.nativeCharacter && typeof entry.nativeCharacter === 'object' ? entry.nativeCharacter : null,
+          nativeCharacter: native || null,
+          tokenImageUrl: String(identity.tokenImageUrl || identity.portraitUrl || '').trim(),
+          speciesId: String(species.id || '').trim().toLowerCase(),
+          speciesLabel: String(species.name || '').trim(),
+          gender: String(identity.gender || '').trim().toLowerCase(),
+          classId: String(firstClass.classId || firstClass.name || '').trim().toLowerCase(),
           color: '#5a4f8f',
           shape: 'rect',
         };

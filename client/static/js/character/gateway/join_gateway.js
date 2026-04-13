@@ -56,9 +56,17 @@
         }));
       const deduped = [];
       const seen = new Set();
+      const seenSignature = new Set();
       merged.forEach(function appendUnique(item) {
         if (!item || !item.id || seen.has(item.id)) return;
+        const signature = [
+          normalizeName(item.name),
+          normalizeName(item.classSummary),
+          String(item.level || ''),
+        ].join('|');
+        if (signature && seenSignature.has(signature)) return;
         seen.add(item.id);
+        if (signature) seenSignature.add(signature);
         deduped.push(item);
       });
       state.setCharacters(deduped);
