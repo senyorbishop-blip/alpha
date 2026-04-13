@@ -1012,15 +1012,28 @@ async def handle_ruler_broadcast(payload: dict, session: Session, user: User):
 async def handle_ping_map(payload: dict, session: Session, user: User):
     if user.role == "viewer":
         return
+    map_ctx = str(payload.get("map_context") or session.dm_map_context or "world").strip()[:80] or "world"
+    if user.role == "player":
+        settings_all = dict(getattr(session, "map_settings", {}) or {})
+        map_settings = settings_all.get(map_ctx) if isinstance(settings_all.get(map_ctx), dict) else {}
+        world_settings = map_settings.get("world") if isinstance(map_settings.get("world"), dict) else {}
+        if bool(world_settings.get("allow_player_ping", True)) is False:
+            return
+    mode = str(payload.get("mode") or "ping").strip().lower()
+    if mode not in {"ping", "point"}:
+        mode = "ping"
+    color = str(payload.get("color") or "#f1c40f").strip()[:16] or "#f1c40f"
     await manager.broadcast(session.id, {
         "type": "map_ping",
         "payload": {
             "x": payload.get("x"),
             "y": payload.get("y"),
             "user_name": user.name,
-            "color": payload.get("color", "#f1c40f"),
+            "color": color,
+            "mode": mode,
+            "map_context": map_ctx,
         }
-    })
+    }, exclude_user=user.id)
 
 
 async def handle_poi_create(payload: dict, session: Session, user: User):

@@ -7830,6 +7830,16 @@
     <select class="perm-select" id="perm-token-sel"></select>
     <select class="perm-select" id="perm-user-sel"></select>
     <button class="perm-btn" onclick="grantPermission()">👁 Grant 30s Control</button>
+    <div style="margin-top:0.65rem;padding-top:0.55rem;border-top:1px solid rgba(255,255,255,0.1);">
+      <div class="sidebar-label" style="font-size:0.68rem;">Point &amp; Ping</div>
+      <label style="display:flex;align-items:center;gap:0.45rem;font-size:0.66rem;color:var(--parchment);cursor:pointer;">
+        <input type="checkbox" id="allow-player-ping-toggle" onchange="toggleAllowPlayerPing(this.checked)" />
+        Allow players to use Point &amp; Ping
+      </label>
+      <div id="allow-player-ping-hint" style="font-size:0.58rem;color:var(--parchment-dim);line-height:1.4;margin-top:0.25rem;">
+        DM can always ping. Player ping/pointer follows this map's setting.
+      </div>
+    </div>
     <div id="assistant-dm-perm-editor" style="margin-top:0.75rem;padding-top:0.65rem;border-top:1px solid rgba(255,255,255,0.1);display:none;">
       <div class="sidebar-label" style="font-size:0.68rem;">Assistant DM Scope</div>
       <select class="perm-select" id="assistant-dm-user-sel"></select>
@@ -11201,8 +11211,11 @@ let ruler = {
   mouseX: 0, mouseY: 0,
 };
 
-// Pings: [{x,y,color,born}]
+// Pings: [{x,y,color,born,mode,user_name}]
 let pings = [];
+let _pingToolPointer = { active: false, startX: 0, startY: 0, startedAt: 0 };
+let _lastPingSentAt = 0;
+let _lastPointSentAt = 0;
 
 // Combat state (declared early to avoid TDZ errors in drawToken / canMoveToken)
 let _combat = { active: false, turn: 0, combatants: [], movement: null, selected_target_id: '', pending_attack: null };
@@ -11621,6 +11634,7 @@ function initUI() {
     const emoteBar = document.getElementById('viewer-emote-bar');
     if (emoteBar) emoteBar.style.display = 'flex';
   }
+  refreshPingPermissionUi();
 
   // Show player character creator rail button
   if (ROLE === 'player') {
@@ -17183,18 +17197,60 @@ function drawFrame() {
   safeClientCall('draw editor walls', () => drawEditorWalls());
 
   const now = Date.now();
-  pings = pings.filter(p => now - p.born < 1200);
+  pings = pings.filter(p => {
+    const ttl = p.mode === 'point' ? 240 : 1100;
+    return now - p.born < ttl;
+  });
   safeClientCall('draw pings', () => {
     pings.forEach(p => {
-      const t = (now - p.born) / 1200;
-      const r = 10 + 30 * t;
+      if (p.mode === 'point') {
+        const t = Math.min(1, (now - p.born) / 240);
+        const alpha = 0.9 * (1 - t);
+        const radius = (8 + 10 * t) / cam.zoom;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color || '#f1c40f';
+        ctx.shadowColor = p.color || '#f1c40f';
+        ctx.shadowBlur = 12 / cam.zoom;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        return;
+      }
+      const t = Math.min(1, (now - p.born) / 1100);
+      const alpha = 1 - t;
+      const color = p.color || '#f1c40f';
+      const ringRadii = [8 + (48 * t), 8 + (36 * t), 8 + (24 * t)];
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ringRadii.forEach((r, idx) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r / cam.zoom, 0, Math.PI * 2);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = Math.max(1.2, (3 - idx * 0.55) / cam.zoom);
+        ctx.shadowColor = color;
+        ctx.shadowBlur = (14 - idx * 3) / cam.zoom;
+        ctx.stroke();
+      });
       ctx.beginPath();
-      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-      ctx.strokeStyle = p.color;
-      ctx.globalAlpha = 1 - t;
-      ctx.lineWidth = 2 / cam.zoom;
-      ctx.stroke();
-      ctx.globalAlpha = 1;
+      ctx.arc(p.x, p.y, 5.5 / cam.zoom, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 16 / cam.zoom;
+      ctx.fill();
+      if (p.user_name) {
+        const label = String(p.user_name).slice(0, 18);
+        ctx.font = `${Math.max(9, 12 / cam.zoom)}px 'Cinzel', serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+        ctx.lineWidth = Math.max(1, 2 / cam.zoom);
+        ctx.strokeText(label, p.x, p.y - (16 / cam.zoom));
+        ctx.fillStyle = '#f8f0d8';
+        ctx.fillText(label, p.x, p.y - (16 / cam.zoom));
+      }
+      ctx.restore();
     });
   });
 
@@ -18356,7 +18412,12 @@ function onMouseDown(e) {
   }
 
   if (currentTool === 'ping') {
-    sendPing(w.x, w.y);
+    if (!canCurrentUserPingMap(true)) return;
+    _pingToolPointer.active = true;
+    _pingToolPointer.startX = w.x;
+    _pingToolPointer.startY = w.y;
+    _pingToolPointer.startedAt = Date.now();
+    sendPoint(w.x, w.y, '#f1c40f');
     return;
   }
 
@@ -18505,6 +18566,10 @@ function onMouseMove(e) {
   if (ruler.active && ruler.phase === 'drawing') {
     ruler.mouseX = w.x; ruler.mouseY = w.y;
   }
+  if (currentTool === 'ping' && _pingToolPointer.active) {
+    sendPoint(w.x, w.y, '#f1c40f');
+    return;
+  }
 
   if (pan.active) {
     const dx = e.clientX - pan.lastX;
@@ -18593,6 +18658,18 @@ function onMouseUp(e) {
   if (e.button === 1) {
     pan.active = false;
     wrap.classList.remove('panning');
+    return;
+  }
+  if (e.button === 0 && currentTool === 'ping' && _pingToolPointer.active) {
+    const w = getMouseWorld(e);
+    const dx = w.x - _pingToolPointer.startX;
+    const dy = w.y - _pingToolPointer.startY;
+    const moved = Math.hypot(dx, dy);
+    const heldMs = Date.now() - Number(_pingToolPointer.startedAt || 0);
+    if (moved < (10 / Math.max(0.01, cam.zoom)) && heldMs < 260) {
+      sendPing(w.x, w.y, '#f1c40f');
+    }
+    _pingToolPointer.active = false;
     return;
   }
 
@@ -19187,6 +19264,9 @@ function setTool(tool) {
     showToast('Viewer mode: this tool is DM/player only.');
     return;
   }
+  if (tool === 'ping' && !canCurrentUserPingMap(true)) {
+    return;
+  }
   if (tool !== 'spell') {
     spellDraft = null; // cancel in-progress draft
     // Clear all locked markers too
@@ -19196,6 +19276,7 @@ function setTool(tool) {
     }
   }
   currentTool = tool;
+  if (tool !== 'ping') _pingToolPointer.active = false;
   if (_runtimeStore && _runtimeStore.set) _runtimeStore.set('ui.currentTool', tool);
   ['select','ruler','ping','spell','poi'].forEach(t => {
     document.getElementById(`tool-${t}`)?.classList.toggle('active', t === tool);
@@ -25427,12 +25508,86 @@ function broadcastRuler() {
 // ═══════════════════════════════════════════════════════════════════
 // PING
 // ═══════════════════════════════════════════════════════════════════
-function sendPing(wx, wy) {
-  sendWS({ type: 'ping_map', payload: { x: wx, y: wy, color: '#f1c40f' } });
-  addPing(wx, wy, '#f1c40f');
+function _currentMapContextKey() {
+  return (_currentPoi && _currentPoi.id) ? _currentPoi.id : 'world';
 }
-function addPing(x, y, color) {
-  pings.push({ x, y, color, born: Date.now() });
+
+function _playerPingAllowedForCurrentMap() {
+  return currentMapSettings()?.world?.allow_player_ping !== false;
+}
+
+function canCurrentUserPingMap(showFeedback) {
+  if (ROLE === 'viewer') {
+    if (showFeedback) showToast('Viewer mode: Point & Ping is disabled.');
+    return false;
+  }
+  if (ROLE === 'player' && !_playerPingAllowedForCurrentMap()) {
+    if (showFeedback) showToast('DM disabled player ping on this map.');
+    return false;
+  }
+  return true;
+}
+
+function sendPing(wx, wy, color) {
+  if (!canCurrentUserPingMap(true)) return;
+  const now = Date.now();
+  if (now - _lastPingSentAt < 300) return;
+  _lastPingSentAt = now;
+  const safeColor = String(color || '#f1c40f');
+  const payload = { x: wx, y: wy, color: safeColor, map_context: _currentMapContextKey(), mode: 'ping' };
+  sendWS({ type: 'ping_map', payload });
+  addPing(wx, wy, safeColor, { mode: 'ping', user_name: NAME || '' });
+}
+
+function sendPoint(wx, wy, color) {
+  if (!canCurrentUserPingMap(false)) return;
+  const now = Date.now();
+  if (now - _lastPointSentAt < 80) return;
+  _lastPointSentAt = now;
+  const safeColor = String(color || '#f1c40f');
+  const payload = { x: wx, y: wy, color: safeColor, map_context: _currentMapContextKey(), mode: 'point' };
+  sendWS({ type: 'ping_map', payload });
+  addPing(wx, wy, safeColor, { mode: 'point', user_name: NAME || '' });
+}
+
+function addPing(x, y, color, opts) {
+  const mode = String(opts?.mode || 'ping') === 'point' ? 'point' : 'ping';
+  const user_name = String(opts?.user_name || '').trim().slice(0, 24);
+  const now = Date.now();
+  pings = pings.filter(p => {
+    const dx = Number(p.x || 0) - Number(x || 0);
+    const dy = Number(p.y || 0) - Number(y || 0);
+    const sameSpot = (dx * dx + dy * dy) < 900;
+    return !(sameSpot && String(p.user_name || '') === user_name && p.mode === mode && (now - Number(p.born || now)) < 350);
+  });
+  pings.push({ x, y, color, born: now, mode, user_name });
+  if (pings.length > 24) pings = pings.slice(-24);
+}
+
+function refreshPingPermissionUi() {
+  const chk = document.getElementById('allow-player-ping-toggle');
+  const hint = document.getElementById('allow-player-ping-hint');
+  if (chk) {
+    chk.checked = _playerPingAllowedForCurrentMap();
+    chk.disabled = ROLE !== 'dm';
+  }
+  if (hint) {
+    hint.textContent = _playerPingAllowedForCurrentMap()
+      ? 'DM can always ping. Players can point and ping on this map.'
+      : 'DM can always ping. Players are blocked from point/ping on this map.';
+  }
+}
+
+function toggleAllowPlayerPing(enabled) {
+  if (ROLE !== 'dm') return;
+  const settings = JSON.parse(JSON.stringify(currentMapSettings() || {}));
+  settings.world = {
+    ...(settings.world || {}),
+    allow_player_ping: !!enabled,
+  };
+  sendWS({ type: 'map_settings_save', payload: { map_context: editorMapContextKey(), settings } });
+  refreshPingPermissionUi();
+  showToast(enabled ? 'Players can now point & ping on this map.' : 'Player point & ping disabled on this map.');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -29612,6 +29767,8 @@ function handleLegacyMessage(msg) {
       _editorPropsAll = preserveDirtyEditorContextInSync('props', p.editor_props || {});
       if (shouldReloadEditorLayerFromSync('props')) ensureEditorPropsLoaded(true);
       _mapSettingsAll = { ...(p.map_settings || {}) };
+      refreshPingPermissionUi();
+      if (currentTool === 'ping' && !canCurrentUserPingMap(false)) setTool('select');
       _editorPathsAll = { ...(p.editor_paths || {}) };
       _editorLabelsAll = { ...(p.editor_labels || {}) };
       _editorMarkersAll = { ...(p.editor_markers || {}) };
@@ -30084,6 +30241,8 @@ function handleLegacyMessage(msg) {
 
     case 'map_settings_sync': {
       _mapSettingsAll = { ...(p.map_settings || {}) };
+      refreshPingPermissionUi();
+      if (currentTool === 'ping' && !canCurrentUserPingMap(false)) setTool('select');
       invalidateFogCache();
       _syncFogUI();
       refreshEditorWeatherControls();
@@ -30843,7 +31002,7 @@ function handleLegacyMessage(msg) {
     }
 
     case 'map_ping': {
-      addPing(p.x, p.y, p.color || '#f1c40f');
+      addPing(p.x, p.y, p.color || '#f1c40f', { mode: p.mode || 'ping', user_name: p.user_name || '' });
       break;
     }
 
@@ -37902,6 +38061,7 @@ function toggleFlyout(id) {
         window.EditorPanel.syncEditorPanel();
       }
     }
+    if (id === 'flyout-perm') refreshPingPermissionUi();
   }
 }
 
@@ -41206,8 +41366,9 @@ function _getCombatOffturnPingPoint() {
 
 function _sendColoredPing(wx, wy, color) {
   const safeColor = String(color || '#f1c40f');
-  sendWS({ type: 'ping_map', payload: { x: wx, y: wy, color: safeColor } });
-  addPing(wx, wy, safeColor);
+  if (!canCurrentUserPingMap(true)) return;
+  sendWS({ type: 'ping_map', payload: { x: wx, y: wy, color: safeColor, map_context: _currentMapContextKey(), mode: 'ping' } });
+  addPing(wx, wy, safeColor, { mode: 'ping', user_name: NAME || '' });
 }
 
 function _sendOffturnPartySignal(message) {
