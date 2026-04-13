@@ -252,20 +252,18 @@
     <div class="motes" id="motes"></div>
     <div class="top-links">
       <a href="/campaigns">Realm Board</a>
-      <a href="/campaigns">Campaign Worlds</a>
     </div>
     <div class="shell">
       <section class="story" aria-label="Story introduction">
-        <div class="eyebrow">New entry flow • HTML Importer connected to Dice</div>
+        <div class="eyebrow">Casual D&amp;D &mdash; Your adventure awaits</div>
         <h1>Enter the Forest Gate</h1>
         <p class="lead">
-          This is the new sign-in path for Dice. Players, Dungeon Masters, and viewers now enter through a shared premium gateway,
-          then continue into the realm board, roster, or join portal from one connected flow.
+          Gather your party. Dungeon Masters, players, and viewers all enter through one gateway — then step directly into your campaigns, characters, and sessions.
         </p>
         <div class="pillars">
-          <div class="pillar"><strong>Login & Register</strong><span>One clean front door for every role, backed by Dice’s live auth endpoints.</span></div>
-          <div class="pillar"><strong>Campaign Worlds</strong><span>Successful entry routes straight into the realm board instead of dropping you into a utility page.</span></div>
-          <div class="pillar"><strong>Reset Support</strong><span>Built-in password reset request and completion flow for development and host-managed recovery.</span></div>
+          <div class="pillar"><strong>Build Your Character</strong><span>Choose your species, class, and story. Your full character sheet is ready the moment you walk in.</span></div>
+          <div class="pillar"><strong>Join a Campaign</strong><span>Accept an invite and drop straight into a live session — no extra steps, no waiting rooms.</span></div>
+          <div class="pillar"><strong>Run the World</strong><span>Dungeon Masters get the full realm board: manage campaigns, scenes, NPCs, and player rosters.</span></div>
         </div>
       </section>
 
@@ -273,7 +271,7 @@
         <div class="panel-header">
           <div>
             <h2 class="panel-title">Casual D&amp;D</h2>
-            <p class="panel-subtitle">Sign in, register, or reset access. Once authenticated, you move directly into the Dice realm board.</p>
+            <p class="panel-subtitle">Sign in or create an account to continue into your campaigns and characters.</p>
           </div>
           <div class="mode-tabs" role="tablist" aria-label="Authentication modes">
             <button class="mode-tab is-active" type="button" data-mode-tab="login">Login</button>
@@ -295,10 +293,10 @@
               <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
             </div>
             <div class="meta-row">
-              <span>Existing Dice accounts work here. Older accounts are auto-migrated on startup when found in a legacy local database.</span>
-              <button type="button" data-switch-mode="forgot">Need a reset?</button>
+              <span>Welcome back, adventurer.</span>
+              <button type="button" data-switch-mode="forgot">Forgot password?</button>
             </div>
-            <button class="cta" type="submit">Enter the Realm Board</button>
+            <button class="cta" type="submit">Sign In</button>
             <div class="divider">or</div>
             <div class="meta-row"><span>Need an account?</span><button type="button" data-switch-mode="register">Create one now</button></div>
           </form>
@@ -324,7 +322,7 @@
                 <option value="viewer">Viewer</option>
               </select>
             </div>
-            <button class="cta" type="submit">Create Account & Enter</button>
+            <button class="cta" type="submit">Create Account</button>
             <div class="meta-row"><span>Already have an account?</span><button type="button" data-switch-mode="login">Back to login</button></div>
           </form>
 
@@ -337,8 +335,7 @@
               <label for="reset-email">Email</label>
               <input id="reset-email" name="email" type="email" autocomplete="email" placeholder="Account email" required>
             </div>
-            <button class="cta" type="submit">Request Reset Code</button>
-            <div class="footnote">In development, Dice returns the reset code here so you can finish the reset immediately. In hosted use, the host/admin can deliver the code separately.</div>
+            <button class="cta" type="submit">Send Reset Code</button>
             <div id="reset-box" class="reset-box hidden">
               <strong>Complete Password Reset</strong>
               <div id="complete-reset-form" style="margin-top:10px; display:grid; gap:12px;">
@@ -465,13 +462,13 @@
       e.preventDefault();
       clearFeedback();
       const form = e.currentTarget;
-      lockButton(form, true, 'Opening Gate…');
+      lockButton(form, true, 'Signing In…');
       try {
         const identifier = form.identifier.value.trim();
         const password = form.password.value;
         const data = await jsonFetch('/api/auth/login', { username_or_email: identifier, password });
         const user = data && data.user ? data.user : null;
-        showFeedback('Welcome back. Opening your route…', 'success');
+        showFeedback('Welcome back! Redirecting…', 'success');
         window.location.href = resolvePostAuthDestination(user);
       } catch (err) {
         showFeedback(err.message || 'Login failed.', 'error');
@@ -491,7 +488,7 @@
         const password = form.password.value;
         const role = form.role.value;
         await jsonFetch('/api/auth/register', { username, email, password, role });
-        showFeedback('Account created. Opening your route…', 'success');
+        showFeedback('Account created! Redirecting…', 'success');
         window.location.href = resolvePostAuthDestination({ role });
       } catch (err) {
         showFeedback(err.message || 'Registration failed.', 'error');

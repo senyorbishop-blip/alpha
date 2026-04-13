@@ -58,10 +58,11 @@
         '</div>',
 
         '<div class="field">',
-        '<label>Pronouns <span class="cb-optional">optional</span></label>',
-        '<input type="text" data-builder-path="identity.pronouns"',
-        ' value="' + escHtml(identity.pronouns || '') + '" maxlength="60"',
-        ' placeholder="they/them" />',
+        '<label>Gender</label>',
+        '<select data-builder-path="identity.gender" id="cb-gender-select">',
+        '<option value="male"' + (identity.gender === 'female' ? '' : ' selected') + '>Male</option>',
+        '<option value="female"' + (identity.gender === 'female' ? ' selected' : '') + '>Female</option>',
+        '</select>',
         '</div>',
 
         '<div class="field">',
