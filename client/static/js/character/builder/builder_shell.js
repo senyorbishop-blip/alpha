@@ -397,7 +397,7 @@
         '<div class="cb-shell-title-text">Character Builder</div>',
         draftName
           ? '<div class="cb-shell-title-sub">' + draftName + '</div>'
-          : '<div class="cb-shell-title-sub">Native • Tavern Tabletop</div>',
+          : '<div class="cb-shell-title-sub">Forge your legend</div>',
         '</div>',
         '</div>',
 

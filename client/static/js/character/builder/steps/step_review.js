@@ -346,7 +346,7 @@
         spellSlotHtml,
         validationHtml,
         '</div>',
-        '<div class="builder-help-text">Use "Save Character" to persist this draft through the host integration hook.</div>',
+        '<div class="builder-help-text">Everything looks right? Hit <strong>Enter the World</strong> to save your character and begin your adventure.</div>',
       ].join('');
     },
   });

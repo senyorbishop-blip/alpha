@@ -33,11 +33,12 @@
       const identity = draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
       const presentation = draft.presentation && typeof draft.presentation === 'object' ? draft.presentation : {};
       const portraitFrame = String(presentation.portraitFrame || 'classic');
+      const gender = identity.gender === 'female' ? 'female' : 'male';
 
       return [
         // ── Core Identity ─────────────────────────────────────────────
         '<div class="cb-section">',
-        sectionHeader('✦', 'Core Identity', 'Name your adventurer and define their persona.'),
+        sectionHeader('✦', 'Core Identity', 'Name your hero and set their defining traits.'),
 
         '<div class="cb-field-row cb-field-row--full" style="margin-bottom:12px;">',
         '<div class="field">',
@@ -51,18 +52,18 @@
         '<div class="cb-field-row cb-field-row--2col">',
 
         '<div class="field">',
-        '<label>Display Name <span class="cb-optional">optional</span></label>',
-        '<input type="text" data-builder-path="identity.displayName"',
-        ' value="' + escHtml(identity.displayName || '') + '" maxlength="60"',
-        ' placeholder="Shown in party UI" />',
+        '<label>Sex</label>',
+        '<select data-builder-path="identity.gender" id="cb-gender-select">',
+        '<option value="male"' + (gender === 'male' ? ' selected' : '') + '>Male</option>',
+        '<option value="female"' + (gender === 'female' ? ' selected' : '') + '>Female</option>',
+        '</select>',
         '</div>',
 
         '<div class="field">',
-        '<label>Gender</label>',
-        '<select data-builder-path="identity.gender" id="cb-gender-select">',
-        '<option value="male"' + (identity.gender === 'female' ? '' : ' selected') + '>Male</option>',
-        '<option value="female"' + (identity.gender === 'female' ? ' selected' : '') + '>Female</option>',
-        '</select>',
+        '<label>Homeland <span class="cb-optional">optional</span></label>',
+        '<input type="text" data-builder-path="identity.homeland"',
+        ' value="' + escHtml(identity.homeland || '') + '" maxlength="80"',
+        ' placeholder="Waterdeep, Neverwinter…" />',
         '</div>',
 
         '<div class="field">',
@@ -80,11 +81,21 @@
         '</div>',
 
         '</div>',
+
+        '<div class="cb-field-row cb-field-row--full" style="margin-top:4px;">',
+        '<div class="field">',
+        '<label>Display Name <span class="cb-optional">optional — shown in party UI</span></label>',
+        '<input type="text" data-builder-path="identity.displayName"',
+        ' value="' + escHtml(identity.displayName || '') + '" maxlength="60"',
+        ' placeholder="Short name shown to other players" />',
+        '</div>',
+        '</div>',
+
         '</div>',
 
         // ── Presentation ──────────────────────────────────────────────
         '<div class="cb-section">',
-        sectionHeader('◈', 'Presentation', 'Portrait image and token appearance.'),
+        sectionHeader('◈', 'Portrait & Token', 'Choose a frame style and link your artwork.'),
 
         '<div class="cb-portrait-frame-row">',
         ['classic', 'rune', 'shadow'].map(function(frame) {
@@ -110,7 +121,7 @@
         ' placeholder="https://…" />',
         '</div>',
         '<div class="field">',
-        '<label>Token Image URL <span class="cb-optional">optional</span></label>',
+        '<label>Token URL <span class="cb-optional">optional</span></label>',
         '<input type="url" data-builder-path="identity.tokenImageUrl"',
         ' value="' + escHtml(identity.tokenImageUrl || '') + '" maxlength="500"',
         ' placeholder="https://…" />',
@@ -119,14 +130,14 @@
 
         '</div>',
 
-        // ── Story & Notes ─────────────────────────────────────────────
+        // ── Backstory ─────────────────────────────────────────────────
         '<div class="cb-section">',
-        sectionHeader('❧', 'Story & Notes', 'Backstory concept and quick roleplay reminders.'),
+        sectionHeader('❧', 'Backstory', 'A short concept and any roleplay notes you want to keep handy.'),
 
         '<div class="cb-field-row cb-field-row--2col">',
 
         '<div class="field">',
-        '<label>Backstory Summary <span class="cb-optional">optional</span></label>',
+        '<label>Backstory <span class="cb-optional">optional</span></label>',
         '<textarea data-builder-path="identity.backstory" maxlength="1000"',
         ' placeholder="One-paragraph concept — origin, motivation, dark secret…"',
         ' rows="5">' + escHtml(identity.backstory || '') + '</textarea>',
