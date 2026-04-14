@@ -97,6 +97,7 @@
     },
     "trickery-divine-strike": {
       "summary": "Layer extra poison pressure onto weapon hits so the domain stays dangerous without always consuming top resources.",
+      "description": "Once per turn when you hit with a weapon attack, you add 1d8 poison damage (2d8 at level 14). The Trickery domain uses poison as its divine flavour, fitting a deity of misdirection and hidden danger. It is not the domain's primary identity, but it keeps weapon turns from being wasted between Channel Divinity spends.",
       "tags": [
         "subclass",
         "combat",

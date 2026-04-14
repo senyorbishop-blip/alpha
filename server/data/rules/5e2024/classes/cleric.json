@@ -405,17 +405,13 @@
     {
       "level": 14,
       "proficiencyBonus": 5,
-      "features": [
-        "Subclass Feature"
-      ],
+      "features": [],
       "classMechanics": {
         "cantripsKnown": 5,
         "spellsPreparedFormula": "wis_mod + cleric_level",
         "channelDivinityUses": 2
       },
-      "unlockIds": [
-        "cleric-subclass-feature-14"
-      ]
+      "unlockIds": []
     },
     {
       "level": 15,
@@ -720,11 +716,6 @@
       "description": "The level 8 domain feature for most domains is Divine Strike (extra weapon damage) or Potent Spellcasting (extra cantrip damage). These features ensure the domain stays relevant in the baseline action economy between major spell turns.",
       "tags": ["subclass", "divine"]
     },
-    "cleric-subclass-feature-14": {
-      "summary": "Your Divine Domain does not grant a feature at level 14 in this progression — this level is covered by the progression table.",
-      "description": "Level 14 is a Subclass Feature placeholder. Verify against your specific domain's roadmap; some domains grant features at different tiers than others.",
-      "tags": ["subclass"]
-    },
     "cleric-subclass-feature-17": {
       "summary": "Your Divine Domain unlocks its capstone feature, completing the domain's full mechanical identity.",
       "description": "The level 17 domain feature is the final expression of the domain's identity. Life gains Supreme Healing, Light gains Corona of Light, Trickery gains Improved Duplicity, War gains Avatar of Battle. These capstones are significant power jumps that define how the domain plays at high levels.",
@@ -785,9 +776,7 @@
     "13": [
       "cleric-spell-level-7"
     ],
-    "14": [
-      "cleric-subclass-feature-14"
-    ],
+    "14": [],
     "15": [
       "cleric-spell-level-8"
     ],
@@ -911,10 +900,8 @@
     },
     {
       "level": 14,
-      "summary": "Subclass Feature.",
-      "unlockIds": [
-        "cleric-subclass-feature-14"
-      ]
+      "summary": "No new class features this level.",
+      "unlockIds": []
     },
     {
       "level": 15,

@@ -190,6 +190,13 @@
 
 
   const CUSTOM_CLASS_GUIDES = {
+    cleric: {
+      title: 'Cleric Surface Guide',
+      summary: 'Cleric should read as a prepared divine caster: Channel Divinity is the core class resource, prepared spells define the offensive and support range, and the domain identity should be visible as a distinct set of actions or passives that sharpen the build.',
+      pillars: ['Channel Divinity', 'Prepared spell range', 'Domain identity', 'Healing / radiant pressure'],
+      loop: 'Audit Channel Divinity uses first — they fuel Divine Spark, Turn Undead, and all domain options. Then check your prepared spell access and confirm your domain actions (Preserve Life, Radiance of the Dawn, Invoke Duplicity, Guided Strike) are visible from the Actions tab. A Cleric sheet that does not show Channel Divinity clearly is missing its most important resource.',
+      next: ['Open Actions to check Channel Divinity surface and domain actions', 'Open Spells to confirm prepared spell list and slot progression', 'Verify domain-specific passives are visible in Features'],
+    },
     tinker: {
       title: 'Tinker Surface Guide',
       summary: 'Tinker should read like an engineer with a live field kit: gadgets, prepared formulae, rig upgrades, and fast battlefield problem-solving.',

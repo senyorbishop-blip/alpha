@@ -16,6 +16,11 @@
 
 
   const CUSTOM_ACTION_SURFACES = {
+    cleric: {
+      title: 'Cleric Combat Surface',
+      copy: 'Lead with Channel Divinity timing — it fuels Divine Spark, Turn Undead, and domain options. Then layer in prepared spell choices and any domain-specific actions. This tab should make divine resource spend and prepared-spell offense obvious together.',
+      checks: ['Channel Divinity uses visible', 'Domain actions visible (Preserve Life / Radiance of the Dawn / Invoke Duplicity / Guided Strike)', 'Turn Undead and Divine Spark surfaced as actions', 'Spell save DC legible'],
+    },
     barbarian: {
       title: 'Barbarian Combat Surface',
       copy: 'Open with Rage, then stay in melee and pressure with bonus-action and reaction tools. Your Rage loop should be obvious at a glance.',
@@ -250,6 +255,150 @@
         'oath of vengeance': [
           { key: 'channel divinity: vow of enmity', name: 'Vow of Enmity', summary: 'Mark one enemy for focused pursuit so your attack pressure stays glued to the target.', actionType: 'bonus', resourceName: 'Channel Divinity', tags: ['Vengeance', 'Mark'] },
           { key: 'channel divinity: abjure enemy', name: 'Abjure Enemy', summary: 'Break an enemy’s momentum with fear and forced control before it can dominate the round.', actionType: 'action', resourceName: 'Channel Divinity', tags: ['Vengeance', 'Control'] },
+        ],
+      },
+    },
+    cleric: {
+      actions: [
+        {
+          key: 'channel divinity',
+          name: 'Channel Divinity',
+          summary: 'Spend a Channel Divinity use to power a major divine effect. Fuels Divine Spark, Turn Undead, and all domain-specific options. Recovers on a Short or Long Rest.',
+          actionType: 'action',
+          resourceName: 'Channel Divinity',
+          resourceSummary: 'Spend 1 use (Short/Long Rest recovery)',
+          range: 'Feature dependent',
+          tags: ['Cleric', 'Divine', 'Resource'],
+        },
+        {
+          key: 'divine spark',
+          name: 'Divine Spark',
+          summary: 'Focus Channel Divinity into immediate healing or radiant/necrotic damage on a single target. Use it when one creature needs to swing right now without spending a spell slot.',
+          actionType: 'action',
+          resourceName: 'Channel Divinity',
+          resourceSummary: 'Spend 1 Channel Divinity use',
+          range: '30 ft',
+          tags: ['Cleric', 'Divine', 'Healing', 'Damage'],
+        },
+        {
+          key: 'turn undead',
+          name: 'Turn Undead',
+          summary: 'Force undead creatures to make a Wisdom save or be driven back and lose tempo. Breaks undead formations before they collapse on the party.',
+          actionType: 'action',
+          resourceName: 'Channel Divinity',
+          resourceSummary: 'Spend 1 Channel Divinity use',
+          range: '30 ft burst',
+          tags: ['Cleric', 'Divine', 'Control', 'Undead'],
+        },
+        {
+          key: 'divine intervention',
+          name: 'Divine Intervention',
+          summary: 'Call directly on your deity for a dramatic answer in desperate moments. Reserved for boss fights, rescues, and scenes where ordinary magic is not enough.',
+          actionType: 'action',
+          resourceName: '',
+          resourceSummary: 'Once per Long Rest',
+          range: 'Deity-dependent',
+          tags: ['Cleric', 'Divine', 'Miracle'],
+        },
+      ],
+      subclassActions: {
+        'life domain': [
+          {
+            key: 'life-preserve-life',
+            name: 'Preserve Life',
+            summary: 'Redistribute emergency healing equal to 5 × your cleric level among creatures within 30 feet. No creature can be healed above half its HP maximum — best when multiple allies are in the danger zone at once.',
+            actionType: 'action',
+            resourceName: 'Channel Divinity',
+            resourceSummary: 'Spend 1 Channel Divinity use',
+            range: '30 ft',
+            tags: ['Life Domain', 'Healing', 'Emergency'],
+          },
+        ],
+        'light domain': [
+          {
+            key: 'light-warding-flare',
+            name: 'Warding Flare',
+            summary: 'Reaction: flash blinding light at an attacker within 30 feet, imposing disadvantage on the attack roll. Uses per Long Rest equal your Charisma modifier.',
+            actionType: 'reaction',
+            resourceName: 'Warding Flare',
+            resourceSummary: 'CHA mod uses per Long Rest',
+            range: '30 ft',
+            tags: ['Light Domain', 'Reaction', 'Defense'],
+          },
+          {
+            key: 'light-radiance-of-the-dawn',
+            name: 'Radiance of the Dawn',
+            summary: 'Dispel magical darkness in 30 feet and force hostile creatures in range to make a Constitution save — 2d10 + cleric level radiant damage on a fail, half on success.',
+            actionType: 'action',
+            resourceName: 'Channel Divinity',
+            resourceSummary: 'Spend 1 Channel Divinity use',
+            range: '30 ft',
+            tags: ['Light Domain', 'Damage', 'Darkness'],
+          },
+        ],
+        'trickery domain': [
+          {
+            key: 'trickery-blessing-of-the-trickster',
+            name: 'Blessing of the Trickster',
+            summary: 'Grant a willing creature advantage on Dexterity (Stealth) checks for 1 hour. Use this before infiltrations, ambushes, or when a scout needs to slip past a formation.',
+            actionType: 'action',
+            resourceName: '',
+            resourceSummary: 'No resource cost',
+            range: 'Touch',
+            tags: ['Trickery Domain', 'Support', 'Stealth'],
+          },
+          {
+            key: 'trickery-invoke-duplicity',
+            name: 'Invoke Duplicity',
+            summary: 'Create an illusory duplicate for 1 minute. Cast spells from the duplicate\'s space and use it to split enemy attention, set up flanking angles, or change where pressure appears to come from.',
+            actionType: 'action',
+            resourceName: 'Channel Divinity',
+            resourceSummary: 'Spend 1 Channel Divinity use',
+            range: '30 ft (duplicate)',
+            tags: ['Trickery Domain', 'Illusion', 'Control'],
+          },
+          {
+            key: 'trickery-cloak-of-shadows',
+            name: 'Cloak of Shadows',
+            summary: 'Become invisible until the end of your next turn. Use it to break target lock, reposition, or set up the next play without being the obvious focus of the enemy\'s response.',
+            actionType: 'action',
+            resourceName: 'Channel Divinity',
+            resourceSummary: 'Spend 1 Channel Divinity use',
+            range: 'Self',
+            tags: ['Trickery Domain', 'Stealth', 'Mobility'],
+          },
+        ],
+        'war domain': [
+          {
+            key: 'war-war-priest',
+            name: 'War Priest',
+            summary: 'After taking the Attack action, make one additional weapon attack as a bonus action. Limited uses per Long Rest equal to your Wisdom modifier. Keeps melee pressure high on weapon-first turns.',
+            actionType: 'bonus',
+            resourceName: 'War Priest',
+            resourceSummary: 'WIS mod uses per Long Rest',
+            range: 'Weapon range',
+            tags: ['War Domain', 'Attack', 'Bonus Action'],
+          },
+          {
+            key: 'war-guided-strike',
+            name: 'Guided Strike',
+            summary: 'After you miss an attack roll, spend Channel Divinity to add +10 to the roll and likely convert the miss into a hit. Use it on high-value attacks when the target AC is frustratingly close.',
+            actionType: 'action',
+            resourceName: 'Channel Divinity',
+            resourceSummary: 'Spend 1 Channel Divinity use',
+            range: 'Self (own attack)',
+            tags: ['War Domain', 'Accuracy', 'Channel Divinity'],
+          },
+          {
+            key: 'war-wars-gods-blessing',
+            name: 'War God\'s Blessing',
+            summary: 'Reaction: when an ally within 30 feet misses an attack roll, grant +10 to the roll via Channel Divinity. Turn a near-miss into a hit when a teammate is targeting a high-value threat.',
+            actionType: 'reaction',
+            resourceName: 'Channel Divinity',
+            resourceSummary: 'Spend 1 Channel Divinity use',
+            range: '30 ft (ally)',
+            tags: ['War Domain', 'Support', 'Accuracy'],
+          },
         ],
       },
     },
@@ -695,6 +844,14 @@
             : '',
         ].filter(Boolean).join(' • ')
       : '';
+    const clericLine = _classKey(charData) === 'cleric'
+      ? [
+          classMechanics.channelDivinityUses != null ? ('Channel Divinity: ' + classMechanics.channelDivinityUses + ' use' + (classMechanics.channelDivinityUses !== 1 ? 's' : '') + ' (Short/Long Rest)') : '',
+          classMechanics.cantripsKnown != null ? ('Cantrips known: ' + classMechanics.cantripsKnown) : '',
+          classMechanics.spellsPreparedFormula ? ('Prepared spells: ' + classMechanics.spellsPreparedFormula) : '',
+          charData && charData.spellSaveDc ? ('Spell save DC: ' + charData.spellSaveDc) : '',
+        ].filter(Boolean).join(' • ')
+      : '';
     return `<div class="cs-combat-callout-grid">
       <div class="cs-combat-callout">
         <div class="cs-combat-callout-title">${_esc(guide.title)}</div>
@@ -702,6 +859,7 @@
         ${barbarianLine ? `<div class="cs-combat-callout-copy">${_esc(barbarianLine)}</div>` : ''}
         ${paladinLine ? `<div class="cs-combat-callout-copy">${_esc(paladinLine)}</div>` : ''}
         ${rogueLine ? `<div class="cs-combat-callout-copy">${_esc(rogueLine)}</div>` : ''}
+        ${clericLine ? `<div class="cs-combat-callout-copy">${_esc(clericLine)}</div>` : ''}
       </div>
       <div class="cs-combat-callout muted">
         <div class="cs-combat-callout-title">What should be visible</div>
