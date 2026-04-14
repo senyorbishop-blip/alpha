@@ -339,7 +339,7 @@ RESOURCE_FIELD_BLUEPRINTS: dict[str, dict[str, Any]] = {
 RESOURCE_RECOVERY_HINTS = {
     "rage_uses": "Short Rest: regain 1 use. Long Rest: regain all uses.",
     "focus_points": "Regain all expended Focus Points on a short or long rest.",
-    "bardic_inspiration": "Refresh depends on level; becomes short-rest refresh later.",
+    "bardic_inspiration": "Long Rest recovery at low levels; upgrades to Short or Long Rest with Font of Inspiration.",
     "channel_divinity": "Short Rest: regain 1 use. Long Rest: regain all uses.",
     "wild_shape": "Short Rest: regain 1 use. Long Rest: regain all uses.",
     "action_surge": "Regain all uses on a short or long rest.",
@@ -513,13 +513,43 @@ def build_features_by_level(class_row: dict[str, Any]) -> list[dict[str, Any]]:
     return out
 
 
-def _resource_summary_from_mechanics(class_mechanics: dict[str, Any]) -> list[dict[str, Any]]:
+def _resource_summary_from_mechanics(class_mechanics: dict[str, Any], *, ability_scores: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     resources: list[dict[str, Any]] = []
+    ability_scores = ability_scores if isinstance(ability_scores, dict) else {}
+    cha_score = _safe_int(ability_scores.get('cha'), 10, minimum=1)
+    cha_mod = (cha_score - 10) // 2
+    bardic_refresh_raw = str(class_mechanics.get('bardicInspirationRefresh') or '').strip().lower()
+    bardic_refresh_text = ''
+    if bardic_refresh_raw == 'longrest':
+        bardic_refresh_text = 'Long Rest'
+    elif bardic_refresh_raw == 'shortorlongrest':
+        bardic_refresh_text = 'Short or Long Rest'
     for field, blueprint in RESOURCE_FIELD_BLUEPRINTS.items():
         if field not in class_mechanics:
             continue
         value = class_mechanics.get(field)
         if value in (None, 0, '0', ''):
+            continue
+        if field == 'bardicInspirationDie':
+            die_text = str(value or '').strip().lower()
+            if not die_text:
+                continue
+            uses = max(1, cha_mod)
+            recovery = f"Refresh: {bardic_refresh_text}." if bardic_refresh_text else RESOURCE_RECOVERY_HINTS.get(str(blueprint['id']), '')
+            resources.append(
+                {
+                    'id': str(blueprint['id']),
+                    'name': str(blueprint['name']),
+                    'current': uses,
+                    'max': uses,
+                    'summary': f'{die_text.upper()} • {uses}/{uses}',
+                    'die': die_text.upper(),
+                    'recovery': recovery,
+                    'type': str(blueprint.get('type') or 'passive'),
+                    'section': str(blueprint.get('section') or 'Class Features'),
+                    'trackUses': bool(blueprint.get('trackUses')),
+                }
+            )
             continue
         is_unlimited = isinstance(value, str) and value.strip().lower() == 'unlimited'
         max_value = 999 if is_unlimited else _safe_int(value, 0, minimum=0)
@@ -588,6 +618,7 @@ def build_runtime_feature_payload(
     class_name: str,
     level: int,
     subclass_row: dict[str, Any] | None = None,
+    ability_scores: dict[str, Any] | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
     if not isinstance(class_row, dict):
         return {'actions': [], 'bonusActions': [], 'reactions': [], 'passives': [], 'resources': [], 'classFeatures': []}
@@ -663,7 +694,10 @@ def build_runtime_feature_payload(
 
     progression_rows = class_row.get('progressionTable') if isinstance(class_row.get('progressionTable'), list) else []
     class_mechanics = next((row.get('classMechanics') for row in progression_rows if isinstance(row, dict) and _safe_int(row.get('level'), 0, minimum=0) == level and isinstance(row.get('classMechanics'), dict)), {})
-    resources = _resource_summary_from_mechanics(class_mechanics if isinstance(class_mechanics, dict) else {})
+    resources = _resource_summary_from_mechanics(
+        class_mechanics if isinstance(class_mechanics, dict) else {},
+        ability_scores=ability_scores,
+    )
 
     resource_ids = {str(row.get('id') or '') for row in resources if isinstance(row, dict)}
     for feature in class_features:

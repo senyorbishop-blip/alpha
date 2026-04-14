@@ -1148,7 +1148,15 @@ async def get_character_sheet(
 
     class_name = str((class_data or {}).get("displayName") or primary_class.get("name") or "").strip()
     spellcasting_type = str((class_data or {}).get("spellcastingType") or runtime.get("spellcastingType") or "none").strip() or "none"
-    feature_payload = build_runtime_feature_payload(class_data if isinstance(class_data, dict) else None, class_name=class_name or class_id.title(), level=char_level, subclass_row=subclass_data if isinstance(subclass_data, dict) else None)
+    abilities = native.get("abilities") if isinstance(native.get("abilities"), dict) else {}
+    ability_scores = abilities.get("scores") if isinstance(abilities.get("scores"), dict) else {}
+    feature_payload = build_runtime_feature_payload(
+        class_data if isinstance(class_data, dict) else None,
+        class_name=class_name or class_id.title(),
+        level=char_level,
+        subclass_row=subclass_data if isinstance(subclass_data, dict) else None,
+        ability_scores=ability_scores if isinstance(ability_scores, dict) else None,
+    )
 
     available_spells: list[dict] = []
     if spellcasting_type != "none" and class_name:

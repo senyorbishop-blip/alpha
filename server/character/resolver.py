@@ -389,6 +389,7 @@ def resolve_character_runtime(document: Any) -> dict:
                 class_name=str(class_row.get("name") or class_row.get("classId") or "Class"),
                 level=class_level,
                 subclass_row=get_subclass_catalog_row(subclass_id) if subclass_id else None,
+                ability_scores=scores,
             )
         )
 

@@ -172,6 +172,7 @@ def _build_spell_choices_preview(
     next_level: int,
     current_class_mechanics: dict[str, Any],
     next_class_mechanics: dict[str, Any],
+    next_level_unlock_ids: list[str] | None = None,
 ) -> dict[str, Any] | None:
     if not class_id:
         return None
@@ -288,7 +289,20 @@ def _build_spell_choices_preview(
         if _safe_int(row.get("unlockLevel"), 0) == next_level
     ])
 
-    if not cantrip_required and not levelled_required and not swap_allowed and mode != "prepared" and not has_subclass_spell_unlocks:
+    unlock_ids = [str(v or "").strip().lower() for v in (next_level_unlock_ids or []) if str(v or "").strip()]
+    magical_secrets_unlocks = len([fid for fid in unlock_ids if fid.startswith("bard-magical-secrets")])
+    magical_secret_options: list[dict[str, Any]] = []
+    if class_id == "bard" and magical_secrets_unlocks > 0:
+        magical_secret_options = _sort_spell_options([
+            _spell_option_row(spell, class_id=class_id)
+            for spell in get_spell_list()
+            if _safe_int(spell.get("level"), 0, minimum=0, maximum=9) > 0
+            and _safe_int(spell.get("level"), 0, minimum=0, maximum=9) <= max(1, next_highest_spell_level)
+            and str(spell.get("id") or "") not in current_known_set
+            and (spell.get("classUnlockLevels") or {}).get(class_id) is None
+        ])
+
+    if not cantrip_required and not levelled_required and not magical_secrets_unlocks and not swap_allowed and mode != "prepared" and not has_subclass_spell_unlocks:
         return None
 
     no_choices_message = ""
@@ -326,6 +340,8 @@ def _build_spell_choices_preview(
         "cantripOptions": cantrip_options,
         "levelledOptions": levelled_options,
         "replaceableKnown": replaceable_known,
+        "magicalSecretsPicksRequired": magical_secrets_unlocks,
+        "magicalSecretOptions": magical_secret_options,
         "noChoicesMessage": no_choices_message,
         "subclassSpellGrants": subclass_spell_grants,
     }
@@ -467,6 +483,7 @@ def build_levelup_preview(document: Any) -> dict[str, Any]:
         next_level=next_level,
         current_class_mechanics=current_class_mechanics,
         next_class_mechanics=class_mechanics,
+        next_level_unlock_ids=new_feature_ids,
     )
     if spell_choices:
         if _safe_int(spell_choices.get("cantripPicksRequired"), 0, minimum=0) > 0:
@@ -487,6 +504,14 @@ def build_levelup_preview(document: Any) -> dict[str, Any]:
                         + ("spellbook spell(s)" if spell_choices.get("mode") == "spellbook" else "spell(s) known")
                         + f" for level {next_level}."
                     ),
+                }
+            )
+        if _safe_int(spell_choices.get("magicalSecretsPicksRequired"), 0, minimum=0) > 0:
+            required_choices.append(
+                {
+                    "id": f"{class_id or 'class'}-spell-magical-secrets-level-{next_level}",
+                    "type": "spell_magical_secrets",
+                    "reason": f"Pick {_safe_int(spell_choices.get('magicalSecretsPicksRequired'), 0)} Magical Secrets off-list spell(s) for level {next_level}.",
                 }
             )
 
@@ -573,6 +598,11 @@ def apply_levelup(document: Any, *, choices: Any = None) -> dict[str, Any]:
             required = _safe_int(spell_plan.get("levelledPicksRequired"), 0, minimum=0)
             if len(_unique_spell_ids(spell_choice_payload.get("levelledAdds"))) < required:
                 unresolved_required.append(row)
+        elif row_type == "spell_magical_secrets":
+            spell_plan = preview.get("spellChoices") if isinstance(preview.get("spellChoices"), dict) else {}
+            required = _safe_int(spell_plan.get("magicalSecretsPicksRequired"), 0, minimum=0)
+            if len(_unique_spell_ids(spell_choice_payload.get("magicalSecretsAdds"))) < required:
+                unresolved_required.append(row)
         elif row_type == "subclass":
             unresolved_required.append(row)
     if unresolved_required:
@@ -636,15 +666,20 @@ def apply_levelup(document: Any, *, choices: Any = None) -> dict[str, Any]:
 
         cantrip_adds = _unique_spell_ids(spell_choice_payload.get("cantripAdds"))
         levelled_adds = _unique_spell_ids(spell_choice_payload.get("levelledAdds"))
+        magical_secrets_adds = _unique_spell_ids(spell_choice_payload.get("magicalSecretsAdds"))
         cantrip_required = _safe_int(spell_plan.get("cantripPicksRequired"), 0, minimum=0)
         levelled_required = _safe_int(spell_plan.get("levelledPicksRequired"), 0, minimum=0)
+        magical_secrets_required = _safe_int(spell_plan.get("magicalSecretsPicksRequired"), 0, minimum=0)
         if cantrip_required and len(cantrip_adds) != cantrip_required:
             raise LevelupApplyError(f"Choose exactly {cantrip_required} cantrip(s) before applying this level.")
         if levelled_required and len(levelled_adds) != levelled_required:
             raise LevelupApplyError(f"Choose exactly {levelled_required} new spell(s) before applying this level.")
+        if magical_secrets_required and len(magical_secrets_adds) != magical_secrets_required:
+            raise LevelupApplyError(f"Choose exactly {magical_secrets_required} Magical Secrets spell(s) before applying this level.")
 
         legal_cantrips = {str(row.get("id") or "") for row in spell_plan.get("cantripOptions") or [] if isinstance(row, dict)}
         legal_levelled = {str(row.get("id") or "") for row in spell_plan.get("levelledOptions") or [] if isinstance(row, dict)}
+        legal_magical_secrets = {str(row.get("id") or "") for row in spell_plan.get("magicalSecretOptions") or [] if isinstance(row, dict)}
         replaceable_known = {str(row.get("id") or "") for row in spell_plan.get("replaceableKnown") or [] if isinstance(row, dict)}
 
         for spell_id in cantrip_adds:
@@ -659,6 +694,18 @@ def apply_levelup(document: Any, *, choices: Any = None) -> dict[str, Any]:
             if spell_id not in known_set:
                 known.append(spell_id)
                 known_set.add(spell_id)
+        for spell_id in magical_secrets_adds:
+            if spell_id not in legal_magical_secrets:
+                raise LevelupApplyError("Illegal Magical Secrets selection detected during level-up.")
+            if spell_id not in known_set:
+                known.append(spell_id)
+                known_set.add(spell_id)
+        if magical_secrets_adds:
+            existing_magical = _unique_spell_ids(spell_state.get("magicalSecretsKnown"))
+            for spell_id in magical_secrets_adds:
+                if spell_id not in existing_magical:
+                    existing_magical.append(spell_id)
+            spell_state["magicalSecretsKnown"] = existing_magical
 
         swap = spell_choice_payload.get("swap") if isinstance(spell_choice_payload.get("swap"), dict) else {}
         swap_drop = str(swap.get("drop") or "").strip()
