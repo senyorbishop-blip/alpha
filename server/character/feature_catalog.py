@@ -335,6 +335,7 @@ RESOURCE_FIELD_BLUEPRINTS: dict[str, dict[str, Any]] = {
     "layOnHandsPool": {"id": "lay_on_hands", "name": "Lay on Hands", "section": "Actions", "type": "action", "trackUses": True},
     "sorceryPoints": {"id": "sorcery_points", "name": "Sorcery Points", "section": "Class Features", "type": "passive", "trackUses": True},
     "pactSlots": {"id": "pact_slots", "name": "Pact Slots", "section": "Class Features", "type": "passive", "trackUses": True},
+    "swaggerUses": {"id": "swagger_dice", "name": "Swagger Dice", "section": "Class Features", "type": "passive", "trackUses": True},
 }
 
 
@@ -349,6 +350,7 @@ RESOURCE_RECOVERY_HINTS = {
     "indomitable": "Regain all uses on a long rest.",
     "lay_on_hands": "The pool refreshes on a long rest.",
     "sorcery_points": "Sorcery Points refresh on a long rest.",
+    "swagger_dice": "Swagger Dice refresh on a short or long rest.",
 }
 
 
@@ -583,6 +585,30 @@ def _resource_summary_from_mechanics(class_mechanics: dict[str, Any], *, ability
                 'max': pact_slots,
                 'summary': f'{pact_slots}/{pact_slots} • Slot Level {pact_slot_level or "?"}',
                 'recovery': 'Refreshes on a Short Rest. All pact slots cast at your highest pact slot level.',
+                'type': 'passive',
+                'section': 'Class Features',
+                'trackUses': True,
+            }
+        )
+    swagger_uses = _safe_int(class_mechanics.get('swaggerUses'), 0, minimum=0)
+    swagger_die = str(class_mechanics.get('swaggerDice') or '').strip().upper()
+    if swagger_uses > 0:
+        resources = [row for row in resources if str(row.get('id') or '') != 'swagger_dice']
+        swagger_summary = f'{swagger_uses}/{swagger_uses}'
+        if swagger_die:
+            swagger_summary = f'{swagger_summary} • {swagger_die}'
+        trick_options = _safe_int(class_mechanics.get('trickOptions'), 0, minimum=0)
+        if trick_options > 0:
+            swagger_summary = f'{swagger_summary} • Tricks {trick_options}'
+        resources.append(
+            {
+                'id': 'swagger_dice',
+                'name': 'Swagger Dice',
+                'current': swagger_uses,
+                'max': swagger_uses,
+                'summary': swagger_summary,
+                'die': swagger_die,
+                'recovery': RESOURCE_RECOVERY_HINTS.get('swagger_dice', ''),
                 'type': 'passive',
                 'section': 'Class Features',
                 'trackUses': True,

@@ -324,9 +324,15 @@ async def api_character_content_catalog(request: Request, rules_mode: str = "cas
             {
                 "id": str(row.get("id") or "").strip(),
                 "classId": class_id,
+                "parentClassId": str(row.get("parentClassId") or "").strip(),
                 "displayName": str(row.get("displayName") or "").strip(),
+                "flavorText": str(row.get("flavorText") or "").strip(),
                 "featureUnlocksByLevel": row.get("featureUnlocksByLevel")
                 if isinstance(row.get("featureUnlocksByLevel"), dict)
+                else {},
+                "features": row.get("features") if isinstance(row.get("features"), list) else [],
+                "featureDefinitions": row.get("featureDefinitions")
+                if isinstance(row.get("featureDefinitions"), dict)
                 else {},
             }
         )

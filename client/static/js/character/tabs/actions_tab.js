@@ -1001,6 +1001,24 @@
           classMechanics.indomitableUses != null ? ('Indomitable uses: ' + classMechanics.indomitableUses) : '',
         ].filter(Boolean).join(' • ')
       : '';
+    const pirateLine = _classKey(charData) === 'pirate'
+      ? [
+          classMechanics.swaggerUses != null ? ('Swagger Dice uses: ' + classMechanics.swaggerUses) : '',
+          classMechanics.swaggerDice ? ('Swagger die: ' + String(classMechanics.swaggerDice).toUpperCase()) : '',
+          classMechanics.trickOptions != null ? ('Dirty trick options: ' + classMechanics.trickOptions) : '',
+        ].filter(Boolean).join(' • ')
+      : '';
+    const pirateSubclassLine = _classKey(charData) === 'pirate'
+      ? (function () {
+          const subclass = _customSubclassKey(charData);
+          if (!subclass) return '';
+          if (subclass === 'corsair') return 'Corsair: duel pressure, boarding bursts, and reaction tempo should be obvious.';
+          if (subclass === 'privateer') return 'Privateer: command/support swagger should read as ally-facing tempo tools.';
+          if (subclass === 'smuggler') return 'Smuggler: escape tools, concealment, and slippery reaction play should stand out.';
+          if (subclass === 'dread captain') return 'Dread Captain: fear pressure, momentum punish, and intimidation rhythm should stand out.';
+          return '';
+        }())
+      : '';
     const fighterSubclassLine = _classKey(charData) === 'fighter'
       ? (function () {
           const subclass = _customSubclassKey(charData);
@@ -1033,6 +1051,8 @@
         ${druidLine ? `<div class="cs-combat-callout-copy">${_esc(druidLine)}</div>` : ''}
         ${fighterLine ? `<div class="cs-combat-callout-copy">${_esc(fighterLine)}</div>` : ''}
         ${fighterSubclassLine ? `<div class="cs-combat-callout-copy">${_esc(fighterSubclassLine)}</div>` : ''}
+        ${pirateLine ? `<div class="cs-combat-callout-copy">${_esc(pirateLine)}</div>` : ''}
+        ${pirateSubclassLine ? `<div class="cs-combat-callout-copy">${_esc(pirateSubclassLine)}</div>` : ''}
       </div>
       <div class="cs-combat-callout muted">
         <div class="cs-combat-callout-title">What should be visible</div>
