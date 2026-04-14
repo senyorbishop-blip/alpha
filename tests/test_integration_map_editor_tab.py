@@ -185,7 +185,7 @@ def test_fog_toggle_broadcasts_fog_toggle(monkeypatch):
         dm,
     ))
 
-    types = [msg["type"] for _, msg, _ in mgr._broadcasts]
+    types = [msg["type"] for _, msg, _ in mgr._broadcasts] + [msg["type"] for _, _, msg in mgr._sent]
     # The broadcast type is 'fog_state' (contains the full fog state payload)
     assert "fog_state" in types
 
@@ -237,10 +237,11 @@ def test_fog_paint_broadcasts_to_all_clients_including_dm(monkeypatch):
         dm,
     ))
 
-    assert len(mgr._broadcasts) > 0
-    _session_id, message, exclude_user = mgr._broadcasts[-1]
+    assert len(mgr._sent) > 0
+    _session_id, _user_id, message = mgr._sent[-1]
     assert message["type"] == "fog_update"
-    assert exclude_user is None  # DM must also receive
+    recipient_ids = {uid for _, uid, _ in mgr._sent}
+    assert dm.id in recipient_ids  # DM must also receive
 
 
 def test_fog_paint_reveal_correct_cells(monkeypatch):

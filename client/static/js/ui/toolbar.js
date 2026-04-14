@@ -51,6 +51,9 @@
     wrap.addEventListener('mousedown', (e) => {
       if (e.target === wrap || e.target.id === 'map-canvas') {
         if (env.document.getElementById('flyout-editor')?.classList.contains('open')) return;
+        const fogFlyoutOpen = env.document.getElementById('flyout-fog')?.classList.contains('open');
+        const fogMode = String((typeof env.getFogSystemMode === 'function' ? env.getFogSystemMode() : '') || '').toLowerCase();
+        if (fogFlyoutOpen && env.ROLE === 'dm' && !!env.fogEnabled && (fogMode === 'manual' || fogMode === 'hybrid')) return;
         closeAllFlyouts(env);
       }
     });
