@@ -1146,6 +1146,65 @@
     return base;
   }
 
+  function _beastMasterCompanionProfile(charData) {
+    const classKey = _classKey(charData);
+    const subclassKey = _customSubclassKey(charData);
+    if (classKey !== 'ranger' || subclassKey !== 'beast master') return null;
+    const frames = {
+      'primal-beast-land': { id: 'primal-beast-land', name: 'Primal Beast of the Land', tokenName: 'Beast Companion (Land)', hp: 25, ac: 13, speed: 40, size: 'medium' },
+      'primal-beast-sea': { id: 'primal-beast-sea', name: 'Primal Beast of the Sea', tokenName: 'Beast Companion (Sea)', hp: 22, ac: 13, speed: 40, size: 'medium' },
+      'primal-beast-sky': { id: 'primal-beast-sky', name: 'Primal Beast of the Sky', tokenName: 'Beast Companion (Sky)', hp: 20, ac: 13, speed: 10, size: 'small' },
+    };
+    let selectedChoice = '';
+    const classes = _safeArray(charData && charData.classes);
+    classes.forEach(function (cl) {
+      const clSubclass = _firstText(cl && cl.subclass, cl && cl.subclassName, '').toLowerCase().replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (clSubclass !== 'beast master') return;
+      const picks = _safeArray(cl && cl.selectedFeatures);
+      picks.forEach(function (pick) {
+        const pickId = String(pick && pick.id || '').toLowerCase();
+        if (pickId !== 'beast-master-rangers-companion') return;
+        selectedChoice = _firstText(pick && pick.selectedChoice, pick && pick.choiceId, '').toLowerCase();
+      });
+    });
+    if (!selectedChoice) {
+      const features = _featureSourceEntries(charData);
+      const names = features.map(function (entry) { return String(_firstText(entry && entry.name, entry && entry.label, '')).toLowerCase(); });
+      if (names.some(function (name) { return name.indexOf('primal beast') >= 0 && name.indexOf('land') >= 0; })) selectedChoice = 'primal-beast-land';
+      else if (names.some(function (name) { return name.indexOf('primal beast') >= 0 && name.indexOf('sea') >= 0; })) selectedChoice = 'primal-beast-sea';
+      else if (names.some(function (name) { return name.indexOf('primal beast') >= 0 && name.indexOf('sky') >= 0; })) selectedChoice = 'primal-beast-sky';
+    }
+    const picked = frames[selectedChoice] || frames['primal-beast-land'];
+    return {
+      id: picked.id,
+      name: picked.name,
+      tokenName: picked.tokenName,
+      hp: picked.hp,
+      maxHp: picked.hp,
+      ac: picked.ac,
+      speed: picked.speed,
+      size: picked.size,
+      source: 'beast_master_sheet',
+    };
+  }
+
+  function _renderBeastMasterCompanionControls(companion) {
+    if (!companion) return '';
+    return `<div class="cs-combat-callout-grid">
+      <div class="cs-combat-callout">
+        <div class="cs-combat-callout-title">Beast Master Companion</div>
+        <div class="cs-combat-callout-copy">${_esc(companion.name)} is selected on this sheet. Deploy it as a real in-session token when needed.</div>
+      </div>
+      <div class="cs-combat-callout muted">
+        <div class="cs-combat-callout-title">Companion deployment</div>
+        <div class="cs-combat-callout-copy">Frame: ${_esc(companion.name)} • HP ${_esc(String(companion.hp))} • AC ${_esc(String(companion.ac))} • Speed ${_esc(String(companion.speed))} ft</div>
+        <div style="margin-top:.5rem;display:flex;gap:.4rem;flex-wrap:wrap;">
+          <button type="button" class="cs-launch-btn" data-beast-master-companion-spawn="1">Place companion token</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
   function _bindDetails(container, model) {
     container.addEventListener('click', function (e) {
       const useBtn = e.target.closest('[data-action-use]');
@@ -1172,6 +1231,17 @@
         e.stopPropagation();
         if (global.CSContainer && typeof global.CSContainer.openMapPanelFromSheet === 'function') {
           global.CSContainer.openMapPanelFromSheet(String(mapJump.getAttribute('data-map-panel-open') || ''));
+        }
+        return;
+      }
+      const companionSpawnBtn = e.target.closest('[data-beast-master-companion-spawn]');
+      if (companionSpawnBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (model.beastMasterCompanion && typeof global.placeBeastMasterCompanionToken === 'function') {
+          global.placeBeastMasterCompanionToken(model.beastMasterCompanion);
+        } else if (typeof global.showToast === 'function') {
+          global.showToast('Companion token deployment is unavailable in this runtime.');
         }
         return;
       }
@@ -1221,6 +1291,7 @@
     const native = _nativeActionGroups(charData || {});
     const resources = _resourceRows(charData || {});
     const textAttacks = _parseTextAttacks(charData || {});
+    const beastMasterCompanion = _beastMasterCompanionProfile(charData || {});
     const selectedTarget = charData && charData.selectedTarget ? charData.selectedTarget : null;
     const concentration = _firstText(charData && charData.activeConcentration, '');
     const totalActions = quickAttacks.length + native.actions.length + native.bonusActions.length + native.reactions.length + textAttacks.length;
@@ -1244,6 +1315,7 @@
       </div>
       ${_renderSurfaceNavButtons()}
       ${_renderCustomSurfaceCallout(charData || {}, resources)}
+      ${_renderBeastMasterCompanionControls(beastMasterCompanion)}
       ${_renderSection('Quick Attacks', quickAttacks, { emptyLabel: 'No quick attack cards are loaded yet.' })}
       ${_renderSection('Native Actions', native.actions, { emptyLabel: 'No structured main actions are loaded yet.' })}
       ${_renderSection('Bonus Actions', native.bonusActions, { emptyLabel: 'No structured bonus actions are loaded yet.' })}
@@ -1251,7 +1323,7 @@
       ${_renderResourceSection(resources)}
     `;
 
-    _bindDetails(container, { quickAttacks, native, resources, textAttacks });
+    _bindDetails(container, { quickAttacks, native, resources, textAttacks, beastMasterCompanion });
   }
 
   global.ActionsTab = { initActionsTab };
