@@ -245,9 +245,9 @@
     },
     paladin: {
       role: 'Burst defender',
-      loop: 'Start with weapon attacks, then confirm Lay on Hands, smite-related actions, and divine resource tracking.',
-      testOrder: ['Attack cards', 'Lay on Hands', 'Spell / smite surface'],
-      verify: ['Lay on Hands', 'Spell slots', 'Divine actions', 'Aura-facing notes'],
+      loop: 'Start with weapon attacks, then confirm Divine Smite timing, Lay on Hands, Channel Divinity options, and aura positioning cues.',
+      testOrder: ['Attack cards + smite hook', 'Lay on Hands + Channel Divinity', 'Spell slot / aura surface'],
+      verify: ['Lay on Hands', 'Channel Divinity', 'Spell slots', 'Aura-facing notes'],
     },
     ranger: {
       role: 'Hunter / skirmisher',

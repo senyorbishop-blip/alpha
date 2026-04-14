@@ -8,7 +8,7 @@
     "3": [
       "ancients-tenets",
       "ancients-natures-wrath",
-      "ancients-vow-of-enmity"
+      "ancients-turn-the-faithless"
     ],
     "7": [
       "ancients-aura-of-warding"
@@ -35,9 +35,9 @@
     },
     {
       "level": 3,
-      "id": "ancients-vow-of-enmity",
-      "displayName": "Channel Divinity: Vow of Enmity",
-      "description": "As a sacred challenge, you gain advantage on attacks against a chosen foe for 1 minute."
+      "id": "ancients-turn-the-faithless",
+      "displayName": "Channel Divinity: Turn the Faithless",
+      "description": "As Channel Divinity, present your holy symbol to force fey and fiends to flee; they must make a Wisdom save or become turned for 1 minute."
     },
     {
       "level": 7,
@@ -82,23 +82,9 @@
         "resource"
       ]
     },
-    "ancients-vow-of-enmity": {
-      "section": "Bonus Actions",
-      "type": "bonus action",
-      "resourceName": "Channel Divinity",
-      "trackUses": true,
-      "summary": "Mark a single enemy for relentless pursuit so your pressure against that target becomes much more reliable.",
-      "description": "Vow of Enmity is the focused-duelist side of the subclass. It should feel like picking the creature that matters most and refusing to let it breathe.",
-      "duration": "1 minute",
-      "tags": [
-        "subclass",
-        "combat",
-        "resource"
-      ]
-    },
     "ancients-aura-of-warding": {
       "summary": "Your aura blunts hostile magic, making your group far harder to break with spells alone.",
-      "description": "Aura of Warding is one of the subclass’s biggest team defenses. In spell-heavy fights it can reshape how much punishment the party can realistically absorb.",
+      "description": "Aura of Warding is one of the subclass\u2019s biggest team defenses. In spell-heavy fights it can reshape how much punishment the party can realistically absorb.",
       "tags": [
         "subclass",
         "aura",
@@ -123,6 +109,22 @@
         "subclass",
         "capstone",
         "nature"
+      ]
+    },
+    "ancients-turn-the-faithless": {
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Channel Divinity",
+      "trackUses": true,
+      "summary": "Drive back fey and fiend threats with a radiant rebuke that protects your formation.",
+      "description": "Turn the Faithless is the anti-corruption side of the Ancients oath. It is strongest when extraplanar enemies pressure your line and you need breathing room immediately.",
+      "save": "Wisdom save",
+      "duration": "Up to 1 minute",
+      "tags": [
+        "subclass",
+        "control",
+        "resource",
+        "anti-fiend"
       ]
     }
   }

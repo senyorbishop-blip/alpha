@@ -78,7 +78,18 @@
       "2nd": 3,
       "3rd": 3
     },
+    "12": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3
+    },
     "13": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 1
+    },
+    "14": {
       "1st": 4,
       "2nd": 3,
       "3rd": 3,
@@ -90,7 +101,20 @@
       "3rd": 3,
       "4th": 2
     },
+    "16": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 2
+    },
     "17": {
+      "1st": 4,
+      "2nd": 3,
+      "3rd": 3,
+      "4th": 3,
+      "5th": 1
+    },
+    "18": {
       "1st": 4,
       "2nd": 3,
       "3rd": 3,
@@ -126,7 +150,8 @@
       "classMechanics": {
         "layOnHandsPool": 5,
         "extraAttacks": 1,
-        "auraRangeFeet": 0
+        "auraRangeFeet": 0,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1"
       },
       "unlockIds": [
         "paladin-lay-on-hands",
@@ -144,7 +169,9 @@
       "classMechanics": {
         "layOnHandsPool": 10,
         "extraAttacks": 1,
-        "auraRangeFeet": 0
+        "auraRangeFeet": 0,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 1
       },
       "unlockIds": [
         "paladin-fighting-style",
@@ -161,7 +188,9 @@
       "classMechanics": {
         "layOnHandsPool": 15,
         "extraAttacks": 1,
-        "auraRangeFeet": 0
+        "auraRangeFeet": 0,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 1
       },
       "unlockIds": [
         "paladin-sacred-oath-subclass",
@@ -178,10 +207,12 @@
       "classMechanics": {
         "layOnHandsPool": 20,
         "extraAttacks": 1,
-        "auraRangeFeet": 0
+        "auraRangeFeet": 0,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 1
       },
       "unlockIds": [
-        "paladin-l4-1"
+        "paladin-ability-score-improvement"
       ]
     },
     {
@@ -194,7 +225,9 @@
       "classMechanics": {
         "layOnHandsPool": 25,
         "extraAttacks": 2,
-        "auraRangeFeet": 0
+        "auraRangeFeet": 0,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 1
       },
       "unlockIds": [
         "paladin-extra-attack",
@@ -211,11 +244,13 @@
       "classMechanics": {
         "layOnHandsPool": 30,
         "extraAttacks": 2,
-        "auraRangeFeet": 10
+        "auraRangeFeet": 10,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 1
       },
       "unlockIds": [
-        "paladin-l6-1",
-        "paladin-l6-2"
+        "paladin-aura-of-protection",
+        "paladin-subclass-feature-6"
       ]
     },
     {
@@ -227,10 +262,12 @@
       "classMechanics": {
         "layOnHandsPool": 35,
         "extraAttacks": 2,
-        "auraRangeFeet": 10
+        "auraRangeFeet": 10,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 1
       },
       "unlockIds": [
-        "paladin-l7-1"
+        "paladin-aura-of-courage-10ft"
       ]
     },
     {
@@ -243,10 +280,12 @@
       "classMechanics": {
         "layOnHandsPool": 40,
         "extraAttacks": 2,
-        "auraRangeFeet": 10
+        "auraRangeFeet": 10,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 1
       },
       "unlockIds": [
-        "paladin-l8-1"
+        "paladin-ability-score-improvement"
       ]
     },
     {
@@ -258,10 +297,12 @@
       "classMechanics": {
         "layOnHandsPool": 45,
         "extraAttacks": 2,
-        "auraRangeFeet": 10
+        "auraRangeFeet": 10,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 1
       },
       "unlockIds": [
-        "paladin-l9-1"
+        "paladin-aura-improvements"
       ]
     },
     {
@@ -274,26 +315,32 @@
       "classMechanics": {
         "layOnHandsPool": 50,
         "extraAttacks": 2,
-        "auraRangeFeet": 10
+        "auraRangeFeet": 10,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 1
       },
       "unlockIds": [
-        "paladin-l10-1",
-        "paladin-l10-2"
+        "paladin-aura-of-courage-extension",
+        "paladin-subclass-feature-10"
       ]
     },
     {
       "level": 11,
       "proficiencyBonus": 4,
       "features": [
-        "Radiant Strikes"
+        "Radiant Strikes",
+        "Channel Divinity (2 uses)"
       ],
       "classMechanics": {
         "layOnHandsPool": 55,
         "extraAttacks": 2,
-        "auraRangeFeet": 10
+        "auraRangeFeet": 10,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 2
       },
       "unlockIds": [
-        "paladin-radiant-strikes"
+        "paladin-radiant-strikes",
+        "paladin-channel-divinity-2-uses"
       ]
     },
     {
@@ -306,10 +353,12 @@
       "classMechanics": {
         "layOnHandsPool": 60,
         "extraAttacks": 2,
-        "auraRangeFeet": 10
+        "auraRangeFeet": 10,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 2
       },
       "unlockIds": [
-        "paladin-l12-1"
+        "paladin-ability-score-improvement"
       ]
     },
     {
@@ -321,10 +370,12 @@
       "classMechanics": {
         "layOnHandsPool": 65,
         "extraAttacks": 2,
-        "auraRangeFeet": 10
+        "auraRangeFeet": 10,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 2
       },
       "unlockIds": [
-        "paladin-l13-1"
+        "paladin-4th-level-spell-slots"
       ]
     },
     {
@@ -336,7 +387,9 @@
       "classMechanics": {
         "layOnHandsPool": 70,
         "extraAttacks": 2,
-        "auraRangeFeet": 10
+        "auraRangeFeet": 10,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 2
       },
       "unlockIds": [
         "paladin-restoring-touch"
@@ -351,10 +404,12 @@
       "classMechanics": {
         "layOnHandsPool": 75,
         "extraAttacks": 2,
-        "auraRangeFeet": 10
+        "auraRangeFeet": 10,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 2
       },
       "unlockIds": [
-        "paladin-l15-1"
+        "paladin-subclass-feature-15"
       ]
     },
     {
@@ -367,10 +422,12 @@
       "classMechanics": {
         "layOnHandsPool": 80,
         "extraAttacks": 2,
-        "auraRangeFeet": 10
+        "auraRangeFeet": 10,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 2
       },
       "unlockIds": [
-        "paladin-l16-1"
+        "paladin-ability-score-improvement"
       ]
     },
     {
@@ -382,10 +439,12 @@
       "classMechanics": {
         "layOnHandsPool": 85,
         "extraAttacks": 2,
-        "auraRangeFeet": 30
+        "auraRangeFeet": 30,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 2
       },
       "unlockIds": [
-        "paladin-l17-1"
+        "paladin-aura-of-protection-30ft"
       ]
     },
     {
@@ -397,10 +456,12 @@
       "classMechanics": {
         "layOnHandsPool": 90,
         "extraAttacks": 2,
-        "auraRangeFeet": 30
+        "auraRangeFeet": 30,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 2
       },
       "unlockIds": [
-        "paladin-l18-1"
+        "paladin-aura-of-courage-30ft"
       ]
     },
     {
@@ -413,7 +474,9 @@
       "classMechanics": {
         "layOnHandsPool": 95,
         "extraAttacks": 2,
-        "auraRangeFeet": 30
+        "auraRangeFeet": 30,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 2
       },
       "unlockIds": [
         "paladin-epic-boon"
@@ -428,10 +491,12 @@
       "classMechanics": {
         "layOnHandsPool": 100,
         "extraAttacks": 2,
-        "auraRangeFeet": 30
+        "auraRangeFeet": 30,
+        "spellsPreparedFormula": "level_plus_cha_mod_min_1",
+        "channelDivinityUses": 2
       },
       "unlockIds": [
-        "paladin-l20-1"
+        "paladin-subclass-capstone"
       ]
     }
   ],
@@ -455,23 +520,30 @@
       "summary": "Prepare divine spells that reinforce your oath with healing, protection, control, and burst damage.",
       "description": "Paladin spellcasting supports the class rather than replacing its martial core. Your slots are precious, your prepared list is narrower than a full caster's, and every spell choice should feel like a statement about how your oath fights and protects.\n\nIn play, this means the class swings between weapon pressure and timely divine utility instead of trying to cast every round.",
       "tags": [
-        "spellcasting",
         "divine",
-        "support",
-        "martial"
-      ]
+        "martial",
+        "prepared-casting",
+        "spellcasting",
+        "support"
+      ],
+      "effect": "Prepare paladin spells using Charisma each day; spend slots for spells or Divine Smite.",
+      "usage": "Prepared spells and slot counts update by level; paladins prepare level + Charisma modifier spells (minimum 1)."
     },
     "paladin-divine-smite": {
       "summary": "Turn a weapon hit into explosive radiant punishment by spending a spell slot after you know you connected.",
       "description": "Divine Smite is the paladin's iconic damage spike. Because it triggers from a hit, it rewards discipline and timing instead of blind slot dumping.\n\nUse it when a dangerous target must drop now, when a critical hit lands, or when radiant burst matters more than conserving resources for later.",
-      "section": "Class Features",
+      "section": "Actions",
       "type": "special",
-      "effect": "Convert a landed weapon hit into extra radiant damage by spending a spell slot.",
+      "effect": "Add radiant burst damage based on the slot spent; strongest when used on critical hits or priority targets.",
       "tags": [
         "combat",
         "burst",
         "divine"
-      ]
+      ],
+      "trigger": "After you hit with a melee weapon or unarmed strike.",
+      "resourceName": "Spell Slots",
+      "trackUses": true,
+      "usage": "Spend 1 spell slot when a hit lands."
     },
     "paladin-fighting-style": {
       "summary": "Choose the combat discipline that shapes how your oath actually fights on the field.",
@@ -577,6 +649,120 @@
         "capstone",
         "endgame"
       ]
+    },
+    "paladin-ability-score-improvement": {
+      "summary": "Improve core abilities or take a feat to sharpen your oath for the next tier of play.",
+      "description": "Ability Score Improvement is your build checkpoint. Paladins can use it to raise Strength for weapon pressure, Charisma for aura and spell support, or Constitution for frontline staying power.",
+      "tags": [
+        "build",
+        "progression",
+        "customization"
+      ]
+    },
+    "paladin-aura-of-courage-10ft": {
+      "summary": "Allies within 10 feet can stand firm against fear because your oath steadies them.",
+      "description": "Aura of Courage means your position can protect nearby allies from fear-driven control effects. Keep the party close when morale attacks are expected.",
+      "tags": [
+        "aura",
+        "support",
+        "defense"
+      ]
+    },
+    "paladin-subclass-feature-6": {
+      "summary": "Your oath path grants a second defining tool, so subclass identity starts showing up every fight.",
+      "description": "At this tier your Sacred Oath should feel distinct in actual turns, not just in flavor text. Check your oath features and Channel Divinity options together.",
+      "tags": [
+        "subclass",
+        "progression",
+        "identity"
+      ]
+    },
+    "paladin-aura-improvements": {
+      "summary": "Your protective presence reaches farther across the battlefield, letting more allies benefit from your oath.",
+      "description": "This level expands the practical footprint of your aura package. It should be visible in the sheet and token support because it changes how the party wants to position around you.",
+      "tags": [
+        "aura",
+        "support",
+        "upgrade"
+      ]
+    },
+    "paladin-aura-of-courage-extension": {
+      "summary": "Your courage aura scales so anti-fear support is easier to maintain while the group spreads out.",
+      "description": "This extension widens your anti-fear support coverage, reducing positioning friction for allies during high-mobility encounters.",
+      "tags": [
+        "aura",
+        "support",
+        "upgrade"
+      ]
+    },
+    "paladin-subclass-feature-10": {
+      "summary": "Your oath grants another mid-tier payoff that should be visible in your active combat plan.",
+      "description": "Level 10 subclass gains are where oath identity must feel mechanically real in routine play, not only in capstones.",
+      "tags": [
+        "subclass",
+        "progression"
+      ]
+    },
+    "paladin-channel-divinity-2-uses": {
+      "summary": "You can call on Channel Divinity twice before resting, letting oath actions show up more often each adventuring day.",
+      "description": "This upgrade increases tactical freedom: use Channel Divinity earlier without feeling forced to hoard your oath options for a single emergency.",
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Channel Divinity",
+      "trackUses": true,
+      "usage": "2 uses available.",
+      "recovery": "Regain uses on a Short or Long Rest.",
+      "tags": [
+        "resource",
+        "divine",
+        "subclass"
+      ]
+    },
+    "paladin-4th-level-spell-slots": {
+      "summary": "Higher-tier divine slots expand both your prepared spell impact and your smite ceiling.",
+      "description": "Fourth-level slots are a major decision point for paladins: cast a premium support/control spell, unleash a heavier smite, or hold the slot for later attrition.",
+      "tags": [
+        "spellcasting",
+        "progression",
+        "smite"
+      ]
+    },
+    "paladin-subclass-feature-15": {
+      "summary": "Your oath grants a late-game signature feature that separates paladin archetypes sharply.",
+      "description": "By this level, subclass identity should dominate your tactical style. Your Devotion, Ancients, or Vengeance plan should be obvious from your feature list.",
+      "tags": [
+        "subclass",
+        "identity",
+        "late-game"
+      ]
+    },
+    "paladin-aura-of-protection-30ft": {
+      "summary": "Aura of Protection expands to 30 feet, making your saving-throw support a large-zone battlefield anchor.",
+      "description": "This is a major team-defense spike. Wider aura range changes party spacing and lets allies benefit from your presence in larger engagements.",
+      "tags": [
+        "aura",
+        "support",
+        "defense",
+        "upgrade"
+      ]
+    },
+    "paladin-aura-of-courage-30ft": {
+      "summary": "Aura of Courage expands to 30 feet so fear immunity covers most of the active formation.",
+      "description": "The wider anti-fear aura keeps your team stable during chaotic fights and reduces the risk of allies being forced out of position by fear effects.",
+      "tags": [
+        "aura",
+        "support",
+        "upgrade"
+      ]
+    },
+    "paladin-subclass-capstone": {
+      "summary": "Your Sacred Oath reaches its final expression with a class-defining capstone feature.",
+      "description": "Subclass capstone is the top-end payoff for your oath path. At level 20, Devotion, Ancients, and Vengeance should feel unmistakably different in live play.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "identity"
+      ]
     }
   },
   "levelUnlockIds": {
@@ -594,58 +780,59 @@
       "paladin-divine-health"
     ],
     "4": [
-      "paladin-l4-1"
+      "paladin-ability-score-improvement"
     ],
     "5": [
       "paladin-extra-attack",
       "paladin-faithful-steed"
     ],
     "6": [
-      "paladin-l6-1",
-      "paladin-l6-2"
+      "paladin-aura-of-protection",
+      "paladin-subclass-feature-6"
     ],
     "7": [
-      "paladin-l7-1"
+      "paladin-aura-of-courage-10ft"
     ],
     "8": [
-      "paladin-l8-1"
+      "paladin-ability-score-improvement"
     ],
     "9": [
-      "paladin-l9-1"
+      "paladin-aura-improvements"
     ],
     "10": [
-      "paladin-l10-1",
-      "paladin-l10-2"
+      "paladin-aura-of-courage-extension",
+      "paladin-subclass-feature-10"
     ],
     "11": [
-      "paladin-radiant-strikes"
+      "paladin-radiant-strikes",
+      "paladin-channel-divinity-2-uses"
     ],
     "12": [
-      "paladin-l12-1"
+      "paladin-ability-score-improvement"
     ],
     "13": [
-      "paladin-l13-1"
+      "paladin-4th-level-spell-slots"
     ],
     "14": [
       "paladin-restoring-touch"
     ],
     "15": [
-      "paladin-l15-1"
+      "paladin-subclass-feature-15"
     ],
     "16": [
-      "paladin-l16-1"
+      "paladin-ability-score-improvement"
     ],
     "17": [
-      "paladin-l17-1"
+      "paladin-aura-of-protection-30ft"
     ],
     "18": [
-      "paladin-l18-1"
+      "paladin-aura-of-courage-30ft"
     ],
     "19": [
       "paladin-epic-boon"
     ],
     "20": [
-      "paladin-l20-1"
+      "paladin-subclass-capstone"
     ]
   },
   "progressionSummary": [
@@ -678,7 +865,7 @@
       "level": 4,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "paladin-l4-1"
+        "paladin-ability-score-improvement"
       ]
     },
     {
@@ -693,58 +880,59 @@
       "level": 6,
       "summary": "Aura of Protection (10 ft), Subclass Feature.",
       "unlockIds": [
-        "paladin-l6-1",
-        "paladin-l6-2"
+        "paladin-aura-of-protection",
+        "paladin-subclass-feature-6"
       ]
     },
     {
       "level": 7,
       "summary": "Aura of Courage (10 ft).",
       "unlockIds": [
-        "paladin-l7-1"
+        "paladin-aura-of-courage-10ft"
       ]
     },
     {
       "level": 8,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "paladin-l8-1"
+        "paladin-ability-score-improvement"
       ]
     },
     {
       "level": 9,
       "summary": "Aura Improvements.",
       "unlockIds": [
-        "paladin-l9-1"
+        "paladin-aura-improvements"
       ]
     },
     {
       "level": 10,
       "summary": "Aura of Courage Extension, Subclass Feature.",
       "unlockIds": [
-        "paladin-l10-1",
-        "paladin-l10-2"
+        "paladin-aura-of-courage-extension",
+        "paladin-subclass-feature-10"
       ]
     },
     {
       "level": 11,
-      "summary": "Radiant Strikes.",
+      "summary": "Radiant Strikes, Channel Divinity (2 uses).",
       "unlockIds": [
-        "paladin-radiant-strikes"
+        "paladin-radiant-strikes",
+        "paladin-channel-divinity-2-uses"
       ]
     },
     {
       "level": 12,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "paladin-l12-1"
+        "paladin-ability-score-improvement"
       ]
     },
     {
       "level": 13,
       "summary": "4th-level Spell Slots.",
       "unlockIds": [
-        "paladin-l13-1"
+        "paladin-4th-level-spell-slots"
       ]
     },
     {
@@ -758,28 +946,28 @@
       "level": 15,
       "summary": "Subclass Feature.",
       "unlockIds": [
-        "paladin-l15-1"
+        "paladin-subclass-feature-15"
       ]
     },
     {
       "level": 16,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "paladin-l16-1"
+        "paladin-ability-score-improvement"
       ]
     },
     {
       "level": 17,
       "summary": "Aura of Protection (30 ft).",
       "unlockIds": [
-        "paladin-l17-1"
+        "paladin-aura-of-protection-30ft"
       ]
     },
     {
       "level": 18,
       "summary": "Aura of Courage (30 ft).",
       "unlockIds": [
-        "paladin-l18-1"
+        "paladin-aura-of-courage-30ft"
       ]
     },
     {
@@ -793,7 +981,7 @@
       "level": 20,
       "summary": "Subclass Capstone.",
       "unlockIds": [
-        "paladin-l20-1"
+        "paladin-subclass-capstone"
       ]
     }
   ],
