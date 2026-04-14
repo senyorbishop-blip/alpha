@@ -53,58 +53,67 @@
       "description": "You emit bright sunlight in a 60-foot aura. Enemies in the aura have disadvantage on saving throws against fire and radiant spells you cast."
     }
   ],
-  "featureDefinitions": {
-    "light-domain-warding-flare": {
-      "section": "Reactions",
-      "type": "reaction",
-      "summary": "Flash protective light into an attacker’s eyes to make a hit less certain.",
-      "description": "Warding Flare is a reactive defense button for keeping yourself or, later, an ally upright. It is the Light cleric version of saying “not so fast” to a dangerous swing.",
-      "tags": [
-        "subclass",
-        "reaction",
-        "defense",
-        "light"
+  “featureDefinitions”: {
+    “light-warding-flare”: {
+      “section”: “Reactions”,
+      “type”: “reaction”,
+      “summary”: “Flash protective light into an attacker’s eyes to impose disadvantage on one incoming attack.”,
+      “description”: “When a creature within 30 feet makes an attack roll, you use your reaction to blind it momentarily with a burst of radiance. The attacker makes the roll at disadvantage. You have a number of uses equal to your Charisma modifier per long rest. At level 6, Improved Flare extends this to protect allies from attacks targeting them, not just yourself.”,
+      “usage”: “Charisma modifier uses per Long Rest”,
+      “recovery”: “Regain all uses on a Long Rest.”,
+      “tags”: [
+        “subclass”,
+        “reaction”,
+        “defense”,
+        “light”
       ]
     },
-    "light-domain-radiance-of-the-dawn": {
-      "section": "Actions",
-      "type": "action",
-      "resourceName": "Channel Divinity",
-      "trackUses": true,
-      "summary": "Explode with sunlight-like force to clear darkness and punish clustered enemies.",
-      "description": "Radiance of the Dawn is the Light Domain’s answer to swarms, shadows, and packed formations. Use it to seize space, reveal hidden pressure, and force the battlefield to respect the cleric’s presence.",
-      "tags": [
-        "subclass",
-        "damage",
-        "light",
-        "resource"
+    “light-radiance-of-the-dawn”: {
+      “section”: “Actions”,
+      “type”: “action”,
+      “resourceName”: “Channel Divinity”,
+      “trackUses”: true,
+      “summary”: “Burst with sunlight-force to dispel magical darkness and punish clustered enemies with radiant damage.”,
+      “description”: “Radiance of the Dawn dispels all magical darkness within 30 feet and forces hostile creatures in range to make a Constitution saving throw. On a failure they take 2d10 + your cleric level in radiant damage (half on success). Strong against undead, shadow-based enemies, and tightly packed formations. Use it early when the enemy cluster is densest.”,
+      “range”: “30 feet”,
+      “save”: “Constitution saving throw”,
+      “tags”: [
+        “subclass”,
+        “damage”,
+        “light”,
+        “resource”
       ]
     },
-    "light-domain-improved-flare": {
-      "summary": "Your blinding defensive flare starts protecting allies as well as yourself.",
-      "tags": [
-        "subclass",
-        "defense",
-        "support",
-        "light"
+    “light-improved-flare”: {
+      “summary”: “Your Warding Flare now protects allies as well as yourself — react to any attack within 30 feet.”,
+      “description”: “Improved Flare removes the restriction that Warding Flare could only be used against attacks targeting you. Now any creature within 30 feet that is attacked becomes a valid target for your reaction flash. This makes the Light cleric a reactive bodyguard as well as an attacker.”,
+      “tags”: [
+        “subclass”,
+        “defense”,
+        “support”,
+        “light”,
+        “passive”
       ]
     },
-    "light-domain-potent-spellcasting": {
-      "summary": "Your offensive cantrips hit harder, keeping radiant pressure online between bigger spell slots.",
-      "tags": [
-        "subclass",
-        "spellcasting",
-        "damage"
+    “light-potent-spellcasting”: {
+      “summary”: “Add your Wisdom modifier to the damage of all cleric cantrips, keeping radiant pressure online between major spell slots.”,
+      “description”: “Potent Spellcasting adds your Wisdom modifier to any damage dealt by your cleric cantrips. With a +4 or +5 Wisdom bonus, Sacred Flame or Word of Radiance go from fragile filler to reliable pressure options. This is the Light domain’s answer to the level 8 slot — consistent damage that doesn’t cost resources.”,
+      “tags”: [
+        “subclass”,
+        “spellcasting”,
+        “damage”,
+        “passive”
       ]
     },
-    "light-domain-corona-of-light": {
-      "summary": "Your presence makes hostile creatures more vulnerable to the Light domain’s save-based magical pressure.",
-      "description": "Corona of Light turns the cleric into a beacon that makes later magic stick more often. It rewards pressing advantage once the fight is already centered on you.",
-      "tags": [
-        "subclass",
-        "light",
-        "control",
-        "capstone"
+    “light-corona-of-light”: {
+      “summary”: “You emit 60-foot bright sunlight. Enemies in the aura have disadvantage on saves against your fire and radiant spells.”,
+      “description”: “Corona of Light is a persistent aura that creates a 60-foot radius of bright sunlight and causes enemies inside it to make all saving throws against your fire and radiant spells at disadvantage. Combined with your spell list and Radiance of the Dawn, this turns the late-game Light cleric into a severe magical threat — every area denial and burst spell hits harder while the aura persists.”,
+      “tags”: [
+        “subclass”,
+        “light”,
+        “control”,
+        “capstone”,
+        “passive”
       ]
     }
   }

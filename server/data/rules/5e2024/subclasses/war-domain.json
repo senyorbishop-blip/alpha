@@ -61,33 +61,37 @@
     }
   ],
   "featureDefinitions": {
-    "war-domain-bonus-proficiency": {
-      "summary": "Start ready for a frontline battle-priest style with sturdier equipment expectations.",
+    "war-bonus-proficiency": {
+      "summary": "Gain heavy armor and martial weapon proficiency, establishing the War cleric’s frontline battle-priest identity from level 1.",
+      "description": "Heavy armor proficiency and martial weapon access fundamentally change how the War cleric plays. You can wade into melee wearing plate, use a weapon that deals real damage on off-turns, and feel like a credible frontline threat rather than a caster who happens to wear medium armor.",
       "tags": [
         "subclass",
         "combat",
         "defense"
       ]
     },
-    "war-domain-war-priest": {
+    "war-war-priest": {
       "section": "Bonus Actions",
       "type": "bonus action",
-      "summary": "Turn martial momentum into extra weapon pressure during the rounds that matter most.",
-      "description": "War Priest helps the domain feel like a genuine battle cleric instead of a caster wearing armor. It rewards stepping into weapon range and staying involved in physical offense.",
+      "summary": "After taking the Attack action, make one additional weapon attack as a bonus action — limited uses per long rest.",
+      "description": "War Priest lets you spend a bonus action on an extra weapon attack whenever you take the Attack action. You have Wisdom modifier uses per long rest. This is what makes the War cleric feel genuinely dangerous in melee rounds instead of just surviving. Use it when a weapon turn is worth more than a bonus-action spell.",
       "resourceName": "War Priest",
       "trackUses": true,
+      "usage": "Wisdom modifier uses per Long Rest",
+      "recovery": "Regain all uses on a Long Rest.",
       "tags": [
         "subclass",
         "combat",
         "resource"
       ]
     },
-    "war-domain-guided-strike": {
+    "war-guided-strike": {
       "section": "Actions",
       "type": "action",
       "resourceName": "Channel Divinity",
       "trackUses": true,
-      "summary": "Invoke divine certainty to turn an important attack into a much more reliable hit.",
+      "summary": "When you miss an attack roll, invoke divine guidance to add +10 to the roll, likely converting a miss into a hit.",
+      "description": "Guided Strike turns a miss into a hit by adding +10 to the attack roll after the fact. A +10 swing will convert most near-misses into hits. Use it on high-value attacks or when a hit matters for battlefield momentum. You can also use this on your own attack roll as a reaction through War God’s Blessing for allies.",
       "tags": [
         "subclass",
         "combat",
@@ -95,12 +99,14 @@
         "accuracy"
       ]
     },
-    "war-domain-war-gods-blessing": {
+    "war-wars-gods-blessing": {
       "section": "Reactions",
       "type": "reaction",
       "resourceName": "Channel Divinity",
       "trackUses": true,
-      "summary": "Use divine warcraft to help an ally land the attack that matters.",
+      "summary": "When an ally within 30 feet misses an attack, use your reaction and Channel Divinity to grant them +10 to the roll.",
+      "description": "War God’s Blessing extends the War Domain’s accuracy bonus to your allies. When an ally within 30 feet misses an attack roll, your reaction lets you intervene with divine guidance and add +10 to the roll, potentially converting it to a hit. This is a strong reaction spend when the ally was targeting a high-value threat.",
+      "range": "30 feet",
       "tags": [
         "subclass",
         "support",
@@ -108,21 +114,23 @@
         "resource"
       ]
     },
-    "war-domain-divine-strike": {
-      "summary": "Add extra weapon damage so the domain’s martial identity stays real as levels rise.",
+    "war-divine-strike": {
+      "summary": "Once per turn on a weapon hit, add extra damage of your deity’s weapon type to keep martial pressure meaningful.",
+      "description": "War Domain’s Divine Strike adds extra damage when you hit with a weapon. At level 8 it is 1d8 extra; at level 14 it scales to 2d8. The damage type reflects your deity. This keeps weapon turns valuable even as spell slots become more plentiful, reinforcing the War cleric’s hybrid identity.",
       "tags": [
         "subclass",
         "combat",
         "damage"
       ]
     },
-    "war-domain-avatar-of-battle": {
-      "summary": "You become much harder to overwhelm in the middle of a brutal melee.",
-      "description": "Avatar of Battle is the late-game payoff for the heavily armored war-priest fantasy. It should read as a real survivability jump, not only a line of resistance text.",
+    "war-avatar-of-battle": {
+      "summary": "Gain resistance to bludgeoning, piercing, and slashing damage from nonmagical weapons, dramatically improving frontline durability.",
+      "description": "Avatar of Battle gives the War cleric resistance to the three physical damage types from nonmagical sources. On the frontline, where most enemy attacks are nonmagical weapon swings, this halves incoming damage from the majority of attacks. It transforms the War cleric from a durable melee caster into a genuinely hard-to-kill battle priest.",
       "tags": [
         "subclass",
         "defense",
-        "capstone"
+        "capstone",
+        "passive"
       ]
     }
   }
