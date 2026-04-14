@@ -136,6 +136,76 @@ _SUBCLASS_SPELL_GRANTS: dict[str, dict[str, Any]] = {
     },
 }
 
+_SUBCLASS_CASTER_OVERRIDES: dict[str, dict[str, Any]] = {
+    "arcane-trickster": {
+        "classId": "rogue",
+        "minLevel": 3,
+        "spellcastingAbility": "int",
+        "castingType": "third",
+        "mode": "known",
+        "cantripsKnownByLevel": {
+            3: 3,
+            4: 3,
+            5: 3,
+            6: 3,
+            7: 3,
+            8: 3,
+            9: 3,
+            10: 4,
+            11: 4,
+            12: 4,
+            13: 4,
+            14: 4,
+            15: 4,
+            16: 4,
+            17: 4,
+            18: 4,
+            19: 4,
+            20: 4,
+        },
+        "spellsKnownByLevel": {
+            3: 3,
+            4: 4,
+            5: 4,
+            6: 4,
+            7: 5,
+            8: 6,
+            9: 6,
+            10: 7,
+            11: 8,
+            12: 8,
+            13: 9,
+            14: 10,
+            15: 10,
+            16: 11,
+            17: 11,
+            18: 11,
+            19: 12,
+            20: 13,
+        },
+        "spellSlotsByLevel": {
+            3: {"1st": 2},
+            4: {"1st": 3},
+            5: {"1st": 3},
+            6: {"1st": 3},
+            7: {"1st": 4, "2nd": 2},
+            8: {"1st": 4, "2nd": 2},
+            9: {"1st": 4, "2nd": 2},
+            10: {"1st": 4, "2nd": 3},
+            11: {"1st": 4, "2nd": 3},
+            12: {"1st": 4, "2nd": 3},
+            13: {"1st": 4, "2nd": 3, "3rd": 2},
+            14: {"1st": 4, "2nd": 3, "3rd": 2},
+            15: {"1st": 4, "2nd": 3, "3rd": 2},
+            16: {"1st": 4, "2nd": 3, "3rd": 3},
+            17: {"1st": 4, "2nd": 3, "3rd": 3},
+            18: {"1st": 4, "2nd": 3, "3rd": 3},
+            19: {"1st": 4, "2nd": 3, "3rd": 3, "4th": 1},
+            20: {"1st": 4, "2nd": 3, "3rd": 3, "4th": 1},
+        },
+    }
+}
+
 _ORDINAL_TO_NUM = {
     '1st': 1, '2nd': 2, '3rd': 3, '4th': 4, '5th': 5, '6th': 6, '7th': 7, '8th': 8, '9th': 9,
 }
@@ -209,6 +279,35 @@ def _augment_classes_from_class_spell_lists(spell_id: str, classes: list[str]) -
         seen.add(_norm(display))
         existing.append(display)
     return existing
+
+
+def _resolve_active_subclass_ids(document: dict[str, Any], *, class_id: str) -> list[str]:
+    classes = document.get('classes') if isinstance(document.get('classes'), list) else []
+    out: list[str] = []
+    seen: set[str] = set()
+    for row in classes:
+        if not isinstance(row, dict):
+            continue
+        row_class_id = _norm(row.get('classId') or row.get('id') or row.get('name'))
+        if class_id and row_class_id != class_id:
+            continue
+        subclass_id = _norm(row.get('subclassId'))
+        if subclass_id and subclass_id not in seen:
+            seen.add(subclass_id)
+            out.append(subclass_id)
+    return out
+
+
+def _caster_override_for_subclass(class_id: str, class_level: int, subclass_id: str | None) -> dict[str, Any] | None:
+    key = _norm(subclass_id)
+    row = _SUBCLASS_CASTER_OVERRIDES.get(key) if key else None
+    if not isinstance(row, dict):
+        return None
+    if _norm(row.get("classId")) != _norm(class_id):
+        return None
+    if class_level < _safe_int(row.get("minLevel"), 1):
+        return None
+    return row
 
 def _extract_target(description: str, range_text: str) -> str:
     desc = str(description or '').strip()
@@ -441,29 +540,46 @@ def _class_mechanics_for_level(class_row: dict[str, Any] | None, level: int) -> 
     return {}
 
 
-def build_spell_limits_for_class(class_id: str, class_level: int, abilities: dict[str, Any] | None = None) -> dict[str, Any]:
+def build_spell_limits_for_class(
+    class_id: str,
+    class_level: int,
+    abilities: dict[str, Any] | None = None,
+    *,
+    document: dict[str, Any] | None = None,
+    subclass_id: str | None = None,
+) -> dict[str, Any]:
     class_row = get_class_catalog_row(class_id)
     mechanics = _class_mechanics_for_level(class_row, class_level)
     abilities = abilities if isinstance(abilities, dict) else {}
     scores = abilities.get('scores') if isinstance(abilities.get('scores'), dict) else abilities
-    spell_ability = _norm((class_row or {}).get('spellcastingAbility'))
+    active_subclass_id = _norm(subclass_id)
+    if not active_subclass_id and isinstance(document, dict):
+        active_subclasses = _resolve_active_subclass_ids(document, class_id=class_id)
+        active_subclass_id = active_subclasses[0] if active_subclasses else ""
+    caster_override = _caster_override_for_subclass(class_id, class_level, active_subclass_id)
+
+    spell_ability = _norm((caster_override or {}).get("spellcastingAbility") or (class_row or {}).get('spellcastingAbility'))
     ability_mod = _ability_modifier(scores.get(spell_ability, 10)) if spell_ability else 0
-    cantrips_known = mechanics.get('cantripsKnown')
-    spells_known = mechanics.get('spellsKnown')
+    cantrips_known = (caster_override or {}).get("cantripsKnownByLevel", {}).get(class_level, mechanics.get('cantripsKnown'))
+    spells_known = (caster_override or {}).get("spellsKnownByLevel", {}).get(class_level, mechanics.get('spellsKnown'))
     formula = str(mechanics.get('spellsPreparedFormula') or '').strip().lower()
     prepared_limit = None
     if formula:
         prepared_limit = max(1, ability_mod + max(1, class_level))
+    spell_slots = _clone(((class_row or {}).get('spellSlots') or {}).get(str(class_level), {}))
+    if caster_override:
+        spell_slots = _clone((caster_override.get("spellSlotsByLevel") or {}).get(class_level, {}))
     return {
         'classId': class_id,
         'className': str((class_row or {}).get('displayName') or class_id).strip(),
         'level': class_level,
-        'castingType': str((class_row or {}).get('spellcastingType') or 'none').strip(),
+        'castingType': str((caster_override or {}).get("castingType") or (class_row or {}).get('spellcastingType') or 'none').strip(),
         'spellcastingAbility': spell_ability,
         'cantripsKnown': _safe_int(cantrips_known, 0) if cantrips_known is not None else None,
         'spellsKnown': _safe_int(spells_known, 0) if spells_known is not None else None,
         'preparedLimit': prepared_limit,
-        'spellSlots': _clone(((class_row or {}).get('spellSlots') or {}).get(str(class_level), {})),
+        'spellSlots': spell_slots,
+        'sourceSubclassId': active_subclass_id if caster_override else '',
     }
 
 
@@ -546,23 +662,6 @@ def get_effective_document_spell_state(document: dict[str, Any], *, class_id: st
     return {'known': fallback_known, 'prepared': fallback_prepared}
 
 
-
-
-def _resolve_active_subclass_ids(document: dict[str, Any], *, class_id: str) -> list[str]:
-    classes = document.get('classes') if isinstance(document.get('classes'), list) else []
-    out: list[str] = []
-    seen: set[str] = set()
-    for row in classes:
-        if not isinstance(row, dict):
-            continue
-        row_class_id = _norm(row.get('classId') or row.get('id') or row.get('name'))
-        if class_id and row_class_id != class_id:
-            continue
-        subclass_id = _norm(row.get('subclassId'))
-        if subclass_id and subclass_id not in seen:
-            seen.add(subclass_id)
-            out.append(subclass_id)
-    return out
 
 
 def get_subclass_spell_grants(document: dict[str, Any], *, class_id: str, class_level: int) -> dict[str, Any]:
@@ -659,7 +758,7 @@ def _highest_slot_level_from_limits(limits: dict[str, Any] | None) -> int:
     return highest
 
 def validate_spell_selection(*, class_id: str, class_level: int, abilities: dict[str, Any] | None, known: list[str], prepared: list[str], document: dict[str, Any] | None = None, subclass_id: str | None = None) -> dict[str, Any]:
-    limits = build_spell_limits_for_class(class_id, class_level, abilities)
+    limits = build_spell_limits_for_class(class_id, class_level, abilities, document=document, subclass_id=subclass_id)
     known_ids = [str(v or '').strip() for v in known if str(v or '').strip()]
     prepared_ids = [str(v or '').strip() for v in prepared if str(v or '').strip()]
     known_cantrips = 0
@@ -803,7 +902,7 @@ def build_character_spell_manifest(document: dict[str, Any]) -> dict[str, Any]:
     primary = classes[0] if classes else {}
     class_id = _norm(primary.get('classId') or primary.get('id') or primary.get('name'))
     class_level = _safe_int(primary.get('level'), 1)
-    limits = build_spell_limits_for_class(class_id, class_level, abilities)
+    limits = build_spell_limits_for_class(class_id, class_level, abilities, document=document, subclass_id=_norm(primary.get('subclassId')))
     highest_available_slot = _highest_slot_level_from_limits(limits)
     effective_spell_state = get_effective_document_spell_state(document, class_id=class_id, class_level=class_level)
     known = list(effective_spell_state.get('known') or [])

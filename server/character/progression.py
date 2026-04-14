@@ -182,8 +182,22 @@ def _build_spell_choices_preview(
     current_prepared = current_spell_state["prepared"]
     current_known_set = set(current_known)
 
-    current_limits = build_spell_limits_for_class(class_id, current_level, document.get("abilities") if isinstance(document.get("abilities"), dict) else {})
-    next_limits = build_spell_limits_for_class(class_id, next_level, document.get("abilities") if isinstance(document.get("abilities"), dict) else {})
+    primary_class = (document.get("classes") or [{}])[0] if isinstance(document.get("classes"), list) and document.get("classes") else {}
+    subclass_id = str((primary_class or {}).get("subclassId") or "").strip().lower()
+    current_limits = build_spell_limits_for_class(
+        class_id,
+        current_level,
+        document.get("abilities") if isinstance(document.get("abilities"), dict) else {},
+        document=document,
+        subclass_id=subclass_id,
+    )
+    next_limits = build_spell_limits_for_class(
+        class_id,
+        next_level,
+        document.get("abilities") if isinstance(document.get("abilities"), dict) else {},
+        document=document,
+        subclass_id=subclass_id,
+    )
 
     known_spells = []
     known_cantrips = []

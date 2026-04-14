@@ -56,21 +56,24 @@
       "section": "Bonus Actions",
       "type": "bonus action",
       "summary": "Handle objects, tools, and interaction tricks faster than most characters could ever manage.",
-      "description": "Fast Hands turns the Thief into a battlefield opportunist who can exploit items, gadgets, and environmental interactions more efficiently than other rogues.",
+      "description": "Fast Hands is action-economy identity: manipulate objects, tools, and interactions without giving up your main attack plan. It keeps the Thief active in every round, not just attack math rounds.",
       "tags": [
         "subclass",
         "utility",
         "mobility"
-      ]
+      ],
+      "trigger": "Bonus action turn option"
     },
     "thief-second-story-work": {
-      "summary": "Climbing and urban movement become much easier, reinforcing the subclass’s classic nimble burglar fantasy.",
-      "description": "Second-Story Work is quiet but important. It changes how the rogue approaches vertical spaces, windows, roofs, and escape routes.",
+      "summary": "Vertical movement and jumps become reliable tactical tools, not obstacles.",
+      "description": "Second-Story Work is how Thief turns map geometry into advantage. Climb routes, ledges, and windows become real positioning lanes for setup and escape.",
       "tags": [
         "subclass",
         "mobility",
         "exploration"
-      ]
+      ],
+      "section": "Movement",
+      "type": "passive"
     },
     "thief-supreme-sneak": {
       "summary": "Slow, careful movement lets you push stealth beyond normal rogue competence.",
