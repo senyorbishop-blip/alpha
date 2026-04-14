@@ -35,6 +35,12 @@ from server.handlers.common import (
     PX_PER_GRID,
     _broadcast_token_state_sync,
 )
+from server.item_schema import (
+    normalize_item_record,
+    normalize_shop_item_row,
+    normalize_crafted_result_row,
+    to_inventory_entry,
+)
 
 
 _LOOT_ROLL_RANGE_FT = 30.0
@@ -138,6 +144,10 @@ _INVENTORY_META_KEYS = (
     "usage_cost", "range", "target_type", "save_dc", "attack_bonus", "damage_formula",
     "healing_formula", "effect_text", "grants_action", "passive_effects", "granted_spells",
     "granted_ability", "image_key",
+    "item_schema", "source_id", "source_type", "slug", "subtype", "stack_limit", "image_url",
+    "scroll_data", "bonuses", "resistances", "immunities", "senses_modifiers", "movement_modifiers",
+    "stat_overrides", "stat_minimums", "equippable", "weapon_type", "ammo_type", "uses_current", "uses_max",
+    "material_type", "recipe_tags", "profession_tags", "item_family", "named_item_flag", "legendary_flag",
     "weight_lbs", "extradimensional", "is_container", "own_weight_lbs", "capacity_lbs", "volume_ft3",
     "is_devouring", "bag_contents",
     "equipped", "equip_slot", *_EQUIPMENT_META_KEYS,
@@ -560,6 +570,38 @@ def _normalize_player_inventory_entry(entry: dict) -> dict | None:
             out["bag_contents"] = cleaned
 
     _normalize_equipment_fields(entry, out)
+
+    # Structured canonical schema (backward-compatible additive field).
+    canonical = normalize_item_record(
+        {**entry, **out, "quantity": out.get("qty", qty)},
+        source_type=str(entry.get("source_type") or "inventory"),
+        source_id=str(entry.get("source_id") or entry.get("id") or entry.get("magic_item_id") or ""),
+    )
+    structured = to_inventory_entry(
+        canonical,
+        notes=out.get("notes", ""),
+        source_label=out.get("source", ""),
+        price_label=out.get("price", ""),
+    )
+    out["item_schema"] = canonical
+    for key in (
+        "slug", "source_type", "source_id", "stack_limit", "image_url", "scroll_data",
+        "bonuses", "resistances", "immunities", "senses_modifiers", "movement_modifiers",
+        "stat_overrides", "stat_minimums", "equippable", "weapon_type", "ammo_type",
+        "uses_current", "uses_max", "material_type", "recipe_tags", "profession_tags",
+        "item_family", "named_item_flag", "legendary_flag",
+    ):
+        value = structured.get(key)
+        if value not in ("", None, [], {}):
+            out[key] = value
+    if not out.get("item_type"):
+        out["item_type"] = str(canonical.get("identity", {}).get("subtype") or canonical.get("identity", {}).get("category") or "misc")
+    if not out.get("category"):
+        out["category"] = str(canonical.get("identity", {}).get("category") or "misc")
+    if not out.get("rarity"):
+        out["rarity"] = str(canonical.get("identity", {}).get("rarity") or "common")
+    if not out.get("image_key"):
+        out["image_key"] = str(canonical.get("display", {}).get("image_key") or "")
     return out
 
 
@@ -2927,6 +2969,8 @@ async def handle_collect_craft_job(payload: dict, session: Session, user: User):
             "payload": {"success": False, "message": "This item is still crafting."}
         })
     result_entry = dict(job.get("result_json") or {})
+    canonical_result = normalize_crafted_result_row(result_entry, recipe_id=str(job.get("recipe_id") or ""))
+    result_entry = to_inventory_entry(canonical_result, notes=str(result_entry.get("notes") or ""), source_label="Crafting")
     item_name = str(result_entry.get("name") or "Crafted Item").strip()[:80]
     _add_item_to_player_inventory(session, user, result_entry, 1, source_name="Crafting")
     logs = list(job.get("logs_json") or [])
@@ -2996,14 +3040,16 @@ async def handle_purchase_item(payload: dict, session: Session, user: User):
     price_paid_gp = (total_cost_units // 100) if total_cost_units > 0 else 0
     record_shop_transaction(shop_id, user.id, item_id, qty, price_paid_gp)
     # Add to player inventory (preserve item_type for sell valuation)
-    item_name = str(item.get("item_name") or "Item").strip()
-    item_type_tag = str(item.get("item_type") or "misc").strip()[:32]
+    canonical_shop_item = normalize_shop_item_row(item)
+    item_name = str(canonical_shop_item.get("identity", {}).get("name") or item.get("item_name") or "Item").strip()
     price_label = _format_gold_units(total_cost_units) if total_cost_units > 0 else ""
-    _add_item_to_player_inventory(
-        session, user,
-        {"name": item_name, "notes": item.get("description", ""), "item_type": item_type_tag},
-        qty, source_name=shop.get("name", "Shop"), price=price_label
+    shop_inventory_entry = to_inventory_entry(
+        canonical_shop_item,
+        notes=str(item.get("description") or ""),
+        source_label=str(shop.get("name", "Shop") or "Shop"),
+        price_label=price_label,
     )
+    _add_item_to_player_inventory(session, user, shop_inventory_entry, qty, source_name=shop.get("name", "Shop"), price=price_label)
     # Record purchase in session buy-log for anti-resale checks
     _record_buy_in_log(session, user, shop_id, item_name, _shop_item_total_gp_units(item))
     _recompute_equipment_effects(session, user)
