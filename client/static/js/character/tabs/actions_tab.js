@@ -36,6 +36,11 @@
       copy: 'Monk should read as a live action-economy loop: Attack action cadence, Martial Arts follow-up, Focus spenders, and reaction defenses all visible together.',
       checks: ['Focus Points visible', 'Martial Arts / Flurry / Patient Defense cards visible', 'Reaction defenses visible'],
     },
+    paladin: {
+      title: 'Paladin Combat Surface',
+      copy: 'Paladin should feel like a hybrid frontline engine: weapon hits, smite timing, Lay on Hands triage, Channel Divinity options, and aura positioning cues all visible together.',
+      checks: ['Lay on Hands visible', 'Channel Divinity visible', 'Smite + spell slot decision surface visible'],
+    },
   };
 
 
@@ -166,6 +171,54 @@
           { key: 'disciple of the elements', name: 'Disciple of the Elements', summary: 'Spend Focus to access elemental techniques beyond standard strikes.', actionType: 'action', resourceName: 'Focus Points', range: 'Technique-dependent', tags: ['Four Elements', 'Elemental'] },
           { key: 'elemental disciplines', name: 'Elemental Disciplines', summary: 'Use elemental blasts and control options as part of your class loop.', actionType: 'action', resourceName: 'Focus Points', range: 'Technique-dependent', tags: ['Four Elements', 'Control'] },
           { key: 'avatar of the four winds', name: 'Avatar of the Four Winds', summary: 'Spend Focus for a high-tier elemental transformation/burst mode.', actionType: 'action', resourceName: 'Focus Points', range: 'Self / area', tags: ['Four Elements', 'Capstone'] },
+        ],
+      },
+    },
+    paladin: {
+      actions: [
+        {
+          key: 'lay on hands',
+          name: 'Lay on Hands',
+          summary: 'Spend points from your healing pool to restore allies, revive downed teammates, or stabilize the front line without using a spell slot.',
+          actionType: 'action',
+          resourceName: 'Lay on Hands',
+          resourceSummary: 'Spend pool points',
+          range: 'Touch',
+          tags: ['Paladin', 'Healing'],
+        },
+        {
+          key: 'divine smite',
+          name: 'Divine Smite',
+          summary: 'After a weapon hit lands, spend a spell slot to convert that hit into premium radiant burst damage.',
+          actionType: 'action',
+          resourceName: 'Spell Slots',
+          resourceSummary: 'Spend slot on hit',
+          range: 'Melee hit trigger',
+          tags: ['Paladin', 'Burst'],
+        },
+        {
+          key: 'channel divinity',
+          name: 'Channel Divinity',
+          summary: 'Spend Channel Divinity to fuel oath actions such as Sacred Weapon, Nature’s Wrath, or Vow of Enmity.',
+          actionType: 'action',
+          resourceName: 'Channel Divinity',
+          resourceSummary: 'Spend 1 use',
+          range: 'Feature dependent',
+          tags: ['Paladin', 'Oath'],
+        },
+      ],
+      subclassActions: {
+        'oath of devotion': [
+          { key: 'channel divinity: sacred weapon', name: 'Sacred Weapon', summary: 'Bless your weapon for a minute of high-confidence attacks and radiant authority.', actionType: 'action', resourceName: 'Channel Divinity', tags: ['Devotion', 'Accuracy'] },
+          { key: 'holy nimbus', name: 'Holy Nimbus', summary: 'Erupt in radiant presence that punishes nearby foes and marks you as the party’s holy center.', actionType: 'action', tags: ['Devotion', 'Radiant'] },
+        ],
+        'oath of the ancients': [
+          { key: 'channel divinity: nature\'s wrath', name: 'Nature’s Wrath', summary: 'Lock down a priority foe with primal restraints to protect your line.', actionType: 'action', resourceName: 'Channel Divinity', tags: ['Ancients', 'Control'] },
+          { key: 'channel divinity: turn the faithless', name: 'Turn the Faithless', summary: 'Repel fey and fiends when corrupted threats are pressing your formation.', actionType: 'action', resourceName: 'Channel Divinity', tags: ['Ancients', 'Anti-Fiend'] },
+        ],
+        'oath of vengeance': [
+          { key: 'channel divinity: vow of enmity', name: 'Vow of Enmity', summary: 'Mark one enemy for focused pursuit so your attack pressure stays glued to the target.', actionType: 'bonus', resourceName: 'Channel Divinity', tags: ['Vengeance', 'Mark'] },
+          { key: 'channel divinity: abjure enemy', name: 'Abjure Enemy', summary: 'Break an enemy’s momentum with fear and forced control before it can dominate the round.', actionType: 'action', resourceName: 'Channel Divinity', tags: ['Vengeance', 'Control'] },
         ],
       },
     },
@@ -535,11 +588,20 @@
           classMechanics.extraAttacks != null ? ('Attacks per Attack action: ' + classMechanics.extraAttacks) : '',
         ].filter(Boolean).join(' • ')
       : '';
+    const paladinLine = _classKey(charData) === 'paladin'
+      ? [
+          classMechanics.layOnHandsPool != null ? ('Lay on Hands pool: ' + classMechanics.layOnHandsPool) : '',
+          classMechanics.channelDivinityUses != null ? ('Channel Divinity uses: ' + classMechanics.channelDivinityUses) : '',
+          classMechanics.auraRangeFeet != null ? ('Aura range: ' + classMechanics.auraRangeFeet + ' ft') : '',
+          classMechanics.extraAttacks != null ? ('Attacks per Attack action: ' + classMechanics.extraAttacks) : '',
+        ].filter(Boolean).join(' • ')
+      : '';
     return `<div class="cs-combat-callout-grid">
       <div class="cs-combat-callout">
         <div class="cs-combat-callout-title">${_esc(guide.title)}</div>
         <div class="cs-combat-callout-copy">${_esc(guide.copy)}</div>
         ${barbarianLine ? `<div class="cs-combat-callout-copy">${_esc(barbarianLine)}</div>` : ''}
+        ${paladinLine ? `<div class="cs-combat-callout-copy">${_esc(paladinLine)}</div>` : ''}
       </div>
       <div class="cs-combat-callout muted">
         <div class="cs-combat-callout-title">What should be visible</div>

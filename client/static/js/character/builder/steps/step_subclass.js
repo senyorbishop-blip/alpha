@@ -137,7 +137,35 @@
     return String(classData.subclassId || classData.subclass || '').trim();
   }
 
+  var SUBCLASS_PROFILE_OVERRIDES = {
+    'oath-of-devotion': {
+      tags: ['Knightly Virtue', 'Radiant Presence', 'Protective Aura'],
+      chooserSummary: 'A classic holy guardian path focused on sacred weapon certainty, anti-charm protection, and radiant battlefield leadership.',
+      fantasy: 'Devotion rewards steadfast frontline play: hold formation, keep allies stable, and punish evil with unwavering divine pressure.',
+    },
+    'oath-of-the-ancients': {
+      tags: ['Nature & Hope', 'Spell Defense', 'Resilient Warden'],
+      chooserSummary: 'A luminous warden path that protects life and joy, with anti-magic resilience and elder-champion staying power.',
+      fantasy: 'Ancients fights like a living bulwark: blunt hostile magic, endure attrition, and keep the party alive through pressure.',
+    },
+    'oath-of-vengeance': {
+      tags: ['Relentless Pursuit', 'Target Lockdown', 'Execution Pressure'],
+      chooserSummary: 'An aggressive avenger path built around mark-and-execute pressure, pursuit tools, and punishing single-target focus.',
+      fantasy: 'Vengeance is for players who want to hunt priority threats, force duels, and finish key enemies before they recover.',
+    },
+  };
+
+  function subclassProfile(entry) {
+    var key = normalizeId(entry && entry.id);
+    if (!key) return null;
+    return SUBCLASS_PROFILE_OVERRIDES[key] || null;
+  }
+
   function classifySubclass(entry) {
+    var profile = subclassProfile(entry);
+    if (profile && Array.isArray(profile.tags) && profile.tags.length) {
+      return profile.tags.slice(0, 3);
+    }
     const haystack = [entry && entry.flavorText, (entry && entry.features || []).map(function (f) { return f && (f.displayName + ' ' + (f.description || '')); }).join(' ')].join(' ').toLowerCase();
     const tags = [];
     if (/(heal|ward|protect|aura|defense|shield|resistance)/.test(haystack)) tags.push('Support / Defense');
@@ -207,12 +235,15 @@
     var unlocks = buildRoadmapRows(entry);
     var firstLevel = unlocks.length ? unlocks[0].level : '—';
     var endgame = unlocks.length ? unlocks[unlocks.length - 1].level : '—';
+    var profile = subclassProfile(entry);
     return {
       tags: tags,
       signatures: signatures,
       firstLevel: firstLevel,
       endgame: endgame,
       className: className || 'Class',
+      chooserSummary: profile && profile.chooserSummary ? profile.chooserSummary : '',
+      fantasy: profile && profile.fantasy ? profile.fantasy : '',
     };
   }
 
@@ -256,7 +287,7 @@
         '<button type="button" class="builder-subclass-card' + selected + '" data-builder-subclass-card="1" data-subclass-id="' + escHtml(row.id) + '">',
         '<div class="builder-subclass-check">✓</div>',
         '<h4>' + escHtml(row.name) + '</h4>',
-        '<div class="builder-subclass-flavor">' + escHtml(row.flavorText || ('A ' + className + ' path with its own identity and unlocks.')) + '</div>',
+        '<div class="builder-subclass-flavor">' + escHtml(summary.chooserSummary || row.flavorText || ('A ' + className + ' path with its own identity and unlocks.')) + '</div>',
         '<div class="builder-subclass-tags">' + tags + '</div>',
         '<div class="builder-subclass-signatures">' + signatures + '</div>',
         '</button>'
@@ -288,7 +319,7 @@
       '<div class="builder-subclass-detail-body">',
       '<div class="builder-subclass-section">',
       '<div class="builder-subclass-section-head">Why pick this path</div>',
-      '<div class="builder-subclass-section-body"><div class="builder-subclass-chooser-copy">Choose <strong style="color:#f3e7c4">' + escHtml(entry.name) + '</strong> if you want your ' + escHtml(className.toLowerCase()) + ' to lean into <span style="color:#c9a84c">' + escHtml(keyThemes || 'its signature theme') + '</span>. Review the roadmap below and read the feature cards closely — this is the text your players should use to decide whether the subclass matches their fantasy before they lock it in.</div></div>',
+      '<div class="builder-subclass-section-body"><div class="builder-subclass-chooser-copy">' + escHtml(summary.fantasy || ('Choose ' + entry.name + ' if you want your ' + className.toLowerCase() + ' to lean into ' + (keyThemes || 'its signature theme') + '.')) + '</div></div>',
       '</div>',
       '<div class="builder-subclass-section">',
       '<div class="builder-subclass-section-head">Signature features</div>',

@@ -379,9 +379,9 @@ function _renderFlagshipHeader(charData) {
     },
     paladin: {
       heading: 'Burst defender / divine striker',
-      summary: 'Weapon attacks, Lay on Hands, and spell support should all feel like one connected surface instead of separate systems.',
-      essentials: ['Check attack cards', 'Validate Lay on Hands', 'Inspect spell / smite-facing detail'],
-      weakSpots: ['Hybrid combat/magic clarity', 'Healing workflow', 'Resource and slot messaging'],
+      summary: 'Weapon attacks, Lay on Hands, Channel Divinity, aura range, and spell/smite choices should read like one connected loop instead of separate systems.',
+      essentials: ['Check attack cards and smite timing', 'Validate Lay on Hands + Channel Divinity', 'Inspect aura range + spell slot messaging'],
+      weakSpots: ['Hybrid combat/magic clarity', 'Healing workflow', 'Aura positioning visibility'],
     },
     ranger: {
       heading: 'Hunter skirmisher',
