@@ -134,13 +134,16 @@
       "trackUses": true,
       "usage": "4d8 Superiority Dice",
       "recovery": "Regain all expended Superiority Dice on a Short or Long Rest.",
-      "effect": "Maneuvers add control, protection, pressure, or precision to weapon play.",
+      "effect": "Choose maneuvers to spend Superiority Dice on attacks, reactions, movement, and control riders.",
       "tags": [
         "subclass",
         "combat",
         "resource",
         "maneuvers"
-      ]
+      ],
+      "section": "Class Features",
+      "type": "special",
+      "save": "Maneuver save DC = 8 + proficiency bonus + STR/DEX modifier"
     },
     "battlemaster-student-of-war": {
       "summary": "Battle study expands your identity beyond attack math by adding a practical tool edge or a broader maneuver menu.",
@@ -148,7 +151,9 @@
         "subclass",
         "utility",
         "combat-study"
-      ]
+      ],
+      "section": "Class Features",
+      "type": "passive"
     },
     "battlemaster-know-your-enemy": {
       "summary": "Read a target before the fight and learn what kind of problem you are actually about to engage.",
@@ -156,7 +161,10 @@
         "subclass",
         "analysis",
         "utility"
-      ]
+      ],
+      "section": "Actions",
+      "type": "action",
+      "usage": "Observe outside combat for 1 minute."
     },
     "battlemaster-relentless": {
       "summary": "Even when you start a fight dry on tactical fuel, the subclass gives you enough back to matter.",
@@ -167,7 +175,10 @@
         "resource",
         "recovery"
       ],
-      "description": "When you roll Initiative and have no Superiority Dice remaining, you regain one Superiority Die. Relentless protects the Battle Master from starting a fight dry on tactical fuel and keeps maneuvers relevant in the next encounter."
+      "description": "When you roll Initiative and have no Superiority Dice remaining, you regain one Superiority Die. Relentless protects the Battle Master from starting a fight dry on tactical fuel and keeps maneuvers relevant in the next encounter.",
+      "section": "Class Features",
+      "type": "passive",
+      "effect": "If initiative starts at 0 dice, recover 1 Superiority Die."
     }
   }
 }

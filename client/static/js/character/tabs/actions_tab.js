@@ -16,6 +16,11 @@
 
 
   const CUSTOM_ACTION_SURFACES = {
+    fighter: {
+      title: 'Fighter Combat Surface',
+      copy: 'Fighter should read as a complete martial loop: clear attack cadence, visible core resources, and subclass tools that change round-to-round choices.',
+      checks: ['Second Wind / Action Surge / Indomitable visible', 'Extra Attack cadence visible', 'Weapon Mastery + Fighting Style identity visible'],
+    },
     barbarian: {
       title: 'Barbarian Combat Surface',
       copy: 'Open with Rage, then stay in melee and pressure with bonus-action and reaction tools. Your Rage loop should be obvious at a glance.',
@@ -70,6 +75,58 @@
 
 
   const CUSTOM_CLASS_ACTIONS = {
+    fighter: {
+      actions: [
+        {
+          key: 'action surge',
+          name: 'Action Surge',
+          summary: 'Spend Action Surge to take an additional action this turn and convert tempo into immediate battlefield swing.',
+          actionType: 'special',
+          resourceName: 'Action Surge',
+          resourceSummary: 'Spend 1 use (Short/Long Rest)',
+          range: 'Self',
+          tags: ['Fighter', 'Burst'],
+        },
+        {
+          key: 'second wind',
+          name: 'Second Wind',
+          summary: 'Use your bonus action self-heal to stabilize under pressure without ending your offensive turn plan.',
+          actionType: 'bonus',
+          resourceName: 'Second Wind',
+          resourceSummary: 'Spend 1 use (Short/Long Rest)',
+          range: 'Self',
+          tags: ['Fighter', 'Sustain'],
+        },
+        {
+          key: 'indomitable',
+          name: 'Indomitable',
+          summary: 'When a critical save fails, spend Indomitable to re-roll and keep your combat role online.',
+          actionType: 'reaction',
+          resourceName: 'Indomitable',
+          resourceSummary: 'Spend 1 use (Long Rest)',
+          range: 'Self',
+          tags: ['Fighter', 'Defense'],
+        },
+      ],
+      subclassActions: {
+        battlemaster: [
+          { key: 'combat superiority', name: 'Combat Superiority', summary: 'Spend Superiority Dice to add maneuver riders that control movement, accuracy, fear, and ally tempo.', actionType: 'special', resourceName: 'Superiority Dice', resourceSummary: '4d8 dice (Short/Long Rest)', tags: ['Battle Master', 'Resource'] },
+          { key: 'maneuvering attack', name: 'Maneuvering Attack', summary: 'On hit, spend a die to reposition an ally safely and keep battlefield tempo in your favor.', actionType: 'action', resourceName: 'Superiority Dice', tags: ['Battle Master', 'Control'] },
+          { key: 'parry', name: 'Parry', summary: 'Use your reaction and a superiority die to reduce incoming melee damage and survive focus fire.', actionType: 'reaction', resourceName: 'Superiority Dice', tags: ['Battle Master', 'Reaction'] },
+          { key: 'feinting attack', name: 'Feinting Attack', summary: 'Spend a bonus action and die to line up advantage and convert setup into cleaner weapon spikes.', actionType: 'bonus', resourceName: 'Superiority Dice', tags: ['Battle Master', 'Setup'] },
+        ],
+        champion: [
+          { key: 'improved critical', name: 'Improved Critical', summary: 'Your crit range is improved, so repeated weapon pressure converts into more explosive spikes over time.', actionType: 'passive', resourceName: '', tags: ['Champion', 'Passive'] },
+          { key: 'survivor', name: 'Survivor', summary: 'In drawn-out fights, regenerate enough staying power to remain a constant front-line problem.', actionType: 'passive', resourceName: '', tags: ['Champion', 'Sustain'] },
+        ],
+        'eldritch knight': [
+          { key: 'weapon bond', name: 'Weapon Bond Recall', summary: 'Recall a bonded weapon as a bonus action so disarms and distance do not break your pressure turn.', actionType: 'bonus', resourceName: '', tags: ['Eldritch Knight', 'Utility'] },
+          { key: 'war magic', name: 'War Magic', summary: 'After a cantrip action, follow with one weapon attack as a bonus action to keep hybrid rhythm online.', actionType: 'bonus', resourceName: '', tags: ['Eldritch Knight', 'Hybrid'] },
+          { key: 'eldritch strike', name: 'Eldritch Strike Setup', summary: 'Land a weapon hit, then pressure with a save spell while the target is softened for your magic.', actionType: 'special', resourceName: '', tags: ['Eldritch Knight', 'Combo'] },
+          { key: 'arcane charge', name: 'Arcane Charge', summary: 'When you Action Surge, teleport up to 30 feet and turn burst turns into position-winning plays.', actionType: 'special', resourceName: 'Action Surge', tags: ['Eldritch Knight', 'Mobility'] },
+        ],
+      },
+    },
     cleric: {
       actions: [
         {
@@ -823,6 +880,35 @@
           (charData && charData.spellAttackBonus != null) ? ('Spell attack: ' + charData.spellAttackBonus) : '',
         ].filter(Boolean).join(' • ')
       : '';
+    const fighterLine = _classKey(charData) === 'fighter'
+      ? [
+          classMechanics.extraAttacks != null ? ('Attacks per Attack action: ' + classMechanics.extraAttacks) : '',
+          classMechanics.weaponMasteryCount != null ? ('Weapon Masteries: ' + classMechanics.weaponMasteryCount) : '',
+          classMechanics.secondWindUses != null ? ('Second Wind uses: ' + classMechanics.secondWindUses) : '',
+          classMechanics.actionSurgeUses != null ? ('Action Surge uses: ' + classMechanics.actionSurgeUses) : '',
+          classMechanics.indomitableUses != null ? ('Indomitable uses: ' + classMechanics.indomitableUses) : '',
+        ].filter(Boolean).join(' • ')
+      : '';
+    const fighterSubclassLine = _classKey(charData) === 'fighter'
+      ? (function () {
+          const subclass = _customSubclassKey(charData);
+          if (subclass === 'battlemaster' || subclass === 'battle master') {
+            const abilityScores = _charAbilityScores(charData);
+            const maneuverAbility = Math.max(_abilityMod(abilityScores.str), _abilityMod(abilityScores.dex));
+            const saveDc = 8 + _charProfBonus(charData) + maneuverAbility;
+            return 'Battle Master: Superiority Dice 4d8 • Maneuver save DC ' + saveDc + ' • Maneuvers should be visible in Actions.';
+          }
+          if (subclass === 'eldritch knight') {
+            const abilityScores = _charAbilityScores(charData);
+            const saveDc = 8 + _charProfBonus(charData) + _abilityMod(abilityScores.int);
+            return 'Eldritch Knight: One-third caster flow • Spell save DC (INT) ' + saveDc + ' • War Magic / Weapon Bond cadence should be visible.';
+          }
+          if (subclass === 'champion') {
+            return 'Champion: Improved Critical pressure, athletic identity, and late-fight durability should read as your subclass loop.';
+          }
+          return '';
+        }())
+      : '';
     return `<div class="cs-combat-callout-grid">
       <div class="cs-combat-callout">
         <div class="cs-combat-callout-title">${_esc(guide.title)}</div>
@@ -832,6 +918,8 @@
         ${rogueLine ? `<div class="cs-combat-callout-copy">${_esc(rogueLine)}</div>` : ''}
         ${warlockLine ? `<div class="cs-combat-callout-copy">${_esc(warlockLine)}</div>` : ''}
         ${rangerLine ? `<div class="cs-combat-callout-copy">${_esc(rangerLine)}</div>` : ''}
+        ${fighterLine ? `<div class="cs-combat-callout-copy">${_esc(fighterLine)}</div>` : ''}
+        ${fighterSubclassLine ? `<div class="cs-combat-callout-copy">${_esc(fighterSubclassLine)}</div>` : ''}
       </div>
       <div class="cs-combat-callout muted">
         <div class="cs-combat-callout-title">What should be visible</div>

@@ -54,7 +54,10 @@
         "subclass",
         "combat",
         "passive"
-      ]
+      ],
+      "effect": "Your weapon attacks critically hit on a lower d20 threshold than normal.",
+      "section": "Class Features",
+      "type": "passive"
     },
     "champion-athletic-adept": {
       "summary": "The Champion reads like a complete athlete, not only a crit-focused damage chassis.",
@@ -62,7 +65,10 @@
         "subclass",
         "mobility",
         "utility"
-      ]
+      ],
+      "effect": "You gain stronger athletic movement and physical challenge consistency.",
+      "section": "Class Features",
+      "type": "passive"
     },
     "champion-fighting-style-plus": {
       "summary": "Double down on fundamentals and become even more defined by excellent martial basics.",
@@ -70,7 +76,10 @@
         "subclass",
         "combat",
         "passive"
-      ]
+      ],
+      "effect": "Gain an additional Fighting Style option to deepen your martial fundamentals.",
+      "section": "Class Features",
+      "type": "passive"
     },
     "champion-survivor": {
       "summary": "Recover steady staying power in drawn-out fights so enemies have a harder time grinding you down.",
@@ -78,7 +87,10 @@
         "subclass",
         "healing",
         "survival"
-      ]
+      ],
+      "effect": "Regain hit points each round while bloodied to stay dangerous in long fights.",
+      "section": "Class Features",
+      "type": "passive"
     }
   }
 }

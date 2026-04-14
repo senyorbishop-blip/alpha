@@ -329,6 +329,7 @@ RESOURCE_FIELD_BLUEPRINTS: dict[str, dict[str, Any]] = {
     "bardicInspirationDie": {"id": "bardic_inspiration", "name": "Bardic Inspiration", "section": "Bonus Actions", "type": "bonus action", "trackUses": True},
     "channelDivinityUses": {"id": "channel_divinity", "name": "Channel Divinity", "section": "Actions", "type": "action", "trackUses": True},
     "wildShapeUses": {"id": "wild_shape", "name": "Wild Shape", "section": "Actions", "type": "action", "trackUses": True},
+    "secondWindUses": {"id": "second_wind", "name": "Second Wind", "section": "Bonus Actions", "type": "bonus action", "trackUses": True},
     "actionSurgeUses": {"id": "action_surge", "name": "Action Surge", "section": "Class Features", "type": "special", "trackUses": True},
     "indomitableUses": {"id": "indomitable", "name": "Indomitable", "section": "Class Features", "type": "special", "trackUses": True},
     "layOnHandsPool": {"id": "lay_on_hands", "name": "Lay on Hands", "section": "Actions", "type": "action", "trackUses": True},
@@ -343,6 +344,7 @@ RESOURCE_RECOVERY_HINTS = {
     "bardic_inspiration": "Long Rest recovery at low levels; upgrades to Short or Long Rest with Font of Inspiration.",
     "channel_divinity": "Regain all expended uses on a Short or Long Rest.",
     "wild_shape": "Short Rest: regain 1 use. Long Rest: regain all uses.",
+    "second_wind": "Regain all uses on a short or long rest.",
     "action_surge": "Regain all uses on a short or long rest.",
     "indomitable": "Regain all uses on a long rest.",
     "lay_on_hands": "The pool refreshes on a long rest.",
@@ -630,6 +632,19 @@ def _runtime_item_from_feature(feature: dict[str, Any], class_name: str, *, is_s
     }
 
 
+def _feature_usage_capacity(feature: dict[str, Any]) -> int:
+    usage_text = str(feature.get('usage') or '').strip().lower()
+    if not usage_text:
+        return 0
+    uses_match = re.search(r'(\d+)\s+use', usage_text)
+    if uses_match:
+        return _safe_int(uses_match.group(1), 0, minimum=0)
+    dice_match = re.search(r'(\d+)d\d+', usage_text)
+    if dice_match:
+        return _safe_int(dice_match.group(1), 0, minimum=0)
+    return 0
+
+
 def build_runtime_feature_payload(
     class_row: dict[str, Any] | None,
     *,
@@ -726,12 +741,13 @@ def build_runtime_feature_payload(
         if not resource_id or resource_id in resource_ids:
             continue
         resource_ids.add(resource_id)
+        capacity = _feature_usage_capacity(feature)
         resources.append(
             {
                 'id': resource_id,
                 'name': resource_name,
-                'current': 0,
-                'max': 0,
+                'current': capacity,
+                'max': capacity,
                 'summary': feature.get('usage') or 'Tracked in sheet text',
                 'recovery': feature.get('recovery') or 'Manual tracking until a full automation rule is connected.',
                 'type': feature.get('section', 'Class Features'),
