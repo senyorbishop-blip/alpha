@@ -15,7 +15,7 @@ def test_anchor_class_feature_definitions_exist_for_druid_sorcerer_ranger():
 
     assert 'druid-l3-1' in druid.get('featureDefinitions', {})
     assert 'sorcerer-l3-1' in sorcerer.get('featureDefinitions', {})
-    assert 'ranger-l3-1' in ranger.get('featureDefinitions', {})
+    assert 'ranger-conclave-subclass' in ranger.get('featureDefinitions', {})
     assert 'unlockIds' in druid.get('progressionTable', [])[0]
     assert 'unlockIds' in sorcerer.get('progressionTable', [])[0]
     assert 'unlockIds' in ranger.get('progressionTable', [])[0]

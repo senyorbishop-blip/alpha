@@ -203,6 +203,21 @@
       chooserSummary: 'An aggressive avenger path built around mark-and-execute pressure, pursuit tools, and punishing single-target focus.',
       fantasy: 'Vengeance is for players who want to hunt priority threats, force duels, and finish key enemies before they recover.',
     },
+    hunter: {
+      tags: ['Anti-Prey Specialist', 'Tactical Forks', 'Veteran Slayer'],
+      chooserSummary: 'Hunter is the clean tactical ranger: pick offensive prey style, defensive counter-patterns, and a late multiattack mode that defines your battlefield lane.',
+      fantasy: 'Pick Hunter if you want practical combat branching with clear prey pressure, survival tools, and veteran slayer identity rather than companion play.',
+    },
+    'beast-master': {
+      tags: ['Companion Partnership', 'Command Economy', 'Shared Hunt'],
+      chooserSummary: 'Beast Master is a two-body ranger loop: choose your primal beast frame, manage command cadence, and scale coordinated pressure across levels.',
+      fantasy: 'Pick Beast Master if you want your turns to include companion command decisions, partner positioning, and shared magic synergy.',
+    },
+    'gloom-stalker': {
+      tags: ['Ambush Opener', 'Darkness Control', 'Reaction Survival'],
+      chooserSummary: 'Gloom Stalker is an opening-turn predator: initiative tempo, first-round damage spike, darkness stealth leverage, and reactive survival tools.',
+      fantasy: 'Pick Gloom Stalker if you want first-round impact, shadow-map advantage, and relentless opener pressure.',
+    },
     'fiend-patron': {
       tags: ['Infernal Aggression', 'Temp HP Snowball', 'Punishing Finisher'],
       chooserSummary: 'Fiend warlocks convert kills into survivability, push infernal damage pressure, and end fights with brutal punishment tools.',

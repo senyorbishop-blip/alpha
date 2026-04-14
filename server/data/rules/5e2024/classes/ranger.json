@@ -128,8 +128,8 @@
         "extraAttacks": 1
       },
       "unlockIds": [
-        "ranger-l1-1",
-        "ranger-l1-2"
+        "ranger-favored-enemy",
+        "ranger-weapon-mastery"
       ]
     },
     {
@@ -145,9 +145,9 @@
         "extraAttacks": 1
       },
       "unlockIds": [
-        "ranger-l2-1",
-        "ranger-l2-2",
-        "ranger-l2-3"
+        "ranger-deft-explorer",
+        "ranger-spellcasting",
+        "ranger-fighting-style"
       ]
     },
     {
@@ -162,8 +162,8 @@
         "extraAttacks": 1
       },
       "unlockIds": [
-        "ranger-l3-1",
-        "ranger-l3-2"
+        "ranger-conclave-subclass",
+        "ranger-roving"
       ]
     },
     {
@@ -178,7 +178,7 @@
         "extraAttacks": 1
       },
       "unlockIds": [
-        "ranger-l4-1"
+        "ranger-asi-4"
       ]
     },
     {
@@ -192,7 +192,7 @@
         "extraAttacks": 2
       },
       "unlockIds": [
-        "ranger-l5-1"
+        "ranger-extra-attack"
       ]
     },
     {
@@ -207,8 +207,8 @@
         "extraAttacks": 2
       },
       "unlockIds": [
-        "ranger-l6-1",
-        "ranger-l6-2"
+        "ranger-subclass-feature-6",
+        "ranger-expertise-second-skill"
       ]
     },
     {
@@ -222,7 +222,7 @@
         "extraAttacks": 2
       },
       "unlockIds": [
-        "ranger-l7-1"
+        "ranger-conjure-barrage"
       ]
     },
     {
@@ -238,8 +238,8 @@
         "extraAttacks": 2
       },
       "unlockIds": [
-        "ranger-l8-1",
-        "ranger-l8-2"
+        "ranger-asi-8",
+        "ranger-lands-stride"
       ]
     },
     {
@@ -253,7 +253,7 @@
         "extraAttacks": 2
       },
       "unlockIds": [
-        "ranger-l9-1"
+        "ranger-third-level-slots"
       ]
     },
     {
@@ -268,8 +268,8 @@
         "extraAttacks": 2
       },
       "unlockIds": [
-        "ranger-l10-1",
-        "ranger-l10-2"
+        "ranger-subclass-feature-10",
+        "ranger-tireless"
       ]
     },
     {
@@ -283,7 +283,7 @@
         "extraAttacks": 2
       },
       "unlockIds": [
-        "ranger-l11-1"
+        "ranger-conjure-volley"
       ]
     },
     {
@@ -298,7 +298,7 @@
         "extraAttacks": 2
       },
       "unlockIds": [
-        "ranger-l12-1"
+        "ranger-asi-12"
       ]
     },
     {
@@ -312,7 +312,7 @@
         "extraAttacks": 2
       },
       "unlockIds": [
-        "ranger-l13-1"
+        "ranger-fourth-level-slots"
       ]
     },
     {
@@ -327,8 +327,8 @@
         "extraAttacks": 2
       },
       "unlockIds": [
-        "ranger-l14-1",
-        "ranger-l14-2"
+        "ranger-subclass-feature-14",
+        "ranger-natures-veil"
       ]
     },
     {
@@ -342,7 +342,7 @@
         "extraAttacks": 2
       },
       "unlockIds": [
-        "ranger-l15-1"
+        "ranger-conjure-barrage-improvement"
       ]
     },
     {
@@ -357,7 +357,7 @@
         "extraAttacks": 2
       },
       "unlockIds": [
-        "ranger-l16-1"
+        "ranger-asi-16"
       ]
     },
     {
@@ -371,7 +371,7 @@
         "extraAttacks": 2
       },
       "unlockIds": [
-        "ranger-l17-1"
+        "ranger-fifth-level-slots"
       ]
     },
     {
@@ -385,7 +385,7 @@
         "extraAttacks": 2
       },
       "unlockIds": [
-        "ranger-l18-1"
+        "ranger-feral-senses"
       ]
     },
     {
@@ -400,7 +400,7 @@
         "extraAttacks": 2
       },
       "unlockIds": [
-        "ranger-l19-1"
+        "ranger-epic-boon"
       ]
     },
     {
@@ -414,30 +414,32 @@
         "extraAttacks": 2
       },
       "unlockIds": [
-        "ranger-l20-1"
+        "ranger-foe-slayer"
       ]
     }
   ],
   "featureDefinitions": {
-    "ranger-l1-1": {
+    "ranger-favored-enemy": {
       "summary": "Mark dangerous prey and study enemy patterns so your damage and tracking feel purposeful rather than generic.",
       "description": "Favored Enemy should make the ranger feel like a hunter with intent. It is about target pressure, tracking, and tactical focus instead of simply being a passive lore note.",
       "tags": [
         "combat",
         "tracking",
         "identity"
-      ]
+      ],
+      "effect": "Hunter's Mark support, target pressure, and tracking identity."
     },
-    "ranger-l1-2": {
+    "ranger-weapon-mastery": {
       "summary": "Your chosen weapons carry tactical mastery properties that make attacks feel more distinctive than simple swings.",
       "description": "Weapon Mastery is an attack-surface feature. It matters because it changes how the ranger approaches weapon turns and should be visible wherever weapon actions are shown.",
       "tags": [
         "martial",
         "combat",
         "weapons"
-      ]
+      ],
+      "effect": "Choose mastered weapons and use mastery properties through weapon attack cards."
     },
-    "ranger-l2-1": {
+    "ranger-deft-explorer": {
       "summary": "You become a stronger explorer and traveler so the ranger contributes clearly between fights as well as during them.",
       "description": "Deft Explorer is utility identity for ranger. It should help the class feel like a guide, scout, and endurance specialist instead of only a bow user with spells.",
       "tags": [
@@ -446,25 +448,58 @@
         "identity"
       ]
     },
-    "ranger-l2-2": {
-      "summary": "Ranger spellcasting supports the hunt with movement, marking, control, and survival tools rather than replacing your martial core.",
-      "description": "Ranger spells should feel like practical field magic: mobility, tracking, control, self-buffs, and the occasional decisive strike instead of full-caster breadth.",
+    "ranger-spellcasting": {
+      "summary": "Half-caster spell progression supports your martial hunt loop with practical field magic.",
+      "description": "Ranger spellcasting should present clear slot and known-spell growth, Wisdom scaling, and utility/control options that complement weapon turns.",
       "tags": [
         "spellcasting",
-        "martial",
+        "half-caster",
         "primal"
-      ]
+      ],
+      "effect": "Wisdom-based spellcasting with delayed half-caster slot cadence."
     },
-    "ranger-l2-3": {
-      "summary": "Choose the combat style that defines how your ranger pressures the battlefield.",
+    "ranger-fighting-style": {
+      "summary": "Pick a permanent fighting posture so your ranger\u2019s ranged, melee, or hybrid plan is explicit.",
       "description": "Fighting Style is a structural class choice. It should clearly influence whether the ranger reads as ranged pressure, defensive skirmisher, two-weapon attacker, or another martial angle.",
       "tags": [
         "build",
         "combat",
         "identity"
+      ],
+      "choices": [
+        {
+          "id": "archery",
+          "name": "Archery",
+          "description": "+2 bonus to attack rolls you make with ranged weapons."
+        },
+        {
+          "id": "defense",
+          "name": "Defense",
+          "description": "+1 AC while you are wearing armor."
+        },
+        {
+          "id": "dueling",
+          "name": "Dueling",
+          "description": "+2 damage when fighting with a single one-handed melee weapon."
+        },
+        {
+          "id": "two-weapon-fighting",
+          "name": "Two-Weapon Fighting",
+          "description": "Add your ability modifier to the damage of your off-hand attack."
+        },
+        {
+          "id": "blind-fighting",
+          "name": "Blind Fighting",
+          "description": "Gain blindsight in a short range to fight through darkness or concealment."
+        },
+        {
+          "id": "thrown-weapon-fighting",
+          "name": "Thrown Weapon Fighting",
+          "description": "Draw thrown weapons freely and improve thrown-weapon damage."
+        }
       ]
     },
-    "ranger-l3-1": {
+    "ranger-conclave-subclass": {
       "summary": "Your conclave determines how you hunt, survive, and shape your battlefield presence as the class progresses.",
       "description": "Ranger Conclave is the subclass gate for ranger. It should instantly tell the player whether this character is a stalker, companion master, focused slayer, fey wanderer, or another specialist hunter.",
       "tags": [
@@ -473,7 +508,7 @@
         "hunt"
       ]
     },
-    "ranger-l3-2": {
+    "ranger-roving": {
       "summary": "Your movement becomes more fluid, letting you cross the field and rough terrain like a practiced scout.",
       "description": "Roving is a quality-of-life mobility feature, but it matters constantly because it improves how the ranger approaches pursuit, kiting, and difficult approaches.",
       "tags": [
@@ -482,27 +517,27 @@
         "passive"
       ]
     },
-    "ranger-l10-2": {
+    "ranger-tireless": {
       "summary": "You can shake off fatigue and keep moving, reinforcing the ranger as a long-haul survivor.",
-      "description": "Tireless is an endurance feature. It should matter on travel-heavy days, attrition-heavy adventuring, and any campaign where the ranger’s staying power matters as much as their aim.",
+      "description": "Tireless is an endurance feature. It should matter on travel-heavy days, attrition-heavy adventuring, and any campaign where the ranger\u2019s staying power matters as much as their aim.",
       "tags": [
         "survival",
         "rest",
         "identity"
       ]
     },
-    "ranger-l14-2": {
+    "ranger-natures-veil": {
       "section": "Bonus Actions",
       "type": "bonus action",
       "summary": "Slip from sight with primal subtlety so you can reposition, disengage attention, or open a cleaner line.",
-      "description": "Nature’s Veil is a strong tactical button. It helps the ranger take control of line-of-sight and positioning, which is exactly where the class often wants to fight.",
+      "description": "Nature\u2019s Veil is a strong tactical button. It helps the ranger take control of line-of-sight and positioning, which is exactly where the class often wants to fight.",
       "tags": [
         "stealth",
         "mobility",
         "combat"
       ]
     },
-    "ranger-l20-1": {
+    "ranger-foe-slayer": {
       "summary": "Your greatest hunts end with deadly certainty, turning focused pressure into a true capstone threat.",
       "description": "Foe Slayer is the ranger capstone identity and a true hunter payoff: when the quarry matters, the class becomes precise and deadly enough to finish the hunt with real certainty.",
       "tags": [
@@ -510,76 +545,253 @@
         "combat",
         "hunt"
       ]
+    },
+    "ranger-asi-4": {
+      "summary": "Increase key abilities or take a feat to sharpen either your martial plan or field utility.",
+      "description": "Ranger ASI levels are where you lock in whether this character leans harder into weapon pressure, spell reliability, or broad utility.",
+      "tags": [
+        "progression",
+        "build",
+        "asi"
+      ]
+    },
+    "ranger-extra-attack": {
+      "summary": "Your Attack action now carries two strikes, making your martial turn reliable even when spells are reserved.",
+      "description": "Extra Attack is the core martial cadence jump for ranger. This level should feel like a real damage and consistency spike for both melee and ranged builds.",
+      "tags": [
+        "combat",
+        "martial",
+        "identity"
+      ]
+    },
+    "ranger-subclass-feature-6": {
+      "summary": "Your conclave grants a mid-tier technique that deepens your chosen hunting style.",
+      "description": "Level 6 is where subclass identity stops being introductory flavor and starts changing your round-by-round decisions in a concrete way.",
+      "tags": [
+        "subclass",
+        "progression",
+        "identity"
+      ],
+      "effect": "Depends on selected Ranger Conclave."
+    },
+    "ranger-expertise-second-skill": {
+      "summary": "Gain deeper expertise in a second key skill to reinforce scouting and hunt reliability.",
+      "description": "This expertise pick helps ranger stay valuable outside initiative by locking in one more signature competency such as Stealth, Perception, or Survival.",
+      "tags": [
+        "exploration",
+        "skill",
+        "utility"
+      ]
+    },
+    "ranger-conjure-barrage": {
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Conjure Barrage",
+      "trackUses": true,
+      "summary": "Fire a limited-use area burst when single-target hunting is not enough.",
+      "description": "Conjure Barrage gives ranger a true clustered-enemy answer and should appear as an active tactical button, not buried passive text.",
+      "usage": "1 use",
+      "recovery": "Long Rest",
+      "tags": [
+        "combat",
+        "area",
+        "resource"
+      ]
+    },
+    "ranger-asi-8": {
+      "summary": "Another ASI/feat breakpoint to reinforce your chosen hunting posture.",
+      "description": "At this tier, ASI decisions should connect directly to your active plan: accuracy, durability, spell reliability, or mobility.",
+      "tags": [
+        "progression",
+        "build",
+        "asi"
+      ]
+    },
+    "ranger-lands-stride": {
+      "summary": "Ignore many terrain penalties so pursuit and repositioning stay in your control.",
+      "description": "Land\u2019s Stride is a movement identity feature that keeps ranger fast through hostile terrain and reinforces skirmisher/scout pacing.",
+      "tags": [
+        "mobility",
+        "exploration",
+        "identity"
+      ]
+    },
+    "ranger-third-level-slots": {
+      "summary": "You unlock 3rd-level spell slots, expanding half-caster impact without replacing your weapon plan.",
+      "description": "This is a half-caster milestone: stronger spell options arrive on a delayed cadence while martial pressure remains central.",
+      "tags": [
+        "spellcasting",
+        "half-caster",
+        "progression"
+      ]
+    },
+    "ranger-subclass-feature-10": {
+      "summary": "Your conclave grants an advanced tactic that sharpens your subclass lane in live play.",
+      "description": "By level 10, subclass tools should feel mature and immediately recognizable on the sheet and in actions/features surfaces.",
+      "tags": [
+        "subclass",
+        "progression",
+        "identity"
+      ],
+      "effect": "Depends on selected Ranger Conclave."
+    },
+    "ranger-conjure-volley": {
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Conjure Volley",
+      "trackUses": true,
+      "summary": "Unleash a larger limited-use volley to punish clustered enemies at higher tier.",
+      "description": "Conjure Volley is a signature ranger crowd-pressure button and should read as a real encounter swing option with clear usage limits.",
+      "usage": "1 use",
+      "recovery": "Long Rest",
+      "tags": [
+        "combat",
+        "area",
+        "resource"
+      ]
+    },
+    "ranger-asi-12": {
+      "summary": "Increase core stats or take a feat to keep your hunt loop scaling cleanly.",
+      "description": "This ASI/feat level lets ranger tune precision, endurance, or spell reliability for mid-tier encounters.",
+      "tags": [
+        "progression",
+        "build",
+        "asi"
+      ]
+    },
+    "ranger-fourth-level-slots": {
+      "summary": "You unlock 4th-level spell slots on the ranger half-caster timeline.",
+      "description": "This progression point should make the delayed-but-steady spell growth obvious so ranger does not read like a vague fighter-plus-magic mashup.",
+      "tags": [
+        "spellcasting",
+        "half-caster",
+        "progression"
+      ]
+    },
+    "ranger-subclass-feature-14": {
+      "summary": "Your conclave grants a high-tier feature that defines late-game identity.",
+      "description": "This unlock is where subclass differentiation should be unmistakable across Hunter, Beast Master, and Gloom Stalker.",
+      "tags": [
+        "subclass",
+        "progression",
+        "identity"
+      ],
+      "effect": "Depends on selected Ranger Conclave."
+    },
+    "ranger-conjure-barrage-improvement": {
+      "summary": "Your barrage package scales so area pressure remains relevant in higher-tier combat.",
+      "description": "This improvement keeps ranger\u2019s limited-use area tools competitive instead of falling behind single-target routines.",
+      "tags": [
+        "combat",
+        "area",
+        "scaling"
+      ]
+    },
+    "ranger-asi-16": {
+      "summary": "Late-tier ASI/feat choice to finalize your endgame hunting build.",
+      "description": "Use this breakpoint to close gaps in durability, save DC reliability, initiative, or weapon accuracy depending on your campaign pressure.",
+      "tags": [
+        "progression",
+        "build",
+        "asi"
+      ]
+    },
+    "ranger-fifth-level-slots": {
+      "summary": "You unlock 5th-level spell slots, completing ranger\u2019s half-caster spell tier ladder.",
+      "description": "This capstone slot tier should read as a meaningful upgrade while still preserving ranger\u2019s martial-first identity.",
+      "tags": [
+        "spellcasting",
+        "half-caster",
+        "progression"
+      ]
+    },
+    "ranger-feral-senses": {
+      "summary": "You remain aware of elusive threats, keeping pressure on hidden or slippery prey.",
+      "description": "Feral Senses reinforces the hunter fantasy at high levels by reducing how often concealment tricks shut down your offense.",
+      "tags": [
+        "awareness",
+        "combat",
+        "identity"
+      ]
+    },
+    "ranger-epic-boon": {
+      "summary": "Gain an epic boon-style endgame enhancement on top of your ranger kit.",
+      "description": "This late progression choice should be explicit so players know they are selecting a major endgame reward, not receiving a passive footnote.",
+      "tags": [
+        "epic",
+        "progression",
+        "build"
+      ]
     }
   },
   "levelUnlockIds": {
     "1": [
-      "ranger-l1-1",
-      "ranger-l1-2"
+      "ranger-favored-enemy",
+      "ranger-weapon-mastery"
     ],
     "2": [
-      "ranger-l2-1",
-      "ranger-l2-2",
-      "ranger-l2-3"
+      "ranger-deft-explorer",
+      "ranger-spellcasting",
+      "ranger-fighting-style"
     ],
     "3": [
-      "ranger-l3-1",
-      "ranger-l3-2"
+      "ranger-conclave-subclass",
+      "ranger-roving"
     ],
     "4": [
-      "ranger-l4-1"
+      "ranger-asi-4"
     ],
     "5": [
-      "ranger-l5-1"
+      "ranger-extra-attack"
     ],
     "6": [
-      "ranger-l6-1",
-      "ranger-l6-2"
+      "ranger-subclass-feature-6",
+      "ranger-expertise-second-skill"
     ],
     "7": [
-      "ranger-l7-1"
+      "ranger-conjure-barrage"
     ],
     "8": [
-      "ranger-l8-1",
-      "ranger-l8-2"
+      "ranger-asi-8",
+      "ranger-lands-stride"
     ],
     "9": [
-      "ranger-l9-1"
+      "ranger-third-level-slots"
     ],
     "10": [
-      "ranger-l10-1",
-      "ranger-l10-2"
+      "ranger-subclass-feature-10",
+      "ranger-tireless"
     ],
     "11": [
-      "ranger-l11-1"
+      "ranger-conjure-volley"
     ],
     "12": [
-      "ranger-l12-1"
+      "ranger-asi-12"
     ],
     "13": [
-      "ranger-l13-1"
+      "ranger-fourth-level-slots"
     ],
     "14": [
-      "ranger-l14-1",
-      "ranger-l14-2"
+      "ranger-subclass-feature-14",
+      "ranger-natures-veil"
     ],
     "15": [
-      "ranger-l15-1"
+      "ranger-conjure-barrage-improvement"
     ],
     "16": [
-      "ranger-l16-1"
+      "ranger-asi-16"
     ],
     "17": [
-      "ranger-l17-1"
+      "ranger-fifth-level-slots"
     ],
     "18": [
-      "ranger-l18-1"
+      "ranger-feral-senses"
     ],
     "19": [
-      "ranger-l19-1"
+      "ranger-epic-boon"
     ],
     "20": [
-      "ranger-l20-1"
+      "ranger-foe-slayer"
     ]
   },
   "progressionSummary": [

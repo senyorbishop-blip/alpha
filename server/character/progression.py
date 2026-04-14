@@ -93,6 +93,16 @@ def _normalize_choice_list(value: Any) -> list[dict[str, Any]]:
     return normalized
 
 
+def _append_unique_feature(rows: list[dict[str, Any]], feature: dict[str, Any]) -> None:
+    feature_id = str((feature or {}).get("id") or "").strip().lower()
+    if not feature_id:
+        return
+    for existing in rows:
+        if str((existing or {}).get("id") or "").strip().lower() == feature_id:
+            return
+    rows.append(feature)
+
+
 def _unique_spell_ids(value: Any) -> list[str]:
     rows = value if isinstance(value, list) else []
     out: list[str] = []
@@ -372,6 +382,9 @@ def build_levelup_preview(document: Any) -> dict[str, Any]:
     classes_by_id = catalog.get("classesById", {})
     if not isinstance(classes_by_id, dict):
         classes_by_id = {}
+    subclasses_by_id = catalog.get("subclassesById", {})
+    if not isinstance(subclasses_by_id, dict):
+        subclasses_by_id = {}
 
     _classes_list = canonical.get("classes") if isinstance(canonical.get("classes"), list) else []
     primary_class = _classes_list[0] if _classes_list else {}
@@ -438,6 +451,40 @@ def build_levelup_preview(document: Any) -> dict[str, Any]:
                 }
             )
 
+    subclass_level = _safe_int(class_catalog.get("subclassLevel"), 0, minimum=0, maximum=20)
+    subclass_id = str(primary_class.get("subclassId") or "").strip().lower()
+    subclass_catalog = subclasses_by_id.get(subclass_id, {}) if subclass_id else {}
+    if not isinstance(subclass_catalog, dict):
+        subclass_catalog = {}
+    subclass_unlocks_by_level = (
+        subclass_catalog.get("featureUnlocksByLevel")
+        if isinstance(subclass_catalog.get("featureUnlocksByLevel"), dict)
+        else {}
+    )
+    subclass_feature_defs = (
+        subclass_catalog.get("featureDefinitions")
+        if isinstance(subclass_catalog.get("featureDefinitions"), dict)
+        else {}
+    )
+    subclass_feature_ids = [
+        str(feature_id or "").strip()
+        for feature_id in (subclass_unlocks_by_level.get(str(next_level), []) if isinstance(subclass_unlocks_by_level, dict) else [])
+        if str(feature_id or "").strip()
+    ]
+    for feature_id in subclass_feature_ids:
+        definition = subclass_feature_defs.get(feature_id, {})
+        if not isinstance(definition, dict):
+            definition = {}
+        _append_unique_feature(
+            new_features,
+            {
+                "id": feature_id,
+                "displayName": str(definition.get("displayName") or feature_id.replace("-", " ").title()),
+                "description": str(definition.get("description") or ""),
+                "choices": _normalize_choice_list(definition.get("choices", [])),
+            },
+        )
+
     is_asi_level = bool(next_level_row.get("asiOrFeat", False))
     hit_die = _class_hit_die(class_catalog)
     con_mod = _ability_modifier(_resolve_con_score(canonical))
@@ -478,8 +525,6 @@ def build_levelup_preview(document: Any) -> dict[str, Any]:
                 "reason": f"{class_display_name} can take an Ability Score Improvement or feat at level {next_level}.",
             }
         )
-    subclass_level = _safe_int(class_catalog.get("subclassLevel"), 0, minimum=0, maximum=20)
-    subclass_id = str(primary_class.get("subclassId") or "").strip().lower()
     if subclass_level and next_level >= subclass_level and not subclass_id:
         required_choices.append(
             {

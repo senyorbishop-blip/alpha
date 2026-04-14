@@ -251,9 +251,9 @@
     },
     ranger: {
       role: 'Hunter / skirmisher',
-      loop: 'Verify ranged or dual-weapon loadout first, then test mark/resource interactions and spell support from the same surface.',
-      testOrder: ['Equipped weapon attacks', "Hunter\'s Mark / spell layer", 'Loadout rules'],
-      verify: ['Ammo / thrown logic', 'Spell cards', 'Target damage', 'Tracking features'],
+      loop: 'Audit ranger as a blended loop: martial attack cadence, Hunter’s Mark pressure, half-caster slots/known spells, and mobility/scouting identity should all connect.',
+      testOrder: ['Equipped attacks + Extra Attack cadence', "Hunter\'s Mark + slot/concentration lane", 'Subclass tactics / companion or opener flow'],
+      verify: ['Half-caster slot and known-spell clarity', 'Weapon mastery + fighting style visibility', 'Mobility/scout features', 'Subclass timing tools'],
     },
     rogue: {
       role: 'Precision striker',

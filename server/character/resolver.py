@@ -6,7 +6,11 @@ import time
 from typing import Any
 
 from server.character.awakening import apply_awakening_grants, resolve_awakening_for_runtime
-from server.character.feature_catalog import build_runtime_feature_payload
+from server.character.feature_catalog import (
+    build_class_feature_definitions,
+    build_runtime_feature_payload,
+    build_subclass_feature_definitions,
+)
 from server.character.feature_authored_data import build_background_feature_profile, build_feat_profile, build_species_trait_profile
 from server.character.rules_catalog import get_class_catalog_row, get_subclass_catalog_row, load_rules_catalog
 from server.character.spell_compendium import build_character_spell_manifest
@@ -429,35 +433,55 @@ def resolve_character_runtime(document: Any) -> dict:
             continue
         class_name = str(class_row.get("name") or class_row.get("classId") or "Class").strip()
         class_level = _safe_int(class_row.get("level"), 1, minimum=1)
+        class_id = str(class_row.get("classId") or "").strip().lower()
+        subclass_id = str(class_row.get("subclassId") or "").strip().lower()
+        class_defs = build_class_feature_definitions(get_class_catalog_row(class_id) or {})
+        subclass_defs = build_subclass_feature_definitions(get_subclass_catalog_row(subclass_id) or {}) if subclass_id else {}
         for row in class_row.get("selectedFeatures") or []:
             if not isinstance(row, dict):
                 continue
             feature_id = str(row.get("id") or "").strip()
-            feature_name = str(row.get("displayName") or feature_id or "Feature Choice").strip()
+            class_def = class_defs.get(feature_id) if isinstance(class_defs, dict) else {}
+            subclass_def = subclass_defs.get(feature_id) if isinstance(subclass_defs, dict) else {}
+            definition = subclass_def if isinstance(subclass_def, dict) and subclass_def else class_def if isinstance(class_def, dict) else {}
+            feature_name = str(row.get("displayName") or definition.get("displayName") or feature_id or "Feature Choice").strip()
             selected_choice = row.get("selectedChoice")
             selected_choice_id = str(selected_choice or "").strip()
+            selected_choice_name = selected_choice_id
+            selected_choice_description = ""
+            for choice in (definition.get("choices") if isinstance(definition.get("choices"), list) else []):
+                if not isinstance(choice, dict):
+                    continue
+                if str(choice.get("id") or "").strip().lower() == selected_choice_id.lower():
+                    selected_choice_name = str(choice.get("name") or selected_choice_id).strip()
+                    selected_choice_description = str(choice.get("description") or "").strip()
+                    break
+            is_subclass_feature = isinstance(subclass_def, dict) and bool(subclass_def)
+            feature_description = str(row.get("description") or definition.get("description") or "").strip()
+            if selected_choice_description:
+                feature_description = (feature_description + "\n\n" + selected_choice_description).strip()
             selected_runtime_features.append(
                 {
                     "id": feature_id or f"selected-{len(selected_runtime_features)+1}",
-                    "name": feature_name + (f" [{selected_choice_id}]" if selected_choice_id else ""),
-                    "section": "Class Features",
-                    "type": "passive",
+                    "name": feature_name + (f" — {selected_choice_name}" if selected_choice_name else ""),
+                    "section": str(definition.get("section") or "Class Features"),
+                    "type": str(definition.get("type") or "passive"),
                     "className": class_name,
                     "subclassName": str(class_row.get("subclassName") or "").strip(),
                     "minLevel": class_level,
-                    "resourceName": "",
-                    "trackUses": False,
-                    "tags": ["selection", "build-choice"],
-                    "summary": str(row.get("description") or "").strip(),
-                    "description": str(row.get("description") or "").strip(),
-                    "range": "",
-                    "duration": "",
-                    "save": "",
-                    "trigger": "",
-                    "usage": "",
-                    "recovery": "",
-                    "effect": f"Selected option: {selected_choice_id}" if selected_choice_id else "",
-                    "isSubclass": False,
+                    "resourceName": str(definition.get("resourceName") or ""),
+                    "trackUses": bool(definition.get("trackUses")),
+                    "tags": list(definition.get("tags") or ["selection", "build-choice"]),
+                    "summary": str(definition.get("summary") or row.get("description") or "").strip(),
+                    "description": feature_description,
+                    "range": str(definition.get("range") or ""),
+                    "duration": str(definition.get("duration") or ""),
+                    "save": str(definition.get("save") or ""),
+                    "trigger": str(definition.get("trigger") or ""),
+                    "usage": str(definition.get("usage") or ""),
+                    "recovery": str(definition.get("recovery") or ""),
+                    "effect": f"Selected option: {selected_choice_name}" if selected_choice_name else "",
+                    "isSubclass": is_subclass_feature,
                     "kind": "class",
                     "source": "native-selected-feature",
                 }
