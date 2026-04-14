@@ -33,6 +33,16 @@ def test_srd_mundane_seed_expansion_contains_crafting_materials_and_recipes():
         "seq_spider_silk_spool",
         "seq_recipe_stitchleaf_salve",
         "seq_recipe_minor_vigor_tonic",
+        "seq_tinkers_multitool",
+        "seq_grapnel_spool",
+        "seq_signal_beetle",
+        "seq_cutlass",
+        "seq_boarding_axe",
+        "seq_smugglers_satchel",
+        "seq_arc_battery",
+        "seq_precision_gear_pack",
+        "seq_recipe_grapnel_spool_launcher",
+        "seq_recipe_stormshore_cloak",
     }
     missing = sorted(expected - set(by_id))
     assert not missing, f"Missing expected expanded economy entries: {missing}"
@@ -42,6 +52,26 @@ def test_srd_mundane_seed_expansion_contains_crafting_materials_and_recipes():
     assert "Material" in categories
     assert "Recipe" in categories
     assert "Consumable" in categories
+    assert "Trinket" in categories
+
+
+def test_magic_seed_scroll_expansion_has_spell_tiers_and_named_scrolls():
+    from server.rules_db import _SRD_MAGIC_ITEMS
+
+    by_id = {item.get("id"): item for item in _SRD_MAGIC_ITEMS}
+    for idx in range(1, 10):
+        assert f"mi_spell_scroll_{idx}" in by_id, f"Missing spell scroll tier {idx}"
+
+    named_scroll_ids = {
+        "mi_scroll_warding_tides",
+        "mi_scroll_safe_harbor",
+        "mi_scroll_warding_circle",
+        "mi_scroll_far_path",
+        "mi_scroll_voltaic_malfunction",
+        "mi_scroll_blackwake_last_order",
+    }
+    missing_named = sorted(named_scroll_ids - set(by_id.keys()))
+    assert not missing_named, f"Missing named/utility scroll additions: {missing_named}"
 
 
 def test_new_srd_seed_entries_do_not_collide_with_existing_magic_item_names():
