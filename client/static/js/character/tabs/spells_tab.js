@@ -98,6 +98,37 @@
       note: _firstText(pact.note, ''),
     };
   }
+  function _classKey(charData) {
+    return _firstText(charData && charData.className, charData && charData.class, '').toLowerCase().trim();
+  }
+  function _sorcererInsights(charData, state) {
+    const mechanics = charData && charData.classMechanics && typeof charData.classMechanics === 'object' ? charData.classMechanics : {};
+    const limits = state && state.manifest && state.manifest.limits && typeof state.manifest.limits === 'object' ? state.manifest.limits : {};
+    const resources = _safeArray(charData && charData.nativeResources);
+    const sorcery = resources.find(function (row) {
+      const id = String(row && row.id || '').toLowerCase();
+      return id === 'sorcery_points' || String(row && row.name || '').toLowerCase() === 'sorcery points';
+    }) || null;
+    const featureRows = _safeArray(charData && charData.nativeClassFeatures).concat(_safeArray(charData && charData.nativeFeatures));
+    const metamagicChoices = featureRows
+      .map(function (row) {
+        const name = _firstText(row && row.name, row && row.displayName, '');
+        if (!/metamagic/i.test(name || '')) return '';
+        const effect = _firstText(row && row.effect, '');
+        const fromEffect = effect.replace(/^selected option:\s*/i, '').trim();
+        const fromName = name.split('—')[1] ? name.split('—')[1].trim() : '';
+        return _firstText(fromEffect, fromName, '');
+      })
+      .filter(Boolean);
+    const uniqueMeta = Array.from(new Set(metamagicChoices)).slice(0, 4);
+    return {
+      sorceryCurrent: sorcery && Number.isFinite(parseInt(sorcery.current, 10)) ? parseInt(sorcery.current, 10) : null,
+      sorceryMax: sorcery && Number.isFinite(parseInt(sorcery.max, 10)) ? parseInt(sorcery.max, 10) : (Number.isFinite(parseInt(mechanics.sorceryPoints, 10)) ? parseInt(mechanics.sorceryPoints, 10) : null),
+      knownLimit: Number.isFinite(parseInt(limits.spellsKnown, 10)) ? parseInt(limits.spellsKnown, 10) : null,
+      cantripLimit: Number.isFinite(parseInt(limits.cantripsKnown, 10)) ? parseInt(limits.cantripsKnown, 10) : null,
+      metamagicChoices: uniqueMeta,
+    };
+  }
   function _spellRankLabel(spell) {
     const level = _spellLevelNumber(spell);
     return level === 0 ? 'Cantrip' : 'Level ' + level;
@@ -1070,6 +1101,8 @@ function _spellAttackSaveCell(spell, charData) {
     const concentration = _firstText(state.charData && state.charData.activeConcentration, '');
     const selected = _selectedSpells(state);
     const pact = _pactMagicState(state.charData || {});
+    const isSorcerer = _classKey(state.charData || {}) === 'sorcerer';
+    const sorcerer = isSorcerer ? _sorcererInsights(state.charData || {}, state) : null;
     const activeSlotTiers = _getSlotCounts(state.charData || {}).filter(function (count, idx) { return idx > 0 && count > 0; }).length;
     container.innerHTML = '' +
       '<div class="cs-combat-hero-grid">' +
@@ -1077,11 +1110,15 @@ function _spellAttackSaveCell(spell, charData) {
         _renderSummaryCard('Spell Attack', _firstText(state.charData && state.charData.spellAttack, '—'), selected.length ? 'Attack-roll spells use this bonus.' : 'No spell attack bonus detected yet.', selected.length ? 'gold' : '') +
         _renderSummaryCard('Active Spells', String(_selectedSpellCount(state)), _selectedSpellCount(state) ? 'Known / prepared list is linked.' : 'Nothing selected yet.', _selectedSpellCount(state) ? 'violet' : '') +
         _renderSummaryCard('Concentration', concentration || 'None', concentration ? 'Active on this character now.' : 'No active concentration spell.', concentration ? 'violet' : '') +
+        (isSorcerer ? _renderSummaryCard('Sorcery Points', (sorcerer && sorcerer.sorceryMax != null) ? ((sorcerer.sorceryCurrent != null ? sorcerer.sorceryCurrent : sorcerer.sorceryMax) + ' / ' + sorcerer.sorceryMax) : '—', 'Spend for Metamagic and Flexible Casting conversions.', (sorcerer && sorcerer.sorceryMax != null) ? 'gold' : '') : '') +
+        (isSorcerer ? _renderSummaryCard('Spells Known', (sorcerer && sorcerer.knownLimit != null) ? (String(_limitSnapshot(state).knownCount) + ' / ' + sorcerer.knownLimit) : '—', 'Known-spell class: learned spells are persistent.', (sorcerer && sorcerer.knownLimit != null) ? 'violet' : '') : '') +
+        (isSorcerer ? _renderSummaryCard('Cantrips', (sorcerer && sorcerer.cantripLimit != null) ? (String(_limitSnapshot(state).cantripCount) + ' / ' + sorcerer.cantripLimit) : '—', 'At-will sorcerer tools always ready.', (sorcerer && sorcerer.cantripLimit != null) ? 'teal' : '') : '') +
+        (isSorcerer ? _renderSummaryCard('Metamagic', (sorcerer && sorcerer.metamagicChoices.length) ? sorcerer.metamagicChoices.length : 'Review', (sorcerer && sorcerer.metamagicChoices.length) ? sorcerer.metamagicChoices.join(', ') : 'Select and verify metamagic options in level-up/features.', (sorcerer && sorcerer.metamagicChoices.length) ? 'gold' : '') : '') +
         (pact.enabled ? _renderSummaryCard('Pact Slots', String(pact.slotCount || 0), (pact.slotLevel ? ('All cast at level ' + pact.slotLevel + '.') : 'Warlock pact slot economy.'), 'gold') : '') +
         (pact.enabled ? _renderSummaryCard('Pact Recovery', 'Short Rest', 'Pact slots refresh on Short Rest cadence.', 'teal') : '') +
         (pact.enabled ? _renderSummaryCard('Mystic Arcanum', 'Separate', 'Arcanum casts are not part of pact slot budgeting.', 'violet') : '') +
       '</div>' +
-      ((activeSlotTiers || concentration || pact.enabled) ? '<div class="cs-inline-hint">' + _esc(concentration ? ('Concentration: ' + concentration + ' • ') : '') + _esc(pact.enabled ? ('Pact Magic: ' + (pact.slotCount || 0) + ' slot(s) at level ' + (pact.slotLevel || '?') + ', refreshing on short rest. ') : '') + _esc(activeSlotTiers ? (activeSlotTiers + ' slot tiers are available for this character.') : 'Cantrips only are available right now.') + (pact.note ? (' ' + _esc(pact.note)) : '') + '</div>' : '') +
+      ((activeSlotTiers || concentration || pact.enabled || isSorcerer) ? '<div class="cs-inline-hint">' + _esc(concentration ? ('Concentration: ' + concentration + ' • ') : '') + _esc(pact.enabled ? ('Pact Magic: ' + (pact.slotCount || 0) + ' slot(s) at level ' + (pact.slotLevel || '?') + ', refreshing on short rest. ') : '') + _esc(isSorcerer ? 'Sorcerer flow: cast from known spells, then spend Sorcery Points for Metamagic or Flexible Casting conversions. ' : '') + _esc(activeSlotTiers ? (activeSlotTiers + ' slot tiers are available for this character.') : 'Cantrips only are available right now.') + (pact.note ? (' ' + _esc(pact.note)) : '') + '</div>' : '') +
       _renderSlotsRow(state.charData) +
       '<div class="cs-spell-toolbar">' +
         _renderSearch(state.managerOpen ? 'Search spells you can add…' : 'Search your current spells…') +

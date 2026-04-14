@@ -5,7 +5,7 @@
   "parentClassId": "sorcerer",
   "flavorText": "Draconic sorcerers inherit ancient dragon magic manifesting in resilience, elemental might, and wings.",
   "featureUnlocksByLevel": {
-    "1": [
+    "3": [
       "draconic-dragon-ancestor",
       "draconic-resilience"
     ],
@@ -21,13 +21,13 @@
   },
   "features": [
     {
-      "level": 1,
+      "level": 3,
       "id": "draconic-dragon-ancestor",
       "displayName": "Dragon Ancestor",
       "description": "Choose your draconic ancestry, determining an associated damage type and granting the dragon language."
     },
     {
-      "level": 1,
+      "level": 3,
       "id": "draconic-resilience",
       "displayName": "Draconic Resilience",
       "description": "Your hit point maximum increases by 1 per sorcerer level, and while unarmored your AC equals 13 + Dexterity modifier."
@@ -59,6 +59,58 @@
         "subclass",
         "identity",
         "draconic"
+      ],
+      "choices": [
+        {
+          "id": "black",
+          "name": "Black Dragon (Acid)",
+          "description": "Elemental affinity: acid."
+        },
+        {
+          "id": "blue",
+          "name": "Blue Dragon (Lightning)",
+          "description": "Elemental affinity: lightning."
+        },
+        {
+          "id": "brass",
+          "name": "Brass Dragon (Fire)",
+          "description": "Elemental affinity: fire."
+        },
+        {
+          "id": "bronze",
+          "name": "Bronze Dragon (Lightning)",
+          "description": "Elemental affinity: lightning."
+        },
+        {
+          "id": "copper",
+          "name": "Copper Dragon (Acid)",
+          "description": "Elemental affinity: acid."
+        },
+        {
+          "id": "gold",
+          "name": "Gold Dragon (Fire)",
+          "description": "Elemental affinity: fire."
+        },
+        {
+          "id": "green",
+          "name": "Green Dragon (Poison)",
+          "description": "Elemental affinity: poison."
+        },
+        {
+          "id": "red",
+          "name": "Red Dragon (Fire)",
+          "description": "Elemental affinity: fire."
+        },
+        {
+          "id": "silver",
+          "name": "Silver Dragon (Cold)",
+          "description": "Elemental affinity: cold."
+        },
+        {
+          "id": "white",
+          "name": "White Dragon (Cold)",
+          "description": "Elemental affinity: cold."
+        }
       ]
     },
     "draconic-resilience": {
@@ -68,7 +120,9 @@
         "subclass",
         "defense",
         "draconic"
-      ]
+      ],
+      "section": "Class Features",
+      "type": "passive"
     },
     "draconic-elemental-affinity": {
       "summary": "Your chosen element becomes a sharper extension of your bloodline, rewarding spells that match your dragon heritage.",
@@ -77,16 +131,22 @@
         "subclass",
         "damage",
         "draconic"
-      ]
+      ],
+      "resourceName": "Sorcery Points",
+      "trackUses": true,
+      "usage": "Spend 1 Sorcery Point to gain resistance to your ancestor element for 1 hour.",
+      "recovery": "Uses Sorcery Points, which refresh on a long rest."
     },
     "draconic-dragon-wings": {
       "summary": "Your lineage manifests physically, granting the mobility and presence of true dragon blood.",
-      "description": "Dragon Wings is one of the subclass’s most visible fantasy moments. It turns the bloodline from a story into something everyone at the table can see.",
+      "description": "Dragon Wings is one of the subclass\u2019s most visible fantasy moments. It turns the bloodline from a story into something everyone at the table can see.",
       "tags": [
         "subclass",
         "mobility",
         "draconic"
-      ]
+      ],
+      "section": "Class Features",
+      "type": "passive"
     },
     "draconic-presence": {
       "section": "Actions",
@@ -98,7 +158,11 @@
         "control",
         "draconic",
         "capstone"
-      ]
+      ],
+      "resourceName": "Draconic Presence",
+      "trackUses": true,
+      "usage": "Activate your presence aura once per long rest.",
+      "recovery": "Refreshes on a long rest."
     }
   }
 }

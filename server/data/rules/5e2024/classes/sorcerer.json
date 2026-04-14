@@ -569,7 +569,11 @@
         "signature",
         "arcane",
         "resource"
-      ]
+      ],
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "usage": "Activate your heightened sorcerous state when the encounter demands a power spike.",
+      "recovery": "Refreshes on a long rest."
     },
     "sorcerer-l1-2": {
       "summary": "Your spells are known instinctively rather than prepared from study, making your list narrower but more personal.",
@@ -600,7 +604,11 @@
         "resource",
         "conversion",
         "spellcasting"
-      ]
+      ],
+      "section": "Class Features",
+      "type": "special",
+      "usage": "Convert Sorcery Points into spell slots or convert slots into Sorcery Points using Flexible Casting rates.",
+      "recovery": "Uses Sorcery Points, which refresh on a long rest."
     },
     "sorcerer-l3-1": {
       "summary": "Your origin explains where your magic comes from and what kind of instability or legacy it carries.",
@@ -620,6 +628,62 @@
         "spellcasting",
         "customization",
         "resource"
+      ],
+      "section": "Class Features",
+      "type": "special",
+      "usage": "Choose 2 options at this level. Additional options at levels 10 and 17.",
+      "recovery": "Metamagic spends Sorcery Points, which refresh on a long rest.",
+      "choices": [
+        {
+          "id": "careful-spell",
+          "name": "Careful Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "distant-spell",
+          "name": "Distant Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "empowered-spell",
+          "name": "Empowered Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "extended-spell",
+          "name": "Extended Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "heightened-spell",
+          "name": "Heightened Spell",
+          "description": "Cost: 3 Sorcery Points."
+        },
+        {
+          "id": "quickened-spell",
+          "name": "Quickened Spell",
+          "description": "Cost: 2 Sorcery Points."
+        },
+        {
+          "id": "seeking-spell",
+          "name": "Seeking Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "subtle-spell",
+          "name": "Subtle Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "transmuted-spell",
+          "name": "Transmuted Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "twinned-spell",
+          "name": "Twinned Spell",
+          "description": "Cost: 1+ Sorcery Points depending on spell level."
+        }
       ]
     },
     "sorcerer-l5-1": {
@@ -631,7 +695,11 @@
         "survival",
         "self-heal",
         "arcane"
-      ]
+      ],
+      "resourceName": "Sorcerous Vitality",
+      "trackUses": true,
+      "usage": "Use once per long rest unless other features improve it.",
+      "recovery": "Refreshes on a long rest."
     },
     "sorcerer-l7-1": {
       "summary": "Push your innate state to a more complete form so your signature magic feels fully online in major encounters.",
@@ -640,7 +708,13 @@
         "signature",
         "arcane",
         "power-state"
-      ]
+      ],
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "Sorcery Points",
+      "trackUses": true,
+      "usage": "Enter your sorcery incarnate state during a key fight.",
+      "recovery": "Sorcery Point spenders refresh on a long rest."
     },
     "sorcerer-l18-1": {
       "summary": "Your mastery of raw magic reaches a rarefied peak where high-end casting feels effortless and overwhelming.",
@@ -649,7 +723,9 @@
         "capstone-adjacent",
         "arcane",
         "signature"
-      ]
+      ],
+      "section": "Class Features",
+      "type": "passive"
     },
     "sorcerer-l20-1": {
       "summary": "Your apotheosis sharpens even further, turning your innate magic into something close to a living magical phenomenon.",
@@ -658,6 +734,266 @@
         "capstone",
         "arcane",
         "mythic"
+      ],
+      "section": "Class Features",
+      "type": "passive"
+    },
+    "sorcerer-l10-1": {
+      "section": "Class Features",
+      "type": "special",
+      "resourceName": "Sorcery Points",
+      "trackUses": true,
+      "summary": "Expand your Metamagic toolkit with one more way to bend spell delivery.",
+      "description": "Adding another Metamagic option increases turn-to-turn spell shaping depth so your best spells keep scaling with your decisions, not only slot level.",
+      "usage": "Choose 1 additional Metamagic option.",
+      "recovery": "Metamagic spends Sorcery Points, which refresh on a long rest.",
+      "tags": [
+        "spellcasting",
+        "customization",
+        "resource"
+      ],
+      "choices": [
+        {
+          "id": "careful-spell",
+          "name": "Careful Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "distant-spell",
+          "name": "Distant Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "empowered-spell",
+          "name": "Empowered Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "extended-spell",
+          "name": "Extended Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "heightened-spell",
+          "name": "Heightened Spell",
+          "description": "Cost: 3 Sorcery Points."
+        },
+        {
+          "id": "quickened-spell",
+          "name": "Quickened Spell",
+          "description": "Cost: 2 Sorcery Points."
+        },
+        {
+          "id": "seeking-spell",
+          "name": "Seeking Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "subtle-spell",
+          "name": "Subtle Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "transmuted-spell",
+          "name": "Transmuted Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "twinned-spell",
+          "name": "Twinned Spell",
+          "description": "Cost: 1+ Sorcery Points depending on spell level."
+        }
+      ]
+    },
+    "sorcerer-l17-2": {
+      "section": "Class Features",
+      "type": "special",
+      "resourceName": "Sorcery Points",
+      "trackUses": true,
+      "summary": "Expand your Metamagic toolkit with one more way to bend spell delivery.",
+      "description": "Adding another Metamagic option increases turn-to-turn spell shaping depth so your best spells keep scaling with your decisions, not only slot level.",
+      "usage": "Choose 1 additional Metamagic option.",
+      "recovery": "Metamagic spends Sorcery Points, which refresh on a long rest.",
+      "tags": [
+        "spellcasting",
+        "customization",
+        "resource"
+      ],
+      "choices": [
+        {
+          "id": "careful-spell",
+          "name": "Careful Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "distant-spell",
+          "name": "Distant Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "empowered-spell",
+          "name": "Empowered Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "extended-spell",
+          "name": "Extended Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "heightened-spell",
+          "name": "Heightened Spell",
+          "description": "Cost: 3 Sorcery Points."
+        },
+        {
+          "id": "quickened-spell",
+          "name": "Quickened Spell",
+          "description": "Cost: 2 Sorcery Points."
+        },
+        {
+          "id": "seeking-spell",
+          "name": "Seeking Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "subtle-spell",
+          "name": "Subtle Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "transmuted-spell",
+          "name": "Transmuted Spell",
+          "description": "Cost: 1 Sorcery Point."
+        },
+        {
+          "id": "twinned-spell",
+          "name": "Twinned Spell",
+          "description": "Cost: 1+ Sorcery Points depending on spell level."
+        }
+      ]
+    },
+    "sorcerer-l4-1": {
+      "summary": "Improve your core ability scores or take a feat to shape your signature casting style.",
+      "description": "This is a major build fork: increase Charisma/Constitution for cleaner spell output and durability, or take a feat that reinforces your sorcery game plan.",
+      "tags": [
+        "build",
+        "progression"
+      ]
+    },
+    "sorcerer-l4-2": {
+      "summary": "Your at-will magic depth increases to five cantrips known.",
+      "description": "Another cantrip widens your no-slot toolkit so the class keeps a personal magical identity even in low-slot fights.",
+      "tags": [
+        "spellcasting",
+        "cantrip"
+      ]
+    },
+    "sorcerer-l6-1": {
+      "summary": "Your Sorcerous Origin advances with a defining subclass feature.",
+      "description": "Level 6 is where your origin starts materially changing your turn decisions, not just your flavor text.",
+      "tags": [
+        "subclass",
+        "progression",
+        "identity"
+      ]
+    },
+    "sorcerer-l8-1": {
+      "summary": "Another Ability Score Improvement or feat sharpens your sorcerer game plan.",
+      "description": "Use this to reinforce casting reliability, survivability, or a feat package that complements your Metamagic choices.",
+      "tags": [
+        "build",
+        "progression"
+      ]
+    },
+    "sorcerer-l9-1": {
+      "summary": "You unlock 5th-level spells and a new power tier for encounter-defining casts.",
+      "description": "This spell-tier jump should be obvious in both slot visibility and known-spell planning because it changes what fights you can solve directly.",
+      "tags": [
+        "spellcasting",
+        "progression"
+      ]
+    },
+    "sorcerer-l10-2": {
+      "summary": "Your cantrip list expands again to six known cantrips.",
+      "description": "This keeps your no-slot identity relevant while Sorcery Points and leveled spells are reserved for higher-pressure moments.",
+      "tags": [
+        "spellcasting",
+        "cantrip"
+      ]
+    },
+    "sorcerer-l11-1": {
+      "summary": "You unlock 6th-level spells and access to high-impact arcane effects.",
+      "description": "This progression point expands your upper-tier spell identity and should stand out in spell list management and slot planning.",
+      "tags": [
+        "spellcasting",
+        "progression"
+      ]
+    },
+    "sorcerer-l12-1": {
+      "summary": "Another Ability Score Improvement or feat to refine your late-midgame build.",
+      "description": "At this stage, optimize the stats or feats that best support your preferred Metamagic and spell selection patterns.",
+      "tags": [
+        "build",
+        "progression"
+      ]
+    },
+    "sorcerer-l13-1": {
+      "summary": "You unlock 7th-level spells for stronger control, utility, and burst options.",
+      "description": "Your spell ceiling rises again, so sheet and level-up surfaces should make the new tier immediately visible.",
+      "tags": [
+        "spellcasting",
+        "progression"
+      ]
+    },
+    "sorcerer-l14-1": {
+      "summary": "Your Sorcerous Origin gains another subclass-defining feature.",
+      "description": "This is a subclass identity spike where your origin should feel mechanically distinct in active play.",
+      "tags": [
+        "subclass",
+        "progression",
+        "identity"
+      ]
+    },
+    "sorcerer-l15-1": {
+      "summary": "You unlock 8th-level spells and another major spellcasting tier jump.",
+      "description": "High-tier spell access should be reflected clearly in slot visibility, known spell planning, and combat expectations.",
+      "tags": [
+        "spellcasting",
+        "progression"
+      ]
+    },
+    "sorcerer-l15-2": {
+      "summary": "Your Sorcerous Origin advances again with its high-level subclass feature.",
+      "description": "This progression point should keep subclass identity visible in gameplay rather than leaving it as passive lore.",
+      "tags": [
+        "subclass",
+        "progression",
+        "identity"
+      ]
+    },
+    "sorcerer-l16-1": {
+      "summary": "Another Ability Score Improvement or feat strengthens your endgame casting profile.",
+      "description": "Use this level to lock in your final core stat line or feat package before top-tier spell play.",
+      "tags": [
+        "build",
+        "progression"
+      ]
+    },
+    "sorcerer-l17-1": {
+      "summary": "You unlock 9th-level spells, the highest tier of arcane casting.",
+      "description": "This is the top spell-tier breakpoint and should be explicitly visible in slots, known spells, and action planning.",
+      "tags": [
+        "spellcasting",
+        "progression",
+        "capstone-adjacent"
+      ]
+    },
+    "sorcerer-l19-1": {
+      "summary": "Gain an Epic Boon as a late-game power reinforcement.",
+      "description": "Epic Boons are endgame build spikes that further specialize your character beyond normal class scaling.",
+      "tags": [
+        "progression",
+        "epic"
       ]
     }
   },

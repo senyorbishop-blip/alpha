@@ -71,6 +71,7 @@
         subclassDisplayName: String(row && row.subclassDisplayName || 'Subclass').trim(),
         spellcastingType: String(row && row.spellcastingType || 'none').trim(),
         spellcastingAbility: String(row && row.spellcastingAbility || '').trim(),
+        buildTips: row && row.buildTips && typeof row.buildTips === 'object' ? row.buildTips : {},
         featureDefinitions: (row && row.featureDefinitions && typeof row.featureDefinitions === 'object') ? row.featureDefinitions : {},
         featuresByLevel: Array.isArray(row && row.featuresByLevel) ? row.featuresByLevel : [],
         progressionTable: progressionTable,
@@ -114,6 +115,18 @@
     var subclassText = entry.subclassLevel > 0 ? ('Level ' + entry.subclassLevel + ' ' + (entry.subclassDisplayName || 'Subclass')) : 'No subclass track';
     var descHtml = entry.classDescription
       ? '<div class="cd-desc">' + escHtml(entry.classDescription) + '</div>'
+      : '';
+    var buildTips = entry.buildTips && typeof entry.buildTips === 'object' ? entry.buildTips : {};
+    var primaryFocus = String(buildTips.primaryFocus || '').trim();
+    var secondaryFocus = String(buildTips.secondaryFocus || '').trim();
+    var avoidDump = String(buildTips.avoidDump || '').trim();
+    var buildTipsHtml = (primaryFocus || secondaryFocus || avoidDump)
+      ? '<div style="margin:0 0 16px;padding:10px 12px;border:1px solid rgba(91,163,208,0.25);border-radius:10px;background:rgba(12,20,32,0.35)">' +
+          '<div style="font-family:var(--cb-font-display);font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;color:#9dd7ff;margin-bottom:6px">Build tips</div>' +
+          (primaryFocus ? '<div class="cd-desc" style="margin:0 0 4px 0"><strong style="color:#f3e7c4">Primary:</strong> ' + escHtml(primaryFocus + (buildTips.primaryReason ? (' — ' + buildTips.primaryReason) : '')) + '</div>' : '') +
+          (secondaryFocus ? '<div class="cd-desc" style="margin:0 0 4px 0"><strong style="color:#f3e7c4">Secondary:</strong> ' + escHtml(secondaryFocus + (buildTips.secondaryReason ? (' — ' + buildTips.secondaryReason) : '')) + '</div>' : '') +
+          (avoidDump ? '<div class="cd-desc" style="margin:0"><strong style="color:#f3e7c4">Avoid dumping:</strong> ' + escHtml(avoidDump + (buildTips.avoidDumpReason ? (' — ' + buildTips.avoidDumpReason) : '')) + '</div>' : '') +
+        '</div>'
       : '';
 
     var progressionRows = Array.isArray(entry.progressionTable) ? entry.progressionTable : [];
@@ -183,6 +196,7 @@
         '<div class="cd-desc" style="margin:0"><strong style="color:#f3e7c4">Skill Choices:</strong> ' + escHtml(skillsStr) + '</div>' +
         '<div class="cd-desc" style="margin:0"><strong style="color:#f3e7c4">Subclass Unlock:</strong> ' + escHtml(subclassText) + '</div>' +
       '</div>' +
+      buildTipsHtml +
       '<div style="border:1px solid rgba(201,168,76,0.14);border-radius:10px;background:rgba(6,8,10,0.38)">' +
         '<div style="padding:10px 12px;border-bottom:1px solid rgba(201,168,76,0.12);font-family:var(--cb-font-display);font-size:0.82rem;color:#E8C97A">Feature Spotlight</div>' +
         (spotlight || '<div style="padding:10px 12px;color:rgba(168,159,142,0.88);font-size:0.7rem;">Detailed feature text will appear here as the class data expands.</div>') +

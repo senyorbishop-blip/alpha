@@ -5,7 +5,7 @@
   "parentClassId": "sorcerer",
   "flavorText": "Wild Magic sorcerers tap chaotic arcana that produces unpredictable surges.",
   "featureUnlocksByLevel": {
-    "1": [
+    "3": [
       "wild-magic-surge",
       "wild-tides-of-chaos"
     ],
@@ -21,13 +21,13 @@
   },
   "features": [
     {
-      "level": 1,
+      "level": 3,
       "id": "wild-magic-surge",
       "displayName": "Wild Magic Surge",
       "description": "After casting a spell of 1st level or higher, roll a d20; on a 1, roll on the Wild Magic Surge table of 50 effects."
     },
     {
-      "level": 1,
+      "level": 3,
       "id": "wild-tides-of-chaos",
       "displayName": "Tides of Chaos",
       "description": "Gain advantage on one attack roll, ability check, or saving throw. The DM can then trigger a Wild Magic Surge to reset this feature."
@@ -58,24 +58,32 @@
       "tags": [
         "subclass",
         "chaos",
-        "signature"
-      ]
+        "signature",
+        "risk-reward"
+      ],
+      "section": "Class Features",
+      "type": "special",
+      "usage": "After casting a 1st-level or higher spell, the DM may call for a surge check."
     },
     "wild-tides-of-chaos": {
       "summary": "Bend fate toward success now, knowing the chaos may answer back later.",
-      "description": "Tides of Chaos is the best expression of this subclass’s bargain: immediate advantage in exchange for inviting the storm to come looking for you later.",
+      "description": "Tides of Chaos is the best expression of this subclass\u2019s bargain: immediate advantage in exchange for inviting the storm to come looking for you later.",
       "resourceName": "Tides of Chaos",
       "trackUses": true,
       "tags": [
         "subclass",
         "chaos",
         "risk-reward"
-      ]
+      ],
+      "section": "Class Features",
+      "type": "special",
+      "usage": "Use once, then recharge when the DM triggers a Wild Magic Surge.",
+      "recovery": "Recharges when surge energy is released; otherwise long rest at DM discretion."
     },
     "wild-bend-luck": {
       "section": "Reactions",
       "type": "reaction",
-      "summary": "Spend sorcery to skew another creature’s roll at the last second.",
+      "summary": "Spend sorcery to skew another creature\u2019s roll at the last second.",
       "description": "Bend Luck is a clutch manipulation button. It lets the wild mage interfere with fate directly, which is exactly what this subclass should feel like when chaos is under partial control.",
       "resourceName": "Sorcery Points",
       "trackUses": true,
@@ -84,10 +92,12 @@
         "reaction",
         "chaos",
         "resource"
-      ]
+      ],
+      "usage": "Spend 2 Sorcery Points as a reaction to add or subtract 1d4 from another creature's d20 roll.",
+      "recovery": "Uses Sorcery Points, which refresh on a long rest."
     },
     "wild-controlled-chaos": {
-      "summary": "You do not remove the chaos—you steer it into outcomes that are less likely to ruin your own plans.",
+      "summary": "When surges trigger, roll twice and choose the result so chaos becomes partially directed.",
       "description": "Controlled Chaos is a maturity point for the subclass. The magic is still wild, but now the sorcerer feels like someone surfing the wave instead of being dragged by it.",
       "tags": [
         "subclass",
@@ -97,7 +107,7 @@
     },
     "wild-spell-bombardment": {
       "summary": "When your spell hits hard, unstable force can cascade into even more punishment.",
-      "description": "Spell Bombardment is the wild mage’s late-game payoff: the subclass remains swingy, but the highs become genuinely explosive.",
+      "description": "Spell Bombardment is the wild mage\u2019s late-game payoff: the subclass remains swingy, but the highs become genuinely explosive.",
       "tags": [
         "subclass",
         "damage",

@@ -397,9 +397,9 @@ function _renderFlagshipHeader(charData) {
     },
     sorcerer: {
       heading: 'Flexible slot / point caster',
-      summary: 'The magic surface should clearly explain spellcasting first, then expose sorcery-style resource hooks as a second layer.',
-      essentials: ['Check spell rows and inspector', 'Validate slot spend', 'Inspect sorcery resource hooks'],
-      weakSpots: ['Point / slot interplay', 'Metamagic-style explanation', 'Concentration feedback'],
+      summary: 'Sorcerer should read as a known-spell caster with a visible point engine: spells known, slots, Sorcery Points, Flexible Casting, and Metamagic should connect cleanly.',
+      essentials: ['Check known cantrip/spell limits', 'Validate Sorcery Points and conversion tools', 'Inspect metamagic and subclass action surfaces'],
+      weakSpots: ['Point / slot conversion clarity', 'Metamagic option visibility', 'Subclass spike visibility (Wild/Draconic)'],
     },
     warlock: {
       heading: 'Pact magic specialist',
