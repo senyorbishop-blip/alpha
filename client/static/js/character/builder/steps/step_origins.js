@@ -2,6 +2,9 @@
   var _backgrounds = [];
   var _backgroundFetchPromise = null;
 
+  // Track which optional sections are open so re-renders don't collapse them.
+  var _originsExpanded = false;
+
   /* ── helpers (preserved) ───────────────────────────────── */
 
   function escHtml(value) {
@@ -149,28 +152,43 @@
       }).join('');
 
       return [
-        '<div class="builder-screen-header">',
-        '<h2 class="builder-screen-title">Background &amp; Origins</h2>',
-        '<div class="builder-screen-divider"></div>',
-        '<p class="builder-screen-subtitle">Choose a background that shapes your character\'s history, skills and starting feat.</p>',
+        '<div class="screen-header">',
+        '<div class="screen-title">Background &amp; Origins</div>',
+        '<div class="screen-divider"></div>',
+        '<div class="screen-subtitle">Your background shapes your history, starting skills, and origin feat.</div>',
         '</div>',
 
         '<input type="hidden" data-builder-path="origins.backgroundId" value="' + escHtml(String(origins.backgroundId || '').trim()) + '" />',
 
         '<div class="species-grid">' + cards + '</div>',
 
-        '<div class="field" style="margin-top:18px"><label>Languages (comma-separated)</label>',
-        '<input type="text" data-builder-origins-languages="1" value="' + escHtml(Array.isArray(origins.languages) ? origins.languages.join(', ') : '') + '" maxlength="220" placeholder="Common, Elvish" /></div>',
+        '<details class="cb-optional-section" data-section-key="origins-extra"' + (_originsExpanded ? ' open' : '') + '>',
+        '<summary class="cb-optional-section-summary">Additional Details <span class="cb-optional">optional</span></summary>',
+        '<div class="cb-optional-section-body">',
 
-        '<div class="field"><label>Origin Proficiencies (comma-separated)</label>',
-        '<input type="text" data-builder-origins-proficiencies="1" value="' + escHtml(Array.isArray(origins.proficiencies) ? origins.proficiencies.join(', ') : '') + '" maxlength="260" placeholder="Perception, Stealth, Thieves\' Tools" /></div>',
+        '<div class="field"><label>Additional Languages <span class="cb-optional">optional</span></label>',
+        '<input type="text" data-builder-origins-languages="1" value="' + escHtml(Array.isArray(origins.languages) ? origins.languages.join(', ') : '') + '" maxlength="220" placeholder="Common, Elvish, Dwarvish\u2026" /></div>',
 
-        '<div class="builder-help-text">Selecting a background auto-fills origin feat and skill proficiencies.</div>',
+        '<div class="field"><label>Extra Proficiencies <span class="cb-optional">optional</span></label>',
+        '<input type="text" data-builder-origins-proficiencies="1" value="' + escHtml(Array.isArray(origins.proficiencies) ? origins.proficiencies.join(', ') : '') + '" maxlength="260" placeholder="Perception, Stealth, Thieves\u2019 Tools\u2026" /></div>',
+
+        '<div class="builder-help-text">Selecting a background auto-fills your skill proficiencies and origin feat. Use these fields to add extras from your DM.</div>',
+
+        '</div>',
+        '</details>',
       ].join('');
     },
 
     bind: function bindOriginsStep(root, context) {
       if (!context || typeof context.onSetField !== 'function') return;
+
+      // Preserve optional section open state across re-renders
+      var extraDetails = root.querySelector('details[data-section-key="origins-extra"]');
+      if (extraDetails) {
+        extraDetails.addEventListener('toggle', function() {
+          _originsExpanded = extraDetails.open;
+        });
+      }
 
       var hiddenInput = root.querySelector('[data-builder-path="origins.backgroundId"]');
       var langInput = root.querySelector('[data-builder-origins-languages="1"]');

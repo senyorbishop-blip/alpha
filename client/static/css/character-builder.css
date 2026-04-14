@@ -1765,3 +1765,173 @@
     overflow-y: auto;
   }
 }
+
+/* ── Screen Header: compact variant for embedded builder ───────────────── */
+/* The standalone preview page uses full sizes; embedded builder uses these */
+.character-builder-shell .screen-header {
+  margin-bottom: 16px;
+}
+.character-builder-shell .screen-title {
+  font-size: 1.25rem;
+  letter-spacing: 0.04em;
+}
+.character-builder-shell .screen-subtitle {
+  font-size: 0.72rem;
+  margin-top: 4px;
+}
+.character-builder-shell .screen-divider {
+  margin: 8px 0;
+}
+
+/* ── Collapsible Optional Section (details/summary) ────────────────────── */
+.cb-optional-section {
+  margin-top: 10px;
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-r-lg);
+  overflow: hidden;
+  background: transparent;
+  transition: border-color 0.2s;
+}
+.cb-optional-section[open] {
+  border-color: rgba(201, 168, 76, 0.22);
+}
+.cb-optional-section-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  font-family: var(--cb-font-display);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  color: var(--cb-text-secondary);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  background: var(--cb-dark2);
+  transition: color 0.15s, background 0.15s;
+}
+.cb-optional-section-summary::-webkit-details-marker {
+  display: none;
+}
+.cb-optional-section-summary::before {
+  content: '›';
+  font-size: 0.9rem;
+  color: var(--cb-text-dim);
+  transition: transform 0.2s, color 0.15s;
+  display: inline-block;
+  flex-shrink: 0;
+  width: 12px;
+  text-align: center;
+}
+.cb-optional-section[open] > .cb-optional-section-summary::before {
+  transform: rotate(90deg);
+  color: var(--cb-gold-dim);
+}
+.cb-optional-section-summary:hover {
+  color: var(--cb-text-primary);
+  background: rgba(255, 255, 255, 0.02);
+}
+.cb-optional-section[open] > .cb-optional-section-summary {
+  color: var(--cb-gold);
+  border-bottom: 1px solid var(--cb-border);
+}
+.cb-optional-section-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  animation: screenIn 0.2s ease;
+}
+.cb-optional-section-body .field {
+  margin-bottom: 10px;
+}
+.cb-optional-section-body .field:last-child {
+  margin-bottom: 0;
+}
+.cb-optional-section-body .cb-field-row {
+  margin-bottom: 10px;
+}
+.cb-optional-section-body .cb-field-row:last-child {
+  margin-bottom: 0;
+}
+.cb-optional-section-body .cb-field-row .field {
+  margin-bottom: 0;
+}
+
+/* ── Level Picker ──────────────────────────────────────────────────────── */
+.cb-level-picker {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.cb-level-btn {
+  padding: 7px 4px;
+  border-radius: 5px;
+  border: 1px solid var(--cb-border);
+  background: var(--cb-dark2);
+  color: var(--cb-text-dim);
+  font-family: var(--cb-font-display);
+  font-size: 0.65rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+  user-select: none;
+}
+.cb-level-btn:hover:not(.active) {
+  border-color: rgba(201, 168, 76, 0.3);
+  color: var(--cb-text-secondary);
+  background: rgba(201, 168, 76, 0.05);
+}
+.cb-level-btn.active {
+  border-color: var(--cb-gold);
+  background: rgba(201, 168, 76, 0.15);
+  color: var(--cb-gold-light);
+  font-weight: 600;
+  box-shadow: 0 0 10px rgba(201, 168, 76, 0.2);
+}
+.cb-level-btn.milestone:not(.active) {
+  border-color: rgba(201, 168, 76, 0.18);
+  color: var(--cb-gold-dim);
+}
+
+/* ── Level Unlock Preview ──────────────────────────────────────────────── */
+.cb-level-unlock {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 212, 184, 0.2);
+  border-radius: var(--cb-r);
+  background: rgba(0, 212, 184, 0.05);
+  margin-bottom: 12px;
+  animation: screenIn 0.2s ease;
+}
+.cb-level-unlock--empty {
+  border-color: var(--cb-border);
+  background: transparent;
+  color: var(--cb-text-dim);
+  font-size: 0.65rem;
+  font-style: italic;
+}
+.cb-level-unlock-label {
+  font-family: var(--cb-font-display);
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  color: var(--cb-teal-dim);
+  text-transform: uppercase;
+}
+.cb-level-unlock-text {
+  font-size: 0.7rem;
+  color: rgba(213, 249, 244, 0.88);
+  line-height: 1.5;
+}
+
+/* ── Progression Class Context Line ────────────────────────────────────── */
+.cb-prog-class-line {
+  font-family: var(--cb-font-display);
+  font-size: 0.68rem;
+  color: var(--cb-gold-dim);
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}

@@ -112,55 +112,6 @@
     return parts.join(' \u00b7 ');
   }
 
-  function getRoadmapRows(draft) {
-    var classData = draft.class && typeof draft.class === 'object' ? draft.class : {};
-    var classId = normalizeId(classData.id);
-    var progression = draft.progression && typeof draft.progression === 'object' ? draft.progression : {};
-    var level = parseInt(progression.level, 10);
-    var startLevel = Number.isFinite(level) && level > 0 ? level : 1;
-
-    var api = global.CharacterBuilderAPI;
-    if (!api || typeof api.getCachedCatalog !== 'function') {
-      return { className: '', startLevel: startLevel, rows: [] };
-    }
-    var catalog = api.getCachedCatalog();
-    var classes = Array.isArray(catalog && catalog.classes) ? catalog.classes : [];
-    var classRow = null;
-    for (var ci = 0; ci < classes.length; ci++) {
-      if (normalizeId(classes[ci] && classes[ci].id) === classId) { classRow = classes[ci]; break; }
-    }
-    if (!classRow) {
-      return { className: '', startLevel: startLevel, rows: [] };
-    }
-
-    var table = Array.isArray(classRow.progressionTable) ? classRow.progressionTable : [];
-    var rows = [];
-    for (var i = 0; i < 5; i++) {
-      var nextLevel = Math.min(startLevel + i, 20);
-      var found = null;
-      for (var ti = 0; ti < table.length; ti++) {
-        if (parseInt(table[ti] && table[ti].level, 10) === nextLevel) { found = table[ti]; break; }
-      }
-      var features = found && Array.isArray(found.features) && found.features.length
-        ? found.features.join(', ')
-        : 'No catalog feature listed yet.';
-      var lower = String(features || '').toLowerCase();
-      rows.push({
-        level: nextLevel,
-        features: features,
-        isCurrent: nextLevel === startLevel,
-        isAsi: lower.indexOf('ability score improvement') !== -1 || lower.indexOf(' feat') !== -1 || lower.indexOf('epic boon') !== -1,
-      });
-      if (nextLevel >= 20) break;
-    }
-
-    return {
-      className: String(classRow.displayName || classRow.id || '').trim(),
-      startLevel: startLevel,
-      rows: rows,
-    };
-  }
-
   function showSpeciesDetailPanel(root, speciesId) {
     var entries = getSpeciesCatalogEntries();
     var entry = null;
@@ -225,27 +176,9 @@
         '<div class="screen-header">',
         '<div class="screen-title">Choose Your Species</div>',
         '<div class="screen-divider"></div>',
-        '<div class="screen-subtitle">Your ancestry shapes your innate traits, senses, and place in the world <button class="help-btn" data-help-topic="species">?</button></div>',
+        '<div class="screen-subtitle">Your ancestry shapes your innate traits, senses, and place in the world. <button class="help-btn" data-help-topic="species">?</button></div>',
         '</div>',
       ].join('');
-
-      // --- roadmap ---
-      var roadmap = getRoadmapRows(draft);
-      var roadmapHtml = '';
-      if (roadmap.className) {
-        var roadmapRowsHtml = roadmap.rows.map(function toRow(row) {
-          var cls = ['roadmap-row'];
-          if (row.isCurrent) cls.push('highlight');
-          if (row.isAsi) cls.push('asi');
-          return '<div class="' + cls.join(' ') + '"><div class="roadmap-lvl">Lv.' + escHtml(row.level) + '</div><div class="roadmap-feature">' + escHtml(row.features) + '</div></div>';
-        }).join('');
-        roadmapHtml = [
-          '<button class="roadmap-toggle">\uD83D\uDCDC Level Roadmap \u2014 see what\'s ahead</button>',
-          '<div class="roadmap-content">',
-          roadmapRowsHtml || '<div class="builder-help-text" style="margin:0;">Choose a class to preview your next 5 levels.</div>',
-          '</div>',
-        ].join('');
-      }
 
       // --- hidden input ---
       var hiddenInput = '<input type="hidden" data-builder-path="species.id" value="' + escAttr(selectedId) + '" />';
@@ -289,7 +222,6 @@
 
       return [
         header,
-        roadmapHtml,
         hiddenInput,
         '<div class="species-grid">' + cards + '</div>',
         detailPanel,
@@ -319,19 +251,9 @@
       if (currentId) {
         showSpeciesDetailPanel(root, currentId);
       }
-      // 3. Roadmap toggle
-      var roadmapBtn = root.querySelector('.roadmap-toggle');
-      var roadmapContent = root.querySelector('.roadmap-content');
-      if (roadmapBtn && roadmapContent) {
-        roadmapBtn.addEventListener('click', function() {
-          roadmapContent.classList.toggle('open');
-          roadmapBtn.textContent = roadmapContent.classList.contains('open')
-            ? '\uD83D\uDCDC Level Roadmap \u25B2'
-            : '\uD83D\uDCDC Level Roadmap \u2014 see what\'s ahead';
-        });
-      }
-      // 4. Help button
+      // 3. Help button
       var helpBtn = root.querySelector('.help-btn[data-help-topic]');
+
       if (helpBtn) {
         helpBtn.addEventListener('click', function() {
           if (typeof global.showHelp === 'function') {
