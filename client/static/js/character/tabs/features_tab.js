@@ -263,9 +263,9 @@
     },
     sorcerer: {
       role: 'Flexible caster',
-      loop: 'Check spellcasting first, then validate any Sorcery Point or metamagic-facing resource hooks on the sheet.',
-      testOrder: ['Spell cards', 'Slot spend', 'Sorcery resource'],
-      verify: ['Sorcery Points', 'Spell slots', 'Spell details', 'Concentration'],
+      loop: 'Audit sorcerer as a known-spell + Sorcery Point loop: spells known and slot tiers first, then Flexible Casting and Metamagic spenders, then origin-specific tools.',
+      testOrder: ['Known/cantrip limits', 'Sorcery Point spend and recovery', 'Metamagic + origin feature actions'],
+      verify: ['Sorcery Points', 'Flexible Casting', 'Metamagic options', 'Origin features'],
     },
     warlock: {
       role: 'Pact caster',

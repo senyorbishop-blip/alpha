@@ -71,6 +71,11 @@
       copy: 'Rogue should read as a precision loop: set up one decisive hit each turn with Cunning Action / Steady Aim, then decide whether Sneak Attack goes to pure damage or Cunning Strike control.',
       checks: ['Sneak Attack dice visible', 'Setup tools visible (Cunning Action / Steady Aim)', 'Subclass tempo tools visible'],
     },
+    sorcerer: {
+      title: 'Sorcerer Combat Surface',
+      copy: 'Sorcerer should read as a two-layer caster loop: spell cards and slot access first, then Sorcery Point spenders like Metamagic and Flexible Casting.',
+      checks: ['Sorcery Points visible', 'Metamagic options visible', 'Flexible Casting conversion options visible'],
+    },
     warlock: {
       title: 'Warlock Combat Surface',
       copy: 'Warlock should show a clear at-will + pact-slot rhythm: Eldritch Blast pressure, pact slot tracking, short-rest recovery, and patron identity tools all visible together.',
@@ -376,6 +381,54 @@
         'college-of-valor': [
           { key: 'combat inspiration', name: 'Combat Inspiration', summary: 'Your inspiration die now boosts weapon damage or can be spent as a reaction to increase AC against one attack.', actionType: 'reaction', resourceName: 'Bardic Inspiration', range: 'Ally with inspiration', tags: ['Valor', 'Combat'] },
           { key: 'battle magic', name: 'Battle Magic', summary: 'After casting a bard spell with your action, make one weapon attack as a bonus action.', actionType: 'bonus', resourceName: '', range: 'Weapon range', tags: ['Valor', 'Tempo'] },
+        ],
+      },
+    },
+    sorcerer: {
+      actions: [
+        {
+          key: 'innate sorcery',
+          name: 'Innate Sorcery',
+          summary: 'Enter your heightened casting state when the fight calls for an explosive spell turn.',
+          actionType: 'bonus',
+          resourceName: 'Innate Sorcery',
+          resourceSummary: 'Long-rest class state',
+          range: 'Self',
+          tags: ['Sorcerer', 'Power State'],
+        },
+        {
+          key: 'flexible casting',
+          name: 'Flexible Casting',
+          summary: 'Convert Sorcery Points and spell slots to rebalance endurance vs burst depending on encounter pressure.',
+          actionType: 'special',
+          resourceName: 'Sorcery Points',
+          resourceSummary: 'Point/slot conversion economy',
+          range: 'Self',
+          tags: ['Sorcerer', 'Resource Engine'],
+        },
+        {
+          key: 'metamagic',
+          name: 'Metamagic',
+          summary: 'Spend Sorcery Points to alter casting delivery with your chosen Metamagic options.',
+          actionType: 'special',
+          resourceName: 'Sorcery Points',
+          resourceSummary: 'Metamagic cost varies by option',
+          range: 'Spell-dependent',
+          tags: ['Sorcerer', 'Spell Shaping'],
+        },
+      ],
+      subclassActions: {
+        'wild magic': [
+          { key: 'wild-magic-surge', name: 'Wild Magic Surge', summary: 'Your leveled spell may trigger a surge event; keep this visible so chaos feels like a live system, not hidden text.', actionType: 'special', resourceName: 'Wild Magic Surge', tags: ['Wild Magic', 'Chaos'] },
+          { key: 'wild-tides-of-chaos', name: 'Tides of Chaos', summary: 'Take advantage now, then expect the table to answer with surge pressure later.', actionType: 'special', resourceName: 'Tides of Chaos', tags: ['Wild Magic', 'Risk / Reward'] },
+          { key: 'wild-bend-luck', name: 'Bend Luck', summary: 'Spend 2 Sorcery Points as a reaction to tilt a nearby creature’s roll in a clutch moment.', actionType: 'reaction', resourceName: 'Sorcery Points', tags: ['Wild Magic', 'Reaction'] },
+          { key: 'wild-controlled-chaos', name: 'Controlled Chaos', summary: 'When surges trigger, roll twice and pick the better chaos result for the moment.', actionType: 'special', resourceName: 'Wild Magic Surge', tags: ['Wild Magic', 'Control'] },
+        ],
+        'draconic bloodline': [
+          { key: 'draconic-dragon-ancestor', name: 'Dragon Ancestor', summary: 'Your ancestor element sets which spells and resistance spend patterns are most efficient for you.', actionType: 'passive', resourceName: 'Draconic Ancestry', tags: ['Draconic', 'Identity'] },
+          { key: 'draconic-elemental-affinity', name: 'Elemental Affinity', summary: 'Add Charisma to matching element spells and optionally spend Sorcery Points for temporary resistance.', actionType: 'special', resourceName: 'Sorcery Points', tags: ['Draconic', 'Elemental'] },
+          { key: 'draconic-dragon-wings', name: 'Dragon Wings', summary: 'Your bloodline manifests as flight, changing positioning and target access every round.', actionType: 'special', resourceName: 'Dragon Wings', tags: ['Draconic', 'Mobility'] },
+          { key: 'draconic-presence', name: 'Draconic Presence', summary: 'Spend your long-rest aura to force charm/fear pressure across a wide area.', actionType: 'action', resourceName: 'Draconic Presence', tags: ['Draconic', 'Control'] },
         ],
       },
     },

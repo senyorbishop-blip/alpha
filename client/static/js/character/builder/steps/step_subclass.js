@@ -138,6 +138,16 @@
   }
 
   var SUBCLASS_PROFILE_OVERRIDES = {
+    'wild-magic': {
+      tags: ['Chaos Engine', 'Risk / Reward', 'Fate Twisting'],
+      chooserSummary: 'Wild Magic is the volatility path: surge events, advantage pressure through Tides of Chaos, and reactive fate-twisting with Bend Luck.',
+      fantasy: 'Pick Wild Magic if you want your sorcerer turns to feel unpredictable, explosive, and tactical around chaos management rather than pure consistency.',
+    },
+    'draconic-bloodline': {
+      tags: ['Elemental Bloodline', 'Durable Caster', 'Draconic Presence'],
+      chooserSummary: 'Draconic Bloodline is the focused power path: elemental identity, extra durability from draconic resilience, and a late-game battlefield presence aura.',
+      fantasy: 'Pick Draconic Bloodline if you want a clearer elemental identity, sturdier sorcerer baseline, and visible dragon-themed power spikes as you level.',
+    },
     'life-domain': {
       tags: ['Healing Specialist', 'Emergency Recovery', 'Support Anchor'],
       chooserSummary: 'Life Domain turns every healing spell into a stronger investment and adds a mass-stabilization Channel Divinity that can rescue multiple allies at once.',
