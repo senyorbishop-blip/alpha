@@ -24903,6 +24903,66 @@ function createToken() {
   refreshTokenImageFieldLabels();
 }
 
+function placeBeastMasterCompanionToken(companionData = {}) {
+  if (ROLE !== 'player' && ROLE !== 'dm') {
+    showToast('Companion tokens can only be placed by players or the DM.');
+    return;
+  }
+  const ownerId = String(USER_ID || '').trim();
+  if (!ownerId) {
+    showToast('Missing player identity for companion token placement.');
+    return;
+  }
+  const mapCtx = ROLE === 'dm'
+    ? (_currentPoi ? (_currentPoi.id || '__local__') : 'world')
+    : _dmMapContext;
+  const hasActiveCompanion = Object.values(tokens).some(t => {
+    if (!t || t.staged) return false;
+    if (String(t.owner_id || '') !== ownerId) return false;
+    const tag = String(t.tokenType || t.kind || t.roleTag || '').toLowerCase();
+    return tag === 'companion' || String(t.notes || '').toLowerCase().indexOf('beast master companion') >= 0;
+  });
+  if (hasActiveCompanion) {
+    showToast('You already have an active companion token. Remove or stage it before placing another.');
+    return;
+  }
+  const sizeHint = String(companionData.size || '').toLowerCase();
+  const tokenSize = sizeHint === 'small'
+    ? { width: 32, height: 32 }
+    : { width: 40, height: 40 };
+  const center = screenToWorld(canvas.width / 2, canvas.height / 2);
+  const clientNonce = 'tok_' + Math.random().toString(36).slice(2, 10);
+  const hp = Math.max(1, parseInt(companionData.hp ?? companionData.maxHp ?? 20, 10) || 20);
+  const ac = Math.max(1, parseInt(companionData.ac ?? 13, 10) || 13);
+  const speed = Math.max(0, parseInt(companionData.speed ?? 40, 10) || 40);
+  const frameName = String(companionData.name || companionData.frameName || 'Primal Beast').trim();
+  const tokenName = String(companionData.tokenName || `🐾 ${frameName}`).trim();
+  const payload = {
+    name: tokenName,
+    color: '#7ad67a',
+    shape: 'circle',
+    x: center.x - tokenSize.width / 2,
+    y: center.y - tokenSize.height / 2,
+    width: tokenSize.width,
+    height: tokenSize.height,
+    owner_id: ownerId,
+    map_context: mapCtx,
+    client_nonce: clientNonce,
+    hp: hp,
+    maxHp: hp,
+    ac: ac,
+    speed: speed,
+    tokenType: 'companion',
+    faction: 'allies',
+    notes: `Beast Master Companion • ${frameName}`,
+  };
+  const snapped = snapTokenToGrid(payload.x, payload.y, payload);
+  payload.x = snapped.x;
+  payload.y = snapped.y;
+  sendWS({ type: 'token_create', payload });
+  showToast(`${tokenName} placed on the board.`);
+}
+
 
 // ═══════════════════════════════════════════════════════════════════
 // CONTEXT MENU
