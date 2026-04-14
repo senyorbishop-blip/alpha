@@ -340,7 +340,7 @@ RESOURCE_RECOVERY_HINTS = {
     "rage_uses": "Short Rest: regain 1 use. Long Rest: regain all uses.",
     "focus_points": "Regain all expended Focus Points on a short or long rest.",
     "bardic_inspiration": "Long Rest recovery at low levels; upgrades to Short or Long Rest with Font of Inspiration.",
-    "channel_divinity": "Short Rest: regain 1 use. Long Rest: regain all uses.",
+    "channel_divinity": "Regain all expended uses on a Short or Long Rest.",
     "wild_shape": "Short Rest: regain 1 use. Long Rest: regain all uses.",
     "action_surge": "Regain all uses on a short or long rest.",
     "indomitable": "Regain all uses on a long rest.",

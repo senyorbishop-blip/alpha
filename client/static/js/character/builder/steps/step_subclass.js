@@ -138,6 +138,26 @@
   }
 
   var SUBCLASS_PROFILE_OVERRIDES = {
+    'life-domain': {
+      tags: ['Healing Specialist', 'Emergency Recovery', 'Support Anchor'],
+      chooserSummary: 'Life Domain turns every healing spell into a stronger investment and adds a mass-stabilization Channel Divinity that can rescue multiple allies at once.',
+      fantasy: 'Pick Life Domain if you want to be the party\'s reliable recovery anchor: bigger healing numbers from level 1, an emergency tool that stabilizes the whole group, and a passive that keeps you functional while you keep everyone else alive.',
+    },
+    'light-domain': {
+      tags: ['Radiant Blaster', 'Anti-Darkness', 'Reactive Defense'],
+      chooserSummary: 'Light Domain trades healing focus for solar aggression: a blinding reaction to protect allies, a Channel Divinity that clears magical darkness and punishes clusters, and cantrips that hit harder at level 8.',
+      fantasy: 'Pick Light Domain if you want your cleric to be an active threat: dispel shadows, scorch packed formations with Radiance of the Dawn, and protect allies with a defensive flare that can deflect dangerous swings.',
+    },
+    'trickery-domain': {
+      tags: ['Illusion & Misdirection', 'Stealth Support', 'Slippery Caster'],
+      chooserSummary: 'Trickery Domain adds misdirection and positioning tricks to the divine toolkit: stealth buffs for allies, an illusory double that bends where spells appear to come from, and short-window invisibility for resets.',
+      fantasy: 'Pick Trickery Domain if you want a cleric who operates through deception and setup: hand out stealth advantage before infiltrations, use your duplicate to split enemy attention, and vanish when the battlefield needs to be reset around you.',
+    },
+    'war-domain': {
+      tags: ['Battle Priest', 'Frontline Divine', 'Accuracy Support'],
+      chooserSummary: 'War Domain is a full martial upgrade for the cleric: heavy armor, martial weapons, a bonus-action weapon attack, and Channel Divinity options that convert near-misses into hits for you and your allies.',
+      fantasy: 'Pick War Domain if you want your cleric on the front line trading real blows: heavier equipment, extra weapon pressure on strong turns, and divine accuracy that makes your team\'s most important attacks land more often.',
+    },
     assassin: {
       tags: ['Ambush Burst', 'Infiltration', 'Surprise Payoff'],
       chooserSummary: 'Assassin is the opener rogue: win mission setup, strike before enemies settle, and convert surprise windows into lethal burst turns.',
