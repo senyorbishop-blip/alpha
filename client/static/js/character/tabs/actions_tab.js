@@ -46,6 +46,11 @@
       copy: 'Cleric should read as a divine decision loop: prepared spells, Channel Divinity spenders, and domain-specific reactions/actions all visible in one place.',
       checks: ['Channel Divinity uses visible', 'Divine Spark / Turn Undead surfaced', 'Domain action identity visible'],
     },
+    druid: {
+      title: 'Druid Combat Surface',
+      copy: 'Druid should read as a visible cast-vs-shift loop: prepared spell pressure, Wild Shape economy, and circle-specific turn tools all available without hunting through flavor text.',
+      checks: ['Wild Shape uses + CR/form limits visible', 'Wild Companion spend option visible', 'Circle of the Moon vs Land combat lane clearly surfaced'],
+    },
     bard: {
       title: 'Bard Combat Surface',
       copy: 'Bard should feel like live support tempo: Bardic Inspiration spenders, reaction/control options, and spell tempo should all be visible from this tab.',
@@ -176,6 +181,51 @@
           { key: 'war priest', name: 'War Priest', summary: 'Convert Attack action turns into bonus-action weapon pressure for frontline tempo.', actionType: 'bonus', resourceName: 'War Priest', tags: ['War', 'Frontline'] },
           { key: 'guided strike', name: 'Guided Strike', summary: 'Spend Channel Divinity to convert a key miss into a likely hit.', actionType: 'action', resourceName: 'Channel Divinity', tags: ['War', 'Accuracy'] },
           { key: "war god's blessing", name: "War God's Blessing", summary: 'Use your reaction and Channel Divinity to help an ally land a pivotal attack.', actionType: 'reaction', resourceName: 'Channel Divinity', tags: ['War', 'Support'] },
+        ],
+      },
+    },
+    druid: {
+      actions: [
+        {
+          key: 'wild shape',
+          name: 'Wild Shape',
+          summary: 'Spend one Wild Shape use to transform for movement, scouting, utility, or combat pressure.',
+          actionType: 'bonus',
+          resourceName: 'Wild Shape',
+          resourceSummary: 'Spend 1 Wild Shape use',
+          range: 'Self',
+          tags: ['Druid', 'Transformation'],
+        },
+        {
+          key: 'wild companion',
+          name: 'Wild Companion',
+          summary: 'Spend one Wild Shape use on a familiar-style helper instead of transforming yourself.',
+          actionType: 'action',
+          resourceName: 'Wild Shape',
+          resourceSummary: 'Spend 1 Wild Shape use',
+          range: '30 ft',
+          tags: ['Druid', 'Companion'],
+        },
+        {
+          key: 'prepared druid spell',
+          name: 'Prepared Spell Cast',
+          summary: 'Use your prepared spell list and Wisdom casting to answer the current turn without committing Wild Shape.',
+          actionType: 'action',
+          resourceName: 'Spell Slots',
+          resourceSummary: 'Consumes slot when cast',
+          range: 'Spell-dependent',
+          tags: ['Druid', 'Spellcasting'],
+        },
+      ],
+      subclassActions: {
+        'circle of the moon': [
+          { key: 'combat wild shape', name: 'Combat Wild Shape', summary: 'Use Wild Shape as a fast battle-form switch and stabilize in-form with slot-powered healing when needed.', actionType: 'bonus', resourceName: 'Wild Shape', resourceSummary: 'Spend 1 Wild Shape use', range: 'Self', tags: ['Moon', 'Transformation'] },
+          { key: 'elemental wild shape', name: 'Elemental Wild Shape', summary: 'Spend two Wild Shape uses for elemental forms that can redefine frontline pressure and resistances.', actionType: 'action', resourceName: 'Wild Shape', resourceSummary: 'Spend 2 Wild Shape uses', range: 'Self', tags: ['Moon', 'Elemental'] },
+        ],
+        'circle of the land': [
+          { key: 'natural recovery', name: 'Natural Recovery', summary: 'Recover spell slot value on a short rest so your casting engine lasts through long adventuring days.', actionType: 'special', resourceName: 'Natural Recovery', resourceSummary: 'Short-rest recovery feature', range: 'Self', tags: ['Land', 'Recovery'] },
+          { key: 'lands aid', name: "Land's Aid", summary: 'Call on your terrain bond for practical support and local momentum swings in active play.', actionType: 'action', resourceName: "Land's Aid", range: 'Local area', tags: ['Land', 'Support'] },
+          { key: 'circle spells', name: 'Circle Spells', summary: 'Always-ready terrain spells extend your prepared toolkit and should stay distinct from Wild Shape resources.', actionType: 'passive', resourceName: '', range: 'Spell-dependent', tags: ['Land', 'Prepared Casting'] },
         ],
       },
     },
@@ -880,6 +930,15 @@
           (charData && charData.spellAttackBonus != null) ? ('Spell attack: ' + charData.spellAttackBonus) : '',
         ].filter(Boolean).join(' • ')
       : '';
+    const druidLine = _classKey(charData) === 'druid'
+      ? [
+          classMechanics.wildShapeUses != null ? ('Wild Shape uses: ' + classMechanics.wildShapeUses) : '',
+          classMechanics.wildShapeMaxCR != null ? ('Wild Shape max form CR: ' + classMechanics.wildShapeMaxCR) : '',
+          classMechanics.spellsPreparedFormula ? ('Prepared formula: ' + classMechanics.spellsPreparedFormula.replace(/_/g, ' ')) : '',
+          classMechanics.cantripsKnown != null ? ('Cantrips known: ' + classMechanics.cantripsKnown) : '',
+          (charData && charData.spellSaveDc) ? ('Spell save DC (WIS): ' + charData.spellSaveDc) : '',
+        ].filter(Boolean).join(' • ')
+      : '';
     const fighterLine = _classKey(charData) === 'fighter'
       ? [
           classMechanics.extraAttacks != null ? ('Attacks per Attack action: ' + classMechanics.extraAttacks) : '',
@@ -918,6 +977,7 @@
         ${rogueLine ? `<div class="cs-combat-callout-copy">${_esc(rogueLine)}</div>` : ''}
         ${warlockLine ? `<div class="cs-combat-callout-copy">${_esc(warlockLine)}</div>` : ''}
         ${rangerLine ? `<div class="cs-combat-callout-copy">${_esc(rangerLine)}</div>` : ''}
+        ${druidLine ? `<div class="cs-combat-callout-copy">${_esc(druidLine)}</div>` : ''}
         ${fighterLine ? `<div class="cs-combat-callout-copy">${_esc(fighterLine)}</div>` : ''}
         ${fighterSubclassLine ? `<div class="cs-combat-callout-copy">${_esc(fighterSubclassLine)}</div>` : ''}
       </div>

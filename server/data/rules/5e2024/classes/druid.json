@@ -212,12 +212,18 @@
         "cantripsKnown": 3,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1/4"
+        "wildShapeMaxCR": "1/4",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted"
       },
       "unlockIds": [
-        "druid-l1-1",
-        "druid-l1-2",
-        "druid-l1-3"
+        "druid-druidic",
+        "druid-spellcasting",
+        "druid-primal-order"
       ]
     },
     {
@@ -231,11 +237,19 @@
         "cantripsKnown": 3,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1/4"
+        "wildShapeMaxCR": "1/4",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use"
       },
       "unlockIds": [
-        "druid-l2-1",
-        "druid-l2-2"
+        "druid-wild-shape",
+        "druid-wild-companion"
       ]
     },
     {
@@ -249,11 +263,20 @@
         "cantripsKnown": 3,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1/4"
+        "wildShapeMaxCR": "1/4",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true
       },
       "unlockIds": [
-        "druid-l3-1",
-        "druid-l3-2"
+        "druid-circle-subclass",
+        "druid-second-circle-magic-tier"
       ]
     },
     {
@@ -269,12 +292,21 @@
         "cantripsKnown": 4,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1/2"
+        "wildShapeMaxCR": "1/2",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true
       },
       "unlockIds": [
         "druid-l4-1",
         "druid-l4-2",
-        "druid-l4-3"
+        "druid-cantrip-progression-4"
       ]
     },
     {
@@ -287,7 +319,16 @@
         "cantripsKnown": 4,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1/2"
+        "wildShapeMaxCR": "1/2",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true
       },
       "unlockIds": [
         "druid-l5-1"
@@ -303,7 +344,16 @@
         "cantripsKnown": 4,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1/2"
+        "wildShapeMaxCR": "1/2",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true
       },
       "unlockIds": [
         "druid-l6-1"
@@ -319,7 +369,16 @@
         "cantripsKnown": 4,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1/2"
+        "wildShapeMaxCR": "1/2",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true
       },
       "unlockIds": [
         "druid-l7-1"
@@ -337,7 +396,16 @@
         "cantripsKnown": 4,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1"
+        "wildShapeMaxCR": "1",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true
       },
       "unlockIds": [
         "druid-l8-1",
@@ -354,7 +422,16 @@
         "cantripsKnown": 4,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1"
+        "wildShapeMaxCR": "1",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true
       },
       "unlockIds": [
         "druid-l9-1"
@@ -371,11 +448,20 @@
         "cantripsKnown": 5,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1"
+        "wildShapeMaxCR": "1",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true
       },
       "unlockIds": [
         "druid-l10-1",
-        "druid-l10-2"
+        "druid-cantrip-progression-5"
       ]
     },
     {
@@ -388,7 +474,16 @@
         "cantripsKnown": 5,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1"
+        "wildShapeMaxCR": "1",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true
       },
       "unlockIds": [
         "druid-l11-1"
@@ -405,7 +500,16 @@
         "cantripsKnown": 5,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1"
+        "wildShapeMaxCR": "1",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true
       },
       "unlockIds": [
         "druid-l12-1"
@@ -421,7 +525,16 @@
         "cantripsKnown": 5,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1"
+        "wildShapeMaxCR": "1",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true
       },
       "unlockIds": [
         "druid-l13-1"
@@ -437,7 +550,16 @@
         "cantripsKnown": 5,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1"
+        "wildShapeMaxCR": "1",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true
       },
       "unlockIds": [
         "druid-l14-1"
@@ -453,7 +575,16 @@
         "cantripsKnown": 5,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1"
+        "wildShapeMaxCR": "1",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true
       },
       "unlockIds": [
         "druid-l15-1"
@@ -470,7 +601,16 @@
         "cantripsKnown": 5,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1"
+        "wildShapeMaxCR": "1",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true
       },
       "unlockIds": [
         "druid-l16-1"
@@ -486,7 +626,16 @@
         "cantripsKnown": 5,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1"
+        "wildShapeMaxCR": "1",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true
       },
       "unlockIds": [
         "druid-l17-1"
@@ -503,11 +652,21 @@
         "cantripsKnown": 5,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1"
+        "wildShapeMaxCR": "1",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true,
+        "beastSpellsOnline": true
       },
       "unlockIds": [
         "druid-l18-1",
-        "druid-l18-2"
+        "druid-beast-spells"
       ]
     },
     {
@@ -521,7 +680,17 @@
         "cantripsKnown": 5,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": 2,
-        "wildShapeMaxCR": "1"
+        "wildShapeMaxCR": "1",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true,
+        "beastSpellsOnline": true
       },
       "unlockIds": [
         "druid-l19-1"
@@ -537,17 +706,28 @@
         "cantripsKnown": 5,
         "spellsPreparedFormula": "wis_mod + druid_level",
         "wildShapeUses": "Unlimited",
-        "wildShapeMaxCR": "1"
+        "wildShapeMaxCR": "1",
+        "preparedCastingAbility": "wis",
+        "wildShapeResource": "Wild Shape",
+        "wildShapeRefresh": "short_or_long_rest",
+        "wildShapeDurationHours": "half_druid_level",
+        "wildShapeCompetesWithSpellcasting": true,
+        "wildShapeCastingRestriction": "cannot_cast_non_feature_spells_while_shifted",
+        "wildCompanionAvailable": true,
+        "wildCompanionCost": "1_wild_shape_use",
+        "circleFeaturesOnline": true,
+        "beastSpellsOnline": true,
+        "archdruidOnline": true
       },
       "unlockIds": [
-        "druid-l20-1"
+        "druid-archdruid"
       ]
     }
   ],
   "featureDefinitions": {
     "druid-l1-1": {
-      "summary": "You speak the secret language of druids, marking you as part of an old primal tradition.",
-      "description": "Druidic is mostly campaign-facing rather than combat-facing, but it matters for hidden signs, sacred circles, coded warnings, and moments where primal identity should matter in the world.",
+      "summary": "You learn Druidic, a hidden language used for signs, warnings, and sacred communication across druid circles.",
+      "description": "Druidic is a campaign utility language that helps with secret messages, hidden site markers, and faction trust. It is mostly roleplay-facing, but it anchors druid identity from level 1.",
       "tags": [
         "identity",
         "utility",
@@ -555,22 +735,34 @@
       ]
     },
     "druid-l1-2": {
-      "summary": "Prepare primal spells that let you heal, control terrain, summon nature, and answer problems with flexible magic.",
-      "description": "Druid spellcasting is broad and adaptive. It should feel like a prepared toolkit built around terrain, transformation, healing, battlefield control, and primal problem-solving instead of pure arcane blasting.",
+      "summary": "You are a Wisdom-based prepared full caster using primal magic for healing, control, summons, and terrain influence.",
+      "description": "Druid spellcasting uses Wisdom for spell attacks and save DCs. You know cantrips from class progression and prepare leveled spells using Wisdom modifier + druid level. Circle spells (if granted) are extra access and should not be mistaken for Wild Shape resources.",
       "tags": [
         "spellcasting",
-        "primal",
-        "support",
-        "control"
+        "prepared",
+        "wisdom",
+        "primal"
       ]
     },
     "druid-l1-3": {
-      "summary": "Choose the direction of your druid early so the class leans either toward mystic lore or battlefield durability.",
-      "description": "Primal Order is a build-shaping choice. It tells the sheet whether this druid should read more like a front-line natural anchor or a deeper primal scholar, and it should influence the way later features are presented.",
+      "summary": "Choose a Primal Order to establish your early play lane: scholar-naturalist depth or sturdier front-line posture.",
+      "description": "Primal Order is your first major druid fork. The Scholar/Sage lane emphasizes lore and magical versatility, while the Warden-style lane pushes survivability and front-line readiness. This choice should stay visible in class identity surfaces.",
       "tags": [
         "build",
         "identity",
-        "primal"
+        "fork"
+      ],
+      "choices": [
+        {
+          "id": "primal-order-magician",
+          "name": "Magician / Primal Sage",
+          "description": "Lean into druid scholarship, magical flexibility, and utility problem-solving."
+        },
+        {
+          "id": "primal-order-warden",
+          "name": "Warden / Natural Anchor",
+          "description": "Lean into armor, staff-and-shield posture, and front-line durability."
+        }
       ]
     },
     "druid-l2-1": {
@@ -578,15 +770,14 @@
       "type": "bonus action",
       "resourceName": "Wild Shape",
       "trackUses": true,
-      "summary": "Spend a Wild Shape use to change form, scout, adapt, or solve problems with beast utility.",
-      "description": "Wild Shape is one of the druid’s defining systems. It is not just a combat toggle: it is scouting, infiltration, movement, utility, survival, and sometimes front-line pressure depending on circle. The sheet should make uses, valid forms, and the active form state obvious.",
-      "usage": "Spend 1 use of Wild Shape.",
-      "recovery": "Wild Shape uses refresh on a Short or Long Rest when supported by the current rules layer.",
+      "summary": "Spend Wild Shape to assume a beast form for scouting, mobility, utility, or combat pressure depending on your circle.",
+      "description": "Wild Shape is a tracked class resource with scaling form limits. It competes with some spellcasting lines early, then cooperates more at high level through Beast Spells and Archdruid. Keep uses, CR limits, and active form state readable in play surfaces.",
+      "usage": "Spend 1 Wild Shape use to transform.",
+      "recovery": "Short or Long Rest refresh (rules-layer dependent).",
       "tags": [
         "resource",
         "transformation",
-        "signature",
-        "utility"
+        "signature"
       ]
     },
     "druid-l2-2": {
@@ -594,25 +785,27 @@
       "type": "action",
       "resourceName": "Wild Shape",
       "trackUses": true,
-      "summary": "Trade a Wild Shape use for a familiar-like primal helper that extends your utility and action economy.",
-      "description": "Wild Companion gives the druid a softer support use for Wild Shape charges. It matters when scouting, delivering touch effects, or extending your utility without fully changing shape yourself.",
+      "summary": "Spend a Wild Shape use to summon a temporary familiar-style primal companion for scouting and support utility.",
+      "description": "Wild Companion is the non-transform Wild Shape spend option. Use it when battlefield information, touch delivery, or utility support is better than personal transformation.",
       "tags": [
-        "summon",
         "resource",
+        "summon",
         "utility"
-      ]
+      ],
+      "usage": "Spend 1 Wild Shape use to summon your companion.",
+      "recovery": "Uses are tied to Wild Shape recovery."
     },
     "druid-l3-1": {
-      "summary": "Your circle determines whether your druid leans harder into forms, terrain mastery, support, summoning, or another primal identity.",
-      "description": "Druid Circle is the subclass gate for druid. It should immediately tell the player how this druid solves problems: shapechanger, land sage, sea mystic, lunar beast, stars seer, and so on.",
+      "summary": "Choose your Druid Circle to define whether your loop centers on battle-shifting, terrain casting, or another future circle identity.",
+      "description": "Circle choice is the long-term druid identity gate. Circle of the Moon emphasizes transformation as combat mode, while Circle of the Land emphasizes prepared casting depth, terrain spells, and slot recovery.",
       "tags": [
         "subclass",
         "identity",
-        "primal"
+        "build"
       ]
     },
     "druid-l18-1": {
-      "summary": "Age and ordinary time sit more lightly on you, reinforcing the druid’s connection to a deeper natural cycle.",
+      "summary": "Age and ordinary time sit more lightly on you, reinforcing the druid\u2019s connection to a deeper natural cycle.",
       "description": "Timeless Body is not a combat spike. It is an identity spike that marks the druid as someone who has moved into an older, steadier relationship with the natural world.",
       "tags": [
         "passive",
@@ -621,42 +814,183 @@
       ]
     },
     "druid-l18-2": {
-      "summary": "You can keep using magic while shaped, removing one of the biggest tensions in the druid class fantasy.",
-      "description": "Beast Spells is a huge quality jump for shape-based druids because it lets form play and spellcasting cooperate instead of competing. It should feel like the class fantasy finally clicking into place.",
+      "summary": "You can cast many druid spells while in Wild Shape, reducing cast-vs-shift friction.",
+      "description": "Beast Spells is the major interaction pivot for druid loops. Before this, shifting often displaces casting; after this, high-level druids can blend form play with meaningful magic output.",
       "tags": [
         "spellcasting",
+        "transformation",
+        "high-level"
+      ]
+    },
+    "druid-l20-1": {
+      "summary": "Your capstone removes Wild Shape scarcity and lets the class loop feel effortless at endgame.",
+      "description": "Archdruid is a resource liberation capstone. Wild Shape should feel effectively always available, and the class should read as fully online in both casting and transformation plans.",
+      "tags": [
+        "capstone",
+        "transformation",
+        "resource"
+      ]
+    },
+    "druid-druidic": {
+      "summary": "You learn Druidic, a hidden language used for signs, warnings, and sacred communication across druid circles.",
+      "description": "Druidic is a campaign utility language that helps with secret messages, hidden site markers, and faction trust. It is mostly roleplay-facing, but it anchors druid identity from level 1.",
+      "tags": [
+        "identity",
+        "utility",
+        "roleplay"
+      ]
+    },
+    "druid-spellcasting": {
+      "summary": "You are a Wisdom-based prepared full caster using primal magic for healing, control, summons, and terrain influence.",
+      "description": "Druid spellcasting uses Wisdom for spell attacks and save DCs. You know cantrips from class progression and prepare leveled spells using Wisdom modifier + druid level. Circle spells (if granted) are extra access and should not be mistaken for Wild Shape resources.",
+      "tags": [
+        "spellcasting",
+        "prepared",
+        "wisdom",
+        "primal"
+      ]
+    },
+    "druid-primal-order": {
+      "summary": "Choose a Primal Order to establish your early play lane: scholar-naturalist depth or sturdier front-line posture.",
+      "description": "Primal Order is your first major druid fork. The Scholar/Sage lane emphasizes lore and magical versatility, while the Warden-style lane pushes survivability and front-line readiness. This choice should stay visible in class identity surfaces.",
+      "tags": [
+        "build",
+        "identity",
+        "fork"
+      ],
+      "choices": [
+        {
+          "id": "primal-order-magician",
+          "name": "Magician / Primal Sage",
+          "description": "Lean into druid scholarship, magical flexibility, and utility problem-solving."
+        },
+        {
+          "id": "primal-order-warden",
+          "name": "Warden / Natural Anchor",
+          "description": "Lean into armor, staff-and-shield posture, and front-line durability."
+        }
+      ]
+    },
+    "druid-wild-shape": {
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "Wild Shape",
+      "trackUses": true,
+      "summary": "Spend Wild Shape to assume a beast form for scouting, mobility, utility, or combat pressure depending on your circle.",
+      "description": "Wild Shape is a tracked class resource with scaling form limits. It competes with some spellcasting lines early, then cooperates more at high level through Beast Spells and Archdruid. Keep uses, CR limits, and active form state readable in play surfaces.",
+      "usage": "Spend 1 Wild Shape use to transform.",
+      "recovery": "Short or Long Rest refresh (rules-layer dependent).",
+      "tags": [
+        "resource",
         "transformation",
         "signature"
       ]
     },
-    "druid-l20-1": {
-      "summary": "Your primal mastery reaches its peak, making both your forms and spellcasting feel endlessly available.",
-      "description": "Archdruid is the final expression of druid identity. It should read like constant readiness: wild shape pressure, spellcasting freedom, and primal control that no longer feels rationed like a low-level adventurer.",
+    "druid-wild-companion": {
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Wild Shape",
+      "trackUses": true,
+      "summary": "Spend a Wild Shape use to summon a temporary familiar-style primal companion for scouting and support utility.",
+      "description": "Wild Companion is the non-transform Wild Shape spend option. Use it when battlefield information, touch delivery, or utility support is better than personal transformation.",
+      "tags": [
+        "resource",
+        "summon",
+        "utility"
+      ],
+      "usage": "Spend 1 Wild Shape use to summon your companion.",
+      "recovery": "Uses are tied to Wild Shape recovery."
+    },
+    "druid-circle-subclass": {
+      "summary": "Choose your Druid Circle to define whether your loop centers on battle-shifting, terrain casting, or another future circle identity.",
+      "description": "Circle choice is the long-term druid identity gate. Circle of the Moon emphasizes transformation as combat mode, while Circle of the Land emphasizes prepared casting depth, terrain spells, and slot recovery.",
+      "tags": [
+        "subclass",
+        "identity",
+        "build"
+      ]
+    },
+    "druid-second-circle-magic-tier": {
+      "summary": "You unlock 2nd-level spell slots, expanding prepared options and concentration pressure.",
+      "description": "At this tier druids usually begin carrying stronger control, restoration, and summon-adjacent effects. Revisit prepared spells after leveling.",
+      "tags": [
+        "spellcasting",
+        "progression"
+      ]
+    },
+    "druid-cantrip-progression-4": {
+      "summary": "Your cantrip roster expands to 4 known cantrips.",
+      "description": "This is a scaling utility/combat flexibility bump and should update cantrip counts in level-up and spell management surfaces.",
+      "tags": [
+        "spellcasting",
+        "cantrip",
+        "progression"
+      ]
+    },
+    "druid-cantrip-progression-5": {
+      "summary": "Your cantrip roster expands to 5 known cantrips.",
+      "description": "Late-tier cantrip progression keeps at-will druid utility and fallback combat options relevant between slot spends.",
+      "tags": [
+        "spellcasting",
+        "cantrip",
+        "progression"
+      ]
+    },
+    "druid-beast-spells": {
+      "summary": "You can cast many druid spells while in Wild Shape, reducing cast-vs-shift friction.",
+      "description": "Beast Spells is the major interaction pivot for druid loops. Before this, shifting often displaces casting; after this, high-level druids can blend form play with meaningful magic output.",
+      "tags": [
+        "spellcasting",
+        "transformation",
+        "high-level"
+      ]
+    },
+    "druid-archdruid": {
+      "summary": "Your capstone removes Wild Shape scarcity and lets the class loop feel effortless at endgame.",
+      "description": "Archdruid is a resource liberation capstone. Wild Shape should feel effectively always available, and the class should read as fully online in both casting and transformation plans.",
       "tags": [
         "capstone",
-        "primal",
-        "signature"
+        "transformation",
+        "resource"
+      ]
+    },
+    "druid-l4-3": {
+      "summary": "Your cantrip roster expands to 4 known cantrips.",
+      "description": "This is a scaling utility/combat flexibility bump and should update cantrip counts in level-up and spell management surfaces.",
+      "tags": [
+        "spellcasting",
+        "cantrip",
+        "progression"
+      ]
+    },
+    "druid-l10-2": {
+      "summary": "Your cantrip roster expands to 5 known cantrips.",
+      "description": "Late-tier cantrip progression keeps at-will druid utility and fallback combat options relevant between slot spends.",
+      "tags": [
+        "spellcasting",
+        "cantrip",
+        "progression"
       ]
     }
   },
   "levelUnlockIds": {
     "1": [
-      "druid-l1-1",
-      "druid-l1-2",
-      "druid-l1-3"
+      "druid-druidic",
+      "druid-spellcasting",
+      "druid-primal-order"
     ],
     "2": [
-      "druid-l2-1",
-      "druid-l2-2"
+      "druid-wild-shape",
+      "druid-wild-companion"
     ],
     "3": [
-      "druid-l3-1",
-      "druid-l3-2"
+      "druid-circle-subclass",
+      "druid-second-circle-magic-tier"
     ],
     "4": [
       "druid-l4-1",
       "druid-l4-2",
-      "druid-l4-3"
+      "druid-cantrip-progression-4"
     ],
     "5": [
       "druid-l5-1"
@@ -676,7 +1010,7 @@
     ],
     "10": [
       "druid-l10-1",
-      "druid-l10-2"
+      "druid-cantrip-progression-5"
     ],
     "11": [
       "druid-l11-1"
@@ -701,13 +1035,13 @@
     ],
     "18": [
       "druid-l18-1",
-      "druid-l18-2"
+      "druid-beast-spells"
     ],
     "19": [
       "druid-l19-1"
     ],
     "20": [
-      "druid-l20-1"
+      "druid-archdruid"
     ]
   },
   "progressionSummary": [
@@ -715,25 +1049,25 @@
       "level": 1,
       "summary": "Druidic, Spellcasting, Primal Order.",
       "unlockIds": [
-        "druid-l1-1",
-        "druid-l1-2",
-        "druid-l1-3"
+        "druid-druidic",
+        "druid-spellcasting",
+        "druid-primal-order"
       ]
     },
     {
       "level": 2,
       "summary": "Wild Shape, Wild Companion.",
       "unlockIds": [
-        "druid-l2-1",
-        "druid-l2-2"
+        "druid-wild-shape",
+        "druid-wild-companion"
       ]
     },
     {
       "level": 3,
       "summary": "Druid Circle (Subclass), 2nd-level Spells.",
       "unlockIds": [
-        "druid-l3-1",
-        "druid-l3-2"
+        "druid-circle-subclass",
+        "druid-second-circle-magic-tier"
       ]
     },
     {
@@ -742,7 +1076,7 @@
       "unlockIds": [
         "druid-l4-1",
         "druid-l4-2",
-        "druid-l4-3"
+        "druid-cantrip-progression-4"
       ]
     },
     {
@@ -786,7 +1120,7 @@
       "summary": "Subclass Feature, Cantrips Known: 5.",
       "unlockIds": [
         "druid-l10-1",
-        "druid-l10-2"
+        "druid-cantrip-progression-5"
       ]
     },
     {
@@ -843,7 +1177,7 @@
       "summary": "Timeless Body, Beast Spells.",
       "unlockIds": [
         "druid-l18-1",
-        "druid-l18-2"
+        "druid-beast-spells"
       ]
     },
     {
@@ -857,7 +1191,7 @@
       "level": 20,
       "summary": "Archdruid.",
       "unlockIds": [
-        "druid-l20-1"
+        "druid-archdruid"
       ]
     }
   ],

@@ -227,9 +227,9 @@
     },
     druid: {
       role: 'Adaptive controller',
-      loop: 'Test spellcasting and Wild Shape together so you can see whether the sheet handles form/resource rules cleanly.',
-      testOrder: ['Wild Shape uses', 'Spell cards', 'Concentration handling'],
-      verify: ['Wild Shape', 'Spell slots', 'Prepared spells', 'State changes'],
+      loop: 'Test druid as a cast-vs-shift loop: verify prepared Wisdom casting, Wild Shape resource flow, and circle identity tools without losing track of either lane.',
+      testOrder: ['Prepared spells and cantrip/slot progression', 'Wild Shape uses + form CR limits + Wild Companion option', 'Circle lane checks (Moon combat shifting or Land recovery/circle spells)'],
+      verify: ['Wild Shape', 'Prepared formula', 'Spell slots', 'Circle feature actions'],
     },
     fighter: {
       role: 'Weapon specialist',
