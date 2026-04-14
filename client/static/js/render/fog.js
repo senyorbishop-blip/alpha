@@ -28,9 +28,23 @@
     const fogFlyout = doc.getElementById('flyout-fog');
     return !!(fogFlyout && fogFlyout.classList && fogFlyout.classList.contains('open'));
   }
+  function _manualFogEditingAllowed(env) {
+    const mode = String((env && typeof env.getFogSystemMode === 'function' ? env.getFogSystemMode() : '') || '').toLowerCase();
+    return mode === 'manual' || mode === 'hybrid';
+  }
+  function _fogContextLabel(state) {
+    const ctx = String(state.fogMapCtx || 'world');
+    return ctx === 'world' ? 'World Map' : `POI / Local Map · ${ctx}`;
+  }
   function _syncFogStatus(state, env) {
     const doc = (env && env.document) || document;
     const statusEl = doc.getElementById('fog-status-text');
+    const mapEl = doc.getElementById('fog-map-context-text');
+    const modelEl = doc.getElementById('fog-visibility-model-text');
+    if (mapEl) mapEl.textContent = `Editing: ${_fogContextLabel(state)}`;
+    if (modelEl) {
+      modelEl.textContent = 'Visibility model: Off = unrestricted, Manual = DM-painted fog, Vision = token LOS, Hybrid = both manual + LOS.';
+    }
     if (!statusEl) return;
     const mode = String((env && typeof env.getFogSystemMode === 'function' ? env.getFogSystemMode() : '') || '').toLowerCase();
     if (mode === 'off') {
@@ -56,17 +70,19 @@
     const chk = doc.getElementById('fog-enable-chk');
     const toolsDiv = doc.getElementById('fog-tools');
     const brushDiv = doc.getElementById('fog-brush-row');
+    const manualAllowed = _manualFogEditingAllowed(env);
     if (chk) {
       chk.removeEventListener('change', handlers.onFogCheckboxChange);
       chk.checked = state.fogEnabled;
+      chk.disabled = !manualAllowed;
       chk.addEventListener('change', handlers.onFogCheckboxChange);
     }
-    if (toolsDiv) toolsDiv.style.display = state.fogEnabled ? 'flex' : 'none';
-    if (brushDiv) brushDiv.style.display = state.fogEnabled ? 'block' : 'none';
+    if (toolsDiv) toolsDiv.style.display = state.fogEnabled && manualAllowed ? 'flex' : 'none';
+    if (brushDiv) brushDiv.style.display = state.fogEnabled && manualAllowed ? 'block' : 'none';
     const toolGrid = doc.getElementById('fog-tool-grid');
-    if (toolGrid) toolGrid.style.display = state.fogEnabled ? 'grid' : 'none';
+    if (toolGrid) toolGrid.style.display = state.fogEnabled && manualAllowed ? 'grid' : 'none';
     const advancedTools = doc.getElementById('fog-advanced-tools');
-    if (advancedTools) advancedTools.style.display = state.fogEnabled ? 'block' : 'none';
+    if (advancedTools) advancedTools.style.display = state.fogEnabled && manualAllowed ? 'block' : 'none';
     const revealBtn = doc.getElementById('fog-btn-reveal');
     const hideBtn = doc.getElementById('fog-btn-hide');
     if (revealBtn) revealBtn.classList.toggle('active', !!state.fogReveal);
@@ -217,6 +233,8 @@
     env.sendWS({ type: 'fog_paint', payload: { reveal: state.fogReveal, cells, map_ctx: state.fogMapCtx } });
   }
   function fogToggle(state, env, enabled) {
+    const manualAllowed = _manualFogEditingAllowed(env);
+    if (enabled && !manualAllowed) enabled = false;
     state.fogEnabled = enabled;
     if (typeof env.syncShellState === 'function') env.syncShellState(state);
     if (!state.fogMaps[state.fogMapCtx]) state.fogMaps[state.fogMapCtx] = { enabled: false, cols: 64, rows: 64, cells: null };
