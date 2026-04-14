@@ -363,16 +363,31 @@ def resolve_character_runtime(document: Any) -> dict:
     }
 
     runtime_feature_sets = []
+    class_mechanics_by_class: dict[str, dict[str, Any]] = {}
     for class_row in runtime_classes:
         if not isinstance(class_row, dict):
             continue
         class_id = str(class_row.get("classId") or "").strip().lower()
         subclass_id = str(class_row.get("subclassId") or "").strip().lower()
+        class_level = _safe_int(class_row.get("level"), 1, minimum=1)
+        catalog_row = get_class_catalog_row(class_id)
+        if isinstance(catalog_row, dict):
+            progression_rows = catalog_row.get("progressionTable") if isinstance(catalog_row.get("progressionTable"), list) else []
+            level_row = next(
+                (
+                    row for row in progression_rows
+                    if isinstance(row, dict) and _safe_int(row.get("level"), 0, minimum=0) == class_level
+                ),
+                {},
+            )
+            mechanics = level_row.get("classMechanics") if isinstance(level_row, dict) and isinstance(level_row.get("classMechanics"), dict) else {}
+            if isinstance(mechanics, dict) and mechanics:
+                class_mechanics_by_class[class_id] = _clone(mechanics)
         runtime_feature_sets.append(
             build_runtime_feature_payload(
-                get_class_catalog_row(class_id),
+                catalog_row,
                 class_name=str(class_row.get("name") or class_row.get("classId") or "Class"),
-                level=_safe_int(class_row.get("level"), 1, minimum=1),
+                level=class_level,
                 subclass_row=get_subclass_catalog_row(subclass_id) if subclass_id else None,
             )
         )
@@ -395,6 +410,8 @@ def resolve_character_runtime(document: Any) -> dict:
     runtime["reactions"] = [item for payload in runtime_feature_sets for item in (payload.get("reactions") or [])]
     runtime["passives"] = [item for payload in runtime_feature_sets for item in (payload.get("passives") or [])]
     runtime["classFeatures"] = [item for payload in runtime_feature_sets for item in (payload.get("classFeatures") or [])]
+    runtime["classMechanicsByClass"] = class_mechanics_by_class
+    runtime["classMechanics"] = _clone(class_mechanics_by_class.get(primary_class_id) or {})
 
     runtime["originTraits"] = _resolve_runtime_origin_traits(normalized)
     runtime["backgroundFeatures"] = _resolve_runtime_background_features(normalized)

@@ -123,6 +123,9 @@
           ? row.featureUnlocksByLevel
           : {},
         features: Array.isArray(row && row.features) ? row.features : [],
+        featureDefinitions: row && row.featureDefinitions && typeof row.featureDefinitions === 'object'
+          ? row.featureDefinitions
+          : {},
       };
     }).filter(function validEntry(entry) {
       return !!entry.id;
@@ -150,16 +153,25 @@
 
   function buildSignatureRows(entry) {
     var features = Array.isArray(entry && entry.features) ? entry.features : [];
+    var defs = entry && entry.featureDefinitions && typeof entry.featureDefinitions === 'object'
+      ? entry.featureDefinitions
+      : {};
     return features.slice(0, 3).map(function (feature) {
+      var id = String(feature && feature.id || '').trim();
+      var def = id && defs[id] && typeof defs[id] === 'object' ? defs[id] : {};
       return {
         title: String(feature && feature.displayName || '').trim(),
-        text: String(feature && feature.description || '').trim(),
+        text: String(def.summary || feature && feature.description || '').trim(),
+        actionType: String(def.type || '').trim(),
       };
     }).filter(function (row) { return !!row.title; });
   }
 
   function buildRoadmapRows(entry) {
     var features = Array.isArray(entry && entry.features) ? entry.features.slice() : [];
+    var defs = entry && entry.featureDefinitions && typeof entry.featureDefinitions === 'object'
+      ? entry.featureDefinitions
+      : {};
     features.sort(function (a, b) {
       return (parseInt(a && a.level, 10) || 0) - (parseInt(b && b.level, 10) || 0);
     });
@@ -170,9 +182,21 @@
       grouped[level].push(feature);
     });
     return Object.keys(grouped).sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); }).map(function (level) {
+      var rows = grouped[level].map(function (feature) {
+        var id = String(feature && feature.id || '').trim();
+        var def = id && defs[id] && typeof defs[id] === 'object' ? defs[id] : {};
+        return {
+          displayName: String(feature && feature.displayName || '').trim() || 'Feature',
+          description: String(def.description || feature && feature.description || '').trim() || 'Feature text not available yet.',
+          type: String(def.type || '').trim(),
+          section: String(def.section || '').trim(),
+          usage: String(def.usage || '').trim(),
+          resourceName: String(def.resourceName || '').trim(),
+        };
+      });
       return {
         level: level,
-        features: grouped[level],
+        features: rows,
       };
     });
   }
@@ -225,7 +249,8 @@
         return '<span class="builder-subclass-tag">' + escHtml(tag) + '</span>';
       }).join('');
       var signatures = summary.signatures.map(function (sig) {
-        return '<div class="builder-subclass-signature"><span><strong style="color:#f3e7c4">' + escHtml(sig.title) + '.</strong> ' + escHtml(sig.text || 'Signature feature.') + '</span></div>';
+        var typeBadge = sig.actionType ? '<span style="border:1px solid rgba(0,212,184,0.3);border-radius:999px;padding:1px 6px;font-size:0.52rem;color:#00d4b8;margin-left:6px;">' + escHtml(sig.actionType) + '</span>' : '';
+        return '<div class="builder-subclass-signature"><span><strong style="color:#f3e7c4">' + escHtml(sig.title) + '.</strong>' + typeBadge + ' ' + escHtml(sig.text || 'Signature feature.') + '</span></div>';
       }).join('');
       return [
         '<button type="button" class="builder-subclass-card' + selected + '" data-builder-subclass-card="1" data-subclass-id="' + escHtml(row.id) + '">',
@@ -275,7 +300,10 @@
       '<div class="builder-subclass-section-head">Level roadmap</div>',
       '<div class="builder-subclass-section-body"><div class="builder-subclass-roadmap">' + roadmap.map(function (row) {
         return '<div class="builder-subclass-roadmap-row"><div class="builder-subclass-roadmap-level">Lv ' + escHtml(row.level) + '</div><div class="builder-subclass-roadmap-content">' + row.features.map(function (feature) {
-          return '<div class="builder-subclass-feature-card"><strong>' + escHtml(feature && feature.displayName || 'Feature') + '</strong><div>' + escHtml(feature && feature.description || 'Feature text not available yet.') + '</div></div>';
+          var chips = [feature.type, feature.section, feature.resourceName].filter(Boolean).map(function (chip) {
+            return '<span class="builder-subclass-tag" style="font-size:0.52rem;padding:1px 6px;">' + escHtml(chip) + '</span>';
+          }).join('');
+          return '<div class="builder-subclass-feature-card"><strong>' + escHtml(feature && feature.displayName || 'Feature') + '</strong>' + (chips ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 6px">' + chips + '</div>' : '') + '<div>' + escHtml(feature && feature.description || 'Feature text not available yet.') + '</div></div>';
         }).join('') + '</div></div>';
       }).join('') + '</div></div>',
       '</div>',

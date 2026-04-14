@@ -37,8 +37,8 @@
   "spellcastingType": "none",
   "spellcastingAbility": null,
   "spellSlots": {},
-  "classDescription": "A furious warrior channeling primal rage.",
-  "roleIdentity": "High durability bruiser with rage-based damage and resilience.",
+  "classDescription": "A primal front-line warrior who channels Rage into durability, pressure, and battlefield momentum.",
+  "roleIdentity": "Front-line bruiser: enter Rage early, trade safely with resistance, and control melee tempo through relentless pressure.",
   "progressionTable": [
     {
       "level": 1,
@@ -382,12 +382,12 @@
       "className": "Barbarian",
       "subclassName": "",
       "range": "",
-      "duration": "",
+      "duration": "Up to 10 minutes; ends early if you are incapacitated or if your turn passes without attacking or forcing a save.",
       "save": "",
       "trigger": "",
       "usage": "",
-      "recovery": "Regain uses on a Long Rest; some tables may also use short-rest recovery text surfaced elsewhere in the sheet.",
-      "effect": "Bonus damage, defensive staying power, and access to rage-linked barbarian features.",
+      "recovery": "Regain all expended uses when you finish a Long Rest.",
+      "effect": "Melee Strength attacks deal bonus damage and you gain resistance to bludgeoning, piercing, and slashing damage.",
       "dice": ""
     },
     "barbarian-unarmored-defense": {
@@ -417,7 +417,7 @@
       "trigger": "",
       "usage": "",
       "recovery": "",
-      "effect": "",
+      "effect": "While not wearing armor, your AC equals 10 + your Dexterity modifier + your Constitution modifier. You can still use a shield.",
       "dice": ""
     },
     "barbarian-weapon-mastery-2-weapons": {
@@ -457,8 +457,8 @@
       "summary": "Trade defense for accuracy by going all-in on your offense.",
       "description": "When you attack recklessly, you swing with full commitment to improve your chance to hit, but you expose yourself in return. This is a voluntary risk-reward toggle, not a free passive buff.\n\nUse it when landing the hit matters more than staying safe, especially while raging or when you want to push advantage-based damage.\n\nUse this when the fight is live and a round-to-round choice matters.\n\nPractical effect: Improves melee attack reliability while increasing the danger of incoming attacks.",
       "level": 2,
-      "section": "Class Features",
-      "type": "passive",
+      "section": "Actions",
+      "type": "special",
       "resourceName": "",
       "trackUses": false,
       "tags": [
@@ -474,10 +474,10 @@
       "range": "",
       "duration": "",
       "save": "",
-      "trigger": "When you attack recklessly",
+      "trigger": "When you make your first attack on your turn",
       "usage": "",
       "recovery": "",
-      "effect": "Improves melee attack reliability while increasing the danger of incoming attacks.",
+      "effect": "You gain Advantage on Strength-based melee attack rolls this turn, and attacks against you have Advantage until your next turn.",
       "dice": ""
     },
     "barbarian-danger-sense": {
@@ -503,11 +503,11 @@
       "subclassName": "",
       "range": "",
       "duration": "",
-      "save": "All save",
+      "save": "Dexterity",
       "trigger": "",
       "usage": "",
       "recovery": "",
-      "effect": "",
+      "effect": "You have Advantage on Dexterity saves against visible effects, such as traps and spells.",
       "dice": ""
     },
     "barbarian-primal-path-subclass": {
@@ -785,11 +785,11 @@
       "id": "barbarian-brutal-strike-1d10-effect",
       "displayName": "Brutal Strike (1d10 + effect)",
       "name": "Brutal Strike (1d10 + effect)",
-      "summary": "Turn a heavy hit into extra control, pressure, or raw damage when you really need the swing to matter.",
-      "description": "Brutal Strike upgrades your strongest melee hits into bigger momentum plays. Depending on the level row, it either adds more damage, lets you layer on extra riders, or both.\n\nIn play, use this when a normal hit is not enough and you want the attack to shift the fight, not just shave off a few hit points.\n\nUse this when the fight is live and a round-to-round choice matters.\n\nPractical effect: Adds extra brutality to a successful hit, with stronger payoff as the barbarian levels.",
+      "summary": "When you attack recklessly, you can forgo Advantage on one Strength attack to add 1d10 damage and apply a rider effect.",
+      "description": "When you use Reckless Attack, you can choose to forgo Advantage on one Strength-based attack roll this turn. If that attack hits, add 1d10 damage and apply a Brutal Strike effect. This scales at higher levels.",
       "level": 9,
-      "section": "Class Features",
-      "type": "passive",
+      "section": "Actions",
+      "type": "special",
       "resourceName": "",
       "trackUses": false,
       "tags": [
@@ -806,7 +806,7 @@
       "range": "",
       "duration": "",
       "save": "",
-      "trigger": "",
+      "trigger": "When you use Reckless Attack and hit with a Strength-based attack",
       "usage": "",
       "recovery": "",
       "effect": "Adds extra brutality to a successful hit, with stronger payoff as the barbarian levels.",
@@ -906,7 +906,7 @@
       "id": "barbarian-brutal-strike-2-effects",
       "displayName": "Brutal Strike (2 effects)",
       "name": "Brutal Strike (2 effects)",
-      "summary": "Turn a heavy hit into extra control, pressure, or raw damage when you really need the swing to matter.",
+      "summary": "Your Brutal Strike package improves with stronger riders and better turn impact.",
       "description": "Brutal Strike upgrades your strongest melee hits into bigger momentum plays. Depending on the level row, it either adds more damage, lets you layer on extra riders, or both.\n\nIn play, use this when a normal hit is not enough and you want the attack to shift the fight, not just shave off a few hit points.\n\nUse this when the fight is live and a round-to-round choice matters.\n\nPractical effect: Adds extra brutality to a successful hit, with stronger payoff as the barbarian levels.",
       "level": 13,
       "section": "Class Features",
@@ -1027,7 +1027,7 @@
       "id": "barbarian-brutal-strike-3d10",
       "displayName": "Brutal Strike (3d10)",
       "name": "Brutal Strike (3d10)",
-      "summary": "Turn a heavy hit into extra control, pressure, or raw damage when you really need the swing to matter.",
+      "summary": "Your Brutal Strike extra damage increases to 3d10 when you land the strike.",
       "description": "Brutal Strike upgrades your strongest melee hits into bigger momentum plays. Depending on the level row, it either adds more damage, lets you layer on extra riders, or both.\n\nIn play, use this when a normal hit is not enough and you want the attack to shift the fight, not just shave off a few hit points.\n\nUse this when the fight is live and a round-to-round choice matters.\n\nPractical effect: Adds extra brutality to a successful hit, with stronger payoff as the barbarian levels.",
       "level": 17,
       "section": "Class Features",
@@ -1120,7 +1120,7 @@
       "displayName": "Primal Champion",
       "name": "Primal Champion",
       "summary": "Your body reaches a legendary peak of raw physical dominance.",
-      "description": "This capstone massively improves the barbarian’s raw physical profile and pushes the class into true endgame bruiser territory. The sheet should reflect the stat impact directly in attacks, saves, checks, hit points, and any other derived totals that depend on it.\n\nThis should read clearly enough that the player can tell when it is worth using without opening another app.",
+      "description": "This capstone massively improves the barbarian\u2019s raw physical profile and pushes the class into true endgame bruiser territory. The sheet should reflect the stat impact directly in attacks, saves, checks, hit points, and any other derived totals that depend on it.\n\nThis should read clearly enough that the player can tell when it is worth using without opening another app.",
       "level": 20,
       "section": "Class Features",
       "type": "passive",
@@ -1148,70 +1148,70 @@
   },
   "levelUnlockIds": {
     "1": [
-      "barbarian-l1-1",
-      "barbarian-l1-2",
-      "barbarian-l1-3"
+      "barbarian-rage",
+      "barbarian-unarmored-defense",
+      "barbarian-weapon-mastery-2-weapons"
     ],
     "2": [
-      "barbarian-l2-1",
-      "barbarian-l2-2"
+      "barbarian-reckless-attack",
+      "barbarian-danger-sense"
     ],
     "3": [
-      "barbarian-l3-1",
-      "barbarian-l3-2"
+      "barbarian-primal-path-subclass",
+      "barbarian-primal-knowledge"
     ],
     "4": [
-      "barbarian-l4-1"
+      "barbarian-ability-score-improvement"
     ],
     "5": [
-      "barbarian-l5-1",
-      "barbarian-l5-2"
+      "barbarian-extra-attack",
+      "barbarian-fast-movement"
     ],
     "6": [
-      "barbarian-l6-1",
-      "barbarian-l6-2"
+      "barbarian-subclass-feature",
+      "barbarian-feral-instinct"
     ],
     "7": [
-      "barbarian-l7-1"
+      "barbarian-instinctive-pounce"
     ],
     "8": [
-      "barbarian-l8-1"
+      "barbarian-ability-score-improvement-2"
     ],
     "9": [
-      "barbarian-l9-1"
+      "barbarian-brutal-strike-1d10-effect"
     ],
     "10": [
-      "barbarian-l10-1"
+      "barbarian-subclass-feature-2"
     ],
     "11": [
-      "barbarian-l11-1"
+      "barbarian-relentless-rage"
     ],
     "12": [
-      "barbarian-l12-1"
+      "barbarian-ability-score-improvement-3"
     ],
     "13": [
-      "barbarian-l13-1"
+      "barbarian-brutal-strike-2-effects"
     ],
     "14": [
-      "barbarian-l14-1"
+      "barbarian-subclass-feature-3"
     ],
     "15": [
-      "barbarian-l15-1"
+      "barbarian-persistent-rage"
     ],
     "16": [
-      "barbarian-l16-1"
+      "barbarian-ability-score-improvement-4"
     ],
     "17": [
-      "barbarian-l17-1"
+      "barbarian-brutal-strike-3d10"
     ],
     "18": [
-      "barbarian-l18-1"
+      "barbarian-indomitable-might"
     ],
     "19": [
-      "barbarian-l19-1"
+      "barbarian-epic-boon"
     ],
     "20": [
-      "barbarian-l20-1"
+      "barbarian-primal-champion"
     ]
   },
   "progressionSummary": [
@@ -1374,6 +1374,9 @@
     "secondaryFocus": "Constitution",
     "secondaryReason": "boosts your HP and keeps you standing while raging",
     "avoidDump": "Dexterity",
-    "avoidDumpReason": "you still need decent initiative and armor class even as a bruiser"
+    "avoidDumpReason": "you still need decent initiative and armor class even as a bruiser",
+    "coreLoop": "Open hard fights with Rage, then keep attacking every round to maintain pressure and value from Rage-linked features.",
+    "primaryStats": "Strength powers attack pressure; Constitution powers durability and Unarmored Defense.",
+    "gear": "Use martial melee weapons, carry javelins/handaxes for reach turns, and consider shield vs two-handed based on role."
   }
 }

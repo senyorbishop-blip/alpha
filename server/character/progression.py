@@ -361,9 +361,19 @@ def build_levelup_preview(document: Any) -> dict[str, Any]:
     current_level_row = next((row for row in progression_table if isinstance(row, dict) and _safe_int(row.get("level"), 0) == current_level), {})
     next_level_row = next((row for row in progression_table if isinstance(row, dict) and _safe_int(row.get("level"), 0) == next_level), {})
 
-    new_feature_ids = class_catalog.get("levelUnlockIds", {}).get(str(next_level), [])
-    if not isinstance(new_feature_ids, list):
-        new_feature_ids = []
+    next_level_unlock_ids = next_level_row.get("unlockIds", []) if isinstance(next_level_row, dict) else []
+    if not isinstance(next_level_unlock_ids, list):
+        next_level_unlock_ids = []
+    new_feature_ids = [
+        str(fid or "").strip()
+        for fid in next_level_unlock_ids
+        if str(fid or "").strip()
+    ]
+    if not new_feature_ids:
+        # Compatibility fallback for catalogs that still only expose levelUnlockIds.
+        fallback_unlocks = class_catalog.get("levelUnlockIds", {}).get(str(next_level), [])
+        if isinstance(fallback_unlocks, list):
+            new_feature_ids = [str(fid or "").strip() for fid in fallback_unlocks if str(fid or "").strip()]
     feature_defs = class_catalog.get("featureDefinitions", {})
     if not isinstance(feature_defs, dict):
         feature_defs = {}
