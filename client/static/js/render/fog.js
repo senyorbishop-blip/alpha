@@ -22,6 +22,8 @@
   }
   function _isFogPainterActive(state, env) {
     if (env.ROLE !== 'dm' || !state.fogEnabled || !state.fogMouseWorld) return false;
+    const mode = String((env && typeof env.getFogSystemMode === 'function' ? env.getFogSystemMode() : '') || '').toLowerCase();
+    if (!(mode === 'manual' || mode === 'hybrid')) return false;
     const doc = (env && env.document) || document;
     const fogFlyout = doc.getElementById('flyout-fog');
     return !!(fogFlyout && fogFlyout.classList && fogFlyout.classList.contains('open'));
@@ -30,12 +32,24 @@
     const doc = (env && env.document) || document;
     const statusEl = doc.getElementById('fog-status-text');
     if (!statusEl) return;
+    const mode = String((env && typeof env.getFogSystemMode === 'function' ? env.getFogSystemMode() : '') || '').toLowerCase();
+    if (mode === 'off') {
+      statusEl.textContent = 'Fog Off · manual fog hidden; players see full map unless vision mode applies.';
+      return;
+    }
+    if (mode === 'vision') {
+      statusEl.textContent = 'Vision Fog · token line-of-sight is authoritative on this map.';
+      return;
+    }
     if (!state.fogEnabled) {
-      statusEl.textContent = 'Fog is OFF · players can see the full map.';
+      statusEl.textContent = mode === 'hybrid'
+        ? 'Hybrid Fog · manual layer is currently disabled for this map.'
+        : 'Manual Fog · currently disabled for this map.';
       return;
     }
     const pct = _fogRevealPercent(state);
-    statusEl.textContent = `Fog is ON · players can currently see about ${pct}% of this map.`;
+    const prefix = mode === 'hybrid' ? 'Hybrid Fog' : 'Manual Fog';
+    statusEl.textContent = `${prefix} · players can currently see about ${pct}% of this map.`;
   }
   function syncFogUI(state, env, handlers) {
     const doc = (env && env.document) || document;
@@ -216,7 +230,14 @@
     }
     env.invalidateFogCache();
     syncFogUI(state, env, env.handlers);
-    env.sendWS({ type: 'fog_toggle', payload: { enabled } });
+    env.sendWS({
+      type: 'fog_toggle',
+      payload: {
+        enabled,
+        map_ctx: state.fogMapCtx,
+        map_context: state.fogMapCtx,
+      },
+    });
   }
   function setFogMode(state, env, reveal) {
     state.fogReveal = reveal;

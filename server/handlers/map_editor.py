@@ -168,6 +168,34 @@ def _normalize_dm_map_context(session: Session, value) -> str:
     return "world"
 
 
+def _resolve_fog_map_context(session: Session, payload: dict) -> str:
+    data = payload if isinstance(payload, dict) else {}
+    requested = (
+        data.get("map_ctx")
+        or data.get("map_context")
+        or data.get("dm_map_context")
+        or getattr(session, "dm_map_context", "world")
+        or "world"
+    )
+    return _normalize_dm_map_context(session, requested)
+
+
+async def _broadcast_fog_to_visible_users(session: Session, message: dict, map_ctx: str):
+    """Deliver fog updates only to users whose visible map contexts include map_ctx."""
+    users = dict(getattr(session, "users", {}) or {})
+    for uid, participant in users.items():
+        role = str(getattr(participant, "role", "") or "").strip().lower()
+        if role == "dm":
+            await manager.send_to(session.id, uid, message)
+            continue
+        try:
+            visible = session.visible_map_contexts_for_user(uid)
+        except Exception:
+            visible = {"world"}
+        if str(map_ctx or "world") in {str(ctx or "world") for ctx in (visible or {"world"})}:
+            await manager.send_to(session.id, uid, message)
+
+
 def _resolve_local_map_url(session: Session, map_ctx: str, fallback=None) -> str | None:
     if map_ctx == "world":
         return None
@@ -922,7 +950,7 @@ async def handle_door_lock_set(payload: dict, session: Session, user: User):
 
 async def handle_fog_toggle(payload: dict, session: Session, user: User):
     """DM toggles fog on/off for the current map only."""
-    map_ctx = session.dm_map_context or 'world'
+    map_ctx = _resolve_fog_map_context(session, payload)
     if user.role != 'dm' and not assistant_dm_has_scope(session, user, "maps.fog", map_ctx=map_ctx):
         return
     if session.fog_maps is None:
@@ -936,7 +964,7 @@ async def handle_fog_toggle(payload: dict, session: Session, user: User):
     if entry['enabled'] and len(entry.get('cells', '')) != total:
         entry['cells'] = '0' * total
     session.fog_maps[map_ctx] = entry
-    await manager.broadcast(session.id, {
+    await _broadcast_fog_to_visible_users(session, {
         'type': 'fog_state',
         'payload': {
             'map_ctx': map_ctx,
@@ -945,14 +973,14 @@ async def handle_fog_toggle(payload: dict, session: Session, user: User):
             'fog_rows': entry['rows'],
             'fog_cells': entry['cells'],
         }
-    })
+    }, map_ctx)
     await save_campaign_async(session)
 
 
 async def handle_fog_paint(payload: dict, session: Session, user: User):
     """DM paints reveal/hide cells on fog grid."""
     reveal = bool(payload.get('reveal', True))
-    map_ctx = payload.get('map_ctx') or session.dm_map_context or 'world'
+    map_ctx = _resolve_fog_map_context(session, payload)
     if user.role != 'dm' and not assistant_dm_has_scope(session, user, "maps.fog", map_ctx=map_ctx):
         return
     cells = payload.get('cells', [])
@@ -971,14 +999,14 @@ async def handle_fog_paint(payload: dict, session: Session, user: User):
         if 0 <= idx < total:
             arr[idx] = '1' if reveal else '0'
     entry['cells'] = ''.join(arr)
-    await manager.broadcast(session.id, {
+    await _broadcast_fog_to_visible_users(session, {
         'type': 'fog_update',
         'payload': {
             'map_ctx': map_ctx,
             'reveal': reveal,
             'cells': cells,
         }
-    })
+    }, map_ctx)
     await save_campaign_async(session)
 
 

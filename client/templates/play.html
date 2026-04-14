@@ -38191,6 +38191,14 @@ function closeAllFlyouts() {
   });
 }
 
+function isFogFlyoutPinnedForEditing() {
+  if (ROLE !== 'dm') return false;
+  const fogFlyout = document.getElementById('flyout-fog');
+  if (!fogFlyout || !fogFlyout.classList.contains('open')) return false;
+  const mode = String(getFogSystemMode() || '').toLowerCase();
+  return !!fogEnabled && (mode === 'manual' || mode === 'hybrid');
+}
+
 function setDmWorkflowMode(mode, opts = {}) {
   if (ROLE !== 'dm') return;
   const nextMode = mode === 'live' ? 'live' : 'prep';
@@ -38262,6 +38270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Only close if clicking/tapping the canvas itself, not a button on it
     if (e.target === wrap || e.target.id === 'map-canvas') {
       if (document.getElementById('flyout-editor')?.classList.contains('open')) return;
+      if (isFogFlyoutPinnedForEditing()) return;
       closeAllFlyouts();
     }
   };
@@ -41011,7 +41020,7 @@ function fogToggle(enabled) {
   }
   invalidateFogCache();
   _syncFogUI();
-  sendWS({ type: 'fog_toggle', payload: { enabled } });
+  sendWS({ type: 'fog_toggle', payload: { enabled, map_ctx: fogMapCtx, map_context: fogMapCtx } });
 }
 
 function setFogMode(reveal) {
