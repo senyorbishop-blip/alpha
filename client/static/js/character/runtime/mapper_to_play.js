@@ -441,6 +441,7 @@
     }
 
     if (Object.keys(spellAccess).length) {
+      out.spellAccess = clone(spellAccess);
       var slots = asObject(spellAccess.slots);
       if (Object.keys(slots).length) {
         out.spellSlots = clone(slots);
@@ -549,6 +550,9 @@
     out.abilityScores = abilityScores;
 
     var spellAccess = asObject(runtime.spellAccess);
+    if (Object.keys(spellAccess).length) {
+      out.spellAccess = clone(spellAccess);
+    }
     var slots = asObject(spellAccess.slots);
     if (Object.keys(slots).length) {
       out.spellSlots = formatSpellSlotLines(slots);

@@ -84,6 +84,20 @@
     return DEFAULT_SLOTS[chosen] || [];
   }
   function _getUsedSlots(charData) { return charData && Array.isArray(charData.usedSpellSlots) ? charData.usedSpellSlots : []; }
+  function _pactMagicState(charData) {
+    const spellAccess = charData && charData.spellAccess && typeof charData.spellAccess === 'object' ? charData.spellAccess : {};
+    const pact = spellAccess && spellAccess.pactMagic && typeof spellAccess.pactMagic === 'object' ? spellAccess.pactMagic : {};
+    const mechanics = charData && charData.classMechanics && typeof charData.classMechanics === 'object' ? charData.classMechanics : {};
+    const slotCount = parseInt(pact.slotCount != null ? pact.slotCount : mechanics.pactSlots, 10);
+    const slotLevel = parseInt(pact.slotLevel != null ? pact.slotLevel : mechanics.pactSlotLevel, 10);
+    return {
+      enabled: !!(pact.enabled || (Number.isFinite(slotCount) && slotCount > 0)),
+      slotCount: Number.isFinite(slotCount) ? slotCount : 0,
+      slotLevel: Number.isFinite(slotLevel) ? slotLevel : 0,
+      recoveryType: _firstText(pact.recoveryType, ''),
+      note: _firstText(pact.note, ''),
+    };
+  }
   function _spellRankLabel(spell) {
     const level = _spellLevelNumber(spell);
     return level === 0 ? 'Cantrip' : 'Level ' + level;
@@ -523,6 +537,17 @@ function _spellAttackSaveCell(spell, charData) {
   }
 
   function _renderSlotsRow(charData) {
+    const pact = _pactMagicState(charData);
+    if (pact.enabled && pact.slotCount > 0) {
+      const used = _getUsedSlots(charData);
+      const usedCount = parseInt(used[pact.slotLevel] || 0, 10) || 0;
+      const available = Math.max(0, pact.slotCount - usedCount);
+      const pips = Array.from({ length: pact.slotCount }, function (_, i) {
+        const avail = i < available;
+        return '<button class="cs-slot-pip ' + (avail ? 'available' : 'used') + '" aria-label="Pact slot ' + (i + 1) + ' of level ' + pact.slotLevel + ' ' + (avail ? '(available)' : '(used)') + '" data-slot-level="' + _esc(String(pact.slotLevel)) + '" data-slot-index="' + _esc(String(i)) + '"></button>';
+      }).join('');
+      return '<div class="cs-slots-row" aria-label="Pact magic slots"><div class="cs-slot-group"><span class="cs-slot-label">PACT L' + _esc(String(pact.slotLevel || '?')) + '</span><div class="cs-slot-pips">' + pips + '</div></div></div>';
+    }
     const slots = _getSlotCounts(charData);
     const used = _getUsedSlots(charData);
     const groups = [];
@@ -1044,6 +1069,7 @@ function _spellAttackSaveCell(spell, charData) {
   function _renderSpellsTab(container, state) {
     const concentration = _firstText(state.charData && state.charData.activeConcentration, '');
     const selected = _selectedSpells(state);
+    const pact = _pactMagicState(state.charData || {});
     const activeSlotTiers = _getSlotCounts(state.charData || {}).filter(function (count, idx) { return idx > 0 && count > 0; }).length;
     container.innerHTML = '' +
       '<div class="cs-combat-hero-grid">' +
@@ -1051,8 +1077,11 @@ function _spellAttackSaveCell(spell, charData) {
         _renderSummaryCard('Spell Attack', _firstText(state.charData && state.charData.spellAttack, '—'), selected.length ? 'Attack-roll spells use this bonus.' : 'No spell attack bonus detected yet.', selected.length ? 'gold' : '') +
         _renderSummaryCard('Active Spells', String(_selectedSpellCount(state)), _selectedSpellCount(state) ? 'Known / prepared list is linked.' : 'Nothing selected yet.', _selectedSpellCount(state) ? 'violet' : '') +
         _renderSummaryCard('Concentration', concentration || 'None', concentration ? 'Active on this character now.' : 'No active concentration spell.', concentration ? 'violet' : '') +
+        (pact.enabled ? _renderSummaryCard('Pact Slots', String(pact.slotCount || 0), (pact.slotLevel ? ('All cast at level ' + pact.slotLevel + '.') : 'Warlock pact slot economy.'), 'gold') : '') +
+        (pact.enabled ? _renderSummaryCard('Pact Recovery', 'Short Rest', 'Pact slots refresh on Short Rest cadence.', 'teal') : '') +
+        (pact.enabled ? _renderSummaryCard('Mystic Arcanum', 'Separate', 'Arcanum casts are not part of pact slot budgeting.', 'violet') : '') +
       '</div>' +
-      (activeSlotTiers || concentration ? '<div class="cs-inline-hint">' + _esc(concentration ? ('Concentration: ' + concentration + ' • ') : '') + _esc(activeSlotTiers ? (activeSlotTiers + ' slot tiers are available for this character.') : 'Cantrips only are available right now.') + '</div>' : '') +
+      ((activeSlotTiers || concentration || pact.enabled) ? '<div class="cs-inline-hint">' + _esc(concentration ? ('Concentration: ' + concentration + ' • ') : '') + _esc(pact.enabled ? ('Pact Magic: ' + (pact.slotCount || 0) + ' slot(s) at level ' + (pact.slotLevel || '?') + ', refreshing on short rest. ') : '') + _esc(activeSlotTiers ? (activeSlotTiers + ' slot tiers are available for this character.') : 'Cantrips only are available right now.') + (pact.note ? (' ' + _esc(pact.note)) : '') + '</div>' : '') +
       _renderSlotsRow(state.charData) +
       '<div class="cs-spell-toolbar">' +
         _renderSearch(state.managerOpen ? 'Search spells you can add…' : 'Search your current spells…') +
