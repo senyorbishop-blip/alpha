@@ -3,7 +3,7 @@
   "displayName": "Way of Shadow",
   "classId": "monk",
   "parentClassId": "monk",
-  "flavorText": "Shadow monks blend stealth, mobility, and battlefield misdirection into a disciplined martial path.",
+  "flavorText": "Shadow monks play an ambush game: stealth, vanish tools, instant repositioning, and reaction punish windows.",
   "featureUnlocksByLevel": {
     "3": [
       "shadow-shadow-arts"
@@ -52,8 +52,8 @@
       "summary": "Spend focus on stealth, darkness, and infiltration tricks that make the monk feel like a true shadow operative.",
       "description": "You learn to spend focus on stealthy tricks, darkness control, and mobility magic so the subclass feels like a true infiltrator instead of only an unarmed striker.\n\nShadow Arts is the opening identity statement for the Way of Shadow. It matters because it gives the monk non-standard tools for map access, stealth setups, and disappearing from obvious lines.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
       "level": 3,
-      "section": "Subclass Features",
-      "type": "passive",
+      "section": "Actions",
+      "type": "action",
       "resourceName": "Focus Points",
       "trackUses": true,
       "tags": [
@@ -69,9 +69,9 @@
       "duration": "",
       "save": "",
       "trigger": "",
-      "usage": "",
+      "usage": "Spend Focus Points to cast shadow arts techniques (for example Darkness, Darkvision, Pass without Trace, or Silence).",
       "recovery": "",
-      "effect": "",
+      "effect": "Expands your tactical kit with stealth and darkness control techniques.",
       "dice": ""
     },
     "shadow-shadow-step": {
@@ -79,7 +79,7 @@
       "displayName": "Shadow Step",
       "name": "Shadow Step",
       "summary": "Teleport through dim light or darkness so your positioning becomes a weapon in its own right.",
-      "description": "As a bonus action, you move between patches of dim light or darkness, letting you reposition hard and threaten angles other characters cannot safely take.\n\nShadow Step is one of the subclass’s biggest tactical spikes. It should feel like a premium ambush and escape button rather than a tiny mobility note.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "description": "As a bonus action, you move between patches of dim light or darkness, letting you reposition hard and threaten angles other characters cannot safely take.\n\nShadow Step is one of the subclass\u2019s biggest tactical spikes. It should feel like a premium ambush and escape button rather than a tiny mobility note.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
       "level": 6,
       "section": "Bonus Actions",
       "type": "bonus action",
@@ -97,10 +97,10 @@
       "range": "",
       "duration": "",
       "save": "",
-      "trigger": "",
+      "trigger": "While in dim light or darkness.",
       "usage": "",
       "recovery": "",
-      "effect": "",
+      "effect": "Teleport between shadows and gain advantage on your next melee attack before end of turn.",
       "dice": ""
     },
     "shadow-cloak-of-shadows": {
@@ -110,8 +110,8 @@
       "summary": "Slip out of sight through shadow, trickery, or disciplined stillness when visibility itself is the problem.",
       "description": "When the light is in your favor, you can vanish from sight and break enemy targeting lines before striking from a safer position.\n\nCloak of Shadows is about vanishing at the right moment to break targeting, reposition, or set up a better next turn. The exact expression depends on the subclass, but it should always feel like a real stealth-state button.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
       "level": 11,
-      "section": "Actions",
-      "type": "action",
+      "section": "Bonus Actions",
+      "type": "bonus action",
       "resourceName": "",
       "trackUses": false,
       "tags": [
@@ -126,10 +126,10 @@
       "range": "",
       "duration": "",
       "save": "",
-      "trigger": "When the light is in your favor",
+      "trigger": "In dim light or darkness.",
       "usage": "",
       "recovery": "",
-      "effect": "",
+      "effect": "Become Invisible until you move, attack, cast, or leave shadowed light.",
       "dice": ""
     },
     "shadow-opportunist": {
@@ -156,10 +156,10 @@
       "range": "",
       "duration": "",
       "save": "",
-      "trigger": "When another creature leaves an opening",
+      "trigger": "When a creature within reach is hit by another creature.",
       "usage": "",
       "recovery": "",
-      "effect": "",
+      "effect": "Use your reaction to make an immediate melee attack against that creature.",
       "dice": ""
     }
   }

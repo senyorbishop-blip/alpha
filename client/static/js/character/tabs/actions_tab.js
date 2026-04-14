@@ -31,6 +31,11 @@
       copy: 'Pirate should feel aggressive and mobile here: Swagger Dice, dirty tricks, bonus-action pressure, and your equipped attacks should all read as one fighting style.',
       checks: ['Swagger Dice visible', 'Dirty trick cards visible', 'Bonus-action pressure tools loaded'],
     },
+    monk: {
+      title: 'Monk Combat Surface',
+      copy: 'Monk should read as a live action-economy loop: Attack action cadence, Martial Arts follow-up, Focus spenders, and reaction defenses all visible together.',
+      checks: ['Focus Points visible', 'Martial Arts / Flurry / Patient Defense cards visible', 'Reaction defenses visible'],
+    },
   };
 
 
@@ -131,6 +136,36 @@
         'dread captain': [
           { key: 'fearsome boarding', name: 'Fearsome Boarding', summary: 'Open with raw intimidation and direct pressure so the enemy line starts to crack immediately.', actionType: 'bonus', resourceName: 'Swagger Dice', tags: ['Dread Captain', 'Fear'] },
           { key: 'crack their will', name: 'Crack Their Will', summary: 'Exploit hesitation or fear once the target starts to break.', actionType: 'reaction', resourceName: 'Swagger Dice', tags: ['Dread Captain', 'Fear'] },
+        ],
+      },
+    },
+    monk: {
+      actions: [
+        { key: 'martial arts', name: 'Martial Arts Follow-Up', summary: 'After taking the Attack action with an unarmed strike or monk weapon, make one unarmed strike as a bonus action.', actionType: 'bonus', resourceName: '', resourceSummary: 'No Focus cost', range: '5 ft', tags: ['Monk', 'Unarmed'] },
+        { key: 'flurry of blows', name: 'Flurry of Blows', summary: 'Spend Focus to convert your turn into two extra unarmed strikes as a bonus action.', actionType: 'bonus', resourceName: 'Focus Points', resourceSummary: 'Spend 1 Focus Point', range: '5 ft', tags: ['Monk', 'Burst'] },
+        { key: 'patient defense', name: 'Patient Defense', summary: 'Spend Focus to Disengage and become harder to hit until your next turn.', actionType: 'bonus', resourceName: 'Focus Points', resourceSummary: 'Spend 1 Focus Point', range: 'Self', tags: ['Monk', 'Defense'] },
+        { key: 'step of the wind', name: 'Step of the Wind', summary: 'Spend Focus to Dash/Disengage as a bonus action and extend jump mobility.', actionType: 'bonus', resourceName: 'Focus Points', resourceSummary: 'Spend 1 Focus Point', range: 'Self', tags: ['Monk', 'Mobility'] },
+        { key: 'stunning strike', name: 'Stunning Strike', summary: 'On a melee hit, spend Focus to force a Constitution save and potentially Stun the target.', actionType: 'action', resourceName: 'Focus Points', resourceSummary: 'Spend 1 Focus Point on hit', range: 'Melee hit trigger', tags: ['Monk', 'Control'] },
+        { key: 'deflect attacks', name: 'Deflect Attacks', summary: 'Use your reaction to reduce incoming attack damage, then optionally redirect.', actionType: 'reaction', resourceName: 'Focus Points', resourceSummary: 'Reaction; optional Focus to redirect', range: 'Self / returned attack', tags: ['Monk', 'Reaction'] },
+        { key: 'slow fall', name: 'Slow Fall', summary: 'Use your reaction when falling to heavily reduce fall damage.', actionType: 'reaction', resourceName: '', resourceSummary: 'Reaction on fall', range: 'Self', tags: ['Monk', 'Reaction'] },
+        { key: 'deflect energy', name: 'Deflect Energy', summary: 'Use your reaction to reduce elemental/force burst damage from visible sources.', actionType: 'reaction', resourceName: '', resourceSummary: 'Reaction to incoming energy damage', range: 'Self', tags: ['Monk', 'Reaction'] },
+        { key: 'superior defense', name: 'Superior Defense', summary: 'Spend Focus for a short defensive spike that resists most damage types.', actionType: 'bonus', resourceName: 'Focus Points', resourceSummary: 'Spend 3 Focus Points', range: 'Self', tags: ['Monk', 'Defense'] },
+      ],
+      subclassActions: {
+        'way of the open hand': [
+          { key: 'open hand technique', name: 'Open Hand Technique Riders', summary: 'Your Flurry hits can push, prone, or disrupt reactions, turning pressure into control.', actionType: 'bonus', resourceName: 'Focus Points', range: 'Melee hit rider', tags: ['Open Hand', 'Control'] },
+          { key: 'wholeness of body', name: 'Wholeness of Body', summary: 'Use an action to self-heal and stabilize your frontline presence.', actionType: 'action', resourceName: 'Wholeness of Body', range: 'Self', tags: ['Open Hand', 'Sustain'] },
+          { key: 'quivering palm', name: 'Quivering Palm', summary: 'Plant a delayed finisher on a hit, then trigger it later for a lethal payoff.', actionType: 'action', resourceName: 'Focus Points', range: 'Melee hit / later trigger', tags: ['Open Hand', 'Finisher'] },
+        ],
+        'way of shadow': [
+          { key: 'shadow arts', name: 'Shadow Arts', summary: 'Spend Focus on darkness and infiltration techniques to shape engagement terms.', actionType: 'action', resourceName: 'Focus Points', range: 'Technique-dependent', tags: ['Shadow', 'Stealth'] },
+          { key: 'shadow step', name: 'Shadow Step', summary: 'Teleport through darkness as a bonus action to set ambush angles.', actionType: 'bonus', resourceName: '', range: 'Shadow-to-shadow', tags: ['Shadow', 'Mobility'] },
+          { key: 'opportunist', name: 'Opportunist', summary: 'When an opening appears, use your reaction to punish instantly.', actionType: 'reaction', resourceName: '', range: 'Triggered melee attack', tags: ['Shadow', 'Reaction'] },
+        ],
+        'way of the four elements': [
+          { key: 'disciple of the elements', name: 'Disciple of the Elements', summary: 'Spend Focus to access elemental techniques beyond standard strikes.', actionType: 'action', resourceName: 'Focus Points', range: 'Technique-dependent', tags: ['Four Elements', 'Elemental'] },
+          { key: 'elemental disciplines', name: 'Elemental Disciplines', summary: 'Use elemental blasts and control options as part of your class loop.', actionType: 'action', resourceName: 'Focus Points', range: 'Technique-dependent', tags: ['Four Elements', 'Control'] },
+          { key: 'avatar of the four winds', name: 'Avatar of the Four Winds', summary: 'Spend Focus for a high-tier elemental transformation/burst mode.', actionType: 'action', resourceName: 'Focus Points', range: 'Self / area', tags: ['Four Elements', 'Capstone'] },
         ],
       },
     },

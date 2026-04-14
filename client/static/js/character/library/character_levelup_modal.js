@@ -448,6 +448,18 @@
     return out;
   }
 
+  function mechanicLabel(key) {
+    const normalized = String(key || '').trim();
+    const labels = {
+      focusPoints: 'Focus Points',
+      disciplinePoints: 'Focus Points',
+      martialArtsDie: 'Martial Arts Die',
+      extraAttacks: 'Attacks per Attack Action',
+    };
+    if (labels[normalized]) return labels[normalized];
+    return normalized.replace(/_/g, ' ').replace(/\b\w/g, function (m) { return m.toUpperCase(); });
+  }
+
   function uniqueIds(value) {
     const rows = Array.isArray(value) ? value : [];
     const out = [];
@@ -933,7 +945,7 @@
       const after = safeInt(newMechanics[key], 0);
       const delta = after - before;
       return {
-        label: key.replace(/_/g, ' ').replace(/\b\w/g, function (m) { return m.toUpperCase(); }),
+        label: mechanicLabel(key),
         before: String(before),
         after: String(after),
         delta: (delta >= 0 ? '+' : '') + String(delta),
@@ -992,7 +1004,7 @@
       + (isStepChoices ? (classChoiceCoach(preview) ? guidancePanelHtml(classChoiceCoach(preview).title, 'Use this step to choose the upgrades that actually change how your turns feel.', classChoiceCoach(preview).bullets) : '') + choiceRuleSummaryHtml(preview, features, spellPlan) + '<section class="lvlup-card"><div class="lvlup-title">Choices — Feature Picks</div><div style="font-size:.84rem;opacity:.9;margin-bottom:8px">Read each card as: what you gain now, what it costs to use, and how it changes your normal turn plan.</div>' + featuresHtml + '</section>' + asiHtml + renderSpellChoiceSection(preview, spellPlan) : '')
       + (isStepReview
         ? '<section class="lvlup-card"><div class="lvlup-title">Finish</div>'
-          + '<div style="font-size:.84rem;opacity:.9;margin-bottom:8px">Automatic gains and player choices are separated so you can quickly see what changes now and what still needs your input.</div>'
+          + '<div style="font-size:.84rem;opacity:.9;margin-bottom:8px">What changes immediately after confirm: automatic gains and player choices are separated so you can quickly see what changes now and what still needs your input.</div>'
           + '<div class="lvlup-confirm-grid">'
           + '  <div class="lvlup-confirm-card"><div class="lvlup-subtitle">What updates now</div>' + reviewList([
           'Your class level becomes ' + String(nextLevel) + ' for ' + String(className) + '.',
