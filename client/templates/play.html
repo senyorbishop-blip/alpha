@@ -11134,6 +11134,8 @@ let _inventoryTransferTargetId = "";
 let _dmInventoryFocusUserId = "";
 let playerGold = 0;
 let _playerInventoryCurrentAc = null;
+let _playerItemActions = [];
+let _playerItemPassives = [];
 let _charAcIsEquipmentDerived = false; // mirrors server token.ac_from_equipment
 let playerEncumbranceByUserId = {};
 let viewerProfiles = {};
@@ -30397,6 +30399,15 @@ function handleLegacyMessage(msg) {
       }
       break;
     }
+    case 'inventory_item_used': {
+      if (!__handlePlayerScopedUiEvent(msg)) {
+        const itemName = String(p.item_name || 'Item');
+        const healing = Number(p.healing_total || 0);
+        if (healing > 0) showToast(`${itemName} restored ${healing} HP.`);
+        else showToast(`${itemName} activated.`);
+      }
+      break;
+    }
     case 'corpse_config_sync': {
       corpseDmConfig = { ...(p || {}) };
       renderEconomyCampaignSettings();
@@ -39215,6 +39226,22 @@ function normalizePlayerInventoryEntry(raw) {
   if ('is_magic' in base) out.is_magic = !!base.is_magic;
   if ('is_identified' in base) out.is_identified = !!base.is_identified;
   if ('attunement_required' in base) out.attunement_required = !!base.attunement_required;
+  if ('attuned' in base) out.attuned = !!base.attuned;
+  ['charges_current','charges_max','usage_cost','save_dc','attack_bonus'].forEach(k => {
+    if (base[k] == null || String(base[k]).trim() === '') return;
+    const v = parseInt(base[k], 10);
+    if (Number.isFinite(v)) out[k] = v;
+  });
+  ['recharge_type','recharge_formula','action_type','activation_type','target_type','damage_formula','healing_formula','effect_text','granted_ability','image_key'].forEach(k => {
+    const v = String(base[k] || '').trim();
+    if (v) out[k] = v;
+  });
+  if ('consumable' in base) out.consumable = !!base.consumable;
+  if ('consumed_on_use' in base) out.consumed_on_use = !!base.consumed_on_use;
+  if ('remove_when_empty' in base) out.remove_when_empty = !!base.remove_when_empty;
+  if ('grants_action' in base) out.grants_action = !!base.grants_action;
+  if (Array.isArray(base.passive_effects)) out.passive_effects = base.passive_effects.slice(0, 12);
+  if (Array.isArray(base.granted_spells)) out.granted_spells = base.granted_spells.slice(0, 12);
   if (!('identified' in out) && 'is_identified' in out) out.identified = !!out.is_identified;
   // Encumbrance fields
   if (base.weight_lbs != null) out.weight_lbs = Math.max(0, Number(base.weight_lbs) || 0);
@@ -39282,6 +39309,8 @@ function normalizeEncumbranceState(raw) {
 function applyPlayerInventoryState(payload) {
   const p = payload || {};
   if (ROLE === 'dm') {
+    _playerItemActions = [];
+    _playerItemPassives = [];
     playerInventories = Array.isArray(p.player_inventories) ? p.player_inventories.map(normalizePlayerInventoryBucket).filter(Boolean) : [];
     const dmEncRaw = (p.player_encumbrance && typeof p.player_encumbrance === 'object') ? p.player_encumbrance : {};
     const dmEncNorm = {};
@@ -39302,6 +39331,8 @@ function applyPlayerInventoryState(payload) {
   } else {
     playerInventory = Array.isArray(p.player_inventory) ? p.player_inventory.map(normalizePlayerInventoryEntry).filter(Boolean) : [];
     playerGold = Math.max(0, Math.round(Number(p.player_gold) || 0));
+    _playerItemActions = Array.isArray(p.item_actions) ? p.item_actions.filter(x => x && typeof x === 'object') : [];
+    _playerItemPassives = Array.isArray(p.item_passives) ? p.item_passives.filter(x => x && typeof x === 'object') : [];
     if (_charSheet && typeof _charSheet === 'object') {
       _charSheet.inventory = playerInventory.map(entry => Object.assign({}, entry));
       _charSheet.inventoryEntries = playerInventory.map(entry => Object.assign({}, entry));
@@ -42284,6 +42315,45 @@ function _getPlayerActionsSections() {
     if (castText.includes('reaction')) sections.Reactions.push(Object.assign({}, spellEntry, { badges: ['Spell', 'Reaction'].concat(badges) }));
   });
 
+  (Array.isArray(_playerItemActions) ? _playerItemActions : []).forEach((itemAction, idx) => {
+    const activation = String(itemAction.activation_type || 'action').toLowerCase();
+    const sectionName = activation === 'bonus_action' ? 'Bonus Actions' : (activation === 'reaction' ? 'Reactions' : 'Class Features');
+    const chargesText = Number.isFinite(Number(itemAction.charges_current))
+      ? `Charges ${Number(itemAction.charges_current)}/${Number(itemAction.charges_max || 0)}`
+      : '';
+    const qtyText = Number.isFinite(Number(itemAction.quantity)) ? `Qty ${Number(itemAction.quantity)}` : '';
+    sections[sectionName] = sections[sectionName] || [];
+    sections[sectionName].push({
+      id: String(itemAction.action_id || itemAction.item_id || `item_action_${idx}`),
+      source: 'item_action',
+      name: String(itemAction.action_name || itemAction.item_name || 'Item Action'),
+      attackBonus: itemAction.attack_bonus != null ? signed(Number(itemAction.attack_bonus) || 0) : '',
+      damage: String(itemAction.damage_formula || itemAction.effect_text || ''),
+      damageType: '',
+      range: String(itemAction.range || ''),
+      resource: [chargesText, qtyText, itemAction.disabled ? `Blocked: ${itemAction.disabled_reason || 'Unavailable'}` : ''].filter(Boolean).join(' • '),
+      desc: String(itemAction.effect_text || ''),
+      badges: ['Item', String(itemAction.item_name || 'Item')].filter(Boolean),
+      disabled: !!itemAction.disabled,
+      disabled_reason: String(itemAction.disabled_reason || ''),
+      item_index: Number(itemAction.item_index),
+      usage_cost: Number(itemAction.usage_cost || 1),
+    });
+  });
+
+  (Array.isArray(_playerItemPassives) ? _playerItemPassives : []).forEach((passive, idx) => {
+    const effects = Array.isArray(passive.effects) ? passive.effects : [];
+    const effectLine = effects.map(effect => String(effect.summary || effect.type || '').trim()).filter(Boolean).join(' • ');
+    sections['Class Features'].push({
+      id: `item_passive_${idx}_${String(passive.item_id || '')}`,
+      source: 'item_passive',
+      name: `${String(passive.item_name || 'Item')} (Passive)`,
+      desc: effectLine || 'Passive item effect.',
+      resource: 'Passive',
+      badges: ['Item Passive'],
+    });
+  });
+
   if (!sections.Reactions.length) {
     sections.Reactions.push({
       id: 'system_opportunity_attack',
@@ -42364,6 +42434,23 @@ function playerUseAction(source, id) {
   if (src === 'system_reaction') {
     sendWS({ type: 'chat_message', payload: { message: '⚡ **Opportunity Attack** is ready when a creature leaves your reach.', channel: 'everyone' } });
     showToast('Opportunity Attack reaction ready.');
+    return;
+  }
+  if (src === 'item_action') {
+    const action = (Array.isArray(_playerItemActions) ? _playerItemActions : []).find(entry => String(entry.action_id || '') === String(id || ''));
+    if (!action) return;
+    if (action.disabled) {
+      showToast(action.disabled_reason || 'That item cannot be used right now.');
+      return;
+    }
+    sendWS({
+      type: 'inventory_use_item_action',
+      payload: {
+        item_index: Number(action.item_index || 0),
+        action_id: String(action.action_id || ''),
+        usage_cost: Math.max(1, Number(action.usage_cost || 1)),
+      },
+    });
     return;
   }
   const actionSections = _getPlayerActionsSections();
@@ -42447,7 +42534,7 @@ function renderPlayerActionsHub() {
               ${action.desc ? `<div class="player-action-desc">${escapeHtml(action.desc)}</div>` : ''}
               <div class="player-action-controls">
                 ${action.source === 'spell' ? `<select id="player-spell-slot-${escapeHtml(String(action.id || '').replace(/[^a-zA-Z0-9_-]/g, '_'))}" class="player-action-slot-select">${(Array.isArray(action.castOptions) ? action.castOptions : [{ value: Number(action.level || 0), label: Number(action.level || 0) === 0 ? 'Cantrip' : 'Cast' }]).map(opt => `<option value="${Number(opt.value || 0)}" ${opt.disabled ? 'disabled' : ''}>${escapeHtml(String(opt.label || 'Cast'))}</option>`).join('')}</select>` : ''}
-                <button class="player-action-use-btn" onclick="${action.source === 'spell' ? `playerUseSpellAction('${escapeHtml(String(action.id || ''))}', 'player-spell-slot-${escapeHtml(String(action.id || '').replace(/[^a-zA-Z0-9_-]/g, '_'))}')` : `playerUseAction('${escapeHtml(action.source || 'book')}', '${escapeHtml(String(action.id || ''))}')`}">${action.source === 'spell' ? 'Cast / Roll' : (action.source === 'weapon' || action.source === 'equip_only') ? 'Attack / Roll' : action.source === 'native_action' ? 'Resolve / Roll' : 'Use Action'}</button>
+                <button class="player-action-use-btn" onclick="${action.source === 'spell' ? `playerUseSpellAction('${escapeHtml(String(action.id || ''))}', 'player-spell-slot-${escapeHtml(String(action.id || '').replace(/[^a-zA-Z0-9_-]/g, '_'))}')` : `playerUseAction('${escapeHtml(action.source || 'book')}', '${escapeHtml(String(action.id || ''))}')`}">${action.source === 'spell' ? 'Cast / Roll' : (action.source === 'weapon' || action.source === 'equip_only') ? 'Attack / Roll' : action.source === 'native_action' ? 'Resolve / Roll' : action.source === 'item_action' ? 'Use Item' : 'Use Action'}</button>
               </div>
             </article>`).join('')}
           </div>

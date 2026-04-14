@@ -133,10 +133,288 @@ _EQUIPMENT_META_KEYS = (
 _INVENTORY_META_KEYS = (
     "id", "category", "icon", "rarity", "is_magic", "is_identified", "magic_item_id", "item_type",
     "attunement_required", "effect", "unidentified_description",
+    "attuned", "charges_current", "charges_max", "recharge_type", "recharge_formula",
+    "consumable", "consumed_on_use", "remove_when_empty", "action_type", "activation_type",
+    "usage_cost", "range", "target_type", "save_dc", "attack_bonus", "damage_formula",
+    "healing_formula", "effect_text", "grants_action", "passive_effects", "granted_spells",
+    "granted_ability", "image_key",
     "weight_lbs", "extradimensional", "is_container", "own_weight_lbs", "capacity_lbs", "volume_ft3",
     "is_devouring", "bag_contents",
     "equipped", "equip_slot", *_EQUIPMENT_META_KEYS,
 )
+
+
+_ITEM_ACTION_ACTIVATION_TYPES = {"action", "bonus_action", "reaction", "free", "special"}
+_ITEM_RECHARGE_TYPES = {"long_rest", "dawn", "daily", "none"}
+
+
+def _normalize_item_runtime_fields(entry: dict, out: dict) -> None:
+    for key, minimum, maximum in (
+        ("charges_current", 0, 99),
+        ("charges_max", 0, 99),
+        ("usage_cost", 0, 20),
+        ("save_dc", 0, 40),
+        ("attack_bonus", -20, 30),
+    ):
+        normalized = _safe_inventory_int(entry.get(key), minimum, maximum)
+        if normalized is not None:
+            out[key] = normalized
+
+    for key, limit in (
+        ("recharge_type", 24),
+        ("recharge_formula", 24),
+        ("action_type", 24),
+        ("activation_type", 24),
+        ("range", 40),
+        ("target_type", 40),
+        ("damage_formula", 60),
+        ("healing_formula", 60),
+        ("effect_text", 400),
+        ("granted_ability", 80),
+        ("image_key", 120),
+    ):
+        value = str(entry.get(key) or "").strip()[:limit]
+        if value:
+            out[key] = value
+
+    for key in ("attuned", "consumable", "consumed_on_use", "remove_when_empty", "grants_action"):
+        if key in entry:
+            out[key] = bool(entry.get(key))
+
+    for key in ("passive_effects", "granted_spells"):
+        raw = entry.get(key)
+        if isinstance(raw, list):
+            cleaned: list[dict] = []
+            for row in raw[:12]:
+                if isinstance(row, dict):
+                    cleaned.append({k: row.get(k) for k in list(row.keys())[:12]})
+                else:
+                    label = str(row or "").strip()[:120]
+                    if label:
+                        cleaned.append({"type": "note", "value": label})
+            if cleaned:
+                out[key] = cleaned
+
+
+def _item_is_attuned(item: dict) -> bool:
+    if not bool(item.get("attunement_required")):
+        return True
+    return bool(item.get("attuned")) or bool(item.get("equipped"))
+
+
+def _extract_known_healing_formula(name: str, effect: str) -> str:
+    mapping = {
+        "potion of healing": "2d4+2",
+        "potion of greater healing": "4d4+4",
+        "potion of superior healing": "8d4+8",
+        "potion of supreme healing": "10d4+20",
+    }
+    lower_name = name.lower()
+    if lower_name in mapping:
+        return mapping[lower_name]
+    matched = re.search(r"(\d+d\d+(?:\s*[+-]\s*\d+)?)\s*hit points", effect, re.IGNORECASE)
+    return str(matched.group(1)).replace(" ", "") if matched else ""
+
+
+def _extract_recharge_formula(effect_text: str) -> tuple[str, str]:
+    effect = str(effect_text or "").lower()
+    if "regains" not in effect:
+        return ("none", "")
+    if "at dawn" in effect:
+        recharge_type = "dawn"
+    elif "long rest" in effect:
+        recharge_type = "long_rest"
+    elif "once per day" in effect or "once/day" in effect:
+        recharge_type = "daily"
+    else:
+        recharge_type = "none"
+    formula_match = re.search(r"regains?\s+([0-9d+\- ]+)\s+charges?", effect, re.IGNORECASE)
+    formula = str(formula_match.group(1) or "").replace(" ", "") if formula_match else ""
+    return recharge_type, formula
+
+
+def _build_known_item_runtime(item: dict) -> dict:
+    name = str(item.get("name") or "").strip()
+    effect = str(item.get("effect") or "").strip()
+    lower_name = name.lower()
+    item_type = str(item.get("item_type") or item.get("category") or "").strip().lower()
+    runtime: dict = {}
+
+    if item_type == "potion" or "potion" in lower_name:
+        healing_formula = _extract_known_healing_formula(name, effect)
+        runtime.update({
+            "consumable": True,
+            "consumed_on_use": True,
+            "remove_when_empty": True,
+            "grants_action": True,
+            "action_type": "consumable",
+            "activation_type": "action",
+            "usage_cost": 1,
+            "target_type": "self_or_touch",
+            "range": "touch",
+            "healing_formula": healing_formula,
+            "effect_text": effect or "Use potion effect.",
+        })
+        if "resistance" in lower_name and "resistance" in effect.lower():
+            damage_type = ""
+            type_match = re.search(r"resistance\s*\(([^)]+)\)", name, re.IGNORECASE)
+            if type_match:
+                damage_type = str(type_match.group(1)).strip().lower()
+            runtime.setdefault("passive_effects", []).append({
+                "type": "resistance",
+                "damage_type": damage_type,
+                "duration": "1 hour",
+                "summary": effect or "Gain damage resistance.",
+            })
+        return runtime
+
+    if item_type == "scroll" or "scroll" in lower_name:
+        runtime.update({
+            "consumable": True,
+            "consumed_on_use": True,
+            "remove_when_empty": True,
+            "grants_action": True,
+            "action_type": "consumable",
+            "activation_type": "action",
+            "usage_cost": 1,
+            "range": "special",
+            "target_type": "special",
+            "effect_text": effect or "Use scroll effect.",
+        })
+        level_match = re.search(r"spell scroll\s*\((\d+)(?:st|nd|rd|th)? level\)", lower_name)
+        if level_match:
+            runtime["granted_ability"] = f"spell_scroll_level_{level_match.group(1)}"
+        return runtime
+
+    if item_type == "wand" or "wand" in lower_name:
+        charges_max = 7
+        if "wand of secrets" in lower_name:
+            charges_max = 3
+        recharge_type, recharge_formula = _extract_recharge_formula(effect)
+        usage_cost = 1
+        if "1–3 charges" in effect or "1-3 charges" in effect:
+            usage_cost = 1
+        runtime.update({
+            "grants_action": True,
+            "action_type": "item_power",
+            "activation_type": "action",
+            "usage_cost": usage_cost,
+            "charges_max": charges_max,
+            "recharge_type": recharge_type,
+            "recharge_formula": recharge_formula,
+            "effect_text": effect or "Use wand power.",
+            "range": "special",
+            "target_type": "spell_target",
+        })
+        if "save dc" in effect.lower():
+            save_match = re.search(r"save dc\s*(\d+)", effect, re.IGNORECASE)
+            if save_match:
+                runtime["save_dc"] = _safe_int(save_match.group(1), 10, minimum=0, maximum=40)
+        return runtime
+
+    if lower_name in {"ring of protection", "cloak of protection"}:
+        runtime["passive_effects"] = [
+            {"type": "ac_bonus", "value": 1, "summary": "+1 AC while equipped/attuned."},
+            {"type": "save_bonus", "value": 1, "summary": "+1 saving throws while equipped/attuned."},
+        ]
+    elif lower_name == "headband of intellect":
+        runtime["passive_effects"] = [{"type": "ability_set", "ability": "int", "value": 19, "summary": "INT becomes 19."}]
+    elif lower_name == "amulet of health":
+        runtime["passive_effects"] = [{"type": "ability_set", "ability": "con", "value": 19, "summary": "CON becomes 19."}]
+    elif lower_name == "goggles of night":
+        runtime["passive_effects"] = [{"type": "sense_bonus", "sense": "darkvision", "value": 60, "summary": "Darkvision +60 ft (or gain 60 ft)."}]
+    elif lower_name == "boots of speed":
+        runtime.update({
+            "grants_action": True,
+            "action_type": "item_power",
+            "activation_type": "bonus_action",
+            "usage_cost": 1,
+            "effect_text": effect or "Activate boots effect.",
+            "passive_effects": [{"type": "speed_multiplier", "value": 2, "summary": "Speed doubled while active."}],
+        })
+    return runtime
+
+
+def _build_item_runtime_action(item: dict, item_index: int) -> tuple[dict | None, dict | None]:
+    if not isinstance(item, dict):
+        return None, None
+    merged = dict(item)
+    known = _build_known_item_runtime(item)
+    for key, value in known.items():
+        if key not in merged or merged.get(key) in (None, "", [], {}):
+            merged[key] = value
+
+    if "charges_max" in merged and "charges_current" not in merged:
+        merged["charges_current"] = _safe_int(merged.get("charges_max"), 0, minimum=0, maximum=99)
+    if "recharge_type" in merged:
+        recharge_type = str(merged.get("recharge_type") or "").strip().lower()
+        if recharge_type not in _ITEM_RECHARGE_TYPES:
+            merged["recharge_type"] = "none"
+    if merged.get("activation_type"):
+        activation = str(merged.get("activation_type") or "").strip().lower()
+        if activation not in _ITEM_ACTION_ACTIVATION_TYPES:
+            merged["activation_type"] = "action"
+
+    passive_effects = list(merged.get("passive_effects") or [])
+    passive_card = None
+    if passive_effects and bool(merged.get("equipped")) and _item_is_attuned(merged):
+        passive_card = {
+            "item_index": item_index,
+            "item_id": str(merged.get("id") or merged.get("magic_item_id") or f"item_{item_index}"),
+            "item_name": str(merged.get("name") or "Item"),
+            "effects": passive_effects,
+        }
+
+    grants_action = bool(merged.get("grants_action")) or bool(merged.get("consumable")) or (
+        _safe_int(merged.get("charges_max"), 0, minimum=0, maximum=99) > 0
+    )
+    if not grants_action:
+        return None, passive_card
+
+    quantity = _safe_int(merged.get("qty"), 1, minimum=1, maximum=9999)
+    charges_current = _safe_int(merged.get("charges_current"), -1, minimum=-1, maximum=99)
+    usage_cost = max(1, _safe_int(merged.get("usage_cost"), 1, minimum=1, maximum=20))
+
+    disabled_reason = ""
+    if bool(merged.get("attunement_required")) and not _item_is_attuned(merged):
+        disabled_reason = "Requires attunement."
+    elif bool(merged.get("consumable")) and quantity <= 0:
+        disabled_reason = "No quantity left."
+    elif charges_current >= 0 and charges_current < usage_cost:
+        disabled_reason = "No charges left."
+
+    action_payload = {
+        "action_id": f"item::{item_index}::{str(merged.get('id') or merged.get('magic_item_id') or merged.get('name') or 'item')}",
+        "source": "item_action",
+        "item_index": item_index,
+        "item_id": str(merged.get("id") or merged.get("magic_item_id") or ""),
+        "item_name": str(merged.get("name") or "Item"),
+        "action_name": f"Use {str(merged.get('name') or 'Item')}",
+        "action_type": str(merged.get("action_type") or "item_power"),
+        "activation_type": str(merged.get("activation_type") or "action"),
+        "usage_cost": usage_cost,
+        "quantity": quantity,
+        "charges_current": charges_current if charges_current >= 0 else None,
+        "charges_max": _safe_int(merged.get("charges_max"), 0, minimum=0, maximum=99),
+        "consumable": bool(merged.get("consumable")),
+        "consumed_on_use": bool(merged.get("consumed_on_use")),
+        "remove_when_empty": bool(merged.get("remove_when_empty", True)),
+        "recharge_type": str(merged.get("recharge_type") or "none"),
+        "recharge_formula": str(merged.get("recharge_formula") or ""),
+        "range": str(merged.get("range") or ""),
+        "target_type": str(merged.get("target_type") or ""),
+        "save_dc": _safe_int(merged.get("save_dc"), 0, minimum=0, maximum=40),
+        "attack_bonus": _safe_int(merged.get("attack_bonus"), 0, minimum=-20, maximum=30),
+        "damage_formula": str(merged.get("damage_formula") or ""),
+        "healing_formula": str(merged.get("healing_formula") or ""),
+        "effect_text": str(merged.get("effect_text") or merged.get("effect") or ""),
+        "granted_spells": list(merged.get("granted_spells") or []),
+        "granted_ability": str(merged.get("granted_ability") or ""),
+        "image_key": str(merged.get("image_key") or ""),
+        "disabled": bool(disabled_reason),
+        "disabled_reason": disabled_reason,
+    }
+    return action_payload, passive_card
 
 
 def _safe_inventory_int(raw, minimum: int, maximum: int) -> int | None:
@@ -252,6 +530,7 @@ def _normalize_player_inventory_entry(entry: dict) -> dict | None:
         out["is_identified"] = bool(entry.get("is_identified"))
     if "attunement_required" in entry:
         out["attunement_required"] = bool(entry.get("attunement_required"))
+    _normalize_item_runtime_fields(entry, out)
     # ── Encumbrance fields ──
     if "weight_lbs" in entry:
         try:
@@ -390,6 +669,18 @@ async def _broadcast_inventory_state(session: Session):
     await _broadcast_token_state_sync(session)
 
 
+def _derive_item_actions_and_passives(items: list[dict]) -> tuple[list[dict], list[dict]]:
+    actions: list[dict] = []
+    passives: list[dict] = []
+    for idx, item in enumerate(list(items or [])):
+        action_payload, passive_card = _build_item_runtime_action(item, idx)
+        if action_payload:
+            actions.append(action_payload)
+        if passive_card:
+            passives.append(passive_card)
+    return actions, passives
+
+
 async def _send_inventory_state(session: Session, user_id: str):
     from server.session import build_player_inventory_payload_for_dm
     user = session.users.get(user_id)
@@ -423,8 +714,11 @@ async def _send_inventory_state(session: Session, user_id: str):
     elif user.role == "player":
         inv = get_player_inventory_for_user(session, user_id)
         gold = get_player_gold_for_user(session, user_id)
+        item_actions, item_passives = _derive_item_actions_and_passives(inv)
         payload["player_inventory"] = inv
         payload["player_gold"] = gold
+        payload["item_actions"] = item_actions
+        payload["item_passives"] = item_passives
         payload["current_ac"] = _calculate_ac_for_user(session, user, inv)
         # Build encumbrance payload for this player
         _update_encumbrance_cache(session, user_id)
@@ -1245,6 +1539,13 @@ def _calculate_ac_for_user(session: Session, user: User, items: list[dict]) -> i
     for _idx, shield in shield_entries:
         ac += _safe_int(shield.get("ac_bonus"), 0, minimum=-20, maximum=20)
 
+    _item_actions, passives = _derive_item_actions_and_passives(items)
+    for passive in passives:
+        for effect in list(passive.get("effects") or []):
+            if str(effect.get("type") or "").strip().lower() != "ac_bonus":
+                continue
+            ac += _safe_int(effect.get("value"), 0, minimum=-20, maximum=20)
+
     return max(1, int(ac))
 
 
@@ -1260,8 +1561,14 @@ def _apply_ac_to_char_profiles(session: Session, user: User, ac_value: int, item
     This prevents equipment recalculation from silently overwriting a manually
     set AC (e.g. the player typed a value in the character sheet form).
     """
+    _actions, passives = _derive_item_actions_and_passives(items)
+    has_passive_ac = any(
+        str(effect.get("type") or "").strip().lower() == "ac_bonus"
+        for passive in passives
+        for effect in list(passive.get("effects") or [])
+    )
     has_armor = bool(
-        _iter_equipped_items(items, "armor") or _iter_equipped_items(items, "shield")
+        _iter_equipped_items(items, "armor") or _iter_equipped_items(items, "shield") or has_passive_ac
     )
     profiles = dict(getattr(session, "char_profiles", {}) or {})
     owner_key = normalize_profile_owner_key(getattr(user, "name", "")) or user.id
@@ -1301,8 +1608,14 @@ def _apply_ac_to_owned_tokens(session: Session, user: User, items: list, ac_valu
     This prevents equipment recalculation from silently overwriting a manually
     set AC (e.g. the player typed a value in the quick panel form).
     """
+    _actions, passives = _derive_item_actions_and_passives(items)
+    has_passive_ac = any(
+        str(effect.get("type") or "").strip().lower() == "ac_bonus"
+        for passive in passives
+        for effect in list(passive.get("effects") or [])
+    )
     has_armor = bool(
-        _iter_equipped_items(items, "armor") or _iter_equipped_items(items, "shield")
+        _iter_equipped_items(items, "armor") or _iter_equipped_items(items, "shield") or has_passive_ac
     )
     for token in (getattr(session, "tokens", {}) or {}).values():
         if _owner_matches_user(getattr(token, "owner_id", ""), user):
@@ -1318,6 +1631,46 @@ def _recompute_equipment_effects(session: Session, user: User) -> int:
     _apply_ac_to_char_profiles(session, user, ac_value, items)
     _apply_ac_to_owned_tokens(session, user, items, ac_value)
     return ac_value
+
+
+def refresh_item_charges_for_rest(session: Session, user: User, rest_type: str) -> list[dict]:
+    inventories, owner_key, items = _get_player_inventory_store(session, user)
+    changed: list[dict] = []
+    changed_any = False
+    rest_key = str(rest_type or "").strip().lower()
+    for idx, raw_item in enumerate(list(items or [])):
+        item = dict(raw_item or {})
+        action_payload, _passive = _build_item_runtime_action(item, idx)
+        if not action_payload:
+            continue
+        recharge_type = str(action_payload.get("recharge_type") or "none").strip().lower()
+        if recharge_type not in {"long_rest", "dawn", "daily"}:
+            continue
+        if recharge_type == "long_rest" and rest_key != "long":
+            continue
+        if recharge_type in {"dawn", "daily"} and rest_key not in {"long", "dawn"}:
+            continue
+        charges_max = _safe_int(item.get("charges_max"), _safe_int(action_payload.get("charges_max"), 0, minimum=0, maximum=99), minimum=0, maximum=99)
+        if charges_max <= 0:
+            continue
+        formula = str(action_payload.get("recharge_formula") or "").strip()
+        if formula:
+            gained = _roll_formula_total(formula)
+            next_charges = min(charges_max, _safe_int(item.get("charges_current"), charges_max, minimum=0, maximum=99) + max(0, gained))
+        else:
+            next_charges = charges_max
+        current = _safe_int(item.get("charges_current"), charges_max, minimum=0, maximum=99)
+        if next_charges == current:
+            continue
+        item["charges_max"] = charges_max
+        item["charges_current"] = next_charges
+        items[idx] = item
+        changed_any = True
+        changed.append({"item_index": idx, "item_name": str(item.get("name") or "Item"), "charges_current": next_charges, "charges_max": charges_max})
+    if changed_any:
+        inventories[owner_key] = [entry for entry in (_normalize_player_inventory_entry(x) for x in items) if entry]
+        session.player_inventories = inventories
+    return changed
 
 
 def _equip_item(session: Session, user: User, item_index: int) -> tuple[bool, str]:
@@ -1435,6 +1788,98 @@ async def handle_inventory_unequip_item(payload: dict, session: Session, user: U
     await _send_inventory_action_result(session, user.id, f"{msg} AC is now {ac_value}.")
     if target_user.id != user.id:
         await _send_inventory_action_result(session, target_user.id, f"{msg} AC is now {ac_value}.")
+
+
+def _roll_formula_total(formula: str) -> int:
+    text = str(formula or "").strip().lower().replace(" ", "")
+    if not text:
+        return 0
+    match = re.fullmatch(r"(\d+)d(\d+)([+-]\d+)?", text)
+    if not match:
+        return 0
+    dice = _safe_int(match.group(1), 1, minimum=1, maximum=50)
+    sides = _safe_int(match.group(2), 1, minimum=1, maximum=100)
+    modifier = _safe_int(match.group(3) or 0, 0, minimum=-200, maximum=200)
+    return sum(random.randint(1, sides) for _ in range(max(1, dice))) + modifier
+
+
+async def handle_inventory_use_item_action(payload: dict, session: Session, user: User):
+    if user.role != "player":
+        return await _send_inventory_action_result(session, user.id, "Only players can use inventory item actions.")
+    item_index = _safe_int(payload.get("item_index"), -1, minimum=-1, maximum=9999)
+    if item_index < 0:
+        return await _send_inventory_action_result(session, user.id, "Choose an item action first.")
+    inventories, owner_key, items = _get_player_inventory_store(session, user)
+    if item_index >= len(items):
+        return await _send_inventory_action_result(session, user.id, "That item is no longer in your inventory.")
+    item = dict(items[item_index] or {})
+    action_payload, _passive = _build_item_runtime_action(item, item_index)
+    if not action_payload:
+        return await _send_inventory_action_result(session, user.id, "That item does not grant an active action.")
+    if bool(action_payload.get("disabled")):
+        return await _send_inventory_action_result(
+            session,
+            user.id,
+            str(action_payload.get("disabled_reason") or "That item cannot be used right now."),
+        )
+    usage_cost = max(1, _safe_int(payload.get("usage_cost"), action_payload.get("usage_cost") or 1, minimum=1, maximum=20))
+    if action_payload.get("charges_current") is not None:
+        charges_current = _safe_int(item.get("charges_current"), _safe_int(action_payload.get("charges_current"), 0, minimum=0, maximum=99), minimum=0, maximum=99)
+        if charges_current < usage_cost:
+            return await _send_inventory_action_result(session, user.id, "Not enough charges.")
+        item["charges_current"] = charges_current - usage_cost
+        if item.get("charges_max") is None and action_payload.get("charges_max") is not None:
+            item["charges_max"] = _safe_int(action_payload.get("charges_max"), 0, minimum=0, maximum=99)
+    removed = False
+    if bool(action_payload.get("consumed_on_use")):
+        current_qty = _safe_int(item.get("qty"), 1, minimum=1, maximum=9999)
+        next_qty = current_qty - 1
+        if next_qty <= 0 and bool(action_payload.get("remove_when_empty", True)):
+            items.pop(item_index)
+            removed = True
+        else:
+            item["qty"] = max(1, next_qty)
+    if not removed:
+        items[item_index] = item
+    inventories[owner_key] = [entry for entry in (_normalize_player_inventory_entry(x) for x in items) if entry]
+    session.player_inventories = inventories
+    _recompute_equipment_effects(session, user)
+    result = {
+        "type": "item_action_result",
+        "item_name": str(action_payload.get("item_name") or item.get("name") or "Item"),
+        "action_name": str(action_payload.get("action_name") or "Use Item"),
+        "item_id": str(action_payload.get("item_id") or ""),
+        "consumed": bool(action_payload.get("consumed_on_use")),
+        "removed": removed,
+        "usage_cost": usage_cost,
+        "remaining_quantity": None if removed else _safe_int(item.get("qty"), 1, minimum=1, maximum=9999),
+        "remaining_charges": None if removed else _safe_int(item.get("charges_current"), 0, minimum=0, maximum=99) if item.get("charges_current") is not None else None,
+        "healing_formula": str(action_payload.get("healing_formula") or ""),
+        "damage_formula": str(action_payload.get("damage_formula") or ""),
+        "effect_text": str(action_payload.get("effect_text") or ""),
+        "target_type": str(action_payload.get("target_type") or ""),
+    }
+    if result["healing_formula"]:
+        result["healing_total"] = _roll_formula_total(result["healing_formula"])
+    await _broadcast_inventory_state(session)
+    await manager.send_to(session.id, user.id, {"type": "inventory_item_used", "payload": result})
+    await manager.broadcast(session.id, {
+        "type": "chat_message",
+        "payload": {
+            "user": user.name,
+            "message": f"🧰 **{result['action_name']}** — {result['item_name']}.",
+            "channel": "everyone",
+            "msg_type": "system",
+        },
+    })
+    await _send_inventory_action_result(
+        session,
+        user.id,
+        f"{result['item_name']} used."
+        if not result.get("healing_total")
+        else f"{result['item_name']} used for {result['healing_total']} healing.",
+    )
+    await save_campaign_async(session)
 
 
 async def handle_prop_take_item(payload: dict, session: Session, user: User):

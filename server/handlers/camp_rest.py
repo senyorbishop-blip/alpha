@@ -215,6 +215,19 @@ async def handle_camp_rest_take_rest(payload: dict, session: Session, user: User
                 "max_hp": int(max_hp),
             })
 
+        item_recharge_updates = []
+        from server.handlers.inventory import refresh_item_charges_for_rest
+        for uid, session_user in list((getattr(session, "users", {}) or {}).items()):
+            if getattr(session_user, "role", "") != "player":
+                continue
+            updated = refresh_item_charges_for_rest(session, session_user, "long")
+            if updated:
+                item_recharge_updates.append({
+                    "user_id": uid,
+                    "user_name": getattr(session_user, "name", "Player"),
+                    "items": updated,
+                })
+
         log_msg = "🌙 Long rest — all party members restored to full HP. Spell slots refreshed."
         rest_label = "Long Rest"
 
@@ -237,9 +250,14 @@ async def handle_camp_rest_take_rest(payload: dict, session: Session, user: User
             "rest_type": rest_type,
             "label": rest_label,
             "healed_tokens": healed_tokens,
+            "item_recharge_updates": item_recharge_updates if rest_type == "long" else [],
             "message": log_msg,
         },
     })
+
+    if rest_type == "long":
+        from server.handlers.inventory import _broadcast_inventory_state
+        await _broadcast_inventory_state(session)
 
     await manager.broadcast(session.id, {
         "type": "chat_message",
