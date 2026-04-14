@@ -169,7 +169,7 @@
       "minimumLevel": 9
     }
   ],
-  "classDescription": "A spellcaster bound to a powerful otherworldly patron.",
+  "classDescription": "A short-rest Pact Magic caster who recovers spell slots every short rest — supplemented by Eldritch Invocations that permanently expand at-will abilities, and a patron subclass that reshapes the whole spell and feature identity.",
   "roleIdentity": "Short-rest caster with high-impact invocations and at-will tricks.",
   "progressionTable": [
     {

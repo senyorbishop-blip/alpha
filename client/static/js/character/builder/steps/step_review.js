@@ -188,7 +188,7 @@
         '<div class="sb-char-name">' + escHtml(characterName) + '</div>',
         '<div class="sb-char-sub">' + escHtml(speciesName) + ' ' + escHtml(className) + ' \u00b7 Level ' + sb.level + '</div>',
         '<div class="sb-char-sub2">' + escHtml(bgName) + ' \u00b7 ' + escHtml(speciesSize) + ' \u00b7 ' + sb.speed + ' ft</div>',
-        '<div class="sb-xp-bar"><div class="sb-xp-fill" style="width:5%"></div></div>',
+        '<div class="sb-xp-bar"><div class="sb-xp-fill" style="width:' + Math.round(((Math.max(1, sb.level) - 1) / 19) * 100) + '%"></div></div>',
         '</div>',
         '</div>',
       ].join('');
@@ -266,7 +266,7 @@
           featureHtml += '</div>';
         });
       } else {
-        featureHtml = '<div style="font-size:0.64rem;color:var(--text-dim);font-style:italic">No level 1 features listed in catalog.</div>';
+        featureHtml = '<div style="font-size:0.64rem;color:var(--text-dim);font-style:italic">Select a class to see starting features.</div>';
       }
 
       var bodyHtml = [

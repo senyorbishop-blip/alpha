@@ -63,7 +63,7 @@
       }) || null;
       var features = row && Array.isArray(row.features) && row.features.length
         ? row.features.join(', ')
-        : 'No catalog feature listed yet.';
+        : '—';
       var lower = String(features || '').toLowerCase();
       rows.push({
         level: nextLevel,

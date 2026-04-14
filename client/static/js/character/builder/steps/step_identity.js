@@ -41,7 +41,8 @@
       const identity = draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
       const presentation = draft.presentation && typeof draft.presentation === 'object' ? draft.presentation : {};
       const portraitFrame = String(presentation.portraitFrame || 'classic');
-      const gender = identity.gender === 'female' ? 'female' : 'male';
+      const GENDER_OPTIONS = ['male', 'female', 'nonbinary', 'custom'];
+      const gender = GENDER_OPTIONS.includes(identity.gender) ? identity.gender : 'male';
 
       function detailsOpen(key) {
         return _expanded[key] ? ' open' : '';
@@ -64,10 +65,12 @@
         '<div class="cb-field-row cb-field-row--2col">',
 
         '<div class="field">',
-        '<label>Sex</label>',
+        '<label>Sex / Gender</label>',
         '<select data-builder-path="identity.gender" id="cb-gender-select">',
         '<option value="male"' + (gender === 'male' ? ' selected' : '') + '>Male</option>',
         '<option value="female"' + (gender === 'female' ? ' selected' : '') + '>Female</option>',
+        '<option value="nonbinary"' + (gender === 'nonbinary' ? ' selected' : '') + '>Nonbinary</option>',
+        '<option value="custom"' + (gender === 'custom' ? ' selected' : '') + '>Custom</option>',
         '</select>',
         '</div>',
 
@@ -76,6 +79,24 @@
         '<input type="text" data-builder-path="identity.alignment"',
         ' value="' + escHtml(identity.alignment || '') + '" maxlength="60"',
         ' placeholder="Neutral Good" />',
+        '</div>',
+
+        '</div>',
+
+        '<div class="cb-field-row cb-field-row--2col">',
+
+        '<div class="field">',
+        '<label>Pronouns <span class="cb-optional">optional</span></label>',
+        '<input type="text" data-builder-path="identity.pronouns"',
+        ' value="' + escHtml(identity.pronouns || '') + '" maxlength="60"',
+        ' placeholder="they/them, she/her, he/him\u2026" />',
+        '</div>',
+
+        '<div class="field">',
+        '<label>Age <span class="cb-optional">optional</span></label>',
+        '<input type="text" data-builder-path="identity.age"',
+        ' value="' + escHtml(identity.age || '') + '" maxlength="40"',
+        ' placeholder="Young adult, 30, etc." />',
         '</div>',
 
         '</div>',
