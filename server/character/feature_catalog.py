@@ -325,6 +325,7 @@ FEATURE_METADATA: dict[str, dict[str, Any]] = {
 RESOURCE_FIELD_BLUEPRINTS: dict[str, dict[str, Any]] = {
     "rageUses": {"id": "rage_uses", "name": "Rage", "section": "Bonus Actions", "type": "bonus action", "trackUses": True},
     "disciplinePoints": {"id": "focus_points", "name": "Focus Points", "section": "Class Features", "type": "passive", "trackUses": True},
+    "focusPoints": {"id": "focus_points", "name": "Focus Points", "section": "Class Features", "type": "passive", "trackUses": True},
     "bardicInspirationDie": {"id": "bardic_inspiration", "name": "Bardic Inspiration", "section": "Bonus Actions", "type": "bonus action", "trackUses": True},
     "channelDivinityUses": {"id": "channel_divinity", "name": "Channel Divinity", "section": "Actions", "type": "action", "trackUses": True},
     "wildShapeUses": {"id": "wild_shape", "name": "Wild Shape", "section": "Actions", "type": "action", "trackUses": True},

@@ -35,8 +35,8 @@
   "spellcastingType": "none",
   "spellcastingAbility": null,
   "spellSlots": {},
-  "classDescription": "A disciplined martial artist channeling body and spirit.",
-  "roleIdentity": "Mobile striker-controller with precision defense and resource bursts.",
+  "classDescription": "A disciplined martial artist who fights with unarmed techniques, monk weapons, and Focus-powered mobility and defense.",
+  "roleIdentity": "Mobile striker-controller with unarmed/monk-weapon tempo, Focus-fueled bonus actions, and reactive defenses.",
   "progressionTable": [
     {
       "level": 1,
@@ -48,8 +48,8 @@
       ],
       "classMechanics": {
         "martialArtsDie": "d6",
-        "disciplinePoints": 0,
-        "extraAttacks": 1
+        "extraAttacks": 1,
+        "focusPoints": 0
       },
       "unlockIds": [
         "monk-martial-arts",
@@ -61,18 +61,18 @@
       "level": 2,
       "proficiencyBonus": 2,
       "features": [
-        "Monk's Focus (Discipline Points)",
+        "Monk's Focus (Focus Points)",
         "Flurry of Blows",
         "Patient Defense",
         "Step of the Wind"
       ],
       "classMechanics": {
         "martialArtsDie": "d6",
-        "disciplinePoints": 2,
-        "extraAttacks": 1
+        "extraAttacks": 1,
+        "focusPoints": 2
       },
       "unlockIds": [
-        "monk-monk-s-focus-discipline-points",
+        "monk-monk-s-focus-focus-points",
         "monk-flurry-of-blows",
         "monk-patient-defense",
         "monk-step-of-the-wind"
@@ -87,8 +87,8 @@
       ],
       "classMechanics": {
         "martialArtsDie": "d6",
-        "disciplinePoints": 3,
-        "extraAttacks": 1
+        "extraAttacks": 1,
+        "focusPoints": 3
       },
       "unlockIds": [
         "monk-monastic-tradition-subclass",
@@ -105,8 +105,8 @@
       "asiOrFeat": true,
       "classMechanics": {
         "martialArtsDie": "d6",
-        "disciplinePoints": 4,
-        "extraAttacks": 1
+        "extraAttacks": 1,
+        "focusPoints": 4
       },
       "unlockIds": [
         "monk-ability-score-improvement",
@@ -122,8 +122,8 @@
       ],
       "classMechanics": {
         "martialArtsDie": "d8",
-        "disciplinePoints": 5,
-        "extraAttacks": 2
+        "extraAttacks": 2,
+        "focusPoints": 5
       },
       "unlockIds": [
         "monk-extra-attack",
@@ -139,8 +139,8 @@
       ],
       "classMechanics": {
         "martialArtsDie": "d8",
-        "disciplinePoints": 6,
-        "extraAttacks": 2
+        "extraAttacks": 2,
+        "focusPoints": 6
       },
       "unlockIds": [
         "monk-subclass-feature",
@@ -156,8 +156,8 @@
       ],
       "classMechanics": {
         "martialArtsDie": "d8",
-        "disciplinePoints": 7,
-        "extraAttacks": 2
+        "extraAttacks": 2,
+        "focusPoints": 7
       },
       "unlockIds": [
         "monk-evasion",
@@ -173,8 +173,8 @@
       "asiOrFeat": true,
       "classMechanics": {
         "martialArtsDie": "d8",
-        "disciplinePoints": 8,
-        "extraAttacks": 2
+        "extraAttacks": 2,
+        "focusPoints": 8
       },
       "unlockIds": [
         "monk-ability-score-improvement-2"
@@ -188,8 +188,8 @@
       ],
       "classMechanics": {
         "martialArtsDie": "d8",
-        "disciplinePoints": 9,
-        "extraAttacks": 2
+        "extraAttacks": 2,
+        "focusPoints": 9
       },
       "unlockIds": [
         "monk-acrobatic-movement"
@@ -204,8 +204,8 @@
       ],
       "classMechanics": {
         "martialArtsDie": "d8",
-        "disciplinePoints": 10,
-        "extraAttacks": 2
+        "extraAttacks": 2,
+        "focusPoints": 10
       },
       "unlockIds": [
         "monk-heightened-focus",
@@ -220,8 +220,8 @@
       ],
       "classMechanics": {
         "martialArtsDie": "d10",
-        "disciplinePoints": 11,
-        "extraAttacks": 2
+        "extraAttacks": 2,
+        "focusPoints": 11
       },
       "unlockIds": [
         "monk-subclass-feature-2"
@@ -236,8 +236,8 @@
       "asiOrFeat": true,
       "classMechanics": {
         "martialArtsDie": "d10",
-        "disciplinePoints": 12,
-        "extraAttacks": 2
+        "extraAttacks": 2,
+        "focusPoints": 12
       },
       "unlockIds": [
         "monk-ability-score-improvement-3"
@@ -251,8 +251,8 @@
       ],
       "classMechanics": {
         "martialArtsDie": "d10",
-        "disciplinePoints": 13,
-        "extraAttacks": 2
+        "extraAttacks": 2,
+        "focusPoints": 13
       },
       "unlockIds": [
         "monk-deflect-energy"
@@ -266,8 +266,8 @@
       ],
       "classMechanics": {
         "martialArtsDie": "d10",
-        "disciplinePoints": 14,
-        "extraAttacks": 2
+        "extraAttacks": 2,
+        "focusPoints": 14
       },
       "unlockIds": [
         "monk-disciplined-survivor"
@@ -281,8 +281,8 @@
       ],
       "classMechanics": {
         "martialArtsDie": "d10",
-        "disciplinePoints": 15,
-        "extraAttacks": 2
+        "extraAttacks": 2,
+        "focusPoints": 15
       },
       "unlockIds": [
         "monk-perfect-focus"
@@ -297,8 +297,8 @@
       "asiOrFeat": true,
       "classMechanics": {
         "martialArtsDie": "d10",
-        "disciplinePoints": 16,
-        "extraAttacks": 2
+        "extraAttacks": 2,
+        "focusPoints": 16
       },
       "unlockIds": [
         "monk-ability-score-improvement-4"
@@ -313,8 +313,8 @@
       ],
       "classMechanics": {
         "martialArtsDie": "d12",
-        "disciplinePoints": 17,
-        "extraAttacks": 2
+        "extraAttacks": 2,
+        "focusPoints": 17
       },
       "unlockIds": [
         "monk-subclass-feature-3",
@@ -329,8 +329,8 @@
       ],
       "classMechanics": {
         "martialArtsDie": "d12",
-        "disciplinePoints": 18,
-        "extraAttacks": 2
+        "extraAttacks": 2,
+        "focusPoints": 18
       },
       "unlockIds": [
         "monk-body-and-mind"
@@ -345,8 +345,8 @@
       "asiOrFeat": true,
       "classMechanics": {
         "martialArtsDie": "d12",
-        "disciplinePoints": 19,
-        "extraAttacks": 2
+        "extraAttacks": 2,
+        "focusPoints": 19
       },
       "unlockIds": [
         "monk-epic-boon"
@@ -356,15 +356,15 @@
       "level": 20,
       "proficiencyBonus": 6,
       "features": [
-        "Quivering Palm"
+        "Perfect Discipline"
       ],
       "classMechanics": {
         "martialArtsDie": "d12",
-        "disciplinePoints": 20,
-        "extraAttacks": 2
+        "extraAttacks": 2,
+        "focusPoints": 20
       },
       "unlockIds": [
-        "monk-quivering-palm"
+        "monk-perfect-discipline"
       ]
     }
   ],
@@ -373,8 +373,8 @@
       "id": "monk-martial-arts",
       "displayName": "Martial Arts",
       "name": "Martial Arts",
-      "summary": "Your unarmed strikes, monk weapons, and action flow now work as a connected martial system.",
-      "description": "Martial Arts is the monk’s core combat engine. It changes attack cadence, weapon expectations, and how bonus action offense comes online. If this is wrong, the whole class feels wrong.\n\nThink about map pressure, escape lanes, and which target you need to reach this turn.",
+      "summary": "Use Dexterity for unarmed/monk-weapon attacks, scale unarmed damage with your Martial Arts die, and unlock bonus-action unarmed follow-ups.",
+      "description": "Your unarmed strikes and monk weapons become one combat engine. You can use Dexterity instead of Strength for attack and damage rolls with unarmed strikes and monk weapons, and your unarmed damage uses your Martial Arts die.\n\nWhen you take the Attack action with an unarmed strike or monk weapon, you can make one unarmed strike as a bonus action.",
       "level": 1,
       "section": "Class Features",
       "type": "passive",
@@ -382,10 +382,10 @@
       "trackUses": false,
       "tags": [
         "monk",
-        "martial",
-        "mobility",
         "combat",
-        "unarmed"
+        "unarmed",
+        "monk-weapons",
+        "action-economy"
       ],
       "sourceKind": "class",
       "className": "Monk",
@@ -396,7 +396,7 @@
       "trigger": "",
       "usage": "",
       "recovery": "",
-      "effect": "",
+      "effect": "Enables Dexterity-based monk-weapon/unarmed attacks and bonus-action unarmed follow-up after Attack.",
       "dice": ""
     },
     "monk-unarmored-defense": {
@@ -459,42 +459,12 @@
       "effect": "",
       "dice": ""
     },
-    "monk-monk-s-focus-discipline-points": {
-      "id": "monk-monk-s-focus-discipline-points",
-      "displayName": "Monk's Focus (Discipline Points)",
-      "name": "Monk's Focus (Discipline Points)",
-      "summary": "Your focus pool fuels the monk’s best mobility, defense, and burst techniques.",
-      "description": "Focus Points are the core spendable engine of the monk. The number left, the refresh timing, and the techniques that consume them should always be obvious to the player.\n\nThink about map pressure, escape lanes, and which target you need to reach this turn.\n\nRefreshes on rest according to the monk rules surfaced by the sheet.",
-      "level": 2,
-      "section": "Class Features",
-      "type": "passive",
-      "resourceName": "Focus Points",
-      "trackUses": true,
-      "tags": [
-        "monk",
-        "martial",
-        "mobility",
-        "resource",
-        "combat"
-      ],
-      "sourceKind": "class",
-      "className": "Monk",
-      "subclassName": "",
-      "range": "",
-      "duration": "",
-      "save": "",
-      "trigger": "",
-      "usage": "",
-      "recovery": "Refreshes on rest according to the monk rules surfaced by the sheet.",
-      "effect": "",
-      "dice": ""
-    },
     "monk-flurry-of-blows": {
       "id": "monk-flurry-of-blows",
       "displayName": "Flurry of Blows",
       "name": "Flurry of Blows",
       "summary": "Spend focus to convert momentum into extra strikes.",
-      "description": "Flurry of Blows is the monk’s classic burst option. It turns a good opening into real pressure and should clearly show both the focus spend and the extra attack sequence it creates.\n\nThink about map pressure, escape lanes, and which target you need to reach this turn.",
+      "description": "After taking the Attack action, you can spend 1 Focus Point to make two unarmed strikes as a bonus action.",
       "level": 2,
       "section": "Bonus Actions",
       "type": "bonus action",
@@ -515,9 +485,9 @@
       "duration": "",
       "save": "",
       "trigger": "",
-      "usage": "",
+      "usage": "Spend 1 Focus Point after the Attack action.",
       "recovery": "",
-      "effect": "",
+      "effect": "Make two unarmed strikes as a bonus action.",
       "dice": ""
     },
     "monk-patient-defense": {
@@ -525,12 +495,12 @@
       "displayName": "Patient Defense",
       "name": "Patient Defense",
       "summary": "Spend focus to become much harder to pin down or hit cleanly.",
-      "description": "Patient Defense is the monk’s answer when survival matters more than damage. It should be readable as a defensive stance choice rather than a mystery button.\n\nThink about map pressure, escape lanes, and which target you need to reach this turn.",
+      "description": "Spend 1 Focus Point as a bonus action to enter a defensive stance. You gain Disengage and enemies have Disadvantage on attack rolls against you until the start of your next turn.",
       "level": 2,
       "section": "Bonus Actions",
       "type": "bonus action",
-      "resourceName": "",
-      "trackUses": false,
+      "resourceName": "Focus Points",
+      "trackUses": true,
       "tags": [
         "monk",
         "martial",
@@ -545,9 +515,9 @@
       "duration": "",
       "save": "",
       "trigger": "",
-      "usage": "",
+      "usage": "Spend 1 Focus Point as a bonus action.",
       "recovery": "",
-      "effect": "",
+      "effect": "Take the Disengage action and gain Disadvantage on attack rolls against you until the start of your next turn.",
       "dice": ""
     },
     "monk-step-of-the-wind": {
@@ -555,12 +525,12 @@
       "displayName": "Step of the Wind",
       "name": "Step of the Wind",
       "summary": "Spend focus to move like a problem the battlefield cannot easily hold.",
-      "description": "Step of the Wind is about verticality, escape, and suddenly being in the right place. It matters on crowded maps, long distances, or fights where position decides who wins.\n\nThink about map pressure, escape lanes, and which target you need to reach this turn.",
+      "description": "Spend 1 Focus Point to take both Dash and Disengage as a bonus action, and your jump distance is doubled for the turn.",
       "level": 2,
       "section": "Bonus Actions",
       "type": "bonus action",
-      "resourceName": "",
-      "trackUses": false,
+      "resourceName": "Focus Points",
+      "trackUses": true,
       "tags": [
         "monk",
         "martial",
@@ -574,9 +544,9 @@
       "duration": "",
       "save": "",
       "trigger": "",
-      "usage": "",
+      "usage": "Spend 1 Focus Point as a bonus action.",
       "recovery": "",
-      "effect": "",
+      "effect": "Take Dash and Disengage as a bonus action; jump distance doubles for the turn.",
       "dice": ""
     },
     "monk-monastic-tradition-subclass": {
@@ -619,8 +589,8 @@
       "level": 3,
       "section": "Reactions",
       "type": "reaction",
-      "resourceName": "",
-      "trackUses": false,
+      "resourceName": "Focus Points",
+      "trackUses": true,
       "tags": [
         "monk",
         "martial",
@@ -634,10 +604,10 @@
       "range": "",
       "duration": "",
       "save": "",
-      "trigger": "",
-      "usage": "",
+      "trigger": "When a visible creature hits you with an attack roll.",
+      "usage": "1 reaction; optional 1 Focus Point to redirect.",
       "recovery": "",
-      "effect": "",
+      "effect": "Use your reaction to reduce the attack damage by 1d10 + Dexterity modifier + Monk level. If reduced to 0, you can spend 1 Focus Point to redirect the attack.",
       "dice": ""
     },
     "monk-ability-score-improvement": {
@@ -694,10 +664,10 @@
       "range": "",
       "duration": "",
       "save": "",
-      "trigger": "",
-      "usage": "",
+      "trigger": "When you fall.",
+      "usage": "1 reaction when you fall.",
       "recovery": "",
-      "effect": "",
+      "effect": "Use your reaction to reduce falling damage by 5 \u00d7 your Monk level.",
       "dice": ""
     },
     "monk-extra-attack": {
@@ -735,12 +705,12 @@
       "displayName": "Stunning Strike",
       "name": "Stunning Strike",
       "summary": "Spend focus on a hit to threaten one of the strongest control riders in the class.",
-      "description": "Stunning Strike lets the monk convert a successful hit into a saving throw that can cripple a target’s turn. It is one of the class’s highest-value resource spends and should clearly show the trigger, save, and cost.\n\nThink about map pressure, escape lanes, and which target you need to reach this turn.\n\nPractical effect: Control rider on a hit, usually forcing a Constitution-based defensive check from the target.",
+      "description": "When you hit with a melee attack, you can spend 1 Focus Point to force the target to make a Constitution saving throw. On a failed save, the target is Stunned until the start of your next turn.",
       "level": 5,
-      "section": "Class Features",
-      "type": "passive",
-      "resourceName": "",
-      "trackUses": false,
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Focus Points",
+      "trackUses": true,
       "tags": [
         "monk",
         "martial",
@@ -754,11 +724,11 @@
       "subclassName": "",
       "range": "",
       "duration": "",
-      "save": "A save",
-      "trigger": "",
-      "usage": "",
+      "save": "Constitution saving throw",
+      "trigger": "Immediately after you hit with a melee attack.",
+      "usage": "Spend 1 Focus Point per attempted stun.",
       "recovery": "",
-      "effect": "Control rider on a hit, usually forcing a Constitution-based defensive check from the target.",
+      "effect": "On a failed save, the target has the Stunned condition until the start of your next turn.",
       "dice": ""
     },
     "monk-subclass-feature": {
@@ -1066,7 +1036,7 @@
       "displayName": "Deflect Energy",
       "name": "Deflect Energy",
       "summary": "Use your reaction to blunt incoming elemental or force-based punishment the way you already answer weapon pressure.",
-      "description": "Deflect Energy extends the monk’s reactive defense package into magical threats. This matters in caster-heavy encounters where surviving the burst is more important than winning a pure damage race.\n\nThink about map pressure, escape lanes, and which target you need to reach this turn.",
+      "description": "Deflect Energy extends the monk\u2019s reactive defense package into magical threats. This matters in caster-heavy encounters where surviving the burst is more important than winning a pure damage race.\n\nThink about map pressure, escape lanes, and which target you need to reach this turn.",
       "level": 13,
       "section": "Reactions",
       "type": "reaction",
@@ -1086,10 +1056,10 @@
       "range": "",
       "duration": "",
       "save": "",
-      "trigger": "",
-      "usage": "",
+      "trigger": "When you take Acid, Cold, Fire, Force, Lightning, or Thunder damage from a visible source.",
+      "usage": "1 reaction.",
       "recovery": "",
-      "effect": "",
+      "effect": "Reduce the triggering damage using your Deflect Attacks reduction.",
       "dice": ""
     },
     "monk-disciplined-survivor": {
@@ -1217,10 +1187,10 @@
       "displayName": "Superior Defense",
       "name": "Superior Defense",
       "summary": "Your defensive tools upgrade into a premium survival mode for the nastiest fights on the table.",
-      "description": "Superior Defense is not just another passive line. It is the monk’s statement that, at high level, surviving magical pressure, focused fire, and layered control is part of the class identity.\n\nThink about map pressure, escape lanes, and which target you need to reach this turn.",
+      "description": "Superior Defense is not just another passive line. It is the monk\u2019s statement that, at high level, surviving magical pressure, focused fire, and layered control is part of the class identity.\n\nThink about map pressure, escape lanes, and which target you need to reach this turn.",
       "level": 17,
-      "section": "Class Features",
-      "type": "passive",
+      "section": "Bonus Actions",
+      "type": "bonus action",
       "resourceName": "Focus Points",
       "trackUses": true,
       "tags": [
@@ -1234,12 +1204,12 @@
       "className": "Monk",
       "subclassName": "",
       "range": "",
-      "duration": "",
+      "duration": "Until the start of your next turn.",
       "save": "",
       "trigger": "",
-      "usage": "",
+      "usage": "Spend 3 Focus Points as a bonus action.",
       "recovery": "",
-      "effect": "",
+      "effect": "Gain resistance to all damage except Force.",
       "dice": ""
     },
     "monk-body-and-mind": {
@@ -1303,111 +1273,138 @@
       "effect": "",
       "dice": ""
     },
-    "monk-quivering-palm": {
-      "id": "monk-quivering-palm",
-      "displayName": "Quivering Palm",
-      "name": "Quivering Palm",
-      "summary": "Plant a hidden lethal vibration in a target and trigger it later for a terrifying finishing burst.",
-      "description": "Quivering Palm is the Open Hand monk’s signature endgame finisher. It should feel like a major setup-and-payoff mechanic, not a one-line damage rider.\n\nThink about map pressure, escape lanes, and which target you need to reach this turn.",
-      "level": 20,
-      "section": "Actions",
-      "type": "action",
-      "resourceName": "",
-      "trackUses": false,
+    "monk-monk-s-focus-focus-points": {
+      "id": "monk-monk-s-focus-focus-points",
+      "displayName": "Monk's Focus (Focus Points)",
+      "name": "Monk's Focus (Focus Points)",
+      "summary": "Your focus pool fuels the monk\u2019s best mobility, defense, and burst techniques.",
+      "description": "You gain Focus Points, the core resource that powers your monk techniques. Your maximum Focus Points equals your Monk level.\n\nSpend Focus on Flurry of Blows, Patient Defense, Step of the Wind, Stunning Strike, and subclass techniques.",
+      "level": 2,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "Focus Points",
+      "trackUses": true,
       "tags": [
         "monk",
         "martial",
         "mobility",
-        "subclass",
-        "capstone",
-        "combat",
-        "focus"
+        "resource",
+        "combat"
       ],
       "sourceKind": "class",
       "className": "Monk",
       "subclassName": "",
       "range": "",
       "duration": "",
-      "save": "Constitution",
+      "save": "",
       "trigger": "",
-      "usage": "",
-      "recovery": "",
+      "usage": "Focus Points equal to your Monk level.",
+      "recovery": "Regain all expended Focus Points when you finish a Short or Long Rest.",
       "effect": "",
+      "dice": ""
+    },
+    "monk-perfect-discipline": {
+      "id": "monk-perfect-discipline",
+      "displayName": "Perfect Discipline",
+      "name": "Perfect Discipline",
+      "summary": "When initiative starts and you are low on Focus, you regain enough Focus to re-enter your class loop immediately.",
+      "description": "At the start of initiative, if you have fewer than 4 Focus Points, you regain Focus until you have 4. This guarantees your core monk techniques are online at the start of major fights.",
+      "level": 20,
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "Focus Points",
+      "trackUses": true,
+      "tags": [
+        "monk",
+        "resource",
+        "capstone",
+        "combat"
+      ],
+      "sourceKind": "class",
+      "className": "Monk",
+      "subclassName": "",
+      "range": "",
+      "duration": "",
+      "save": "",
+      "trigger": "At initiative, if you have fewer than 4 Focus Points.",
+      "usage": "Automatic at the start of combat.",
+      "recovery": "",
+      "effect": "Restore Focus Points up to 4 when combat starts if below 4.",
       "dice": ""
     }
   },
   "levelUnlockIds": {
     "1": [
-      "monk-l1-1",
-      "monk-l1-2",
-      "monk-l1-3"
+      "monk-martial-arts",
+      "monk-unarmored-defense",
+      "monk-weapon-mastery-2-weapons"
     ],
     "2": [
-      "monk-l2-1",
-      "monk-l2-2",
-      "monk-l2-3",
-      "monk-l2-4"
+      "monk-monk-s-focus-focus-points",
+      "monk-flurry-of-blows",
+      "monk-patient-defense",
+      "monk-step-of-the-wind"
     ],
     "3": [
-      "monk-l3-1",
-      "monk-l3-2"
+      "monk-monastic-tradition-subclass",
+      "monk-deflect-attacks"
     ],
     "4": [
-      "monk-l4-1",
-      "monk-l4-2"
+      "monk-ability-score-improvement",
+      "monk-slow-fall"
     ],
     "5": [
-      "monk-l5-1",
-      "monk-l5-2"
+      "monk-extra-attack",
+      "monk-stunning-strike"
     ],
     "6": [
-      "monk-l6-1",
-      "monk-l6-2"
+      "monk-subclass-feature",
+      "monk-empowered-strikes"
     ],
     "7": [
-      "monk-l7-1",
-      "monk-l7-2"
+      "monk-evasion",
+      "monk-stillness-of-mind"
     ],
     "8": [
-      "monk-l8-1"
+      "monk-ability-score-improvement-2"
     ],
     "9": [
-      "monk-l9-1"
+      "monk-acrobatic-movement"
     ],
     "10": [
-      "monk-l10-1",
-      "monk-l10-2"
+      "monk-heightened-focus",
+      "monk-self-restoration"
     ],
     "11": [
-      "monk-l11-1"
+      "monk-subclass-feature-2"
     ],
     "12": [
-      "monk-l12-1"
+      "monk-ability-score-improvement-3"
     ],
     "13": [
-      "monk-l13-1"
+      "monk-deflect-energy"
     ],
     "14": [
-      "monk-l14-1"
+      "monk-disciplined-survivor"
     ],
     "15": [
-      "monk-l15-1"
+      "monk-perfect-focus"
     ],
     "16": [
-      "monk-l16-1"
+      "monk-ability-score-improvement-4"
     ],
     "17": [
-      "monk-l17-1",
-      "monk-l17-2"
+      "monk-subclass-feature-3",
+      "monk-superior-defense"
     ],
     "18": [
-      "monk-l18-1"
+      "monk-body-and-mind"
     ],
     "19": [
-      "monk-l19-1"
+      "monk-epic-boon"
     ],
     "20": [
-      "monk-l20-1"
+      "monk-perfect-discipline"
     ]
   },
   "progressionSummary": [
@@ -1415,152 +1412,152 @@
       "level": 1,
       "summary": "Martial Arts, Unarmored Defense, Weapon Mastery (2 weapons).",
       "unlockIds": [
-        "monk-l1-1",
-        "monk-l1-2",
-        "monk-l1-3"
+        "monk-martial-arts",
+        "monk-unarmored-defense",
+        "monk-weapon-mastery-2-weapons"
       ]
     },
     {
       "level": 2,
-      "summary": "Monk's Focus (Discipline Points), Flurry of Blows, Patient Defense, Step of the Wind.",
+      "summary": "Monk's Focus (Focus Points), Flurry of Blows, Patient Defense, Step of the Wind.",
       "unlockIds": [
-        "monk-l2-1",
-        "monk-l2-2",
-        "monk-l2-3",
-        "monk-l2-4"
+        "monk-monk-s-focus-focus-points",
+        "monk-flurry-of-blows",
+        "monk-patient-defense",
+        "monk-step-of-the-wind"
       ]
     },
     {
       "level": 3,
       "summary": "Monastic Tradition (Subclass), Deflect Attacks.",
       "unlockIds": [
-        "monk-l3-1",
-        "monk-l3-2"
+        "monk-monastic-tradition-subclass",
+        "monk-deflect-attacks"
       ]
     },
     {
       "level": 4,
       "summary": "Ability Score Improvement, Slow Fall.",
       "unlockIds": [
-        "monk-l4-1",
-        "monk-l4-2"
+        "monk-ability-score-improvement",
+        "monk-slow-fall"
       ]
     },
     {
       "level": 5,
       "summary": "Extra Attack, Stunning Strike.",
       "unlockIds": [
-        "monk-l5-1",
-        "monk-l5-2"
+        "monk-extra-attack",
+        "monk-stunning-strike"
       ]
     },
     {
       "level": 6,
       "summary": "Subclass Feature, Empowered Strikes.",
       "unlockIds": [
-        "monk-l6-1",
-        "monk-l6-2"
+        "monk-subclass-feature",
+        "monk-empowered-strikes"
       ]
     },
     {
       "level": 7,
       "summary": "Evasion, Stillness of Mind.",
       "unlockIds": [
-        "monk-l7-1",
-        "monk-l7-2"
+        "monk-evasion",
+        "monk-stillness-of-mind"
       ]
     },
     {
       "level": 8,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "monk-l8-1"
+        "monk-ability-score-improvement-2"
       ]
     },
     {
       "level": 9,
       "summary": "Acrobatic Movement.",
       "unlockIds": [
-        "monk-l9-1"
+        "monk-acrobatic-movement"
       ]
     },
     {
       "level": 10,
       "summary": "Heightened Focus, Self-Restoration.",
       "unlockIds": [
-        "monk-l10-1",
-        "monk-l10-2"
+        "monk-heightened-focus",
+        "monk-self-restoration"
       ]
     },
     {
       "level": 11,
       "summary": "Subclass Feature.",
       "unlockIds": [
-        "monk-l11-1"
+        "monk-subclass-feature-2"
       ]
     },
     {
       "level": 12,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "monk-l12-1"
+        "monk-ability-score-improvement-3"
       ]
     },
     {
       "level": 13,
       "summary": "Deflect Energy.",
       "unlockIds": [
-        "monk-l13-1"
+        "monk-deflect-energy"
       ]
     },
     {
       "level": 14,
       "summary": "Disciplined Survivor.",
       "unlockIds": [
-        "monk-l14-1"
+        "monk-disciplined-survivor"
       ]
     },
     {
       "level": 15,
       "summary": "Perfect Focus.",
       "unlockIds": [
-        "monk-l15-1"
+        "monk-perfect-focus"
       ]
     },
     {
       "level": 16,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "monk-l16-1"
+        "monk-ability-score-improvement-4"
       ]
     },
     {
       "level": 17,
       "summary": "Subclass Feature, Superior Defense.",
       "unlockIds": [
-        "monk-l17-1",
-        "monk-l17-2"
+        "monk-subclass-feature-3",
+        "monk-superior-defense"
       ]
     },
     {
       "level": 18,
       "summary": "Body and Mind.",
       "unlockIds": [
-        "monk-l18-1"
+        "monk-body-and-mind"
       ]
     },
     {
       "level": 19,
       "summary": "Epic Boon.",
       "unlockIds": [
-        "monk-l19-1"
+        "monk-epic-boon"
       ]
     },
     {
       "level": 20,
-      "summary": "Quivering Palm.",
+      "summary": "Perfect Discipline.",
       "unlockIds": [
-        "monk-l20-1"
+        "monk-perfect-discipline"
       ]
     }
   ],

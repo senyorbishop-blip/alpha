@@ -3,7 +3,7 @@
   "displayName": "Way of the Four Elements",
   "classId": "monk",
   "parentClassId": "monk",
-  "flavorText": "Four Elements monks channel disciplined focus into elemental blasts, movement, and battlefield control.",
+  "flavorText": "Four Elements monks are Focus-fueled martial casters who trade part of their strike loop for elemental control, blasts, and mobility techniques.",
   "featureUnlocksByLevel": {
     "3": [
       "four-elements-disciple-of-the-elements"
@@ -52,8 +52,8 @@
       "summary": "Your focus training opens an elemental technique list so the monk can solve problems with air, fire, water, and stone as well as fists.",
       "description": "You begin shaping fire, water, air, and stone through disciplined practice, opening a menu of elemental techniques fueled by your focus resource.\n\nDisciple of the Elements is the subclass fork that turns the monk into a hybrid martial-caster style character. The player should see immediately that focus now fuels more than mobility and strikes.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
       "level": 3,
-      "section": "Subclass Features",
-      "type": "passive",
+      "section": "Actions",
+      "type": "action",
       "resourceName": "Focus Points",
       "trackUses": true,
       "tags": [
@@ -69,7 +69,7 @@
       "duration": "",
       "save": "",
       "trigger": "",
-      "usage": "",
+      "usage": "Spend Focus Points to activate elemental disciplines from your technique list.",
       "recovery": "",
       "effect": "",
       "dice": ""
@@ -99,9 +99,9 @@
       "duration": "",
       "save": "",
       "trigger": "",
-      "usage": "",
+      "usage": "Choose and use elemental techniques; each has its own Focus cost and action timing.",
       "recovery": "",
-      "effect": "",
+      "effect": "Adds scalable elemental attack, control, and movement techniques that consume Focus.",
       "dice": ""
     },
     "four-elements-elemental-flow": {
@@ -109,10 +109,10 @@
       "displayName": "Elemental Flow",
       "name": "Elemental Flow",
       "summary": "Your mastery over the elements starts blending mobility, area control, and rhythm into a smoother combat pattern.",
-      "description": "You move through the battlefield with growing mastery over the elements, chaining mobility and area pressure in ways that make positioning itself part of the subclass identity.\n\nElemental Flow is about the subclass becoming less clunky and more expressive. The monk should feel like a living conduit of the battlefield’s natural forces.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "description": "You move through the battlefield with growing mastery over the elements, chaining mobility and area pressure in ways that make positioning itself part of the subclass identity.\n\nElemental Flow is about the subclass becoming less clunky and more expressive. The monk should feel like a living conduit of the battlefield\u2019s natural forces.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
       "level": 11,
-      "section": "Subclass Features",
-      "type": "passive",
+      "section": "Bonus Actions",
+      "type": "bonus action",
       "resourceName": "",
       "trackUses": false,
       "tags": [
@@ -130,7 +130,7 @@
       "trigger": "",
       "usage": "",
       "recovery": "",
-      "effect": "",
+      "effect": "Chain movement and elemental pressure more efficiently, improving your turn-to-turn action economy.",
       "dice": ""
     },
     "four-elements-avatar-of-the-four-winds": {
@@ -140,10 +140,10 @@
       "summary": "At the height of the path, you become a major elemental presence rather than a martial artist with a few themed tricks.",
       "description": "At the height of the path, you can unleash large-scale elemental presence that makes you feel like a walking storm rather than a simple skirmisher.\n\nAvatar of the Four Winds is the capstone fantasy payoff for the subclass. It should read big, mobile, and scene-shaping.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
       "level": 17,
-      "section": "Subclass Features",
-      "type": "passive",
-      "resourceName": "",
-      "trackUses": false,
+      "section": "Actions",
+      "type": "action",
+      "resourceName": "Focus Points",
+      "trackUses": true,
       "tags": [
         "subclass",
         "monk",
@@ -157,9 +157,9 @@
       "duration": "",
       "save": "",
       "trigger": "",
-      "usage": "",
+      "usage": "Spend Focus to unleash a high-tier elemental stance or burst effect.",
       "recovery": "",
-      "effect": "",
+      "effect": "Large-scale elemental transformation/burst that reshapes battlefield pressure.",
       "dice": ""
     }
   }

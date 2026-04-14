@@ -3,7 +3,7 @@
   "displayName": "Way of the Open Hand",
   "classId": "monk",
   "parentClassId": "monk",
-  "flavorText": "Open Hand monks turn precision strikes and inner discipline into control, recovery, and terrifying finishing pressure.",
+  "flavorText": "Open Hand monks specialize in precision control: rider pressure, self-sustain, and a lethal setup finisher.",
   "featureUnlocksByLevel": {
     "3": [
       "open-hand-open-hand-technique"
@@ -49,13 +49,13 @@
       "id": "open-hand-open-hand-technique",
       "displayName": "Open Hand Technique",
       "name": "Open Hand Technique",
-      "summary": "Your flurry pressure carries control riders that push, drop, or disrupt foes instead of only adding damage.",
-      "description": "Your Flurry of Blows gains control riders that can push, drop, or disrupt enemies, turning basic monk pressure into a battlefield-shaping toolkit.\n\nOpen Hand Technique is why the subclass feels like a battlefield controller. The sheet should tell the player these are real rider choices, not flavor attached to Flurry of Blows.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "summary": "Your Flurry of Blows can impose rider effects (push, prone, or reaction denial), turning strikes into battlefield control.",
+      "description": "When you use Flurry of Blows, each unarmed hit can apply control riders such as push, knock prone, or reaction denial (save as appropriate to your table rules).",
       "level": 3,
-      "section": "Subclass Features",
-      "type": "passive",
-      "resourceName": "",
-      "trackUses": false,
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "Focus Points",
+      "trackUses": true,
       "tags": [
         "subclass",
         "monk",
@@ -69,8 +69,8 @@
       "range": "",
       "duration": "",
       "save": "",
-      "trigger": "",
-      "usage": "",
+      "trigger": "When your Flurry of Blows hits.",
+      "usage": "Applied through Flurry of Blows (typically costs 1 Focus Point).",
       "recovery": "",
       "effect": "",
       "dice": ""
@@ -100,8 +100,8 @@
       "duration": "",
       "save": "",
       "trigger": "",
-      "usage": "",
-      "recovery": "",
+      "usage": "1 action to restore hit points to yourself.",
+      "recovery": "Refreshes on a Long Rest.",
       "effect": "",
       "dice": ""
     },
@@ -127,12 +127,12 @@
       "className": "Monk",
       "subclassName": "Way of the Open Hand",
       "range": "",
-      "duration": "",
+      "duration": "Until broken or as defined by table rules.",
       "save": "",
       "trigger": "",
       "usage": "",
       "recovery": "",
-      "effect": "",
+      "effect": "Gain Sanctuary-like protection until you attack, cast a harmful effect, or the protection is broken.",
       "dice": ""
     },
     "open-hand-quivering-palm": {
@@ -140,12 +140,12 @@
       "displayName": "Quivering Palm",
       "name": "Quivering Palm",
       "summary": "Plant a hidden lethal vibration in a target and trigger it later for a terrifying finishing burst.",
-      "description": "You plant a devastating delayed vibration in a foe and can later trigger it for massive internal damage, giving the subclass a signature high-tier finisher.\n\nQuivering Palm is the Open Hand monk’s signature endgame finisher. It should feel like a major setup-and-payoff mechanic, not a one-line damage rider.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
+      "description": "You plant a devastating delayed vibration in a foe and can later trigger it for massive internal damage, giving the subclass a signature high-tier finisher.\n\nQuivering Palm is the Open Hand monk\u2019s signature endgame finisher. It should feel like a major setup-and-payoff mechanic, not a one-line damage rider.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
       "level": 17,
       "section": "Actions",
       "type": "action",
-      "resourceName": "",
-      "trackUses": false,
+      "resourceName": "Focus Points",
+      "trackUses": true,
       "tags": [
         "subclass",
         "monk",
@@ -160,10 +160,10 @@
       "range": "",
       "duration": "",
       "save": "Constitution",
-      "trigger": "",
-      "usage": "",
+      "trigger": "After hitting with an unarmed strike; later triggered with an action.",
+      "usage": "Spend Focus to plant the vibration on a hit, then use an action later to trigger it.",
       "recovery": "",
-      "effect": "",
+      "effect": "Target makes a Constitution save; on failure it drops to 0 hit points or suffers massive necrotic/internal damage.",
       "dice": ""
     }
   }
