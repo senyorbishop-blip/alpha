@@ -467,6 +467,10 @@
     if (runtimeResources.length) {
       out.nativeResources = clone(runtimeResources);
     }
+    var runtimeClassMechanics = asObject(runtime.classMechanics);
+    if (Object.keys(runtimeClassMechanics).length) {
+      out.classMechanics = clone(runtimeClassMechanics);
+    }
 
     var runtimeClassFeatures = asArray(runtime.classFeatures).filter(function onlyFeatureRows(row) { return row && typeof row === 'object'; });
     if (runtimeClassFeatures.length) {
@@ -582,6 +586,10 @@
     var runtimeResources = asArray(runtime.resources).filter(function onlyResourceRows(row) { return row && typeof row === 'object'; });
     if (runtimeResources.length) {
       out.nativeResources = clone(runtimeResources);
+    }
+    var runtimeClassMechanics = asObject(runtime.classMechanics);
+    if (Object.keys(runtimeClassMechanics).length) {
+      out.classMechanics = clone(runtimeClassMechanics);
     }
 
     var runtimeClassFeatures = asArray(runtime.classFeatures).filter(function onlyFeatureRows(row) { return row && typeof row === 'object'; });

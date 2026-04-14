@@ -68,10 +68,10 @@
       "range": "",
       "duration": "",
       "save": "",
-      "trigger": "",
+      "trigger": "When your Rage starts",
       "usage": "",
       "recovery": "",
-      "effect": "",
+      "effect": "You gain temporary hit points equal to your proficiency bonus.",
       "dice": ""
     },
     "world-tree-branches-of-the-tree": {
@@ -81,8 +81,8 @@
       "summary": "You project World Tree influence outward to reposition, support, or control the shape of the fight.",
       "description": "When a creature misses you with an attack, you can use your reaction to teleport that creature to an unoccupied space adjacent to you.\n\nBranches of the Tree should read like a real battlefield tool, not a vague lore line. Use it when controlling space or helping allies matters more than a plain weapon swing.\n\nThe sheet should make the specialization identity obvious, not bury it as a hidden unlock.",
       "level": 6,
-      "section": "Actions",
-      "type": "action",
+      "section": "Reactions",
+      "type": "reaction",
       "resourceName": "",
       "trackUses": false,
       "tags": [
@@ -97,10 +97,10 @@
       "range": "",
       "duration": "",
       "save": "",
-      "trigger": "When a creature misses you with an attack",
+      "trigger": "When a creature misses you with an attack while you are raging",
       "usage": "",
       "recovery": "",
-      "effect": "",
+      "effect": "Teleport the triggering creature to an unoccupied space you can see within 30 feet of you.",
       "dice": ""
     },
     "world-tree-battering-roots": {
@@ -142,7 +142,7 @@
       "level": 14,
       "section": "Actions",
       "type": "action",
-      "resourceName": "",
+      "resourceName": "Travel Along the Tree",
       "trackUses": true,
       "tags": [
         "subclass",
@@ -159,7 +159,7 @@
       "save": "",
       "trigger": "While raging",
       "usage": "once per long rest",
-      "recovery": "",
+      "recovery": "Regain use on a Long Rest.",
       "effect": "",
       "dice": ""
     }

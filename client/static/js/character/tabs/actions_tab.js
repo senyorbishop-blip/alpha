@@ -16,6 +16,11 @@
 
 
   const CUSTOM_ACTION_SURFACES = {
+    barbarian: {
+      title: 'Barbarian Combat Surface',
+      copy: 'Open with Rage, then stay in melee and pressure with bonus-action and reaction tools. Your Rage loop should be obvious at a glance.',
+      checks: ['Rage uses visible', 'Rage damage bonus visible', 'Subclass Rage riders visible'],
+    },
     tinker: {
       title: 'Tinker Combat Surface',
       copy: 'Your best turns usually start with Gadget Charges or rig actions, then branch into specialty spells or subclass devices. This tab should feel like a field kit, not just a list of attacks.',
@@ -485,10 +490,21 @@
     const guide = _customActionSurface(charData);
     if (!guide) return '';
     const resourceLine = resources.length ? resources.map(function (item) { return item.name; }).join(' • ') : 'No structured resource row loaded yet';
+    const classMechanics = charData && charData.classMechanics && typeof charData.classMechanics === 'object'
+      ? charData.classMechanics
+      : {};
+    const barbarianLine = _classKey(charData) === 'barbarian'
+      ? [
+          classMechanics.rageUses != null ? ('Rage uses: ' + classMechanics.rageUses) : '',
+          classMechanics.rageDamageBonus != null ? ('Rage damage: +' + classMechanics.rageDamageBonus) : '',
+          classMechanics.extraAttacks != null ? ('Attacks per Attack action: ' + classMechanics.extraAttacks) : '',
+        ].filter(Boolean).join(' • ')
+      : '';
     return `<div class="cs-combat-callout-grid">
       <div class="cs-combat-callout">
         <div class="cs-combat-callout-title">${_esc(guide.title)}</div>
         <div class="cs-combat-callout-copy">${_esc(guide.copy)}</div>
+        ${barbarianLine ? `<div class="cs-combat-callout-copy">${_esc(barbarianLine)}</div>` : ''}
       </div>
       <div class="cs-combat-callout muted">
         <div class="cs-combat-callout-title">What should be visible</div>

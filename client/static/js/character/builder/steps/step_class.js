@@ -64,6 +64,11 @@
         primaryAbilities: Array.isArray(row && row.primaryAbilities) ? row.primaryAbilities : [],
         savingThrows: Array.isArray(row && row.savingThrows) ? row.savingThrows : [],
         armorProficiencies: Array.isArray(row && row.armorProficiencies) ? row.armorProficiencies : [],
+        weaponProficiencies: Array.isArray(row && row.weaponProficiencies) ? row.weaponProficiencies : [],
+        toolProficiencies: Array.isArray(row && row.toolProficiencies) ? row.toolProficiencies : [],
+        skillChoices: row && row.skillChoices && typeof row.skillChoices === 'object' ? row.skillChoices : {},
+        subclassLevel: parseInt(row && row.subclassLevel, 10),
+        subclassDisplayName: String(row && row.subclassDisplayName || 'Subclass').trim(),
         spellcastingType: String(row && row.spellcastingType || 'none').trim(),
         featureDefinitions: (row && row.featureDefinitions && typeof row.featureDefinitions === 'object') ? row.featureDefinitions : {},
         featuresByLevel: Array.isArray(row && row.featuresByLevel) ? row.featuresByLevel : [],
@@ -97,6 +102,12 @@
 
     var primaryStr = entry.primaryAbilities.map(function(a) { return String(a || '').toUpperCase(); }).join('/') || '—';
     var savesStr = entry.savingThrows.map(function(a) { return String(a || '').toUpperCase(); }).join('/') || '—';
+    var armorStr = entry.armorProficiencies.map(function(v) { return String(v || '').replace(/(^|-)([a-z])/g, function(_, a, b){ return a + b.toUpperCase(); }); }).join(', ') || '—';
+    var weaponStr = entry.weaponProficiencies.map(function(v) { return String(v || '').replace(/(^|-)([a-z])/g, function(_, a, b){ return a + b.toUpperCase(); }); }).join(', ') || '—';
+    var skillsFrom = Array.isArray(entry.skillChoices && entry.skillChoices.from) ? entry.skillChoices.from : [];
+    var skillsCount = parseInt(entry.skillChoices && entry.skillChoices.count, 10) || 0;
+    var skillsStr = skillsFrom.length ? ('Choose ' + skillsCount + ': ' + skillsFrom.join(', ')) : '—';
+    var subclassText = entry.subclassLevel > 0 ? ('Level ' + entry.subclassLevel + ' ' + (entry.subclassDisplayName || 'Subclass')) : 'No subclass track';
     var descHtml = entry.classDescription
       ? '<div class="cd-desc">' + escHtml(entry.classDescription) + '</div>'
       : '';
@@ -160,6 +171,12 @@
           '<thead><tr><th>Lvl</th><th>Prof</th><th>Features</th></tr></thead>' +
           '<tbody>' + tableBody + '</tbody>' +
         '</table>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px">' +
+        '<div class="cd-desc" style="margin:0"><strong style="color:#f3e7c4">Armor Proficiencies:</strong> ' + escHtml(armorStr) + '</div>' +
+        '<div class="cd-desc" style="margin:0"><strong style="color:#f3e7c4">Weapon Proficiencies:</strong> ' + escHtml(weaponStr) + '</div>' +
+        '<div class="cd-desc" style="margin:0"><strong style="color:#f3e7c4">Skill Choices:</strong> ' + escHtml(skillsStr) + '</div>' +
+        '<div class="cd-desc" style="margin:0"><strong style="color:#f3e7c4">Subclass Unlock:</strong> ' + escHtml(subclassText) + '</div>' +
       '</div>' +
       '<div style="border:1px solid rgba(201,168,76,0.14);border-radius:10px;background:rgba(6,8,10,0.38)">' +
         '<div style="padding:10px 12px;border-bottom:1px solid rgba(201,168,76,0.12);font-family:var(--cb-font-display);font-size:0.82rem;color:#E8C97A">Feature Spotlight</div>' +

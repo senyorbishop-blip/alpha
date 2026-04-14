@@ -409,9 +409,21 @@ async def api_character_content_catalog(request: Request, rules_mode: str = "cas
                     "armorProficiencies": row.get("armorProficiencies")
                     if isinstance(row.get("armorProficiencies"), list)
                     else [],
+                    "weaponProficiencies": row.get("weaponProficiencies")
+                    if isinstance(row.get("weaponProficiencies"), list)
+                    else [],
+                    "toolProficiencies": row.get("toolProficiencies")
+                    if isinstance(row.get("toolProficiencies"), list)
+                    else [],
+                    "skillChoices": row.get("skillChoices")
+                    if isinstance(row.get("skillChoices"), dict)
+                    else {},
                     "spellcastingType": str(row.get("spellcastingType") or "none").strip() or "none",
                     "subclassLevel": _safe_int(row.get("subclassLevel"), default=0, minimum=0, maximum=20),
                     "buildTips": row.get("buildTips") if isinstance(row.get("buildTips"), dict) else {},
+                    "subclassDisplayName": str(row.get("subclassDisplayName") or "Subclass").strip() or "Subclass",
+                    "classDescription": str(row.get("classDescription") or "").strip(),
+                    "roleIdentity": str(row.get("roleIdentity") or "").strip(),
                     "progressionTable": row.get("progressionTable")
                     if isinstance(row.get("progressionTable"), list)
                     else [],
