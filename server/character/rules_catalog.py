@@ -13,7 +13,11 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from server.character.feature_catalog import build_class_feature_definitions, build_features_by_level
+from server.character.feature_catalog import (
+    build_class_feature_definitions,
+    build_features_by_level,
+    build_subclass_feature_definitions,
+)
 
 _RULESET_ID = "5e2024"
 _RULES_ROOT = Path(__file__).resolve().parents[1] / "data" / "rules" / _RULESET_ID
@@ -128,6 +132,8 @@ def load_rules_catalog() -> dict[str, Any]:
         row["featureDefinitions"] = generated_feature_defs
         row["featuresByLevel"] = build_features_by_level(row)
     subclasses = _load_collection("subclasses", ("id", "classId", "displayName", "featureUnlocksByLevel"))
+    for row in subclasses:
+        row["featureDefinitions"] = build_subclass_feature_definitions(row)
     talents = _load_collection(
         "talents",
         ("id", "displayName", "classRestrictions", "minimumLevel", "grants", "tags", "source"),

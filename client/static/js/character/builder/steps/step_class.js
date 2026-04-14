@@ -70,6 +70,7 @@
         subclassLevel: parseInt(row && row.subclassLevel, 10),
         subclassDisplayName: String(row && row.subclassDisplayName || 'Subclass').trim(),
         spellcastingType: String(row && row.spellcastingType || 'none').trim(),
+        spellcastingAbility: String(row && row.spellcastingAbility || '').trim(),
         featureDefinitions: (row && row.featureDefinitions && typeof row.featureDefinitions === 'object') ? row.featureDefinitions : {},
         featuresByLevel: Array.isArray(row && row.featuresByLevel) ? row.featuresByLevel : [],
         progressionTable: progressionTable,
@@ -93,9 +94,11 @@
     var color = getClassColor(entry);
     var casterType = normalizeId(entry.spellcastingType);
     var spellStatHtml;
+    var spellAbility = String(entry.spellcastingAbility || '').trim().toUpperCase();
     if (casterType && casterType !== 'none') {
       var casterLabel = casterType === 'full' ? 'Full' : casterType === 'half' ? 'Half' : 'Pact';
-      spellStatHtml = '<div class="cd-stat"><div class="cd-stat-val" style="color:#5ba3d0">' + escHtml(casterLabel) + '</div><div class="cd-stat-lbl">Caster</div></div>';
+      spellStatHtml = '<div class="cd-stat"><div class="cd-stat-val" style="color:#5ba3d0">' + escHtml(casterLabel) + '</div><div class="cd-stat-lbl">Caster</div></div>' +
+        '<div class="cd-stat"><div class="cd-stat-val" style="color:#9dd7ff">' + escHtml(spellAbility || '—') + '</div><div class="cd-stat-lbl">Spell Ability</div></div>';
     } else {
       spellStatHtml = '<div class="cd-stat"><div class="cd-stat-val" style="color:var(--cb-text-dim)">None</div><div class="cd-stat-lbl">Spellcasting</div></div>';
     }
