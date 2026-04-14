@@ -530,6 +530,18 @@
         "build",
         "divine",
         "identity"
+      ],
+      "choices": [
+        {
+          "id": "protector-order",
+          "name": "Protector Order",
+          "description": "Leans battle-priest: heavier armor competency, stronger frontline posture, and easier concentration survival in contested space."
+        },
+        {
+          "id": "thaumaturge-order",
+          "name": "Thaumaturge Order",
+          "description": "Leans scholar-priest: stronger cantrip and knowledge-facing expression with a clearer caster-support identity."
+        }
       ]
     },
     "cleric-channel-divinity-1-use": {
@@ -560,7 +572,9 @@
         "healing",
         "damage",
         "resource"
-      ]
+      ],
+      "usage": "Spend 1 Channel Divinity use",
+      "recovery": "Channel Divinity refreshes on a Short or Long Rest."
     },
     "cleric-turn-undead": {
       "summary": "Drive undead back with holy force and break the shape of an encounter that depends on them closing in.",
@@ -576,7 +590,9 @@
         "control",
         "resource",
         "undead"
-      ]
+      ],
+      "usage": "Spend 1 Channel Divinity use",
+      "recovery": "Channel Divinity refreshes on a Short or Long Rest."
     },
     "cleric-divine-domain-subclass": {
       "summary": "Your chosen domain defines what kind of cleric you really are and which signature powers start shaping the build.",
@@ -590,7 +606,7 @@
     },
     "cleric-blessed-strikes": {
       "summary": "Your regular offense gains a reliable divine rider so your turns stay meaningful even when you are not spending top resources.",
-      "description": "Blessed Strikes keeps the cleric’s baseline pressure relevant by adding divine payoff to weapon attacks or cantrip damage. It matters because not every turn is a perfect high-level spell turn; sometimes you need dependable value while preserving slots.",
+      "description": "Blessed Strikes keeps the cleric\u2019s baseline pressure relevant by adding divine payoff to weapon attacks or cantrip damage. It matters because not every turn is a perfect high-level spell turn; sometimes you need dependable value while preserving slots.",
       "tags": [
         "combat",
         "divine",
@@ -606,7 +622,9 @@
         "divine",
         "capstone",
         "miracle"
-      ]
+      ],
+      "usage": "Use per class rules; major class miracle button.",
+      "recovery": "Recovery cadence depends on level and successful intervention outcome."
     },
     "cleric-greater-divine-intervention": {
       "summary": "Your god answers with far greater certainty, turning Divine Intervention from a gamble into a true endgame class payoff.",
@@ -621,42 +639,67 @@
     "cleric-spell-level-2": {
       "summary": "Unlock 2nd-level spell slots, expanding your prepared list into stronger healing, control, and offensive options.",
       "description": "2nd-level spells open access to powerful cleric options: Spiritual Weapon, Hold Person, Silence, Aid, and Enhance Ability. Your prepared list grows with your level, so higher-tier spells become available without giving up access to 1st-level slots.",
-      "tags": ["spellcasting", "divine"]
+      "tags": [
+        "spellcasting",
+        "divine"
+      ]
     },
     "cleric-spell-level-3": {
-      "summary": "Unlock 3rd-level spell slots — a significant jump in available spell power and battlefield control options.",
+      "summary": "Unlock 3rd-level spell slots \u2014 a significant jump in available spell power and battlefield control options.",
       "description": "3rd-level spells are a major spike for the cleric: Dispel Magic, Revivify, Spirit Guardians, Mass Healing Word, and Bestow Curse are all available here. Proficiency bonus also increases to +3 at this level.",
-      "tags": ["spellcasting", "divine"]
+      "tags": [
+        "spellcasting",
+        "divine"
+      ]
     },
     "cleric-spell-level-4": {
       "summary": "Unlock 4th-level spell slots and expand access to stronger domain expressions and defensive options.",
       "description": "4th-level spells include Banishment, Death Ward, Freedom of Movement, Guardian of Faith, and Stone Shape. Your expanded prepared list can now address a wider variety of threats.",
-      "tags": ["spellcasting", "divine"]
+      "tags": [
+        "spellcasting",
+        "divine"
+      ]
     },
     "cleric-spell-level-5": {
-      "summary": "Unlock 5th-level spell slots — the tier where cleric spellcasting reaches its most powerful general-purpose options.",
+      "summary": "Unlock 5th-level spell slots \u2014 the tier where cleric spellcasting reaches its most powerful general-purpose options.",
       "description": "5th-level spells are a turning point: Flame Strike, Mass Cure Wounds, Raise Dead, Scrying, and Commune are all available. Proficiency bonus increases to +4. This is often the level where the cleric's support and control output feels definitively powerful.",
-      "tags": ["spellcasting", "divine"]
+      "tags": [
+        "spellcasting",
+        "divine"
+      ]
     },
     "cleric-spell-level-6": {
       "summary": "Unlock 6th-level spell slots, extending into rare divine magic with powerful control and recovery effects.",
       "description": "6th-level spells open Heal, Harm, Blade Barrier, Find the Path, and True Seeing. At this tier, single spell slots can swing an entire encounter.",
-      "tags": ["spellcasting", "divine"]
+      "tags": [
+        "spellcasting",
+        "divine"
+      ]
     },
     "cleric-spell-level-7": {
       "summary": "Unlock 7th-level spell slots and access to some of the most powerful divine magic available.",
       "description": "7th-level spells include Conjure Celestial, Divine Word, Plane Shift, and Resurrection. Proficiency bonus increases to +5.",
-      "tags": ["spellcasting", "divine"]
+      "tags": [
+        "spellcasting",
+        "divine"
+      ]
     },
     "cleric-spell-level-8": {
       "summary": "Unlock 8th-level spell slots and a near-pinnacle tier of divine power.",
       "description": "8th-level spells include Antimagic Field, Control Weather, Earthquake, and Holy Aura. These spells can reshape the battlefield entirely.",
-      "tags": ["spellcasting", "divine"]
+      "tags": [
+        "spellcasting",
+        "divine"
+      ]
     },
     "cleric-spell-level-9": {
-      "summary": "Unlock 9th-level spell slots — the highest tier of spellcasting, available to very few beings in the world.",
+      "summary": "Unlock 9th-level spell slots \u2014 the highest tier of spellcasting, available to very few beings in the world.",
       "description": "9th-level spells include True Resurrection, Mass Heal, Gate, and Wish (if on the list). Proficiency bonus increases to +6. A single 9th-level spell can fundamentally alter the course of a campaign moment.",
-      "tags": ["spellcasting", "divine", "capstone"]
+      "tags": [
+        "spellcasting",
+        "divine",
+        "capstone"
+      ]
     },
     "cleric-channel-divinity-2-uses": {
       "summary": "Channel Divinity now refreshes to 2 uses per rest, giving you significantly more resource flexibility.",
@@ -667,10 +710,14 @@
       "type": "action",
       "usage": "2 uses available",
       "recovery": "Regain all expended uses on a Short or Long Rest.",
-      "tags": ["divine", "resource", "action"]
+      "tags": [
+        "divine",
+        "resource",
+        "action"
+      ]
     },
     "cleric-channel-divinity-3-uses": {
-      "summary": "Channel Divinity now provides 3 uses per rest — enough to be a consistent tactical tool across every fight.",
+      "summary": "Channel Divinity now provides 3 uses per rest \u2014 enough to be a consistent tactical tool across every fight.",
       "description": "With 3 Channel Divinity uses per rest, the high-level cleric can treat this resource as a reliable part of every encounter, not just a once-per-fight emergency button. Domain Channel Divinity options become much more deployable.",
       "resourceName": "Channel Divinity",
       "trackUses": true,
@@ -678,62 +725,98 @@
       "type": "action",
       "usage": "3 uses available",
       "recovery": "Regain all expended uses on a Short or Long Rest.",
-      "tags": ["divine", "resource", "action"]
+      "tags": [
+        "divine",
+        "resource",
+        "action"
+      ]
     },
     "cleric-cantrips-known-4": {
       "summary": "You now know 4 cleric cantrips, giving you a broader zero-slot toolkit.",
       "description": "A fourth cantrip slot lets you round out your cantrip coverage: typically one offensive option (Sacred Flame or Word of Radiance), one utility (Guidance, Light, Thaumaturgy), and one situational pick.",
-      "tags": ["spellcasting"]
+      "tags": [
+        "spellcasting"
+      ]
     },
     "cleric-cantrips-known-5": {
-      "summary": "You now know 5 cleric cantrips — a full set covering offense, utility, and defense.",
+      "summary": "You now know 5 cleric cantrips \u2014 a full set covering offense, utility, and defense.",
       "description": "5 cantrips is the Cleric's maximum. By level 10, this should represent a well-rounded set that covers all major zero-slot scenarios your build needs.",
-      "tags": ["spellcasting"]
+      "tags": [
+        "spellcasting"
+      ]
     },
     "cleric-ability-score-improvement-4": {
       "summary": "Improve two ability scores by 1 each, or take a feat to add a specialized capability.",
       "description": "Most Cleric builds increase Wisdom first (to improve spell save DC, healing rolls, and spell attacks) or Constitution (to improve HP and Concentration saves). Feats like War Caster or Resilient (Constitution) are strong options for Concentration-dependent builds.",
-      "tags": ["build", "improvement"]
+      "tags": [
+        "build",
+        "improvement"
+      ]
     },
     "cleric-ability-score-improvement-8": {
-      "summary": "Second ASI or feat — continue improving Wisdom or Constitution, or add a feat that suits your domain identity.",
+      "summary": "Second ASI or feat \u2014 continue improving Wisdom or Constitution, or add a feat that suits your domain identity.",
       "description": "By level 8, consider whether your primary stats are high enough or if a feat adds more value. Spell Sniper, Inspiring Leader, or additional saving throw proficiency can all be strong picks depending on your domain and party role.",
-      "tags": ["build", "improvement"]
+      "tags": [
+        "build",
+        "improvement"
+      ]
     },
     "cleric-ability-score-improvement-12": {
-      "summary": "Third ASI or feat — shore up weaknesses or maximize your most impactful stat.",
+      "summary": "Third ASI or feat \u2014 shore up weaknesses or maximize your most impactful stat.",
       "description": "If Wisdom or Constitution are not yet at their target scores, this is the level to close the gap. Alternatively, a utility feat can add out-of-combat flexibility or defense.",
-      "tags": ["build", "improvement"]
+      "tags": [
+        "build",
+        "improvement"
+      ]
     },
     "cleric-ability-score-improvement-16": {
-      "summary": "Fourth ASI or feat — high-level refinement of your cleric build.",
+      "summary": "Fourth ASI or feat \u2014 high-level refinement of your cleric build.",
       "description": "By level 16, most primary stats are maximized. This is a natural point for a feat that rewards the build you have been running rather than the one you planned at level 1.",
-      "tags": ["build", "improvement"]
+      "tags": [
+        "build",
+        "improvement"
+      ]
     },
     "cleric-subclass-feature-6": {
       "summary": "Your Divine Domain unlocks a second defining feature, deepening the domain's mechanical and thematic identity.",
       "description": "The level 6 domain feature is a significant step in your domain's power curve. Life gains Blessed Healer, Light gains Improved Flare, Trickery gains Cloak of Shadows, War gains War God's Blessing. Each transforms the domain from an early-game identity into a sustained tactical asset.",
-      "tags": ["subclass", "divine"]
+      "tags": [
+        "subclass",
+        "divine"
+      ]
     },
     "cleric-subclass-feature-8": {
       "summary": "Your Divine Domain grants a passive or active feature that reinforces its offense, defense, or support identity.",
       "description": "The level 8 domain feature for most domains is Divine Strike (extra weapon damage) or Potent Spellcasting (extra cantrip damage). These features ensure the domain stays relevant in the baseline action economy between major spell turns.",
-      "tags": ["subclass", "divine"]
+      "tags": [
+        "subclass",
+        "divine"
+      ]
     },
     "cleric-subclass-feature-14": {
-      "summary": "Your Divine Domain does not grant a feature at level 14 in this progression — this level is covered by the progression table.",
+      "summary": "Your Divine Domain does not grant a feature at level 14 in this progression \u2014 this level is covered by the progression table.",
       "description": "Level 14 is a Subclass Feature placeholder. Verify against your specific domain's roadmap; some domains grant features at different tiers than others.",
-      "tags": ["subclass"]
+      "tags": [
+        "subclass"
+      ]
     },
     "cleric-subclass-feature-17": {
       "summary": "Your Divine Domain unlocks its capstone feature, completing the domain's full mechanical identity.",
       "description": "The level 17 domain feature is the final expression of the domain's identity. Life gains Supreme Healing, Light gains Corona of Light, Trickery gains Improved Duplicity, War gains Avatar of Battle. These capstones are significant power jumps that define how the domain plays at high levels.",
-      "tags": ["subclass", "divine", "capstone"]
+      "tags": [
+        "subclass",
+        "divine",
+        "capstone"
+      ]
     },
     "cleric-epic-boon": {
-      "summary": "Choose an Epic Boon feat — a rare, powerful enhancement available only to characters at this level.",
+      "summary": "Choose an Epic Boon feat \u2014 a rare, powerful enhancement available only to characters at this level.",
       "description": "Epic Boons are very powerful feats gated behind high level play. They provide abilities beyond the normal scope of feat choices. Select the one that best matches your cleric's role and the campaign's remaining challenges.",
-      "tags": ["build", "improvement", "endgame"]
+      "tags": [
+        "build",
+        "improvement",
+        "endgame"
+      ]
     }
   },
   "levelUnlockIds": {

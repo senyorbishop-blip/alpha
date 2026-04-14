@@ -36,6 +36,11 @@
       copy: 'Monk should read as a live action-economy loop: Attack action cadence, Martial Arts follow-up, Focus spenders, and reaction defenses all visible together.',
       checks: ['Focus Points visible', 'Martial Arts / Flurry / Patient Defense cards visible', 'Reaction defenses visible'],
     },
+    cleric: {
+      title: 'Cleric Combat Surface',
+      copy: 'Cleric should read as a divine decision loop: prepared spells, Channel Divinity spenders, and domain-specific reactions/actions all visible in one place.',
+      checks: ['Channel Divinity uses visible', 'Divine Spark / Turn Undead surfaced', 'Domain action identity visible'],
+    },
     bard: {
       title: 'Bard Combat Surface',
       copy: 'Bard should feel like live support tempo: Bardic Inspiration spenders, reaction/control options, and spell tempo should all be visible from this tab.',
@@ -55,6 +60,58 @@
 
 
   const CUSTOM_CLASS_ACTIONS = {
+    cleric: {
+      actions: [
+        {
+          key: 'divine spark',
+          name: 'Divine Spark',
+          summary: 'Spend Channel Divinity for immediate healing or divine damage when one swing in momentum matters right now.',
+          actionType: 'action',
+          resourceName: 'Channel Divinity',
+          resourceSummary: 'Spend 1 use',
+          range: '30 ft',
+          tags: ['Cleric', 'Core Divine'],
+        },
+        {
+          key: 'turn undead',
+          name: 'Turn Undead',
+          summary: 'Spend Channel Divinity to force undead back and create breathing room for your party.',
+          actionType: 'action',
+          resourceName: 'Channel Divinity',
+          resourceSummary: 'Spend 1 use',
+          range: '30 ft',
+          tags: ['Cleric', 'Control'],
+        },
+        {
+          key: 'divine intervention',
+          name: 'Divine Intervention',
+          summary: 'Call directly on your deity for a major swing when ordinary spellcasting is not enough.',
+          actionType: 'action',
+          resourceName: '',
+          resourceSummary: 'High-impact class feature',
+          range: 'Special',
+          tags: ['Cleric', 'Miracle'],
+        },
+      ],
+      subclassActions: {
+        'life domain': [
+          { key: 'preserve life', name: 'Preserve Life', summary: 'Channel Divinity burst-heal spread across nearby allies in danger.', actionType: 'action', resourceName: 'Channel Divinity', tags: ['Life', 'Healing'] },
+        ],
+        'light domain': [
+          { key: 'warding flare', name: 'Warding Flare', summary: 'Use your reaction to impose disadvantage and blunt an incoming attack.', actionType: 'reaction', resourceName: 'Warding Flare', tags: ['Light', 'Defense'] },
+          { key: 'radiance of the dawn', name: 'Radiance of the Dawn', summary: 'Spend Channel Divinity for radiant burst and anti-darkness control.', actionType: 'action', resourceName: 'Channel Divinity', tags: ['Light', 'Radiant'] },
+        ],
+        'trickery domain': [
+          { key: 'invoke duplicity', name: 'Invoke Duplicity', summary: 'Spend Channel Divinity to project an illusion double and reshape positioning pressure.', actionType: 'action', resourceName: 'Channel Divinity', tags: ['Trickery', 'Illusion'] },
+          { key: 'cloak of shadows', name: 'Cloak of Shadows', summary: 'Spend Channel Divinity for a short invisibility reset and repositioning play.', actionType: 'action', resourceName: 'Channel Divinity', tags: ['Trickery', 'Stealth'] },
+        ],
+        'war domain': [
+          { key: 'war priest', name: 'War Priest', summary: 'Convert Attack action turns into bonus-action weapon pressure for frontline tempo.', actionType: 'bonus', resourceName: 'War Priest', tags: ['War', 'Frontline'] },
+          { key: 'guided strike', name: 'Guided Strike', summary: 'Spend Channel Divinity to convert a key miss into a likely hit.', actionType: 'action', resourceName: 'Channel Divinity', tags: ['War', 'Accuracy'] },
+          { key: "war god's blessing", name: "War God's Blessing", summary: 'Use your reaction and Channel Divinity to help an ally land a pivotal attack.', actionType: 'reaction', resourceName: 'Channel Divinity', tags: ['War', 'Support'] },
+        ],
+      },
+    },
     tinker: {
       actions: [
         {
