@@ -60,7 +60,11 @@
         "companion",
         "construct",
         "utility"
-      ]
+      ],
+      "type": "bonus action",
+      "resourceName": "Gadget Charges",
+      "trackUses": true,
+      "usage": "Spend 1 Gadget Charge to command, boost, or redeploy your frame."
     },
     "mechanist-systems-spells": {
       "summary": "Your granted spells support force projection, positioning, and machine-minded problem solving.",
@@ -76,7 +80,11 @@
         "subclass",
         "tempo",
         "companion"
-      ]
+      ],
+      "type": "bonus action",
+      "resourceName": "Gadget Charges",
+      "trackUses": true,
+      "usage": "Spend 1 Gadget Charge when chaining your action with a frame command."
     },
     "mechanist-hardened-frame": {
       "summary": "Your construct becomes sturdy enough to stay meaningful into tougher fights.",
@@ -84,7 +92,8 @@
         "subclass",
         "defense",
         "companion"
-      ]
+      ],
+      "effect": "Your frame gains durability and keeps acting as a true second body in sustained fights."
     },
     "mechanist-swarm-directive": {
       "summary": "Your command net expands from one frame to a full battlefield system.",
@@ -93,7 +102,11 @@
         "capstone",
         "control",
         "automation"
-      ]
+      ],
+      "type": "action",
+      "resourceName": "Gadget Charges",
+      "trackUses": true,
+      "usage": "Spend 2 Gadget Charges to execute synchronized multi-device directives."
     }
   }
 }

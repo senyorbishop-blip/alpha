@@ -60,7 +60,11 @@
         "support",
         "brews",
         "resource"
-      ]
+      ],
+      "type": "action",
+      "resourceName": "Gadget Charges",
+      "trackUses": true,
+      "usage": "Spend 1 Gadget Charge to administer or launch a prepared elixir."
     },
     "alchemist-restorative-spells": {
       "summary": "Your spell identity leans hard into recovery, cleansing, and adaptive chemistry.",
@@ -76,7 +80,8 @@
         "subclass",
         "support",
         "tempo"
-      ]
+      ],
+      "effect": "Your brews can shift between healing, resistance, and mobility riders when deployed."
     },
     "alchemist-panacea-kit": {
       "summary": "You become the party\u2019s premium answer to long-fight attrition and harsh conditions.",
@@ -84,7 +89,11 @@
         "subclass",
         "restoration",
         "utility"
-      ]
+      ],
+      "type": "action",
+      "resourceName": "Gadget Charges",
+      "trackUses": true,
+      "usage": "Spend 2 Gadget Charges for full panacea protocol."
     },
     "alchemist-master-transmutation": {
       "summary": "Your highest-tier chemistry changes the rules of the encounter instead of just patching around them.",
@@ -92,7 +101,8 @@
         "subclass",
         "capstone",
         "alchemy"
-      ]
+      ],
+      "effect": "Your late-tier compounds can rewrite damage type, condition pressure, or ally recovery output."
     }
   }
 }

@@ -60,7 +60,11 @@
         "stealth",
         "traps",
         "utility"
-      ]
+      ],
+      "type": "bonus action",
+      "resourceName": "Gadget Charges",
+      "trackUses": true,
+      "usage": "Spend 1 Gadget Charge to seed a hidden tool, trap, or stealth rig."
     },
     "saboteur-infiltration-spells": {
       "summary": "Your granted spells keep stealth, concealment, and setup pressure online every day.",
@@ -76,7 +80,11 @@
         "subclass",
         "tempo",
         "control"
-      ]
+      ],
+      "type": "reaction",
+      "resourceName": "Gadget Charges",
+      "trackUses": true,
+      "usage": "Spend 1 Gadget Charge when a disruption trigger is met."
     },
     "saboteur-silent-breach": {
       "summary": "Your team gets cleaner entries, exits, and setup windows thanks to disciplined sabotage craft.",
@@ -84,7 +92,8 @@
         "subclass",
         "infiltration",
         "mobility"
-      ]
+      ],
+      "effect": "Your breach kits reduce setup noise and let allies enter with less exposure."
     },
     "saboteur-perfect-ambush": {
       "summary": "Your endgame sabotage tools let you shape the opening of a fight almost like a script.",
@@ -92,7 +101,11 @@
         "subclass",
         "capstone",
         "ambush"
-      ]
+      ],
+      "type": "reaction",
+      "resourceName": "Gadget Charges",
+      "trackUses": true,
+      "usage": "Spend 2 Gadget Charges to execute full ambush sequencing."
     }
   }
 }

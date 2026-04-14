@@ -335,6 +335,7 @@ RESOURCE_FIELD_BLUEPRINTS: dict[str, dict[str, Any]] = {
     "layOnHandsPool": {"id": "lay_on_hands", "name": "Lay on Hands", "section": "Actions", "type": "action", "trackUses": True},
     "sorceryPoints": {"id": "sorcery_points", "name": "Sorcery Points", "section": "Class Features", "type": "passive", "trackUses": True},
     "pactSlots": {"id": "pact_slots", "name": "Pact Slots", "section": "Class Features", "type": "passive", "trackUses": True},
+    "gadgetCharges": {"id": "gadget_charges", "name": "Gadget Charges", "section": "Class Features", "type": "passive", "trackUses": True},
     "swaggerUses": {"id": "swagger_dice", "name": "Swagger Dice", "section": "Class Features", "type": "passive", "trackUses": True},
 }
 
@@ -350,6 +351,7 @@ RESOURCE_RECOVERY_HINTS = {
     "indomitable": "Regain all uses on a long rest.",
     "lay_on_hands": "The pool refreshes on a long rest.",
     "sorcery_points": "Sorcery Points refresh on a long rest.",
+    "gadget_charges": "Gadget Charges refresh on a long rest unless a feature grants an emergency recharge.",
     "swagger_dice": "Swagger Dice refresh on a short or long rest.",
 }
 
