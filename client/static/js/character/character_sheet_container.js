@@ -384,10 +384,10 @@ function _renderFlagshipHeader(charData) {
       weakSpots: ['Hybrid combat/magic clarity', 'Healing workflow', 'Aura positioning visibility'],
     },
     ranger: {
-      heading: 'Hunter skirmisher',
-      summary: 'Equipped ranged or dual-wield attacks and mark-like spell support should work together cleanly.',
-      essentials: ['Check equipped attacks', 'Validate mark / spell layer', 'Confirm ammo / thrown notes'],
-      weakSpots: ['Ammo and thrown flow', 'Spell-combat linkage', 'Loadout detail'],
+      heading: 'Hunter skirmisher / half-caster',
+      summary: 'Ranger should read as a blended martial + Wisdom-caster class: weapon cadence, Hunt/Mark pressure, mobility tools, and subclass tactics should all be visible together.',
+      essentials: ['Check equipped attacks + Extra Attack cadence', 'Validate Hunter’s Mark + spell slot surface', 'Confirm mobility/scout features and subclass tools'],
+      weakSpots: ['Half-caster slot/known clarity', 'Subclass tactic visibility', 'Companion command clarity (Beast Master)'],
     },
     rogue: {
       heading: 'Precision opportunist',

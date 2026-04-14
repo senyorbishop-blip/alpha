@@ -51,6 +51,11 @@
       copy: 'Paladin should feel like a hybrid frontline engine: weapon hits, smite timing, Lay on Hands triage, Channel Divinity options, and aura positioning cues all visible together.',
       checks: ['Lay on Hands visible', 'Channel Divinity visible', 'Smite + spell slot decision surface visible'],
     },
+    ranger: {
+      title: 'Ranger Combat Surface',
+      copy: 'Ranger should read as one hunt loop: weapon pressure, Hunter’s Mark / spell cadence, movement tools, and subclass tactics all visible without jumping through hidden tabs.',
+      checks: ['Weapon attack cadence visible', 'Hunter’s Mark + slot economy visible', 'Subclass tactics / companion command cards visible'],
+    },
     rogue: {
       title: 'Rogue Combat Surface',
       copy: 'Rogue should read as a precision loop: set up one decisive hit each turn with Cunning Action / Steady Aim, then decide whether Sneak Attack goes to pure damage or Cunning Strike control.',
@@ -312,6 +317,31 @@
         'oath of vengeance': [
           { key: 'channel divinity: vow of enmity', name: 'Vow of Enmity', summary: 'Mark one enemy for focused pursuit so your attack pressure stays glued to the target.', actionType: 'bonus', resourceName: 'Channel Divinity', tags: ['Vengeance', 'Mark'] },
           { key: 'channel divinity: abjure enemy', name: 'Abjure Enemy', summary: 'Break an enemy’s momentum with fear and forced control before it can dominate the round.', actionType: 'action', resourceName: 'Channel Divinity', tags: ['Vengeance', 'Control'] },
+        ],
+      },
+    },
+    ranger: {
+      actions: [
+        { key: "hunter's mark", name: "Hunter's Mark", summary: 'Mark a priority target and keep pressure concentrated while tracking it through the encounter.', actionType: 'bonus', resourceName: 'Spell Slots', resourceSummary: 'Concentration spell', range: '90 ft', tags: ['Ranger', 'Mark'] },
+        { key: 'conjure barrage', name: 'Conjure Barrage', summary: 'Spend a limited-use area volley when clustered enemies punish single-target routines.', actionType: 'action', resourceName: 'Conjure Barrage', resourceSummary: '1/LR feature action', range: 'Area effect', tags: ['Ranger', 'Area'] },
+        { key: "nature's veil", name: "Nature's Veil", summary: 'Use bonus-action concealment to reposition, break focus fire, or open a cleaner attack line.', actionType: 'bonus', resourceName: '', resourceSummary: 'Class feature', range: 'Self', tags: ['Ranger', 'Stealth'] },
+      ],
+      subclassActions: {
+        hunter: [
+          { key: "hunter's prey", name: "Hunter's Prey Style", summary: 'Apply your chosen prey branch (Colossus Slayer, Giant Killer, or Horde Breaker) during weapon turns.', actionType: 'action', resourceName: '', range: 'Weapon-dependent', tags: ['Hunter', 'Branch'] },
+          { key: 'multiattack', name: 'Hunter Multiattack', summary: 'Use Volley or Whirlwind when battlefield density makes standard attacks less efficient.', actionType: 'action', resourceName: '', range: 'Weapon / nearby area', tags: ['Hunter', 'Area Pressure'] },
+          { key: 'stand against the tide', name: 'Stand Against the Tide', summary: 'Punish misses by redirecting enemy momentum through reaction timing.', actionType: 'reaction', resourceName: '', range: 'Triggered reaction', tags: ['Hunter', 'Reaction'] },
+        ],
+        'gloom stalker': [
+          { key: 'dread ambusher', name: 'Dread Ambusher Opener', summary: 'Exploit first-round tempo: initiative edge, opening attack burst, and ambush pressure.', actionType: 'action', resourceName: '', range: 'Weapon-dependent', tags: ['Gloom Stalker', 'Opener'] },
+          { key: "stalker's flurry", name: "Stalker's Flurry", summary: 'Recover tempo after a miss and keep opening pressure from collapsing.', actionType: 'action', resourceName: '', range: 'Triggered follow-up', tags: ['Gloom Stalker', 'Consistency'] },
+          { key: 'shadowy dodge', name: 'Shadowy Dodge', summary: 'Use reaction defense to impose disadvantage when enemies finally line up a clean shot.', actionType: 'reaction', resourceName: '', range: 'Triggered reaction', tags: ['Gloom Stalker', 'Reaction'] },
+        ],
+        'beast master': [
+          { key: "ranger's companion", name: "Companion Command", summary: 'Command your bonded beast so it contributes as a real partner in movement and attacks.', actionType: 'bonus', resourceName: 'Companion Command', range: 'Companion command range', tags: ['Beast Master', 'Companion'] },
+          { key: 'exceptional training', name: 'Exceptional Training', summary: 'Issue cleaner utility and combat commands as companion reliability scales.', actionType: 'bonus', resourceName: 'Companion Command', range: 'Companion command range', tags: ['Beast Master', 'Companion'] },
+          { key: 'bestial fury', name: 'Bestial Fury', summary: 'Leverage your companion’s upgraded offense so duo pressure remains relevant at higher tiers.', actionType: 'action', resourceName: 'Companion Command', range: 'Companion attacks', tags: ['Beast Master', 'Companion'] },
+          { key: 'share spells', name: 'Share Spells', summary: 'Extend self-target spell support through both ranger and companion positioning.', actionType: 'action', resourceName: 'Spell Slots', range: 'Self + companion (30 ft)', tags: ['Beast Master', 'Spell Support'] },
         ],
       },
     },
@@ -785,6 +815,14 @@
           classMechanics.invocationsKnown != null ? ('Invocations known: ' + classMechanics.invocationsKnown) : '',
         ].filter(Boolean).join(' • ')
       : '';
+    const rangerLine = _classKey(charData) === 'ranger'
+      ? [
+          classMechanics.extraAttacks != null ? ('Attacks per Attack action: ' + classMechanics.extraAttacks) : '',
+          classMechanics.spellsKnown != null ? ('Spells known: ' + classMechanics.spellsKnown) : '',
+          (charData && charData.spellSaveDc) ? ('Spell save DC (WIS): ' + charData.spellSaveDc) : '',
+          (charData && charData.spellAttackBonus != null) ? ('Spell attack: ' + charData.spellAttackBonus) : '',
+        ].filter(Boolean).join(' • ')
+      : '';
     return `<div class="cs-combat-callout-grid">
       <div class="cs-combat-callout">
         <div class="cs-combat-callout-title">${_esc(guide.title)}</div>
@@ -793,6 +831,7 @@
         ${paladinLine ? `<div class="cs-combat-callout-copy">${_esc(paladinLine)}</div>` : ''}
         ${rogueLine ? `<div class="cs-combat-callout-copy">${_esc(rogueLine)}</div>` : ''}
         ${warlockLine ? `<div class="cs-combat-callout-copy">${_esc(warlockLine)}</div>` : ''}
+        ${rangerLine ? `<div class="cs-combat-callout-copy">${_esc(rangerLine)}</div>` : ''}
       </div>
       <div class="cs-combat-callout muted">
         <div class="cs-combat-callout-title">What should be visible</div>

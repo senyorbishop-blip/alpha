@@ -46,13 +46,35 @@
   ],
   "featureDefinitions": {
     "beast-master-rangers-companion": {
-      "summary": "Fight and travel with a trained companion so the ranger’s battlefield presence becomes truly two-bodied.",
-      "description": "Ranger’s Companion is the defining Beast Master feature. It should feel like a real partnership with its own action economy and tactical presence, not a cosmetic pet.",
+      "summary": "Choose and command a Primal Beast partner that acts as a real second body on the field.",
+      "description": "Ranger\u2019s Companion is the defining Beast Master feature. It should feel like a real partnership with its own action economy and tactical presence, not a cosmetic pet.",
       "tags": [
         "subclass",
         "companion",
         "signature"
-      ]
+      ],
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "resourceName": "Companion Command",
+      "choices": [
+        {
+          "id": "primal-beast-land",
+          "name": "Primal Beast of the Land",
+          "description": "Durable ground skirmisher with strong melee engagement and control presence."
+        },
+        {
+          "id": "primal-beast-sea",
+          "name": "Primal Beast of the Sea",
+          "description": "Aquatic hunter with swim mobility and water-focused pursuit utility."
+        },
+        {
+          "id": "primal-beast-sky",
+          "name": "Primal Beast of the Sky",
+          "description": "Aerial scout-striker for mobility, vision, and attack angle control."
+        }
+      ],
+      "usage": "Command cadence depends on your bonus-action economy; uncommanded behavior defaults to passive/defensive behavior based on table rules.",
+      "effect": "Companion scales with Ranger level and proficiency bonus."
     },
     "beast-master-exceptional-training": {
       "summary": "Your companion becomes more dependable and responsive as your partnership deepens.",
@@ -61,25 +83,34 @@
         "subclass",
         "companion",
         "training"
-      ]
+      ],
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "effect": "Companion command reliability and utility actions improve."
     },
     "beast-master-bestial-fury": {
-      "summary": "Your companion’s offense ramps up so it remains a meaningful combat contributor at higher levels.",
+      "summary": "Your companion\u2019s offense ramps up so it remains a meaningful combat contributor at higher levels.",
       "description": "Bestial Fury is essential to keeping the companion threatening into later tiers of play.",
       "tags": [
         "subclass",
         "companion",
         "combat"
-      ]
+      ],
+      "section": "Class Features",
+      "type": "passive",
+      "effect": "Companion offensive cadence increases so it remains relevant."
     },
     "beast-master-share-spells": {
-      "summary": "Your magic and your companion’s presence intertwine more closely, turning the pair into a stronger unified hunter.",
-      "description": "Share Spells is one of the subclass’s late-game rewards for sticking with the companion fantasy. It makes the beast feel like part of the ranger’s magic footprint, not just an extra body.",
+      "summary": "Your magic and your companion\u2019s presence intertwine more closely, turning the pair into a stronger unified hunter.",
+      "description": "Share Spells is one of the subclass\u2019s late-game rewards for sticking with the companion fantasy. It makes the beast feel like part of the ranger\u2019s magic footprint, not just an extra body.",
       "tags": [
         "subclass",
         "companion",
         "spellcasting"
-      ]
+      ],
+      "section": "Class Features",
+      "type": "passive",
+      "effect": "Self-target spells can extend to your companion within range."
     }
   }
 }

@@ -47,11 +47,30 @@
   "featureDefinitions": {
     "hunter-hunters-prey": {
       "summary": "Choose how you specialize in dropping prey so the subclass has a clear offensive identity from the start.",
-      "description": "Hunter’s Prey is the subclass fork that tells the sheet what kind of slayer this ranger is trying to be. It should feel like a real tactical choice, not a hidden setup detail.",
+      "description": "Hunter\u2019s Prey is the subclass fork that tells the sheet what kind of slayer this ranger is trying to be. It should feel like a real tactical choice, not a hidden setup detail.",
       "tags": [
         "subclass",
         "combat",
         "hunt"
+      ],
+      "section": "Class Features",
+      "type": "passive",
+      "choices": [
+        {
+          "id": "colossus-slayer",
+          "name": "Colossus Slayer",
+          "description": "Once per turn, deal extra damage to a creature that is already wounded."
+        },
+        {
+          "id": "giant-killer",
+          "name": "Giant Killer",
+          "description": "Use your reaction to strike a Large or larger creature that misses you."
+        },
+        {
+          "id": "horde-breaker",
+          "name": "Horde Breaker",
+          "description": "Once on each turn, make an extra attack against a different nearby creature."
+        }
       ]
     },
     "hunter-defensive-tactics": {
@@ -61,24 +80,53 @@
         "subclass",
         "defense",
         "combat"
+      ],
+      "choices": [
+        {
+          "id": "escape-the-horde",
+          "name": "Escape the Horde",
+          "description": "Opportunity attacks against you are made with disadvantage while you disengage cleanly."
+        },
+        {
+          "id": "multiattack-defense",
+          "name": "Multiattack Defense",
+          "description": "After a creature hits you, subsequent attacks from it are harder to land this turn."
+        },
+        {
+          "id": "steel-will",
+          "name": "Steel Will",
+          "description": "Gain advantage on saves against being frightened."
+        }
       ]
     },
     "hunter-multiattack": {
       "section": "Actions",
       "type": "action",
       "summary": "Apply your hunting style across multiple foes or multiple strikes when the battlefield opens up.",
-      "description": "Multiattack is the subclass’s battlefield pressure spike. It should feel like a practiced technique for capitalizing on target-rich encounters.",
+      "description": "Multiattack is the subclass\u2019s battlefield pressure spike. It should feel like a practiced technique for capitalizing on target-rich encounters.",
       "tags": [
         "subclass",
         "action",
         "combat"
+      ],
+      "choices": [
+        {
+          "id": "volley",
+          "name": "Volley",
+          "description": "Use a ranged area attack pattern to pressure clustered targets."
+        },
+        {
+          "id": "whirlwind-attack",
+          "name": "Whirlwind Attack",
+          "description": "Use a melee spin attack to pressure multiple adjacent creatures."
+        }
       ]
     },
     "hunter-stand-against-the-tide": {
       "section": "Reactions",
       "type": "reaction",
-      "summary": "Turn an enemy’s momentum against them when they overcommit around you.",
-      "description": "Stand Against the Tide is a veteran hunter trick—measured, punishing, and built around letting the foe make the wrong move first.",
+      "summary": "Turn an enemy\u2019s momentum against them when they overcommit around you.",
+      "description": "Stand Against the Tide is a veteran hunter trick\u2014measured, punishing, and built around letting the foe make the wrong move first.",
       "tags": [
         "subclass",
         "reaction",

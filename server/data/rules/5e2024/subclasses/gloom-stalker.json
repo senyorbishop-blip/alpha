@@ -59,7 +59,8 @@
         "subclass",
         "ambush",
         "combat"
-      ]
+      ],
+      "effect": "Opening-round tempo spike: initiative bonus, additional first-round attack pressure, and bonus opening damage."
     },
     "gloom-umbral-sight": {
       "summary": "Darkness becomes a natural hunting ground for you rather than a limitation.",
@@ -81,12 +82,15 @@
     },
     "gloom-stalkers-flurry": {
       "summary": "A missed strike is less likely to waste your moment because the subclass stays relentless once it commits.",
-      "description": "Stalker’s Flurry helps the subclass preserve offensive tempo instead of losing it to one bad roll.",
+      "description": "Stalker\u2019s Flurry helps the subclass preserve offensive tempo instead of losing it to one bad roll.",
       "tags": [
         "subclass",
         "combat",
         "pressure"
-      ]
+      ],
+      "section": "Class Features",
+      "type": "passive",
+      "trigger": "Once per turn after missing with a weapon attack."
     },
     "gloom-shadowy-dodge": {
       "section": "Reactions",
