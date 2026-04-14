@@ -3,6 +3,8 @@ from types import SimpleNamespace
 
 from server.handlers import map_editor
 from server.session import POI, Session, User
+from server.persistence_schema import extract_persistable_campaign_state
+from server.restore import restore_session_from_db
 
 
 def test_fog_paint_broadcasts_to_all_clients_including_dm_sender(monkeypatch):
@@ -156,3 +158,57 @@ def test_fog_broadcast_only_reaches_users_with_map_visibility(monkeypatch):
     assert dm.id in recipients
     assert player_poi.id in recipients
     assert player_world.id not in recipients
+
+
+def test_fog_maps_persist_across_restore_and_stay_isolated_per_context():
+    session = Session(id="fog-sync-5")
+    session.name = "Fog Restore"
+    session.player_invite = "player-code"
+    session.viewer_invite = "viewer-code"
+    session.created_at = 123.0
+    dm = User(id="dm-1", name="DM", role="dm")
+    player = User(id="pl-1", name="Player", role="player")
+    session.users[dm.id] = dm
+    session.users[player.id] = player
+    session.dm_id = dm.id
+    session.dm_map_context = "poi-a"
+    session.pois["poi-a"] = POI(id="poi-a", x=0, y=0, name="A", map_context="world")
+    session.pois["poi-b"] = POI(id="poi-b", x=1, y=1, name="B", map_context="world")
+    session.set_user_subgroup_id(player.id, "alpha", actor_id=dm.id)
+    session.set_subgroup_map_context("alpha", "poi-a", actor_id=dm.id)
+    session.fog_maps = {
+        "world": {"enabled": True, "cols": 4, "rows": 4, "cells": "1000000000000000"},
+        "poi-a": {"enabled": True, "cols": 4, "rows": 4, "cells": "0100000000000000"},
+        "poi-b": {"enabled": True, "cols": 4, "rows": 4, "cells": "0010000000000000"},
+    }
+
+    persisted = extract_persistable_campaign_state(session)
+    data = {
+        "id": session.id,
+        "name": session.name,
+        "dm_name": dm.name,
+        "player_invite": session.player_invite,
+        "viewer_invite": session.viewer_invite,
+        "created_at": session.created_at,
+        "map_image_url": None,
+        "dm_map_context": session.dm_map_context,
+        "dm_current_map_url": None,
+        "dm_id": dm.id,
+        "tokens": [],
+        "players": [{"id": player.id, "name": player.name, "role": player.role}],
+        "pois": [poi.to_dict(include_dm_notes=True) for poi in session.pois.values()],
+        "logs": [],
+        **persisted,
+    }
+
+    restored, _ = restore_session_from_db(data)
+    assert restored.fog_maps["world"]["cells"][0] == "1"
+    assert restored.fog_maps["poi-a"]["cells"][1] == "1"
+    assert restored.fog_maps["poi-b"]["cells"][2] == "1"
+    assert restored.fog_maps["poi-a"]["cells"][2] == "0"
+    assert restored.fog_maps["poi-b"]["cells"][1] == "0"
+
+    dm_view = restored.to_state_dict_for_role("dm", dm.id)
+    assert "world" in dm_view["fog_maps"]
+    assert "poi-a" in dm_view["fog_maps"]
+    assert "poi-b" in dm_view["fog_maps"]

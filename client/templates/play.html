@@ -7901,7 +7901,9 @@
       </div>
     </details>
 
-    <div id="fog-status-text" style="margin:-0.12rem 0 0.45rem;font-size:0.62rem;color:var(--parchment-dim);line-height:1.35;">Fog is OFF · players can see the full map.</div>
+    <div id="fog-map-context-text" style="margin:-0.12rem 0 0.2rem;font-size:0.58rem;color:rgba(214,188,140,0.9);line-height:1.35;letter-spacing:0.05em;text-transform:uppercase;">Editing: World Map</div>
+    <div id="fog-status-text" style="margin:0 0 0.35rem;font-size:0.62rem;color:var(--parchment-dim);line-height:1.35;">Fog is OFF · players can see the full map.</div>
+    <div id="fog-visibility-model-text" style="margin:0 0 0.45rem;font-size:0.58rem;color:rgba(214,188,140,0.75);line-height:1.3;">Visibility model: Off = unrestricted, Manual = DM-painted fog, Vision = token LOS, Hybrid = both manual + LOS.</div>
 
     <!-- Brush size -->
     <div id="fog-brush-row" style="margin-bottom:0.45rem;">
@@ -18462,7 +18464,7 @@ function onMouseDown(e) {
 
   // Fog painting — click on map when fog flyout is open
   const fogFlyout = document.getElementById('flyout-fog');
-  if (fogEnabled && ROLE === 'dm' && fogFlyout && fogFlyout.classList.contains('open')) {
+  if (fogEnabled && isManualFogEditingAllowed() && ROLE === 'dm' && fogFlyout && fogFlyout.classList.contains('open')) {
     if (fogPaintTool === 'brush') {
       fogPainting = true;
       fogPaintAt(w.x, w.y);
@@ -40504,6 +40506,11 @@ function getFogSystemMode() {
   return fogEnabled ? 'manual' : 'off';
 }
 
+function isManualFogEditingAllowed() {
+  const mode = String(getFogSystemMode() || '').toLowerCase();
+  return mode === 'manual' || mode === 'hybrid';
+}
+
 function setFogSystemMode(mode) {
   if (ROLE !== 'dm') return;
   const next = ['off','manual','vision','hybrid'].includes(String(mode)) ? String(mode) : 'manual';
@@ -40649,18 +40656,25 @@ function _syncFogUI() {
   const chk      = document.getElementById('fog-enable-chk');
   const toolsDiv = document.getElementById('fog-tools');
   const brushDiv = document.getElementById('fog-brush-row');
+  const manualAllowed = isManualFogEditingAllowed();
   if (chk) {
     // Set without triggering onchange
     chk.removeEventListener('change', _fogChkHandler);
     chk.checked = fogEnabled;
+    chk.disabled = !manualAllowed;
     chk.addEventListener('change', _fogChkHandler);
   }
-  if (toolsDiv) toolsDiv.style.display = fogEnabled ? 'flex' : 'none';
-  if (brushDiv) brushDiv.style.display = fogEnabled ? 'block' : 'none';
+  if (toolsDiv) toolsDiv.style.display = fogEnabled && manualAllowed ? 'flex' : 'none';
+  if (brushDiv) brushDiv.style.display = fogEnabled && manualAllowed ? 'block' : 'none';
   const toolGrid = document.getElementById('fog-tool-grid');
-  if (toolGrid) toolGrid.style.display = fogEnabled ? 'grid' : 'none';
+  if (toolGrid) toolGrid.style.display = fogEnabled && manualAllowed ? 'grid' : 'none';
   const advancedTools = document.getElementById('fog-advanced-tools');
-  if (advancedTools) advancedTools.style.display = fogEnabled ? 'block' : 'none';
+  if (advancedTools) advancedTools.style.display = fogEnabled && manualAllowed ? 'block' : 'none';
+  const mapCtxEl = document.getElementById('fog-map-context-text');
+  if (mapCtxEl) {
+    const ctx = String(fogMapCtx || 'world');
+    mapCtxEl.textContent = ctx === 'world' ? 'Editing: World Map' : `Editing: POI / Local Map · ${ctx}`;
+  }
   const modeSel = document.getElementById('fog-mode-select');
   const mode = getFogSystemMode();
   if (modeSel && modeSel.value !== mode) modeSel.value = mode;
@@ -40887,7 +40901,7 @@ function drawFogOverlay(W, H) {
 
   // ── DM Brush preview ──
   const fogFlyout = document.getElementById('flyout-fog');
-  if (ROLE === 'dm' && fogEnabled && _fogMouseWorld && fogFlyout && fogFlyout.classList.contains('open') && fogPaintTool === 'brush') {
+  if (ROLE === 'dm' && fogEnabled && isManualFogEditingAllowed() && _fogMouseWorld && fogFlyout && fogFlyout.classList.contains('open') && fogPaintTool === 'brush') {
     const cellW  = (mw / fogCols) * cam.zoom;
     const brushR = Math.max(fogBrushSize - 1, 0);
     const brushPx = (brushR + 0.5) * cellW;
@@ -41007,6 +41021,7 @@ function fogToggle(enabled) {
     __applyFogModuleState(state);
     return;
   }
+  if (enabled && !isManualFogEditingAllowed()) enabled = false;
   // Optimistically update local state immediately
   fogEnabled = enabled;
   if (!fogMaps[fogMapCtx]) fogMaps[fogMapCtx] = { enabled: false, cols: 64, rows: 64, cells: null };
