@@ -1474,75 +1474,75 @@
   },
   "levelUnlockIds": {
     "1": [
-      "bard-l1-1",
-      "bard-l1-2"
+      "bard-spellcasting",
+      "bard-bardic-inspiration-d6"
     ],
     "2": [
-      "bard-l2-1",
-      "bard-l2-2"
+      "bard-jack-of-all-trades",
+      "bard-song-of-rest-d6"
     ],
     "3": [
-      "bard-l3-1",
-      "bard-l3-2"
+      "bard-bard-college-subclass",
+      "bard-expertise"
     ],
     "4": [
-      "bard-l4-1",
-      "bard-l4-2"
+      "bard-ability-score-improvement",
+      "bard-cantrips-known-3"
     ],
     "5": [
-      "bard-l5-1",
-      "bard-l5-2"
+      "bard-font-of-inspiration",
+      "bard-bardic-inspiration-d8"
     ],
     "6": [
-      "bard-l6-1",
-      "bard-l6-2"
+      "bard-subclass-feature",
+      "bard-countercharm"
     ],
     "7": [
-      "bard-l7-1"
+      "bard-magical-secrets"
     ],
     "8": [
-      "bard-l8-1"
+      "bard-ability-score-improvement-2"
     ],
     "9": [
-      "bard-l9-1"
+      "bard-song-of-rest-d8"
     ],
     "10": [
-      "bard-l10-1",
-      "bard-l10-2",
-      "bard-l10-3",
-      "bard-l10-4"
+      "bard-expertise-2",
+      "bard-magical-secrets-2",
+      "bard-bardic-inspiration-d10",
+      "bard-cantrips-known-4"
     ],
     "11": [
-      "bard-l11-1"
+      "bard-magical-secrets-3"
     ],
     "12": [
-      "bard-l12-1"
+      "bard-ability-score-improvement-3"
     ],
     "13": [
-      "bard-l13-1",
-      "bard-l13-2"
+      "bard-song-of-rest-d10",
+      "bard-magical-secrets-4"
     ],
     "14": [
-      "bard-l14-1"
+      "bard-subclass-feature-2"
     ],
     "15": [
-      "bard-l15-1"
+      "bard-bardic-inspiration-d12"
     ],
     "16": [
-      "bard-l16-1"
+      "bard-ability-score-improvement-4"
     ],
     "17": [
-      "bard-l17-1",
-      "bard-l17-2"
+      "bard-song-of-rest-d12",
+      "bard-magical-secrets-5"
     ],
     "18": [
-      "bard-l18-1"
+      "bard-magical-secrets-6"
     ],
     "19": [
-      "bard-l19-1"
+      "bard-epic-boon"
     ],
     "20": [
-      "bard-l20-1"
+      "bard-superior-inspiration"
     ]
   },
   "progressionSummary": [
@@ -1550,151 +1550,151 @@
       "level": 1,
       "summary": "Spellcasting, Bardic Inspiration (d6).",
       "unlockIds": [
-        "bard-l1-1",
-        "bard-l1-2"
+        "bard-spellcasting",
+        "bard-bardic-inspiration-d6"
       ]
     },
     {
       "level": 2,
       "summary": "Jack of All Trades, Song of Rest (d6).",
       "unlockIds": [
-        "bard-l2-1",
-        "bard-l2-2"
+        "bard-jack-of-all-trades",
+        "bard-song-of-rest-d6"
       ]
     },
     {
       "level": 3,
       "summary": "Bard College (Subclass), Expertise.",
       "unlockIds": [
-        "bard-l3-1",
-        "bard-l3-2"
+        "bard-bard-college-subclass",
+        "bard-expertise"
       ]
     },
     {
       "level": 4,
       "summary": "Ability Score Improvement, Cantrips Known: 3.",
       "unlockIds": [
-        "bard-l4-1",
-        "bard-l4-2"
+        "bard-ability-score-improvement",
+        "bard-cantrips-known-3"
       ]
     },
     {
       "level": 5,
       "summary": "Font of Inspiration, Bardic Inspiration (d8).",
       "unlockIds": [
-        "bard-l5-1",
-        "bard-l5-2"
+        "bard-font-of-inspiration",
+        "bard-bardic-inspiration-d8"
       ]
     },
     {
       "level": 6,
       "summary": "Subclass Feature, Countercharm.",
       "unlockIds": [
-        "bard-l6-1",
-        "bard-l6-2"
+        "bard-subclass-feature",
+        "bard-countercharm"
       ]
     },
     {
       "level": 7,
       "summary": "Magical Secrets.",
       "unlockIds": [
-        "bard-l7-1"
+        "bard-magical-secrets"
       ]
     },
     {
       "level": 8,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "bard-l8-1"
+        "bard-ability-score-improvement-2"
       ]
     },
     {
       "level": 9,
       "summary": "Song of Rest (d8).",
       "unlockIds": [
-        "bard-l9-1"
+        "bard-song-of-rest-d8"
       ]
     },
     {
       "level": 10,
       "summary": "Expertise, Magical Secrets, Bardic Inspiration (d10), Cantrips Known: 4.",
       "unlockIds": [
-        "bard-l10-1",
-        "bard-l10-2",
-        "bard-l10-3",
-        "bard-l10-4"
+        "bard-expertise-2",
+        "bard-magical-secrets-2",
+        "bard-bardic-inspiration-d10",
+        "bard-cantrips-known-4"
       ]
     },
     {
       "level": 11,
       "summary": "Magical Secrets.",
       "unlockIds": [
-        "bard-l11-1"
+        "bard-magical-secrets-3"
       ]
     },
     {
       "level": 12,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "bard-l12-1"
+        "bard-ability-score-improvement-3"
       ]
     },
     {
       "level": 13,
       "summary": "Song of Rest (d10), Magical Secrets.",
       "unlockIds": [
-        "bard-l13-1",
-        "bard-l13-2"
+        "bard-song-of-rest-d10",
+        "bard-magical-secrets-4"
       ]
     },
     {
       "level": 14,
       "summary": "Subclass Feature.",
       "unlockIds": [
-        "bard-l14-1"
+        "bard-subclass-feature-2"
       ]
     },
     {
       "level": 15,
       "summary": "Bardic Inspiration (d12).",
       "unlockIds": [
-        "bard-l15-1"
+        "bard-bardic-inspiration-d12"
       ]
     },
     {
       "level": 16,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "bard-l16-1"
+        "bard-ability-score-improvement-4"
       ]
     },
     {
       "level": 17,
       "summary": "Song of Rest (d12), Magical Secrets.",
       "unlockIds": [
-        "bard-l17-1",
-        "bard-l17-2"
+        "bard-song-of-rest-d12",
+        "bard-magical-secrets-5"
       ]
     },
     {
       "level": 18,
       "summary": "Magical Secrets.",
       "unlockIds": [
-        "bard-l18-1"
+        "bard-magical-secrets-6"
       ]
     },
     {
       "level": 19,
       "summary": "Epic Boon.",
       "unlockIds": [
-        "bard-l19-1"
+        "bard-epic-boon"
       ]
     },
     {
       "level": 20,
       "summary": "Superior Inspiration.",
       "unlockIds": [
-        "bard-l20-1"
+        "bard-superior-inspiration"
       ]
     }
   ],

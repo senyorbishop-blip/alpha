@@ -418,6 +418,7 @@
     activeStep: 'automatic',
     spellCantripAdds: [],
     spellLevelledAdds: [],
+    spellMagicalSecretsAdds: [],
     spellSwapDrop: '',
     spellSwapLearn: '',
     spellSearch: '',
@@ -708,6 +709,7 @@
       payload.spellChoices = {
         cantripAdds: uniqueIds(modalState.spellCantripAdds),
         levelledAdds: uniqueIds(modalState.spellLevelledAdds),
+        magicalSecretsAdds: uniqueIds(modalState.spellMagicalSecretsAdds),
         swap: {
           drop: modalState.spellSwapDrop || '',
           learn: modalState.spellSwapLearn || '',
@@ -750,13 +752,15 @@
     if (!spellPlan || typeof spellPlan !== 'object') return '';
     const cantripRequired = safeInt(spellPlan.cantripPicksRequired, 0);
     const levelledRequired = safeInt(spellPlan.levelledPicksRequired, 0);
+    const magicalSecretsRequired = safeInt(spellPlan.magicalSecretsPicksRequired, 0);
     const mode = String(spellPlan.mode || 'known');
-    if (cantripRequired <= 0 && levelledRequired <= 0 && !spellPlan.swapAllowed) return '';
+    if (cantripRequired <= 0 && levelledRequired <= 0 && magicalSecretsRequired <= 0 && !spellPlan.swapAllowed) return '';
     const cantripOptions = Array.isArray(spellPlan.cantripOptions) ? spellPlan.cantripOptions : [];
     const levelledOptions = Array.isArray(spellPlan.levelledOptions) ? spellPlan.levelledOptions : [];
     const replaceable = Array.isArray(spellPlan.replaceableKnown) ? spellPlan.replaceableKnown : [];
-    const combinedRows = [].concat(cantripOptions, levelledOptions, replaceable);
-    if (!combinedRows.length && !spellPlan.swapAllowed) return '';
+    const magicalSecretOptions = Array.isArray(spellPlan.magicalSecretOptions) ? spellPlan.magicalSecretOptions : [];
+    const combinedRows = [].concat(cantripOptions, levelledOptions, replaceable, magicalSecretOptions);
+    if (!combinedRows.length && magicalSecretsRequired <= 0 && !spellPlan.swapAllowed) return '';
 
     const guide = spellPlanGuide(preview, spellPlan);
     let html = '<section class="lvlup-card"><div class="lvlup-title">Choices — Spell Picks</div>'
@@ -799,6 +803,18 @@
           const blocked = !active && modalState.spellLevelledAdds.length >= levelledRequired;
           return spellCardHtml(spell, active, 'data-spell-pick="levelled" data-spell-id="' + escHtml(String(spell.id || '')) + '"', blocked, spell.range || spell.castingTime || '');
         }, 'No unlocked leveled spell options are available with the current filter.')
+        + '</div>';
+    }
+
+    if (magicalSecretsRequired > 0) {
+      const magicalSecretOptions = Array.isArray(spellPlan.magicalSecretOptions) ? spellPlan.magicalSecretOptions : [];
+      html += '<div style="margin-top:12px"><div style="font-weight:600">Pick Magical Secrets (' + modalState.spellMagicalSecretsAdds.length + ' / ' + magicalSecretsRequired + ')</div>'
+        + '<div style="font-size:.76rem;opacity:.78;margin:3px 0 8px">Pick off-list spells unlocked by Magical Secrets at this level.</div>'
+        + groupedSpellCards(magicalSecretOptions, function (spell) {
+          const active = modalState.spellMagicalSecretsAdds.indexOf(String(spell.id || '')) >= 0;
+          const blocked = !active && modalState.spellMagicalSecretsAdds.length >= magicalSecretsRequired;
+          return spellCardHtml(spell, active, 'data-spell-pick="magical-secret" data-spell-id="' + escHtml(String(spell.id || '')) + '"', blocked, 'Off-list class access');
+        }, 'No off-list Magical Secrets options are available with the current filter.')
         + '</div>';
     }
 
@@ -976,6 +992,7 @@
     if (spellPlan) {
       if (safeInt(spellPlan.cantripPicksRequired, 0) > 0) choiceRequirementRows.push('Cantrips: ' + String(modalState.spellCantripAdds.length) + ' / ' + String(safeInt(spellPlan.cantripPicksRequired, 0)));
       if (safeInt(spellPlan.levelledPicksRequired, 0) > 0) choiceRequirementRows.push('Levelled spells: ' + String(modalState.spellLevelledAdds.length) + ' / ' + String(safeInt(spellPlan.levelledPicksRequired, 0)));
+      if (safeInt(spellPlan.magicalSecretsPicksRequired, 0) > 0) choiceRequirementRows.push('Magical Secrets: ' + String(modalState.spellMagicalSecretsAdds.length) + ' / ' + String(safeInt(spellPlan.magicalSecretsPicksRequired, 0)));
       if (spellPlan.swapAllowed) choiceRequirementRows.push('Optional swap: ' + ((modalState.spellSwapDrop && modalState.spellSwapLearn) ? 'Ready' : 'Not selected'));
     }
 
@@ -1018,6 +1035,7 @@
           spellPlan ? ('Mode: ' + String(spellPlan.mode || 'known')) : '',
           spellPlan && safeInt(spellPlan.cantripPicksRequired, 0) > 0 ? ('Cantrips selected: ' + String(modalState.spellCantripAdds.length) + ' / ' + String(safeInt(spellPlan.cantripPicksRequired, 0))) : '',
           spellPlan && safeInt(spellPlan.levelledPicksRequired, 0) > 0 ? ('Levelled spells selected: ' + String(modalState.spellLevelledAdds.length) + ' / ' + String(safeInt(spellPlan.levelledPicksRequired, 0))) : '',
+          spellPlan && safeInt(spellPlan.magicalSecretsPicksRequired, 0) > 0 ? ('Magical Secrets selected: ' + String(modalState.spellMagicalSecretsAdds.length) + ' / ' + String(safeInt(spellPlan.magicalSecretsPicksRequired, 0))) : '',
           spellPlan && spellPlan.swapAllowed ? ('Swap ready: ' + ((modalState.spellSwapDrop && modalState.spellSwapLearn) ? 'Yes' : 'No')) : '',
           spellPlan && spellPlan.nextHighestSpellLevel ? ('Highest legal spell tier after level: ' + String(spellLevelLabel(spellPlan.nextHighestSpellLevel))) : ''
           ], 'No spell choices are required at this level.') + '</div>'
@@ -1039,6 +1057,7 @@
       if (spellPlan) {
         if (safeInt(spellPlan.cantripPicksRequired, 0) > 0) canApply = canApply && modalState.spellCantripAdds.length === safeInt(spellPlan.cantripPicksRequired, 0);
         if (safeInt(spellPlan.levelledPicksRequired, 0) > 0) canApply = canApply && modalState.spellLevelledAdds.length === safeInt(spellPlan.levelledPicksRequired, 0);
+        if (safeInt(spellPlan.magicalSecretsPicksRequired, 0) > 0) canApply = canApply && modalState.spellMagicalSecretsAdds.length === safeInt(spellPlan.magicalSecretsPicksRequired, 0);
         const partialSwap = (!!modalState.spellSwapDrop && !modalState.spellSwapLearn) || (!modalState.spellSwapDrop && !!modalState.spellSwapLearn);
         const duplicateSwapLearn = !!modalState.spellSwapLearn && modalState.spellLevelledAdds.indexOf(modalState.spellSwapLearn) >= 0;
         if (partialSwap || duplicateSwapLearn) canApply = false;
@@ -1112,6 +1131,7 @@
         if (!pickType || !spellId || !spellPlan) return;
         if (pickType === 'cantrip') modalState.spellCantripAdds = togglePick(modalState.spellCantripAdds, spellId, safeInt(spellPlan.cantripPicksRequired, 0) || null);
         else if (pickType === 'levelled') modalState.spellLevelledAdds = togglePick(modalState.spellLevelledAdds, spellId, safeInt(spellPlan.levelledPicksRequired, 0) || null);
+        else if (pickType === 'magical-secret') modalState.spellMagicalSecretsAdds = togglePick(modalState.spellMagicalSecretsAdds, spellId, safeInt(spellPlan.magicalSecretsPicksRequired, 0) || null);
         renderPreview(root, preview);
       });
     });
@@ -1184,6 +1204,7 @@
       modalState.preview = freshPreview;
       modalState.spellCantripAdds = [];
       modalState.spellLevelledAdds = [];
+      modalState.spellMagicalSecretsAdds = [];
       modalState.spellSwapDrop = '';
       modalState.spellSwapLearn = '';
       renderPreview(root, freshPreview);
@@ -1206,6 +1227,7 @@
     modalState.activeStep = 'automatic';
     modalState.spellCantripAdds = [];
     modalState.spellLevelledAdds = [];
+    modalState.spellMagicalSecretsAdds = [];
     modalState.spellSwapDrop = '';
     modalState.spellSwapLearn = '';
     modalState.spellSearch = '';

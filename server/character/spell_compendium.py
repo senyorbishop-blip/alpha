@@ -614,6 +614,37 @@ def get_subclass_spell_grants(document: dict[str, Any], *, class_id: str, class_
         'unlockedSpells': unlocked_now,
     }
 
+
+def get_class_bonus_spell_access(document: dict[str, Any], *, class_id: str, class_level: int) -> dict[str, Any]:
+    class_key = _norm(class_id)
+    if class_key != 'bard':
+        return {'alwaysKnown': [], 'unlockedSpells': []}
+    spell_state = document.get('spellState') if isinstance(document.get('spellState'), dict) else {}
+    magical_known = spell_state.get('magicalSecretsKnown') if isinstance(spell_state.get('magicalSecretsKnown'), list) else []
+    known: list[str] = []
+    unlocked: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for spell_id in magical_known:
+        spell_id = str(spell_id or '').strip()
+        if not spell_id:
+            continue
+        spell = get_spell_by_id(spell_id)
+        if not spell:
+            continue
+        canonical_id = str(spell.get('id') or '').strip()
+        if not canonical_id or canonical_id in seen:
+            continue
+        seen.add(canonical_id)
+        known.append(canonical_id)
+        unlocked.append(
+            {
+                'featureId': 'bard-magical-secrets',
+                'unlockLevel': class_level,
+                'spells': [{'id': canonical_id, 'name': str(spell.get('name') or canonical_id).strip(), 'level': _safe_int(spell.get('level'), 0)}],
+            }
+        )
+    return {'alwaysKnown': known, 'unlockedSpells': unlocked}
+
 def _highest_slot_level_from_limits(limits: dict[str, Any] | None) -> int:
     if not isinstance(limits, dict):
         return 0
@@ -638,8 +669,9 @@ def validate_spell_selection(*, class_id: str, class_level: int, abilities: dict
     allowed_known: list[str] = []
     allowed_prepared: list[str] = []
     subclass_grants = get_subclass_spell_grants(document or {'classes': ([{'classId': class_id, 'subclassId': subclass_id}] if subclass_id else [])}, class_id=class_id, class_level=class_level)
+    class_bonus = get_class_bonus_spell_access(document or {'classes': []}, class_id=class_id, class_level=class_level)
     always_prepared = set(subclass_grants.get('alwaysPrepared') or [])
-    always_known = set(subclass_grants.get('alwaysKnown') or [])
+    always_known = set(subclass_grants.get('alwaysKnown') or []) | set(class_bonus.get('alwaysKnown') or [])
     bonus_access = always_prepared | always_known
     for spell_id in known_ids:
         spell = get_spell_by_id(spell_id)
@@ -706,6 +738,7 @@ def validate_spell_selection(*, class_id: str, class_level: int, abilities: dict
         'known': allowed_known,
         'prepared': allowed_prepared,
         'subclassGrants': subclass_grants,
+        'classBonusGrants': class_bonus,
     }
 
 

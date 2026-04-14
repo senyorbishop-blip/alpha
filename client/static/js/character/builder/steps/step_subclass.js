@@ -138,6 +138,21 @@
   }
 
   var SUBCLASS_PROFILE_OVERRIDES = {
+    'college-of-glamour': {
+      tags: ['Fey Presence', 'Ally Reposition', 'Social Control'],
+      chooserSummary: 'Glamour bards spend inspiration on battlefield staging: temporary hit points, reaction movement, and command-pressure turns.',
+      fantasy: 'Pick Glamour if you want your bard to feel like a fey battle director who protects allies, repositions the team, and dominates social scenes.',
+    },
+    'college-of-lore': {
+      tags: ['Skill Mastery', 'Reaction Disruption', 'Off-List Magic'],
+      chooserSummary: 'Lore bards focus on broad expertise and clutch reactions, then widen spell identity through Magical Discoveries and late-game skill spikes.',
+      fantasy: 'Pick Lore if you want maximum flexibility: stronger checks, Cutting Words timing, and extra cross-list spell access that adapts to party gaps.',
+    },
+    'college-of-valor': {
+      tags: ['Martial Bard', 'Combat Inspiration', 'Spell + Steel'],
+      chooserSummary: 'Valor bards add medium armor, shields, and martial weapons, then evolve into a spell-and-weapon tempo class with Extra Attack and Battle Magic.',
+      fantasy: 'Pick Valor if you want your bard closer to the front line, supporting allies while still trading attacks and keeping combat pressure visible.',
+    },
     'oath-of-devotion': {
       tags: ['Knightly Virtue', 'Radiant Presence', 'Protective Aura'],
       chooserSummary: 'A classic holy guardian path focused on sacred weapon certainty, anti-charm protection, and radiant battlefield leadership.',

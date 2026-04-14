@@ -36,6 +36,11 @@
       copy: 'Monk should read as a live action-economy loop: Attack action cadence, Martial Arts follow-up, Focus spenders, and reaction defenses all visible together.',
       checks: ['Focus Points visible', 'Martial Arts / Flurry / Patient Defense cards visible', 'Reaction defenses visible'],
     },
+    bard: {
+      title: 'Bard Combat Surface',
+      copy: 'Bard should feel like live support tempo: Bardic Inspiration spenders, reaction/control options, and spell tempo should all be visible from this tab.',
+      checks: ['Bardic Inspiration die + uses visible', 'Subclass spenders visible (Glamour/Lore/Valor)', 'Spell + support flow visible in combat turns'],
+    },
     paladin: {
       title: 'Paladin Combat Surface',
       copy: 'Paladin should feel like a hybrid frontline engine: weapon hits, smite timing, Lay on Hands triage, Channel Divinity options, and aura positioning cues all visible together.',
@@ -171,6 +176,27 @@
           { key: 'disciple of the elements', name: 'Disciple of the Elements', summary: 'Spend Focus to access elemental techniques beyond standard strikes.', actionType: 'action', resourceName: 'Focus Points', range: 'Technique-dependent', tags: ['Four Elements', 'Elemental'] },
           { key: 'elemental disciplines', name: 'Elemental Disciplines', summary: 'Use elemental blasts and control options as part of your class loop.', actionType: 'action', resourceName: 'Focus Points', range: 'Technique-dependent', tags: ['Four Elements', 'Control'] },
           { key: 'avatar of the four winds', name: 'Avatar of the Four Winds', summary: 'Spend Focus for a high-tier elemental transformation/burst mode.', actionType: 'action', resourceName: 'Focus Points', range: 'Self / area', tags: ['Four Elements', 'Capstone'] },
+        ],
+      },
+    },
+    bard: {
+      actions: [
+        { key: 'bardic inspiration', name: 'Bardic Inspiration', summary: 'Use a bonus action to grant an ally your current Bardic Inspiration die for attacks, checks, or saves.', actionType: 'bonus', resourceName: 'Bardic Inspiration', resourceSummary: 'Spend 1 Bardic Inspiration use', range: '60 ft', tags: ['Bard', 'Support'] },
+        { key: 'countercharm', name: 'Countercharm', summary: 'Use your performance to help allies resist fear and charm pressure when control effects start landing.', actionType: 'action', resourceName: '', resourceSummary: 'No resource cost', range: 'Aura / nearby allies', tags: ['Bard', 'Defense'] },
+        { key: 'magical secrets', name: 'Magical Secrets Spell Pick', summary: 'Use your off-list Magical Secrets picks to cover missing party roles with non-bard spell access.', actionType: 'action', resourceName: '', resourceSummary: 'Spell cast from known list', range: 'Spell-dependent', tags: ['Bard', 'Spellcasting'] },
+      ],
+      subclassActions: {
+        'college-of-glamour': [
+          { key: 'mantle of inspiration', name: 'Mantle of Inspiration', summary: 'Spend Bardic Inspiration as a bonus action to grant temporary hit points and reaction movement without opportunity attacks.', actionType: 'bonus', resourceName: 'Bardic Inspiration', range: '60 ft', tags: ['Glamour', 'Support'] },
+          { key: 'mantle of majesty', name: 'Mantle of Majesty', summary: 'Enter a command-focused state and pressure enemies with repeated bonus-action Command casts.', actionType: 'bonus', resourceName: '', range: 'Spell range', tags: ['Glamour', 'Control'] },
+        ],
+        'college-of-lore': [
+          { key: 'cutting words', name: 'Cutting Words', summary: 'Spend Bardic Inspiration as a reaction to reduce an enemy attack, ability check, or damage roll.', actionType: 'reaction', resourceName: 'Bardic Inspiration', range: '60 ft', tags: ['Lore', 'Reaction'] },
+          { key: 'peerless skill', name: 'Peerless Skill', summary: 'Spend Bardic Inspiration on yourself when a critical ability check must land.', actionType: 'reaction', resourceName: 'Bardic Inspiration', range: 'Self', tags: ['Lore', 'Skills'] },
+        ],
+        'college-of-valor': [
+          { key: 'combat inspiration', name: 'Combat Inspiration', summary: 'Your inspiration die now boosts weapon damage or can be spent as a reaction to increase AC against one attack.', actionType: 'reaction', resourceName: 'Bardic Inspiration', range: 'Ally with inspiration', tags: ['Valor', 'Combat'] },
+          { key: 'battle magic', name: 'Battle Magic', summary: 'After casting a bard spell with your action, make one weapon attack as a bonus action.', actionType: 'bonus', resourceName: '', range: 'Weapon range', tags: ['Valor', 'Tempo'] },
         ],
       },
     },
