@@ -243,7 +243,10 @@ def test_character_content_catalog_returns_species_classes_and_subclasses(monkey
                     "id": "champion",
                     "classId": "fighter",
                     "displayName": "Champion",
+                    "flavorText": "Wins by consistency and superior fundamentals.",
                     "featureUnlocksByLevel": {"3": ["champion-improved-critical"]},
+                    "features": [{"id": "champion-improved-critical", "displayName": "Improved Critical", "level": 3}],
+                    "featureDefinitions": {"champion-improved-critical": {"summary": "Crit on 19-20."}},
                 }
             ],
             "talents": [
@@ -271,6 +274,9 @@ def test_character_content_catalog_returns_species_classes_and_subclasses(monkey
     assert payload["species"][0]["id"] == "human"
     assert payload["classes"][0]["id"] == "fighter"
     assert payload["subclassesByClass"]["fighter"][0]["id"] == "champion"
+    assert payload["subclassesByClass"]["fighter"][0]["flavorText"] == "Wins by consistency and superior fundamentals."
+    assert payload["subclassesByClass"]["fighter"][0]["features"][0]["id"] == "champion-improved-critical"
+    assert payload["subclassesByClass"]["fighter"][0]["featureDefinitions"]["champion-improved-critical"]["summary"] == "Crit on 19-20."
     assert payload["talentsByClass"]["fighter"][0]["id"] == "fighter-bulwark-stance"
     assert payload["talents"][0]["source"] == "casualdnd_talent"
 

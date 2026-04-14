@@ -1,4 +1,5 @@
 from server.character.rules_catalog import load_rules_catalog
+from server.character.feature_catalog import build_runtime_feature_payload
 
 
 def test_pirate_exists_with_full_progression_and_subclasses():
@@ -33,3 +34,23 @@ def test_pirate_feature_definitions_have_authored_depth():
     assert defs["pirate-swagger-dice"]["trackUses"] is True
     assert defs["pirate-swagger-dice"]["resourceName"] == "Swagger Dice"
     assert defs["pirate-dread-volley"]["type"] == "action"
+
+
+def test_pirate_runtime_resources_surface_swagger_dice_pool():
+    catalog = load_rules_catalog()
+    pirate = {row["id"]: row for row in catalog["classes"]}["pirate"]
+    privateer = {row["id"]: row for row in catalog["subclasses"]}["privateer"]
+    payload = build_runtime_feature_payload(
+        pirate,
+        class_name="Pirate",
+        level=11,
+        subclass_row=privateer,
+        ability_scores={"cha": 16},
+    )
+
+    resources = payload.get("resources") or []
+    swagger = next(row for row in resources if row.get("id") == "swagger_dice")
+    assert swagger["name"] == "Swagger Dice"
+    assert swagger["current"] == 4
+    assert swagger["max"] == 4
+    assert "D10" in swagger["summary"]

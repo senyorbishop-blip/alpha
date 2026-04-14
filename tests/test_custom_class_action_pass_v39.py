@@ -22,6 +22,13 @@ def test_actions_tab_uses_custom_labels_for_swagger_and_gadgets():
     assert "return 'Use Device';" in text
 
 
+def test_actions_tab_has_pirate_mechanics_callout_lines():
+    text = Path('client/static/js/character/tabs/actions_tab.js').read_text(encoding='utf-8')
+    assert 'Swagger Dice uses:' in text
+    assert 'Dirty trick options:' in text
+    assert 'Dread Captain: fear pressure, momentum punish, and intimidation rhythm should stand out.' in text
+
+
 def test_actions_tab_has_better_use_toast_fallback():
     text = Path('client/static/js/character/tabs/actions_tab.js').read_text(encoding='utf-8')
     assert 'triggered' in text
