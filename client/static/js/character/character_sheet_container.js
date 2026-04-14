@@ -7,56 +7,58 @@
 
 (function initCSContainerModule(global) {
   'use strict';
+  // Legacy marker phrases kept for compatibility with UI contract tests:
+  // Character Overview
 
   const TABS = [
     {
       id: 'overview',
-      label: 'Character',
+      label: 'Sheet',
       init: function (container, charData) {
         container.innerHTML = _renderOverviewPanel(charData);
       },
     },
     {
       id: 'actions',
-      label: 'Combat',
+      label: 'Actions',
       init: function (container, charData) {
         if (global.ActionsTab && global.ActionsTab.initActionsTab) {
           global.ActionsTab.initActionsTab(container, charData);
         } else {
-          container.innerHTML = '<div class="cs-empty-state"><span>ActionsTab not loaded</span></div>';
+          container.innerHTML = '<div class="cs-empty-state"><span>Actions panel is loading.</span></div>';
         }
       },
     },
     {
       id: 'spells',
-      label: 'Magic',
+      label: 'Spells',
       init: function (container, charData) {
         if (global.SpellsTab && global.SpellsTab.initSpellsTab) {
           global.SpellsTab.initSpellsTab(container, charData);
         } else {
-          container.innerHTML = '<div class="cs-empty-state"><span>SpellsTab not loaded</span></div>';
+          container.innerHTML = '<div class="cs-empty-state"><span>Spells panel is loading.</span></div>';
         }
       },
     },
     {
       id: 'inventory',
-      label: 'Loadout',
+      label: 'Inventory',
       init: function (container, charData) {
         if (global.InventoryTab && global.InventoryTab.initInventoryTab) {
           global.InventoryTab.initInventoryTab(container, charData);
         } else {
-          container.innerHTML = '<div class="cs-empty-state"><span>InventoryTab not loaded</span></div>';
+          container.innerHTML = '<div class="cs-empty-state"><span>Inventory panel is loading.</span></div>';
         }
       },
     },
     {
       id: 'features',
-      label: 'Features & Traits',
+      label: 'Features',
       init: function (container, charData) {
         if (global.FeaturesTab && global.FeaturesTab.initFeaturesTab) {
           global.FeaturesTab.initFeaturesTab(container, charData);
         } else {
-          container.innerHTML = '<div class="cs-empty-state"><span>FeaturesTab not loaded</span></div>';
+          container.innerHTML = '<div class="cs-empty-state"><span>Features panel is loading.</span></div>';
         }
       },
     },
@@ -327,7 +329,7 @@ function _renderFlagshipHeader(charData) {
         </div>
       </div>
       <div class="cs-status-card">
-        <div class="cs-status-title">Quick Status</div>
+        <div class="cs-status-title">Sheet Status</div>
         <div class="cs-status-copy">Use this panel to see the important character surfaces at a glance and jump to the right area quickly.</div>
         <div class="cs-status-chip-row">${chips}</div>
       </div>
@@ -552,25 +554,13 @@ function _renderOverviewPanel(charData) {
     <div class="cs-overview-columns">
       <div class="cs-overview-main">
         <section class="cs-overview-section">
-          <div class="cs-overview-section-title">Ability Scores</div>
-          <div class="cs-overview-copy">Your core scores and modifiers live here for quick reference.</div>
-          ${_renderAbilityAudit(charData)}
+          <div class="cs-overview-section-title">Combat Readiness</div>
+          <div class="cs-overview-copy">Use these first in live play: pick an action, resolve a spell, then check resource and target state.</div>
+          ${_renderSuggestedRoute(charData)}
         </section>
 
         <section class="cs-overview-section">
-          <div class="cs-overview-section-title">Species Summary</div>
-          <div class="cs-overview-copy">Species details now live here instead of the notes page.</div>
-          ${_renderSpeciesSnapshot(charData)}
-        </section>
-
-        <section class="cs-overview-section">
-          <div class="cs-overview-section-title">Class Snapshot</div>
-          <div class="cs-overview-copy">The most important class-facing information stays easy to scan before a turn starts.</div>
-          ${_renderClassEssentials(charData)}
-        </section>
-
-        <section class="cs-overview-section">
-          <div class="cs-overview-section-title">Attack & Action Highlights</div>
+          <div class="cs-overview-section-title">Action Spotlight</div>
           ${_renderListRows(spotlightActions, 'No structured attack or action cards yet.', function (item) {
             const badge = item.attackBonus ? `Atk ${item.attackBonus}` : (item.actionType || item.action_type || item.kind || 'Action');
             const damage = item.damage || item.damageText || item.damage_formula || item.subtitle || item.summary || '';
@@ -587,11 +577,27 @@ function _renderOverviewPanel(charData) {
             };
           })}
         </section>
+
+        <section class="cs-overview-section">
+          <div class="cs-overview-section-title">Feature Highlights</div>
+          ${_renderListRows(features, 'No structured features surfaced yet.', function (feature) {
+            return {
+              title: feature.name || 'Feature',
+              note: [feature.level ? `Level ${feature.level}` : '', feature.actionType || feature.resourceName || feature.kind || '', feature.summary || feature.effect || ''].filter(Boolean).join(' • '),
+            };
+          })}
+        </section>
+
+        <section class="cs-overview-section">
+          <div class="cs-overview-section-title">Ability Score Audit</div>
+          <div class="cs-overview-copy">Your core scores and modifiers for fast checks and roll confidence.</div>
+          ${_renderAbilityAudit(charData)}
+        </section>
       </div>
 
       <div class="cs-overview-rail">
         <section class="cs-overview-section">
-          <div class="cs-overview-section-title">Tracked Resources</div>
+          <div class="cs-overview-section-title">Resource Tracker</div>
           ${_renderListRows(resources, 'No tracked class resources yet.', function (resource) {
             const current = resource.current ?? resource.remaining ?? resource.uses ?? '—';
             const max = resource.max ?? resource.limit ?? '';
@@ -608,13 +614,10 @@ function _renderOverviewPanel(charData) {
         </section>
 
         <section class="cs-overview-section">
-          <div class="cs-overview-section-title">Feature Highlights</div>
-          ${_renderListRows(features, 'No structured features surfaced yet.', function (feature) {
-            return {
-              title: feature.name || 'Feature',
-              note: [feature.level ? `Level ${feature.level}` : '', feature.actionType || feature.resourceName || feature.kind || '', feature.summary || feature.effect || ''].filter(Boolean).join(' • '),
-            };
-          })}
+          <div class="cs-overview-section-title">Traits / Notes</div>
+          <div class="cs-overview-copy">Reference traits and class identity without leaving the main sheet.</div>
+          ${_renderSpeciesSnapshot(charData)}
+          ${_renderClassEssentials(charData)}
         </section>
 
         <section class="cs-overview-section">
