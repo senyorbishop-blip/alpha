@@ -25,6 +25,14 @@
     ].join('');
   }
 
+  // Module-level state: which optional sections are currently expanded.
+  // This persists across re-renders so typing in a field doesn't collapse sections.
+  var _expanded = {
+    roleplay: false,
+    artwork: false,
+    backstory: false,
+  };
+
   registerStep({
     id: 'identity',
     label: 'Identity',
@@ -35,17 +43,21 @@
       const portraitFrame = String(presentation.portraitFrame || 'classic');
       const gender = identity.gender === 'female' ? 'female' : 'male';
 
-      return [
-        // ── Core Identity ─────────────────────────────────────────────
-        '<div class="cb-section">',
-        sectionHeader('✦', 'Core Identity', 'Name your hero and set their defining traits.'),
+      function detailsOpen(key) {
+        return _expanded[key] ? ' open' : '';
+      }
 
-        '<div class="cb-field-row cb-field-row--full" style="margin-bottom:12px;">',
+      return [
+        // ── Primary: Name ─────────────────────────────────────────────
+        '<div class="cb-section">',
+        sectionHeader('✦', 'Your Character', 'Give your adventurer a name to begin.'),
+
+        '<div class="cb-field-row cb-field-row--full" style="margin-bottom:10px;">',
         '<div class="field">',
         '<label data-builder-tooltip="identity">Character Name</label>',
         '<input type="text" class="cb-input-hero" data-builder-path="identity.name"',
         ' value="' + escHtml(identity.name || '') + '" maxlength="60"',
-        ' placeholder="Enter your character\'s full name…" />',
+        ' placeholder="Enter your character\'s full name\u2026" autofocus />',
         '</div>',
         '</div>',
 
@@ -60,42 +72,52 @@
         '</div>',
 
         '<div class="field">',
-        '<label>Homeland <span class="cb-optional">optional</span></label>',
-        '<input type="text" data-builder-path="identity.homeland"',
-        ' value="' + escHtml(identity.homeland || '') + '" maxlength="80"',
-        ' placeholder="Waterdeep, Neverwinter…" />',
-        '</div>',
-
-        '<div class="field">',
         '<label>Alignment <span class="cb-optional">optional</span></label>',
         '<input type="text" data-builder-path="identity.alignment"',
         ' value="' + escHtml(identity.alignment || '') + '" maxlength="60"',
         ' placeholder="Neutral Good" />',
         '</div>',
 
+        '</div>',
+        '</div>',
+
+        // ── Optional: Roleplay Details ────────────────────────────────
+        '<details class="cb-optional-section" data-section-key="roleplay"' + detailsOpen('roleplay') + '>',
+        '<summary class="cb-optional-section-summary">Roleplay Details <span class="cb-optional">optional</span></summary>',
+        '<div class="cb-optional-section-body">',
+
+        '<div class="cb-field-row cb-field-row--2col">',
+
         '<div class="field">',
-        '<label>Deity <span class="cb-optional">optional</span></label>',
+        '<label>Homeland</label>',
+        '<input type="text" data-builder-path="identity.homeland"',
+        ' value="' + escHtml(identity.homeland || '') + '" maxlength="80"',
+        ' placeholder="Waterdeep, Neverwinter\u2026" />',
+        '</div>',
+
+        '<div class="field">',
+        '<label>Deity</label>',
         '<input type="text" data-builder-path="identity.deity"',
         ' value="' + escHtml(identity.deity || '') + '" maxlength="80"',
-        ' placeholder="Kelemvor, Sehanine…" />',
+        ' placeholder="Kelemvor, Sehanine\u2026" />',
         '</div>',
 
         '</div>',
 
-        '<div class="cb-field-row cb-field-row--full" style="margin-top:4px;">',
         '<div class="field">',
-        '<label>Display Name <span class="cb-optional">optional — shown in party UI</span></label>',
+        '<label>Display Name <span class="cb-optional">shown in party UI</span></label>',
         '<input type="text" data-builder-path="identity.displayName"',
         ' value="' + escHtml(identity.displayName || '') + '" maxlength="60"',
         ' placeholder="Short name shown to other players" />',
         '</div>',
-        '</div>',
 
         '</div>',
+        '</details>',
 
-        // ── Presentation ──────────────────────────────────────────────
-        '<div class="cb-section">',
-        sectionHeader('◈', 'Portrait & Token', 'Choose a frame style and link your artwork.'),
+        // ── Optional: Portrait & Artwork ──────────────────────────────
+        '<details class="cb-optional-section" data-section-key="artwork"' + detailsOpen('artwork') + '>',
+        '<summary class="cb-optional-section-summary">Portrait &amp; Artwork <span class="cb-optional">optional</span></summary>',
+        '<div class="cb-optional-section-body">',
 
         '<div class="cb-portrait-frame-row">',
         ['classic', 'rune', 'shadow'].map(function(frame) {
@@ -115,49 +137,59 @@
 
         '<div class="cb-field-row cb-field-row--2col">',
         '<div class="field">',
-        '<label>Portrait URL <span class="cb-optional">optional</span></label>',
+        '<label>Portrait URL</label>',
         '<input type="url" data-builder-path="identity.portraitUrl"',
         ' value="' + escHtml(identity.portraitUrl || '') + '" maxlength="500"',
-        ' placeholder="https://…" />',
+        ' placeholder="https://\u2026" />',
         '</div>',
         '<div class="field">',
-        '<label>Token URL <span class="cb-optional">optional</span></label>',
+        '<label>Token URL</label>',
         '<input type="url" data-builder-path="identity.tokenImageUrl"',
         ' value="' + escHtml(identity.tokenImageUrl || '') + '" maxlength="500"',
-        ' placeholder="https://…" />',
+        ' placeholder="https://\u2026" />',
         '</div>',
         '</div>',
 
         '</div>',
+        '</details>',
 
-        // ── Backstory ─────────────────────────────────────────────────
-        '<div class="cb-section">',
-        sectionHeader('❧', 'Backstory', 'A short concept and any roleplay notes you want to keep handy.'),
-
-        '<div class="cb-field-row cb-field-row--2col">',
+        // ── Optional: Backstory ───────────────────────────────────────
+        '<details class="cb-optional-section" data-section-key="backstory"' + detailsOpen('backstory') + '>',
+        '<summary class="cb-optional-section-summary">Backstory &amp; Notes <span class="cb-optional">optional</span></summary>',
+        '<div class="cb-optional-section-body">',
 
         '<div class="field">',
-        '<label>Backstory <span class="cb-optional">optional</span></label>',
+        '<label>Backstory</label>',
         '<textarea data-builder-path="identity.backstory" maxlength="1000"',
-        ' placeholder="One-paragraph concept — origin, motivation, dark secret…"',
-        ' rows="5">' + escHtml(identity.backstory || '') + '</textarea>',
+        ' placeholder="One-paragraph concept \u2014 origin, motivation, dark secret\u2026"',
+        ' rows="4">' + escHtml(identity.backstory || '') + '</textarea>',
         '<div class="cb-char-count">' + String(identity.backstory || '').length + ' / 1000</div>',
         '</div>',
 
         '<div class="field">',
-        '<label>Notes <span class="cb-optional">optional</span></label>',
+        '<label>Notes</label>',
         '<textarea data-builder-path="identity.notes" maxlength="600"',
-        ' placeholder="Personality traits, bonds, flaws, roleplay reminders…"',
-        ' rows="5">' + escHtml(identity.notes || '') + '</textarea>',
+        ' placeholder="Personality traits, bonds, flaws, roleplay reminders\u2026"',
+        ' rows="3">' + escHtml(identity.notes || '') + '</textarea>',
         '<div class="cb-char-count">' + String(identity.notes || '').length + ' / 600</div>',
         '</div>',
 
         '</div>',
-        '</div>',
+        '</details>',
       ].join('');
     },
 
     bind: function bindIdentityStep(root, ctx) {
+      // Track open/closed state of each optional section so re-renders preserve it
+      root.querySelectorAll('details[data-section-key]').forEach(function(details) {
+        details.addEventListener('toggle', function() {
+          var key = details.dataset.sectionKey;
+          if (key && Object.prototype.hasOwnProperty.call(_expanded, key)) {
+            _expanded[key] = details.open;
+          }
+        });
+      });
+
       // Portrait frame selector
       var frameButtons = root.querySelectorAll('.cb-frame-opt');
       var frameInput = root.querySelector('#cb-portrait-frame-input');
