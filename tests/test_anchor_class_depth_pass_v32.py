@@ -48,6 +48,31 @@ def test_anchor_druid_runtime_has_circle_and_shape_depth():
     assert 'elemental' in str(elemental.get('description') or '').lower()
 
 
+def test_anchor_druid_catalog_uses_authored_unlock_ids_and_choices():
+    druid = _load('server/data/rules/5e2024/classes/druid.json')
+    by_level = {row.get('level'): row for row in druid.get('progressionTable', [])}
+
+    assert by_level[1].get('unlockIds') == ['druid-druidic', 'druid-spellcasting', 'druid-primal-order']
+    assert by_level[2].get('unlockIds') == ['druid-wild-shape', 'druid-wild-companion']
+    assert by_level[20].get('unlockIds') == ['druid-archdruid']
+
+    primal_order = (druid.get('featureDefinitions') or {}).get('druid-primal-order', {})
+    assert len(primal_order.get('choices') or []) >= 2
+    assert any('sage' in str(choice.get('name') or '').lower() or 'magician' in str(choice.get('id') or '').lower() for choice in (primal_order.get('choices') or []))
+
+
+def test_anchor_druid_land_circle_has_terrain_choice_depth():
+    land = _load('server/data/rules/5e2024/subclasses/circle-of-the-land.json')
+    defs = land.get('featureDefinitions') or {}
+    circle_spells = defs.get('land-circle-spells') or {}
+    choices = circle_spells.get('choices') or []
+
+    assert len(choices) >= 8
+    choice_ids = {str(row.get('id') or '').lower() for row in choices}
+    assert 'land-terrain-forest' in choice_ids
+    assert 'land-terrain-underdark' in choice_ids
+
+
 def test_anchor_sorcerer_runtime_has_origin_and_sorcery_point_depth():
     runtime = resolve_runtime(
         {

@@ -46,35 +46,43 @@
   ],
   "featureDefinitions": {
     "moon-combat-wild-shape": {
-      "summary": "Use Wild Shape as a true battle form instead of mostly an exploration tool.",
-      "description": "Combat Wild Shape is the feature that tells the player this circle fights through transformation. It should make beast form feel like a frontline mode, not a side utility option.",
+      "summary": "Convert Wild Shape into a real combat mode with faster activation and in-form sustain options.",
+      "description": "Combat Wild Shape is the Moon identity switch. It turns form play from scouting utility into a frontline loop with better action economy and emergency slot-to-heal conversion while shifted.",
       "resourceName": "Wild Shape",
       "trackUses": true,
       "tags": [
         "subclass",
         "transformation",
         "combat"
-      ]
+      ],
+      "section": "Bonus Actions",
+      "type": "bonus action",
+      "usage": "Spend 1 Wild Shape use to transform as a bonus action. While transformed, Moon features can improve healing and combat posture.",
+      "recovery": "Wild Shape uses recover on short or long rest per rules layer."
     },
     "moon-circle-forms": {
-      "summary": "Your available beast forms grow stronger sooner, letting the subclass stay relevant as a shape-based combatant.",
-      "description": "Circle Forms keeps the Moon druid from falling behind in form quality. It is crucial to making the subclass feel like a real shapeshifting bruiser.",
+      "summary": "Your Wild Shape form ceiling scales aggressively so beast forms stay combat-relevant through mid tiers.",
+      "description": "Circle Forms increases the maximum beast form challenge quickly (CR 1 at 2nd, CR 3 at 6th, CR 5 at 10th, and Moon cap by 14th). This is the scaling backbone that keeps Moon druids battle-ready.",
       "tags": [
         "subclass",
         "transformation",
         "scaling"
-      ]
+      ],
+      "effect": "Moon Wild Shape CR scaling: 2nd\u2192CR1, 6th\u2192CR3, 10th\u2192CR5, 14th\u2192Moon cap."
     },
     "moon-elemental-wild-shape": {
-      "summary": "Your transformations escalate beyond beasts into primal elemental force.",
-      "description": "Elemental Wild Shape is a major fantasy spike. It should feel like the subclass breaking through ordinary beast limits into something more mythic and dangerous.",
+      "summary": "Spend two Wild Shape uses to become an elemental for major resistance and battlefield presence spikes.",
+      "description": "Elemental Wild Shape is the subclass breakout moment. It trades resource efficiency for encounter-shaping forms and should read as a deliberate high-impact mode switch.",
       "resourceName": "Wild Shape",
       "trackUses": true,
       "tags": [
         "subclass",
         "transformation",
         "elemental"
-      ]
+      ],
+      "section": "Actions",
+      "type": "action",
+      "usage": "Spend 2 Wild Shape uses to take an elemental form."
     },
     "moon-thousand-forms": {
       "section": "Actions",

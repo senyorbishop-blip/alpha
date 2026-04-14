@@ -24,7 +24,7 @@
       "level": 3,
       "id": "land-circle-spells",
       "displayName": "Circle Spells",
-      "description": "Choose a terrain—Arctic, Coast, Desert, Forest, Grassland, Mountain, Swamp, or Underdark. You gain always-prepared bonus spells by level based on that terrain."
+      "description": "Choose a terrain\u2014Arctic, Coast, Desert, Forest, Grassland, Mountain, Swamp, or Underdark. You gain always-prepared bonus spells by level based on that terrain."
     },
     {
       "level": 6,
@@ -53,39 +53,89 @@
   ],
   "featureDefinitions": {
     "land-circle-spells": {
-      "summary": "Your circle gives you terrain-flavored spell access that makes the subclass feel like a true regional sage.",
-      "description": "Circle Spells should make the subclass feel tied to a place, not just a generic druid with extra entries. The bonus list is one of the cleanest ways the subclass communicates its biome identity.",
+      "summary": "Choose a terrain and gain always-ready circle spells that reinforce that biome identity.",
+      "description": "Circle Spells are terrain-anchored bonus access that should feel distinct from your normal prepared pool. They communicate place-based identity and improve day-to-day utility breadth.",
       "tags": [
         "subclass",
         "spellcasting",
         "terrain"
+      ],
+      "choices": [
+        {
+          "id": "land-terrain-arctic",
+          "name": "Arctic",
+          "description": "Cold-control and endurance-oriented circle spell lane."
+        },
+        {
+          "id": "land-terrain-coast",
+          "name": "Coast",
+          "description": "Mist, water, and mobility-oriented circle spell lane."
+        },
+        {
+          "id": "land-terrain-desert",
+          "name": "Desert",
+          "description": "Heat, attrition, and harsh-environment circle spell lane."
+        },
+        {
+          "id": "land-terrain-forest",
+          "name": "Forest",
+          "description": "Growth, concealment, and beast/nature utility lane."
+        },
+        {
+          "id": "land-terrain-grassland",
+          "name": "Grassland",
+          "description": "Wind, movement, and open-field control lane."
+        },
+        {
+          "id": "land-terrain-mountain",
+          "name": "Mountain",
+          "description": "Stone, weather, and elevation-control lane."
+        },
+        {
+          "id": "land-terrain-swamp",
+          "name": "Swamp",
+          "description": "Debuff, decay, and difficult-terrain pressure lane."
+        },
+        {
+          "id": "land-terrain-underdark",
+          "name": "Underdark",
+          "description": "Darkness, secrecy, and subterranean control lane."
+        }
       ]
     },
     "land-natural-recovery": {
-      "summary": "Recover part of your spell economy during rest so your circle stays effective across longer adventuring days.",
+      "summary": "Recover part of your slot economy on a short rest so Land druids stay magical across longer adventuring days.",
       "description": "Natural Recovery is a slot economy feature. It matters because it lets Circle of the Land feel like the druid most capable of stretching magic through a full day of exploration and multiple fights.",
-      "resourceName": "Spell Recovery",
+      "resourceName": "Natural Recovery",
       "trackUses": true,
       "tags": [
         "subclass",
         "resource",
         "spellcasting"
-      ]
+      ],
+      "section": "Class Features",
+      "type": "special",
+      "usage": "Once per day during a short rest, recover spell slots with combined levels up to half your druid level (rounded up).",
+      "recovery": "Resets on long rest."
     },
     "land-lands-aid": {
       "section": "Actions",
       "type": "action",
-      "summary": "Call on your bond with the land to support allies and shift local momentum in your favor.",
-      "description": "Land’s Aid should read like a direct expression of your terrain bond: restorative, stabilizing, and practical rather than flashy.",
+      "summary": "Call on your terrain bond for practical ally support that swings attrition and positioning.",
+      "description": "Land\u2019s Aid should read like a direct expression of your terrain bond: restorative, stabilizing, and practical rather than flashy.",
       "tags": [
         "subclass",
         "support",
         "primal"
-      ]
+      ],
+      "resourceName": "Land's Aid",
+      "trackUses": true,
+      "usage": "Activate Land\u2019s Aid to bolster allies in your local zone.",
+      "recovery": "Typically once per long rest unless modified by table rules."
     },
     "land-natures-ward": {
       "summary": "The natural world hardens you against control and corruption that would break lesser wanderers.",
-      "description": "Nature’s Ward is a defense identity feature. It reinforces Circle of the Land as the seasoned druid who belongs outdoors so completely that hostile influences struggle to take hold.",
+      "description": "Nature\u2019s Ward is a defense identity feature. It reinforces Circle of the Land as the seasoned druid who belongs outdoors so completely that hostile influences struggle to take hold.",
       "tags": [
         "subclass",
         "defense",
@@ -94,7 +144,7 @@
     },
     "land-natures-sanctuary": {
       "summary": "Wild creatures hesitate to harm you, reflecting how deeply your circle is accepted by the natural world.",
-      "description": "Nature’s Sanctuary is a late-game identity feature more than a raw damage tool. It should feel like the world itself acknowledging your place within it.",
+      "description": "Nature\u2019s Sanctuary is a late-game identity feature more than a raw damage tool. It should feel like the world itself acknowledging your place within it.",
       "tags": [
         "subclass",
         "identity",

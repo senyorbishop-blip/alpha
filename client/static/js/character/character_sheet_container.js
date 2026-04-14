@@ -360,10 +360,10 @@ function _renderFlagshipHeader(charData) {
       weakSpots: ['Domain flavor surfacing', 'Save spell expectations', 'Healing target feedback'],
     },
     druid: {
-      heading: 'Adaptive controller',
-      summary: 'It should stay clear when the character is operating through spells versus Wild Shape-style resources and state changes.',
-      essentials: ['Check Wild Shape / class resource', 'Verify prepared spells', 'Confirm concentration and form-facing notes'],
-      weakSpots: ['State-change clarity', 'Prepared spell depth', 'Resource recovery hints'],
+      heading: 'Primal prepared caster / shapeshifter',
+      summary: 'Druid should clearly show three lanes together: prepared Wisdom spellcasting, Wild Shape resource + form limits, and circle identity (Moon battle-shifter vs Land terrain caster).',
+      essentials: ['Check prepared formula and current prepared count', 'Check Wild Shape uses + max form CR', 'Check circle-specific lane (Moon transform pressure or Land recovery/circle spells)'],
+      weakSpots: ['Cast-vs-shift timing clarity', 'Wild Companion visibility', 'High-level Beast Spells / Archdruid expectations'],
     },
     fighter: {
       heading: 'Weapon loadout specialist',
