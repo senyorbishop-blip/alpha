@@ -203,6 +203,21 @@
       chooserSummary: 'An aggressive avenger path built around mark-and-execute pressure, pursuit tools, and punishing single-target focus.',
       fantasy: 'Vengeance is for players who want to hunt priority threats, force duels, and finish key enemies before they recover.',
     },
+    'fiend-patron': {
+      tags: ['Infernal Aggression', 'Temp HP Snowball', 'Punishing Finisher'],
+      chooserSummary: 'Fiend warlocks convert kills into survivability, push infernal damage pressure, and end fights with brutal punishment tools.',
+      fantasy: 'Pick The Fiend if you want your warlock to feel relentless: snowball temporary hit points, adapt resistances, and slam priority targets with nightmare-level punishment.',
+    },
+    'archfey-patron': {
+      tags: ['Glamour Control', 'Reactive Escape', 'Fey Mobility'],
+      chooserSummary: 'Archfey warlocks lean on charm/fear pressure, slippery reaction escapes, and psychological control over battlefield flow.',
+      fantasy: 'Pick The Archfey if you want a tricky controller: disrupt minds, vanish when threatened, and win fights through slippery repositioning and social menace.',
+    },
+    'great-old-one-patron': {
+      tags: ['Telepathy', 'Psychic Weirdness', 'Reality-Bending Defense'],
+      chooserSummary: 'Great Old One warlocks specialize in telepathic influence, unsettling psychic pressure, and strange defensive manipulation.',
+      fantasy: 'Pick The Great Old One if you want your warlock to feel alien and invasive: silent communication, warped defense timing, and eerie mind-control identity.',
+    },
   };
 
   function subclassProfile(entry) {

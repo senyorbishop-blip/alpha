@@ -183,7 +183,9 @@
       "classMechanics": {
         "cantripsKnown": 2,
         "spellsKnown": 2,
-        "invocationsKnown": 0
+        "invocationsKnown": 0,
+        "pactSlots": 1,
+        "pactSlotLevel": 1
       },
       "unlockIds": [
         "warlock-eldritch-patron-subclass",
@@ -201,7 +203,9 @@
       "classMechanics": {
         "cantripsKnown": 2,
         "spellsKnown": 2,
-        "invocationsKnown": 1
+        "invocationsKnown": 1,
+        "pactSlots": 2,
+        "pactSlotLevel": 1
       },
       "unlockIds": [
         "warlock-eldritch-invocations-2",
@@ -218,11 +222,14 @@
       "classMechanics": {
         "cantripsKnown": 2,
         "spellsKnown": 3,
-        "invocationsKnown": 2
+        "invocationsKnown": 2,
+        "pactSlots": 2,
+        "pactSlotLevel": 2
       },
       "unlockIds": [
         "warlock-pact-boon",
-        "warlock-mystic-arcanum-6th"
+        "warlock-mystic-arcanum-6th",
+        "warlock-eldritch-invocation-choice-l3"
       ]
     },
     {
@@ -236,10 +243,12 @@
       "classMechanics": {
         "cantripsKnown": 3,
         "spellsKnown": 4,
-        "invocationsKnown": 2
+        "invocationsKnown": 2,
+        "pactSlots": 2,
+        "pactSlotLevel": 2
       },
       "unlockIds": [
-        "warlock-l4-1",
+        "warlock-asi-or-feat",
         "warlock-cantrips-known-3"
       ]
     },
@@ -252,10 +261,13 @@
       "classMechanics": {
         "cantripsKnown": 3,
         "spellsKnown": 4,
-        "invocationsKnown": 3
+        "invocationsKnown": 3,
+        "pactSlots": 2,
+        "pactSlotLevel": 3
       },
       "unlockIds": [
-        "warlock-pact-slot-level-3"
+        "warlock-pact-slot-level-3",
+        "warlock-eldritch-invocation-choice-l5"
       ]
     },
     {
@@ -267,10 +279,12 @@
       "classMechanics": {
         "cantripsKnown": 3,
         "spellsKnown": 5,
-        "invocationsKnown": 3
+        "invocationsKnown": 3,
+        "pactSlots": 2,
+        "pactSlotLevel": 3
       },
       "unlockIds": [
-        "warlock-l6-1"
+        "warlock-patron-feature-6"
       ]
     },
     {
@@ -282,10 +296,13 @@
       "classMechanics": {
         "cantripsKnown": 3,
         "spellsKnown": 6,
-        "invocationsKnown": 4
+        "invocationsKnown": 4,
+        "pactSlots": 2,
+        "pactSlotLevel": 4
       },
       "unlockIds": [
-        "warlock-l7-1"
+        "warlock-mystic-arcanum-7th",
+        "warlock-eldritch-invocation-choice-l7"
       ]
     },
     {
@@ -298,10 +315,12 @@
       "classMechanics": {
         "cantripsKnown": 3,
         "spellsKnown": 6,
-        "invocationsKnown": 4
+        "invocationsKnown": 4,
+        "pactSlots": 2,
+        "pactSlotLevel": 4
       },
       "unlockIds": [
-        "warlock-l8-1"
+        "warlock-asi-or-feat"
       ]
     },
     {
@@ -314,11 +333,14 @@
       "classMechanics": {
         "cantripsKnown": 3,
         "spellsKnown": 7,
-        "invocationsKnown": 5
+        "invocationsKnown": 5,
+        "pactSlots": 2,
+        "pactSlotLevel": 5
       },
       "unlockIds": [
-        "warlock-l9-1",
-        "warlock-l9-2"
+        "warlock-mystic-arcanum-8th",
+        "warlock-pact-slot-level-5",
+        "warlock-eldritch-invocation-choice-l9"
       ]
     },
     {
@@ -331,11 +353,13 @@
       "classMechanics": {
         "cantripsKnown": 4,
         "spellsKnown": 8,
-        "invocationsKnown": 5
+        "invocationsKnown": 5,
+        "pactSlots": 2,
+        "pactSlotLevel": 5
       },
       "unlockIds": [
-        "warlock-l10-1",
-        "warlock-l10-2"
+        "warlock-patron-feature-10",
+        "warlock-cantrips-known-4"
       ]
     },
     {
@@ -347,10 +371,13 @@
       "classMechanics": {
         "cantripsKnown": 4,
         "spellsKnown": 8,
-        "invocationsKnown": 6
+        "invocationsKnown": 6,
+        "pactSlots": 3,
+        "pactSlotLevel": 5
       },
       "unlockIds": [
-        "warlock-l11-1"
+        "warlock-mystic-arcanum-9th",
+        "warlock-eldritch-invocation-choice-l11"
       ]
     },
     {
@@ -363,10 +390,12 @@
       "classMechanics": {
         "cantripsKnown": 4,
         "spellsKnown": 9,
-        "invocationsKnown": 6
+        "invocationsKnown": 6,
+        "pactSlots": 3,
+        "pactSlotLevel": 5
       },
       "unlockIds": [
-        "warlock-l12-1"
+        "warlock-asi-or-feat"
       ]
     },
     {
@@ -378,10 +407,13 @@
       "classMechanics": {
         "cantripsKnown": 4,
         "spellsKnown": 10,
-        "invocationsKnown": 7
+        "invocationsKnown": 7,
+        "pactSlots": 3,
+        "pactSlotLevel": 5
       },
       "unlockIds": [
-        "warlock-l13-1"
+        "warlock-mystic-arcanum-improvement",
+        "warlock-eldritch-invocation-choice-l13"
       ]
     },
     {
@@ -393,10 +425,12 @@
       "classMechanics": {
         "cantripsKnown": 4,
         "spellsKnown": 10,
-        "invocationsKnown": 7
+        "invocationsKnown": 7,
+        "pactSlots": 3,
+        "pactSlotLevel": 5
       },
       "unlockIds": [
-        "warlock-l14-1"
+        "warlock-patron-feature-14"
       ]
     },
     {
@@ -408,10 +442,13 @@
       "classMechanics": {
         "cantripsKnown": 4,
         "spellsKnown": 11,
-        "invocationsKnown": 8
+        "invocationsKnown": 8,
+        "pactSlots": 3,
+        "pactSlotLevel": 5
       },
       "unlockIds": [
-        "warlock-l15-1"
+        "warlock-mystic-arcanum-improvement",
+        "warlock-eldritch-invocation-choice-l15"
       ]
     },
     {
@@ -424,10 +461,12 @@
       "classMechanics": {
         "cantripsKnown": 4,
         "spellsKnown": 12,
-        "invocationsKnown": 8
+        "invocationsKnown": 8,
+        "pactSlots": 3,
+        "pactSlotLevel": 5
       },
       "unlockIds": [
-        "warlock-l16-1"
+        "warlock-asi-or-feat"
       ]
     },
     {
@@ -439,10 +478,13 @@
       "classMechanics": {
         "cantripsKnown": 4,
         "spellsKnown": 12,
-        "invocationsKnown": 9
+        "invocationsKnown": 9,
+        "pactSlots": 4,
+        "pactSlotLevel": 5
       },
       "unlockIds": [
-        "warlock-l17-1"
+        "warlock-pact-slots-4",
+        "warlock-eldritch-invocation-choice-l17"
       ]
     },
     {
@@ -454,10 +496,12 @@
       "classMechanics": {
         "cantripsKnown": 4,
         "spellsKnown": 13,
-        "invocationsKnown": 9
+        "invocationsKnown": 9,
+        "pactSlots": 4,
+        "pactSlotLevel": 5
       },
       "unlockIds": [
-        "warlock-l18-1"
+        "warlock-patron-feature-18"
       ]
     },
     {
@@ -470,10 +514,13 @@
       "classMechanics": {
         "cantripsKnown": 4,
         "spellsKnown": 14,
-        "invocationsKnown": 10
+        "invocationsKnown": 10,
+        "pactSlots": 4,
+        "pactSlotLevel": 5
       },
       "unlockIds": [
-        "warlock-l19-1"
+        "warlock-epic-boon",
+        "warlock-eldritch-invocation-choice-l19"
       ]
     },
     {
@@ -485,7 +532,9 @@
       "classMechanics": {
         "cantripsKnown": 4,
         "spellsKnown": 15,
-        "invocationsKnown": 10
+        "invocationsKnown": 10,
+        "pactSlots": 4,
+        "pactSlotLevel": 5
       },
       "unlockIds": [
         "warlock-eldritch-master"
@@ -530,6 +579,33 @@
         "build",
         "customization",
         "pact"
+      ],
+      "choices": [
+        {
+          "id": "agonizing-blast",
+          "name": "Agonizing Blast",
+          "description": "Add Charisma to Eldritch Blast damage to sharpen your at-will pressure."
+        },
+        {
+          "id": "repelling-blast",
+          "name": "Repelling Blast",
+          "description": "Push targets with Eldritch Blast to create forced movement and control."
+        },
+        {
+          "id": "eldritch-spear",
+          "name": "Eldritch Spear",
+          "description": "Extend Eldritch Blast range for safer long-lane pressure."
+        },
+        {
+          "id": "devils-sight",
+          "name": "Devil's Sight",
+          "description": "See through darkness, including magical darkness, for tactical advantage."
+        },
+        {
+          "id": "mask-of-many-faces",
+          "name": "Mask of Many Faces",
+          "description": "Gain at-will disguise utility for social and infiltration play."
+        }
       ]
     },
     "warlock-magical-cunning": {
@@ -548,6 +624,23 @@
         "build",
         "identity",
         "pact"
+      ],
+      "choices": [
+        {
+          "id": "pact-of-the-blade",
+          "name": "Pact of the Blade",
+          "description": "Lean into weapon pressure and melee invocations like Thirsting Blade."
+        },
+        {
+          "id": "pact-of-the-tome",
+          "name": "Pact of the Tome",
+          "description": "Expand cantrip and ritual-like utility through a broader magical toolkit."
+        },
+        {
+          "id": "pact-of-the-chain",
+          "name": "Pact of the Chain",
+          "description": "Gain a stronger familiar identity for scouting, utility, and setup."
+        }
       ]
     },
     "warlock-mystic-arcanum-6th": {
@@ -557,6 +650,23 @@
         "spellcasting",
         "boon",
         "high-magic"
+      ],
+      "choices": [
+        {
+          "id": "mass-suggestion-arcanum",
+          "name": "Mass Suggestion Arcanum",
+          "description": "Take social-control dominance for large encounters and intrigue scenes."
+        },
+        {
+          "id": "circle-of-death-arcanum",
+          "name": "Circle of Death Arcanum",
+          "description": "Take heavy area damage pressure for packed enemy formations."
+        },
+        {
+          "id": "true-seeing-arcanum",
+          "name": "True Seeing Arcanum",
+          "description": "Take high-value perception and anti-deception utility."
+        }
       ]
     },
     "warlock-cantrips-known-3": {
@@ -603,6 +713,487 @@
         "resource",
         "pact"
       ]
+    },
+    "warlock-asi-or-feat": {
+      "summary": "Sharpen your core stats or claim a feat that reinforces your pact identity.",
+      "description": "Warlock ASI levels are where you lock in your long-term game plan: stronger Charisma pressure, tougher concentration, or a feat that supports your pact rhythm.",
+      "tags": [
+        "progression",
+        "build"
+      ]
+    },
+    "warlock-patron-feature-6": {
+      "summary": "Your patron grants a level 6 signature escalation.",
+      "description": "At level 6, your subclass adds a concrete new pressure tool that should feel different for Fiend, Archfey, and Great Old One warlocks.",
+      "tags": [
+        "subclass",
+        "identity"
+      ]
+    },
+    "warlock-patron-feature-10": {
+      "summary": "Your patron package deepens with another major subclass feature.",
+      "description": "At level 10, your patron identity should become easier to feel in live play through stronger survivability, control, or psychic weirdness depending on your subclass.",
+      "tags": [
+        "subclass",
+        "identity"
+      ]
+    },
+    "warlock-patron-feature-14": {
+      "summary": "Your patron grants a high-impact signature capstone move.",
+      "description": "At level 14, subclass identity should feel unmistakable: nightmare punishment, fey mind-prisons, or long-term enthrallment.",
+      "tags": [
+        "subclass",
+        "capstone"
+      ]
+    },
+    "warlock-patron-feature-18": {
+      "summary": "Your patron path reaches its final expression with endgame reliability.",
+      "description": "This level cements your patron role in late-campaign play and should remain visible in both feature and action surfaces.",
+      "tags": [
+        "subclass",
+        "capstone"
+      ]
+    },
+    "warlock-mystic-arcanum-7th": {
+      "summary": "Gain a 7th-level Mystic Arcanum, separate from your pact-slot pool.",
+      "description": "This Arcanum is premium magic outside ordinary pact slots. Keep it mentally separate from short-rest pact-slot budgeting.",
+      "tags": [
+        "spellcasting",
+        "arcanum"
+      ],
+      "choices": [
+        {
+          "id": "forcecage-arcanum",
+          "name": "Forcecage Arcanum",
+          "description": "Lock key enemies out of the fight with no concentration drop from your pact slot economy."
+        },
+        {
+          "id": "plane-shift-arcanum",
+          "name": "Plane Shift Arcanum",
+          "description": "Use high-tier banishment and travel utility without spending pact slots."
+        },
+        {
+          "id": "finger-of-death-arcanum",
+          "name": "Finger of Death Arcanum",
+          "description": "Pick a lethal single-target finisher for boss pressure."
+        }
+      ]
+    },
+    "warlock-mystic-arcanum-8th": {
+      "summary": "Gain an 8th-level Mystic Arcanum as a separate high-tier cast lane.",
+      "description": "Mystic Arcanum remains distinct from pact slots: this is premium top-end magic, not part of your short-rest slot loop.",
+      "tags": [
+        "spellcasting",
+        "arcanum"
+      ],
+      "choices": [
+        {
+          "id": "power-word-stun-arcanum",
+          "name": "Power Word Stun Arcanum",
+          "description": "Take a control-first arcanum that creates hard momentum swings."
+        },
+        {
+          "id": "demiplane-arcanum",
+          "name": "Demiplane Arcanum",
+          "description": "Add utility and containment options for campaign-scale problems."
+        },
+        {
+          "id": "feeblemind-arcanum",
+          "name": "Feeblemind Arcanum",
+          "description": "Pick devastating anti-caster mind-break pressure."
+        }
+      ]
+    },
+    "warlock-mystic-arcanum-9th": {
+      "summary": "Gain a 9th-level Mystic Arcanum, your highest non-slot magical expression.",
+      "description": "This is your top-end arcanum lane and should be treated separately from pact slots in both planning and sheet clarity.",
+      "tags": [
+        "spellcasting",
+        "arcanum"
+      ],
+      "choices": [
+        {
+          "id": "foresight-arcanum",
+          "name": "Foresight Arcanum",
+          "description": "Choose elite all-day reliability for yourself or a key ally."
+        },
+        {
+          "id": "true-polymorph-arcanum",
+          "name": "True Polymorph Arcanum",
+          "description": "Choose a reality-warping transformation tool for major scenes."
+        },
+        {
+          "id": "psychic-scream-arcanum",
+          "name": "Psychic Scream Arcanum",
+          "description": "Choose battlefield-wide psychic devastation and disruption."
+        }
+      ]
+    },
+    "warlock-mystic-arcanum-improvement": {
+      "summary": "One of your Mystic Arcanum options improves in reliability or impact.",
+      "description": "Arcanum improvements are meaningful power jumps and should change how you plan major encounters around your premium spells.",
+      "tags": [
+        "spellcasting",
+        "upgrade",
+        "arcanum"
+      ]
+    },
+    "warlock-cantrips-known-4": {
+      "summary": "Your at-will package expands to four cantrips.",
+      "description": "Warlocks live on at-will pressure between pact-slot spikes, so this expansion should immediately feel useful in live combat loops.",
+      "tags": [
+        "cantrip",
+        "spellcasting"
+      ]
+    },
+    "warlock-pact-slot-level-5": {
+      "summary": "All pact slots now cast at level 5, maximizing each slot spend.",
+      "description": "Because every pact slot casts at the same highest tier, this jump significantly boosts every slot spell you cast.",
+      "tags": [
+        "pact",
+        "spellcasting",
+        "upgrade"
+      ]
+    },
+    "warlock-pact-slots-4": {
+      "summary": "You now hold four pact slots between short rests.",
+      "description": "This increases your short-rest casting endurance while preserving the warlock identity of few but high-impact slots.",
+      "tags": [
+        "pact",
+        "resource"
+      ]
+    },
+    "warlock-epic-boon": {
+      "summary": "Claim an epic boon to capstone your warlock progression.",
+      "description": "Epic boons represent late-game specialization and should reinforce your patron and invocation identity rather than dilute it.",
+      "tags": [
+        "epic",
+        "build"
+      ]
+    },
+    "warlock-eldritch-invocation-choice-l3": {
+      "summary": "Choose one additional Eldritch Invocation at level 3.",
+      "description": "Each additional invocation should reinforce a clear warlock plan: blast pressure, pact utility, survivability, or battlefield control.",
+      "tags": [
+        "customization",
+        "invocation",
+        "warlock"
+      ],
+      "choices": [
+        {
+          "id": "agonizing-blast",
+          "name": "Agonizing Blast",
+          "description": "Boost Eldritch Blast damage with Charisma."
+        },
+        {
+          "id": "repelling-blast",
+          "name": "Repelling Blast",
+          "description": "Add push control to Eldritch Blast hits."
+        },
+        {
+          "id": "eldritch-spear",
+          "name": "Eldritch Spear",
+          "description": "Increase Eldritch Blast range."
+        },
+        {
+          "id": "thirsting-blade",
+          "name": "Thirsting Blade",
+          "description": "Blade boon synergy: pressure with additional weapon attacks."
+        },
+        {
+          "id": "lifedrinker",
+          "name": "Lifedrinker",
+          "description": "High-level blade boon finisher for weapon attacks."
+        }
+      ]
+    },
+    "warlock-eldritch-invocation-choice-l5": {
+      "summary": "Choose one additional Eldritch Invocation at level 5.",
+      "description": "Each additional invocation should reinforce a clear warlock plan: blast pressure, pact utility, survivability, or battlefield control.",
+      "tags": [
+        "customization",
+        "invocation",
+        "warlock"
+      ],
+      "choices": [
+        {
+          "id": "agonizing-blast",
+          "name": "Agonizing Blast",
+          "description": "Boost Eldritch Blast damage with Charisma."
+        },
+        {
+          "id": "repelling-blast",
+          "name": "Repelling Blast",
+          "description": "Add push control to Eldritch Blast hits."
+        },
+        {
+          "id": "eldritch-spear",
+          "name": "Eldritch Spear",
+          "description": "Increase Eldritch Blast range."
+        },
+        {
+          "id": "thirsting-blade",
+          "name": "Thirsting Blade",
+          "description": "Blade boon synergy: pressure with additional weapon attacks."
+        },
+        {
+          "id": "lifedrinker",
+          "name": "Lifedrinker",
+          "description": "High-level blade boon finisher for weapon attacks."
+        }
+      ]
+    },
+    "warlock-eldritch-invocation-choice-l7": {
+      "summary": "Choose one additional Eldritch Invocation at level 7.",
+      "description": "Each additional invocation should reinforce a clear warlock plan: blast pressure, pact utility, survivability, or battlefield control.",
+      "tags": [
+        "customization",
+        "invocation",
+        "warlock"
+      ],
+      "choices": [
+        {
+          "id": "agonizing-blast",
+          "name": "Agonizing Blast",
+          "description": "Boost Eldritch Blast damage with Charisma."
+        },
+        {
+          "id": "repelling-blast",
+          "name": "Repelling Blast",
+          "description": "Add push control to Eldritch Blast hits."
+        },
+        {
+          "id": "eldritch-spear",
+          "name": "Eldritch Spear",
+          "description": "Increase Eldritch Blast range."
+        },
+        {
+          "id": "thirsting-blade",
+          "name": "Thirsting Blade",
+          "description": "Blade boon synergy: pressure with additional weapon attacks."
+        },
+        {
+          "id": "lifedrinker",
+          "name": "Lifedrinker",
+          "description": "High-level blade boon finisher for weapon attacks."
+        }
+      ]
+    },
+    "warlock-eldritch-invocation-choice-l9": {
+      "summary": "Choose one additional Eldritch Invocation at level 9.",
+      "description": "Each additional invocation should reinforce a clear warlock plan: blast pressure, pact utility, survivability, or battlefield control.",
+      "tags": [
+        "customization",
+        "invocation",
+        "warlock"
+      ],
+      "choices": [
+        {
+          "id": "agonizing-blast",
+          "name": "Agonizing Blast",
+          "description": "Boost Eldritch Blast damage with Charisma."
+        },
+        {
+          "id": "repelling-blast",
+          "name": "Repelling Blast",
+          "description": "Add push control to Eldritch Blast hits."
+        },
+        {
+          "id": "eldritch-spear",
+          "name": "Eldritch Spear",
+          "description": "Increase Eldritch Blast range."
+        },
+        {
+          "id": "thirsting-blade",
+          "name": "Thirsting Blade",
+          "description": "Blade boon synergy: pressure with additional weapon attacks."
+        },
+        {
+          "id": "lifedrinker",
+          "name": "Lifedrinker",
+          "description": "High-level blade boon finisher for weapon attacks."
+        }
+      ]
+    },
+    "warlock-eldritch-invocation-choice-l11": {
+      "summary": "Choose one additional Eldritch Invocation at level 11.",
+      "description": "Each additional invocation should reinforce a clear warlock plan: blast pressure, pact utility, survivability, or battlefield control.",
+      "tags": [
+        "customization",
+        "invocation",
+        "warlock"
+      ],
+      "choices": [
+        {
+          "id": "agonizing-blast",
+          "name": "Agonizing Blast",
+          "description": "Boost Eldritch Blast damage with Charisma."
+        },
+        {
+          "id": "repelling-blast",
+          "name": "Repelling Blast",
+          "description": "Add push control to Eldritch Blast hits."
+        },
+        {
+          "id": "eldritch-spear",
+          "name": "Eldritch Spear",
+          "description": "Increase Eldritch Blast range."
+        },
+        {
+          "id": "thirsting-blade",
+          "name": "Thirsting Blade",
+          "description": "Blade boon synergy: pressure with additional weapon attacks."
+        },
+        {
+          "id": "lifedrinker",
+          "name": "Lifedrinker",
+          "description": "High-level blade boon finisher for weapon attacks."
+        }
+      ]
+    },
+    "warlock-eldritch-invocation-choice-l13": {
+      "summary": "Choose one additional Eldritch Invocation at level 13.",
+      "description": "Each additional invocation should reinforce a clear warlock plan: blast pressure, pact utility, survivability, or battlefield control.",
+      "tags": [
+        "customization",
+        "invocation",
+        "warlock"
+      ],
+      "choices": [
+        {
+          "id": "agonizing-blast",
+          "name": "Agonizing Blast",
+          "description": "Boost Eldritch Blast damage with Charisma."
+        },
+        {
+          "id": "repelling-blast",
+          "name": "Repelling Blast",
+          "description": "Add push control to Eldritch Blast hits."
+        },
+        {
+          "id": "eldritch-spear",
+          "name": "Eldritch Spear",
+          "description": "Increase Eldritch Blast range."
+        },
+        {
+          "id": "thirsting-blade",
+          "name": "Thirsting Blade",
+          "description": "Blade boon synergy: pressure with additional weapon attacks."
+        },
+        {
+          "id": "lifedrinker",
+          "name": "Lifedrinker",
+          "description": "High-level blade boon finisher for weapon attacks."
+        }
+      ]
+    },
+    "warlock-eldritch-invocation-choice-l15": {
+      "summary": "Choose one additional Eldritch Invocation at level 15.",
+      "description": "Each additional invocation should reinforce a clear warlock plan: blast pressure, pact utility, survivability, or battlefield control.",
+      "tags": [
+        "customization",
+        "invocation",
+        "warlock"
+      ],
+      "choices": [
+        {
+          "id": "agonizing-blast",
+          "name": "Agonizing Blast",
+          "description": "Boost Eldritch Blast damage with Charisma."
+        },
+        {
+          "id": "repelling-blast",
+          "name": "Repelling Blast",
+          "description": "Add push control to Eldritch Blast hits."
+        },
+        {
+          "id": "eldritch-spear",
+          "name": "Eldritch Spear",
+          "description": "Increase Eldritch Blast range."
+        },
+        {
+          "id": "thirsting-blade",
+          "name": "Thirsting Blade",
+          "description": "Blade boon synergy: pressure with additional weapon attacks."
+        },
+        {
+          "id": "lifedrinker",
+          "name": "Lifedrinker",
+          "description": "High-level blade boon finisher for weapon attacks."
+        }
+      ]
+    },
+    "warlock-eldritch-invocation-choice-l17": {
+      "summary": "Choose one additional Eldritch Invocation at level 17.",
+      "description": "Each additional invocation should reinforce a clear warlock plan: blast pressure, pact utility, survivability, or battlefield control.",
+      "tags": [
+        "customization",
+        "invocation",
+        "warlock"
+      ],
+      "choices": [
+        {
+          "id": "agonizing-blast",
+          "name": "Agonizing Blast",
+          "description": "Boost Eldritch Blast damage with Charisma."
+        },
+        {
+          "id": "repelling-blast",
+          "name": "Repelling Blast",
+          "description": "Add push control to Eldritch Blast hits."
+        },
+        {
+          "id": "eldritch-spear",
+          "name": "Eldritch Spear",
+          "description": "Increase Eldritch Blast range."
+        },
+        {
+          "id": "thirsting-blade",
+          "name": "Thirsting Blade",
+          "description": "Blade boon synergy: pressure with additional weapon attacks."
+        },
+        {
+          "id": "lifedrinker",
+          "name": "Lifedrinker",
+          "description": "High-level blade boon finisher for weapon attacks."
+        }
+      ]
+    },
+    "warlock-eldritch-invocation-choice-l19": {
+      "summary": "Choose one additional Eldritch Invocation at level 19.",
+      "description": "Each additional invocation should reinforce a clear warlock plan: blast pressure, pact utility, survivability, or battlefield control.",
+      "tags": [
+        "customization",
+        "invocation",
+        "warlock"
+      ],
+      "choices": [
+        {
+          "id": "agonizing-blast",
+          "name": "Agonizing Blast",
+          "description": "Boost Eldritch Blast damage with Charisma."
+        },
+        {
+          "id": "repelling-blast",
+          "name": "Repelling Blast",
+          "description": "Add push control to Eldritch Blast hits."
+        },
+        {
+          "id": "eldritch-spear",
+          "name": "Eldritch Spear",
+          "description": "Increase Eldritch Blast range."
+        },
+        {
+          "id": "thirsting-blade",
+          "name": "Thirsting Blade",
+          "description": "Blade boon synergy: pressure with additional weapon attacks."
+        },
+        {
+          "id": "lifedrinker",
+          "name": "Lifedrinker",
+          "description": "High-level blade boon finisher for weapon attacks."
+        }
+      ]
     }
   },
   "levelUnlockIds": {
@@ -617,58 +1208,67 @@
     ],
     "3": [
       "warlock-pact-boon",
-      "warlock-mystic-arcanum-6th"
+      "warlock-mystic-arcanum-6th",
+      "warlock-eldritch-invocation-choice-l3"
     ],
     "4": [
-      "warlock-l4-1",
+      "warlock-asi-or-feat",
       "warlock-cantrips-known-3"
     ],
     "5": [
-      "warlock-pact-slot-level-3"
+      "warlock-pact-slot-level-3",
+      "warlock-eldritch-invocation-choice-l5"
     ],
     "6": [
-      "warlock-l6-1"
+      "warlock-patron-feature-6"
     ],
     "7": [
-      "warlock-l7-1"
+      "warlock-mystic-arcanum-7th",
+      "warlock-eldritch-invocation-choice-l7"
     ],
     "8": [
-      "warlock-l8-1"
+      "warlock-asi-or-feat"
     ],
     "9": [
-      "warlock-l9-1",
-      "warlock-l9-2"
+      "warlock-mystic-arcanum-8th",
+      "warlock-pact-slot-level-5",
+      "warlock-eldritch-invocation-choice-l9"
     ],
     "10": [
-      "warlock-l10-1",
-      "warlock-l10-2"
+      "warlock-patron-feature-10",
+      "warlock-cantrips-known-4"
     ],
     "11": [
-      "warlock-l11-1"
+      "warlock-mystic-arcanum-9th",
+      "warlock-eldritch-invocation-choice-l11"
     ],
     "12": [
-      "warlock-l12-1"
+      "warlock-asi-or-feat"
     ],
     "13": [
-      "warlock-l13-1"
+      "warlock-mystic-arcanum-improvement",
+      "warlock-eldritch-invocation-choice-l13"
     ],
     "14": [
-      "warlock-l14-1"
+      "warlock-patron-feature-14"
     ],
     "15": [
-      "warlock-l15-1"
+      "warlock-mystic-arcanum-improvement",
+      "warlock-eldritch-invocation-choice-l15"
     ],
     "16": [
-      "warlock-l16-1"
+      "warlock-asi-or-feat"
     ],
     "17": [
-      "warlock-l17-1"
+      "warlock-pact-slots-4",
+      "warlock-eldritch-invocation-choice-l17"
     ],
     "18": [
-      "warlock-l18-1"
+      "warlock-patron-feature-18"
     ],
     "19": [
-      "warlock-l19-1"
+      "warlock-epic-boon",
+      "warlock-eldritch-invocation-choice-l19"
     ],
     "20": [
       "warlock-eldritch-master"
@@ -697,14 +1297,15 @@
       "summary": "Pact Boon, Mystic Arcanum (6th).",
       "unlockIds": [
         "warlock-pact-boon",
-        "warlock-mystic-arcanum-6th"
+        "warlock-mystic-arcanum-6th",
+        "warlock-eldritch-invocation-choice-l3"
       ]
     },
     {
       "level": 4,
       "summary": "Ability Score Improvement, Cantrips Known: 3.",
       "unlockIds": [
-        "warlock-l4-1",
+        "warlock-asi-or-feat",
         "warlock-cantrips-known-3"
       ]
     },
@@ -712,107 +1313,115 @@
       "level": 5,
       "summary": "Pact Slot Level 3.",
       "unlockIds": [
-        "warlock-pact-slot-level-3"
+        "warlock-pact-slot-level-3",
+        "warlock-eldritch-invocation-choice-l5"
       ]
     },
     {
       "level": 6,
       "summary": "Subclass Feature.",
       "unlockIds": [
-        "warlock-l6-1"
+        "warlock-patron-feature-6"
       ]
     },
     {
       "level": 7,
       "summary": "Mystic Arcanum (7th).",
       "unlockIds": [
-        "warlock-l7-1"
+        "warlock-mystic-arcanum-7th",
+        "warlock-eldritch-invocation-choice-l7"
       ]
     },
     {
       "level": 8,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "warlock-l8-1"
+        "warlock-asi-or-feat"
       ]
     },
     {
       "level": 9,
       "summary": "Mystic Arcanum (8th), Pact Slot Level 5.",
       "unlockIds": [
-        "warlock-l9-1",
-        "warlock-l9-2"
+        "warlock-mystic-arcanum-8th",
+        "warlock-pact-slot-level-5",
+        "warlock-eldritch-invocation-choice-l9"
       ]
     },
     {
       "level": 10,
       "summary": "Subclass Feature, Cantrips Known: 4.",
       "unlockIds": [
-        "warlock-l10-1",
-        "warlock-l10-2"
+        "warlock-patron-feature-10",
+        "warlock-cantrips-known-4"
       ]
     },
     {
       "level": 11,
       "summary": "Mystic Arcanum (9th).",
       "unlockIds": [
-        "warlock-l11-1"
+        "warlock-mystic-arcanum-9th",
+        "warlock-eldritch-invocation-choice-l11"
       ]
     },
     {
       "level": 12,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "warlock-l12-1"
+        "warlock-asi-or-feat"
       ]
     },
     {
       "level": 13,
       "summary": "Mystic Arcanum Improvement.",
       "unlockIds": [
-        "warlock-l13-1"
+        "warlock-mystic-arcanum-improvement",
+        "warlock-eldritch-invocation-choice-l13"
       ]
     },
     {
       "level": 14,
       "summary": "Subclass Feature.",
       "unlockIds": [
-        "warlock-l14-1"
+        "warlock-patron-feature-14"
       ]
     },
     {
       "level": 15,
       "summary": "Mystic Arcanum Improvement.",
       "unlockIds": [
-        "warlock-l15-1"
+        "warlock-mystic-arcanum-improvement",
+        "warlock-eldritch-invocation-choice-l15"
       ]
     },
     {
       "level": 16,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "warlock-l16-1"
+        "warlock-asi-or-feat"
       ]
     },
     {
       "level": 17,
       "summary": "Pact Slots: 4.",
       "unlockIds": [
-        "warlock-l17-1"
+        "warlock-pact-slots-4",
+        "warlock-eldritch-invocation-choice-l17"
       ]
     },
     {
       "level": 18,
       "summary": "Subclass Feature.",
       "unlockIds": [
-        "warlock-l18-1"
+        "warlock-patron-feature-18"
       ]
     },
     {
       "level": 19,
       "summary": "Epic Boon.",
       "unlockIds": [
-        "warlock-l19-1"
+        "warlock-epic-boon",
+        "warlock-eldritch-invocation-choice-l19"
       ]
     },
     {

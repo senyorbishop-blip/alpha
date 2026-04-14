@@ -333,6 +333,7 @@ RESOURCE_FIELD_BLUEPRINTS: dict[str, dict[str, Any]] = {
     "indomitableUses": {"id": "indomitable", "name": "Indomitable", "section": "Class Features", "type": "special", "trackUses": True},
     "layOnHandsPool": {"id": "lay_on_hands", "name": "Lay on Hands", "section": "Actions", "type": "action", "trackUses": True},
     "sorceryPoints": {"id": "sorcery_points", "name": "Sorcery Points", "section": "Class Features", "type": "passive", "trackUses": True},
+    "pactSlots": {"id": "pact_slots", "name": "Pact Slots", "section": "Class Features", "type": "passive", "trackUses": True},
 }
 
 
@@ -566,6 +567,23 @@ def _resource_summary_from_mechanics(class_mechanics: dict[str, Any], *, ability
                 'type': str(blueprint.get('type') or 'passive'),
                 'section': str(blueprint.get('section') or 'Class Features'),
                 'trackUses': bool(blueprint.get('trackUses')),
+            }
+        )
+    pact_slots = _safe_int(class_mechanics.get('pactSlots'), 0, minimum=0)
+    pact_slot_level = _safe_int(class_mechanics.get('pactSlotLevel'), 0, minimum=0)
+    if pact_slots > 0:
+        resources = [row for row in resources if str(row.get('id') or '') != 'pact_slots']
+        resources.append(
+            {
+                'id': 'pact_slots',
+                'name': 'Pact Slots',
+                'current': pact_slots,
+                'max': pact_slots,
+                'summary': f'{pact_slots}/{pact_slots} • Slot Level {pact_slot_level or "?"}',
+                'recovery': 'Refreshes on a Short Rest. All pact slots cast at your highest pact slot level.',
+                'type': 'passive',
+                'section': 'Class Features',
+                'trackUses': True,
             }
         )
     return resources

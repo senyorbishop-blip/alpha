@@ -347,6 +347,11 @@ def resolve_character_runtime(document: Any) -> dict:
         class_spell_slots = (primary_catalog or {}).get("spellSlots", {}).get(str(primary_class_level), {})
         if not isinstance(class_spell_slots, dict):
             class_spell_slots = {}
+    pact_magic = (primary_catalog or {}).get("pactMagic") if isinstance((primary_catalog or {}).get("pactMagic"), dict) else {}
+    pact_slots_by_level = pact_magic.get("slotsPerLevel") if isinstance(pact_magic.get("slotsPerLevel"), dict) else {}
+    pact_slot_levels = pact_magic.get("slotLevel") if isinstance(pact_magic.get("slotLevel"), dict) else {}
+    pact_slot_count = _safe_int(pact_slots_by_level.get(str(primary_class_level)), 0, minimum=0)
+    pact_slot_level = _safe_int(pact_slot_levels.get(str(primary_class_level)), 0, minimum=0)
 
     spell_manifest = build_character_spell_manifest(normalized)
     runtime["spellAccess"] = {
@@ -360,6 +365,13 @@ def resolve_character_runtime(document: Any) -> dict:
         "limits": _clone(spell_manifest.get("limits") or {}),
         "validation": _clone(spell_manifest.get("validation") or {}),
         "cards": _clone(spell_manifest.get("cards") or []),
+        "pactMagic": {
+            "enabled": bool(pact_magic),
+            "slotCount": pact_slot_count,
+            "slotLevel": pact_slot_level,
+            "recoveryType": str(pact_magic.get("recoveryType") or "").strip(),
+            "note": str(pact_magic.get("note") or "").strip(),
+        },
     }
 
     runtime_feature_sets = []
@@ -411,6 +423,47 @@ def resolve_character_runtime(document: Any) -> dict:
     runtime["reactions"] = [item for payload in runtime_feature_sets for item in (payload.get("reactions") or [])]
     runtime["passives"] = [item for payload in runtime_feature_sets for item in (payload.get("passives") or [])]
     runtime["classFeatures"] = [item for payload in runtime_feature_sets for item in (payload.get("classFeatures") or [])]
+    selected_runtime_features = []
+    for class_row in runtime_classes:
+        if not isinstance(class_row, dict):
+            continue
+        class_name = str(class_row.get("name") or class_row.get("classId") or "Class").strip()
+        class_level = _safe_int(class_row.get("level"), 1, minimum=1)
+        for row in class_row.get("selectedFeatures") or []:
+            if not isinstance(row, dict):
+                continue
+            feature_id = str(row.get("id") or "").strip()
+            feature_name = str(row.get("displayName") or feature_id or "Feature Choice").strip()
+            selected_choice = row.get("selectedChoice")
+            selected_choice_id = str(selected_choice or "").strip()
+            selected_runtime_features.append(
+                {
+                    "id": feature_id or f"selected-{len(selected_runtime_features)+1}",
+                    "name": feature_name + (f" [{selected_choice_id}]" if selected_choice_id else ""),
+                    "section": "Class Features",
+                    "type": "passive",
+                    "className": class_name,
+                    "subclassName": str(class_row.get("subclassName") or "").strip(),
+                    "minLevel": class_level,
+                    "resourceName": "",
+                    "trackUses": False,
+                    "tags": ["selection", "build-choice"],
+                    "summary": str(row.get("description") or "").strip(),
+                    "description": str(row.get("description") or "").strip(),
+                    "range": "",
+                    "duration": "",
+                    "save": "",
+                    "trigger": "",
+                    "usage": "",
+                    "recovery": "",
+                    "effect": f"Selected option: {selected_choice_id}" if selected_choice_id else "",
+                    "isSubclass": False,
+                    "kind": "class",
+                    "source": "native-selected-feature",
+                }
+            )
+    if selected_runtime_features:
+        runtime["classFeatures"] = runtime["classFeatures"] + selected_runtime_features
     runtime["classMechanicsByClass"] = class_mechanics_by_class
     runtime["classMechanics"] = _clone(class_mechanics_by_class.get(primary_class_id) or {})
 

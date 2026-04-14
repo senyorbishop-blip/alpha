@@ -56,6 +56,11 @@
       copy: 'Rogue should read as a precision loop: set up one decisive hit each turn with Cunning Action / Steady Aim, then decide whether Sneak Attack goes to pure damage or Cunning Strike control.',
       checks: ['Sneak Attack dice visible', 'Setup tools visible (Cunning Action / Steady Aim)', 'Subclass tempo tools visible'],
     },
+    warlock: {
+      title: 'Warlock Combat Surface',
+      copy: 'Warlock should show a clear at-will + pact-slot rhythm: Eldritch Blast pressure, pact slot tracking, short-rest recovery, and patron identity tools all visible together.',
+      checks: ['Pact Slots + slot level visible', 'Eldritch Blast loop visible', 'Invocation / patron actions visible'],
+    },
   };
 
 
@@ -366,6 +371,27 @@
           { key: 'mage hand legerdemain', name: 'Mage Hand Legerdemain', summary: 'Run lock, trap, and theft interactions from range using invisible mage hand manipulation.', actionType: 'action', tags: ['Arcane Trickster', 'Utility'] },
           { key: 'versatile trickster', name: 'Versatile Trickster', summary: 'Use Mage Hand as a bonus-action distraction to set up advantaged weapon attacks.', actionType: 'bonus', tags: ['Arcane Trickster', 'Setup'] },
           { key: 'spell thief', name: 'Spell Thief', summary: 'When you resist a targeted spell, react to deny it and temporarily steal the magical edge.', actionType: 'reaction', tags: ['Arcane Trickster', 'Reaction'] },
+        ],
+      },
+    },
+    warlock: {
+      actions: [
+        { key: 'eldritch blast loop', name: 'Eldritch Blast Pressure', summary: 'Use Eldritch Blast as your default at-will pressure between pact-slot spikes.', actionType: 'action', resourceName: '', resourceSummary: 'At will cantrip pressure', range: '120 ft+', tags: ['Warlock', 'Signature'] },
+        { key: 'pact slot cast', name: 'Pact Slot Cast', summary: 'Spend one pact slot; every pact-slot spell is cast at your current pact slot level.', actionType: 'action', resourceName: 'Pact Slots', resourceSummary: 'Short-rest slot economy', range: 'Spell-dependent', tags: ['Warlock', 'Pact Magic'] },
+        { key: 'magical cunning', name: 'Magical Cunning', summary: 'Use your class recovery tool to stay relevant between short rests when the slot economy is tight.', actionType: 'special', resourceName: 'Pact Slots', resourceSummary: 'Recovery tempo', range: 'Self', tags: ['Warlock', 'Recovery'] },
+      ],
+      subclassActions: {
+        'fiend-patron': [
+          { key: 'dark ones blessing flow', name: 'Dark One’s Blessing Flow', summary: 'Track kill-trigger temporary hit points so infernal momentum stays visible in combat turns.', actionType: 'special', resourceName: 'Temp HP', tags: ['Fiend', 'Snowball'] },
+          { key: 'hurl through hell', name: 'Hurl Through Hell', summary: 'Land your capstone punishment trigger when a key target must be removed from tempo.', actionType: 'special', resourceName: 'Long Rest feature', tags: ['Fiend', 'Punishment'] },
+        ],
+        'archfey-patron': [
+          { key: 'fey presence', name: 'Fey Presence', summary: 'Burst charm/fear control to disrupt clustered enemies early in an exchange.', actionType: 'action', resourceName: 'Short Rest feature', tags: ['Archfey', 'Control'] },
+          { key: 'misty escape', name: 'Misty Escape', summary: 'React to damage with invisibility + teleport so the warlock remains slippery under focus fire.', actionType: 'reaction', resourceName: 'Long Rest feature', tags: ['Archfey', 'Escape'] },
+        ],
+        'great-old-one-patron': [
+          { key: 'awakened mind', name: 'Awakened Mind', summary: 'Use silent telepathy for scouting, coordination, and social pressure.', actionType: 'special', resourceName: '', tags: ['GOO', 'Telepathy'] },
+          { key: 'entropic ward', name: 'Entropic Ward', summary: 'Reaction defense that bends attack flow and creates your counter-pressure window.', actionType: 'reaction', resourceName: 'Short Rest feature', tags: ['GOO', 'Defense'] },
         ],
       },
     },
@@ -752,6 +778,13 @@
             : '',
         ].filter(Boolean).join(' • ')
       : '';
+    const warlockLine = _classKey(charData) === 'warlock'
+      ? [
+          classMechanics.pactSlots != null ? ('Pact slots: ' + classMechanics.pactSlots) : '',
+          classMechanics.pactSlotLevel != null ? ('Pact slot level: ' + classMechanics.pactSlotLevel) : '',
+          classMechanics.invocationsKnown != null ? ('Invocations known: ' + classMechanics.invocationsKnown) : '',
+        ].filter(Boolean).join(' • ')
+      : '';
     return `<div class="cs-combat-callout-grid">
       <div class="cs-combat-callout">
         <div class="cs-combat-callout-title">${_esc(guide.title)}</div>
@@ -759,6 +792,7 @@
         ${barbarianLine ? `<div class="cs-combat-callout-copy">${_esc(barbarianLine)}</div>` : ''}
         ${paladinLine ? `<div class="cs-combat-callout-copy">${_esc(paladinLine)}</div>` : ''}
         ${rogueLine ? `<div class="cs-combat-callout-copy">${_esc(rogueLine)}</div>` : ''}
+        ${warlockLine ? `<div class="cs-combat-callout-copy">${_esc(warlockLine)}</div>` : ''}
       </div>
       <div class="cs-combat-callout muted">
         <div class="cs-combat-callout-title">What should be visible</div>
