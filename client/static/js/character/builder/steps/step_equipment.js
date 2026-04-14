@@ -25,10 +25,20 @@
       const choices = Array.isArray(equipment.choices) ? equipment.choices : [];
 
       return [
+        '<div class="screen-header">',
+        '<div class="screen-title">Starting Equipment</div>',
+        '<div class="screen-divider"></div>',
+        '<div class="screen-subtitle">Record your starting gear and gold. Your DM may adjust this based on campaign context.</div>',
+        '</div>',
+
         '<div class="field"><label>Starting Equipment Pack</label>',
-        '<input type="text" data-builder-path="equipment.startingPack" value="' + escHtml(equipment.startingPack || '') + '" maxlength="120" placeholder="Explorer\'s Pack" /></div>',
-        '<div class="field"><label>Equipment Choices (comma-separated)</label>',
-        '<input type="text" data-builder-equipment-choices="1" value="' + escHtml(choices.join(', ')) + '" maxlength="420" placeholder="Longsword, Shield, Chain Shirt" /></div>',
+        '<input type="text" data-builder-path="equipment.startingPack" value="' + escHtml(equipment.startingPack || '') + '" maxlength="120" placeholder="Explorer\'s Pack, Dungeoneer\'s Pack\u2026" /></div>',
+
+        '<div class="field"><label>Additional Equipment <span class="cb-optional">comma-separated</span></label>',
+        '<input type="text" data-builder-equipment-choices="1" value="' + escHtml(choices.join(', ')) + '" maxlength="420" placeholder="Longsword, Shield, Chain Shirt\u2026" />',
+        '<div class="builder-help-text">List any weapons, armor, or items not covered by your pack.</div>',
+        '</div>',
+
         '<div class="field"><label>Starting Currency</label>',
         '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;">',
         ['cp', 'sp', 'ep', 'gp', 'pp'].map(function toCoin(coin) {
@@ -38,7 +48,6 @@
             + '</label>';
         }).join(''),
         '</div></div>',
-        '<div class="builder-help-text">Equipment and currency are mapped into canonical inventory fields and legacy charBook/charSheet compatibility exports.</div>',
       ].join('');
     },
     bind: function bindEquipmentStep(root, context) {

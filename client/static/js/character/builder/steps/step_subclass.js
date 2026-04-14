@@ -258,6 +258,130 @@
       chooserSummary: 'Great Old One warlocks specialize in telepathic influence, unsettling psychic pressure, and strange defensive manipulation.',
       fantasy: 'Pick The Great Old One if you want your warlock to feel alien and invasive: silent communication, warped defense timing, and eerie mind-control identity.',
     },
+
+    // ── Barbarian ────────────────────────────────────────────────────────
+    berserker: {
+      tags: ['Frenzied Rage', 'Retaliation', 'Brutal Finisher'],
+      chooserSummary: 'Berserker leans into relentless aggression: Frenzy unlocks a bonus-action weapon attack every round of rage, Intimidating Presence terrorizes single targets, and Retaliation punishes every hit against you.',
+      fantasy: 'Pick Berserker if you want a straightforward, punishing rage identity — more attacks, brutal comebacks, and a presence that makes enemies think twice about targeting you.',
+    },
+    'totem-warrior': {
+      tags: ['Spirit Boons', 'Primal Adaptability', 'Ritual Communion'],
+      chooserSummary: 'Path of the Wild Heart bonds you with animal spirits at every tier: choose Bear for resilience, Eagle for mobility, or Wolf for pack pressure — then re-choose at 6th and 10th level for a layered spirit build.',
+      fantasy: 'Pick Wild Heart if you want a barbarian defined by primal spirit identity, not just raw violence — adaptable spirit boons and ritual commune add a naturalistic feel to your rage.',
+    },
+    'world-tree': {
+      tags: ['Cosmic Vitality', 'Space Control', 'Late-Game Power'],
+      chooserSummary: 'World Tree channels Yggdrasil\'s power through rage: Vitality of the Tree generates temp HP, Branches of the Tree repositions allies mid-combat, and Travel Along the Tree opens long-range teleport at high levels.',
+      fantasy: 'Pick World Tree if you want a barbarian who bends space and sustains teammates — cosmic flavor, battlefield repositioning, and a powerful late-game identity that scales into a planar force.',
+    },
+
+    // ── Monk ─────────────────────────────────────────────────────────────
+    'way-of-the-open-hand': {
+      tags: ['Precision Control', 'Rider Effects', 'Lethal Finisher'],
+      chooserSummary: 'Open Hand adds on-hit riders to your Flurry of Blows — knock prone, push back, or deny reactions — then builds toward Wholeness of Body self-sustain and the devastating Quivering Palm execution finisher.',
+      fantasy: 'Pick Open Hand if you want a monk who controls fights through precision rather than magic: body-check the formation, deny reactions at key moments, and end big fights with an unavoidable kill condition.',
+    },
+    'way-of-shadow': {
+      tags: ['Ambush Stealth', 'Teleport Mobility', 'Reaction Punish'],
+      chooserSummary: 'Shadow monks cast darkness and silence from Focus, Shadow Step through shadowed terrain for instant repositioning, and Cloak of Shadows vanishes before major threats. Opportunist punishes any movement out of your range.',
+      fantasy: 'Pick Way of Shadow if you want a ninja-style monk: move through darkness, teleport between shadows, strike from invisibility, and never let an enemy escape your reach without paying for it.',
+    },
+    'way-of-the-four-elements': {
+      tags: ['Elemental Bursts', 'Focus Management', 'Martial Caster'],
+      chooserSummary: 'Four Elements monks spend Focus to cast elemental techniques — fire blasts, water whips, earth shockwaves, wind leaps — layered on top of the standard monk strike loop. Elemental Flow and Avatar of the Four Winds scale the power dramatically.',
+      fantasy: 'Pick Four Elements if you want a monk who feels like a bending martial artist: elemental techniques alongside fast strikes, active Focus management, and a dramatic late-game transformation into an elemental force.',
+    },
+
+    // ── Wizard ───────────────────────────────────────────────────────────
+    abjurer: {
+      tags: ['Arcane Ward', 'Counter Magic', 'Protection Specialist'],
+      chooserSummary: 'Abjurer wizards construct a persistent Arcane Ward that absorbs damage — rechargeable every time you cast an abjuration spell. Projected Ward extends this protection to allies. Spell Resistance at high levels makes you nearly immune to hostile magic.',
+      fantasy: 'Pick Abjurer if you want your wizard to be the party\'s magical shield: tank hits on behalf of allies, shut down enemy casters with Counterspell, and become increasingly resistant to the spells that threaten everyone else.',
+    },
+    diviner: {
+      tags: ['Portent Dice', 'Outcome Control', 'Prophetic Mastery'],
+      chooserSummary: 'Diviner wizards roll two Portent dice each long rest and can substitute those values for any d20 roll — by anyone, including enemies. Expert Divination recovers spell slots on divination casts. Foresight caps the path at level 18.',
+      fantasy: 'Pick Diviner if you want metatextual power: your best turns come from deciding when a critical enemy save fails or a crucial ally attack hits — Portent dice give you narrative control over pivotal moments.',
+    },
+    evoker: {
+      tags: ['Sculpt Spells', 'Damage Focus', 'Blastmaster'],
+      chooserSummary: 'Evoker wizards sculpt their area spells to protect allies caught in the blast, add intelligence to cantrip damage, and eventually overcharge their most powerful evocations for maximum effect.',
+      fantasy: 'Pick Evoker if you want to throw fireballs into melee and hit only enemies — raw damage identity, sculpted explosions, and reliable cantrip pressure that scales with your Intelligence.',
+    },
+    illusionist: {
+      tags: ['Malleable Illusions', 'Instant Minor Illusion', 'Illusory Reality'],
+      chooserSummary: 'Illusionist wizards reshape illusions as a bonus action rather than recasting, double up Minor Illusion effects instantly, and at high level can make one illusion physically real for one minute.',
+      fantasy: 'Pick Illusionist if you want a wizard who plays the environment: conjure obstacles, terrain features, and decoys that enemies react to as though real — and at high level, make them genuinely real.',
+    },
+    necromancer: {
+      tags: ['Undead Army', 'Life Drain', 'Dark Sustain'],
+      chooserSummary: 'Necromancer wizards raise twice as many undead from Animate Dead, grant them bonus HP and attack damage based on your Proficiency Bonus, and drain life energy through Grim Harvest whenever you kill with a spell.',
+      fantasy: 'Pick Necromancer if you want a minion-commander wizard: build a durable undead force, sustain your HP through each kill, and gradually scale your army into a genuine frontline while you cast from safety.',
+    },
+
+    // ── Druid ────────────────────────────────────────────────────────────
+    'circle-of-the-land': {
+      tags: ['Terrain Spells', 'Natural Recovery', 'Warden Utility'],
+      chooserSummary: 'Land druids bond with a chosen terrain (Arctic, Coast, Desert, Forest, etc.) and gain expanded spell lists from that terrain. Natural Recovery lets you regain spell slots on a short rest, and Land\'s Aid heals or hinders at short range.',
+      fantasy: 'Pick Circle of the Land if you want a spellcasting-focused druid who conserves resources through short-rest recovery, carries terrain-specific utility, and acts as the party\'s magical anchor rather than a frontline brawler.',
+    },
+    'circle-of-the-moon': {
+      tags: ['Combat Wild Shape', 'Powerful Beast Forms', 'Elemental Shift'],
+      chooserSummary: 'Moon druids Wild Shape into CR-appropriate combat beasts as a bonus action, fight effectively in beast form, shift into Elemental Forms at level 10, and eventually attain Thousand Forms utility Wild Shapes at level 14.',
+      fantasy: 'Pick Circle of the Moon if you want to fight in beast form — powerful forms at low levels, bonus-action shifting so you can enter a fight and change form fluidly, and elemental transformation that turns you into a force of nature.',
+    },
+
+    // ── Pirate ───────────────────────────────────────────────────────────
+    corsair: {
+      tags: ['Boarding Predator', 'Duel Pressure', 'Close Combat Burst'],
+      chooserSummary: 'Corsairs are aggressive duelists built for first contact: opening charge damage, grapple integration, and boarding-action burst that punishes enemies who engage in close quarters.',
+      fantasy: 'Pick Corsair if you want to be the pirate who wins the moment the gangplank drops — fast, violent, hard to disengage from, and scariest when the fight is at knife range.',
+    },
+    'dread-captain': {
+      tags: ['Fear Aura', 'Morale Pressure', 'Momentum Control'],
+      chooserSummary: 'Dread Captains rule through psychological dominance: fear effects that stack with Swagger Dice pressure, momentum denial that slows pursuit, and a presence that makes surrendering feel like the smart choice.',
+      fantasy: 'Pick Dread Captain if you want to win fights before they peak — terrify priority targets, chain fear into repositioning opportunities, and project an authority that bends the battlefield around your presence.',
+    },
+    privateer: {
+      tags: ['Command Coordination', 'Ally Tempo', 'Tactical Leadership'],
+      chooserSummary: 'Privateers turn cooperation into combat mechanics: share Swagger Dice with allies, coordinate positioning through ordered maneuvers, and project a legitimate authority that buffs the whole crew\'s output.',
+      fantasy: 'Pick Privateer if you want your pirate to feel like an officer — your best turns involve setting up the whole party, sharing resources deliberately, and winning through coordinated team pressure.',
+    },
+    smuggler: {
+      tags: ['Stealth Package', 'Concealment Tricks', 'Social Misdirection'],
+      chooserSummary: 'Smugglers survive through invisibility, misdirection, and improvised tools: stealth bonuses that stack into reliable hiding, concealment tricks that reset engagements, and social deceit layers that work inside and outside combat.',
+      fantasy: 'Pick Smuggler if you want a pirate who never gets caught — blend in, vanish when threatened, mislead pursuers, and win encounters by controlling what enemies can perceive.',
+    },
+
+    // ── Tinker ───────────────────────────────────────────────────────────
+    artillerist: {
+      tags: ['Deployable Cannon', 'Burst Platform', 'Siege Pressure'],
+      chooserSummary: 'Artillerists deploy Arc Cannons that fire independently, combine with Bombardment Spells for area denial, and stabilize into a persistent battery that holds territory and punishes clustered enemies.',
+      fantasy: 'Pick Artillerist if you want a tinker who controls the battlefield with deployable firepower — set up your cannon, pick your burst window, and win fights by establishing positions enemies can\'t afford to ignore.',
+    },
+    alchemist: {
+      tags: ['Experimental Elixirs', 'Adaptive Chemistry', 'Support Toolkit'],
+      chooserSummary: 'Alchemists prepare Experimental Elixirs for a range of effects — healing, fire resistance, enlarged size, flight — and combine restoratives with toxins and catalysts for an adaptable support and control role.',
+      fantasy: 'Pick Alchemist if you want a tinker who prepares solutions rather than weapons: carry the right brew for every problem, keep the party topped off with restorative compounds, and deploy volatile reactions for area denial.',
+    },
+    mechanist: {
+      tags: ['Companion Frame', 'Extended Reach', 'Construct Tactics'],
+      chooserSummary: 'Mechanists build and command a Companion Frame — a durable automaton that follows commands, shares actions through Linked Actions, and becomes increasingly hardened through Systems Spells and upgraded frames.',
+      fantasy: 'Pick Mechanist if you want a two-body tinker loop: deploy your frame as a frontline presence, command it to extend your action economy, and upgrade it into a formidable construct partner as you level.',
+    },
+    saboteur: {
+      tags: ['Ghost Tools', 'Trap Network', 'Silent Breach'],
+      chooserSummary: 'Saboteurs weaponize infiltration: Ghost Tools bypass locks and wards silently, Chain Reaction plants trap networks that detonate in sequence, and Silent Breach clears entire rooms before enemies raise an alarm.',
+      fantasy: 'Pick Saboteur if you want a tinker who wins before the fight starts — infiltrate targets, rig the battlefield with connected traps, and convert stealth preparation into devastating opening-round payoff.',
+    },
+
+    // ── Fighter ──────────────────────────────────────────────────────────
+    'psi-warrior': {
+      tags: ['Psionic Force', 'Telekinetic Pressure', 'Mental Resilience'],
+      chooserSummary: 'Psi Warriors add Psionic Energy Dice to their fighter loop: spend them for telekinetic strikes that add force damage and push/repel targets, protective psychic shields, and guarded mind defenses against charm and frighten.',
+      fantasy: 'Pick Psi Warrior if you want a fighter whose martial power has a mental dimension — telekinetic force on weapon attacks, psychic shields that absorb hits, and a battlefield presence that bends objects and bodies with the mind.',
+    },
   };
 
   function subclassProfile(entry) {
@@ -353,25 +477,14 @@
   }
 
   function renderSubclassSelect(subclassRows, currentSubclassId) {
-    if (!subclassRows.length) {
-      return '<input type="text" data-builder-path="class.subclassId" value="' + escHtml(currentSubclassId || '') + '" maxlength="80" placeholder="Subclass id (future content compatible)" />';
+    // When cards are rendered, use a hidden input so card clicks drive the selection.
+    // The visible <select> is redundant next to the card grid and creates confusing
+    // dual-selection UI — cards are the primary (and only) chooser.
+    if (subclassRows.length) {
+      return '<input type="hidden" data-builder-path="class.subclassId" value="' + escHtml(currentSubclassId || '') + '" />';
     }
-
-    const options = [{ id: '', name: 'Choose subclass…' }].concat(subclassRows.map(function (row) {
-      return { id: row.id, name: row.name };
-    }));
-    const hasCurrent = options.some(function hasOption(entry) {
-      return normalizeId(entry.id) === normalizeId(currentSubclassId);
-    });
-    if (currentSubclassId && !hasCurrent) {
-      options.push({ id: currentSubclassId, name: currentSubclassId + ' (Imported)' });
-    }
-
-    const html = options.map(function toOption(entry) {
-      const selected = normalizeId(entry.id) === normalizeId(currentSubclassId) ? ' selected' : '';
-      return '<option value="' + escHtml(entry.id) + '"' + selected + '>' + escHtml(entry.name) + '</option>';
-    }).join('');
-    return '<select data-builder-path="class.subclassId">' + html + '</select>';
+    // Fallback for imported / future subclasses with no catalog entries
+    return '<input type="text" data-builder-path="class.subclassId" value="' + escHtml(currentSubclassId || '') + '" maxlength="80" placeholder="Enter subclass name\u2026" />';
   }
 
   function renderSubclassCards(subclassRows, currentSubclassId, className) {
@@ -386,7 +499,7 @@
       }).join('');
       var signatures = summary.signatures.map(function (sig) {
         var typeBadge = sig.actionType ? '<span style="border:1px solid rgba(0,212,184,0.3);border-radius:999px;padding:1px 6px;font-size:0.52rem;color:#00d4b8;margin-left:6px;">' + escHtml(sig.actionType) + '</span>' : '';
-        return '<div class="builder-subclass-signature"><span><strong style="color:#f3e7c4">' + escHtml(sig.title) + '.</strong>' + typeBadge + ' ' + escHtml(sig.text || 'Signature feature.') + '</span></div>';
+        return '<div class="builder-subclass-signature"><span><strong style="color:#f3e7c4">' + escHtml(sig.title) + '.</strong>' + typeBadge + ' ' + escHtml(sig.text || 'See the detail panel for a full description.') + '</span></div>';
       }).join('');
       return [
         '<button type="button" class="builder-subclass-card' + selected + '" data-builder-subclass-card="1" data-subclass-id="' + escHtml(row.id) + '">',
@@ -418,7 +531,7 @@
       '<div class="builder-subclass-detail-grid">',
       '<div class="builder-subclass-detail-stat"><strong>How it feels</strong><span>' + escHtml(keyThemes || 'Specialist path with a unique gameplay loop.') + '</span></div>',
       '<div class="builder-subclass-detail-stat"><strong>First unlock</strong><span>Level ' + escHtml(summary.firstLevel) + ' · ' + escHtml(firstMajor) + '</span></div>',
-      '<div class="builder-subclass-detail-stat"><strong>Depth surface</strong><span>' + escHtml(String(featuresCount)) + ' feature entries mapped through level ' + escHtml(summary.endgame) + '</span></div>',
+      '<div class="builder-subclass-detail-stat"><strong>Features</strong><span>' + escHtml(String(featuresCount)) + ' features through level ' + escHtml(summary.endgame) + '</span></div>',
       '</div>',
       '</div>',
       '<div class="builder-subclass-detail-body">',
@@ -429,7 +542,7 @@
       '<div class="builder-subclass-section">',
       '<div class="builder-subclass-section-head">Signature features</div>',
       '<div class="builder-subclass-section-body">' + summary.signatures.map(function (sig) {
-        return '<div class="builder-subclass-feature-card"><strong>' + escHtml(sig.title) + '</strong><div>' + escHtml(sig.text || 'Signature feature.') + '</div></div>';
+        return '<div class="builder-subclass-feature-card"><strong>' + escHtml(sig.title) + '</strong><div>' + escHtml(sig.text || 'Feature text available in-game.') + '</div></div>';
       }).join('') + '</div>',
       '</div>',
       '<div class="builder-subclass-section">',
@@ -453,9 +566,10 @@
       var selected = normalizeId(card.dataset.subclassId) === normalizeId(subclassId);
       card.classList.toggle('selected', selected);
     });
-    var selectEl = root.querySelector('[data-builder-path="class.subclassId"]');
-    if (selectEl && normalizeId(selectEl.value) !== normalizeId(subclassId)) {
-      selectEl.value = subclassId || '';
+    // Keep the hidden input in sync so data-builder-path binding stays current
+    var hiddenInput = root.querySelector('input[data-builder-path="class.subclassId"]');
+    if (hiddenInput && normalizeId(hiddenInput.value) !== normalizeId(subclassId)) {
+      hiddenInput.value = subclassId || '';
     }
   }
 
@@ -502,13 +616,12 @@
         '</div>',
         '<div class="builder-subclass-layout">',
         '<div class="builder-subclass-column">',
-        '<div class="field builder-subclass-select-wrap"><label>Subclass</label>' + renderSubclassSelect(subclassRows, subclassId) + '</div>',
-        '<div class="builder-help-text">Click any card below to read its flavor, signature features, and the level-by-level unlock roadmap before choosing.</div>',
+        renderSubclassSelect(subclassRows, subclassId),
+        '<div class="builder-help-text">Click a card to read its playstyle, signature features, and level roadmap. Click again to select it.</div>',
         renderSubclassCards(subclassRows, subclassId, className),
         '</div>',
         '<div class="builder-subclass-column" data-builder-subclass-detail="1">' + renderSubclassDetail(subclassRows.find(function (row) { return normalizeId(row.id) === normalizeId(subclassId); }) || null, className) + '</div>',
         '</div>',
-        '<div class="builder-help-text">Stored as <code>classes[0].subclassId</code> in canonical data. The detail panel is intentionally verbose so players can read what each subclass does before they lock it in.</div>'
       ].join('');
     },
     bind: function bindSubclassStep(root, context) {
@@ -525,12 +638,6 @@
           applySelection(String(card.dataset.subclassId || '').trim());
         });
       });
-      var selectEl = root.querySelector('[data-builder-path="class.subclassId"]');
-      if (selectEl) {
-        selectEl.addEventListener('change', function () {
-          applySelection(String(selectEl.value || '').trim());
-        });
-      }
       var current = getSelectedSubclassId(draft);
       syncSubclassSelection(root, current);
       showSubclassDetail(root, classId, current);

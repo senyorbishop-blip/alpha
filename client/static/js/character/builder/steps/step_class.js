@@ -163,7 +163,14 @@
     }).join('');
 
     var featureDefs = getFeatureDefinitionMap(entry);
-    var spotlight = Object.keys(featureDefs).slice(0, 6).map(function(id) {
+    // Sort by level ascending so the spotlight shows level 1-2 features first,
+    // giving players the most immediately relevant info about how the class plays.
+    var spotlightIds = Object.keys(featureDefs).sort(function(a, b) {
+      var la = parseInt((featureDefs[a] && featureDefs[a].level) || 99, 10);
+      var lb = parseInt((featureDefs[b] && featureDefs[b].level) || 99, 10);
+      return la - lb;
+    }).slice(0, 6);
+    var spotlight = spotlightIds.map(function(id) {
       var def = featureDefs[id] || {};
       var levelBadge = parseInt(def.level, 10) > 0 ? '<span class="cc-tag">Lv ' + escHtml(def.level) + '</span>' : '';
       var typeBadge = def.type ? '<span class="cc-tag">' + escHtml(String(def.type).replace(/_/g, ' ')) + '</span>' : '';

@@ -232,10 +232,10 @@
                 '</section>',
               ].join('');
             }).join(''),
-            filtered.length ? '' : '<div class="builder-help-text">No class spells found yet for this class.</div>',
+            filtered.length ? '' : '<div class="builder-help-text">No spells available for your current class and level selection.</div>',
             '</div>',
           ].join(''),
-        '<div class="builder-help-text">Spell lists are normalized into canonical spellState. Imported source tags remain preserved during D&D Beyond import.</div>',
+        '<div class="builder-help-text">Your selected spells will appear on your character sheet and be available during gameplay.</div>',
       ].join('');
     },
     bind: function bindSpellStep(root, context) {

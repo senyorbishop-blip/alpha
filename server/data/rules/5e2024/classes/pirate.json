@@ -835,9 +835,12 @@
     "Surface dirty tricks as actionable buttons in the Actions tab and map-side quick panel.",
     "Add stronger ship-combat integrations for rigging, boarding, morale, and cannon-adjacent play."
   ],
-  "buildTips": [
-    "Dexterity is your main combat stat; Charisma sharpens many class themes and makes the social side sing.",
-    "Fight where movement matters: ladders, bridges, doors, rails, corners, and cover all favor you.",
-    "Use Swagger Dice proactively; the class feels best when you keep pressure high rather than hoarding resources."
-  ]
+  "buildTips": {
+    "primaryFocus": "Dexterity",
+    "primaryReason": "powers attack rolls, AC, and Swagger Dice save DCs",
+    "secondaryFocus": "Charisma",
+    "secondaryReason": "sharpens class features, social presence, and most subclass themes",
+    "avoidDump": "Constitution",
+    "avoidDumpReason": "you fight in medium armor at close range and need the HP to survive trades"
+  }
 }
