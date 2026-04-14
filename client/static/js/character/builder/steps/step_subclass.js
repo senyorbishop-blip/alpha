@@ -163,6 +163,21 @@
       chooserSummary: 'Assassin is the opener rogue: win mission setup, strike before enemies settle, and convert surprise windows into lethal burst turns.',
       fantasy: 'Pick Assassin if you want first-round timing, infiltration prep, and ruthless single-target elimination to define your play.',
     },
+    champion: {
+      tags: ['Crit Pressure', 'Athletic Resilience', 'Polished Fundamentals'],
+      chooserSummary: 'Champion keeps your fighter loop clean and reliable: better critical pressure, superior athletic presence, and late-fight durability.',
+      fantasy: 'Pick Champion if you want a dependable front-line identity that wins through excellent weapon fundamentals instead of resource-heavy complexity.',
+    },
+    battlemaster: {
+      tags: ['Maneuver Tactics', 'Superiority Dice', 'Battlefield Control'],
+      chooserSummary: 'Battle Master turns your fighter into a tactical controller with maneuver picks, superiority dice pacing, and explicit combat timing decisions.',
+      fantasy: 'Pick Battle Master if you want active turn-by-turn decision making: spend dice deliberately, pressure positioning, and shape the battlefield around your team.',
+    },
+    'eldritch-knight': {
+      tags: ['Weapon + Spell Weave', 'Arcane Defense', 'Hybrid Pressure'],
+      chooserSummary: 'Eldritch Knight layers one-third casting onto fighter fundamentals so you can weave cantrips, leveled spells, and weapon attacks in the same fight.',
+      fantasy: 'Pick Eldritch Knight if you want an armored battle-mage loop with bonded weapons, magical control pressure, and clear spell-plus-steel turn planning.',
+    },
     thief: {
       tags: ['Fast Hands', 'Mobility', 'Object Tempo'],
       chooserSummary: 'Thief is the opportunist rogue: fast object interaction, vertical movement, and utility tempo that wins fights through positioning and tools.',

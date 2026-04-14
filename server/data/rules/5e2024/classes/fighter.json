@@ -54,7 +54,9 @@
       "classMechanics": {
         "extraAttacks": 1,
         "actionSurgeUses": 0,
-        "indomitableUses": 0
+        "indomitableUses": 0,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 3
       },
       "unlockIds": [
         "fighter-fighting-style",
@@ -72,7 +74,9 @@
       "classMechanics": {
         "extraAttacks": 1,
         "actionSurgeUses": 1,
-        "indomitableUses": 0
+        "indomitableUses": 0,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 3
       },
       "unlockIds": [
         "fighter-action-surge-1-use",
@@ -88,7 +92,9 @@
       "classMechanics": {
         "extraAttacks": 1,
         "actionSurgeUses": 1,
-        "indomitableUses": 0
+        "indomitableUses": 0,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 3
       },
       "unlockIds": [
         "fighter-martial-archetype-subclass"
@@ -104,7 +110,9 @@
       "classMechanics": {
         "extraAttacks": 1,
         "actionSurgeUses": 1,
-        "indomitableUses": 0
+        "indomitableUses": 0,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 3
       },
       "unlockIds": [
         "fighter-ability-score-improvement-4"
@@ -119,7 +127,9 @@
       "classMechanics": {
         "extraAttacks": 2,
         "actionSurgeUses": 1,
-        "indomitableUses": 0
+        "indomitableUses": 0,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 3
       },
       "unlockIds": [
         "fighter-extra-attack-2"
@@ -135,7 +145,9 @@
       "classMechanics": {
         "extraAttacks": 2,
         "actionSurgeUses": 1,
-        "indomitableUses": 0
+        "indomitableUses": 0,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 3
       },
       "unlockIds": [
         "fighter-ability-score-improvement-6"
@@ -151,7 +163,9 @@
       "classMechanics": {
         "extraAttacks": 2,
         "actionSurgeUses": 1,
-        "indomitableUses": 0
+        "indomitableUses": 0,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 4
       },
       "unlockIds": [
         "fighter-subclass-feature-7",
@@ -168,7 +182,9 @@
       "classMechanics": {
         "extraAttacks": 2,
         "actionSurgeUses": 1,
-        "indomitableUses": 0
+        "indomitableUses": 0,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 4
       },
       "unlockIds": [
         "fighter-ability-score-improvement-8"
@@ -184,7 +200,9 @@
       "classMechanics": {
         "extraAttacks": 2,
         "actionSurgeUses": 1,
-        "indomitableUses": 1
+        "indomitableUses": 1,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 4
       },
       "unlockIds": [
         "fighter-indomitable-1-use",
@@ -200,7 +218,9 @@
       "classMechanics": {
         "extraAttacks": 2,
         "actionSurgeUses": 1,
-        "indomitableUses": 1
+        "indomitableUses": 1,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 4
       },
       "unlockIds": [
         "fighter-subclass-feature-10"
@@ -216,7 +236,9 @@
       "classMechanics": {
         "extraAttacks": 3,
         "actionSurgeUses": 1,
-        "indomitableUses": 1
+        "indomitableUses": 1,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 4
       },
       "unlockIds": [
         "fighter-extra-attack-3",
@@ -233,7 +255,9 @@
       "classMechanics": {
         "extraAttacks": 3,
         "actionSurgeUses": 1,
-        "indomitableUses": 1
+        "indomitableUses": 1,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 4
       },
       "unlockIds": [
         "fighter-ability-score-improvement-12"
@@ -249,7 +273,9 @@
       "classMechanics": {
         "extraAttacks": 3,
         "actionSurgeUses": 1,
-        "indomitableUses": 2
+        "indomitableUses": 2,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 4
       },
       "unlockIds": [
         "fighter-indomitable-2-uses",
@@ -267,7 +293,9 @@
       "classMechanics": {
         "extraAttacks": 3,
         "actionSurgeUses": 1,
-        "indomitableUses": 2
+        "indomitableUses": 2,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 5
       },
       "unlockIds": [
         "fighter-ability-score-improvement-14",
@@ -283,7 +311,9 @@
       "classMechanics": {
         "extraAttacks": 3,
         "actionSurgeUses": 1,
-        "indomitableUses": 2
+        "indomitableUses": 2,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 5
       },
       "unlockIds": [
         "fighter-subclass-feature-15"
@@ -299,7 +329,9 @@
       "classMechanics": {
         "extraAttacks": 3,
         "actionSurgeUses": 1,
-        "indomitableUses": 2
+        "indomitableUses": 2,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 5
       },
       "unlockIds": [
         "fighter-ability-score-improvement-16"
@@ -315,7 +347,9 @@
       "classMechanics": {
         "extraAttacks": 3,
         "actionSurgeUses": 2,
-        "indomitableUses": 3
+        "indomitableUses": 3,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 5
       },
       "unlockIds": [
         "fighter-action-surge-2-uses",
@@ -331,7 +365,9 @@
       "classMechanics": {
         "extraAttacks": 3,
         "actionSurgeUses": 2,
-        "indomitableUses": 3
+        "indomitableUses": 3,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 5
       },
       "unlockIds": [
         "fighter-subclass-feature-18"
@@ -347,7 +383,9 @@
       "classMechanics": {
         "extraAttacks": 3,
         "actionSurgeUses": 2,
-        "indomitableUses": 3
+        "indomitableUses": 3,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 5
       },
       "unlockIds": [
         "fighter-epic-boon"
@@ -363,7 +401,9 @@
       "classMechanics": {
         "extraAttacks": 4,
         "actionSurgeUses": 2,
-        "indomitableUses": 3
+        "indomitableUses": 3,
+        "secondWindUses": 1,
+        "weaponMasteryCount": 5
       },
       "unlockIds": [
         "fighter-extra-attack-4",
@@ -383,7 +423,7 @@
     },
     "fighter-second-wind": {
       "summary": "Catch your breath and restore a meaningful chunk of staying power without surrendering your whole turn.",
-      "description": "Second Wind is the fighter’s quick self-stabilizer. It is there so the class can keep operating through chip damage, survive one more exchange, and avoid feeling fragile just because the healer is busy elsewhere.",
+      "description": "Second Wind is the fighter\u2019s quick self-stabilizer. It is there so the class can keep operating through chip damage, survive one more exchange, and avoid feeling fragile just because the healer is busy elsewhere.",
       "section": "Bonus Actions",
       "type": "bonus action",
       "resourceName": "Second Wind",
@@ -398,7 +438,7 @@
       ]
     },
     "fighter-weapon-mastery": {
-      "summary": "Your weapons do more than deal damage — they carry rider properties that reward choosing the right tool for the job.",
+      "summary": "Your weapons do more than deal damage \u2014 they carry rider properties that reward choosing the right tool for the job.",
       "description": "Weapon Mastery is one of the features that makes the modern fighter feel technical instead of empty. Different weapons now imply different control, pressure, or positioning lines, so the sheet should make those mastered choices visible and easy to understand.",
       "tags": [
         "combat",
@@ -408,7 +448,7 @@
     },
     "fighter-action-surge-1-use": {
       "summary": "Explode a turn with an extra action when tempo matters more than patience.",
-      "description": "Action Surge is one of the fighter’s signature power spikes. Use it when an extra action changes the whole round: finish a target, reposition and still attack, cast and attack as an Eldritch Knight, or seize the opening before the enemy recovers.",
+      "description": "Action Surge is one of the fighter\u2019s signature power spikes. Use it when an extra action changes the whole round: finish a target, reposition and still attack, cast and attack as an Eldritch Knight, or seize the opening before the enemy recovers.",
       "resourceName": "Action Surge",
       "trackUses": true,
       "usage": "1 use available",
@@ -431,7 +471,7 @@
     },
     "fighter-martial-archetype-subclass": {
       "summary": "Your archetype decides what kind of fighter you really are beyond the base attack engine.",
-      "description": "Martial Archetype is the subclass gate for fighter. This is where the class becomes a Battle Master, Champion, Eldritch Knight, or Psi Warrior and starts playing with a distinct tactical identity.\n\nThe sheet should treat this as a major fork because later subclass features are what stop high-level fighters from feeling like only “more attacks.”",
+      "description": "Martial Archetype is the subclass gate for fighter. This is where the class becomes a Battle Master, Champion, Eldritch Knight, or Psi Warrior and starts playing with a distinct tactical identity.\n\nThe sheet should treat this as a major fork because later subclass features are what stop high-level fighters from feeling like only \u201cmore attacks.\u201d",
       "tags": [
         "subclass",
         "combat",
@@ -441,7 +481,7 @@
     },
     "fighter-indomitable-1-use": {
       "summary": "Refuse a bad save result when the fight is too important to lose to one failed defense.",
-      "description": "Indomitable is the fighter’s answer to swingy saving throws. When a crippling effect would take you out of the scene, this feature gives you another chance to hold the line and keep acting like the martial anchor of the team.",
+      "description": "Indomitable is the fighter\u2019s answer to swingy saving throws. When a crippling effect would take you out of the scene, this feature gives you another chance to hold the line and keep acting like the martial anchor of the team.",
       "resourceName": "Indomitable",
       "trackUses": true,
       "usage": "1 use available",
@@ -473,74 +513,74 @@
   },
   "levelUnlockIds": {
     "1": [
-      "fighter-l1-1",
-      "fighter-l1-2",
-      "fighter-l1-3"
+      "fighter-fighting-style",
+      "fighter-second-wind",
+      "fighter-weapon-mastery"
     ],
     "2": [
-      "fighter-l2-1",
-      "fighter-l2-2"
+      "fighter-action-surge-1-use",
+      "fighter-tactical-mind"
     ],
     "3": [
-      "fighter-l3-1"
+      "fighter-martial-archetype-subclass"
     ],
     "4": [
-      "fighter-l4-1"
+      "fighter-ability-score-improvement-4"
     ],
     "5": [
-      "fighter-l5-1"
+      "fighter-extra-attack-2"
     ],
     "6": [
-      "fighter-l6-1"
+      "fighter-ability-score-improvement-6"
     ],
     "7": [
-      "fighter-l7-1",
-      "fighter-l7-2"
+      "fighter-subclass-feature-7",
+      "fighter-weapon-mastery-4-weapons"
     ],
     "8": [
-      "fighter-l8-1"
+      "fighter-ability-score-improvement-8"
     ],
     "9": [
-      "fighter-l9-1",
-      "fighter-l9-2"
+      "fighter-indomitable-1-use",
+      "fighter-tactical-shift"
     ],
     "10": [
-      "fighter-l10-1"
+      "fighter-subclass-feature-10"
     ],
     "11": [
-      "fighter-l11-1",
-      "fighter-l11-2"
+      "fighter-extra-attack-3",
+      "fighter-studied-attacks"
     ],
     "12": [
-      "fighter-l12-1"
+      "fighter-ability-score-improvement-12"
     ],
     "13": [
-      "fighter-l13-1",
-      "fighter-l13-2"
+      "fighter-indomitable-2-uses",
+      "fighter-subclass-feature-13"
     ],
     "14": [
-      "fighter-l14-1",
-      "fighter-l14-2"
+      "fighter-ability-score-improvement-14",
+      "fighter-weapon-mastery-5-weapons"
     ],
     "15": [
-      "fighter-l15-1"
+      "fighter-subclass-feature-15"
     ],
     "16": [
-      "fighter-l16-1"
+      "fighter-ability-score-improvement-16"
     ],
     "17": [
-      "fighter-l17-1",
-      "fighter-l17-2"
+      "fighter-action-surge-2-uses",
+      "fighter-indomitable-3-uses"
     ],
     "18": [
-      "fighter-l18-1"
+      "fighter-subclass-feature-18"
     ],
     "19": [
-      "fighter-l19-1"
+      "fighter-epic-boon"
     ],
     "20": [
-      "fighter-l20-1",
-      "fighter-l20-2"
+      "fighter-extra-attack-4",
+      "fighter-subclass-capstone"
     ]
   },
   "progressionSummary": [
@@ -548,150 +588,150 @@
       "level": 1,
       "summary": "Fighting Style, Second Wind, Weapon Mastery.",
       "unlockIds": [
-        "fighter-l1-1",
-        "fighter-l1-2",
-        "fighter-l1-3"
+        "fighter-fighting-style",
+        "fighter-second-wind",
+        "fighter-weapon-mastery"
       ]
     },
     {
       "level": 2,
       "summary": "Action Surge (1 use), Tactical Mind.",
       "unlockIds": [
-        "fighter-l2-1",
-        "fighter-l2-2"
+        "fighter-action-surge-1-use",
+        "fighter-tactical-mind"
       ]
     },
     {
       "level": 3,
       "summary": "Martial Archetype (Subclass).",
       "unlockIds": [
-        "fighter-l3-1"
+        "fighter-martial-archetype-subclass"
       ]
     },
     {
       "level": 4,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "fighter-l4-1"
+        "fighter-ability-score-improvement-4"
       ]
     },
     {
       "level": 5,
       "summary": "Extra Attack (2).",
       "unlockIds": [
-        "fighter-l5-1"
+        "fighter-extra-attack-2"
       ]
     },
     {
       "level": 6,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "fighter-l6-1"
+        "fighter-ability-score-improvement-6"
       ]
     },
     {
       "level": 7,
       "summary": "Subclass Feature, Weapon Mastery (4 weapons).",
       "unlockIds": [
-        "fighter-l7-1",
-        "fighter-l7-2"
+        "fighter-subclass-feature-7",
+        "fighter-weapon-mastery-4-weapons"
       ]
     },
     {
       "level": 8,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "fighter-l8-1"
+        "fighter-ability-score-improvement-8"
       ]
     },
     {
       "level": 9,
       "summary": "Indomitable (1 use), Tactical Shift.",
       "unlockIds": [
-        "fighter-l9-1",
-        "fighter-l9-2"
+        "fighter-indomitable-1-use",
+        "fighter-tactical-shift"
       ]
     },
     {
       "level": 10,
       "summary": "Subclass Feature.",
       "unlockIds": [
-        "fighter-l10-1"
+        "fighter-subclass-feature-10"
       ]
     },
     {
       "level": 11,
       "summary": "Extra Attack (3), Studied Attacks.",
       "unlockIds": [
-        "fighter-l11-1",
-        "fighter-l11-2"
+        "fighter-extra-attack-3",
+        "fighter-studied-attacks"
       ]
     },
     {
       "level": 12,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "fighter-l12-1"
+        "fighter-ability-score-improvement-12"
       ]
     },
     {
       "level": 13,
       "summary": "Indomitable (2 uses), Subclass Feature.",
       "unlockIds": [
-        "fighter-l13-1",
-        "fighter-l13-2"
+        "fighter-indomitable-2-uses",
+        "fighter-subclass-feature-13"
       ]
     },
     {
       "level": 14,
       "summary": "Ability Score Improvement, Weapon Mastery (5 weapons).",
       "unlockIds": [
-        "fighter-l14-1",
-        "fighter-l14-2"
+        "fighter-ability-score-improvement-14",
+        "fighter-weapon-mastery-5-weapons"
       ]
     },
     {
       "level": 15,
       "summary": "Subclass Feature.",
       "unlockIds": [
-        "fighter-l15-1"
+        "fighter-subclass-feature-15"
       ]
     },
     {
       "level": 16,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "fighter-l16-1"
+        "fighter-ability-score-improvement-16"
       ]
     },
     {
       "level": 17,
       "summary": "Action Surge (2 uses), Indomitable (3 uses).",
       "unlockIds": [
-        "fighter-l17-1",
-        "fighter-l17-2"
+        "fighter-action-surge-2-uses",
+        "fighter-indomitable-3-uses"
       ]
     },
     {
       "level": 18,
       "summary": "Subclass Feature.",
       "unlockIds": [
-        "fighter-l18-1"
+        "fighter-subclass-feature-18"
       ]
     },
     {
       "level": 19,
       "summary": "Epic Boon.",
       "unlockIds": [
-        "fighter-l19-1"
+        "fighter-epic-boon"
       ]
     },
     {
       "level": 20,
       "summary": "Extra Attack (4), Subclass Capstone.",
       "unlockIds": [
-        "fighter-l20-1",
-        "fighter-l20-2"
+        "fighter-extra-attack-4",
+        "fighter-subclass-capstone"
       ]
     }
   ],

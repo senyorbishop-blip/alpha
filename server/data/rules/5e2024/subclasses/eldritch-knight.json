@@ -77,7 +77,10 @@
         "subclass",
         "spellcasting",
         "combat"
-      ]
+      ],
+      "section": "Class Features",
+      "type": "passive",
+      "effect": "One-third caster progression using Intelligence; blend control and defense spells with weapon turns."
     },
     "eldritch-knight-weapon-bond": {
       "section": "Bonus Actions",
@@ -87,7 +90,8 @@
         "subclass",
         "combat",
         "utility"
-      ]
+      ],
+      "effect": "Summon a bonded weapon as a bonus action and resist disarm effects."
     },
     "eldritch-knight-war-magic": {
       "section": "Bonus Actions",
@@ -97,7 +101,8 @@
         "subclass",
         "combat",
         "spellcasting"
-      ]
+      ],
+      "effect": "After casting a cantrip with your action, make one weapon attack as a bonus action."
     },
     "eldritch-knight-eldritch-strike": {
       "summary": "A weapon hit softens the target for the save-based spell you land next.",
@@ -105,7 +110,8 @@
         "subclass",
         "spellcasting",
         "control"
-      ]
+      ],
+      "effect": "Weapon hits impose disadvantage on the target's next save against your spell."
     },
     "eldritch-knight-arcane-charge": {
       "summary": "Action Surge now doubles as an aggressive reposition tool, letting you burst and appear where it hurts most.",
@@ -113,7 +119,11 @@
         "subclass",
         "mobility",
         "burst"
-      ]
+      ],
+      "section": "Class Features",
+      "type": "special",
+      "trigger": "When you use Action Surge",
+      "effect": "Teleport up to 30 feet as part of the surge turn."
     },
     "eldritch-knight-improved-war-magic": {
       "section": "Bonus Actions",
@@ -123,7 +133,8 @@
         "subclass",
         "combat",
         "spellcasting"
-      ]
+      ],
+      "effect": "After casting a leveled spell with your action, make one weapon attack as a bonus action."
     }
   }
 }
