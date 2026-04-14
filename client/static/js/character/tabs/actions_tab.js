@@ -1165,7 +1165,7 @@
         }).join('')}</div>
         <div class="cs-action-bestuse">${_esc(bestUse)}</div>
         <div class="cs-action-controls" style="margin-top:.55rem;display:flex;gap:.4rem;flex-wrap:wrap;">
-          <button type="button" class="cs-feature-inspect" data-action-use="${_esc(String(action.id || action.name || ''))}" data-action-source="${_esc(String(action.source || 'weapon'))}">${_esc(useLabel)}</button>
+          <button type="button" class="cs-feature-inspect" data-action-use="${_esc(String(action.id || action.name || ''))}" data-action-source="${_esc(String(action.source || 'weapon'))}" ${action.disabled ? `disabled title="${_esc(action.disabledReason || 'Unavailable')}"` : ''}>${_esc(useLabel)}</button>
         </div>
       </div>
       <div class="cs-action-side">${econ.map(_econPip).join('')}</div>
@@ -1208,6 +1208,36 @@
         resourceName: _firstText(card.ammoKind, card.ammoNote),
         tags: [card.source === 'equip_only' ? 'Equipped Loadout' : '', card.modeLabel || '', card.mastery_label || card.masteryLabel || ''].filter(Boolean),
         longText: [card.summary, card.note, card.modeNote, card.mastery_text].filter(Boolean).join('\n\n'),
+      };
+    });
+  }
+
+  function _buildItemActionCards() {
+    const rows = Array.isArray(global._playerItemActions) ? global._playerItemActions : [];
+    return rows.map(function (row, index) {
+      const activation = String(row.activation_type || 'action').toLowerCase();
+      const economy = activation === 'bonus_action' ? 'bonus' : activation === 'reaction' ? 'reaction' : 'action';
+      const usageBits = [];
+      if (Number.isFinite(Number(row.charges_current))) usageBits.push(`Charges ${row.charges_current}/${Number(row.charges_max || 0)}`);
+      if (Number.isFinite(Number(row.quantity))) usageBits.push(`Qty ${row.quantity}`);
+      if (row.disabled && row.disabled_reason) usageBits.push(row.disabled_reason);
+      return {
+        id: String(row.action_id || `item_action_${index}`),
+        source: 'item_action',
+        name: String(row.action_name || row.item_name || 'Item Action'),
+        desc: String(row.effect_text || ''),
+        description: String(row.effect_text || ''),
+        economy: [economy],
+        icon: '🧰',
+        attackBonus: row.attack_bonus != null ? Number(row.attack_bonus) : '',
+        damage: String(row.damage_formula || ''),
+        range: String(row.range || ''),
+        resourceName: usageBits.join(' • '),
+        resourceSummary: usageBits.join(' • '),
+        tags: ['Item', String(row.item_name || 'Item')],
+        longText: String(row.effect_text || ''),
+        disabled: !!row.disabled,
+        disabledReason: String(row.disabled_reason || ''),
       };
     });
   }
@@ -1460,7 +1490,7 @@
         if (typeof global.playerUseAction === 'function') {
           global.playerUseAction(actionSource, actionId);
         } else if (typeof global.showToast === 'function') {
-          const all = [].concat(model.quickAttacks, model.native.actions, model.native.bonusActions, model.native.reactions, model.textAttacks);
+          const all = [].concat(model.quickAttacks, model.itemActions, model.native.actions, model.native.bonusActions, model.native.reactions, model.textAttacks);
           const action = all.find(function (entry) { return String(entry && entry.id || '') === actionId || String(entry && entry.name || '').toLowerCase() === actionId.toLowerCase(); });
           const label = action && action.name ? action.name : 'Action';
           const cost = action && (action.resourceSummary || action.resourceName) ? ` — ${action.resourceSummary || action.resourceName}` : '';
@@ -1491,7 +1521,7 @@
       const actionRow = e.target.closest('.cs-action-row');
       if (actionRow) {
         const name = String(actionRow.getAttribute('data-action-name') || '').toLowerCase();
-        const all = [].concat(model.quickAttacks, model.native.actions, model.native.bonusActions, model.native.reactions, model.textAttacks);
+        const all = [].concat(model.quickAttacks, model.itemActions, model.native.actions, model.native.bonusActions, model.native.reactions, model.textAttacks);
         const action = all.find(function (entry) { return String(entry && entry.name || '').toLowerCase() === name; });
         if (action) _openActionDetails(action);
         return;
@@ -1531,13 +1561,14 @@
     if (!container) return;
 
     const quickAttacks = _buildQuickAttackCards(charData || {});
+    const itemActions = _buildItemActionCards();
     const native = _nativeActionGroups(charData || {});
     const resources = _resourceRows(charData || {});
     const textAttacks = _parseTextAttacks(charData || {});
     const beastMasterCompanion = _beastMasterCompanionProfile(charData || {});
     const selectedTarget = charData && charData.selectedTarget ? charData.selectedTarget : null;
     const concentration = _firstText(charData && charData.activeConcentration, '');
-    const totalActions = quickAttacks.length + native.actions.length + native.bonusActions.length + native.reactions.length + textAttacks.length;
+    const totalActions = quickAttacks.length + itemActions.length + native.actions.length + native.bonusActions.length + native.reactions.length + textAttacks.length;
 
     container.innerHTML = `
       <div class="cs-combat-hero-grid">
@@ -1560,13 +1591,14 @@
       ${_renderCustomSurfaceCallout(charData || {}, resources)}
       ${_renderBeastMasterCompanionControls(beastMasterCompanion)}
       ${_renderSection('Quick Attacks', quickAttacks, { emptyLabel: 'No quick attack cards are loaded yet.' })}
+      ${_renderSection('Item Actions', itemActions, { emptyLabel: 'No usable item actions are loaded yet.' })}
       ${_renderSection('Native Actions', native.actions, { emptyLabel: 'No structured main actions are loaded yet.' })}
       ${_renderSection('Bonus Actions', native.bonusActions, { emptyLabel: 'No structured bonus actions are loaded yet.' })}
       ${_renderSection('Reactions', native.reactions, { emptyLabel: 'No structured reactions are loaded yet.' })}
       ${_renderResourceSection(resources)}
     `;
 
-    _bindDetails(container, { quickAttacks, native, resources, textAttacks, beastMasterCompanion });
+    _bindDetails(container, { quickAttacks, itemActions, native, resources, textAttacks, beastMasterCompanion });
   }
 
   global.ActionsTab = { initActionsTab };
