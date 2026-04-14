@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from server.paths import DB_PATH, ensure_data_dirs
 from server.persistence_schema import extract_persistable_campaign_state, normalize_persisted_campaign_data
+from server.item_schema import normalize_shop_item_row
 
 ensure_data_dirs()
 _db_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="db")
@@ -1406,6 +1407,7 @@ def get_shop_by_prop_id(campaign_id: str, prop_id: str) -> Optional[dict]:
                     item["item_data"] = json.loads(item.get("item_data") or "{}")
                 except Exception:
                     item["item_data"] = {}
+                item["normalized_item"] = normalize_shop_item_row(item)
             return shop
     except Exception as e:
         logger.error("[DB] get_shop_by_prop_id error: %s", e)
@@ -1433,6 +1435,7 @@ def get_shop_by_id(shop_id: str) -> Optional[dict]:
                     item["item_data"] = json.loads(item.get("item_data") or "{}")
                 except Exception:
                     item["item_data"] = {}
+                item["normalized_item"] = normalize_shop_item_row(item)
             return shop
     except Exception as e:
         logger.error("[DB] get_shop_by_id error: %s", e)
@@ -1655,6 +1658,7 @@ def get_all_shops_for_campaign(campaign_id: str) -> list:
                         item["item_data"] = json.loads(item.get("item_data") or "{}")
                     except Exception:
                         item["item_data"] = {}
+                    item["normalized_item"] = normalize_shop_item_row(item)
                 shops.append(shop)
             return shops
     except Exception as e:
