@@ -149,6 +149,7 @@
       const spellbook = draft.spellbook && typeof draft.spellbook === 'object' ? draft.spellbook : {};
       const castingMode = String(spellbook.castingMode || 'none');
       const classId = String(draft.class && draft.class.id || '').trim();
+      const subclassId = String(draft.class && draft.class.subclassId || '').trim();
       const classRow = getClassRow(classId);
       const className = String(classRow && classRow.displayName || classId || '').trim();
       const classLevel = parseInt(draft.progression && draft.progression.level, 10);
@@ -158,9 +159,16 @@
 
       const filtered = _spellRows.filter(function byClass(spell) {
         const classes = Array.isArray(spell && spell.classes) ? spell.classes : [];
+        const subclassLists = []
+          .concat(Array.isArray(spell && spell.subclass_lists) ? spell.subclass_lists : [])
+          .concat(Array.isArray(spell && spell.subclassLists) ? spell.subclassLists : []);
         if (!className) return false;
-        return classes.some(function includesClass(entry) {
+        const classMatch = classes.some(function includesClass(entry) {
           return normalizeId(entry) === normalizeId(className) || normalizeId(entry) === normalizeId(classId);
+        });
+        if (classMatch) return true;
+        return subclassId && subclassLists.some(function includesSubclass(entry) {
+          return normalizeId(entry) === normalizeId(subclassId);
         });
       });
       const groups = groupByLevel(filtered);

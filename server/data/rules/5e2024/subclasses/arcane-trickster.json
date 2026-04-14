@@ -53,22 +53,27 @@
   ],
   "featureDefinitions": {
     "arcane-trickster-spellcasting": {
-      "summary": "Blend rogue precision with selective wizard magic, especially illusion and enchantment tools.",
-      "description": "Arcane Trickster spellcasting is about control, setup, and utility rather than trying to out-wizard a full caster. The subclass should feel sneaky, clever, and opportunistic with its magic.",
+      "summary": "Gain Intelligence-based one-third caster progression with stealth-oriented spell utility.",
+      "description": "Arcane Trickster spellcasting should feel like rogue setup magic: control, distraction, infiltration, and precision support rather than front-line blasting.",
       "tags": [
         "subclass",
         "spellcasting",
         "utility"
-      ]
+      ],
+      "section": "Class Features",
+      "type": "passive",
+      "resourceName": "Spell Slots"
     },
     "arcane-trickster-mage-hand-legerdemain": {
-      "summary": "Your Mage Hand becomes a true burglar’s tool for theft, trap work, and subtle manipulation at range.",
-      "description": "Mage Hand Legerdemain is one of the subclass’s signature identity pieces. It turns a familiar cantrip into a rogue-flavored infiltration and setup engine.",
+      "summary": "Your invisible Mage Hand becomes a true remote burglary and setup tool.",
+      "description": "Mage Hand Legerdemain defines the subclass loop outside and inside combat: manipulate objects, handle traps, and create openings from safer positions.",
       "tags": [
         "subclass",
         "utility",
         "stealth"
-      ]
+      ],
+      "section": "Actions",
+      "type": "special"
     },
     "arcane-trickster-magical-ambush": {
       "summary": "Hidden casting becomes more dangerous because your target has a harder time resisting the trick.",
@@ -83,12 +88,13 @@
       "section": "Bonus Actions",
       "type": "bonus action",
       "summary": "Use your spectral hand to create a distraction and open a cleaner attack line.",
-      "description": "Versatile Trickster lets your Mage Hand create the distraction itself, turning a familiar utility spell into a combat setup piece that helps land the rogue’s precision damage.",
+      "description": "Versatile Trickster lets your Mage Hand create the distraction itself, turning a familiar utility spell into a combat setup piece that helps land the rogue\u2019s precision damage.",
       "tags": [
         "subclass",
         "combat",
         "setup"
-      ]
+      ],
+      "trigger": "Bonus action with active Mage Hand"
     },
     "arcane-trickster-spell-thief": {
       "section": "Reactions",
@@ -99,7 +105,8 @@
         "subclass",
         "reaction",
         "spellcasting"
-      ]
+      ],
+      "trigger": "Reaction when you succeed on a save vs a spell that targets only you"
     }
   }
 }

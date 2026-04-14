@@ -104,6 +104,7 @@
     var savesStr = entry.savingThrows.map(function(a) { return String(a || '').toUpperCase(); }).join('/') || '—';
     var armorStr = entry.armorProficiencies.map(function(v) { return String(v || '').replace(/(^|-)([a-z])/g, function(_, a, b){ return a + b.toUpperCase(); }); }).join(', ') || '—';
     var weaponStr = entry.weaponProficiencies.map(function(v) { return String(v || '').replace(/(^|-)([a-z])/g, function(_, a, b){ return a + b.toUpperCase(); }); }).join(', ') || '—';
+    var toolStr = entry.toolProficiencies.map(function(v) { return String(v || '').replace(/(^|-)([a-z])/g, function(_, a, b){ return a + b.toUpperCase(); }); }).join(', ') || '—';
     var skillsFrom = Array.isArray(entry.skillChoices && entry.skillChoices.from) ? entry.skillChoices.from : [];
     var skillsCount = parseInt(entry.skillChoices && entry.skillChoices.count, 10) || 0;
     var skillsStr = skillsFrom.length ? ('Choose ' + skillsCount + ': ' + skillsFrom.join(', ')) : '—';
@@ -175,6 +176,7 @@
       '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px">' +
         '<div class="cd-desc" style="margin:0"><strong style="color:#f3e7c4">Armor Proficiencies:</strong> ' + escHtml(armorStr) + '</div>' +
         '<div class="cd-desc" style="margin:0"><strong style="color:#f3e7c4">Weapon Proficiencies:</strong> ' + escHtml(weaponStr) + '</div>' +
+        '<div class="cd-desc" style="margin:0"><strong style="color:#f3e7c4">Tool Proficiencies:</strong> ' + escHtml(toolStr) + '</div>' +
         '<div class="cd-desc" style="margin:0"><strong style="color:#f3e7c4">Skill Choices:</strong> ' + escHtml(skillsStr) + '</div>' +
         '<div class="cd-desc" style="margin:0"><strong style="color:#f3e7c4">Subclass Unlock:</strong> ' + escHtml(subclassText) + '</div>' +
       '</div>' +

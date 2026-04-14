@@ -138,6 +138,21 @@
   }
 
   var SUBCLASS_PROFILE_OVERRIDES = {
+    assassin: {
+      tags: ['Ambush Burst', 'Infiltration', 'Surprise Payoff'],
+      chooserSummary: 'Assassin is the opener rogue: win mission setup, strike before enemies settle, and convert surprise windows into lethal burst turns.',
+      fantasy: 'Pick Assassin if you want first-round timing, infiltration prep, and ruthless single-target elimination to define your play.',
+    },
+    thief: {
+      tags: ['Fast Hands', 'Mobility', 'Object Tempo'],
+      chooserSummary: 'Thief is the opportunist rogue: fast object interaction, vertical movement, and utility tempo that wins fights through positioning and tools.',
+      fantasy: 'Pick Thief if you want climbing, item exploitation, and quick-turn opportunism to matter every session.',
+    },
+    'arcane-trickster': {
+      tags: ['Stealth Magic', 'Mage Hand Utility', 'Hybrid Control'],
+      chooserSummary: 'Arcane Trickster blends rogue setup with magic: stealth casting, mage hand manipulation, and control tools that feed precision attacks.',
+      fantasy: 'Pick Arcane Trickster if you want a rogue-caster loop where spells, deception, and Sneak Attack setups all reinforce each other.',
+    },
     'college-of-glamour': {
       tags: ['Fey Presence', 'Ally Reposition', 'Social Control'],
       chooserSummary: 'Glamour bards spend inspiration on battlefield staging: temporary hit points, reaction movement, and command-pressure turns.',

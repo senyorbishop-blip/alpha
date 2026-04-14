@@ -44,8 +44,8 @@
   "spellcastingType": "none",
   "spellcastingAbility": null,
   "spellSlots": {},
-  "classDescription": "A precise opportunist relying on mobility and cunning.",
-  "roleIdentity": "Skill specialist and burst-damage striker built around Sneak Attack.",
+  "classDescription": "A precision skirmisher built on stealth, expertise, and timing-sensitive burst damage.",
+  "roleIdentity": "Skill specialist and precision striker: create openings, trigger Sneak Attack, and outmaneuver threats with cunning setup tools.",
   "progressionTable": [
     {
       "level": 1,
@@ -105,7 +105,7 @@
         "sneakAttackDice": "2d6"
       },
       "unlockIds": [
-        "rogue-l4-1"
+        "rogue-ability-score-improvement-l4"
       ]
     },
     {
@@ -164,7 +164,7 @@
         "sneakAttackDice": "4d6"
       },
       "unlockIds": [
-        "rogue-l8-1"
+        "rogue-ability-score-improvement-l8"
       ]
     },
     {
@@ -190,7 +190,7 @@
         "sneakAttackDice": "5d6"
       },
       "unlockIds": [
-        "rogue-l10-1"
+        "rogue-subclass-feature-l10"
       ]
     },
     {
@@ -219,7 +219,7 @@
         "sneakAttackDice": "6d6"
       },
       "unlockIds": [
-        "rogue-l12-1"
+        "rogue-ability-score-improvement-l12"
       ]
     },
     {
@@ -248,7 +248,7 @@
         "sneakAttackDice": "7d6"
       },
       "unlockIds": [
-        "rogue-l14-1",
+        "rogue-subclass-feature-l14",
         "rogue-slippery-mind"
       ]
     },
@@ -263,7 +263,7 @@
         "sneakAttackDice": "8d6"
       },
       "unlockIds": [
-        "rogue-l15-1",
+        "rogue-subclass-feature-l15",
         "rogue-sneak-attack-l15"
       ]
     },
@@ -278,7 +278,7 @@
         "sneakAttackDice": "8d6"
       },
       "unlockIds": [
-        "rogue-l16-1"
+        "rogue-ability-score-improvement-l16"
       ]
     },
     {
@@ -321,7 +321,7 @@
         "sneakAttackDice": "10d6"
       },
       "unlockIds": [
-        "rogue-l19-1",
+        "rogue-epic-boon-l19",
         "rogue-sneak-attack-l19"
       ]
     },
@@ -353,8 +353,8 @@
     },
     "rogue-sneak-attack-1d6": {
       "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
-      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "description": "Sneak Attack is your main combat loop: create or exploit an opening, land one quality hit, and convert it into precision burst damage.\n\nSetup tools like Cunning Action, Steady Aim, ally positioning, and subclass tricks are there to make this trigger happen consistently.",
+      "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
         "precision",
@@ -372,7 +372,7 @@
     },
     "rogue-cunning-action": {
       "summary": "Turn movement and repositioning into a regular part of your round instead of a luxury.",
-      "description": "Cunning Action is what lets rogue feel slippery. It keeps the class mobile, evasive, and much better at claiming the exact angle Sneak Attack wants.",
+      "description": "Use Dash, Disengage, or Hide as a bonus action to control distance, escape danger, or create a Sneak Attack angle without spending your main action.",
       "section": "Bonus Actions",
       "type": "bonus action",
       "tags": [
@@ -392,7 +392,7 @@
     },
     "rogue-steady-aim": {
       "summary": "Slow down, line up the strike, and trade movement freedom for a cleaner chance to land your damage spike.",
-      "description": "Steady Aim is a risk-reward setup button. It is there for the turns where accuracy matters more than movement and you need a reliable way to enable precision damage.",
+      "description": "Use a bonus action to gain Advantage on your next attack this turn, but your speed becomes 0 until turn end. Use it when landing Sneak Attack is worth giving up movement.",
       "section": "Bonus Actions",
       "type": "bonus action",
       "tags": [
@@ -403,7 +403,7 @@
     },
     "rogue-cunning-strike": {
       "summary": "Spend part of your Sneak Attack pressure on control or utility riders instead of raw damage alone.",
-      "description": "Cunning Strike expands rogue decision-making. It turns the class from pure damage math into a toolkit that can disrupt, reposition, or pressure enemies in more varied ways.",
+      "description": "When Sneak Attack lands, you can trade part of its damage for tactical riders (such as control or positioning effects). Choose this when battlefield advantage is stronger than raw damage.",
       "tags": [
         "combat",
         "control",
@@ -430,7 +430,7 @@
     },
     "rogue-improved-cunning-strike": {
       "summary": "Your precision damage riders become more flexible and punishing as your control options deepen.",
-      "description": "Improved Cunning Strike means the rogue's tactical choices keep scaling instead of plateauing at mid levels.",
+      "description": "Your Cunning Strike options improve, letting you convert Sneak Attack damage into stronger control outcomes when needed. This deepens your turn-by-turn tactical choices.",
       "tags": [
         "combat",
         "control",
@@ -439,7 +439,7 @@
     },
     "rogue-devious-strikes": {
       "summary": "Your dirty-fighting toolkit becomes nastier and more layered, pushing the rogue deeper into battlefield manipulation.",
-      "description": "Devious Strikes reinforces the class as an opportunist who wins through pressure points, not stand-up trading.",
+      "description": "Your precision riders become nastier. At this tier, you should regularly decide between maximum damage and disruptive effects that set up the party or protect your next turn.",
       "tags": [
         "combat",
         "control",
@@ -493,8 +493,8 @@
     },
     "rogue-sneak-attack-l3": {
       "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
-      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
         "precision",
@@ -503,8 +503,8 @@
     },
     "rogue-sneak-attack-l5": {
       "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
-      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
         "precision",
@@ -513,8 +513,8 @@
     },
     "rogue-sneak-attack-l7": {
       "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
-      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
         "precision",
@@ -523,8 +523,8 @@
     },
     "rogue-sneak-attack-l9": {
       "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
-      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
         "precision",
@@ -533,8 +533,8 @@
     },
     "rogue-sneak-attack-l11": {
       "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
-      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
         "precision",
@@ -543,8 +543,8 @@
     },
     "rogue-sneak-attack-l13": {
       "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
-      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
         "precision",
@@ -553,8 +553,8 @@
     },
     "rogue-sneak-attack-l15": {
       "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
-      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
         "precision",
@@ -563,8 +563,8 @@
     },
     "rogue-sneak-attack-l17": {
       "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
-      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
         "precision",
@@ -573,8 +573,8 @@
     },
     "rogue-sneak-attack-l19": {
       "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
-      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
         "precision",
@@ -583,12 +583,84 @@
     },
     "rogue-sneak-attack-l20": {
       "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "Sneak Attack is the rogue's signature precision engine. It depends on setup, positioning, and timing rather than raw attrition, which is why the class feels so different from a straight martial bruiser.\n\nIn play, treat this as the reward for getting the angle right, coordinating with allies, or creating the opening yourself.",
-      "effect": "Extra precision damage once per turn when your attack meets the class trigger conditions.",
+      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
         "precision",
         "signature"
+      ]
+    },
+    "rogue-ability-score-improvement-l4": {
+      "summary": "Increase your key ability scores or take a feat to sharpen your rogue plan.",
+      "description": "This level is a build-shaping checkpoint. Most rogues raise Dexterity first, but this can also be where you lock in a feat that strengthens setup, stealth, or survivability.",
+      "tags": [
+        "build",
+        "asi",
+        "progression"
+      ]
+    },
+    "rogue-ability-score-improvement-l8": {
+      "summary": "Another ability or feat breakpoint to tighten your precision and survivability profile.",
+      "description": "Use this checkpoint to reinforce your role: higher Dexterity for attack quality and AC, stronger Constitution for durability, or a feat that supports your preferred rogue loop.",
+      "tags": [
+        "build",
+        "asi",
+        "progression"
+      ]
+    },
+    "rogue-ability-score-improvement-l12": {
+      "summary": "Mid-game build spike to keep your rogue scaling with encounter pressure.",
+      "description": "At this tier, ASI or feat choices should support the way you actually play: accuracy, stealth reliability, mobility, or tactical control options from your subclass.",
+      "tags": [
+        "build",
+        "asi",
+        "progression"
+      ]
+    },
+    "rogue-ability-score-improvement-l16": {
+      "summary": "Late-game build adjustment so your rogue remains sharp in high-tier play.",
+      "description": "Use this level to patch a weakness or double down on your strongest lane. High-level rogues feel best when their setup, damage delivery, and defenses all stay reliable.",
+      "tags": [
+        "build",
+        "asi",
+        "progression"
+      ]
+    },
+    "rogue-subclass-feature-l10": {
+      "summary": "Your archetype adds a new defining tool that should change how your turns or missions are planned.",
+      "description": "This is not filler progression. Level 10 is where your chosen rogue archetype deepens into a clearer gameplay identity in combat, infiltration, or utility play.",
+      "tags": [
+        "subclass",
+        "progression",
+        "identity"
+      ]
+    },
+    "rogue-subclass-feature-l14": {
+      "summary": "Your subclass package gains another major identity upgrade.",
+      "description": "By now your archetype should strongly shape your turn planning and role in scenes. This feature is part of what separates Assassin, Thief, and Arcane Trickster in real play.",
+      "tags": [
+        "subclass",
+        "progression",
+        "identity"
+      ]
+    },
+    "rogue-subclass-feature-l15": {
+      "summary": "High-tier subclass payoff that pushes your archetype into endgame territory.",
+      "description": "This level usually unlocks one of your subclass\u2019s most impactful tactical tools. Expect it to matter in boss encounters and high-stakes mission moments.",
+      "tags": [
+        "subclass",
+        "progression",
+        "identity"
+      ]
+    },
+    "rogue-epic-boon-l19": {
+      "summary": "You gain an Epic Boon on top of your Sneak Attack increase.",
+      "description": "This endgame milestone combines top-tier precision damage with a powerful boon pick, letting you tailor one final major edge before capstone play.",
+      "tags": [
+        "epic",
+        "build",
+        "endgame"
       ]
     }
   },
@@ -607,7 +679,7 @@
       "rogue-sneak-attack-l3"
     ],
     "4": [
-      "rogue-l4-1"
+      "rogue-ability-score-improvement-l4"
     ],
     "5": [
       "rogue-cunning-strike",
@@ -622,35 +694,35 @@
       "rogue-sneak-attack-l7"
     ],
     "8": [
-      "rogue-l8-1"
+      "rogue-ability-score-improvement-l8"
     ],
     "9": [
       "rogue-sneak-attack-l9"
     ],
     "10": [
-      "rogue-l10-1"
+      "rogue-subclass-feature-l10"
     ],
     "11": [
       "rogue-improved-cunning-strike",
       "rogue-sneak-attack-l11"
     ],
     "12": [
-      "rogue-l12-1"
+      "rogue-ability-score-improvement-l12"
     ],
     "13": [
       "rogue-devious-strikes",
       "rogue-sneak-attack-l13"
     ],
     "14": [
-      "rogue-l14-1",
+      "rogue-subclass-feature-l14",
       "rogue-slippery-mind"
     ],
     "15": [
-      "rogue-l15-1",
+      "rogue-subclass-feature-l15",
       "rogue-sneak-attack-l15"
     ],
     "16": [
-      "rogue-l16-1"
+      "rogue-ability-score-improvement-l16"
     ],
     "17": [
       "rogue-subtle-strikes",
@@ -660,7 +732,7 @@
       "rogue-elusive"
     ],
     "19": [
-      "rogue-l19-1",
+      "rogue-epic-boon-l19",
       "rogue-sneak-attack-l19"
     ],
     "20": [
@@ -698,7 +770,7 @@
       "level": 4,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "rogue-l4-1"
+        "rogue-ability-score-improvement-l4"
       ]
     },
     {
@@ -729,7 +801,7 @@
       "level": 8,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "rogue-l8-1"
+        "rogue-ability-score-improvement-l8"
       ]
     },
     {
@@ -743,7 +815,7 @@
       "level": 10,
       "summary": "Subclass Feature.",
       "unlockIds": [
-        "rogue-l10-1"
+        "rogue-subclass-feature-l10"
       ]
     },
     {
@@ -758,7 +830,7 @@
       "level": 12,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "rogue-l12-1"
+        "rogue-ability-score-improvement-l12"
       ]
     },
     {
@@ -773,7 +845,7 @@
       "level": 14,
       "summary": "Subclass Feature, Slippery Mind.",
       "unlockIds": [
-        "rogue-l14-1",
+        "rogue-subclass-feature-l14",
         "rogue-slippery-mind"
       ]
     },
@@ -781,7 +853,7 @@
       "level": 15,
       "summary": "Subclass Feature, Sneak Attack (8d6).",
       "unlockIds": [
-        "rogue-l15-1",
+        "rogue-subclass-feature-l15",
         "rogue-sneak-attack-l15"
       ]
     },
@@ -789,7 +861,7 @@
       "level": 16,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "rogue-l16-1"
+        "rogue-ability-score-improvement-l16"
       ]
     },
     {
@@ -811,7 +883,7 @@
       "level": 19,
       "summary": "Epic Boon, Sneak Attack (10d6).",
       "unlockIds": [
-        "rogue-l19-1",
+        "rogue-epic-boon-l19",
         "rogue-sneak-attack-l19"
       ]
     },
@@ -836,6 +908,7 @@
     "secondaryFocus": "Constitution",
     "secondaryReason": "extra HP helps you survive when plans go wrong",
     "avoidDump": "Wisdom",
-    "avoidDumpReason": "Perception and common saves use Wisdom more than many new rogues expect"
+    "avoidDumpReason": "Perception and common saves use Wisdom more than many new rogues expect",
+    "playPatternHint": "Use Cunning Action or Steady Aim to set up one high-value Sneak Attack each turn; spend Cunning Strike riders when control is worth more than raw damage."
   }
 }

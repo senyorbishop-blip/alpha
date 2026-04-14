@@ -46,6 +46,11 @@
       copy: 'Paladin should feel like a hybrid frontline engine: weapon hits, smite timing, Lay on Hands triage, Channel Divinity options, and aura positioning cues all visible together.',
       checks: ['Lay on Hands visible', 'Channel Divinity visible', 'Smite + spell slot decision surface visible'],
     },
+    rogue: {
+      title: 'Rogue Combat Surface',
+      copy: 'Rogue should read as a precision loop: set up one decisive hit each turn with Cunning Action / Steady Aim, then decide whether Sneak Attack goes to pure damage or Cunning Strike control.',
+      checks: ['Sneak Attack dice visible', 'Setup tools visible (Cunning Action / Steady Aim)', 'Subclass tempo tools visible'],
+    },
   };
 
 
@@ -245,6 +250,65 @@
         'oath of vengeance': [
           { key: 'channel divinity: vow of enmity', name: 'Vow of Enmity', summary: 'Mark one enemy for focused pursuit so your attack pressure stays glued to the target.', actionType: 'bonus', resourceName: 'Channel Divinity', tags: ['Vengeance', 'Mark'] },
           { key: 'channel divinity: abjure enemy', name: 'Abjure Enemy', summary: 'Break an enemy’s momentum with fear and forced control before it can dominate the round.', actionType: 'action', resourceName: 'Channel Divinity', tags: ['Vengeance', 'Control'] },
+        ],
+      },
+    },
+    rogue: {
+      actions: [
+        {
+          key: 'sneak attack',
+          name: 'Sneak Attack Window',
+          summary: 'Once per turn, when your hit meets the trigger, convert it into your current Sneak Attack precision burst.',
+          actionType: 'action',
+          resourceName: '',
+          resourceSummary: 'Once per turn on a valid hit',
+          range: 'Finesse / ranged weapon hit',
+          tags: ['Rogue', 'Precision'],
+        },
+        {
+          key: 'cunning action',
+          name: 'Cunning Action',
+          summary: 'Use Dash, Disengage, or Hide as a bonus action to create the angle you need before or after attacking.',
+          actionType: 'bonus',
+          resourceName: '',
+          resourceSummary: 'At will',
+          range: 'Self',
+          tags: ['Rogue', 'Setup'],
+        },
+        {
+          key: 'steady aim',
+          name: 'Steady Aim',
+          summary: 'Trade movement for accuracy so the attack that matters is more likely to land.',
+          actionType: 'bonus',
+          resourceName: '',
+          resourceSummary: 'Speed becomes 0 this turn',
+          range: 'Self',
+          tags: ['Rogue', 'Setup'],
+        },
+        {
+          key: 'cunning strike',
+          name: 'Cunning Strike Riders',
+          summary: 'When Sneak Attack lands, trade some dice for control or disruption instead of pure damage.',
+          actionType: 'action',
+          resourceName: 'Sneak Attack Dice',
+          resourceSummary: 'Spend damage for rider effects',
+          range: 'On Sneak Attack hit',
+          tags: ['Rogue', 'Control'],
+        },
+      ],
+      subclassActions: {
+        assassin: [
+          { key: 'assassinate', name: 'Assassinate', summary: 'Exploit first-turn and surprise timing for advantaged opener pressure and critical burst windows.', actionType: 'action', tags: ['Assassin', 'Ambush'] },
+          { key: 'death strike', name: 'Death Strike', summary: 'Punish surprised targets with a high-stakes finisher that can double your attack damage.', actionType: 'action', tags: ['Assassin', 'Burst'] },
+        ],
+        thief: [
+          { key: 'fast hands', name: 'Fast Hands', summary: 'Use your bonus action for object, tool, and pickpocket tempo that other rogues cannot match.', actionType: 'bonus', tags: ['Thief', 'Utility'] },
+          { key: 'second-story work', name: 'Second-Story Work', summary: 'Turn climb and vertical movement into reliable combat positioning and escape lanes.', actionType: 'bonus', tags: ['Thief', 'Mobility'] },
+        ],
+        'arcane trickster': [
+          { key: 'mage hand legerdemain', name: 'Mage Hand Legerdemain', summary: 'Run lock, trap, and theft interactions from range using invisible mage hand manipulation.', actionType: 'action', tags: ['Arcane Trickster', 'Utility'] },
+          { key: 'versatile trickster', name: 'Versatile Trickster', summary: 'Use Mage Hand as a bonus-action distraction to set up advantaged weapon attacks.', actionType: 'bonus', tags: ['Arcane Trickster', 'Setup'] },
+          { key: 'spell thief', name: 'Spell Thief', summary: 'When you resist a targeted spell, react to deny it and temporarily steal the magical edge.', actionType: 'reaction', tags: ['Arcane Trickster', 'Reaction'] },
         ],
       },
     },
@@ -622,12 +686,22 @@
           classMechanics.extraAttacks != null ? ('Attacks per Attack action: ' + classMechanics.extraAttacks) : '',
         ].filter(Boolean).join(' • ')
       : '';
+    const rogueLine = _classKey(charData) === 'rogue'
+      ? [
+          classMechanics.sneakAttackDice ? ('Sneak Attack: ' + classMechanics.sneakAttackDice) : '',
+          classMechanics.cunningStrikeMaxOptions != null ? ('Cunning Strike riders: ' + classMechanics.cunningStrikeMaxOptions) : '',
+          (charData && charData.subclassName && String(charData.subclassName).toLowerCase().indexOf('arcane trickster') >= 0 && charData.spellSaveDc)
+            ? ('Arcane Trickster spell save DC: ' + charData.spellSaveDc)
+            : '',
+        ].filter(Boolean).join(' • ')
+      : '';
     return `<div class="cs-combat-callout-grid">
       <div class="cs-combat-callout">
         <div class="cs-combat-callout-title">${_esc(guide.title)}</div>
         <div class="cs-combat-callout-copy">${_esc(guide.copy)}</div>
         ${barbarianLine ? `<div class="cs-combat-callout-copy">${_esc(barbarianLine)}</div>` : ''}
         ${paladinLine ? `<div class="cs-combat-callout-copy">${_esc(paladinLine)}</div>` : ''}
+        ${rogueLine ? `<div class="cs-combat-callout-copy">${_esc(rogueLine)}</div>` : ''}
       </div>
       <div class="cs-combat-callout muted">
         <div class="cs-combat-callout-title">What should be visible</div>

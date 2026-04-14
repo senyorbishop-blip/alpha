@@ -46,13 +46,16 @@
   ],
   "featureDefinitions": {
     "assassin-assassinate": {
-      "summary": "Exploit the first moments of a fight to hit harder and punish targets before they are fully ready.",
-      "description": "Assassinate is about opening pressure. It rewards planning, ambush play, and striking before the enemy has stabilized the battlefield.",
+      "summary": "Open combat before enemies act: advantage against creatures that have not taken a turn, with devastating payoff versus surprised targets.",
+      "description": "Assassinate rewards first-turn sequencing and ambush planning. Prioritize initiative, surprise setups, and target selection so your opener meaningfully swings the encounter.",
       "tags": [
         "subclass",
         "combat",
         "burst"
-      ]
+      ],
+      "section": "Actions",
+      "type": "special",
+      "trigger": "First round / surprised target timing"
     },
     "assassin-infiltration-expertise": {
       "summary": "You become markedly better at maintaining cover identities and operating inside hostile territory.",
@@ -73,13 +76,16 @@
       ]
     },
     "assassin-death-strike": {
-      "summary": "When you catch a creature truly off guard, the payoff becomes devastating.",
-      "description": "Death Strike is the subclass’s late-game assassination spike. It should feel like the culmination of patience, setup, and ruthless timing.",
+      "summary": "Convert a successful surprise hit into a potential double-damage execution window.",
+      "description": "Death Strike is a timing feature, not a passive buff. It pays off when your team can actually create surprise and you capitalize on the burst window immediately.",
       "tags": [
         "subclass",
         "burst",
         "capstone"
-      ]
+      ],
+      "section": "Actions",
+      "type": "special",
+      "trigger": "Hit a surprised creature"
     }
   }
 }
