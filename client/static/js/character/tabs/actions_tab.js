@@ -1008,6 +1008,26 @@
           classMechanics.trickOptions != null ? ('Dirty trick options: ' + classMechanics.trickOptions) : '',
         ].filter(Boolean).join(' • ')
       : '';
+    const tinkerLine = _classKey(charData) === 'tinker'
+      ? [
+          classMechanics.gadgetCharges != null ? ('Gadget Charges: ' + classMechanics.gadgetCharges) : '',
+          classMechanics.infusionSlots != null ? ('Infusion slots: ' + classMechanics.infusionSlots) : '',
+          classMechanics.spellsKnown != null ? ('Spells known: ' + classMechanics.spellsKnown) : '',
+          classMechanics.cantripsKnown != null ? ('Cantrips known: ' + classMechanics.cantripsKnown) : '',
+          (charData && charData.spellSaveDc) ? ('Spell save DC (INT): ' + charData.spellSaveDc) : '',
+        ].filter(Boolean).join(' • ')
+      : '';
+    const tinkerSubclassLine = _classKey(charData) === 'tinker'
+      ? (function () {
+          const subclass = _customSubclassKey(charData);
+          if (!subclass) return '';
+          if (subclass === 'artillerist') return 'Artillerist: Arc Cannon and Shatter Field should read as active deployment pressure tools.';
+          if (subclass === 'alchemist') return 'Alchemist: Elixir and Panacea actions should read as charge-backed support and recovery plays.';
+          if (subclass === 'mechanist') return 'Mechanist: Companion Frame commands should feel like a second body with linked-action tempo.';
+          if (subclass === 'saboteur') return 'Saboteur: Ghost Tools and Chain Reaction should surface stealth setup and reaction disruption rhythm.';
+          return '';
+        }())
+      : '';
     const pirateSubclassLine = _classKey(charData) === 'pirate'
       ? (function () {
           const subclass = _customSubclassKey(charData);
@@ -1051,6 +1071,8 @@
         ${druidLine ? `<div class="cs-combat-callout-copy">${_esc(druidLine)}</div>` : ''}
         ${fighterLine ? `<div class="cs-combat-callout-copy">${_esc(fighterLine)}</div>` : ''}
         ${fighterSubclassLine ? `<div class="cs-combat-callout-copy">${_esc(fighterSubclassLine)}</div>` : ''}
+        ${tinkerLine ? `<div class="cs-combat-callout-copy">${_esc(tinkerLine)}</div>` : ''}
+        ${tinkerSubclassLine ? `<div class="cs-combat-callout-copy">${_esc(tinkerSubclassLine)}</div>` : ''}
         ${pirateLine ? `<div class="cs-combat-callout-copy">${_esc(pirateLine)}</div>` : ''}
         ${pirateSubclassLine ? `<div class="cs-combat-callout-copy">${_esc(pirateSubclassLine)}</div>` : ''}
       </div>

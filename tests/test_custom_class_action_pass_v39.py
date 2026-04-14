@@ -29,6 +29,13 @@ def test_actions_tab_has_pirate_mechanics_callout_lines():
     assert 'Dread Captain: fear pressure, momentum punish, and intimidation rhythm should stand out.' in text
 
 
+def test_actions_tab_has_tinker_mechanics_callout_lines():
+    text = Path('client/static/js/character/tabs/actions_tab.js').read_text(encoding='utf-8')
+    assert 'Gadget Charges:' in text
+    assert 'Infusion slots:' in text
+    assert 'Mechanist: Companion Frame commands should feel like a second body with linked-action tempo.' in text
+
+
 def test_actions_tab_has_better_use_toast_fallback():
     text = Path('client/static/js/character/tabs/actions_tab.js').read_text(encoding='utf-8')
     assert 'triggered' in text

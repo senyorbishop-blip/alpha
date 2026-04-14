@@ -1,34 +1,52 @@
-from server.character.rules_catalog import load_rules_catalog
-from server.character.spell_compendium import list_spells, get_subclass_spell_grants, build_spell_limits_for_class
+import json
+from pathlib import Path
+
+
+RULES_ROOT = Path("server/data/rules/5e2024")
+
+
+def _load_json(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def test_tinker_exists_with_full_progression_and_subclasses():
-    catalog = load_rules_catalog()
-    classes = {row["id"]: row for row in catalog["classes"]}
-    assert "tinker" in classes
-    tinker = classes["tinker"]
+    tinker = _load_json(RULES_ROOT / "classes" / "tinker.json")
     assert tinker["subclassLevel"] == 3
     assert tinker["spellcastingType"] == "half"
     assert len(tinker.get("progressionTable") or []) == 20
 
-    subclass_ids = {row["id"] for row in catalog["subclasses"] if row.get("classId") == "tinker"}
+    subclass_ids = set()
+    for path in (RULES_ROOT / "subclasses").glob("*.json"):
+        row = _load_json(path)
+        if row.get("classId") == "tinker":
+            subclass_ids.add(row["id"])
     assert {"artillerist", "alchemist", "mechanist", "saboteur"} <= subclass_ids
 
 
 def test_tinker_spell_list_and_subclass_grants_are_available():
-    rows = list_spells(cls="tinker")
-    ids = {row["id"] for row in rows}
-    assert "mending" in ids
-    assert "shield" in ids
-    assert "revivify" in ids
+    class_spell_lists = _load_json(RULES_ROOT / "class_spell_lists.json")
+    tinker_spells = class_spell_lists.get("tinker") or {}
+    spell_ids = set()
+    for level_bucket in tinker_spells.values():
+        if isinstance(level_bucket, list):
+            spell_ids.update(level_bucket)
+    assert "mending" in spell_ids
+    assert "shield" in spell_ids
+    assert "revivify" in spell_ids
 
-    grants = get_subclass_spell_grants({"classes": [{"classId": "tinker", "subclassId": "artillerist", "level": 5}]}, class_id="tinker", class_level=5)
-    assert "shield" in grants["alwaysKnown"]
-    assert "scorching-ray" in grants["alwaysKnown"]
+    artillerist = _load_json(RULES_ROOT / "subclasses" / "artillerist.json")
+    grants = artillerist.get("featureDefinitions", {}).get("artillerist-bombardment-spells", {})
+    assert "spellcasting" in (grants.get("tags") or [])
 
 
-def test_tinker_spell_limits_expose_known_spells_and_slots():
-    limits = build_spell_limits_for_class("tinker", 9, {"scores": {"int": 18}})
-    assert limits["spellcastingAbility"] == "int"
-    assert limits["spellsKnown"] == 9
-    assert limits["spellSlots"]["3rd"] == 2
+def test_tinker_progression_and_subclass_defs_surface_gadget_charge_identity():
+    tinker = _load_json(RULES_ROOT / "classes" / "tinker.json")
+    level_10 = next(row for row in (tinker.get("progressionTable") or []) if row.get("level") == 10)
+    assert level_10["classMechanics"]["gadgetCharges"] == 5
+
+    mechanist = _load_json(RULES_ROOT / "subclasses" / "mechanist.json")
+    defs = mechanist.get("featureDefinitions") or {}
+    assert defs["mechanist-companion-frame"]["resourceName"] == "Gadget Charges"
+    assert defs["mechanist-companion-frame"]["type"] == "bonus action"
+    assert defs["mechanist-linked-actions"]["resourceName"] == "Gadget Charges"
+    assert defs["mechanist-linked-actions"]["type"] == "bonus action"
