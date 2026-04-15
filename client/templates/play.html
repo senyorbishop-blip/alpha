@@ -30309,6 +30309,24 @@ function handleLegacyMessage(msg) {
       break;
     }
 
+    case 'summon_runtime_result': {
+      if (p.ok) {
+        const tokenName = String((p.token && p.token.name) || (p.summon && p.summon.actor && p.summon.actor.name) || 'Companion').trim();
+        showToast(`${tokenName} summoned.`);
+      } else {
+        const error = String(p.error || 'summon_failed');
+        const msg = error === 'invalid_variant'
+          ? 'Summon failed: invalid beast variant.'
+          : error === 'summon_not_unlocked'
+            ? 'Summon failed: that variant is not unlocked.'
+            : error === 'profile_not_found'
+              ? 'Summon failed: no active character profile found.'
+              : `Summon failed: ${error.replace(/_/g, ' ')}`;
+        showToast(msg);
+      }
+      break;
+    }
+
     case 'char_profiles_sync': {
       loadCharProfiles(p.profiles || []);
       break;

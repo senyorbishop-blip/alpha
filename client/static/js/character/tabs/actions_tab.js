@@ -2048,19 +2048,45 @@
         const actionSource = String(useBtn.getAttribute('data-action-source') || '');
         if (actionSource === 'summon_action') {
           const action = _safeArray(model && model.summonActions).find(function (entry) { return String(entry && entry.id || '') === actionId; });
+          const summonMeta = action && action.summonAction && typeof action.summonAction === 'object' ? action.summonAction : {};
           const label = _firstText(action && action.name, 'Summon action');
-          if (typeof global.showToast === 'function') {
-            global.showToast(`${label}: summon runtime not implemented yet.`);
+          const sourceClassId = String((summonMeta.sourceClassId || '').toLowerCase());
+          const sourceSubclassId = String((summonMeta.sourceSubclassId || '').toLowerCase());
+          const isBeastMaster = sourceClassId === 'ranger' && sourceSubclassId === 'beast-master';
+          if (!isBeastMaster) {
+            if (typeof global.showToast === 'function') global.showToast(`${label}: runtime path is not live for this class yet.`);
+            return;
           }
-          try {
-            global.dispatchEvent(new CustomEvent('summonRuntimeRequestedStub', {
-              detail: {
-                actionId: actionId,
-                summonAction: action && action.summonAction ? action.summonAction : null,
-                status: 'not_implemented',
+          const variants = _safeArray(summonMeta.variants).map(function (entry) {
+            return {
+              id: _firstText(entry && entry.id, '').toLowerCase(),
+              name: _firstText(entry && entry.displayName, entry && entry.id, ''),
+            };
+          }).filter(function (entry) { return !!entry.id; });
+          let selectedVariantId = _firstText(summonMeta.selectedVariantId, '').toLowerCase();
+          if (!selectedVariantId && variants.length) selectedVariantId = String(variants[0].id || '').toLowerCase();
+          if (!selectedVariantId) {
+            if (typeof global.showToast === 'function') global.showToast(`${label}: no summon variant is configured.`);
+            return;
+          }
+          if (typeof global.sendWS === 'function') {
+            global.sendWS({
+              type: 'summon_runtime_request',
+              payload: {
+                action_id: actionId,
+                profile_id: _firstText(model && model.charData && model.charData.id, model && model.charData && model.charData.charId, ''),
+                summon_group_id: _firstText(summonMeta.summonGroupId, ''),
+                summon_template_id: _firstText(summonMeta.summonTemplateId, selectedVariantId),
+                selected_variant: selectedVariantId,
               },
-            }));
-          } catch (_) {}
+            });
+            if (typeof global.showToast === 'function') {
+              const variantName = (variants.find(function (v) { return v.id === selectedVariantId; }) || {}).name || summonMeta.selectedVariantName || selectedVariantId;
+              global.showToast(`Summoning ${variantName}...`);
+            }
+          } else if (typeof global.showToast === 'function') {
+            global.showToast(`${label}: websocket runtime unavailable.`);
+          }
           return;
         }
         _pulseRowFromTrigger(useBtn);

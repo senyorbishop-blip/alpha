@@ -83,8 +83,8 @@ def test_non_summon_class_has_no_summon_actions():
     assert actions == []
 
 
-def test_actions_tab_summon_button_is_stubbed_without_success_claim():
+def test_actions_tab_beast_master_summon_button_calls_runtime_request():
     src = Path("client/static/js/character/tabs/actions_tab.js").read_text(encoding="utf-8")
-    assert "summonRuntimeRequestedStub" in src
-    assert "summon runtime not implemented yet" in src.lower()
-    assert "summon succeeded" not in src.lower()
+    assert "summon_runtime_request" in src
+    assert "runtime path is not live for this class yet" in src
+    assert "summon runtime not implemented yet" not in src.lower()
