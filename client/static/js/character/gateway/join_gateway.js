@@ -480,9 +480,17 @@
         });
     }
 
+    async function refreshLibraryCharacters() {
+      const selectedBefore = state.getState().selectedProfileId || null;
+      const characters = await fetchLibraryCharacters();
+      libraryCharacters = Array.isArray(characters) ? characters : [];
+      rebuildCharacters(selectedBefore);
+    }
+
     return {
       init,
       loadCharacters,
+      refreshLibraryCharacters,
       selectProfile: state.selectProfile,
       getSelectedProfileId: function getSelectedProfileId() {
         return state.getState().selectedProfileId;
