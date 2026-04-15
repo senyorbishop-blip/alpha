@@ -896,7 +896,18 @@ function _spellAttackSaveCell(spell, charData) {
     const limits = (state.manifest && state.manifest.limits) || {};
     const mode = _selectionMode(limits);
     const cards = _mergeSpellArrays(_safeArray(state.manifest && state.manifest.cards), state.linkedSpells);
-    const cantripCount = cards.filter(function (spell) { return _spellLevelNumber(spell) === 0 && _spellIsSelectedInPlayView(spell, state); }).length;
+    const cardsById = new Map(cards.map(function (spell) {
+      return [String(spell && spell.id || '').trim(), spell];
+    }).filter(function (entry) { return entry[0]; }));
+    const manifestKnownIds = _safeArray(state && state.manifest && state.manifest.known)
+      .map(function (id) { return String(id || '').trim(); })
+      .filter(Boolean);
+    const knownCantripCountFromManifest = manifestKnownIds.filter(function (spellId) {
+      const knownSpell = cardsById.get(spellId);
+      return knownSpell && _spellLevelNumber(knownSpell) === 0;
+    }).length;
+    const cantripCountFromCards = cards.filter(function (spell) { return _spellLevelNumber(spell) === 0 && _spellIsSelectedInPlayView(spell, state); }).length;
+    const cantripCount = Math.max(cantripCountFromCards, knownCantripCountFromManifest);
     const preparedCount = cards.filter(function (spell) { return _spellLevelNumber(spell) > 0 && !!spell.isPrepared; }).length;
     const knownCount = cards.filter(function (spell) { return _spellLevelNumber(spell) > 0 && _spellIsSelectedInPlayView(spell, state); }).length;
     return {

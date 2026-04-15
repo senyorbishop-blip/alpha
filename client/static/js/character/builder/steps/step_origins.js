@@ -106,10 +106,22 @@
           tool: String(row.toolProficiency || '').trim(),
           feat: String(row.originFeat || '').trim(),
           gold: parseInt(row.startingGold, 10) || 0,
+          equipment: Array.isArray(row.equipment) ? row.equipment.slice() : [],
         };
       });
     }
-    return BACKGROUND_FALLBACK;
+    return BACKGROUND_FALLBACK.map(function (row) {
+      return Object.assign({}, row, {
+        equipment: Array.isArray(row.equipment) ? row.equipment.slice() : [],
+      });
+    });
+  }
+
+  function sanitizeEquipmentPicks(list) {
+    return (Array.isArray(list) ? list : [])
+      .map(function(item) { return String(item || '').trim(); })
+      .filter(function(item) { return !!item; })
+      .filter(function(item) { return !/\b\d+\s*(gp|sp|cp|ep|pp)\b/i.test(item); });
   }
 
   /* ── card renderer ─────────────────────────────────────── */
@@ -210,8 +222,14 @@
           cardEl.classList.add('selected');
 
           context.onSetField(['origins', 'backgroundId'], id);
+          context.onSetField(['origins', 'backgroundName'], bg.name);
           context.onSetField(['origins', 'skillProficiencies'], bg.skills.slice());
           context.onSetField(['origins', 'originFeat'], bg.feat);
+          context.onSetField(['background', 'id'], id);
+          context.onSetField(['background', 'name'], bg.name);
+          context.onSetField(['background', 'equipmentPicks'], sanitizeEquipmentPicks(bg.equipment));
+          context.onSetField(['equipment', 'choices'], sanitizeEquipmentPicks(bg.equipment));
+          context.onSetField(['equipment', 'currency', 'gp'], Math.max(0, parseInt(bg.gold, 10) || 0));
         });
       });
 
