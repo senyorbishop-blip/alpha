@@ -1198,6 +1198,7 @@ async def get_character_sheet(
                 "spellcastingType": spellcasting_type,
                 "spellState": spell_state,
                 "resources": feature_payload.get("resources") or [],
+                "summonActions": runtime.get("summonActions") if isinstance(runtime.get("summonActions"), list) else [],
             },
             "classData": class_data or {},
             "speciesData": species_data or {},

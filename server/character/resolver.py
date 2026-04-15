@@ -14,6 +14,7 @@ from server.character.feature_catalog import (
 from server.character.feature_authored_data import build_background_feature_profile, build_feat_profile, build_species_trait_profile
 from server.character.rules_catalog import get_class_catalog_row, get_subclass_catalog_row, load_rules_catalog
 from server.character.spell_compendium import build_character_spell_manifest
+from server.character.summon_catalog import get_summon_template
 from server.character.talent_engine import apply_talent_grants, resolve_talents_for_runtime
 from server.character.summon_state import sync_summon_unlocks_from_features
 from server.character.schema import default_runtime
@@ -271,6 +272,142 @@ def _resolve_subclass_available_spells(runtime_classes: list[dict[str, Any]]) ->
     return available
 
 
+def _resolve_summon_feature_name(
+    *,
+    feature_id: str,
+    class_catalog: dict[str, Any] | None,
+    subclass_catalog: dict[str, Any] | None,
+) -> str:
+    class_defs = (class_catalog or {}).get("featureDefinitions") if isinstance((class_catalog or {}).get("featureDefinitions"), dict) else {}
+    subclass_defs = (subclass_catalog or {}).get("featureDefinitions") if isinstance((subclass_catalog or {}).get("featureDefinitions"), dict) else {}
+    source = {}
+    if isinstance(subclass_defs.get(feature_id), dict):
+        source = subclass_defs.get(feature_id) or {}
+    elif isinstance(class_defs.get(feature_id), dict):
+        source = class_defs.get(feature_id) or {}
+    return str(source.get("displayName") or source.get("name") or feature_id).strip()
+
+
+def _command_model_summary(command_model: str) -> str:
+    mapping = {
+        "bonus_action_command": "Commands usually consume your Bonus Action.",
+        "action_command": "Commands usually consume your Action.",
+    }
+    return mapping.get(command_model, "Command economy rules will be applied in runtime.")
+
+
+def _build_runtime_summon_actions(
+    document: dict[str, Any],
+    runtime_classes: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    summons = document.get("summons") if isinstance(document.get("summons"), dict) else {}
+    unlocked_templates = [
+        str(template_id or "").strip().lower()
+        for template_id in (summons.get("unlockedTemplates") or [])
+        if str(template_id or "").strip()
+    ]
+    if not unlocked_templates:
+        return []
+
+    classes = document.get("classes") if isinstance(document.get("classes"), list) else []
+    primary_class = classes[0] if classes and isinstance(classes[0], dict) else {}
+    class_id = str(primary_class.get("classId") or primary_class.get("id") or primary_class.get("name") or "").strip().lower()
+    subclass_id = str(primary_class.get("subclassId") or "").strip().lower()
+    class_catalog = get_class_catalog_row(class_id) if class_id else None
+    subclass_catalog = get_subclass_catalog_row(subclass_id) if subclass_id else None
+
+    selected_variants = summons.get("selectedVariants") if isinstance(summons.get("selectedVariants"), dict) else {}
+    active_summons = summons.get("activeSummons") if isinstance(summons.get("activeSummons"), list) else []
+
+    template_rows: list[dict[str, Any]] = []
+    for template_id in unlocked_templates:
+        row = get_summon_template(template_id)
+        if isinstance(row, dict):
+            template_rows.append(row)
+    if not template_rows:
+        return []
+
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in template_rows:
+        group_key = str(row.get("variantGroup") or row.get("id") or "").strip().lower()
+        if not group_key:
+            continue
+        grouped.setdefault(group_key, []).append(row)
+
+    out: list[dict[str, Any]] = []
+    for group_key, rows in grouped.items():
+        primary = rows[0] if rows else {}
+        source_feature_id = str(primary.get("sourceFeatureId") or "").strip().lower()
+        source_feature_name = _resolve_summon_feature_name(
+            feature_id=source_feature_id,
+            class_catalog=class_catalog if isinstance(class_catalog, dict) else None,
+            subclass_catalog=subclass_catalog if isinstance(subclass_catalog, dict) else None,
+        ) if source_feature_id else "Summon Feature"
+        selected_variant = str(selected_variants.get(group_key) or "").strip().lower()
+        if not selected_variant and rows:
+            selected_variant = str(rows[0].get("id") or "").strip().lower()
+        unlocked_variant_ids = [str(row.get("id") or "").strip().lower() for row in rows if str(row.get("id") or "").strip()]
+        variant_names = [str(row.get("displayName") or row.get("tokenName") or row.get("id") or "").strip() for row in rows]
+        selected_variant_name = next(
+            (
+                str(row.get("displayName") or row.get("tokenName") or row.get("id") or "").strip()
+                for row in rows
+                if str(row.get("id") or "").strip().lower() == selected_variant
+            ),
+            (variant_names[0] if variant_names else str(primary.get("displayName") or primary.get("tokenName") or "Summon").strip()),
+        )
+        max_active = _safe_int(primary.get("maxActive"), 1, minimum=0)
+        active_count = 0
+        for active in active_summons:
+            if not isinstance(active, dict):
+                continue
+            active_template_id = str(active.get("templateId") or active.get("summonTemplateId") or active.get("id") or "").strip().lower()
+            if active_template_id and active_template_id in unlocked_variant_ids:
+                active_count += 1
+        summon_category = str(primary.get("summonCategory") or "").strip().lower()
+        action_label = "Deploy" if summon_category in {"deployable", "construct", "turret", "cannon", "device"} else "Summon"
+        command_model = str(primary.get("commandModel") or "").strip().lower()
+        replace_on_resummon = bool(primary.get("replaceOnResummon"))
+        summary_bits = [
+            f"{action_label} {selected_variant_name}."
+        ]
+        if len(variant_names) > 1:
+            summary_bits.append("Variants: " + ", ".join(variant_names[:6]))
+        summary_bits.append(f"Active {active_count}/{max_active}.")
+        if replace_on_resummon:
+            summary_bits.append("Re-summoning replaces an existing summon.")
+        out.append(
+            {
+                "id": f"summon:{group_key}",
+                "displayName": f"{action_label} {str(primary.get('tokenName') or primary.get('displayName') or 'Companion').strip()}",
+                "sourceFeatureId": source_feature_id,
+                "sourceFeatureName": source_feature_name,
+                "summonGroupId": group_key,
+                "summonTemplateId": selected_variant or str(primary.get("id") or "").strip().lower(),
+                "variants": [
+                    {
+                        "id": str(row.get("id") or "").strip().lower(),
+                        "displayName": str(row.get("displayName") or row.get("tokenName") or row.get("id") or "").strip(),
+                        "tags": list(row.get("tags") or []),
+                    }
+                    for row in rows
+                ],
+                "selectedVariantId": selected_variant,
+                "selectedVariantName": selected_variant_name,
+                "actionType": action_label,
+                "commandModel": command_model,
+                "commandModelSummary": _command_model_summary(command_model),
+                "maxActive": max_active,
+                "currentActiveCount": active_count,
+                "replaceOnResummon": replace_on_resummon,
+                "shortSummary": " ".join(bit for bit in summary_bits if bit).strip(),
+                "tags": sorted({str(tag).strip() for row in rows for tag in (row.get("tags") or []) if str(tag).strip()}),
+                "summonDisplayName": str(primary.get("displayName") or primary.get("tokenName") or "").strip(),
+            }
+        )
+    return out
+
+
 def resolve_character_runtime(document: Any) -> dict:
     """Resolve canonical character document into runtime payload.
 
@@ -499,6 +636,7 @@ def resolve_character_runtime(document: Any) -> dict:
     runtime["originTraits"] = _resolve_runtime_origin_traits(normalized)
     runtime["backgroundFeatures"] = _resolve_runtime_background_features(normalized)
     runtime["featFeatures"] = _resolve_runtime_feat_features(normalized)
+    runtime["summonActions"] = _build_runtime_summon_actions(normalized, runtime_classes)
 
     class_saving_throws = []
     if isinstance((primary_catalog or {}).get("savingThrows"), list):

@@ -32235,6 +32235,9 @@ function _buildPremiumSheetCharData() {
   const nativeActionCards = (typeof _getNativeCharacterBookActionCards === 'function') ? _getNativeCharacterBookActionCards() : [];
   const nativeResourceCards = (typeof _getNativeCharacterBookResources === 'function') ? _getNativeCharacterBookResources() : [];
   const nativeFeatureCards = (typeof _getNativeCharacterBookFeatures === 'function') ? _getNativeCharacterBookFeatures() : [];
+  const summonActions = Array.isArray(sheet.summonActions)
+    ? sheet.summonActions
+    : (Array.isArray(sheet?.book?.summonActions) ? sheet.book.summonActions : []);
   const selectedTarget = (typeof _nativeActionSelectedTarget === 'function') ? _nativeActionSelectedTarget() : null;
   const activeConcentration = (typeof _getActiveConcentrationSpellName === 'function') ? _getActiveConcentrationSpellName() : '';
 
@@ -32307,6 +32310,7 @@ function _buildPremiumSheetCharData() {
     feats,
     actions,
     nativeActionCards,
+    summonActions,
     nativeResources: nativeResourceCards,
     nativeFeatures: nativeFeatureCards,
     nativeClassFeatures: nativeFeatureCards,

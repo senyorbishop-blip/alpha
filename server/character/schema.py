@@ -213,6 +213,7 @@ def default_runtime() -> dict:
         "actions": [],
         "bonusActions": [],
         "reactions": [],
+        "summonActions": [],
         "passives": [],
         "talents": [],
         "talentGrants": [],
