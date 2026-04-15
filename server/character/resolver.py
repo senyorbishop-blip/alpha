@@ -15,6 +15,7 @@ from server.character.feature_authored_data import build_background_feature_prof
 from server.character.rules_catalog import get_class_catalog_row, get_subclass_catalog_row, load_rules_catalog
 from server.character.spell_compendium import build_character_spell_manifest
 from server.character.talent_engine import apply_talent_grants, resolve_talents_for_runtime
+from server.character.summon_state import sync_summon_unlocks_from_features
 from server.character.schema import default_runtime
 from server.character.validation import ensure_character_defaults
 from server.rules_content import OPEN_5E_SPELLS as _OPEN_5E_SPELLS
@@ -277,6 +278,7 @@ def resolve_character_runtime(document: Any) -> dict:
     TODO: replace stubs with ruleset/species/class aware calculators.
     """
     normalized = ensure_character_defaults(document)
+    normalized = sync_summon_unlocks_from_features(normalized)
     runtime = default_runtime()
 
     level_total = _compute_total_level(normalized)

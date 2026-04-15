@@ -169,7 +169,7 @@
       "minimumLevel": 9
     }
   ],
-  "classDescription": "A short-rest Pact Magic caster who recovers spell slots every short rest — supplemented by Eldritch Invocations that permanently expand at-will abilities, and a patron subclass that reshapes the whole spell and feature identity.",
+  "classDescription": "A short-rest Pact Magic caster who recovers spell slots every short rest \u2014 supplemented by Eldritch Invocations that permanently expand at-will abilities, and a patron subclass that reshapes the whole spell and feature identity.",
   "roleIdentity": "Short-rest caster with high-impact invocations and at-will tricks.",
   "progressionTable": [
     {
@@ -641,7 +641,25 @@
           "name": "Pact of the Chain",
           "description": "Gain a stronger familiar identity for scouting, utility, and setup."
         }
-      ]
+      ],
+      "grantsSummons": true,
+      "summonUnlockMode": "feature_choice_map",
+      "summonChoiceMap": {
+        "pact-of-the-chain": {
+          "summonTemplateIds": [
+            "warlock-chain-imp",
+            "warlock-chain-pseudodragon",
+            "warlock-chain-quasit",
+            "warlock-chain-sprite"
+          ],
+          "defaultSummonTemplateId": "warlock-chain-imp",
+          "variantGroup": "warlock-pact-chain-familiar"
+        }
+      },
+      "summonTemplateIds": [],
+      "summonVariantChoice": true,
+      "defaultSummonTemplateId": "warlock-chain-imp",
+      "variantGroup": "warlock-pact-chain-familiar"
     },
     "warlock-mystic-arcanum-6th": {
       "summary": "Your patron grants a higher-tier spell effect outside the normal pact-slot loop, marking a major jump in magical reach.",

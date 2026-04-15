@@ -5,6 +5,8 @@ import copy
 import time
 from typing import Any
 
+from server.character.summon_state import default_summon_state
+
 CHARACTER_SCHEMA_NAME = "casual-dnd.character"
 CHARACTER_SCHEMA_VERSION = 1
 
@@ -155,6 +157,7 @@ def default_character_document() -> dict:
             "spellbookEntries": [],
             "classSources": [],
         },
+        "summons": default_summon_state(),
         "importMeta": {
             "origin": "",
             "externalId": "",
@@ -262,6 +265,7 @@ def normalize_character_document(raw: Any) -> dict:
         "awakening",
         "equipment",
         "spellState",
+        "summons",
         "importMeta",
         "audit",
     ):

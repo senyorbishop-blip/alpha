@@ -64,7 +64,15 @@
       "type": "bonus action",
       "resourceName": "Gadget Charges",
       "trackUses": true,
-      "usage": "Spend 1 Gadget Charge to command, boost, or redeploy your frame."
+      "usage": "Spend 1 Gadget Charge to command, boost, or redeploy your frame.",
+      "grantsSummons": true,
+      "summonUnlockMode": "subclass_feature_unlock",
+      "summonTemplateIds": [
+        "tinker-mechanist-companion-frame"
+      ],
+      "summonVariantChoice": false,
+      "defaultSummonTemplateId": "tinker-mechanist-companion-frame",
+      "variantGroup": "tinker-mechanist-frame"
     },
     "mechanist-systems-spells": {
       "summary": "Your granted spells support force projection, positioning, and machine-minded problem solving.",
