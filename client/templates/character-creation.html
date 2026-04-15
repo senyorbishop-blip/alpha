@@ -186,6 +186,9 @@
       min-height: 54px; border-radius: 18px; padding: 14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;
       border:1px solid rgba(229,198,151,0.14); background: rgba(10,6,5,0.5); color: var(--muted);
     }
+    .feedback.is-empty {
+      display: none;
+    }
     .feedback.error { color: var(--danger); border-color: rgba(255,141,141,0.24); background: rgba(64,14,14,0.38); }
     .feedback.success { color: var(--accent); border-color: rgba(156,224,219,0.24); background: rgba(12,31,29,0.45); }
     .step-view { display: grid; align-content: start; gap: 18px; }
@@ -251,6 +254,27 @@
       padding: 12px 14px; border-radius: 18px; border:1px solid rgba(229,198,151,0.12); background: rgba(10,6,5,0.48); color: var(--muted);
       display:flex; justify-content:space-between; gap: 14px;
     }
+    .equipment-pack-grid {
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 12px;
+    }
+    .equipment-pack-card {
+      width: 100%;
+      border: 1px solid rgba(229,198,151,0.16);
+      border-radius: 16px;
+      background: rgba(8,4,3,0.58);
+      color: var(--text);
+      padding: 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .equipment-pack-card.selected {
+      border-color: rgba(156,224,219,0.58);
+      box-shadow: 0 12px 30px rgba(22,72,70,0.25);
+    }
+    .equipment-pack-card h4 { margin: 0 0 6px; font-family:'Cinzel',serif; font-size: 0.88rem; }
+    .equipment-pack-card p { margin: 0; color: var(--muted); font-size: 0.8rem; line-height: 1.35; }
     .button-row { display:flex; justify-content:space-between; gap: 14px; align-items:center; }
     .btn {
       appearance:none; border:none; cursor:pointer; font-family:'Cinzel',serif; border-radius: 18px; padding: 16px 20px;
@@ -594,6 +618,87 @@
       { id: 'soldier', name: 'Soldier', summary: 'Disciplined by war and command.' },
       { id: 'urchin', name: 'Urchin', summary: 'Streetwise, scrappy, and impossible to pin down.' },
     ];
+    const STARTER_WEAPON_PACKS = {
+      barbarian: [
+        { id: 'barbarian_greataxe', label: 'Greataxe Bruiser', items: ['Greataxe', 'Handaxe ×2', 'Javelin ×4'] },
+        { id: 'barbarian_maul', label: 'Maul Crusher', items: ['Maul', 'Handaxe ×2', 'Javelin ×4'] },
+        { id: 'barbarian_shield', label: 'Axe & Shield', items: ['Battleaxe', 'Shield', 'Javelin ×4'] },
+      ],
+      bard: [
+        { id: 'bard_rapier', label: 'Rapier Performer', items: ['Rapier', 'Dagger', 'Light Crossbow', 'Bolts ×20'] },
+        { id: 'bard_longsword', label: 'Longsword Balladeer', items: ['Longsword', 'Dagger', 'Shortbow', 'Arrows ×20'] },
+        { id: 'bard_dual', label: 'Dual Dagger Troubadour', items: ['Dagger ×2', 'Shortbow', 'Arrows ×20'] },
+      ],
+      cleric: [
+        { id: 'cleric_mace', label: 'Mace & Shield', items: ['Mace', 'Shield', 'Light Crossbow', 'Bolts ×20'] },
+        { id: 'cleric_warhammer', label: 'Warhammer Devotee', items: ['Warhammer', 'Shield', 'Javelin ×4'] },
+        { id: 'cleric_spear', label: 'Spear Acolyte', items: ['Spear', 'Shield', 'Mace'] },
+      ],
+      druid: [
+        { id: 'druid_staff', label: 'Quarterstaff Warden', items: ['Quarterstaff', 'Scimitar', 'Dagger'] },
+        { id: 'druid_spear', label: 'Spear Keeper', items: ['Spear', 'Shield', 'Dagger'] },
+        { id: 'druid_club', label: 'Club Mystic', items: ['Club', 'Dagger ×2', 'Sling', 'Sling Bullets ×20'] },
+      ],
+      fighter: [
+        { id: 'fighter_greatsword', label: 'Greatsword Vanguard', items: ['Greatsword', 'Handaxe ×2', 'Javelin ×4'] },
+        { id: 'fighter_longsword', label: 'Sword & Board', items: ['Longsword', 'Shield', 'Javelin ×4'] },
+        { id: 'fighter_polearm', label: 'Polearm Sentinel', items: ['Halberd', 'Light Crossbow', 'Bolts ×20'] },
+      ],
+      monk: [
+        { id: 'monk_staff', label: 'Bo Staff Adept', items: ['Quarterstaff', 'Dart ×10'] },
+        { id: 'monk_shortsword', label: 'Shortblade Initiate', items: ['Shortsword', 'Dart ×10'] },
+        { id: 'monk_spear', label: 'Spear Disciple', items: ['Spear', 'Dart ×10'] },
+      ],
+      paladin: [
+        { id: 'paladin_longsword', label: 'Longsword Guardian', items: ['Longsword', 'Shield', 'Javelin ×5'] },
+        { id: 'paladin_warhammer', label: 'Warhammer Defender', items: ['Warhammer', 'Shield', 'Javelin ×5'] },
+        { id: 'paladin_greatweapon', label: 'Great Weapon Oathsworn', items: ['Greatsword', 'Javelin ×5'] },
+      ],
+      ranger: [
+        { id: 'ranger_longsword_bow', label: 'Longsword Archer', items: ['Longsword', 'Longbow', 'Arrows ×20', 'Dagger ×2'] },
+        { id: 'ranger_dual_scimitar', label: 'Dual Scimitar Stalker', items: ['Scimitar ×2', 'Longbow', 'Arrows ×20'] },
+        { id: 'ranger_spear_shield', label: 'Spear Warden', items: ['Spear', 'Shield', 'Longbow', 'Arrows ×20'] },
+      ],
+      rogue: [
+        { id: 'rogue_rapier', label: 'Rapier Cutpurse', items: ['Rapier', 'Shortbow', 'Arrows ×20', 'Dagger ×2'] },
+        { id: 'rogue_shortsword', label: 'Dual Shortsword Sneak', items: ['Shortsword ×2', 'Shortbow', 'Arrows ×20'] },
+        { id: 'rogue_dagger', label: 'Dagger Skirmisher', items: ['Dagger ×4', 'Shortbow', 'Arrows ×20'] },
+      ],
+      sorcerer: [
+        { id: 'sorcerer_light_xbow', label: 'Crossbow Adept', items: ['Light Crossbow', 'Bolts ×20', 'Dagger ×2'] },
+        { id: 'sorcerer_quarterstaff', label: 'Quarterstaff Channeler', items: ['Quarterstaff', 'Dagger ×2'] },
+        { id: 'sorcerer_sling', label: 'Sling Arcanist', items: ['Sling', 'Sling Bullets ×20', 'Dagger ×2'] },
+      ],
+      warlock: [
+        { id: 'warlock_light_xbow', label: 'Crossbow Pactbound', items: ['Light Crossbow', 'Bolts ×20', 'Dagger'] },
+        { id: 'warlock_simple_blade', label: 'Blade Pact Initiate', items: ['Quarterstaff', 'Dagger ×2'] },
+        { id: 'warlock_spear', label: 'Spear Hexer', items: ['Spear', 'Dagger', 'Light Crossbow', 'Bolts ×20'] },
+      ],
+      wizard: [
+        { id: 'wizard_quarterstaff', label: 'Quarterstaff Savant', items: ['Quarterstaff', 'Dagger'] },
+        { id: 'wizard_light_xbow', label: 'Crossbow Savant', items: ['Light Crossbow', 'Bolts ×20', 'Dagger'] },
+        { id: 'wizard_sling', label: 'Sling Scholar', items: ['Sling', 'Sling Bullets ×20', 'Dagger'] },
+      ],
+      tinker: [
+        { id: 'tinker_hand_crossbow', label: 'Bolt Rig Starter', items: ['Hand Crossbow', 'Bolts ×20', 'Light Hammer', "Tinker's Tools"] },
+        { id: 'tinker_spear_shield', label: 'Field Engineer Kit', items: ['Spear', 'Shield', 'Light Crossbow', 'Bolts ×20', "Tinker's Tools"] },
+        { id: 'tinker_throwing', label: 'Prototype Thrower', items: ['Dagger ×3', 'Light Hammer', "Tinker's Tools", 'Shield'] },
+      ],
+      pirate: [
+        { id: 'pirate_cutlass', label: 'Cutlass Raider', items: ['Scimitar', 'Pistol', 'Bullets ×20', 'Dagger'] },
+        { id: 'pirate_duel', label: 'Dueling Buccaneer', items: ['Rapier', 'Pistol', 'Bullets ×20', 'Dagger'] },
+        { id: 'pirate_boarder', label: 'Boarding Specialist', items: ['Handaxe', 'Shield', 'Musket', 'Bullets ×20'] },
+      ],
+    };
+    const STARTING_PACKS = {
+      explorer_pack: { id: 'explorer_pack', name: "Explorer's Pack", own_weight_lbs: 5, capacity_lbs: 30, contents: ['Bedroll', 'Mess Kit', 'Tinderbox', 'Torch ×10', 'Rations ×10 days', 'Waterskin', 'Rope (50 ft)'] },
+      dungeoneer_pack: { id: 'dungeoneer_pack', name: "Dungeoneer's Pack", own_weight_lbs: 5, capacity_lbs: 30, contents: ['Crowbar', 'Hammer', 'Pitons ×10', 'Torch ×10', 'Tinderbox', 'Rations ×10 days', 'Waterskin', 'Rope (50 ft)'] },
+      burglar_pack: { id: 'burglar_pack', name: "Burglar's Pack", own_weight_lbs: 5, capacity_lbs: 30, contents: ['Bag of Ball Bearings', 'String (10 ft)', 'Bell', 'Candles ×5', 'Crowbar', 'Hammer', 'Pitons ×10', 'Hooded Lantern', 'Oil Flasks ×2', 'Rations ×5 days', 'Tinderbox', 'Waterskin', 'Rope (50 ft)'] },
+      diplomat_pack: { id: 'diplomat_pack', name: "Diplomat's Pack", own_weight_lbs: 5, capacity_lbs: 30, contents: ['Chest', 'Cases for Maps and Scrolls ×2', 'Fine Clothes', 'Ink', 'Ink Pen', 'Lamp', 'Oil Flasks ×2', 'Paper ×5 sheets', 'Perfume', 'Sealing Wax', 'Soap'] },
+      entertainer_pack: { id: 'entertainer_pack', name: "Entertainer's Pack", own_weight_lbs: 5, capacity_lbs: 30, contents: ['Bedroll', 'Costume ×2', 'Candles ×5', 'Rations ×5 days', 'Waterskin', 'Disguise Kit'] },
+      priest_pack: { id: 'priest_pack', name: "Priest's Pack", own_weight_lbs: 5, capacity_lbs: 30, contents: ['Blanket', 'Candles ×10', 'Tinderbox', 'Alms Box', 'Incense ×2 blocks', 'Censer', 'Vestments', 'Rations ×2 days', 'Waterskin'] },
+      scholar_pack: { id: 'scholar_pack', name: "Scholar's Pack", own_weight_lbs: 5, capacity_lbs: 30, contents: ['Book of Lore', 'Ink', 'Ink Pen', 'Parchment ×10 sheets', 'Little Bag of Sand', 'Small Knife'] },
+    };
 
     const params = new URLSearchParams(location.search);
     const SESSION_ID = String(params.get('session') || '').trim().toUpperCase();
@@ -620,6 +725,8 @@
         abilityMode: 'standard_array',
         startingLevel: 1,
         subclassId: '',
+        selectedWeaponPackId: '',
+        selectedAdventuringPackId: 'explorer_pack',
       }
     };
 
@@ -645,7 +752,10 @@
 
     function setFeedback(message, type) {
       els.feedback.textContent = message || '';
-      els.feedback.className = 'feedback' + (type ? (' ' + type) : '');
+      const classes = ['feedback'];
+      if (!message) classes.push('is-empty');
+      if (type) classes.push(type);
+      els.feedback.className = classes.join(' ');
     }
     function getCsrfToken() {
       const match = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
@@ -713,6 +823,44 @@ function traitDescription(trait) {
   }
   return TRAIT_DETAIL_FALLBACKS[normalizedTraitKey(trait)] || 'This trait is available during character creation and should affect play, not just act as a label.';
 }
+    function parseItemLine(line) {
+      const text = String(line || '').trim();
+      if (!text) return null;
+      const m = text.match(/^(.*?)\s*[×x]\s*(\d+)$/i);
+      if (m) return { name: String(m[1] || '').trim(), qty: Math.max(1, Number(m[2] || 1) || 1) };
+      return { name: text, qty: 1 };
+    }
+    function inferEquipmentKind(name) {
+      const lower = String(name || '').toLowerCase();
+      if (/shield/.test(lower)) return 'shield';
+      if (/armor|armour|mail|plate|leather|breastplate|splint|chain/.test(lower)) return 'armor';
+      if (/sword|axe|mace|hammer|staff|spear|bow|crossbow|dagger|scimitar|rapier|halberd|maul|javelin|dart|sling|pistol|musket/.test(lower)) return 'weapon';
+      return 'gear';
+    }
+    function inventoryItemFromLine(line, source = 'builder_starting_choice') {
+      const parsed = parseItemLine(line);
+      if (!parsed || !parsed.name) return null;
+      const kind = inferEquipmentKind(parsed.name);
+      return { name: parsed.name, qty: parsed.qty, equipment_kind: kind, item_type: kind, source, equipped: false };
+    }
+    function getWeaponPacksForClass(item) {
+      const classId = String((item && item.id) || state.hero.classId || '').trim().toLowerCase();
+      return STARTER_WEAPON_PACKS[classId] || [];
+    }
+    function getSelectedWeaponPack() {
+      const packs = getWeaponPacksForClass(selectedClass() || {});
+      const selectedId = String(state.hero.selectedWeaponPackId || '').trim();
+      return packs.find((pack) => String(pack.id || '') === selectedId) || null;
+    }
+    function ensureEquipmentDefaults() {
+      const packs = getWeaponPacksForClass(selectedClass() || {});
+      if (!packs.some((pack) => String(pack.id || '') === String(state.hero.selectedWeaponPackId || ''))) {
+        state.hero.selectedWeaponPackId = '';
+      }
+      if (!STARTING_PACKS[String(state.hero.selectedAdventuringPackId || '')]) {
+        state.hero.selectedAdventuringPackId = 'explorer_pack';
+      }
+    }
     function equipmentForClass(item) {
       const raw = item && (item.startingEquipment || item.starting_equipment || item.starting_items || item.equipmentPicks || item.equipment_picks || item.startingEquipmentChoices || item.starting_equipment_choices || []);
       const rows = [];
@@ -741,10 +889,15 @@ function traitDescription(trait) {
       pushValue(raw);
       const unique = Array.from(new Set(rows.filter(Boolean)));
       if (unique.length) return unique.slice(0, 10);
-      return ['Class starter kit', 'Primary weapon', 'Adventuring pack'];
+      const selectedPack = getSelectedWeaponPack();
+      if (selectedPack && Array.isArray(selectedPack.items) && selectedPack.items.length) return selectedPack.items;
+      return ['Primary weapon', 'Adventuring pack'];
     }
     function normalizeEquipmentRows(item) {
-      const source = equipmentForClass(item);
+      const selectedPack = getSelectedWeaponPack();
+      const source = (selectedPack && selectedPack.items && selectedPack.items.length)
+        ? selectedPack.items
+        : equipmentForClass(item);
       if (!source.length) {
         return [
           { label: 'Class starter kit', detail: 'Starter class gear package.' },
@@ -766,6 +919,17 @@ function traitDescription(trait) {
         return { label: idx === 1 ? 'Primary weapon' : 'Bonus gear', detail: name };
       });
       return details.slice(0, 6);
+    }
+    function packIdFromClassDefaults(item) {
+      const source = equipmentForClass(item);
+      const lower = source.map((entry) => String(entry || '').toLowerCase());
+      if (lower.some((entry) => entry.includes('dungeoneer'))) return 'dungeoneer_pack';
+      if (lower.some((entry) => entry.includes('burglar'))) return 'burglar_pack';
+      if (lower.some((entry) => entry.includes('diplomat'))) return 'diplomat_pack';
+      if (lower.some((entry) => entry.includes('entertainer'))) return 'entertainer_pack';
+      if (lower.some((entry) => entry.includes('priest'))) return 'priest_pack';
+      if (lower.some((entry) => entry.includes('scholar'))) return 'scholar_pack';
+      return 'explorer_pack';
     }
     function classAccent(item) { return item.accentColor || item.accent_color || '#d0a65f'; }
     
@@ -789,6 +953,8 @@ function normalizeCatalogClasses(items) {
     featuresByLevel: Array.isArray(item.featuresByLevel) ? item.featuresByLevel : [],
     subclassLevel: Number(item.subclassLevel || 0),
     buildTips: item.buildTips && typeof item.buildTips === 'object' ? item.buildTips : {},
+    portraitUrl: item.portraitUrl || item.portrait_url || item.imageUrl || item.image || '',
+    defaultStartingPackId: item.defaultStartingPackId || item.default_starting_pack_id || packIdFromClassDefaults(item),
   })).filter(item => item.id);
 }
 
@@ -963,6 +1129,39 @@ function buildAvatarOptions(extra) {
   }, extra || {});
 }
 
+function resolveClassPortraitUrl(klass) {
+  if (!klass || typeof klass !== 'object') return '';
+  return String(
+    klass.portraitUrl
+    || klass.portrait_url
+    || klass.heroPortrait
+    || klass.hero_portrait
+    || klass.imageUrl
+    || klass.image
+    || ''
+  ).trim();
+}
+
+function resolveMainPortraitUrl() {
+  const hero = state.hero || {};
+  const identityPortrait = String(
+    hero.importedPortraitUrl
+    || hero.customPortraitUrl
+    || hero.portraitUrl
+    || ''
+  ).trim();
+  if (identityPortrait) return identityPortrait;
+  const appearancePortrait = String(hero.appearancePortraitUrl || '').trim();
+  if (appearancePortrait) return appearancePortrait;
+  const classPortrait = resolveClassPortraitUrl(selectedClass() || {});
+  if (classPortrait) return classPortrait;
+  return '';
+}
+
+function fallbackPortraitMarkup(size = 250) {
+  return `<div style="width:${size}px;height:${Math.round(size*1.24)}px;border-radius:24px;background:rgba(255,255,255,0.04);display:grid;place-items:center;color:rgba(235,222,196,0.62);font-family:'Cinzel',serif;">Hero</div>`;
+}
+
 function renderAvatarSVG(size = 250) {
   const sp = selectedSpecies() || {};
   const klass = selectedClass() || {};
@@ -977,11 +1176,10 @@ function renderAvatarSVG(size = 250) {
       <div class="portrait-caption">Select Species &amp; Look to reveal the hero portrait.</div>
     </div>`;
   }
-  const portraits = window.CasualDnDPortraitLibrary;
-  const renderer = window.CasualDnDAvatarRenderer;
-  const imageMarkup = portraits
-    ? portraits.renderImgMarkup(buildAvatarOptions(), size, 'portrait', 'portrait')
-    : (renderer ? renderer.renderImgMarkup(buildAvatarOptions(), size, 'portrait', 'portrait') : `<div style="width:${size}px;height:${Math.round(size*1.24)}px;border-radius:24px;background:rgba(255,255,255,0.04)"></div>`);
+  const mainPortrait = resolveMainPortraitUrl();
+  const imageMarkup = mainPortrait
+    ? `<img src="${escapeHtml(mainPortrait)}" alt="Hero portrait" width="${size}" height="${Math.round(size * 1.24)}" style="border-radius:24px;object-fit:cover;display:block;" />`
+    : fallbackPortraitMarkup(size);
   return `
   <div class="portrait-panel">
     ${imageMarkup}
@@ -1018,6 +1216,7 @@ function renderPreview() {
 }
     function renderStepView() {
       const step = STEPS[state.step];
+      ensureEquipmentDefaults();
       els.stepTitle.textContent = step.title;
       els.stepCopy.textContent = step.copy;
       els.back.textContent = state.step === 0 ? 'Back to roster' : 'Previous step';
@@ -1119,8 +1318,23 @@ function renderStepMarkup() {
   }
   if (step === 'equipment') {
     const cls = selectedClass() || { startingEquipment: [] };
-    const equipmentRows = normalizeEquipmentRows(cls);
-    return `<div class="equipment-list"><div class="equipment-item"><strong>Starting Gold</strong><span>50 GP</span></div><div class="equipment-item"><strong>Starting Level</strong><span>Level ${Number(state.hero.startingLevel || 1)}</span></div>${equipmentRows.map(item => `<div class="equipment-item"><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.detail)}</span></div>`).join('')}</div>`;
+    const packs = getWeaponPacksForClass(cls);
+    const selectedPack = getSelectedWeaponPack();
+    const selectedPackId = String(state.hero.selectedAdventuringPackId || '');
+    const selectedPackDef = STARTING_PACKS[selectedPackId] || null;
+    return `<div class="equipment-list">
+      <div class="equipment-item"><strong>Starting Gold</strong><span>50 GP</span></div>
+      <div class="equipment-item"><strong>Starting Level</strong><span>Level ${Number(state.hero.startingLevel || 1)}</span></div>
+      <div class="field">
+        <label>Choose 1 Weapon Pack</label>
+        <div class="equipment-pack-grid">
+          ${packs.length ? packs.map((pack) => `<button type="button" class="equipment-pack-card ${String(pack.id||'')===String(state.hero.selectedWeaponPackId||'') ? 'selected' : ''}" data-weapon-pack-id="${escapeHtml(pack.id)}"><h4>${escapeHtml(pack.label || pack.id || 'Weapon Pack')}</h4><p>${escapeHtml((Array.isArray(pack.items) ? pack.items.join(' • ') : ''))}</p></button>`).join('') : '<div class="equipment-item"><strong>No class selected</strong><span>Select a class first to unlock weapon packs.</span></div>'}
+        </div>
+      </div>
+      <div class="field"><label>Adventuring Pack</label><select class="select" id="equipment-starting-pack">${Object.values(STARTING_PACKS).map((pack)=>`<option value="${escapeHtml(pack.id)}" ${pack.id===selectedPackId?'selected':''}>${escapeHtml(pack.name)}</option>`).join('')}</select></div>
+      ${selectedPack ? `<div class="equipment-item"><strong>Selected Weapon Pack</strong><span>${escapeHtml((selectedPack.items || []).join(', '))}</span></div>` : ''}
+      ${selectedPackDef ? `<div class="equipment-item"><strong>${escapeHtml(selectedPackDef.name)}</strong><span>${escapeHtml((selectedPackDef.contents || []).join(', '))}</span></div>` : ''}
+    </div>`;
   }
   if (step === 'backstory') {
     return `<div class="form-grid"><div class="field"><label>Alignment</label><select class="select" id="hero-alignment"><option value="">Choose alignment</option>${ALIGNMENT_OPTIONS.map(v => `<option value="${escapeHtml(v)}" ${hero.alignment===v?'selected':''}>${escapeHtml(v)}</option>`).join('')}</select></div><div class="field"><label>Personality Traits</label><select class="select" id="hero-traits"><option value="">Choose trait</option>${PERSONALITY_OPTIONS.map(v => `<option value="${escapeHtml(v)}" ${hero.personalityTraits===v?'selected':''}>${escapeHtml(v)}</option>`).join('')}</select></div><div class="field"><label>Ideals</label><input class="input" id="hero-ideals" value="${escapeHtml(hero.ideals)}" placeholder="What drives them?" /></div><div class="field"><label>Bonds</label><input class="input" id="hero-bonds" value="${escapeHtml(hero.bonds)}" placeholder="What ties them down?" /></div><div class="field full"><label>Flaws</label><select class="select" id="hero-flaws"><option value="">Choose flaw</option>${FLAW_OPTIONS.map(v => `<option value="${escapeHtml(v)}" ${hero.flaws===v?'selected':''}>${escapeHtml(v)}</option>`).join('')}</select></div><div class="field full"><label>Backstory</label><textarea class="textarea" id="hero-backstory" placeholder="Write the opening chapter of this hero.">${escapeHtml(hero.backstory)}</textarea></div><div class="field full"><label>Player Notes (syncs to character notes)</label><textarea class="textarea" id="hero-notes" placeholder="Goals, reminders, secrets, links to campaign notes...">${escapeHtml(hero.notes || '')}</textarea></div></div>`;
@@ -1207,7 +1421,15 @@ function bindStepMarkup() {
     document.querySelectorAll('[data-option-id]').forEach(btn => btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-option-id');
       if (step === 'species') state.hero.speciesId = id;
-      if (step === 'class') { state.hero.classId = id; state.hero.subclassId = ''; ensureStartingLevelInRange(); }
+      if (step === 'class') {
+        state.hero.classId = id;
+        state.hero.subclassId = '';
+        ensureStartingLevelInRange();
+        const cls = selectedClass();
+        state.hero.selectedAdventuringPackId = (cls && cls.defaultStartingPackId) || 'explorer_pack';
+        state.hero.selectedWeaponPackId = '';
+        ensureEquipmentDefaults();
+      }
       if (step === 'background') state.hero.backgroundId = id;
       renderStepView();
     }));
@@ -1216,6 +1438,16 @@ function bindStepMarkup() {
       document.getElementById('subclass-picker')?.addEventListener('change', e => { state.hero.subclassId = String(e.target.value || '').trim(); renderStepView(); });
     }
     if (step === 'background') document.getElementById('hero-notes')?.addEventListener('input', e => { state.hero.notes = e.target.value; });
+  } else if (step === 'equipment') {
+    ensureEquipmentDefaults();
+    document.querySelectorAll('[data-weapon-pack-id]').forEach((btn) => btn.addEventListener('click', () => {
+      state.hero.selectedWeaponPackId = String(btn.getAttribute('data-weapon-pack-id') || '').trim();
+      renderStepView();
+    }));
+    document.getElementById('equipment-starting-pack')?.addEventListener('change', (e) => {
+      state.hero.selectedAdventuringPackId = String(e.target.value || '').trim();
+      renderStepView();
+    });
   } else if (step === 'abilities') {
     document.getElementById('ability-mode')?.addEventListener('change', e => { resetScoresForMode(e.target.value || 'standard_array'); renderStepView(); });
     document.querySelectorAll('[data-stat][data-value]').forEach(btn => btn.addEventListener('click', () => {
@@ -1299,6 +1531,7 @@ function canProceed() {
   if (step === 'species') return !!state.hero.speciesId;
   if (step === 'class') return !!state.hero.classId && Number(state.hero.startingLevel || 1) >= 1;
   if (step === 'background') return !!state.hero.backgroundId;
+  if (step === 'equipment') return !!String(state.hero.selectedWeaponPackId || '').trim();
   if (step === 'abilities') {
     if (state.hero.abilityMode === 'standard_array') return state.hero.remaining.length === 0;
     if (state.hero.abilityMode === 'point_buy') return STATS.every(([key]) => Number(state.hero.stats[key] || 8) >= 8 && Number(state.hero.stats[key] || 8) <= 15) && pointBuyRemaining() >= 0;
@@ -1310,7 +1543,26 @@ function canProceed() {
       const sp = selectedSpecies() || { id: 'human', name: 'Human', speed: 30, size: 'Medium' };
       const cls = selectedClass() || { id: 'fighter', displayName: 'Fighter', startingEquipment: ['Longsword'] };
       const bg = selectedBackground() || { id: 'folk-hero', name: 'Folk Hero' };
-      const equipment = equipmentForClass(cls);
+      ensureEquipmentDefaults();
+      const selectedWeaponPack = getSelectedWeaponPack();
+      const selectedPackId = String(state.hero.selectedAdventuringPackId || '');
+      const selectedStartingPack = STARTING_PACKS[selectedPackId] || STARTING_PACKS.explorer_pack;
+      const weaponItems = (selectedWeaponPack && Array.isArray(selectedWeaponPack.items) ? selectedWeaponPack.items : [])
+        .map((line) => inventoryItemFromLine(line))
+        .filter(Boolean);
+      const packContainer = selectedStartingPack ? {
+        id: selectedStartingPack.id,
+        name: selectedStartingPack.name,
+        qty: 1,
+        equipment_kind: 'gear',
+        item_type: 'gear',
+        is_container: true,
+        own_weight_lbs: Number(selectedStartingPack.own_weight_lbs || 0) || 0,
+        capacity_lbs: Number(selectedStartingPack.capacity_lbs || 0) || 0,
+        source: 'builder_starting_pack',
+        bag_contents: (selectedStartingPack.contents || []).map((line) => inventoryItemFromLine(line, 'builder_starting_pack')).filter(Boolean),
+      } : null;
+      const inventory = packContainer ? weaponItems.concat([packContainer]) : weaponItems;
       return {
         schemaVersion: 1,
         rulesMode: 'casual',
@@ -1329,8 +1581,8 @@ function canProceed() {
           ideals: state.hero.ideals,
           bonds: state.hero.bonds,
           flaws: state.hero.flaws,
-          portraitUrl: (window.CasualDnDPortraitLibrary && window.CasualDnDPortraitLibrary.resolve(buildAvatarOptions())) || '',
-          tokenImageUrl: (window.CasualDnDPortraitLibrary && window.CasualDnDPortraitLibrary.resolve(buildAvatarOptions())) || '',
+          portraitUrl: resolveMainPortraitUrl(),
+          tokenImageUrl: resolveMainPortraitUrl(),
         },
         presentation: {
           portraitFrame: 'importer-premium',
@@ -1387,7 +1639,14 @@ function canProceed() {
         },
         equipment: {
           currency: { cp: 0, sp: 0, ep: 0, gp: 50, pp: 0 },
-          choices: equipment,
+          choices: {
+            starterLoadoutId: String((selectedWeaponPack && selectedWeaponPack.id) || ''),
+            startingPackId: selectedStartingPack ? selectedStartingPack.id : '',
+            additionalItems: [],
+            selectedWeaponPackId: String((selectedWeaponPack && selectedWeaponPack.id) || ''),
+          },
+          startingPack: selectedStartingPack ? selectedStartingPack.id : '',
+          inventory,
         },
         spellbook: {
           castingMode: cls.spellcaster && cls.spellcaster !== 'none' ? String(cls.spellcaster) : 'none',
