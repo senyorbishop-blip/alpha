@@ -93,7 +93,7 @@
   },
   "classes": {
     "barbarian": "/static/importer/portraits/combos/Human Female Barbarian.png",
-    "fighter": "/static/importer/portraits/class/fighter.png",
-    "warlock": "/static/importer/portraits/class/warlock.png"
+    "fighter": "/static/importer/portraits/combos/Human Male Fighter.png",
+    "warlock": "/static/importer/portraits/combos/Human Male Warlock.png"
   }
 }
