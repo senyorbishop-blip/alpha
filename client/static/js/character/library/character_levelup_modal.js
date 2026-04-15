@@ -548,6 +548,28 @@
     }).join('');
   }
 
+  function spellStateBadge(label, tone) {
+    return '<span class="lvlup-spell-badge ' + escHtml(tone || '') + '">' + escHtml(label || '') + '</span>';
+  }
+
+  function groupedSpellTable(rows, rowRenderer, emptyText) {
+    const grouped = {};
+    filterSpellRows(rows).forEach(function (spell) {
+      const key = String(safeInt(spell && spell.level, 0));
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(spell);
+    });
+    const keys = Object.keys(grouped).sort(function (a, b) { return safeInt(a, 0) - safeInt(b, 0); });
+    if (!keys.length) return '<div style="font-size:.8rem;opacity:.76">' + escHtml(emptyText) + '</div>';
+    return keys.map(function (key) {
+      const rowsHtml = grouped[key].map(function (spell) { return rowRenderer(spell); }).join('');
+      return '<div class="lvlup-subsection"><div class="lvlup-subtitle">' + escHtml(spellLevelLabel(key)) + '</div>'
+        + '<div class="lvlup-spell-table-wrap"><table class="lvlup-spell-table"><thead><tr><th>Spell</th><th>Level</th><th>School</th><th>Cast Time</th><th>Range</th><th>Summary</th><th>State</th><th></th></tr></thead><tbody>'
+        + rowsHtml
+        + '</tbody></table></div></div>';
+    }).join('');
+  }
+
   function spellChoiceToolbar(allRows) {
     if (!Array.isArray(allRows) || !allRows.length) return '';
     return '<div class="lvlup-card" style="padding:10px 12px;background:rgba(8,12,15,.6)">'
@@ -619,6 +641,17 @@
       + '#character-levelup-modal .lvlup-spell-grid .lvlup-spell-name{font-size:.98rem;line-height:1.2}'
       + '#character-levelup-modal .lvlup-spell-grid .lvlup-spell-castline{font-size:.9rem}'
       + '#character-levelup-modal .lvlup-spell-grid .lvlup-spell-summary{color:rgba(223,254,249,.88)}'
+      + '#character-levelup-modal .lvlup-spell-table-wrap{overflow:auto;border:1px solid rgba(0,229,204,.22);border-radius:8px;background:rgba(3,9,11,.48)}'
+      + '#character-levelup-modal .lvlup-spell-table{width:100%;border-collapse:collapse;font-size:.76rem;min-width:840px}'
+      + '#character-levelup-modal .lvlup-spell-table th,#character-levelup-modal .lvlup-spell-table td{padding:7px 8px;border-bottom:1px solid rgba(0,229,204,.12);text-align:left;vertical-align:top}'
+      + '#character-levelup-modal .lvlup-spell-table thead th{font-size:.67rem;letter-spacing:.05em;text-transform:uppercase;color:#9ff8ed;background:rgba(0,229,204,.08);position:sticky;top:0;z-index:1}'
+      + '#character-levelup-modal .lvlup-spell-table tbody tr.active{background:rgba(0,229,204,.12)}'
+      + '#character-levelup-modal .lvlup-spell-table tbody tr.disabled{opacity:.6}'
+      + '#character-levelup-modal .lvlup-spell-badge{display:inline-flex;align-items:center;border-radius:999px;border:1px solid rgba(0,229,204,.28);padding:2px 8px;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em}'
+      + '#character-levelup-modal .lvlup-spell-badge.good{background:rgba(41,180,121,.2);border-color:rgba(41,180,121,.55)}'
+      + '#character-levelup-modal .lvlup-spell-badge.warn{background:rgba(201,56,56,.18);border-color:rgba(201,56,56,.55)}'
+      + '#character-levelup-modal .lvlup-spell-badge.teal{background:rgba(0,229,204,.18);border-color:rgba(0,229,204,.55)}'
+      + '#character-levelup-modal .lvlup-spell-badge.violet{background:rgba(155,89,182,.2);border-color:rgba(155,89,182,.55)}'
       + '#character-levelup-modal .lvlup-subsection{display:grid;gap:8px;margin-top:10px}'
       + '#character-levelup-modal .lvlup-subtitle{font-size:.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#9efff2;opacity:.95}'
       + '#character-levelup-modal .lvlup-choice-card .lvlup-meta{font-size:.72rem;opacity:.72}'
@@ -769,23 +802,31 @@
     }).join('');
   }
 
-  function spellCardHtml(spell, active, attrs, disabled, helper) {
-    const parts = [];
-    if (spell.level === 0) parts.push('Cantrip');
-    else parts.push('Level ' + spell.level);
-    if (spell.school) parts.push(spell.school);
-    const castLine = [spell.castingTime || spell.casting_time, spell.range].filter(Boolean).join(' • ');
-    return '<button type="button" class="lvlup-choice-card ' + (active ? 'active' : '') + '" ' + attrs + (disabled ? ' disabled' : '') + '>'
-      + '<div class="lvlup-spell-head" style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">'
-      + '<div>'
-      + '  <div class="lvlup-spell-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-weight:700">' + escHtml(spell.name || spell.id || 'Spell') + '</span>' + (active ? '<span class="lvlup-selected-chip">Selected</span>' : '') + '</div>'
-      + '  <div class="lvlup-meta" style="margin-top:3px">' + escHtml(parts.join(' • ')) + '</div>'
-      + '</div>'
-      + '</div>'
-      + '<div class="lvlup-spell-castline" style="font-size:.78rem;font-weight:700;color:#dffef8;margin-top:6px">' + escHtml(castLine || spell.summary || 'No short summary loaded yet.') + '</div>'
-      + '<div class="lvlup-spell-summary" style="font-size:.74rem;opacity:.82;margin-top:4px;line-height:1.4">' + escHtml(spell.summary || 'No short summary loaded yet.') + '</div>'
-      + (helper ? '<div class="lvlup-helper">' + escHtml(helper) + '</div>' : '')
-      + '</button>';
+  function spellChoiceRowHtml(spell, cfg) {
+    const config = cfg && typeof cfg === 'object' ? cfg : {};
+    const selectedNow = !!config.selectedNow;
+    const alreadySelected = !!config.alreadySelected;
+    const prepared = !!config.prepared;
+    const disabled = !!config.disabled;
+    const actionAttrs = config.actionAttrs || '';
+    const actionLabel = selectedNow ? 'Unselect' : (alreadySelected ? 'Locked' : 'Select');
+    const summary = String(spell && spell.summary || '').trim() || 'No short summary loaded yet.';
+    let badge = '';
+    if (disabled && !selectedNow) badge = spellStateBadge('illegal', 'warn');
+    else if (selectedNow) badge = spellStateBadge('selected now', 'good');
+    else if (prepared) badge = spellStateBadge('prepared', 'teal');
+    else if (alreadySelected) badge = spellStateBadge('known', 'violet');
+    else badge = spellStateBadge('legal', '');
+    return '<tr class="' + (selectedNow ? 'active' : '') + (disabled ? ' disabled' : '') + '">'
+      + '<td><strong>' + escHtml(spell && (spell.name || spell.id) || 'Spell') + '</strong></td>'
+      + '<td>' + escHtml(spellLevelLabel(safeInt(spell && spell.level, 0))) + '</td>'
+      + '<td>' + escHtml(spell && spell.school || '—') + '</td>'
+      + '<td>' + escHtml(spell && (spell.castingTime || spell.casting_time) || '—') + '</td>'
+      + '<td>' + escHtml(spell && spell.range || '—') + '</td>'
+      + '<td>' + escHtml(summary) + '</td>'
+      + '<td>' + badge + '</td>'
+      + '<td><button type="button" class="lvlup-ability-btn ' + (selectedNow ? 'active' : '') + '" ' + actionAttrs + (disabled ? ' disabled' : '') + '>' + escHtml(actionLabel) + '</button></td>'
+      + '</tr>';
   }
 
   function renderSpellChoiceSection(preview, spellPlan) {
@@ -799,6 +840,7 @@
     const levelledOptions = Array.isArray(spellPlan.levelledOptions) ? spellPlan.levelledOptions : [];
     const replaceable = Array.isArray(spellPlan.replaceableKnown) ? spellPlan.replaceableKnown : [];
     const magicalSecretOptions = Array.isArray(spellPlan.magicalSecretOptions) ? spellPlan.magicalSecretOptions : [];
+    const replaceableIds = new Set(replaceable.map(function (spell) { return String(spell && spell.id || ''); }).filter(Boolean));
     const combinedRows = [].concat(cantripOptions, levelledOptions, replaceable, magicalSecretOptions);
     if (!combinedRows.length && magicalSecretsRequired <= 0 && !spellPlan.swapAllowed) return '';
 
@@ -823,11 +865,17 @@
     if (cantripRequired > 0) {
       html += '<div style="margin-top:12px"><div style="font-weight:600">Pick cantrips (' + modalState.spellCantripAdds.length + ' / ' + cantripRequired + ')</div>'
         + '<div style="font-size:.76rem;opacity:.78;margin:3px 0 8px">Choose the new at-will spells this level grants you.</div>'
-        + groupedSpellCards(cantripOptions, function (spell) {
+        + groupedSpellTable(cantripOptions, function (spell) {
           const active = modalState.spellCantripAdds.indexOf(String(spell.id || '')) >= 0;
           const blocked = !active && modalState.spellCantripAdds.length >= cantripRequired;
-          return spellCardHtml(spell, active, 'data-spell-pick="cantrip" data-spell-id="' + escHtml(String(spell.id || '')) + '"', blocked, spell.range || spell.castingTime || '');
-        }, 'No unlocked cantrip options are available with the current filter.', 'lvlup-choice-grid lvlup-spell-grid')
+          return spellChoiceRowHtml(spell, {
+            selectedNow: active,
+            alreadySelected: replaceableIds.has(String(spell.id || '')),
+            prepared: false,
+            disabled: blocked,
+            actionAttrs: 'data-spell-pick="cantrip" data-spell-id="' + escHtml(String(spell.id || '')) + '"'
+          });
+        }, 'No unlocked cantrip options are available with the current filter.')
         + '</div>';
     }
 
@@ -838,11 +886,17 @@
         : 'These are the new leveled spells your character can learn now.';
       html += '<div style="margin-top:12px"><div style="font-weight:600">' + escHtml(pickLabel) + ' (' + modalState.spellLevelledAdds.length + ' / ' + levelledRequired + ')</div>'
         + '<div style="font-size:.76rem;opacity:.78;margin:3px 0 8px">' + escHtml(pickHelp) + '</div>'
-        + groupedSpellCards(levelledOptions, function (spell) {
+        + groupedSpellTable(levelledOptions, function (spell) {
           const active = modalState.spellLevelledAdds.indexOf(String(spell.id || '')) >= 0;
           const blocked = !active && modalState.spellLevelledAdds.length >= levelledRequired;
-          return spellCardHtml(spell, active, 'data-spell-pick="levelled" data-spell-id="' + escHtml(String(spell.id || '')) + '"', blocked, spell.range || spell.castingTime || '');
-        }, 'No unlocked leveled spell options are available with the current filter.', 'lvlup-choice-grid lvlup-spell-grid')
+          return spellChoiceRowHtml(spell, {
+            selectedNow: active,
+            alreadySelected: replaceableIds.has(String(spell.id || '')),
+            prepared: mode === 'prepared',
+            disabled: blocked,
+            actionAttrs: 'data-spell-pick="levelled" data-spell-id="' + escHtml(String(spell.id || '')) + '"'
+          });
+        }, 'No unlocked leveled spell options are available with the current filter.')
         + '</div>';
     }
 
@@ -850,11 +904,17 @@
       const magicalSecretOptions = Array.isArray(spellPlan.magicalSecretOptions) ? spellPlan.magicalSecretOptions : [];
       html += '<div style="margin-top:12px"><div style="font-weight:600">Pick Magical Secrets (' + modalState.spellMagicalSecretsAdds.length + ' / ' + magicalSecretsRequired + ')</div>'
         + '<div style="font-size:.76rem;opacity:.78;margin:3px 0 8px">Pick off-list spells unlocked by Magical Secrets at this level.</div>'
-        + groupedSpellCards(magicalSecretOptions, function (spell) {
+        + groupedSpellTable(magicalSecretOptions, function (spell) {
           const active = modalState.spellMagicalSecretsAdds.indexOf(String(spell.id || '')) >= 0;
           const blocked = !active && modalState.spellMagicalSecretsAdds.length >= magicalSecretsRequired;
-          return spellCardHtml(spell, active, 'data-spell-pick="magical-secret" data-spell-id="' + escHtml(String(spell.id || '')) + '"', blocked, 'Off-list class access');
-        }, 'No off-list Magical Secrets options are available with the current filter.', 'lvlup-choice-grid lvlup-spell-grid')
+          return spellChoiceRowHtml(spell, {
+            selectedNow: active,
+            alreadySelected: false,
+            prepared: false,
+            disabled: blocked,
+            actionAttrs: 'data-spell-pick="magical-secret" data-spell-id="' + escHtml(String(spell.id || '')) + '"'
+          });
+        }, 'No off-list Magical Secrets options are available with the current filter.')
         + '</div>';
     }
 
@@ -866,16 +926,28 @@
         + '<div style="font-size:.76rem;opacity:.78;margin:3px 0 8px">If this class can replace one spell when leveling, choose one old spell to drop and one new legal spell to learn. Newly added spells are hidden from the replacement pool.</div>'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
         + '<div><div class="lvlup-subtitle">Drop one old spell</div>'
-        + groupedSpellCards(replaceable, function (spell) {
+        + groupedSpellTable(replaceable, function (spell) {
           const active = modalState.spellSwapDrop === String(spell.id || '');
-          return spellCardHtml(spell, active, 'data-spell-swap="drop" data-spell-id="' + escHtml(String(spell.id || '')) + '"', false, 'Known right now');
-        }, 'No spells are eligible to swap out with the current filter.', 'lvlup-choice-grid lvlup-spell-grid')
+          return spellChoiceRowHtml(spell, {
+            selectedNow: active,
+            alreadySelected: true,
+            prepared: mode === 'prepared',
+            disabled: false,
+            actionAttrs: 'data-spell-swap="drop" data-spell-id="' + escHtml(String(spell.id || '')) + '"'
+          });
+        }, 'No spells are eligible to swap out with the current filter.')
         + '</div>'
         + '<div><div class="lvlup-subtitle">Learn one replacement spell</div>'
-        + groupedSpellCards(replacementPool, function (spell) {
+        + groupedSpellTable(replacementPool, function (spell) {
           const active = modalState.spellSwapLearn === String(spell.id || '');
-          return spellCardHtml(spell, active, 'data-spell-swap="learn" data-spell-id="' + escHtml(String(spell.id || '')) + '"', false, 'Unlocked at this level');
-        }, 'No legal replacement spells are unlocked with the current filter.', 'lvlup-choice-grid lvlup-spell-grid')
+          return spellChoiceRowHtml(spell, {
+            selectedNow: active,
+            alreadySelected: replaceableIds.has(String(spell.id || '')),
+            prepared: mode === 'prepared',
+            disabled: false,
+            actionAttrs: 'data-spell-swap="learn" data-spell-id="' + escHtml(String(spell.id || '')) + '"'
+          });
+        }, 'No legal replacement spells are unlocked with the current filter.')
         + '</div>'
         + '</div></div>';
     }
@@ -1261,8 +1333,28 @@
       const data = await res.json().catch(function () { return {}; });
       if (!res.ok || !data || data.ok !== true) throw new Error((data && data.detail) || 'Level-up apply failed');
       if (data.nativeCharacter && typeof data.nativeCharacter === 'object') opts.characterDocument = data.nativeCharacter;
+      if (data.nativeCharacter && typeof data.nativeCharacter === 'object' && global._charSheet && typeof global._charSheet === 'object') {
+        Object.assign(global._charSheet, data.nativeCharacter);
+      }
+      const nextSpellState = (data && data.nativeCharacter && data.nativeCharacter.spellState && typeof data.nativeCharacter.spellState === 'object')
+        ? data.nativeCharacter.spellState
+        : ((data && data.spellState && typeof data.spellState === 'object') ? data.spellState : null);
+      if (nextSpellState && global._charSheet && typeof global._charSheet === 'object') {
+        global._charSheet.spellState = {
+          known: uniqueIds(nextSpellState.known || []),
+          prepared: uniqueIds(nextSpellState.prepared || []),
+        };
+      }
       modalState.options = opts;
       setStatus(root, 'Level-up applied and saved.', 'success');
+      try {
+        global.dispatchEvent(new CustomEvent('character:spell-state-updated', {
+          detail: { source: 'levelup-apply', spellState: nextSpellState || null, nativeCharacter: data.nativeCharacter || null }
+        }));
+      } catch (_) {}
+      if (typeof global.requestCharacterBookOverviewRender === 'function') {
+        try { global.requestCharacterBookOverviewRender('levelup-apply'); } catch (_) {}
+      }
       if (typeof opts.onApplied === 'function') {
         try { opts.onApplied(data); } catch (_) {}
       }
