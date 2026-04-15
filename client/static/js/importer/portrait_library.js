@@ -14,7 +14,6 @@
     mage: 'wizard',
     bowman: 'ranger',
     thief: 'rogue',
-    pirate: 'bard',
   };
   // Gender system: male and female only. All aliases resolve to 'male' or 'female'.
   const GENDER_ALIASES = {
