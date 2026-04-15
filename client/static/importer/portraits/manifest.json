@@ -92,6 +92,7 @@
     "elf": "/static/importer/portraits/species/elf.png"
   },
   "classes": {
+    "barbarian": "/static/importer/portraits/combos/Human Female Barbarian.png",
     "fighter": "/static/importer/portraits/class/fighter.png",
     "warlock": "/static/importer/portraits/class/warlock.png"
   }
