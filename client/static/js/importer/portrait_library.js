@@ -112,8 +112,8 @@
     },
     classes: {
       barbarian: `${base}/combos/Human Female Barbarian.png`,
-      fighter: `${base}/class/fighter.png`,
-      warlock: `${base}/class/warlock.png`,
+      fighter: `${base}/combos/Human Male Fighter.png`,
+      warlock: `${base}/combos/Human Male Warlock.png`,
     },
     species_order: ['human', 'elf', 'aasimar', 'dwarf', 'dragonborn', 'tiefling', 'goliath'],
     class_order: ['barbarian','bard','cleric','druid','fighter','monk','paladin','ranger','rogue','sorcerer','warlock','wizard'],
