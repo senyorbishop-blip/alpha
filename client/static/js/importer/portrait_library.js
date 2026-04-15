@@ -146,10 +146,10 @@
 
     // 4. Species-only portrait
     if (manifest.species[sp]) return manifest.species[sp];
-    // 4b. Conventional species portrait drop-in path
+    // 5. Class-only portrait fallback (legacy manifest support)
+    if (manifest.classes[cls]) return manifest.classes[cls];
+    // 6. Conventional species portrait drop-in path
     return `${base}/species/${sp}.png`;
-    // 5. Class-only portrait (kept for legacy manifest support)
-    // if (manifest.classes[cls]) return manifest.classes[cls];
   }
 
   // Returns a random female class portrait URL for use on species step
@@ -164,7 +164,7 @@
     }
     for (let attempt = 0; attempt < pool.length; attempt++) {
       const cls = pool[(idx + attempt) % pool.length];
-      const femaleKey = `__${cls}__female`;
+      const femaleKey = `__${cls}__feminine`;
       const match = Object.keys(manifest.combos).find(function(k) { return k.indexOf(femaleKey) !== -1; });
       if (match) return manifest.combos[match];
       if (manifest.classes[cls]) return manifest.classes[cls];
