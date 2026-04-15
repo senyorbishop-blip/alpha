@@ -382,6 +382,8 @@ def _build_runtime_summon_actions(
                 "displayName": f"{action_label} {str(primary.get('tokenName') or primary.get('displayName') or 'Companion').strip()}",
                 "sourceFeatureId": source_feature_id,
                 "sourceFeatureName": source_feature_name,
+                "sourceClassId": str(primary.get("sourceClassId") or class_id or "").strip().lower(),
+                "sourceSubclassId": str(primary.get("sourceSubclassId") or subclass_id or "").strip().lower(),
                 "summonGroupId": group_key,
                 "summonTemplateId": selected_variant or str(primary.get("id") or "").strip().lower(),
                 "variants": [

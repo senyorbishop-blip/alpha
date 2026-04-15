@@ -211,6 +211,9 @@ from server.handlers.conversation import (
     handle_conversation_queue_advance,
     handle_conversation_reaction_set,
 )
+from server.handlers.summons import (
+    handle_summon_runtime_request,
+)
 
 
 async def handle_message(raw: dict, session: Session, user: User):
@@ -267,6 +270,7 @@ async def handle_message(raw: dict, session: Session, user: User):
         "combat_select_target": handle_combat_select_target,
         "combat_attack_request": handle_combat_attack_request,
         "combat_attack_override": handle_combat_attack_override,
+        "summon_runtime_request": handle_summon_runtime_request,
         "journal_upsert":         handle_journal_upsert,
         "journal_delete":         handle_journal_delete,
         "session_quest_upsert":   handle_session_quest_upsert,

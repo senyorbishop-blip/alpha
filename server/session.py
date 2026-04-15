@@ -791,6 +791,10 @@ class Session:
                 continue
             if bool(getattr(token, "staged", False)):
                 continue
+            token_type = str(getattr(token, "token_type", "player") or "player").strip().lower()
+            if token_type == "companion":
+                # Companions are intentionally allowed alongside a player's primary token.
+                continue
             owned_active.setdefault(owner_id, []).append(token)
 
         staged_token_ids: list[str] = []
