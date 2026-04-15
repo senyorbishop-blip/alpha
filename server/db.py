@@ -1431,6 +1431,516 @@ def _seed_crafting_recipes(conn) -> None:
             "tags_json": json.dumps(["tailor-family", "pirate-utility-family", "rare"]),
             "rarity": "rare",
         },
+        # ── EXPANSION PACK: deeper profession content ─────────────────────────
+        # Blacksmithing
+        {
+            "id": "rec_iron_buckler",
+            "name": "Iron Buckler",
+            "result_item_json": json.dumps({
+                "id": "crafted_iron_buckler",
+                "name": "Iron Buckler",
+                "notes": (
+                    "A compact round shield forged from double-folded iron with a hide-wrapped center grip. "
+                    "Lighter than a standard shield but fully functional at +2 AC. "
+                    "Favored by scouts, fencers, and sailors who need a free off-hand for rigging work."
+                ),
+                "category": "Armor",
+                "item_type": "shield",
+                "rarity": "common",
+            }),
+            "requires_professions_json": json.dumps(["blacksmithing"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Iron Ingot", "qty": 2},
+                {"name": "Cured Hide", "qty": 1},
+            ]),
+            "fee_units": 200,
+            "duration_seconds": 200,
+            "station_shop_types_json": json.dumps(["blacksmith"]),
+            "tags_json": json.dumps(["blacksmith-family", "shield", "combat"]),
+            "rarity": "common",
+        },
+        {
+            "id": "rec_throwing_axe_bundle",
+            "name": "Throwing Axe Bundle",
+            "result_item_json": json.dumps({
+                "id": "crafted_throwing_axe_bundle",
+                "name": "Throwing Axe Bundle (3)",
+                "notes": (
+                    "Three balanced throwing axes with hickory handles, weighted for distance throws "
+                    "and close-range fighting alike. A reliable loadout for scouts, soldiers, and deck fighters."
+                ),
+                "category": "Weapon",
+                "item_type": "weapon",
+                "rarity": "common",
+            }),
+            "requires_professions_json": json.dumps(["blacksmithing"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Iron Ingot", "qty": 2},
+                {"name": "Hardwood Plank Bundle", "qty": 1},
+            ]),
+            "fee_units": 250,
+            "duration_seconds": 220,
+            "station_shop_types_json": json.dumps(["blacksmith"]),
+            "tags_json": json.dumps(["blacksmith-family", "weapon", "combat"]),
+            "rarity": "common",
+        },
+        {
+            "id": "rec_boarding_shield",
+            "name": "Boarding Shield",
+            "result_item_json": json.dumps({
+                "id": "crafted_boarding_shield",
+                "name": "Boarding Shield",
+                "notes": (
+                    "A compact circular shield reinforced with iron studs along the rim. "
+                    "Provides the standard +2 AC bonus of a shield and can also be used to "
+                    "shove opponents in narrow corridors and gangways."
+                ),
+                "category": "Armor",
+                "item_type": "shield",
+                "rarity": "uncommon",
+            }),
+            "requires_professions_json": json.dumps(["blacksmithing"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Iron Ingot", "qty": 2},
+                {"name": "Cured Hide", "qty": 1},
+            ]),
+            "fee_units": 220,
+            "duration_seconds": 200,
+            "station_shop_types_json": json.dumps(["blacksmith"]),
+            "tags_json": json.dumps(["blacksmith-family", "pirate-utility-family", "shield"]),
+            "rarity": "uncommon",
+        },
+        # Leatherworking
+        {
+            "id": "rec_scaled_vest",
+            "name": "Scaled Leather Vest",
+            "result_item_json": json.dumps({
+                "id": "crafted_scaled_vest",
+                "name": "Scaled Leather Vest",
+                "notes": (
+                    "A tanned hide vest reinforced with overlapping scale panels along the torso. "
+                    "Treated leather with scale overlay gives it the protection profile of studded leather "
+                    "while still allowing free movement. Favored by rangers, rogues, and corsairs."
+                ),
+                "category": "Armor",
+                "item_type": "armor",
+                "rarity": "uncommon",
+            }),
+            "requires_professions_json": json.dumps(["leatherworking"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Cured Hide", "qty": 2},
+                {"name": "Scaled Scraps", "qty": 1},
+            ]),
+            "fee_units": 240,
+            "duration_seconds": 240,
+            "station_shop_types_json": json.dumps(["general", "black_market"]),
+            "tags_json": json.dumps(["leatherwork-family", "armor", "pirate"]),
+            "rarity": "uncommon",
+        },
+        {
+            "id": "rec_corsair_vest",
+            "name": "Corsair's Boiled-Leather Vest",
+            "result_item_json": json.dumps({
+                "id": "crafted_corsair_vest",
+                "name": "Corsair's Boiled-Leather Vest",
+                "notes": (
+                    "Boiled and lacquer-sealed leather vest worn over a shirt for the AC profile "
+                    "of light armor without the bulk of studded leather. A corsair staple favoring "
+                    "mobility on rolling decks and tight rigging."
+                ),
+                "category": "Armor",
+                "item_type": "armor",
+                "rarity": "uncommon",
+            }),
+            "requires_professions_json": json.dumps(["leatherworking"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Cured Hide", "qty": 3},
+                {"name": "Scaled Scraps", "qty": 1},
+            ]),
+            "fee_units": 310,
+            "duration_seconds": 300,
+            "station_shop_types_json": json.dumps(["black_market", "general"]),
+            "tags_json": json.dumps(["leatherwork-family", "pirate-utility-family", "armor"]),
+            "rarity": "uncommon",
+        },
+        # Alchemy / Herbalism
+        {
+            "id": "rec_fever_break_draught",
+            "name": "Fever-Break Draught",
+            "result_item_json": json.dumps({
+                "id": "crafted_fever_break_draught",
+                "name": "Fever-Break Draught",
+                "notes": (
+                    "A sharp herbal brew using sunleaf and deepmoss that clears fever and restores "
+                    "focus. Removes the Poisoned condition when it is caused by a disease effect "
+                    "(subject to DM ruling). A practical and cheap medic staple."
+                ),
+                "category": "Consumable",
+                "item_type": "consumable",
+                "rarity": "common",
+            }),
+            "requires_professions_json": json.dumps(["herbalism", "alchemy"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Sunleaf Bunch", "qty": 2},
+                {"name": "Deepmoss Herb", "qty": 1},
+                {"name": "Glass Vial", "qty": 1},
+            ]),
+            "fee_units": 80,
+            "duration_seconds": 100,
+            "station_shop_types_json": json.dumps(["alchemist", "general"]),
+            "tags_json": json.dumps(["healing-family", "field-medicine", "consumable"]),
+            "rarity": "common",
+        },
+        {
+            "id": "rec_antitoxin_brew",
+            "name": "Artisan Antitoxin",
+            "result_item_json": json.dumps({
+                "id": "crafted_antitoxin_brew",
+                "name": "Artisan Antitoxin",
+                "notes": (
+                    "A refined antitoxin brewed from a rendered venom sac neutralized by sunleaf reduction. "
+                    "Grants advantage on Constitution saving throws against all poison for 1 hour — stronger "
+                    "than the standard antitoxin vial found at general stores."
+                ),
+                "category": "Consumable",
+                "item_type": "consumable",
+                "rarity": "uncommon",
+            }),
+            "requires_professions_json": json.dumps(["herbalism", "alchemy"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Venom Sac", "qty": 1},
+                {"name": "Sunleaf Bunch", "qty": 1},
+                {"name": "Glass Vial", "qty": 1},
+            ]),
+            "fee_units": 200,
+            "duration_seconds": 200,
+            "station_shop_types_json": json.dumps(["alchemist"]),
+            "tags_json": json.dumps(["field-medicine", "antitoxin", "alchemy-family"]),
+            "rarity": "uncommon",
+        },
+        {
+            "id": "rec_numbing_poultice",
+            "name": "Numbing Poultice",
+            "result_item_json": json.dumps({
+                "id": "crafted_numbing_poultice",
+                "name": "Numbing Poultice",
+                "notes": (
+                    "A damp clay-and-herb wrap made from frostcap mushroom and crushed sunleaf. "
+                    "Applied to a fresh wound it dulls sharp pain and slows bleeding from shallow cuts. "
+                    "Common field medicine among mercenary surgeons and herbalists."
+                ),
+                "category": "Consumable",
+                "item_type": "consumable",
+                "rarity": "common",
+            }),
+            "requires_professions_json": json.dumps(["herbalism"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Frostcap Mushroom", "qty": 1},
+                {"name": "Sunleaf Bunch", "qty": 1},
+            ]),
+            "fee_units": 60,
+            "duration_seconds": 80,
+            "station_shop_types_json": json.dumps(["alchemist", "general"]),
+            "tags_json": json.dumps(["healing-family", "field-medicine", "consumable"]),
+            "rarity": "common",
+        },
+        {
+            "id": "rec_travel_tonic",
+            "name": "Trail Endurance Tonic",
+            "result_item_json": json.dumps({
+                "id": "crafted_travel_tonic",
+                "name": "Trail Endurance Tonic",
+                "notes": (
+                    "A bracing tea-tonic brewed from double-strength sunleaf with frostcap edge. "
+                    "Popular with couriers, long-march soldiers, and scouts who need to push past "
+                    "fatigue. Reduces exhaustion penalties for 2 hours."
+                ),
+                "category": "Potion",
+                "item_type": "potion",
+                "rarity": "common",
+            }),
+            "requires_professions_json": json.dumps(["herbalism"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Sunleaf Bunch", "qty": 2},
+                {"name": "Frostcap Mushroom", "qty": 1},
+                {"name": "Glass Vial", "qty": 1},
+            ]),
+            "fee_units": 90,
+            "duration_seconds": 100,
+            "station_shop_types_json": json.dumps(["alchemist", "general"]),
+            "tags_json": json.dumps(["healing-family", "potion", "travel"]),
+            "rarity": "common",
+        },
+        # Woodworking
+        {
+            "id": "rec_recurve_bow",
+            "name": "Recurve Hunting Bow",
+            "result_item_json": json.dumps({
+                "id": "crafted_recurve_bow",
+                "name": "Recurve Hunting Bow",
+                "notes": (
+                    "A recurved bow carved from darkwood limbs and strung with spider silk. "
+                    "The recurve draw gives it better range and punch than a standard shortbow "
+                    "while remaining compact enough for mounted use or forest stalking. "
+                    "Use the longbow damage profile."
+                ),
+                "category": "Weapon",
+                "item_type": "weapon",
+                "rarity": "uncommon",
+            }),
+            "requires_professions_json": json.dumps(["woodworking"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Darkwood Plank", "qty": 2},
+                {"name": "Spider Silk Spool", "qty": 1},
+            ]),
+            "fee_units": 280,
+            "duration_seconds": 300,
+            "station_shop_types_json": json.dumps(["general"]),
+            "tags_json": json.dumps(["woodwork-family", "weapon", "bow"]),
+            "rarity": "uncommon",
+        },
+        {
+            "id": "rec_iron_spike_bundle",
+            "name": "Iron-Tipped Stake Bundle",
+            "result_item_json": json.dumps({
+                "id": "crafted_iron_spike_bundle",
+                "name": "Iron-Tipped Stake Bundle (5)",
+                "notes": (
+                    "Five hardwood stakes with hammered iron tips. Used as perimeter spikes, "
+                    "improvised caltrops, vampire deterrents, and tent pegs in a pinch. "
+                    "A cheap, versatile field supply."
+                ),
+                "category": "Gear",
+                "item_type": "gear",
+                "rarity": "common",
+            }),
+            "requires_professions_json": json.dumps(["woodworking", "blacksmithing"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Hardwood Plank Bundle", "qty": 1},
+                {"name": "Iron Ingot", "qty": 1},
+            ]),
+            "fee_units": 120,
+            "duration_seconds": 120,
+            "station_shop_types_json": json.dumps(["general", "blacksmith"]),
+            "tags_json": json.dumps(["woodwork-family", "field-gear", "trap"]),
+            "rarity": "common",
+        },
+        # Tailoring
+        {
+            "id": "rec_padded_surcoat",
+            "name": "Padded Surcoat",
+            "result_item_json": json.dumps({
+                "id": "crafted_padded_surcoat",
+                "name": "Padded Surcoat",
+                "notes": (
+                    "A quilted coat stitched from spider-silk over a hide base. "
+                    "Worn over clothing as light armor. The silk layer cushions blows while the "
+                    "hide backing maintains shape on campaign. AC profile matches padded armor."
+                ),
+                "category": "Armor",
+                "item_type": "armor",
+                "rarity": "common",
+            }),
+            "requires_professions_json": json.dumps(["tailoring", "leatherworking"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Cured Hide", "qty": 1},
+                {"name": "Spider Silk Spool", "qty": 1},
+            ]),
+            "fee_units": 200,
+            "duration_seconds": 240,
+            "station_shop_types_json": json.dumps(["magic", "general"]),
+            "tags_json": json.dumps(["tailor-family", "armor", "clothing"]),
+            "rarity": "common",
+        },
+        {
+            "id": "rec_winter_wrap",
+            "name": "Winter Travel Wrap",
+            "result_item_json": json.dumps({
+                "id": "crafted_winter_wrap",
+                "name": "Winter Travel Wrap",
+                "notes": (
+                    "A layered travel cloak stitched from spider-silk outer cloth with scale scrap "
+                    "lining that traps heat without bulk. Favored by mountain scouts, cold-coast "
+                    "traders, and rangers working boreal terrain."
+                ),
+                "category": "Gear",
+                "item_type": "cloak",
+                "rarity": "uncommon",
+            }),
+            "requires_professions_json": json.dumps(["tailoring"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Spider Silk Spool", "qty": 2},
+                {"name": "Scaled Scraps", "qty": 1},
+            ]),
+            "fee_units": 230,
+            "duration_seconds": 260,
+            "station_shop_types_json": json.dumps(["magic", "general"]),
+            "tags_json": json.dumps(["tailor-family", "cloak", "cold-resistance"]),
+            "rarity": "uncommon",
+        },
+        # Tinkering
+        {
+            "id": "rec_arc_lantern",
+            "name": "Arc Lantern",
+            "result_item_json": json.dumps({
+                "id": "crafted_arc_lantern",
+                "name": "Arc Lantern",
+                "notes": (
+                    "A brass-cased lantern powered by an arc battery rather than oil. "
+                    "Bright 30-foot radius; dim 30 more. Lasts 12 hours per battery charge. "
+                    "Does not spill, does not flame out in wind or rain. "
+                    "A tinker's answer to the problem of light on a rolling ship or a wet cave."
+                ),
+                "category": "Gear",
+                "item_type": "gear",
+                "rarity": "uncommon",
+            }),
+            "requires_professions_json": json.dumps(["tinkering"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Arc Battery Cell", "qty": 1},
+                {"name": "Crystal Shard Cluster", "qty": 1},
+                {"name": "Salvaged Brass Bundle", "qty": 1},
+            ]),
+            "fee_units": 320,
+            "duration_seconds": 300,
+            "station_shop_types_json": json.dumps(["blacksmith", "black_market"]),
+            "tags_json": json.dumps(["tinker-gadget-family", "light", "utility"]),
+            "rarity": "uncommon",
+        },
+        {
+            "id": "rec_clockwork_sentry",
+            "name": "Clockwork Sentry",
+            "result_item_json": json.dumps({
+                "id": "crafted_clockwork_sentry",
+                "name": "Clockwork Sentry",
+                "notes": (
+                    "A wound-spring perimeter sentry with integrated alert mechanism. "
+                    "Deploy as an action; covers a 20-foot radius and emits a loud tone when "
+                    "disturbed by movement. Stays active for 8 hours before winding down. "
+                    "Cannot be silenced without disabling the device (DC 14 Thieves' Tools)."
+                ),
+                "category": "Gear",
+                "item_type": "gear",
+                "rarity": "rare",
+            }),
+            "requires_professions_json": json.dumps(["tinkering"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Clockwork Spring Set", "qty": 2},
+                {"name": "Precision Gear Pack", "qty": 1},
+                {"name": "Arc Battery Cell", "qty": 1},
+            ]),
+            "fee_units": 500,
+            "duration_seconds": 480,
+            "station_shop_types_json": json.dumps(["blacksmith", "black_market"]),
+            "tags_json": json.dumps(["tinker-gadget-family", "sentry", "utility"]),
+            "rarity": "rare",
+        },
+        # Shipwright / Pirate
+        {
+            "id": "rec_tar_caulk_kit",
+            "name": "Tar Caulk Repair Kit",
+            "result_item_json": json.dumps({
+                "id": "crafted_tar_caulk_kit",
+                "name": "Tar Caulk Repair Kit",
+                "notes": (
+                    "A field repair kit for hulls, barrels, and field shelters. "
+                    "Contains pre-mixed tar caulk and pressing tools for sealing planks, "
+                    "cracks, and waterway joints. Three standard uses per kit."
+                ),
+                "category": "Tool",
+                "item_type": "tool",
+                "rarity": "common",
+            }),
+            "requires_professions_json": json.dumps(["shipwright", "woodworking"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Tarred Rope Bundle", "qty": 1},
+                {"name": "Sea-Oak Plank", "qty": 1},
+            ]),
+            "fee_units": 130,
+            "duration_seconds": 120,
+            "station_shop_types_json": json.dumps(["general"]),
+            "tags_json": json.dumps(["pirate-utility-family", "repair", "tool"]),
+            "rarity": "common",
+        },
+        {
+            "id": "rec_signal_beacon",
+            "name": "Signal Beacon",
+            "result_item_json": json.dumps({
+                "id": "crafted_signal_beacon",
+                "name": "Signal Beacon",
+                "notes": (
+                    "A brass-mounted signal fire on a folding hardwood post. "
+                    "Burns signal-bright for 30 minutes and can be seen for up to 2 miles at night. "
+                    "Standard pirate and naval rendezvous equipment."
+                ),
+                "category": "Gear",
+                "item_type": "gear",
+                "rarity": "common",
+            }),
+            "requires_professions_json": json.dumps(["shipwright"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Salvaged Brass Bundle", "qty": 1},
+                {"name": "Hardwood Plank Bundle", "qty": 1},
+            ]),
+            "fee_units": 150,
+            "duration_seconds": 150,
+            "station_shop_types_json": json.dumps(["general", "blacksmith"]),
+            "tags_json": json.dumps(["pirate-utility-family", "signal", "navigation"]),
+            "rarity": "common",
+        },
+        # Jeweling
+        {
+            "id": "rec_seafarers_amulet",
+            "name": "Seafarer's Coral Amulet",
+            "result_item_json": json.dumps({
+                "id": "crafted_seafarers_amulet",
+                "name": "Seafarer's Coral Amulet",
+                "notes": (
+                    "A polished coral shard mounted in a crystal-inlaid silver setting. "
+                    "Worn as a protective charm against sea peril, storms, and salt exposure. "
+                    "Prized by navigators, corsairs, and deep-sea divers."
+                ),
+                "category": "Wondrous Item",
+                "item_type": "wondrous",
+                "rarity": "uncommon",
+            }),
+            "requires_professions_json": json.dumps(["jeweling"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Coral Inlay Shards", "qty": 1},
+                {"name": "Crystal Shard Cluster", "qty": 1},
+            ]),
+            "fee_units": 380,
+            "duration_seconds": 360,
+            "station_shop_types_json": json.dumps(["magic"]),
+            "tags_json": json.dumps(["jewel-family", "pirate-utility-family", "amulet"]),
+            "rarity": "uncommon",
+        },
+        {
+            "id": "rec_resonance_focus",
+            "name": "Resonance Focus",
+            "result_item_json": json.dumps({
+                "id": "crafted_resonance_focus",
+                "name": "Resonance Focus",
+                "notes": (
+                    "A faceted crystal shard set in a copper-wire housing. "
+                    "Used by casters as a spellcasting focus; also amplifies detection-school spells — "
+                    "when used with Detect Magic, the range increases by 15 feet."
+                ),
+                "category": "Wondrous Item",
+                "item_type": "wondrous",
+                "rarity": "uncommon",
+            }),
+            "requires_professions_json": json.dumps(["jeweling", "tinkering"]),
+            "requires_materials_json": json.dumps([
+                {"name": "Crystal Shard Cluster", "qty": 2},
+                {"name": "Copper Wire Spool", "qty": 1},
+            ]),
+            "fee_units": 420,
+            "duration_seconds": 400,
+            "station_shop_types_json": json.dumps(["magic"]),
+            "tags_json": json.dumps(["jewel-family", "tinker-gadget-family", "focus"]),
+            "rarity": "uncommon",
+        },
     ]
     for row in recipes:
         conn.execute("""
