@@ -5,7 +5,7 @@ import copy
 from typing import Any
 
 from server.character.resolver import resolve_character_runtime
-from server.character.rules_catalog import load_rules_catalog
+from server.character.rules_catalog import load_rules_catalog, get_subclass_catalog_row
 from server.character.spell_compendium import (
     build_spell_limits_for_class,
     get_effective_document_spell_state,
@@ -525,12 +525,31 @@ def build_levelup_preview(document: Any) -> dict[str, Any]:
                 "reason": f"{class_display_name} can take an Ability Score Improvement or feat at level {next_level}.",
             }
         )
+    subclass_options: list[dict[str, str]] = []
+    if subclass_level and not subclass_id:
+        subclasses_rows = catalog.get("subclassesByClass", {}).get(class_id, []) if isinstance(catalog.get("subclassesByClass"), dict) else []
+        if isinstance(subclasses_rows, list):
+            for row in subclasses_rows:
+                if not isinstance(row, dict):
+                    continue
+                option_id = str(row.get("id") or "").strip().lower()
+                if not option_id:
+                    continue
+                subclass_options.append(
+                    {
+                        "id": option_id,
+                        "name": str(row.get("displayName") or option_id.replace("-", " ").title()).strip(),
+                        "summary": str(row.get("flavorText") or "").strip(),
+                    }
+                )
+
     if subclass_level and next_level >= subclass_level and not subclass_id:
         required_choices.append(
             {
                 "id": f"{class_id or 'class'}-subclass-choice-level-{next_level}",
                 "type": "subclass",
                 "reason": f"{class_display_name} selects a subclass at level {subclass_level}.",
+                "options": copy.deepcopy(subclass_options),
             }
         )
 
@@ -608,6 +627,14 @@ def build_levelup_preview(document: Any) -> dict[str, Any]:
             for row in new_features
         ],
         "requiredChoices": required_choices,
+        "subclassChoice": {
+            "required": bool(subclass_level and next_level >= subclass_level and not subclass_id),
+            "unlockLevel": subclass_level,
+            "selected": subclass_id,
+            "options": copy.deepcopy(subclass_options),
+            "classId": class_id,
+            "className": class_display_name,
+        },
         "optionalChoices": [],
         "meta": {"previewOnly": True, "applySupported": True, "engine": "character.levelup.preview.v3"},
     }
@@ -633,6 +660,7 @@ def apply_levelup(document: Any, *, choices: Any = None) -> dict[str, Any]:
     asi_choice = selected_choices.get("asiChoice") if isinstance(selected_choices.get("asiChoice"), dict) else {}
     feat_choice = str(selected_choices.get("featChoice") or "").strip().lower()
     spell_choice_payload = selected_choices.get("spellChoices") if isinstance(selected_choices.get("spellChoices"), dict) else {}
+    subclass_choice = str(selected_choices.get("subclassChoice") or "").strip().lower()
 
     unresolved_required = []
     for row in preview.get("requiredChoices") or []:
@@ -663,9 +691,25 @@ def apply_levelup(document: Any, *, choices: Any = None) -> dict[str, Any]:
             if len(_unique_spell_ids(spell_choice_payload.get("magicalSecretsAdds"))) < required:
                 unresolved_required.append(row)
         elif row_type == "subclass":
-            unresolved_required.append(row)
+            row_options = row.get("options") if isinstance(row.get("options"), list) else []
+            allowed_ids = {
+                str(option.get("id") or "").strip().lower()
+                for option in row_options
+                if isinstance(option, dict) and str(option.get("id") or "").strip()
+            }
+            if not subclass_choice:
+                unresolved_required.append(row)
+            elif allowed_ids and subclass_choice not in allowed_ids:
+                unresolved_required.append(row)
     if unresolved_required:
         raise LevelupApplyError("Cannot apply level-up: unresolved required choices remain.")
+
+    if subclass_choice:
+        subclass_row = get_subclass_catalog_row(subclass_choice)
+        if not isinstance(subclass_row, dict):
+            raise LevelupApplyError("Cannot apply level-up: selected subclass is not valid.")
+        primary_class["subclassId"] = subclass_choice
+        primary_class["subclass"] = str(subclass_row.get("displayName") or subclass_choice.replace("-", " ").title()).strip()
 
     class_features = primary_class.get("selectedFeatures") if isinstance(primary_class.get("selectedFeatures"), list) else []
     known_feature_ids = {str(row.get("id") or "").strip().lower() for row in class_features if isinstance(row, dict)}

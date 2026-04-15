@@ -408,8 +408,20 @@
     if (classDisplay.className) {
       out.className = classDisplay.className;
     }
+    if (classDisplay.classId) {
+      out.classId = classDisplay.classId;
+    }
+    if (classDisplay.subclassId) {
+      out.subclassId = classDisplay.subclassId;
+    }
     if (classDisplay.subclassName) {
       out.subclass = classDisplay.subclassName;
+    }
+    if (classDisplay.subclassUnlockLevel != null) {
+      out.subclassUnlockLevel = asInt(classDisplay.subclassUnlockLevel, 0);
+    }
+    if (classDisplay.subclassPending != null) {
+      out.subclassPending = !!classDisplay.subclassPending;
     }
 
     if (runtime.ac !== undefined && runtime.ac !== null) {

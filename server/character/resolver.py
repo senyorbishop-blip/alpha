@@ -227,6 +227,7 @@ def _resolve_runtime_classes(normalized: dict) -> list[dict[str, Any]]:
                 "subclassName": subclass_display_name,
                 "subclassUnlockLevel": subclass_unlock_level,
                 "subclassUnlocked": bool(subclass_id and subclass_unlock_level and level >= subclass_unlock_level),
+                "subclassPending": bool((not subclass_id) and subclass_unlock_level and level >= subclass_unlock_level),
                 "subclassFeatureUnlocksByLevel": unlocks,
             }
         )
@@ -299,6 +300,7 @@ def resolve_character_runtime(document: Any) -> dict:
             "subclassName": primary.get("subclassName") or "",
             "subclassUnlockLevel": _safe_int(primary.get("subclassUnlockLevel"), 0, minimum=0),
             "subclassUnlocked": bool(primary.get("subclassUnlocked")),
+            "subclassPending": bool(primary.get("subclassPending")),
             "subclassFeatureUnlocksByLevel": _clone(primary.get("subclassFeatureUnlocksByLevel") or {}),
         }
     else:
@@ -309,6 +311,7 @@ def resolve_character_runtime(document: Any) -> dict:
             "subclassName": "",
             "subclassUnlockLevel": 0,
             "subclassUnlocked": False,
+            "subclassPending": False,
             "subclassFeatureUnlocksByLevel": {},
         }
 
