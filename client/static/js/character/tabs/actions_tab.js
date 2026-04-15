@@ -1315,6 +1315,39 @@
     return found;
   }
 
+  function _normalizedActionIdentity(card, fallbackEconomy, classKey) {
+    const entry = card && typeof card === 'object' ? card : {};
+    const economy = _firstText(entry.economy, entry.actionType, entry.type, fallbackEconomy, 'action').toLowerCase();
+    const name = _firstText(entry.name, entry.label, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const sourceFeatureId = _firstText(entry.featureId, entry.sourceFeatureId, entry.id, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').trim();
+    const normalizedClass = String(classKey || '').toLowerCase().trim();
+    return [name, normalizedClass, economy, sourceFeatureId].join('::');
+  }
+
+  function _dedupeActionBucket(cards, fallbackEconomy, classKey) {
+    const priorityForSource = function (source) {
+      const text = String(source || '').toLowerCase();
+      if (text === 'native_action') return 4;
+      if (text === 'custom_druid_action') return 3;
+      if (text === 'feature-fallback') return 1;
+      return 2;
+    };
+    const byIdentity = new Map();
+    _safeArray(cards).forEach(function (card) {
+      const identity = _normalizedActionIdentity(card, fallbackEconomy, classKey);
+      if (!identity) return;
+      const prev = byIdentity.get(identity);
+      if (!prev) {
+        byIdentity.set(identity, card);
+        return;
+      }
+      const prevPriority = priorityForSource(prev && prev.source);
+      const nextPriority = priorityForSource(card && card.source);
+      if (nextPriority > prevPriority) byIdentity.set(identity, card);
+    });
+    return Array.from(byIdentity.values());
+  }
+
   function _buildCustomClassActionCards(charData) {
     const classKey = _classKey(charData);
     const config = CUSTOM_CLASS_ACTIONS[classKey];
@@ -1328,28 +1361,28 @@
     const seen = new Set();
     candidateDefs.forEach(function (def, index) {
       const feature = _findFeatureMatch(lookup, def && def.key);
-      if (!feature) return;
-      const actionType = String(def.actionType || feature.actionType || feature.type || 'action').toLowerCase();
+      if (!feature && classKey !== 'druid') return;
+      const actionType = String(def.actionType || (feature && feature.actionType) || (feature && feature.type) || 'action').toLowerCase();
       const bucket = /reaction/.test(actionType) ? 'reactions' : /bonus/.test(actionType) ? 'bonusActions' : 'actions';
       const id = `custom_${classKey}_${String(def.key || index).replace(/[^a-z0-9]+/gi, '_').toLowerCase()}`;
       if (seen.has(id)) return;
       seen.add(id);
-      const usageBits = [_firstText(feature.usage, ''), _firstText(feature.recovery, '')].filter(Boolean).join(' • ');
+      const usageBits = [_firstText(feature && feature.usage, ''), _firstText(feature && feature.recovery, '')].filter(Boolean).join(' • ');
       groups[bucket].push({
         id: id,
-        source: 'native_action',
+        source: classKey === 'druid' ? 'custom_druid_action' : 'native_action',
         name: def.name || feature.name || 'Custom Action',
-        summary: _firstText(def.summary, feature.summary, feature.description, 'Class action'),
-        description: _firstText(def.summary, feature.summary, feature.description, 'Class action'),
-        text: [_firstText(feature.description, ''), _firstText(feature.longText, '')].filter(Boolean).join('\n\n'),
+        summary: _firstText(def.summary, feature && feature.summary, feature && feature.description, 'Class action'),
+        description: _firstText(def.summary, feature && feature.summary, feature && feature.description, 'Class action'),
+        text: [_firstText(feature && feature.description, ''), _firstText(feature && feature.longText, '')].filter(Boolean).join('\n\n'),
         actionType: actionType,
         type: actionType,
-        range: _firstText(def.range, feature.range, ''),
-        resourceName: _firstText(def.resourceName, feature.resourceName, ''),
+        range: _firstText(def.range, feature && feature.range, ''),
+        resourceName: _firstText(def.resourceName, feature && feature.resourceName, ''),
         resourceSummary: _firstText(def.resourceSummary, usageBits, ''),
-        tags: (Array.isArray(def.tags) ? def.tags : []).concat([_firstText(feature.source, classKey)]).filter(Boolean),
-        note: _firstText(feature.summary, feature.usage, feature.recovery, ''),
-        effectText: _firstText(feature.effect, ''),
+        tags: (Array.isArray(def.tags) ? def.tags : []).concat([_firstText(feature && feature.source, classKey)]).filter(Boolean),
+        note: _firstText(feature && feature.summary, feature && feature.usage, feature && feature.recovery, ''),
+        effectText: _firstText(feature && feature.effect, ''),
       });
     });
     return groups;
@@ -1361,6 +1394,25 @@
       : { actions: [], bonusActions: [], reactions: [] };
     const fallback = _featureActionFallbacks(charData);
     const custom = _buildCustomClassActionCards(charData);
+    const classKey = _classKey(charData);
+    const isDruid = classKey === 'druid';
+    const nativeCount = _safeArray(groups.actions).length + _safeArray(groups.bonusActions).length + _safeArray(groups.reactions).length;
+    const fallbackFiltered = isDruid && nativeCount > 0
+      ? {
+          actions: _safeArray(fallback.actions).filter(function (card) {
+            const name = _firstText(card && card.name, '').toLowerCase();
+            return !(/wild shape|circle spells|prepared spell/.test(name));
+          }),
+          bonusActions: _safeArray(fallback.bonusActions).filter(function (card) {
+            const name = _firstText(card && card.name, '').toLowerCase();
+            return !(/wild shape|circle spells|prepared spell/.test(name));
+          }),
+          reactions: _safeArray(fallback.reactions).filter(function (card) {
+            const name = _firstText(card && card.name, '').toLowerCase();
+            return !(/wild shape|circle spells|prepared spell/.test(name));
+          }),
+        }
+      : fallback;
     const subclassGate = (function () {
       const className = _firstText(charData && charData.className, charData && charData.classId, 'Class');
       const unlockLevel = _num(charData && charData.subclassUnlockLevel, 0);
@@ -1380,10 +1432,18 @@
       }, 'action');
     }());
     const out = {
-      actions: _safeArray(groups.actions).concat(custom.actions).concat(fallback.actions).map(function (card, index) { return _normalizeNativeAction(card, 'action', index); }),
-      bonusActions: _safeArray(groups.bonusActions).concat(custom.bonusActions).concat(fallback.bonusActions).map(function (card, index) { return _normalizeNativeAction(card, 'bonus', index); }),
-      reactions: _safeArray(groups.reactions).concat(custom.reactions).concat(fallback.reactions).map(function (card, index) { return _normalizeNativeAction(card, 'reaction', index); }),
+      actions: _dedupeActionBucket(_safeArray(groups.actions).concat(custom.actions).concat(fallbackFiltered.actions), 'action', classKey).map(function (card, index) { return _normalizeNativeAction(card, 'action', index); }),
+      bonusActions: _dedupeActionBucket(_safeArray(groups.bonusActions).concat(custom.bonusActions).concat(fallbackFiltered.bonusActions), 'bonus', classKey).map(function (card, index) { return _normalizeNativeAction(card, 'bonus', index); }),
+      reactions: _dedupeActionBucket(_safeArray(groups.reactions).concat(custom.reactions).concat(fallbackFiltered.reactions), 'reaction', classKey).map(function (card, index) { return _normalizeNativeAction(card, 'reaction', index); }),
     };
+    if (isDruid) {
+      const beastActions = _wildShapeActionCards(charData || {});
+      if (beastActions.length) {
+        out.actions = _dedupeActionBucket(_safeArray(out.actions).concat(beastActions), 'action', classKey).map(function (card, index) {
+          return _normalizeNativeAction(card, 'action', index);
+        });
+      }
+    }
     if (subclassGate) out.actions.unshift(subclassGate);
     if (!out.reactions.length) {
       out.reactions.push(_normalizeNativeAction({
@@ -1474,6 +1534,80 @@
     return base;
   }
 
+  const DRUID_WILD_SHAPE_FORMS = [
+    { id: 'wolf', name: 'Wolf', minLevel: 2, cr: 0.25, speed: 40, swim: 0, fly: 0, senses: 'Keen Hearing, Keen Smell', attacks: ['Bite +4 (2d4+2 piercing, prone on failed STR save)'] },
+    { id: 'panther', name: 'Panther', minLevel: 2, cr: 0.25, speed: 50, swim: 0, fly: 0, senses: 'Keen Smell', attacks: ['Bite +4 (1d6+2 piercing)', 'Claw +4 (1d4+2 slashing)'] },
+    { id: 'brown_bear', name: 'Brown Bear', minLevel: 4, cr: 1, speed: 40, swim: 0, fly: 0, senses: 'Keen Smell', attacks: ['Bite +5 (1d8+4 piercing)', 'Claws +5 (2d6+4 slashing)'] },
+    { id: 'giant_spider', name: 'Giant Spider', minLevel: 4, cr: 1, speed: 30, swim: 0, fly: 0, senses: 'Blindsight 10 ft', attacks: ['Bite +5 (1d8+3 piercing + poison)'] },
+    { id: 'saber_toothed_tiger', name: 'Saber-Toothed Tiger', minLevel: 8, cr: 2, speed: 40, swim: 0, fly: 0, senses: 'Keen Smell', attacks: ['Bite +6 (1d10+5 piercing)', 'Claw +6 (2d6+5 slashing)'] },
+  ];
+
+  function _druidLevel(charData) {
+    const classes = _safeArray(charData && charData.classes);
+    const found = classes.find(function (row) {
+      return String(row && row.name || '').toLowerCase().trim() === 'druid';
+    });
+    if (found) return _num(found.level, 0);
+    const key = _classKey(charData);
+    if (key === 'druid') return _num(charData && (charData.level || charData.totalLevel), 0);
+    return 0;
+  }
+
+  function _druidWildShapeState(charData) {
+    const mechanics = charData && charData.classMechanics && typeof charData.classMechanics === 'object' ? charData.classMechanics : {};
+    const usesMax = _num(mechanics.wildShapeUses, 2) || 2;
+    const spent = _num(mechanics.wildShapeSpent, 0) || 0;
+    const usesLeft = Math.max(0, usesMax - spent);
+    const maxCr = Number(mechanics.wildShapeMaxCR != null ? mechanics.wildShapeMaxCR : 0.25) || 0.25;
+    const active = charData && charData.wildShapeState && typeof charData.wildShapeState === 'object' ? charData.wildShapeState : {};
+    return {
+      usesMax: usesMax,
+      usesLeft: usesLeft,
+      maxCr: maxCr,
+      activeFormId: _firstText(active.formId, ''),
+      activeFormName: _firstText(active.formName, ''),
+      originalName: _firstText(active.originalName, charData && charData.name, ''),
+      originalAvatarUrl: _firstText(active.originalAvatarUrl, charData && charData.avatarUrl, ''),
+      originalSpeed: _num(active.originalSpeed, _num(charData && charData.speed, 30)),
+      originalSenses: _firstText(active.originalSenses, charData && charData.senses, ''),
+      active: !!active.active,
+    };
+  }
+
+  function _legalWildShapeForms(charData) {
+    const level = _druidLevel(charData);
+    const state = _druidWildShapeState(charData);
+    const allowFly = level >= 8;
+    const allowSwim = level >= 4;
+    return DRUID_WILD_SHAPE_FORMS.filter(function (form) {
+      if (!form || form.minLevel > level) return false;
+      if (Number(form.cr || 0) > Number(state.maxCr || 0)) return false;
+      if (!allowFly && Number(form.fly || 0) > 0) return false;
+      if (!allowSwim && Number(form.swim || 0) > 0) return false;
+      return true;
+    });
+  }
+
+  function _wildShapeActionCards(charData) {
+    const state = _druidWildShapeState(charData);
+    if (!state.active) return [];
+    const form = _legalWildShapeForms(charData).find(function (row) { return row.id === state.activeFormId; });
+    if (!form) return [];
+    return _safeArray(form.attacks).map(function (text, idx) {
+      return {
+        id: 'wild_shape_attack_' + String(form.id || idx) + '_' + String(idx),
+        source: 'wild_shape_form',
+        name: form.name + ' Attack ' + String(idx + 1),
+        summary: text,
+        description: text,
+        actionType: 'action',
+        type: 'action',
+        range: 'Melee',
+        tags: ['Druid', 'Wild Shape', form.name],
+      };
+    });
+  }
+
   function _beastMasterCompanionProfile(charData) {
     const classKey = _classKey(charData);
     const subclassKey = _customSubclassKey(charData);
@@ -1533,8 +1667,93 @@
     </div>`;
   }
 
+  function _renderDruidWildShapeControls(charData) {
+    if (_classKey(charData) !== 'druid') return '';
+    const state = _druidWildShapeState(charData);
+    const forms = _legalWildShapeForms(charData);
+    const selected = String(charData && charData.wildShapeSelection || '');
+    return `<div class="cs-combat-callout-grid">
+      <div class="cs-combat-callout">
+        <div class="cs-combat-callout-title">Wild Shape</div>
+        <div class="cs-combat-callout-copy">Uses ${_esc(String(state.usesLeft))}/${_esc(String(state.usesMax))} • Max CR ${_esc(String(state.maxCr))}${state.active ? ` • Active form: ${_esc(state.activeFormName || state.activeFormId)}` : ''}</div>
+      </div>
+      <div class="cs-combat-callout muted">
+        <div class="cs-combat-callout-title">Form picker</div>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
+          <select data-druid-wild-shape-select="1" style="background:#0f1716;color:#defcf8;border:1px solid rgba(0,229,204,.28);border-radius:8px;padding:6px 8px;min-width:220px;">
+            <option value="">Choose legal form…</option>
+            ${forms.map(function (form) { return `<option value="${_esc(form.id)}" ${selected === form.id ? 'selected' : ''}>${_esc(form.name)} (CR ${_esc(String(form.cr))})</option>`; }).join('')}
+          </select>
+          <button type="button" class="cs-launch-btn" data-druid-wild-shape-apply="1" ${state.usesLeft <= 0 || !forms.length ? 'disabled' : ''}>Transform</button>
+          <button type="button" class="cs-launch-btn muted" data-druid-wild-shape-revert="1" ${state.active ? '' : 'disabled'}>Revert</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function _broadcastWildShapeTokenUpdate(charData, state) {
+    if (typeof global.sendWS !== 'function') return;
+    const formName = _firstText(state && state.activeFormName, '');
+    const payload = {
+      name: formName ? (charData && charData.name ? (charData.name + ' (' + formName + ')') : formName) : (charData && charData.name || ''),
+      speed: _num(charData && charData.speed, 0),
+      senses: _firstText(charData && charData.senses, ''),
+      portrait: _firstText(charData && charData.avatarUrl, ''),
+      wild_shape: state || {},
+    };
+    try { global.sendWS({ type: 'token_edit', payload: payload }); } catch (_) {}
+  }
+
   function _bindDetails(container, model) {
     container.addEventListener('click', function (e) {
+      const wildShapeApply = e.target.closest('[data-druid-wild-shape-apply]');
+      if (wildShapeApply) {
+        e.preventDefault();
+        const charData = model && model.charData ? model.charData : {};
+        const selectedFormId = String(charData && charData.wildShapeSelection || '');
+        const selectedForm = _legalWildShapeForms(charData).find(function (row) { return row.id === selectedFormId; });
+        const state = _druidWildShapeState(charData);
+        if (!selectedForm || state.usesLeft <= 0) return;
+        const nextState = {
+          active: true,
+          formId: selectedForm.id,
+          formName: selectedForm.name,
+          originalName: state.originalName || _firstText(charData && charData.name, ''),
+          originalAvatarUrl: state.originalAvatarUrl || _firstText(charData && charData.avatarUrl, ''),
+          originalSpeed: state.originalSpeed || _num(charData && charData.speed, 30),
+          originalSenses: state.originalSenses || _firstText(charData && charData.senses, ''),
+        };
+        if (!charData.classMechanics || typeof charData.classMechanics !== 'object') charData.classMechanics = {};
+        charData.classMechanics.wildShapeSpent = _num(charData.classMechanics.wildShapeSpent, 0) + 1;
+        charData.wildShapeState = nextState;
+        charData.speed = _num(selectedForm.speed, charData.speed || 30);
+        charData.senses = _firstText(selectedForm.senses, charData.senses, '');
+        if (global._charSheet && typeof global._charSheet === 'object') Object.assign(global._charSheet, charData);
+        _broadcastWildShapeTokenUpdate(charData, nextState);
+        if (typeof model.rerender === 'function') model.rerender();
+        return;
+      }
+      const wildShapeRevert = e.target.closest('[data-druid-wild-shape-revert]');
+      if (wildShapeRevert) {
+        e.preventDefault();
+        const charData = model && model.charData ? model.charData : {};
+        const state = _druidWildShapeState(charData);
+        charData.wildShapeState = {
+          active: false,
+          formId: '',
+          formName: '',
+          originalName: state.originalName,
+          originalAvatarUrl: state.originalAvatarUrl,
+          originalSpeed: state.originalSpeed,
+          originalSenses: state.originalSenses,
+        };
+        charData.speed = state.originalSpeed || _num(charData.speed, 30);
+        charData.senses = state.originalSenses || _firstText(charData.senses, '');
+        if (global._charSheet && typeof global._charSheet === 'object') Object.assign(global._charSheet, charData);
+        _broadcastWildShapeTokenUpdate(charData, charData.wildShapeState);
+        if (typeof model.rerender === 'function') model.rerender();
+        return;
+      }
       const useBtn = e.target.closest('[data-action-use]');
       if (useBtn) {
         e.preventDefault();
@@ -1610,6 +1829,13 @@
       e.preventDefault();
       row.click();
     });
+    container.addEventListener('change', function (e) {
+      const selector = e.target.closest('[data-druid-wild-shape-select]');
+      if (!selector) return;
+      if (!model || !model.charData) return;
+      model.charData.wildShapeSelection = String(selector.value || '');
+      if (global._charSheet && typeof global._charSheet === 'object') global._charSheet.wildShapeSelection = model.charData.wildShapeSelection;
+    });
   }
 
   function initActionsTab(container, charData) {
@@ -1644,6 +1870,7 @@
       </div>
       ${_renderSurfaceNavButtons()}
       ${_renderCustomSurfaceCallout(charData || {}, resources)}
+      ${_renderDruidWildShapeControls(charData || {})}
       ${_renderBeastMasterCompanionControls(beastMasterCompanion)}
       ${_renderSection('Quick Attacks', quickAttacks, { emptyLabel: 'No quick attack cards are loaded yet.' })}
       ${_renderSection('Item Actions', itemActions, { emptyLabel: 'No usable item actions are loaded yet.' })}
@@ -1653,7 +1880,11 @@
       ${_renderResourceSection(resources)}
     `;
 
-    _bindDetails(container, { quickAttacks, itemActions, native, resources, textAttacks, beastMasterCompanion });
+    _bindDetails(container, {
+      quickAttacks, itemActions, native, resources, textAttacks, beastMasterCompanion,
+      charData: charData || {},
+      rerender: function rerenderActions() { initActionsTab(container, charData); }
+    });
   }
 
   global.ActionsTab = { initActionsTab };

@@ -1405,6 +1405,21 @@ function _spellAttackSaveCell(spell, charData) {
     _bindSpellRows(container, state);
     _bindFilterControls(container, state);
     _loadState(container, state);
+    if (!container.__spellSyncListenerBound) {
+      container.__spellSyncListenerBound = true;
+      global.addEventListener('character:spell-state-updated', function () {
+        const sheet = global._charSheet && typeof global._charSheet === 'object' ? global._charSheet : null;
+        if (sheet && sheet.spellState && typeof sheet.spellState === 'object') {
+          state.charData.spellState = {
+            known: _safeArray(sheet.spellState.known),
+            prepared: _safeArray(sheet.spellState.prepared),
+          };
+        }
+        state.message = 'Spellbook synced from level-up.';
+        state.messageTone = 'good';
+        _loadState(container, state);
+      });
+    }
   }
 
   global.SpellsTab = { initSpellsTab: initSpellsTab };
