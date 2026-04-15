@@ -111,6 +111,7 @@
       elf: `${base}/species/elf.png`,
     },
     classes: {
+      barbarian: `${base}/combos/Human Female Barbarian.png`,
       fighter: `${base}/class/fighter.png`,
       warlock: `${base}/class/warlock.png`,
     },
