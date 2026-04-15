@@ -1178,12 +1178,19 @@ function resolveMainPortraitUrl() {
     || ''
   ).trim();
   if (customPortrait && !isLegacyAutoPortraitUrl(customPortrait)) return customPortrait;
+  const klass = selectedClass() || null;
+  const hasClassSelection = !!String((klass && klass.id) || '').trim();
+  if (!hasClassSelection) return '';
   const portraits = window.CasualDnDPortraitLibrary || null;
   if (portraits && typeof portraits.resolve === 'function') {
-    const comboPortrait = String(portraits.resolve(buildAvatarOptions()) || '').trim();
+    const comboPortrait = String(portraits.resolve(buildAvatarOptions({
+      allowSpeciesFallback: false,
+      allowClassFallback: true,
+      neutralFallback: '',
+    })) || '').trim();
     if (comboPortrait) return comboPortrait;
   }
-  const classPortrait = resolveClassPortraitUrl(selectedClass() || {});
+  const classPortrait = resolveClassPortraitUrl(klass || {});
   if (classPortrait) return classPortrait;
   return '';
 }
@@ -1302,11 +1309,9 @@ function renderOptionCard(item, type, selectedId) {
 function renderBackgroundListItem(item, selectedId) {
   const id = item.id;
   const isSelected = id === selectedId;
-  const summary = String(item.summary || item.description || '').trim();
   return `<button type="button" class="option-card class-card compact${isSelected ? ' selected' : ''}" data-option-type="background" data-option-id="${escapeHtml(id)}" style="padding:12px;min-height:98px">
     <div style="display:grid;gap:4px;min-height:72px;align-content:start;">
       <h3 style="margin:0;font-size:0.94rem">${escapeHtml(backgroundDisplayName(item))}</h3>
-      ${summary ? `<p style="margin:0;font-size:0.78rem;line-height:1.38">${escapeHtml(summary)}</p>` : '<div style="min-height:1.38em;"></div>'}
     </div>
   </button>`;
 }
@@ -1579,10 +1584,32 @@ function canProceed() {
   }
   return true;
 }
+    function deriveStartingVitals(cls, sp) {
+      const level = Math.max(1, Number(state.hero.startingLevel || 1));
+      const conScore = Number(state.hero.stats.constitution || 10);
+      const dexScore = Number(state.hero.stats.dexterity || 10);
+      const conMod = Math.floor((conScore - 10) / 2);
+      const dexMod = Math.floor((dexScore - 10) / 2);
+      const hitDie = Math.max(1, Number((cls && cls.hitDie) || 8));
+      const speciesSpeed = Number((sp && sp.speed) || 30);
+      const baseMaxHp = hitDie + conMod + ((level - 1) * (Math.floor((hitDie / 2) + 1) + conMod));
+      const maxHp = Math.max(level, baseMaxHp);
+      const defaultAc = 10 + dexMod;
+      return {
+        level,
+        currentHp: maxHp,
+        maxHp,
+        tempHp: 0,
+        ac: Math.max(1, defaultAc),
+        speed: Math.max(0, speciesSpeed || 30),
+        initiative: dexMod,
+      };
+    }
     function buildDraftDocument() {
       const sp = selectedSpecies() || { id: 'human', name: 'Human', speed: 30, size: 'Medium' };
       const cls = selectedClass() || { id: 'fighter', displayName: 'Fighter', startingEquipment: ['Longsword'] };
       const bg = selectedBackground() || { id: 'folk-hero', name: 'Folk Hero' };
+      const vitals = deriveStartingVitals(cls, sp);
       ensureEquipmentDefaults();
       const selectedWeaponPack = getSelectedWeaponPack();
       const selectedPackId = String(state.hero.selectedAdventuringPackId || '');
@@ -1671,10 +1698,25 @@ function canProceed() {
           classId: cls.id,
           subclassId: String(state.hero.subclassId || '').trim(),
           subclass: selectedSubclass() ? String(selectedSubclass().displayName || selectedSubclass().id || '').trim() : '',
-          level: Number(state.hero.startingLevel || 1),
+          level: vitals.level,
         }],
-        progression: { level: Number(state.hero.startingLevel || 1) },
+        progression: { level: vitals.level },
+        vitals: {
+          currentHp: vitals.currentHp,
+          maxHp: vitals.maxHp,
+          tempHp: vitals.tempHp,
+          ac: vitals.ac,
+          speed: vitals.speed,
+          initiative: vitals.initiative,
+        },
         charSheet: {
+          level: vitals.level,
+          currentHp: vitals.currentHp,
+          maxHp: vitals.maxHp,
+          tempHp: vitals.tempHp,
+          ac: vitals.ac,
+          speed: vitals.speed,
+          initiative: vitals.initiative,
           campaignNotes: state.hero.notes || '',
         },
         equipment: {
