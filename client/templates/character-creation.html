@@ -58,11 +58,11 @@
       padding: 28px;
     }
     .shell {
-      max-width: 1420px;
+      max-width: 1360px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: 320px 1fr;
-      gap: 26px;
+      grid-template-columns: 272px 1fr;
+      gap: 18px;
     }
     .sidebar, .panel {
       border: 1px solid var(--line);
@@ -82,10 +82,10 @@
     }
     .sidebar {
       min-height: calc(100vh - 56px);
-      padding: 24px 22px;
+      padding: 18px 16px;
       display: grid;
-      grid-template-rows: auto auto minmax(220px, 1fr) auto;
-      gap: 16px;
+      grid-template-rows: auto auto auto minmax(170px, 1fr);
+      gap: 10px;
       align-content: start;
     }
     .brand-row {
@@ -119,33 +119,33 @@
       color: rgba(244, 230, 206, 0.88);
       background: rgba(7, 4, 3, 0.32);
     }
-    .steps { display: grid; gap: 10px; min-height: 0; overflow: auto; padding-right: 2px; }
+    .steps { display: grid; gap: 8px; min-height: 0; overflow: auto; padding-right: 2px; }
     .step-pill {
       display: flex; align-items: center; gap: 12px;
-      padding: 10px 12px; border-radius: 18px;
+      padding: 8px 10px; border-radius: 14px;
       border: 1px solid rgba(229,198,151,0.1);
       background: rgba(11,6,5,0.42);
       color: rgba(235,222,196,0.65);
       font-family: 'Cinzel', serif;
       letter-spacing: 0.04em;
-      font-size: 0.82rem;
+      font-size: 0.72rem;
     }
     .step-pill.active { border-color: rgba(156,224,219,0.36); color: var(--gold-strong); background: rgba(12,24,23,0.36); }
     .step-pill.done { border-color: rgba(229,198,151,0.18); color: rgba(244,230,206,0.88); }
     .step-num {
-      width: 28px; height: 28px; border-radius: 999px; display:grid; place-items:center;
-      font-size: 0.74rem; font-weight: 700;
+      width: 22px; height: 22px; border-radius: 999px; display:grid; place-items:center;
+      font-size: 0.64rem; font-weight: 700;
       border: 1px solid rgba(229,198,151,0.16); background: rgba(0,0,0,0.22);
     }
     .avatar-stage {
-      border-radius: 24px;
+      border-radius: 18px;
       border: 1px solid rgba(229,198,151,0.12);
       background: radial-gradient(circle at 50% 20%, rgba(255,235,196,0.14), transparent 36%), linear-gradient(180deg, rgba(11,6,5,0.66), rgba(8,4,3,0.86));
-      min-height: 380px;
+      min-height: 290px;
       display: grid;
       align-content: start;
       justify-items: center;
-      padding-top: 14px;
+      padding: 10px;
       position: relative;
       overflow: hidden;
     }
@@ -156,14 +156,14 @@
       filter: blur(8px);
     }
     .avatar-meta {
-      display: grid; gap: 10px;
-      padding: 14px 16px; border-radius: 20px;
+      display: grid; gap: 6px;
+      padding: 10px 12px; border-radius: 14px;
       border: 1px solid rgba(229,198,151,0.1);
       background: rgba(10,6,5,0.44);
       min-height: 0;
     }
-    .avatar-meta strong { font-family: 'Cinzel', serif; color: var(--gold-strong); font-size: 1.1rem; }
-    .avatar-meta span { color: var(--muted); }
+    .avatar-meta strong { font-family: 'Cinzel', serif; color: var(--gold-strong); font-size: 0.92rem; }
+    .avatar-meta span { color: var(--muted); font-size: 0.78rem; line-height: 1.3; }
     .panel {
       min-height: calc(100vh - 56px);
       padding: 26px 28px;
@@ -194,12 +194,12 @@
     .textarea { min-height: 120px; resize: vertical; }
     .card-grid { display:grid; gap:14px; grid-template-columns: repeat(3, minmax(0,1fr)); }
     .option-card {
-      border-radius: 26px; border:1px solid rgba(229,198,151,0.12);
+      border-radius: 18px; border:1px solid rgba(229,198,151,0.12);
       background:
         linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01) 8%, rgba(10,5,4,0.86) 46%, rgba(7,3,2,0.94)),
         linear-gradient(180deg, rgba(58,33,22,0.18), rgba(18,10,8,0));
-      padding: 18px; cursor:pointer; transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
-      display:grid; gap: 14px; align-content:start; min-height: 236px; position:relative; overflow:hidden;
+      padding: 12px; cursor:pointer; transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      display:grid; gap: 8px; align-content:start; min-height: 110px; position:relative; overflow:hidden;
       text-align:left;
     }
     .option-card::before {
@@ -211,8 +211,8 @@
     }
     .option-card:hover { transform: translateY(-3px); border-color: rgba(229,198,151,0.28); box-shadow: 0 24px 48px rgba(0,0,0,0.3); }
     .option-card.selected { border-color: rgba(156,224,219,0.48); box-shadow: 0 20px 46px rgba(17,53,51,0.28); }
-    .option-card h3 { margin: 0; font-family:'Cinzel',serif; color: var(--gold-strong); font-size: 1.3rem; }
-    .option-card p { margin: 0; color: rgba(240,231,216,0.78); line-height: 1.56; font-size: 1.02rem; }
+    .option-card h3 { margin: 0; font-family:'Cinzel',serif; color: var(--gold-strong); font-size: 0.96rem; }
+    .option-card p { margin: 0; color: rgba(240,231,216,0.78); line-height: 1.45; font-size: 0.8rem; }
     .card-tags { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
     .tag { border-radius:999px; padding: 6px 10px; font-size: .82rem; border:1px solid rgba(229,198,151,0.12); background: rgba(255,255,255,0.03); color: rgba(244,230,206,0.82); }
     .mini-portrait {
@@ -258,8 +258,8 @@
 
     .class-stage { display:grid; grid-template-columns: minmax(320px, 0.95fr) minmax(420px, 1.25fr); gap: 18px; align-items:start; }
     .class-browser { display:grid; gap: 12px; }
-    .class-list { display:grid; gap: 12px; grid-template-columns: repeat(2, minmax(0,1fr)); }
-    .class-card.compact { min-height: 182px; padding: 16px; }
+    .class-list { display:grid; gap: 10px; grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .class-card.compact { min-height: 98px; padding: 12px; }
     .class-detail {
       border:1px solid rgba(229,198,151,0.15); border-radius: 28px;
       background:
@@ -347,7 +347,7 @@
     .ability-summary { display:flex; flex-wrap:wrap; gap: 10px; }
     .ability-summary .tag { font-size: 0.78rem; }
     .ability-shell .select { min-width: 260px; }
-    .ability-grid.detailed { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; }
+    .ability-grid.detailed { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
     .ability-card.detailed { padding: 13px 14px; display:grid; gap: 10px; border-radius: 18px; }
     .ability-card.detailed .ability-head { margin-bottom: 0; }
     .ability-card.detailed .ability-head strong { font-size: 0.95rem; }
@@ -370,16 +370,27 @@
     .manual-score input { max-width: 100px; padding: 10px 12px; border-radius: 12px; }
     .rules-note { color: var(--muted); line-height:1.45; font-size: 0.9rem; }
     .portrait-panel {
-      width: 100%; max-width: 326px; min-height: 382px; border-radius: 30px; border:1px solid rgba(229,198,151,0.12);
+      width: 100%; max-width: 244px; min-height: 244px; border-radius: 20px; border:1px solid rgba(229,198,151,0.12);
       background: linear-gradient(180deg, rgba(16,8,6,0.56), rgba(5,3,2,0.9)); display:grid; place-items:center; position:relative; overflow:hidden;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 26px 44px rgba(0,0,0,0.34);
     }
     .portrait-panel::before { content:''; position:absolute; inset:0; pointer-events:none; background: radial-gradient(circle at 50% 14%, rgba(255,226,176,0.16), transparent 28%), linear-gradient(180deg, rgba(255,255,255,0.04), transparent 18%); }
-    .portrait-caption { position:absolute; left:16px; right:16px; bottom:16px; padding: 10px 12px; border-radius: 16px; background: rgba(7,4,3,0.62); border:1px solid rgba(229,198,151,0.08); color: var(--muted); font-size: 0.92rem; }
+    .portrait-caption { position:absolute; left:8px; right:8px; bottom:8px; padding: 7px 9px; border-radius: 12px; background: rgba(7,4,3,0.55); border:none; color: var(--muted); font-size: 0.72rem; }
     .avatar-render { display:block; width:100%; height:auto; image-rendering:auto; }
     .avatar-render.mini { width:100%; height:100%; max-width:160px; object-fit:contain; filter: drop-shadow(0 14px 22px rgba(0,0,0,0.24)); }
     .avatar-render.token { width:100%; height:100%; object-fit:cover; }
-    .portrait-panel .avatar-render.portrait { width:92%; max-width:304px; max-height:316px; object-fit:contain; filter: drop-shadow(0 20px 30px rgba(0,0,0,0.34)); }
+    .portrait-panel .avatar-render.portrait { width:94%; max-width:228px; max-height:228px; object-fit:contain; filter: drop-shadow(0 16px 24px rgba(0,0,0,0.34)); }
+    .portrait-panel.placeholder .portrait-caption { position: static; width: calc(100% - 24px); margin: 0 12px 12px; text-align: center; }
+    .subclass-alert {
+      margin-top: 10px;
+      border: 1px solid rgba(156,224,219,0.38);
+      border-radius: 14px;
+      background: rgba(12,24,23,0.42);
+      padding: 10px 12px;
+      color: #d9fffb;
+      font-size: 0.85rem;
+      line-height: 1.45;
+    }
 
     @media (max-width: 1180px) {
       .shell { grid-template-columns: 1fr; }
@@ -408,15 +419,15 @@
           <span class="eyebrow">Importer Hero Forge</span>
           <a id="back-link" href="#">Back to roster</a>
         </div>
-        <div class="avatar-stage">
-          <div id="avatar-preview"></div>
-        </div>
-        <div class="steps" id="steps"></div>
         <div class="avatar-meta">
           <strong id="hero-title">Unnamed Hero</strong>
           <span id="hero-subtitle">Choose a species and class to see the full style preview.</span>
           <span id="hero-campaign">Realm: Unknown campaign</span>
         </div>
+        <div class="avatar-stage">
+          <div id="avatar-preview"></div>
+        </div>
+        <div class="steps" id="steps"></div>
       </aside>
       <main class="panel">
         <div class="panel-head">
@@ -679,6 +690,30 @@ function traitDescription(trait) {
       if (unique.length) return unique.slice(0, 10);
       return ['Class starter kit', 'Primary weapon', 'Adventuring pack'];
     }
+    function normalizeEquipmentRows(item) {
+      const source = equipmentForClass(item);
+      if (!source.length) {
+        return [
+          { label: 'Class starter kit', detail: 'Starter class gear package.' },
+          { label: 'Primary weapon', detail: 'Main combat weapon from your class package.' },
+          { label: 'Adventuring pack', detail: 'Basic expedition supplies.' },
+        ];
+      }
+      const details = source.map((name, idx) => {
+        const lower = String(name || '').toLowerCase();
+        if (lower.includes('pack')) {
+          return {
+            label: idx === 0 ? 'Class starter kit' : 'Adventuring pack',
+            detail: `${name} — utility gear (rope, rations, torches, and travel basics vary by pack).`,
+          };
+        }
+        if (!idx) {
+          return { label: 'Class starter kit', detail: `${name} plus core class equipment.` };
+        }
+        return { label: idx === 1 ? 'Primary weapon' : 'Bonus gear', detail: name };
+      });
+      return details.slice(0, 6);
+    }
     function classAccent(item) { return item.accentColor || item.accent_color || '#d0a65f'; }
     
 function normalizeCatalogClasses(items) {
@@ -878,6 +913,13 @@ function buildAvatarOptions(extra) {
 function renderAvatarSVG(size = 250) {
   const sp = selectedSpecies() || {};
   const klass = selectedClass() || {};
+  const hasSpecies = !!state.hero.speciesId;
+  if (!hasSpecies) {
+    return `
+    <div class="portrait-panel placeholder">
+      <div class="portrait-caption">Select Species &amp; Look to reveal the hero portrait.</div>
+    </div>`;
+  }
   const portraits = window.CasualDnDPortraitLibrary;
   const renderer = window.CasualDnDAvatarRenderer;
   const imageMarkup = portraits
@@ -914,27 +956,20 @@ function renderPreview() {
       renderPreview();
       renderSteps();
     }
-    function renderOptionCard(item, type, selectedId) {
+function renderOptionCard(item, type, selectedId) {
       const id = item.id;
       const selected = id === selectedId ? ' selected' : '';
       const title = type === 'class' ? classDisplayName(item) : (type === 'species' ? speciesDisplayName(item) : backgroundDisplayName(item));
-      const desc = item.summary || item.description || 'Ready for the realm.';
-      const accent = type === 'class' ? classAccent(item) : '#a7c5ff';
-      let tags = '';
-      if (type === 'class') {
-        tags = `<span class="tag">d${item.hitDie || 8} hit die</span><span class="tag">${classPrimaryAbilityLabel(item)}</span>${item.spellcaster && item.spellcaster !== 'none' ? `<span class="tag">${String(item.spellcaster).toUpperCase()} caster</span>` : '<span class="tag">Martial</span>'}`;
-      } else if (type === 'species') {
-        tags = `<span class="tag">${item.size || 'Medium'}</span><span class="tag">${item.speed || 30} ft</span>${(item.gameplayBenefits || []).slice(0,1).map(v => `<span class="tag">${v}</span>`).join('')}`;
-      } else {
-        tags = `<span class="tag">Background</span>`;
-      }
+      const compactSummary = type === 'class'
+        ? (item.summary || item.description || 'Choose this class to view full details on the right.')
+        : (type === 'species'
+          ? (item.summary || item.description || 'Choose this species to view full details on the right.')
+          : (item.summary || item.description || 'Choose this background to view full details on the right.'));
       return `<button type="button" class="option-card${selected}" data-option-type="${type}" data-option-id="${escapeHtml(id)}">
-        <div class="mini-portrait">${renderMiniGlyph(type, item, accent)}</div>
         <div>
           <h3>${escapeHtml(title)}</h3>
-          <p>${escapeHtml(desc)}</p>
+          <p>${escapeHtml(compactSummary)}</p>
         </div>
-        <div class="card-tags">${tags}</div>
       </button>`;
     }
     function renderMiniGlyph(type, item, accent) {
@@ -961,9 +996,8 @@ function renderBackgroundListItem(item, selectedId) {
   const id = item.id;
   const isSelected = id === selectedId;
   const summary = item.summary || item.description || 'Background details available after selection.';
-  return `<button type="button" class="option-card class-card compact${isSelected ? ' selected' : ''}" data-option-type="background" data-option-id="${escapeHtml(id)}" style="padding:16px;min-height:170px">
-    <div><h3 style="margin:0 0 6px;font-size:1.02rem">${escapeHtml(backgroundDisplayName(item))}</h3><p style="margin:0">${escapeHtml(summary)}</p></div>
-    <div class="card-tags"><span class="tag">Origin</span>${item.originFeat ? `<span class="tag">Feat · ${escapeHtml(item.originFeat)}</span>` : ''}${item.startingGold ? `<span class="tag">${Number(item.startingGold)} GP</span>` : ''}</div>
+  return `<button type="button" class="option-card class-card compact${isSelected ? ' selected' : ''}" data-option-type="background" data-option-id="${escapeHtml(id)}" style="padding:12px;min-height:98px">
+    <div><h3 style="margin:0 0 4px;font-size:0.94rem">${escapeHtml(backgroundDisplayName(item))}</h3><p style="margin:0;font-size:0.78rem;line-height:1.38">${escapeHtml(summary)}</p></div>
   </button>`;
 }
 function renderBackgroundDetail(bg) {
@@ -981,17 +1015,8 @@ function renderSpeciesListItem(item, selectedId) {
   const id = item.id;
   const isSelected = id === selectedId;
   const name = speciesDisplayName(item);
-  const size = item.size || 'Medium';
-  const speed = item.speed || 30;
-  const benefits = Array.isArray(item.gameplayBenefits) ? item.gameplayBenefits.slice(0, 2) : [];
-  return `<button type="button" class="option-card class-card compact${isSelected ? ' selected' : ''}" data-option-type="species" data-option-id="${escapeHtml(id)}" style="padding:14px 16px;flex-direction:column;gap:8px;align-items:flex-start">
-    <div class="mini-portrait">${renderMiniGlyph('species', item, '#8eb8d8')}</div>
-    <h3 style="margin:0;font-size:1.05rem">${escapeHtml(name)}</h3>
-    <div class="card-tags">
-      <span class="tag">${escapeHtml(size)}</span>
-      <span class="tag">${speed} ft</span>
-      ${benefits.map(b => `<span class="tag">${escapeHtml(String(b))}</span>`).join('')}
-    </div>
+  return `<button type="button" class="option-card class-card compact${isSelected ? ' selected' : ''}" data-option-type="species" data-option-id="${escapeHtml(id)}" style="padding:12px;min-height:88px">
+    <h3 style="margin:0;font-size:0.94rem">${escapeHtml(name)}</h3>
   </button>`;
 }
 
@@ -1023,8 +1048,8 @@ function renderStepMarkup() {
   }
   if (step === 'equipment') {
     const cls = selectedClass() || { startingEquipment: [] };
-    const equipment = equipmentForClass(cls);
-    return `<div class="equipment-list"><div class="equipment-item"><strong>Starting Gold</strong><span>50 GP</span></div><div class="equipment-item"><strong>Starting Level</strong><span>Level ${Number(state.hero.startingLevel || 1)}</span></div>${equipment.map(item => `<div class="equipment-item"><strong>${escapeHtml(item)}</strong><span>Class starter gear</span></div>`).join('')}</div>`;
+    const equipmentRows = normalizeEquipmentRows(cls);
+    return `<div class="equipment-list"><div class="equipment-item"><strong>Starting Gold</strong><span>50 GP</span></div><div class="equipment-item"><strong>Starting Level</strong><span>Level ${Number(state.hero.startingLevel || 1)}</span></div>${equipmentRows.map(item => `<div class="equipment-item"><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.detail)}</span></div>`).join('')}</div>`;
   }
   if (step === 'backstory') {
     return `<div class="form-grid"><div class="field"><label>Alignment</label><select class="select" id="hero-alignment"><option value="">Choose alignment</option>${ALIGNMENT_OPTIONS.map(v => `<option value="${escapeHtml(v)}" ${hero.alignment===v?'selected':''}>${escapeHtml(v)}</option>`).join('')}</select></div><div class="field"><label>Personality Traits</label><select class="select" id="hero-traits"><option value="">Choose trait</option>${PERSONALITY_OPTIONS.map(v => `<option value="${escapeHtml(v)}" ${hero.personalityTraits===v?'selected':''}>${escapeHtml(v)}</option>`).join('')}</select></div><div class="field"><label>Ideals</label><input class="input" id="hero-ideals" value="${escapeHtml(hero.ideals)}" placeholder="What drives them?" /></div><div class="field"><label>Bonds</label><input class="input" id="hero-bonds" value="${escapeHtml(hero.bonds)}" placeholder="What ties them down?" /></div><div class="field full"><label>Flaws</label><select class="select" id="hero-flaws"><option value="">Choose flaw</option>${FLAW_OPTIONS.map(v => `<option value="${escapeHtml(v)}" ${hero.flaws===v?'selected':''}>${escapeHtml(v)}</option>`).join('')}</select></div><div class="field full"><label>Backstory</label><textarea class="textarea" id="hero-backstory" placeholder="Write the opening chapter of this hero.">${escapeHtml(hero.backstory)}</textarea></div><div class="field full"><label>Player Notes (syncs to character notes)</label><textarea class="textarea" id="hero-notes" placeholder="Goals, reminders, secrets, links to campaign notes...">${escapeHtml(hero.notes || '')}</textarea></div></div>`;
@@ -1032,9 +1057,9 @@ function renderStepMarkup() {
   const cls = selectedClass();
   const sp = selectedSpecies();
   const bg = selectedBackground();
-  const equipment = equipmentForClass(cls || {});
+  const equipment = normalizeEquipmentRows(cls || {});
   const unlocked = featuresUpToLevel(cls || {}, state.hero.startingLevel || 1).slice(0, 8);
-  return `<div class="review-list"><div class="review-item"><strong>Name</strong><span>${escapeHtml(hero.name || 'Unnamed Hero')}</span></div><div class="review-item"><strong>Species</strong><span>${escapeHtml(sp ? speciesDisplayName(sp) : 'Unset')}</span></div><div class="review-item"><strong>Class</strong><span>${escapeHtml(cls ? classDisplayName(cls) : 'Unset')}</span></div><div class="review-item"><strong>Starting Level</strong><span>Level ${Number(state.hero.startingLevel || 1)}</span></div><div class="review-item"><strong>Background</strong><span>${escapeHtml(bg ? backgroundDisplayName(bg) : 'Unset')}</span></div><div class="review-item"><strong>Ability Total</strong><span>${scoreSum()} across the six core stats</span></div><div class="review-item"><strong>Starting Gold</strong><span>50 GP</span></div><div class="review-item"><strong>Starter Gear</strong><span>${escapeHtml(equipment.join(', ') || 'Class starter package')}</span></div><div class="review-item"><strong>Unlocked Class Features</strong><span>${escapeHtml(unlocked.map(f => f.displayName || f.name).join(', ') || 'Level 1 core features')}</span></div><div class="review-item"><strong>Backstory</strong><span>${escapeHtml(hero.backstory || 'No backstory yet')}</span></div></div>`;
+  return `<div class="review-list"><div class="review-item"><strong>Name</strong><span>${escapeHtml(hero.name || 'Unnamed Hero')}</span></div><div class="review-item"><strong>Species</strong><span>${escapeHtml(sp ? speciesDisplayName(sp) : 'Unset')}</span></div><div class="review-item"><strong>Class</strong><span>${escapeHtml(cls ? classDisplayName(cls) : 'Unset')}</span></div><div class="review-item"><strong>Starting Level</strong><span>Level ${Number(state.hero.startingLevel || 1)}</span></div><div class="review-item"><strong>Background</strong><span>${escapeHtml(bg ? backgroundDisplayName(bg) : 'Unset')}</span></div><div class="review-item"><strong>Ability Total</strong><span>${scoreSum()} across the six core stats</span></div><div class="review-item"><strong>Starting Gold</strong><span>50 GP</span></div><div class="review-item"><strong>Starter Gear</strong><span>${escapeHtml(equipment.map(row => row.detail).join(', ') || 'Class starter package')}</span></div><div class="review-item"><strong>Unlocked Class Features</strong><span>${escapeHtml(unlocked.map(f => f.displayName || f.name).join(', ') || 'Level 1 core features')}</span></div><div class="review-item"><strong>Backstory</strong><span>${escapeHtml(hero.backstory || 'No backstory yet')}</span></div></div>`;
 }
 
 function renderSpeciesDetail(sp) {
@@ -1072,7 +1097,12 @@ function renderClassDetail(cls) {
       ? `<div class="field" style="margin-top:10px"><label>${escapeHtml(String(cls.subclassDisplayName || 'Subclass'))}</label><select class="select" id="subclass-picker">${subclassRows.map((row)=>{ const rowId = String(row.id || '').trim(); return `<option value="${escapeHtml(rowId)}" ${rowId===String(state.hero.subclassId||'')?'selected':''}>${escapeHtml(row.displayName || rowId || 'Subclass')}</option>`; }).join('')}</select></div>`
       : `<p class="rules-note">${escapeHtml(String(cls.subclassDisplayName || 'Subclass'))} unlocks at level ${subclassGate}. Raise starting level to choose it.</p>`)
     : '';
-  return `<div class="class-detail-head"><div><h3>${escapeHtml(classDisplayName(cls))}</h3><p>${escapeHtml(cls.summary || 'A class ready for the realm.')}</p>${subclassHint}</div><div class="start-level-box"><label>Starting level</label><select class="select" id="starting-level">${Array.from({length: classMaxLevel(cls)}, (_,i)=>i+1).map(v => `<option value="${v}" ${v===level?'selected':''}>Level ${v}</option>`).join('')}</select></div></div><div class="class-quickfacts"><span class="tag">Hit Die d${escapeHtml(String(cls.hitDie || 8))}</span><span class="tag">Primary · ${escapeHtml(formatAbilityList(cls.primaryAbilities && cls.primaryAbilities.length ? cls.primaryAbilities : String(cls.primaryAbility || '').split(/,\s*/)))}</span><span class="tag">Saves · ${escapeHtml(formatAbilityList(cls.savingThrows))}</span><span class="tag">Subclass at ${escapeHtml(String(cls.subclassLevel || '—'))}</span><span class="tag">${escapeHtml(String(cls.spellcaster || 'none').toUpperCase())} caster</span>${subclassName ? `<span class="tag">Path · ${escapeHtml(subclassName)}</span>` : ''}</div><div class="class-sections"><div class="detail-block"><h4>What you get at level ${level}</h4><div class="feature-stack">${currentFeatures.length ? currentFeatures.map(f => renderFeatureCard(f, level)).join('') : '<p>No specific features surfaced for this level yet.</p>'}</div></div><div class="detail-block"><h4>What comes next</h4>${laterUnlock ? `<div class="trait-highlight"><h5>Next big unlock · Level ${Number(laterUnlock.level || level + 1)}</h5><p>${escapeHtml((Array.isArray(laterUnlock.features) ? laterUnlock.features.join(' • ') : 'Feature unlocks pending'))}</p></div>` : ''}<p>${escapeHtml(tips[0] || 'Use this panel the way D&D Beyond does: check what you gain now, what comes next, and whether you want to begin above level 1 before you lock the class.')}</p></div></div><div class="class-sections"><div class="detail-block"><h4>Roadmap</h4><div class="roadmap">${roadmapRows.length ? roadmapRows.map(row => `<div class="roadmap-row ${Number(row.level||0)===level?'current':''}"><div class="lvl">Level ${Number(row.level || 0)}</div><div class="txt">${escapeHtml((Array.isArray(row.features) ? row.features.join(' • ') : 'Feature unlocks pending'))}</div></div>`).join('') : '<p>Progression roadmap not surfaced yet.</p>'}</div></div><div class="detail-block"><h4>Starter package</h4><p>${escapeHtml(equipmentForClass(cls).join(', ') || 'Starter pack')}</p><div class="feature-stack">${currentFeatures.slice(0, 2).map(f => renderFeatureCard(f, level)).join('') || '<p>Your starting package and core class features should be visible together here.</p>'}</div></div></div>`;
+  const subclassAlert = subclassGate > 0
+    ? (subclassUnlocked
+      ? `<div class="subclass-alert">${escapeHtml(String(cls.subclassDisplayName || 'Subclass'))} unlocked at level ${subclassGate}. Pick a path now${subclassName ? ` · Current choice: ${subclassName}` : ''}.</div>`
+      : `<div class="subclass-alert">${escapeHtml(String(cls.subclassDisplayName || 'Subclass'))} unlocks at level ${subclassGate}. You are currently level ${level}.</div>`)
+    : '';
+  return `<div class="class-detail-head"><div><h3>${escapeHtml(classDisplayName(cls))}</h3><p>${escapeHtml(cls.summary || 'A class ready for the realm.')}</p>${subclassHint}${subclassAlert}</div><div class="start-level-box"><label>Starting level</label><select class="select" id="starting-level">${Array.from({length: classMaxLevel(cls)}, (_,i)=>i+1).map(v => `<option value="${v}" ${v===level?'selected':''}>Level ${v}</option>`).join('')}</select></div></div><div class="class-quickfacts"><span class="tag">Hit Die d${escapeHtml(String(cls.hitDie || 8))}</span><span class="tag">Primary · ${escapeHtml(formatAbilityList(cls.primaryAbilities && cls.primaryAbilities.length ? cls.primaryAbilities : String(cls.primaryAbility || '').split(/,\s*/)))}</span><span class="tag">Saves · ${escapeHtml(formatAbilityList(cls.savingThrows))}</span><span class="tag">Subclass at ${escapeHtml(String(cls.subclassLevel || '—'))}</span><span class="tag">${escapeHtml(String(cls.spellcaster || 'none').toUpperCase())} caster</span>${subclassName ? `<span class="tag">Path · ${escapeHtml(subclassName)}</span>` : ''}</div><div class="class-sections"><div class="detail-block"><h4>What you get at level ${level}</h4><div class="feature-stack">${currentFeatures.length ? currentFeatures.map(f => renderFeatureCard(f, level)).join('') : '<p>No specific features surfaced for this level yet.</p>'}</div></div><div class="detail-block"><h4>What comes next</h4>${laterUnlock ? `<div class="trait-highlight"><h5>Next big unlock · Level ${Number(laterUnlock.level || level + 1)}</h5><p>${escapeHtml((Array.isArray(laterUnlock.features) ? laterUnlock.features.join(' • ') : 'Feature unlocks pending'))}</p></div>` : ''}<p>${escapeHtml(tips[0] || 'Use this panel the way D&D Beyond does: check what you gain now, what comes next, and whether you want to begin above level 1 before you lock the class.')}</p></div></div><div class="class-sections"><div class="detail-block"><h4>Roadmap</h4><div class="roadmap">${roadmapRows.length ? roadmapRows.map(row => `<div class="roadmap-row ${Number(row.level||0)===level?'current':''}"><div class="lvl">Level ${Number(row.level || 0)}</div><div class="txt">${escapeHtml((Array.isArray(row.features) ? row.features.join(' • ') : 'Feature unlocks pending'))}</div></div>`).join('') : '<p>Progression roadmap not surfaced yet.</p>'}</div></div><div class="detail-block"><h4>Starter package</h4><p>${escapeHtml(equipmentForClass(cls).join(', ') || 'Starter pack')}</p><div class="feature-stack">${currentFeatures.slice(0, 2).map(f => renderFeatureCard(f, level)).join('') || '<p>Your starting package and core class features should be visible together here.</p>'}</div></div></div>`;
 }
 function renderAbilityStep() {
   const mode = state.hero.abilityMode || 'standard_array';
