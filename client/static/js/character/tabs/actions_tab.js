@@ -752,6 +752,14 @@
     };
   }
 
+  function _cloneJsonSafe(value, fallback) {
+    try {
+      return JSON.parse(JSON.stringify(value));
+    } catch (_) {
+      return fallback;
+    }
+  }
+
   function _featureActionFallbacks(charData) {
     const source = _safeArray(charData && charData.nativeFeatures)
       .concat(_safeArray(charData && charData.nativeClassFeatures))
@@ -1665,21 +1673,79 @@
     if (!form) return [];
     return _safeArray(form.attacks).map(function (attack, idx) {
       const row = attack && typeof attack === 'object' ? attack : { summary: String(attack || '') };
+      const attackBonus = _parseAttackBonusValue(row.attackBonus != null ? row.attackBonus : row.toHit);
+      const saveDcText = _firstText(row.saveDC, row.saveDc, row.save, '');
+      const damageText = _firstText(row.damage, row.damageText, row.effect, '');
       return {
         id: 'wild_shape_attack_' + String(form.id || idx) + '_' + String(idx),
         source: 'wild_shape_form',
         name: form.name + ' • ' + _firstText(row.name, 'Attack ' + String(idx + 1)),
-        summary: _firstText(row.summary, row.damage, ''),
-        description: _firstText(row.summary, row.damage, ''),
+        summary: _firstText(row.summary, damageText, ''),
+        description: _firstText(row.summary, damageText, ''),
         actionType: 'action',
         type: 'action',
-        attackBonus: row.attackBonus,
-        damage: row.damage,
-        saveDC: row.saveDC,
+        attackBonus: attackBonus != null ? attackBonus : '',
+        damage: damageText,
+        damageText: damageText,
+        saveDC: saveDcText,
+        save: saveDcText,
         range: _firstText(row.range, '5 ft'),
+        effectText: _firstText(row.summary, row.effect, ''),
+        longText: [_firstText(row.summary, ''), damageText ? ('Damage: ' + damageText) : '', saveDcText ? ('Save/DC: ' + saveDcText) : ''].filter(Boolean).join('\n'),
         tags: ['Druid', 'Wild Shape', form.name],
       };
     });
+  }
+
+  function _isWildShapeAttackEntry(entry) {
+    const src = String(entry && entry.source || '').toLowerCase();
+    if (src === 'wild_shape_form') return true;
+    const tags = _safeArray(entry && entry.tags).map(function (tag) { return String(tag || '').toLowerCase(); });
+    return tags.some(function (tag) { return tag === 'wild shape' || tag === 'wild_shape_form'; });
+  }
+
+  function _setWildShapeCombatOverrides(charData, state, form) {
+    if (!charData || !form) return;
+    const beastCards = _wildShapeActionCards(charData);
+    if (!beastCards.length) return;
+    if (!charData.nativeActionCards || typeof charData.nativeActionCards !== 'object') {
+      charData.nativeActionCards = { actions: [], bonusActions: [], reactions: [] };
+    }
+    const prior = charData.nativeActionCards;
+    const mergedActions = _safeArray(prior.actions).filter(function (card) { return !_isWildShapeAttackEntry(card); }).concat(beastCards);
+    charData.nativeActionCards = {
+      actions: mergedActions,
+      bonusActions: _safeArray(prior.bonusActions),
+      reactions: _safeArray(prior.reactions),
+    };
+    state.originalQuickAttackCards = _cloneJsonSafe(charData.quickAttackCards, []);
+    charData.quickAttackCards = beastCards.map(function (card) {
+      return {
+        id: card.id,
+        source: 'native_action',
+        name: card.name,
+        summary: card.summary,
+        attackBonus: card.attackBonus,
+        damage: card.damage,
+        damageText: card.damageText,
+        range: card.range,
+        note: card.longText,
+      };
+    });
+  }
+
+  function _restoreWildShapeCombatOverrides(charData, state) {
+    if (!charData || !state) return;
+    if (state.originalNativeActionCards) {
+      charData.nativeActionCards = _cloneJsonSafe(state.originalNativeActionCards, { actions: [], bonusActions: [], reactions: [] });
+    } else if (charData.nativeActionCards && typeof charData.nativeActionCards === 'object') {
+      charData.nativeActionCards = {
+        actions: _safeArray(charData.nativeActionCards.actions).filter(function (card) { return !_isWildShapeAttackEntry(card); }),
+        bonusActions: _safeArray(charData.nativeActionCards.bonusActions),
+        reactions: _safeArray(charData.nativeActionCards.reactions),
+      };
+    }
+    if (state.originalQuickAttackCards) charData.quickAttackCards = _cloneJsonSafe(state.originalQuickAttackCards, []);
   }
 
   function _beastMasterCompanionProfile(charData) {
@@ -1794,6 +1860,9 @@
         payload: {
           token_id: tokenId,
           name: nextName,
+          hp: _num(charData && (charData.currentHp ?? charData.hp), 0),
+          maxHp: _num(charData && charData.maxHp, _num(charData && (charData.currentHp ?? charData.hp), 0)),
+          tempHp: _num(charData && charData.tempHp, 0),
           ac: _num(charData && charData.ac, 0),
           speed: _num(charData && charData.speed, 0),
           senses: _firstText(charData && charData.senses, ''),
@@ -1816,6 +1885,7 @@
         if (!selectedForm || state.usesLeft <= 0) return;
         const baseCurrentHp = _num(charData && (charData.currentHp ?? charData.hp), 0);
         const baseMaxHp = _num(charData && charData.maxHp, baseCurrentHp);
+        const baseTempHp = _num(charData && charData.tempHp, 0);
         const baseAc = _num(charData && charData.ac, 10);
         const nextState = {
           active: true,
@@ -1827,10 +1897,24 @@
           originalSenses: state.originalSenses || _firstText(charData && charData.senses, ''),
           originalHp: state.originalHp || baseCurrentHp,
           originalMaxHp: state.originalMaxHp || baseMaxHp,
+          originalTempHp: state.originalTempHp || baseTempHp,
           originalAc: state.originalAc || baseAc,
+          originalNativeActionCards: state.originalNativeActionCards || _cloneJsonSafe(charData && charData.nativeActionCards, { actions: [], bonusActions: [], reactions: [] }),
+          originalQuickAttackCards: state.originalQuickAttackCards || _cloneJsonSafe(charData && charData.quickAttackCards, []),
           transformedHp: _num(selectedForm.hp, 1),
           transformedMaxHp: _num(selectedForm.hp, 1),
           transformedAc: _num(selectedForm.ac, baseAc),
+          transformedTempHp: 0,
+          transformedCombatProfile: {
+            formId: selectedForm.id,
+            formName: selectedForm.name,
+            ac: _num(selectedForm.ac, baseAc),
+            hp: _num(selectedForm.hp, 1),
+            maxHp: _num(selectedForm.hp, 1),
+            tempHp: 0,
+            speed: _num(selectedForm.speed, charData.speed || 30),
+            senses: _firstText(selectedForm.senses, charData.senses, ''),
+          },
         };
         if (!charData.classMechanics || typeof charData.classMechanics !== 'object') charData.classMechanics = {};
         charData.classMechanics.wildShapeSpent = _num(charData.classMechanics.wildShapeSpent, 0) + 1;
@@ -1840,9 +1924,13 @@
         charData.ac = _num(selectedForm.ac, charData.ac || 10);
         charData.maxHp = _num(selectedForm.hp, charData.maxHp || 1);
         charData.currentHp = _num(selectedForm.hp, charData.currentHp || charData.hp || 1);
+        charData.tempHp = 0;
         charData.hp = charData.currentHp;
+        _setWildShapeCombatOverrides(charData, nextState, selectedForm);
         if (global._charSheet && typeof global._charSheet === 'object') Object.assign(global._charSheet, charData);
         _broadcastWildShapeTokenUpdate(charData, nextState);
+        if (typeof global.requestCharacterBookOverviewRender === 'function') global.requestCharacterBookOverviewRender('wild-shape-apply');
+        if (typeof global.renderCharSheet === 'function') global.renderCharSheet();
         if (typeof model.rerender === 'function') model.rerender();
         return;
       }
@@ -1861,19 +1949,28 @@
           originalSenses: state.originalSenses,
           originalHp: state.originalHp,
           originalMaxHp: state.originalMaxHp,
+          originalTempHp: state.originalTempHp,
           originalAc: state.originalAc,
+          originalNativeActionCards: state.originalNativeActionCards,
+          originalQuickAttackCards: state.originalQuickAttackCards,
           transformedHp: state.transformedHp,
           transformedMaxHp: state.transformedMaxHp,
           transformedAc: state.transformedAc,
+          transformedTempHp: state.transformedTempHp,
+          transformedCombatProfile: state.transformedCombatProfile,
         };
         charData.speed = state.originalSpeed || _num(charData.speed, 30);
         charData.senses = state.originalSenses || _firstText(charData.senses, '');
         charData.ac = state.originalAc || _num(charData.ac, 10);
         charData.maxHp = state.originalMaxHp || _num(charData.maxHp, 1);
         charData.currentHp = state.originalHp || _num(charData.currentHp ?? charData.hp, 1);
+        charData.tempHp = _num(state.originalTempHp, _num(charData.tempHp, 0));
         charData.hp = charData.currentHp;
+        _restoreWildShapeCombatOverrides(charData, state);
         if (global._charSheet && typeof global._charSheet === 'object') Object.assign(global._charSheet, charData);
         _broadcastWildShapeTokenUpdate(charData, charData.wildShapeState);
+        if (typeof global.requestCharacterBookOverviewRender === 'function') global.requestCharacterBookOverviewRender('wild-shape-revert');
+        if (typeof global.renderCharSheet === 'function') global.renderCharSheet();
         if (typeof model.rerender === 'function') model.rerender();
         return;
       }
@@ -1964,7 +2061,31 @@
   function initActionsTab(container, charData) {
     if (!container) return;
 
+    const native = _nativeActionGroups(charData || {});
+    const isWildShapeActive = !!_druidWildShapeState(charData || {}).active;
     const quickAttacks = (function () {
+      if (isWildShapeActive) {
+        const transformed = _safeArray(native.actions).filter(function (entry) { return _isWildShapeAttackEntry(entry); });
+        if (transformed.length) {
+          return transformed.map(function (card) {
+            return {
+              id: card.id,
+              source: 'native_action',
+              name: card.name,
+              desc: _firstText(card.desc, card.description, ''),
+              description: _firstText(card.description, card.desc, ''),
+              economy: ['action'],
+              icon: '🐾',
+              attackBonus: card.attackBonus,
+              damage: _firstText(card.damage, card.damageText, ''),
+              range: card.range || '5 ft',
+              saveDC: _firstText(card.saveDC, card.hitDc, card.save, ''),
+              tags: ['Wild Shape', 'Transformed'],
+              longText: card.longText || '',
+            };
+          });
+        }
+      }
       const fromQuick = _buildQuickAttackCards(charData || {});
       const fromInventory = _inventoryWeaponCards(charData || {});
       const combined = [];
@@ -1983,7 +2104,9 @@
       return combined;
     }());
     const itemActions = _buildItemActionCards();
-    const native = _nativeActionGroups(charData || {});
+    const nativeActionsForSection = isWildShapeActive
+      ? _safeArray(native.actions).filter(function (entry) { return !_isWildShapeAttackEntry(entry); })
+      : _safeArray(native.actions);
     const resources = _resourceRows(charData || {});
     const textAttacks = _parseTextAttacks(charData || {});
     const beastMasterCompanion = _beastMasterCompanionProfile(charData || {});
@@ -2013,8 +2136,9 @@
       ${_renderDruidWildShapeControls(charData || {})}
       ${_renderBeastMasterCompanionControls(beastMasterCompanion)}
       ${_renderSection('Quick Attacks', quickAttacks, { emptyLabel: 'No quick attack cards are loaded yet.' })}
+      ${_renderSection('Imported / Legacy Attack Lines', textAttacks, { emptyLabel: 'No imported attack lines detected.' })}
       ${_renderSection('Item Actions', itemActions, { emptyLabel: 'No usable item actions are loaded yet.' })}
-      ${_renderSection('Native Actions', native.actions, { emptyLabel: 'No structured main actions are loaded yet.' })}
+      ${_renderSection('Native Actions', nativeActionsForSection, { emptyLabel: isWildShapeActive ? 'Wild Shape attacks are currently driving your attack surface.' : 'No structured main actions are loaded yet.' })}
       ${_renderSection('Bonus Actions', native.bonusActions, { emptyLabel: 'No structured bonus actions are loaded yet.' })}
       ${_renderSection('Reactions', native.reactions, { emptyLabel: 'No structured reactions are loaded yet.' })}
       ${_renderResourceSection(resources)}
