@@ -61,8 +61,9 @@
       max-width: 1360px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: 272px 1fr;
+      grid-template-columns: 320px minmax(0, 1fr);
       gap: 18px;
+      align-items: start;
     }
     .sidebar, .panel {
       border: 1px solid var(--line);
@@ -81,6 +82,10 @@
       background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent 28%, transparent 72%, rgba(255,255,255,0.03));
     }
     .sidebar {
+      width: 320px;
+      max-width: 320px;
+      justify-self: start;
+      align-self: start;
       min-height: calc(100vh - 56px);
       padding: 18px 16px;
       display: grid;
@@ -165,6 +170,7 @@
     .avatar-meta strong { font-family: 'Cinzel', serif; color: var(--gold-strong); font-size: 0.92rem; }
     .avatar-meta span { color: var(--muted); font-size: 0.78rem; line-height: 1.3; }
     .panel {
+      min-width: 0;
       min-height: calc(100vh - 56px);
       padding: 26px 28px;
       display: grid;
@@ -269,11 +275,54 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 24px 50px rgba(0,0,0,0.22);
     }
     .class-detail::before { content:''; position:absolute; inset:0; pointer-events:none; background: radial-gradient(circle at 78% 0%, rgba(255,255,255,0.08), transparent 26%), linear-gradient(180deg, rgba(244,223,184,0.04), transparent 18%); }
+    .species-detail::before {
+      background:
+        radial-gradient(circle at 100% 0%, rgba(255, 245, 224, 0.06), transparent 22%),
+        linear-gradient(180deg, rgba(244,223,184,0.035), transparent 18%);
+    }
     .class-detail-head { display:flex; justify-content:space-between; gap: 16px; align-items:flex-start; }
     .class-detail-head h3 { margin: 0 0 8px; font-family:'Cinzel',serif; color: var(--gold-strong); font-size: clamp(1.35rem, 2.2vw, 1.85rem); }
     .class-detail-head p { margin: 0; color: var(--muted); line-height: 1.6; }
+    .species-detail-head h3 { margin: 0; font-family:'Cinzel',serif; color: var(--gold-strong); font-size: clamp(1.35rem, 2.2vw, 1.85rem); }
+    .species-detail-head p { margin: 0; color: var(--muted); line-height: 1.6; }
     .class-quickfacts { display:flex; flex-wrap:wrap; gap: 10px; }
     .class-quickfacts .tag { background: rgba(255,255,255,0.04); }
+    .species-detail-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: start;
+    }
+    .species-detail-copy {
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+    }
+    .species-quickfacts {
+      display: grid;
+      gap: 8px;
+      justify-items: end;
+      align-content: start;
+      min-width: 152px;
+    }
+    .species-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 136px;
+      min-height: 34px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(229,198,151,0.16);
+      background: rgba(255,255,255,0.04);
+      color: rgba(244,230,206,0.88);
+      font-family: 'Cinzel', serif;
+      font-size: 0.76rem;
+      letter-spacing: 0.03em;
+      text-align: center;
+      line-height: 1.25;
+      white-space: nowrap;
+    }
     .start-level-box { display:grid; gap: 10px; min-width: 200px; }
     .start-level-box label { font-family:'Cinzel',serif; text-transform:uppercase; letter-spacing:0.08em; font-size:0.76rem; color: rgba(244,230,206,0.82); }
     .class-sections { display:grid; gap: 16px; grid-template-columns: 1fr 1fr; }
@@ -394,12 +443,15 @@
 
     @media (max-width: 1180px) {
       .shell { grid-template-columns: 1fr; }
+      .sidebar { width: 100%; max-width: none; justify-self: stretch; }
       .sidebar, .panel { min-height: auto; }
       .card-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
       .ability-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
       .class-stage, .class-sections, .trait-hero { grid-template-columns: 1fr; }
       .class-list { grid-template-columns: repeat(2, minmax(0,1fr)); }
       .ability-grid.detailed { grid-template-columns: 1fr; }
+      .species-detail-head { grid-template-columns: 1fr; }
+      .species-quickfacts { justify-items: start; min-width: 0; }
     }
     @media (max-width: 760px) {
       .scene { padding: 18px; }
@@ -424,7 +476,7 @@
           <span id="hero-subtitle">Choose a species and class to see the full style preview.</span>
           <span id="hero-campaign">Realm: Unknown campaign</span>
         </div>
-        <div class="avatar-stage">
+        <div class="avatar-stage" id="avatar-stage">
           <div id="avatar-preview"></div>
         </div>
         <div class="steps" id="steps"></div>
@@ -437,8 +489,8 @@
           </div>
           <div class="stat-badges">
             <span class="stat-badge" id="badge-gold">Starting Gold · 50 GP</span>
-            <span class="stat-badge" id="badge-class">Class · Unset</span>
-            <span class="stat-badge" id="badge-species">Species · Unset</span>
+            <span class="stat-badge hidden" id="badge-class"></span>
+            <span class="stat-badge hidden" id="badge-species"></span>
           </div>
         </div>
         <div class="feedback" id="feedback"></div>
@@ -581,6 +633,7 @@
       back: document.getElementById('back-step'),
       cancel: document.getElementById('cancel-btn'),
       avatar: document.getElementById('avatar-preview'),
+      avatarStage: document.getElementById('avatar-stage'),
       heroTitle: document.getElementById('hero-title'),
       heroSubtitle: document.getElementById('hero-subtitle'),
       heroCampaign: document.getElementById('hero-campaign'),
@@ -629,8 +682,8 @@
       } catch (_) {}
     }
     function getPlayerKey() { return state.authUser && state.authUser.id ? ('auth_' + state.authUser.id) : ''; }
-    function selectedSpecies() { return state.species.find(s => s.id === state.hero.speciesId) || state.species[0] || null; }
-    function selectedClass() { return state.classes.find(c => c.id === state.hero.classId) || state.classes[0] || null; }
+    function selectedSpecies() { return state.species.find(s => s.id === state.hero.speciesId) || null; }
+    function selectedClass() { return state.classes.find(c => c.id === state.hero.classId) || null; }
     function subclassesForClass(classId) {
       const key = String(classId || '').trim().toLowerCase();
       const rows = (state.subclassesByClass && state.subclassesByClass[key]) || [];
@@ -913,8 +966,12 @@ function buildAvatarOptions(extra) {
 function renderAvatarSVG(size = 250) {
   const sp = selectedSpecies() || {};
   const klass = selectedClass() || {};
-  const hasSpecies = !!state.hero.speciesId;
-  if (!hasSpecies) {
+  const hasClass = !!state.hero.classId;
+  const hasMeaningfulPreview = hasClass || (!!state.hero.speciesId && !!state.hero.name.trim());
+  if (!hasMeaningfulPreview) {
+    return '';
+  }
+  if (!state.hero.speciesId) {
     return `
     <div class="portrait-panel placeholder">
       <div class="portrait-caption">Select Species &amp; Look to reveal the hero portrait.</div>
@@ -934,15 +991,29 @@ function renderAvatarSVG(size = 250) {
 
 function renderPreview() {
   ensureStartingLevelInRange();
-  els.avatar.innerHTML = renderAvatarSVG(window.innerWidth < 760 ? 220 : 264);
+  const avatarMarkup = renderAvatarSVG(window.innerWidth < 760 ? 220 : 264);
+  els.avatar.innerHTML = avatarMarkup;
+  els.avatarStage.classList.toggle('hidden', !avatarMarkup);
   const sp = selectedSpecies();
   const cls = selectedClass();
   const bg = selectedBackground();
   els.heroTitle.textContent = state.hero.name.trim() || 'Unnamed Hero';
   els.heroSubtitle.textContent = `${sp ? speciesDisplayName(sp) : 'Unset species'} · ${cls ? classDisplayName(cls) : 'Unset class'} · ${bg ? backgroundDisplayName(bg) : 'Unset background'}`;
   els.heroCampaign.textContent = 'Realm: ' + (state.campaignName || 'Unknown campaign');
-  els.badgeClass.textContent = 'Class · ' + (cls ? `${classDisplayName(cls)} · Lv ${state.hero.startingLevel || 1}` : 'Unset');
-  els.badgeSpecies.textContent = 'Species · ' + (sp ? speciesDisplayName(sp) : 'Unset');
+  if (cls) {
+    els.badgeClass.textContent = 'Class · ' + `${classDisplayName(cls)} · Lv ${state.hero.startingLevel || 1}`;
+    els.badgeClass.classList.remove('hidden');
+  } else {
+    els.badgeClass.classList.add('hidden');
+    els.badgeClass.textContent = '';
+  }
+  if (sp) {
+    els.badgeSpecies.textContent = 'Species · ' + speciesDisplayName(sp);
+    els.badgeSpecies.classList.remove('hidden');
+  } else {
+    els.badgeSpecies.classList.add('hidden');
+    els.badgeSpecies.textContent = '';
+  }
   els.badgeGold.textContent = 'Starting Gold · 50 GP';
 }
     function renderStepView() {
@@ -1033,7 +1104,7 @@ function renderStepMarkup() {
       </div>`;
   }
   if (step === 'species') {
-    return `<div class="class-stage"><div class="class-browser"><div class="class-list">${state.species.map(item => renderSpeciesListItem(item, hero.speciesId)).join('')}</div></div><div class="class-detail">${renderSpeciesDetail(selectedSpecies())}</div></div>`;
+    return `<div class="class-stage"><div class="class-browser"><div class="class-list">${state.species.map(item => renderSpeciesListItem(item, hero.speciesId)).join('')}</div></div><div class="class-detail species-detail">${renderSpeciesDetail(selectedSpecies())}</div></div>`;
   }
   if (step === 'class') {
     const cls = selectedClass();
@@ -1068,7 +1139,7 @@ function renderSpeciesDetail(sp) {
   const traits = Array.isArray(sp.traits) && sp.traits.length ? sp.traits.slice(0, 5) : [];
   const roleplay = sp.description || sp.summary || 'Choose this species for its identity, movement, and feel in the world.';
   const spotlight = traits[0] || benefits[0] || null;
-  return `<div class="class-detail-head"><div><h3>${escapeHtml(speciesDisplayName(sp))}</h3><p>${escapeHtml(roleplay)}</p></div><div class="class-quickfacts"><span class="tag">${escapeHtml(sp.size || 'Medium')}</span><span class="tag">${escapeHtml(String(sp.speed || 30))} ft speed</span></div></div><div class="detail-block"><h4>Species summary</h4>${spotlight ? `<div class="trait-highlight"><h5>${escapeHtml(traitLabel(spotlight))}</h5><p>${escapeHtml(traitDescription(spotlight))}</p></div>` : ''}<p>${escapeHtml(roleplay)}</p></div><div class="class-sections"><div class="detail-block"><h4>Core benefits</h4><div class="feature-stack">${benefits.length ? benefits.map(v => `<details class="collapsible"><summary>${escapeHtml(traitLabel(v))}</summary><div class="collapsible-content"><p>${escapeHtml(traitDescription(v))}</p></div></details>`).join('') : '<p>No species feature notes surfaced yet.</p>'}</div></div><div class="detail-block"><h4>Feature details</h4>${traits.length ? `<div class="feature-stack">${traits.map(v => `<details class="collapsible"><summary>${escapeHtml(traitLabel(v))}</summary><div class="collapsible-content"><p>${escapeHtml(traitDescription(v))}</p></div></details>`).join('')}</div>` : '<p>No species trait breakdown surfaced yet.</p>'}</div></div>`;
+  return `<div class="species-detail-head"><div class="species-detail-copy"><h3>${escapeHtml(speciesDisplayName(sp))}</h3><p>${escapeHtml(roleplay)}</p></div><div class="species-quickfacts"><span class="species-pill">Size · ${escapeHtml(sp.size || 'Medium')}</span><span class="species-pill">Movement · ${escapeHtml(String(sp.speed || 30))} ft</span></div></div><div class="detail-block"><h4>Species summary</h4>${spotlight ? `<div class="trait-highlight"><h5>${escapeHtml(traitLabel(spotlight))}</h5><p>${escapeHtml(traitDescription(spotlight))}</p></div>` : ''}<p>${escapeHtml(roleplay)}</p></div><div class="class-sections"><div class="detail-block"><h4>Core benefits</h4><div class="feature-stack">${benefits.length ? benefits.map(v => `<details class="collapsible"><summary>${escapeHtml(traitLabel(v))}</summary><div class="collapsible-content"><p>${escapeHtml(traitDescription(v))}</p></div></details>`).join('') : '<p>No species feature notes surfaced yet.</p>'}</div></div><div class="detail-block"><h4>Feature details</h4>${traits.length ? `<div class="feature-stack">${traits.map(v => `<details class="collapsible"><summary>${escapeHtml(traitLabel(v))}</summary><div class="collapsible-content"><p>${escapeHtml(traitDescription(v))}</p></div></details>`).join('')}</div>` : '<p>No species trait breakdown surfaced yet.</p>'}</div></div>`;
 }
 function renderFeatureCard(feature, level) {
   const name = feature.displayName || feature.name || 'Feature';
@@ -1394,8 +1465,6 @@ function canProceed() {
         state.classes = classes.length ? classes : normalizeCatalogClasses(FALLBACK_CLASSES);
         state.species = species.length ? species : normalizeCatalogSpecies(FALLBACK_SPECIES);
         state.backgrounds = backgrounds.length ? backgrounds : FALLBACK_BACKGROUNDS;
-        if (!state.hero.classId && state.classes[0]) state.hero.classId = state.classes[0].id;
-        if (!state.hero.speciesId && state.species[0]) state.hero.speciesId = state.species[0].id;
         if (!state.hero.backgroundId && state.backgrounds[0]) state.hero.backgroundId = state.backgrounds[0].id;
         ensureStartingLevelInRange();
       } catch (_) {
@@ -1403,8 +1472,6 @@ function canProceed() {
         state.species = normalizeCatalogSpecies(FALLBACK_SPECIES);
         state.subclassesByClass = {};
         state.backgrounds = FALLBACK_BACKGROUNDS;
-        if (!state.hero.classId && state.classes[0]) state.hero.classId = state.classes[0].id;
-        if (!state.hero.speciesId && state.species[0]) state.hero.speciesId = state.species[0].id;
         if (!state.hero.backgroundId && state.backgrounds[0]) state.hero.backgroundId = state.backgrounds[0].id;
         ensureStartingLevelInRange();
       }
