@@ -47,6 +47,14 @@
       .replace(/"/g, '&quot;');
   }
 
+
+  function renderItemToken(item, size = 22) {
+    if (window.AppItemImages && typeof window.AppItemImages.renderToken === 'function') {
+      return window.AppItemImages.renderToken(item || {}, { size, radius: 6, label: item?.item_name || item?.name || 'Item' });
+    }
+    return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;min-width:${size}px;border-radius:6px;background:rgba(255,255,255,0.08);border:1px solid rgba(139,90,20,.25);font-size:${Math.max(12, Math.round(size * 0.62))}px;">🧰</span>`;
+  }
+
   function fmtGold(units) {
     const total = Math.max(0, Math.round(Number(units) || 0));
     const gp = Math.floor(total / 100);
@@ -110,6 +118,7 @@
     return `
       <div class="sv-item${isOos ? ' sv-item-oos' : ''}">
         <div class="sv-item-top">
+          ${renderItemToken(item, 22)}
           <span class="sv-item-name">${esc(item.item_name || item.name || 'Item')}</span>
           ${priceBadge(priceInfo)}
           ${qtyBadge}
@@ -229,6 +238,7 @@
     return `
       <div class="sv-item">
         <div class="sv-item-top">
+          ${renderItemToken((recipe.result_item_json || {}), 20)}
           <span class="sv-item-name">${esc((recipe.result_item_json || {}).name || recipe.name || 'Recipe')}</span>
           <span class="sv-badge">${esc(String(recipe.rarity || 'common'))}</span>
         </div>
@@ -303,6 +313,7 @@
     return `
       <div class="sv-item${!accepted || locked ? ' sv-item-oos' : ''}">
         <div class="sv-item-top">
+          ${renderItemToken(offer.item_data || { name: offer.item_name, item_type: offer.item_type }, 20)}
           <span class="sv-item-name">${esc(offer.item_name)}</span>
           ${offerHtml}
           <span class="sv-badge">×${offer.qty}</span>

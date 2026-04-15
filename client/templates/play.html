@@ -10573,6 +10573,7 @@ Shortbow — +5 to hit, 1d6+3 piercing"></textarea>
 <script src="/static/js/editor/asset_renderer.js"></script>
 <script src="/static/js/editor/terrain_renderer.js"></script>
 <script src="/static/js/editor/placement_controller.js"></script>
+<script src="/static/js/ui/item_image_resolver.js"></script>
 <script src="/static/js/editor/shop_panel.js"></script>
 <script src="/static/js/editor/shop_view.js"></script>
 <script src="/static/js/editor/chest_view.js"></script>
@@ -20899,7 +20900,7 @@ function openLootModal(lootData) {
         return `<div style="padding:0.55rem 0.65rem;border:1px solid ${rarityColor}44;border-radius:9px;background:${rarityColor}0d;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;">
             <div style="min-width:0;flex:1;">
-              <div style="font-size:0.74rem;color:var(--parchment);font-weight:600;">${nameDisplay}</div>
+              <div style="font-size:0.74rem;color:var(--parchment);font-weight:600;display:flex;align-items:center;gap:0.35rem;">${renderItemVisualToken(it, { size: 20, radius: 6, label: it?.name || 'Item' })}<span>${nameDisplay}</span></div>
               ${isMagic && it.unidentified_description ? `<div style="font-size:0.64rem;color:var(--parchment-dim);margin-top:0.12rem;line-height:1.4;">${escapeHtml(it.unidentified_description)}</div>` : ''}
               <div style="display:flex;gap:0.4rem;align-items:center;margin-top:0.12rem;flex-wrap:wrap;">
                 <span style="font-size:0.6rem;font-weight:700;padding:0.08rem 0.35rem;border-radius:4px;background:${rarityColor}22;color:${rarityColor};text-transform:uppercase;">${escapeHtml(rarity)}</span>
@@ -21042,6 +21043,7 @@ function buildLootRevealEntryMarkup(item, idx) {
   return `<button type="button" data-loot-reveal-index="${idx}" style="text-align:left;display:flex;justify-content:space-between;align-items:flex-start;gap:0.7rem;padding:0.72rem 0.78rem;border-radius:11px;border:1px solid ${rarityColor}44;background:linear-gradient(180deg, ${rarityColor}12, rgba(255,255,255,0.02));cursor:pointer;color:inherit;">
     <div style="min-width:0;flex:1;">
       <div style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;">
+        ${renderItemVisualToken(item, { size: 20, radius: 6, label: item?.name || 'Item' })}
         <span style="font-size:0.8rem;font-weight:700;color:var(--parchment);">${escapeHtml(displayName)}</span>
         ${qtyBadge(item.qty)}
         ${rarity ? `<span style="font-size:0.58rem;font-weight:700;padding:0.12rem 0.38rem;border-radius:999px;background:${rarityColor}22;color:${rarityColor};text-transform:uppercase;letter-spacing:0.05em;">${escapeHtml(rarity)}</span>` : ''}
@@ -39331,7 +39333,7 @@ function normalizePlayerInventoryEntry(raw) {
     const v = parseInt(base[k], 10);
     if (Number.isFinite(v)) out[k] = v;
   });
-  ['recharge_type','recharge_formula','action_type','activation_type','target_type','damage_formula','healing_formula','effect_text','granted_ability','image_key'].forEach(k => {
+  ['recharge_type','recharge_formula','action_type','activation_type','target_type','damage_formula','healing_formula','effect_text','granted_ability','image_key','image_url','image_path','category_icon_key','subtype_icon_key'].forEach(k => {
     const v = String(base[k] || '').trim();
     if (v) out[k] = v;
   });
@@ -39583,6 +39585,30 @@ function dmSetInventoryItemWeight(targetUserId, itemIndex) {
   });
 }
 
+
+function resolveItemVisual(item) {
+  if (window.AppItemImages && typeof window.AppItemImages.resolve === 'function') {
+    return window.AppItemImages.resolve(item || {});
+  }
+  return {
+    icon: String(item?.icon || '🧰').trim() || '🧰',
+    imageUrl: String(item?.image_url || item?.image_path || '').trim(),
+    key: String(item?.image_key || 'generic_item').trim(),
+    source: 'fallback_no_resolver',
+    named: !!item?.named_item_flag,
+    legendary: !!item?.legendary_flag || String(item?.rarity || '').toLowerCase() === 'legendary',
+  };
+}
+
+function renderItemVisualToken(item, options = {}) {
+  if (window.AppItemImages && typeof window.AppItemImages.renderToken === 'function') {
+    return window.AppItemImages.renderToken(item || {}, options || {});
+  }
+  const size = Number(options.size) > 0 ? Number(options.size) : 20;
+  const emoji = String(item?.icon || '🧰').trim() || '🧰';
+  return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;min-width:${size}px;border-radius:6px;background:rgba(255,255,255,0.06);border:1px solid rgba(212,175,55,0.2);font-size:${Math.max(11, Math.round(size * 0.62))}px;line-height:1;">${emoji}</span>`;
+}
+
 function renderPartyStashWidget() {
   const widget = document.getElementById('party-stash-widget');
   const list = document.getElementById('party-stash-list');
@@ -39622,7 +39648,7 @@ function renderPartyStashWidget() {
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;justify-content:space-between;gap:0.55rem;align-items:flex-start;padding:0.52rem 0.58rem;border-radius:9px;background:rgba(8,20,28,0.28);border:1px solid rgba(0,229,204,0.12);width:100%;min-width:0;flex:0 0 auto;';
     row.innerHTML = `<div style="min-width:0;flex:1;">
-        <div style="font-size:0.74rem;color:var(--parchment);font-weight:600;">${hiddenMagic ? '<span style="font-style:italic;color:#a855f7;">??? (Unidentified)</span>' : escapeHtml(item.name)}</div>
+        <div style="font-size:0.74rem;color:var(--parchment);font-weight:600;display:flex;align-items:center;gap:0.4rem;">${renderItemVisualToken(item, { size: 20, radius: 6, label: item?.name || 'Item' })}${hiddenMagic ? '<span style="font-style:italic;color:#a855f7;">??? (Unidentified)</span>' : escapeHtml(item.name)}</div>
         ${item.notes ? `<div style="font-size:0.63rem;color:var(--parchment-dim);line-height:1.4;margin-top:0.14rem;">${escapeHtml(item.notes)}</div>` : ''}
         <div style="display:flex;gap:0.35rem;flex-wrap:wrap;margin-top:0.34rem;">
           <button class="mini-btn" onclick="openLootRevealModal({ title: 'Party Stash', subtitle: 'Inspect this shared item before claiming it.', source: 'Party Stash', mode: 'stash', items: [partyStash[${idx}]] })" style="margin:0;font-size:0.62rem;padding:0.22rem 0.5rem;">Inspect</button>
@@ -39767,7 +39793,7 @@ function renderInventoryPanel() {
                 : null);
           const dmIsEssentials = _inventoryLayoutMode !== 'full';
           row.innerHTML = `<div style="min-width:0;flex:1;">
-              <div style="font-size:0.74rem;color:var(--parchment);font-weight:600;">${escapeHtml(item.name)}</div>
+              <div style="font-size:0.74rem;color:var(--parchment);font-weight:600;display:flex;align-items:center;gap:0.35rem;">${renderItemVisualToken(item, { size: 18, radius: 5, label: item?.name || 'Item' })}<span>${escapeHtml(item.name)}</span></div>
               ${!dmIsEssentials && item.notes ? `<div style="font-size:0.64rem;color:var(--parchment-dim);line-height:1.4;">${escapeHtml(item.notes)}</div>` : ''}
               ${!dmIsEssentials && (item.price || item.source) ? `<div style="font-size:0.62rem;color:var(--gold-dim);">${escapeHtml([item.price && `Cost ${item.price}`, item.source && `From ${item.source}`].filter(Boolean).join(' · '))}</div>` : ''}
               ${dmWeight != null ? `<div style="font-size:0.6rem;color:var(--parchment-dim);margin-top:0.14rem;">${dmWeight.toFixed(1)} lbs</div>` : ''}
@@ -39871,7 +39897,7 @@ function renderInventoryPanel() {
         const mainRowHtml = `<div style="display:flex;justify-content:space-between;gap:0.6rem;align-items:flex-start;">
             <div style="min-width:0;flex:1;">
               <div style="font-size:0.78rem;color:var(--parchment);font-weight:600;display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
-                <span>${isBag ? '🎒 ' : ''}${isMagicUnidentified ? '<span style="font-style:italic;color:#a855f7;">??? (Unidentified)</span>' : escapeHtml(item.name)}</span>
+                <span style="display:inline-flex;align-items:center;gap:0.35rem;">${renderItemVisualToken(item, { size: 20, radius: 6, label: item?.name || 'Item' })}<span>${isBag ? '🎒 ' : ''}${isMagicUnidentified ? '<span style="font-style:italic;color:#a855f7;">??? (Unidentified)</span>' : escapeHtml(item.name)}</span></span>
                 ${item.equipped ? `<span class="inventory-equip-badge">Equipped${equippedSlotLabel ? ` · ${escapeHtml(equippedSlotLabel)}` : ''}</span>` : ''}
                 ${item.attunement_required ? `<span style="font-size:0.56rem;padding:0.12rem 0.34rem;border-radius:999px;border:1px solid rgba(155,89,182,0.35);background:rgba(155,89,182,0.16);color:#ddb4ff;text-transform:uppercase;letter-spacing:0.04em;">Attunement</span>` : ''}
               </div>

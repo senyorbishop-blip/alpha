@@ -144,7 +144,8 @@ _INVENTORY_META_KEYS = (
     "usage_cost", "range", "target_type", "save_dc", "attack_bonus", "damage_formula",
     "healing_formula", "effect_text", "grants_action", "passive_effects", "granted_spells",
     "granted_ability", "image_key",
-    "item_schema", "source_id", "source_type", "slug", "subtype", "stack_limit", "image_url",
+    "item_schema", "source_id", "source_type", "slug", "subtype", "stack_limit", "image_url", "image_path",
+    "category_icon_key", "subtype_icon_key",
     "scroll_data", "bonuses", "resistances", "immunities", "senses_modifiers", "movement_modifiers",
     "stat_overrides", "stat_minimums", "equippable", "weapon_type", "ammo_type", "uses_current", "uses_max",
     "material_type", "recipe_tags", "profession_tags", "item_family", "named_item_flag", "legendary_flag",
@@ -182,6 +183,10 @@ def _normalize_item_runtime_fields(entry: dict, out: dict) -> None:
         ("effect_text", 400),
         ("granted_ability", 80),
         ("image_key", 120),
+        ("image_url", 500),
+        ("image_path", 500),
+        ("category_icon_key", 120),
+        ("subtype_icon_key", 120),
     ):
         value = str(entry.get(key) or "").strip()[:limit]
         if value:
