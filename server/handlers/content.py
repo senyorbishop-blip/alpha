@@ -4,7 +4,7 @@ server/handlers/content.py — Journal, library, character profiles, chat, and s
 import asyncio
 import time
 import secrets
-from server.session import Session, User, normalize_profile_owner_key, set_assistant_dm_permissions, assistant_dm_has_scope, grant_temp_permission, ACTIVE_PROFILE_ID_KEY_LIMIT
+from server.session import Session, User, normalize_profile_owner_key, set_assistant_dm_permissions, assistant_dm_has_scope, grant_temp_permission, ACTIVE_PROFILE_ID_KEY_LIMIT, set_player_gold_for_user, _inventory_owner_key
 from server.quest_library import (
     build_session_quest_from_template,
     get_quest_template,
@@ -202,6 +202,76 @@ def _get_char_profiles_for_user(session: Session, user: User):
             session.char_profiles = profiles
     return profiles, owner_key, mine
 
+
+
+
+def _safe_profile_inventory_item(raw):
+    if not isinstance(raw, dict):
+        return None
+    name = str(raw.get("name") or "").strip()[:80]
+    if not name:
+        return None
+    try:
+        qty = int(raw.get("qty") or raw.get("quantity") or 1)
+    except Exception:
+        qty = 1
+    out = {"name": name, "qty": max(1, min(9999, qty))}
+    for key in ("notes", "price", "source", "id", "category", "item_type", "equipment_kind", "armor_type", "handedness", "equip_slot", "damage_dice", "damage_type", "versatile_damage"):
+        value = str(raw.get(key) or "").strip()
+        if value:
+            out[key] = value
+    for key in ("equipped", "is_container", "extradimensional", "is_devouring"):
+        if key in raw:
+            out[key] = bool(raw.get(key))
+    for key in ("weight_lbs", "own_weight_lbs", "capacity_lbs", "volume_ft3", "base_ac", "dex_cap", "ac_bonus", "strength_requirement"):
+        if raw.get(key) is None or str(raw.get(key)).strip() == "":
+            continue
+        try:
+            out[key] = int(raw.get(key)) if key in {"base_ac", "dex_cap", "ac_bonus", "strength_requirement"} else float(raw.get(key))
+        except Exception:
+            continue
+    if isinstance(raw.get("weapon_properties"), list):
+        cleaned = [str(v or "").strip()[:32] for v in (raw.get("weapon_properties") or []) if str(v or "").strip()]
+        if cleaned:
+            out["weapon_properties"] = cleaned[:12]
+    if isinstance(raw.get("bag_contents"), list):
+        out["bag_contents"] = [entry for entry in (_safe_profile_inventory_item(v) for v in raw.get("bag_contents") or []) if entry]
+    return out
+
+
+def _currency_dict_to_gold_units(currency: dict) -> int:
+    if not isinstance(currency, dict):
+        return 0
+    try:
+        cp = int(currency.get("cp") or 0)
+        sp = int(currency.get("sp") or 0)
+        ep = int(currency.get("ep") or 0)
+        gp = int(currency.get("gp") or 0)
+        pp = int(currency.get("pp") or 0)
+    except Exception:
+        return 0
+    cp = max(0, cp); sp = max(0, sp); ep = max(0, ep); gp = max(0, gp); pp = max(0, pp)
+    return (pp * 1000) + (gp * 100) + (ep * 50) + (sp * 10) + cp
+
+
+def _hydrate_active_profile_inventory_state(session: Session, user: User, profile: dict) -> None:
+    if not isinstance(profile, dict):
+        return
+    native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
+    equipment = native.get("equipment") if isinstance(native.get("equipment"), dict) else {}
+    inventory_rows = equipment.get("inventory") if isinstance(equipment.get("inventory"), list) else []
+    currency = equipment.get("currency") if isinstance(equipment.get("currency"), dict) else {}
+    wallet_units = equipment.get("walletGoldUnits")
+
+    normalized_inventory = [row for row in (_safe_profile_inventory_item(item) for item in inventory_rows) if row]
+    inventories = dict(getattr(session, "player_inventories", {}) or {})
+    owner_key = _inventory_owner_key(session, user)
+    inventories[owner_key] = normalized_inventory
+    session.player_inventories = inventories
+
+    if wallet_units is None:
+        wallet_units = _currency_dict_to_gold_units(currency)
+    set_player_gold_for_user(session, user.id, wallet_units)
 
 def _resolve_profile_level(payload: dict) -> int | None:
     """Resolve a canonical profile level while preserving legacy payload shapes."""
@@ -416,7 +486,10 @@ async def handle_item_library_delete(payload: dict, session: Session, user: User
 
 async def handle_char_profile_upsert(payload: dict, session: Session, user: User):
     owner_key = _char_profile_bucket_key(session, user)
-    upsert_char_profile_for_owner(session, owner_key, payload)
+    saved_profile = upsert_char_profile_for_owner(session, owner_key, payload)
+    active_profile_id = str((getattr(session, "active_char_profiles", {}) or {}).get(user.id) or "").strip()
+    if active_profile_id and str(saved_profile.get("id") or "").strip() == active_profile_id:
+        _hydrate_active_profile_inventory_state(session, user, saved_profile)
     await _send_char_profiles(session, user.id)
     # Refresh encumbrance so STR/size changes are reflected immediately.
     # Also recompute equipment AC so DEX changes update token.ac before broadcasting.
@@ -433,11 +506,15 @@ async def handle_char_profile_select(payload: dict, session: Session, user: User
     if profile_id and profile_id not in valid_ids:
         return
     active_map = dict(getattr(session, "active_char_profiles", {}) or {})
+    selected_profile = None
     if profile_id:
         active_map[user.id] = profile_id
+        selected_profile = next((entry for entry in mine if isinstance(entry, dict) and str(entry.get("id") or "").strip() == profile_id), None)
     else:
         active_map.pop(user.id, None)
     session.active_char_profiles = active_map
+    if selected_profile:
+        _hydrate_active_profile_inventory_state(session, user, selected_profile)
     _update_encumbrance_cache(session, user.id)
     _recompute_equipment_effects(session, user)
     await _broadcast_inventory_state(session)

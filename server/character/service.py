@@ -58,6 +58,58 @@ def _build_class_summary(char_sheet: dict) -> str:
     return " / ".join(labels)[:120]
 
 
+
+
+def _normalize_builder_inventory_entry(raw: Any) -> dict | None:
+    if not isinstance(raw, dict):
+        return None
+    name = _safe_str(raw.get("name"))[:80]
+    if not name:
+        return None
+    try:
+        qty = int(raw.get("qty") or raw.get("quantity") or 1)
+    except Exception:
+        qty = 1
+    out: dict[str, Any] = {
+        "name": name,
+        "qty": max(1, min(9999, qty)),
+    }
+    for key in ("source", "notes", "price", "id", "category", "item_type", "equipment_kind", "armor_type", "handedness", "equip_slot", "damage_dice", "damage_type", "versatile_damage"):
+        value = _safe_str(raw.get(key))
+        if value:
+            out[key] = value
+    for key in ("equipped", "is_container", "extradimensional", "is_devouring"):
+        if key in raw:
+            out[key] = bool(raw.get(key))
+    for key in ("weight_lbs", "own_weight_lbs", "capacity_lbs", "volume_ft3", "base_ac", "dex_cap", "ac_bonus", "strength_requirement"):
+        value = raw.get(key)
+        if value is None or str(value).strip() == "":
+            continue
+        try:
+            out[key] = int(value) if key in {"base_ac", "dex_cap", "ac_bonus", "strength_requirement"} else float(value)
+        except Exception:
+            continue
+    weapon_props = raw.get("weapon_properties")
+    if isinstance(weapon_props, list):
+        cleaned = [str(v or "").strip()[:32] for v in weapon_props if str(v or "").strip()]
+        if cleaned:
+            out["weapon_properties"] = cleaned[:12]
+    contents = raw.get("bag_contents")
+    if isinstance(contents, list):
+        out["bag_contents"] = [entry for entry in (_normalize_builder_inventory_entry(row) for row in contents) if entry]
+    return out
+
+
+def _currency_to_gold_units(currency: dict) -> int:
+    if not isinstance(currency, dict):
+        return 0
+    cp = _safe_int(currency.get("cp"), 0, minimum=0)
+    sp = _safe_int(currency.get("sp"), 0, minimum=0)
+    ep = _safe_int(currency.get("ep"), 0, minimum=0)
+    gp = _safe_int(currency.get("gp"), 0, minimum=0)
+    pp = _safe_int(currency.get("pp"), 0, minimum=0)
+    return (pp * 1000) + (gp * 100) + (ep * 50) + (sp * 10) + cp
+
 def _normalize_builder_draft_document(raw: dict) -> dict:
     """Coerce builder-draft payloads into a canonical document candidate."""
     identity = raw.get("identity") if isinstance(raw.get("identity"), dict) else {}
@@ -103,7 +155,25 @@ def _normalize_builder_draft_document(raw: dict) -> dict:
     spell_mode = _safe_str(spellbook.get("castingMode"), "none").lower()[:24]
 
     equipment_currency = equipment.get("currency") if isinstance(equipment.get("currency"), dict) else {}
-    equipment_choices = equipment.get("choices") if isinstance(equipment.get("choices"), list) else []
+    raw_equipment_choices = equipment.get("choices")
+    if isinstance(raw_equipment_choices, list):
+        equipment_choices: dict[str, Any] = {
+            "additionalItems": [str(item or "").strip() for item in raw_equipment_choices if str(item or "").strip()],
+            "starterLoadoutId": "",
+            "startingPackId": _safe_str(equipment.get("startingPack")),
+        }
+    elif isinstance(raw_equipment_choices, dict):
+        equipment_choices = {
+            "starterLoadoutId": _safe_str(raw_equipment_choices.get("starterLoadoutId")),
+            "startingPackId": _safe_str(raw_equipment_choices.get("startingPackId") or equipment.get("startingPack")),
+            "additionalItems": [str(item or "").strip() for item in (raw_equipment_choices.get("additionalItems") or []) if str(item or "").strip()],
+        }
+    else:
+        equipment_choices = {"starterLoadoutId": "", "startingPackId": _safe_str(equipment.get("startingPack")), "additionalItems": []}
+    equipment_inventory_raw = equipment.get("inventory") if isinstance(equipment.get("inventory"), list) else []
+    normalized_equipment_inventory = [
+        entry for entry in (_normalize_builder_inventory_entry(item) for item in equipment_inventory_raw) if entry
+    ]
     origins_languages = origins.get("languages") if isinstance(origins.get("languages"), list) else []
     origins_proficiencies = origins.get("proficiencies") if isinstance(origins.get("proficiencies"), list) else []
     progression_feats = progression.get("feats") if isinstance(progression.get("feats"), list) else []
@@ -199,13 +269,15 @@ def _normalize_builder_draft_document(raw: dict) -> dict:
                 "gp": _safe_int(equipment_currency.get("gp"), 0, minimum=0),
                 "pp": _safe_int(equipment_currency.get("pp"), 0, minimum=0),
             },
-            "inventory": [
+            "inventory": normalized_equipment_inventory or [
                 {"name": str(item or "").strip(), "source": "builder_starting_choice"}
-                for item in equipment_choices
+                for item in (equipment_choices.get("additionalItems") or [])
                 if str(item or "").strip()
             ],
             "equipped": {},
             "containers": [],
+            "builderChoices": equipment_choices,
+            "walletGoldUnits": _currency_to_gold_units(equipment_currency),
         },
         "spellState": {
             "known": [str(item or "").strip() for item in spell_known if str(item or "").strip()],
