@@ -44,6 +44,14 @@
       .replace(/"/g, '&quot;');
   }
 
+
+  function renderItemToken(entry, size = 22) {
+    if (window.AppItemImages && typeof window.AppItemImages.renderToken === 'function') {
+      return window.AppItemImages.renderToken(entry || {}, { size, radius: 6, label: entry?.name || 'Item' });
+    }
+    return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;min-width:${size}px;border-radius:6px;background:rgba(255,255,255,0.08);border:1px solid rgba(139,90,20,.25);font-size:${Math.max(12, Math.round(size * 0.62))}px;">🧰</span>`;
+  }
+
   /* ── Item card renderer ───────────────────────────────────────────────── */
   function _renderItemCard(entry, idx, isDm) {
     const qty           = Math.max(1, Number(entry.qty) || 1);
@@ -84,6 +92,7 @@
     return `
       <div class="cv-item" id="cv-item-${idx}">
         <div class="cv-item-top">
+          ${renderItemToken(entry, 22)}
           <span class="cv-item-name">${displayName}</span>
           <span class="cv-qty-badge">×${qty}</span>
         </div>

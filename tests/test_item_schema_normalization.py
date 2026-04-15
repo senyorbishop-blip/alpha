@@ -45,7 +45,14 @@ def test_shop_and_craft_payloads_normalize_and_keep_image_fields():
         "description": "Keeps bearings in storms.",
         "price_gp": 12,
         "quantity": 2,
-        "item_data": {"image_key": "pirate/compass", "tags": ["pirate_gear"]},
+        "item_data": {
+            "image_key": "pirate/compass",
+            "image_path": "/static/assets/items/pirate_compass.png",
+            "category_icon_key": "trinket_basic",
+            "subtype_icon_key": "pirate_gear",
+            "named_item_flag": True,
+            "tags": ["pirate_gear"],
+        },
     })
     crafted = normalize_crafted_result_row({
         "id": "crafted_tinker",
@@ -58,6 +65,10 @@ def test_shop_and_craft_payloads_normalize_and_keep_image_fields():
 
     assert shop["identity"]["source_type"] == "shop_item"
     assert shop["display"]["image_key"] == "pirate/compass"
+    assert shop["display"]["image_path"] == "/static/assets/items/pirate_compass.png"
+    assert shop["display"]["category_icon_key"] == "trinket_basic"
+    assert shop["display"]["subtype_icon_key"] == "pirate_gear"
+    assert shop["crafting"]["named_item_flag"] is True
     assert crafted["identity"]["source_type"] == "craft_result"
     assert crafted["crafting"]["profession_tags"] == ["tinker"]
 
@@ -74,3 +85,26 @@ def test_to_inventory_entry_keeps_scroll_first_class_fields():
     assert entry["consumable"] is True
     assert entry["scroll_data"]["spell_level"] == 2
     assert entry["item_schema"]["identity"]["source_type"] == "loot"
+
+
+def test_to_inventory_entry_exposes_image_pipeline_fields():
+    canonical = normalize_item_record({
+        "id": "legendary_holy_avenger",
+        "name": "Holy Avenger",
+        "category": "weapon",
+        "subtype": "sword",
+        "image_key": "legendary_holy_avenger",
+        "image_path": "/static/assets/items/holy_avenger.png",
+        "category_icon_key": "weapon_basic",
+        "subtype_icon_key": "sword_basic",
+        "named_item_flag": True,
+        "legendary_flag": True,
+        "rarity": "legendary",
+    }, source_type="magic_item")
+    entry = to_inventory_entry(canonical)
+    assert entry["image_key"] == "legendary_holy_avenger"
+    assert entry["image_path"] == "/static/assets/items/holy_avenger.png"
+    assert entry["category_icon_key"] == "weapon_basic"
+    assert entry["subtype_icon_key"] == "sword_basic"
+    assert entry["named_item_flag"] is True
+    assert entry["legendary_flag"] is True
