@@ -131,16 +131,7 @@
     return [
       '<div class="species-card' + (isSelected ? ' selected' : '') + '" data-background-id="' + escHtml(bg.id) + '">',
       '<div class="sc-selected-check">✓</div>',
-      '<div class="sc-icon" style="font-size:1.4rem;background:rgba(201,168,76,0.06);border-color:rgba(201,168,76,0.15)">' + bg.icon + '</div>',
       '<div class="sc-name">' + escHtml(bg.name) + '</div>',
-      '<div class="sc-badges">',
-      '<span class="sc-badge" style="background:rgba(201,168,76,0.08);border-color:rgba(201,168,76,0.2);color:var(--cb-gold-dim)">⭐ ' + escHtml(bg.feat) + '</span>',
-      '</div>',
-      '<div class="sc-traits">',
-      bg.skills.map(function(s) { return '<div class="sc-trait">' + escHtml(s) + '</div>'; }).join(''),
-      '<div class="sc-trait" style="color:var(--cb-text-dim)">' + escHtml(bg.tool) + '</div>',
-      '<div class="sc-trait" style="color:var(--cb-gold-dim)">' + bg.gold + ' GP</div>',
-      '</div>',
       '</div>',
     ].join('');
   }
