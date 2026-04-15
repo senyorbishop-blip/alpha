@@ -580,6 +580,10 @@
     if (runtimeClassFeatures.length) {
       out.nativeClassFeatures = clone(runtimeClassFeatures);
     }
+    var runtimeSummonActions = asArray(runtime.summonActions).filter(function onlySummonRows(row) { return row && typeof row === 'object'; });
+    if (runtimeSummonActions.length) {
+      out.summonActions = clone(runtimeSummonActions);
+    }
 
     var runtimeOriginTraits = asArray(runtime.originTraits).filter(function onlyTraitRows(row) { return row && typeof row === 'object'; });
     var runtimeBackgroundFeatures = asArray(runtime.backgroundFeatures).filter(function onlyBackgroundRows(row) { return row && typeof row === 'object'; });
@@ -704,6 +708,10 @@
     var runtimeClassFeatures = asArray(runtime.classFeatures).filter(function onlyFeatureRows(row) { return row && typeof row === 'object'; });
     if (runtimeClassFeatures.length) {
       out.nativeClassFeatures = clone(runtimeClassFeatures);
+    }
+    var runtimeSummonActions = asArray(runtime.summonActions).filter(function onlySummonRows(row) { return row && typeof row === 'object'; });
+    if (runtimeSummonActions.length) {
+      out.summonActions = clone(runtimeSummonActions);
     }
 
     var runtimeOriginTraits = asArray(runtime.originTraits).filter(function onlyTraitRows(row) { return row && typeof row === 'object'; });

@@ -685,6 +685,49 @@
     };
   }
 
+  function _summonActionRows(charData) {
+    return _safeArray(charData && charData.summonActions).map(function (entry, index) {
+      if (!entry || typeof entry !== 'object') return null;
+      const actionTypeText = _firstText(entry.actionType, 'Summon');
+      const selectedVariantName = _firstText(entry.selectedVariantName, entry.summonDisplayName, '');
+      const variants = _safeArray(entry.variants);
+      const variantLabel = variants.map(function (variant) {
+        return _firstText(variant && variant.displayName, variant && variant.id, '');
+      }).filter(Boolean);
+      const activeCount = _num(entry.currentActiveCount, 0);
+      const maxActive = Math.max(0, _num(entry.maxActive, 1));
+      const id = _firstText(entry.id, entry.summonGroupId, entry.summonTemplateId, '') || (`summon-action-${index + 1}`);
+      return {
+        id: id,
+        source: 'summon_action',
+        name: _firstText(entry.displayName, selectedVariantName, 'Summon'),
+        desc: _firstText(entry.shortSummary, `Use ${actionTypeText.toLowerCase()} when your companion or device is needed.`),
+        description: _firstText(entry.shortSummary, `Use ${actionTypeText.toLowerCase()} when your companion or device is needed.`),
+        economy: ['action'],
+        icon: /deploy/i.test(actionTypeText) ? '🛠️' : '🧿',
+        actionType: actionTypeText,
+        resourceName: `Active ${activeCount}/${maxActive}`,
+        resourceSummary: `Active ${activeCount}/${maxActive}${entry.replaceOnResummon ? ' • Replaces existing summon on re-use' : ''}`,
+        range: _firstText(entry.commandModelSummary, ''),
+        tags: []
+          .concat(_safeArray(entry.tags))
+          .concat(variantLabel.length ? ['Variants: ' + variantLabel.join(', ')] : [])
+          .concat(selectedVariantName ? ['Selected: ' + selectedVariantName] : []),
+        longText: [
+          _firstText(entry.shortSummary, ''),
+          _firstText(entry.sourceFeatureName, '') ? `Source feature: ${_firstText(entry.sourceFeatureName, '')}` : '',
+          selectedVariantName ? `Selected variant: ${selectedVariantName}` : '',
+          variantLabel.length > 1 ? `Unlocked variants: ${variantLabel.join(', ')}` : '',
+          `Command model: ${_firstText(entry.commandModelSummary, 'Runtime command model pending.')}`,
+          `Active count: ${activeCount}/${maxActive}`,
+          entry.replaceOnResummon ? 'Re-summoning will replace an existing summon.' : '',
+          'Summon runtime is not implemented yet in this pass.',
+        ].filter(Boolean).join('\n\n'),
+        summonAction: entry,
+      };
+    }).filter(Boolean);
+  }
+
   function _isHiddenFeatureCard(feature) {
     const rawName = _firstText(feature && feature.name, feature && feature.label, '');
     const cleanName = rawName.replace(/\[[^\]]+\]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
@@ -949,6 +992,17 @@
           { label: 'Save / DC', value: action.saveDC || action.hitDc || action.save || '—' },
           { label: 'Resource', value: action.resourceName || action.resource || action.cost || '—' },
         ] },
+        ...(action && action.source === 'summon_action' ? [{
+          title: 'Summon / Deploy Metadata',
+          items: [
+            { label: 'Source feature', value: _firstText(action && action.summonAction && action.summonAction.sourceFeatureName, '—') },
+            { label: 'Selected variant', value: _firstText(action && action.summonAction && action.summonAction.selectedVariantName, '—') },
+            { label: 'Available variants', value: _safeArray(action && action.summonAction && action.summonAction.variants).map(function (variant) { return _firstText(variant && variant.displayName, variant && variant.id, ''); }).filter(Boolean).join(', ') || '—' },
+            { label: 'Active count', value: `${_num(action && action.summonAction && action.summonAction.currentActiveCount, 0)}/${Math.max(0, _num(action && action.summonAction && action.summonAction.maxActive, 1))}` },
+            { label: 'Replace on re-summon', value: action && action.summonAction && action.summonAction.replaceOnResummon ? 'Yes' : 'No' },
+            { label: 'Command model', value: _firstText(action && action.summonAction && action.summonAction.commandModelSummary, 'Runtime command model pending.') },
+          ],
+        }] : []),
         { title: 'What Happens', items: _actionExpectedResults(action) },
       ],
     });
@@ -1208,7 +1262,18 @@
     const toHit = attackBonusValue != null ? (attackBonusValue >= 0 ? `+${attackBonusValue}` : String(attackBonusValue)) : '';
     const resourceState = _resourceStateFromAction(action);
     const laneRows = [];
-    if (kind === 'attack') {
+    if (action && action.source === 'summon_action') {
+      const summonMeta = action.summonAction && typeof action.summonAction === 'object' ? action.summonAction : {};
+      const variants = _safeArray(summonMeta.variants).map(function (variant) {
+        return _firstText(variant && variant.displayName, variant && variant.id, '');
+      }).filter(Boolean);
+      laneRows.push({ label: 'Source', value: _firstText(summonMeta.sourceFeatureName, '—') });
+      laneRows.push({ label: 'Summons', value: _firstText(summonMeta.selectedVariantName, summonMeta.summonDisplayName, '—') });
+      if (variants.length > 1) laneRows.push({ label: 'Variants', value: variants.join(', ') });
+      laneRows.push({ label: 'Active', value: `${_num(summonMeta.currentActiveCount, 0)}/${Math.max(0, _num(summonMeta.maxActive, 1))}` });
+      laneRows.push({ label: 'Re-summon', value: summonMeta.replaceOnResummon ? 'Replaces existing summon' : 'Adds without replacement' });
+      laneRows.push({ label: 'Command', value: _firstText(summonMeta.commandModelSummary, 'Runtime command model pending.') });
+    } else if (kind === 'attack') {
       const effect = _firstText(action.damage, action.damageText, action.effect, '');
       const range = _firstText(action.range, action.reach, '');
       const spend = _firstText(action.resourceSummary, action.resourceName, action.cost, action.usesText, '');
@@ -1242,6 +1307,7 @@
     const useLabel = (function () {
       const src = String(action.source || '').toLowerCase();
       const text = `${String(action.name || '')} ${String(action.resourceName || '')} ${String(action.resourceSummary || '')}`.toLowerCase();
+      if (src === 'summon_action') return /deploy/i.test(String(action.actionType || '')) ? 'Deploy' : 'Summon';
       if (src === 'spell') return 'Cast';
       if (kind === 'subclass_gate') return 'Choose subclass';
       if (src === 'weapon' || src === 'equip_only' || src === 'system_unarmed' || kind === 'attack') return 'Attack';
@@ -1980,11 +2046,28 @@
         e.stopPropagation();
         const actionId = String(useBtn.getAttribute('data-action-use') || '');
         const actionSource = String(useBtn.getAttribute('data-action-source') || '');
+        if (actionSource === 'summon_action') {
+          const action = _safeArray(model && model.summonActions).find(function (entry) { return String(entry && entry.id || '') === actionId; });
+          const label = _firstText(action && action.name, 'Summon action');
+          if (typeof global.showToast === 'function') {
+            global.showToast(`${label}: summon runtime not implemented yet.`);
+          }
+          try {
+            global.dispatchEvent(new CustomEvent('summonRuntimeRequestedStub', {
+              detail: {
+                actionId: actionId,
+                summonAction: action && action.summonAction ? action.summonAction : null,
+                status: 'not_implemented',
+              },
+            }));
+          } catch (_) {}
+          return;
+        }
         _pulseRowFromTrigger(useBtn);
         if (typeof global.playerUseAction === 'function') {
           global.playerUseAction(actionSource, actionId);
         } else if (typeof global.showToast === 'function') {
-          const all = [].concat(model.quickAttacks, model.itemActions, model.native.actions, model.native.bonusActions, model.native.reactions, model.textAttacks);
+          const all = [].concat(model.quickAttacks, model.itemActions, model.native.actions, model.native.bonusActions, model.native.reactions, model.textAttacks, model.summonActions || []);
           const action = all.find(function (entry) { return String(entry && entry.id || '') === actionId || String(entry && entry.name || '').toLowerCase() === actionId.toLowerCase(); });
           const label = action && action.name ? action.name : 'Action';
           const cost = action && (action.resourceSummary || action.resourceName) ? ` — ${action.resourceSummary || action.resourceName}` : '';
@@ -2015,7 +2098,7 @@
       const actionRow = e.target.closest('.cs-action-row');
       if (actionRow) {
         const name = String(actionRow.getAttribute('data-action-name') || '').toLowerCase();
-        const all = [].concat(model.quickAttacks, model.itemActions, model.native.actions, model.native.bonusActions, model.native.reactions, model.textAttacks);
+        const all = [].concat(model.quickAttacks, model.itemActions, model.native.actions, model.native.bonusActions, model.native.reactions, model.textAttacks, model.summonActions || []);
         const action = all.find(function (entry) { return String(entry && entry.name || '').toLowerCase() === name; });
         if (action) _openActionDetails(action);
         return;
@@ -2109,10 +2192,11 @@
       : _safeArray(native.actions);
     const resources = _resourceRows(charData || {});
     const textAttacks = _parseTextAttacks(charData || {});
+    const summonActions = _summonActionRows(charData || {});
     const beastMasterCompanion = _beastMasterCompanionProfile(charData || {});
     const selectedTarget = charData && charData.selectedTarget ? charData.selectedTarget : null;
     const concentration = _firstText(charData && charData.activeConcentration, '');
-    const totalActions = quickAttacks.length + itemActions.length + native.actions.length + native.bonusActions.length + native.reactions.length + textAttacks.length;
+    const totalActions = quickAttacks.length + itemActions.length + native.actions.length + native.bonusActions.length + native.reactions.length + textAttacks.length + summonActions.length;
 
     container.innerHTML = `
       <div class="cs-combat-hero-grid">
@@ -2138,6 +2222,7 @@
       ${_renderSection('Quick Attacks', quickAttacks, { emptyLabel: 'No quick attack cards are loaded yet.' })}
       ${_renderSection('Imported / Legacy Attack Lines', textAttacks, { emptyLabel: 'No imported attack lines detected.' })}
       ${_renderSection('Item Actions', itemActions, { emptyLabel: 'No usable item actions are loaded yet.' })}
+      ${_renderSection('Summon / Deploy Actions', summonActions, { emptyLabel: 'No summon or deploy actions are unlocked for this character.' })}
       ${_renderSection('Native Actions', nativeActionsForSection, { emptyLabel: isWildShapeActive ? 'Wild Shape attacks are currently driving your attack surface.' : 'No structured main actions are loaded yet.' })}
       ${_renderSection('Bonus Actions', native.bonusActions, { emptyLabel: 'No structured bonus actions are loaded yet.' })}
       ${_renderSection('Reactions', native.reactions, { emptyLabel: 'No structured reactions are loaded yet.' })}
@@ -2145,7 +2230,7 @@
     `;
 
     _bindDetails(container, {
-      quickAttacks, itemActions, native, resources, textAttacks, beastMasterCompanion,
+      quickAttacks, itemActions, native, resources, textAttacks, summonActions, beastMasterCompanion,
       charData: charData || {},
       rerender: function rerenderActions() { initActionsTab(container, charData); }
     });
