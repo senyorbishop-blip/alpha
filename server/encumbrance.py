@@ -7,6 +7,7 @@ they can be called freely from handlers or tests.
 """
 from __future__ import annotations
 from typing import Any
+import math
 import re
 
 # ─── Item weight tables ───────────────────────────────────────────────────────
@@ -375,7 +376,8 @@ def get_size_multiplier(size: str) -> float:
 
 def _get_carry_capacity_scalar(strength: int, size: str = "medium") -> float:
     str_val = max(1, min(30, int(strength or 10)))
-    return str_val * 15.0 * get_size_multiplier(size)
+    base_capacity = math.floor((str_val * 15.0) * 1.25) + 10
+    return base_capacity * get_size_multiplier(size)
 
 
 def get_carry_capacity(strength_or_character: Any, size: str = "medium") -> Any:
@@ -391,10 +393,10 @@ def get_carry_capacity(strength_or_character: Any, size: str = "medium") -> Any:
         abilities = character_document.get("abilities", {})
         ability_scores = abilities.get("scores", {}) if isinstance(abilities, dict) else {}
         str_score = int(ability_scores.get("str", abilities.get("str", 10)) or 10) if isinstance(abilities, dict) else 10
-        carry_capacity = str_score * 15
+        carry_capacity = math.floor((str_score * 15) * 1.25) + 10
         push_drag_lift = str_score * 30
-        encumbered_threshold = str_score * 5
-        heavily_encumbered = str_score * 10
+        encumbered_threshold = carry_capacity / 3
+        heavily_encumbered = (carry_capacity * 2) / 3
         return {
             "carryCapacity": carry_capacity,
             "pushDragLift": push_drag_lift,
@@ -405,12 +407,11 @@ def get_carry_capacity(strength_or_character: Any, size: str = "medium") -> Any:
 
 
 def get_encumbrance_thresholds(strength: int, size: str = "medium") -> dict:
-    str_val = max(1, min(30, int(strength or 10)))
-    mult = get_size_multiplier(size)
+    capacity = _get_carry_capacity_scalar(strength, size)
     return {
-        ENC_LIGHT:  str_val * 5.0  * mult,
-        ENC_HEAVY:  str_val * 10.0 * mult,
-        ENC_OVER:   str_val * 15.0 * mult,
+        ENC_LIGHT:  capacity / 3.0,
+        ENC_HEAVY:  (capacity * 2.0) / 3.0,
+        ENC_OVER:   capacity,
     }
 
 

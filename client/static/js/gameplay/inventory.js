@@ -118,11 +118,12 @@
     const strength = Math.max(1, parseInt(enc.strength, 10) || 10);
     const pct = Math.max(0, Math.min(1, current / capacity));
     const barColor = pct >= 1 ? '#e74c3c' : (pct >= 0.66 ? '#f39c12' : '#2ecc71');
+    const baseCapacity = Math.floor((15 * strength) * 1.25) + 10;
     return {
       label: `${current.toFixed(1)} / ${capacity.toFixed(0)} lbs`,
       fillPercent: Number((pct * 100).toFixed(1)),
       barColor,
-      tooltip: `Based on STR ${strength} (15 × ${strength} = ${(15 * strength).toFixed(0)} lbs)`,
+      tooltip: `Based on STR ${strength} (floor((15 × ${strength}) × 1.25) + 10 = ${baseCapacity.toFixed(0)} lbs)`,
     };
   }
 

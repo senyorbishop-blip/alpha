@@ -119,16 +119,17 @@
   }
 
   function getCarryCapacity(strength, size) {
-    return Math.max(1, Math.min(30, parseInt(strength, 10) || 10)) * 15 * getSizeMultiplier(size);
+    const s = Math.max(1, Math.min(30, parseInt(strength, 10) || 10));
+    const baseCapacity = Math.floor((s * 15) * 1.25) + 10;
+    return baseCapacity * getSizeMultiplier(size);
   }
 
   function getThresholds(strength, size) {
-    const s = Math.max(1, Math.min(30, parseInt(strength, 10) || 10));
-    const m = getSizeMultiplier(size);
+    const capacity = getCarryCapacity(strength, size);
     return {
-      [ENC_LIGHT]: s * 5 * m,
-      [ENC_HEAVY]: s * 10 * m,
-      [ENC_OVER]:  s * 15 * m,
+      [ENC_LIGHT]: capacity / 3,
+      [ENC_HEAVY]: (capacity * 2) / 3,
+      [ENC_OVER]:  capacity,
     };
   }
 
@@ -216,7 +217,8 @@
     const markerLight = capacity > 0 ? Math.min(1, tLight / capacity) * 100 : 0;
     const markerHeavy = capacity > 0 ? Math.min(1, tHeavy / capacity) * 100 : 0;
 
-    const tooltip = `Based on STR ${strScore} (15 × ${strScore} = ${(strScore * 15).toFixed(0)} lbs)`;
+    const baseCapacity = Math.floor((strScore * 15) * 1.25) + 10;
+    const tooltip = `Based on STR ${strScore} (floor((15 × ${strScore}) × 1.25) + 10 = ${baseCapacity.toFixed(0)} lbs)`;
     wrap.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
         <span style="font-size:0.62rem;color:${barColor};font-weight:700;letter-spacing:0.05em;">${escapeHtmlEnc(label)}</span>
