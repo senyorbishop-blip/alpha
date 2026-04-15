@@ -4,8 +4,14 @@
   //   and fog overlay rendering through env/state compatibility wrappers
   // - deliberately does NOT own gameplay collections or the broader draw loop,
   //   which still live in play.html during the staged migration
+  function _resolveAuthoritativeMapContext(env) {
+    if (env && typeof env.getCurrentMapContext === 'function') {
+      return String(env.getCurrentMapContext() || 'world');
+    }
+    return env && env.currentPoi ? (env.currentPoi.id || '__local__') : 'world';
+  }
   function fogCurrentCtx(env) {
-    return env.currentPoi ? (env.currentPoi.id || '__local__') : 'world';
+    return _resolveAuthoritativeMapContext(env);
   }
   function fogSaveCurrentMap(state) {
     if (!state.fogMaps[state.fogMapCtx]) state.fogMaps[state.fogMapCtx] = {};
@@ -24,6 +30,8 @@
     if (env.ROLE !== 'dm' || !state.fogEnabled || !state.fogMouseWorld) return false;
     const mode = String((env && typeof env.getFogSystemMode === 'function' ? env.getFogSystemMode() : '') || '').toLowerCase();
     if (!(mode === 'manual' || mode === 'hybrid')) return false;
+    if (String(state.fogMapCtx || 'world') !== _resolveAuthoritativeMapContext(env)) return false;
+    if (String(state.fogPaintTool || 'brush') !== 'brush') return false;
     const doc = (env && env.document) || document;
     const fogFlyout = doc.getElementById('flyout-fog');
     return !!(fogFlyout && fogFlyout.classList && fogFlyout.classList.contains('open'));
@@ -32,8 +40,9 @@
     const mode = String((env && typeof env.getFogSystemMode === 'function' ? env.getFogSystemMode() : '') || '').toLowerCase();
     return mode === 'manual' || mode === 'hybrid';
   }
-  function _fogContextLabel(state) {
+  function _fogContextLabel(state, env) {
     const ctx = String(state.fogMapCtx || 'world');
+    if (env && typeof env.getMapContextLabel === 'function') return env.getMapContextLabel(ctx);
     return ctx === 'world' ? 'World Map' : `POI / Local Map · ${ctx}`;
   }
   function _syncFogStatus(state, env) {
@@ -41,7 +50,7 @@
     const statusEl = doc.getElementById('fog-status-text');
     const mapEl = doc.getElementById('fog-map-context-text');
     const modelEl = doc.getElementById('fog-visibility-model-text');
-    if (mapEl) mapEl.textContent = `Editing: ${_fogContextLabel(state)}`;
+    if (mapEl) mapEl.textContent = `Editing: ${_fogContextLabel(state, env)}`;
     if (modelEl) {
       modelEl.textContent = 'Visibility model: Off = unrestricted, Manual = DM-painted fog, Vision = token LOS, Hybrid = both manual + LOS.';
     }
@@ -90,8 +99,8 @@
     _syncFogStatus(state, env);
   }
   function fogLoadMap(state, env, ctx) {
-    state.fogMapCtx = ctx;
-    const entry = state.fogMaps[ctx];
+    state.fogMapCtx = String(ctx || 'world');
+    const entry = state.fogMaps[state.fogMapCtx];
     if (entry) {
       state.fogEnabled = entry.enabled || false;
       state.fogCols = entry.cols || 64;
@@ -302,5 +311,22 @@
     if (p.map_ctx !== undefined && p.map_ctx !== ctx) return;
     fogLoadMap(state, env, ctx);
   }
-  window.AppFog = { fogCurrentCtx, fogSaveCurrentMap, syncFogUI, fogLoadMap, fogInitCells, drawFogOverlay, fogWorldToCell, fogPaintAt, fogFlushBatch, fogToggle, setFogMode, fogRevealAll, fogHideAll, fogApplyState };
+  function fogApplyUpdate(state, env, p) {
+    const updCtx = String((p && p.map_ctx) || 'world');
+    const val = p && p.reveal ? 1 : 0;
+    if (!state.fogMaps[updCtx]) state.fogMaps[updCtx] = { enabled: true, cols: 64, rows: 64, cells: new Uint8Array(64 * 64) };
+    const entry = state.fogMaps[updCtx];
+    if (!entry.cells || !(entry.cells instanceof Uint8Array)) {
+      entry.cells = new Uint8Array((entry.cols || 64) * (entry.rows || 64));
+    }
+    (p && p.cells ? p.cells : []).forEach(idx => {
+      if (idx >= 0 && idx < entry.cells.length) entry.cells[idx] = val;
+    });
+    const activeCtx = fogCurrentCtx(env);
+    if (updCtx === activeCtx) {
+      fogLoadMap(state, env, activeCtx);
+      env.invalidateFogCache();
+    }
+  }
+  window.AppFog = { fogCurrentCtx, fogSaveCurrentMap, syncFogUI, fogLoadMap, fogInitCells, drawFogOverlay, fogWorldToCell, fogPaintAt, fogFlushBatch, fogToggle, setFogMode, fogRevealAll, fogHideAll, fogApplyState, fogApplyUpdate };
 })();

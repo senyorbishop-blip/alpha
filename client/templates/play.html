@@ -30884,24 +30884,29 @@ function handleLegacyMessage(msg) {
       break;
     }
     case 'fog_update': {
-      const updCtx = p.map_ctx || 'world';
-      const val = p.reveal ? 1 : 0;
-      if (!fogMaps[updCtx]) {
-        fogMaps[updCtx] = { enabled: true, cols: 64, rows: 64, cells: new Uint8Array(64*64) };
-      }
-      const entry = fogMaps[updCtx];
-      if (!entry.cells || !(entry.cells instanceof Uint8Array)) {
-        entry.cells = new Uint8Array((entry.cols||64) * (entry.rows||64));
-      }
-      (p.cells || []).forEach(idx => {
-        if (idx >= 0 && idx < entry.cells.length) entry.cells[idx] = val;
-      });
-      // Also update live fogCells if this is the current map
-      if (updCtx === fogMapCtx && fogCells) {
+      if (window.AppFog && typeof window.AppFog.fogApplyUpdate === 'function') {
+        const state = __createFogModuleState();
+        window.AppFog.fogApplyUpdate(state, __createFogModuleEnv(), p);
+        __applyFogModuleState(state);
+      } else {
+        const updCtx = p.map_ctx || 'world';
+        const val = p.reveal ? 1 : 0;
+        if (!fogMaps[updCtx]) {
+          fogMaps[updCtx] = { enabled: true, cols: 64, rows: 64, cells: new Uint8Array(64*64) };
+        }
+        const entry = fogMaps[updCtx];
+        if (!entry.cells || !(entry.cells instanceof Uint8Array)) {
+          entry.cells = new Uint8Array((entry.cols||64) * (entry.rows||64));
+        }
         (p.cells || []).forEach(idx => {
-          if (idx >= 0 && idx < fogCells.length) fogCells[idx] = val;
+          if (idx >= 0 && idx < entry.cells.length) entry.cells[idx] = val;
         });
-        invalidateFogCache();
+        const activeFogCtx = _getCurrentMapContext();
+        if (updCtx === activeFogCtx) {
+          setFogMapContext(activeFogCtx);
+          fogLoadMap(fogMapCtx);
+          invalidateFogCache();
+        }
       }
       break;
     }
@@ -40637,6 +40642,13 @@ function __applyFogModuleState(state) {
 }
 
 function __createFogModuleEnv() {
+  const _resolveFogContextLabel = (ctx) => {
+    const key = String(ctx || 'world');
+    if (key === 'world') return 'World Map';
+    const poi = pois && pois[key];
+    const poiName = String(poi?.name || '').trim();
+    return poiName ? `POI / Local Map · ${poiName} (${key})` : `POI / Local Map · ${key}`;
+  };
   return {
     document,
     ROLE,
@@ -40644,6 +40656,8 @@ function __createFogModuleEnv() {
     ctx,
     mapImage,
     currentPoi: _currentPoi,
+    getCurrentMapContext: _getCurrentMapContext,
+    getMapContextLabel: _resolveFogContextLabel,
     handlers: { onFogCheckboxChange: _fogChkHandler },
     invalidateFogCache,
     syncShellState: () => _syncFogShellState(),
@@ -40748,7 +40762,7 @@ function fogCurrentCtx() {
     return window.AppFog.fogCurrentCtx(__createFogModuleEnv());
   }
   // Returns the map context key for current map
-  return _currentPoi ? (_currentPoi.id || '__local__') : 'world';
+  return _getCurrentMapContext();
 }
 
 function fogSaveCurrentMap() {
