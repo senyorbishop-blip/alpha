@@ -24,64 +24,86 @@
     return Number.isFinite(parseInt(value, 10));
   }
 
-  function resolveCanonicalHp(nativeCharacter, nativeRuntime, fallback) {
-    var doc = asObject(nativeCharacter);
-    var runtime = asObject(nativeRuntime);
-    var fallbackHp = asObject(fallback);
+  function _collectCanonicalHpNumbers(doc, fallbackHp) {
     var rootHp = asObject(doc.hp);
     var vitals = asObject(doc.vitals);
     var combatVitals = asObject(vitals.combat);
+    return {
+      max: [
+        doc.maxHP,
+        doc.maxHp,
+        rootHp.max,
+        vitals.maxHP,
+        vitals.maxHp,
+        combatVitals.maxHP,
+        combatVitals.maxHp,
+        fallbackHp.max,
+      ],
+      current: [
+        doc.currentHP,
+        doc.currentHp,
+        rootHp.current,
+        vitals.currentHP,
+        vitals.currentHp,
+        combatVitals.currentHP,
+        combatVitals.currentHp,
+        fallbackHp.current,
+      ],
+      temp: [
+        doc.tempHP,
+        doc.tempHp,
+        rootHp.temp,
+        vitals.tempHP,
+        vitals.tempHp,
+        combatVitals.tempHP,
+        combatVitals.tempHp,
+        fallbackHp.temp,
+      ],
+    };
+  }
+
+  function _collectRuntimeHpNumbers(runtime) {
     var runtimeHp = asObject(runtime.hp);
     var runtimeCombat = asObject(runtime.combat);
+    return {
+      max: [runtimeHp.max, runtimeCombat.maxHP, runtimeCombat.maxHp],
+      current: [runtimeHp.current, runtimeCombat.currentHP, runtimeCombat.currentHp],
+      temp: [runtimeHp.temp, runtimeCombat.tempHP, runtimeCombat.tempHp],
+    };
+  }
 
-    var max = firstDefinedNumber(
-      doc.maxHP,
-      doc.maxHp,
-      rootHp.max,
-      vitals.maxHP,
-      vitals.maxHp,
-      combatVitals.maxHP,
-      combatVitals.maxHp,
-      runtimeHp.max,
-      runtimeCombat.maxHP,
-      runtimeCombat.maxHp,
-      fallbackHp.max
-    );
+  function resolveCanonicalHp(nativeCharacter, nativeRuntime, fallback, opts) {
+    var doc = asObject(nativeCharacter);
+    var runtime = asObject(nativeRuntime);
+    var fallbackHp = asObject(fallback);
+    var options = asObject(opts);
+    var includeRuntime = options.includeRuntime !== false;
+    var canonical = _collectCanonicalHpNumbers(doc, fallbackHp);
+    var runtimeNumbers = _collectRuntimeHpNumbers(runtime);
+    var max = firstDefinedNumber.apply(null, includeRuntime ? canonical.max.concat(runtimeNumbers.max) : canonical.max);
     max = max > 0 ? max : 1;
-
-    var current = firstDefinedNumber(
-      doc.currentHP,
-      doc.currentHp,
-      rootHp.current,
-      vitals.currentHP,
-      vitals.currentHp,
-      combatVitals.currentHP,
-      combatVitals.currentHp,
-      runtimeHp.current,
-      runtimeCombat.currentHP,
-      runtimeCombat.currentHp,
-      fallbackHp.current,
-      max
-    );
+    var current = firstDefinedNumber.apply(null, includeRuntime ? canonical.current.concat(runtimeNumbers.current, [max]) : canonical.current.concat([max]));
     current = Math.max(0, Math.min(max, current));
-
-    var temp = firstDefinedNumber(
-      doc.tempHP,
-      doc.tempHp,
-      rootHp.temp,
-      vitals.tempHP,
-      vitals.tempHp,
-      combatVitals.tempHP,
-      combatVitals.tempHp,
-      runtimeHp.temp,
-      runtimeCombat.tempHP,
-      runtimeCombat.tempHp,
-      fallbackHp.temp,
-      0
-    );
+    var temp = firstDefinedNumber.apply(null, includeRuntime ? canonical.temp.concat(runtimeNumbers.temp, [0]) : canonical.temp.concat([0]));
     temp = Math.max(0, temp);
 
     return { max: max, current: current, temp: temp };
+  }
+
+  function rebuildRuntimeHp(nativeCharacter, nativeRuntime, fallback) {
+    var runtime = asObject(nativeRuntime);
+    var canonicalHp = resolveCanonicalHp(nativeCharacter, runtime, fallback, { includeRuntime: false });
+    return Object.assign({}, runtime, {
+      hp: {
+        max: canonicalHp.max,
+        current: canonicalHp.current,
+        temp: canonicalHp.temp,
+      },
+      combat: Object.assign({}, asObject(runtime.combat), {
+        maxHP: canonicalHp.max,
+        currentHP: canonicalHp.current,
+      }),
+    });
   }
 
   function firstDefinedNumber() {
@@ -785,39 +807,45 @@
       return out;
     }
 
-    out.charSheet = nativeToLegacyCharSheet(nativeCharacter, nativeRuntime, source.charSheet);
-    out.charBook = nativeToLegacyCharBook(nativeCharacter, nativeRuntime, source.charBook);
-    var runtimeHp = resolveCanonicalHp(nativeCharacter, nativeRuntime, {
-      max: asInt(out.charSheet && out.charSheet.maxHp, asInt(out.charBook && out.charBook.maxHp, asInt(out.hp, 1))),
-      current: asInt(out.charSheet && out.charSheet.currentHp, asInt(out.charBook && out.charBook.currentHp, asInt(out.curhp, asInt(out.hp, 1)))),
-      temp: asInt(out.charSheet && out.charSheet.tempHp, asInt(out.charBook && out.charBook.tempHp, asInt(out.tempHp, 0))),
+    var existingCharSheet = asObject(source.charSheet);
+    var existingCharBook = asObject(source.charBook);
+    var runtimeWithCanonicalHp = rebuildRuntimeHp(nativeCharacter, nativeRuntime, {
+      max: asInt(existingCharSheet.maxHp, asInt(existingCharBook.maxHp, asInt(out.hp, 1))),
+      current: asInt(existingCharSheet.currentHp, asInt(existingCharBook.currentHp, asInt(out.curhp, asInt(out.hp, 1)))),
+      temp: asInt(existingCharSheet.tempHp, asInt(existingCharBook.tempHp, asInt(out.tempHp, 0))),
     });
-    var runtimeSpeed = asObject(nativeRuntime.speed);
+    out.charSheet = nativeToLegacyCharSheet(nativeCharacter, runtimeWithCanonicalHp, source.charSheet);
+    out.charBook = nativeToLegacyCharBook(nativeCharacter, runtimeWithCanonicalHp, source.charBook);
+    var runtimeHp = asObject(runtimeWithCanonicalHp.hp);
+    var runtimeSpeed = asObject(runtimeWithCanonicalHp.speed);
     var mappedMaxHp = asInt(runtimeHp.max, asInt(out.charSheet && out.charSheet.maxHp, asInt(out.charBook && out.charBook.maxHp, asInt(out.hp, 0))));
     var mappedCurrentHp = asInt(runtimeHp.current, asInt(out.charSheet && out.charSheet.currentHp, asInt(out.charBook && out.charBook.currentHp, mappedMaxHp)));
     var mappedTempHp = asInt(runtimeHp.temp, asInt(out.charSheet && out.charSheet.tempHp, asInt(out.charBook && out.charBook.tempHp, asInt(out.tempHp, 0))));
     out.hp = mappedMaxHp;
     out.curhp = mappedCurrentHp;
     out.tempHp = mappedTempHp;
-    out.nativeRuntime = Object.assign({}, asObject(out.nativeRuntime), {
+    out.nativeRuntime = Object.assign({}, asObject(out.nativeRuntime), runtimeWithCanonicalHp, {
       hp: { max: mappedMaxHp, current: mappedCurrentHp, temp: mappedTempHp },
       combat: Object.assign({}, asObject(asObject(out.nativeRuntime).combat), {
         maxHP: mappedMaxHp,
         currentHP: mappedCurrentHp,
+      }, asObject(runtimeWithCanonicalHp.combat), {
+        maxHP: mappedMaxHp,
+        currentHP: mappedCurrentHp,
       }),
     });
-    var runtimeCombat = asObject(nativeRuntime.combat);
+    var runtimeCombat = asObject(runtimeWithCanonicalHp.combat);
     if (runtimeCombat.ac !== undefined && runtimeCombat.ac !== null) {
       out.ac = asInt(runtimeCombat.ac, asInt(out.ac, 0));
-    } else if (nativeRuntime.ac !== undefined && nativeRuntime.ac !== null) {
-      out.ac = asInt(nativeRuntime.ac, asInt(out.ac, 0));
+    } else if (runtimeWithCanonicalHp.ac !== undefined && runtimeWithCanonicalHp.ac !== null) {
+      out.ac = asInt(runtimeWithCanonicalHp.ac, asInt(out.ac, 0));
     }
     if (runtimeCombat.initiative !== undefined && runtimeCombat.initiative !== null) {
       out.initiative = asInt(runtimeCombat.initiative, asInt(out.initiative, 0));
     }
     var mappedSpeed = asInt(runtimeCombat.speed, asInt(runtimeSpeed.walk, asInt(out.speed, 0)));
     if (mappedSpeed > 0) out.speed = mappedSpeed;
-    var mappedLevel = asInt(nativeRuntime.levelTotal, asInt(out.charSheet && out.charSheet.totalLevel, asInt(out.level, 0)));
+    var mappedLevel = asInt(runtimeWithCanonicalHp.levelTotal, asInt(out.charSheet && out.charSheet.totalLevel, asInt(out.level, 0)));
     if (mappedLevel > 0) out.level = mappedLevel;
     out.__nativeMapped = true;
     return out;
