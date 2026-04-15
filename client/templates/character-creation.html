@@ -1146,6 +1146,14 @@ function buildAvatarOptions(extra) {
   }, extra || {});
 }
 
+function isLegacyAutoPortraitUrl(url) {
+  const value = String(url || '').trim().toLowerCase();
+  if (!value) return false;
+  return value.startsWith('/static/importer/portraits/class/')
+    || value.startsWith('/static/importer/portraits/species/')
+    || value.startsWith('/static/importer/portraits/classes/');
+}
+
 function resolveClassPortraitUrl(klass) {
   if (!klass || typeof klass !== 'object') return '';
   const explicit = String(
@@ -1157,7 +1165,7 @@ function resolveClassPortraitUrl(klass) {
     || klass.image
     || ''
   ).trim();
-  if (explicit) return explicit;
+  if (explicit && !isLegacyAutoPortraitUrl(explicit)) return explicit;
   return '';
 }
 
@@ -1169,7 +1177,7 @@ function resolveMainPortraitUrl() {
     || hero.portraitUrl
     || ''
   ).trim();
-  if (customPortrait) return customPortrait;
+  if (customPortrait && !isLegacyAutoPortraitUrl(customPortrait)) return customPortrait;
   const portraits = window.CasualDnDPortraitLibrary || null;
   if (portraits && typeof portraits.resolve === 'function') {
     const comboPortrait = String(portraits.resolve(buildAvatarOptions()) || '').trim();
