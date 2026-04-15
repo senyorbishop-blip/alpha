@@ -95,8 +95,8 @@
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: stretch;
-      padding: 0 1rem;
-      gap: 1rem;
+      padding: 0 0.65rem;
+      gap: 0.6rem;
       z-index: 100;
     }
     #topbar-title {
@@ -1545,6 +1545,7 @@
       flex-wrap: wrap;
       gap: 0.24rem;
       justify-content: flex-end;
+      min-width: 0;
     }
     .player-action-badge {
       font-size: 0.52rem;
@@ -1553,7 +1554,9 @@
       border-radius: 999px;
       padding: 0.14rem 0.36rem;
       color: var(--gold-dim);
-      white-space: nowrap;
+      white-space: normal;
+      word-break: break-word;
+      max-width: 100%;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       background: rgba(201,162,39,0.08);
@@ -1682,6 +1685,8 @@
       display: flex;
       flex-wrap: wrap;
       gap: 0.28rem;
+      align-items: flex-start;
+      overflow: hidden;
     }
     .char-state-chip {
       display: inline-flex;
@@ -1695,7 +1700,8 @@
       font-size: 0.58rem;
       line-height: 1.2;
       max-width: 100%;
-      white-space: nowrap;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
     .char-state-chip.temp {
       border-style: dashed;
@@ -2714,8 +2720,8 @@
       text-transform: uppercase;
       color: var(--gold);
       opacity: 0.7;
-      margin-bottom: 0.5rem;
-      margin-top: 0.4rem;
+      margin-bottom: 0.32rem;
+      margin-top: 0.28rem;
     }
     .char-personalization-grid {
       display: grid;
@@ -5715,8 +5721,8 @@
       display: none;
       flex-direction: column;
       gap: 0.45rem;
-      margin: 0 0 0.55rem 0;
-      padding: 0.55rem 0.6rem;
+      margin: 0 0 0.35rem 0;
+      padding: 0.45rem 0.5rem;
       border: 1px solid rgba(0,229,204,0.18);
       border-radius: 8px;
       background: linear-gradient(180deg, rgba(0,229,204,0.08), rgba(8,12,20,0.75));
@@ -7087,14 +7093,17 @@
   <div class="rail-divider"></div>
 
   <!-- Flyout toggle buttons -->
-  <button class="rail-btn" id="rail-dice-btn" onclick="toggleFlyout('flyout-dice')">
-    🎲<span class="rail-tooltip">Dice Tray</span>
-  </button>
   <button class="rail-btn" id="rail-token-btn" onclick="toggleFlyout('flyout-token')" style="display:none;">
     🪙<span class="rail-tooltip">Create Token</span>
   </button>
   <button class="rail-btn" id="rail-char-btn" onclick="toggleFlyout('flyout-char')" style="display:none;">
     🛡<span class="rail-tooltip">My Character</span>
+  </button>
+  <button class="rail-btn" id="rail-char-token-btn" onclick="toggleFlyout('flyout-char-token')" style="display:none;">
+    🎭<span class="rail-tooltip">Token</span>
+  </button>
+  <button class="rail-btn" id="rail-dice-btn" onclick="toggleFlyout('flyout-dice')">
+    🎲<span class="rail-tooltip">Dice Tray</span>
   </button>
   <button class="rail-btn" id="rail-journal-btn" onclick="toggleFlyout('flyout-journal')">
     📚<span class="rail-tooltip">Journal & Handouts</span>
@@ -7333,62 +7342,32 @@
     </div>
     <div class="char-section-title">Name</div>
     <input type="text" class="char-name-input" id="char-name" placeholder="Character name…" maxlength="24" oninput="refreshCharSummary()" />
-    <div class="char-section-title">Class</div>
-    <div class="char-class-grid" id="class-grid"></div>
-    <div style="display:flex;gap:0.4rem;margin-bottom:0.4rem;">
-      <div style="flex:1;">
-        <div class="char-section-title">Current HP</div>
-        <input type="number" class="mini-input" id="char-curhp" placeholder="e.g. 34" min="0" max="999" oninput="refreshCharSummary()"
-          style="width:100%;text-align:center;" />
-      </div>
-      <div style="flex:1;">
-        <div class="char-section-title">Max HP</div>
-        <input type="number" class="mini-input" id="char-hp" placeholder="e.g. 38" min="1" max="999" oninput="refreshCharSummary()"
-          style="width:100%;text-align:center;" />
-      </div>
-    </div>
-    <div style="display:flex;gap:0.4rem;margin-bottom:0.4rem;">
-      <div style="flex:1;">
-        <div class="char-section-title">Temp HP</div>
-        <input type="number" class="mini-input" id="char-temp-hp" placeholder="0" min="0" max="999" oninput="refreshCharSummary()"
-          style="width:100%;text-align:center;" />
-      </div>
-      <div style="flex:1;">
-        <div class="char-section-title">Initiative</div>
-        <input type="number" class="mini-input" id="char-initiative" placeholder="+2" min="-20" max="30" oninput="refreshCharSummary()"
-          style="width:100%;text-align:center;" />
-      </div>
-    </div>
-    <div style="display:flex;gap:0.4rem;margin-bottom:0.4rem;">
-      <div style="flex:1;">
-        <div class="char-section-title">AC</div>
-        <input type="number" class="mini-input" id="char-ac" placeholder="15" min="0" max="99" oninput="refreshCharSummary()"
-          style="width:100%;text-align:center;" />
-      </div>
-      <div style="flex:1;">
-        <div class="char-section-title">Speed</div>
-        <input type="number" class="mini-input" id="char-speed" placeholder="30" min="0" max="300" oninput="refreshCharSummary()"
-          style="width:100%;text-align:center;" />
-      </div>
-    </div>
-    <div style="display:flex;gap:0.4rem;margin-bottom:0.4rem;">
-      <div style="flex:1;">
-        <div class="char-section-title">Level</div>
-        <input type="number" class="mini-input" id="char-level" placeholder="1" min="0" max="30"
-          style="width:100%;text-align:center;" />
-      </div>
-      <div style="flex:1;">
-        <div class="char-section-title">Passive Perception</div>
-        <input type="number" class="mini-input" id="char-passive" placeholder="10" min="0" max="99"
-          style="width:100%;text-align:center;" />
-      </div>
-    </div>
-    <div class="char-section-title">Faction</div>
-    <input type="text" class="mini-input" id="char-faction" placeholder="Party / Faction"
-      maxlength="32" style="width:100%;margin-bottom:0.4rem;" />
     <div class="char-section-title">Notes</div>
     <textarea class="mini-input" id="char-notes" placeholder="Token notes…"
       style="width:100%;min-height:64px;resize:vertical;margin-bottom:0.45rem;padding:0.45rem;"></textarea>
+    <div class="char-section-title">Character Workflow</div>
+    <div style="margin-bottom:0.5rem;padding:0.45rem 0.55rem;border:1px solid rgba(0,229,204,0.22);border-radius:6px;background:rgba(0,229,204,0.05);font-size:0.64rem;color:var(--parchment-dim);line-height:1.45;">
+      1) Load or save a profile → 2) Open Character Book for details/imports → 3) Use <strong style="color:var(--gold);">Level Up Planner</strong> for guided progression.
+    </div>
+    <div style="display:flex;gap:0.4rem;margin-bottom:0.45rem;">
+      <button class="mini-btn" type="button" onclick="openCharacterBook('premiumsheet')" style="flex:1;">Open Character Book</button>
+      <button class="mini-btn" type="button" onclick="openCharacterBook('import')" style="flex:1;">Import Character</button>
+    </div>
+    <div style="display:flex;gap:0.4rem;margin-bottom:0.5rem;">
+      <button class="mini-btn" type="button" onclick="openCharacterLevelupPlanner()" style="flex:1;background:rgba(0,229,204,0.12);border-color:rgba(0,229,204,0.42);color:#9ff6ea;">✨ Level Up Planner</button>
+    </div>
+  </div>
+</div>
+
+<div class="flyout" id="flyout-char-token">
+  <div class="sidebar-section">
+    <div class="sidebar-label">Token</div>
+    <input type="number" class="mini-input" id="char-curhp" placeholder="Current HP" min="0" max="999" oninput="refreshCharSummary()" style="margin-bottom:0.35rem;text-align:center;" />
+    <input type="number" class="mini-input" id="char-hp" placeholder="Max HP" min="1" max="999" oninput="refreshCharSummary()" style="margin-bottom:0.35rem;text-align:center;" />
+    <input type="number" class="mini-input" id="char-temp-hp" placeholder="Temp HP" min="0" max="999" oninput="refreshCharSummary()" style="margin-bottom:0.35rem;text-align:center;" />
+    <input type="number" class="mini-input" id="char-ac" placeholder="AC" min="0" max="99" oninput="refreshCharSummary()" style="margin-bottom:0.35rem;text-align:center;" />
+    <input type="number" class="mini-input" id="char-initiative" placeholder="Initiative" min="-20" max="30" oninput="refreshCharSummary()" style="margin-bottom:0.35rem;text-align:center;" />
+    <input type="number" class="mini-input" id="char-speed" placeholder="Speed" min="0" max="300" oninput="refreshCharSummary()" style="margin-bottom:0.45rem;text-align:center;" />
     <div class="char-section-title">Token Image</div>
     <label style="display:flex;flex-direction:column;gap:0.22rem;font-size:0.62rem;color:var(--parchment-dim);margin-bottom:0.45rem;">
       Upload portrait / token art
@@ -7408,31 +7387,10 @@
       <div class="char-identity-preview-name" id="char-identity-preview-name">Adventurer</div>
       <div class="char-identity-preview-tagline" id="char-identity-preview-tagline">Add a quote for extra flavor.</div>
     </div>
-    <div class="char-section-title">Character Workflow</div>
-    <div style="margin-bottom:0.5rem;padding:0.45rem 0.55rem;border:1px solid rgba(0,229,204,0.22);border-radius:6px;background:rgba(0,229,204,0.05);font-size:0.64rem;color:var(--parchment-dim);line-height:1.45;">
-      1) Load or save a profile → 2) Open Character Book for details/imports → 3) Use <strong style="color:var(--gold);">Level Up Planner</strong> for guided progression.
-    </div>
-    <div style="display:flex;gap:0.4rem;margin-bottom:0.45rem;">
-      <button class="mini-btn" type="button" onclick="openCharacterBook('premiumsheet')" style="flex:1;">Open Character Book</button>
-      <button class="mini-btn" type="button" onclick="openCharacterBook('import')" style="flex:1;">Import Character</button>
-    </div>
-    <div style="display:flex;gap:0.4rem;margin-bottom:0.5rem;">
-      <button class="mini-btn" type="button" onclick="openCharacterLevelupPlanner()" style="flex:1;background:rgba(0,229,204,0.12);border-color:rgba(0,229,204,0.42);color:#9ff6ea;">✨ Level Up Planner</button>
-    </div>
-    <div class="char-section-title">Saved Profiles</div>
-    <div style="display:flex;gap:0.4rem;margin-bottom:0.45rem;">
-      <select class="mini-input" id="char-profile-select" style="flex:1;" onchange="loadSelectedCharProfile({ silent: true })"></select>
-      <button class="mini-btn" type="button" onclick="loadSelectedCharProfile()" style="white-space:nowrap;">Load</button>
-    </div>
-    <div style="display:flex;gap:0.4rem;margin-bottom:0.45rem;">
-      <button class="mini-btn" type="button" onclick="saveCurrentCharProfile()" style="flex:1;">Save Profile</button>
-      <button class="mini-btn" type="button" onclick="deleteSelectedCharProfile()" style="flex:1;background:rgba(231,76,60,0.12);border-color:rgba(231,76,60,0.35);color:#f0b0aa;">Delete</button>
-    </div>
-    <div style="display:flex;gap:0.4rem;margin-bottom:0.45rem;">
-      <button class="mini-btn" type="button" onclick="saveCurrentCharProfileAsNew()" style="flex:1;">Save as New Character</button>
-    </div>
+    <input type="hidden" id="char-level" value="1" />
+    <input type="hidden" id="char-passive" value="10" />
+    <input type="hidden" id="char-faction" value="" />
     <button class="place-char-btn" onclick="placeCharacter()">🛡 Place My Character</button>
-    <button class="place-char-btn" id="char-update-btn" onclick="updateMyChar()" style="margin-top:0.4rem;background:rgba(0,229,204,0.12);border-color:rgba(0,229,204,0.4);color:var(--accent);">✔ Update Stats</button>
   </div>
 </div>
 
@@ -8528,8 +8486,6 @@
 
 <!-- ── RIGHT SIDEBAR ── -->
 <div id="sidebar-right">
-  <div id="player-dashboard-shell" aria-hidden="true"></div>
-
   <!-- Tab bar -->
   <div id="right-tab-bar" role="tablist" aria-label="Right panel tabs" style="position:relative;">
     <button class="rtab active" id="rtab-party" role="tab" type="button" aria-controls="rtab-pane-party" data-rtab-target="party">
@@ -11289,13 +11245,14 @@ const _JOURNAL_CAT_COLORS = {
 };
 
 // Flyout panel IDs (declared early to avoid TDZ errors in closeAllFlyouts / toggleFlyout)
-const _flyoutIds = ['flyout-dice','flyout-ruler','flyout-spell','flyout-token','flyout-char','flyout-journal','flyout-editor','flyout-map','flyout-perm','flyout-fog','flyout-sound','flyout-assistant','flyout-cart'];
+const _flyoutIds = ['flyout-dice','flyout-ruler','flyout-spell','flyout-token','flyout-char','flyout-char-token','flyout-journal','flyout-editor','flyout-map','flyout-perm','flyout-fog','flyout-sound','flyout-assistant','flyout-cart'];
 const _flyoutBtnMap = {
   'flyout-dice':  'rail-dice-btn',
   'flyout-ruler': 'tool-ruler',
   'flyout-spell': 'tool-spell',
   'flyout-token': 'rail-token-btn',
   'flyout-char':  'rail-char-btn',
+  'flyout-char-token': 'rail-char-token-btn',
   'flyout-journal': 'rail-journal-btn',
   'flyout-editor': 'rail-editor-btn',
   'flyout-map':   'rail-map-btn',
@@ -11648,13 +11605,14 @@ function initUI() {
   if (ROLE === 'player') {
     const charBtn = document.getElementById('rail-char-btn');
     if (charBtn) charBtn.style.display = 'flex';
+    const tokenBtn = document.getElementById('rail-char-token-btn');
+    if (tokenBtn) tokenBtn.style.display = 'flex';
     refreshCharProfileSelect();
     renderTokenEmotePanel();
     if (_charSheet) {
       const stb = document.getElementById('sheet-toggle-btn');
       if (stb) stb.style.display = 'block';
     }
-    buildClassGrid();
     buildPlayerColorSwatches();
     applyPlayerPersonalizationTheme();
     refreshIdentityPreviewCard();
@@ -17808,8 +17766,10 @@ function drawToken(t) {
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#ffffff';
     const iconX = bubbleX - bubbleW / 2 + 7 / cam.zoom;
-    const textX = iconX + 12 / cam.zoom;
-    ctx.fillText(String(activeEmote.icon || ''), iconX, bubbleY + bubbleH / 2 + 0.2 / cam.zoom);
+    const iconText = String(activeEmote.icon || '');
+    const iconWidth = Math.max(10 / cam.zoom, ctx.measureText(iconText).width);
+    const textX = iconX + iconWidth + 4 / cam.zoom;
+    ctx.fillText(iconText, iconX, bubbleY + bubbleH / 2 + 0.2 / cam.zoom);
     if (labelText) {
       ctx.font = `${Math.max(8, 9 / cam.zoom)}px system-ui, sans-serif`;
       ctx.fillStyle = 'rgba(245,240,225,0.96)';
@@ -24555,23 +24515,44 @@ function buildHpSummaryValues(curValue, maxValue, tempValue) {
   };
 }
 
+function getActivePlayerCharacterSnapshot() {
+  const ownedToken = _getMyOwnedToken();
+  const profile = _partyStatusActiveProfile();
+  const readInput = (id) => document.getElementById(id)?.value;
+  const parseNum = (value, fallback = null) => {
+    const n = parseInt(value, 10);
+    return Number.isNaN(n) ? fallback : n;
+  };
+  const rawName = String(
+    ownedToken?.name
+    || readInput('char-name')
+    || _charSheet?.name
+    || profile?.name
+    || NAME
+    || 'Adventurer'
+  ).trim();
+  return {
+    name: _stripClassIcon(rawName),
+    currentHp: parseNum(ownedToken?.hp, parseNum(readInput('char-curhp'), parseNum(_charSheet?.currentHp, parseNum(profile?.curhp, null)))),
+    maxHp: parseNum(ownedToken?.maxHp, parseNum(readInput('char-hp'), parseNum(_charSheet?.maxHp, parseNum(profile?.hp, null)))),
+    tempHp: parseNum(ownedToken?.tempHp, parseNum(readInput('char-temp-hp'), parseNum(_charSheet?.tempHp, parseNum(profile?.tempHp, 0)))),
+    ac: parseNum(ownedToken?.ac, parseNum(readInput('char-ac'), parseNum(_charSheet?.ac, parseNum(profile?.ac, null)))),
+    initiative: parseNum(ownedToken?.initiativeMod, parseNum(readInput('char-initiative'), parseNum(_charSheet?.initiative, parseNum(profile?.initiative, 0)))),
+    speed: parseNum(ownedToken?.speed, parseNum(readInput('char-speed'), parseNum(_charSheet?.speed, parseNum(profile?.speed, null)))),
+  };
+}
+
 function refreshCharSummary() {
-  const name = (document.getElementById('char-name')?.value || _charSheet?.name || NAME || 'Adventurer').trim() || 'Adventurer';
-  const curHp = document.getElementById('char-curhp')?.value || _charSheet?.currentHp || '—';
-  const maxHp = document.getElementById('char-hp')?.value || _charSheet?.maxHp || '—';
-  const tempHp = document.getElementById('char-temp-hp')?.value || _charSheet?.tempHp || 0;
-  const ac = document.getElementById('char-ac')?.value || _charSheet?.ac || '—';
-  const init = document.getElementById('char-initiative')?.value ?? _charSheet?.initiative ?? 0;
-  const speed = document.getElementById('char-speed')?.value || _charSheet?.speed || '—';
-  const hpSummary = buildHpSummaryValues(curHp, maxHp, tempHp);
+  const snapshot = getActivePlayerCharacterSnapshot();
+  const hpSummary = buildHpSummaryValues(snapshot.currentHp, snapshot.maxHp, snapshot.tempHp);
   const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
-  set('char-summary-name', name);
+  set('char-summary-name', snapshot.name || 'Adventurer');
   set('char-summary-hp', hpSummary.hpText);
   set('char-summary-temp', hpSummary.tempText);
   set('char-summary-total', hpSummary.totalText);
-  set('char-summary-ac', `${ac}`);
-  set('char-summary-init', formatSignedSummaryValue(init));
-  set('char-summary-speed', `${speed}`);
+  set('char-summary-ac', `${snapshot.ac ?? '—'}`);
+  set('char-summary-init', formatSignedSummaryValue(snapshot.initiative ?? 0));
+  set('char-summary-speed', `${snapshot.speed ?? '—'}`);
   if (_runtimeStore && typeof _runtimeStore.set === 'function' && _charSheet) {
     _runtimeStore.set('charSheet', _charSheet);
   }
@@ -24649,8 +24630,8 @@ function openMyTokenStats(tok) {
   }
 
   // Open the flyout
-  const flyout = document.getElementById('flyout-char');
-  if (flyout && !flyout.classList.contains('open')) toggleFlyout('flyout-char');
+  const flyout = document.getElementById('flyout-char-token');
+  if (flyout && !flyout.classList.contains('open')) toggleFlyout('flyout-char-token');
 
   // Also open the sheet panel if we have sheet data
   if (_charSheet) requestCharacterBookOverviewRender('openMyTokenStats');
@@ -24725,7 +24706,7 @@ function placeCharacter() {
     }
     existingTok.tempHp = tempHpVal;
     existingTok.initiativeMod = initVal;
-    existingTok.name = (selectedClass && selectedClass.icon ? selectedClass.icon + ' ' : 'P ') + name;
+    existingTok.name = name;
     existingTok.ac = acVal;
     existingTok.speed = speedVal;
     existingTok.hasDarkvision = speciesHasDarkvision;
@@ -24736,7 +24717,7 @@ function placeCharacter() {
     existingTok.notes = notesVal;
     sendWS({ type: 'token_edit', payload: {
       token_id: updateTokId,
-      name: (selectedClass && selectedClass.icon ? selectedClass.icon + ' ' : 'P ') + name,
+      name: name,
       initiativeMod: initVal,
       tempHp: tempHpVal,
       ac: acVal,
@@ -24780,7 +24761,7 @@ function placeCharacter() {
     return;
   }
 
-  const tokenName = (selectedClass && selectedClass.icon ? selectedClass.icon + ' ' : '') + name;
+  const tokenName = name;
   const mapCtx = ROLE === 'dm'
     ? (_currentPoi ? (_currentPoi.id || '__local__') : 'world')
     : _dmMapContext;
@@ -30906,18 +30887,26 @@ function handleLegacyMessage(msg) {
     }
 
     case 'char_hp_update': {
-      // Update the token HP on the map for all clients
-      const targetToken = Object.values(tokens).find(t => t.owner_id === p.user_id);
-      if (targetToken) {
-        targetToken.hp    = p.hp;
-        targetToken.maxHp = p.maxHp;
-        _cacheTokenByContext(targetToken);
+      // Update all owned tokens for the player so sidebar + token HUD stay in lock-step.
+      [...Object.values(tokens), ...Object.values(_stagingTokens)]
+        .filter(t => String(t?.owner_id || '') === String(p.user_id || ''))
+        .forEach((targetToken) => {
+          targetToken.hp = p.hp;
+          targetToken.maxHp = p.maxHp;
+          _cacheTokenByContext(targetToken);
+        });
+      if (String(p.user_id || '') === String(USER_ID || '')) {
+        if (!_charSheet) _charSheet = {};
+        _charSheet.currentHp = p.hp;
+        _charSheet.maxHp = p.maxHp;
+        syncMyCharacterFormFromToken();
       }
       // Show in combat log
       const hpEntry = { id: 'hp_'+Date.now(), type:'system', user: p.name,
         message: `HP: ${p.hp} / ${p.maxHp}`, timestamp: Date.now()/1000 };
       appendLog(hpEntry);
       if (ROLE === 'dm') addDmNotif(`${p.name}: ${p.hp}/${p.maxHp} HP`);
+      refreshCharSummary();
       renderPartyStatusPanel();
       break;
     }
@@ -35631,8 +35620,8 @@ function openMyTokenPanel() {
                 Object.values(_stagingTokens).find(t => _tokenOwnedByMe(t));
   if (myTok) { openMyTokenStats(myTok); return; }
   // No token yet — just open the flyout pre-filled from charSheet
-  const flyout = document.getElementById('flyout-char');
-  if (flyout && !flyout.classList.contains('open')) toggleFlyout('flyout-char');
+  const flyout = document.getElementById('flyout-char-token');
+  if (flyout && !flyout.classList.contains('open')) toggleFlyout('flyout-char-token');
 }
 
 function syncMyCharacterFormFromToken(preferVisible = true) {
@@ -35768,7 +35757,7 @@ function updateMyChar() {
     }
     myTok.initiativeMod = init;
     myTok.tempHp = tempHp;
-    myTok.name = (selectedClass && selectedClass.icon ? selectedClass.icon + ' ' : 'P ') + name;
+    myTok.name = name;
     myTok.ac = ac;
     myTok.speed = speed;
     myTok.level = level;
@@ -35777,7 +35766,7 @@ function updateMyChar() {
     myTok.notes = notes;
     sendWS({ type: 'token_edit', payload: {
       token_id: myTok.id,
-      name: (selectedClass && selectedClass.icon ? selectedClass.icon + ' ' : 'P ') + name,
+      name: name,
       initiativeMod: init,
       tempHp: tempHp,
       ac: ac,
@@ -37873,6 +37862,7 @@ function applyCharProfileRecord(p, opts = {}) {
   syncActiveCharProfileSelection(profile.id);
   persistCurrentCharProfileDraft(collectCurrentCharProfile({ profileId: profile.id }));
   _syncLoadedProfileToOwnedToken(profile);
+  syncMyCharacterFormFromToken();
   setTimeout(() => { try { renderPartyStatusPanel(); } catch {} }, 0);
   if (!opts.silent) showToast(`Loaded profile: ${profile.name}`);
 }
