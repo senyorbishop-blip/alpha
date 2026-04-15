@@ -972,10 +972,27 @@ function normalizeCatalogSpecies(items) {
 }
 
 function normalizeCatalogBackgrounds(items) {
+  const isSystemPlaceholder = (value) => {
+    const text = String(value || '').trim().toLowerCase();
+    if (!text) return true;
+    return (
+      text === 'background data loaded from rules catalog.'
+      || text.includes('loaded from rules catalog')
+      || text.includes('rules source')
+      || text.includes('catalog data')
+      || text.includes('debug')
+      || text.includes('placeholder')
+      || text.includes('internal')
+      || text.includes('system')
+    );
+  };
   const rows = (Array.isArray(items) ? items : []).map((item) => ({
     id: String(item.id || item.name || '').trim().toLowerCase().replace(/\s+/g, '-'),
     name: item.displayName || item.name || item.id || 'Background',
-    summary: item.summary || item.featureSummary || item.description || 'Background data loaded from rules catalog.',
+    summary: (() => {
+      const value = String(item.summary || item.featureSummary || item.description || '').trim();
+      return isSystemPlaceholder(value) ? '' : value;
+    })(),
     skillProficiencies: Array.isArray(item.skillProficiencies) ? item.skillProficiencies : [],
     toolProficiencies: Array.isArray(item.toolProficiencies) ? item.toolProficiencies : (item.toolProficiency ? [item.toolProficiency] : []),
     languages: Array.isArray(item.languages) ? item.languages : [],
@@ -1141,30 +1158,7 @@ function resolveClassPortraitUrl(klass) {
     || ''
   ).trim();
   if (explicit) return explicit;
-  const portraits = window.CasualDnDPortraitLibrary || null;
-  const normalizeClassAssetKey = (value) => {
-    const raw = String(value || '').trim().toLowerCase();
-    if (!raw) return '';
-    const compact = raw.replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '');
-    const aliases = {
-      bloodhunter: 'blood-hunter',
-      artificer: 'tinker',
-      bowman: 'ranger',
-      mage: 'wizard',
-      warrior: 'fighter',
-      thief: 'rogue',
-    };
-    const normalized = aliases[compact] || compact;
-    return normalized.replace(/[^a-z0-9]+/g, '-');
-  };
-  const classId = normalizeClassAssetKey(klass.id || '');
-  const className = normalizeClassAssetKey(klass.displayName || klass.name || '');
-  const classKey = classId || className;
-  if (!classKey) return '';
-  if (portraits && portraits.manifest && portraits.manifest.classes && portraits.manifest.classes[classKey]) {
-    return String(portraits.manifest.classes[classKey] || '').trim();
-  }
-  return `/static/importer/portraits/class/${classKey}.png`;
+  return '';
 }
 
 function resolveMainPortraitUrl() {
@@ -1176,6 +1170,11 @@ function resolveMainPortraitUrl() {
     || ''
   ).trim();
   if (customPortrait) return customPortrait;
+  const portraits = window.CasualDnDPortraitLibrary || null;
+  if (portraits && typeof portraits.resolve === 'function') {
+    const comboPortrait = String(portraits.resolve(buildAvatarOptions()) || '').trim();
+    if (comboPortrait) return comboPortrait;
+  }
   const classPortrait = resolveClassPortraitUrl(selectedClass() || {});
   if (classPortrait) return classPortrait;
   return '';
@@ -1202,7 +1201,10 @@ function renderAvatarSVG(size = 250) {
   }
   const mainPortrait = resolveMainPortraitUrl();
   const imageMarkup = mainPortrait
-    ? `<img src="${escapeHtml(mainPortrait)}" alt="Hero portrait" width="${size}" height="${Math.round(size * 1.24)}" style="border-radius:24px;object-fit:cover;display:block;" />`
+    ? `<div style="position:relative;display:grid;place-items:center;">
+        <img src="${escapeHtml(mainPortrait)}" alt="" width="${size}" height="${Math.round(size * 1.24)}" style="border-radius:24px;object-fit:cover;display:block;" onerror="this.style.display='none';var fb=this.nextElementSibling;if(fb)fb.style.display='grid';" />
+        <div style="display:none;">${fallbackPortraitMarkup(size)}</div>
+      </div>`
     : fallbackPortraitMarkup(size);
   return `
   <div class="portrait-panel">
@@ -1292,9 +1294,12 @@ function renderOptionCard(item, type, selectedId) {
 function renderBackgroundListItem(item, selectedId) {
   const id = item.id;
   const isSelected = id === selectedId;
-  const summary = item.summary || item.description || 'Background details available after selection.';
+  const summary = String(item.summary || item.description || '').trim();
   return `<button type="button" class="option-card class-card compact${isSelected ? ' selected' : ''}" data-option-type="background" data-option-id="${escapeHtml(id)}" style="padding:12px;min-height:98px">
-    <div><h3 style="margin:0 0 4px;font-size:0.94rem">${escapeHtml(backgroundDisplayName(item))}</h3><p style="margin:0;font-size:0.78rem;line-height:1.38">${escapeHtml(summary)}</p></div>
+    <div style="display:grid;gap:4px;min-height:72px;align-content:start;">
+      <h3 style="margin:0;font-size:0.94rem">${escapeHtml(backgroundDisplayName(item))}</h3>
+      ${summary ? `<p style="margin:0;font-size:0.78rem;line-height:1.38">${escapeHtml(summary)}</p>` : '<div style="min-height:1.38em;"></div>'}
+    </div>
   </button>`;
 }
 function renderBackgroundDetail(bg) {
@@ -1304,7 +1309,7 @@ function renderBackgroundDetail(bg) {
   const langs = Array.isArray(bg.languages) ? bg.languages : [];
   return `<div class="detail-block"><h4>${escapeHtml(backgroundDisplayName(bg))}</h4><p>${escapeHtml(bg.summary || bg.description || 'Origin details for this background.')}</p></div>
     <div class="class-sections"><div class="detail-block"><h4>Proficiencies</h4><p>${escapeHtml(skills.join(', ') || 'No listed skill proficiencies in current rules data.')}</p><p>${escapeHtml(tools.join(', ') || 'No listed tool proficiencies.')}</p></div>
-    <div class="detail-block"><h4>Roleplay hooks</h4><p>${escapeHtml(bg.featureSummary || bg.originFeat || 'Background roleplay hook data is not yet populated in this rules source.')}</p><p>${escapeHtml(langs.length ? ('Suggested languages: ' + langs.join(', ')) : 'Add custom notes below to carry this origin into sheet notes.')}</p>
+    <div class="detail-block"><h4>Roleplay hooks</h4><p>${escapeHtml(bg.featureSummary || bg.originFeat || 'Use this origin to anchor your goals, allies, and story hooks.')}</p><p>${escapeHtml(langs.length ? ('Suggested languages: ' + langs.join(', ')) : 'Add custom notes below to carry this origin into your sheet notes.')}</p>
     <div class="field" style="margin-top:10px"><label>Background Notes</label><textarea class="textarea" id="hero-notes" placeholder="How does this background shape your goals in this campaign?">${escapeHtml(state.hero.notes || '')}</textarea></div></div></div>`;
 }
 
