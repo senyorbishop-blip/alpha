@@ -85,6 +85,10 @@
     return key;
   }
 
+  function resolveOwnerLabel() {
+    return 'Saved in your profile library';
+  }
+
   function normalizeCharacterEntries(entries) {
     const list = Array.isArray(entries) ? entries : [];
     return list
@@ -115,7 +119,7 @@
           level: level,
           sourceMode: sourceMode,
           sourceBadge: formatSourceBadge(sourceMode),
-          ownerLabel: classSummary || 'Saved in your profile library',
+          ownerLabel: resolveOwnerLabel(),
           nativeCharacter: native || null,
           tokenImageUrl: String(identity.tokenImageUrl || identity.portraitUrl || '').trim(),
           speciesId: String(species.id || '').trim().toLowerCase(),
