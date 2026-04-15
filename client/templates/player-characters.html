@@ -64,8 +64,8 @@
       max-width: 1360px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: 0.94fr 1.06fr;
-      gap: 32px;
+      grid-template-columns: 1fr;
+      gap: 22px;
       align-items: start;
     }
     .hero, .panel {
@@ -85,11 +85,12 @@
       background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent 28%, transparent 72%, rgba(255,255,255,0.03));
     }
     .hero {
-      min-height: calc(100vh - 98px);
+      min-height: auto;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      padding: 34px 34px 30px;
+      justify-content: flex-start;
+      padding: 24px 26px;
+      gap: 14px;
     }
     .eyebrow {
       display: inline-flex;
@@ -125,7 +126,7 @@
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px;
-      margin-top: 34px;
+      margin-top: 6px;
     }
     .summary-card {
       padding: 18px 18px 16px;
@@ -152,7 +153,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 16px;
-      margin-top: 36px;
+      margin-top: 4px;
       color: rgba(243, 229, 205, 0.8);
       font-size: 1rem;
     }
@@ -325,6 +326,25 @@
       font-weight: 700;
       transition: all 160ms ease;
     }
+    .card-controls {
+      display: grid;
+      gap: 8px;
+      justify-items: end;
+      align-items: center;
+    }
+    .delete-btn {
+      border: 1px solid rgba(255, 141, 141, 0.28);
+      background: rgba(70, 14, 14, 0.54);
+      color: #ffd6d6;
+      border-radius: 999px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.66rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 7px 10px;
+      line-height: 1;
+      cursor: pointer;
+    }
     .character-card.selected .character-check {
       color: #091010;
       background: linear-gradient(180deg, #b7f1ec, #78d6cc);
@@ -389,7 +409,6 @@
       font-size: 0.96rem;
     }
     @media (max-width: 1120px) {
-      .layout { grid-template-columns: 1fr; }
       .hero, .panel { min-height: auto; }
       .summary-grid { grid-template-columns: 1fr; }
       .status-stack { min-width: 0; }
@@ -410,21 +429,21 @@
     <div class="layout">
       <section class="hero">
         <div>
-          <div class="eyebrow">Player Invite Route · New Hero Gateway</div>
+          <div class="eyebrow">Player Invite · Hero Selection</div>
           <h1>Choose<br>Your Hero</h1>
-          <p id="hero-copy">Sign in, review the characters tied to your account, pick the one you want for this campaign, or build a new one without getting dumped into the old join page.</p>
+          <p id="hero-copy">Sign in, pick a character linked to your account, or build a new one and enter the campaign.</p>
           <div class="summary-grid">
             <div class="summary-card">
-              <strong>Invite first</strong>
-              <span>The campaign link should bring the player straight here after sign-in, not to the DM realm board.</span>
+              <strong>Pick or forge</strong>
+              <span>Use an existing hero or create a new one without leaving the invite flow.</span>
             </div>
             <div class="summary-card">
-              <strong>Homebrew included</strong>
-              <span>Library characters and session-owned characters both surface here so custom classes stay available.</span>
+              <strong>Library-ready</strong>
+              <span>Homebrew and imported characters appear with native characters in one roster.</span>
             </div>
             <div class="summary-card">
-              <strong>Enter cleanly</strong>
-              <span>Choose a hero, then move straight into play with the right session and role already attached.</span>
+              <strong>Clean entry</strong>
+              <span>Select your hero and jump straight into play with the correct session and role.</span>
             </div>
           </div>
         </div>
@@ -600,6 +619,7 @@
         : (renderer
           ? renderer.renderImgMarkup(buildAvatarOptions(entry), 110, 'mini', 'mini')
           : `<span>${(entry.name || '?').slice(0, 2).toUpperCase()}</span>`);
+      const canDelete = entry.kind === 'library-profile' || (entry.kind === 'session-token' && entry.mine);
       card.innerHTML = `
         <div class="token">${avatarMarkup}</div>
         <div class="character-main">
@@ -611,7 +631,10 @@
             ${entry.libraryId ? '<span class="character-tag">Library</span>' : '<span class="character-tag">Session</span>'}
           </div>
         </div>
-        <div class="character-check">✓</div>
+        <div class="card-controls">
+          <div class="character-check">✓</div>
+          ${canDelete ? '<button type="button" class="delete-btn" data-delete-character="1">Delete</button>' : ''}
+        </div>
       `;
       card.addEventListener('click', () => {
         if (joinGateway && typeof joinGateway.selectProfile === 'function') {
@@ -619,7 +642,50 @@
           renderRosterFromState();
         }
       });
+      const deleteBtn = card.querySelector('[data-delete-character="1"]');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', async (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const ok = confirm('Delete this character from your roster?');
+          if (!ok) return;
+          try {
+            await deleteCharacterEntry(entry);
+            setFeedback('Character removed from your roster.', 'success');
+            await refreshRoster();
+          } catch (err) {
+            setFeedback(err.message || 'Could not delete this character.', 'error');
+          }
+        });
+      }
       return card;
+    }
+
+    async function deleteCharacterEntry(entry) {
+      if (!entry || typeof entry !== 'object') throw new Error('Missing character entry.');
+      const sessionId = String(SESSION_ID || '').trim();
+      if (entry.kind === 'session-token') {
+        const tokenId = String(entry.claimTokenId || entry.id || '').trim();
+        if (!tokenId || !sessionId) throw new Error('Missing session token reference.');
+        await fetchJson(`/api/session/${encodeURIComponent(sessionId)}/token/${encodeURIComponent(tokenId)}`, {
+          method: 'DELETE',
+        });
+        return;
+      }
+      const libraryId = String(entry.libraryId || '').trim();
+      if (!libraryId) throw new Error('Missing library character ID.');
+      const q = new URLSearchParams();
+      if (sessionId) q.set('session_id', sessionId);
+      await fetchJson(`/api/character/profile/${encodeURIComponent(libraryId)}${q.toString() ? ('?' + q.toString()) : ''}`, {
+        method: 'DELETE',
+      });
+    }
+
+    async function refreshRoster() {
+      await loadSessionInfo();
+      rememberInviteRoute(SESSION_ID, INVITE);
+      mapCharacters();
+      renderRosterFromState();
     }
 
     function renderEmptyState(message) {
@@ -715,8 +781,8 @@
       els.inviteStatus.textContent = 'Invite verified';
       els.panelTitle.textContent = 'Hero Roster for ' + campaignName;
       els.panelCopy.textContent = 'Choose the character you want to bring into ' + campaignName + ', or create/import one before entering.';
-      els.heroCopy.textContent = 'The player invite now lands on the new hero page. Sign in, choose from native or homebrew-ready characters, then head straight into ' + campaignName + '.';
-      els.footerCopy.textContent = 'Invite links now route players through this hero page instead of the old join screen.';
+      els.heroCopy.textContent = 'Sign in, choose your hero, and head into ' + campaignName + ' without leaving the invite flow.';
+      els.footerCopy.textContent = 'Invite links route players through this hero selector before entering play.';
     }
 
     function mapCharacters() {
@@ -856,9 +922,7 @@
     els.refreshBtn.addEventListener('click', async () => {
       setFeedback('Refreshing roster…');
       try {
-        await loadSessionInfo();
-        rememberInviteRoute(SESSION_ID, INVITE);
-        mapCharacters();
+        await refreshRoster();
         setFeedback('Roster refreshed.', 'success');
       } catch (err) {
         setFeedback(err.message || 'Could not refresh the roster.', 'error');

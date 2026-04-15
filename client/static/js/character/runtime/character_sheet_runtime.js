@@ -29,6 +29,16 @@ function _prettySheetLabel(raw) {
     .replace(/\b([a-z])/g, function (_, ch) { return ch.toUpperCase(); });
 }
 
+function _formatGoldUnits(units) {
+  const totalCp = Math.max(0, Math.round(Number(units || 0)));
+  const gp = Math.floor(totalCp / 100);
+  const sp = Math.floor((totalCp % 100) / 10);
+  const cp = totalCp % 10;
+  if (gp > 0) return `${gp} gp${sp > 0 ? ` ${sp} sp` : ''}${cp > 0 ? ` ${cp} cp` : ''}`;
+  if (sp > 0) return `${sp} sp${cp > 0 ? ` ${cp} cp` : ''}`;
+  return `${cp} cp`;
+}
+
 function renderCharSheet() {
   requestCharacterBookOverviewRender('legacy-renderCharSheet-shim');
 }

@@ -84,8 +84,8 @@
       min-height: calc(100vh - 56px);
       padding: 24px 22px;
       display: grid;
-      grid-template-rows: auto auto 1fr auto;
-      gap: 22px;
+      grid-template-rows: auto auto auto 1fr;
+      gap: 16px;
     }
     .brand-row {
       display: flex;
@@ -118,7 +118,7 @@
       color: rgba(244, 230, 206, 0.88);
       background: rgba(7, 4, 3, 0.32);
     }
-    .steps { display: grid; gap: 10px; }
+    .steps { display: grid; gap: 10px; max-height: 290px; overflow: auto; padding-right: 2px; }
     .step-pill {
       display: flex; align-items: center; gap: 12px;
       padding: 10px 12px; border-radius: 18px;
@@ -346,8 +346,10 @@
     .ability-summary .tag { font-size: 0.78rem; }
     .ability-shell .select { min-width: 260px; }
     .ability-grid.detailed { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; }
-    .ability-card.detailed { padding: 18px; display:grid; gap: 14px; }
+    .ability-card.detailed { padding: 13px 14px; display:grid; gap: 10px; border-radius: 18px; }
     .ability-card.detailed .ability-head { margin-bottom: 0; }
+    .ability-card.detailed .ability-head strong { font-size: 0.95rem; }
+    .ability-card.detailed .ability-score { font-size: 1rem; }
     .score-chip-row { display:flex; flex-wrap:wrap; gap: 10px; }
     .score-chip {
       min-width: 60px; border:none; border-radius: 14px; padding: 11px 14px; background: rgba(255,255,255,0.06); color: var(--text);
@@ -363,8 +365,8 @@
     }
     .score-big { min-width: 58px; text-align:center; font-family:'Cinzel',serif; font-size: 1.2rem; color: var(--gold-strong); }
     .manual-score { display:grid; gap: 8px; }
-    .manual-score input { max-width: 120px; }
-    .rules-note { color: var(--muted); line-height:1.55; font-size: 0.98rem; }
+    .manual-score input { max-width: 100px; padding: 10px 12px; border-radius: 12px; }
+    .rules-note { color: var(--muted); line-height:1.45; font-size: 0.9rem; }
     .portrait-panel {
       width: 100%; max-width: 326px; min-height: 382px; border-radius: 30px; border:1px solid rgba(229,198,151,0.12);
       background: linear-gradient(180deg, rgba(16,8,6,0.56), rgba(5,3,2,0.9)); display:grid; place-items:center; position:relative; overflow:hidden;
@@ -404,10 +406,10 @@
           <span class="eyebrow">Importer Hero Forge</span>
           <a id="back-link" href="#">Back to roster</a>
         </div>
-        <div class="steps" id="steps"></div>
         <div class="avatar-stage">
           <div id="avatar-preview"></div>
         </div>
+        <div class="steps" id="steps"></div>
         <div class="avatar-meta">
           <strong id="hero-title">Unnamed Hero</strong>
           <span id="hero-subtitle">Choose a species and class to see the full style preview.</span>
@@ -632,9 +634,34 @@ function traitDescription(trait) {
   return TRAIT_DETAIL_FALLBACKS[normalizedTraitKey(trait)] || 'This trait is available during character creation and should affect play, not just act as a label.';
 }
     function equipmentForClass(item) {
-      const raw = item && (item.startingEquipment || item.starting_equipment || item.starting_items || item.equipmentPicks || item.equipment_picks || []);
-      if (Array.isArray(raw) && raw.length) return raw.map(v => typeof v === 'string' ? v : (v.name || v.id || v.label || '')).map(v => String(v||'').trim()).filter(Boolean);
-      return ['Class kit (catalog pending)', 'Primary weapon (catalog pending)'];
+      const raw = item && (item.startingEquipment || item.starting_equipment || item.starting_items || item.equipmentPicks || item.equipment_picks || item.startingEquipmentChoices || item.starting_equipment_choices || []);
+      const rows = [];
+      const pushValue = (value) => {
+        if (!value) return;
+        if (Array.isArray(value)) {
+          value.forEach(pushValue);
+          return;
+        }
+        if (typeof value === 'string') {
+          const cleaned = value.trim();
+          if (cleaned) rows.push(cleaned);
+          return;
+        }
+        if (typeof value === 'object') {
+          const name = String(value.displayName || value.name || value.label || value.item || value.id || '').trim();
+          const qty = Number(value.quantity || value.count || 0);
+          if (name) {
+            rows.push(qty > 1 ? `${name} (x${qty})` : name);
+          }
+          pushValue(value.choice);
+          pushValue(value.options);
+          pushValue(value.items);
+        }
+      };
+      pushValue(raw);
+      const unique = Array.from(new Set(rows.filter(Boolean)));
+      if (unique.length) return unique.slice(0, 10);
+      return ['Class starter kit', 'Primary weapon', 'Adventuring pack'];
     }
     function classAccent(item) { return item.accentColor || item.accent_color || '#d0a65f'; }
     
