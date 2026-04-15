@@ -37,7 +37,7 @@
   }
   function classKey(value) {
     const key = norm(value);
-    return CLASS_ALIASES[key] || key || 'fighter';
+    return CLASS_ALIASES[key] || key || '';
   }
   function genderKey(value) {
     const key = norm(value);
@@ -152,6 +152,11 @@
     const sp = speciesKey(options && (options.speciesId || options.species));
     const cls = classKey(options && (options.classId || options.className));
     const gender = genderKey(options && options.gender);
+    const allowSpeciesFallback = !(options && options.allowSpeciesFallback === false);
+    const allowClassFallback = !(options && options.allowClassFallback === false);
+    const neutralFallback = String((options && options.neutralFallback) || '').trim();
+
+    if (!cls) return neutralFallback;
 
     // 1. Try exact combo (e.g. human__fighter__female)
     const exact = `${sp}__${cls}__${gender}`;
@@ -169,12 +174,14 @@
     });
     if (anyGenderKey) return manifest.combos[anyGenderKey];
 
-    // 4. Species-only portrait
-    if (manifest.species[sp]) return manifest.species[sp];
-    // 5. Class-only portrait fallback (legacy manifest support)
-    if (manifest.classes[cls]) return manifest.classes[cls];
-    // 6. Conventional species portrait drop-in path
-    return `${base}/species/${sp}.png`;
+    // 4. Class-only portrait fallback (legacy manifest support)
+    if (allowClassFallback && manifest.classes[cls]) return manifest.classes[cls];
+    // 5. Species-only portrait fallback (legacy behavior)
+    if (allowSpeciesFallback && manifest.species[sp]) return manifest.species[sp];
+    // 6. Conventional species portrait drop-in path (legacy behavior)
+    if (allowSpeciesFallback) return `${base}/species/${sp}.png`;
+    // 7. Explicit neutral/blank fallback
+    return neutralFallback;
   }
 
   // Returns a random female class portrait URL for use on species step
