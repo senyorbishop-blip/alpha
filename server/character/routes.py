@@ -748,19 +748,32 @@ async def api_character_profile_delete(request: Request, profile_id: str):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    owner_key = _resolve_owner_key(auth_user)
-    if not owner_key:
-        raise HTTPException(status_code=400, detail="Unable to resolve profile owner")
-
     normalized_profile_id = str(profile_id).strip()
     profiles = dict(getattr(session, "char_profiles", {}) or {})
-    mine = list(profiles.get(owner_key, []) or [])
-    cleaned = [p for p in mine if str(p.get("id") or "") != normalized_profile_id]
+    owner_candidates: list[str] = []
+    display_name_key = normalize_profile_owner_key(auth_display_name(auth_user, fallback=""))
+    if display_name_key:
+        owner_candidates.append(display_name_key)
 
-    if len(cleaned) == len(mine):
+    username_key = normalize_profile_owner_key(auth_user.get("username") or "")
+    if username_key and username_key not in owner_candidates:
+        owner_candidates.append(username_key)
+
+    user_id = str(auth_user.get("id") or "").strip()
+    if user_id and user_id not in owner_candidates:
+        owner_candidates.append(user_id)
+
+    removed_any = False
+    for owner_key in owner_candidates:
+        mine = list(profiles.get(owner_key, []) or [])
+        cleaned = [p for p in mine if str(p.get("id") or "") != normalized_profile_id]
+        if len(cleaned) != len(mine):
+            profiles[owner_key] = cleaned
+            removed_any = True
+
+    if not removed_any:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    profiles[owner_key] = cleaned
     session.char_profiles = profiles
     await save_campaign_async(session)
 

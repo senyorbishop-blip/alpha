@@ -427,3 +427,38 @@ def test_character_profile_delete_survives_reload_library_excludes_deleted(monke
         ids = [p["id"] for p in profiles]
         assert "profile-a" not in ids
         assert "profile-b" in ids
+
+
+def test_character_profile_delete_removes_duplicate_owner_buckets(monkeypatch):
+    """Delete should remove profile across owner aliases to avoid stale roster rows."""
+    auth_user = {"id": "u1", "username": "Lyra", "character_name": "Lyra Prime"}
+    session = SimpleNamespace(
+        char_profiles={
+            "lyra prime": [
+                {"id": "profile-a", "name": "Aria"},
+            ],
+            "lyra": [
+                {"id": "profile-a", "name": "Aria"},
+                {"id": "profile-b", "name": "Beron"},
+            ],
+            "u1": [
+                {"id": "profile-a", "name": "Aria"},
+            ],
+        }
+    )
+
+    async def _fake_save_campaign(_session):
+        return None
+
+    monkeypatch.setattr(character_routes, "get_request_user", lambda request: auth_user)
+    monkeypatch.setattr(character_routes, "get_or_restore_session", lambda session_id: session)
+    monkeypatch.setattr(character_routes, "save_campaign_async", _fake_save_campaign)
+
+    with TestClient(main.app, raise_server_exceptions=False) as client:
+        headers = _csrf_headers(client)
+        del_res = client.delete("/api/character/profile/profile-a?session_id=s1", headers=headers)
+        assert del_res.status_code == 200
+
+    assert [row["id"] for row in session.char_profiles["lyra prime"]] == []
+    assert [row["id"] for row in session.char_profiles["lyra"]] == ["profile-b"]
+    assert [row["id"] for row in session.char_profiles["u1"]] == []
