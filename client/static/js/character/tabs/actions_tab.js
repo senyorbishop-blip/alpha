@@ -1119,36 +1119,72 @@
     </div>`;
   }
 
+  function _actionKind(action) {
+    const text = `${String(action && action.name || '')} ${String(action && (action.desc || action.description || action.longText || '') || '')}`.toLowerCase();
+    const economy = (Array.isArray(action && action.economy) ? action.economy : [action && action.economy || action && action.actionType || '']).join(' ').toLowerCase();
+    const hasAttackData = action && (action.attackBonus != null || action.damage || action.damageText || action.saveDC || action.hitDc || action.save);
+    const hasActionLane = /(action|bonus|reaction|special|trigger)/.test(economy);
+    if ((/subclass choice required|choose subclass|subclass required/.test(text)) || action && action.kind === 'subclass_gate') return 'subclass_gate';
+    if (/passive|always on|always-on/.test(economy) || /passive/.test(text)) return 'passive';
+    if (hasAttackData) return 'attack';
+    if (!hasAttackData && hasActionLane) return 'feature';
+    return 'feature';
+  }
+
+  function _canUseAction(action, kind) {
+    if (!action || kind === 'passive' || kind === 'subclass_gate') return false;
+    const source = String(action.source || '').toLowerCase();
+    if (source === 'feature-fallback') return false;
+    return true;
+  }
+
   function _renderActionRow(action) {
     const econ = Array.isArray(action.economy) ? action.economy : [action.economy || 'action'];
     const sourceTag = _firstText(action.source, '').replace(/_/g, ' ').trim();
     const summary = _firstText(action.desc, action.description, 'No summary loaded yet.');
     const bestUse = _firstText(action.longText, action.description, action.desc, 'Use this when the action helps your turn right now.');
+    const kind = _actionKind(action);
     const toHit = action.attackBonus != null ? `+${String(action.attackBonus).replace(/^\+/, '')}` : '';
-    const effect = _firstText(action.damage, action.damageText, action.effect, action.resourceSummary, action.resourceName, action.cost, '—');
-    const range = _firstText(action.range, action.reach, '—');
-    const spend = _firstText(action.resourceSummary, action.resourceName, action.cost, action.usesText, 'At will');
-    const laneRows = [
-      { label: 'To hit', value: toHit || '—' },
-      { label: 'Effect', value: effect },
-      { label: 'Range', value: range },
-      { label: 'Spend', value: spend }
-    ];
+    const laneRows = [];
+    if (kind === 'attack') {
+      const effect = _firstText(action.damage, action.damageText, action.effect, '');
+      const range = _firstText(action.range, action.reach, '');
+      const spend = _firstText(action.resourceSummary, action.resourceName, action.cost, action.usesText, '');
+      if (toHit) laneRows.push({ label: 'To hit', value: toHit });
+      if (_firstText(action.saveDC, action.hitDc, action.save, '')) laneRows.push({ label: 'Save / DC', value: _firstText(action.saveDC, action.hitDc, action.save, '') });
+      if (effect) laneRows.push({ label: 'Effect', value: effect });
+      if (range) laneRows.push({ label: 'Range', value: range });
+      if (spend) laneRows.push({ label: 'Spend', value: spend });
+    } else {
+      const actionType = _firstText(action.actionType, action.type, econ[0], 'Feature');
+      const trigger = _firstText(action.trigger, action.usage, '');
+      const spend = _firstText(action.resourceSummary, action.resourceName, action.cost, action.usesText, '');
+      const range = _firstText(action.range, action.reach, '');
+      laneRows.push({ label: 'Type', value: actionType.replace(/_/g, ' ') });
+      if (trigger) laneRows.push({ label: 'When', value: trigger });
+      if (spend) laneRows.push({ label: 'Spend', value: spend });
+      if (range) laneRows.push({ label: 'Range', value: range });
+      if (_firstText(action.saveDC, action.hitDc, action.save, '')) laneRows.push({ label: 'Save / DC', value: _firstText(action.saveDC, action.hitDc, action.save, '') });
+    }
     const leadBadges = [];
-    if (toHit) leadBadges.push('<span class="cs-action-mini-pill accent">Attack roll</span>');
+    if (kind === 'attack' && toHit) leadBadges.push('<span class="cs-action-mini-pill accent">Attack roll</span>');
     if (/save/i.test(String(action.saveText || action.effect || ''))) leadBadges.push('<span class="cs-action-mini-pill">Save effect</span>');
     if (/bonus/i.test(String(econ.join(' ')))) leadBadges.push('<span class="cs-action-mini-pill">Bonus action</span>');
     if (/reaction/i.test(String(econ.join(' ')))) leadBadges.push('<span class="cs-action-mini-pill">Reaction</span>');
+    if (kind === 'passive') leadBadges.push('<span class="cs-action-mini-pill">Passive</span>');
+    if (kind === 'subclass_gate') leadBadges.push('<span class="cs-action-mini-pill warn">Subclass choice required</span>');
     if (!leadBadges.length) leadBadges.push('<span class="cs-action-mini-pill ready">Usable now</span>');
     const useLabel = (function () {
       const src = String(action.source || '').toLowerCase();
       const text = `${String(action.name || '')} ${String(action.resourceName || '')} ${String(action.resourceSummary || '')}`.toLowerCase();
       if (src === 'spell') return 'Cast';
-      if (src === 'weapon' || src === 'equip_only' || src === 'system_unarmed') return 'Attack';
+      if (kind === 'subclass_gate') return 'Choose subclass';
+      if (src === 'weapon' || src === 'equip_only' || src === 'system_unarmed' || kind === 'attack') return 'Attack';
       if (/swagger/.test(text)) return 'Spend Swagger';
       if (/gadget/.test(text)) return 'Use Device';
       return 'Use';
     }());
+    const showUseButton = _canUseAction(action, kind);
     return `<div class="cs-action-row" tabindex="0" role="button" data-action-name="${_esc(action.name || '')}" aria-label="${_esc(action.name || 'Action')} details">
       <div class="cs-action-icon" aria-hidden="true">${_esc(_actionIcon(action))}</div>
       <div class="cs-action-maincopy">
@@ -1164,9 +1200,9 @@
           return `<div class="cs-action-lane"><span class="cs-action-lane-label">${_esc(lane.label)}</span><span class="cs-action-lane-value">${_esc(lane.value || '—')}</span></div>`;
         }).join('')}</div>
         <div class="cs-action-bestuse">${_esc(bestUse)}</div>
-        <div class="cs-action-controls" style="margin-top:.55rem;display:flex;gap:.4rem;flex-wrap:wrap;">
+        ${showUseButton ? `<div class="cs-action-controls" style="margin-top:.55rem;display:flex;gap:.4rem;flex-wrap:wrap;">
           <button type="button" class="cs-feature-inspect" data-action-use="${_esc(String(action.id || action.name || ''))}" data-action-source="${_esc(String(action.source || 'weapon'))}" ${action.disabled ? `disabled title="${_esc(action.disabledReason || 'Unavailable')}"` : ''}>${_esc(useLabel)}</button>
-        </div>
+        </div>` : ''}
       </div>
       <div class="cs-action-side">${econ.map(_econPip).join('')}</div>
     </div>`;
@@ -1325,11 +1361,30 @@
       : { actions: [], bonusActions: [], reactions: [] };
     const fallback = _featureActionFallbacks(charData);
     const custom = _buildCustomClassActionCards(charData);
+    const subclassGate = (function () {
+      const className = _firstText(charData && charData.className, charData && charData.classId, 'Class');
+      const unlockLevel = _num(charData && charData.subclassUnlockLevel, 0);
+      const isPending = !!(charData && charData.subclassPending);
+      if (!isPending) return null;
+      return _normalizeNativeAction({
+        id: `subclass-choice-required-${String(className).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+        name: 'Subclass Choice Required',
+        summary: `${className} chooses a subclass at level ${unlockLevel || 'this tier'}. Select your subclass to unlock class progression features.`,
+        description: `Your ${className} is high enough level to require a subclass, but none is selected yet. Open the level-up flow and choose a subclass before continuing progression.`,
+        text: 'Open Level Up and choose your subclass path.',
+        actionType: 'feature',
+        type: 'feature',
+        tags: ['Subclass', 'Required Choice'],
+        source: 'subclass-gate',
+        kind: 'subclass_gate',
+      }, 'action');
+    }());
     const out = {
       actions: _safeArray(groups.actions).concat(custom.actions).concat(fallback.actions).map(function (card, index) { return _normalizeNativeAction(card, 'action', index); }),
       bonusActions: _safeArray(groups.bonusActions).concat(custom.bonusActions).concat(fallback.bonusActions).map(function (card, index) { return _normalizeNativeAction(card, 'bonus', index); }),
       reactions: _safeArray(groups.reactions).concat(custom.reactions).concat(fallback.reactions).map(function (card, index) { return _normalizeNativeAction(card, 'reaction', index); }),
     };
+    if (subclassGate) out.actions.unshift(subclassGate);
     if (!out.reactions.length) {
       out.reactions.push(_normalizeNativeAction({
         name: 'Opportunity Attack',

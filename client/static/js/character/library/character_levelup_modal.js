@@ -425,6 +425,7 @@
     spellSwapLearn: '',
     spellSearch: '',
     spellFilterLevel: 'all',
+    subclassChoice: '',
   };
 
   function escHtml(value) {
@@ -718,7 +719,36 @@
         },
       };
     }
+    if (preview && preview.subclassChoice && preview.subclassChoice.required) {
+      payload.subclassChoice = String(modalState.subclassChoice || '').trim().toLowerCase();
+    }
     return payload;
+  }
+
+  function renderSubclassChoiceSection(preview) {
+    const choice = preview && preview.subclassChoice && typeof preview.subclassChoice === 'object' ? preview.subclassChoice : null;
+    if (!choice || !choice.required) return '';
+    const options = Array.isArray(choice.options) ? choice.options : [];
+    if (!options.length) {
+      return '<section class="lvlup-card"><div class="lvlup-title">Choices — Subclass</div>'
+        + '<div style="font-size:.84rem;opacity:.9">Subclass choice is required at this level, but no legal subclass options were returned. Ask the DM to refresh the rules catalog for this class.</div>'
+        + '</section>';
+    }
+    const cards = options.map(function (row) {
+      const subclassId = String(row && row.id || '').trim().toLowerCase();
+      const active = subclassId && modalState.subclassChoice === subclassId;
+      return '<button type="button" class="lvlup-choice-card lvlup-option-card ' + (active ? 'active' : '') + '" data-subclass-choice="' + escHtml(subclassId) + '">'
+        + '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">'
+        + '  <div><div style="font-weight:700;font-size:.95rem">' + escHtml(row && (row.name || row.id) || 'Subclass') + '</div><div class="lvlup-meta" style="margin-top:3px">Subclass path</div></div>'
+        + '  <span class="lvlup-pill" style="margin:0">' + escHtml(active ? 'Selected' : 'Choose') + '</span>'
+        + '</div>'
+        + '<div style="font-size:.8rem;opacity:.9;margin-top:8px">' + escHtml(row && row.summary || 'No summary available for this subclass option.') + '</div>'
+        + '</button>';
+    }).join('');
+    return '<section class="lvlup-card"><div class="lvlup-title">Choices — Subclass</div>'
+      + '<div style="font-size:.84rem;opacity:.9;margin-bottom:8px">Level ' + escHtml(String(choice.unlockLevel || '?')) + ' unlocks your subclass. Choose one path to continue.</div>'
+      + '<div class="lvlup-choice-grid">' + cards + '</div>'
+      + '</section>';
   }
 
   function slotRowsHtml(oldSlots, newSlots) {
@@ -991,6 +1021,13 @@
     if (preview.isAsiLevel) {
       choiceRequirementRows.push('ASI / Feat: ' + (modalState.asiMode === 'feat' ? (modalState.featChoice || 'Choose a feat') : (modalState.asiMode === 'plus1x2' ? ((modalState.asiPlus1Abilities.length ? modalState.asiPlus1Abilities.map(abilityLabel).join(' + ') : 'Choose two abilities')) : ('+' + '2 ' + abilityLabel(modalState.asiPlus2Ability || 'str')))));
     }
+    const subclassChoice = preview && preview.subclassChoice && typeof preview.subclassChoice === 'object' ? preview.subclassChoice : null;
+    if (subclassChoice && subclassChoice.required) {
+      const selectedOption = (Array.isArray(subclassChoice.options) ? subclassChoice.options : []).find(function (row) {
+        return String(row && row.id || '').trim().toLowerCase() === String(modalState.subclassChoice || '').toLowerCase();
+      });
+      choiceRequirementRows.push('Subclass: ' + (selectedOption ? (selectedOption.name || selectedOption.id || modalState.subclassChoice) : 'Choose one'));
+    }
     if (spellPlan) {
       if (safeInt(spellPlan.cantripPicksRequired, 0) > 0) choiceRequirementRows.push('Cantrips: ' + String(modalState.spellCantripAdds.length) + ' / ' + String(safeInt(spellPlan.cantripPicksRequired, 0)));
       if (safeInt(spellPlan.levelledPicksRequired, 0) > 0) choiceRequirementRows.push('Levelled spells: ' + String(modalState.spellLevelledAdds.length) + ' / ' + String(safeInt(spellPlan.levelledPicksRequired, 0)));
@@ -1020,7 +1057,14 @@
       + '</section>'
       + (guide ? '<section class="lvlup-card"><div class="lvlup-title">' + escHtml(guide.title) + '</div><div style="font-size:.84rem;opacity:.9">' + escHtml(guide.summary) + '</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + guide.checks.map(function (item) { return '<span class="lvlup-pill">' + escHtml(item) + '</span>'; }).join('') + '</div></section>' : '')
       + (isStepAutomatic ? '<section class="lvlup-card"><div class="lvlup-title">Automatic Gains — Before / After</div>' + diffRowsHtml(automaticRows) + '</section>' + spellSlotsHtml : '')
-      + (isStepChoices ? (classChoiceCoach(preview) ? guidancePanelHtml(classChoiceCoach(preview).title, 'Use this step to choose the upgrades that actually change how your turns feel.', classChoiceCoach(preview).bullets) : '') + choiceRuleSummaryHtml(preview, features, spellPlan) + '<section class="lvlup-card"><div class="lvlup-title">Choices — Feature Picks</div><div style="font-size:.84rem;opacity:.9;margin-bottom:8px">Read each card as: what you gain now, what it costs to use, and how it changes your normal turn plan.</div>' + featuresHtml + '</section>' + asiHtml + renderSpellChoiceSection(preview, spellPlan) : '')
+      + (isStepChoices
+        ? renderSubclassChoiceSection(preview)
+          + (classChoiceCoach(preview) ? guidancePanelHtml(classChoiceCoach(preview).title, 'Use this step to choose the upgrades that actually change how your turns feel.', classChoiceCoach(preview).bullets) : '')
+          + choiceRuleSummaryHtml(preview, features, spellPlan)
+          + '<section class="lvlup-card"><div class="lvlup-title">Choices — Feature Picks</div><div style="font-size:.84rem;opacity:.9;margin-bottom:8px">Read each card as: what you gain now, what it costs to use, and how it changes your normal turn plan.</div>' + featuresHtml + '</section>'
+          + asiHtml
+          + renderSpellChoiceSection(preview, spellPlan)
+        : '')
       + (isStepReview
         ? '<section class="lvlup-card"><div class="lvlup-title">Finish</div>'
           + '<div style="font-size:.84rem;opacity:.9;margin-bottom:8px">What changes immediately after confirm: automatic gains and player choices are separated so you can quickly see what changes now and what still needs your input.</div>'
@@ -1056,6 +1100,9 @@
         if (modalState.asiMode === 'feat') canApply = canApply && !!modalState.featChoice;
         else if (modalState.asiMode === 'plus1x2') canApply = canApply && modalState.asiPlus1Abilities.length === 2;
       }
+      if (subclassChoice && subclassChoice.required) {
+        canApply = canApply && !!modalState.subclassChoice;
+      }
       if (spellPlan) {
         if (safeInt(spellPlan.cantripPicksRequired, 0) > 0) canApply = canApply && modalState.spellCantripAdds.length === safeInt(spellPlan.cantripPicksRequired, 0);
         if (safeInt(spellPlan.levelledPicksRequired, 0) > 0) canApply = canApply && modalState.spellLevelledAdds.length === safeInt(spellPlan.levelledPicksRequired, 0);
@@ -1084,6 +1131,15 @@
         const choiceId = String(el.getAttribute('data-choice-id') || '');
         if (!featureId || !choiceId) return;
         modalState.featureChoices[featureId] = choiceId;
+        renderPreview(root, preview);
+      });
+    });
+
+    root.querySelectorAll('[data-subclass-choice]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        const subclassId = String(el.getAttribute('data-subclass-choice') || '').trim().toLowerCase();
+        if (!subclassId) return;
+        modalState.subclassChoice = subclassId;
         renderPreview(root, preview);
       });
     });
@@ -1234,6 +1290,7 @@
     modalState.spellSwapLearn = '';
     modalState.spellSearch = '';
     modalState.spellFilterLevel = 'all';
+    modalState.subclassChoice = '';
 
     const root = ensureModalDom();
     root.style.display = 'flex';
