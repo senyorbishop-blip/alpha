@@ -609,12 +609,18 @@
       const rows = Array.isArray(snapshot.characters) ? snapshot.characters : [];
       const matchLibrary = String(entry.libraryId || '').trim();
       const matchId = String(entry.id || '').trim();
+      const matchClaim = String(entry.claimTokenId || '').trim();
+      const profileClaim = matchLibrary ? ('profile:' + matchLibrary) : '';
+      const libraryScopedId = matchLibrary ? ('library:' + matchLibrary) : '';
+      const killSet = new Set([matchLibrary, matchId, matchClaim, profileClaim, libraryScopedId].filter(Boolean));
       const nextRows = rows.filter((row) => {
         if (!row || typeof row !== 'object') return true;
         const rowLibrary = String(row.libraryId || '').trim();
         const rowId = String(row.id || '').trim();
-        if (matchLibrary && rowLibrary && rowLibrary === matchLibrary) return false;
-        if (matchId && rowId && rowId === matchId) return false;
+        const rowClaim = String(row.claimTokenId || '').trim();
+        if (rowLibrary && killSet.has(rowLibrary)) return false;
+        if (rowId && killSet.has(rowId)) return false;
+        if (rowClaim && killSet.has(rowClaim)) return false;
         return true;
       });
       if (nextRows.length === rows.length) return false;
