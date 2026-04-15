@@ -52,6 +52,15 @@ def test_mapper_builds_native_skills_when_book_skills_missing():
     assert "out.skills = buildNativeSkillMap(doc, runtime);" in src
 
 
+def test_mapper_rebuilds_runtime_hp_from_canonical_sources_before_mapping():
+    src = _read("client/static/js/character/runtime/mapper_to_play.js")
+    assert "function rebuildRuntimeHp(nativeCharacter, nativeRuntime, fallback)" in src
+    assert "includeRuntime: false" in src
+    assert "var runtimeWithCanonicalHp = rebuildRuntimeHp(nativeCharacter, nativeRuntime" in src
+    assert "out.charSheet = nativeToLegacyCharSheet(nativeCharacter, runtimeWithCanonicalHp, source.charSheet);" in src
+    assert "out.charBook = nativeToLegacyCharBook(nativeCharacter, runtimeWithCanonicalHp, source.charBook);" in src
+
+
 def test_mapper_overrides_gear_with_native_equipment_lines():
     src = _read("client/static/js/character/runtime/mapper_to_play.js")
     assert "function buildNativeGearLines(doc)" in src
