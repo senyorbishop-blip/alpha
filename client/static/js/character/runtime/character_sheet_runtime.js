@@ -48,8 +48,9 @@ function renderCharacterBookOverviewContent() {
   if (!c) return;
 
   document.getElementById('sheet-char-name').textContent = c.name || 'Adventurer';
-  const classLine = (Array.isArray(c.classes) ? c.classes : []).map(cl => [_prettySheetLabel(cl?.name || 'Adventurer'), _prettySheetLabel(cl?.subclass || '')].filter(Boolean).join(' · ')).filter(Boolean).join(' / ');
-  document.getElementById('sheet-char-sub').textContent = (classLine || 'Adventurer') + (c.race ? ' · ' + _prettySheetLabel(c.race) : '');
+  const speciesLine = _prettySheetLabel(c.species || c.race || '');
+  const backgroundLine = _prettySheetLabel(c.background || c.book?.background || '');
+  document.getElementById('sheet-char-sub').textContent = [speciesLine, backgroundLine].filter(Boolean).join(' · ') || 'Character details';
 
   const body = document.getElementById('sheet-body');
   if (!body) return;

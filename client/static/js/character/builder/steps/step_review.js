@@ -187,7 +187,6 @@
         '<div class="sb-identity">',
         '<div class="sb-char-name">' + escHtml(characterName) + '</div>',
         '<div class="sb-char-sub">' + escHtml(speciesName) + ' ' + escHtml(className) + ' \u00b7 Level ' + sb.level + '</div>',
-        '<div class="sb-char-sub2">' + escHtml(bgName) + ' \u00b7 ' + escHtml(speciesSize) + ' \u00b7 ' + sb.speed + ' ft</div>',
         '<div class="sb-xp-bar"><div class="sb-xp-fill" style="width:' + Math.round(((Math.max(1, sb.level) - 1) / 19) * 100) + '%"></div></div>',
         '</div>',
         '</div>',
