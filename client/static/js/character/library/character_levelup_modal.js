@@ -532,7 +532,7 @@
       + '</div>';
   }
 
-  function groupedSpellCards(rows, renderFn, emptyText) {
+  function groupedSpellCards(rows, renderFn, emptyText, gridClass) {
     const grouped = {};
     filterSpellRows(rows).forEach(function (spell) {
       const key = String(safeInt(spell && spell.level, 0));
@@ -542,7 +542,7 @@
     const keys = Object.keys(grouped).sort(function (a, b) { return safeInt(a, 0) - safeInt(b, 0); });
     if (!keys.length) return '<div style="font-size:.8rem;opacity:.76">' + escHtml(emptyText) + '</div>';
     return keys.map(function (key) {
-      return '<div class="lvlup-subsection"><div class="lvlup-subtitle">' + escHtml(spellLevelLabel(key)) + '</div><div class="lvlup-choice-grid">'
+      return '<div class="lvlup-subsection"><div class="lvlup-subtitle">' + escHtml(spellLevelLabel(key)) + '</div><div class="' + escHtml(gridClass || 'lvlup-choice-grid') + '">'
         + grouped[key].map(renderFn).join('')
         + '</div></div>';
     }).join('');
@@ -613,6 +613,12 @@
       + '#character-levelup-modal .lvlup-step-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}'
       + '#character-levelup-modal .lvlup-review-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}'
       + '#character-levelup-modal .lvlup-choice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}'
+      + '#character-levelup-modal .lvlup-spell-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}'
+      + '#character-levelup-modal .lvlup-spell-grid .lvlup-choice-card{min-height:132px;text-align:left;padding:11px 12px;background:linear-gradient(180deg,rgba(0,229,204,.09),rgba(0,229,204,.035));border-color:rgba(0,229,204,.3)}'
+      + '#character-levelup-modal .lvlup-spell-grid .lvlup-choice-card .lvlup-meta{font-size:.72rem;opacity:.7}'
+      + '#character-levelup-modal .lvlup-spell-grid .lvlup-spell-name{font-size:.98rem;line-height:1.2}'
+      + '#character-levelup-modal .lvlup-spell-grid .lvlup-spell-castline{font-size:.9rem}'
+      + '#character-levelup-modal .lvlup-spell-grid .lvlup-spell-summary{color:rgba(223,254,249,.88)}'
       + '#character-levelup-modal .lvlup-subsection{display:grid;gap:8px;margin-top:10px}'
       + '#character-levelup-modal .lvlup-subtitle{font-size:.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#9efff2;opacity:.95}'
       + '#character-levelup-modal .lvlup-choice-card .lvlup-meta{font-size:.72rem;opacity:.72}'
@@ -768,14 +774,16 @@
     if (spell.level === 0) parts.push('Cantrip');
     else parts.push('Level ' + spell.level);
     if (spell.school) parts.push(spell.school);
+    const castLine = [spell.castingTime || spell.casting_time, spell.range].filter(Boolean).join(' • ');
     return '<button type="button" class="lvlup-choice-card ' + (active ? 'active' : '') + '" ' + attrs + (disabled ? ' disabled' : '') + '>'
-      + '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">'
+      + '<div class="lvlup-spell-head" style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">'
       + '<div>'
-      + '  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-weight:700">' + escHtml(spell.name || spell.id || 'Spell') + '</span>' + (active ? '<span class="lvlup-selected-chip">Selected</span>' : '') + '</div>'
+      + '  <div class="lvlup-spell-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-weight:700">' + escHtml(spell.name || spell.id || 'Spell') + '</span>' + (active ? '<span class="lvlup-selected-chip">Selected</span>' : '') + '</div>'
       + '  <div class="lvlup-meta" style="margin-top:3px">' + escHtml(parts.join(' • ')) + '</div>'
       + '</div>'
       + '</div>'
-      + '<div style="font-size:.78rem;font-weight:700;color:#dffef8;margin-top:6px">' + escHtml(spell.summary || 'No short summary loaded yet.') + '</div>'
+      + '<div class="lvlup-spell-castline" style="font-size:.78rem;font-weight:700;color:#dffef8;margin-top:6px">' + escHtml(castLine || spell.summary || 'No short summary loaded yet.') + '</div>'
+      + '<div class="lvlup-spell-summary" style="font-size:.74rem;opacity:.82;margin-top:4px;line-height:1.4">' + escHtml(spell.summary || 'No short summary loaded yet.') + '</div>'
       + (helper ? '<div class="lvlup-helper">' + escHtml(helper) + '</div>' : '')
       + '</button>';
   }
@@ -819,7 +827,7 @@
           const active = modalState.spellCantripAdds.indexOf(String(spell.id || '')) >= 0;
           const blocked = !active && modalState.spellCantripAdds.length >= cantripRequired;
           return spellCardHtml(spell, active, 'data-spell-pick="cantrip" data-spell-id="' + escHtml(String(spell.id || '')) + '"', blocked, spell.range || spell.castingTime || '');
-        }, 'No unlocked cantrip options are available with the current filter.')
+        }, 'No unlocked cantrip options are available with the current filter.', 'lvlup-choice-grid lvlup-spell-grid')
         + '</div>';
     }
 
@@ -834,7 +842,7 @@
           const active = modalState.spellLevelledAdds.indexOf(String(spell.id || '')) >= 0;
           const blocked = !active && modalState.spellLevelledAdds.length >= levelledRequired;
           return spellCardHtml(spell, active, 'data-spell-pick="levelled" data-spell-id="' + escHtml(String(spell.id || '')) + '"', blocked, spell.range || spell.castingTime || '');
-        }, 'No unlocked leveled spell options are available with the current filter.')
+        }, 'No unlocked leveled spell options are available with the current filter.', 'lvlup-choice-grid lvlup-spell-grid')
         + '</div>';
     }
 
@@ -846,7 +854,7 @@
           const active = modalState.spellMagicalSecretsAdds.indexOf(String(spell.id || '')) >= 0;
           const blocked = !active && modalState.spellMagicalSecretsAdds.length >= magicalSecretsRequired;
           return spellCardHtml(spell, active, 'data-spell-pick="magical-secret" data-spell-id="' + escHtml(String(spell.id || '')) + '"', blocked, 'Off-list class access');
-        }, 'No off-list Magical Secrets options are available with the current filter.')
+        }, 'No off-list Magical Secrets options are available with the current filter.', 'lvlup-choice-grid lvlup-spell-grid')
         + '</div>';
     }
 
@@ -861,13 +869,13 @@
         + groupedSpellCards(replaceable, function (spell) {
           const active = modalState.spellSwapDrop === String(spell.id || '');
           return spellCardHtml(spell, active, 'data-spell-swap="drop" data-spell-id="' + escHtml(String(spell.id || '')) + '"', false, 'Known right now');
-        }, 'No spells are eligible to swap out with the current filter.')
+        }, 'No spells are eligible to swap out with the current filter.', 'lvlup-choice-grid lvlup-spell-grid')
         + '</div>'
         + '<div><div class="lvlup-subtitle">Learn one replacement spell</div>'
         + groupedSpellCards(replacementPool, function (spell) {
           const active = modalState.spellSwapLearn === String(spell.id || '');
           return spellCardHtml(spell, active, 'data-spell-swap="learn" data-spell-id="' + escHtml(String(spell.id || '')) + '"', false, 'Unlocked at this level');
-        }, 'No legal replacement spells are unlocked with the current filter.')
+        }, 'No legal replacement spells are unlocked with the current filter.', 'lvlup-choice-grid lvlup-spell-grid')
         + '</div>'
         + '</div></div>';
     }
