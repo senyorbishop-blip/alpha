@@ -65,7 +65,15 @@
       ],
       "type": "action",
       "usage": "Spend 1 Gadget Charge per cannon discharge.",
-      "recovery": "Gadget Charges recharge on a long rest unless a feature says otherwise."
+      "recovery": "Gadget Charges recharge on a long rest unless a feature says otherwise.",
+      "grantsSummons": true,
+      "summonUnlockMode": "subclass_feature_unlock",
+      "summonTemplateIds": [
+        "tinker-artillerist-arc-cannon"
+      ],
+      "summonVariantChoice": false,
+      "defaultSummonTemplateId": "tinker-artillerist-arc-cannon",
+      "variantGroup": "tinker-artillerist-cannon"
     },
     "artillerist-bombardment-spells": {
       "summary": "Gain always-ready explosive and defensive formulae that keep your subclass spell identity sharp.",

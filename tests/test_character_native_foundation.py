@@ -32,6 +32,7 @@ def test_default_character_document_has_required_foundation_fields():
         "awakening",
         "equipment",
         "spellState",
+        "summons",
         "importMeta",
         "audit",
     ):

@@ -14,6 +14,7 @@ from server.character.spell_compendium import (
     validate_spell_selection,
 )
 from server.character.validation import validate_or_raise
+from server.character.summon_state import sync_summon_unlocks_from_features
 
 
 def _safe_int(value: Any, fallback: int = 0, *, minimum: int | None = None, maximum: int | None = None) -> int:
@@ -434,6 +435,11 @@ def build_levelup_preview(document: Any) -> dict[str, Any]:
                 "displayName": str(definition.get("displayName") or feature_id.replace("-", " ").title()),
                 "description": str(definition.get("description") or ""),
                 "choices": _normalize_choice_list(definition.get("choices", [])),
+                "grantsSummons": bool(definition.get("grantsSummons")),
+                "summonTemplateIds": list(definition.get("summonTemplateIds") or []),
+                "summonVariantChoice": bool(definition.get("summonVariantChoice")),
+                "summonUnlockMode": str(definition.get("summonUnlockMode") or ""),
+                "defaultSummonTemplateId": str(definition.get("defaultSummonTemplateId") or ""),
             }
         )
 
@@ -482,6 +488,11 @@ def build_levelup_preview(document: Any) -> dict[str, Any]:
                 "displayName": str(definition.get("displayName") or feature_id.replace("-", " ").title()),
                 "description": str(definition.get("description") or ""),
                 "choices": _normalize_choice_list(definition.get("choices", [])),
+                "grantsSummons": bool(definition.get("grantsSummons")),
+                "summonTemplateIds": list(definition.get("summonTemplateIds") or []),
+                "summonVariantChoice": bool(definition.get("summonVariantChoice")),
+                "summonUnlockMode": str(definition.get("summonUnlockMode") or ""),
+                "defaultSummonTemplateId": str(definition.get("defaultSummonTemplateId") or ""),
             },
         )
 
@@ -858,6 +869,8 @@ def apply_levelup(document: Any, *, choices: Any = None) -> dict[str, Any]:
         preview.get("hpGained"), 1, minimum=1
     )
     canonical["progression"] = progression
+
+    canonical = sync_summon_unlocks_from_features(canonical)
 
     resolved_after = resolve_character_runtime(canonical)
     result_document = resolved_after["document"]

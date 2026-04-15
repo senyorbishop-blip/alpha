@@ -27,6 +27,7 @@ _REQUIRED_TOP_LEVEL_FIELDS = {
     "awakening",
     "equipment",
     "spellState",
+    "summons",
     "importMeta",
     "audit",
 }
@@ -75,6 +76,7 @@ def validate_required_shape(document: Any) -> list[str]:
         "awakening",
         "equipment",
         "spellState",
+        "summons",
         "importMeta",
         "audit",
     ):

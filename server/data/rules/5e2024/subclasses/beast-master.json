@@ -74,7 +74,17 @@
         }
       ],
       "usage": "Command cadence depends on your bonus-action economy; uncommanded behavior defaults to passive/defensive behavior based on table rules.",
-      "effect": "Companion scales with Ranger level and proficiency bonus."
+      "effect": "Companion scales with Ranger level and proficiency bonus.",
+      "grantsSummons": true,
+      "summonUnlockMode": "subclass_feature_unlock",
+      "summonTemplateIds": [
+        "ranger-primal-beast-land",
+        "ranger-primal-beast-sea",
+        "ranger-primal-beast-sky"
+      ],
+      "summonVariantChoice": true,
+      "defaultSummonTemplateId": "ranger-primal-beast-land",
+      "variantGroup": "ranger-primal-beast"
     },
     "beast-master-exceptional-training": {
       "summary": "Your companion becomes more dependable and responsive as your partnership deepens.",
