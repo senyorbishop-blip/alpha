@@ -20,6 +20,77 @@
     return Array.isArray(value) ? value : [];
   }
 
+  function hasNumber(value) {
+    return Number.isFinite(parseInt(value, 10));
+  }
+
+  function resolveCanonicalHp(nativeCharacter, nativeRuntime, fallback) {
+    var doc = asObject(nativeCharacter);
+    var runtime = asObject(nativeRuntime);
+    var fallbackHp = asObject(fallback);
+    var rootHp = asObject(doc.hp);
+    var vitals = asObject(doc.vitals);
+    var combatVitals = asObject(vitals.combat);
+    var runtimeHp = asObject(runtime.hp);
+    var runtimeCombat = asObject(runtime.combat);
+
+    var max = firstDefinedNumber(
+      doc.maxHP,
+      doc.maxHp,
+      rootHp.max,
+      vitals.maxHP,
+      vitals.maxHp,
+      combatVitals.maxHP,
+      combatVitals.maxHp,
+      runtimeHp.max,
+      runtimeCombat.maxHP,
+      runtimeCombat.maxHp,
+      fallbackHp.max
+    );
+    max = max > 0 ? max : 1;
+
+    var current = firstDefinedNumber(
+      doc.currentHP,
+      doc.currentHp,
+      rootHp.current,
+      vitals.currentHP,
+      vitals.currentHp,
+      combatVitals.currentHP,
+      combatVitals.currentHp,
+      runtimeHp.current,
+      runtimeCombat.currentHP,
+      runtimeCombat.currentHp,
+      fallbackHp.current,
+      max
+    );
+    current = Math.max(0, Math.min(max, current));
+
+    var temp = firstDefinedNumber(
+      doc.tempHP,
+      doc.tempHp,
+      rootHp.temp,
+      vitals.tempHP,
+      vitals.tempHp,
+      combatVitals.tempHP,
+      combatVitals.tempHp,
+      runtimeHp.temp,
+      runtimeCombat.tempHP,
+      runtimeCombat.tempHp,
+      fallbackHp.temp,
+      0
+    );
+    temp = Math.max(0, temp);
+
+    return { max: max, current: current, temp: temp };
+  }
+
+  function firstDefinedNumber() {
+    for (var i = 0; i < arguments.length; i += 1) {
+      if (hasNumber(arguments[i])) return parseInt(arguments[i], 10);
+    }
+    return 0;
+  }
+
   function titleCaseWord(raw) {
     var text = String(raw || '').trim().toLowerCase();
     if (!text) return '';
@@ -366,7 +437,7 @@
     var tokenDisplay = asObject(presentation.tokenDisplay);
     var species = asObject(doc.species);
     var background = asObject(doc.background);
-    var hp = asObject(runtime.hp);
+    var hp = resolveCanonicalHp(doc, runtime, asObject(out.hp));
     var speed = asObject(runtime.speed);
     var spellAccess = asObject(runtime.spellAccess);
     var classDisplay = asObject(runtime.classDisplay);
@@ -428,16 +499,14 @@
       out.ac = asInt(runtime.ac, asInt(out.ac, 10));
     }
 
-    if (Object.keys(hp).length) {
-      out.maxHp = asInt(hp.max, asInt(out.maxHp, asInt(asObject(out.hp).max, 1)));
-      out.currentHp = asInt(hp.current, asInt(out.currentHp, asInt(asObject(out.hp).current, out.maxHp || 1)));
-      out.tempHp = asInt(hp.temp, asInt(out.tempHp, asInt(asObject(out.hp).temp, 0)));
-      out.hp = {
-        max: out.maxHp,
-        current: out.currentHp,
-        temp: out.tempHp,
-      };
-    }
+    out.maxHp = asInt(hp.max, asInt(out.maxHp, asInt(asObject(out.hp).max, 1)));
+    out.currentHp = asInt(hp.current, asInt(out.currentHp, asInt(asObject(out.hp).current, out.maxHp || 1)));
+    out.tempHp = asInt(hp.temp, asInt(out.tempHp, asInt(asObject(out.hp).temp, 0)));
+    out.hp = {
+      max: out.maxHp,
+      current: out.currentHp,
+      temp: out.tempHp,
+    };
 
     var walkSpeed = asInt(speed.walk, asInt(out.speed, 30));
     if (walkSpeed > 0) {
@@ -518,7 +587,11 @@
     var tokenDisplay = asObject(presentation.tokenDisplay);
     var species = asObject(doc.species);
     var background = asObject(doc.background);
-    var hp = asObject(runtime.hp);
+    var hp = resolveCanonicalHp(doc, runtime, {
+      max: out.maxHp,
+      current: out.currentHp,
+      temp: out.tempHp,
+    });
     var speed = asObject(runtime.speed);
     var classDisplay = asObject(runtime.classDisplay);
 
@@ -540,11 +613,9 @@
       out.ac = asInt(runtime.ac, asInt(out.ac, 10));
     }
 
-    if (Object.keys(hp).length) {
-      out.maxHp = asInt(hp.max, asInt(out.maxHp, 1));
-      out.currentHp = asInt(hp.current, asInt(out.currentHp, out.maxHp || 1));
-      out.tempHp = asInt(hp.temp, asInt(out.tempHp, 0));
-    }
+    out.maxHp = asInt(hp.max, asInt(out.maxHp, 1));
+    out.currentHp = asInt(hp.current, asInt(out.currentHp, out.maxHp || 1));
+    out.tempHp = asInt(hp.temp, asInt(out.tempHp, 0));
 
     var walkSpeed = asInt(speed.walk, asInt(out.speed, 30));
     if (walkSpeed > 0) {
@@ -716,16 +787,25 @@
 
     out.charSheet = nativeToLegacyCharSheet(nativeCharacter, nativeRuntime, source.charSheet);
     out.charBook = nativeToLegacyCharBook(nativeCharacter, nativeRuntime, source.charBook);
-    var runtimeHp = asObject(nativeRuntime.hp);
+    var runtimeHp = resolveCanonicalHp(nativeCharacter, nativeRuntime, {
+      max: asInt(out.charSheet && out.charSheet.maxHp, asInt(out.charBook && out.charBook.maxHp, asInt(out.hp, 1))),
+      current: asInt(out.charSheet && out.charSheet.currentHp, asInt(out.charBook && out.charBook.currentHp, asInt(out.curhp, asInt(out.hp, 1)))),
+      temp: asInt(out.charSheet && out.charSheet.tempHp, asInt(out.charBook && out.charBook.tempHp, asInt(out.tempHp, 0))),
+    });
     var runtimeSpeed = asObject(nativeRuntime.speed);
-    if (Object.keys(runtimeHp).length) {
-      var mappedMaxHp = asInt(runtimeHp.max, asInt(out.charSheet && out.charSheet.maxHp, asInt(out.charBook && out.charBook.maxHp, asInt(out.hp, 0))));
-      var mappedCurrentHp = asInt(runtimeHp.current, asInt(out.charSheet && out.charSheet.currentHp, asInt(out.charBook && out.charBook.currentHp, mappedMaxHp)));
-      var mappedTempHp = asInt(runtimeHp.temp, asInt(out.charSheet && out.charSheet.tempHp, asInt(out.charBook && out.charBook.tempHp, asInt(out.tempHp, 0))));
-      out.hp = mappedMaxHp;
-      out.curhp = mappedCurrentHp;
-      out.tempHp = mappedTempHp;
-    }
+    var mappedMaxHp = asInt(runtimeHp.max, asInt(out.charSheet && out.charSheet.maxHp, asInt(out.charBook && out.charBook.maxHp, asInt(out.hp, 0))));
+    var mappedCurrentHp = asInt(runtimeHp.current, asInt(out.charSheet && out.charSheet.currentHp, asInt(out.charBook && out.charBook.currentHp, mappedMaxHp)));
+    var mappedTempHp = asInt(runtimeHp.temp, asInt(out.charSheet && out.charSheet.tempHp, asInt(out.charBook && out.charBook.tempHp, asInt(out.tempHp, 0))));
+    out.hp = mappedMaxHp;
+    out.curhp = mappedCurrentHp;
+    out.tempHp = mappedTempHp;
+    out.nativeRuntime = Object.assign({}, asObject(out.nativeRuntime), {
+      hp: { max: mappedMaxHp, current: mappedCurrentHp, temp: mappedTempHp },
+      combat: Object.assign({}, asObject(asObject(out.nativeRuntime).combat), {
+        maxHP: mappedMaxHp,
+        currentHP: mappedCurrentHp,
+      }),
+    });
     var runtimeCombat = asObject(nativeRuntime.combat);
     if (runtimeCombat.ac !== undefined && runtimeCombat.ac !== null) {
       out.ac = asInt(runtimeCombat.ac, asInt(out.ac, 0));
@@ -748,7 +828,11 @@
     var token = asObject(existingTokenData);
     var runtime = asObject(doc.runtime);
     var combat = asObject(runtime.combat);
-    var hp = asObject(runtime.hp);
+    var hp = resolveCanonicalHp(doc, runtime, {
+      max: asInt(combat.maxHP, asInt(token.maxHP, 10)),
+      current: asInt(combat.currentHP, asInt(token.currentHP, 10)),
+      temp: asInt(token.tempHP, 0),
+    });
     var species = asObject(runtime.species);
     var identity = asObject(doc.identity);
 
