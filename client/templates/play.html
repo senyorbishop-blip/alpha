@@ -37744,8 +37744,14 @@ function _syncLoadedProfileToOwnedToken(profile) {
   }
   const profileSheet = (profile && typeof profile.charSheet === 'object') ? profile.charSheet : {};
   const profileBook = (profile && typeof profile.charBook === 'object') ? profile.charBook : {};
+  const profileRuntime = (profile && typeof profile.nativeRuntime === 'object') ? profile.nativeRuntime : {};
+  const profileRuntimeHp = (profileRuntime && typeof profileRuntime.hp === 'object') ? profileRuntime.hp : {};
+  const profileRuntimeCombat = (profileRuntime && typeof profileRuntime.combat === 'object') ? profileRuntime.combat : {};
+  const profileRuntimeSpeed = (profileRuntime && typeof profileRuntime.speed === 'object') ? profileRuntime.speed : {};
   const sheetHpOverride = parseInt(
-    profileSheet?.maxHp
+    profileRuntimeHp?.max
+      ?? profileRuntimeCombat?.maxHP
+      ?? profileSheet?.maxHp
       ?? profileBook?.maxHp
       ?? _charSheet?.maxHp
       ?? _charSheet?.book?.maxHp
@@ -37753,7 +37759,9 @@ function _syncLoadedProfileToOwnedToken(profile) {
     10
   );
   const sheetCurHpOverride = parseInt(
-    profileSheet?.currentHp
+    profileRuntimeHp?.current
+      ?? profileRuntimeCombat?.currentHP
+      ?? profileSheet?.currentHp
       ?? profileBook?.currentHp
       ?? _charSheet?.currentHp
       ?? _charSheet?.book?.currentHp
@@ -37761,7 +37769,9 @@ function _syncLoadedProfileToOwnedToken(profile) {
     10
   );
   const profileAcOverride = parseInt(
-    profileSheet?.ac
+    profileRuntimeCombat?.ac
+      ?? profileRuntime?.ac
+      ?? profileSheet?.ac
       ?? profileBook?.ac
       ?? _charSheet?.ac
       ?? _charSheet?.book?.ac
@@ -37769,7 +37779,9 @@ function _syncLoadedProfileToOwnedToken(profile) {
     10
   );
   const profileSpeedOverride = parseInt(
-    profileSheet?.speed
+    profileRuntimeCombat?.speed
+      ?? profileRuntimeSpeed?.walk
+      ?? profileSheet?.speed
       ?? profileBook?.speed
       ?? _charSheet?.speed
       ?? _charSheet?.book?.speed
@@ -37777,7 +37789,8 @@ function _syncLoadedProfileToOwnedToken(profile) {
     10
   );
   const profileLevelOverride = parseInt(
-    profileSheet?.level
+    profileRuntime?.levelTotal
+      ?? profileSheet?.level
       ?? profileSheet?.totalLevel
       ?? profileBook?.level
       ?? _charSheet?.level
@@ -37788,6 +37801,13 @@ function _syncLoadedProfileToOwnedToken(profile) {
   );
   if (Number.isFinite(sheetHpOverride) && sheetHpOverride > 0) payload.maxHp = sheetHpOverride;
   if (Number.isFinite(sheetCurHpOverride) && sheetCurHpOverride >= 0) payload.hp = Math.min(payload.maxHp || sheetCurHpOverride, sheetCurHpOverride);
+  const profileTempHpOverride = parseInt(
+    profileRuntimeHp?.temp
+      ?? profileSheet?.tempHp
+      ?? profileBook?.tempHp,
+    10
+  );
+  if (Number.isFinite(profileTempHpOverride) && profileTempHpOverride >= 0) payload.tempHp = profileTempHpOverride;
   if (Number.isFinite(profileAcOverride) && profileAcOverride > 0) payload.ac = profileAcOverride;
   if (Number.isFinite(profileSpeedOverride) && profileSpeedOverride > 0) payload.speed = profileSpeedOverride;
   if (Number.isFinite(profileLevelOverride) && profileLevelOverride > 0) payload.level = profileLevelOverride;
@@ -37832,6 +37852,42 @@ function applyCharProfileRecord(p, opts = {}) {
     profile.charBook = draft.charBook || profile.charBook;
     profile.charSheet = draft.charSheet || profile.charSheet;
   }
+  const profileRuntime = (profile && typeof profile.nativeRuntime === 'object') ? profile.nativeRuntime : {};
+  const profileRuntimeHp = (profileRuntime && typeof profileRuntime.hp === 'object') ? profileRuntime.hp : {};
+  const profileRuntimeCombat = (profileRuntime && typeof profileRuntime.combat === 'object') ? profileRuntime.combat : {};
+  const profileRuntimeSpeed = (profileRuntime && typeof profileRuntime.speed === 'object') ? profileRuntime.speed : {};
+  const resolvedMaxHp = profileRuntimeHp?.max
+    ?? profile?.charSheet?.maxHp
+    ?? profile?.charBook?.maxHp
+    ?? profile?.hp;
+  const resolvedCurHp = profileRuntimeHp?.current
+    ?? profileRuntimeCombat?.currentHP
+    ?? profile?.charSheet?.currentHp
+    ?? profile?.charBook?.currentHp
+    ?? profile?.curhp;
+  const resolvedTempHp = profileRuntimeHp?.temp
+    ?? profile?.charSheet?.tempHp
+    ?? profile?.charBook?.tempHp
+    ?? profile?.tempHp;
+  const resolvedAc = profileRuntimeCombat?.ac
+    ?? profileRuntime?.ac
+    ?? profile?.charSheet?.ac
+    ?? profile?.charBook?.ac
+    ?? profile?.ac;
+  const resolvedInitiative = profileRuntimeCombat?.initiative
+    ?? profile?.charSheet?.initiative
+    ?? profile?.charBook?.initiative
+    ?? profile?.initiative;
+  const resolvedSpeed = profileRuntimeCombat?.speed
+    ?? profileRuntimeSpeed?.walk
+    ?? profile?.charSheet?.speed
+    ?? profile?.charBook?.speed
+    ?? profile?.speed;
+  const resolvedLevel = profileRuntime?.levelTotal
+    ?? profile?.charSheet?.totalLevel
+    ?? profile?.charSheet?.level
+    ?? profile?.charBook?.level
+    ?? profile?.level;
   const setCharVal = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
   setCharVal('char-name', profile.name || '');
   const mappedClassId = String(profile.classId || profile.charSheet?.classes?.[0]?.classId || profile.charSheet?.classes?.[0]?.id || '').trim();
@@ -37841,13 +37897,13 @@ function applyCharProfileRecord(p, opts = {}) {
     if (found) { selectedClass = found; buildClassGrid(); }
   }
   playerColor = profile.color || playerColor;
-  setCharVal('char-curhp', profile.curhp != null ? String(profile.curhp) : '');
-  setCharVal('char-hp', profile.hp != null ? String(profile.hp) : '');
-  setCharVal('char-temp-hp', profile.tempHp != null ? String(profile.tempHp) : '');
-  setCharVal('char-initiative', profile.initiative != null ? String(profile.initiative) : '');
-  setCharVal('char-ac', profile.ac != null ? String(profile.ac) : '');
-  setCharVal('char-speed', profile.speed != null ? String(profile.speed) : '');
-  setCharVal('char-level', profile.level != null ? String(profile.level) : '');
+  setCharVal('char-curhp', resolvedCurHp != null ? String(resolvedCurHp) : '');
+  setCharVal('char-hp', resolvedMaxHp != null ? String(resolvedMaxHp) : '');
+  setCharVal('char-temp-hp', resolvedTempHp != null ? String(resolvedTempHp) : '');
+  setCharVal('char-initiative', resolvedInitiative != null ? String(resolvedInitiative) : '');
+  setCharVal('char-ac', resolvedAc != null ? String(resolvedAc) : '');
+  setCharVal('char-speed', resolvedSpeed != null ? String(resolvedSpeed) : '');
+  setCharVal('char-level', resolvedLevel != null ? String(resolvedLevel) : '');
   setCharVal('char-passive', profile.passive != null ? String(profile.passive) : '');
   setCharVal('char-faction', profile.faction || '');
   setCharVal('char-notes', profile.notes || '');
@@ -37867,7 +37923,7 @@ function applyCharProfileRecord(p, opts = {}) {
   if (profile.charBook) {
     applyCharacterBookDataToUI(profile.charBook, { skipQuickSync: true });
     // Restore runtime current HP — may have decreased from charBook value due to combat damage
-    if (profile.curhp !== undefined) setCharVal('char-curhp', profile.curhp != null ? String(profile.curhp) : '');
+    if (resolvedCurHp !== undefined) setCharVal('char-curhp', resolvedCurHp != null ? String(resolvedCurHp) : '');
   } else {
     seedCharacterBookFromCurrentState();
   }

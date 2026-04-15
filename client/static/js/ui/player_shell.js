@@ -146,6 +146,9 @@
       const external = env.getActiveCharacterState();
       if (external && typeof external === 'object') return external;
     }
+    const runtimeSnapshot = (env && typeof env.getActivePlayerCharacterSnapshot === 'function')
+      ? (env.getActivePlayerCharacterSnapshot() || {})
+      : {};
     const token = _findOwnedToken(env);
     const bookData = (env && typeof env.getCharacterBookDataFromUI === 'function')
       ? (env.getCharacterBookDataFromUI() || {})
@@ -153,18 +156,20 @@
     return {
       token,
       bookData,
-      name: _firstDefined(token?.name, bookData?.name, env?.NAME, 'My character'),
-      currentHp: _firstDefined(token?.hp, bookData?.currentHp),
-      maxHp: _firstDefined(token?.maxHp, bookData?.maxHp),
-      tempHp: _firstDefined(token?.tempHp, bookData?.tempHp, 0),
-      ac: _firstDefined(token?.ac, bookData?.ac),
-      speed: _firstDefined(token?.speed, bookData?.speed),
-      initiative: _firstDefined(token?.initiativeMod, bookData?.initiative),
+      name: _firstDefined(runtimeSnapshot?.name, token?.name, bookData?.name, env?.NAME, 'My character'),
+      currentHp: _firstDefined(runtimeSnapshot?.currentHp, token?.hp, bookData?.currentHp),
+      maxHp: _firstDefined(runtimeSnapshot?.maxHp, token?.maxHp, bookData?.maxHp),
+      tempHp: _firstDefined(runtimeSnapshot?.tempHp, token?.tempHp, bookData?.tempHp, 0),
+      ac: _firstDefined(runtimeSnapshot?.ac, token?.ac, bookData?.ac),
+      speed: _firstDefined(runtimeSnapshot?.speed, token?.speed, bookData?.speed),
+      initiative: _firstDefined(runtimeSnapshot?.initiative, token?.initiativeMod, bookData?.initiative),
       passivePerception: _firstDefined(token?.passivePerception, bookData?.passivePerception),
       faction: _firstDefined(token?.faction, bookData?.faction),
       notes: _firstDefined(token?.notes, bookData?.campaignNotes),
       level: _firstDefined(token?.level, bookData?.level),
       className: _firstDefined(bookData?.className, ''),
+      portraitUrl: _firstDefined(runtimeSnapshot?.portraitUrl, bookData?.avatarUrl, ''),
+      tokenImageUrl: _firstDefined(runtimeSnapshot?.tokenImageUrl, token?.image_url, bookData?.tokenImageUrl, ''),
     };
   }
 

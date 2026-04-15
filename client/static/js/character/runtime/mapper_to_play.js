@@ -716,6 +716,29 @@
 
     out.charSheet = nativeToLegacyCharSheet(nativeCharacter, nativeRuntime, source.charSheet);
     out.charBook = nativeToLegacyCharBook(nativeCharacter, nativeRuntime, source.charBook);
+    var runtimeHp = asObject(nativeRuntime.hp);
+    var runtimeSpeed = asObject(nativeRuntime.speed);
+    if (Object.keys(runtimeHp).length) {
+      var mappedMaxHp = asInt(runtimeHp.max, asInt(out.charSheet && out.charSheet.maxHp, asInt(out.charBook && out.charBook.maxHp, asInt(out.hp, 0))));
+      var mappedCurrentHp = asInt(runtimeHp.current, asInt(out.charSheet && out.charSheet.currentHp, asInt(out.charBook && out.charBook.currentHp, mappedMaxHp)));
+      var mappedTempHp = asInt(runtimeHp.temp, asInt(out.charSheet && out.charSheet.tempHp, asInt(out.charBook && out.charBook.tempHp, asInt(out.tempHp, 0))));
+      out.hp = mappedMaxHp;
+      out.curhp = mappedCurrentHp;
+      out.tempHp = mappedTempHp;
+    }
+    var runtimeCombat = asObject(nativeRuntime.combat);
+    if (runtimeCombat.ac !== undefined && runtimeCombat.ac !== null) {
+      out.ac = asInt(runtimeCombat.ac, asInt(out.ac, 0));
+    } else if (nativeRuntime.ac !== undefined && nativeRuntime.ac !== null) {
+      out.ac = asInt(nativeRuntime.ac, asInt(out.ac, 0));
+    }
+    if (runtimeCombat.initiative !== undefined && runtimeCombat.initiative !== null) {
+      out.initiative = asInt(runtimeCombat.initiative, asInt(out.initiative, 0));
+    }
+    var mappedSpeed = asInt(runtimeCombat.speed, asInt(runtimeSpeed.walk, asInt(out.speed, 0)));
+    if (mappedSpeed > 0) out.speed = mappedSpeed;
+    var mappedLevel = asInt(nativeRuntime.levelTotal, asInt(out.charSheet && out.charSheet.totalLevel, asInt(out.level, 0)));
+    if (mappedLevel > 0) out.level = mappedLevel;
     out.__nativeMapped = true;
     return out;
   }
