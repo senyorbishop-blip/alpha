@@ -592,6 +592,44 @@
       return data;
     }
 
+    function notifyRosterMutation(kind, id) {
+      try {
+        localStorage.setItem('dnd_roster_mutation', JSON.stringify({
+          kind: String(kind || ''),
+          id: String(id || ''),
+          session: SESSION_ID,
+          at: Date.now(),
+        }));
+      } catch (_) {}
+    }
+
+    function removeCharacterEntryFromGateway(entry) {
+      if (!entry || !gatewayState || typeof gatewayState.getState !== 'function' || typeof gatewayState.setState !== 'function') return false;
+      const snapshot = gatewayState.getState() || {};
+      const rows = Array.isArray(snapshot.characters) ? snapshot.characters : [];
+      const matchLibrary = String(entry.libraryId || '').trim();
+      const matchId = String(entry.id || '').trim();
+      const nextRows = rows.filter((row) => {
+        if (!row || typeof row !== 'object') return true;
+        const rowLibrary = String(row.libraryId || '').trim();
+        const rowId = String(row.id || '').trim();
+        if (matchLibrary && rowLibrary && rowLibrary === matchLibrary) return false;
+        if (matchId && rowId && rowId === matchId) return false;
+        return true;
+      });
+      if (nextRows.length === rows.length) return false;
+      gatewayState.setState(Object.assign({}, snapshot, { characters: nextRows }));
+      if (joinGateway && typeof joinGateway.selectProfile === 'function') {
+        const selected = joinGateway.getSelectedProfileId ? String(joinGateway.getSelectedProfileId() || '').trim() : '';
+        const selectedStillExists = nextRows.some((row) => String((row && row.id) || '').trim() === selected);
+        if (!selectedStillExists && nextRows[0]) {
+          joinGateway.selectProfile(String(nextRows[0].id || '').trim());
+        }
+      }
+      renderRosterFromState();
+      return true;
+    }
+
     function buildAvatarOptions(entry) {
       const classLabel = String(entry.classSummary || entry.classId || '').trim();
       return {
@@ -651,8 +689,10 @@
           if (!ok) return;
           try {
             await deleteCharacterEntry(entry);
-            setFeedback('Character removed from your roster.', 'success');
-            await refreshRoster();
+            const removedLive = removeCharacterEntryFromGateway(entry);
+            notifyRosterMutation('delete', entry && (entry.libraryId || entry.id));
+            setFeedback(removedLive ? 'Character removed instantly from your roster.' : 'Character removed from your roster.', 'success');
+            if (!removedLive) await refreshRoster();
           } catch (err) {
             setFeedback(err.message || 'Could not delete this character.', 'error');
           }
@@ -927,6 +967,19 @@
       } catch (err) {
         setFeedback(err.message || 'Could not refresh the roster.', 'error');
       }
+    });
+
+    window.addEventListener('storage', async (event) => {
+      if (!event || event.key !== 'dnd_roster_mutation' || !event.newValue) return;
+      try {
+        const payload = JSON.parse(event.newValue);
+        if (!payload || String(payload.session || '').trim().toUpperCase() !== SESSION_ID) return;
+      } catch (_) {
+        return;
+      }
+      try {
+        await refreshRoster();
+      } catch (_) {}
     });
 
     init();
