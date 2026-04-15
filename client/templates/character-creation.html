@@ -1131,7 +1131,7 @@ function buildAvatarOptions(extra) {
 
 function resolveClassPortraitUrl(klass) {
   if (!klass || typeof klass !== 'object') return '';
-  return String(
+  const explicit = String(
     klass.portraitUrl
     || klass.portrait_url
     || klass.heroPortrait
@@ -1140,19 +1140,42 @@ function resolveClassPortraitUrl(klass) {
     || klass.image
     || ''
   ).trim();
+  if (explicit) return explicit;
+  const portraits = window.CasualDnDPortraitLibrary || null;
+  const normalizeClassAssetKey = (value) => {
+    const raw = String(value || '').trim().toLowerCase();
+    if (!raw) return '';
+    const compact = raw.replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '');
+    const aliases = {
+      bloodhunter: 'blood-hunter',
+      artificer: 'tinker',
+      bowman: 'ranger',
+      mage: 'wizard',
+      warrior: 'fighter',
+      thief: 'rogue',
+    };
+    const normalized = aliases[compact] || compact;
+    return normalized.replace(/[^a-z0-9]+/g, '-');
+  };
+  const classId = normalizeClassAssetKey(klass.id || '');
+  const className = normalizeClassAssetKey(klass.displayName || klass.name || '');
+  const classKey = classId || className;
+  if (!classKey) return '';
+  if (portraits && portraits.manifest && portraits.manifest.classes && portraits.manifest.classes[classKey]) {
+    return String(portraits.manifest.classes[classKey] || '').trim();
+  }
+  return `/static/importer/portraits/class/${classKey}.png`;
 }
 
 function resolveMainPortraitUrl() {
   const hero = state.hero || {};
-  const identityPortrait = String(
+  const customPortrait = String(
     hero.importedPortraitUrl
     || hero.customPortraitUrl
     || hero.portraitUrl
     || ''
   ).trim();
-  if (identityPortrait) return identityPortrait;
-  const appearancePortrait = String(hero.appearancePortraitUrl || '').trim();
-  if (appearancePortrait) return appearancePortrait;
+  if (customPortrait) return customPortrait;
   const classPortrait = resolveClassPortraitUrl(selectedClass() || {});
   if (classPortrait) return classPortrait;
   return '';
@@ -1165,15 +1188,16 @@ function fallbackPortraitMarkup(size = 250) {
 function renderAvatarSVG(size = 250) {
   const sp = selectedSpecies() || {};
   const klass = selectedClass() || {};
-  const hasClass = !!state.hero.classId;
-  const hasMeaningfulPreview = hasClass || (!!state.hero.speciesId && !!state.hero.name.trim());
-  if (!hasMeaningfulPreview) {
-    return '';
-  }
-  if (!state.hero.speciesId) {
+  const stepKey = (STEPS[state.step] && STEPS[state.step].key) || '';
+  const customPortrait = String(
+    (state.hero && (state.hero.importedPortraitUrl || state.hero.customPortraitUrl || state.hero.portraitUrl)) || ''
+  ).trim();
+  const showClassPortrait = ['class', 'background', 'abilities', 'equipment', 'backstory', 'confirm'].includes(stepKey);
+  const canRenderPortrait = !!customPortrait || showClassPortrait;
+  if (!canRenderPortrait) {
     return `
     <div class="portrait-panel placeholder">
-      <div class="portrait-caption">Select Species &amp; Look to reveal the hero portrait.</div>
+      <div class="portrait-caption">Portrait preview unlocks at Class &amp; Style. Importing a custom portrait will show it immediately.</div>
     </div>`;
   }
   const mainPortrait = resolveMainPortraitUrl();
@@ -1196,7 +1220,10 @@ function renderPreview() {
   const cls = selectedClass();
   const bg = selectedBackground();
   els.heroTitle.textContent = state.hero.name.trim() || 'Unnamed Hero';
-  els.heroSubtitle.textContent = `${sp ? speciesDisplayName(sp) : 'Unset species'} · ${cls ? classDisplayName(cls) : 'Unset class'} · ${bg ? backgroundDisplayName(bg) : 'Unset background'}`;
+  const subtitleParts = [];
+  if (state.hero.homeland && String(state.hero.homeland).trim()) subtitleParts.push(String(state.hero.homeland).trim());
+  if (bg) subtitleParts.push(backgroundDisplayName(bg));
+  els.heroSubtitle.textContent = subtitleParts.length ? subtitleParts.join(' · ') : 'Set homeland and background details';
   els.heroCampaign.textContent = 'Realm: ' + (state.campaignName || 'Unknown campaign');
   if (cls) {
     els.badgeClass.textContent = 'Class · ' + `${classDisplayName(cls)} · Lv ${state.hero.startingLevel || 1}`;
