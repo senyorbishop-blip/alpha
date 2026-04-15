@@ -7362,12 +7362,12 @@
 <div class="flyout" id="flyout-char-token">
   <div class="sidebar-section">
     <div class="sidebar-label">Token</div>
-    <input type="number" class="mini-input" id="char-curhp" placeholder="Current HP" min="0" max="999" oninput="refreshCharSummary()" style="margin-bottom:0.35rem;text-align:center;" />
-    <input type="number" class="mini-input" id="char-hp" placeholder="Max HP" min="1" max="999" oninput="refreshCharSummary()" style="margin-bottom:0.35rem;text-align:center;" />
-    <input type="number" class="mini-input" id="char-temp-hp" placeholder="Temp HP" min="0" max="999" oninput="refreshCharSummary()" style="margin-bottom:0.35rem;text-align:center;" />
-    <input type="number" class="mini-input" id="char-ac" placeholder="AC" min="0" max="99" oninput="refreshCharSummary()" style="margin-bottom:0.35rem;text-align:center;" />
-    <input type="number" class="mini-input" id="char-initiative" placeholder="Initiative" min="-20" max="30" oninput="refreshCharSummary()" style="margin-bottom:0.35rem;text-align:center;" />
-    <input type="number" class="mini-input" id="char-speed" placeholder="Speed" min="0" max="300" oninput="refreshCharSummary()" style="margin-bottom:0.45rem;text-align:center;" />
+    <input type="hidden" id="char-curhp" />
+    <input type="hidden" id="char-hp" />
+    <input type="hidden" id="char-temp-hp" />
+    <input type="hidden" id="char-ac" />
+    <input type="hidden" id="char-initiative" />
+    <input type="hidden" id="char-speed" />
     <div class="char-section-title">Token Image</div>
     <label style="display:flex;flex-direction:column;gap:0.22rem;font-size:0.62rem;color:var(--parchment-dim);margin-bottom:0.45rem;">
       Upload portrait / token art
@@ -7384,7 +7384,6 @@
       <label class="char-personalization-field char-personalization-tagline"><span>Favorite Quote / Tagline</span><input type="text" class="mini-input" id="char-tagline" maxlength="120" placeholder="“No lock can hold me.”" oninput="onCharPersonalizationChange()" /></label>
     </div>
     <div class="char-identity-preview" id="char-identity-preview">
-      <div class="char-identity-preview-name" id="char-identity-preview-name">Adventurer</div>
       <div class="char-identity-preview-tagline" id="char-identity-preview-tagline">Add a quote for extra flavor.</div>
     </div>
     <input type="hidden" id="char-level" value="1" />
@@ -24515,30 +24514,57 @@ function buildHpSummaryValues(curValue, maxValue, tempValue) {
   };
 }
 
-function getActivePlayerCharacterSnapshot() {
+function _activeCharacterFromRuntimeSource() {
   const ownedToken = _getMyOwnedToken();
   const profile = _partyStatusActiveProfile();
-  const readInput = (id) => document.getElementById(id)?.value;
-  const parseNum = (value, fallback = null) => {
+  const toIntOr = (value, fallback = null) => {
     const n = parseInt(value, 10);
     return Number.isNaN(n) ? fallback : n;
   };
   const rawName = String(
-    ownedToken?.name
-    || readInput('char-name')
-    || _charSheet?.name
+    _charSheet?.name
+    || ownedToken?.name
     || profile?.name
     || NAME
     || 'Adventurer'
   ).trim();
   return {
+    ownedToken,
     name: _stripClassIcon(rawName),
-    currentHp: parseNum(ownedToken?.hp, parseNum(readInput('char-curhp'), parseNum(_charSheet?.currentHp, parseNum(profile?.curhp, null)))),
-    maxHp: parseNum(ownedToken?.maxHp, parseNum(readInput('char-hp'), parseNum(_charSheet?.maxHp, parseNum(profile?.hp, null)))),
-    tempHp: parseNum(ownedToken?.tempHp, parseNum(readInput('char-temp-hp'), parseNum(_charSheet?.tempHp, parseNum(profile?.tempHp, 0)))),
-    ac: parseNum(ownedToken?.ac, parseNum(readInput('char-ac'), parseNum(_charSheet?.ac, parseNum(profile?.ac, null)))),
-    initiative: parseNum(ownedToken?.initiativeMod, parseNum(readInput('char-initiative'), parseNum(_charSheet?.initiative, parseNum(profile?.initiative, 0)))),
-    speed: parseNum(ownedToken?.speed, parseNum(readInput('char-speed'), parseNum(_charSheet?.speed, parseNum(profile?.speed, null)))),
+    currentHp: toIntOr(_charSheet?.currentHp, toIntOr(ownedToken?.hp, toIntOr(profile?.curhp, null))),
+    maxHp: toIntOr(_charSheet?.maxHp, toIntOr(ownedToken?.maxHp, toIntOr(profile?.hp, null))),
+    tempHp: toIntOr(_charSheet?.tempHp, toIntOr(ownedToken?.tempHp, toIntOr(profile?.tempHp, 0))),
+    ac: toIntOr(_charSheet?.ac, toIntOr(ownedToken?.ac, toIntOr(profile?.ac, null))),
+    initiative: toIntOr(_charSheet?.initiative, toIntOr(ownedToken?.initiativeMod, toIntOr(profile?.initiative, 0))),
+    speed: toIntOr(_charSheet?.speed, toIntOr(ownedToken?.speed, toIntOr(profile?.speed, null))),
+    tokenImageUrl: String(_charSheet?.tokenImageUrl || ownedToken?.image_url || '').trim(),
+  };
+}
+
+function _syncCharSheetFromOwnedToken(tok) {
+  if (ROLE !== 'player' || !tok) return;
+  if (!_charSheet) _charSheet = {};
+  _charSheet.name = _stripClassIcon(String(tok.name || _charSheet.name || NAME || 'Adventurer'));
+  if (tok.hp != null) _charSheet.currentHp = parseInt(tok.hp, 10);
+  if (tok.maxHp != null) _charSheet.maxHp = parseInt(tok.maxHp, 10);
+  _charSheet.tempHp = Math.max(0, parseInt(tok.tempHp, 10) || 0);
+  if (tok.ac != null) _charSheet.ac = parseInt(tok.ac, 10);
+  if (tok.initiativeMod != null) _charSheet.initiative = parseInt(tok.initiativeMod, 10);
+  if (tok.speed != null) _charSheet.speed = parseInt(tok.speed, 10);
+  if (tok.image_url) _charSheet.tokenImageUrl = String(tok.image_url);
+}
+
+function getActivePlayerCharacterSnapshot() {
+  const state = _activeCharacterFromRuntimeSource();
+  if (state.ownedToken) _syncCharSheetFromOwnedToken(state.ownedToken);
+  return {
+    name: state.name,
+    currentHp: state.currentHp,
+    maxHp: state.maxHp,
+    tempHp: state.tempHp,
+    ac: state.ac,
+    initiative: state.initiative,
+    speed: state.speed,
   };
 }
 
@@ -24594,6 +24620,7 @@ function _stripClassIcon(rawName) {
   return rawName;
 }
 function openMyTokenStats(tok) {
+  _syncCharSheetFromOwnedToken(tok);
   // Populate the char flyout with current values
   const name      = _stripClassIcon(tok.name);  // strip class icon if present
   const nameEl    = document.getElementById('char-name');
@@ -35630,6 +35657,7 @@ function syncMyCharacterFormFromToken(preferVisible = true) {
   const stagedTok  = Object.values(_stagingTokens).find(t => _tokenOwnedByMe(t));
   const tok = preferVisible ? (visibleTok || stagedTok) : (stagedTok || visibleTok);
   if (!tok) return;
+  _syncCharSheetFromOwnedToken(tok);
   const activeProfileId = resolveActiveCharProfileId();
   const activeProfile = charProfiles.find(p => String(p?.id || '') === String(activeProfileId || '')) || null;
   const activeMode = _resolveCharacterSheetModeFromProfile(activeProfile || { nativeCharacter: _activeNativeCharacterDocument || {} });
@@ -37680,15 +37708,16 @@ function _syncLoadedProfileToOwnedToken(profile) {
   const tokenName = (classObj && classObj.icon ? classObj.icon + ' ' : '') + name;
   const imageFields = _resolveProfileImageFields(profile || {});
   const speciesDarkvisionRadius = parseInt(_charSheet?.darkvisionRadius ?? _charSheet?.speciesGameplay?.darkvision_radius ?? 0, 10) || 0;
+  const runtime = _activeCharacterFromRuntimeSource();
   const payload = {
     name: tokenName,
     color: playerColor,
-    initiativeMod: parseInt(document.getElementById('char-initiative')?.value || _charSheet?.initiative || 0, 10) || 0,
-    tempHp: parseInt(document.getElementById('char-temp-hp')?.value || _charSheet?.tempHp || 0, 10) || 0,
-    hp: parseInt(document.getElementById('char-curhp')?.value || _charSheet?.currentHp || 0, 10) || 0,
-    maxHp: parseInt(document.getElementById('char-hp')?.value || _charSheet?.maxHp || 0, 10) || 0,
-    ac: parseInt(document.getElementById('char-ac')?.value || _charSheet?.ac || 0, 10) || null,
-    speed: parseInt(document.getElementById('char-speed')?.value || _charSheet?.speed || 0, 10) || null,
+    initiativeMod: parseInt(runtime.initiative ?? 0, 10) || 0,
+    tempHp: parseInt(runtime.tempHp ?? 0, 10) || 0,
+    hp: parseInt(runtime.currentHp ?? 0, 10) || 0,
+    maxHp: parseInt(runtime.maxHp ?? 0, 10) || 0,
+    ac: parseInt(runtime.ac ?? 0, 10) || null,
+    speed: parseInt(runtime.speed ?? 0, 10) || null,
     level: parseInt(document.getElementById('char-level')?.value || _charSheet?.level || 0, 10) || null,
     passivePerception: parseInt(document.getElementById('char-passive')?.value || _charSheet?.passivePerception || 0, 10) || null,
     faction: String(document.getElementById('char-faction')?.value || _charSheet?.faction || '').trim(),
@@ -37778,6 +37807,7 @@ function _syncLoadedProfileToOwnedToken(profile) {
     tok.level = payload.level ?? tok.level;
     tok.initiativeMod = payload.initiativeMod ?? tok.initiativeMod;
     tok.faction = payload.faction ?? tok.faction;
+    _syncCharSheetFromOwnedToken(tok);
     sendWS({ type: 'token_edit', payload: tokenEdit });
   } else {
     _pendingLoadedCharacterTokenSeed = {
