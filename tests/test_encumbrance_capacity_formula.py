@@ -5,13 +5,13 @@ from server import encumbrance
 
 def test_carry_capacity_uses_updated_formula_for_scalar_path():
     strength = 10
-    expected = math.floor((strength * 15) * 1.25) + 10
+    expected = math.floor((strength * 15) * 1.5) + 20
     assert encumbrance.get_carry_capacity(strength) == expected
 
 
 def test_carry_capacity_uses_updated_formula_for_new_and_existing_character_shapes():
     strength = 14
-    expected = math.floor((strength * 15) * 1.25) + 10
+    expected = math.floor((strength * 15) * 1.5) + 20
 
     newly_created_character = {"abilities": {"scores": {"str": strength}}}
     existing_character = {"abilities": {"str": strength}}

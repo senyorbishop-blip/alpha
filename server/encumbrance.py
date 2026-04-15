@@ -376,7 +376,7 @@ def get_size_multiplier(size: str) -> float:
 
 def _get_carry_capacity_scalar(strength: int, size: str = "medium") -> float:
     str_val = max(1, min(30, int(strength or 10)))
-    base_capacity = math.floor((str_val * 15.0) * 1.25) + 10
+    base_capacity = math.floor((str_val * 15.0) * 1.5) + 20
     return base_capacity * get_size_multiplier(size)
 
 
@@ -393,7 +393,7 @@ def get_carry_capacity(strength_or_character: Any, size: str = "medium") -> Any:
         abilities = character_document.get("abilities", {})
         ability_scores = abilities.get("scores", {}) if isinstance(abilities, dict) else {}
         str_score = int(ability_scores.get("str", abilities.get("str", 10)) or 10) if isinstance(abilities, dict) else 10
-        carry_capacity = math.floor((str_score * 15) * 1.25) + 10
+        carry_capacity = math.floor((str_score * 15) * 1.5) + 20
         push_drag_lift = str_score * 30
         encumbered_threshold = carry_capacity / 3
         heavily_encumbered = (carry_capacity * 2) / 3
