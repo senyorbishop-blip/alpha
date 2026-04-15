@@ -24,6 +24,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.responses import FileResponse
 
 from server.session import get_session
 from server.db import init_db, save_campaign_async, load_campaign, create_creature
@@ -54,6 +55,7 @@ from server.maps.routes import router as maps_router
 from server.commercial.routes import router as commercial_router
 from server.character.routes import router as character_router
 from server.config import load_config
+from server.static_compat import resolve_legacy_class_portrait
 
 # ── GPU TTS system (Chatterbox + Dia + Kokoro) ────────────────────────────────
 try:
@@ -295,7 +297,6 @@ static_dir = BASE / "client" / "static"
 single_prop_dir = BASE / "vtt_single_props"
 static_dir.mkdir(parents=True, exist_ok=True)
 # Serve map files with long cache so players don't re-download on refresh
-from starlette.responses import FileResponse as _FR
 
 @app.get("/static/maps/{filename}")
 async def serve_map(filename: str):
@@ -303,7 +304,25 @@ async def serve_map(filename: str):
     if not path.exists():
         from fastapi import HTTPException
         raise HTTPException(404)
-    return _FR(str(path), headers={"Cache-Control": "public, max-age=604800"})
+    return FileResponse(str(path), headers={"Cache-Control": "public, max-age=604800"})
+
+
+@app.get("/static/importer/portraits/class/{filename}")
+async def serve_legacy_class_portrait(filename: str):
+    path = resolve_legacy_class_portrait(static_dir, filename)
+    if path is None:
+        from fastapi import HTTPException
+        raise HTTPException(404)
+    return FileResponse(str(path), headers={"Cache-Control": "public, max-age=86400"})
+
+
+@app.get("/static/importer/portraits/classes/{filename}")
+async def serve_legacy_classes_portrait(filename: str):
+    path = resolve_legacy_class_portrait(static_dir, filename)
+    if path is None:
+        from fastapi import HTTPException
+        raise HTTPException(404)
+    return FileResponse(str(path), headers={"Cache-Control": "public, max-age=86400"})
 
 # Serve user-uploaded assets (tokens, power icons) before the generic /static mount
 # so uploaded map URLs like /static/user_uploads/maps/... are not swallowed by the
