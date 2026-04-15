@@ -120,7 +120,7 @@
 
   function getCarryCapacity(strength, size) {
     const s = Math.max(1, Math.min(30, parseInt(strength, 10) || 10));
-    const baseCapacity = Math.floor((s * 15) * 1.25) + 10;
+    const baseCapacity = Math.floor((s * 15) * 1.5) + 20;
     return baseCapacity * getSizeMultiplier(size);
   }
 
@@ -217,8 +217,8 @@
     const markerLight = capacity > 0 ? Math.min(1, tLight / capacity) * 100 : 0;
     const markerHeavy = capacity > 0 ? Math.min(1, tHeavy / capacity) * 100 : 0;
 
-    const baseCapacity = Math.floor((strScore * 15) * 1.25) + 10;
-    const tooltip = `Based on STR ${strScore} (floor((15 × ${strScore}) × 1.25) + 10 = ${baseCapacity.toFixed(0)} lbs)`;
+    const baseCapacity = Math.floor((strScore * 15) * 1.5) + 20;
+    const tooltip = `Based on STR ${strScore} (floor((15 × ${strScore}) × 1.5) + 20 = ${baseCapacity.toFixed(0)} lbs)`;
     wrap.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
         <span style="font-size:0.62rem;color:${barColor};font-weight:700;letter-spacing:0.05em;">${escapeHtmlEnc(label)}</span>
