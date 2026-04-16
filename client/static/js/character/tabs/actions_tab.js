@@ -706,11 +706,19 @@
           const activeRows = _safeArray(meta.activeSummons).filter(function (entry) { return entry && typeof entry === 'object'; });
           const selectedVariantId = _firstText(meta.selectedVariantId, variants[0] && variants[0].id, '').toLowerCase();
           const variantHint = meta.replaceOnResummon ? 'Switching variants replaces the existing summon when deployed again.' : 'Switching variants applies to your next summon/deploy.';
+          const entityBadge = meta.isCreature ? 'Creature' : `Field ${_firstText(meta.entityKind, 'effect').replace(/_/g, ' ')}`;
+          const interaction = meta && meta.interactionModel && typeof meta.interactionModel === 'object' ? meta.interactionModel : {};
+          const interactionBits = [
+            interaction.stationary ? 'stationary' : '',
+            interaction.triggerable ? 'triggerable' : '',
+            interaction.destructible ? 'destructible' : 'indestructible',
+            interaction.ownerActivated ? 'owner-activated' : 'passive',
+          ].filter(Boolean);
           return `<div style="border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:.45rem .52rem;background:rgba(0,0,0,.18);">
             <div style="display:flex;justify-content:space-between;gap:.45rem;align-items:flex-start;">
               <div>
                 <div style="font-weight:700;font-size:.72rem;">${_esc(_firstText(action && action.name, 'Summon'))}</div>
-                <div style="font-size:.6rem;color:rgba(235,230,210,.72);">${_esc(_firstText(meta.sourceFeatureName, 'Source unknown'))}</div>
+                <div style="font-size:.6rem;color:rgba(235,230,210,.72);">${_esc(_firstText(meta.sourceFeatureName, 'Source unknown'))} • ${_esc(entityBadge)}</div>
               </div>
               <div style="font-size:.6rem;color:rgba(235,230,210,.72);">Active ${_num(meta.currentActiveCount, 0)}/${Math.max(0, _num(meta.maxActive, 1))}</div>
             </div>
@@ -725,7 +733,7 @@
               <button type="button" class="cs-feature-inspect" data-action-use="${_esc(actionId)}" data-action-source="summon_action">${_esc(/deploy/i.test(String(action && action.actionType || '')) ? 'Deploy' : 'Summon')}</button>
               <button type="button" class="cs-feature-inspect" data-action-dismiss="${_esc(actionId)}" data-action-source="summon_action" ${activeRows.length ? '' : 'disabled'}>Dismiss</button>
             </div>
-            <div style="font-size:.58rem;color:rgba(235,230,210,.68);margin-top:.3rem;">${_esc(_firstText(meta.commandModelSummary, 'Command model pending.'))} • ${_esc(variantHint)}</div>
+            <div style="font-size:.58rem;color:rgba(235,230,210,.68);margin-top:.3rem;">${_esc(_firstText(meta.commandModelSummary, 'Command model pending.'))} • ${_esc(variantHint)}${interactionBits.length ? ` • ${_esc(interactionBits.join(', '))}` : ''}</div>
             ${activeRows.length ? `<div style="display:grid;gap:.3rem;margin-top:.45rem;">${activeRows.map(function (row) {
               const tokenId = _firstText(row && row.tokenId, '');
               return `<div style="display:flex;justify-content:space-between;align-items:center;gap:.35rem;font-size:.6rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:.25rem .35rem;">
@@ -753,13 +761,15 @@
       }).filter(Boolean);
       const activeCount = _num(entry.currentActiveCount, 0);
       const maxActive = Math.max(0, _num(entry.maxActive, 1));
+      const isCreature = !!entry.isCreature;
+      const entityKind = _firstText(entry.entityKind, isCreature ? 'creature' : 'effect');
       const id = _firstText(entry.id, entry.summonGroupId, entry.summonTemplateId, '') || (`summon-action-${index + 1}`);
       return {
         id: id,
         source: 'summon_action',
         name: _firstText(entry.displayName, selectedVariantName, 'Summon'),
-        desc: _firstText(entry.shortSummary, `Use ${actionTypeText.toLowerCase()} when your companion or device is needed.`),
-        description: _firstText(entry.shortSummary, `Use ${actionTypeText.toLowerCase()} when your companion or device is needed.`),
+        desc: _firstText(entry.shortSummary, `Use ${actionTypeText.toLowerCase()} when your ${isCreature ? 'companion creature' : 'field deployment'} is needed.`),
+        description: _firstText(entry.shortSummary, `Use ${actionTypeText.toLowerCase()} when your ${isCreature ? 'companion creature' : 'field deployment'} is needed.`),
         economy: ['action'],
         icon: /deploy/i.test(actionTypeText) ? '🛠️' : '🧿',
         actionType: actionTypeText,
@@ -768,6 +778,7 @@
         range: _firstText(entry.commandModelSummary, ''),
         tags: []
           .concat(_safeArray(entry.tags))
+          .concat([isCreature ? 'Creature Summon' : `Field ${entityKind.replace(/_/g, ' ')}`])
           .concat(variantLabel.length ? ['Variants: ' + variantLabel.join(', ')] : [])
           .concat(selectedVariantName ? ['Selected: ' + selectedVariantName] : []),
         longText: [

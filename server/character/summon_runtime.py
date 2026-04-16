@@ -528,6 +528,11 @@ def resolve_tinker_artillerist_actor(*, native_document: dict[str, Any], templat
     ac = max(10, _safe_int(_TINKER_ARTILLERIST_ARC_CANNON["ac_base"], 14) + max(0, proficiency - 2))
     token_name = str(template.get("tokenName") or template.get("displayName") or "Arc Cannon").strip()
     command_model = str(template.get("commandModel") or "action_command").strip().lower()
+    placement_rules = template.get("placementRules") if isinstance(template.get("placementRules"), dict) else {}
+    stationary = bool(placement_rules.get("stationary", True))
+    movement = copy.deepcopy(_TINKER_ARTILLERIST_ARC_CANNON.get("movement") or template.get("movement") or {"walk": 15})
+    if stationary:
+        movement["walk"] = 0
     action_rows = [
         _normalize_action_payload(
             actor={},
@@ -548,8 +553,11 @@ def resolve_tinker_artillerist_actor(*, native_document: dict[str, Any], templat
         "name": token_name,
         "actorType": "deployable",
         "summonCategory": "deployable",
+        "isCreature": bool(template.get("isCreature", False)),
+        "entityKind": str(template.get("entityKind") or "device").strip().lower(),
+        "actionSurfaceType": str(template.get("actionSurfaceType") or "deployed_field_effect").strip().lower(),
         "size": str(_TINKER_ARTILLERIST_ARC_CANNON.get("size") or template.get("size") or "small"),
-        "movement": copy.deepcopy(_TINKER_ARTILLERIST_ARC_CANNON.get("movement") or template.get("movement") or {"walk": 15}),
+        "movement": movement,
         "senses": copy.deepcopy(_TINKER_ARTILLERIST_ARC_CANNON.get("senses") or template.get("senses") or {}),
         "ac": ac,
         "hp": {"current": hp, "max": hp},
@@ -566,6 +574,18 @@ def resolve_tinker_artillerist_actor(*, native_document: dict[str, Any], templat
         },
         "owner": {"userId": str(owner_user.id), "userName": str(owner_user.name), "profileId": str(profile_id or "")},
         "commandModel": command_model,
+        "interactionModel": {
+            "controllable": True,
+            "selectable": True,
+            "inspectable": True,
+            "destructible": True,
+            "triggerable": True,
+            "passive": False,
+            "ownerActivated": True,
+            "stationary": stationary,
+        },
+        "placementRules": copy.deepcopy(placement_rules),
+        "cleanupPolicy": copy.deepcopy(template.get("cleanupPolicy") or {}),
         "source": {
             "classId": str(template.get("sourceClassId") or "tinker"),
             "subclassId": str(template.get("sourceSubclassId") or "artillerist"),
@@ -1107,10 +1127,12 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
         sw = sh = 40.0
 
     summon_category = str(actor.get("summonCategory") or "").strip().lower()
+    entity_kind = str(actor.get("entityKind") or template.get("entityKind") or "").strip().lower()
+    is_creature = bool(actor.get("isCreature", template.get("isCreature", True)))
     icon = "🐾"
     if summon_category == "familiar":
         icon = "🦇"
-    elif summon_category in {"construct", "deployable", "device", "turret"}:
+    elif not is_creature or summon_category in {"deployable", "device", "turret"}:
         icon = "⚙️"
     elif summon_category in {"spell_effect", "spell"}:
         icon = "✨"
@@ -1130,7 +1152,7 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
         "faction": "allies",
         "notes": _notes_for_actor(actor),
         "image_url": ((actor.get("tokenVisual") or {}).get("image_url") or None),
-        "monster_type": summon_category or "summon",
+        "monster_type": entity_kind or summon_category or "summon",
     }
 
     return {
@@ -1145,4 +1167,6 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
         "actor": actor,
         "token_payload": token_payload,
         "map_context": map_context,
+        "entity_kind": entity_kind or "creature",
+        "is_creature": is_creature,
     }
