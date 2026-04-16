@@ -1,4 +1,4 @@
-"""Runtime summon orchestration (Pass D: Beast Master + Warlock familiar + Tinker mechanist)."""
+"""Runtime summon orchestration (Pass H: expanded summon families via shared runtime)."""
 from __future__ import annotations
 
 import copy
@@ -102,6 +102,28 @@ _TINKER_MECHANIST_FRAME = {
     "traits": ["Construct Resilience", "Command Relay Link"],
     "actions": [
         {"id": "force_slam", "name": "Force Slam", "classification": "attack", "range": "Melee 5 ft", "damage": {"formula": "1d8+PB", "type": "force"}, "saveDC": None, "saveAbility": "STR", "summary": "On hit, target can be shoved 5 ft on failed STR save."}
+    ],
+}
+
+_TINKER_ARTILLERIST_ARC_CANNON = {
+    "ac_base": 14,
+    "hp_base": 8,
+    "hp_per_level": 4,
+    "movement": {"walk": 15},
+    "senses": {},
+    "size": "small",
+    "traits": ["Arc Core", "Stabilized Emplacement"],
+    "actions": [
+        {
+            "id": "arc_blast",
+            "name": "Arc Blast",
+            "classification": "attack",
+            "range": "Ranged 120 ft",
+            "damage": {"formula": "2d8+PB", "type": "force"},
+            "saveDC": None,
+            "saveAbility": "DEX",
+            "summary": "Discharge a focused bolt of force from the cannon core.",
+        }
     ],
 }
 
@@ -463,6 +485,79 @@ def resolve_tinker_mechanist_actor(*, native_document: dict[str, Any], template:
             "shape": "square",
             "image_url": str(template.get("imageUrl") or "").strip() or None,
             "fallbackEmoji": "⚙️",
+        },
+    }
+
+
+def resolve_tinker_artillerist_actor(*, native_document: dict[str, Any], template: dict[str, Any], selected_variant: str, owner_user: User, profile_id: str) -> dict[str, Any]:
+    primary = _resolve_primary_class(native_document)
+    class_id = str(primary.get("classId") or primary.get("id") or "").strip().lower()
+    subclass_id = str(primary.get("subclassId") or "").strip().lower()
+    class_level = _safe_int(primary.get("level"), 1, minimum=1, maximum=20)
+    if class_id != "tinker" or subclass_id != "artillerist":
+        raise ValueError("tinker_artillerist_only")
+    if selected_variant != "tinker-artillerist-arc-cannon":
+        raise ValueError("invalid_variant")
+
+    ability_scores = ((native_document.get("abilities") or {}).get("scores") or {}) if isinstance(native_document.get("abilities"), dict) else {}
+    int_mod = _ability_mod(ability_scores.get("int", 10))
+    proficiency = _proficiency_bonus(class_level)
+    hp = max(
+        5,
+        _safe_int(_TINKER_ARTILLERIST_ARC_CANNON["hp_base"], 8) + (_safe_int(_TINKER_ARTILLERIST_ARC_CANNON["hp_per_level"], 4) * class_level) + int_mod,
+    )
+    ac = max(10, _safe_int(_TINKER_ARTILLERIST_ARC_CANNON["ac_base"], 14) + max(0, proficiency - 2))
+    token_name = str(template.get("tokenName") or template.get("displayName") or "Arc Cannon").strip()
+    command_model = str(template.get("commandModel") or "action_command").strip().lower()
+    action_rows = [
+        _normalize_action_payload(
+            actor={},
+            action=row,
+            index=index,
+            attack_bonus=proficiency + int_mod,
+            save_dc=8 + proficiency + int_mod,
+            command_model=command_model,
+        )
+        for index, row in enumerate(list(_TINKER_ARTILLERIST_ARC_CANNON.get("actions") or []))
+        if isinstance(row, dict)
+    ]
+    return {
+        "id": f"summon-{owner_user.id}-{int(time.time() * 1000)}",
+        "templateId": str(template.get("id") or selected_variant),
+        "variantId": selected_variant,
+        "variantName": str(template.get("displayName") or token_name),
+        "name": token_name,
+        "actorType": "deployable",
+        "summonCategory": "deployable",
+        "size": str(_TINKER_ARTILLERIST_ARC_CANNON.get("size") or template.get("size") or "small"),
+        "movement": copy.deepcopy(_TINKER_ARTILLERIST_ARC_CANNON.get("movement") or template.get("movement") or {"walk": 15}),
+        "senses": copy.deepcopy(_TINKER_ARTILLERIST_ARC_CANNON.get("senses") or template.get("senses") or {}),
+        "ac": ac,
+        "hp": {"current": hp, "max": hp},
+        "actions": action_rows,
+        "attacks": _legacy_attacks_from_actions(action_rows),
+        "traits": copy.deepcopy(_TINKER_ARTILLERIST_ARC_CANNON.get("traits") or []),
+        "proficiencyBonus": proficiency,
+        "levelSource": {
+            "classId": "tinker",
+            "subclassId": "artillerist",
+            "classLevel": class_level,
+            "featureId": str(template.get("sourceFeatureId") or "artillerist-arc-cannon"),
+            "featureName": "Arc Cannon",
+        },
+        "owner": {"userId": str(owner_user.id), "userName": str(owner_user.name), "profileId": str(profile_id or "")},
+        "commandModel": command_model,
+        "source": {
+            "classId": str(template.get("sourceClassId") or "tinker"),
+            "subclassId": str(template.get("sourceSubclassId") or "artillerist"),
+            "featureId": str(template.get("sourceFeatureId") or "artillerist-arc-cannon"),
+            "variantGroup": str(template.get("variantGroup") or "tinker-artillerist-cannon"),
+        },
+        "tokenVisual": {
+            "color": "#ffb466",
+            "shape": "square",
+            "image_url": str(template.get("imageUrl") or "").strip() or None,
+            "fallbackEmoji": "💥",
         },
     }
 
@@ -849,6 +944,14 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
             )
         elif source_class == "tinker" and source_subclass == "mechanist":
             actor = resolve_tinker_mechanist_actor(
+                native_document=native,
+                template=template,
+                selected_variant=selected_variant,
+                owner_user=user,
+                profile_id=str(profile.get("id") or requested_profile_id or ""),
+            )
+        elif source_class == "tinker" and source_subclass == "artillerist":
+            actor = resolve_tinker_artillerist_actor(
                 native_document=native,
                 template=template,
                 selected_variant=selected_variant,

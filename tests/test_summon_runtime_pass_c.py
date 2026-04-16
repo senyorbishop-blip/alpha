@@ -94,6 +94,29 @@ def _seed_player_with_tinker_mechanist_profile(session: Session, player: User):
     session.active_char_profiles = {player.id: "profile-tinker"}
 
 
+def _seed_player_with_tinker_artillerist_profile(session: Session, player: User):
+    owner_key = player.name.strip().lower()
+    session.char_profiles = {
+        owner_key: [
+            {
+                "id": "profile-artillerist",
+                "name": "Rook",
+                "nativeCharacter": {
+                    "classes": [{"classId": "tinker", "level": 6, "subclassId": "artillerist"}],
+                    "abilities": {"scores": {"int": 18}},
+                    "summons": {
+                        "unlockedTemplates": ["tinker-artillerist-arc-cannon"],
+                        "selectedVariants": {"tinker-artillerist-cannon": "tinker-artillerist-arc-cannon"},
+                        "activeSummons": [],
+                    },
+                },
+                "nativeRuntime": {},
+            }
+        ]
+    }
+    session.active_char_profiles = {player.id: "profile-artillerist"}
+
+
 def test_beast_master_runtime_resolves_land_sea_sky_variants_with_real_actor_payload():
     session = Session(id="TESTSUMMON")
     player = User(id="u-player", name="Ayla", role="player")
@@ -278,13 +301,37 @@ def test_tinker_mechanist_runtime_resolves_construct_payload():
     assert result.get("ok") is True
     actor = result.get("actor") or {}
     assert actor.get("summonCategory") == "construct"
-    assert isinstance(actor.get("attacks"), list) and actor.get("attacks")
+
+
+def test_tinker_artillerist_runtime_resolves_deployable_payload():
+    session = Session(id="TESTSUMMON")
+    player = User(id="u-player", name="Ayla", role="player")
+    session.users[player.id] = player
+    _seed_player_with_tinker_artillerist_profile(session, player)
+
+    result = build_summon_runtime_payload(
+        session=session,
+        user=player,
+        payload={
+            "profile_id": "profile-artillerist",
+            "summon_group_id": "tinker-artillerist-cannon",
+            "summon_template_id": "tinker-artillerist-arc-cannon",
+            "selected_variant": "tinker-artillerist-arc-cannon",
+        },
+    )
+    assert result.get("ok") is True
+    actor = result.get("actor") or {}
+    token_payload = result.get("token_payload") or {}
+    assert actor.get("summonCategory") == "deployable"
+    assert actor.get("commandModel") == "action_command"
     assert isinstance(actor.get("actions"), list) and actor.get("actions")
+    assert token_payload.get("monster_type") == "deployable"
+    assert isinstance(actor.get("attacks"), list) and actor.get("attacks")
     assert all(isinstance(row.get("id"), str) and row.get("id") for row in actor.get("actions"))
     assert all("classification" in row for row in actor.get("actions"))
     assert all("summary" in row for row in actor.get("actions"))
     assert isinstance(actor.get("traits"), list) and actor.get("traits")
-    assert (result.get("token_payload") or {}).get("monster_type") == "construct"
+    assert (result.get("token_payload") or {}).get("monster_type") == "deployable"
 
 
 def test_non_live_paths_remain_non_live_in_runtime_service():
@@ -297,7 +344,7 @@ def test_non_live_paths_remain_non_live_in_runtime_service():
             {
                 "id": "profile-artillerist",
                 "nativeCharacter": {
-                    "classes": [{"classId": "tinker", "level": 6, "subclassId": "artillerist"}],
+                    "classes": [{"classId": "fighter", "level": 6, "subclassId": "champion"}],
                     "summons": {"unlockedTemplates": ["tinker-artillerist-arc-cannon"], "selectedVariants": {}, "activeSummons": []},
                 },
                 "nativeRuntime": {},
@@ -317,7 +364,7 @@ def test_non_live_paths_remain_non_live_in_runtime_service():
         },
     )
     assert result.get("ok") is False
-    assert result.get("error") == "runtime_not_live_for_class"
+    assert result.get("error") == "tinker_artillerist_only"
 
 
 def test_active_summon_state_normalizes_legacy_single_slot_record():
