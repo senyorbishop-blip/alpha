@@ -1318,9 +1318,12 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
                 selected_variant=selected_variant,
                 owner_user=user,
                 profile_id=str(profile.get("id") or requested_profile_id or ""),
-            )
-        else:
+            ),
+        }
+        resolver = runtime_resolvers.get(resolver_key)
+        if resolver is None:
             return _runtime_failure("runtime_not_live_for_class", message="This summon family is not currently live in runtime deployment.", context={**context, "source_class": source_class, "source_subclass": source_subclass})
+        actor = resolver()
     except ValueError as exc:
         code = str(exc) or "runtime_resolution_failed"
         return _runtime_failure(code, message="Summon actor resolution failed for the selected deployment variant.", context=context)
