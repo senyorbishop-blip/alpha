@@ -486,27 +486,235 @@ def _notes_for_actor(actor: dict[str, Any]) -> str:
     )
 
 
-def register_active_summon(native_document: dict[str, Any], active_entry: dict[str, Any]) -> dict[str, Any]:
-    summons = normalize_summon_state(native_document.get("summons"))
-    group_id = str(((active_entry.get("source") or {}).get("variantGroup") or "")).strip().lower()
+def _entry_group_id(row: dict[str, Any]) -> str:
+    return str(row.get("summonGroupId") or ((row.get("source") or {}).get("variantGroup")) or "").strip().lower()
 
-    filtered: list[dict[str, Any]] = []
+
+def _entry_template_id(row: dict[str, Any]) -> str:
+    return str(row.get("templateId") or row.get("summonTemplateId") or "").strip().lower()
+
+
+def _entry_source_feature_id(row: dict[str, Any]) -> str:
+    return str(row.get("sourceFeatureId") or ((row.get("source") or {}).get("featureId")) or "").strip().lower()
+
+
+def _entry_owner_profile_id(row: dict[str, Any]) -> str:
+    return str(row.get("ownerProfileId") or ((row.get("owner") or {}).get("profileId")) or "").strip()
+
+
+def _summon_limit_policy(summons: dict[str, Any], template: dict[str, Any], group_id: str) -> tuple[int, bool]:
+    rules = summons.get("rules") if isinstance(summons.get("rules"), dict) else {}
+    per_group = rules.get("maxActiveByGroup") if isinstance(rules.get("maxActiveByGroup"), dict) else {}
+    per_template = rules.get("maxActiveByTemplate") if isinstance(rules.get("maxActiveByTemplate"), dict) else {}
+    replace_rules = rules.get("replaceOnResummonByGroup") if isinstance(rules.get("replaceOnResummonByGroup"), dict) else {}
+    template_id = str(template.get("id") or "").strip().lower()
+    max_active = _safe_int(template.get("maxActive"), 1, minimum=0)
+    if group_id and per_group.get(group_id) is not None:
+        max_active = _safe_int(per_group.get(group_id), max_active, minimum=0)
+    if template_id and per_template.get(template_id) is not None:
+        max_active = _safe_int(per_template.get(template_id), max_active, minimum=0)
+    replace = bool(template.get("replaceOnResummon"))
+    if group_id in replace_rules:
+        replace = bool(replace_rules.get(group_id))
+    return max_active, replace
+
+
+def plan_active_summon_mutations(native_document: dict[str, Any], *, active_entry: dict[str, Any], template: dict[str, Any]) -> dict[str, Any]:
+    summons = normalize_summon_state(native_document.get("summons"))
+    group_id = _entry_group_id(active_entry)
+    template_id = _entry_template_id(active_entry)
+    owner_profile_id = _entry_owner_profile_id(active_entry)
+    source_feature_id = _entry_source_feature_id(active_entry)
+    max_active, replace_on_resummon = _summon_limit_policy(summons, template, group_id)
+
+    existing: list[dict[str, Any]] = [row for row in (summons.get("activeSummons") or []) if isinstance(row, dict)]
+    scoped = [
+        row for row in existing
+        if _entry_owner_profile_id(row) == owner_profile_id
+        and (_entry_group_id(row) == group_id or _entry_template_id(row) == template_id)
+    ]
+    to_remove: list[dict[str, Any]] = []
+    if replace_on_resummon and scoped:
+        to_remove.extend(scoped)
+    elif max_active >= 0 and len(scoped) >= max_active > 0:
+        overflow = (len(scoped) - max_active) + 1
+        to_remove.extend(scoped[:overflow])
+    if max_active == 0:
+        to_remove.extend(scoped)
+    # deterministic unique removes
+    seen: set[str] = set()
+    unique = []
+    for row in to_remove:
+        key = str(row.get("id") or row.get("tokenId") or "")
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(copy.deepcopy(row))
+    return {"max_active": max_active, "replace_on_resummon": replace_on_resummon, "remove_entries": unique}
+
+
+def list_active_summons(
+    native_document: dict[str, Any], *,
+    template_id: str = "", summon_group_id: str = "", source_feature_id: str = "", owner_profile_id: str = ""
+) -> list[dict[str, Any]]:
+    summons = normalize_summon_state(native_document.get("summons"))
+    match_template = str(template_id or "").strip().lower()
+    match_group = str(summon_group_id or "").strip().lower()
+    match_feature = str(source_feature_id or "").strip().lower()
+    match_owner_profile = str(owner_profile_id or "").strip()
+    out = []
     for row in (summons.get("activeSummons") or []):
         if not isinstance(row, dict):
             continue
-        row_group = str(((row.get("source") or {}).get("variantGroup") or row.get("summonGroupId") or "")).strip().lower()
-        if row_group and group_id and row_group == group_id:
+        if match_template and _entry_template_id(row) != match_template:
             continue
-        filtered.append(row)
+        if match_group and _entry_group_id(row) != match_group:
+            continue
+        if match_feature and _entry_source_feature_id(row) != match_feature:
+            continue
+        if match_owner_profile and _entry_owner_profile_id(row) != match_owner_profile:
+            continue
+        out.append(copy.deepcopy(row))
+    return out
 
-    filtered.append(copy.deepcopy(active_entry))
-    summons["activeSummons"] = filtered
+
+def remove_active_summon(
+    native_document: dict[str, Any], *,
+    active_id: str = "", token_id: str = "", summon_group_id: str = "", source_feature_id: str = "", owner_profile_id: str = ""
+) -> list[dict[str, Any]]:
+    summons = normalize_summon_state(native_document.get("summons"))
+    match_id = str(active_id or "").strip()
+    match_token_id = str(token_id or "").strip()
+    match_group = str(summon_group_id or "").strip().lower()
+    match_feature = str(source_feature_id or "").strip().lower()
+    match_owner_profile = str(owner_profile_id or "").strip()
+    removed: list[dict[str, Any]] = []
+    kept: list[dict[str, Any]] = []
+    for row in (summons.get("activeSummons") or []):
+        if not isinstance(row, dict):
+            continue
+        remove = False
+        if match_id and str(row.get("id") or "").strip() == match_id:
+            remove = True
+        if match_token_id and str(row.get("tokenId") or "").strip() == match_token_id:
+            remove = True
+        if match_group and _entry_group_id(row) == match_group:
+            remove = True
+        if match_feature and _entry_source_feature_id(row) == match_feature:
+            remove = True
+        if match_owner_profile and _entry_owner_profile_id(row) != match_owner_profile:
+            remove = False
+        if remove:
+            removed.append(copy.deepcopy(row))
+        else:
+            kept.append(row)
+    summons["activeSummons"] = kept
+    native_document["summons"] = summons
+    return removed
+
+
+def register_active_summon(native_document: dict[str, Any], active_entry: dict[str, Any]) -> dict[str, Any]:
+    template_id = _entry_template_id(active_entry)
+    template = get_summon_template(template_id) or {}
+    mutation_plan = plan_active_summon_mutations(native_document, active_entry=active_entry, template=template)
+    for row in mutation_plan.get("remove_entries") or []:
+        if not isinstance(row, dict):
+            continue
+        remove_active_summon(
+            native_document,
+            active_id=str(row.get("id") or ""),
+            token_id=str(row.get("tokenId") or ""),
+            owner_profile_id=_entry_owner_profile_id(active_entry),
+        )
+
+    summons = normalize_summon_state(native_document.get("summons"))
+    group_id = _entry_group_id(active_entry)
+
+    row = copy.deepcopy(active_entry)
+    row["templateId"] = template_id
+    row["summonTemplateId"] = template_id
+    row["summonGroupId"] = group_id
+    row["sourceFeatureId"] = _entry_source_feature_id(active_entry)
+    row["sourceClassId"] = str(row.get("sourceClassId") or ((row.get("source") or {}).get("classId")) or "").strip().lower()
+    row["sourceSubclassId"] = str(row.get("sourceSubclassId") or ((row.get("source") or {}).get("subclassId")) or "").strip().lower()
+    row["ownerProfileId"] = _entry_owner_profile_id(active_entry)
+    row["variant"] = str(row.get("variant") or row.get("variantId") or template_id).strip().lower()
+    row["status"] = str(row.get("status") or "active").strip().lower() or "active"
+    row["updatedAt"] = time.time()
+    row["createdAt"] = row.get("createdAt") if row.get("createdAt") is not None else row.get("spawnedAt", row["updatedAt"])
+    if row.get("maxActive") is None:
+        row["maxActive"] = mutation_plan.get("max_active")
+    if row.get("replaceOnResummon") is None:
+        row["replaceOnResummon"] = bool(mutation_plan.get("replace_on_resummon"))
+    summons["activeSummons"] = list(summons.get("activeSummons") or []) + [row]
     if group_id and str(active_entry.get("variantId") or "").strip():
         selected = summons.get("selectedVariants") if isinstance(summons.get("selectedVariants"), dict) else {}
         selected[group_id] = str(active_entry.get("variantId") or "").strip().lower()
         summons["selectedVariants"] = selected
     native_document["summons"] = summons
     return native_document
+
+
+def reconcile_native_summons(
+    native_document: dict[str, Any], *,
+    existing_token_ids: set[str] | None = None,
+    valid_map_contexts: set[str] | None = None,
+) -> dict[str, Any]:
+    summons = normalize_summon_state(native_document.get("summons"))
+    active_rows = list(summons.get("activeSummons") or [])
+    kept: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    seen_tokens: set[str] = set()
+    for row in active_rows:
+        if not isinstance(row, dict):
+            continue
+        row_id = str(row.get("id") or "").strip()
+        token_id = str(row.get("tokenId") or "").strip()
+        map_context = str(row.get("mapContext") or row.get("sceneId") or "").strip()
+        if row_id and row_id in seen_ids:
+            continue
+        if token_id and token_id in seen_tokens:
+            continue
+        if existing_token_ids is not None and token_id and token_id not in existing_token_ids:
+            continue
+        if valid_map_contexts is not None and map_context and map_context not in valid_map_contexts:
+            continue
+        if row_id:
+            seen_ids.add(row_id)
+        if token_id:
+            seen_tokens.add(token_id)
+        kept.append(copy.deepcopy(row))
+    summons["activeSummons"] = kept
+    native_document["summons"] = summons
+    return native_document
+
+
+def reconcile_session_active_summons(session: Session) -> int:
+    profiles = dict(getattr(session, "char_profiles", {}) or {})
+    valid_token_ids = {str(tid) for tid in (getattr(session, "tokens", {}) or {}).keys()}
+    valid_map_contexts = {"world"}
+    valid_map_contexts.update(str(k or "").strip() for k in (getattr(session, "pois", {}) or {}).keys())
+    valid_map_contexts.update(str(k or "").strip() for k in (getattr(session, "map_documents", {}) or {}).keys())
+    changed = 0
+    for owner_key, rows in list(profiles.items()):
+        if not isinstance(rows, list):
+            continue
+        bucket = list(rows)
+        for idx, row in enumerate(bucket):
+            if not isinstance(row, dict):
+                continue
+            native = row.get("nativeCharacter") if isinstance(row.get("nativeCharacter"), dict) else {}
+            before = normalize_summon_state(native.get("summons"))
+            reconcile_native_summons(native, existing_token_ids=valid_token_ids, valid_map_contexts=valid_map_contexts)
+            after = normalize_summon_state(native.get("summons"))
+            if before != after:
+                row["nativeCharacter"] = native
+                bucket[idx] = row
+                changed += 1
+        profiles[owner_key] = bucket
+    if changed:
+        session.char_profiles = profiles
+    return changed
 
 
 def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[str, Any]) -> dict[str, Any]:

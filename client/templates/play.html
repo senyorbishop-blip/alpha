@@ -30326,6 +30326,16 @@ function handleLegacyMessage(msg) {
       }
       break;
     }
+    case 'summon_runtime_dismiss_result': {
+      if (p.ok) {
+        const count = Array.isArray(p.removed) ? p.removed.length : 0;
+        showToast(count > 0 ? `Dismissed ${count} summon${count === 1 ? '' : 's'}.` : 'No active summon matched the dismiss request.');
+      } else {
+        const error = String(p.error || 'dismiss_failed');
+        showToast(`Dismiss failed: ${error.replace(/_/g, ' ')}`);
+      }
+      break;
+    }
 
     case 'char_profiles_sync': {
       loadCharProfiles(p.profiles || []);

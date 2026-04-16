@@ -9,6 +9,7 @@ from server.session import _sessions, Session, Token, User, POI, normalize_inter
 from server.map_document import build_map_documents_from_session, hydrate_session_from_map_documents
 from server.persistence_schema import normalize_persisted_campaign_data
 from server.quest_progression import resolve_session_quest_progression
+from server.character.summon_runtime import reconcile_session_active_summons
 
 
 def _valid_map_contexts(session: Session) -> set[str]:
@@ -220,6 +221,7 @@ def restore_session_from_db(data: dict):
     # Restore logs
     session.log = data.get("logs", [])
     session.enforce_single_active_player_token_rule()
+    reconcile_session_active_summons(session)
 
     _sessions[session.id] = session
     return session, dm_id

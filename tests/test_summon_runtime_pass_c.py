@@ -1,4 +1,11 @@
-from server.character.summon_runtime import build_summon_runtime_payload, register_active_summon
+from server.character.summon_runtime import (
+    build_summon_runtime_payload,
+    register_active_summon,
+    remove_active_summon,
+    reconcile_native_summons,
+    reconcile_session_active_summons,
+)
+from server.character.summon_state import normalize_summon_state
 from server.session import Session, User, Token
 
 
@@ -306,3 +313,118 @@ def test_non_live_paths_remain_non_live_in_runtime_service():
     )
     assert result.get("ok") is False
     assert result.get("error") == "runtime_not_live_for_class"
+
+
+def test_active_summon_state_normalizes_legacy_single_slot_record():
+    summons = normalize_summon_state(
+        {
+            "activeSummon": {
+                "id": "legacy-one",
+                "summonTemplateId": "warlock-chain-imp",
+                "tokenId": "tok-legacy",
+                "source": {"variantGroup": "warlock-pact-chain-familiar", "featureId": "warlock-pact-boon"},
+            }
+        }
+    )
+    active = summons.get("activeSummons") or []
+    assert len(active) == 1
+    assert active[0].get("templateId") == "warlock-chain-imp"
+    assert active[0].get("summonGroupId") == "warlock-pact-chain-familiar"
+    assert active[0].get("sourceFeatureId") == "warlock-pact-boon"
+
+
+def test_register_active_summon_respects_single_active_policy_per_group():
+    native = {
+        "summons": {
+            "activeSummons": [
+                {
+                    "id": "old-a",
+                    "templateId": "warlock-chain-imp",
+                    "summonGroupId": "warlock-pact-chain-familiar",
+                    "ownerProfileId": "profile-warlock",
+                    "tokenId": "tok-old",
+                }
+            ]
+        }
+    }
+    updated = register_active_summon(
+        native,
+        {
+            "id": "new-a",
+            "templateId": "warlock-chain-sprite",
+            "summonGroupId": "warlock-pact-chain-familiar",
+            "ownerProfileId": "profile-warlock",
+            "tokenId": "tok-new",
+        },
+    )
+    active = ((updated.get("summons") or {}).get("activeSummons") or [])
+    assert len(active) == 1
+    assert active[0].get("id") == "new-a"
+    assert active[0].get("tokenId") == "tok-new"
+
+
+def test_dismiss_removes_only_targeted_summon_entry():
+    native = {
+        "summons": {
+            "activeSummons": [
+                {"id": "keep", "tokenId": "tok-keep", "summonGroupId": "tinker-mechanist-frame", "ownerProfileId": "profile-tinker"},
+                {"id": "drop", "tokenId": "tok-drop", "summonGroupId": "warlock-pact-chain-familiar", "ownerProfileId": "profile-tinker"},
+            ]
+        }
+    }
+    removed = remove_active_summon(native, active_id="drop", owner_profile_id="profile-tinker")
+    remaining = ((native.get("summons") or {}).get("activeSummons") or [])
+    assert len(removed) == 1
+    assert removed[0].get("id") == "drop"
+    assert len(remaining) == 1
+    assert remaining[0].get("id") == "keep"
+
+
+def test_reconcile_prunes_stale_or_duplicate_summon_links_without_token_spam():
+    native = {
+        "summons": {
+            "activeSummons": [
+                {"id": "a", "tokenId": "tok-a", "mapContext": "world"},
+                {"id": "b", "tokenId": "tok-missing", "mapContext": "world"},
+                {"id": "a", "tokenId": "tok-a", "mapContext": "world"},
+                {"id": "c", "tokenId": "tok-c", "mapContext": "invalid-map"},
+            ]
+        }
+    }
+    reconcile_native_summons(native, existing_token_ids={"tok-a", "tok-c"}, valid_map_contexts={"world"})
+    active = ((native.get("summons") or {}).get("activeSummons") or [])
+    assert len(active) == 1
+    assert active[0].get("id") == "a"
+    assert active[0].get("tokenId") == "tok-a"
+
+
+def test_session_reconcile_removes_stale_active_rows_after_restore():
+    session = Session(id="TESTSUMMON")
+    player = User(id="u-player", name="Ayla", role="player")
+    session.users[player.id] = player
+    _seed_player_with_beast_master_profile(session, player)
+    owner_key = player.name.strip().lower()
+    profile = (session.char_profiles.get(owner_key) or [])[0]
+    native = profile.get("nativeCharacter") or {}
+    native["summons"]["activeSummons"] = [
+        {"id": "exists", "tokenId": "tok-ok", "mapContext": "world"},
+        {"id": "stale", "tokenId": "tok-missing", "mapContext": "world"},
+    ]
+    session.tokens["tok-ok"] = Token(
+        id="tok-ok",
+        name="Companion",
+        x=0,
+        y=0,
+        width=40,
+        height=40,
+        color="#fff",
+        shape="circle",
+        owner_id=player.id,
+        token_type="companion",
+        map_context="world",
+    )
+    changed = reconcile_session_active_summons(session)
+    updated_active = (((session.char_profiles.get(owner_key) or [])[0].get("nativeCharacter") or {}).get("summons") or {}).get("activeSummons") or []
+    assert changed == 1
+    assert len(updated_active) == 1
+    assert updated_active[0].get("id") == "exists"

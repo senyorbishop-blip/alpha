@@ -358,12 +358,32 @@ def _build_runtime_summon_actions(
         )
         max_active = _safe_int(primary.get("maxActive"), 1, minimum=0)
         active_count = 0
+        active_rows: list[dict[str, Any]] = []
         for active in active_summons:
             if not isinstance(active, dict):
+                continue
+            if str(active.get("status") or "active").strip().lower() not in {"", "active"}:
                 continue
             active_template_id = str(active.get("templateId") or active.get("summonTemplateId") or active.get("id") or "").strip().lower()
             if active_template_id and active_template_id in unlocked_variant_ids:
                 active_count += 1
+                active_rows.append(
+                    {
+                        "id": str(active.get("id") or "").strip(),
+                        "tokenId": str(active.get("tokenId") or "").strip(),
+                        "variantId": str(active.get("variantId") or active_template_id).strip().lower(),
+                        "variantName": next(
+                            (
+                                str(row.get("displayName") or row.get("tokenName") or row.get("id") or "").strip()
+                                for row in rows
+                                if str(row.get("id") or "").strip().lower() == str(active.get("variantId") or active_template_id).strip().lower()
+                            ),
+                            str(active.get("variantId") or active_template_id).strip(),
+                        ),
+                        "mapContext": str(active.get("mapContext") or active.get("sceneId") or "").strip(),
+                        "status": str(active.get("status") or "active").strip().lower() or "active",
+                    }
+                )
         summon_category = str(primary.get("summonCategory") or "").strip().lower()
         action_label = "Deploy" if summon_category in {"deployable", "construct", "turret", "cannon", "device"} else "Summon"
         command_model = str(primary.get("commandModel") or "").strip().lower()
@@ -402,6 +422,7 @@ def _build_runtime_summon_actions(
                 "maxActive": max_active,
                 "currentActiveCount": active_count,
                 "replaceOnResummon": replace_on_resummon,
+                "activeSummons": active_rows,
                 "shortSummary": " ".join(bit for bit in summary_bits if bit).strip(),
                 "tags": sorted({str(tag).strip() for row in rows for tag in (row.get("tags") or []) if str(tag).strip()}),
                 "summonDisplayName": str(primary.get("displayName") or primary.get("tokenName") or "").strip(),
