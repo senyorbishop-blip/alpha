@@ -237,6 +237,37 @@ def _compute_equipment_ac(document: dict[str, Any], *, dex_mod: int, fallback_ac
     return max(fallback_ac, armor_ac + shield_bonus)
 
 
+def _resource_dedupe_key(resource_id: Any, name: Any) -> str:
+    import re
+
+    base = str(resource_id or name or "").strip().lower()
+    if not base:
+        return ""
+    return re.sub(r"[^a-z0-9]+", "", base)
+
+
+def _build_first_turn_strike_action(
+    *,
+    proficiency_bonus: int,
+    str_mod: int,
+) -> dict[str, Any]:
+    return {
+        "id": "basic-unarmed-strike",
+        "displayName": "Basic Strike",
+        "actionType": "action",
+        "classification": "attack",
+        "range": "Melee 5 ft",
+        "attackBonus": proficiency_bonus + str_mod,
+        "damage": {
+            "formula": "1 + STR",
+            "type": "bludgeoning",
+        },
+        "summary": "Reliable first-turn fallback so every class can immediately make an attack roll.",
+        "resourceName": "",
+        "trackUses": False,
+    }
+
+
 def _resolve_runtime_classes(normalized: dict) -> list[dict[str, Any]]:
     classes = normalized.get("classes") if isinstance(normalized.get("classes"), list) else []
     resolved_rows: list[dict[str, Any]] = []
@@ -274,6 +305,7 @@ def _resolve_runtime_classes(normalized: dict) -> list[dict[str, Any]]:
             subclass_name
             or (subclass_catalog.get("displayName") if isinstance(subclass_catalog, dict) else "")
         ).strip()
+        selected_features = row.get("selectedFeatures") if isinstance(row.get("selectedFeatures"), list) else []
 
         # Maintain compatibility: keep class row carrying both subclassId + subclass display.
         if idx < len(classes) and isinstance(classes[idx], dict):
@@ -284,6 +316,8 @@ def _resolve_runtime_classes(normalized: dict) -> list[dict[str, Any]]:
                 classes[idx]["subclassId"] = subclass_id
             if subclass_display_name:
                 classes[idx]["subclass"] = subclass_display_name
+            if selected_features:
+                classes[idx]["selectedFeatures"] = _clone(selected_features)
 
         unlocks = {}
         if isinstance(subclass_catalog, dict):
@@ -302,6 +336,7 @@ def _resolve_runtime_classes(normalized: dict) -> list[dict[str, Any]]:
                 "subclassUnlocked": bool(subclass_id and subclass_unlock_level and level >= subclass_unlock_level),
                 "subclassPending": bool((not subclass_id) and subclass_unlock_level and level >= subclass_unlock_level),
                 "subclassFeatureUnlocksByLevel": unlocks,
+                "selectedFeatures": _clone(selected_features),
             }
         )
 
@@ -685,15 +720,16 @@ def resolve_character_runtime(document: Any) -> dict:
         )
 
     merged_resources = []
-    seen_resource_ids = set()
+    seen_resource_keys = set()
     for payload in runtime_feature_sets:
         for row in payload.get("resources") or []:
             if not isinstance(row, dict):
                 continue
             rid = str(row.get("id") or "").strip()
-            if not rid or rid in seen_resource_ids:
+            dedupe_key = _resource_dedupe_key(rid, row.get("name"))
+            if not dedupe_key or dedupe_key in seen_resource_keys:
                 continue
-            seen_resource_ids.add(rid)
+            seen_resource_keys.add(dedupe_key)
             merged_resources.append(_clone(row))
 
     runtime["resources"] = merged_resources
@@ -702,6 +738,9 @@ def resolve_character_runtime(document: Any) -> dict:
     runtime["reactions"] = [item for payload in runtime_feature_sets for item in (payload.get("reactions") or [])]
     runtime["passives"] = [item for payload in runtime_feature_sets for item in (payload.get("passives") or [])]
     runtime["classFeatures"] = [item for payload in runtime_feature_sets for item in (payload.get("classFeatures") or [])]
+    has_first_turn_path = bool(runtime["actions"] or runtime["bonusActions"] or runtime.get("summonActions"))
+    if not has_first_turn_path:
+        runtime["actions"] = [_build_first_turn_strike_action(proficiency_bonus=proficiency_bonus, str_mod=str_mod)]
     selected_runtime_features = []
     for class_row in runtime_classes:
         if not isinstance(class_row, dict):
