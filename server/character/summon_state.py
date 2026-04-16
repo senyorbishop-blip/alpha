@@ -63,6 +63,21 @@ def _normalize_active_summon_entry(raw: Any) -> dict[str, Any] | None:
     owner_user_id = str(raw.get("ownerUserId") or (raw.get("owner") or {}).get("userId") or "").strip()
     owner_profile_id = str(raw.get("ownerProfileId") or (raw.get("owner") or {}).get("profileId") or "").strip()
     map_context = str(raw.get("mapContext") or raw.get("sceneId") or "").strip()[:80]
+    source_origin = _safe_lower_str(raw.get("sourceOriginType") or raw.get("summonOrigin") or source.get("summonOrigin"))
+    if not source_origin:
+        source_origin = "spell" if _safe_lower_str(raw.get("spellId") or source.get("spellId")) else "feature"
+    control_model = _safe_lower_str(raw.get("controlModel") or raw.get("commandModel"))
+    if not control_model:
+        control_model = "owner_controlled"
+    entity_kind = _safe_lower_str(raw.get("entityKind"))
+    if not entity_kind:
+        actor_type = _safe_lower_str((raw.get("actor") or {}).get("actorType") if isinstance(raw.get("actor"), dict) else "")
+        if actor_type in {"deployable", "spell_effect"}:
+            entity_kind = actor_type
+        elif source_origin == "spell":
+            entity_kind = "spell_effect"
+        else:
+            entity_kind = "creature"
     created_at = raw.get("createdAt", raw.get("spawnedAt"))
     updated_at = raw.get("updatedAt", created_at)
     status = _safe_lower_str(raw.get("status") or "active") or "active"
@@ -77,6 +92,8 @@ def _normalize_active_summon_entry(raw: Any) -> dict[str, Any] | None:
         "summonGroupId": summon_group_id,
         "variantId": variant_id,
         "variant": variant_id,
+        "entityId": str(raw.get("entityId") or raw.get("id") or "").strip() or template_id or token_id,
+        "entityKind": entity_kind,
         "sourceClassId": source_class,
         "sourceSubclassId": source_subclass,
         "sourceFeatureId": source_feature,
@@ -88,6 +105,7 @@ def _normalize_active_summon_entry(raw: Any) -> dict[str, Any] | None:
         "createdAt": created_at,
         "updatedAt": updated_at,
         "status": status,
+        "sourceOriginType": source_origin,
         "summonOrigin": _safe_lower_str(raw.get("summonOrigin") or source.get("summonOrigin")),
         "spellId": _safe_lower_str(raw.get("spellId") or source.get("spellId")),
         "temporary": bool(raw.get("temporary")),
@@ -97,6 +115,15 @@ def _normalize_active_summon_entry(raw: Any) -> dict[str, Any] | None:
         "cleanupPolicy": list(raw.get("cleanupPolicy") or []) if isinstance(raw.get("cleanupPolicy"), list) else [],
         "replaceOnResummon": bool(raw.get("replaceOnResummon")),
         "maxActive": max_active,
+        "controlModel": control_model,
+        "commandModel": _safe_lower_str(raw.get("commandModel") or (raw.get("actor") or {}).get("commandModel") if isinstance(raw.get("actor"), dict) else ""),
+        "lifecycle": {
+            "temporary": bool(raw.get("temporary")),
+            "status": status,
+            "durationSeconds": int(raw.get("durationSeconds") or 0) if str(raw.get("durationSeconds") or "").strip() else 0,
+            "expiresAt": raw.get("expiresAt"),
+            "cleanupPolicy": list(raw.get("cleanupPolicy") or []) if isinstance(raw.get("cleanupPolicy"), list) else [],
+        },
         "source": source,
     }
     if isinstance(raw.get("actor"), dict):

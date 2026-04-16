@@ -7,12 +7,14 @@ import time
 from server.character.resolver import resolve_character_runtime
 from server.character.summon_runtime import (
     build_summon_runtime_payload,
+    build_active_deployment_entry,
     register_active_summon,
     remove_active_summon,
     reconcile_native_summons,
     plan_active_summon_mutations,
     synchronize_active_summon_state,
     prune_expired_temporary_summons,
+    normalize_deployment_ui_entry,
 )
 from server.handlers.common import Session, User, manager, save_campaign_async, _broadcast_token_state_sync
 from server.character.summon_state import normalize_summon_state
@@ -32,6 +34,35 @@ def _upsert_profile_runtime(session: Session, *, owner_key: str, profile_index: 
     bucket[profile_index] = row
     profiles[owner_key] = bucket
     session.char_profiles = profiles
+
+
+def _collect_valid_map_contexts(session: Session) -> set[str]:
+    valid_map_contexts = {"world"}
+    valid_map_contexts.update(str(k or "").strip() for k in (getattr(session, "pois", {}) or {}).keys())
+    valid_map_contexts.update(str(k or "").strip() for k in (getattr(session, "map_documents", {}) or {}).keys())
+    return valid_map_contexts
+
+
+def _refresh_profiles_for_native_docs(session: Session, touched_profiles: set[tuple[str, int]]) -> bool:
+    if not touched_profiles:
+        return False
+    profiles = dict(getattr(session, "char_profiles", {}) or {})
+    changed = False
+    for owner_key, profile_index in touched_profiles:
+        bucket = list(profiles.get(owner_key) or []) if isinstance(profiles.get(owner_key), list) else []
+        if not (0 <= profile_index < len(bucket)):
+            continue
+        slot = bucket[profile_index] if isinstance(bucket[profile_index], dict) else {}
+        native_doc = slot.get("nativeCharacter") if isinstance(slot.get("nativeCharacter"), dict) else {}
+        resolved_runtime = resolve_character_runtime(native_doc)
+        slot["nativeCharacter"] = resolved_runtime.get("document") if isinstance(resolved_runtime.get("document"), dict) else native_doc
+        slot["nativeRuntime"] = resolved_runtime.get("runtime") if isinstance(resolved_runtime.get("runtime"), dict) else slot.get("nativeRuntime", {})
+        bucket[profile_index] = slot
+        profiles[owner_key] = bucket
+        changed = True
+    if changed:
+        session.char_profiles = profiles
+    return changed
 
 
 async def handle_summon_runtime_request(payload: dict, session: Session, user: User):
@@ -67,13 +98,10 @@ async def handle_summon_runtime_request(payload: dict, session: Session, user: U
             session.tokens.pop(expired_token_id, None)
             removed_token_ids.append(expired_token_id)
             await manager.broadcast(session.id, {"type": "token_deleted", "payload": {"token_id": expired_token_id}})
-    valid_map_contexts = {"world"}
-    valid_map_contexts.update(str(k or "").strip() for k in (getattr(session, "pois", {}) or {}).keys())
-    valid_map_contexts.update(str(k or "").strip() for k in (getattr(session, "map_documents", {}) or {}).keys())
     reconcile_native_summons(
         native_document,
         existing_token_ids={str(k) for k in (session.tokens or {}).keys()},
-        valid_map_contexts=valid_map_contexts,
+        valid_map_contexts=_collect_valid_map_contexts(session),
     )
     mutation_plan = plan_active_summon_mutations(
         native_document,
@@ -136,37 +164,15 @@ async def handle_summon_runtime_request(payload: dict, session: Session, user: U
         cr="",
     )
 
-    active_entry = {
-        "id": str(actor.get("id") or ""),
-        "templateId": str((actor.get("templateId") or "").strip().lower()),
-        "summonTemplateId": str((actor.get("templateId") or "").strip().lower()),
-        "variantId": selected_variant,
-        "variant": selected_variant,
-        "summonGroupId": str(((actor.get("source") or {}).get("variantGroup") or "").strip().lower()),
-        "sourceClassId": str(((actor.get("source") or {}).get("classId") or "").strip().lower()),
-        "sourceSubclassId": str(((actor.get("source") or {}).get("subclassId") or "").strip().lower()),
-        "sourceFeatureId": str(((actor.get("source") or {}).get("featureId") or "").strip().lower()),
-        "summonOrigin": str((resolved.get("template") or {}).get("summonOrigin") or ((actor.get("source") or {}).get("summonOrigin") or "feature")).strip().lower(),
-        "spellId": str((resolved.get("template") or {}).get("spellId") or ((actor.get("source") or {}).get("spellId") or "")).strip().lower(),
-        "tokenId": str(token.id),
-        "ownerUserId": str(user.id),
-        "ownerProfileId": profile_id,
-        "mapContext": str(token_payload.get("map_context") or "world"),
-        "sceneId": str(token_payload.get("map_context") or "world"),
-        "source": copy.deepcopy(actor.get("source") or {}),
-        "createdAt": time.time(),
-        "updatedAt": time.time(),
-        "status": "active",
-        "temporary": bool((resolved.get("template") or {}).get("temporary")),
-        "concentrationRequired": bool((resolved.get("template") or {}).get("concentrationRequired")),
-        "cleanupPolicy": list((resolved.get("template") or {}).get("cleanupPolicy") or []),
-        "durationSeconds": int((resolved.get("template") or {}).get("durationSeconds") or 0),
-        "expiresAt": (time.time() + int((resolved.get("template") or {}).get("durationSeconds") or 0)) if bool((resolved.get("template") or {}).get("temporary")) and int((resolved.get("template") or {}).get("durationSeconds") or 0) > 0 else None,
-        "replaceOnResummon": bool((resolved.get("template") or {}).get("replaceOnResummon")),
-        "maxActive": int((resolved.get("template") or {}).get("maxActive") or 1),
-        "spawnedAt": time.time(),
-        "actor": actor,
-    }
+    active_entry = build_active_deployment_entry(
+        actor=actor,
+        template=(resolved.get("template") if isinstance(resolved.get("template"), dict) else {}),
+        token_id=str(token.id),
+        owner_user=user,
+        profile_id=profile_id,
+        selected_variant=selected_variant,
+        map_context=str(token_payload.get("map_context") or "world"),
+    )
 
     owner_key = str(resolved.get("owner_key") or "")
     profile_index = int(resolved.get("profile_index", -1) or -1)
@@ -297,14 +303,14 @@ def _iter_active_summons(session: Session):
                     owner_name = str(((active.get("actor") or {}).get("owner") or {}).get("userName") or "")
                 if not owner_name:
                     owner_name = str(owner_key or "")
-                enriched = copy.deepcopy(active)
-                enriched["ownerBucketKey"] = str(owner_key)
-                enriched["profileIndex"] = idx
-                enriched["profileId"] = profile_id
-                enriched["ownerName"] = owner_name
-                enriched["tokenPresent"] = bool(token)
-                enriched["tokenName"] = str(getattr(token, "name", "") or (enriched.get("actor") or {}).get("name") or "")
-                enriched["tokenMapContext"] = str(getattr(token, "map_context", "") or enriched.get("mapContext") or enriched.get("sceneId") or "")
+                enriched = normalize_deployment_ui_entry(
+                    active_entry=active,
+                    token=token,
+                    owner_name=owner_name,
+                    owner_bucket_key=str(owner_key),
+                    profile_index=idx,
+                    profile_id=profile_id,
+                )
                 yield owner_key, idx, row, native, enriched
 
 
@@ -332,20 +338,7 @@ async def handle_summon_runtime_admin(payload: dict, session: Session, user: Use
                     session.tokens.pop(expired_token_id, None)
                     removed_token_ids.append(expired_token_id)
                     await manager.broadcast(session.id, {"type": "token_deleted", "payload": {"token_id": expired_token_id}})
-        if touched_profiles:
-            profiles = dict(getattr(session, "char_profiles", {}) or {})
-            for owner_key, profile_index in touched_profiles:
-                bucket = list(profiles.get(owner_key) or []) if isinstance(profiles.get(owner_key), list) else []
-                if not (0 <= profile_index < len(bucket)):
-                    continue
-                slot = bucket[profile_index] if isinstance(bucket[profile_index], dict) else {}
-                native_doc = slot.get("nativeCharacter") if isinstance(slot.get("nativeCharacter"), dict) else {}
-                resolved_runtime = resolve_character_runtime(native_doc)
-                slot["nativeCharacter"] = resolved_runtime.get("document") if isinstance(resolved_runtime.get("document"), dict) else native_doc
-                slot["nativeRuntime"] = resolved_runtime.get("runtime") if isinstance(resolved_runtime.get("runtime"), dict) else slot.get("nativeRuntime", {})
-                bucket[profile_index] = slot
-                profiles[owner_key] = bucket
-            session.char_profiles = profiles
+        if _refresh_profiles_for_native_docs(session, touched_profiles):
             await _broadcast_token_state_sync(session)
             await save_campaign_async(session)
         rows = list(_iter_active_summons(session))
@@ -391,20 +384,7 @@ async def handle_summon_runtime_admin(payload: dict, session: Session, user: Use
                 removed_token_ids.append(row_token_id)
                 await manager.broadcast(session.id, {"type": "token_deleted", "payload": {"token_id": row_token_id}})
 
-        if touched:
-            profiles = dict(getattr(session, "char_profiles", {}) or {})
-            for owner_key, profile_index in touched:
-                bucket = list(profiles.get(owner_key) or []) if isinstance(profiles.get(owner_key), list) else []
-                if not (0 <= profile_index < len(bucket)):
-                    continue
-                slot = bucket[profile_index] if isinstance(bucket[profile_index], dict) else {}
-                native_doc = slot.get("nativeCharacter") if isinstance(slot.get("nativeCharacter"), dict) else {}
-                resolved_runtime = resolve_character_runtime(native_doc)
-                slot["nativeCharacter"] = resolved_runtime.get("document") if isinstance(resolved_runtime.get("document"), dict) else native_doc
-                slot["nativeRuntime"] = resolved_runtime.get("runtime") if isinstance(resolved_runtime.get("runtime"), dict) else slot.get("nativeRuntime", {})
-                bucket[profile_index] = slot
-                profiles[owner_key] = bucket
-            session.char_profiles = profiles
+        if _refresh_profiles_for_native_docs(session, touched):
             await _broadcast_token_state_sync(session)
             for uid in (session.users or {}).keys():
                 await _send_char_profiles(session, uid)
