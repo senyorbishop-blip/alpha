@@ -320,10 +320,22 @@ def _build_runtime_summon_actions(
     active_summons = summons.get("activeSummons") if isinstance(summons.get("activeSummons"), list) else []
 
     template_rows: list[dict[str, Any]] = []
+    seen_template_ids: set[str] = set()
     for template_id in unlocked_templates:
         row = get_summon_template(template_id)
         if isinstance(row, dict):
             template_rows.append(row)
+            seen_template_ids.add(str(row.get("id") or "").strip().lower())
+    for active in active_summons:
+        if not isinstance(active, dict):
+            continue
+        active_template_id = str(active.get("templateId") or active.get("summonTemplateId") or "").strip().lower()
+        if not active_template_id or active_template_id in seen_template_ids:
+            continue
+        row = get_summon_template(active_template_id)
+        if isinstance(row, dict):
+            template_rows.append(row)
+            seen_template_ids.add(active_template_id)
     if not template_rows:
         return []
 
@@ -389,6 +401,8 @@ def _build_runtime_summon_actions(
                 )
         summon_category = str(primary.get("summonCategory") or "").strip().lower()
         action_label = "Deploy" if summon_category in {"deployable", "construct", "turret", "cannon", "device"} else "Summon"
+        if str(primary.get("summonOrigin") or "").strip().lower() == "spell":
+            action_label = "Cast Summon"
         command_model = str(primary.get("commandModel") or "").strip().lower()
         replace_on_resummon = bool(primary.get("replaceOnResummon"))
         summary_bits = [

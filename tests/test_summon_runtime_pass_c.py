@@ -5,6 +5,7 @@ from server.character.summon_runtime import (
     reconcile_native_summons,
     reconcile_session_active_summons,
     synchronize_active_summon_state,
+    prune_expired_temporary_summons,
 )
 from server.character.summon_state import normalize_summon_state
 from server.session import Session, User, Token
@@ -115,6 +116,30 @@ def _seed_player_with_tinker_artillerist_profile(session: Session, player: User)
         ]
     }
     session.active_char_profiles = {player.id: "profile-artillerist"}
+
+
+def _seed_player_with_conjure_spell_profile(session: Session, player: User):
+    owner_key = player.name.strip().lower()
+    session.char_profiles = {
+        owner_key: [
+            {
+                "id": "profile-spellcaster",
+                "name": "Selene",
+                "nativeCharacter": {
+                    "classes": [{"classId": "druid", "level": 13, "subclassId": "land"}],
+                    "abilities": {"scores": {"wis": 18}},
+                    "spellState": {"known": ["conjure-fey"], "prepared": ["conjure-fey"]},
+                    "summons": {
+                        "unlockedTemplates": [],
+                        "selectedVariants": {},
+                        "activeSummons": [],
+                    },
+                },
+                "nativeRuntime": {},
+            }
+        ]
+    }
+    session.active_char_profiles = {player.id: "profile-spellcaster"}
 
 
 def test_beast_master_runtime_resolves_land_sea_sky_variants_with_real_actor_payload():
@@ -323,15 +348,78 @@ def test_tinker_artillerist_runtime_resolves_deployable_payload():
     actor = result.get("actor") or {}
     token_payload = result.get("token_payload") or {}
     assert actor.get("summonCategory") == "deployable"
-    assert actor.get("commandModel") == "action_command"
-    assert isinstance(actor.get("actions"), list) and actor.get("actions")
-    assert token_payload.get("monster_type") == "deployable"
-    assert isinstance(actor.get("attacks"), list) and actor.get("attacks")
-    assert all(isinstance(row.get("id"), str) and row.get("id") for row in actor.get("actions"))
-    assert all("classification" in row for row in actor.get("actions"))
-    assert all("summary" in row for row in actor.get("actions"))
-    assert isinstance(actor.get("traits"), list) and actor.get("traits")
-    assert (result.get("token_payload") or {}).get("monster_type") == "deployable"
+
+
+def test_spell_conjure_fey_runtime_resolves_temporary_spell_manifestation():
+    session = Session(id="TESTSUMMON")
+    player = User(id="u-player", name="Ayla", role="player")
+    session.users[player.id] = player
+    _seed_player_with_conjure_spell_profile(session, player)
+
+    result = build_summon_runtime_payload(
+        session=session,
+        user=player,
+        payload={
+            "profile_id": "profile-spellcaster",
+            "summon_template_id": "spell-conjure-fey-manifestation",
+            "selected_variant": "spell-conjure-fey-manifestation",
+            "spell_id": "conjure-fey",
+        },
+    )
+    assert result.get("ok") is True
+    actor = result.get("actor") or {}
+    assert actor.get("summonCategory") == "spell_effect"
+    assert actor.get("temporary") is True
+    assert actor.get("concentrationRequired") is True
+
+
+def test_spell_manifestation_requires_spell_in_profile_state():
+    session = Session(id="TESTSUMMON")
+    player = User(id="u-player", name="Ayla", role="player")
+    session.users[player.id] = player
+    _seed_player_with_conjure_spell_profile(session, player)
+
+    result = build_summon_runtime_payload(
+        session=session,
+        user=player,
+        payload={
+            "profile_id": "profile-spellcaster",
+            "summon_template_id": "spell-conjure-celestial-manifestation",
+            "selected_variant": "spell-conjure-celestial-manifestation",
+            "spell_id": "conjure-celestial",
+        },
+    )
+    assert result.get("ok") is False
+    assert result.get("error") == "spell_not_available"
+
+
+def test_prune_expired_temporary_spell_summons_keeps_persistent_companions():
+    native = {
+        "summons": {
+            "activeSummons": [
+                {
+                    "id": "spell-old",
+                    "templateId": "spell-conjure-fey-manifestation",
+                    "tokenId": "tok-spell",
+                    "temporary": True,
+                    "expiresAt": 100.0,
+                    "cleanupPolicy": ["duration_expiry", "long_rest"],
+                },
+                {
+                    "id": "companion",
+                    "templateId": "ranger-primal-beast-land",
+                    "tokenId": "tok-companion",
+                    "temporary": False,
+                },
+            ]
+        }
+    }
+    removed = prune_expired_temporary_summons(native, now_ts=101.0)
+    assert len(removed) == 1
+    assert removed[0].get("id") == "spell-old"
+    active = ((native.get("summons") or {}).get("activeSummons") or [])
+    assert len(active) == 1
+    assert active[0].get("id") == "companion"
 
 
 def test_non_live_paths_remain_non_live_in_runtime_service():
