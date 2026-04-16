@@ -3,11 +3,36 @@ from __future__ import annotations
 
 import copy
 import time
+import threading
 from typing import Any
 
 from server.character.summon_catalog import get_summon_template
 from server.character.summon_state import normalize_summon_state
 from server.session import Session, User
+
+
+_METRICS_LOCK = threading.Lock()
+_SUMMON_RUNTIME_METRICS: dict[str, Any] = {
+    "build_payload_calls": 0,
+    "build_payload_ms_total": 0.0,
+    "build_payload_ms_last": 0.0,
+    "reconcile_calls": 0,
+    "reconcile_rows_scanned": 0,
+    "reconcile_rows_pruned": 0,
+    "prune_calls": 0,
+    "prune_rows_scanned": 0,
+    "prune_rows_removed": 0,
+}
+
+
+def _record_runtime_metric(metric_key: str, value: float | int = 1) -> None:
+    with _METRICS_LOCK:
+        _SUMMON_RUNTIME_METRICS[metric_key] = _SUMMON_RUNTIME_METRICS.get(metric_key, 0) + value
+
+
+def get_summon_runtime_metrics() -> dict[str, Any]:
+    with _METRICS_LOCK:
+        return copy.deepcopy(_SUMMON_RUNTIME_METRICS)
 
 
 def _safe_int(value: Any, fallback: int = 0, *, minimum: int | None = None, maximum: int | None = None) -> int:
@@ -653,7 +678,8 @@ def resolve_spell_manifestation_actor(*, template: dict[str, Any], selected_vari
 
 
 def _summoner_anchor_token(session: Session, user: User, map_context: str):
-    owned = []
+    best = None
+    best_id = ""
     for tok in (getattr(session, "tokens", {}) or {}).values():
         if str(getattr(tok, "owner_id", "") or "") != str(user.id):
             continue
@@ -663,11 +689,11 @@ def _summoner_anchor_token(session: Session, user: User, map_context: str):
             continue
         if str(getattr(tok, "token_type", "player") or "player").strip().lower() == "companion":
             continue
-        owned.append(tok)
-    if owned:
-        owned.sort(key=lambda t: str(getattr(t, "id", "")))
-        return owned[0]
-    return None
+        tok_id = str(getattr(tok, "id", "") or "")
+        if best is None or tok_id < best_id:
+            best = tok
+            best_id = tok_id
+    return best
 
 
 def _compute_spawn_position(session: Session, user: User, map_context: str) -> tuple[float, float, float, float]:
@@ -887,6 +913,14 @@ def _entry_temporary(row: dict[str, Any]) -> bool:
     return bool(source.get("temporary")) or str(source.get("summonOrigin") or "").strip().lower() == "spell"
 
 
+def _template_for_row(row: dict[str, Any]) -> dict[str, Any]:
+    return get_summon_template(_entry_template_id(row)) or {}
+
+
+def _active_rows(summons: dict[str, Any]) -> list[dict[str, Any]]:
+    return [row for row in (summons.get("activeSummons") or []) if isinstance(row, dict)]
+
+
 def _summon_limit_policy(summons: dict[str, Any], template: dict[str, Any], group_id: str) -> tuple[int, bool]:
     rules = summons.get("rules") if isinstance(summons.get("rules"), dict) else {}
     per_group = rules.get("maxActiveByGroup") if isinstance(rules.get("maxActiveByGroup"), dict) else {}
@@ -912,7 +946,7 @@ def plan_active_summon_mutations(native_document: dict[str, Any], *, active_entr
     source_feature_id = _entry_source_feature_id(active_entry)
     max_active, replace_on_resummon = _summon_limit_policy(summons, template, group_id)
 
-    existing: list[dict[str, Any]] = [row for row in (summons.get("activeSummons") or []) if isinstance(row, dict)]
+    existing = _active_rows(summons)
     scoped = [
         row for row in existing
         if _entry_owner_profile_id(row) == owner_profile_id
@@ -948,9 +982,7 @@ def list_active_summons(
     match_feature = str(source_feature_id or "").strip().lower()
     match_owner_profile = str(owner_profile_id or "").strip()
     out = []
-    for row in (summons.get("activeSummons") or []):
-        if not isinstance(row, dict):
-            continue
+    for row in _active_rows(summons):
         if match_template and _entry_template_id(row) != match_template:
             continue
         if match_group and _entry_group_id(row) != match_group:
@@ -1000,19 +1032,32 @@ def remove_active_summon(
 
 def register_active_summon(native_document: dict[str, Any], active_entry: dict[str, Any]) -> dict[str, Any]:
     template_id = _entry_template_id(active_entry)
-    template = get_summon_template(template_id) or {}
+    template = _template_for_row(active_entry)
     mutation_plan = plan_active_summon_mutations(native_document, active_entry=active_entry, template=template)
-    for row in mutation_plan.get("remove_entries") or []:
-        if not isinstance(row, dict):
-            continue
-        remove_active_summon(
-            native_document,
-            active_id=str(row.get("id") or ""),
-            token_id=str(row.get("tokenId") or ""),
-            owner_profile_id=_entry_owner_profile_id(active_entry),
-        )
-
     summons = normalize_summon_state(native_document.get("summons"))
+    existing_rows = _active_rows(summons)
+    owner_profile_id = _entry_owner_profile_id(active_entry)
+    remove_ids = {
+        str(row.get("id") or "").strip()
+        for row in (mutation_plan.get("remove_entries") or [])
+        if isinstance(row, dict) and str(row.get("id") or "").strip()
+    }
+    remove_tokens = {
+        str(row.get("tokenId") or "").strip()
+        for row in (mutation_plan.get("remove_entries") or [])
+        if isinstance(row, dict) and str(row.get("tokenId") or "").strip()
+    }
+    if remove_ids or remove_tokens:
+        existing_rows = [
+            row for row in existing_rows
+            if not (
+                _entry_owner_profile_id(row) == owner_profile_id
+                and (
+                    str(row.get("id") or "").strip() in remove_ids
+                    or str(row.get("tokenId") or "").strip() in remove_tokens
+                )
+            )
+        ]
     group_id = _entry_group_id(active_entry)
 
     row = copy.deepcopy(active_entry)
@@ -1031,7 +1076,7 @@ def register_active_summon(native_document: dict[str, Any], active_entry: dict[s
         row["maxActive"] = mutation_plan.get("max_active")
     if row.get("replaceOnResummon") is None:
         row["replaceOnResummon"] = bool(mutation_plan.get("replace_on_resummon"))
-    summons["activeSummons"] = list(summons.get("activeSummons") or []) + [row]
+    summons["activeSummons"] = existing_rows + [row]
     if group_id and str(active_entry.get("variantId") or "").strip():
         selected = summons.get("selectedVariants") if isinstance(summons.get("selectedVariants"), dict) else {}
         selected[group_id] = str(active_entry.get("variantId") or "").strip().lower()
@@ -1046,7 +1091,9 @@ def reconcile_native_summons(
     valid_map_contexts: set[str] | None = None,
 ) -> dict[str, Any]:
     summons = normalize_summon_state(native_document.get("summons"))
-    active_rows = list(summons.get("activeSummons") or [])
+    active_rows = _active_rows(summons)
+    _record_runtime_metric("reconcile_calls")
+    _record_runtime_metric("reconcile_rows_scanned", len(active_rows))
     kept: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
     seen_tokens: set[str] = set()
@@ -1069,6 +1116,8 @@ def reconcile_native_summons(
         if token_id:
             seen_tokens.add(token_id)
         kept.append(copy.deepcopy(row))
+    if len(kept) != len(active_rows):
+        _record_runtime_metric("reconcile_rows_pruned", len(active_rows) - len(kept))
     summons["activeSummons"] = kept
     native_document["summons"] = summons
     return native_document
@@ -1081,7 +1130,9 @@ def prune_expired_temporary_summons(
     rest_type: str = "",
 ) -> list[dict[str, Any]]:
     summons = normalize_summon_state(native_document.get("summons"))
-    rows = list(summons.get("activeSummons") or [])
+    rows = _active_rows(summons)
+    _record_runtime_metric("prune_calls")
+    _record_runtime_metric("prune_rows_scanned", len(rows))
     now_value = float(now_ts if now_ts is not None else time.time())
     rest_mode = str(rest_type or "").strip().lower()
     removed: list[dict[str, Any]] = []
@@ -1107,6 +1158,7 @@ def prune_expired_temporary_summons(
         else:
             kept.append(row)
     if removed:
+        _record_runtime_metric("prune_rows_removed", len(removed))
         summons["activeSummons"] = kept
         native_document["summons"] = summons
     return removed
@@ -1183,6 +1235,7 @@ def synchronize_active_summon_state(native_document: dict[str, Any], *, token_id
 
 
 def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[str, Any]) -> dict[str, Any]:
+    started = time.perf_counter()
     requested_profile_id = str(payload.get("profile_id") or payload.get("profileId") or "").strip()
     owner_key, profile_index, profile = _find_active_profile(session, user, requested_profile_id)
     if profile_index < 0 or not isinstance(profile, dict):
@@ -1286,7 +1339,7 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
 
     token_payload = _build_token_payload(actor=actor, user=user, map_context=map_context, sx=sx, sy=sy, sw=sw, sh=sh)
 
-    return {
+    result = {
         "ok": True,
         "owner_key": owner_key,
         "profile_index": profile_index,
@@ -1301,3 +1354,9 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
         "entity_kind": entity_kind or "creature",
         "is_creature": is_creature,
     }
+    elapsed_ms = (time.perf_counter() - started) * 1000.0
+    _record_runtime_metric("build_payload_calls")
+    _record_runtime_metric("build_payload_ms_total", elapsed_ms)
+    with _METRICS_LOCK:
+        _SUMMON_RUNTIME_METRICS["build_payload_ms_last"] = elapsed_ms
+    return result

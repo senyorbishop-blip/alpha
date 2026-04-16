@@ -15,6 +15,7 @@ from server.character.summon_runtime import (
     synchronize_active_summon_state,
     prune_expired_temporary_summons,
     normalize_deployment_ui_entry,
+    get_summon_runtime_metrics,
 )
 from server.handlers.common import Session, User, manager, save_campaign_async, _broadcast_token_state_sync
 from server.character.summon_state import normalize_summon_state
@@ -66,6 +67,7 @@ def _refresh_profiles_for_native_docs(session: Session, touched_profiles: set[tu
 
 
 async def handle_summon_runtime_request(payload: dict, session: Session, user: User):
+    started = time.perf_counter()
     if user.role not in {"player", "dm"}:
         await manager.send_to(
             session.id,
@@ -206,6 +208,9 @@ async def handle_summon_runtime_request(payload: dict, session: Session, user: U
                 "summon": active_entry,
                 "token": token.to_dict(),
                 "removed_token_ids": removed_token_ids,
+                "diagnostics": {
+                    "runtime_ms": round((time.perf_counter() - started) * 1000.0, 3),
+                },
             },
         },
     )
@@ -344,7 +349,22 @@ async def handle_summon_runtime_admin(payload: dict, session: Session, user: Use
         rows = list(_iter_active_summons(session))
     if action in {"list", "refresh"}:
         data = [entry for (_, _, _, _, entry) in rows]
-        await manager.send_to(session.id, user.id, {"type": "summon_runtime_admin_result", "payload": {"ok": True, "action": "list", "summons": data}})
+        await manager.send_to(
+            session.id,
+            user.id,
+            {
+                "type": "summon_runtime_admin_result",
+                "payload": {
+                    "ok": True,
+                    "action": "list",
+                    "summons": data,
+                    "diagnostics": {
+                        "summon_count": len(data),
+                        "runtime_metrics": get_summon_runtime_metrics(),
+                    },
+                },
+            },
+        )
         return
 
     if action == "inspect":

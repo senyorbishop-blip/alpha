@@ -20,6 +20,7 @@ def test_summon_admin_handler_supports_dismiss_and_cleanup_stale():
     assert 'cleanup_stale' in src
     assert 'role_not_allowed' in src
     assert 'token_deleted' in src
+    assert 'runtime_metrics' in src
 
 
 def test_spell_summon_templates_are_registered_for_pass_i():

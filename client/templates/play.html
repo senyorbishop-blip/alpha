@@ -42633,6 +42633,26 @@ function playerUseSpellAction(spellId, slotSelectId) {
   combatQuickCastSpell(spellId, Number.isFinite(selected) ? selected : undefined);
 }
 
+function _resolveSummonActionEntryById(entryId) {
+  const raw = String(entryId || '').trim();
+  const parts = raw.split(':');
+  if (parts.length !== 4 || parts[0] !== 'summon_action') return null;
+  const rowIndex = Number(parts[1]);
+  const activeIndex = Number(parts[2]);
+  const actionIndex = Number(parts[3]);
+  if (!Number.isInteger(rowIndex) || !Number.isInteger(activeIndex) || !Number.isInteger(actionIndex)) return null;
+  const summonRows = Array.isArray(_charSheet?.summonActions) ? _charSheet.summonActions : [];
+  const row = summonRows[rowIndex];
+  const active = Array.isArray(row?.activeSummons) ? row.activeSummons[activeIndex] : null;
+  const action = Array.isArray(active?.actions) ? active.actions[actionIndex] : null;
+  if (!action || typeof action !== 'object') return null;
+  return {
+    tokenId: String(active?.tokenId || '').trim(),
+    actionId: String(action.id || '').trim(),
+    name: String(action.displayName || action.name || 'Action').trim(),
+  };
+}
+
 function playerUseAction(source, id) {
   const src = String(source || '').trim();
   if (src === 'weapon' || src === 'equip_only' || src === 'system_unarmed' || src === 'attack') {
@@ -42648,9 +42668,7 @@ function playerUseAction(source, id) {
     return;
   }
   if (src === 'summon_action') {
-    const actionSections = _getPlayerActionsSections();
-    const entries = ['Bonus Actions', 'Reactions', 'Class Features', 'Attacks'].flatMap(key => actionSections[key] || []);
-    const picked = entries.find(entry => String(entry.id) === String(id));
+    const picked = _resolveSummonActionEntryById(id);
     if (!picked || !picked.tokenId || !picked.actionId) return;
     const targetId = String(_combat?.selected_target_id || '').trim();
     sendWS({ type: 'summon_action_use', payload: { token_id: picked.tokenId, action_id: picked.actionId, target_id: targetId } });
