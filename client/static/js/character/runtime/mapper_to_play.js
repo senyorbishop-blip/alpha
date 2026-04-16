@@ -466,6 +466,7 @@
 
     var levelTotal = asInt(runtime.levelTotal, asInt(out.totalLevel, asInt(out.level, 1)));
     var profBonus = asInt(runtime.proficiencyBonus, asInt(out.profBonus, asInt(out.proficiencyBonus, 2)));
+    var abilities = asObject(asObject(doc.abilities).scores);
 
     out.name = firstNonEmpty(identity.displayName, identity.name, out.name);
     out.displayName = firstNonEmpty(identity.displayName, out.displayName, out.name);
@@ -497,6 +498,20 @@
     out.totalLevel = levelTotal;
     out.profBonus = profBonus;
     out.proficiencyBonus = profBonus;
+    out.abilityScores = Object.assign({}, asObject(out.abilityScores), {
+      str: asInt(abilities.str, asInt(asObject(out.abilityScores).str, 10)),
+      dex: asInt(abilities.dex, asInt(asObject(out.abilityScores).dex, 10)),
+      con: asInt(abilities.con, asInt(asObject(out.abilityScores).con, 10)),
+      int: asInt(abilities.int, asInt(asObject(out.abilityScores).int, 10)),
+      wis: asInt(abilities.wis, asInt(asObject(out.abilityScores).wis, 10)),
+      cha: asInt(abilities.cha, asInt(asObject(out.abilityScores).cha, 10)),
+      strength: asInt(abilities.str, asInt(asObject(out.abilityScores).strength, 10)),
+      dexterity: asInt(abilities.dex, asInt(asObject(out.abilityScores).dexterity, 10)),
+      constitution: asInt(abilities.con, asInt(asObject(out.abilityScores).constitution, 10)),
+      intelligence: asInt(abilities.int, asInt(asObject(out.abilityScores).intelligence, 10)),
+      wisdom: asInt(abilities.wis, asInt(asObject(out.abilityScores).wisdom, 10)),
+      charisma: asInt(abilities.cha, asInt(asObject(out.abilityScores).charisma, 10)),
+    });
 
     if (classDisplay.className) {
       out.className = classDisplay.className;
@@ -549,6 +564,8 @@
       if (Object.keys(slots).length) {
         out.spellSlots = clone(slots);
       }
+      if (spellAccess.saveDc != null) out.spellSaveDc = String(asInt(spellAccess.saveDc, asInt(out.spellSaveDc, 8)));
+      if (spellAccess.attackBonus != null) out.spellAttack = signed(spellAccess.attackBonus);
     }
 
     var runtimeActions = asArray(runtime.actions).map(function normalizeAction(entry) { return normalizeActionEntry(entry, 'action'); }).filter(Boolean);
@@ -837,9 +854,11 @@
       combat: Object.assign({}, asObject(asObject(out.nativeRuntime).combat), {
         maxHP: mappedMaxHp,
         currentHP: mappedCurrentHp,
+        tempHP: mappedTempHp,
       }, asObject(runtimeWithCanonicalHp.combat), {
         maxHP: mappedMaxHp,
         currentHP: mappedCurrentHp,
+        tempHP: mappedTempHp,
       }),
     });
     var runtimeCombat = asObject(runtimeWithCanonicalHp.combat);
@@ -869,7 +888,7 @@
       current: asInt(combat.currentHP, asInt(token.currentHP, 10)),
       temp: asInt(token.tempHP, 0),
     });
-    var species = asObject(runtime.species);
+    var species = asObject(doc.species);
     var identity = asObject(doc.identity);
 
     var mappedMaxHp = asInt(hp.max, asInt(combat.maxHP, asInt(token.maxHP, 10)));
@@ -882,10 +901,11 @@
       tokenImageUrl: firstNonEmpty(identity.tokenImageUrl, doc.tokenImageUrl, token.tokenImageUrl),
       maxHP: mappedMaxHp,
       currentHP: mappedCurrentHp,
+      tempHP: asInt(hp.temp, asInt(token.tempHP, 0)),
       ac: asInt(combat.ac, asInt(token.ac, 10)),
-      speed: asInt(combat.speed, asInt(species.speed, asInt(token.speed, 30))),
+      speed: asInt(combat.speed, asInt(asObject(runtime.speed).walk, asInt(token.speed, 30))),
       initiative: asInt(combat.initiative, 0),
-      darkvision: asInt(species.darkvision, 0),
+      darkvision: asInt(combat.darkvision, asInt(asObject(runtime.senses).darkvision, asInt(token.darkvision, 0))),
       size: firstNonEmpty(species.size, token.size, 'Medium'),
       conditions: Array.isArray(token.conditions) ? token.conditions.slice() : [],
       spellSlots: asObject(runtime.spellSlots),
