@@ -1434,6 +1434,16 @@
 
   function _buildQuickAttackCards(charData) {
     return _safeArray(charData && charData.quickAttackCards).map(function (card) {
+      const attackBonus = card.attackBonus != null
+        ? card.attackBonus
+        : (card.attack_bonus_value != null ? card.attack_bonus_value : _firstText(card.attack_bonus, card.toHit, card.hit));
+      const damageText = _firstText(
+        card.damage,
+        card.damageText,
+        card.damage_formula,
+        card.base_damage_formula,
+        card.effect
+      );
       return {
         id: String(card.id || card.name || '').trim() || ('attack-' + String(card.name || 'attack').toLowerCase().replace(/[^a-z0-9]+/g, '-')),
         source: String(card.source || 'weapon').trim() || 'weapon',
@@ -1442,8 +1452,9 @@
         description: _firstText(card.summary, card.note, card.text, 'Generated quick attack card.'),
         economy: ['action'],
         icon: card.icon || (String(card.range || '').match(/ft|range/i) ? '🏹' : '⚔️'),
-        attackBonus: card.attackBonus != null ? card.attackBonus : _firstText(card.toHit, card.hit),
-        damage: _firstText(card.damage, card.damageText, card.effect),
+        attackBonus: attackBonus,
+        damage: damageText,
+        damageText: damageText,
         range: _firstText(card.range, card.reach),
         resourceName: _firstText(card.ammoKind, card.ammoNote),
         tags: [card.source === 'equip_only' ? 'Equipped Loadout' : '', card.modeLabel || '', card.mastery_label || card.masteryLabel || ''].filter(Boolean),
