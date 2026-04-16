@@ -1559,6 +1559,19 @@
 
   function _buildQuickAttackCards(charData) {
     return _safeArray(charData && charData.quickAttackCards).map(function (card) {
+      const fallbackId = _firstText(
+        card && card.id,
+        card && card.actionId,
+        card && card.combatCardId,
+        card && card.name,
+        ''
+      ).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const canonicalId = _firstText(
+        card && card.id,
+        card && card.actionId,
+        card && card.combatCardId,
+        ''
+      ).trim();
       const attackBonus = card.attackBonus != null
         ? card.attackBonus
         : (card.attack_bonus_value != null ? card.attack_bonus_value : _firstText(card.attack_bonus, card.toHit, card.hit));
