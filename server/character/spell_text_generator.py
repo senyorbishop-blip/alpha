@@ -381,7 +381,7 @@ def _guess_damage_type(name: str, existing: str, school: str) -> str:
 def _guess_attack_or_save(name: str, level: int, school: str, damage_type: str, tags: list[str] | None = None, effect_text: str = '') -> tuple[str, str]:
     lname = name.lower()
     tag_set = {str(t).strip().lower() for t in (tags or []) if str(t).strip()}
-    combined = f'{lname} {str(effect_text or '').lower()}'
+    combined = f"{lname} {str(effect_text or '').lower()}"
     if tag_set & {'utility', 'ritual', 'buff', 'healing', 'summon', 'teleport'} and not (tag_set & {'damage', 'attack', 'save'}):
         return '', ''
     if any(k in combined for k in ['spell attack', 'make a ranged spell attack', 'make a melee spell attack']):
