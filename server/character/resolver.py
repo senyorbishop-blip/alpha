@@ -166,6 +166,77 @@ def _compute_base_hp(document: dict, level_total: int, runtime_classes: list[dic
     }
 
 
+def _runtime_hp_from_document(document: dict[str, Any], base_hp: dict[str, Any]) -> dict[str, Any]:
+    root_hp = document.get("hp") if isinstance(document.get("hp"), dict) else {}
+    max_hp = _safe_int(
+        document.get("maxHP"),
+        _safe_int(
+            document.get("maxHp"),
+            _safe_int(root_hp.get("max"), _safe_int(base_hp.get("max"), 1, minimum=1), minimum=1),
+            minimum=1,
+        ),
+        minimum=1,
+    )
+    current_hp = _safe_int(
+        document.get("currentHP"),
+        _safe_int(
+            document.get("currentHp"),
+            _safe_int(root_hp.get("current"), max_hp, minimum=0),
+            minimum=0,
+        ),
+        minimum=0,
+    )
+    temp_hp = _safe_int(
+        document.get("tempHP"),
+        _safe_int(
+            document.get("tempHp"),
+            _safe_int(root_hp.get("temp"), 0),
+        ),
+        minimum=0,
+    )
+    return {
+        "max": max(1, max_hp),
+        "current": max(0, min(max_hp, current_hp)),
+        "temp": max(0, temp_hp),
+        "hitDice": list(base_hp.get("hitDice") or []),
+    }
+
+
+def _compute_equipment_ac(document: dict[str, Any], *, dex_mod: int, fallback_ac: int) -> int:
+    equipment = document.get("equipment") if isinstance(document.get("equipment"), dict) else {}
+    inventory = equipment.get("inventory") if isinstance(equipment.get("inventory"), list) else []
+    equipped_rows = [row for row in inventory if isinstance(row, dict) and bool(row.get("equipped"))]
+    armor_rows = [
+        row for row in equipped_rows
+        if str(row.get("equipment_kind") or row.get("kind") or row.get("item_type") or "").strip().lower() == "armor"
+    ]
+    shield_rows = [
+        row for row in equipped_rows
+        if str(row.get("equipment_kind") or row.get("kind") or row.get("item_type") or "").strip().lower() == "shield"
+    ]
+
+    armor_ac = fallback_ac
+    for armor in armor_rows:
+        base_ac = _safe_int(armor.get("base_ac"), 0, minimum=0)
+        if base_ac <= 0:
+            continue
+        armor_type = str(armor.get("armor_type") or "").strip().lower()
+        dex_cap = armor.get("dex_cap")
+        if armor_type == "heavy":
+            dex_for_ac = 0
+        elif armor_type == "medium":
+            dex_for_ac = min(dex_mod, _safe_int(dex_cap, 2))
+        else:
+            dex_for_ac = min(dex_mod, _safe_int(dex_cap, dex_mod)) if dex_cap not in (None, "") else dex_mod
+        armor_bonus = _safe_int(armor.get("ac_bonus"), 0)
+        armor_ac = max(armor_ac, base_ac + dex_for_ac + armor_bonus)
+
+    shield_bonus = 0
+    for shield in shield_rows:
+        shield_bonus += _safe_int(shield.get("ac_bonus"), 2)
+    return max(fallback_ac, armor_ac + shield_bonus)
+
+
 def _resolve_runtime_classes(normalized: dict) -> list[dict[str, Any]]:
     classes = normalized.get("classes") if isinstance(normalized.get("classes"), list) else []
     resolved_rows: list[dict[str, Any]] = []
@@ -486,7 +557,7 @@ def resolve_character_runtime(document: Any) -> dict:
     speed = _safe_int(species.get("speed"), 30, minimum=0)
     runtime["speed"] = {"walk": speed}
     runtime_classes = _resolve_runtime_classes(normalized)
-    runtime["hp"] = _compute_base_hp(normalized, level_total, runtime_classes)
+    runtime["hp"] = _runtime_hp_from_document(normalized, _compute_base_hp(normalized, level_total, runtime_classes))
     runtime["classes"] = runtime_classes
     if runtime_classes:
         primary = runtime_classes[0]
@@ -520,7 +591,11 @@ def resolve_character_runtime(document: Any) -> dict:
     int_mod = _ability_modifier(scores.get("int", 10))
     wis_mod = _ability_modifier(scores.get("wis", 10))
     cha_mod = _ability_modifier(scores.get("cha", 10))
-    runtime["ac"] = max(10, 10 + dex_mod)
+    runtime["ac"] = _safe_int(
+        normalized.get("ac"),
+        max(10, 10 + dex_mod),
+        minimum=1,
+    )
 
     senses = species.get("senses") if isinstance(species.get("senses"), list) else []
     darkvision = _safe_int(runtime["senses"].get("darkvision"), 0, minimum=0)
@@ -724,23 +799,14 @@ def resolve_character_runtime(document: Any) -> dict:
         armor_class = max(armor_class, 10 + dex_mod + con_mod)
     elif primary_class_id == "monk":
         armor_class = max(armor_class, 10 + dex_mod + wis_mod)
-    runtime["ac"] = armor_class
-
-    current_hp = _safe_int(
-        normalized.get("currentHP"),
-        _safe_int(
-            (normalized.get("hp") if isinstance(normalized.get("hp"), dict) else {}).get("current"),
-            _safe_int(runtime["hp"].get("current"), runtime["hp"]["max"]),
-            minimum=0,
-        ),
-        minimum=0,
-    )
-    runtime["hp"]["current"] = min(runtime["hp"]["max"], current_hp or runtime["hp"]["max"])
+    runtime["ac"] = _compute_equipment_ac(normalized, dex_mod=dex_mod, fallback_ac=armor_class)
+    runtime["speed"]["walk"] = walk_speed
 
     runtime["combat"] = {
         "ac": runtime["ac"],
         "maxHP": runtime["hp"]["max"],
         "currentHP": runtime["hp"]["current"],
+        "tempHP": runtime["hp"]["temp"],
         "initiative": dex_mod,
         "speed": walk_speed,
         "proficiencyBonus": proficiency_bonus,
@@ -751,7 +817,9 @@ def resolve_character_runtime(document: Any) -> dict:
         },
         "savingThrows": saving_throws,
         "spellSaveDC": (8 + proficiency_bonus + spellcasting_mod) if is_caster else None,
+        "spellAttackBonus": (spellcasting_mod + proficiency_bonus) if is_caster else None,
         "darkvision": darkvision,
+        "senses": _clone(runtime.get("senses") or {}),
     }
 
     runtime["derivedTags"] = [

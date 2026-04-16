@@ -914,15 +914,23 @@
     const inventory = _safeArray(charData && charData.inventory);
     const profBonus = _charProfBonus(charData);
     const stats = _charAbilityScores(charData);
-    return inventory.filter(function (item) {
-      return item && /weapon/i.test(String(item.kind || item.type || item.category || ''));
-    }).map(function (item) {
-      const propertyText = Array.isArray(item.properties) ? item.properties.join(' ') : String(item.properties || '');
+    const weaponRows = inventory.filter(function (item) {
+      return item && /weapon/i.test(String(item.kind || item.type || item.category || item.equipment_kind || item.item_type || ''));
+    });
+    const equippedRows = weaponRows.filter(function (row) { return !!row.equipped; });
+    const sourceRows = equippedRows.length ? equippedRows : weaponRows;
+    return sourceRows.map(function (item) {
+      const propertyText = []
+        .concat(Array.isArray(item.properties) ? item.properties : [])
+        .concat(Array.isArray(item.weapon_properties) ? item.weapon_properties : [])
+        .map(function (entry) { return String(entry || ''); })
+        .join(' ');
       const finesse = /finesse/i.test(propertyText);
-      const ranged = /ranged|bow|crossbow|sling/i.test(String(item.kind || '') + ' ' + String(item.name || '') + ' ' + String(item.range || ''));
+      const ranged = /ranged|bow|crossbow|sling|thrown|ammunition/i.test(String(item.kind || '') + ' ' + String(item.name || '') + ' ' + String(item.range || '') + ' ' + propertyText);
       const abilityMod = ranged ? _abilityMod(stats.dex) : (finesse ? Math.max(_abilityMod(stats.str), _abilityMod(stats.dex)) : _abilityMod(stats.str));
       const attackBonus = profBonus + abilityMod;
-      const damage = _firstText(item.damage, item.damageDice, item.damage_dice, item.notes, item.note, 'Weapon attack');
+      const damage = _firstText(item.damage, item.damageDice, item.damage_dice, item.versatile_damage, item.notes, item.note, 'Weapon attack');
+      const ammoKind = _firstText(item.ammo_kind, item.ammoKind, '');
       return {
         id: String(item.id || item.name || '').trim() || ('inventory-' + String(item.name || 'weapon').toLowerCase().replace(/[^a-z0-9]+/g, '-')),
         source: item.equipped ? 'equip_only' : 'weapon',
@@ -934,9 +942,9 @@
         attackBonus: attackBonus >= 0 ? '+' + attackBonus : String(attackBonus),
         damage: damage,
         range: _firstText(item.range, item.reach),
-        resourceName: '',
-        tags: [item.equipped ? 'Equipped' : 'Inventory', item.kind || item.type || 'Weapon'].filter(Boolean),
-        longText: [item.note, item.notes, item.damage, item.range].filter(Boolean).join('\n\n'),
+        resourceName: ammoKind ? ('Ammo: ' + ammoKind) : '',
+        tags: [item.equipped ? 'Equipped' : 'Inventory only', item.kind || item.type || 'Weapon', finesse ? 'Finesse' : '', ranged ? 'Ranged' : 'Melee'].filter(Boolean),
+        longText: [item.note, item.notes, item.damage, item.range, ammoKind ? ('Ammo type: ' + ammoKind) : '', propertyText ? ('Properties: ' + propertyText) : ''].filter(Boolean).join('\n\n'),
       };
     });
   }

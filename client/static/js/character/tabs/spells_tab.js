@@ -277,9 +277,10 @@
 
 function _spellAttackBonusValue(spell, charData) {
   const kind = _spellAttackKind(spell);
+  const spellAccess = charData && charData.spellAccess && typeof charData.spellAccess === 'object' ? charData.spellAccess : {};
   const raw = _firstText(
     spell && (spell.attackBonus || spell.attack_bonus || spell.spellAttack || spell.spell_attack || ''),
-    kind === 'spell' ? (charData && (charData.spellAttack || charData.spell_attack || '')) : '',
+    kind === 'spell' ? _firstText(charData && (charData.spellAttack || charData.spell_attack || ''), spellAccess.attackBonus != null ? String(spellAccess.attackBonus) : '') : '',
     ''
   );
   const parsed = parseInt(String(raw || '').replace(/^\s*\+/, '').trim(), 10);
@@ -312,7 +313,13 @@ function _spellHasAttackRoll(spell, charData) {
 
 function _spellAttackSaveLabel(spell, charData) {
   const attackBonus = _spellAttackBonusValue(spell, charData);
-  const saveDc = _firstText(spell && (spell.saveDC || spell.save_dc || ''), charData && (charData.spellSaveDc || charData.spell_save_dc || ''), '');
+  const spellAccess = charData && charData.spellAccess && typeof charData.spellAccess === 'object' ? charData.spellAccess : {};
+  const saveDc = _firstText(
+    spell && (spell.saveDC || spell.save_dc || ''),
+    charData && (charData.spellSaveDc || charData.spell_save_dc || ''),
+    spellAccess.saveDc != null ? String(spellAccess.saveDc) : '',
+    ''
+  );
   const saveAbility = _firstText(spell && (spell.savingThrow || spell.saveAbility || spell.save_ability || ''), '');
   const attackKind = _spellAttackKind(spell);
   if (attackKind && attackBonus != null) return 'Attack ' + (attackBonus >= 0 ? `+${attackBonus}` : String(attackBonus));
