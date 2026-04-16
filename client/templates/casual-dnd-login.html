@@ -404,10 +404,12 @@
     }
 
     function roleDefaultDestination(user) {
-      const userRole = String((user && user.role) || ROUTE_ROLE || '').trim().toLowerCase();
-      if (userRole === 'dm') return '/campaigns';
-      if (userRole === 'viewer') return storedInviteDestination('viewer') || '/viewer/watch';
-      if (userRole === 'player') return storedInviteDestination('player') || '/player/characters';
+      const routeRole = String(ROUTE_ROLE || '').trim().toLowerCase();
+      const userRole = String((user && user.role) || '').trim().toLowerCase();
+      const effectiveRole = routeRole || userRole;
+      if (effectiveRole === 'dm') return '/campaigns';
+      if (effectiveRole === 'viewer') return storedInviteDestination('viewer') || '/viewer/watch';
+      if (effectiveRole === 'player') return storedInviteDestination('player') || '/player/characters';
       return DEFAULT_POST_AUTH_TARGET || '/campaigns';
     }
 
