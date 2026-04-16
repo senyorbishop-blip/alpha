@@ -13,7 +13,8 @@ from server.character.summon_runtime import (
     plan_active_summon_mutations,
     synchronize_active_summon_state,
 )
-from server.handlers.common import Session, User, manager, save_campaign_async, _broadcast_token_state_sync, _sync_combatant_token_state
+from server.handlers.common import Session, User, manager, save_campaign_async, _broadcast_token_state_sync
+from server.character.summon_state import normalize_summon_state
 from server.handlers.content import _send_char_profiles, _char_profile_bucket_key
 from server.session import create_token
 
@@ -257,109 +258,116 @@ async def handle_summon_runtime_dismiss(payload: dict, session: Session, user: U
     await save_campaign_async(session)
 
 
-def _iter_user_native_documents(session: Session, user: User):
+def _iter_active_summons(session: Session):
     profiles = dict(getattr(session, "char_profiles", {}) or {})
-    for owner_key, rows in profiles.items():
-        if not isinstance(rows, list):
-            continue
+    users = dict(getattr(session, "users", {}) or {})
+    for owner_key, bucket in profiles.items():
+        rows = list(bucket) if isinstance(bucket, list) else []
         for idx, row in enumerate(rows):
             if not isinstance(row, dict):
                 continue
+            profile_id = str(row.get("id") or "").strip()
             native = row.get("nativeCharacter") if isinstance(row.get("nativeCharacter"), dict) else {}
-            if not native:
-                continue
-            owner_profile_id = str(row.get("id") or "").strip()
-            if user.role == "dm":
-                yield owner_key, idx, row, native, owner_profile_id
-            elif owner_key == _char_profile_bucket_key(session, user):
-                yield owner_key, idx, row, native, owner_profile_id
+            summons = normalize_summon_state(native.get("summons"))
+            for active in (summons.get("activeSummons") or []):
+                if not isinstance(active, dict):
+                    continue
+                token_id = str(active.get("tokenId") or "").strip()
+                token = (session.tokens or {}).get(token_id)
+                owner_user_id = str(active.get("ownerUserId") or "").strip()
+                owner_name = ""
+                if owner_user_id and owner_user_id in users:
+                    owner_name = str(getattr(users[owner_user_id], "name", "") or "")
+                if not owner_name:
+                    owner_name = str(((active.get("actor") or {}).get("owner") or {}).get("userName") or "")
+                if not owner_name:
+                    owner_name = str(owner_key or "")
+                enriched = copy.deepcopy(active)
+                enriched["ownerBucketKey"] = str(owner_key)
+                enriched["profileIndex"] = idx
+                enriched["profileId"] = profile_id
+                enriched["ownerName"] = owner_name
+                enriched["tokenPresent"] = bool(token)
+                enriched["tokenName"] = str(getattr(token, "name", "") or (enriched.get("actor") or {}).get("name") or "")
+                enriched["tokenMapContext"] = str(getattr(token, "map_context", "") or enriched.get("mapContext") or enriched.get("sceneId") or "")
+                yield owner_key, idx, row, native, enriched
 
 
-async def handle_summon_action_use(payload: dict, session: Session, user: User):
-    if user.role not in {"player", "dm"}:
+async def handle_summon_runtime_admin(payload: dict, session: Session, user: User):
+    if user.role != "dm":
+        await manager.send_to(session.id, user.id, {"type": "summon_runtime_admin_result", "payload": {"ok": False, "error": "role_not_allowed"}})
         return
+
+    action = str(payload.get("action") or "list").strip().lower()
+    active_id = str(payload.get("active_id") or payload.get("activeId") or "").strip()
     token_id = str(payload.get("token_id") or payload.get("tokenId") or "").strip()
-    action_id = str(payload.get("action_id") or payload.get("actionId") or "").strip().lower()
-    target_id = str(payload.get("target_id") or payload.get("targetId") or "").strip()
-    if not token_id or not action_id:
-        return
-    token = (session.tokens or {}).get(token_id)
-    if not token:
-        return
-    if user.role != "dm" and str(getattr(token, "owner_id", "") or "") != str(user.id):
+
+    rows = list(_iter_active_summons(session))
+    if action in {"list", "refresh"}:
+        data = [entry for (_, _, _, _, entry) in rows]
+        await manager.send_to(session.id, user.id, {"type": "summon_runtime_admin_result", "payload": {"ok": True, "action": "list", "summons": data}})
         return
 
-    found = None
-    for owner_key, idx, row, native, owner_profile_id in _iter_user_native_documents(session, user):
-        active_rows = ((native.get("summons") or {}).get("activeSummons") or [])
-        for active in active_rows:
-            if not isinstance(active, dict):
-                continue
-            if str(active.get("tokenId") or "").strip() != token_id:
-                continue
-            actor = active.get("actor") if isinstance(active.get("actor"), dict) else {}
-            actions = actor.get("actions") if isinstance(actor.get("actions"), list) else []
-            action = next((a for a in actions if isinstance(a, dict) and str(a.get("id") or "").strip().lower() == action_id), None)
-            if action:
-                found = (owner_key, idx, row, native, active, actor, action, owner_profile_id)
+    if action == "inspect":
+        selected = None
+        for _, _, _, _, entry in rows:
+            if active_id and str(entry.get("id") or "") == active_id:
+                selected = entry
                 break
-        if found:
-            break
-    if not found:
-        await manager.send_to(session.id, user.id, {"type": "summon_action_result", "payload": {"ok": False, "error": "action_not_found"}})
+            if token_id and str(entry.get("tokenId") or "") == token_id:
+                selected = entry
+                break
+        await manager.send_to(session.id, user.id, {"type": "summon_runtime_admin_result", "payload": {"ok": True, "action": "inspect", "summon": selected}})
         return
 
-    _, idx, _, native, active, actor, action, owner_profile_id = found
-    command_model = str(action.get("commandModel") or actor.get("commandModel") or "").strip().lower()
-    if (session.combat or {}).get("active") and command_model in {"bonus_action_command", "action_command"}:
-        round_no = int((session.combat or {}).get("round", 1) or 1)
-        usage = session.combat.get("summon_command_usage") if isinstance(session.combat.get("summon_command_usage"), dict) else {}
-        owner_usage = usage.get(owner_profile_id) if isinstance(usage.get(owner_profile_id), dict) else {}
-        if int(owner_usage.get("round", 0) or 0) == round_no and owner_usage.get("used"):
-            await manager.send_to(session.id, user.id, {"type": "summon_action_result", "payload": {"ok": False, "error": "command_already_used_this_round"}})
-            return
-        usage[owner_profile_id] = {"round": round_no, "used": True, "model": command_model}
-        session.combat["summon_command_usage"] = usage
+    if action in {"dismiss", "cleanup_stale"}:
+        removed: list[dict] = []
+        removed_token_ids: list[str] = []
+        touched: set[tuple[str, int]] = set()
+        for owner_key, profile_index, row, native, entry in rows:
+            row_active_id = str(entry.get("id") or "")
+            row_token_id = str(entry.get("tokenId") or "")
+            if action == "cleanup_stale" and row_token_id and row_token_id in (session.tokens or {}):
+                continue
+            if action == "dismiss" and active_id and row_active_id != active_id:
+                continue
+            if action == "dismiss" and token_id and row_token_id != token_id:
+                continue
+            if action == "dismiss" and not active_id and not token_id:
+                continue
+            gone = remove_active_summon(native, active_id=row_active_id, token_id=row_token_id, owner_profile_id=str(entry.get("ownerProfileId") or ""))
+            if not gone:
+                continue
+            removed.extend(gone)
+            touched.add((owner_key, profile_index))
+            if row_token_id and row_token_id in (session.tokens or {}):
+                session.tokens.pop(row_token_id, None)
+                removed_token_ids.append(row_token_id)
+                await manager.broadcast(session.id, {"type": "token_deleted", "payload": {"token_id": row_token_id}})
 
-    damage_formula = str(((action.get("damage") or {}).get("formula") or "")).replace(" ", "")
-    damage_type = str(((action.get("damage") or {}).get("type") or ""))
-    target = (session.tokens or {}).get(target_id) if target_id else None
-    applied_damage = None
-    if target and damage_formula:
-        import re, random
+        if touched:
+            profiles = dict(getattr(session, "char_profiles", {}) or {})
+            for owner_key, profile_index in touched:
+                bucket = list(profiles.get(owner_key) or []) if isinstance(profiles.get(owner_key), list) else []
+                if not (0 <= profile_index < len(bucket)):
+                    continue
+                slot = bucket[profile_index] if isinstance(bucket[profile_index], dict) else {}
+                native_doc = slot.get("nativeCharacter") if isinstance(slot.get("nativeCharacter"), dict) else {}
+                resolved_runtime = resolve_character_runtime(native_doc)
+                slot["nativeCharacter"] = resolved_runtime.get("document") if isinstance(resolved_runtime.get("document"), dict) else native_doc
+                slot["nativeRuntime"] = resolved_runtime.get("runtime") if isinstance(resolved_runtime.get("runtime"), dict) else slot.get("nativeRuntime", {})
+                bucket[profile_index] = slot
+                profiles[owner_key] = bucket
+            session.char_profiles = profiles
+            await _broadcast_token_state_sync(session)
+            for uid in (session.users or {}).keys():
+                await _send_char_profiles(session, uid)
+            await save_campaign_async(session)
 
-        m = re.match(r"(\d+)d(\d+)([+\-]\d+)?$", damage_formula)
-        if m:
-            qty = max(1, int(m.group(1)))
-            die = max(2, int(m.group(2)))
-            mod = int(m.group(3) or 0)
-            total = sum(random.randint(1, die) for _ in range(qty)) + mod
-            target.hp = max(0, int(getattr(target, "hp", 0) or 0) - max(0, total))
-            _sync_combatant_token_state(session, target, previous_hp=None)
-            applied_damage = max(0, total)
-            await manager.broadcast(
-                session.id,
-                {"type": "token_hp_updated", "payload": {"token_id": target.id, "hp": target.hp, "maxHp": target.max_hp, "hidden_hp": target.hidden_hp, "log": None}},
-            )
+        await manager.send_to(session.id, user.id, {
+            "type": "summon_runtime_admin_result",
+            "payload": {"ok": True, "action": action, "removed": removed, "removed_token_ids": removed_token_ids},
+        })
+        return
 
-    log_msg = f"🧿 {actor.get('name', 'Summon')} used {action.get('displayName', action_id)}"
-    if target:
-        log_msg += f" on {getattr(target, 'name', 'target')}"
-    if applied_damage is not None:
-        log_msg += f" for {applied_damage} {damage_type}".strip()
-    log_entry = session.add_log(log_msg, "combat", user.name)
-    await manager.broadcast(session.id, {"type": "log_entry", "payload": {"log": log_entry}})
-    await manager.send_to(
-        session.id,
-        user.id,
-        {"type": "summon_action_result", "payload": {"ok": True, "token_id": token_id, "action_id": action_id, "target_id": target_id, "applied_damage": applied_damage}},
-    )
-    # keep runtime summon state hp in sync when target is itself
-    synchronize_active_summon_state(
-        native,
-        token_id=token_id,
-        hp_current=int(getattr(token, "hp", 0) or 0),
-        hp_max=int(getattr(token, "max_hp", 1) or 1),
-    )
-    await _send_char_profiles(session, user.id)
-    await save_campaign_async(session)
+    await manager.send_to(session.id, user.id, {"type": "summon_runtime_admin_result", "payload": {"ok": False, "error": "unknown_action"}})

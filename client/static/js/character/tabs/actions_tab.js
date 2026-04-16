@@ -685,6 +685,63 @@
     };
   }
 
+
+  function _renderSummonManager(summonActions) {
+    const rows = _safeArray(summonActions);
+    if (!rows.length) {
+      return `<div class="cs-combat-callout muted"><div class="cs-combat-callout-title">Summon Manager</div><div class="cs-combat-callout-copy">No live summon families are currently unlocked for this character.</div></div>`;
+    }
+    const totalActive = rows.reduce(function (sum, action) {
+      const meta = action && action.summonAction && typeof action.summonAction === 'object' ? action.summonAction : {};
+      return sum + _safeArray(meta.activeSummons).length;
+    }, 0);
+    return `<div class="cs-combat-callout" style="margin-top:.55rem;">
+      <div class="cs-combat-callout-title">Summon Manager</div>
+      <div class="cs-combat-callout-copy">Unlocked families: ${rows.length} • Active summons: ${totalActive}. Choose variant, summon/deploy, focus, inspect, and dismiss from one compact panel.</div>
+      <div style="display:grid;gap:.45rem;margin-top:.5rem;">
+        ${rows.map(function (action) {
+          const meta = action && action.summonAction && typeof action.summonAction === 'object' ? action.summonAction : {};
+          const actionId = _firstText(action && action.id, '');
+          const variants = _safeArray(meta.variants).filter(function (entry) { return entry && typeof entry === 'object'; });
+          const activeRows = _safeArray(meta.activeSummons).filter(function (entry) { return entry && typeof entry === 'object'; });
+          const selectedVariantId = _firstText(meta.selectedVariantId, variants[0] && variants[0].id, '').toLowerCase();
+          const variantHint = meta.replaceOnResummon ? 'Switching variants replaces the existing summon when deployed again.' : 'Switching variants applies to your next summon/deploy.';
+          return `<div style="border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:.45rem .52rem;background:rgba(0,0,0,.18);">
+            <div style="display:flex;justify-content:space-between;gap:.45rem;align-items:flex-start;">
+              <div>
+                <div style="font-weight:700;font-size:.72rem;">${_esc(_firstText(action && action.name, 'Summon'))}</div>
+                <div style="font-size:.6rem;color:rgba(235,230,210,.72);">${_esc(_firstText(meta.sourceFeatureName, 'Source unknown'))}</div>
+              </div>
+              <div style="font-size:.6rem;color:rgba(235,230,210,.72);">Active ${_num(meta.currentActiveCount, 0)}/${Math.max(0, _num(meta.maxActive, 1))}</div>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:.35rem;margin-top:.42rem;align-items:center;">
+              <select data-summon-variant-for="${_esc(actionId)}" style="width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.16);border-radius:7px;color:#e8dcc8;padding:.28rem .35rem;font-size:.64rem;" ${variants.length > 1 ? '' : 'disabled'}>
+                ${variants.map(function (variant) {
+                  const id = _firstText(variant && variant.id, '').toLowerCase();
+                  const selected = id === selectedVariantId ? 'selected' : '';
+                  return `<option value="${_esc(id)}" ${selected}>${_esc(_firstText(variant && variant.displayName, id, 'Variant'))}</option>`;
+                }).join('') || `<option value="${_esc(selectedVariantId)}">${_esc(_firstText(meta.selectedVariantName, 'Variant'))}</option>`}
+              </select>
+              <button type="button" class="cs-feature-inspect" data-action-use="${_esc(actionId)}" data-action-source="summon_action">${_esc(/deploy/i.test(String(action && action.actionType || '')) ? 'Deploy' : 'Summon')}</button>
+              <button type="button" class="cs-feature-inspect" data-action-dismiss="${_esc(actionId)}" data-action-source="summon_action" ${activeRows.length ? '' : 'disabled'}>Dismiss</button>
+            </div>
+            <div style="font-size:.58rem;color:rgba(235,230,210,.68);margin-top:.3rem;">${_esc(_firstText(meta.commandModelSummary, 'Command model pending.'))} • ${_esc(variantHint)}</div>
+            ${activeRows.length ? `<div style="display:grid;gap:.3rem;margin-top:.45rem;">${activeRows.map(function (row) {
+              const tokenId = _firstText(row && row.tokenId, '');
+              return `<div style="display:flex;justify-content:space-between;align-items:center;gap:.35rem;font-size:.6rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:.25rem .35rem;">
+                <span>${_esc(_firstText(row && row.variantName, row && row.variantId, 'Summon'))} • ${_esc(_firstText(row && row.status, 'active'))}${tokenId ? ' • token linked' : ' • token missing'}</span>
+                <span style="display:flex;gap:.25rem;">
+                  <button type="button" class="cs-feature-inspect" data-summon-focus-token="${_esc(tokenId)}" ${tokenId ? '' : 'disabled'}>Focus</button>
+                  <button type="button" class="cs-feature-inspect" data-summon-inspect-token="${_esc(tokenId)}" ${tokenId ? '' : 'disabled'}>Inspect</button>
+                </span>
+              </div>`;
+            }).join('')}</div>` : ''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+
   function _summonActionRows(charData) {
     return _safeArray(charData && charData.summonActions).map(function (entry, index) {
       if (!entry || typeof entry !== 'object') return null;
@@ -2067,7 +2124,8 @@
               name: _firstText(entry && entry.displayName, entry && entry.id, ''),
             };
           }).filter(function (entry) { return !!entry.id; });
-          let selectedVariantId = _firstText(summonMeta.selectedVariantId, '').toLowerCase();
+          const variantSelect = container.querySelector(`[data-summon-variant-for="${actionId.replace(/"/g, '\\"')}"]`);
+          let selectedVariantId = _firstText(variantSelect && variantSelect.value, summonMeta.selectedVariantId, '').toLowerCase();
           if (!selectedVariantId && variants.length === 1) selectedVariantId = String(variants[0].id || '').toLowerCase();
           if (!selectedVariantId && variants.length > 1) {
             const variantMenu = variants.map(function (v, i) { return `${i + 1}. ${v.name}`; }).join('\n');
@@ -2122,6 +2180,30 @@
           const label = action && action.name ? action.name : 'Action';
           const cost = action && (action.resourceSummary || action.resourceName) ? ` — ${action.resourceSummary || action.resourceName}` : '';
           global.showToast(`${label} triggered${cost}`);
+        }
+        return;
+      }
+      const summonFocusBtn = e.target.closest('[data-summon-focus-token]');
+      if (summonFocusBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const tokenId = String(summonFocusBtn.getAttribute('data-summon-focus-token') || '');
+        if (tokenId && typeof global.focusSummonTokenById === 'function') {
+          global.focusSummonTokenById(tokenId);
+        } else if (typeof global.showToast === 'function') {
+          global.showToast('Summon token is missing on this map.');
+        }
+        return;
+      }
+      const summonInspectBtn = e.target.closest('[data-summon-inspect-token]');
+      if (summonInspectBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const tokenId = String(summonInspectBtn.getAttribute('data-summon-inspect-token') || '');
+        if (tokenId && typeof global.inspectSummonTokenById === 'function') {
+          global.inspectSummonTokenById(tokenId);
+        } else if (typeof global.showToast === 'function') {
+          global.showToast('Summon token is missing on this map.');
         }
         return;
       }
@@ -2314,6 +2396,7 @@
       ${_renderSection('Quick Attacks', quickAttacks, { emptyLabel: 'No quick attack cards are loaded yet.' })}
       ${_renderSection('Imported / Legacy Attack Lines', textAttacks, { emptyLabel: 'No imported attack lines detected.' })}
       ${_renderSection('Item Actions', itemActions, { emptyLabel: 'No usable item actions are loaded yet.' })}
+      ${_renderSummonManager(summonActions)}
       ${_renderSection('Summon / Deploy Actions', summonActions, { emptyLabel: 'No summon or deploy actions are unlocked for this character.' })}
       ${_renderSection('Native Actions', nativeActionsForSection, { emptyLabel: isWildShapeActive ? 'Wild Shape attacks are currently driving your attack surface.' : 'No structured main actions are loaded yet.' })}
       ${_renderSection('Bonus Actions', native.bonusActions, { emptyLabel: 'No structured bonus actions are loaded yet.' })}

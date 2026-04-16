@@ -214,7 +214,7 @@ from server.handlers.conversation import (
 from server.handlers.summons import (
     handle_summon_runtime_request,
     handle_summon_runtime_dismiss,
-    handle_summon_action_use,
+    handle_summon_runtime_admin,
 )
 
 
@@ -274,7 +274,7 @@ async def handle_message(raw: dict, session: Session, user: User):
         "combat_attack_override": handle_combat_attack_override,
         "summon_runtime_request": handle_summon_runtime_request,
         "summon_runtime_dismiss": handle_summon_runtime_dismiss,
-        "summon_action_use": handle_summon_action_use,
+        "summon_runtime_admin": handle_summon_runtime_admin,
         "journal_upsert":         handle_journal_upsert,
         "journal_delete":         handle_journal_delete,
         "session_quest_upsert":   handle_session_quest_upsert,
