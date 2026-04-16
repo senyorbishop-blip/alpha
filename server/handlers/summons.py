@@ -159,8 +159,8 @@ async def handle_summon_runtime_request(payload: dict, session: Session, user: U
         staged=False,
         image_url=token_payload.get("image_url"),
         creature_id=str(actor.get("id") or "")[:120],
-        creature_type="summon",
-        monster_type=str(token_payload.get("monster_type") or (actor.get("summonCategory") or "") or "summon"),
+        creature_type=("summon" if bool(actor.get("isCreature", True)) else "deployed_effect"),
+        monster_type=str(token_payload.get("monster_type") or (actor.get("entityKind") or actor.get("summonCategory") or "") or "summon"),
         cr="",
     )
 

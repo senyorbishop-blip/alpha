@@ -175,6 +175,37 @@ SUMMON_TEMPLATE_REGISTRY: dict[str, dict[str, Any]] = {
         "commandModel": "action_command",
         "maxActive": 1,
         "replaceOnResummon": True,
+        "entityKind": "device",
+        "isCreature": False,
+        "actionSurfaceType": "deployed_field_device",
+        "placementRules": {
+            "stationary": True,
+            "spawnNearOwner": True,
+            "ownerPlacementOnly": True,
+        },
+        "collisionSemantics": {
+            "blocksMovement": False,
+            "occupiesTile": True,
+        },
+        "durationModel": {
+            "type": "until_dismissed",
+            "supportsExpiry": False,
+        },
+        "ownershipModel": {
+            "controller": "owner",
+            "ownerActivated": True,
+        },
+        "interactable": True,
+        "destructible": True,
+        "triggerRules": {
+            "mode": "manual_activation",
+            "placeholder": True,
+        },
+        "cleanupPolicy": {
+            "onDismiss": "remove_token",
+            "onOwnerRecast": "replace_existing",
+            "onReconcileMissingToken": "prune_state",
+        },
         "tags": ["tinker", "artillerist", "deployable", "cannon"],
     },
     "spell-conjure-fey-manifestation": {
@@ -232,13 +263,51 @@ SUMMON_TEMPLATE_REGISTRY: dict[str, dict[str, Any]] = {
 }
 
 
+def _with_entity_defaults(row: dict[str, Any]) -> dict[str, Any]:
+    normalized = copy.deepcopy(row)
+    summon_category = str(normalized.get("summonCategory") or "").strip().lower()
+    default_is_creature = summon_category not in {"deployable", "device", "trap", "ward", "effect", "object"}
+    normalized["isCreature"] = bool(normalized.get("isCreature", default_is_creature))
+    normalized["entityKind"] = str(
+        normalized.get("entityKind")
+        or ("creature" if normalized["isCreature"] else "effect")
+    ).strip().lower()
+    normalized["actionSurfaceType"] = str(
+        normalized.get("actionSurfaceType")
+        or ("summoned_creature" if normalized["isCreature"] else "deployed_field_effect")
+    ).strip().lower()
+    if not isinstance(normalized.get("placementRules"), dict):
+        normalized["placementRules"] = {
+            "stationary": False,
+            "spawnNearOwner": True,
+            "ownerPlacementOnly": True,
+        }
+    if not isinstance(normalized.get("durationModel"), dict):
+        normalized["durationModel"] = {"type": "until_dismissed", "supportsExpiry": False}
+    if not isinstance(normalized.get("ownershipModel"), dict):
+        normalized["ownershipModel"] = {"controller": "owner", "ownerActivated": True}
+    if not isinstance(normalized.get("cleanupPolicy"), dict):
+        normalized["cleanupPolicy"] = {
+            "onDismiss": "remove_token",
+            "onOwnerRecast": "replace_existing",
+            "onReconcileMissingToken": "prune_state",
+        }
+    normalized["interactable"] = bool(normalized.get("interactable", True))
+    normalized["destructible"] = bool(normalized.get("destructible", True))
+    if not isinstance(normalized.get("triggerRules"), dict):
+        normalized["triggerRules"] = {"mode": "none", "placeholder": False}
+    if not isinstance(normalized.get("collisionSemantics"), dict):
+        normalized["collisionSemantics"] = {"blocksMovement": False, "occupiesTile": True}
+    return normalized
+
+
 def get_summon_template(template_id: Any) -> dict[str, Any] | None:
     key = str(template_id or "").strip().lower()
     if not key:
         return None
     row = SUMMON_TEMPLATE_REGISTRY.get(key)
-    return copy.deepcopy(row) if isinstance(row, dict) else None
+    return _with_entity_defaults(row) if isinstance(row, dict) else None
 
 
 def list_summon_templates() -> list[dict[str, Any]]:
-    return [copy.deepcopy(row) for row in SUMMON_TEMPLATE_REGISTRY.values() if isinstance(row, dict)]
+    return [_with_entity_defaults(row) for row in SUMMON_TEMPLATE_REGISTRY.values() if isinstance(row, dict)]

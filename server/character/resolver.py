@@ -400,9 +400,9 @@ def _build_runtime_summon_actions(
                     }
                 )
         summon_category = str(primary.get("summonCategory") or "").strip().lower()
-        action_label = "Deploy" if summon_category in {"deployable", "construct", "turret", "cannon", "device"} else "Summon"
-        if str(primary.get("summonOrigin") or "").strip().lower() == "spell":
-            action_label = "Cast Summon"
+        entity_kind = str(primary.get("entityKind") or ("creature" if bool(primary.get("isCreature", True)) else "effect")).strip().lower()
+        is_creature = bool(primary.get("isCreature", True))
+        action_label = "Deploy" if (not is_creature or summon_category in {"deployable", "construct", "turret", "cannon", "device"}) else "Summon"
         command_model = str(primary.get("commandModel") or "").strip().lower()
         replace_on_resummon = bool(primary.get("replaceOnResummon"))
         summary_bits = [
@@ -434,6 +434,20 @@ def _build_runtime_summon_actions(
                 "selectedVariantId": selected_variant,
                 "selectedVariantName": selected_variant_name,
                 "actionType": action_label,
+                "entityKind": entity_kind,
+                "isCreature": is_creature,
+                "actionSurfaceType": str(primary.get("actionSurfaceType") or ("summoned_creature" if is_creature else "deployed_field_effect")).strip().lower(),
+                "placementRules": copy.deepcopy(primary.get("placementRules") or {}),
+                "interactionModel": {
+                    "controllable": bool(is_creature or entity_kind in {"device", "object"}),
+                    "selectable": True,
+                    "inspectable": True,
+                    "destructible": bool(primary.get("destructible", True)),
+                    "triggerable": bool(entity_kind in {"device", "trap", "ward", "effect"}),
+                    "passive": bool(entity_kind in {"ward", "effect"} and not bool(primary.get("destructible", True))),
+                    "ownerActivated": bool((primary.get("ownershipModel") or {}).get("ownerActivated", True)),
+                    "stationary": bool((primary.get("placementRules") or {}).get("stationary", False)),
+                },
                 "commandModel": command_model,
                 "commandModelSummary": _command_model_summary(command_model),
                 "maxActive": max_active,
