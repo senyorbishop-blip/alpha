@@ -717,6 +717,158 @@ def _notes_for_actor(actor: dict[str, Any]) -> str:
     )
 
 
+def _resolve_entity_kind(template: dict[str, Any], actor: dict[str, Any]) -> str:
+    actor_type = str(actor.get("actorType") or "").strip().lower()
+    summon_category = str(actor.get("summonCategory") or template.get("summonCategory") or "").strip().lower()
+    if actor_type in {"deployable", "spell_effect"}:
+        return actor_type
+    if summon_category in {"deployable", "construct", "device", "turret"}:
+        return "deployable"
+    if summon_category in {"spell_effect", "spell"}:
+        return "spell_effect"
+    return "creature"
+
+
+def _resolve_origin_type(template: dict[str, Any], actor: dict[str, Any]) -> str:
+    origin = str(template.get("summonOrigin") or ((actor.get("source") or {}).get("summonOrigin")) or "").strip().lower()
+    if origin:
+        return origin
+    source_class = str(template.get("sourceClassId") or ((actor.get("source") or {}).get("classId")) or "").strip().lower()
+    if source_class == "spell":
+        return "spell"
+    return "feature"
+
+
+def _resolve_control_model(template: dict[str, Any], actor: dict[str, Any]) -> str:
+    explicit = str(template.get("controlModel") or actor.get("controlModel") or "").strip().lower()
+    if explicit:
+        return explicit
+    command_model = str(actor.get("commandModel") or template.get("commandModel") or "").strip().lower()
+    if command_model in {"bonus_action_command", "action_command"}:
+        return "owner_commanded"
+    if command_model == "spell_effect":
+        return "caster_owned_independent_effect"
+    return "owner_controlled"
+
+
+def _token_icon_for_category(summon_category: str) -> str:
+    summon_category = str(summon_category or "").strip().lower()
+    if summon_category == "familiar":
+        return "🦇"
+    if summon_category in {"construct", "deployable", "device", "turret"}:
+        return "⚙️"
+    if summon_category in {"spell_effect", "spell"}:
+        return "✨"
+    return "🐾"
+
+
+def build_active_deployment_entry(
+    *,
+    actor: dict[str, Any],
+    template: dict[str, Any],
+    token_id: str,
+    owner_user: User,
+    profile_id: str,
+    selected_variant: str,
+    map_context: str,
+    created_at: float | None = None,
+) -> dict[str, Any]:
+    # Shared deployment entity model for all live families (companion/familiar,
+    # spell manifestations, and non-creature deployables). Add future families by
+    # feeding this builder, not by introducing family-specific state schemas.
+    now = float(created_at if created_at is not None else time.time())
+    source = copy.deepcopy(actor.get("source") or {}) if isinstance(actor.get("source"), dict) else {}
+    template_id = str(actor.get("templateId") or template.get("id") or selected_variant or "").strip().lower()
+    summon_group_id = str(source.get("variantGroup") or template.get("variantGroup") or "").strip().lower()
+    origin_type = _resolve_origin_type(template, actor)
+    duration_seconds = int(template.get("durationSeconds") or 0)
+    is_temporary = bool(template.get("temporary"))
+    expires_at = (now + duration_seconds) if is_temporary and duration_seconds > 0 else None
+    return {
+        "id": str(actor.get("id") or ""),
+        "entityId": str(actor.get("id") or ""),
+        "entityKind": _resolve_entity_kind(template, actor),
+        "templateId": template_id,
+        "summonTemplateId": template_id,
+        "variantId": selected_variant,
+        "variant": selected_variant,
+        "summonGroupId": summon_group_id,
+        "sourceOriginType": origin_type,
+        "sourceClassId": str(source.get("classId") or template.get("sourceClassId") or "").strip().lower(),
+        "sourceSubclassId": str(source.get("subclassId") or template.get("sourceSubclassId") or "").strip().lower(),
+        "sourceFeatureId": str(source.get("featureId") or template.get("sourceFeatureId") or "").strip().lower(),
+        "summonOrigin": origin_type,
+        "spellId": str(template.get("spellId") or source.get("spellId") or "").strip().lower(),
+        "tokenId": str(token_id or ""),
+        "ownerUserId": str(owner_user.id),
+        "ownerProfileId": str(profile_id or ""),
+        "mapContext": str(map_context or "world"),
+        "sceneId": str(map_context or "world"),
+        "status": "active",
+        "durationSeconds": duration_seconds,
+        "expiresAt": expires_at,
+        "temporary": is_temporary,
+        "concentrationRequired": bool(template.get("concentrationRequired")),
+        "cleanupPolicy": list(template.get("cleanupPolicy") or []),
+        "maxActive": int(template.get("maxActive") or 1),
+        "replaceOnResummon": bool(template.get("replaceOnResummon")),
+        "controlModel": _resolve_control_model(template, actor),
+        "commandModel": str(actor.get("commandModel") or template.get("commandModel") or "").strip().lower(),
+        "createdAt": now,
+        "updatedAt": now,
+        "spawnedAt": now,
+        "source": source,
+        "actor": actor,
+    }
+
+
+def normalize_deployment_ui_entry(*, active_entry: dict[str, Any], token: Any = None, owner_name: str = "", owner_bucket_key: str = "", profile_index: int = -1, profile_id: str = "") -> dict[str, Any]:
+    row = copy.deepcopy(active_entry if isinstance(active_entry, dict) else {})
+    map_context = str(
+        getattr(token, "map_context", "") or row.get("mapContext") or row.get("sceneId") or "world"
+    ).strip() or "world"
+    actor = row.get("actor") if isinstance(row.get("actor"), dict) else {}
+    resolved_owner_name = str(owner_name or ((actor.get("owner") or {}).get("userName") or "")).strip()
+    row["ownerBucketKey"] = str(owner_bucket_key or "")
+    row["profileIndex"] = int(profile_index)
+    row["profileId"] = str(profile_id or row.get("ownerProfileId") or "")
+    row["ownerName"] = resolved_owner_name
+    row["tokenPresent"] = bool(token)
+    row["tokenName"] = str(getattr(token, "name", "") or actor.get("name") or "")
+    row["tokenMapContext"] = map_context
+    row["ui"] = {
+        "entityLabel": str(actor.get("name") or row.get("variantId") or "Summon"),
+        "kindLabel": str(row.get("entityKind") or "creature").replace("_", " "),
+        "originLabel": str(row.get("sourceOriginType") or row.get("summonOrigin") or "feature"),
+        "temporary": bool(row.get("temporary")),
+        "controllable": str(row.get("controlModel") or "").strip().lower() not in {"passive", "none"},
+    }
+    return row
+
+
+def _build_token_payload(*, actor: dict[str, Any], user: User, map_context: str, sx: float, sy: float, sw: float, sh: float) -> dict[str, Any]:
+    summon_category = str(actor.get("summonCategory") or "").strip().lower()
+    icon = _token_icon_for_category(summon_category)
+    return {
+        "name": f"{icon} {actor.get('name', 'Summon')}",
+        "x": sx,
+        "y": sy,
+        "width": sw,
+        "height": sh,
+        "map_context": map_context,
+        "owner_id": user.id,
+        "hp": int(((actor.get("hp") or {}).get("current") or 1)),
+        "max_hp": int(((actor.get("hp") or {}).get("max") or 1)),
+        "ac": int(actor.get("ac") or 10),
+        "speed": int((actor.get("movement") or {}).get("walk") or 0),
+        "token_type": "companion",
+        "faction": "allies",
+        "notes": _notes_for_actor(actor),
+        "image_url": ((actor.get("tokenVisual") or {}).get("image_url") or None),
+        "monster_type": summon_category or "summon",
+    }
+
+
 def _entry_group_id(row: dict[str, Any]) -> str:
     return str(row.get("summonGroupId") or ((row.get("source") or {}).get("variantGroup")) or "").strip().lower()
 
@@ -1088,40 +1240,39 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
     try:
         source_class = str(template.get("sourceClassId") or "").strip().lower()
         source_subclass = str(template.get("sourceSubclassId") or "").strip().lower()
-        if source_class == "ranger" and source_subclass == "beast-master":
-            actor = resolve_beast_master_actor(
+        summon_category = str(template.get("summonCategory") or "").strip().lower()
+        resolver_key = (source_class, source_subclass, summon_category)
+        owner_profile_id = str(profile.get("id") or requested_profile_id or "")
+        runtime_resolvers = {
+            ("ranger", "beast-master", ""): lambda: resolve_beast_master_actor(
                 native_document=native,
                 template=template,
                 selected_variant=selected_variant,
                 owner_user=user,
-                profile_id=str(profile.get("id") or requested_profile_id or ""),
-            )
-        elif source_class == "warlock" and str(template.get("summonCategory") or "").strip().lower() == "familiar":
-            actor = resolve_warlock_familiar_actor(
+                profile_id=owner_profile_id,
+            ),
+            ("warlock", "", "familiar"): lambda: resolve_warlock_familiar_actor(
                 native_document=native,
                 template=template,
                 selected_variant=selected_variant,
                 owner_user=user,
-                profile_id=str(profile.get("id") or requested_profile_id or ""),
-            )
-        elif source_class == "tinker" and source_subclass == "mechanist":
-            actor = resolve_tinker_mechanist_actor(
+                profile_id=owner_profile_id,
+            ),
+            ("tinker", "mechanist", ""): lambda: resolve_tinker_mechanist_actor(
                 native_document=native,
                 template=template,
                 selected_variant=selected_variant,
                 owner_user=user,
-                profile_id=str(profile.get("id") or requested_profile_id or ""),
-            )
-        elif source_class == "tinker" and source_subclass == "artillerist":
-            actor = resolve_tinker_artillerist_actor(
+                profile_id=owner_profile_id,
+            ),
+            ("tinker", "artillerist", ""): lambda: resolve_tinker_artillerist_actor(
                 native_document=native,
                 template=template,
                 selected_variant=selected_variant,
                 owner_user=user,
-                profile_id=str(profile.get("id") or requested_profile_id or ""),
-            )
-        elif source_class == "spell" and is_spell_template:
-            actor = resolve_spell_manifestation_actor(
+                profile_id=owner_profile_id,
+            ),
+            ("spell", "", "spell_effect"): lambda: resolve_spell_manifestation_actor(
                 template=template,
                 selected_variant=selected_variant,
                 owner_user=user,
@@ -1144,34 +1295,7 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
     elif token_size == "medium":
         sw = sh = 40.0
 
-    summon_category = str(actor.get("summonCategory") or "").strip().lower()
-    entity_kind = str(actor.get("entityKind") or template.get("entityKind") or "").strip().lower()
-    is_creature = bool(actor.get("isCreature", template.get("isCreature", True)))
-    icon = "🐾"
-    if summon_category == "familiar":
-        icon = "🦇"
-    elif not is_creature or summon_category in {"deployable", "device", "turret"}:
-        icon = "⚙️"
-    elif summon_category in {"spell_effect", "spell"}:
-        icon = "✨"
-    token_payload = {
-        "name": f"{icon} {actor.get('name', 'Summon')}",
-        "x": sx,
-        "y": sy,
-        "width": sw,
-        "height": sh,
-        "map_context": map_context,
-        "owner_id": user.id,
-        "hp": int(((actor.get("hp") or {}).get("current") or 1)),
-        "max_hp": int(((actor.get("hp") or {}).get("max") or 1)),
-        "ac": int(actor.get("ac") or 10),
-        "speed": int((actor.get("movement") or {}).get("walk") or 0),
-        "token_type": "companion",
-        "faction": "allies",
-        "notes": _notes_for_actor(actor),
-        "image_url": ((actor.get("tokenVisual") or {}).get("image_url") or None),
-        "monster_type": entity_kind or summon_category or "summon",
-    }
+    token_payload = _build_token_payload(actor=actor, user=user, map_context=map_context, sx=sx, sy=sy, sw=sw, sh=sh)
 
     return {
         "ok": True,
