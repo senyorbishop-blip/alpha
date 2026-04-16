@@ -45,7 +45,7 @@
   }
 
   function createWsConfig() {
-    return {
+    const wsConfig = {
       getSessionId: function () {
         const fromStore = storeGet('session.id', global.SESSION_ID || '');
         if (String(fromStore || '').trim()) return fromStore;
@@ -53,19 +53,18 @@
       },
       getUserId: function () {
         const resolved = typeof global.getEffectiveUserId === 'function' ? global.getEffectiveUserId() : '';
-        const fromQuery = readQueryParam(['user_id', 'uid', 'user']);
+        const fromStore = storeGet('user.id', global.USER_ID || '');
         const fromGlobal = String(global.USER_ID || '').trim();
-        const fromStore = storeGet('user.id', '');
         if (String(resolved || '').trim()) return resolved;
-        if (String(fromQuery || '').trim()) return fromQuery;
+        if (String(fromStore || '').trim()) return String(fromStore || '').trim();
         if (fromGlobal) return fromGlobal;
-        return String(fromStore || '').trim();
+        return readQueryParam(['user_id', 'uid', 'user']);
       },
       getRole: function () {
         const resolvedRole = typeof global.getEffectiveRole === 'function' ? global.getEffectiveRole() : '';
         const fromQuery = readQueryParam(['role']);
         const fromGlobal = String(global.ROLE || '').trim();
-        const fromStore = storeGet('user.role', '');
+        const fromStore = storeGet('user.role', global.ROLE || 'viewer');
         return String(resolvedRole || fromQuery || fromGlobal || fromStore || 'viewer').toLowerCase();
       },
       getSocket: function () { return storeGet('socket.instance', global.ws || null); },
@@ -116,6 +115,8 @@
         global.setTimeout(function () { global.location.href = '/'; }, 3000);
       },
     };
+    const config = wsConfig;
+    return wsConfig;
   }
 
   function createBootEnv() {
