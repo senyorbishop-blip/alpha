@@ -4,7 +4,7 @@ import logging
 from server.db import load_campaign
 from server.restore import restore_session_from_db
 from server.session import get_session
-from server.http.auth import auth_display_name, auth_player_key, get_request_user
+from server.http.auth import auth_player_key, get_request_user
 
 
 restore_session = restore_session_from_db
@@ -41,31 +41,13 @@ def resolve_session_authority(request, session, fallback_user_id: str = "") -> d
             matched_via = "session_dm_id"
             break
 
-    # Legacy fallback: old sessions can retain dm_id/user_id values that no
-    # longer equal the authenticated account id. Prefer explicit user matches
-    # above, then fall back to exact DM-name match.
-    if not matched_user and auth_user:
-        auth_name = auth_display_name(auth_user, fallback="").strip().lower()
-        if auth_name:
-            dm_user = next(
-                (
-                    u for u in session.users.values()
-                    if str(getattr(u, "role", "")).strip().lower() == "dm"
-                    and str(getattr(u, "name", "")).strip().lower() == auth_name
-                ),
-                None,
-            )
-            if dm_user:
-                matched_user = dm_user
-                matched_user_id = str(getattr(dm_user, "id", "") or "").strip()
-                matched_via = "dm_name"
-
     participant_role = str(getattr(matched_user, 'role', '') or '').strip().lower() or None
     is_session_dm = bool(matched_user_id and str(getattr(session, 'dm_id', '') or '') == matched_user_id) or participant_role == 'dm'
+    resolved_user_id = matched_user_id or fallback_user_id or auth_user_id or None
     authority = {
         'auth_user_id': auth_user_id or None,
         'fallback_user_id': fallback_user_id or None,
-        'resolved_user_id': matched_user_id or auth_user_id or fallback_user_id or None,
+        'resolved_user_id': resolved_user_id,
         'resolved_session_user_id': matched_user_id or None,
         'participant_role': participant_role,
         'session_dm_id': str(getattr(session, 'dm_id', '') or '') or None,

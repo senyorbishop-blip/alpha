@@ -42,10 +42,19 @@ async def _broadcast_token_event(manager, session, msg_type: str, payload: dict,
 
 
 def _visible_tokens_payload_for_user(session: Session, user: User) -> dict:
+    role = str(getattr(user, "role", "") or "").strip().lower() or "viewer"
+    visible_contexts = session.visible_map_contexts_for_user(getattr(user, "id", "")) if role != "dm" else set()
     tokens = {}
     for tid, token in (session.tokens or {}).items():
-        if _can_user_see_token(token, user):
+        if role == "dm":
             tokens[tid] = token.to_dict()
+            continue
+        if getattr(token, "hidden", False):
+            continue
+        token_ctx = str(getattr(token, "map_context", "world") or "world")
+        if token_ctx not in visible_contexts:
+            continue
+        tokens[tid] = token.to_dict()
     return tokens
 
 
@@ -340,4 +349,3 @@ async def require_role(session: Session, user: User, *roles: str, message: str =
         return True
     await send_error(session, user.id, message)
     return False
-
