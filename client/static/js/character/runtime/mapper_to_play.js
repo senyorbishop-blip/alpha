@@ -429,7 +429,7 @@
   function mergeSpellCards(existingCards, runtimeCards) {
     var merged = [];
     var seen = new Set();
-    asArray(existingCards).concat(asArray(runtimeCards)).forEach(function addCard(card) {
+    asArray(runtimeCards).concat(asArray(existingCards)).forEach(function addCard(card) {
       if (!card || typeof card !== 'object') return;
       var key = String(card.id || card.name || '').trim().toLowerCase();
       if (!key || seen.has(key)) return;

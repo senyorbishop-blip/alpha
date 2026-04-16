@@ -25,3 +25,10 @@ def test_player_actions_hub_is_mobile_first():
     src = _read('client/templates/play.html')
     assert '.player-action-use-btn { width: 100%; min-height: 40px; }' in src
     assert '.player-action-meta { grid-template-columns: 1fr; }' in src
+
+
+def test_player_weapon_action_execution_accepts_runtime_id_name_and_slug_fallbacks():
+    src = _read('client/templates/play.html')
+    assert "const normalizedId = rawId.toLowerCase();" in src
+    assert "String(c.name || '').trim().toLowerCase() === normalizedId" in src
+    assert "('attack-' + slug) === normalizedId" in src

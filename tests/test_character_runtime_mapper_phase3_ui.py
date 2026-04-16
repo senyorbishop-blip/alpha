@@ -84,6 +84,11 @@ def test_extract_spell_name_helper_exists_in_mapper():
     assert "function extractSpellName(entry)" in src
 
 
+def test_mapper_prefers_runtime_spell_cards_over_stale_existing_spell_cards():
+    src = _read("client/static/js/character/runtime/mapper_to_play.js")
+    assert "asArray(runtimeCards).concat(asArray(existingCards))" in src
+
+
 def test_play_html_normalize_book_text_handles_spell_object_structure():
     """normalizeBookText in play.html must convert {known, prepared} objects to readable
     text instead of falling through to JSON.stringify."""
@@ -285,13 +290,11 @@ def test_stage15_flagship_sheet_surface_exists():
 def test_character_sheet_container_stage14_builds_flagship_overview_shell():
     src = _read("client/static/js/character/character_sheet_container.js")
     assert "Character Sheet" in src
-    assert "Sheet" in src
-    assert "Sheet Status" in src
-    assert "Open Actions" in src
-    assert "Open Spells" in src
-    assert "Action Spotlight" in src
-    assert "Resource Tracker" in src
-    assert "Traits / Notes" in src
+    assert "id: 'actions'" in src
+    assert "id: 'spells'" in src
+    assert "id: 'features'" in src
+    assert "_activateTab('actions'" in src
+    assert "id: 'overview'" not in src
 
 
 
@@ -320,6 +323,8 @@ def test_actions_tab_stage17_uses_structured_quick_attacks_native_actions_and_re
     assert "Tracked Resources" in src
     assert "Quick Attacks" in src
     assert "Imported / Legacy Attack Lines" in src
+    assert "combatCardId" in src
+    assert "_summonActionRuntimeSupported" in src
 
 
 def test_spells_tab_stage17_shows_linked_spell_actions_and_library_together():
