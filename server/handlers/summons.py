@@ -11,8 +11,9 @@ from server.character.summon_runtime import (
     remove_active_summon,
     reconcile_native_summons,
     plan_active_summon_mutations,
+    synchronize_active_summon_state,
 )
-from server.handlers.common import Session, User, manager, save_campaign_async, _broadcast_token_state_sync
+from server.handlers.common import Session, User, manager, save_campaign_async, _broadcast_token_state_sync, _sync_combatant_token_state
 from server.handlers.content import _send_char_profiles, _char_profile_bucket_key
 from server.session import create_token
 
@@ -253,4 +254,112 @@ async def handle_summon_runtime_dismiss(payload: dict, session: Session, user: U
         user.id,
         {"type": "summon_runtime_dismiss_result", "payload": {"ok": True, "removed": removed_rows, "removed_token_ids": removed_token_ids}},
     )
+    await save_campaign_async(session)
+
+
+def _iter_user_native_documents(session: Session, user: User):
+    profiles = dict(getattr(session, "char_profiles", {}) or {})
+    for owner_key, rows in profiles.items():
+        if not isinstance(rows, list):
+            continue
+        for idx, row in enumerate(rows):
+            if not isinstance(row, dict):
+                continue
+            native = row.get("nativeCharacter") if isinstance(row.get("nativeCharacter"), dict) else {}
+            if not native:
+                continue
+            owner_profile_id = str(row.get("id") or "").strip()
+            if user.role == "dm":
+                yield owner_key, idx, row, native, owner_profile_id
+            elif owner_key == _char_profile_bucket_key(session, user):
+                yield owner_key, idx, row, native, owner_profile_id
+
+
+async def handle_summon_action_use(payload: dict, session: Session, user: User):
+    if user.role not in {"player", "dm"}:
+        return
+    token_id = str(payload.get("token_id") or payload.get("tokenId") or "").strip()
+    action_id = str(payload.get("action_id") or payload.get("actionId") or "").strip().lower()
+    target_id = str(payload.get("target_id") or payload.get("targetId") or "").strip()
+    if not token_id or not action_id:
+        return
+    token = (session.tokens or {}).get(token_id)
+    if not token:
+        return
+    if user.role != "dm" and str(getattr(token, "owner_id", "") or "") != str(user.id):
+        return
+
+    found = None
+    for owner_key, idx, row, native, owner_profile_id in _iter_user_native_documents(session, user):
+        active_rows = ((native.get("summons") or {}).get("activeSummons") or [])
+        for active in active_rows:
+            if not isinstance(active, dict):
+                continue
+            if str(active.get("tokenId") or "").strip() != token_id:
+                continue
+            actor = active.get("actor") if isinstance(active.get("actor"), dict) else {}
+            actions = actor.get("actions") if isinstance(actor.get("actions"), list) else []
+            action = next((a for a in actions if isinstance(a, dict) and str(a.get("id") or "").strip().lower() == action_id), None)
+            if action:
+                found = (owner_key, idx, row, native, active, actor, action, owner_profile_id)
+                break
+        if found:
+            break
+    if not found:
+        await manager.send_to(session.id, user.id, {"type": "summon_action_result", "payload": {"ok": False, "error": "action_not_found"}})
+        return
+
+    _, idx, _, native, active, actor, action, owner_profile_id = found
+    command_model = str(action.get("commandModel") or actor.get("commandModel") or "").strip().lower()
+    if (session.combat or {}).get("active") and command_model in {"bonus_action_command", "action_command"}:
+        round_no = int((session.combat or {}).get("round", 1) or 1)
+        usage = session.combat.get("summon_command_usage") if isinstance(session.combat.get("summon_command_usage"), dict) else {}
+        owner_usage = usage.get(owner_profile_id) if isinstance(usage.get(owner_profile_id), dict) else {}
+        if int(owner_usage.get("round", 0) or 0) == round_no and owner_usage.get("used"):
+            await manager.send_to(session.id, user.id, {"type": "summon_action_result", "payload": {"ok": False, "error": "command_already_used_this_round"}})
+            return
+        usage[owner_profile_id] = {"round": round_no, "used": True, "model": command_model}
+        session.combat["summon_command_usage"] = usage
+
+    damage_formula = str(((action.get("damage") or {}).get("formula") or "")).replace(" ", "")
+    damage_type = str(((action.get("damage") or {}).get("type") or ""))
+    target = (session.tokens or {}).get(target_id) if target_id else None
+    applied_damage = None
+    if target and damage_formula:
+        import re, random
+
+        m = re.match(r"(\d+)d(\d+)([+\-]\d+)?$", damage_formula)
+        if m:
+            qty = max(1, int(m.group(1)))
+            die = max(2, int(m.group(2)))
+            mod = int(m.group(3) or 0)
+            total = sum(random.randint(1, die) for _ in range(qty)) + mod
+            target.hp = max(0, int(getattr(target, "hp", 0) or 0) - max(0, total))
+            _sync_combatant_token_state(session, target, previous_hp=None)
+            applied_damage = max(0, total)
+            await manager.broadcast(
+                session.id,
+                {"type": "token_hp_updated", "payload": {"token_id": target.id, "hp": target.hp, "maxHp": target.max_hp, "hidden_hp": target.hidden_hp, "log": None}},
+            )
+
+    log_msg = f"🧿 {actor.get('name', 'Summon')} used {action.get('displayName', action_id)}"
+    if target:
+        log_msg += f" on {getattr(target, 'name', 'target')}"
+    if applied_damage is not None:
+        log_msg += f" for {applied_damage} {damage_type}".strip()
+    log_entry = session.add_log(log_msg, "combat", user.name)
+    await manager.broadcast(session.id, {"type": "log_entry", "payload": {"log": log_entry}})
+    await manager.send_to(
+        session.id,
+        user.id,
+        {"type": "summon_action_result", "payload": {"ok": True, "token_id": token_id, "action_id": action_id, "target_id": target_id, "applied_damage": applied_damage}},
+    )
+    # keep runtime summon state hp in sync when target is itself
+    synchronize_active_summon_state(
+        native,
+        token_id=token_id,
+        hp_current=int(getattr(token, "hp", 0) or 0),
+        hp_max=int(getattr(token, "max_hp", 1) or 1),
+    )
+    await _send_char_profiles(session, user.id)
     await save_campaign_async(session)

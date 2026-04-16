@@ -382,6 +382,9 @@ def _build_runtime_summon_actions(
                         ),
                         "mapContext": str(active.get("mapContext") or active.get("sceneId") or "").strip(),
                         "status": str(active.get("status") or "active").strip().lower() or "active",
+                        "actorName": str(((active.get("actor") or {}).get("name") or "")).strip(),
+                        "commandModel": str(((active.get("actor") or {}).get("commandModel") or primary.get("commandModel") or "")).strip().lower(),
+                        "actions": copy.deepcopy(((active.get("actor") or {}).get("actions") or [])),
                     }
                 )
         summon_category = str(primary.get("summonCategory") or "").strip().lower()
@@ -423,6 +426,10 @@ def _build_runtime_summon_actions(
                 "currentActiveCount": active_count,
                 "replaceOnResummon": replace_on_resummon,
                 "activeSummons": active_rows,
+                "activeSummonActionCount": sum(
+                    len(row.get("actions") or []) if isinstance(row.get("actions"), list) else 0
+                    for row in active_rows
+                ),
                 "shortSummary": " ".join(bit for bit in summary_bits if bit).strip(),
                 "tags": sorted({str(tag).strip() for row in rows for tag in (row.get("tags") or []) if str(tag).strip()}),
                 "summonDisplayName": str(primary.get("displayName") or primary.get("tokenName") or "").strip(),
