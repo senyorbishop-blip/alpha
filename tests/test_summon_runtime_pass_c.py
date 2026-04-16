@@ -6,6 +6,7 @@ from server.character.summon_runtime import (
     reconcile_session_active_summons,
     synchronize_active_summon_state,
     prune_expired_temporary_summons,
+    get_summon_runtime_metrics,
 )
 from server.character.summon_state import normalize_summon_state
 from server.session import Session, User, Token
@@ -625,3 +626,36 @@ def test_synchronize_active_summon_state_updates_hp_and_handles_removal():
     removed = synchronize_active_summon_state(native, token_id="tok-1", remove=True)
     assert removed is True
     assert ((native.get("summons") or {}).get("activeSummons") or []) == []
+
+
+def test_runtime_metrics_increment_for_payload_build_and_reconcile_paths():
+    session = Session(id="TESTSUMMONMETRICS")
+    player = User(id="u-player", name="Ayla", role="player")
+    session.users[player.id] = player
+    _seed_player_with_beast_master_profile(session, player)
+
+    before = get_summon_runtime_metrics()
+    result = build_summon_runtime_payload(
+        session=session,
+        user=player,
+        payload={
+            "profile_id": "profile-ranger",
+            "summon_template_id": "ranger-primal-beast-land",
+            "selected_variant": "ranger-primal-beast-land",
+        },
+    )
+    assert result.get("ok") is True
+
+    native = result.get("native_document") or {}
+    native["summons"]["activeSummons"] = [
+        {"id": "ok", "tokenId": "tok-live", "mapContext": "world"},
+        {"id": "stale", "tokenId": "tok-missing", "mapContext": "world"},
+    ]
+    reconcile_native_summons(native, existing_token_ids={"tok-live"}, valid_map_contexts={"world"})
+    prune_expired_temporary_summons(native, now_ts=0.0)
+
+    after = get_summon_runtime_metrics()
+    assert after.get("build_payload_calls", 0) >= before.get("build_payload_calls", 0) + 1
+    assert after.get("build_payload_ms_last", 0.0) >= 0.0
+    assert after.get("reconcile_calls", 0) >= before.get("reconcile_calls", 0) + 1
+    assert after.get("reconcile_rows_pruned", 0) >= before.get("reconcile_rows_pruned", 0) + 1
