@@ -554,12 +554,6 @@ function _renderOverviewPanel(charData) {
     <div class="cs-overview-columns">
       <div class="cs-overview-main">
         <section class="cs-overview-section">
-          <div class="cs-overview-section-title">Combat Readiness</div>
-          <div class="cs-overview-copy">Use these first in live play: pick an action, resolve a spell, then check resource and target state.</div>
-          ${_renderSuggestedRoute(charData)}
-        </section>
-
-        <section class="cs-overview-section">
           <div class="cs-overview-section-title">Action Spotlight</div>
           ${_renderListRows(spotlightActions, 'No structured attack or action cards yet.', function (item) {
             const badge = item.attackBonus ? `Atk ${item.attackBonus}` : (item.actionType || item.action_type || item.kind || 'Action');
