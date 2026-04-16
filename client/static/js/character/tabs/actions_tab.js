@@ -894,7 +894,9 @@
         ].filter(Boolean).join('\n\n'),
         summonAction: entry,
       };
-    }).filter(Boolean);
+    }).filter(function (entry) {
+      return !!entry && _summonActionRuntimeSupported(entry);
+    });
   }
 
   function _isHiddenFeatureCard(feature) {

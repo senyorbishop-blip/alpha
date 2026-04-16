@@ -56,7 +56,7 @@
           : '',
         '</div>',
         '<span class="check">' + (opts.selectedProfileId === item.id ? '✓ Selected' : '✓') + '</span>',
-        (item.nativeCharacter && item.sourceMode === 'native')
+        (opts.enableLevelupPreview && item.nativeCharacter && item.sourceMode === 'native')
           ? '<button type="button" class="btn btn-ghost" data-levelup-preview="1" style="margin-left:auto; padding:4px 8px; font-size:0.68rem;">Level-Up Preview</button>'
           : '',
         isDeletable
