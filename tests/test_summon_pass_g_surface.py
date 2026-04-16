@@ -20,3 +20,18 @@ def test_summon_admin_handler_supports_dismiss_and_cleanup_stale():
     assert 'cleanup_stale' in src
     assert 'role_not_allowed' in src
     assert 'token_deleted' in src
+
+
+def test_spell_summon_templates_are_registered_for_pass_i():
+    src = Path('server/character/summon_catalog.py').read_text()
+    assert 'spell-conjure-fey-manifestation' in src
+    assert 'spell-conjure-celestial-manifestation' in src
+    assert '"summonOrigin": "spell"' in src
+    assert '"temporary": True' in src
+
+
+def test_play_page_routes_supported_spell_summons_into_runtime_request():
+    src = Path('client/templates/play.html').read_text()
+    assert '_spellSummonRuntimeTemplateForSpell' in src
+    assert "sendWS({" in src and "type: 'summon_runtime_request'" in src
+    assert "spell_id: spellId" in src

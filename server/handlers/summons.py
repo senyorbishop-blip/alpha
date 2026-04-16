@@ -12,6 +12,7 @@ from server.character.summon_runtime import (
     reconcile_native_summons,
     plan_active_summon_mutations,
     synchronize_active_summon_state,
+    prune_expired_temporary_summons,
 )
 from server.handlers.common import Session, User, manager, save_campaign_async, _broadcast_token_state_sync
 from server.character.summon_state import normalize_summon_state
@@ -59,6 +60,13 @@ async def handle_summon_runtime_request(payload: dict, session: Session, user: U
     summon_group_id = str(resolved.get("summon_group_id") or "")
     removed_token_ids: list[str] = []
     native_document = resolved.get("native_document") if isinstance(resolved.get("native_document"), dict) else {}
+    expired_rows = prune_expired_temporary_summons(native_document)
+    for expired in expired_rows:
+        expired_token_id = str(expired.get("tokenId") or "").strip()
+        if expired_token_id and expired_token_id in (session.tokens or {}):
+            session.tokens.pop(expired_token_id, None)
+            removed_token_ids.append(expired_token_id)
+            await manager.broadcast(session.id, {"type": "token_deleted", "payload": {"token_id": expired_token_id}})
     valid_map_contexts = {"world"}
     valid_map_contexts.update(str(k or "").strip() for k in (getattr(session, "pois", {}) or {}).keys())
     valid_map_contexts.update(str(k or "").strip() for k in (getattr(session, "map_documents", {}) or {}).keys())
@@ -138,6 +146,8 @@ async def handle_summon_runtime_request(payload: dict, session: Session, user: U
         "sourceClassId": str(((actor.get("source") or {}).get("classId") or "").strip().lower()),
         "sourceSubclassId": str(((actor.get("source") or {}).get("subclassId") or "").strip().lower()),
         "sourceFeatureId": str(((actor.get("source") or {}).get("featureId") or "").strip().lower()),
+        "summonOrigin": str((resolved.get("template") or {}).get("summonOrigin") or ((actor.get("source") or {}).get("summonOrigin") or "feature")).strip().lower(),
+        "spellId": str((resolved.get("template") or {}).get("spellId") or ((actor.get("source") or {}).get("spellId") or "")).strip().lower(),
         "tokenId": str(token.id),
         "ownerUserId": str(user.id),
         "ownerProfileId": profile_id,
@@ -147,6 +157,11 @@ async def handle_summon_runtime_request(payload: dict, session: Session, user: U
         "createdAt": time.time(),
         "updatedAt": time.time(),
         "status": "active",
+        "temporary": bool((resolved.get("template") or {}).get("temporary")),
+        "concentrationRequired": bool((resolved.get("template") or {}).get("concentrationRequired")),
+        "cleanupPolicy": list((resolved.get("template") or {}).get("cleanupPolicy") or []),
+        "durationSeconds": int((resolved.get("template") or {}).get("durationSeconds") or 0),
+        "expiresAt": (time.time() + int((resolved.get("template") or {}).get("durationSeconds") or 0)) if bool((resolved.get("template") or {}).get("temporary")) and int((resolved.get("template") or {}).get("durationSeconds") or 0) > 0 else None,
         "replaceOnResummon": bool((resolved.get("template") or {}).get("replaceOnResummon")),
         "maxActive": int((resolved.get("template") or {}).get("maxActive") or 1),
         "spawnedAt": time.time(),
@@ -303,6 +318,37 @@ async def handle_summon_runtime_admin(payload: dict, session: Session, user: Use
     token_id = str(payload.get("token_id") or payload.get("tokenId") or "").strip()
 
     rows = list(_iter_active_summons(session))
+    if action in {"list", "refresh", "cleanup_stale"}:
+        touched_profiles: set[tuple[str, int]] = set()
+        removed_token_ids: list[str] = []
+        for owner_key, profile_index, _, native, _ in rows:
+            expired_rows = prune_expired_temporary_summons(native)
+            if not expired_rows:
+                continue
+            touched_profiles.add((owner_key, profile_index))
+            for expired in expired_rows:
+                expired_token_id = str(expired.get("tokenId") or "").strip()
+                if expired_token_id and expired_token_id in (session.tokens or {}):
+                    session.tokens.pop(expired_token_id, None)
+                    removed_token_ids.append(expired_token_id)
+                    await manager.broadcast(session.id, {"type": "token_deleted", "payload": {"token_id": expired_token_id}})
+        if touched_profiles:
+            profiles = dict(getattr(session, "char_profiles", {}) or {})
+            for owner_key, profile_index in touched_profiles:
+                bucket = list(profiles.get(owner_key) or []) if isinstance(profiles.get(owner_key), list) else []
+                if not (0 <= profile_index < len(bucket)):
+                    continue
+                slot = bucket[profile_index] if isinstance(bucket[profile_index], dict) else {}
+                native_doc = slot.get("nativeCharacter") if isinstance(slot.get("nativeCharacter"), dict) else {}
+                resolved_runtime = resolve_character_runtime(native_doc)
+                slot["nativeCharacter"] = resolved_runtime.get("document") if isinstance(resolved_runtime.get("document"), dict) else native_doc
+                slot["nativeRuntime"] = resolved_runtime.get("runtime") if isinstance(resolved_runtime.get("runtime"), dict) else slot.get("nativeRuntime", {})
+                bucket[profile_index] = slot
+                profiles[owner_key] = bucket
+            session.char_profiles = profiles
+            await _broadcast_token_state_sync(session)
+            await save_campaign_async(session)
+        rows = list(_iter_active_summons(session))
     if action in {"list", "refresh"}:
         data = [entry for (_, _, _, _, entry) in rows]
         await manager.send_to(session.id, user.id, {"type": "summon_runtime_admin_result", "payload": {"ok": True, "action": "list", "summons": data}})

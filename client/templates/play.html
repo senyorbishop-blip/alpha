@@ -43973,6 +43973,17 @@ function _rollDiceExpr(expr) {
   return { total, rolls, expr };
 }
 
+function _spellSummonRuntimeTemplateForSpell(spellId) {
+  const sid = String(spellId || '').trim().toLowerCase();
+  if (sid === 'conjure-fey') return 'spell-conjure-fey-manifestation';
+  if (sid === 'conjure-celestial') return 'spell-conjure-celestial-manifestation';
+  return '';
+}
+
+function _isSupportedRuntimeSpellSummon(spellId) {
+  return !!_spellSummonRuntimeTemplateForSpell(spellId);
+}
+
 function _executeCombatSpellCast(spell, slotLevel) {
   _recordSpellUsage(spell);
   const baseLevel = Number(spell.level || 0);
@@ -43981,11 +43992,32 @@ function _executeCombatSpellCast(spell, slotLevel) {
   const effectiveSlot = numericSlotLevel > 0 ? numericSlotLevel : baseLevel;
   const slotText = effectiveSlot > 0 ? ` at ${ordinals[effectiveSlot]||effectiveSlot+'th'} level` : ' (cantrip)';
   const card = spell.card || {};
+  const spellId = String(spell?.id || card?.id || '').trim().toLowerCase();
+  const spellSummonTemplateId = _spellSummonRuntimeTemplateForSpell(spellId);
 
   const slotSpend = _consumeSpellSlotLevel(effectiveSlot);
   if (!slotSpend.ok) {
     showToast(`No level ${effectiveSlot} spell slots remaining.`);
     return null;
+  }
+
+  if (_isSupportedRuntimeSpellSummon(spellId)) {
+    if (_spellCardHasConcentration(card)) _startActiveSpellConcentration(spell.name || card.name || 'Concentration Spell');
+    sendWS({
+      type: 'summon_runtime_request',
+      payload: {
+        summon_template_id: spellSummonTemplateId,
+        selected_variant: spellSummonTemplateId,
+        summon_group_id: spellSummonTemplateId.includes('conjure-fey') ? 'spell-conjure-fey' : 'spell-conjure-celestial',
+        spell_id: spellId,
+      },
+    });
+    sendWS({ type: 'chat_message', payload: { message: `✨ **${spell.name}** cast at ${ordinals[effectiveSlot]||effectiveSlot+'th'} level.`, channel: 'everyone' } });
+    showToast(`${spell.name} summoned as a temporary spell effect.`);
+    if (typeof renderRulesSpellbook === 'function') renderRulesSpellbook();
+    if (typeof renderPlayerSpellLibrary === 'function') renderPlayerSpellLibrary();
+    if (typeof renderPlayerActionsHub === 'function') renderPlayerActionsHub();
+    return { spell: spell.name, slotLevel: effectiveSlot, outcome: 'summon', total: null, applied: { applied: false, reason: 'spell_summon_runtime' } };
   }
 
   let dmgExpr = card.damage_dice || card.damage || card.damage_formula || card.base_damage_formula
