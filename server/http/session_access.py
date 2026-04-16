@@ -16,14 +16,33 @@ def resolve_session_authority(request, session, fallback_user_id: str = "") -> d
     """Resolve authenticated/session-backed authority separately from UI mode hints."""
     auth_user = get_request_user(request)
     auth_user_id = str((auth_user or {}).get("id") or "").strip()
+    auth_player_key_id = auth_player_key(auth_user_id) if auth_user_id else ""
     fallback_user_id = str(fallback_user_id or "").strip()
     candidate_ids = []
     if auth_user_id:
         candidate_ids.append(auth_user_id)
-        candidate_player_key = auth_player_key(auth_user_id)
-        if candidate_player_key and candidate_player_key not in candidate_ids:
-            candidate_ids.append(candidate_player_key)
-    if fallback_user_id and fallback_user_id not in candidate_ids:
+        if auth_player_key_id and auth_player_key_id not in candidate_ids:
+            candidate_ids.append(auth_player_key_id)
+
+    # Restrict fallback identity when an authenticated principal exists:
+    # - fallback can only mirror the auth id/player-key
+    # - or map to a session participant that is explicitly linked to that auth player-key.
+    fallback_allowed = False
+    fallback_via = "none"
+    if fallback_user_id:
+        if not auth_user_id:
+            fallback_allowed = True
+            fallback_via = "legacy_unauthenticated"
+        elif fallback_user_id in {auth_user_id, auth_player_key_id}:
+            fallback_allowed = True
+            fallback_via = "auth_exact_match"
+        else:
+            session_user = (getattr(session, "users", {}) or {}).get(fallback_user_id)
+            session_user_key = str(getattr(session_user, "player_key", "") or "").strip()
+            if session_user and auth_player_key_id and session_user_key == auth_player_key_id:
+                fallback_allowed = True
+                fallback_via = "auth_player_key_match"
+    if fallback_allowed and fallback_user_id not in candidate_ids:
         candidate_ids.append(fallback_user_id)
 
     matched_user = None
@@ -46,7 +65,10 @@ def resolve_session_authority(request, session, fallback_user_id: str = "") -> d
     resolved_user_id = matched_user_id or fallback_user_id or auth_user_id or None
     authority = {
         'auth_user_id': auth_user_id or None,
+        'auth_player_key': auth_player_key_id or None,
         'fallback_user_id': fallback_user_id or None,
+        'fallback_allowed': bool(fallback_allowed),
+        'fallback_allowed_via': fallback_via,
         'resolved_user_id': resolved_user_id,
         'resolved_session_user_id': matched_user_id or None,
         'participant_role': participant_role,
@@ -54,9 +76,9 @@ def resolve_session_authority(request, session, fallback_user_id: str = "") -> d
         'is_session_dm': bool(is_session_dm),
         'matched_via': matched_via,
     }
-    logger.info('[Authority] session_id=%s auth_user_id=%s fallback_user_id=%s resolved_user_id=%s participant_role=%s session_dm_id=%s is_session_dm=%s matched_via=%s',
+    logger.info('[Authority] session_id=%s auth_user_id=%s auth_player_key=%s fallback_user_id=%s fallback_allowed=%s fallback_allowed_via=%s resolved_user_id=%s participant_role=%s session_dm_id=%s is_session_dm=%s matched_via=%s',
         str(getattr(session, 'id', '') or ''),
-        authority['auth_user_id'], authority['fallback_user_id'], authority['resolved_user_id'], authority['participant_role'], authority['session_dm_id'], authority['is_session_dm'], authority['matched_via'])
+        authority['auth_user_id'], authority['auth_player_key'], authority['fallback_user_id'], authority['fallback_allowed'], authority['fallback_allowed_via'], authority['resolved_user_id'], authority['participant_role'], authority['session_dm_id'], authority['is_session_dm'], authority['matched_via'])
     return authority
 
 

@@ -53,16 +53,20 @@
       },
       getUserId: function () {
         const resolved = typeof global.getEffectiveUserId === 'function' ? global.getEffectiveUserId() : '';
-        const fromStore = storeGet('user.id', global.USER_ID || '');
+        const fromQuery = readQueryParam(['user_id', 'uid', 'user']);
+        const fromGlobal = String(global.USER_ID || '').trim();
+        const fromStore = storeGet('user.id', '');
         if (String(resolved || '').trim()) return resolved;
-        if (String(fromStore || '').trim()) return fromStore;
-        return readQueryParam(['user_id', 'uid', 'user']);
+        if (String(fromQuery || '').trim()) return fromQuery;
+        if (fromGlobal) return fromGlobal;
+        return String(fromStore || '').trim();
       },
       getRole: function () {
         const resolvedRole = typeof global.getEffectiveRole === 'function' ? global.getEffectiveRole() : '';
-        const fromStore = storeGet('user.role', global.ROLE || 'viewer');
         const fromQuery = readQueryParam(['role']);
-        return String(resolvedRole || fromStore || fromQuery || global.ROLE || 'viewer').toLowerCase();
+        const fromGlobal = String(global.ROLE || '').trim();
+        const fromStore = storeGet('user.role', '');
+        return String(resolvedRole || fromQuery || fromGlobal || fromStore || 'viewer').toLowerCase();
       },
       getSocket: function () { return storeGet('socket.instance', global.ws || null); },
       setSocket: function (value) { storeSet('socket.instance', value); global.ws = value; },

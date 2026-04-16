@@ -31,13 +31,24 @@ def _can_user_see_token(token, user) -> bool:
     return not getattr(token, "hidden", False)
 
 
+def _is_token_visible_to_user(session: Session, token, user: User) -> bool:
+    if not _can_user_see_token(token, user):
+        return False
+    role = str(getattr(user, "role", "") or "").strip().lower() or "viewer"
+    if role == "dm":
+        return True
+    visible_contexts = session.visible_map_contexts_for_user(getattr(user, "id", ""))
+    token_ctx = str(getattr(token, "map_context", "world") or "world")
+    return token_ctx in visible_contexts
+
+
 async def _broadcast_token_event(manager, session, msg_type: str, payload: dict, token,
                                   exclude_user: str = None):
     """Broadcast a token event to everyone who can currently see the token."""
     for uid, u in session.users.items():
         if uid == exclude_user:
             continue
-        if _can_user_see_token(token, u):
+        if _is_token_visible_to_user(session, token, u):
             await manager.send_to(session.id, uid, {"type": msg_type, "payload": payload})
 
 
@@ -233,15 +244,13 @@ async def _broadcast_token_visibility(session, token, msg_type: str = "token_hid
     """Send token visibility/update state per user when a token is edited or hidden/revealed."""
     token_payload = token.to_dict()
     for uid, u in session.users.items():
-        if u.role == "dm":
+        if _is_token_visible_to_user(session, token, u):
             await manager.send_to(session.id, uid, {"type": msg_type, "payload": token_payload})
-        elif token.hidden:
+        elif str(getattr(u, "role", "") or "").strip().lower() != "dm" and token.hidden:
             await manager.send_to(session.id, uid, {
                 "type": "token_removed_hidden",
                 "payload": {"id": token.id}
             })
-        else:
-            await manager.send_to(session.id, uid, {"type": msg_type, "payload": token_payload})
 
 
 def _get_combatant_by_token_id(session: Session, token_id: str) -> dict | None:

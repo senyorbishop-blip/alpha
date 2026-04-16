@@ -10817,9 +10817,14 @@ function isServerAuthoritativeDm() {
   return !!(_serverAuthority && _serverAuthority.isSessionDm);
 }
 
+function getEffectiveRole() {
+  if (isServerAuthoritativeDm()) return 'dm';
+  return String((_serverResolvedRole || ROLE || 'viewer')).toLowerCase();
+}
+
 function getEffectiveRoleLabel() {
   if (isServerAuthoritativeDm()) return 'DM';
-  const role = String((_serverResolvedRole || ROLE || 'viewer')).toLowerCase();
+  const role = getEffectiveRole();
   if (role === 'player') return 'PLAYER';
   if (role === 'viewer') return 'VIEWER';
   if (role === 'assistant_dm') return 'ASSISTANT DM';
@@ -10868,7 +10873,7 @@ function _tokenOwnedByUser(token, user) {
 function refreshRoleBadge() {
   const roleEl = document.getElementById('topbar-role');
   if (!roleEl) return;
-  const effectiveRole = isServerAuthoritativeDm() ? 'dm' : String((_serverResolvedRole || ROLE || 'viewer')).toLowerCase();
+  const effectiveRole = getEffectiveRole();
   roleEl.textContent = getEffectiveRoleLabel();
   roleEl.className = `role-${effectiveRole}`;
   roleEl.title = isServerAuthoritativeDm()
@@ -10884,6 +10889,34 @@ function refreshRoleBadge() {
       crBtn.title = 'Camp scene not active — DM must start one';
     }
   }
+}
+
+function _redirectToResolvedAuthority(reason = '') {
+  const resolvedUserId = String((_serverAuthority && _serverAuthority.resolvedUserId) || '').trim();
+  const resolvedRole = String(getEffectiveRole() || '').trim().toLowerCase();
+  if (!resolvedUserId || !resolvedRole) return false;
+  const currentUserId = String(USER_ID || '').trim();
+  const currentRole = String(ROLE || '').trim().toLowerCase();
+  if (resolvedUserId === currentUserId && resolvedRole === currentRole) return false;
+  const next = new URL(window.location.href);
+  next.searchParams.set('session_id', String(SESSION_ID || '').trim());
+  next.searchParams.set('user_id', resolvedUserId);
+  next.searchParams.set('role', resolvedRole);
+  next.searchParams.set('name', String(NAME || '').trim());
+  next.searchParams.set('returning', RETURNING ? '1' : '0');
+  _setWsStatus('reconnecting', 'refreshing authority');
+  console.warn('[AuthoritySync] correcting stale play identity', {
+    reason,
+    urlRole: currentRole,
+    resolvedRole,
+    urlUserId: currentUserId,
+    resolvedUserId,
+  });
+  if (window.ws && window.ws.readyState <= 1) {
+    try { window.ws.close(1000, 'Client authority redirect'); } catch (_err) {}
+  }
+  window.location.replace(next.toString());
+  return true;
 }
 
 
@@ -11023,8 +11056,17 @@ async function syncSessionAuthority(reason = 'runtime') {
       matchedVia: data.matched_via || '',
     };
     _serverResolvedRole = data.resolved_role || data.participant_role || ROLE;
+    if (_runtimeStore && typeof _runtimeStore.patch === 'function') {
+      _runtimeStore.patch({
+        user: {
+          id: String(_serverAuthority.resolvedUserId || USER_ID || '').trim(),
+          role: String(getEffectiveRole() || 'viewer').toLowerCase(),
+        },
+      });
+    }
     console.info('[AuthoritySync] resolved', { reason, sessionId: SESSION_ID, authUserId: USER_ID, roleParam: ROLE, authority: _serverAuthority, uiMode: _uiViewMode });
     refreshRoleBadge();
+    if (_redirectToResolvedAuthority(reason)) return { ...data, redirected: true };
     return data;
   } catch (error) {
     console.warn('[AuthoritySync] error', { reason, message: error && error.message ? error.message : error });
@@ -28791,14 +28833,22 @@ function renderPrivateStoryHookAdminList() {
 // WEBSOCKET
 // ═══════════════════════════════════════════════════════════════════
 function connectWS() {
-  if (!(window.AppWS && window.AppRuntimeBridge && typeof window.AppRuntimeBridge.createWsConfig === 'function')) {
-    console.error('[WS] AppWS runtime missing; websocket boot aborted.');
-    return null;
-  }
-  window.AppWS.configure(window.AppRuntimeBridge.createWsConfig());
-  _setWsStatus('connecting');
-  ws = window.AppWS.connectWS();
-  syncSessionAuthority('ws_connect');
+  const runConnect = async () => {
+    const authority = await syncSessionAuthority('ws_preconnect');
+    if (authority && authority.redirected) return null;
+    if (!(window.AppWS && window.AppRuntimeBridge && typeof window.AppRuntimeBridge.createWsConfig === 'function')) {
+      console.error('[WS] AppWS runtime missing; websocket boot aborted.');
+      return null;
+    }
+    window.AppWS.configure(window.AppRuntimeBridge.createWsConfig());
+    _setWsStatus('connecting');
+    ws = window.AppWS.connectWS();
+    return ws;
+  };
+  runConnect().catch((err) => {
+    console.warn('[WS] connect bootstrap failed', err);
+    _setWsStatus('reconnecting', 'bootstrap failed');
+  });
   return ws;
 }
 
