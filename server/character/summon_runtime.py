@@ -7,6 +7,7 @@ import threading
 from typing import Any
 
 from server.character.summon_catalog import get_summon_template
+from server.character.summon_diagnostics import build_failure
 from server.character.summon_state import normalize_summon_state
 from server.session import Session, User
 
@@ -1239,11 +1240,11 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
     requested_profile_id = str(payload.get("profile_id") or payload.get("profileId") or "").strip()
     owner_key, profile_index, profile = _find_active_profile(session, user, requested_profile_id)
     if profile_index < 0 or not isinstance(profile, dict):
-        return {"ok": False, "error": "profile_not_found"}
+        return _runtime_failure("profile_not_found", message="No active character profile was found for this summon request.", context=context)
 
     native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
     if not native:
-        return {"ok": False, "error": "missing_native_character"}
+        return _runtime_failure("missing_native_character", message="The selected profile is missing native character data.", context=context)
 
     summons = normalize_summon_state(native.get("summons"))
     unlocked = {str(v).strip().lower() for v in (summons.get("unlockedTemplates") or []) if str(v).strip()}
@@ -1260,18 +1261,22 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
         unlocked=unlocked,
     )
     if variant_error or not template:
-        return {"ok": False, "error": variant_error or "invalid_variant"}
+        return _runtime_failure(
+            variant_error or "invalid_variant",
+            message="The selected summon variant could not be resolved from unlocked templates.",
+            context={**context, "resolved_template_id": str((template or {}).get("id") or "")},
+        )
     template_origin = str(template.get("summonOrigin") or "").strip().lower()
     template_spell_id = str(template.get("spellId") or "").strip().lower()
     is_spell_template = template_origin == "spell" and bool(template_spell_id)
     if selected_variant not in unlocked and not is_spell_template:
-        return {"ok": False, "error": "summon_not_unlocked"}
+        return _runtime_failure("summon_not_unlocked", message="This summon template is not unlocked for the selected profile.", context=context)
     if is_spell_template:
         if requested_spell_id != template_spell_id:
-            return {"ok": False, "error": "spell_id_mismatch"}
+            return _runtime_failure("invalid_variant", message="Spell summon request spell_id does not match the selected template.", context={**context, "template_spell_id": template_spell_id})
         available_spells = _extract_profile_spell_ids(native)
         if template_spell_id not in available_spells:
-            return {"ok": False, "error": "spell_not_available"}
+            return _runtime_failure("spell_not_available", message="The selected spell summon is not currently available on the profile spell list.", context={**context, "template_spell_id": template_spell_id})
 
     try:
         source_class = str(template.get("sourceClassId") or "").strip().lower()
@@ -1312,23 +1317,17 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
                 template=template,
                 selected_variant=selected_variant,
                 owner_user=user,
-                profile_id=owner_profile_id,
-            ),
-        }
-        resolver = runtime_resolvers.get(resolver_key)
-        if not resolver and source_class in {"ranger", "tinker"}:
-            resolver = runtime_resolvers.get((source_class, source_subclass, ""))
-        if not resolver and source_class == "spell" and is_spell_template:
-            resolver = runtime_resolvers.get(("spell", "", "spell_effect"))
-        if not resolver:
-            return {"ok": False, "error": "runtime_not_live_for_class"}
-        actor = resolver()
+                profile_id=str(profile.get("id") or requested_profile_id or ""),
+            )
+        else:
+            return _runtime_failure("runtime_not_live_for_class", message="This summon family is not currently live in runtime deployment.", context={**context, "source_class": source_class, "source_subclass": source_subclass})
     except ValueError as exc:
-        return {"ok": False, "error": str(exc)}
+        code = str(exc) or "runtime_resolution_failed"
+        return _runtime_failure(code, message="Summon actor resolution failed for the selected deployment variant.", context=context)
 
     map_context = _resolve_map_context(session, user, payload)
     if not map_context:
-        return {"ok": False, "error": "missing_map_context"}
+        return _runtime_failure("missing_map_context", message="No valid map context was available for summon placement.", context=context)
 
     sx, sy, sw, sh = _compute_spawn_position(session, user, map_context)
     token_size = str(actor.get("size") or "medium").lower()
