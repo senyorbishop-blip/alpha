@@ -690,6 +690,38 @@
         { id: 'pirate_boarder', label: 'Boarding Specialist', items: ['Handaxe', 'Shield', 'Musket', 'Bullets ×20'] },
       ],
     };
+    const STARTER_WEAPON_STATS = {
+      greataxe: { damage_dice: '1d12', damage_type: 'slashing', handedness: 'two_handed', weapon_properties: ['Heavy', 'Two-Handed'] },
+      maul: { damage_dice: '2d6', damage_type: 'bludgeoning', handedness: 'two_handed', weapon_properties: ['Heavy', 'Two-Handed'] },
+      battleaxe: { damage_dice: '1d8', versatile_damage: '1d10', damage_type: 'slashing', handedness: 'one_handed', weapon_properties: ['Versatile'] },
+      longsword: { damage_dice: '1d8', versatile_damage: '1d10', damage_type: 'slashing', handedness: 'one_handed', weapon_properties: ['Versatile'] },
+      rapier: { damage_dice: '1d8', damage_type: 'piercing', handedness: 'one_handed', weapon_properties: ['Finesse'] },
+      shortsword: { damage_dice: '1d6', damage_type: 'piercing', handedness: 'one_handed', weapon_properties: ['Finesse', 'Light'] },
+      scimitar: { damage_dice: '1d6', damage_type: 'slashing', handedness: 'one_handed', weapon_properties: ['Finesse', 'Light'] },
+      dagger: { damage_dice: '1d4', damage_type: 'piercing', handedness: 'one_handed', weapon_properties: ['Finesse', 'Light', 'Thrown'] },
+      handaxe: { damage_dice: '1d6', damage_type: 'slashing', handedness: 'one_handed', weapon_properties: ['Light', 'Thrown'] },
+      javelin: { damage_dice: '1d6', damage_type: 'piercing', handedness: 'one_handed', weapon_properties: ['Thrown'] },
+      mace: { damage_dice: '1d6', damage_type: 'bludgeoning', handedness: 'one_handed' },
+      warhammer: { damage_dice: '1d8', versatile_damage: '1d10', damage_type: 'bludgeoning', handedness: 'one_handed', weapon_properties: ['Versatile'] },
+      spear: { damage_dice: '1d6', versatile_damage: '1d8', damage_type: 'piercing', handedness: 'one_handed', weapon_properties: ['Thrown', 'Versatile'] },
+      quarterstaff: { damage_dice: '1d6', versatile_damage: '1d8', damage_type: 'bludgeoning', handedness: 'one_handed', weapon_properties: ['Versatile'] },
+      club: { damage_dice: '1d4', damage_type: 'bludgeoning', handedness: 'one_handed', weapon_properties: ['Light'] },
+      greatsword: { damage_dice: '2d6', damage_type: 'slashing', handedness: 'two_handed', weapon_properties: ['Heavy', 'Two-Handed'] },
+      halberd: { damage_dice: '1d10', damage_type: 'slashing', handedness: 'two_handed', weapon_properties: ['Heavy', 'Reach', 'Two-Handed'] },
+      light_hammer: { damage_dice: '1d4', damage_type: 'bludgeoning', handedness: 'one_handed', weapon_properties: ['Light', 'Thrown'] },
+      dart: { damage_dice: '1d4', damage_type: 'piercing', handedness: 'one_handed', weapon_properties: ['Finesse', 'Thrown'] },
+      sling: { damage_dice: '1d4', damage_type: 'bludgeoning', handedness: 'one_handed' },
+      shortbow: { damage_dice: '1d6', damage_type: 'piercing', handedness: 'two_handed', weapon_properties: ['Ammunition', 'Two-Handed'] },
+      longbow: { damage_dice: '1d8', damage_type: 'piercing', handedness: 'two_handed', weapon_properties: ['Ammunition', 'Heavy', 'Two-Handed'] },
+      light_crossbow: { damage_dice: '1d8', damage_type: 'piercing', handedness: 'two_handed', weapon_properties: ['Ammunition', 'Loading', 'Two-Handed'] },
+      hand_crossbow: { damage_dice: '1d6', damage_type: 'piercing', handedness: 'one_handed', weapon_properties: ['Ammunition', 'Light', 'Loading'] },
+      musket: { damage_dice: '1d12', damage_type: 'piercing', handedness: 'two_handed', weapon_properties: ['Ammunition', 'Loading', 'Two-Handed'] },
+      pistol: { damage_dice: '1d10', damage_type: 'piercing', handedness: 'one_handed', weapon_properties: ['Ammunition', 'Loading'] },
+    };
+    const STARTER_WEAPON_ALIASES = {
+      bo_staff: 'quarterstaff',
+      cutlass: 'scimitar',
+    };
     const STARTING_PACKS = {
       explorer_pack: { id: 'explorer_pack', name: "Explorer's Pack", own_weight_lbs: 5, capacity_lbs: 30, contents: ['Bedroll', 'Mess Kit', 'Tinderbox', 'Torch ×10', 'Rations ×10 days', 'Waterskin', 'Rope (50 ft)'] },
       dungeoneer_pack: { id: 'dungeoneer_pack', name: "Dungeoneer's Pack", own_weight_lbs: 5, capacity_lbs: 30, contents: ['Crowbar', 'Hammer', 'Pitons ×10', 'Torch ×10', 'Tinderbox', 'Rations ×10 days', 'Waterskin', 'Rope (50 ft)'] },
@@ -837,11 +869,29 @@ function traitDescription(trait) {
       if (/sword|axe|mace|hammer|staff|spear|bow|crossbow|dagger|scimitar|rapier|halberd|maul|javelin|dart|sling|pistol|musket/.test(lower)) return 'weapon';
       return 'gear';
     }
+    function starterWeaponStatsForName(name) {
+      const normalized = String(name || '').trim().toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+      const key = STARTER_WEAPON_ALIASES[normalized] || normalized;
+      const row = STARTER_WEAPON_STATS[key];
+      if (!row || typeof row !== 'object') return null;
+      return row;
+    }
     function inventoryItemFromLine(line, source = 'builder_starting_choice') {
       const parsed = parseItemLine(line);
       if (!parsed || !parsed.name) return null;
       const kind = inferEquipmentKind(parsed.name);
-      return { name: parsed.name, qty: parsed.qty, equipment_kind: kind, item_type: kind, source, equipped: false };
+      const item = { name: parsed.name, qty: parsed.qty, equipment_kind: kind, item_type: kind, source, equipped: false };
+      const weaponStats = starterWeaponStatsForName(parsed.name);
+      if (weaponStats) {
+        item.equipment_kind = 'weapon';
+        item.item_type = 'weapon';
+        item.damage_dice = String(weaponStats.damage_dice || '').trim();
+        item.damage_type = String(weaponStats.damage_type || '').trim();
+        item.versatile_damage = String(weaponStats.versatile_damage || '').trim();
+        item.handedness = String(weaponStats.handedness || '').trim();
+        item.weapon_properties = Array.isArray(weaponStats.weapon_properties) ? weaponStats.weapon_properties.slice(0, 8) : [];
+      }
+      return item;
     }
     function getWeaponPacksForClass(item) {
       const classId = String((item && item.id) || state.hero.classId || '').trim().toLowerCase();
