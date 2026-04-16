@@ -964,9 +964,9 @@
       }
     }
 
-    els.createBtn.addEventListener('click', () => {
-      location.href = getCreateUrl();
-    });
+    // NOTE: create button click handling is owned by CharacterJoinGateway.
+    // Avoid attaching a second listener here, which caused dual create flows
+    // (embedded builder + immediate redirect) to race each other.
 
     els.refreshBtn.addEventListener('click', async () => {
       setFeedback('Refreshing roster…');
