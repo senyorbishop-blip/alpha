@@ -30336,6 +30336,15 @@ function handleLegacyMessage(msg) {
       }
       break;
     }
+    case 'summon_action_result': {
+      if (p.ok) {
+        showToast('Summon action resolved.');
+      } else {
+        const err = String(p.error || 'summon_action_failed').replace(/_/g, ' ');
+        showToast(`Summon action failed: ${err}`);
+      }
+      break;
+    }
 
     case 'char_profiles_sync': {
       loadCharProfiles(p.profiles || []);
@@ -42459,6 +42468,40 @@ function _getPlayerActionsSections() {
       });
     });
   });
+  const summonRows = Array.isArray(_charSheet?.summonActions) ? _charSheet.summonActions : [];
+  summonRows.forEach((row, rowIndex) => {
+    if (!row || typeof row !== 'object') return;
+    const summonLabel = String(row.selectedVariantName || row.summonDisplayName || row.displayName || 'Summon').trim();
+    const commandText = String(row.commandModelSummary || '').trim();
+    (Array.isArray(row.activeSummons) ? row.activeSummons : []).forEach((active, activeIndex) => {
+      const tokenId = String(active?.tokenId || '').trim();
+      const actions = Array.isArray(active?.actions) ? active.actions : [];
+      actions.forEach((action, actionIndex) => {
+        if (!action || typeof action !== 'object') return;
+        const actionType = String(action.actionType || 'action').toLowerCase();
+        const sectionName = actionType === 'bonus action' ? 'Bonus Actions' : (actionType === 'reaction' ? 'Reactions' : 'Class Features');
+        const damage = action?.damage && typeof action.damage === 'object' ? String(action.damage.formula || '') : '';
+        const damageType = action?.damage && typeof action.damage === 'object' ? String(action.damage.type || '') : '';
+        sections[sectionName] = sections[sectionName] || [];
+        sections[sectionName].push({
+          id: `summon_action:${rowIndex}:${activeIndex}:${actionIndex}`,
+          source: 'summon_action',
+          tokenId,
+          actionId: String(action.id || '').trim(),
+          name: `${String(action.displayName || action.name || 'Action').trim()} (${summonLabel})`,
+          attackBonus: Number.isFinite(Number(action.attackBonus)) ? signed(Number(action.attackBonus)) : '',
+          saveDC: Number.isFinite(Number(action.saveDC)) ? Number(action.saveDC) : '',
+          saveAbility: String(action.saveAbility || '').trim(),
+          damage,
+          damageType,
+          range: String(action.range || action.reach || '').trim(),
+          resource: commandText,
+          desc: String(action.summary || '').trim(),
+          badges: ['Summon', String(action.classification || 'action').replace(/^\w/, c => c.toUpperCase())],
+        });
+      });
+    });
+  });
 
   _getCombatQuickSpells().forEach(sp => {
     const card = sp.card || {};
@@ -42552,6 +42595,7 @@ function _getPlayerActionsSections() {
 function _buildPlayerActionMetaHtml(action) {
   const rows = [];
   if (action.attackBonus) rows.push(`<div class="player-action-meta-item"><strong>Attack</strong>${escapeHtml(String(action.attackBonus || ''))}</div>`);
+  if (action.saveDC) rows.push(`<div class="player-action-meta-item"><strong>Save</strong>DC ${escapeHtml(String(action.saveDC || ''))}${action.saveAbility ? ` ${escapeHtml(String(action.saveAbility || ''))}` : ''}</div>`);
   if (action.damage) rows.push(`<div class="player-action-meta-item"><strong>Damage</strong>${escapeHtml(String(action.damage || ''))}</div>`);
   if (action.range) rows.push(`<div class="player-action-meta-item"><strong>Range</strong>${escapeHtml(String(action.range || ''))}</div>`);
   if (action.damageType) rows.push(`<div class="player-action-meta-item"><strong>Type</strong>${escapeHtml(String(action.damageType || ''))}</div>`);
@@ -42602,6 +42646,16 @@ function playerUseAction(source, id) {
     useNativeActionCard(id);
     return;
   }
+  if (src === 'summon_action') {
+    const actionSections = _getPlayerActionsSections();
+    const entries = ['Bonus Actions', 'Reactions', 'Class Features', 'Attacks'].flatMap(key => actionSections[key] || []);
+    const picked = entries.find(entry => String(entry.id) === String(id));
+    if (!picked || !picked.tokenId || !picked.actionId) return;
+    const targetId = String(_combat?.selected_target_id || '').trim();
+    sendWS({ type: 'summon_action_use', payload: { token_id: picked.tokenId, action_id: picked.actionId, target_id: targetId } });
+    showToast(`Used summon action: ${picked.name || 'Action'}`);
+    return;
+  }
   if (src === 'system_reaction') {
     sendWS({ type: 'chat_message', payload: { message: '⚡ **Opportunity Attack** is ready when a creature leaves your reach.', channel: 'everyone' } });
     showToast('Opportunity Attack reaction ready.');
@@ -42648,6 +42702,10 @@ function playerInspectAction(source, id) {
     return false;
   }
   if (src === 'native_action' && typeof useNativeActionCard === 'function') return useNativeActionCard(id, { skipResolve: true });
+  if (src === 'summon_action') {
+    showToast('Summon action is ready. Pick a target then use the action.');
+    return true;
+  }
   if (src === 'system_reaction') { showToast('Opportunity Attack: use this reaction when a creature leaves your reach.'); return true; }
   return false;
 }

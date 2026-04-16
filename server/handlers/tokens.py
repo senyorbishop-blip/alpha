@@ -32,6 +32,7 @@ from server.handlers.content import handle_discovery_trigger
 from server.handlers.narration import broadcast_narration_hook
 from server.ambient_audio import normalize_ambient_profile
 from server.living_world_events import emit_world_event, consume_world_event
+from server.character.summon_runtime import synchronize_active_summon_state
 import time
 
 
@@ -486,6 +487,25 @@ async def handle_token_delete(payload: dict, session: Session, user: User):
     if user.role != "dm" and not owner_user_delete:
         return
     session.tokens.pop(token_id, None)
+    profiles = dict(getattr(session, "char_profiles", {}) or {})
+    summon_sync_changed = False
+    for owner_key, rows in list(profiles.items()):
+        if not isinstance(rows, list):
+            continue
+        bucket = list(rows)
+        for idx, row in enumerate(bucket):
+            if not isinstance(row, dict):
+                continue
+            native = row.get("nativeCharacter") if isinstance(row.get("nativeCharacter"), dict) else {}
+            if not native:
+                continue
+            if synchronize_active_summon_state(native, token_id=str(token_id), remove=True):
+                row["nativeCharacter"] = native
+                bucket[idx] = row
+                summon_sync_changed = True
+        profiles[owner_key] = bucket
+    if summon_sync_changed:
+        session.char_profiles = profiles
     corpse_states = dict(getattr(session, "corpse_states", {}) or {})
     corpse_states.pop(str(token_id), None)
     session.corpse_states = corpse_states
@@ -517,6 +537,25 @@ async def handle_token_hp_update(payload: dict, session: Session, user: User):
     if "max_hp" in payload and payload["max_hp"]:
         token.max_hp = max(1, int(payload["max_hp"]))
     token.hp = min(new_hp, token.max_hp) if token.max_hp else new_hp
+    profiles = dict(getattr(session, "char_profiles", {}) or {})
+    summon_sync_changed = False
+    for owner_key, rows in list(profiles.items()):
+        if not isinstance(rows, list):
+            continue
+        bucket = list(rows)
+        for idx, row in enumerate(bucket):
+            if not isinstance(row, dict):
+                continue
+            native = row.get("nativeCharacter") if isinstance(row.get("nativeCharacter"), dict) else {}
+            if not native:
+                continue
+            if synchronize_active_summon_state(native, token_id=str(token_id), hp_current=int(token.hp or 0), hp_max=int(token.max_hp or 1)):
+                row["nativeCharacter"] = native
+                bucket[idx] = row
+                summon_sync_changed = True
+        profiles[owner_key] = bucket
+    if summon_sync_changed:
+        session.char_profiles = profiles
     if int(token.hp or 0) <= 0:
         _ensure_corpse_state_for_token(session, token)
     combat_changed = _sync_combatant_token_state(session, token, previous_hp=previous_hp)

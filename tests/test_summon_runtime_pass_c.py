@@ -4,6 +4,7 @@ from server.character.summon_runtime import (
     remove_active_summon,
     reconcile_native_summons,
     reconcile_session_active_summons,
+    synchronize_active_summon_state,
 )
 from server.character.summon_state import normalize_summon_state
 from server.session import Session, User, Token
@@ -278,6 +279,10 @@ def test_tinker_mechanist_runtime_resolves_construct_payload():
     actor = result.get("actor") or {}
     assert actor.get("summonCategory") == "construct"
     assert isinstance(actor.get("attacks"), list) and actor.get("attacks")
+    assert isinstance(actor.get("actions"), list) and actor.get("actions")
+    assert all(isinstance(row.get("id"), str) and row.get("id") for row in actor.get("actions"))
+    assert all("classification" in row for row in actor.get("actions"))
+    assert all("summary" in row for row in actor.get("actions"))
     assert isinstance(actor.get("traits"), list) and actor.get("traits")
     assert (result.get("token_payload") or {}).get("monster_type") == "construct"
 
@@ -428,3 +433,60 @@ def test_session_reconcile_removes_stale_active_rows_after_restore():
     assert changed == 1
     assert len(updated_active) == 1
     assert updated_active[0].get("id") == "exists"
+
+
+def test_runtime_actions_include_combat_payload_fields_for_live_summons():
+    session = Session(id="TESTSUMMON")
+    player = User(id="u-player", name="Ayla", role="player")
+    session.users[player.id] = player
+    _seed_player_with_beast_master_profile(session, player)
+
+    result = build_summon_runtime_payload(
+        session=session,
+        user=player,
+        payload={
+            "profile_id": "profile-ranger",
+            "summon_template_id": "ranger-primal-beast-land",
+            "selected_variant": "ranger-primal-beast-land",
+        },
+    )
+    assert result.get("ok") is True
+    actions = ((result.get("actor") or {}).get("actions") or [])
+    assert actions
+    first = actions[0]
+    assert first.get("id")
+    assert first.get("displayName")
+    assert first.get("actionType")
+    assert first.get("classification") in {"attack", "save", "utility", "support"}
+    assert first.get("range")
+    assert "summary" in first
+    assert "commandRequired" in first
+
+
+def test_synchronize_active_summon_state_updates_hp_and_handles_removal():
+    native = {
+        "summons": {
+            "activeSummons": [
+                {
+                    "id": "active-1",
+                    "tokenId": "tok-1",
+                    "status": "active",
+                    "actor": {"hp": {"current": 20, "max": 20}},
+                }
+            ]
+        }
+    }
+    changed = synchronize_active_summon_state(native, token_id="tok-1", hp_current=7, hp_max=20)
+    assert changed is True
+    row = ((native.get("summons") or {}).get("activeSummons") or [])[0]
+    assert ((row.get("actor") or {}).get("hp") or {}).get("current") == 7
+    assert row.get("status") == "active"
+
+    changed_down = synchronize_active_summon_state(native, token_id="tok-1", hp_current=0, hp_max=20)
+    assert changed_down is True
+    row = ((native.get("summons") or {}).get("activeSummons") or [])[0]
+    assert row.get("status") == "defeated"
+
+    removed = synchronize_active_summon_state(native, token_id="tok-1", remove=True)
+    assert removed is True
+    assert ((native.get("summons") or {}).get("activeSummons") or []) == []

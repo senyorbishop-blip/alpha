@@ -29,46 +29,19 @@ _BEAST_VARIANTS = {
         "movement": {"walk": 40, "climb": 40},
         "size": "medium",
         "senses": {"darkvision": 60},
-        "actions": [
-            {
-                "id": "maul",
-                "name": "Maul",
-                "toHit": "PB + WIS",
-                "damage": "1d8 + 2 + PB",
-                "type": "force",
-                "rider": "If target is Large or smaller, it is knocked Prone.",
-            }
-        ],
+        "actions": [{"id": "maul", "name": "Maul", "classification": "attack", "range": "Melee 5 ft", "damage": {"formula": "1d8+2+PB", "type": "force"}, "summary": "On hit, Large or smaller targets are knocked prone."}],
     },
     "ranger-primal-beast-sea": {
         "movement": {"walk": 5, "swim": 60},
         "size": "medium",
         "senses": {"darkvision": 60},
-        "actions": [
-            {
-                "id": "binding_strike",
-                "name": "Binding Strike",
-                "toHit": "PB + WIS",
-                "damage": "1d6 + 2 + PB",
-                "type": "piercing",
-                "rider": "Target grappled (escape DC = spell save DC equivalent).",
-            }
-        ],
+        "actions": [{"id": "binding_strike", "name": "Binding Strike", "classification": "attack", "range": "Melee 5 ft", "damage": {"formula": "1d6+2+PB", "type": "piercing"}, "summary": "On hit, target is grappled until it escapes."}],
     },
     "ranger-primal-beast-sky": {
         "movement": {"walk": 10, "fly": 60},
         "size": "small",
         "senses": {"darkvision": 60},
-        "actions": [
-            {
-                "id": "shred",
-                "name": "Shred",
-                "toHit": "PB + WIS",
-                "damage": "1d4 + 3 + PB",
-                "type": "slashing",
-                "rider": "Flyby-style movement profile for hit-and-run positioning.",
-            }
-        ],
+        "actions": [{"id": "shred", "name": "Shred", "classification": "attack", "range": "Melee 5 ft", "damage": {"formula": "1d4+3+PB", "type": "slashing"}, "summary": "Fast flyby strike for hit-and-run positioning."}],
     },
 }
 
@@ -81,13 +54,7 @@ _WARLOCK_FAMILIAR_VARIANTS = {
         "size": "tiny",
         "traits": ["Devil's Sight", "Shapechanger (Raven/Rat/Spider)"],
         "actions": [
-            {
-                "id": "sting",
-                "name": "Sting",
-                "toHit": "+5",
-                "damage": "1d4+3 piercing",
-                "rider": "Poison save (DC 11).",
-            }
+            {"id": "sting", "name": "Sting", "classification": "attack", "range": "Melee 5 ft", "attackBonus": 5, "damage": {"formula": "1d4+3", "type": "piercing"}, "saveDC": 11, "saveAbility": "CON", "summary": "Target makes CON save or suffers poison effect."}
         ],
     },
     "warlock-chain-pseudodragon": {
@@ -98,13 +65,7 @@ _WARLOCK_FAMILIAR_VARIANTS = {
         "size": "tiny",
         "traits": ["Keen Senses", "Limited Telepathy"],
         "actions": [
-            {
-                "id": "sting",
-                "name": "Sting",
-                "toHit": "+4",
-                "damage": "1d4+2 piercing",
-                "rider": "Poison save (DC 11) vs poisoned/unconscious.",
-            }
+            {"id": "sting", "name": "Sting", "classification": "attack", "range": "Melee 5 ft", "attackBonus": 4, "damage": {"formula": "1d4+2", "type": "piercing"}, "saveDC": 11, "saveAbility": "CON", "summary": "Failed save can poison or knock out the target."}
         ],
     },
     "warlock-chain-quasit": {
@@ -115,13 +76,7 @@ _WARLOCK_FAMILIAR_VARIANTS = {
         "size": "tiny",
         "traits": ["Magic Resistance", "Shapechanger (Bat/Centipede/Toad)"],
         "actions": [
-            {
-                "id": "claws",
-                "name": "Claws",
-                "toHit": "+4",
-                "damage": "1d4+3 slashing",
-                "rider": "Poison save (DC 10).",
-            }
+            {"id": "claws", "name": "Claws", "classification": "attack", "range": "Melee 5 ft", "attackBonus": 4, "damage": {"formula": "1d4+3", "type": "slashing"}, "saveDC": 10, "saveAbility": "CON", "summary": "Target makes CON save against poison."}
         ],
     },
     "warlock-chain-sprite": {
@@ -132,13 +87,7 @@ _WARLOCK_FAMILIAR_VARIANTS = {
         "size": "tiny",
         "traits": ["Heart Sight", "Fey Step profile"],
         "actions": [
-            {
-                "id": "shortbow",
-                "name": "Shortbow",
-                "toHit": "+6",
-                "damage": "1 piercing",
-                "rider": "Poison save (DC 10) vs poisoned.",
-            }
+            {"id": "shortbow", "name": "Shortbow", "classification": "attack", "range": "40/160 ft", "attackBonus": 6, "damage": {"formula": "1", "type": "piercing"}, "saveDC": 10, "saveAbility": "CON", "summary": "Arrow carries poison on hit."}
         ],
     },
 }
@@ -152,13 +101,7 @@ _TINKER_MECHANIST_FRAME = {
     "size": "medium",
     "traits": ["Construct Resilience", "Command Relay Link"],
     "actions": [
-        {
-            "id": "force_slam",
-            "name": "Force Slam",
-            "toHit": "PB + INT",
-            "damage": "1d8 + PB force",
-            "rider": "On hit, can shove 5 ft if target fails STR save.",
-        }
+        {"id": "force_slam", "name": "Force Slam", "classification": "attack", "range": "Melee 5 ft", "damage": {"formula": "1d8+PB", "type": "force"}, "saveDC": None, "saveAbility": "STR", "summary": "On hit, target can be shoved 5 ft on failed STR save."}
     ],
 }
 
@@ -169,6 +112,56 @@ def _ability_mod(value: Any) -> int:
 
 def _proficiency_bonus(level_total: int) -> int:
     return 2 + max(0, (max(1, level_total) - 1) // 4)
+
+
+def _format_signed(value: int) -> str:
+    return f"{value:+d}" if value >= 0 else str(value)
+
+
+def _normalize_action_payload(*, actor: dict[str, Any], action: dict[str, Any], index: int, attack_bonus: int | None = None, save_dc: int | None = None, command_model: str = "") -> dict[str, Any]:
+    action_id = str(action.get("id") or f"action-{index+1}").strip().lower()
+    display = str(action.get("displayName") or action.get("name") or action_id.replace("_", " ").title()).strip()
+    classification = str(action.get("classification") or action.get("kind") or "attack").strip().lower()
+    action_type = str(action.get("actionType") or action.get("type") or "action").strip().lower()
+    payload = {
+        "id": action_id or f"action-{index+1}",
+        "displayName": display or "Action",
+        "actionType": action_type or "action",
+        "classification": classification or "attack",
+        "range": str(action.get("range") or "").strip(),
+        "reach": str(action.get("reach") or "").strip(),
+        "attackBonus": attack_bonus if attack_bonus is not None else action.get("attackBonus"),
+        "saveDC": save_dc if save_dc is not None else action.get("saveDC"),
+        "saveAbility": str(action.get("saveAbility") or "").strip().upper(),
+        "damage": copy.deepcopy(action.get("damage") or {}),
+        "healing": copy.deepcopy(action.get("healing") or {}),
+        "usage": copy.deepcopy(action.get("usage") or {}),
+        "summary": str(action.get("summary") or action.get("rider") or "").strip(),
+        "commandModel": command_model,
+        "commandRequired": bool(command_model in {"bonus_action_command", "action_command"}),
+    }
+    if not payload["range"] and classification == "attack":
+        payload["range"] = "Melee"
+    return payload
+
+
+def _legacy_attacks_from_actions(actions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for action in actions:
+        if not isinstance(action, dict):
+            continue
+        dmg = action.get("damage") if isinstance(action.get("damage"), dict) else {}
+        formula = str(dmg.get("formula") or "").strip()
+        dtype = str(dmg.get("type") or "").strip()
+        out.append({
+            "id": str(action.get("id") or ""),
+            "name": str(action.get("displayName") or action.get("name") or "Action"),
+            "toHit": _format_signed(int(action.get("attackBonus") or 0)) if action.get("attackBonus") is not None else "",
+            "damage": formula,
+            "type": dtype,
+            "rider": str(action.get("summary") or "").strip(),
+        })
+    return out
 
 
 def _resolve_primary_class(native_document: dict[str, Any]) -> dict[str, Any]:
@@ -276,6 +269,19 @@ def resolve_beast_master_actor(*, native_document: dict[str, Any], template: dic
     max_hp = max(5, 5 + (class_level * 5) + con_mod)
     ac = 13 + proficiency
     token_name = str(template.get("tokenName") or template.get("displayName") or "Primal Beast").strip()
+    command_model = str(template.get("commandModel") or "bonus_action_command").strip().lower()
+    action_rows = [
+        _normalize_action_payload(
+            actor={},
+            action=row,
+            index=index,
+            attack_bonus=proficiency + wis_mod,
+            save_dc=8 + proficiency + wis_mod,
+            command_model=command_model,
+        )
+        for index, row in enumerate(list(variant_defaults.get("actions") or []))
+        if isinstance(row, dict)
+    ]
 
     return {
         "id": f"summon-{owner_user.id}-{int(time.time() * 1000)}",
@@ -290,7 +296,8 @@ def resolve_beast_master_actor(*, native_document: dict[str, Any], template: dic
         "senses": copy.deepcopy(variant_defaults.get("senses") or template.get("senses") or {}),
         "ac": ac,
         "hp": {"current": max_hp, "max": max_hp},
-        "attacks": copy.deepcopy(variant_defaults.get("actions") or []),
+        "actions": action_rows,
+        "attacks": _legacy_attacks_from_actions(action_rows),
         "proficiencyBonus": proficiency,
         "levelSource": {
             "classId": "ranger",
@@ -304,6 +311,7 @@ def resolve_beast_master_actor(*, native_document: dict[str, Any], template: dic
             "userName": str(owner_user.name),
             "profileId": str(profile_id or ""),
         },
+        "commandModel": command_model,
         "source": {
             "classId": str(template.get("sourceClassId") or "ranger"),
             "subclassId": str(template.get("sourceSubclassId") or "beast-master"),
@@ -317,6 +325,7 @@ def resolve_beast_master_actor(*, native_document: dict[str, Any], template: dic
             "fallbackEmoji": "🐾",
         },
     }
+
 
 def resolve_warlock_familiar_actor(*, native_document: dict[str, Any], template: dict[str, Any], selected_variant: str, owner_user: User, profile_id: str) -> dict[str, Any]:
     primary = _resolve_primary_class(native_document)
@@ -334,6 +343,19 @@ def resolve_warlock_familiar_actor(*, native_document: dict[str, Any], template:
     ac = max(1, _safe_int(familiar.get("ac"), 10, minimum=1))
     movement = copy.deepcopy(familiar.get("movement") or template.get("movement") or {"walk": 30})
     senses = copy.deepcopy(familiar.get("senses") or template.get("senses") or {})
+    command_model = str(template.get("commandModel") or "bonus_action_command").strip().lower()
+    action_rows = [
+        _normalize_action_payload(
+            actor={},
+            action=row,
+            index=index,
+            attack_bonus=(_safe_int(row.get("attackBonus"), 0) if row.get("attackBonus") is not None else None),
+            save_dc=(_safe_int(row.get("saveDC"), 0) if row.get("saveDC") is not None else None),
+            command_model=command_model,
+        )
+        for index, row in enumerate(list(familiar.get("actions") or []))
+        if isinstance(row, dict)
+    ]
     return {
         "id": f"summon-{owner_user.id}-{int(time.time() * 1000)}",
         "templateId": str(template.get("id") or selected_variant),
@@ -347,7 +369,8 @@ def resolve_warlock_familiar_actor(*, native_document: dict[str, Any], template:
         "senses": senses,
         "ac": ac,
         "hp": {"current": hp, "max": hp},
-        "attacks": copy.deepcopy(familiar.get("actions") or []),
+        "actions": action_rows,
+        "attacks": _legacy_attacks_from_actions(action_rows),
         "traits": copy.deepcopy(familiar.get("traits") or []),
         "proficiencyBonus": _proficiency_bonus(class_level),
         "levelSource": {
@@ -358,6 +381,7 @@ def resolve_warlock_familiar_actor(*, native_document: dict[str, Any], template:
             "featureName": "Pact Boon (Pact of the Chain)",
         },
         "owner": {"userId": str(owner_user.id), "userName": str(owner_user.name), "profileId": str(profile_id or "")},
+        "commandModel": command_model,
         "source": {
             "classId": str(template.get("sourceClassId") or "warlock"),
             "subclassId": str(template.get("sourceSubclassId") or ""),
@@ -389,6 +413,19 @@ def resolve_tinker_mechanist_actor(*, native_document: dict[str, Any], template:
     hp = max(5, _safe_int(_TINKER_MECHANIST_FRAME["hp_base"], 10) + (_safe_int(_TINKER_MECHANIST_FRAME["hp_per_level"], 5) * class_level) + int_mod)
     ac = max(10, _safe_int(_TINKER_MECHANIST_FRAME["ac_base"], 13) + max(0, proficiency - 2))
     token_name = str(template.get("tokenName") or template.get("displayName") or "Companion Frame").strip()
+    command_model = str(template.get("commandModel") or "bonus_action_command").strip().lower()
+    action_rows = [
+        _normalize_action_payload(
+            actor={},
+            action=row,
+            index=index,
+            attack_bonus=proficiency + int_mod,
+            save_dc=8 + proficiency + int_mod,
+            command_model=command_model,
+        )
+        for index, row in enumerate(list(_TINKER_MECHANIST_FRAME.get("actions") or []))
+        if isinstance(row, dict)
+    ]
     return {
         "id": f"summon-{owner_user.id}-{int(time.time() * 1000)}",
         "templateId": str(template.get("id") or selected_variant),
@@ -402,7 +439,8 @@ def resolve_tinker_mechanist_actor(*, native_document: dict[str, Any], template:
         "senses": copy.deepcopy(_TINKER_MECHANIST_FRAME.get("senses") or template.get("senses") or {}),
         "ac": ac,
         "hp": {"current": hp, "max": hp},
-        "attacks": copy.deepcopy(_TINKER_MECHANIST_FRAME.get("actions") or []),
+        "actions": action_rows,
+        "attacks": _legacy_attacks_from_actions(action_rows),
         "traits": copy.deepcopy(_TINKER_MECHANIST_FRAME.get("traits") or []),
         "proficiencyBonus": proficiency,
         "levelSource": {
@@ -413,6 +451,7 @@ def resolve_tinker_mechanist_actor(*, native_document: dict[str, Any], template:
             "featureName": "Companion Frame",
         },
         "owner": {"userId": str(owner_user.id), "userName": str(owner_user.name), "profileId": str(profile_id or "")},
+        "commandModel": command_model,
         "source": {
             "classId": str(template.get("sourceClassId") or "tinker"),
             "subclassId": str(template.get("sourceSubclassId") or "mechanist"),
@@ -463,12 +502,14 @@ def _compute_spawn_position(session: Session, user: User, map_context: str) -> t
 def _notes_for_actor(actor: dict[str, Any]) -> str:
     movement = actor.get("movement") if isinstance(actor.get("movement"), dict) else {}
     movement_text = ", ".join(f"{k}:{v}" for k, v in movement.items()) or "walk:30"
-    attacks = actor.get("attacks") if isinstance(actor.get("attacks"), list) else []
+    attacks = actor.get("actions") if isinstance(actor.get("actions"), list) else (actor.get("attacks") if isinstance(actor.get("attacks"), list) else [])
     attack_lines = []
     for row in attacks:
         if not isinstance(row, dict):
             continue
-        attack_lines.append(f"{row.get('name', 'Attack')} ({row.get('damage', '')})")
+        damage = row.get('damage') if isinstance(row.get('damage'), dict) else {}
+        dmg_text = damage.get('formula') if isinstance(damage, dict) else row.get('damage', '')
+        attack_lines.append(f"{row.get('displayName', row.get('name', 'Attack'))} ({dmg_text or '—'})")
     attack_text = "; ".join(attack_lines) if attack_lines else "Bestial Strike"
     hp = (actor.get("hp") or {}) if isinstance(actor.get("hp"), dict) else {}
     title = str(actor.get("summonCategory") or actor.get("actorType") or "summon").replace("-", " ").title()
@@ -715,6 +756,48 @@ def reconcile_session_active_summons(session: Session) -> int:
     if changed:
         session.char_profiles = profiles
     return changed
+
+
+def synchronize_active_summon_state(native_document: dict[str, Any], *, token_id: str, hp_current: int | None = None, hp_max: int | None = None, remove: bool = False) -> bool:
+    summons = normalize_summon_state(native_document.get("summons"))
+    rows = list(summons.get("activeSummons") or [])
+    changed = False
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        row_token_id = str(row.get("tokenId") or "").strip()
+        if row_token_id != str(token_id or "").strip():
+            out.append(row)
+            continue
+        if remove:
+            changed = True
+            continue
+        next_row = copy.deepcopy(row)
+        actor = next_row.get("actor") if isinstance(next_row.get("actor"), dict) else {}
+        hp = actor.get("hp") if isinstance(actor.get("hp"), dict) else {}
+        if hp_current is not None and hp.get("current") != hp_current:
+            hp["current"] = max(0, int(hp_current))
+            changed = True
+        if hp_max is not None and hp.get("max") != hp_max:
+            hp["max"] = max(1, int(hp_max))
+            changed = True
+        if hp:
+            actor["hp"] = hp
+            next_row["actor"] = actor
+        if hp_current is not None and int(hp_current) <= 0 and next_row.get("status") != "defeated":
+            next_row["status"] = "defeated"
+            changed = True
+        elif hp_current is not None and int(hp_current) > 0 and str(next_row.get("status") or "active") != "active":
+            next_row["status"] = "active"
+            changed = True
+        if changed:
+            next_row["updatedAt"] = time.time()
+        out.append(next_row)
+    if changed or remove:
+        summons["activeSummons"] = out
+        native_document["summons"] = summons
+    return changed or remove
 
 
 def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[str, Any]) -> dict[str, Any]:
