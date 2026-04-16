@@ -278,6 +278,18 @@
       testOrder: ['Spell library / prepared surface', 'Slot spend', 'Save / attack roll output'],
       verify: ['Prepared spells', 'Spell slots', 'Spell details', 'Arcane recovery notes'],
     },
+    tinker: {
+      role: 'Engineer controller',
+      loop: 'Audit Tinker as a kit loop: gadget charges first, then rig/deploy actions, then specialty spell support and subclass device identity.',
+      testOrder: ['Gadget resource and recharge cadence', 'Deploy / countermeasure action cards', 'Specialty spell and subclass rig tools'],
+      verify: ['Gadget Charges', 'Rig actions', 'Deployables', 'Specialty spell lane'],
+    },
+    pirate: {
+      role: 'Tempo duelist',
+      loop: 'Audit Pirate as a pressure loop: swagger resource, dirty tricks, movement tempo, and target-control riders should all read as one fighting style.',
+      testOrder: ['Swagger spend and recovery', 'Dirty trick action cards', 'Movement / pressure subclass tools'],
+      verify: ['Swagger Dice', 'Dirty tricks', 'Bonus-action pressure', 'Subclass identity'],
+    },
   };
 
   function _classKey(charData) {
@@ -501,7 +513,7 @@
     return `<section class="cs-overview-section cs-feature-controls-section">
       <div class="cs-overview-section-title">Features & Traits</div>
       ${_renderSurfaceNavButtons()}
-      <div class="cs-overview-copy">Each row shows the rules-first summary up front. Open a feature only when you want the full text.</div>
+      <div class="cs-overview-copy">Each row shows the rules-first summary up front, including <strong>When it matters</strong> in play. Open a feature only when you want the full text.</div>
       <div class="cs-feature-toolbar">
         <input type="search" class="cs-feature-search" data-feature-search placeholder="Search features, traits, feats, resources…" aria-label="Search features" />
         <div class="cs-feature-filter-row" role="tablist" aria-label="Feature filters">

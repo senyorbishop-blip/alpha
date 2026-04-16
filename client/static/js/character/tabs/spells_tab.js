@@ -129,6 +129,40 @@
       metamagicChoices: uniqueMeta,
     };
   }
+  function _classSpellModelInsights(classKey, state, pact) {
+    const snap = _limitSnapshot(state);
+    const cards = [];
+    let hint = '';
+    if (classKey === 'cleric' || classKey === 'druid' || classKey === 'paladin' || classKey === 'wizard') {
+      cards.push(_renderSummaryCard('Spell Model', 'Prepared', 'Prepare leveled spells from your unlocked list after rest.', 'teal'));
+    } else if (classKey === 'bard' || classKey === 'ranger' || classKey === 'sorcerer' || classKey === 'warlock' || classKey === 'tinker') {
+      cards.push(_renderSummaryCard('Spell Model', 'Known', 'Learned spells stay known; you cast from that persistent list.', 'gold'));
+    } else {
+      cards.push(_renderSummaryCard('Spell Model', 'Library', 'This class currently reads from linked spell cards and library data.', 'violet'));
+    }
+    if (snap.mode === 'prepared' && snap.preparedLimit != null) {
+      cards.push(_renderSummaryCard('Prepared Limit', String(snap.preparedCount) + ' / ' + String(snap.preparedLimit), 'Leveled spells currently ready for this adventuring day.', snap.preparedCount <= snap.preparedLimit ? 'teal' : ''));
+    }
+    if (snap.mode === 'known' && snap.knownLimit != null) {
+      cards.push(_renderSummaryCard('Known Limit', String(snap.knownCount) + ' / ' + String(snap.knownLimit), 'Leveled spells currently learned by this class.', snap.knownCount <= snap.knownLimit ? 'gold' : ''));
+    }
+    if (classKey === 'warlock' && pact && pact.enabled) {
+      hint += 'Warlock flow: use at-will cantrips between pact-slot spikes; pact slots refresh on short rest. ';
+    } else if (classKey === 'sorcerer') {
+      hint += 'Sorcerer flow: cast from known spells, then spend Sorcery Points on Metamagic or Flexible Casting. ';
+    } else if (classKey === 'druid') {
+      hint += 'Druid flow: prepared spellcasting and Wild Shape are separate lanes; do not spend Wild Shape when casting normal spells. ';
+    } else if (classKey === 'cleric') {
+      hint += 'Cleric flow: prepared spells handle most turns, while Channel Divinity features sit on a separate class resource. ';
+    } else if (classKey === 'wizard') {
+      hint += 'Wizard flow: prepare your daily toolkit from your spellbook, then use Arcane Recovery to extend slot endurance. ';
+    } else if (classKey === 'ranger' || classKey === 'paladin') {
+      hint += 'Half-caster flow: slot tiers arrive slower than full casters, so combine weapon pressure with selective spell use. ';
+    } else if (classKey === 'tinker') {
+      hint += 'Tinker flow: treat specialty spells as part of your gadget loop, not separate from your class resource cadence. ';
+    }
+    return { cards: cards, hint: hint };
+  }
   function _spellRankLabel(spell) {
     const level = _spellLevelNumber(spell);
     return level === 0 ? 'Cantrip' : 'Level ' + level;
@@ -1111,9 +1145,11 @@ function _spellAttackSaveCell(spell, charData) {
   function _renderSpellsTab(container, state) {
     const concentration = _firstText(state.charData && state.charData.activeConcentration, '');
     const selected = _selectedSpells(state);
+    const classKey = _classKey(state.charData || {});
     const pact = _pactMagicState(state.charData || {});
     const isSorcerer = _classKey(state.charData || {}) === 'sorcerer';
     const sorcerer = isSorcerer ? _sorcererInsights(state.charData || {}, state) : null;
+    const model = _classSpellModelInsights(classKey, state, pact);
     const activeSlotTiers = _getSlotCounts(state.charData || {}).filter(function (count, idx) { return idx > 0 && count > 0; }).length;
     container.innerHTML = '' +
       '<div class="cs-combat-hero-grid">' +
@@ -1128,8 +1164,9 @@ function _spellAttackSaveCell(spell, charData) {
         (pact.enabled ? _renderSummaryCard('Pact Slots', String(pact.slotCount || 0), (pact.slotLevel ? ('All cast at level ' + pact.slotLevel + '.') : 'Warlock pact slot economy.'), 'gold') : '') +
         (pact.enabled ? _renderSummaryCard('Pact Recovery', 'Short Rest', 'Pact slots refresh on Short Rest cadence.', 'teal') : '') +
         (pact.enabled ? _renderSummaryCard('Mystic Arcanum', 'Separate', 'Arcanum casts are not part of pact slot budgeting.', 'violet') : '') +
+        model.cards.join('') +
       '</div>' +
-      ((activeSlotTiers || concentration || pact.enabled || isSorcerer) ? '<div class="cs-inline-hint">' + _esc(concentration ? ('Concentration: ' + concentration + ' • ') : '') + _esc(pact.enabled ? ('Pact Magic: ' + (pact.slotCount || 0) + ' slot(s) at level ' + (pact.slotLevel || '?') + ', refreshing on short rest. ') : '') + _esc(isSorcerer ? 'Sorcerer flow: cast from known spells, then spend Sorcery Points for Metamagic or Flexible Casting conversions. ' : '') + _esc(activeSlotTiers ? (activeSlotTiers + ' slot tiers are available for this character.') : 'Cantrips only are available right now.') + (pact.note ? (' ' + _esc(pact.note)) : '') + '</div>' : '') +
+      ((activeSlotTiers || concentration || pact.enabled || isSorcerer || model.hint) ? '<div class="cs-inline-hint">' + _esc(concentration ? ('Concentration: ' + concentration + ' • ') : '') + _esc(pact.enabled ? ('Pact Magic: ' + (pact.slotCount || 0) + ' slot(s) at level ' + (pact.slotLevel || '?') + ', refreshing on short rest. ') : '') + _esc(isSorcerer ? 'Sorcerer flow: cast from known spells, then spend Sorcery Points for Metamagic or Flexible Casting conversions. ' : '') + _esc(model.hint || '') + _esc(activeSlotTiers ? (activeSlotTiers + ' slot tiers are available for this character.') : 'Cantrips only are available right now.') + (pact.note ? (' ' + _esc(pact.note)) : '') + '</div>' : '') +
       _renderSlotsRow(state.charData) +
       '<div class="cs-spell-toolbar">' +
         _renderSearch(state.managerOpen ? 'Search spells you can add…' : 'Search your current spells…') +

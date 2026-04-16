@@ -81,10 +81,61 @@
       copy: 'Warlock should show a clear at-will + pact-slot rhythm: Eldritch Blast pressure, pact slot tracking, short-rest recovery, and patron identity tools all visible together.',
       checks: ['Pact Slots + slot level visible', 'Eldritch Blast loop visible', 'Invocation / patron actions visible'],
     },
+    wizard: {
+      title: 'Wizard Combat Surface',
+      copy: 'Wizard should read as a prepared-caster control desk: spell slot tiers, prepared tool selection, Arcane Recovery cadence, and school subclass identity all visible.',
+      checks: ['Prepared spell lane visible', 'Arcane Recovery surfaced', 'School subclass tools visible'],
+    },
   };
 
 
   const CUSTOM_CLASS_ACTIONS = {
+    barbarian: {
+      actions: [
+        {
+          key: 'rage',
+          name: 'Rage',
+          summary: 'Use your bonus action to enter Rage, then anchor turns around frontline pressure and physical durability.',
+          actionType: 'bonus',
+          resourceName: 'Rage',
+          resourceSummary: 'Spend 1 Rage use',
+          range: 'Self',
+          tags: ['Barbarian', 'Core Loop'],
+        },
+        {
+          key: 'reckless attack',
+          name: 'Reckless Attack',
+          summary: 'Opt into advantage on your melee attacks this turn, accepting easier incoming hits in return.',
+          actionType: 'special',
+          resourceName: '',
+          resourceSummary: 'Risk / reward attack rider',
+          range: 'Melee weapon',
+          tags: ['Barbarian', 'Offense'],
+        },
+        {
+          key: 'danger sense',
+          name: 'Danger Sense',
+          summary: 'Track this as a passive defensive rider for visible effects; keep it in mind when saves decide the round.',
+          actionType: 'passive',
+          resourceName: '',
+          resourceSummary: 'Passive defense',
+          range: 'Self',
+          tags: ['Barbarian', 'Defense'],
+        },
+      ],
+      subclassActions: {
+        berserker: [
+          { key: 'frenzy', name: 'Frenzy', summary: 'Upgrade your rage turn sequence into heavier offense when the encounter demands immediate pressure.', actionType: 'special', resourceName: 'Rage', tags: ['Berserker', 'Burst'] },
+          { key: 'retaliation', name: 'Retaliation', summary: 'Use your reaction to strike back when a nearby enemy hits you and keep tempo in your favor.', actionType: 'reaction', resourceName: '', tags: ['Berserker', 'Reaction'] },
+        ],
+        'totem warrior': [
+          { key: 'totem spirit', name: 'Totem Spirit', summary: 'Your totem choice changes rage behavior and defensive posture; keep that rider visible each fight.', actionType: 'passive', resourceName: 'Rage', tags: ['Totem Warrior', 'Stance'] },
+        ],
+        'world tree': [
+          { key: 'branches of the world tree', name: 'Branches of the World Tree', summary: 'Use your subclass lane to influence positioning, reach, or control while raging.', actionType: 'special', resourceName: 'Rage', tags: ['World Tree', 'Control'] },
+        ],
+      },
+    },
     fighter: {
       actions: [
         {
@@ -582,6 +633,57 @@
         'great-old-one-patron': [
           { key: 'awakened mind', name: 'Awakened Mind', summary: 'Use silent telepathy for scouting, coordination, and social pressure.', actionType: 'special', resourceName: '', tags: ['GOO', 'Telepathy'] },
           { key: 'entropic ward', name: 'Entropic Ward', summary: 'Reaction defense that bends attack flow and creates your counter-pressure window.', actionType: 'reaction', resourceName: 'Short Rest feature', tags: ['GOO', 'Defense'] },
+        ],
+      },
+    },
+    wizard: {
+      actions: [
+        {
+          key: 'arcane recovery',
+          name: 'Arcane Recovery',
+          summary: 'On a short rest, recover expended spell slot value so your prepared-caster engine stays online through long adventuring days.',
+          actionType: 'special',
+          resourceName: 'Arcane Recovery',
+          resourceSummary: 'Short-rest recovery feature',
+          range: 'Self / rest phase',
+          tags: ['Wizard', 'Recovery'],
+        },
+        {
+          key: 'ritual adept',
+          name: 'Ritual Casting',
+          summary: 'Cast eligible rituals without spending slots when you have the spell prepared and time to perform it.',
+          actionType: 'special',
+          resourceName: '',
+          resourceSummary: 'No slot spend for ritual casts',
+          range: 'Spell-dependent',
+          tags: ['Wizard', 'Utility'],
+        },
+        {
+          key: 'signature spells',
+          name: 'Signature Spells',
+          summary: 'Treat your signature picks as always-ready, high-efficiency combat options once unlocked.',
+          actionType: 'passive',
+          resourceName: '',
+          resourceSummary: 'High-level wizard feature',
+          range: 'Spell-dependent',
+          tags: ['Wizard', 'Capstone'],
+        },
+      ],
+      subclassActions: {
+        abjurer: [
+          { key: 'arcane ward', name: 'Arcane Ward', summary: 'Keep your ward pool active to absorb damage before it reaches your hit points.', actionType: 'reaction', resourceName: 'Arcane Ward', tags: ['Abjurer', 'Defense'] },
+        ],
+        diviner: [
+          { key: 'portent', name: 'Portent', summary: 'Replace key d20 outcomes with your stored portent rolls when tempo and certainty matter most.', actionType: 'reaction', resourceName: 'Portent', tags: ['Diviner', 'Control'] },
+        ],
+        evoker: [
+          { key: 'sculpt spells', name: 'Sculpt Spells', summary: 'Shape area spells to preserve ally positioning while maintaining blast pressure.', actionType: 'special', resourceName: '', tags: ['Evoker', 'Area Control'] },
+        ],
+        illusionist: [
+          { key: 'improved minor illusion', name: 'Improved Minor Illusion', summary: 'Use upgraded illusion utility to control attention, terrain reads, and tactical misdirection.', actionType: 'action', resourceName: '', tags: ['Illusionist', 'Utility'] },
+        ],
+        necromancer: [
+          { key: 'grim harvest', name: 'Grim Harvest', summary: 'Convert successful spell takedowns into sustain and keep your spell tempo alive in extended fights.', actionType: 'passive', resourceName: '', tags: ['Necromancer', 'Sustain'] },
         ],
       },
     },
