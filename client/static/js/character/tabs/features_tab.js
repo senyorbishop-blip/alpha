@@ -391,8 +391,8 @@
     if (!playbook && !uniqueResources.length) {
       return `<section class="cs-overview-section">
         <div class="cs-overview-section-title">Class Guide</div>
-        <div class="cs-overview-copy">This guide gives a quick feel for how the class usually plays and which resources matter most in moment-to-moment play.</div>
-        <div class="cs-empty-state compact"><span>No class playbook guidance is available yet.</span></div>
+        <div class="cs-overview-copy">Use this area for quick class context and key resources.</div>
+        <div class="cs-empty-state compact"><span>Class-specific guidance is not available for this build yet.</span></div>
       </section>`;
     }
     const checklist = (playbook && Array.isArray(playbook.verify) ? playbook.verify : ['Feature text', 'Combat / magic surface']).map(function (item) {
@@ -406,19 +406,19 @@
       : '<div class="cs-empty-state compact"><span>No tracked resource hooks surfaced for this class yet.</span></div>';
     return `<section class="cs-overview-section">
       <div class="cs-overview-section-title">Class Guide</div>
-      <div class="cs-overview-copy">Use this class guide to understand the usual rhythm of ${_esc(classLabel || 'the build')}.</div>
+      <div class="cs-overview-copy">Quick reference for how ${_esc(classLabel || 'this build')} plays in live turns.</div>
       <div class="cs-playbook-grid">
         <div class="cs-playbook-card highlight">
-          <div class="cs-playbook-eyebrow">Role / loop</div>
+          <div class="cs-playbook-eyebrow">Core role</div>
           <div class="cs-playbook-title">${_esc(classLabel || 'Current class')}</div>
-          <div class="cs-playbook-copy">${_esc((playbook && playbook.role ? playbook.role + ' — ' : '') + (playbook && playbook.loop ? playbook.loop : 'Use the sheet, action, and magic surfaces together and note what still feels disconnected.'))}</div>
+          <div class="cs-playbook-copy">${_esc((playbook && playbook.role ? playbook.role + ' — ' : '') + (playbook && playbook.loop ? playbook.loop : 'Use features, actions, and spells together during your turn.'))}</div>
         </div>
         <div class="cs-playbook-card">
-          <div class="cs-playbook-eyebrow">Usually watch</div>
+          <div class="cs-playbook-eyebrow">Key checks</div>
           <div class="cs-playbook-chip-row">${checklist}</div>
         </div>
         <div class="cs-playbook-card">
-          <div class="cs-playbook-eyebrow">Start here</div>
+          <div class="cs-playbook-eyebrow">First steps</div>
           <ol class="cs-playbook-list">${order}</ol>
         </div>
         <div class="cs-playbook-card">
@@ -513,7 +513,7 @@
     return `<section class="cs-overview-section cs-feature-controls-section">
       <div class="cs-overview-section-title">Features & Traits</div>
       ${_renderSurfaceNavButtons()}
-      <div class="cs-overview-copy">Each row shows the rules-first summary up front, including <strong>When it matters</strong> in play. Open a feature only when you want the full text.</div>
+      <div class="cs-overview-copy">Each row starts with a short rules summary. Open any feature card to view full details.</div>
       <div class="cs-feature-toolbar">
         <input type="search" class="cs-feature-search" data-feature-search placeholder="Search features, traits, feats, resources…" aria-label="Search features" />
         <div class="cs-feature-filter-row" role="tablist" aria-label="Feature filters">
