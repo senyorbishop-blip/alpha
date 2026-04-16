@@ -17,7 +17,7 @@ router = APIRouter()
 
 @router.post("/api/session/create")
 async def api_create_session(request: Request):
-    return await create_session_response(await request.json())
+    return await create_session_response(request, await request.json())
 
 
 @router.post("/api/session/join")

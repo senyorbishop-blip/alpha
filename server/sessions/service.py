@@ -132,10 +132,13 @@ def _sync_player_state_from_profile(session, user, profile: dict) -> None:
     except Exception:
         pass
 
-async def create_session_response(body: dict):
+async def create_session_response(request, body: dict):
+    auth_user = get_request_user(request)
     dm_name = str(body.get("dm_name", "Dungeon Master")).strip()[:40] or "Dungeon Master"
     session, dm = create_session(dm_name)
     session.name = str(body.get("campaign_name", "My Campaign")).strip()[:60] or "My Campaign"
+    if auth_user:
+        dm.player_key = auth_player_key(auth_user["id"])
     await save_campaign_async(session)
     return JSONResponse({
         "session_id": session.id,

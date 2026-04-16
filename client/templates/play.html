@@ -11066,7 +11066,7 @@ async function syncSessionAuthority(reason = 'runtime') {
     }
     console.info('[AuthoritySync] resolved', { reason, sessionId: SESSION_ID, authUserId: USER_ID, roleParam: ROLE, authority: _serverAuthority, uiMode: _uiViewMode });
     refreshRoleBadge();
-    if (_redirectToResolvedAuthority(reason)) return { ...data, redirected: true };
+    if (reason !== 'ws_preconnect' && _redirectToResolvedAuthority(reason)) return { ...data, redirected: true };
     return data;
   } catch (error) {
     console.warn('[AuthoritySync] error', { reason, message: error && error.message ? error.message : error });
