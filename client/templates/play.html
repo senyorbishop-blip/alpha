@@ -30047,6 +30047,16 @@ function handleLegacyMessage(msg) {
 
       const shouldTrustServerNav = !(ROLE === 'dm' && _clientNavIntent > 0 && serverNavIntent > 0 && serverNavIntent < _clientNavIntent);
       if (!shouldTrustServerNav) {
+        // Keep the canvas usable while the DM nav resync round-trip runs.
+        // Without this provisional load, reconnecting DMs can land on a blank board
+        // if the stale-intent guard rejects server navigation for this state_sync.
+        if (onLocal) {
+          const dmPoi = Object.values(pois).find(poi => poi.id === dmCtx);
+          const mapUrl = localUrl || (dmPoi && dmPoi.local_map_url);
+          if (mapUrl) loadMapImage(mapUrl, true);
+        } else if (_worldMapImageUrl) {
+          loadMapImage(_worldMapImageUrl, true);
+        }
         setTimeout(_resyncDmMapNav, 0);
       } else {
         if (dmCtx !== undefined) _dmMapContext = dmCtx;

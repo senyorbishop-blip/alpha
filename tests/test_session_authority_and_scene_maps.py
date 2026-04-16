@@ -93,6 +93,18 @@ def test_play_html_uses_authoritative_token_projection_context_helper():
     assert "const drawCtx = _getAuthoritativeTokenDrawContext();" in source
 
 
+def test_state_sync_stale_dm_nav_guard_keeps_map_loaded():
+    source = Path("client/templates/play.html").read_text(encoding="utf-8")
+    anchor = "if (!shouldTrustServerNav) {"
+    start = source.index(anchor)
+    end = source.index("} else {", start)
+    guard_body = source[start:end]
+    assert "if (onLocal) {" in guard_body
+    assert "loadMapImage(mapUrl, true);" in guard_body
+    assert "else if (_worldMapImageUrl) {" in guard_body
+    assert "loadMapImage(_worldMapImageUrl, true);" in guard_body
+
+
 def test_viewer_state_includes_dm_scene_context_tokens():
     session = Session(id="VIEWER-CTX")
     dm = User(id="dm-user", name="DM", role="dm")
