@@ -49,13 +49,85 @@ def _normalize_list(values: Any) -> list[str]:
     return out
 
 
+def _normalize_active_summon_entry(raw: Any) -> dict[str, Any] | None:
+    if not isinstance(raw, dict):
+        return None
+    source = copy.deepcopy(raw.get("source")) if isinstance(raw.get("source"), dict) else {}
+    source_class = _safe_lower_str(raw.get("sourceClassId") or source.get("classId"))
+    source_subclass = _safe_lower_str(raw.get("sourceSubclassId") or source.get("subclassId"))
+    source_feature = _safe_lower_str(raw.get("sourceFeatureId") or source.get("featureId"))
+    summon_group_id = _safe_lower_str(raw.get("summonGroupId") or source.get("variantGroup"))
+    template_id = _safe_lower_str(raw.get("templateId") or raw.get("summonTemplateId") or raw.get("id"))
+    variant_id = _safe_lower_str(raw.get("variantId") or raw.get("variant") or template_id)
+    token_id = str(raw.get("tokenId") or "").strip()
+    owner_user_id = str(raw.get("ownerUserId") or (raw.get("owner") or {}).get("userId") or "").strip()
+    owner_profile_id = str(raw.get("ownerProfileId") or (raw.get("owner") or {}).get("profileId") or "").strip()
+    map_context = str(raw.get("mapContext") or raw.get("sceneId") or "").strip()[:80]
+    created_at = raw.get("createdAt", raw.get("spawnedAt"))
+    updated_at = raw.get("updatedAt", created_at)
+    status = _safe_lower_str(raw.get("status") or "active") or "active"
+    try:
+        max_active = max(0, int(raw.get("maxActive")))
+    except Exception:
+        max_active = None
+    normalized = {
+        "id": str(raw.get("id") or "").strip() or template_id or token_id,
+        "templateId": template_id,
+        "summonTemplateId": template_id,
+        "summonGroupId": summon_group_id,
+        "variantId": variant_id,
+        "variant": variant_id,
+        "sourceClassId": source_class,
+        "sourceSubclassId": source_subclass,
+        "sourceFeatureId": source_feature,
+        "ownerUserId": owner_user_id,
+        "ownerProfileId": owner_profile_id,
+        "tokenId": token_id,
+        "sceneId": map_context,
+        "mapContext": map_context,
+        "createdAt": created_at,
+        "updatedAt": updated_at,
+        "status": status,
+        "replaceOnResummon": bool(raw.get("replaceOnResummon")),
+        "maxActive": max_active,
+        "source": source,
+    }
+    if isinstance(raw.get("actor"), dict):
+        normalized["actor"] = copy.deepcopy(raw.get("actor"))
+    return normalized
+
+
+def _normalize_active_summons(src: dict[str, Any]) -> list[dict[str, Any]]:
+    rows: list[Any] = []
+    if isinstance(src.get("activeSummons"), list):
+        rows.extend(list(src.get("activeSummons") or []))
+    # Backward compatibility: single active summon slot used in earlier passes.
+    for legacy_key in ("activeSummon", "active", "currentSummon"):
+        legacy = src.get(legacy_key)
+        if isinstance(legacy, dict):
+            rows.append(legacy)
+    out: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    for raw in rows:
+        normalized = _normalize_active_summon_entry(raw)
+        if not normalized:
+            continue
+        row_id = str(normalized.get("id") or "").strip()
+        dedupe_key = row_id or str(normalized.get("tokenId") or "").strip() or str(normalized.get("templateId") or "").strip()
+        if not dedupe_key or dedupe_key in seen_ids:
+            continue
+        seen_ids.add(dedupe_key)
+        out.append(normalized)
+    return out
+
+
 def normalize_summon_state(raw: Any) -> dict[str, Any]:
     base = default_summon_state()
     src = raw if isinstance(raw, dict) else {}
     base["unlockedTemplates"] = _normalize_list(src.get("unlockedTemplates"))
     base["unlockedGroups"] = _normalize_list(src.get("unlockedGroups"))
     base["selectedVariants"] = _normalize_selected_variants(src.get("selectedVariants"))
-    base["activeSummons"] = list(src.get("activeSummons")) if isinstance(src.get("activeSummons"), list) else []
+    base["activeSummons"] = _normalize_active_summons(src)
     base["rules"] = copy.deepcopy(src.get("rules")) if isinstance(src.get("rules"), dict) else {}
     base["lastUpdatedFromFeatures"] = _normalize_list(src.get("lastUpdatedFromFeatures"))
     return base

@@ -721,7 +721,6 @@
           `Command model: ${_firstText(entry.commandModelSummary, 'Runtime command model pending.')}`,
           `Active count: ${activeCount}/${maxActive}`,
           entry.replaceOnResummon ? 'Re-summoning will replace an existing summon.' : '',
-          'Summon runtime is not implemented yet in this pass.',
         ].filter(Boolean).join('\n\n'),
         summonAction: entry,
       };
@@ -1318,6 +1317,8 @@
       return 'Use';
     }());
     const showUseButton = _canUseAction(action, kind);
+    const activeSummons = _safeArray(action && action.summonAction && action.summonAction.activeSummons);
+    const showDismissButton = action && action.source === 'summon_action' && activeSummons.length > 0;
     const disabledReason = action.disabledReason || (resourceState.exhausted ? `Out of uses${resourceState.rechargeSource ? ` · Recharges on ${resourceState.rechargeSource}` : ''}` : 'Unavailable');
     return `<div class="cs-action-row" tabindex="0" role="button" data-action-name="${_esc(action.name || '')}" aria-label="${_esc(action.name || 'Action')} details">
       <div class="cs-action-icon" aria-hidden="true">${_esc(_actionIcon(action))}</div>
@@ -1334,8 +1335,9 @@
           return `<div class="cs-action-lane"><span class="cs-action-lane-label">${_esc(lane.label)}</span><span class="cs-action-lane-value">${_esc(lane.value || '—')}</span></div>`;
         }).join('')}</div>
         <div class="cs-action-bestuse">${_esc(bestUse)}</div>
-        ${(showUseButton || resourceState.exhausted || action.disabled) ? `<div class="cs-action-controls" style="margin-top:.55rem;display:flex;gap:.4rem;flex-wrap:wrap;">
+        ${(showUseButton || resourceState.exhausted || action.disabled || showDismissButton) ? `<div class="cs-action-controls" style="margin-top:.55rem;display:flex;gap:.4rem;flex-wrap:wrap;">
           <button type="button" class="cs-feature-inspect" data-action-use="${_esc(String(action.id || action.name || ''))}" data-action-source="${_esc(String(action.source || 'weapon'))}" ${(showUseButton ? '' : `disabled title="${_esc(disabledReason)}"`)}>${_esc(useLabel)}</button>
+          ${showDismissButton ? `<button type="button" class="cs-feature-inspect" data-action-dismiss="${_esc(String(action.id || action.name || ''))}" data-action-source="${_esc(String(action.source || 'weapon'))}">Dismiss</button>` : ''}
         </div>` : ''}
       </div>
       <div class="cs-action-side">${econ.map(_econPip).join('')}</div>
@@ -2120,6 +2122,48 @@
           const label = action && action.name ? action.name : 'Action';
           const cost = action && (action.resourceSummary || action.resourceName) ? ` — ${action.resourceSummary || action.resourceName}` : '';
           global.showToast(`${label} triggered${cost}`);
+        }
+        return;
+      }
+      const dismissBtn = e.target.closest('[data-action-dismiss]');
+      if (dismissBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const actionId = String(dismissBtn.getAttribute('data-action-dismiss') || '');
+        const action = _safeArray(model && model.summonActions).find(function (entry) { return String(entry && entry.id || '') === actionId; });
+        const summonMeta = action && action.summonAction && typeof action.summonAction === 'object' ? action.summonAction : {};
+        const activeRows = _safeArray(summonMeta.activeSummons).filter(function (row) { return row && typeof row === 'object'; });
+        if (!activeRows.length) {
+          if (typeof global.showToast === 'function') global.showToast('No active summon to dismiss.');
+          return;
+        }
+        let selected = activeRows[0];
+        if (activeRows.length > 1 && typeof global.prompt === 'function') {
+          const menu = activeRows.map(function (row, i) { return `${i + 1}. ${_firstText(row.variantName, row.variantId, 'Summon')} (${_firstText(row.status, 'active')})`; }).join('\n');
+          const answer = String(global.prompt(`Choose summon to dismiss:\n${menu}\n\nType number or active id/token id:`, '1') || '').trim();
+          const byIndex = parseInt(answer, 10);
+          if (Number.isFinite(byIndex) && byIndex >= 1 && byIndex <= activeRows.length) {
+            selected = activeRows[byIndex - 1];
+          } else if (answer) {
+            const byId = activeRows.find(function (row) { return String(row.id || '') === answer || String(row.tokenId || '') === answer; });
+            selected = byId || selected;
+          }
+        }
+        if (typeof global.sendWS === 'function') {
+          global.sendWS({
+            type: 'summon_runtime_dismiss',
+            payload: {
+              action_id: actionId,
+              profile_id: _firstText(model && model.charData && model.charData.id, model && model.charData && model.charData.charId, ''),
+              summon_group_id: _firstText(summonMeta.summonGroupId, ''),
+              source_feature_id: _firstText(summonMeta.sourceFeatureId, ''),
+              active_id: _firstText(selected && selected.id, ''),
+              token_id: _firstText(selected && selected.tokenId, ''),
+            },
+          });
+          if (typeof global.showToast === 'function') global.showToast(`Dismissing ${_firstText(selected && selected.variantName, selected && selected.variantId, 'summon')}...`);
+        } else if (typeof global.showToast === 'function') {
+          global.showToast('Dismiss failed: websocket runtime unavailable.');
         }
         return;
       }
