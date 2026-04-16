@@ -1,4 +1,4 @@
-"""Runtime summon orchestration (Pass C Beast Master vertical slice)."""
+"""Runtime summon orchestration (Pass D: Beast Master + Warlock familiar + Tinker mechanist)."""
 from __future__ import annotations
 
 import copy
@@ -72,6 +72,96 @@ _BEAST_VARIANTS = {
     },
 }
 
+_WARLOCK_FAMILIAR_VARIANTS = {
+    "warlock-chain-imp": {
+        "ac": 13,
+        "hp": 10,
+        "movement": {"walk": 20, "fly": 40},
+        "senses": {"darkvision": 120},
+        "size": "tiny",
+        "traits": ["Devil's Sight", "Shapechanger (Raven/Rat/Spider)"],
+        "actions": [
+            {
+                "id": "sting",
+                "name": "Sting",
+                "toHit": "+5",
+                "damage": "1d4+3 piercing",
+                "rider": "Poison save (DC 11).",
+            }
+        ],
+    },
+    "warlock-chain-pseudodragon": {
+        "ac": 13,
+        "hp": 7,
+        "movement": {"walk": 15, "fly": 60},
+        "senses": {"blindsight": 10, "darkvision": 60},
+        "size": "tiny",
+        "traits": ["Keen Senses", "Limited Telepathy"],
+        "actions": [
+            {
+                "id": "sting",
+                "name": "Sting",
+                "toHit": "+4",
+                "damage": "1d4+2 piercing",
+                "rider": "Poison save (DC 11) vs poisoned/unconscious.",
+            }
+        ],
+    },
+    "warlock-chain-quasit": {
+        "ac": 13,
+        "hp": 7,
+        "movement": {"walk": 40},
+        "senses": {"darkvision": 120},
+        "size": "tiny",
+        "traits": ["Magic Resistance", "Shapechanger (Bat/Centipede/Toad)"],
+        "actions": [
+            {
+                "id": "claws",
+                "name": "Claws",
+                "toHit": "+4",
+                "damage": "1d4+3 slashing",
+                "rider": "Poison save (DC 10).",
+            }
+        ],
+    },
+    "warlock-chain-sprite": {
+        "ac": 15,
+        "hp": 2,
+        "movement": {"walk": 10, "fly": 40},
+        "senses": {"darkvision": 60},
+        "size": "tiny",
+        "traits": ["Heart Sight", "Fey Step profile"],
+        "actions": [
+            {
+                "id": "shortbow",
+                "name": "Shortbow",
+                "toHit": "+6",
+                "damage": "1 piercing",
+                "rider": "Poison save (DC 10) vs poisoned.",
+            }
+        ],
+    },
+}
+
+_TINKER_MECHANIST_FRAME = {
+    "ac_base": 13,
+    "hp_base": 10,
+    "hp_per_level": 5,
+    "movement": {"walk": 30},
+    "senses": {"darkvision": 60},
+    "size": "medium",
+    "traits": ["Construct Resilience", "Command Relay Link"],
+    "actions": [
+        {
+            "id": "force_slam",
+            "name": "Force Slam",
+            "toHit": "PB + INT",
+            "damage": "1d8 + PB force",
+            "rider": "On hit, can shove 5 ft if target fails STR save.",
+        }
+    ],
+}
+
 
 def _ability_mod(value: Any) -> int:
     return (_safe_int(value, 10) - 10) // 2
@@ -127,19 +217,39 @@ def _find_active_profile(session: Session, user: User, requested_profile_id: str
     return owner_key, -1, {}
 
 
-def _resolve_variant(template_id: str, selected_variant: str, native_document: dict[str, Any]) -> tuple[str, dict[str, Any] | None, str]:
+def _resolve_variant(
+    *,
+    template_id: str,
+    selected_variant: str,
+    summon_group_id: str,
+    native_document: dict[str, Any],
+    unlocked: set[str],
+) -> tuple[str, dict[str, Any] | None, str]:
     requested = str(selected_variant or template_id or "").strip().lower()
-    template = get_summon_template(requested)
-    if template:
+    template = get_summon_template(requested) if requested else None
+    if template and requested in unlocked:
         return requested, template, ""
 
+    group_id = str(summon_group_id or (template or {}).get("variantGroup") or "").strip().lower()
     summons = native_document.get("summons") if isinstance(native_document.get("summons"), dict) else {}
     selected_variants = summons.get("selectedVariants") if isinstance(summons.get("selectedVariants"), dict) else {}
-    fallback = str(selected_variants.get("ranger-primal-beast") or "").strip().lower()
-    if fallback:
+    fallback = str(selected_variants.get(group_id) or "").strip().lower()
+    if fallback and fallback in unlocked:
         template = get_summon_template(fallback)
         if template:
             return fallback, template, ""
+
+    if group_id:
+        group_options = sorted(
+            tid
+            for tid in unlocked
+            if str((get_summon_template(tid) or {}).get("variantGroup") or "").strip().lower() == group_id
+        )
+        if group_options:
+            first = group_options[0]
+            template = get_summon_template(first)
+            if template:
+                return first, template, ""
 
     return "", None, "invalid_variant"
 
@@ -208,6 +318,115 @@ def resolve_beast_master_actor(*, native_document: dict[str, Any], template: dic
         },
     }
 
+def resolve_warlock_familiar_actor(*, native_document: dict[str, Any], template: dict[str, Any], selected_variant: str, owner_user: User, profile_id: str) -> dict[str, Any]:
+    primary = _resolve_primary_class(native_document)
+    class_id = str(primary.get("classId") or primary.get("id") or "").strip().lower()
+    class_level = _safe_int(primary.get("level"), 1, minimum=1, maximum=20)
+    if class_id != "warlock":
+        raise ValueError("warlock_only")
+
+    familiar = _WARLOCK_FAMILIAR_VARIANTS.get(selected_variant)
+    if not isinstance(familiar, dict):
+        raise ValueError("invalid_variant")
+
+    token_name = str(template.get("tokenName") or template.get("displayName") or "Familiar").strip()
+    hp = max(1, _safe_int(familiar.get("hp"), 1, minimum=1))
+    ac = max(1, _safe_int(familiar.get("ac"), 10, minimum=1))
+    movement = copy.deepcopy(familiar.get("movement") or template.get("movement") or {"walk": 30})
+    senses = copy.deepcopy(familiar.get("senses") or template.get("senses") or {})
+    return {
+        "id": f"summon-{owner_user.id}-{int(time.time() * 1000)}",
+        "templateId": str(template.get("id") or selected_variant),
+        "variantId": selected_variant,
+        "variantName": str(template.get("displayName") or token_name),
+        "name": token_name,
+        "actorType": "familiar",
+        "summonCategory": "familiar",
+        "size": str(familiar.get("size") or template.get("size") or "tiny"),
+        "movement": movement,
+        "senses": senses,
+        "ac": ac,
+        "hp": {"current": hp, "max": hp},
+        "attacks": copy.deepcopy(familiar.get("actions") or []),
+        "traits": copy.deepcopy(familiar.get("traits") or []),
+        "proficiencyBonus": _proficiency_bonus(class_level),
+        "levelSource": {
+            "classId": "warlock",
+            "subclassId": str(primary.get("subclassId") or "").strip().lower(),
+            "classLevel": class_level,
+            "featureId": str(template.get("sourceFeatureId") or "warlock-pact-boon"),
+            "featureName": "Pact Boon (Pact of the Chain)",
+        },
+        "owner": {"userId": str(owner_user.id), "userName": str(owner_user.name), "profileId": str(profile_id or "")},
+        "source": {
+            "classId": str(template.get("sourceClassId") or "warlock"),
+            "subclassId": str(template.get("sourceSubclassId") or ""),
+            "featureId": str(template.get("sourceFeatureId") or "warlock-pact-boon"),
+            "variantGroup": str(template.get("variantGroup") or "warlock-pact-chain-familiar"),
+        },
+        "tokenVisual": {
+            "color": "#9f87ff",
+            "shape": "circle",
+            "image_url": str(template.get("imageUrl") or "").strip() or None,
+            "fallbackEmoji": "🦇",
+        },
+    }
+
+
+def resolve_tinker_mechanist_actor(*, native_document: dict[str, Any], template: dict[str, Any], selected_variant: str, owner_user: User, profile_id: str) -> dict[str, Any]:
+    primary = _resolve_primary_class(native_document)
+    class_id = str(primary.get("classId") or primary.get("id") or "").strip().lower()
+    subclass_id = str(primary.get("subclassId") or "").strip().lower()
+    class_level = _safe_int(primary.get("level"), 1, minimum=1, maximum=20)
+    if class_id != "tinker" or subclass_id != "mechanist":
+        raise ValueError("tinker_mechanist_only")
+    if selected_variant != "tinker-mechanist-companion-frame":
+        raise ValueError("invalid_variant")
+
+    ability_scores = ((native_document.get("abilities") or {}).get("scores") or {}) if isinstance(native_document.get("abilities"), dict) else {}
+    int_mod = _ability_mod(ability_scores.get("int", 10))
+    proficiency = _proficiency_bonus(class_level)
+    hp = max(5, _safe_int(_TINKER_MECHANIST_FRAME["hp_base"], 10) + (_safe_int(_TINKER_MECHANIST_FRAME["hp_per_level"], 5) * class_level) + int_mod)
+    ac = max(10, _safe_int(_TINKER_MECHANIST_FRAME["ac_base"], 13) + max(0, proficiency - 2))
+    token_name = str(template.get("tokenName") or template.get("displayName") or "Companion Frame").strip()
+    return {
+        "id": f"summon-{owner_user.id}-{int(time.time() * 1000)}",
+        "templateId": str(template.get("id") or selected_variant),
+        "variantId": selected_variant,
+        "variantName": str(template.get("displayName") or token_name),
+        "name": token_name,
+        "actorType": "construct",
+        "summonCategory": "construct",
+        "size": str(_TINKER_MECHANIST_FRAME.get("size") or template.get("size") or "medium"),
+        "movement": copy.deepcopy(_TINKER_MECHANIST_FRAME.get("movement") or template.get("movement") or {"walk": 30}),
+        "senses": copy.deepcopy(_TINKER_MECHANIST_FRAME.get("senses") or template.get("senses") or {}),
+        "ac": ac,
+        "hp": {"current": hp, "max": hp},
+        "attacks": copy.deepcopy(_TINKER_MECHANIST_FRAME.get("actions") or []),
+        "traits": copy.deepcopy(_TINKER_MECHANIST_FRAME.get("traits") or []),
+        "proficiencyBonus": proficiency,
+        "levelSource": {
+            "classId": "tinker",
+            "subclassId": "mechanist",
+            "classLevel": class_level,
+            "featureId": str(template.get("sourceFeatureId") or "mechanist-companion-frame"),
+            "featureName": "Companion Frame",
+        },
+        "owner": {"userId": str(owner_user.id), "userName": str(owner_user.name), "profileId": str(profile_id or "")},
+        "source": {
+            "classId": str(template.get("sourceClassId") or "tinker"),
+            "subclassId": str(template.get("sourceSubclassId") or "mechanist"),
+            "featureId": str(template.get("sourceFeatureId") or "mechanist-companion-frame"),
+            "variantGroup": str(template.get("variantGroup") or "tinker-mechanist-frame"),
+        },
+        "tokenVisual": {
+            "color": "#6fd7ff",
+            "shape": "square",
+            "image_url": str(template.get("imageUrl") or "").strip() or None,
+            "fallbackEmoji": "⚙️",
+        },
+    }
+
 
 def _summoner_anchor_token(session: Session, user: User, map_context: str):
     owned = []
@@ -252,13 +471,17 @@ def _notes_for_actor(actor: dict[str, Any]) -> str:
         attack_lines.append(f"{row.get('name', 'Attack')} ({row.get('damage', '')})")
     attack_text = "; ".join(attack_lines) if attack_lines else "Bestial Strike"
     hp = (actor.get("hp") or {}) if isinstance(actor.get("hp"), dict) else {}
+    title = str(actor.get("summonCategory") or actor.get("actorType") or "summon").replace("-", " ").title()
+    traits = actor.get("traits") if isinstance(actor.get("traits"), list) else []
+    traits_text = ", ".join(str(t) for t in traits if str(t).strip())
     return (
-        f"Beast Master Companion\n"
-        f"Variant: {actor.get('variantName', actor.get('name', 'Primal Beast'))}\n"
+        f"{title}\n"
+        f"Variant: {actor.get('variantName', actor.get('name', 'Summon'))}\n"
         f"AC: {actor.get('ac', '—')}\n"
         f"HP: {hp.get('current', '—')}/{hp.get('max', '—')}\n"
         f"Movement: {movement_text}\n"
         f"Actions: {attack_text}\n"
+        f"Traits: {traits_text or '—'}\n"
         f"Owner: {((actor.get('owner') or {}).get('userName') or '')}"
     )
 
@@ -300,21 +523,49 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
     unlocked = {str(v).strip().lower() for v in (summons.get("unlockedTemplates") or []) if str(v).strip()}
 
     requested_template = str(payload.get("summon_template_id") or payload.get("summonTemplateId") or "").strip().lower()
+    requested_group = str(payload.get("summon_group_id") or payload.get("summonGroupId") or "").strip().lower()
     requested_variant = str(payload.get("selected_variant") or payload.get("selectedVariant") or payload.get("selectedVariantId") or requested_template).strip().lower()
-    selected_variant, template, variant_error = _resolve_variant(requested_template, requested_variant, native)
+    selected_variant, template, variant_error = _resolve_variant(
+        template_id=requested_template,
+        selected_variant=requested_variant,
+        summon_group_id=requested_group,
+        native_document=native,
+        unlocked=unlocked,
+    )
     if variant_error or not template:
         return {"ok": False, "error": variant_error or "invalid_variant"}
     if selected_variant not in unlocked:
         return {"ok": False, "error": "summon_not_unlocked"}
 
     try:
-        actor = resolve_beast_master_actor(
-            native_document=native,
-            template=template,
-            selected_variant=selected_variant,
-            owner_user=user,
-            profile_id=str(profile.get("id") or requested_profile_id or ""),
-        )
+        source_class = str(template.get("sourceClassId") or "").strip().lower()
+        source_subclass = str(template.get("sourceSubclassId") or "").strip().lower()
+        if source_class == "ranger" and source_subclass == "beast-master":
+            actor = resolve_beast_master_actor(
+                native_document=native,
+                template=template,
+                selected_variant=selected_variant,
+                owner_user=user,
+                profile_id=str(profile.get("id") or requested_profile_id or ""),
+            )
+        elif source_class == "warlock" and str(template.get("summonCategory") or "").strip().lower() == "familiar":
+            actor = resolve_warlock_familiar_actor(
+                native_document=native,
+                template=template,
+                selected_variant=selected_variant,
+                owner_user=user,
+                profile_id=str(profile.get("id") or requested_profile_id or ""),
+            )
+        elif source_class == "tinker" and source_subclass == "mechanist":
+            actor = resolve_tinker_mechanist_actor(
+                native_document=native,
+                template=template,
+                selected_variant=selected_variant,
+                owner_user=user,
+                profile_id=str(profile.get("id") or requested_profile_id or ""),
+            )
+        else:
+            return {"ok": False, "error": "runtime_not_live_for_class"}
     except ValueError as exc:
         return {"ok": False, "error": str(exc)}
 
@@ -329,8 +580,14 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
     elif token_size == "medium":
         sw = sh = 40.0
 
+    summon_category = str(actor.get("summonCategory") or "").strip().lower()
+    icon = "🐾"
+    if summon_category == "familiar":
+        icon = "🦇"
+    elif summon_category in {"construct", "deployable", "device", "turret"}:
+        icon = "⚙️"
     token_payload = {
-        "name": f"🐾 {actor.get('name', 'Primal Beast')}",
+        "name": f"{icon} {actor.get('name', 'Summon')}",
         "x": sx,
         "y": sy,
         "width": sw,
@@ -345,6 +602,7 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
         "faction": "allies",
         "notes": _notes_for_actor(actor),
         "image_url": ((actor.get("tokenVisual") or {}).get("image_url") or None),
+        "monster_type": summon_category or "summon",
     }
 
     return {
@@ -355,6 +613,7 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
         "native_document": native,
         "template": template,
         "selected_variant": selected_variant,
+        "summon_group_id": str((template.get("variantGroup") or requested_group or "")).strip().lower(),
         "actor": actor,
         "token_payload": token_payload,
         "map_context": map_context,
