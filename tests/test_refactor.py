@@ -3546,6 +3546,16 @@ def test_runtime_bridge_reads_shell_state_from_store_first():
     for snippet in required_reads:
         assert snippet in src, f"runtime_bridge.js must prefer store-backed shell state for {snippet}"
 
+def test_runtime_bridge_keeps_play_page_query_param_fallbacks_for_ws_identity():
+    """runtime_bridge.js must still resolve session/user/role from play.html query params."""
+    bridge_path = os.path.join(PROJECT_ROOT, 'client', 'static', 'js', 'core', 'runtime_bridge.js')
+    with open(bridge_path, 'r', encoding='utf-8') as f:
+        src = f.read()
+    assert "return readQueryParam(['session_id', 'session', 'sid']);" in src
+    assert "return readQueryParam(['user_id', 'uid', 'user']);" in src
+    assert "const fromQuery = readQueryParam(['role']);" in src
+    assert "const effectiveRole = String(config.getRole() || 'viewer').toLowerCase();" in src
+
 
 
 def test_stage3_store_defines_shell_state_domains():

@@ -24,6 +24,19 @@
     return store && typeof store.set === 'function' ? store.set(path, value) : value;
   }
 
+  function readQueryParam(keys) {
+    try {
+      const search = String(global.location && global.location.search ? global.location.search : '');
+      if (!search) return '';
+      const params = new global.URLSearchParams(search);
+      for (const key of keys) {
+        const value = String(params.get(key) || '').trim();
+        if (value) return value;
+      }
+    } catch (_err) {}
+    return '';
+  }
+
   function createMessageDispatchEnv() {
     return {
       reportClientRuntimeError: pick('reportClientRuntimeError'),
@@ -36,25 +49,20 @@
       getSessionId: function () {
         const fromStore = storeGet('session.id', global.SESSION_ID || '');
         if (String(fromStore || '').trim()) return fromStore;
-        const aliasSession = (global.params && typeof global.params.get === 'function')
-          ? (global.params.get('session') || global.params.get('sid') || '')
-          : '';
-        return String(aliasSession || '').trim();
+        return readQueryParam(['session_id', 'session', 'sid']);
       },
       getUserId: function () {
         const resolved = typeof global.getEffectiveUserId === 'function' ? global.getEffectiveUserId() : '';
         const fromStore = storeGet('user.id', global.USER_ID || '');
         if (String(resolved || '').trim()) return resolved;
         if (String(fromStore || '').trim()) return fromStore;
-        const aliasUser = (global.params && typeof global.params.get === 'function')
-          ? (global.params.get('uid') || global.params.get('user') || '')
-          : '';
-        return String(aliasUser || '').trim();
+        return readQueryParam(['user_id', 'uid', 'user']);
       },
       getRole: function () {
         const resolvedRole = typeof global.getEffectiveRole === 'function' ? global.getEffectiveRole() : '';
         const fromStore = storeGet('user.role', global.ROLE || 'viewer');
-        return String(resolvedRole || fromStore || global.ROLE || 'viewer').toLowerCase();
+        const fromQuery = readQueryParam(['role']);
+        return String(resolvedRole || fromStore || fromQuery || global.ROLE || 'viewer').toLowerCase();
       },
       getSocket: function () { return storeGet('socket.instance', global.ws || null); },
       setSocket: function (value) { storeSet('socket.instance', value); global.ws = value; },
@@ -72,13 +80,14 @@
         legacy(msg);
       },
       onOpen: function () {
+        const effectiveRole = String(config.getRole() || 'viewer').toLowerCase();
         const status = global.document.getElementById('ws-status');
         if (status) status.classList.add('connected');
         if (typeof global._setWsStatus === 'function') global._setWsStatus('connected');
         storeSet('socket.connected', true);
         storeSet('socket.status', 'connected');
-        if (global.ROLE === 'dm' && typeof global._resyncDmMapNav === 'function') global.setTimeout(global._resyncDmMapNav, 0);
-        if (global.ROLE === 'dm' || global.ROLE === 'player') {
+        if (effectiveRole === 'dm' && typeof global._resyncDmMapNav === 'function') global.setTimeout(global._resyncDmMapNav, 0);
+        if (effectiveRole === 'dm' || effectiveRole === 'player') {
           if (global.AppWS && typeof global.AppWS.send === 'function') global.AppWS.send({ type: 'treasury_get', payload: {} });
           else if (typeof global.sendWS === 'function') global.sendWS({ type: 'treasury_get', payload: {} });
         }

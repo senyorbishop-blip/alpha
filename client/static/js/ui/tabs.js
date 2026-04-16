@@ -357,7 +357,9 @@
     if (doc.body?.dataset.uiTabsBound === '1') return false;
     if (doc.body) doc.body.dataset.uiTabsBound = '1';
     doc.addEventListener('click', function (event) {
-      if (!event.target.closest('#right-tab-bar')) closeAllDropdowns(env);
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (!target.closest('#right-tab-bar')) closeAllDropdowns(env);
     });
     doc.addEventListener('click', function (event) {
       if (event.defaultPrevented) return;
