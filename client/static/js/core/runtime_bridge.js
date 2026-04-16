@@ -33,9 +33,29 @@
 
   function createWsConfig() {
     return {
-      getSessionId: function () { return storeGet('session.id', global.SESSION_ID || ''); },
-      getUserId: function () { return storeGet('user.id', global.USER_ID || ''); },
-      getRole: function () { return storeGet('user.role', global.ROLE || 'viewer'); },
+      getSessionId: function () {
+        const fromStore = storeGet('session.id', global.SESSION_ID || '');
+        if (String(fromStore || '').trim()) return fromStore;
+        const aliasSession = (global.params && typeof global.params.get === 'function')
+          ? (global.params.get('session') || global.params.get('sid') || '')
+          : '';
+        return String(aliasSession || '').trim();
+      },
+      getUserId: function () {
+        const resolved = typeof global.getEffectiveUserId === 'function' ? global.getEffectiveUserId() : '';
+        const fromStore = storeGet('user.id', global.USER_ID || '');
+        if (String(resolved || '').trim()) return resolved;
+        if (String(fromStore || '').trim()) return fromStore;
+        const aliasUser = (global.params && typeof global.params.get === 'function')
+          ? (global.params.get('uid') || global.params.get('user') || '')
+          : '';
+        return String(aliasUser || '').trim();
+      },
+      getRole: function () {
+        const resolvedRole = typeof global.getEffectiveRole === 'function' ? global.getEffectiveRole() : '';
+        const fromStore = storeGet('user.role', global.ROLE || 'viewer');
+        return String(resolvedRole || fromStore || global.ROLE || 'viewer').toLowerCase();
+      },
       getSocket: function () { return storeGet('socket.instance', global.ws || null); },
       setSocket: function (value) { storeSet('socket.instance', value); global.ws = value; },
       getReconnectTimer: function () { return storeGet('socket.reconnectTimer', global.wsReconnectTimer || null); },

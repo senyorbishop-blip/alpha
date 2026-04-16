@@ -359,6 +359,22 @@
     doc.addEventListener('click', function (event) {
       if (!event.target.closest('#right-tab-bar')) closeAllDropdowns(env);
     });
+    doc.addEventListener('click', function (event) {
+      if (event.defaultPrevented) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const tabTrigger = target.closest('[data-rtab-target]');
+      if (tabTrigger) {
+        event.preventDefault();
+        switchRTab(env, tabTrigger.dataset.rtabTarget || 'party');
+        return;
+      }
+      const dropdownTrigger = target.closest('[data-rtab-dropdown]');
+      if (dropdownTrigger) {
+        event.preventDefault();
+        toggleDropdown(env, dropdownTrigger.dataset.rtabDropdown || '');
+      }
+    });
     doc.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') {
         closeAllDropdowns(env);
