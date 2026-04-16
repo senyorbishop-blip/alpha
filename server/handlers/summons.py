@@ -123,8 +123,8 @@ async def handle_summon_runtime_request(payload: dict, session: Session, user: U
         staged=False,
         image_url=token_payload.get("image_url"),
         creature_id=str(actor.get("id") or "")[:120],
-        creature_type="summon",
-        monster_type=str(token_payload.get("monster_type") or (actor.get("summonCategory") or "") or "summon"),
+        creature_type=("summon" if bool(actor.get("isCreature", True)) else "deployed_effect"),
+        monster_type=str(token_payload.get("monster_type") or (actor.get("entityKind") or actor.get("summonCategory") or "") or "summon"),
         cr="",
     )
 
@@ -147,6 +147,12 @@ async def handle_summon_runtime_request(payload: dict, session: Session, user: U
         "createdAt": time.time(),
         "updatedAt": time.time(),
         "status": "active",
+        "entityKind": str(actor.get("entityKind") or (resolved.get("template") or {}).get("entityKind") or "creature").strip().lower(),
+        "isCreature": bool(actor.get("isCreature", (resolved.get("template") or {}).get("isCreature", True))),
+        "actionSurfaceType": str(actor.get("actionSurfaceType") or (resolved.get("template") or {}).get("actionSurfaceType") or "").strip().lower(),
+        "placementRules": copy.deepcopy(actor.get("placementRules") or (resolved.get("template") or {}).get("placementRules") or {}),
+        "interactionModel": copy.deepcopy(actor.get("interactionModel") or {}),
+        "cleanupPolicy": copy.deepcopy(actor.get("cleanupPolicy") or (resolved.get("template") or {}).get("cleanupPolicy") or {}),
         "replaceOnResummon": bool((resolved.get("template") or {}).get("replaceOnResummon")),
         "maxActive": int((resolved.get("template") or {}).get("maxActive") or 1),
         "spawnedAt": time.time(),

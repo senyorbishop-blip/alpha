@@ -30312,7 +30312,8 @@ function handleLegacyMessage(msg) {
     case 'summon_runtime_result': {
       if (p.ok) {
         const tokenName = String((p.token && p.token.name) || (p.summon && p.summon.actor && p.summon.actor.name) || 'Companion').trim();
-        showToast(`${tokenName} summoned.`);
+        const isCreature = !(p.summon && p.summon.isCreature === false);
+        showToast(`${tokenName} ${isCreature ? 'summoned' : 'deployed'}.`);
       } else {
         const error = String(p.error || 'summon_failed');
         const msg = error === 'invalid_variant'
