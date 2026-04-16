@@ -44180,7 +44180,14 @@ function _executeCombatSpellCast(spell, slotLevel) {
 
 function combatQuickWeaponAttack(attackId, mode = 'base') {
   const cards = _getUnifiedQuickAttackCards();
-  const card = (cards || []).find(c => String(c.id) === String(attackId));
+  const rawId = String(attackId || '').trim();
+  const normalizedId = rawId.toLowerCase();
+  const card = (cards || []).find(c => String(c.id || '') === rawId)
+    || (cards || []).find(c => String(c.name || '').trim().toLowerCase() === normalizedId)
+    || (cards || []).find(c => {
+      const slug = String(c.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      return slug && (slug === normalizedId || ('attack-' + slug) === normalizedId);
+    });
   if (!card) { showToast('Attack not found.'); return; }
   const spend = _consumeInventoryAttackResources(card, mode);
   if (!spend.ok) {

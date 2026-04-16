@@ -1313,10 +1313,23 @@
     if (!action || kind === 'passive' || kind === 'subclass_gate') return false;
     const source = String(action.source || '').toLowerCase();
     if (source === 'feature-fallback') return false;
+    if (source === 'summon_action' && !_summonActionRuntimeSupported(action)) return false;
     if (action.disabled) return false;
     const resourceState = _resourceStateFromAction(action);
     if (resourceState.exhausted) return false;
     return true;
+  }
+
+  function _summonActionRuntimeSupported(action) {
+    const summonMeta = action && action.summonAction && typeof action.summonAction === 'object' ? action.summonAction : {};
+    const sourceClassId = String((summonMeta.sourceClassId || '').toLowerCase());
+    const sourceSubclassId = String((summonMeta.sourceSubclassId || '').toLowerCase());
+    const summonGroupId = String((summonMeta.summonGroupId || '').toLowerCase());
+    const summonTemplateId = String((summonMeta.summonTemplateId || '').toLowerCase());
+    const isBeastMaster = sourceClassId === 'ranger' && sourceSubclassId === 'beast-master';
+    const isWarlockChain = sourceClassId === 'warlock' && summonGroupId === 'warlock-pact-chain-familiar';
+    const isTinkerMechanist = sourceClassId === 'tinker' && sourceSubclassId === 'mechanist' && summonTemplateId === 'tinker-mechanist-companion-frame';
+    return !!(isBeastMaster || isWarlockChain || isTinkerMechanist);
   }
 
   function _renderActionRow(action) {
@@ -1445,7 +1458,8 @@
         card.effect
       );
       return {
-        id: String(card.id || card.name || '').trim() || ('attack-' + String(card.name || 'attack').toLowerCase().replace(/[^a-z0-9]+/g, '-')),
+        id: canonicalId || ('attack-' + fallbackId),
+        combatCardId: canonicalId || String(card.name || '').trim(),
         source: String(card.source || 'weapon').trim() || 'weapon',
         name: card.name || 'Attack',
         desc: _firstText(card.summary, card.note, card.text, 'Generated quick attack card.'),
@@ -2127,6 +2141,8 @@
         e.stopPropagation();
         const actionId = String(useBtn.getAttribute('data-action-use') || '');
         const actionSource = String(useBtn.getAttribute('data-action-source') || '');
+        const all = [].concat(model.quickAttacks, model.itemActions, model.native.actions, model.native.bonusActions, model.native.reactions, model.textAttacks, model.summonActions || []);
+        const action = all.find(function (entry) { return String(entry && entry.id || '') === actionId || String(entry && entry.name || '').toLowerCase() === actionId.toLowerCase(); });
         if (actionSource === 'summon_action') {
           const action = _safeArray(model && model.summonActions).find(function (entry) { return String(entry && entry.id || '') === actionId; });
           const summonMeta = action && action.summonAction && typeof action.summonAction === 'object' ? action.summonAction : {};
@@ -2195,10 +2211,18 @@
         }
         _pulseRowFromTrigger(useBtn);
         if (typeof global.playerUseAction === 'function') {
-          global.playerUseAction(actionSource, actionId);
+          let resolvedActionId = actionId;
+          const weaponLike = /^(weapon|equip_only|system_unarmed|attack)$/i.test(actionSource);
+          if (weaponLike && typeof global._getUnifiedQuickAttackCards === 'function') {
+            const cards = _safeArray(global._getUnifiedQuickAttackCards());
+            const hasDirect = cards.some(function (card) { return String(card && card.id || '') === resolvedActionId; });
+            if (!hasDirect) {
+              const byMapped = action && _firstText(action.combatCardId, action.name, '');
+              if (byMapped) resolvedActionId = byMapped;
+            }
+          }
+          global.playerUseAction(actionSource, resolvedActionId);
         } else if (typeof global.showToast === 'function') {
-          const all = [].concat(model.quickAttacks, model.itemActions, model.native.actions, model.native.bonusActions, model.native.reactions, model.textAttacks, model.summonActions || []);
-          const action = all.find(function (entry) { return String(entry && entry.id || '') === actionId || String(entry && entry.name || '').toLowerCase() === actionId.toLowerCase(); });
           const label = action && action.name ? action.name : 'Action';
           const cost = action && (action.resourceSummary || action.resourceName) ? ` — ${action.resourceSummary || action.resourceName}` : '';
           global.showToast(`${label} triggered${cost}`);

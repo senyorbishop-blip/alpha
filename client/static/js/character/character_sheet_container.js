@@ -12,13 +12,6 @@
 
   const TABS = [
     {
-      id: 'overview',
-      label: 'Sheet',
-      init: function (container, charData) {
-        container.innerHTML = _renderOverviewPanel(charData);
-      },
-    },
-    {
       id: 'actions',
       label: 'Actions',
       init: function (container, charData) {
@@ -158,7 +151,6 @@ function _portraitUrl(charData) {
   }
 
   function _tabCount(tabId, charData) {
-    if (tabId === 'overview') return '';
     if (tabId === 'actions') return String(_safeArray(charData.quickAttackCards).length + _nativeActionCount(charData));
     if (tabId === 'spells') return String(_safeArray(charData.rulesSpellCards).length);
     if (tabId === 'inventory') return String(_safeArray(charData.inventory).length);
@@ -709,7 +701,7 @@ function _buildSkeleton(wrapper, charData) {
     const refs = _buildSkeleton(container, charData || {});
     const initialised = {};
     _bindDetailDrawer(container);
-    _activateTab('overview', refs, charData, initialised);
+    _activateTab('actions', refs, charData, initialised);
 
     refs.tabBar.addEventListener('click', function (e) {
       const btn = e.target.closest('.cs-tab-btn');
