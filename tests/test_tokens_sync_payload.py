@@ -44,3 +44,44 @@ def test_tokens_sync_includes_corpse_states(monkeypatch):
         assert msg.get('type') == 'tokens_sync'
         payload = msg.get('payload') or {}
         assert payload.get('corpse_states') == session.corpse_states
+
+
+def test_tokens_sync_visibility_matches_state_bootstrap_filters(monkeypatch):
+    session = Session(id='TESTSYNCCTX')
+    dm = User(id='dm1', name='DM', role='dm')
+    player = User(id='pl1', name='Player', role='player')
+    session.users[dm.id] = dm
+    session.users[player.id] = player
+    session.dm_id = dm.id
+    session.set_user_subgroup_id(player.id, 'party-a', actor_id=dm.id)
+    session.set_subgroup_map_context('party-a', 'poi-inn', actor_id=dm.id)
+    session.dm_map_context = 'poi-inn'
+
+    session.tokens['tok-world'] = Token(
+        id='tok-world', name='World NPC', x=0, y=0, width=40, height=40,
+        color='#fff', shape='circle', owner_id=None, map_context='world',
+    )
+    session.tokens['tok-local'] = Token(
+        id='tok-local', name='Inn NPC', x=0, y=0, width=40, height=40,
+        color='#fff', shape='circle', owner_id=None, map_context='poi-inn',
+    )
+    session.tokens['tok-hidden'] = Token(
+        id='tok-hidden', name='Hidden NPC', x=0, y=0, width=40, height=40,
+        color='#fff', shape='circle', owner_id=None, hidden=True, map_context='poi-inn',
+    )
+
+    capture = _CaptureManager()
+    monkeypatch.setattr(common_handlers, 'manager', capture)
+    asyncio.run(common_handlers._broadcast_token_state_sync(session))
+
+    sent_by_user = {uid: msg for _sid, uid, msg in capture.sent if msg.get('type') == 'tokens_sync'}
+    assert dm.id in sent_by_user
+    assert player.id in sent_by_user
+
+    dm_tokens = set((sent_by_user[dm.id].get('payload') or {}).get('tokens', {}).keys())
+    player_tokens = set((sent_by_user[player.id].get('payload') or {}).get('tokens', {}).keys())
+    player_bootstrap_tokens = set(session.to_state_dict_for_role("player", player.id).get("tokens", {}).keys())
+
+    assert dm_tokens == {'tok-world', 'tok-local', 'tok-hidden'}
+    assert player_tokens == player_bootstrap_tokens
+    assert player_tokens == {'tok-world', 'tok-local'}
