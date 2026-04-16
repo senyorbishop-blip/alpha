@@ -9,6 +9,7 @@ at any time.  No heavy mechanics — this is pure atmosphere and interaction.
 """
 import time
 from server.session import Session, User
+from server.character.summon_runtime import prune_expired_temporary_summons
 from server.handlers.common import (
     manager, save_campaign_async,
     _apply_heal, _broadcast_token_state_sync, _sync_combatant_token_state,
@@ -193,6 +194,7 @@ async def handle_camp_rest_take_rest(payload: dict, session: Session, user: User
         rest_type = "long"
 
     healed_tokens = []
+    removed_temp_summon_tokens: list[str] = []
 
     if rest_type == "long":
         # Long rest (5e): all player tokens restored to full HP, temp HP cleared.
@@ -237,6 +239,32 @@ async def handle_camp_rest_take_rest(payload: dict, session: Session, user: User
         log_msg = "☀ Short rest — party may spend hit dice to recover HP."
         rest_label = "Short Rest"
 
+    profiles = dict(getattr(session, "char_profiles", {}) or {})
+    for owner_key, rows in list(profiles.items()):
+        if not isinstance(rows, list):
+            continue
+        bucket = list(rows)
+        changed = False
+        for idx, row in enumerate(bucket):
+            if not isinstance(row, dict):
+                continue
+            native = row.get("nativeCharacter") if isinstance(row.get("nativeCharacter"), dict) else {}
+            removed = prune_expired_temporary_summons(native, rest_type=rest_type)
+            if not removed:
+                continue
+            changed = True
+            row["nativeCharacter"] = native
+            bucket[idx] = row
+            for entry in removed:
+                tok_id = str(entry.get("tokenId") or "").strip()
+                if tok_id and tok_id in (session.tokens or {}):
+                    session.tokens.pop(tok_id, None)
+                    removed_temp_summon_tokens.append(tok_id)
+                    await manager.broadcast(session.id, {"type": "token_deleted", "payload": {"token_id": tok_id}})
+        if changed:
+            profiles[owner_key] = bucket
+    session.char_profiles = profiles
+
     session.add_log(log_msg, "camp_rest", "DM")
 
     # Sync token state across all clients if HP changed
@@ -252,6 +280,7 @@ async def handle_camp_rest_take_rest(payload: dict, session: Session, user: User
             "healed_tokens": healed_tokens,
             "item_recharge_updates": item_recharge_updates if rest_type == "long" else [],
             "message": log_msg,
+            "removed_temp_summon_tokens": removed_temp_summon_tokens,
         },
     })
 

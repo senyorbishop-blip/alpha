@@ -191,6 +191,25 @@ def _resolve_primary_class(native_document: dict[str, Any]) -> dict[str, Any]:
     return classes[0] if classes and isinstance(classes[0], dict) else {}
 
 
+def _extract_profile_spell_ids(native_document: dict[str, Any]) -> set[str]:
+    spell_state = native_document.get("spellState") if isinstance(native_document.get("spellState"), dict) else {}
+    out: set[str] = set()
+    for key in ("known", "prepared"):
+        rows = spell_state.get(key) if isinstance(spell_state.get(key), list) else []
+        for row in rows:
+            spell_id = str(row or "").strip().lower()
+            if spell_id:
+                out.add(spell_id)
+    entries = native_document.get("spellbookEntries") if isinstance(native_document.get("spellbookEntries"), list) else []
+    for row in entries:
+        if not isinstance(row, dict):
+            continue
+        spell_id = str(row.get("id") or row.get("spellId") or "").strip().lower()
+        if spell_id:
+            out.add(spell_id)
+    return out
+
+
 def _resolve_map_context(session: Session, user: User, payload: dict[str, Any]) -> str:
     if "map_context" in payload or "mapContext" in payload:
         explicit = str(payload.get("map_context") or payload.get("mapContext") or "").strip()
@@ -582,6 +601,57 @@ def resolve_tinker_artillerist_actor(*, native_document: dict[str, Any], templat
     }
 
 
+def resolve_spell_manifestation_actor(*, template: dict[str, Any], selected_variant: str, owner_user: User, profile_id: str) -> dict[str, Any]:
+    token_name = str(template.get("tokenName") or template.get("displayName") or "Spell Manifestation").strip()
+    command_model = str(template.get("commandModel") or "spell_effect").strip().lower()
+    spell_id = str(template.get("spellId") or "").strip().lower()
+    summon_id = f"summon-{owner_user.id}-{int(time.time() * 1000)}"
+    return {
+        "id": summon_id,
+        "templateId": str(template.get("id") or selected_variant),
+        "variantId": selected_variant,
+        "variantName": str(template.get("displayName") or token_name),
+        "name": token_name,
+        "actorType": "spell_effect",
+        "summonCategory": "spell_effect",
+        "size": str(template.get("size") or "medium"),
+        "movement": copy.deepcopy(template.get("movement") or {"walk": 30}),
+        "senses": copy.deepcopy(template.get("senses") or {}),
+        "ac": 10,
+        "hp": {"current": 1, "max": 1},
+        "actions": [],
+        "attacks": [],
+        "traits": ["Spell-created temporary manifestation"],
+        "proficiencyBonus": 0,
+        "levelSource": {
+            "classId": "spell",
+            "subclassId": "",
+            "classLevel": 1,
+            "featureId": str(template.get("sourceFeatureId") or f"spell:{spell_id}"),
+            "featureName": str(template.get("displayName") or "Spell Manifestation"),
+        },
+        "owner": {"userId": str(owner_user.id), "userName": str(owner_user.name), "profileId": str(profile_id or "")},
+        "commandModel": command_model,
+        "source": {
+            "classId": "spell",
+            "subclassId": "",
+            "featureId": str(template.get("sourceFeatureId") or f"spell:{spell_id}"),
+            "variantGroup": str(template.get("variantGroup") or template.get("id") or "").strip().lower(),
+            "summonOrigin": "spell",
+            "spellId": spell_id,
+        },
+        "tokenVisual": {
+            "color": "#d4af37",
+            "shape": "circle",
+            "image_url": str(template.get("imageUrl") or "").strip() or None,
+            "fallbackEmoji": "✨",
+        },
+        "temporary": bool(template.get("temporary")),
+        "spellId": spell_id,
+        "concentrationRequired": bool(template.get("concentrationRequired")),
+    }
+
+
 def _summoner_anchor_token(session: Session, user: User, map_context: str):
     owned = []
     for tok in (getattr(session, "tokens", {}) or {}).values():
@@ -656,6 +726,13 @@ def _entry_source_feature_id(row: dict[str, Any]) -> str:
 
 def _entry_owner_profile_id(row: dict[str, Any]) -> str:
     return str(row.get("ownerProfileId") or ((row.get("owner") or {}).get("profileId")) or "").strip()
+
+
+def _entry_temporary(row: dict[str, Any]) -> bool:
+    if row.get("temporary") is not None:
+        return bool(row.get("temporary"))
+    source = row.get("source") if isinstance(row.get("source"), dict) else {}
+    return bool(source.get("temporary")) or str(source.get("summonOrigin") or "").strip().lower() == "spell"
 
 
 def _summon_limit_policy(summons: dict[str, Any], template: dict[str, Any], group_id: str) -> tuple[int, bool]:
@@ -845,6 +922,44 @@ def reconcile_native_summons(
     return native_document
 
 
+def prune_expired_temporary_summons(
+    native_document: dict[str, Any],
+    *,
+    now_ts: float | None = None,
+    rest_type: str = "",
+) -> list[dict[str, Any]]:
+    summons = normalize_summon_state(native_document.get("summons"))
+    rows = list(summons.get("activeSummons") or [])
+    now_value = float(now_ts if now_ts is not None else time.time())
+    rest_mode = str(rest_type or "").strip().lower()
+    removed: list[dict[str, Any]] = []
+    kept: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        should_remove = False
+        if _entry_temporary(row):
+            expires_at = row.get("expiresAt")
+            try:
+                if expires_at is not None and float(expires_at) <= now_value:
+                    should_remove = True
+            except Exception:
+                pass
+            if rest_mode in {"short", "long"}:
+                cleanup = row.get("cleanupPolicy")
+                cleanup_rules = set(str(v or "").strip().lower() for v in cleanup) if isinstance(cleanup, list) else set()
+                if f"{rest_mode}_rest" in cleanup_rules:
+                    should_remove = True
+        if should_remove:
+            removed.append(copy.deepcopy(row))
+        else:
+            kept.append(row)
+    if removed:
+        summons["activeSummons"] = kept
+        native_document["summons"] = summons
+    return removed
+
+
 def reconcile_session_active_summons(session: Session) -> int:
     profiles = dict(getattr(session, "char_profiles", {}) or {})
     valid_token_ids = {str(tid) for tid in (getattr(session, "tokens", {}) or {}).keys()}
@@ -931,6 +1046,7 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
     requested_template = str(payload.get("summon_template_id") or payload.get("summonTemplateId") or "").strip().lower()
     requested_group = str(payload.get("summon_group_id") or payload.get("summonGroupId") or "").strip().lower()
     requested_variant = str(payload.get("selected_variant") or payload.get("selectedVariant") or payload.get("selectedVariantId") or requested_template).strip().lower()
+    requested_spell_id = str(payload.get("spell_id") or payload.get("spellId") or "").strip().lower()
     selected_variant, template, variant_error = _resolve_variant(
         template_id=requested_template,
         selected_variant=requested_variant,
@@ -940,8 +1056,17 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
     )
     if variant_error or not template:
         return {"ok": False, "error": variant_error or "invalid_variant"}
-    if selected_variant not in unlocked:
+    template_origin = str(template.get("summonOrigin") or "").strip().lower()
+    template_spell_id = str(template.get("spellId") or "").strip().lower()
+    is_spell_template = template_origin == "spell" and bool(template_spell_id)
+    if selected_variant not in unlocked and not is_spell_template:
         return {"ok": False, "error": "summon_not_unlocked"}
+    if is_spell_template:
+        if requested_spell_id != template_spell_id:
+            return {"ok": False, "error": "spell_id_mismatch"}
+        available_spells = _extract_profile_spell_ids(native)
+        if template_spell_id not in available_spells:
+            return {"ok": False, "error": "spell_not_available"}
 
     try:
         source_class = str(template.get("sourceClassId") or "").strip().lower()
@@ -978,6 +1103,13 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
                 owner_user=user,
                 profile_id=str(profile.get("id") or requested_profile_id or ""),
             )
+        elif source_class == "spell" and is_spell_template:
+            actor = resolve_spell_manifestation_actor(
+                template=template,
+                selected_variant=selected_variant,
+                owner_user=user,
+                profile_id=str(profile.get("id") or requested_profile_id or ""),
+            )
         else:
             return {"ok": False, "error": "runtime_not_live_for_class"}
     except ValueError as exc:
@@ -1002,6 +1134,8 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
         icon = "🦇"
     elif not is_creature or summon_category in {"deployable", "device", "turret"}:
         icon = "⚙️"
+    elif summon_category in {"spell_effect", "spell"}:
+        icon = "✨"
     token_payload = {
         "name": f"{icon} {actor.get('name', 'Summon')}",
         "x": sx,
