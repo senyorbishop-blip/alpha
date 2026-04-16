@@ -85,3 +85,44 @@ def test_tokens_sync_visibility_matches_state_bootstrap_filters(monkeypatch):
     assert dm_tokens == {'tok-world', 'tok-local', 'tok-hidden'}
     assert player_tokens == player_bootstrap_tokens
     assert player_tokens == {'tok-world', 'tok-local'}
+
+
+def test_token_event_visibility_matches_context_filters(monkeypatch):
+    session = Session(id='TESTEVENTCTX')
+    dm = User(id='dm1', name='DM', role='dm')
+    player = User(id='pl1', name='Player', role='player')
+    session.users[dm.id] = dm
+    session.users[player.id] = player
+    session.dm_id = dm.id
+    session.set_user_subgroup_id(player.id, 'party-a', actor_id=dm.id)
+    session.set_subgroup_map_context('party-a', 'poi-inn', actor_id=dm.id)
+
+    token = Token(
+        id='tok-world', name='World NPC', x=0, y=0, width=40, height=40,
+        color='#fff', shape='circle', owner_id=None, map_context='world',
+    )
+
+    capture = _CaptureManager()
+    asyncio.run(common_handlers._broadcast_token_event(capture, session, 'token_moved', {'id': token.id}, token))
+    sent_by_user = {uid: msg for _sid, uid, msg in capture.sent}
+
+    assert dm.id in sent_by_user
+    assert player.id in sent_by_user
+
+    session.set_subgroup_map_context('party-a', 'poi-crypt', actor_id=dm.id)
+    capture = _CaptureManager()
+    asyncio.run(common_handlers._broadcast_token_event(capture, session, 'token_moved', {'id': token.id}, token))
+    sent_by_user = {uid: msg for _sid, uid, msg in capture.sent}
+
+    assert dm.id in sent_by_user
+    assert player.id in sent_by_user, "players should still receive world-map token updates"
+
+    local_token = Token(
+        id='tok-local', name='Local NPC', x=0, y=0, width=40, height=40,
+        color='#fff', shape='circle', owner_id=None, map_context='poi-inn',
+    )
+    capture = _CaptureManager()
+    asyncio.run(common_handlers._broadcast_token_event(capture, session, 'token_moved', {'id': local_token.id}, local_token))
+    sent_user_ids = {uid for _sid, uid, _msg in capture.sent}
+    assert dm.id in sent_user_ids
+    assert player.id not in sent_user_ids

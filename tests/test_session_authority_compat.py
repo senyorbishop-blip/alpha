@@ -55,6 +55,7 @@ def test_resolve_session_authority_prefers_fallback_session_user_id_over_auth_id
     session = Session(id="s-auth-fallback")
     dm = User(id="dm-1", name="DungeonMaster", role="dm")
     player = User(id="session-player-id", name="Player One", role="player")
+    player.player_key = "auth_auth-user-123"
     session.users[dm.id] = dm
     session.users[player.id] = player
     session.dm_id = dm.id
@@ -78,3 +79,60 @@ def test_resolve_session_authority_prefers_fallback_session_user_id_over_auth_id
     assert authority["participant_role"] == "player"
     assert authority["is_session_dm"] is False
     assert authority["matched_via"] == "session_user"
+
+
+def test_resolve_session_authority_rejects_untrusted_fallback_dm_when_auth_present(monkeypatch):
+    session = Session(id="s-auth-restrict")
+    dm = User(id="dm-1", name="DungeonMaster", role="dm")
+    player = User(id="player-1", name="Player", role="player")
+    player.player_key = "auth_auth-user-123"
+    session.users[dm.id] = dm
+    session.users[player.id] = player
+    session.dm_id = dm.id
+
+    request = SimpleNamespace(cookies={}, headers={})
+
+    monkeypatch.setattr(
+        session_access,
+        "get_request_user",
+        lambda _req: {"id": "auth-user-123", "username": "Player"},
+    )
+
+    authority = session_access.resolve_session_authority(
+        request,
+        session,
+        fallback_user_id=dm.id,
+    )
+
+    assert authority["fallback_allowed"] is False
+    assert authority["fallback_allowed_via"] == "none"
+    assert authority["is_session_dm"] is False
+    assert authority["resolved_session_user_id"] is None
+    assert authority["matched_via"] == "none"
+
+
+def test_resolve_session_authority_allows_fallback_when_linked_by_auth_player_key(monkeypatch):
+    session = Session(id="s-auth-player-key")
+    player = User(id="session-player-id", name="Player", role="player")
+    player.player_key = "auth_auth-user-123"
+    session.users[player.id] = player
+
+    request = SimpleNamespace(cookies={}, headers={})
+
+    monkeypatch.setattr(
+        session_access,
+        "get_request_user",
+        lambda _req: {"id": "auth-user-123", "username": "Player"},
+    )
+
+    authority = session_access.resolve_session_authority(
+        request,
+        session,
+        fallback_user_id=player.id,
+    )
+
+    assert authority["fallback_allowed"] is True
+    assert authority["fallback_allowed_via"] == "auth_player_key_match"
+    assert authority["resolved_session_user_id"] == player.id
+    assert authority["participant_role"] == "player"
+    assert authority["is_session_dm"] is False
