@@ -37799,7 +37799,6 @@ function _syncLoadedProfileToOwnedToken(profile) {
   const profileRuntimeSpeed = (profileRuntime && typeof profileRuntime.speed === 'object') ? profileRuntime.speed : {};
   const sheetHpOverride = parseInt(
     profileRuntimeHp?.max
-      ?? profileRuntimeCombat?.maxHP
       ?? profileSheet?.maxHp
       ?? profileBook?.maxHp
       ?? _charSheet?.maxHp
@@ -37809,13 +37808,25 @@ function _syncLoadedProfileToOwnedToken(profile) {
   );
   const sheetCurHpOverride = parseInt(
     profileRuntimeHp?.current
-      ?? profileRuntimeCombat?.currentHP
       ?? profileSheet?.currentHp
       ?? profileBook?.currentHp
       ?? _charSheet?.currentHp
       ?? _charSheet?.book?.currentHp
       ?? _charSheet?.charBook?.currentHp,
     10
+  );
+  const combatant = (tok && _combat && Array.isArray(_combat.combatants))
+    ? _combat.combatants.find(c => String(c?.token_id || '') === String(tok.id || ''))
+    : null;
+  const combatMaxHp = parseInt(combatant?.max_hp ?? combatant?.maxHp, 10);
+  const combatCurHp = parseInt(combatant?.hp, 10);
+  const hasActiveCombatHpOverride = !!(
+    _combat?.active
+    && combatant
+    && Number.isFinite(combatMaxHp)
+    && combatMaxHp > 0
+    && Number.isFinite(combatCurHp)
+    && combatCurHp >= 0
   );
   const profileAcOverride = parseInt(
     profileRuntimeCombat?.ac
@@ -37848,8 +37859,13 @@ function _syncLoadedProfileToOwnedToken(profile) {
       ?? _charSheet?.charBook?.level,
     10
   );
-  if (Number.isFinite(sheetHpOverride) && sheetHpOverride > 0) payload.maxHp = sheetHpOverride;
-  if (Number.isFinite(sheetCurHpOverride) && sheetCurHpOverride >= 0) payload.hp = Math.min(payload.maxHp || sheetCurHpOverride, sheetCurHpOverride);
+  if (hasActiveCombatHpOverride) {
+    payload.maxHp = combatMaxHp;
+    payload.hp = Math.min(combatMaxHp, combatCurHp);
+  } else {
+    if (Number.isFinite(sheetHpOverride) && sheetHpOverride > 0) payload.maxHp = sheetHpOverride;
+    if (Number.isFinite(sheetCurHpOverride) && sheetCurHpOverride >= 0) payload.hp = Math.min(payload.maxHp || sheetCurHpOverride, sheetCurHpOverride);
+  }
   const profileTempHpOverride = parseInt(
     profileRuntimeHp?.temp
       ?? profileSheet?.tempHp
@@ -37863,6 +37879,8 @@ function _syncLoadedProfileToOwnedToken(profile) {
 
   if (tok && tok.id) {
     const tokenEdit = { token_id: tok.id, ...payload };
+    delete tokenEdit.hp;
+    delete tokenEdit.maxHp;
     if (imageFields.tokenImageUrl) {
       tokenEdit.image_url = imageFields.tokenImageUrl;
     }
@@ -37877,6 +37895,16 @@ function _syncLoadedProfileToOwnedToken(profile) {
     tok.initiativeMod = payload.initiativeMod ?? tok.initiativeMod;
     tok.faction = payload.faction ?? tok.faction;
     _syncCharSheetFromOwnedToken(tok);
+    if (Number.isFinite(parseInt(payload.maxHp, 10)) && Number.isFinite(parseInt(payload.hp, 10))) {
+      sendWS({
+        type: 'token_hp_update',
+        payload: {
+          token_id: tok.id,
+          hp: parseInt(payload.hp, 10),
+          max_hp: parseInt(payload.maxHp, 10),
+        }
+      });
+    }
     sendWS({ type: 'token_edit', payload: tokenEdit });
   } else {
     _pendingLoadedCharacterTokenSeed = {
