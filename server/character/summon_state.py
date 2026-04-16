@@ -7,13 +7,22 @@ from typing import Any
 from server.character.rules_catalog import get_class_catalog_row, get_subclass_catalog_row
 from server.character.summon_catalog import get_summon_template
 
+SUMMON_DEPLOY_SCHEMA_VERSION = 3
+
 
 def default_summon_state() -> dict[str, Any]:
     return {
+        "deploySchemaVersion": SUMMON_DEPLOY_SCHEMA_VERSION,
+        "migration": {
+            "normalizerVersion": SUMMON_DEPLOY_SCHEMA_VERSION,
+            "legacyUpgradesApplied": [],
+            "quarantinedCount": 0,
+        },
         "unlockedTemplates": [],
         "unlockedGroups": [],
         "selectedVariants": {},
         "activeSummons": [],
+        "quarantinedSummons": [],
         "rules": {},
         "lastUpdatedFromFeatures": [],
     }
@@ -49,50 +58,165 @@ def _normalize_list(values: Any) -> list[str]:
     return out
 
 
-def _normalize_active_summon_entry(raw: Any) -> dict[str, Any] | None:
+def _parse_cleanup_policy(value: Any) -> list[str]:
+    if isinstance(value, list):
+        out: list[str] = []
+        for row in value:
+            key = _safe_lower_str(row)
+            if key and key not in out:
+                out.append(key)
+        return out
+    if isinstance(value, str):
+        tokens = [tok.strip() for tok in value.replace(";", ",").split(",")]
+        return [k for k in (_safe_lower_str(tok) for tok in tokens) if k]
+    return []
+
+
+def _parse_bool(value: Any, *, fallback: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        text = value.strip().lower()
+        if text in {"1", "true", "yes", "y", "on"}:
+            return True
+        if text in {"0", "false", "no", "n", "off"}:
+            return False
+    return fallback
+
+
+def _parse_int(value: Any, *, fallback: int = 0, minimum: int | None = None) -> int:
+    try:
+        out = int(value)
+    except Exception:
+        out = fallback
+    if minimum is not None:
+        out = max(minimum, out)
+    return out
+
+
+def _resolve_legacy_template_id(raw: dict[str, Any], source: dict[str, Any]) -> str:
+    return _safe_lower_str(
+        raw.get("templateId")
+        or raw.get("summonTemplateId")
+        or raw.get("template")
+        or raw.get("summonTemplate")
+        or raw.get("variantTemplateId")
+        or raw.get("deploymentTemplateId")
+        or raw.get("deployableTemplateId")
+        or raw.get("legacyTemplateId")
+        or raw.get("id")
+        or source.get("templateId")
+        or source.get("summonTemplateId")
+    )
+
+
+def _resolve_legacy_group_id(raw: dict[str, Any], source: dict[str, Any], template_id: str) -> str:
+    return _safe_lower_str(
+        raw.get("summonGroupId")
+        or raw.get("groupId")
+        or raw.get("variantGroup")
+        or raw.get("summonFamilyId")
+        or raw.get("deploymentGroupId")
+        or raw.get("deploymentFamily")
+        or source.get("variantGroup")
+        or source.get("summonGroupId")
+        or template_id
+    )
+
+
+def _resolve_entity_kind(*, raw: dict[str, Any], source_origin: str, source: dict[str, Any]) -> str:
+    entity_kind = _safe_lower_str(raw.get("entityKind") or raw.get("kind") or raw.get("deploymentKind"))
+    if entity_kind:
+        return entity_kind
+    actor = raw.get("actor") if isinstance(raw.get("actor"), dict) else {}
+    actor_type = _safe_lower_str(actor.get("actorType") or raw.get("actorType") or raw.get("summonType"))
+    if actor_type in {"deployable", "spell_effect", "object"}:
+        return "deployable" if actor_type == "object" else actor_type
+    template = get_summon_template(_resolve_legacy_template_id(raw, source)) or {}
+    template_kind = _safe_lower_str(template.get("entityKind"))
+    if template_kind:
+        return template_kind
+    if source_origin == "spell":
+        return "spell_effect"
+    return "creature"
+
+
+def _legacy_source_payload(raw: dict[str, Any], source: dict[str, Any]) -> dict[str, Any]:
+    out = copy.deepcopy(source)
+    if not isinstance(out, dict):
+        out = {}
+    if not out.get("classId"):
+        out["classId"] = _safe_lower_str(raw.get("sourceClassId") or raw.get("classId") or raw.get("ownerClassId"))
+    if not out.get("subclassId"):
+        out["subclassId"] = _safe_lower_str(raw.get("sourceSubclassId") or raw.get("subclassId"))
+    if not out.get("featureId"):
+        out["featureId"] = _safe_lower_str(raw.get("sourceFeatureId") or raw.get("featureId"))
+    if not out.get("spellId"):
+        out["spellId"] = _safe_lower_str(raw.get("spellId") or raw.get("sourceSpellId"))
+    if not out.get("variantGroup"):
+        out["variantGroup"] = _safe_lower_str(raw.get("summonGroupId") or raw.get("variantGroup"))
+    return out
+
+
+def _normalize_active_summon_entry(raw: Any) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     if not isinstance(raw, dict):
-        return None
+        return None, None
     source = copy.deepcopy(raw.get("source")) if isinstance(raw.get("source"), dict) else {}
+    source = _legacy_source_payload(raw, source)
     source_class = _safe_lower_str(raw.get("sourceClassId") or source.get("classId"))
     source_subclass = _safe_lower_str(raw.get("sourceSubclassId") or source.get("subclassId"))
     source_feature = _safe_lower_str(raw.get("sourceFeatureId") or source.get("featureId"))
-    summon_group_id = _safe_lower_str(raw.get("summonGroupId") or source.get("variantGroup"))
-    template_id = _safe_lower_str(raw.get("templateId") or raw.get("summonTemplateId") or raw.get("id"))
+    template_id = _resolve_legacy_template_id(raw, source)
+    summon_group_id = _resolve_legacy_group_id(raw, source, template_id)
     variant_id = _safe_lower_str(raw.get("variantId") or raw.get("variant") or template_id)
-    token_id = str(raw.get("tokenId") or "").strip()
-    owner_user_id = str(raw.get("ownerUserId") or (raw.get("owner") or {}).get("userId") or "").strip()
-    owner_profile_id = str(raw.get("ownerProfileId") or (raw.get("owner") or {}).get("profileId") or "").strip()
-    map_context = str(raw.get("mapContext") or raw.get("sceneId") or "").strip()[:80]
+    token_id = str(raw.get("tokenId") or raw.get("token_id") or raw.get("token") or "").strip()
+    owner_user_id = str(raw.get("ownerUserId") or raw.get("ownerId") or (raw.get("owner") or {}).get("userId") or "").strip()
+    owner_profile_id = str(raw.get("ownerProfileId") or raw.get("profileId") or (raw.get("owner") or {}).get("profileId") or "").strip()
+    map_context = str(raw.get("mapContext") or raw.get("sceneId") or raw.get("tokenMapContext") or raw.get("map") or "").strip()[:80]
     source_origin = _safe_lower_str(raw.get("sourceOriginType") or raw.get("summonOrigin") or source.get("summonOrigin"))
     if not source_origin:
         source_origin = "spell" if _safe_lower_str(raw.get("spellId") or source.get("spellId")) else "feature"
-    control_model = _safe_lower_str(raw.get("controlModel") or raw.get("commandModel"))
+    control_model = _safe_lower_str(raw.get("controlModel") or raw.get("commandModel") or raw.get("control") or raw.get("legacyControlModel"))
     if not control_model:
         control_model = "owner_controlled"
-    entity_kind = _safe_lower_str(raw.get("entityKind"))
-    if not entity_kind:
-        actor_type = _safe_lower_str((raw.get("actor") or {}).get("actorType") if isinstance(raw.get("actor"), dict) else "")
-        if actor_type in {"deployable", "spell_effect"}:
-            entity_kind = actor_type
-        elif source_origin == "spell":
-            entity_kind = "spell_effect"
-        else:
-            entity_kind = "creature"
+    entity_kind = _resolve_entity_kind(raw=raw, source_origin=source_origin, source=source)
     created_at = raw.get("createdAt", raw.get("spawnedAt"))
     updated_at = raw.get("updatedAt", created_at)
-    status = _safe_lower_str(raw.get("status") or "active") or "active"
+    status = _safe_lower_str(raw.get("status") or raw.get("state") or "active") or "active"
     try:
         max_active = max(0, int(raw.get("maxActive")))
     except Exception:
         max_active = None
+    id_fallback = str(raw.get("id") or raw.get("activeId") or "").strip() or template_id or token_id
+    if not id_fallback:
+        return None, {
+            "reason": "missing_identity",
+            "raw": copy.deepcopy(raw),
+            "status": "quarantined",
+        }
+    if not template_id and not token_id:
+        return None, {
+            "reason": "missing_template_and_token",
+            "activeId": id_fallback,
+            "raw": copy.deepcopy(raw),
+            "status": "quarantined",
+        }
+    duration_seconds = _parse_int(raw.get("durationSeconds"), fallback=0, minimum=0)
+    if not duration_seconds:
+        duration_seconds = _parse_int((raw.get("lifecycle") or {}).get("durationSeconds") if isinstance(raw.get("lifecycle"), dict) else None, fallback=0, minimum=0)
+    cleanup_policy = _parse_cleanup_policy(raw.get("cleanupPolicy"))
+    if not cleanup_policy and isinstance(raw.get("lifecycle"), dict):
+        cleanup_policy = _parse_cleanup_policy((raw.get("lifecycle") or {}).get("cleanupPolicy"))
     normalized = {
-        "id": str(raw.get("id") or "").strip() or template_id or token_id,
+        "id": id_fallback,
         "templateId": template_id,
         "summonTemplateId": template_id,
         "summonGroupId": summon_group_id,
         "variantId": variant_id,
         "variant": variant_id,
-        "entityId": str(raw.get("entityId") or raw.get("id") or "").strip() or template_id or token_id,
+        "entityId": str(raw.get("entityId") or raw.get("id") or raw.get("activeId") or "").strip() or template_id or token_id,
         "entityKind": entity_kind,
         "sourceClassId": source_class,
         "sourceSubclassId": source_subclass,
@@ -108,42 +232,55 @@ def _normalize_active_summon_entry(raw: Any) -> dict[str, Any] | None:
         "sourceOriginType": source_origin,
         "summonOrigin": _safe_lower_str(raw.get("summonOrigin") or source.get("summonOrigin")),
         "spellId": _safe_lower_str(raw.get("spellId") or source.get("spellId")),
-        "temporary": bool(raw.get("temporary")),
-        "concentrationRequired": bool(raw.get("concentrationRequired")),
-        "durationSeconds": int(raw.get("durationSeconds") or 0) if str(raw.get("durationSeconds") or "").strip() else 0,
-        "expiresAt": raw.get("expiresAt"),
-        "cleanupPolicy": list(raw.get("cleanupPolicy") or []) if isinstance(raw.get("cleanupPolicy"), list) else [],
+        "temporary": _parse_bool(raw.get("temporary"), fallback=_parse_bool((raw.get("lifecycle") or {}).get("temporary") if isinstance(raw.get("lifecycle"), dict) else False, fallback=False)),
+        "concentrationRequired": _parse_bool(raw.get("concentrationRequired"), fallback=False),
+        "durationSeconds": duration_seconds,
+        "expiresAt": raw.get("expiresAt") if raw.get("expiresAt") is not None else ((raw.get("lifecycle") or {}).get("expiresAt") if isinstance(raw.get("lifecycle"), dict) else None),
+        "cleanupPolicy": cleanup_policy,
         "replaceOnResummon": bool(raw.get("replaceOnResummon")),
         "maxActive": max_active,
         "controlModel": control_model,
         "commandModel": _safe_lower_str(raw.get("commandModel") or (raw.get("actor") or {}).get("commandModel") if isinstance(raw.get("actor"), dict) else ""),
         "lifecycle": {
-            "temporary": bool(raw.get("temporary")),
+            "temporary": _parse_bool(raw.get("temporary"), fallback=False),
             "status": status,
-            "durationSeconds": int(raw.get("durationSeconds") or 0) if str(raw.get("durationSeconds") or "").strip() else 0,
-            "expiresAt": raw.get("expiresAt"),
-            "cleanupPolicy": list(raw.get("cleanupPolicy") or []) if isinstance(raw.get("cleanupPolicy"), list) else [],
+            "durationSeconds": duration_seconds,
+            "expiresAt": raw.get("expiresAt") if raw.get("expiresAt") is not None else ((raw.get("lifecycle") or {}).get("expiresAt") if isinstance(raw.get("lifecycle"), dict) else None),
+            "cleanupPolicy": cleanup_policy,
         },
         "source": source,
     }
     if isinstance(raw.get("actor"), dict):
         normalized["actor"] = copy.deepcopy(raw.get("actor"))
-    return normalized
+    if raw.get("legacyMeta") is not None:
+        normalized["legacyMeta"] = copy.deepcopy(raw.get("legacyMeta"))
+    return normalized, None
 
 
-def _normalize_active_summons(src: dict[str, Any]) -> list[dict[str, Any]]:
+def _normalize_active_summons(src: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[str]]:
     rows: list[Any] = []
+    upgrades: list[str] = []
     if isinstance(src.get("activeSummons"), list):
         rows.extend(list(src.get("activeSummons") or []))
+    for legacy_list_key in ("activeDeployments", "activeEntities", "deployments"):
+        legacy_rows = src.get(legacy_list_key)
+        if isinstance(legacy_rows, list):
+            rows.extend(list(legacy_rows))
+            upgrades.append(f"{legacy_list_key}_list_upgraded")
     # Backward compatibility: single active summon slot used in earlier passes.
-    for legacy_key in ("activeSummon", "active", "currentSummon"):
+    for legacy_key in ("activeSummon", "active", "currentSummon", "activeDeployment", "currentDeployment"):
         legacy = src.get(legacy_key)
         if isinstance(legacy, dict):
             rows.append(legacy)
+            upgrades.append(f"{legacy_key}_single_upgraded")
     out: list[dict[str, Any]] = []
+    quarantined: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
     for raw in rows:
-        normalized = _normalize_active_summon_entry(raw)
+        normalized, rejected = _normalize_active_summon_entry(raw)
+        if rejected:
+            quarantined.append(rejected)
+            continue
         if not normalized:
             continue
         row_id = str(normalized.get("id") or "").strip()
@@ -152,18 +289,30 @@ def _normalize_active_summons(src: dict[str, Any]) -> list[dict[str, Any]]:
             continue
         seen_ids.add(dedupe_key)
         out.append(normalized)
-    return out
+    return out, quarantined, upgrades
 
 
 def normalize_summon_state(raw: Any) -> dict[str, Any]:
     base = default_summon_state()
     src = raw if isinstance(raw, dict) else {}
+    migration = src.get("migration") if isinstance(src.get("migration"), dict) else {}
+    prior_upgrades = _normalize_list(migration.get("legacyUpgradesApplied"))
+    base["deploySchemaVersion"] = SUMMON_DEPLOY_SCHEMA_VERSION
     base["unlockedTemplates"] = _normalize_list(src.get("unlockedTemplates"))
     base["unlockedGroups"] = _normalize_list(src.get("unlockedGroups"))
     base["selectedVariants"] = _normalize_selected_variants(src.get("selectedVariants"))
-    base["activeSummons"] = _normalize_active_summons(src)
+    active, quarantined, upgrades = _normalize_active_summons(src)
+    base["activeSummons"] = active
+    base["quarantinedSummons"] = list(src.get("quarantinedSummons") or []) if isinstance(src.get("quarantinedSummons"), list) else []
+    base["quarantinedSummons"].extend(quarantined)
     base["rules"] = copy.deepcopy(src.get("rules")) if isinstance(src.get("rules"), dict) else {}
     base["lastUpdatedFromFeatures"] = _normalize_list(src.get("lastUpdatedFromFeatures"))
+    deduped_upgrades = _normalize_list(prior_upgrades + upgrades)
+    base["migration"] = {
+        "normalizerVersion": SUMMON_DEPLOY_SCHEMA_VERSION,
+        "legacyUpgradesApplied": deduped_upgrades,
+        "quarantinedCount": len(base["quarantinedSummons"]),
+    }
     return base
 
 
