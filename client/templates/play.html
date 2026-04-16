@@ -42910,7 +42910,7 @@ function _buildActionEconomyState() {
   const actions_total_base = 1;
   const bonus_actions_total = 1;
   const reactions_total = 1;
-  const movement_total = Math.max(0, Number(moveState?.speed_ft ?? Number(_charSheet?.speed || 0) || 0));
+  const movement_total = Math.max(0, Number(moveState?.speed_ft ?? (Number(_charSheet?.speed || 0) || 0)));
   const movement_used = Math.max(0, Number(moveState?.spent_ft || 0));
   const movement_remaining = Math.max(0, Number(moveState?.remaining_ft ?? movement_total - movement_used));
 
