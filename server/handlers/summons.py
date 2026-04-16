@@ -1,4 +1,4 @@
-"""Live summon runtime handlers (Pass C Beast Master vertical slice)."""
+"""Live summon runtime handlers (Pass D summon families)."""
 from __future__ import annotations
 
 import copy
@@ -34,20 +34,29 @@ async def handle_summon_runtime_request(payload: dict, session: Session, user: U
     selected_variant = str(resolved.get("selected_variant") or "")
     profile_id = str(resolved.get("profile_id") or "")
 
-    # Replace prior beast companion token for same owner to avoid duplicate spam.
+    summon_group_id = str(resolved.get("summon_group_id") or "")
+    # Replace prior same-group summon token for same owner to avoid duplicate spam.
     removed_token_ids: list[str] = []
-    for tok in list((session.tokens or {}).values()):
-        if not tok:
-            continue
-        if str(getattr(tok, "owner_id", "") or "") != str(user.id):
-            continue
-        if str(getattr(tok, "token_type", "") or "").strip().lower() != "companion":
-            continue
-        notes = str(getattr(tok, "notes", "") or "").lower()
-        if "beast master companion" not in notes:
-            continue
-        removed_token_ids.append(str(getattr(tok, "id", "") or ""))
-        session.tokens.pop(str(getattr(tok, "id", "") or ""), None)
+    native_document = resolved.get("native_document") if isinstance(resolved.get("native_document"), dict) else {}
+    summon_state = native_document.get("summons") if isinstance(native_document.get("summons"), dict) else {}
+    active_rows = summon_state.get("activeSummons") if isinstance(summon_state.get("activeSummons"), list) else []
+    if summon_group_id and isinstance(active_rows, list):
+        for row in active_rows:
+            if not isinstance(row, dict):
+                continue
+            row_group = str(((row.get("source") or {}).get("variantGroup") or row.get("summonGroupId") or "")).strip().lower()
+            if row_group != summon_group_id:
+                continue
+            old_token_id = str(row.get("tokenId") or "").strip()
+            if not old_token_id:
+                continue
+            tok = (session.tokens or {}).get(old_token_id)
+            if not tok:
+                continue
+            if str(getattr(tok, "owner_id", "") or "") != str(user.id):
+                continue
+            removed_token_ids.append(old_token_id)
+            session.tokens.pop(old_token_id, None)
 
     token = create_token(
         session=session,
@@ -55,8 +64,8 @@ async def handle_summon_runtime_request(payload: dict, session: Session, user: U
         name=str(token_payload.get("name") or "🐾 Primal Beast"),
         x=float(token_payload.get("x", 120.0) or 120.0),
         y=float(token_payload.get("y", 120.0) or 120.0),
-        color="#7ad67a",
-        shape="circle",
+        color=str(((actor.get("tokenVisual") or {}).get("color") or "#7ad67a")),
+        shape=str(((actor.get("tokenVisual") or {}).get("shape") or "circle")),
         width=float(token_payload.get("width", 40.0) or 40.0),
         height=float(token_payload.get("height", 40.0) or 40.0),
         owner_id=user.id,
@@ -78,7 +87,7 @@ async def handle_summon_runtime_request(payload: dict, session: Session, user: U
         image_url=token_payload.get("image_url"),
         creature_id=str(actor.get("id") or "")[:120],
         creature_type="summon",
-        monster_type="beast-companion",
+        monster_type=str(token_payload.get("monster_type") or (actor.get("summonCategory") or "") or "summon"),
         cr="",
     )
 

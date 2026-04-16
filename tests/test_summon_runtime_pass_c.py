@@ -35,6 +35,57 @@ def _seed_player_with_beast_master_profile(session: Session, player: User):
     session.active_char_profiles = {player.id: "profile-ranger"}
 
 
+def _seed_player_with_warlock_profile(session: Session, player: User):
+    owner_key = player.name.strip().lower()
+    session.char_profiles = {
+        owner_key: [
+            {
+                "id": "profile-warlock",
+                "name": "Vesper",
+                "nativeCharacter": {
+                    "classes": [{"classId": "warlock", "level": 5, "subclassId": "fiend"}],
+                    "abilities": {"scores": {"cha": 18}},
+                    "summons": {
+                        "unlockedTemplates": [
+                            "warlock-chain-imp",
+                            "warlock-chain-pseudodragon",
+                            "warlock-chain-quasit",
+                            "warlock-chain-sprite",
+                        ],
+                        "selectedVariants": {"warlock-pact-chain-familiar": "warlock-chain-imp"},
+                        "activeSummons": [],
+                    },
+                },
+                "nativeRuntime": {},
+            }
+        ]
+    }
+    session.active_char_profiles = {player.id: "profile-warlock"}
+
+
+def _seed_player_with_tinker_mechanist_profile(session: Session, player: User):
+    owner_key = player.name.strip().lower()
+    session.char_profiles = {
+        owner_key: [
+            {
+                "id": "profile-tinker",
+                "name": "Brix",
+                "nativeCharacter": {
+                    "classes": [{"classId": "tinker", "level": 6, "subclassId": "mechanist"}],
+                    "abilities": {"scores": {"int": 18}},
+                    "summons": {
+                        "unlockedTemplates": ["tinker-mechanist-companion-frame"],
+                        "selectedVariants": {"tinker-mechanist-frame": "tinker-mechanist-companion-frame"},
+                        "activeSummons": [],
+                    },
+                },
+                "nativeRuntime": {},
+            }
+        ]
+    }
+    session.active_char_profiles = {player.id: "profile-tinker"}
+
+
 def test_beast_master_runtime_resolves_land_sea_sky_variants_with_real_actor_payload():
     session = Session(id="TESTSUMMON")
     player = User(id="u-player", name="Ayla", role="player")
@@ -177,7 +228,54 @@ def test_runtime_fails_cleanly_for_invalid_variant_and_missing_map_context():
     assert missing_map.get("error") == "missing_map_context"
 
 
-def test_non_beast_master_paths_remain_non_live_in_runtime_service():
+def test_warlock_chain_runtime_resolves_all_familiar_variants_with_real_actor_payload():
+    session = Session(id="TESTSUMMON")
+    player = User(id="u-player", name="Ayla", role="player")
+    session.users[player.id] = player
+    _seed_player_with_warlock_profile(session, player)
+
+    for variant in ("warlock-chain-imp", "warlock-chain-pseudodragon", "warlock-chain-quasit", "warlock-chain-sprite"):
+        result = build_summon_runtime_payload(
+            session=session,
+            user=player,
+            payload={
+                "profile_id": "profile-warlock",
+                "summon_group_id": "warlock-pact-chain-familiar",
+                "summon_template_id": variant,
+                "selected_variant": variant,
+            },
+        )
+        assert result.get("ok") is True
+        assert (result.get("actor") or {}).get("summonCategory") == "familiar"
+        assert (result.get("token_payload") or {}).get("token_type") == "companion"
+        assert (result.get("token_payload") or {}).get("monster_type") == "familiar"
+
+
+def test_tinker_mechanist_runtime_resolves_construct_payload():
+    session = Session(id="TESTSUMMON")
+    player = User(id="u-player", name="Ayla", role="player")
+    session.users[player.id] = player
+    _seed_player_with_tinker_mechanist_profile(session, player)
+
+    result = build_summon_runtime_payload(
+        session=session,
+        user=player,
+        payload={
+            "profile_id": "profile-tinker",
+            "summon_group_id": "tinker-mechanist-frame",
+            "summon_template_id": "tinker-mechanist-companion-frame",
+            "selected_variant": "tinker-mechanist-companion-frame",
+        },
+    )
+    assert result.get("ok") is True
+    actor = result.get("actor") or {}
+    assert actor.get("summonCategory") == "construct"
+    assert isinstance(actor.get("attacks"), list) and actor.get("attacks")
+    assert isinstance(actor.get("traits"), list) and actor.get("traits")
+    assert (result.get("token_payload") or {}).get("monster_type") == "construct"
+
+
+def test_non_live_paths_remain_non_live_in_runtime_service():
     session = Session(id="TESTSUMMON")
     player = User(id="u-player", name="Ayla", role="player")
     session.users[player.id] = player
@@ -185,25 +283,26 @@ def test_non_beast_master_paths_remain_non_live_in_runtime_service():
     session.char_profiles = {
         owner_key: [
             {
-                "id": "profile-warlock",
+                "id": "profile-artillerist",
                 "nativeCharacter": {
-                    "classes": [{"classId": "warlock", "level": 5, "subclassId": "fiend"}],
-                    "summons": {"unlockedTemplates": ["warlock-chain-imp"], "selectedVariants": {}, "activeSummons": []},
+                    "classes": [{"classId": "tinker", "level": 6, "subclassId": "artillerist"}],
+                    "summons": {"unlockedTemplates": ["tinker-artillerist-arc-cannon"], "selectedVariants": {}, "activeSummons": []},
                 },
                 "nativeRuntime": {},
             }
         ]
     }
-    session.active_char_profiles = {player.id: "profile-warlock"}
+    session.active_char_profiles = {player.id: "profile-artillerist"}
 
     result = build_summon_runtime_payload(
         session=session,
         user=player,
         payload={
-            "profile_id": "profile-warlock",
-            "summon_template_id": "warlock-chain-imp",
-            "selected_variant": "warlock-chain-imp",
+            "profile_id": "profile-artillerist",
+            "summon_group_id": "tinker-artillerist-cannon",
+            "summon_template_id": "tinker-artillerist-arc-cannon",
+            "selected_variant": "tinker-artillerist-arc-cannon",
         },
     )
     assert result.get("ok") is False
-    assert result.get("error") == "beast_master_only"
+    assert result.get("error") == "runtime_not_live_for_class"

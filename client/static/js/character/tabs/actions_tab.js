@@ -2053,7 +2053,9 @@
           const sourceClassId = String((summonMeta.sourceClassId || '').toLowerCase());
           const sourceSubclassId = String((summonMeta.sourceSubclassId || '').toLowerCase());
           const isBeastMaster = sourceClassId === 'ranger' && sourceSubclassId === 'beast-master';
-          if (!isBeastMaster) {
+          const isWarlockChain = sourceClassId === 'warlock' && String(summonMeta.summonGroupId || '').toLowerCase() === 'warlock-pact-chain-familiar';
+          const isTinkerMechanist = sourceClassId === 'tinker' && sourceSubclassId === 'mechanist' && String(summonMeta.summonTemplateId || '').toLowerCase() === 'tinker-mechanist-companion-frame';
+          if (!isBeastMaster && !isWarlockChain && !isTinkerMechanist) {
             if (typeof global.showToast === 'function') global.showToast(`${label}: runtime path is not live for this class yet.`);
             return;
           }
@@ -2064,7 +2066,27 @@
             };
           }).filter(function (entry) { return !!entry.id; });
           let selectedVariantId = _firstText(summonMeta.selectedVariantId, '').toLowerCase();
-          if (!selectedVariantId && variants.length) selectedVariantId = String(variants[0].id || '').toLowerCase();
+          if (!selectedVariantId && variants.length === 1) selectedVariantId = String(variants[0].id || '').toLowerCase();
+          if (!selectedVariantId && variants.length > 1) {
+            const variantMenu = variants.map(function (v, i) { return `${i + 1}. ${v.name}`; }).join('\n');
+            const answer = (typeof global.prompt === 'function')
+              ? String(global.prompt(`Choose summon variant:\n${variantMenu}\n\nType number or variant id:`, '1') || '').trim()
+              : '';
+            if (answer) {
+              const byIndex = parseInt(answer, 10);
+              if (Number.isFinite(byIndex) && byIndex >= 1 && byIndex <= variants.length) {
+                selectedVariantId = String(variants[byIndex - 1].id || '').toLowerCase();
+              } else {
+                const normalized = answer.toLowerCase();
+                const found = variants.find(function (v) { return v.id === normalized || String(v.name || '').toLowerCase() === normalized; });
+                selectedVariantId = found ? String(found.id || '').toLowerCase() : '';
+              }
+            }
+            if (!selectedVariantId && typeof global.showToast === 'function') {
+              global.showToast(`${label}: summon variant selection was cancelled.`);
+              return;
+            }
+          }
           if (!selectedVariantId) {
             if (typeof global.showToast === 'function') global.showToast(`${label}: no summon variant is configured.`);
             return;
