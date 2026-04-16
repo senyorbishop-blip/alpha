@@ -363,8 +363,8 @@
       "id": "barbarian-rage",
       "displayName": "Rage",
       "name": "Rage",
-      "summary": "Enter a rage to hit harder, stay dangerous, and soak punishment in front-line fights.",
-      "description": "As a bonus action, you enter a Rage that turns you into a durable melee threat. While raging, your weapon attacks hit harder, you gain strong durability against common physical punishment, and many barbarian features start keying off the rage state.\n\nIn play, Rage is your default combat opener when a hard fight starts. Trigger it early, then stay aggressive so you keep the benefits rolling while you pressure the enemy line.\n\nUse this when the fight is live and a round-to-round choice matters.\n\nRegain uses on a Long Rest; some tables may also use short-rest recovery text surfaced elsewhere in the sheet.\n\nPractical effect: Bonus damage, defensive staying power, and access to rage-linked barbarian features.",
+      "summary": "Enter a rage to add bonus melee damage, gain physical resistance, and unlock Barbarian pressure turns.",
+      "description": "As a bonus action, you enter a Rage that turns you into a durable melee threat for up to 10 minutes.\n\nWhile raging, your Strength-based melee weapon attacks gain a Rage Damage bonus: +2 at levels 1-8, +3 at levels 9-15, and +4 at levels 16-20. Rage damage applies on each qualifying hit.\n\nRage also grants resistance to bludgeoning, piercing, and slashing damage, and it fuels many Barbarian and subclass features.\n\nExtra Attack is a separate class feature: at Barbarian level 5, your Attack action makes 2 attacks instead of 1. Rage does not grant Extra Attack by itself.\n\nRegain expended Rage uses on a Long Rest.",
       "level": 1,
       "section": "Bonus Actions",
       "type": "bonus action",
@@ -387,7 +387,7 @@
       "trigger": "",
       "usage": "",
       "recovery": "Regain all expended uses when you finish a Long Rest.",
-      "effect": "Melee Strength attacks deal bonus damage and you gain resistance to bludgeoning, piercing, and slashing damage.",
+      "effect": "Strength-based melee weapon attacks gain Rage damage (+2 at levels 1-8, +3 at 9-15, +4 at 16-20) and you gain resistance to bludgeoning, piercing, and slashing damage while raging.",
       "dice": ""
     },
     "barbarian-unarmored-defense": {
