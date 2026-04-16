@@ -556,10 +556,26 @@
     const summary = _cleanFeatureSummary(feature);
     const facts = _featurePlayerFacts(feature);
     const description = _trimRepeatedLead(summary, _firstText(feature && feature.description, ''));
+    const generatedGuidance = _featureGeneratedGuidance(feature);
+    const fallbackLines = [];
+    if (!description) {
+      if (facts.length) {
+        fallbackLines.push(
+          facts
+            .map(function (fact) { return `${fact.label}: ${fact.value}`; })
+            .join(' • ')
+        );
+      }
+      if (generatedGuidance) fallbackLines.push(generatedGuidance);
+      fallbackLines.push(_featureWhenItMatters(feature));
+    }
+    const fallbackCopy = fallbackLines.filter(Boolean).join('\n\n');
     const factsHtml = facts.length ? `<div class="cs-feature-facts">${facts.map(function (fact) {
       return `<div class="cs-feature-fact"><span class="cs-feature-fact-label">${_esc(fact.label)}</span><span class="cs-feature-fact-value">${_esc(fact.value)}</span></div>`;
     }).join('')}</div>` : '';
-    const rulesHtml = description ? `<div class="cs-feature-body-rules">${_descHtml(description)}</div>` : '<div class="cs-feature-body-rules"><p>Full rules text is not linked for this feature yet.</p></div>';
+    const rulesHtml = (description || fallbackCopy)
+      ? `<div class="cs-feature-body-rules">${_descHtml(description || fallbackCopy)}</div>`
+      : '<div class="cs-feature-body-rules"><p>Full rules text is not linked for this feature yet.</p></div>';
     return `
       <div class="cs-feature-body-summary"><strong>${_esc(summary)}</strong></div>
       ${factsHtml}
