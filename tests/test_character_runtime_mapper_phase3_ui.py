@@ -269,11 +269,11 @@ def test_play_html_stage14_opens_flagship_sheet_after_import_and_from_main_toggl
     assert "goCharacterBookPage('premiumsheet', true);" in src
 
 
-def test_stage15_flagship_sheet_test_hub_and_audit_ui_exist():
+def test_stage15_flagship_sheet_surface_exists():
     src = _read("client/static/js/character/character_sheet_container.js")
     assert "Sheet Status" in src
-    assert "Ability Score Audit" in src
-    assert "Character Overview" in src
+    assert "Ability Scores" in src
+    assert "Character Sheet" in src
     assert "function _renderAbilityAudit(charData) {" in src
     assert "function _renderChecklist(charData) {" in src
     assert "function _tabCount(tabId, charData) {" in src
@@ -285,7 +285,7 @@ def test_stage15_flagship_sheet_test_hub_and_audit_ui_exist():
 def test_character_sheet_container_stage14_builds_flagship_overview_shell():
     src = _read("client/static/js/character/character_sheet_container.js")
     assert "Character Sheet" in src
-    assert "Overview" in src
+    assert "Sheet" in src
     assert "Sheet Status" in src
     assert "Open Actions" in src
     assert "Open Spells" in src
@@ -329,6 +329,7 @@ def test_spells_tab_stage17_shows_linked_spell_actions_and_library_together():
     assert "Linked Spell Actions" in src
     assert "Spell Library" in src
     assert "Spell flow" in src
+    assert "Concentration status" in src
 
 
 def test_character_sheet_container_hides_detail_drawer_when_hidden_and_binds_close_button_directly():
@@ -341,7 +342,7 @@ def test_character_sheet_container_hides_detail_drawer_when_hidden_and_binds_clo
     assert "display: none !important;" in css
 
 
-def test_features_tab_stage18_renders_traits_build_audit_and_inspect_buttons():
+def test_features_tab_stage18_renders_traits_build_and_inspect_buttons():
     src = _read("client/static/js/character/tabs/features_tab.js")
     css = _read("client/static/css/character-sheet-premium.css")
     assert "Features at a Glance" in src
@@ -352,6 +353,24 @@ def test_features_tab_stage18_renders_traits_build_audit_and_inspect_buttons():
     assert "data-feature-inspect" in src
     assert "cs-traits-summary-grid" in css
     assert "cs-build-note-grid" in css
+
+
+def test_player_facing_character_surfaces_avoid_testing_audit_wording():
+    files = [
+        "client/static/js/character/character_sheet_container.js",
+        "client/static/js/character/tabs/actions_tab.js",
+        "client/static/js/character/tabs/features_tab.js",
+        "client/static/js/character/tabs/spells_tab.js",
+    ]
+    banned_phrases = [
+        "during testing",
+        "Concentration audit",
+        "audit point",
+    ]
+    for path in files:
+        src = _read(path)
+        for phrase in banned_phrases:
+            assert phrase not in src
 
 
 def test_features_tab_stage19_adds_class_roadmap_spotlight_and_feature_filters():

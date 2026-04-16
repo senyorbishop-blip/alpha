@@ -1031,7 +1031,7 @@
 
   function _actionCommonBlockers(action) {
     const blockers = [];
-    if ((action.attackBonus != null || action.damage || action.damageText || action.range || action.reach) && !(action.range || action.reach)) blockers.push({ label: 'Targeting', value: 'This action may need manual target selection / validation during testing.' });
+    if ((action.attackBonus != null || action.damage || action.damageText || action.range || action.reach) && !(action.range || action.reach)) blockers.push({ label: 'Targeting', value: 'This action may need manual target selection when no range/reach metadata is provided.' });
     if (action.resourceSummary || action.resourceName || action.resource || action.cost) blockers.push({ label: 'Spend / recovery', value: 'Confirm the linked pool changes on use and rest recovery.' });
     if (action.saveDC || action.hitDc || action.save) blockers.push({ label: 'Save outcome', value: 'Verify the UI explains the save result clearly and the target state updates match it.' });
     if (!blockers.length) blockers.push({ label: 'Coverage', value: 'No obvious blockers detected from the current card data.' });

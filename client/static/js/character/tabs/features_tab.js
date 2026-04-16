@@ -54,7 +54,6 @@
       /best time to use it/i,
       /important thing is/i,
       /hidden unlock/i,
-      /audit point/i,
       /this should make/i,
       /it matters because/i,
       /treat this like/i,
@@ -239,7 +238,7 @@
     },
     monk: {
       role: 'Mobile striker',
-      loop: 'Validate Focus Point spend, martial attacks, and movement/action economy together because Monk testing breaks if any one of those is missing.',
+      loop: 'Validate Focus Point spend, martial attacks, and movement/action economy together so the Monk core loop remains clear in play.',
       testOrder: ['Focus resource', 'Attack / damage buttons', 'Bonus action techniques'],
       verify: ['Focus Points', 'Martial Arts', 'Bonus actions', 'Target application'],
     },
@@ -257,7 +256,7 @@
     },
     rogue: {
       role: 'Precision striker',
-      loop: 'Attack testing matters most here: make sure Sneak Attack-facing cards, bonus actions, and target application all feel connected.',
+      loop: 'Attack flow matters most here: make sure Sneak Attack-facing cards, bonus actions, and target application all feel connected.',
       testOrder: ['Attack cards', 'Sneak Attack conditions', 'Bonus action mobility'],
       verify: ['Sneak Attack', 'Cunning Action', 'Targeting', 'Damage spikes'],
     },
@@ -327,12 +326,12 @@
   function _featureTestingGuidance(feature, charData) {
     const text = _featureKeywordHaystack(feature);
     const className = _firstText(charData && charData.className, 'this class');
-    if (/(rage)/.test(text)) return 'Click the feature, verify the use is tracked, and then short/long rest the character to make sure recovery text and counts stay in sync.';
-    if (/(focus|ki|discipline points|patient defense|flurry|step of the wind|stunning strike)/.test(text)) return 'Use the feature from the Combat tab and confirm the Focus pool changes, the action lands in the right timing bucket, and the target/result output matches the spend.';
-    if (/(bardic inspiration|channel divinity|wild shape|lay on hands|action surge|second wind|sorcery points)/.test(text)) return 'Treat this like a resource test: spend it, watch the tracker update, then verify the sheet still reports the correct remaining uses and recovery hint.';
-    if (/(spell|metamagic|arcane|pact|ritual)/.test(text)) return 'Open the Magic tab next and validate that the spell card or slot/concentration logic connected to this feature actually appears and behaves like the description suggests.';
-    if (/(sneak attack|extra attack|weapon mastery|fighting style|martial arts|reckless attack|divine smite)/.test(text)) return 'Use the related attack cards from the Combat tab and check that the feature changes the attack or damage flow the way the rules text implies.';
-    return `Use this entry as a ${className} audit point: check that the text is readable, the level is correct, and any linked combat, spell, or resource surface is actually present elsewhere in the sheet.`;
+    if (/(rage)/.test(text)) return 'Use this feature, then short/long rest and make sure spend + recovery counts stay synchronized.';
+    if (/(focus|ki|discipline points|patient defense|flurry|step of the wind|stunning strike)/.test(text)) return 'Use this from the Combat tab and confirm Focus spend, timing lane, and target/result output all match the feature text.';
+    if (/(bardic inspiration|channel divinity|wild shape|lay on hands|action surge|second wind|sorcery points)/.test(text)) return 'Spend the linked resource, then confirm remaining uses and recovery hints update correctly.';
+    if (/(spell|metamagic|arcane|pact|ritual)/.test(text)) return 'Open the Magic tab and confirm the related spell, slot, and concentration behavior matches this description.';
+    if (/(sneak attack|extra attack|weapon mastery|fighting style|martial arts|reckless attack|divine smite)/.test(text)) return 'Use related attack cards from Combat and confirm this feature changes attack or damage flow as described.';
+    return `Use this ${className} feature and verify text clarity, unlock level, and linked combat/spell/resource surfaces.`;
   }
 
 
@@ -365,7 +364,7 @@
     const blockers = [];
     if (!feature.description) blockers.push({ label: 'Rules text', value: 'This entry still needs richer descriptive text to feel complete.' });
     if (feature.resourceName) blockers.push({ label: 'Spend / recovery', value: 'Verify the linked resource changes on use and after rest recovery.' });
-    if (feature.isSubclass) blockers.push({ label: 'Unlock source', value: 'Confirm the subclass feature appears at the correct level and in the right audit lane.' });
+    if (feature.isSubclass) blockers.push({ label: 'Unlock source', value: 'Confirm the subclass feature appears at the correct level and in the class feature list.' });
     if (!blockers.length) blockers.push({ label: 'Coverage', value: 'No obvious blockers detected from the current feature metadata.' });
     return blockers;
   }

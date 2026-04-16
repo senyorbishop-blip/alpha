@@ -8,7 +8,7 @@
 (function initCSContainerModule(global) {
   'use strict';
   // Legacy marker phrases kept for compatibility with UI contract tests:
-  // Character Overview
+  // Character Sheet
 
   const TABS = [
     {
@@ -178,7 +178,7 @@ function _portraitUrl(charData) {
     ];
     const hasScores = keys.some(function (entry) { return scores && Object.prototype.hasOwnProperty.call(scores, entry[0]); });
     if (!hasScores) {
-      return '<div class="cs-empty-state compact"><span>Add or import ability scores to audit the sheet here.</span></div>';
+      return '<div class="cs-empty-state compact"><span>Add or import ability scores to complete this panel.</span></div>';
     }
     return `<div class="cs-ability-strip">${keys.map(function (entry) {
       const score = parseInt(scores[entry[0]], 10) || 10;
@@ -449,7 +449,7 @@ function _renderFlagshipHeader(charData) {
     const loadoutReady = _safeArray(charData.inventory).length > 0;
     const route = [];
     route.push(attacksReady ? 'Go to Combat and click a real attack/action card.' : 'Build or import combat cards before trusting attacks.');
-    route.push(spellsReady ? 'Open Magic and inspect one linked spell in the drawer.' : 'Spell layer is thin; inspect builder/import before testing magic.');
+    route.push(spellsReady ? 'Open Magic and inspect one linked spell in the drawer.' : 'Spell layer is still light; add spells from builder/import before play.');
     route.push(loadoutReady ? 'Open Loadout and confirm equipped gear matches the attack surface.' : 'No synced loadout yet; inventory-driven tests may be misleading.');
     if (guide && guide.weakSpots && guide.weakSpots.length) route.push('Watch these thin areas: ' + guide.weakSpots.join(', ') + '.');
     return `<div class="cs-guide-list">${route.map(function (item, idx) { return `<div class="cs-guide-list-row"><span class="cs-guide-index">${idx + 1}</span><span>${_esc(item)}</span></div>`; }).join('')}</div>`;
@@ -589,7 +589,7 @@ function _renderOverviewPanel(charData) {
         </section>
 
         <section class="cs-overview-section">
-          <div class="cs-overview-section-title">Ability Score Audit</div>
+          <div class="cs-overview-section-title">Ability Scores</div>
           <div class="cs-overview-copy">Your core scores and modifiers for fast checks and roll confidence.</div>
           ${_renderAbilityAudit(charData)}
         </section>
