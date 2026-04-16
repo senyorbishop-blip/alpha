@@ -100,8 +100,12 @@ def test_state_sync_stale_dm_nav_guard_keeps_map_loaded():
     end = source.index("} else {", start)
     guard_body = source[start:end]
     assert "if (onLocal) {" in guard_body
+    assert "if (ROLE === 'dm' && !_currentPoi && dmPoi) {" in guard_body
+    assert "_currentPoi = dmPoi;" in guard_body
+    assert "_dmMapContext = dmPoi.id || dmCtx;" in guard_body
     assert "loadMapImage(mapUrl, true);" in guard_body
     assert "else if (_worldMapImageUrl) {" in guard_body
+    assert "_dmMapContext = 'world';" in guard_body
     assert "loadMapImage(_worldMapImageUrl, true);" in guard_body
 
 

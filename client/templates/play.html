@@ -30053,8 +30053,21 @@ function handleLegacyMessage(msg) {
         if (onLocal) {
           const dmPoi = Object.values(pois).find(poi => poi.id === dmCtx);
           const mapUrl = localUrl || (dmPoi && dmPoi.local_map_url);
+          if (ROLE === 'dm' && !_currentPoi && dmPoi) {
+            // Rehydrate DM scene context for reconnects before the resync call.
+            // This prevents local-scene tokens from being staged as "off-map" and
+            // ensures _resyncDmMapNav emits local_map_enter instead of local_map_exit.
+            _currentPoi = dmPoi;
+            _dmMapContext = dmPoi.id || dmCtx;
+            __syncMapShellState();
+          }
           if (mapUrl) loadMapImage(mapUrl, true);
         } else if (_worldMapImageUrl) {
+          if (ROLE === 'dm') {
+            _currentPoi = null;
+            _dmMapContext = 'world';
+            __syncMapShellState();
+          }
           loadMapImage(_worldMapImageUrl, true);
         }
         setTimeout(_resyncDmMapNav, 0);
