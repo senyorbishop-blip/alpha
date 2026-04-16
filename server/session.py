@@ -1604,6 +1604,11 @@ def join_session(session_id: str, invite_code: str, user_name: str, player_key: 
         )
 
     if returning_user:
+        if player_key:
+            # Backfill/refresh stable auth-linked player_key for returning participants.
+            # This prevents authority sync from downgrading authenticated players/viewers
+            # to viewer mode when legacy session rows were created before auth key binding.
+            returning_user.player_key = player_key
         returning_user.connected = False  # will be set True on WS connect
         session.add_log(f"{returning_user.name} returned to the session.", "system")
         return session, returning_user, ""
