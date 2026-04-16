@@ -24688,6 +24688,10 @@ function buildHpSummaryValues(curValue, maxValue, tempValue) {
 function _activeCharacterFromRuntimeSource() {
   const ownedToken = _getMyOwnedToken();
   const profile = _partyStatusActiveProfile();
+  const profileRuntime = (profile && typeof profile.nativeRuntime === 'object') ? profile.nativeRuntime : {};
+  const profileRuntimeHp = (profileRuntime && typeof profileRuntime.hp === 'object') ? profileRuntime.hp : {};
+  const profileRuntimeCombat = (profileRuntime && typeof profileRuntime.combat === 'object') ? profileRuntime.combat : {};
+  const profileRuntimeSpeed = (profileRuntime && typeof profileRuntime.speed === 'object') ? profileRuntime.speed : {};
   const toIntOr = (value, fallback = null) => {
     const n = parseInt(value, 10);
     return Number.isNaN(n) ? fallback : n;
@@ -24702,12 +24706,30 @@ function _activeCharacterFromRuntimeSource() {
   return {
     ownedToken,
     name: _stripClassIcon(rawName),
-    currentHp: toIntOr(_charSheet?.currentHp, toIntOr(ownedToken?.hp, toIntOr(profile?.curhp, null))),
-    maxHp: toIntOr(_charSheet?.maxHp, toIntOr(ownedToken?.maxHp, toIntOr(profile?.hp, null))),
-    tempHp: toIntOr(_charSheet?.tempHp, toIntOr(ownedToken?.tempHp, toIntOr(profile?.tempHp, 0))),
-    ac: toIntOr(_charSheet?.ac, toIntOr(ownedToken?.ac, toIntOr(profile?.ac, null))),
-    initiative: toIntOr(_charSheet?.initiative, toIntOr(ownedToken?.initiativeMod, toIntOr(profile?.initiative, 0))),
-    speed: toIntOr(_charSheet?.speed, toIntOr(ownedToken?.speed, toIntOr(profile?.speed, null))),
+    currentHp: toIntOr(
+      profileRuntimeHp?.current ?? profileRuntimeCombat?.currentHP,
+      toIntOr(_charSheet?.currentHp, toIntOr(ownedToken?.hp, toIntOr(profile?.curhp, null)))
+    ),
+    maxHp: toIntOr(
+      profileRuntimeHp?.max ?? profileRuntimeCombat?.maxHP,
+      toIntOr(_charSheet?.maxHp, toIntOr(ownedToken?.maxHp, toIntOr(profile?.hp, null)))
+    ),
+    tempHp: toIntOr(
+      profileRuntimeHp?.temp ?? profileRuntimeCombat?.tempHP,
+      toIntOr(_charSheet?.tempHp, toIntOr(ownedToken?.tempHp, toIntOr(profile?.tempHp, 0)))
+    ),
+    ac: toIntOr(
+      profileRuntimeCombat?.ac ?? profileRuntime?.ac,
+      toIntOr(_charSheet?.ac, toIntOr(ownedToken?.ac, toIntOr(profile?.ac, null)))
+    ),
+    initiative: toIntOr(
+      profileRuntimeCombat?.initiative,
+      toIntOr(_charSheet?.initiative, toIntOr(ownedToken?.initiativeMod, toIntOr(profile?.initiative, 0)))
+    ),
+    speed: toIntOr(
+      profileRuntimeCombat?.speed ?? profileRuntimeSpeed?.walk,
+      toIntOr(_charSheet?.speed, toIntOr(ownedToken?.speed, toIntOr(profile?.speed, null)))
+    ),
     tokenImageUrl: String(_charSheet?.tokenImageUrl || ownedToken?.image_url || '').trim(),
   };
 }
@@ -32239,13 +32261,108 @@ if (window.CharacterBookRuntime && typeof window.CharacterBookRuntime.registerHo
 
 // ── Native Character Builder Integration ──
 let _nativeBuilderShell = null;
+let _nativeBuilderState = null;
+
+function _buildBuilderDraftFromProfile(profile) {
+  const sourceProfile = (profile && typeof profile === 'object') ? profile : {};
+  const native = (sourceProfile.nativeCharacter && typeof sourceProfile.nativeCharacter === 'object') ? sourceProfile.nativeCharacter : {};
+  if (!native || !Object.keys(native).length) {
+    return window.CharacterBuilderState?.createDefaultDraft?.() || null;
+  }
+  const identity = (native.identity && typeof native.identity === 'object') ? native.identity : {};
+  const presentation = (native.presentation && typeof native.presentation === 'object') ? native.presentation : {};
+  const species = (native.species && typeof native.species === 'object') ? native.species : {};
+  const cls = Array.isArray(native.classes) ? (native.classes[0] || {}) : {};
+  const abilities = (native.abilities && typeof native.abilities === 'object') ? native.abilities : {};
+  const scores = (abilities.scores && typeof abilities.scores === 'object') ? abilities.scores : {};
+  const progression = (native.progression && typeof native.progression === 'object') ? native.progression : {};
+  const spellState = (native.spellState && typeof native.spellState === 'object') ? native.spellState : {};
+  const equipment = (native.equipment && typeof native.equipment === 'object') ? native.equipment : {};
+  const background = (native.background && typeof native.background === 'object') ? native.background : {};
+
+  return {
+    schemaVersion: 1,
+    sourceMode: 'native',
+    identity: {
+      name: String(identity.name || '').trim(),
+      displayName: String(identity.displayName || '').trim(),
+      pronouns: String(identity.pronouns || '').trim(),
+      alignment: String(identity.alignment || '').trim(),
+      deity: String(identity.deity || '').trim(),
+      age: String(identity.age || '').trim(),
+      homeland: String(identity.homeland || '').trim(),
+      notes: String(identity.notes || '').trim(),
+      backstory: String(identity.backstory || '').trim(),
+      portraitUrl: String(identity.portraitUrl || '').trim(),
+      tokenImageUrl: String(identity.tokenImageUrl || '').trim(),
+    },
+    presentation: {
+      tokenDisplay: (presentation.tokenDisplay && typeof presentation.tokenDisplay === 'object') ? { ...presentation.tokenDisplay } : {},
+      portraitFrame: String(presentation.portraitFrame || 'classic').trim() || 'classic',
+    },
+    species: {
+      id: String(species.id || '').trim(),
+      lineage: String(species.lineage || '').trim(),
+    },
+    origins: {
+      backgroundId: String(background.id || '').trim(),
+      backgroundName: String(background.name || '').trim(),
+      languages: Array.isArray(background.languages) ? background.languages.slice() : [],
+      proficiencies: Array.isArray(background.proficiencies) ? background.proficiencies.slice() : [],
+    },
+    abilityGenerationMode: String(abilities.generationMode || 'manual').trim() || 'manual',
+    abilities: {
+      str: parseInt(scores.str, 10) || 10,
+      dex: parseInt(scores.dex, 10) || 10,
+      con: parseInt(scores.con, 10) || 10,
+      int: parseInt(scores.int, 10) || 10,
+      wis: parseInt(scores.wis, 10) || 10,
+      cha: parseInt(scores.cha, 10) || 10,
+    },
+    class: {
+      id: String(cls.classId || cls.id || cls.name || '').trim(),
+      subclassId: String(cls.subclassId || '').trim(),
+      subclass: String(cls.subclass || '').trim(),
+    },
+    classes: Array.isArray(native.classes) ? native.classes.slice() : [],
+    progression: {
+      level: parseInt(progression.level, 10) || parseInt(cls.level, 10) || 1,
+      xp: parseInt(progression.xp, 10) || 0,
+      feats: Array.isArray(native.feats) ? native.feats.slice() : [],
+      talents: Array.isArray(native.talents) ? native.talents.slice() : [],
+      awakening: (native.awakening && typeof native.awakening === 'object') ? { ...native.awakening } : { track: '', tier: 0 },
+    },
+    spellbook: {
+      castingMode: String((spellState.mode || spellState.castingMode || 'none')).trim() || 'none',
+      spellcastingAbility: String(spellState.spellcastingAbility || '').trim(),
+      known: Array.isArray(spellState.known) ? spellState.known.slice() : [],
+      prepared: Array.isArray(spellState.prepared) ? spellState.prepared.slice() : [],
+    },
+    equipment: {
+      startingPack: String(equipment.startingPack || '').trim(),
+      choices: (equipment.builderChoices && typeof equipment.builderChoices === 'object') ? { ...equipment.builderChoices } : [],
+      currency: (equipment.currency && typeof equipment.currency === 'object') ? { ...equipment.currency } : { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
+      inventory: Array.isArray(equipment.inventory) ? equipment.inventory.slice() : [],
+    },
+    compatibility: {
+      charSheet: (sourceProfile.charSheet && typeof sourceProfile.charSheet === 'object') ? { ...sourceProfile.charSheet } : {},
+      charBook: (sourceProfile.charBook && typeof sourceProfile.charBook === 'object') ? { ...sourceProfile.charBook } : {},
+    },
+    meta: {
+      status: 'draft',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  };
+}
 
 function _initNativeCharacterBuilder() {
   if (_nativeBuilderShell) return _nativeBuilderShell;
   if (!window.CharacterBuilderState || !window.CharacterBuilderRouter || !window.CharacterBuilderShell) return null;
   const mountEl = document.getElementById('char-builder-shell-root');
   if (!mountEl) return null;
-  const state = window.CharacterBuilderState.createBuilderState({ resumeMemoryDraft: true });
+  const state = window.CharacterBuilderState.createBuilderState({ resumeMemoryDraft: false });
+  _nativeBuilderState = state;
   const shell = window.CharacterBuilderShell.createBuilderShell({
     mountEl,
     state,
@@ -32298,6 +32415,14 @@ function openNativeCharacterBuilder() {
   if (!shell) {
     showToast('Character builder is still loading. Try again in a moment.');
     return;
+  }
+  if (_nativeBuilderState && typeof _nativeBuilderState.replaceDraft === 'function') {
+    const activeProfileId = resolveActiveCharProfileId();
+    const activeProfile = (Array.isArray(charProfiles) && activeProfileId)
+      ? (charProfiles.find(p => String(p?.id || '') === String(activeProfileId)) || null)
+      : null;
+    const draftSeed = _buildBuilderDraftFromProfile(activeProfile || {});
+    if (draftSeed) _nativeBuilderState.replaceDraft(draftSeed, { markDirty: false });
   }
   modal.style.display = 'flex';
   shell.open();
@@ -37924,9 +38049,23 @@ function _resolveProfileImageFields(profile) {
     || ''
   ).trim();
 
+  const classIdOrName = String(
+    profile?.classId
+    || profile?.charSheet?.classes?.[0]?.classId
+    || profile?.charSheet?.classes?.[0]?.id
+    || profile?.charBook?.className
+    || profile?.classSummary
+    || ''
+  ).trim();
+  const classPortraitFallback = classIdOrName
+    ? `/static/importer/portraits/class/${encodeURIComponent(classIdOrName.toLowerCase())}.png`
+    : '';
+  const resolvedPortraitUrl = portraitUrl || classPortraitFallback;
+  const resolvedTokenImageUrl = tokenImageUrl || resolvedPortraitUrl;
+
   return {
-    portraitUrl,
-    tokenImageUrl,
+    portraitUrl: resolvedPortraitUrl,
+    tokenImageUrl: resolvedTokenImageUrl,
     portraitFrame: String(nativePresentation.portraitFrame || charSheet.portraitFrame || charBook.portraitFrame || profile.portraitFrame || 'classic').trim() || 'classic',
     tokenDisplay: {
       ...(charBook.tokenDisplay || {}),
