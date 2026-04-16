@@ -6,7 +6,8 @@ from server.handlers.map_editor import handle_map_set_url
 from server.handlers import tokens as token_handlers
 from server.restore import restore_session_from_db
 from server.http.session_access import can_user_place_creatures
-from server.session import POI, Session, User, Token
+from server.http.auth import auth_player_key
+from server.session import POI, Session, User, Token, join_session
 
 
 class FakeRequest:
@@ -135,6 +136,28 @@ def test_viewer_state_includes_dm_scene_context_tokens():
 
     assert "poi-inn" in session.visible_map_contexts_for_user(viewer.id)
     assert "tok-local" in state["tokens"]
+
+
+def test_join_session_backfills_player_key_for_returning_user():
+    session = Session(id="JOIN-BACKFILL")
+    session.player_invite = "PLAY1234"
+    stale_player = User(id="player-1", name="Fenrir", role="player")
+    stale_player.player_key = ""
+    stale_player.connected = False
+    session.users[stale_player.id] = stale_player
+
+    from server import session as session_module
+
+    session_module._sessions[session.id] = session
+    try:
+        expected_key = auth_player_key("auth-user-123")
+        _, returning_user, error = join_session(session.id, "PLAY1234", "Fenrir", expected_key)
+        assert error == ""
+        assert returning_user is not None
+        assert returning_user.id == stale_player.id
+        assert returning_user.player_key == expected_key
+    finally:
+        session_module._sessions.pop(session.id, None)
 
 
 @pytest.mark.anyio
