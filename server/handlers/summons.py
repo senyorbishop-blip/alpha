@@ -13,6 +13,7 @@ from server.character.summon_runtime import (
     plan_active_summon_mutations,
 )
 from server.handlers.common import Session, User, manager, save_campaign_async, _broadcast_token_state_sync
+from server.character.summon_state import normalize_summon_state
 from server.handlers.content import _send_char_profiles, _char_profile_bucket_key
 from server.session import create_token
 
@@ -254,3 +255,118 @@ async def handle_summon_runtime_dismiss(payload: dict, session: Session, user: U
         {"type": "summon_runtime_dismiss_result", "payload": {"ok": True, "removed": removed_rows, "removed_token_ids": removed_token_ids}},
     )
     await save_campaign_async(session)
+
+
+def _iter_active_summons(session: Session):
+    profiles = dict(getattr(session, "char_profiles", {}) or {})
+    users = dict(getattr(session, "users", {}) or {})
+    for owner_key, bucket in profiles.items():
+        rows = list(bucket) if isinstance(bucket, list) else []
+        for idx, row in enumerate(rows):
+            if not isinstance(row, dict):
+                continue
+            profile_id = str(row.get("id") or "").strip()
+            native = row.get("nativeCharacter") if isinstance(row.get("nativeCharacter"), dict) else {}
+            summons = normalize_summon_state(native.get("summons"))
+            for active in (summons.get("activeSummons") or []):
+                if not isinstance(active, dict):
+                    continue
+                token_id = str(active.get("tokenId") or "").strip()
+                token = (session.tokens or {}).get(token_id)
+                owner_user_id = str(active.get("ownerUserId") or "").strip()
+                owner_name = ""
+                if owner_user_id and owner_user_id in users:
+                    owner_name = str(getattr(users[owner_user_id], "name", "") or "")
+                if not owner_name:
+                    owner_name = str(((active.get("actor") or {}).get("owner") or {}).get("userName") or "")
+                if not owner_name:
+                    owner_name = str(owner_key or "")
+                enriched = copy.deepcopy(active)
+                enriched["ownerBucketKey"] = str(owner_key)
+                enriched["profileIndex"] = idx
+                enriched["profileId"] = profile_id
+                enriched["ownerName"] = owner_name
+                enriched["tokenPresent"] = bool(token)
+                enriched["tokenName"] = str(getattr(token, "name", "") or (enriched.get("actor") or {}).get("name") or "")
+                enriched["tokenMapContext"] = str(getattr(token, "map_context", "") or enriched.get("mapContext") or enriched.get("sceneId") or "")
+                yield owner_key, idx, row, native, enriched
+
+
+async def handle_summon_runtime_admin(payload: dict, session: Session, user: User):
+    if user.role != "dm":
+        await manager.send_to(session.id, user.id, {"type": "summon_runtime_admin_result", "payload": {"ok": False, "error": "role_not_allowed"}})
+        return
+
+    action = str(payload.get("action") or "list").strip().lower()
+    active_id = str(payload.get("active_id") or payload.get("activeId") or "").strip()
+    token_id = str(payload.get("token_id") or payload.get("tokenId") or "").strip()
+
+    rows = list(_iter_active_summons(session))
+    if action in {"list", "refresh"}:
+        data = [entry for (_, _, _, _, entry) in rows]
+        await manager.send_to(session.id, user.id, {"type": "summon_runtime_admin_result", "payload": {"ok": True, "action": "list", "summons": data}})
+        return
+
+    if action == "inspect":
+        selected = None
+        for _, _, _, _, entry in rows:
+            if active_id and str(entry.get("id") or "") == active_id:
+                selected = entry
+                break
+            if token_id and str(entry.get("tokenId") or "") == token_id:
+                selected = entry
+                break
+        await manager.send_to(session.id, user.id, {"type": "summon_runtime_admin_result", "payload": {"ok": True, "action": "inspect", "summon": selected}})
+        return
+
+    if action in {"dismiss", "cleanup_stale"}:
+        removed: list[dict] = []
+        removed_token_ids: list[str] = []
+        touched: set[tuple[str, int]] = set()
+        for owner_key, profile_index, row, native, entry in rows:
+            row_active_id = str(entry.get("id") or "")
+            row_token_id = str(entry.get("tokenId") or "")
+            if action == "cleanup_stale" and row_token_id and row_token_id in (session.tokens or {}):
+                continue
+            if action == "dismiss" and active_id and row_active_id != active_id:
+                continue
+            if action == "dismiss" and token_id and row_token_id != token_id:
+                continue
+            if action == "dismiss" and not active_id and not token_id:
+                continue
+            gone = remove_active_summon(native, active_id=row_active_id, token_id=row_token_id, owner_profile_id=str(entry.get("ownerProfileId") or ""))
+            if not gone:
+                continue
+            removed.extend(gone)
+            touched.add((owner_key, profile_index))
+            if row_token_id and row_token_id in (session.tokens or {}):
+                session.tokens.pop(row_token_id, None)
+                removed_token_ids.append(row_token_id)
+                await manager.broadcast(session.id, {"type": "token_deleted", "payload": {"token_id": row_token_id}})
+
+        if touched:
+            profiles = dict(getattr(session, "char_profiles", {}) or {})
+            for owner_key, profile_index in touched:
+                bucket = list(profiles.get(owner_key) or []) if isinstance(profiles.get(owner_key), list) else []
+                if not (0 <= profile_index < len(bucket)):
+                    continue
+                slot = bucket[profile_index] if isinstance(bucket[profile_index], dict) else {}
+                native_doc = slot.get("nativeCharacter") if isinstance(slot.get("nativeCharacter"), dict) else {}
+                resolved_runtime = resolve_character_runtime(native_doc)
+                slot["nativeCharacter"] = resolved_runtime.get("document") if isinstance(resolved_runtime.get("document"), dict) else native_doc
+                slot["nativeRuntime"] = resolved_runtime.get("runtime") if isinstance(resolved_runtime.get("runtime"), dict) else slot.get("nativeRuntime", {})
+                bucket[profile_index] = slot
+                profiles[owner_key] = bucket
+            session.char_profiles = profiles
+            await _broadcast_token_state_sync(session)
+            for uid in (session.users or {}).keys():
+                await _send_char_profiles(session, uid)
+            await save_campaign_async(session)
+
+        await manager.send_to(session.id, user.id, {
+            "type": "summon_runtime_admin_result",
+            "payload": {"ok": True, "action": action, "removed": removed, "removed_token_ids": removed_token_ids},
+        })
+        return
+
+    await manager.send_to(session.id, user.id, {"type": "summon_runtime_admin_result", "payload": {"ok": False, "error": "unknown_action"}})

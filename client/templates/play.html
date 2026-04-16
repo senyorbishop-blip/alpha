@@ -19044,7 +19044,7 @@ function setDmCompanionMode(enabled) {
     btn.classList.toggle('active', shouldEnable);
     btn.textContent = shouldEnable ? '📱 Companion On' : '📱 Companion';
   }
-  if (shouldEnable) renderDmCompanionPanel();
+  if (shouldEnable) { renderDmCompanionPanel(); dmCompanionSummonRefresh(); }
 }
 
 function toggleDmCompanionMode() {
@@ -19111,10 +19111,39 @@ function renderDmCompanionPanel() {
           <button type="button" class="dm-companion-btn warn" onclick="dmCompanionReturnWorld()" ${_currentPoi ? '' : 'disabled'}>🌍 World</button>
         </div>
       </section>
+      <section class="dm-companion-section" style="grid-column:1 / -1;">
+        <div class="dm-companion-section-title">Summon Admin</div>
+        <div class="dm-companion-meta">Track owner/source/variant and safely clean up stale summons without bypassing runtime lifecycle.</div>
+        <div class="dm-companion-row" style="margin-bottom:0.3rem;">
+          <button type="button" class="dm-companion-btn" onclick="dmCompanionSummonRefresh()">↻ Refresh</button>
+          <button type="button" class="dm-companion-btn warn" onclick="dmCompanionSummonCleanupStale()">🧹 Cleanup stale</button>
+        </div>
+        <div style="display:grid;gap:0.25rem;max-height:148px;overflow:auto;">
+          ${Array.isArray(_dmCompanionSummons) && _dmCompanionSummons.length ? _dmCompanionSummons.map((row) => {
+            const tokenId = String(row?.tokenId || '');
+            const activeId = String(row?.id || '');
+            const owner = String(row?.ownerName || row?.ownerUserId || 'Unknown');
+            const source = String(row?.sourceFeatureId || row?.source?.featureId || 'feature');
+            const variant = String(row?.variantName || row?.variantId || row?.summonTemplateId || 'variant');
+            const status = String(row?.status || (row?.tokenPresent ? 'active' : 'stale'));
+            const scene = String(row?.tokenMapContext || row?.mapContext || row?.sceneId || 'world');
+            return `<div style="border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:0.28rem 0.36rem;background:rgba(255,255,255,0.02);">
+              <div style="font-size:0.62rem;color:var(--parchment);">${escapeHtml(String(row?.tokenName || row?.actor?.name || row?.variantName || 'Summon'))} · ${escapeHtml(variant)}</div>
+              <div style="font-size:0.56rem;color:var(--parchment-dim);">Owner: ${escapeHtml(owner)} · Source: ${escapeHtml(source)} · ${escapeHtml(status)} · ${escapeHtml(scene)}</div>
+              <div class="dm-companion-row" style="margin-top:0.24rem;">
+                <button type="button" class="dm-companion-btn" onclick="dmCompanionSummonInspect('${escapeHtml(activeId)}','${escapeHtml(tokenId)}')">Inspect</button>
+                <button type="button" class="dm-companion-btn" onclick="focusSummonTokenById('${escapeHtml(tokenId)}')" ${tokenId ? '' : 'disabled'}>Focus</button>
+                <button type="button" class="dm-companion-btn warn" onclick="dmCompanionSummonDismiss('${escapeHtml(activeId)}','${escapeHtml(tokenId)}')">Dismiss</button>
+              </div>
+            </div>`;
+          }).join('') : '<div class="dm-companion-meta">No active summons reported yet. Hit refresh to query runtime state.</div>'}
+        </div>
+      </section>
     </div>`;
 }
 
 let _dmCompanionTokenId = '';
+let _dmCompanionSummons = [];
 
 function dmCompanionSetToken(tokenId) {
   _dmCompanionTokenId = String(tokenId || '');
@@ -19161,6 +19190,49 @@ function dmCompanionReturnWorld() {
   if (!_currentPoi) return;
   closeLocalMap();
   renderDmCompanionPanel();
+}
+
+function dmCompanionSummonRefresh() {
+  if (ROLE !== 'dm') return;
+  sendWS({ type: 'summon_runtime_admin', payload: { action: 'list' } });
+}
+
+function dmCompanionSummonInspect(activeId, tokenId) {
+  if (ROLE !== 'dm') return;
+  sendWS({ type: 'summon_runtime_admin', payload: { action: 'inspect', active_id: String(activeId || ''), token_id: String(tokenId || '') } });
+}
+
+function dmCompanionSummonDismiss(activeId, tokenId) {
+  if (ROLE !== 'dm') return;
+  sendWS({ type: 'summon_runtime_admin', payload: { action: 'dismiss', active_id: String(activeId || ''), token_id: String(tokenId || '') } });
+}
+
+function dmCompanionSummonCleanupStale() {
+  if (ROLE !== 'dm') return;
+  sendWS({ type: 'summon_runtime_admin', payload: { action: 'cleanup_stale' } });
+}
+
+function focusSummonTokenById(tokenId) {
+  const id = String(tokenId || '').trim();
+  const token = id ? tokens[id] : null;
+  if (!token) {
+    showToast('Summon token is not present on this map.');
+    return;
+  }
+  ctxToken = token;
+  _quickPanelCenterOnPoint(Number(token.x || 0) + Number(token.width || PX_PER_GRID) / 2, Number(token.y || 0) + Number(token.height || PX_PER_GRID) / 2);
+}
+
+function inspectSummonTokenById(tokenId) {
+  const id = String(tokenId || '').trim();
+  const token = id ? (tokens[id] || _stagingTokens[id]) : null;
+  if (!token) {
+    showToast('Summon token is not present.');
+    return;
+  }
+  ctxToken = token;
+  if (ROLE === 'dm') openTokenEditor();
+  else showToast(`${token.name || 'Summon'} selected.`);
 }
 
 function syncMobilePanelState() {
@@ -30333,6 +30405,31 @@ function handleLegacyMessage(msg) {
       } else {
         const error = String(p.error || 'dismiss_failed');
         showToast(`Dismiss failed: ${error.replace(/_/g, ' ')}`);
+      }
+      break;
+    }
+    case 'summon_runtime_admin_result': {
+      if (!p.ok) {
+        showToast(`Summon admin error: ${String(p.error || 'unknown').replace(/_/g, ' ')}`);
+        break;
+      }
+      if (p.action === 'list') {
+        _dmCompanionSummons = Array.isArray(p.summons) ? p.summons : [];
+        if (_dmCompanionMode) renderDmCompanionPanel();
+      } else if (p.action === 'inspect') {
+        const row = (p.summon && typeof p.summon === 'object') ? p.summon : null;
+        if (!row) {
+          showToast('Summon not found.');
+          break;
+        }
+        const owner = String(row.ownerName || row.ownerUserId || 'Unknown');
+        const source = String(row.sourceFeatureId || row.source?.featureId || 'feature');
+        showToast(`${String(row.tokenName || row.variantName || 'Summon')} · ${owner} · ${source}`);
+        if (row.tokenId) inspectSummonTokenById(String(row.tokenId || ''));
+      } else if (p.action === 'dismiss' || p.action === 'cleanup_stale') {
+        const count = Array.isArray(p.removed) ? p.removed.length : 0;
+        showToast(count > 0 ? `Admin removed ${count} summon${count === 1 ? '' : 's'}.` : 'No summon records matched.');
+        dmCompanionSummonRefresh();
       }
       break;
     }
