@@ -545,6 +545,7 @@
     const GENDERS = [
       { id: 'male', label: 'Male', pronouns: 'He / Him' },
       { id: 'female', label: 'Female', pronouns: 'She / Her' },
+      { id: 'nonbinary', label: 'Nonbinary', pronouns: 'They / Them' },
     ];
     const STAT_ARRAY = [15, 14, 13, 12, 10, 8];
     const ALIGNMENT_OPTIONS = ['Lawful Good','Neutral Good','Chaotic Good','Lawful Neutral','True Neutral','Chaotic Neutral','Lawful Evil','Neutral Evil','Chaotic Evil'];
@@ -1372,8 +1373,7 @@ function renderBackgroundDetail(bg) {
   const langs = Array.isArray(bg.languages) ? bg.languages : [];
   return `<div class="detail-block"><h4>${escapeHtml(backgroundDisplayName(bg))}</h4><p>${escapeHtml(bg.summary || bg.description || 'Origin details for this background.')}</p></div>
     <div class="class-sections"><div class="detail-block"><h4>Proficiencies</h4><p>${escapeHtml(skills.join(', ') || 'No listed skill proficiencies in current rules data.')}</p><p>${escapeHtml(tools.join(', ') || 'No listed tool proficiencies.')}</p></div>
-    <div class="detail-block"><h4>Roleplay hooks</h4><p>${escapeHtml(bg.featureSummary || bg.originFeat || 'Use this origin to anchor your goals, allies, and story hooks.')}</p><p>${escapeHtml(langs.length ? ('Suggested languages: ' + langs.join(', ')) : 'Add custom notes below to carry this origin into your sheet notes.')}</p>
-    <div class="field" style="margin-top:10px"><label>Background Notes</label><textarea class="textarea" id="hero-notes" placeholder="How does this background shape your goals in this campaign?">${escapeHtml(state.hero.notes || '')}</textarea></div></div></div>`;
+    <div class="detail-block"><h4>Roleplay hooks</h4><p>${escapeHtml(bg.featureSummary || bg.originFeat || 'Use this origin to anchor your goals, allies, and story hooks.')}</p><p>${escapeHtml(langs.length ? ('Suggested languages: ' + langs.join(', ')) : 'Add personal notes in the Backstory step before you finish the hero.')}</p></div></div>`;
 }
 
 function renderSpeciesListItem(item, selectedId) {
@@ -1392,7 +1392,7 @@ function renderStepMarkup() {
     return `
       <div class="form-grid">
         <div class="field full"><label>Hero Name</label><input class="input" id="hero-name" value="${escapeHtml(hero.name)}" placeholder="Name your adventurer" /></div>
-        <div class="field"><label>Sex</label><select class="select" id="hero-gender">${GENDERS.map(g => `<option value="${g.id}" ${hero.gender===g.id ? 'selected' : ''}>${g.label}</option>`).join('')}</select></div>
+        <div class="field"><label>Gender</label><select class="select" id="hero-gender">${GENDERS.map(g => `<option value="${g.id}" ${hero.gender===g.id ? 'selected' : ''}>${g.label}</option>`).join('')}</select></div>
         <div class="field"><label>Homeland</label><input class="input" id="hero-homeland" value="${escapeHtml(hero.homeland)}" placeholder="Where are they from?" /></div>
         <div class="field"><label>Patron / Deity</label><input class="input" id="hero-deity" value="${escapeHtml(hero.deity)}" placeholder="Optional faith or patron" /></div>
       </div>`;
@@ -1532,7 +1532,6 @@ function bindStepMarkup() {
       document.getElementById('starting-level')?.addEventListener('change', e => { state.hero.startingLevel = Number(e.target.value || 1); renderStepView(); });
       document.getElementById('subclass-picker')?.addEventListener('change', e => { state.hero.subclassId = String(e.target.value || '').trim(); renderStepView(); });
     }
-    if (step === 'background') document.getElementById('hero-notes')?.addEventListener('input', e => { state.hero.notes = e.target.value; });
   } else if (step === 'equipment') {
     ensureEquipmentDefaults();
     document.querySelectorAll('[data-weapon-pack-id]').forEach((btn) => btn.addEventListener('click', () => {
@@ -1688,6 +1687,7 @@ function canProceed() {
         identity: {
           name: state.hero.name.trim(),
           displayName: state.hero.name.trim(),
+          gender: state.hero.gender,
           pronouns: state.hero.pronouns,
           alignment: state.hero.alignment,
           deity: state.hero.deity,

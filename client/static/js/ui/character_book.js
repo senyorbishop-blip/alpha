@@ -27,14 +27,14 @@
     if (!strip) return;
     const pageOrder = env.getPageOrder() || [];
     const idx = Math.round(strip.scrollLeft / Math.max(1, strip.clientWidth));
-    const page = pageOrder[Math.min(pageOrder.length - 1, Math.max(0, idx))] || 'overview';
+    const page = pageOrder[Math.min(pageOrder.length - 1, Math.max(0, idx))] || 'premiumsheet';
     if (page !== env.getActiveCharBookPage()) {
       env.setActiveCharBookPage(page);
       updateCharacterBookTabs(env, page);
     }
   }
 
-  function openCharacterBook(env, page = 'overview') {
+  function openCharacterBook(env, page = 'premiumsheet') {
     env.initCharacterBook();
     const charSheet = env.getCharSheet();
     if (charSheet && (Object.keys(charSheet.book || {}).length || (charSheet.name && charSheet.name !== 'Unknown Hero') || (charSheet.classes && charSheet.classes.length))) {

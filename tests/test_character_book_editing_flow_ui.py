@@ -76,3 +76,9 @@ def test_native_builder_router_clears_subclass_when_step_skipped():
     # getStepOrder must call clearSubclassFromDraft when the subclass step is excluded
     assert "if (!order.includes('subclass'))" in src
     assert 'clearSubclassFromDraft(draft)' in src
+
+
+def test_character_book_defaults_to_live_sheet_page_on_open():
+    src = Path('client/static/js/ui/character_book.js').read_text(encoding='utf-8')
+    assert "function openCharacterBook(env, page = 'premiumsheet')" in src
+    assert "|| 'premiumsheet';" in src
