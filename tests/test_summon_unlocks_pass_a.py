@@ -101,8 +101,10 @@ def test_tinker_subclass_paths_unlock_companion_or_deployable_templates():
         },
         choices={"subclassChoice": "artillerist"},
     )
-    arti_templates = set(_summons(artillerist["document"]).get("unlockedTemplates") or [])
+    artillerist_summons = _summons(artillerist["document"])
+    arti_templates = set(artillerist_summons.get("unlockedTemplates") or [])
     assert "tinker-artillerist-arc-cannon" in arti_templates
+    assert artillerist_summons.get("selectedVariants", {}).get("tinker-artillerist-cannon") == "tinker-artillerist-arc-cannon"
 
 
 def test_backward_compat_old_documents_without_summon_block_still_validate_and_non_summon_levelup_works():
