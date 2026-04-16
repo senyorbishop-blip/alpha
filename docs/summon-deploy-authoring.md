@@ -1,6 +1,21 @@
-# Summon / Deploy Authoring Guide (Pass N)
+# Summon / Deploy Authoring Guide (Pass O)
 
 This guide covers the **live summon/deploy content path** for new families.
+
+## Pass O compatibility + migration notes
+
+- Summon/deploy state normalization now writes `summons.deploySchemaVersion` and `summons.migration` markers.
+- Legacy active shapes (`activeSummon`, `currentSummon`, `activeDeployment`, `activeEntities`, etc.) are upgraded into `activeSummons`.
+- Unrecoverable legacy rows are moved into `quarantinedSummons` with a machine-readable `reason` instead of crashing load/restore.
+- Normalization is idempotent for already-upgraded state.
+
+Dry-run helper:
+
+```bash
+python tools/summon_deploy_compat_report.py --input /path/to/payload.json
+```
+
+The helper prints upgrade/quarantine counts without mutating stored data.
 
 ## Runtime source-of-truth path
 
