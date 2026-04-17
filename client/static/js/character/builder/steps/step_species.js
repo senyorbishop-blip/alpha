@@ -240,6 +240,7 @@
       return [
         header,
         hiddenInput,
+        renderPreviewTile(draft),
         '<div class="species-grid">' + cards + '</div>',
         detailPanel,
         lineageField,
@@ -255,6 +256,17 @@
           if (hiddenInput) hiddenInput.value = id;
           if (context && typeof context.onSetField === 'function') {
             context.onSetField(['species', 'id'], id);
+            var draft = context.draft && typeof context.draft === 'object' ? context.draft : {};
+            var identity = draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
+            var manualPortrait = String(identity.portraitUrl || '').trim();
+            var manualToken = String(identity.tokenImageUrl || '').trim();
+            if (!manualPortrait && !manualToken) {
+              var resolvedPortrait = resolveComboPortrait(Object.assign({}, draft, { species: Object.assign({}, draft.species || {}, { id: id }) }));
+              if (resolvedPortrait) {
+                context.onSetField(['identity', 'portraitUrl'], resolvedPortrait);
+                context.onSetField(['identity', 'tokenImageUrl'], resolvedPortrait);
+              }
+            }
           }
           root.querySelectorAll('.species-card').forEach(function(c) {
             c.classList.remove('selected');

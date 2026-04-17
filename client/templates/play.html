@@ -33808,6 +33808,12 @@ function _getResolvedNativeResources() {
   });
 }
 
+function formatSigned(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '—';
+  return `${num >= 0 ? '+' : ''}${Math.trunc(num)}`;
+}
+
 function _findNativeResourceByRef(resourceRef) {
   const normalized = _slugNativeResourceKey(resourceRef);
   if (!normalized) return null;
@@ -34297,7 +34303,7 @@ function renderNativeCharacterBookPanels() {
               <div class="rules-badges"><span class="rules-badge good">${escapeHtml(bucket.badge)}</span>${(card.tags || []).slice(0, 3).map(tag => `<span class="rules-badge">${escapeHtml(tag)}</span>`).join('')}</div>
             </div>
             <div class="rules-spell-meta">
-              <div><strong>Attack</strong>${escapeHtml(Number.isFinite(card.attackBonus) ? signed(card.attackBonus) : '—')}</div>
+              <div><strong>Attack</strong>${escapeHtml(Number.isFinite(card.attackBonus) ? formatSigned(card.attackBonus) : '—')}</div>
               <div><strong>Damage</strong>${escapeHtml(card.damage || '—')}</div>
               <div><strong>Type</strong>${escapeHtml(card.damageType || '—')}</div>
               <div><strong>Range</strong>${escapeHtml(card.range || '—')}</div>
@@ -42881,7 +42887,7 @@ function _getPlayerActionsSections() {
         id: String(action.id || action.name || ''),
         source: 'native_action',
         name: action.name || 'Action',
-        attackBonus: Number.isFinite(action.attackBonus) ? signed(action.attackBonus) : '',
+        attackBonus: Number.isFinite(action.attackBonus) ? formatSigned(action.attackBonus) : '',
         damage: action.damage || '',
         damageType: action.damageType || '',
         range: action.range || '',
@@ -42912,7 +42918,7 @@ function _getPlayerActionsSections() {
           tokenId,
           actionId: String(action.id || '').trim(),
           name: `${String(action.displayName || action.name || 'Action').trim()} (${summonLabel})`,
-          attackBonus: Number.isFinite(Number(action.attackBonus)) ? signed(Number(action.attackBonus)) : '',
+          attackBonus: Number.isFinite(Number(action.attackBonus)) ? formatSigned(Number(action.attackBonus)) : '',
           saveDC: Number.isFinite(Number(action.saveDC)) ? Number(action.saveDC) : '',
           saveAbility: String(action.saveAbility || '').trim(),
           damage,
@@ -42964,7 +42970,7 @@ function _getPlayerActionsSections() {
       id: String(itemAction.action_id || itemAction.item_id || `item_action_${idx}`),
       source: 'item_action',
       name: String(itemAction.action_name || itemAction.item_name || 'Item Action'),
-      attackBonus: itemAction.attack_bonus != null ? signed(Number(itemAction.attack_bonus) || 0) : '',
+      attackBonus: itemAction.attack_bonus != null ? formatSigned(Number(itemAction.attack_bonus) || 0) : '',
       damage: String(itemAction.damage_formula || itemAction.effect_text || ''),
       damageType: '',
       range: String(itemAction.range || ''),

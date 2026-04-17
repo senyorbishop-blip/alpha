@@ -658,7 +658,16 @@
       card.dataset.profileId = entry.id;
       const lib = window.CasualDnDPortraitLibrary;
       const renderer = window.CasualDnDAvatarRenderer;
+      const portraitLibrary = window.CasualDnDPortraitLibrary;
       const tokenImageUrl = String(entry.tokenImageUrl || '').trim();
+      const comboPortraitUrl = portraitLibrary && typeof portraitLibrary.resolve === 'function'
+        ? String(portraitLibrary.resolve({
+            speciesId: entry.speciesId || entry.speciesLabel || '',
+            classId: entry.classId || entry.classSummary || '',
+            gender: entry.gender || 'neutral',
+            neutralFallback: '',
+          }) || '').trim()
+        : '';
       const avatarMarkup = tokenImageUrl
         ? `<img class="avatar-render mini" src="${escapeHtml(tokenImageUrl)}" alt="${escapeHtml(entry.name || 'Hero')}">`
         : (lib
@@ -750,6 +759,7 @@
       joinGateway = window.CharacterJoinGateway.createJoinGateway({
         state: gatewayState,
         modal: window.CharacterGatewayModal,
+        externalRosterRenderer: true,
         hooks: {
           onUseExisting(profileId, selectedEntry) {
             const selectedId = String(profileId || '').trim();

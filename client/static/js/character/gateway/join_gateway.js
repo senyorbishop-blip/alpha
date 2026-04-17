@@ -5,6 +5,7 @@
       modal: null,
       hooks: {},
       elements: {},
+      externalRosterRenderer: false,
     }, config || {});
 
     const state = cfg.state;
@@ -87,13 +88,37 @@
         throw new Error('Missing session_id for character save.');
       }
 
+      const canonicalDraft = draft && typeof draft === 'object' ? JSON.parse(JSON.stringify(draft)) : {};
+      const identity = canonicalDraft.identity && typeof canonicalDraft.identity === 'object' ? canonicalDraft.identity : {};
+      const portraitLibrary = global.CasualDnDPortraitLibrary;
+      const hasManualPortrait = !!String(identity.portraitUrl || '').trim();
+      const hasManualToken = !!String(identity.tokenImageUrl || '').trim();
+      if (portraitLibrary && typeof portraitLibrary.resolve === 'function' && !hasManualPortrait && !hasManualToken) {
+        const resolvedPortrait = String(portraitLibrary.resolve({
+          speciesId: canonicalDraft.species && (canonicalDraft.species.id || canonicalDraft.species.name) || '',
+          classId: canonicalDraft.class && canonicalDraft.class.id || '',
+          gender: identity.gender || 'neutral',
+          neutralFallback: '',
+        }) || '').trim();
+        if (resolvedPortrait) {
+          canonicalDraft.identity = Object.assign({}, identity, {
+            portraitUrl: resolvedPortrait,
+            tokenImageUrl: resolvedPortrait,
+          });
+        }
+      } else if (hasManualPortrait && !hasManualToken) {
+        canonicalDraft.identity = Object.assign({}, identity, { tokenImageUrl: String(identity.portraitUrl || '').trim() });
+      } else if (!hasManualPortrait && hasManualToken) {
+        canonicalDraft.identity = Object.assign({}, identity, { portraitUrl: String(identity.tokenImageUrl || '').trim() });
+      }
+
       const res = await fetch('/api/character/save', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           session_id: sessionId,
-          character_document: draft,
+          character_document: canonicalDraft,
         }),
       });
       if (!res.ok) {
@@ -436,7 +461,8 @@
     }
 
     function syncView(snapshot) {
-      modal.renderCharacterCards({
+      if (!cfg.externalRosterRenderer) {
+        modal.renderCharacterCards({
         gridEl: els.charGrid,
         characters: snapshot.characters,
         selectedProfileId: snapshot.selectedProfileId,
@@ -455,14 +481,15 @@
             }
           });
         },
-      });
+        });
 
-      modal.setHasExistingState({
-        characters: snapshot.characters,
-        existingSectionEl: els.existingSection,
-        actionsSectionEl: els.actionsSection,
-        emptyHintEl: els.emptyHint,
-      });
+        modal.setHasExistingState({
+          characters: snapshot.characters,
+          existingSectionEl: els.existingSection,
+          actionsSectionEl: els.actionsSection,
+          emptyHintEl: els.emptyHint,
+        });
+      }
 
       if (els.useExistingBtn) {
         const selected = Array.isArray(snapshot.characters)
