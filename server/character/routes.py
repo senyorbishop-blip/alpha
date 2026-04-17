@@ -361,6 +361,10 @@ async def api_character_content_catalog(request: Request, rules_mode: str = "cas
             and any(str(class_id or "").strip().lower() in class_ids for class_id in (row.get("classRestrictions") or []))
         )
     ]
+    feat_rows = [
+        row for row in (catalog.get("featsGeneral") or []) + (catalog.get("featsOrigin") or [])
+        if isinstance(row, dict) and _rules_mode_allows_row(row, normalized_rules_mode)
+    ]
 
     subclasses_by_class: dict[str, list[dict]] = {}
     for row in subclass_rows:
@@ -503,6 +507,18 @@ async def api_character_content_catalog(request: Request, rules_mode: str = "cas
             ],
             "subclasses": subclass_rows,
             "subclassesByClass": subclasses_by_class,
+            "feats": [
+                {
+                    "id": str(row.get("id") or "").strip(),
+                    "displayName": str(row.get("displayName") or row.get("name") or "").strip(),
+                    "prerequisite": row.get("prerequisite"),
+                    "description": str(row.get("description") or "").strip(),
+                    "abilityBonus": row.get("abilityBonus") if isinstance(row.get("abilityBonus"), dict) else {},
+                    "source": str(row.get("source") or "feat").strip() or "feat",
+                }
+                for row in feat_rows
+                if str(row.get("id") or "").strip()
+            ],
             "talents": talent_rows,
             "talentsByClass": talents_by_class,
             "awakenings": awakening_rows,

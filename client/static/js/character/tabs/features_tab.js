@@ -533,6 +533,7 @@
       feature.range ? { label: 'Range', value: feature.range } : null,
       feature.duration ? { label: 'Duration', value: feature.duration } : null,
       (feature.save || feature.trigger) ? { label: feature.save ? 'Save' : 'Trigger', value: feature.save || feature.trigger } : null,
+      feature.effect ? { label: 'Effect', value: feature.effect } : null,
       feature.usage ? { label: 'Uses', value: feature.usage } : null,
       feature.recovery ? { label: 'Recovery', value: feature.recovery } : null,
     ].filter(Boolean);

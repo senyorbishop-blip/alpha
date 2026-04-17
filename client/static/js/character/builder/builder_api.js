@@ -36,6 +36,7 @@
       classes: [],
       subclasses: [],
       subclassesByClass: {},
+      feats: [],
       futureContent: { feats: [], spells: [] },
       loadedAt: Date.now(),
     };
@@ -58,6 +59,7 @@
       classes,
       subclasses,
       subclassesByClass: byClass,
+      feats: Array.isArray(src.feats) ? src.feats : [],
       futureContent: src.futureContent && typeof src.futureContent === 'object'
         ? src.futureContent
         : { feats: [], spells: [] },
