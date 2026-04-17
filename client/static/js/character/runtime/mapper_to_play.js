@@ -146,26 +146,28 @@
 
   function rebuildRuntimeHp(nativeCharacter, nativeRuntime, fallback) {
     var runtime = asObject(nativeRuntime);
-    var canonicalHp = resolveCanonicalHp(nativeCharacter, runtime, fallback, { includeRuntime: false });
+    var canonicalHp = resolveCanonicalHp(nativeCharacter, runtime, fallback, { includeRuntime: true });
     if (!(Number.isFinite(canonicalHp.max) && canonicalHp.max > 0)) {
       return runtime;
     }
     var canonicalCurrent = Number.isFinite(canonicalHp.current)
       ? Math.max(0, Math.min(canonicalHp.max, canonicalHp.current))
       : canonicalHp.max;
+    var canonicalTemp = Number.isFinite(canonicalHp.temp) ? Math.max(0, canonicalHp.temp) : 0;
     return Object.assign({}, runtime, {
       hp: {
         max: canonicalHp.max,
         current: canonicalCurrent,
-        temp: canonicalHp.temp,
+        temp: canonicalTemp,
       },
       combat: Object.assign({}, asObject(runtime.combat), {
         maxHP: canonicalHp.max,
         currentHP: canonicalCurrent,
-        tempHP: canonicalHp.temp,
+        tempHP: canonicalTemp,
       }),
     });
   }
+
 
   function firstDefinedNumber() {
     for (var i = 0; i < arguments.length; i += 1) {
@@ -922,28 +924,35 @@
     });
     out.charSheet = nativeToLegacyCharSheet(nativeCharacter, runtimeWithCanonicalHp, source.charSheet);
     out.charBook = nativeToLegacyCharBook(nativeCharacter, runtimeWithCanonicalHp, source.charBook);
-    var runtimeHp = asObject(runtimeWithCanonicalHp.hp);
     var runtimeSpeed = asObject(runtimeWithCanonicalHp.speed);
-    var mappedMaxHp = asInt(runtimeHp.max, asInt(out.charSheet && out.charSheet.maxHp, asInt(out.charBook && out.charBook.maxHp, asInt(out.hp, null))));
-    var mappedCurrentHp = asInt(runtimeHp.current, asInt(out.charSheet && out.charSheet.currentHp, asInt(out.charBook && out.charBook.currentHp, mappedMaxHp)));
-    var mappedTempHp = asInt(runtimeHp.temp, asInt(out.charSheet && out.charSheet.tempHp, asInt(out.charBook && out.charBook.tempHp, asInt(out.tempHp, 0))));
+    var resolvedMappedHp = resolveCanonicalHp(nativeCharacter, runtimeWithCanonicalHp, {
+      max: asInt(out.charSheet && out.charSheet.maxHp, asInt(out.charBook && out.charBook.maxHp, asInt(out.hp, null))),
+      current: asInt(out.charSheet && out.charSheet.currentHp, asInt(out.charBook && out.charBook.currentHp, asInt(out.curhp, null))),
+      temp: asInt(out.charSheet && out.charSheet.tempHp, asInt(out.charBook && out.charBook.tempHp, asInt(out.tempHp, 0))),
+    }, { includeRuntime: true });
+    var mappedMaxHp = asInt(resolvedMappedHp.max, null);
+    var mappedCurrentHp = asInt(resolvedMappedHp.current, mappedMaxHp);
+    var mappedTempHp = Math.max(0, asInt(resolvedMappedHp.temp, 0));
+
     if (Number.isFinite(mappedMaxHp) && mappedMaxHp > 0) {
+      mappedCurrentHp = Number.isFinite(mappedCurrentHp)
+        ? Math.max(0, Math.min(mappedMaxHp, mappedCurrentHp))
+        : mappedMaxHp;
       out.hp = mappedMaxHp;
-      out.curhp = Number.isFinite(mappedCurrentHp) ? Math.max(0, Math.min(mappedMaxHp, mappedCurrentHp)) : mappedMaxHp;
-      out.tempHp = Math.max(0, asInt(mappedTempHp, 0));
+      out.curhp = mappedCurrentHp;
+      out.tempHp = mappedTempHp;
     }
-    out.nativeRuntime = Object.assign({}, asObject(out.nativeRuntime), runtimeWithCanonicalHp, {
-      hp: { max: mappedMaxHp, current: mappedCurrentHp, temp: mappedTempHp },
-      combat: Object.assign({}, asObject(asObject(out.nativeRuntime).combat), {
+
+    var baseRuntime = Object.assign({}, asObject(out.nativeRuntime), runtimeWithCanonicalHp);
+    if (Number.isFinite(mappedMaxHp) && mappedMaxHp > 0) {
+      baseRuntime.hp = { max: mappedMaxHp, current: mappedCurrentHp, temp: mappedTempHp };
+      baseRuntime.combat = Object.assign({}, asObject(baseRuntime.combat), {
         maxHP: mappedMaxHp,
         currentHP: mappedCurrentHp,
         tempHP: mappedTempHp,
-      }, asObject(runtimeWithCanonicalHp.combat), {
-        maxHP: mappedMaxHp,
-        currentHP: mappedCurrentHp,
-        tempHP: mappedTempHp,
-      }),
-    });
+      });
+    }
+    out.nativeRuntime = baseRuntime;
     var runtimeCombat = asObject(runtimeWithCanonicalHp.combat);
     if (runtimeCombat.ac !== undefined && runtimeCombat.ac !== null) {
       out.ac = asInt(runtimeCombat.ac, asInt(out.ac, 0));
@@ -978,7 +987,11 @@
     var identity = asObject(doc.identity);
 
     var mappedMaxHp = asInt(hp.max, asInt(combat.maxHP, asInt(token.maxHP, 10)));
-    var mappedCurrentHp = asInt(hp.current, asInt(combat.currentHP, asInt(hp.max, asInt(combat.maxHP, asInt(token.currentHP, 10)))));
+    if (!Number.isFinite(mappedMaxHp) || mappedMaxHp <= 0) {
+      mappedMaxHp = asInt(token.maxHP, 10);
+    }
+    var mappedCurrentHp = asInt(hp.current, asInt(combat.currentHP, asInt(token.currentHP, mappedMaxHp)));
+    mappedCurrentHp = Math.max(0, Math.min(mappedMaxHp, mappedCurrentHp));
 
     var comboPortrait = resolveComboPortraitForDoc(doc, identity);
     return {
