@@ -176,12 +176,12 @@
     style.id = 'character-builder-shell-style';
     style.textContent = [
       /* ── Shell Container ── */
-      '.character-builder-shell { margin-top: 14px; border: 1px solid rgba(201,168,76,0.28); border-radius: 12px; padding: 16px 18px; background: linear-gradient(180deg, rgba(11,14,18,0.96), rgba(8,11,15,0.98)); box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.02); }',
+      '.character-builder-shell { margin-top: 12px; border: 1px solid rgba(201,168,76,0.24); border-radius: 12px; padding: 12px 14px; background: linear-gradient(180deg, rgba(11,14,18,0.96), rgba(8,11,15,0.98)); box-shadow: 0 8px 28px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.02); }',
 
       /* ── Shell Branding Header ── */
-      '.character-builder-shell .cb-shell-branding { display:flex; align-items:center; gap:10px; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid rgba(201,168,76,0.15); }',
-      '.character-builder-shell .cb-shell-badge { width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg,rgba(201,168,76,0.18),rgba(0,212,184,0.1)); border:1px solid rgba(201,168,76,0.35); display:flex; align-items:center; justify-content:center; font-size:1rem; color:#C9A84C; flex-shrink:0; }',
-      '.character-builder-shell .cb-shell-title-text { font-family:"Cinzel",serif; font-size:0.82rem; font-weight:600; letter-spacing:0.07em; color:#E8C97A; }',
+      '.character-builder-shell .cb-shell-branding { display:flex; align-items:center; gap:8px; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid rgba(201,168,76,0.12); }',
+      '.character-builder-shell .cb-shell-badge { width:28px; height:28px; border-radius:7px; background:linear-gradient(135deg,rgba(201,168,76,0.18),rgba(0,212,184,0.1)); border:1px solid rgba(201,168,76,0.35); display:flex; align-items:center; justify-content:center; font-size:0.9rem; color:#C9A84C; flex-shrink:0; }',
+      '.character-builder-shell .cb-shell-title-text { font-family:"Cinzel",serif; font-size:0.74rem; font-weight:600; letter-spacing:0.06em; color:#E8C97A; }',
       '.character-builder-shell .cb-shell-title-sub { font-size:0.58rem; color:rgba(107,98,88,0.9); letter-spacing:0.03em; margin-top:1px; }',
 
       /* ── Field Styles ── */
@@ -193,7 +193,7 @@
       '.character-builder-shell textarea { resize: vertical; min-height: 96px; }',
 
       /* ── Actions Row ── */
-      '.character-builder-shell .builder-actions { display: flex; align-items:center; justify-content:space-between; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top:10px; border-top:1px solid rgba(42,51,64,0.7); }',
+      '.character-builder-shell .builder-actions { display: flex; align-items:center; justify-content:space-between; gap: 8px; flex-wrap: wrap; margin-top: 10px; padding-top:8px; border-top:1px solid rgba(42,51,64,0.7); }',
 
       /* ── Error & Help ── */
       '.character-builder-shell .builder-error { color: #fc9090; font-size: 0.68rem; min-height: 18px; margin-top: 4px; font-style:italic; }',
@@ -203,10 +203,10 @@
       '.character-builder-shell .builder-class-hint { margin: 8px 0 10px; border: 1px solid rgba(0,212,184,0.22); border-radius: 8px; background: rgba(0,212,184,0.06); padding: 9px 12px; font-size: 0.68rem; line-height: 1.5; color: rgba(213,249,244,0.88); }',
 
       /* ── Roadmap ── */
-      '.character-builder-shell .builder-roadmap { margin-bottom: 12px; border: 1px solid rgba(201,168,76,0.18); border-radius: 9px; background: rgba(6,8,10,0.6); overflow:hidden; }',
-      '.character-builder-shell .builder-roadmap-toggle { width: 100%; text-align: left; background: none; border: 0; color: #b09060; font-family: "Cinzel", serif; font-size: 0.68rem; letter-spacing: 0.05em; padding: 9px 12px; cursor: pointer; display:flex; align-items:center; justify-content:space-between; transition:color 0.2s; }',
+      '.character-builder-shell .builder-roadmap { margin-bottom: 10px; border: 1px solid rgba(201,168,76,0.14); border-radius: 8px; background: rgba(6,8,10,0.55); overflow:hidden; }',
+      '.character-builder-shell .builder-roadmap-toggle { width: 100%; text-align: left; background: none; border: 0; color: #b09060; font-family: "Cinzel", serif; font-size: 0.62rem; letter-spacing: 0.05em; padding: 7px 10px; cursor: pointer; display:flex; align-items:center; justify-content:space-between; transition:color 0.2s; }',
       '.character-builder-shell .builder-roadmap-toggle:hover { color: #E8C97A; }',
-      '.character-builder-shell .builder-roadmap-content { border-top: 1px solid rgba(201,168,76,0.14); padding: 8px 12px; }',
+      '.character-builder-shell .builder-roadmap-content { border-top: 1px solid rgba(201,168,76,0.14); padding: 7px 10px; }',
       '.character-builder-shell .roadmap-row { display: grid; grid-template-columns: 52px 1fr; gap: 8px; padding: 5px 0; font-size: 0.65rem; color: rgba(168,159,142,0.88); border-bottom:1px solid rgba(255,255,255,0.025); }',
       '.character-builder-shell .roadmap-row:last-child { border-bottom:none; }',
       '.character-builder-shell .roadmap-row.highlight .roadmap-level { color: #00D4B8; font-weight: 700; }',
@@ -217,8 +217,8 @@
       '.character-builder-shell .builder-meta { margin-top: 6px; font-size: 0.61rem; color: rgba(107,98,88,0.8); display:flex; align-items:center; gap:6px; }',
 
       /* ── Step Progress Track ── */
-      '.character-builder-shell .step-track { padding-bottom: 44px; }',
-      '.character-builder-shell .step-dot { width: 30px; height: 30px; }',
+      '.character-builder-shell .step-track { padding-bottom: 36px; }',
+      '.character-builder-shell .step-dot { width: 26px; height: 26px; }',
       '.character-builder-shell .step-label { font-size: 0.52rem; }',
 
       /* ── Step Counter ── */
@@ -344,6 +344,11 @@
       });
 
       const onReview = snapshot.currentStepId === 'review';
+      var showRoadmap = snapshot.currentStepId === 'class'
+        || snapshot.currentStepId === 'progression'
+        || snapshot.currentStepId === 'abilities'
+        || snapshot.currentStepId === 'subclass'
+        || snapshot.currentStepId === 'review';
       const roadmap = getRoadmapRows(snapshot);
       const roadmapRows = roadmap.rows.map(function toRoadmapRow(row) {
         var cls = [
@@ -405,18 +410,22 @@
         renderStepProgress(stepItems, snapshot.currentStepId),
 
         // ── Level Roadmap ──
-        '<div class="builder-roadmap">',
-        '<button class="builder-roadmap-toggle" data-builder-roadmap-toggle="1">',
-        'Level Roadmap',
-        roadmap.className ? ' · ' + escHtml(roadmap.className) : '',
-        roadmapExpanded ? ' ▲' : ' ▼',
-        '</button>',
-        '<div class="builder-roadmap-content"' + (roadmapExpanded ? '' : ' hidden') + '>',
-        roadmap.rows.length
-          ? roadmapRows
-          : '<div class="builder-help-text" style="margin:0;font-size:0.63rem;">Choose a class to preview upcoming level features.</div>',
-        '</div>',
-        '</div>',
+        showRoadmap
+          ? [
+              '<div class="builder-roadmap">',
+              '<button class="builder-roadmap-toggle" data-builder-roadmap-toggle="1">',
+              'Level Roadmap',
+              roadmap.className ? ' · ' + escHtml(roadmap.className) : '',
+              roadmapExpanded ? ' ▲' : ' ▼',
+              '</button>',
+              '<div class="builder-roadmap-content"' + (roadmapExpanded ? '' : ' hidden') + '>',
+              roadmap.rows.length
+                ? roadmapRows
+                : '<div class="builder-help-text" style="margin:0;font-size:0.63rem;">Choose a class to preview upcoming level features.</div>',
+              '</div>',
+              '</div>',
+            ].join('')
+          : '',
 
         // ── Step Body ──
         resumeBannerHtml,

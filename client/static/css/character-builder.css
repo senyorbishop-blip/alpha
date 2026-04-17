@@ -1673,7 +1673,8 @@
   border-color: rgba(201, 168, 76, 0.14);
 }
 
-.cls-list-item.selected {
+.cls-list-item.selected,
+.cls-list-item[aria-selected="true"] {
   background: rgba(201, 168, 76, 0.11);
   border-color: var(--cb-gold);
 }
@@ -1777,18 +1778,18 @@
 /* ── Screen Header: compact variant for embedded builder ───────────────── */
 /* The standalone preview page uses full sizes; embedded builder uses these */
 .character-builder-shell .screen-header {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 .character-builder-shell .screen-title {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   letter-spacing: 0.04em;
 }
 .character-builder-shell .screen-subtitle {
-  font-size: 0.72rem;
-  margin-top: 4px;
+  font-size: 0.68rem;
+  margin-top: 3px;
 }
 .character-builder-shell .screen-divider {
-  margin: 8px 0;
+  margin: 6px 0;
 }
 
 /* ── Collapsible Optional Section (details/summary) ────────────────────── */
@@ -1809,7 +1810,7 @@
   gap: 8px;
   padding: 9px 14px;
   font-family: var(--cb-font-display);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   letter-spacing: 0.05em;
   color: var(--cb-text-secondary);
   cursor: pointer;
@@ -1844,11 +1845,22 @@
   border-bottom: 1px solid var(--cb-border);
 }
 .cb-optional-section-body {
-  padding: 12px 14px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   gap: 0;
   animation: screenIn 0.2s ease;
+}
+.cb-optional-section--muted {
+  border-color: rgba(42, 51, 64, 0.75);
+  background: rgba(6, 8, 10, 0.35);
+}
+.cb-optional-section--muted > .cb-optional-section-summary {
+  color: var(--cb-text-dim);
+  background: rgba(17, 21, 25, 0.45);
+}
+.cb-optional-section--muted[open] > .cb-optional-section-summary {
+  color: rgba(168, 159, 142, 0.92);
 }
 .cb-optional-section-body .field {
   margin-bottom: 10px;
@@ -1870,11 +1882,11 @@
 .cb-level-picker {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
-  gap: 4px;
-  margin-bottom: 12px;
+  gap: 5px;
+  margin-bottom: 10px;
 }
 .cb-level-btn {
-  padding: 7px 4px;
+  padding: 6px 4px;
   border-radius: 5px;
   border: 1px solid var(--cb-border);
   background: var(--cb-dark2);
@@ -1938,8 +1950,14 @@
 /* ── Progression Class Context Line ────────────────────────────────────── */
 .cb-prog-class-line {
   font-family: var(--cb-font-display);
-  font-size: 0.68rem;
-  color: var(--cb-gold-dim);
+  font-size: 0.62rem;
+  color: rgba(201, 168, 76, 0.8);
   letter-spacing: 0.04em;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.cb-identity-preview {
+  margin: 6px 0 8px !important;
+  padding: 8px 10px !important;
 }

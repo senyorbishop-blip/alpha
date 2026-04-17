@@ -295,7 +295,7 @@
         else if (casterType === 'half') casterDot = '<span class="cls-caster-dot half" title="Half Caster"></span>';
         else if (casterType === 'pact') casterDot = '<span class="cls-caster-dot pact" title="Pact Magic"></span>';
 
-        return '<div class="cls-list-item' + (isSelected ? ' selected' : '') + '" data-class-id="' + escHtml(entry.id) + '" style="--class-color:' + color + '">' +
+        return '<div class="cls-list-item' + (isSelected ? ' selected' : '') + '" data-class-id="' + escHtml(entry.id) + '" aria-selected="' + (isSelected ? 'true' : 'false') + '" style="--class-color:' + color + '">' +
           '<span class="cls-list-dot" style="background:' + color + '"></span>' +
           '<span class="cls-list-name">' + escHtml(entry.name) + '</span>' +
           casterDot +
@@ -311,9 +311,9 @@
         : '<div class="cls-detail-empty"><div style="font-size:2.5rem;opacity:0.25">⚔</div><div>Select a class to view details</div></div>';
 
       return '<div class="screen-header">' +
-          '<div class="screen-title">Choose Your Class</div>' +
+          '<div class="screen-title">Choose Class</div>' +
           '<div class="screen-divider"></div>' +
-          '<div class="screen-subtitle">Your class is your calling — it defines your powers, fighting style, and path forward</div>' +
+          '<div class="screen-subtitle">Pick the role you want to play. You can compare full details before moving on.</div>' +
         '</div>' +
         renderPreviewTile(draft) +
         '<input type="hidden" data-builder-path="class.id" value="' + escHtml(selectedId) + '" />' +
@@ -331,9 +331,17 @@
           if (context && typeof context.onSetField === 'function') {
             context.onSetField(['class', 'id'], id);
           }
-          root.querySelectorAll('.cls-list-item').forEach(function(i) { i.classList.remove('selected'); });
+          root.querySelectorAll('.cls-list-item').forEach(function(i) {
+            i.classList.remove('selected');
+            i.setAttribute('aria-selected', 'false');
+          });
           item.classList.add('selected');
-          showClassDetailPanel(root, id, context && context.draft);
+          item.setAttribute('aria-selected', 'true');
+          var currentDraft = context && context.draft && typeof context.draft === 'object' ? context.draft : {};
+          var nextDraft = Object.assign({}, currentDraft, {
+            class: Object.assign({}, currentDraft.class || {}, { id: id }),
+          });
+          showClassDetailPanel(root, id, nextDraft);
         });
       });
     },

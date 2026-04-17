@@ -231,9 +231,9 @@
       // --- screen header ---
       var header = [
         '<div class="screen-header">',
-        '<div class="screen-title">Choose Your Species</div>',
+        '<div class="screen-title">Choose Species</div>',
         '<div class="screen-divider"></div>',
-        '<div class="screen-subtitle">Your ancestry shapes your innate traits, senses, and place in the world. <button class="help-btn" data-help-topic="species">?</button></div>',
+        '<div class="screen-subtitle">Pick your ancestry. You can review details after selecting a card.</div>',
         '</div>',
       ].join('');
 
@@ -273,8 +273,13 @@
 
       // --- lineage field ---
       var lineageField = [
-        '<div class="field"><label>Lineage / Heritage Notes (optional)</label>',
+        '<details class="cb-optional-section" data-section-key="species-lineage">',
+        '<summary class="cb-optional-section-summary">Lineage Notes <span class="cb-optional">optional</span></summary>',
+        '<div class="cb-optional-section-body">',
+        '<div class="field"><label>Lineage / Heritage</label>',
         '<input type="text" data-builder-path="species.lineage" value="' + escAttr(species.lineage || '') + '" maxlength="80" placeholder="High Elf, Hill Dwarf, etc." /></div>',
+        '</div>',
+        '</details>',
       ].join('');
 
       return [
@@ -314,16 +319,6 @@
       var currentId = bindDraft.species && bindDraft.species.id;
       if (currentId) {
         showSpeciesDetailPanel(root, currentId, bindDraft);
-      }
-      // 3. Help button
-      var helpBtn = root.querySelector('.help-btn[data-help-topic]');
-
-      if (helpBtn) {
-        helpBtn.addEventListener('click', function() {
-          if (typeof global.showHelp === 'function') {
-            global.showHelp(helpBtn.dataset.helpTopic);
-          }
-        });
       }
     },
     getCatalog: function getCatalog() {

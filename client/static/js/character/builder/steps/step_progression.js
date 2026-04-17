@@ -128,13 +128,13 @@
 
       var hiddenLevelInput = '<input type="hidden" data-builder-path="progression.level" value="' + safeLevel + '" id="cb-progression-level-hidden" />';
       var classLine = className
-        ? '<div class="cb-prog-class-line">' + escHtml(className) + ' · Level ' + safeLevel + '</div>'
+        ? '<div class="cb-prog-class-line">' + escHtml(className) + ' · Starting level ' + safeLevel + '</div>'
         : '';
 
       var featPickerHtml = featLevel
         ? [
             '<div class="field"><label>Level ' + safeLevel + ' Choice</label>',
-            '<div class="builder-help-text">This level grants an Ability Score Improvement or a Feat choice.</div>',
+            '<div class="builder-help-text">This level grants either an Ability Score Improvement or a Feat.</div>',
             '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:8px;">',
             '<button type="button" data-builder-asi-mode="ability" class="sheet-book-btn' + (asiMode === 'ability' ? ' active' : '') + '">Ability Score Improvement</button>',
             '<button type="button" data-builder-asi-mode="feat" class="sheet-book-btn' + (asiMode === 'feat' ? ' active' : '') + '">Choose a Feat</button>',
@@ -148,14 +148,14 @@
               return '<option value="' + escHtml(id) + '"' + selected + '>' + escHtml(String(row.displayName || row.name || id)) + '</option>';
             }).join(''),
             '</select>',
-            '<div class="builder-help-text">Structured feat choice is saved directly; no CSV typing required.</div>',
+            '<div class="builder-help-text">Your feat selection saves automatically.</div>',
             '</div>',
           ].join('')
-        : '<div class="builder-help-text">No feat/ASI pick is required at Level ' + safeLevel + '.</div>';
+        : '<div class="builder-help-text">No feat or ASI choice is required at this level.</div>';
 
       var talentPickerHtml = [
         '<div class="field"><label>Talents</label>',
-        '<div class="builder-help-text">Choose talent cards. This stores structured picks (no CSV typing).</div>',
+        '<div class="builder-help-text">Choose any talent cards your table uses.</div>',
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:8px;">',
         (talentRows.length ? talentRows.map(function (row) {
           var id = String(row.id || '').trim();
@@ -169,9 +169,9 @@
 
       return [
         '<div class="screen-header">',
-        '<div class="screen-title">Starting Level</div>',
+        '<div class="screen-title">Set Starting Level</div>',
         '<div class="screen-divider"></div>',
-        '<div class="screen-subtitle">Most campaigns begin at Level 1. Your DM may tell you to start higher.</div>',
+        '<div class="screen-subtitle">Start where your campaign begins. Most games begin at level 1.</div>',
         '</div>',
 
         classLine,
@@ -179,8 +179,8 @@
         renderLevelPicker(safeLevel),
         milestoneHtml,
 
-        '<details class="cb-optional-section" data-section-key="progression-advanced"' + (_advancedOpen ? ' open' : '') + '>',
-        '<summary class="cb-optional-section-summary">Advanced Options <span class="cb-optional">feats &amp; talents</span></summary>',
+        '<details class="cb-optional-section cb-optional-section--muted" data-section-key="progression-advanced"' + (_advancedOpen ? ' open' : '') + '>',
+        '<summary class="cb-optional-section-summary">Advanced Picks <span class="cb-optional">feats &amp; talents</span></summary>',
         '<div class="cb-optional-section-body">',
         featPickerHtml,
         talentPickerHtml,

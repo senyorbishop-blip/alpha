@@ -1,13 +1,4 @@
 (function initCharacterBuilderStepIdentity(global) {
-  function ensureBuilderStyles() {
-    if (document.getElementById('character-builder-css')) return;
-    var link = document.createElement('link');
-    link.id = 'character-builder-css';
-    link.rel = 'stylesheet';
-    link.href = '/static/css/character-builder.css';
-    document.head.appendChild(link);
-  }
-
   function escHtml(value) {
     return String(value || '')
       .replace(/&/g, '&amp;')
@@ -113,26 +104,6 @@
       const GENDER_OPTIONS = ['male', 'female', 'nonbinary', 'custom'];
       const gender = GENDER_OPTIONS.includes(identity.gender) ? identity.gender : 'male';
 
-      // Combo portrait preview — resolves from library when species + class are set
-      var portraitPreviewHtml = '';
-      var portraitLib = global.CasualDnDPortraitLibrary;
-      if (portraitLib && typeof portraitLib.resolve === 'function') {
-        var previewSrc = portraitLib.resolve({
-          speciesId: draft.species && draft.species.id,
-          classId: draft.class && draft.class.id,
-          gender: gender,
-        });
-        if (previewSrc && draft.species && draft.class && draft.species.id && draft.class.id) {
-          portraitPreviewHtml = [
-            '<div style="float:right;width:82px;height:92px;border-radius:14px;overflow:hidden;',
-            'border:1px solid rgba(201,168,76,0.3);margin:0 0 12px 14px;',
-            'box-shadow:0 8px 20px rgba(0,0,0,0.3);flex-shrink:0;">',
-            '<img src="' + escHtml(previewSrc) + '" style="width:100%;height:100%;object-fit:contain;object-position:center;" alt="Character preview" />',
-            '</div>',
-          ].join('');
-        }
-      }
-
       function detailsOpen(key) {
         return _expanded[key] ? ' open' : '';
       }
@@ -140,23 +111,20 @@
       return [
         // ── Primary: Name ─────────────────────────────────────────────
         '<div class="cb-section">',
-        portraitPreviewHtml,
-        sectionHeader('✦', 'Your Character', 'Give your adventurer a name to begin.'),
+        sectionHeader('✦', 'Character Identity', 'Start with a name. You can add details later.'),
 
         '<div class="cb-field-row cb-field-row--full" style="margin-bottom:10px;">',
         '<div class="field">',
         '<label data-builder-tooltip="identity">Character Name</label>',
         '<input type="text" class="cb-input-hero" data-builder-path="identity.name"',
         ' value="' + escHtml(identity.name || '') + '" maxlength="60"',
-        ' placeholder="Enter your character\'s full name\u2026" autofocus />',
+        ' placeholder="Character name" autofocus />',
         '</div>',
         '</div>',
-        renderPortraitPreview(draft),
-
         '<div class="cb-field-row cb-field-row--2col">',
 
         '<div class="field">',
-        '<label>Presentation</label>',
+        '<label>Portrait Tone</label>',
         '<select data-builder-path="identity.gender" id="cb-gender-select">',
         '<option value="male"' + (gender === 'male' ? ' selected' : '') + '>Masculine</option>',
         '<option value="female"' + (gender === 'female' ? ' selected' : '') + '>Feminine</option>',
@@ -173,23 +141,22 @@
         '</div>',
 
         '</div>',
-
-        '<div class="cb-field-row cb-field-row--2col">',
-
-        '<div class="field">',
-        '<label>Age <span class="cb-optional">optional</span></label>',
-        '<input type="text" data-builder-path="identity.age"',
-        ' value="' + escHtml(identity.age || '') + '" maxlength="40"',
-        ' placeholder="Young adult, 30, etc." />',
-        '</div>',
-
-        '</div>',
         '</div>',
 
         // ── Optional: Roleplay Details ────────────────────────────────
         '<details class="cb-optional-section" data-section-key="roleplay"' + detailsOpen('roleplay') + '>',
         '<summary class="cb-optional-section-summary">Roleplay Details <span class="cb-optional">optional</span></summary>',
         '<div class="cb-optional-section-body">',
+        renderPortraitPreview(draft),
+
+        '<div class="cb-field-row cb-field-row--2col">',
+        '<div class="field">',
+        '<label>Age</label>',
+        '<input type="text" data-builder-path="identity.age"',
+        ' value="' + escHtml(identity.age || '') + '" maxlength="40"',
+        ' placeholder="Young adult, 30, etc." />',
+        '</div>',
+        '</div>',
 
         '<div class="cb-field-row cb-field-row--2col">',
 
@@ -266,7 +233,7 @@
         '<div class="field">',
         '<label>Backstory</label>',
         '<textarea data-builder-path="identity.backstory" maxlength="1000"',
-        ' placeholder="One-paragraph concept \u2014 origin, motivation, dark secret\u2026"',
+        ' placeholder="Short concept: origin, goal, and tone."',
         ' rows="4">' + escHtml(identity.backstory || '') + '</textarea>',
         '<div class="cb-char-count">' + String(identity.backstory || '').length + ' / 1000</div>',
         '</div>',
@@ -274,7 +241,7 @@
         '<div class="field">',
         '<label>Notes</label>',
         '<textarea data-builder-path="identity.notes" maxlength="600"',
-        ' placeholder="Personality traits, bonds, flaws, roleplay reminders\u2026"',
+        ' placeholder="Roleplay notes, bonds, flaws, reminders."',
         ' rows="3">' + escHtml(identity.notes || '') + '</textarea>',
         '<div class="cb-char-count">' + String(identity.notes || '').length + ' / 600</div>',
         '</div>',
