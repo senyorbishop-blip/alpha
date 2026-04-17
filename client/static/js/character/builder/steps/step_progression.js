@@ -128,6 +128,87 @@
     return single ? [single] : [];
   }
 
+  function uniqueStrings(values) {
+    var seen = Object.create(null);
+    var out = [];
+    (Array.isArray(values) ? values : []).forEach(function (value) {
+      var token = String(value || '').trim();
+      if (!token || seen[token]) return;
+      seen[token] = true;
+      out.push(token);
+    });
+    return out;
+  }
+
+  function resolvedAsiChoiceCount(progression) {
+    var row = progression && typeof progression === 'object' ? progression : {};
+    var asiChoice = row.asiChoice && typeof row.asiChoice === 'object' ? row.asiChoice : {};
+    var asiMode = String(asiChoice.mode || 'ability').toLowerCase() === 'feat' ? 'feat' : 'ability';
+    var asiAbilities = getAbilityChoiceState(row, asiMode);
+    var featChoice = String(
+      asiChoice.featId
+      || (row.choiceState && row.choiceState.featId)
+      || (Array.isArray(row.feats) ? row.feats[0] : '')
+      || ''
+    ).trim();
+    var storedFeats = uniqueStrings(Array.isArray(row.feats) ? row.feats : []);
+    var explicitAsi = (asiMode === 'ability' && asiAbilities.length > 0) || (asiMode === 'feat' && !!featChoice) ? 1 : 0;
+    return Math.max(storedFeats.length, explicitAsi);
+  }
+
+  function computeCumulativeRequirements(draft) {
+    var progression = draft && draft.progression && typeof draft.progression === 'object' ? draft.progression : {};
+    var level = parseInt(progression.level, 10);
+    var safeLevel = Number.isFinite(level) && level >= 1 ? Math.min(level, 20) : 1;
+    var progressionSummary = getProgressionSummary(draft);
+    var progressionTable = getProgressionTable(draft);
+    var subclassUnlockLevel = getSubclassUnlockLevel(draft);
+    var subclassSelection = String(draft && draft.class && draft.class.subclassId || '').trim();
+
+    var asiLevels = [];
+    for (var lvl = 1; lvl <= safeLevel; lvl += 1) {
+      var levelRow = getLevelRow(progressionTable, lvl);
+      if (hasFeatOrAsiChoice(levelRow, progressionSummary, lvl)) {
+        asiLevels.push(lvl);
+      }
+    }
+
+    var resolvedCount = resolvedAsiChoiceCount(progression);
+    var unresolvedAsiLevels = asiLevels.slice(resolvedCount);
+    var required = [];
+    if (subclassUnlockLevel > 0 && safeLevel >= subclassUnlockLevel && !subclassSelection) {
+      required.push({
+        type: 'subclass',
+        level: subclassUnlockLevel,
+        title: 'Subclass choice required',
+        detail: 'Subclass unlocks at level ' + subclassUnlockLevel + ' and is still unresolved.',
+      });
+    }
+    unresolvedAsiLevels.forEach(function (lvl) {
+      required.push({
+        type: 'asi',
+        level: lvl,
+        title: 'ASI / Feat required',
+        detail: 'Resolve your level ' + lvl + ' Ability Score Improvement or Feat choice.',
+      });
+    });
+
+    return {
+      safeLevel: safeLevel,
+      progressionSummary: progressionSummary,
+      progressionTable: progressionTable,
+      subclassUnlockLevel: subclassUnlockLevel,
+      subclassSelection: subclassSelection,
+      asiLevels: asiLevels,
+      unresolvedAsiLevels: unresolvedAsiLevels,
+      required: required,
+    };
+  }
+
+  global.CharacterBuilderProgressionRequirements = {
+    compute: computeCumulativeRequirements,
+  };
+
   function renderLevelPicker(safeLevel) {
     var buttons = '';
     for (var lvl = 1; lvl <= 20; lvl++) {
@@ -154,11 +235,13 @@
 
       const classId = getClassId(draft);
       const className = getClassName(draft);
-      const progressionSummary = getProgressionSummary(draft);
-      const progressionTable = getProgressionTable(draft);
+      const requirements = computeCumulativeRequirements(draft);
+      const progressionSummary = requirements.progressionSummary;
+      const progressionTable = requirements.progressionTable;
       const levelRow = getLevelRow(progressionTable, safeLevel);
       const featureText = getFeaturesAtLevel(progressionSummary, safeLevel);
-      const featLevel = hasFeatOrAsiChoice(levelRow, progressionSummary, safeLevel);
+      const featLevel = requirements.unresolvedAsiLevels.length > 0;
+      const featTargetLevel = featLevel ? requirements.unresolvedAsiLevels[0] : safeLevel;
       const featRows = getFeatRows();
       const talentRows = getTalentRowsForClass(classId).filter(function (row) {
         var minLevel = parseInt(row && row.minimumLevel, 10);
@@ -174,9 +257,9 @@
       const selectedTalents = Array.isArray(choiceState.talentIds)
         ? choiceState.talentIds.map(function (v) { return String(v || '').trim(); }).filter(Boolean)
         : (Array.isArray(progression.talents) ? progression.talents.map(function (v) { return String(v || '').trim(); }).filter(Boolean) : []);
-      const subclassUnlockLevel = getSubclassUnlockLevel(draft);
-      const subclassRequiredNow = !!(subclassUnlockLevel && safeLevel >= subclassUnlockLevel && !String(draft && draft.class && draft.class.subclassId || '').trim());
-      const subclassSelection = String(draft && draft.class && draft.class.subclassId || '').trim();
+      const subclassUnlockLevel = requirements.subclassUnlockLevel;
+      const subclassRequiredNow = requirements.required.some(function (item) { return item.type === 'subclass'; });
+      const subclassSelection = requirements.subclassSelection;
 
       var milestoneHtml = '';
       if (featureText) {
@@ -197,10 +280,24 @@
         ? '<div class="cb-prog-class-line">' + escHtml(className) + ' · Starting level ' + safeLevel + '</div>'
         : '';
 
+      var autoUnlockRows = [];
+      for (var unlockLevel = 1; unlockLevel <= safeLevel; unlockLevel += 1) {
+        var rowText = getFeaturesAtLevel(progressionSummary, unlockLevel);
+        if (!rowText) continue;
+        autoUnlockRows.push('<div class="cb-level-unlock" style="margin-top:6px;"><span class="cb-level-unlock-label">Level ' + unlockLevel + '</span><span class="cb-level-unlock-text">' + escHtml(rowText) + '</span></div>');
+      }
+      var autoUnlockHtml = autoUnlockRows.length
+        ? '<div style="margin-top:10px;"><div class="builder-help-text" style="margin:0 0 4px 0;">Automatic unlock summary (levels 1-' + safeLevel + ')</div>' + autoUnlockRows.join('') + '</div>'
+        : '';
+
+      var requiredChoicesHtml = requirements.required.length
+        ? '<div style="margin-top:10px;"><div class="cb-level-unlock"><span class="cb-level-unlock-label">Required unresolved picks</span><span class="cb-level-unlock-text">' + requirements.required.map(function (item) { return 'Lv ' + item.level + ': ' + item.title; }).join(' · ') + '</span></div></div>'
+        : '<div class="builder-help-text" style="margin-top:10px;">All mandatory progression choices through level ' + safeLevel + ' are resolved.</div>';
+
       var featPickerHtml = featLevel
         ? [
-            '<div class="field"><label>Level ' + safeLevel + ' Choice</label>',
-            '<div class="builder-help-text">This level grants either an Ability Score Improvement or a Feat.</div>',
+            '<div class="field"><label>Level ' + featTargetLevel + ' Required Choice</label>',
+            '<div class="builder-help-text">Resolve this required Ability Score Improvement or Feat before continuing.</div>',
             '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:8px;">',
             '<button type="button" data-builder-asi-mode="ability" class="sheet-book-btn' + (asiMode === 'ability' ? ' active' : '') + '">Ability Score Improvement</button>',
             '<button type="button" data-builder-asi-mode="feat" class="sheet-book-btn' + (asiMode === 'feat' ? ' active' : '') + '">Choose a Feat</button>',
@@ -228,7 +325,7 @@
             '<div class="builder-help-text">Your feat selection saves automatically.</div>',
             '</div>',
           ].join('')
-        : '<div class="builder-help-text">No feat or ASI choice is required at this level.</div>';
+        : '<div class="builder-help-text">No unresolved ASI/feat choices remain up to this starting level.</div>';
 
       var talentPickerHtml = talentRows.length ? [
         '<div class="field"><label>Talents</label>',
@@ -268,10 +365,12 @@
         milestoneHtml,
         subclassPromptHtml,
 
-        '<details class="cb-optional-section cb-optional-section--muted" data-section-key="progression-advanced"' + (_advancedOpen ? ' open' : '') + '>',
-        '<summary class="cb-optional-section-summary">Advanced Picks <span class="cb-optional">feats &amp; talents</span></summary>',
-        '<div class="cb-optional-section-body">',
+        autoUnlockHtml,
+        requiredChoicesHtml,
         featPickerHtml,
+        '<details class="cb-optional-section cb-optional-section--muted" data-section-key="progression-advanced"' + (_advancedOpen ? ' open' : '') + '>',
+        '<summary class="cb-optional-section-summary">Optional Picks <span class="cb-optional">talents</span></summary>',
+        '<div class="cb-optional-section-body">',
         talentPickerHtml,
         '</div>',
         '</details>',

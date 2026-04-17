@@ -7,6 +7,8 @@
     tabByKey: Object.create(null),
     searchByKey: Object.create(null),
     statusByKey: Object.create(null),
+    searchTimerByKey: Object.create(null),
+    indexedByKey: Object.create(null),
   };
 
   function asArray(value) {
@@ -250,8 +252,11 @@
   }
 
   function setSelection(context, known, prepared, status) {
-    context.onSetField(['spellbook', 'known'], dedupeIds(known));
-    context.onSetField(['spellbook', 'prepared'], dedupeIds(prepared));
+    var existing = asObject(context && context.draft && context.draft.spellbook);
+    context.onSetField(['spellbook'], Object.assign({}, existing, {
+      known: dedupeIds(known),
+      prepared: dedupeIds(prepared),
+    }));
     state.statusByKey[requestKey(context.draft)] = String(status || '');
   }
 
@@ -285,9 +290,16 @@
     var spellId = String(card && card.id || '').trim();
     var name = String(card && (card.displayName || card.name || spellId) || 'Spell');
     var summary = String(card && (card.summary || card.description) || '').trim();
+    var searchIndex = String([
+      card && card.displayName,
+      card && card.name,
+      card && card.summary,
+      card && card.description,
+      card && card.school
+    ].join(' ')).toLowerCase();
 
     return [
-      '<article class="' + classes.join(' ') + '" data-builder-spell-card="1" data-builder-spell-id="' + esc(spellId) + '" data-builder-spell-level="' + esc(String(parseInt(card && card.level, 10) || 0)) + '" data-builder-spell-blocked="' + (options.blocked ? '1' : '0') + '">',
+      '<article class="' + classes.join(' ') + '" data-builder-spell-card="1" data-builder-spell-id="' + esc(spellId) + '" data-builder-spell-level="' + esc(String(parseInt(card && card.level, 10) || 0)) + '" data-builder-spell-blocked="' + (options.blocked ? '1' : '0') + '" data-builder-spell-search-index="' + esc(searchIndex) + '">',
       '<div class="cb-spell-head"><div class="cb-spell-name">' + esc(name) + '</div><div class="cb-spell-level">' + esc(levelLabel(card && card.level)) + '</div></div>',
       '<div class="cb-spell-meta"><span>' + esc(String(card && card.school || '')) + '</span><span>' + esc(String(card && card.castingTime || '')) + '</span><span>' + esc(String(card && card.range || '')) + '</span></div>',
       summary ? '<div class="cb-spell-summary">' + esc(summary) + '</div>' : '',
@@ -324,6 +336,12 @@
     var levels = Object.keys(cardsByLevel).map(function (v) { return parseInt(v, 10); }).filter(function (v) { return Number.isFinite(v); }).sort(function (a, b) { return a - b; });
 
     var key = requestKey(draft);
+    state.indexedByKey[key] = {
+      cardsByLevel: cardsByLevel,
+      cardById: indexCards(visibleCards),
+      grants: grants,
+      highestUnlocked: highestUnlocked,
+    };
     var activeLevel = state.tabByKey[key];
     if (levels.indexOf(activeLevel) < 0) activeLevel = levels.length ? levels[0] : 0;
     state.tabByKey[key] = activeLevel;
@@ -332,7 +350,7 @@
     var status = String(state.statusByKey[key] || '').trim();
     var warnClass = /limit reached|not unlocked|illegal|only|exceeded/i.test(status) ? ' warn' : '';
 
-    var cardById = indexCards(visibleCards);
+    var cardById = state.indexedByKey[key].cardById;
     var chipKnown = selected.known.map(function (id) { return cardById[id]; }).filter(Boolean);
     var chipPrepared = selected.prepared.map(function (id) { return cardById[id]; }).filter(Boolean);
 
@@ -382,49 +400,51 @@
         return '<button type="button" class="cb-spells-tab' + (lvl === activeLevel ? ' active' : '') + '" data-builder-spell-tab="' + esc(String(lvl)) + '">' + esc(levelLabel(lvl)) + ' (' + esc(String(total)) + ')</button>';
       }).join(''),
       '</div>',
-      levels.map(function (lvl) {
-        var rows = asArray(cardsByLevel[lvl]).filter(function (card) {
-          if (!search) return true;
-          var haystack = String([
-            card && card.displayName,
-            card && card.name,
-            card && card.summary,
-            card && card.description,
-            card && card.school
-          ].join(' ')).toLowerCase();
-          return haystack.indexOf(search) >= 0;
-        });
-
-        var sectionBody = rows.length
-          ? ('<div class="cb-spells-grid">' + rows.map(function (card) {
-            var spellId = String(card && card.id || '').trim();
-            var spellLevel = parseInt(card && card.level, 10) || 0;
-            var selectedNow = spellLevel <= 0
-              ? selected.known.indexOf(spellId) >= 0
-              : (counts.mode === 'prepared' ? selected.prepared.indexOf(spellId) >= 0 : selected.known.indexOf(spellId) >= 0);
-            var granted = grants.alwaysPrepared.has(spellId) || grants.alwaysKnown.has(spellId) || grants.classAlwaysKnown.has(spellId);
-            var blocked = !selectedNow && card && card.isAccessible === false;
-            var note = '';
-            if (granted && counts.mode === 'prepared' && grants.alwaysPrepared.has(spellId)) {
-              note = 'Granted (always prepared, no slot cost in pick limit).';
-            } else if (granted) {
-              note = 'Granted (always known, no slot cost in pick limit).';
-            } else if (blocked) {
-              note = String(card.blockedReason || 'Not unlocked for this class and level.');
-            }
-            return renderSpellCard(card, {
-              selected: selectedNow,
-              blocked: blocked,
-              granted: granted,
-              note: note,
-            });
-          }).join('') + '</div>')
-          : '<div class="cb-spells-empty">No spells match this filter.</div>';
-
-        return '<section class="cb-spells-group' + (lvl === activeLevel ? ' active' : '') + '" data-builder-spell-group="' + esc(String(lvl)) + '">' + sectionBody + '</section>';
-      }).join(''),
+      '<section class="cb-spells-group active" data-builder-spell-active-group="1">' + renderSpellGroup(cardsByLevel, activeLevel, search, selected, counts, grants) + '</section>',
       '</div>'
     ].join('');
+  }
+
+  function renderSpellGroup(cardsByLevel, activeLevel, search, selected, counts, grants) {
+    var rows = asArray(cardsByLevel[activeLevel]).filter(function (card) {
+      if (!search) return true;
+      var haystack = String([
+        card && card.displayName,
+        card && card.name,
+        card && card.summary,
+        card && card.description,
+        card && card.school
+      ].join(' ')).toLowerCase();
+      return haystack.indexOf(search) >= 0;
+    });
+
+    if (!rows.length) {
+      return '<div class="cb-spells-empty">No spells match this filter.</div>';
+    }
+
+    return '<div class="cb-spells-grid">' + rows.map(function (card) {
+      var spellId = String(card && card.id || '').trim();
+      var spellLevel = parseInt(card && card.level, 10) || 0;
+      var selectedNow = spellLevel <= 0
+        ? selected.known.indexOf(spellId) >= 0
+        : (counts.mode === 'prepared' ? selected.prepared.indexOf(spellId) >= 0 : selected.known.indexOf(spellId) >= 0);
+      var granted = grants.alwaysPrepared.has(spellId) || grants.alwaysKnown.has(spellId) || grants.classAlwaysKnown.has(spellId);
+      var blocked = !selectedNow && card && card.isAccessible === false;
+      var note = '';
+      if (granted && counts.mode === 'prepared' && grants.alwaysPrepared.has(spellId)) {
+        note = 'Granted (always prepared, no slot cost in pick limit).';
+      } else if (granted) {
+        note = 'Granted (always known, no slot cost in pick limit).';
+      } else if (blocked) {
+        note = String(card.blockedReason || 'Not unlocked for this class and level.');
+      }
+      return renderSpellCard(card, {
+        selected: selectedNow,
+        blocked: blocked,
+        granted: granted,
+        note: note,
+      });
+    }).join('') + '</div>';
   }
 
   function render(context) {
@@ -450,7 +470,27 @@
     return renderMain(context, cached);
   }
 
-  function wireTabAndSearch(root, draft) {
+  function rerenderActiveGroup(root, context, payload) {
+    var draft = asObject(context && context.draft);
+    var key = requestKey(draft);
+    var indexed = state.indexedByKey[key];
+    if (!indexed) return;
+    var selected = sanitizeSelection(draft, payload);
+    var counts = computeCounts(payload, selected);
+    var grants = grantedSets(asObject(payload && payload.validation));
+    var activeLevel = parseInt(state.tabByKey[key], 10);
+    var levels = Object.keys(indexed.cardsByLevel).map(function (v) { return parseInt(v, 10); }).filter(function (v) { return Number.isFinite(v); }).sort(function (a, b) { return a - b; });
+    if (levels.indexOf(activeLevel) < 0) activeLevel = levels.length ? levels[0] : 0;
+    state.tabByKey[key] = activeLevel;
+    var query = String(state.searchByKey[key] || '').trim().toLowerCase();
+    var group = root.querySelector('[data-builder-spell-active-group="1"]');
+    if (group) {
+      group.innerHTML = renderSpellGroup(indexed.cardsByLevel, activeLevel, query, selected, counts, grants);
+    }
+  }
+
+  function wireTabAndSearch(root, context, payload) {
+    var draft = asObject(context && context.draft);
     var key = requestKey(draft);
 
     root.querySelectorAll('[data-builder-spell-tab]').forEach(function (btn) {
@@ -462,10 +502,8 @@
         root.querySelectorAll('[data-builder-spell-tab]').forEach(function (tab) {
           tab.classList.toggle('active', tab === btn);
         });
-        root.querySelectorAll('[data-builder-spell-group]').forEach(function (groupEl) {
-          var groupLevel = parseInt(groupEl.getAttribute('data-builder-spell-group'), 10);
-          groupEl.classList.toggle('active', groupLevel === level);
-        });
+        rerenderActiveGroup(root, context, payload);
+        applySearchFilter(root, key);
       });
     });
 
@@ -474,31 +512,46 @@
       searchInput.addEventListener('input', function () {
         var query = String(searchInput.value || '').trim().toLowerCase();
         state.searchByKey[key] = query;
-
-        root.querySelectorAll('[data-builder-spell-group]').forEach(function (groupEl) {
-          var cards = groupEl.querySelectorAll('[data-builder-spell-card="1"]');
-          var visibleCount = 0;
-          cards.forEach(function (cardEl) {
-            var haystack = String(cardEl.textContent || '').toLowerCase();
-            var visible = !query || haystack.indexOf(query) >= 0;
-            cardEl.style.display = visible ? '' : 'none';
-            if (visible) visibleCount += 1;
-          });
-
-          var empty = groupEl.querySelector('.cb-spells-empty[data-filter-empty="1"]');
-          if (visibleCount === 0) {
-            if (!empty) {
-              empty = document.createElement('div');
-              empty.className = 'cb-spells-empty';
-              empty.setAttribute('data-filter-empty', '1');
-              empty.textContent = 'No spells match this filter.';
-              groupEl.appendChild(empty);
-            }
-          } else if (empty && empty.parentNode) {
-            empty.parentNode.removeChild(empty);
-          }
-        });
+        if (state.searchTimerByKey[key]) {
+          clearTimeout(state.searchTimerByKey[key]);
+        }
+        state.searchTimerByKey[key] = setTimeout(function () {
+          rerenderActiveGroup(root, context, payload);
+          applySearchFilter(root, key);
+        }, 120);
       });
+    }
+  }
+
+  function applySearchFilter(root, key) {
+    var query = String(state.searchByKey[key] || '').trim().toLowerCase();
+    var activeLevel = parseInt(state.tabByKey[key], 10);
+    if (!Number.isFinite(activeLevel)) activeLevel = 0;
+    var group = root.querySelector('[data-builder-spell-active-group="1"]');
+    if (!group) return;
+
+    var cards = group.querySelectorAll('[data-builder-spell-card="1"]');
+    var visibleCount = 0;
+    cards.forEach(function (cardEl) {
+      var haystack = String(cardEl.getAttribute('data-builder-spell-search-index') || '').toLowerCase();
+      var level = parseInt(cardEl.getAttribute('data-builder-spell-level'), 10);
+      var inActiveLevel = Number.isFinite(level) ? level === activeLevel : false;
+      var visible = inActiveLevel && (!query || haystack.indexOf(query) >= 0);
+      cardEl.style.display = visible ? '' : 'none';
+      if (visible) visibleCount += 1;
+    });
+
+    var empty = group.querySelector('.cb-spells-empty[data-filter-empty="1"]');
+    if (visibleCount === 0) {
+      if (!empty) {
+        empty = document.createElement('div');
+        empty.className = 'cb-spells-empty';
+        empty.setAttribute('data-filter-empty', '1');
+        empty.textContent = 'No spells match this filter.';
+        group.appendChild(empty);
+      }
+    } else if (empty && empty.parentNode) {
+      empty.parentNode.removeChild(empty);
     }
   }
 
@@ -604,7 +657,8 @@
         });
       });
 
-      wireTabAndSearch(root, draft);
+      wireTabAndSearch(root, context, payload);
+      applySearchFilter(root, key);
     });
   }
 

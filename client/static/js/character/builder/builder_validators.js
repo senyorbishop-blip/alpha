@@ -131,6 +131,18 @@
     if (!Number.isFinite(level) || level < 1 || level > 20) {
       return { ok: false, error: 'Character level must be between 1 and 20.' };
     }
+    const progressionRequirements = global.CharacterBuilderProgressionRequirements;
+    if (progressionRequirements && typeof progressionRequirements.compute === 'function') {
+      const requirements = progressionRequirements.compute(draft);
+      const pending = Array.isArray(requirements && requirements.required) ? requirements.required : [];
+      if (pending.length > 0) {
+        const first = pending[0] || {};
+        if (first.type === 'subclass') {
+          return { ok: false, error: 'Choose your subclass to resolve required progression choices.' };
+        }
+        return { ok: false, error: 'Resolve required progression choices (ASI/Feat) before continuing.' };
+      }
+    }
     return { ok: true, error: '' };
   }
 

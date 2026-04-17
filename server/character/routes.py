@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from functools import lru_cache
 from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
@@ -319,6 +320,34 @@ def _highest_unlocked_spell_level(spell_slots: dict) -> int:
     return highest
 
 
+@lru_cache(maxsize=1)
+def _builder_class_spell_pool() -> dict[str, set[str]]:
+    root = Path(__file__).resolve().parents[1] / "data" / "rules" / "5e2024" / "class_spell_lists.json"
+    try:
+        payload = json.loads(root.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    out: dict[str, set[str]] = {}
+    if not isinstance(payload, dict):
+        return out
+    for raw_class_id, buckets in payload.items():
+        class_id = str(raw_class_id or "").strip().lower()
+        if not class_id:
+            continue
+        spell_ids: set[str] = set()
+        if isinstance(buckets, dict):
+            for values in buckets.values():
+                if not isinstance(values, list):
+                    continue
+                for raw_spell_id in values:
+                    spell_id = str(raw_spell_id or "").strip().lower()
+                    if spell_id:
+                        spell_ids.add(spell_id)
+        if spell_ids:
+            out[class_id] = spell_ids
+    return out
+
+
 @router.get("/api/character/content/catalog")
 async def api_character_content_catalog(request: Request, rules_mode: str = "casual"):
     auth_user = get_request_user(request)
@@ -577,22 +606,41 @@ async def api_character_builder_spell_options(
     )
 
     highest_unlocked = _highest_unlocked_spell_level(limits.get("spellSlots") if isinstance(limits, dict) else {})
-    known_set = set(validation.get("known") or [])
-    prepared_set = set(validation.get("prepared") or [])
+    known_set = {str(v or "").strip().lower() for v in (validation.get("known") or []) if str(v or "").strip()}
+    prepared_set = {str(v or "").strip().lower() for v in (validation.get("prepared") or []) if str(v or "").strip()}
     subclass_grants = validation.get("subclassGrants") if isinstance(validation.get("subclassGrants"), dict) else {}
     class_bonus = validation.get("classBonusGrants") if isinstance(validation.get("classBonusGrants"), dict) else {}
     bonus_access = set(subclass_grants.get("alwaysPrepared") or []) | set(subclass_grants.get("alwaysKnown") or []) | set(class_bonus.get("alwaysKnown") or [])
+    class_spell_pool = _builder_class_spell_pool().get(normalized_class_id, set())
+    if not class_spell_pool:
+        # Fallback for environments missing class_spell_lists metadata.
+        class_spell_pool = {
+            str(row.get("id") or "").strip().lower()
+            for row in list_compendium_spells(cls=normalized_class_id)
+            if isinstance(row, dict)
+        }
+
     cards: list[dict] = []
     for spell in list_compendium_spells():
         if not isinstance(spell, dict):
             continue
-        spell_id = str(spell.get("id") or "").strip()
+        spell_id = str(spell.get("id") or "").strip().lower()
         if not spell_id:
             continue
+        in_class_pool = spell_id in class_spell_pool
         unlock = (spell.get("classUnlockLevels") or {}).get(normalized_class_id)
-        is_accessible = (unlock is not None and class_level >= _safe_int(unlock, 99)) or (spell_id in bonus_access)
+        has_bonus_access = spell_id in bonus_access
+        if not in_class_pool and not has_bonus_access and spell_id not in known_set and spell_id not in prepared_set:
+            continue
+
+        is_accessible = False
+        if has_bonus_access:
+            is_accessible = True
+        elif in_class_pool and unlock is not None and class_level >= _safe_int(unlock, 99):
+            is_accessible = True
+
         spell_level = _safe_int(spell.get("level"), 0)
-        if spell_level > 0 and highest_unlocked >= 0 and spell_level > highest_unlocked and spell_id not in bonus_access:
+        if spell_level > 0 and highest_unlocked >= 0 and spell_level > highest_unlocked and not has_bonus_access:
             is_accessible = False
         if not is_accessible and spell_id not in known_set and spell_id not in prepared_set:
             continue
