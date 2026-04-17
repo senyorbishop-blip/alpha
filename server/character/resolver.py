@@ -151,11 +151,13 @@ def _compute_base_hp(document: dict, level_total: int, runtime_classes: list[dic
             class_catalog = get_class_catalog_row(class_id) if class_id else None
             hit_die = _safe_int((class_catalog or {}).get("hitDie"), 8, minimum=1)
             hit_die_average = max(1, (hit_die // 2) + 1)
-            class_hp = max(1, (hit_die_average * lvl) + (con_mod * lvl))
+            # Level 1 gets the full hit die; each subsequent level gets the average.
+            class_hp = max(1, hit_die + (hit_die_average * (lvl - 1)) + (con_mod * lvl))
             max_hp += class_hp
             hit_dice.append({"die": hit_die, "count": lvl, "classId": class_id})
     else:
-        max_hp = max(1, level_total * (6 + con_mod))
+        default_avg = max(1, (6 // 2) + 1)
+        max_hp = max(1, 6 + (level_total - 1) * default_avg + con_mod * level_total)
 
     max_hp = max(1, max_hp)
     return {
@@ -592,7 +594,7 @@ def resolve_character_runtime(document: Any) -> dict:
     speed = _safe_int(species.get("speed"), 30, minimum=0)
     runtime["speed"] = {"walk": speed}
     runtime_classes = _resolve_runtime_classes(normalized)
-    runtime["hp"] = _runtime_hp_from_document(normalized, _compute_base_hp(normalized, level_total, runtime_classes))
+    runtime["hp"] = _compute_base_hp(normalized, level_total, runtime_classes)
     runtime["classes"] = runtime_classes
     if runtime_classes:
         primary = runtime_classes[0]

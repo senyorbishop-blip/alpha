@@ -18,10 +18,10 @@
     global.CharacterBuilderStepModules[step.id] = step;
   }
 
-  function ensureCatalogLoaded() {
+  function ensureCatalogLoaded(rulesMode) {
     const api = global.CharacterBuilderAPI;
     if (!api || typeof api.fetchCatalog !== 'function') return;
-    api.fetchCatalog({ rulesMode: 'casual' }).catch(function ignoreFailure() {});
+    api.fetchCatalog({ rulesMode: rulesMode || 'casual' }).catch(function ignoreFailure() {});
   }
 
   function ensureSubclassStyles() {
@@ -589,9 +589,10 @@
     id: 'subclass',
     label: 'Subclass',
     render: function renderSubclassStep(context) {
-      ensureCatalogLoaded();
-      ensureSubclassStyles();
       const draft = context && context.draft && typeof context.draft === 'object' ? context.draft : {};
+      const rulesMode = String(draft.rulesMode || 'casual').trim().toLowerCase();
+      ensureCatalogLoaded(rulesMode);
+      ensureSubclassStyles();
       const classId = getCurrentClassId(draft);
       const subclassId = getSelectedSubclassId(draft);
       const unlockLevel = getSubclassUnlockLevel(classId);
