@@ -31,43 +31,50 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "type": "bonus action",
         "resourceName": "Rage",
         "trackUses": True,
-        "summary": "Enter a rage to hit harder, stay dangerous, and soak punishment in front-line fights.",
+        "summary": "Enter a Rage to deal bonus damage, gain resistance to physical damage, and unlock rage-linked Barbarian features.",
         "description": (
-            "As a bonus action, you enter a Rage that turns you into a durable melee threat. While raging, your weapon attacks hit harder, "
-            "you gain strong durability against common physical punishment, and many barbarian features start keying off the rage state.\n\n"
-            "In play, Rage is your default combat opener when a hard fight starts. Trigger it early, then stay aggressive so you keep the "
-            "benefits rolling while you pressure the enemy line."
+            "As a Bonus Action, you enter a Rage that lasts up to 1 minute. While raging:\n\n"
+            "Bonus damage: Add your Rage Damage Bonus to Strength-based weapon attack damage rolls (starts at +2, increases at higher levels).\n\n"
+            "Resistance: You have resistance to Bludgeoning, Piercing, and Slashing damage — you take half damage from those types.\n\n"
+            "Limits: You can't cast or concentrate on spells while raging. Rage ends early if you end a turn without attacking a hostile "
+            "creature or taking damage, or if you fall Unconscious.\n\n"
+            "Open Rage at the start of a tough melee fight. Stay aggressive to keep it running — an idle turn with no attack or damage can drop it early."
         ),
-        "effect": "Bonus damage, defensive staying power, and access to rage-linked barbarian features.",
-        "recovery": "Regain uses on a Long Rest; some tables may also use short-rest recovery text surfaced elsewhere in the sheet.",
+        "effect": "+2 (or more) damage on Strength attacks, resistance to physical damage, access to rage-dependent features.",
+        "duration": "Up to 1 minute; ends early if you end a turn without attacking or taking damage, or fall Unconscious.",
+        "usage": "Spend 1 Rage use",
+        "recovery": "All Rage uses return on a Long Rest.",
         "tags": ["combat", "resource", "defense"],
     },
     "unarmored defense": {
-        "summary": "Your Armor Class comes from your body and stats instead of needing armor.",
+        "summary": "When unarmored, your AC is calculated from your stats instead of armor — no equipment needed.",
         "description": (
-            "This feature replaces the default armor math with a class-specific formula, letting your build stay effective even when you are not "
-            "wearing armor. It matters every time your Dexterity, Constitution, or Wisdom changes depending on class.\n\n"
-            "In play, this is passive but important: the sheet should recalculate AC correctly and keep that value stable across rests, reloads, "
-            "and equipment changes."
+            "When you are not wearing armor, your AC uses a class-specific formula instead of the default 10 + Dexterity modifier:\n\n"
+            "Barbarian: AC = 10 + Dexterity modifier + Constitution modifier.\n\n"
+            "Monk: AC = 10 + Dexterity modifier + Wisdom modifier.\n\n"
+            "This feature is passive and always active when unarmored. You may still use a shield (Barbarians only). "
+            "Equipping any armor disables this formula and uses the armor's AC instead."
         ),
         "tags": ["defense", "passive"],
     },
     "reckless attack": {
-        "summary": "Trade defense for accuracy by going all-in on your offense.",
+        "summary": "Gain Advantage on your melee attacks this turn, but grant Advantage on all attacks against you until your next turn.",
         "description": (
-            "When you attack recklessly, you swing with full commitment to improve your chance to hit, but you expose yourself in return. "
-            "This is a voluntary risk-reward toggle, not a free passive buff.\n\n"
-            "Use it when landing the hit matters more than staying safe, especially while raging or when you want to push advantage-based damage."
+            "When you make your first attack on your turn, you can choose to attack recklessly. You gain Advantage on all melee weapon attack "
+            "rolls using Strength for the rest of the turn — but until your next turn, attack rolls against you also have Advantage.\n\n"
+            "Worth using when: you need the hit badly (boss with regeneration, single remaining enemy, etc.), while raging (the resistance offsets "
+            "the incoming hit risk), or when another Sneak Attack or burst-damage ally can capitalize on the distraction."
         ),
-        "effect": "Improves melee attack reliability while increasing the danger of incoming attacks.",
+        "effect": "Advantage on your Strength melee attacks this turn; Advantage on attacks against you until next turn.",
         "tags": ["combat", "risk-reward"],
     },
     "danger sense": {
-        "summary": "You react quickly to visible threats and effects that can be dodged.",
+        "summary": "You have Advantage on Dexterity saving throws against visible threats such as traps, spells, and breath weapons.",
         "description": (
-            "Danger Sense is a defensive awareness feature that improves your odds against hazards, blasts, and similar threats you can actually "
-            "notice. It does not replace all saving throw defenses, but it makes you much harder to catch flat-footed in obvious danger zones.\n\n"
-            "In play, pressure this during trap checks, spell bursts, and breath-weapon style tests where visibility and reaction matter."
+            "You gain Advantage on Dexterity saving throws against effects you can see, such as traps, spells, and explosions — as long as you "
+            "are not Blinded, Deafened, or Incapacitated.\n\n"
+            "This is a passive benefit on a specific saving throw type. Against area-of-effect spells, fireballs, dragon breath, and similar "
+            "visible blasts, you are noticeably harder to damage than other front-liners."
         ),
         "tags": ["defense", "awareness"],
     },
@@ -80,10 +87,11 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["utility", "exploration"],
     },
     "fast movement": {
-        "summary": "You move faster than most front-line warriors, helping you stick to priority targets.",
+        "summary": "Your speed increases by 10 feet when you are not wearing Heavy Armor.",
         "description": (
-            "This passive speed increase makes it easier to start fights on your terms, close gaps, and keep pressure on fragile targets. The value "
-            "should apply automatically in the sheet and remain visible in combat movement surfaces."
+            "When you are not wearing Heavy Armor, your walking speed increases by 10 feet. This is a passive bonus that applies automatically.\n\n"
+            "The extra movement lets you close on priority targets before they can create distance, reposition mid-fight without sacrificing attack "
+            "turns, and generally out-pace heavier characters across the battlefield."
         ),
         "tags": ["mobility", "passive"],
     },
@@ -120,10 +128,11 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["combat", "resource"],
     },
     "primal champion": {
-        "summary": "Your body reaches a legendary peak of raw physical dominance.",
+        "summary": "Your Strength and Constitution each increase by 4, pushing every physical stat, save, and derived number to its peak.",
         "description": (
-            "This capstone massively improves the barbarian’s raw physical profile and pushes the class into true endgame bruiser territory. "
-            "The sheet should reflect the stat impact directly in attacks, saves, checks, hit points, and any other derived totals that depend on it."
+            "At level 20, your Strength and Constitution both increase by 4 — and can exceed the normal maximum of 20. "
+            "This upgrades attack bonuses, damage bonuses, Athletics checks, Constitution saving throws, hit point total "
+            "(retroactively, since Constitution modifier increases), and any other Strength or Constitution-based number on the sheet."
         ),
         "tags": ["capstone", "stats"],
     },
@@ -132,19 +141,23 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "type": "bonus action",
         "resourceName": "Bardic Inspiration",
         "trackUses": True,
-        "summary": "Grant an ally a die they can spend later to swing a key roll in your party’s favor.",
+        "summary": "Grant one ally a die they can add to one ability check, attack roll, or saving throw within 10 minutes.",
         "description": (
-            "As a bonus action, you inspire a creature so it can add the Bardic Inspiration die to an important future roll. This is one of the bard’s "
-            "core support tools and should feel visible, easy to spend, and easy to track.\n\n"
-            "In play, use it before decisive attacks, saves, or ability checks instead of hoarding it too long. The sheet should make the die size, "
-            "remaining uses, and refresh timing obvious."
+            "As a Bonus Action, choose one creature other than yourself within 60 feet who can hear you. That creature gains a Bardic Inspiration "
+            "die. Once within the next 10 minutes, they can roll the die and add the result to one ability check, attack roll, or saving throw — "
+            "and they can decide after seeing the roll result.\n\n"
+            "Die size: d6 at level 1, d8 at level 5, d10 at level 10, d12 at level 15.\n\n"
+            "Number of uses: equal to your Charisma modifier (minimum 1). All uses return on a Long Rest. At level 5, Font of Inspiration lets "
+            "them return on a Short Rest instead.\n\n"
+            "Best timing: hand it to an ally before a contested roll, an important concentration save, or a skill check with a meaningful "
+            "consequence — where a few extra points clearly change the outcome."
         ),
-        "effect": "Creates a flexible support resource that helps the party pass important rolls.",
+        "effect": "A floating bonus die an ally can add to any one roll of their choice.",
         "range": "60 feet",
         "duration": "10 minutes",
-        "trigger": "Use before an ally makes an ability check, attack roll, or saving throw that matters.",
+        "trigger": "Use before an ally makes a roll where the margin between success and failure is small.",
         "usage": "Spend 1 Bardic Inspiration use",
-        "recovery": "Refresh depends on level; later bard progression improves how often this comes back.",
+        "recovery": "Returns on Long Rest (Short Rest at level 5 via Font of Inspiration).",
         "tags": ["support", "resource", "social"],
     },
     "jack of all trades": {
@@ -182,18 +195,23 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["support", "defense", "action"],
     },
     "magical secrets": {
-        "summary": "You learn powerful off-list magic, widening what your bard can solve.",
+        "summary": "Learn spells from any class list — these bonus spells do not count against your Bard Spells Known limit.",
         "description": (
-            "Magical Secrets is one of the bard’s biggest identity spikes. It lets you poach spells that radically change your support, control, or burst "
-            "toolkit. The sheet should make those extra spell choices feel first-class, not like a hidden exception."
+            "Magical Secrets lets you pick spells from any class’s spell list and add them to your Bard spell list. These spells are known "
+            "as Bard spells and count against your Spells Known total only at the level you gain them (not as ongoing slots).\n\n"
+            "You gain Magical Secrets at level 10, and again at levels 14 and 18. Some subclasses (Lore Bard) grant Additional Magical Secrets "
+            "at level 6 — two spells from any list, not just the Bard list.\n\n"
+            "High-value picks: Fireball or Counterspell from the Wizard list, Healing Word for healing flexibility, Animate Objects for combat "
+            "power, or any spell your party does not already have access to."
         ),
         "tags": ["spellcasting", "customization"],
     },
     "font of inspiration": {
-        "summary": "Your inspiration engine is now much easier to keep online.",
+        "summary": "Your Bardic Inspiration uses now return on a Short Rest instead of only a Long Rest.",
         "description": (
-            "This progression point changes the cadence of Bardic Inspiration recovery. It matters because it decides whether the bard can treat inspiration "
-            "as a premium panic button or as a regular combat rhythm tool."
+            "Starting at level 5, all expended Bardic Inspiration uses return when you finish a Short Rest (in addition to Long Rests). "
+            "This changes Bardic Inspiration from a resource you hoard across a day to one you can spend freely each encounter, "
+            "knowing a 1-hour rest will recharge the whole pool."
         ),
         "tags": ["resource", "support"],
     },
@@ -210,12 +228,17 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "type": "action",
         "resourceName": "Channel Divinity",
         "trackUses": True,
-        "summary": "Spend divine power on subclass or core cleric effects such as bursts of support, turning, or domain tools.",
+        "summary": "Spend a Channel Divinity use to power one of your available divine options — Turn Undead, a domain ability, or another granted option.",
         "description": (
-            "Channel Divinity is a spendable divine resource that powers major cleric buttons. The exact option depends on your build, but the important "
-            "thing is that the sheet clearly surfaces the resource, the action timing, and the linked divine options."
+            "Channel Divinity lets you focus divine power into one of several usable effects. Each use is spent on one option, most of which use "
+            "your Action. The available options come from two sources:\n\n"
+            "Core Cleric: Turn Undead (and at later levels, Destroy Undead).\n\n"
+            "Divine Domain: Each domain grants 1–3 additional Channel Divinity options specific to that domain (e.g., Preserve Life for Life Domain, "
+            "Sacred Weapon for Devotion Paladin, Nature's Wrath for Nature Domain).\n\n"
+            "Uses: You start with 1 use, gaining more at higher Cleric levels. All uses return on a Short or Long Rest."
         ),
-        "recovery": "Usually refreshes on a Short or Long Rest depending on the surfaced class rules.",
+        "usage": "Spend 1 Channel Divinity use",
+        "recovery": "All uses return on a Short or Long Rest.",
         "tags": ["divine", "resource", "support"],
     },
     "turn undead": {
@@ -278,24 +301,31 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "type": "action",
         "resourceName": "Wild Shape",
         "trackUses": True,
-        "summary": "Transform into beast forms to scout, survive, or fight from an entirely different stat profile.",
+        "summary": "Transform into a beast form using your Action, gaining the creature's stats, movement, and attacks while retaining your mental scores.",
         "description": (
-            "Wild Shape changes how the druid interacts with the game by swapping into a beast form with different mobility, senses, and combat options. "
-            "It is both an exploration tool and, for some circles, a combat engine.\n\n"
-            "In play, the important questions are what form you can currently access, how many uses remain, and what happens to your resources and state "
-            "while transformed."
+            "As an Action, spend 1 Wild Shape use to transform into a beast you have seen. Rules while transformed:\n\n"
+            "Stats: Use the beast's physical stats (Strength, Dexterity, Constitution) but keep your own mental scores (Intelligence, Wisdom, Charisma). "
+            "Your hit points change to the beast's HP; when you drop to 0 in beast form you revert to your Druid form with your remaining HP.\n\n"
+            "CR limits: The beast's Challenge Rating cannot exceed certain thresholds tied to your Druid level (CR 1/4 at level 2, CR 1/2 at level 4, "
+            "CR 1 at level 8, higher with Moon Druid).\n\n"
+            "Equipment: Your equipment either melds into the form (non-functional but protected) or falls to the ground.\n\n"
+            "Spellcasting: You cannot cast spells while in beast form unless Beast Spells (level 18) allows it.\n\n"
+            "Duration: Up to a number of hours equal to half your Druid level (minimum 1 hour). You can revert as a Bonus Action. "
+            "You have 2 uses; they return on a Short or Long Rest."
         ),
-        "duration": "Usually hours equal to half your druid level (minimum 1 hour), unless ended early.",
-        "trigger": "Use when you need beast mobility, survivability, scouting, or circle-specific combat form pressure.",
-        "usage": "Spend 1 Wild Shape use",
-        "recovery": "Track uses and rest refresh directly in the sheet resource area.",
+        "duration": "Hours equal to half your Druid level (minimum 1 hour); revert as a Bonus Action.",
+        "trigger": "Use for scouting in a smaller form, surviving a tough fight with beast HP, or Moon Druid combat forms.",
+        "usage": "Spend 1 Wild Shape use (2 uses total)",
+        "recovery": "Both uses return on a Short or Long Rest.",
         "tags": ["shapechange", "resource", "exploration"],
     },
     "druidic": {
-        "summary": "You gain access to the hidden language and cultural signals of druids.",
+        "summary": "You know Druidic, a secret language that only other Druids can understand — used for hidden messages and druid-to-druid communication.",
         "description": (
-            "Druidic is mostly a world and communication feature, but it matters because it gives the class an identity hook that can surface in exploration, "
-            "secrets, and faction-style interactions."
+            "You know Druidic, the secret language of Druids. You can speak and write it, and leave hidden messages that only other Druids can read. "
+            "Non-Druids noticing the message know something is written there but cannot decode it.\n\n"
+            "Druidic pays off in roleplay, exploration, and faction interactions — spotting a druidic mark in a dungeon, "
+            "communicating secretly with druid NPCs, or leaving messages for allies with the same training."
         ),
         "tags": ["language", "flavor", "utility"],
     },
@@ -344,13 +374,17 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "type": "bonus action",
         "resourceName": "Second Wind",
         "trackUses": True,
-        "summary": "Spend a bonus action to stabilize yourself with a burst of self-healing.",
+        "summary": "As a Bonus Action, restore 1d10 + your Fighter level in hit points to yourself.",
         "description": (
-            "Second Wind is the fighter’s emergency self-sustain button. It should be quick to read and quick to use, especially because it often decides "
-            "whether the fighter can hold the line for one more round."
+            "As a Bonus Action, you regain hit points equal to 1d10 + your Fighter level. No targeting, no roll to hit — just immediate "
+            "self-healing on your turn without spending your Action.\n\n"
+            "Uses: You have 1 use, refreshing on a Short or Long Rest. At level 9 you gain 2 uses per rest.\n\n"
+            "Best used when you are low on health and cannot afford to go down before the fight ends — or immediately after taking a big hit "
+            "to stay above zero and keep fighting."
         ),
-        "effect": "Restore hit points to yourself without giving up your main action.",
-        "recovery": "Refreshes with rest based on the fighter resource rules surfaced in the sheet.",
+        "effect": "1d10 + Fighter level hit points restored to yourself.",
+        "usage": "Spend 1 Second Wind use",
+        "recovery": "Returns on a Short or Long Rest.",
         "tags": ["healing", "resource", "combat"],
     },
     "action surge": {
@@ -358,16 +392,21 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "type": "special",
         "resourceName": "Action Surge",
         "trackUses": True,
-        "summary": "Explode your tempo for one turn and do something extra that most characters simply cannot.",
+        "summary": "On your turn, take one additional Action on top of your regular Action and Bonus Action.",
         "description": (
-            "Action Surge is a defining fighter spike tool. It is about tempo, burst, and solving a turn right now rather than later. The sheet should make "
-            "the remaining uses obvious because the player’s whole tactical plan may hinge on it."
+            "On your turn, you can spend 1 Action Surge use to take one additional Action. This is one of the most powerful turn-shaping abilities "
+            "in the game:\n\n"
+            "Attack + Attack: Use the Attack action twice (with Extra Attack, that’s 4 total swings at level 5).\n\n"
+            "Spell + Attack or Spell + Spell: Cast a spell and also take the Attack action in the same turn (note: you cannot cast two "
+            "non-cantrip leveled spells in the same turn using Action Surge).\n\n"
+            "Any action twice: Help, Dash, Grapple, Shove, or any other action — doubled on the same turn.\n\n"
+            "Uses: 1 use at levels 2–16; 2 uses at levels 17–20. All uses return on a Short or Long Rest."
         ),
-        "effect": "Gain an extra action on your turn within the feature’s current limits.",
+        "effect": "An extra full Action on your current turn.",
         "duration": "This turn only",
-        "trigger": "Use when an extra action will decisively finish a target, secure position, or rescue tempo.",
+        "trigger": "Use when doubling your action tempo will finish a target, stabilize the fight, or secure a crucial objective.",
         "usage": "Spend 1 Action Surge use",
-        "recovery": "Usually returns on a Short or Long Rest.",
+        "recovery": "Returns on a Short or Long Rest.",
         "tags": ["combat", "resource", "burst"],
     },
     "fighting style": {
@@ -379,10 +418,15 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["combat", "passive"],
     },
     "weapon mastery": {
-        "summary": "You unlock weapon rider properties that make attacks do more than just deal damage.",
+        "summary": "You unlock special Mastery properties on equipped weapons, adding tactical riders like Push, Slow, Topple, Sap, Flex, Graze, Vex, and Nick.",
         "description": (
-            "Weapon Mastery gives trained weapons additional tactical texture. The important thing is not just knowing you have mastery, but understanding which "
-            "weapons can trigger which rider and when that matters in a fight."
+            "Each weapon with a Mastery property gains an extra tactical option when you use it. Mastery properties include:\n\n"
+            "Cleave: Attack another creature adjacent to your hit target (no roll required, same weapon damage).\n\n"
+            "Graze: On a miss, deal damage equal to your ability modifier to the target.\n\n"
+            "Nick: When you make the extra attack granted by the Light property, you can make it with a different weapon.\n\n"
+            "Push / Topple / Sap: Force the target to succeed on a save or be pushed 10 ft / knocked Prone / Disadvantaged on next attack.\n\n"
+            "Slow: Speed reduced by 10 feet until your next turn on a hit. Vex: Advantage on your next attack roll against the target.\n\n"
+            "You choose which weapons to apply your Mastery to — check your equipped weapon list for which properties are active."
         ),
         "tags": ["combat", "weapons"],
     },
@@ -412,63 +456,87 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         ),
         "tags": ["mobility", "combat"],
     },
-    "monk's focus": {
+    "monk’s focus": {
         "resourceName": "Focus Points",
         "trackUses": True,
-        "summary": "Your focus pool fuels the monk’s best mobility, defense, and burst techniques.",
+        "summary": "Your Focus Point pool (equal to your Monk level) fuels core techniques: Flurry of Blows, Patient Defense, Step of the Wind, and more.",
         "description": (
-            "Focus Points are the core spendable engine of the monk. The number left, the refresh timing, and the techniques that consume them should always "
-            "be obvious to the player."
+            "You have a number of Focus Points equal to your Monk level. They fuel your signature Monk techniques:\n\n"
+            "Flurry of Blows (1 point, Bonus Action): Make two additional unarmed strikes after the Attack action.\n\n"
+            "Patient Defense (1 point, Bonus Action): Take the Dodge action, giving attacks against you Disadvantage.\n\n"
+            "Step of the Wind (1 point, Bonus Action): Take the Dash or Disengage action; your jump distance doubles.\n\n"
+            "Stunning Strike (1 point, after a melee hit): Force a Constitution save — on failure, target is Stunned until your next turn.\n\n"
+            "Additional techniques unlock as you gain Monk levels. All Focus Points return on a Short or Long Rest."
         ),
-        "recovery": "Refreshes on rest according to the monk rules surfaced by the sheet.",
+        "recovery": "All Focus Points return on a Short or Long Rest.",
         "tags": ["resource", "combat", "mobility"],
     },
     "martial arts": {
-        "summary": "Your unarmed strikes, monk weapons, and action flow now work as a connected martial system.",
+        "summary": "Your unarmed strikes and Monk weapons scale in damage, can use Dexterity, and unlock a free Bonus Action strike after the Attack action.",
         "description": (
-            "Martial Arts is the monk’s core combat engine. It changes attack cadence, weapon expectations, and how bonus action offense comes online. If this "
-            "is wrong, the whole class feels wrong."
+            "Martial Arts gives you three connected benefits:\n\n"
+            "Damage scaling: Unarmed strikes and Monk weapons (simple melee weapons without Two-Handed, or shortswords) deal the Martial Arts die if "
+            "it exceeds the weapon’s normal damage: d6 at levels 1–4, d8 at 5–10, d10 at 11–16, d12 at 17–20.\n\n"
+            "Dexterity attacks: Use your Dexterity modifier instead of Strength for attack and damage rolls with Monk weapons and unarmed strikes.\n\n"
+            "Bonus strike: When you take the Attack action using a Monk weapon or unarmed strike, make one additional unarmed strike as a Bonus Action "
+            "(no Focus Point required for this strike)."
         ),
         "tags": ["combat", "unarmed"],
     },
     "flurry of blows": {
         "section": "Bonus Actions",
         "type": "bonus action",
-        "summary": "Spend focus to convert momentum into extra strikes.",
+        "summary": "Spend 1 Focus Point after the Attack action to make two additional unarmed strikes as a Bonus Action.",
         "description": (
-            "Flurry of Blows is the monk’s classic burst option. It turns a good opening into real pressure and should clearly show both the focus spend and the "
-            "extra attack sequence it creates."
+            "Immediately after you take the Attack action on your turn, spend 1 Focus Point to make two unarmed strikes as your Bonus Action. "
+            "Each uses your Martial Arts die + Dexterity modifier.\n\n"
+            "Combined with Extra Attack (level 5), Flurry gives you 4 total attacks in one turn: 2 from the Attack action, 2 from Flurry. "
+            "This is higher attack volume than almost any other class at equivalent level, making it ideal for applying Stunning Strike attempts "
+            "or simply maximizing damage on a priority target."
         ),
+        "usage": "Spend 1 Focus Point",
         "tags": ["combat", "resource", "unarmed"],
     },
     "patient defense": {
         "section": "Bonus Actions",
         "type": "bonus action",
-        "summary": "Spend focus to become much harder to pin down or hit cleanly.",
+        "summary": "Spend 1 Focus Point as a Bonus Action to take the Dodge action — imposing Disadvantage on attacks against you.",
         "description": (
-            "Patient Defense is the monk’s answer when survival matters more than damage. It should be readable as a defensive stance choice rather than a mystery "
-            "button."
+            "As a Bonus Action, spend 1 Focus Point to take the Dodge action. Until the start of your next turn:\n\n"
+            "Attack rolls against you have Disadvantage (if you can see the attacker).\n\n"
+            "You have Advantage on Dexterity saving throws.\n\n"
+            "Choose Patient Defense over Flurry of Blows when you are the primary target of a dangerous enemy, when you are low on hit points, "
+            "or when your next hit is not critical but surviving this round is."
         ),
+        "usage": "Spend 1 Focus Point",
         "tags": ["defense", "resource"],
     },
     "step of the wind": {
         "section": "Bonus Actions",
         "type": "bonus action",
-        "summary": "Spend focus to move like a problem the battlefield cannot easily hold.",
+        "summary": "Spend 1 Focus Point as a Bonus Action to Dash or Disengage, and double your jump distance until end of turn.",
         "description": (
-            "Step of the Wind is about verticality, escape, and suddenly being in the right place. It matters on crowded maps, long distances, or fights where "
-            "position decides who wins."
+            "As a Bonus Action, spend 1 Focus Point to take the Dash or Disengage action, and your jump distance is doubled until the end of the turn.\n\n"
+            "Dash: Your movement doubles this turn — great for closing long gaps or reaching elevated positions.\n\n"
+            "Disengage: Your movement no longer provokes Opportunity Attacks this turn — great for escaping a surrounded position or switching targets safely.\n\n"
+            "Combined with Unarmored Movement (which increases your speed as you level), Step of the Wind makes the Monk among the most mobile melee "
+            "fighters on any map."
         ),
+        "usage": "Spend 1 Focus Point",
         "tags": ["mobility", "resource"],
     },
     "deflect attacks": {
         "section": "Reactions",
         "type": "reaction",
-        "summary": "Use your reaction to blunt or redirect incoming punishment.",
+        "summary": "Use your Reaction when hit by a melee or ranged attack to reduce the damage by 1d10 + your Dexterity modifier + Monk level.",
         "description": (
-            "Deflect Attacks is a reactive defense that should feel immediate and tactical. When it is available, the player should know they have a real answer "
-            "to ranged or weapon pressure instead of eating every hit full-force."
+            "When you are hit by an attack roll, you can use your Reaction to reduce the damage by 1d10 + your Dexterity modifier + your Monk level.\n\n"
+            "If the damage is reduced to 0, you can spend 1 Focus Point (as part of the same Reaction) to redirect the projectile or energy "
+            "at a creature within 5–60 feet — making a ranged attack roll to deal the weapon's damage type.\n\n"
+            "Use this on heavy hits — boss attacks, sneak attacks, or any incoming attack you expect to deal serious damage."
         ),
+        "trigger": "When you are hit by an attack roll (melee or ranged).",
+        "usage": "Free (Reaction); optionally spend 1 Focus Point to redirect if damage reduced to 0.",
         "tags": ["reaction", "defense"],
     },
     "slow fall": {
@@ -481,12 +549,19 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["reaction", "mobility", "defense"],
     },
     "stunning strike": {
-        "summary": "Spend focus on a hit to threaten one of the strongest control riders in the class.",
+        "summary": "Spend 1 Focus Point after landing a melee hit to force a Constitution save — on failure, the target is Stunned until your next turn.",
         "description": (
-            "Stunning Strike lets the monk convert a successful hit into a saving throw that can cripple a target’s turn. It is one of the class’s highest-value "
-            "resource spends and should clearly show the trigger, save, and cost."
+            "When you hit a creature with a melee weapon attack, you can spend 1 Focus Point to attempt Stunning Strike. The target must make a "
+            "Constitution saving throw (DC = 8 + your proficiency bonus + your Wisdom modifier).\n\n"
+            "On a failed save, the creature is Stunned until the start of your next turn — it cannot take actions or move, attack rolls against it "
+            "have Advantage, and it fails Strength and Dexterity saving throws.\n\n"
+            "When to spend it: use against bosses with dangerous action routines, powerful casters who need to be interrupted, or any enemy whose "
+            "turn would hurt the party badly. Stunning once can be worth 2–3 Focus Points of effective value if the Stunned target loses a key turn."
         ),
-        "effect": "Control rider on a hit, usually forcing a Constitution-based defensive check from the target.",
+        "effect": "Stunned condition on target until your next turn on a failed Constitution save.",
+        "save": "Constitution saving throw (DC = 8 + proficiency bonus + Wisdom modifier)",
+        "trigger": "Immediately after landing a melee attack hit.",
+        "usage": "Spend 1 Focus Point per attempt",
         "tags": ["control", "resource", "combat"],
     },
     "stillness of mind": {
@@ -508,16 +583,20 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "type": "action",
         "resourceName": "Lay on Hands",
         "trackUses": True,
-        "summary": "Spend points from a healing pool to rescue allies or stabilize the front line.",
+        "summary": "Touch a creature to restore hit points from your healing pool (5 × Paladin level), or spend 5 points to cure a disease or poison.",
         "description": (
-            "Lay on Hands is reliable, controllable healing. It matters because it is not random: the player decides exactly how much of the pool to spend and "
-            "whether the moment calls for topping off, picking someone up, or removing a key condition."
+            "You have a Lay on Hands pool equal to 5 × your Paladin level. As an Action, touch a creature to spend any number of points from the "
+            "pool, restoring that many hit points.\n\n"
+            "Alternatively, spend 5 points (no hit points restored) to cure one disease or neutralize one poison affecting the target.\n\n"
+            "Lay on Hands is fully controlled and deterministic — no dice rolled, no chance of failure. You decide exactly how much to spend. "
+            "Best use: revive a downed ally (spend just enough to bring them above 0 HP), or top off the most critical team member after a fight. "
+            "Spending it all on one person mid-fight rarely helps as much as spreading it across the day."
         ),
-        "effect": "Convert points from a limited pool into healing or specific restorative effects.",
+        "effect": "Restore exact hit points from pool, or spend 5 points to remove a disease or poison.",
         "range": "Touch",
-        "trigger": "Use when an ally needs immediate healing, stabilization, or condition support.",
-        "usage": "Spend points from your Lay on Hands pool (up to pool maximum).",
-        "recovery": "The pool refreshes on a Long Rest.",
+        "trigger": "Use to stabilize a downed ally or restore a key ally's health at a decisive moment.",
+        "usage": "Spend any number of points from your Lay on Hands pool.",
+        "recovery": "The entire pool returns on a Long Rest.",
         "tags": ["healing", "resource", "divine"],
     },
     "divine sense": {
@@ -531,12 +610,19 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["utility", "divine", "action"],
     },
     "divine smite": {
-        "summary": "Spend magical fuel on a hit to turn a weapon strike into a burst of radiant punishment.",
+        "summary": "When you hit with a melee weapon, choose to spend a spell slot and deal 2d8 radiant damage per slot level (max 5d8).",
         "description": (
-            "Divine Smite is the paladin’s classic burst converter. You do not use it blindly; you spend it when a hit lands and the target or moment is worth "
-            "the slot. That timing is what makes the feature feel powerful."
+            "When you hit a creature with a melee weapon attack, you can choose to expend one spell slot to use Divine Smite. You deal radiant "
+            "damage in addition to the weapon’s damage:\n\n"
+            "1st-level slot: +2d8 radiant. 2nd-level: +3d8. 3rd-level: +4d8. 4th-level or higher: +5d8 (maximum).\n\n"
+            "Bonus against undead and fiends: deal an extra 1d8 radiant damage (total max 6d8 against those creature types).\n\n"
+            "Critical hits double all Smite dice — which is why Paladins are so dangerous on crits: a 3rd-level Smite crit deals 8d8 radiant.\n\n"
+            "Use after the hit lands, not before — you decide whether to smite after you know the attack succeeded. Save higher-level slots for "
+            "bosses and priority targets."
         ),
-        "effect": "Adds radiant burst damage to a weapon hit by spending magical fuel.",
+        "effect": "+2d8 to +5d8 radiant damage on a melee hit (per slot level); +1d8 extra vs. undead and fiends.",
+        "trigger": "Decide immediately after a melee weapon hit lands.",
+        "usage": "Expend one spell slot (any level)",
         "tags": ["combat", "burst", "spellcasting"],
     },
     "divine health": {
@@ -583,11 +669,17 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["damage", "divine"],
     },
     "sneak attack": {
-        "summary": "Once per turn, a correctly set-up hit deals a large spike of precision damage.",
+        "summary": "Once per turn, deal extra precision damage when you hit with a Finesse or Ranged weapon — if you have Advantage or an ally is adjacent to the target.",
         "description": (
-            "Sneak Attack is the rogue’s signature damage engine. The important thing is understanding the trigger conditions and seeing the current damage dice clearly, "
-            "because the entire class feels wrong when those are muddy."
+            "When you hit a creature with a Finesse or Ranged weapon attack, you can deal Sneak Attack damage if at least one of these is true:\n\n"
+            "You have Advantage on the attack roll, OR a non-incapacitated ally is within 5 feet of the target and you do not have Disadvantage.\n\n"
+            "You cannot have Disadvantage on the roll.\n\n"
+            "Damage scales with Rogue level: 1d6 at level 1, increasing by 1d6 every odd level (3, 5, 7, 9...) up to 10d6 at level 19.\n\n"
+            "Once per turn means: once per combat turn (yours or anyone else’s). You can trigger it on an Opportunity Attack during another creature’s turn, "
+            "then again on your own turn — that’s two Sneak Attacks in the same round."
         ),
+        "effect": "Extra precision damage once per turn on qualifying Finesse or Ranged weapon attacks.",
+        "trigger": "Advantage on attack OR an ally within 5 ft of target (without Disadvantage).",
         "tags": ["combat", "precision"],
     },
     "thieves' cant": {
@@ -647,10 +739,16 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["capstone", "precision"],
     },
     "spellcasting": {
-        "summary": "You gain access to spell slots, a spellcasting ability, and a growing library of magical options.",
+        "summary": "You cast spells using your class's defined ability score, spell slot progression, and prepared or known spell list.",
         "description": (
-            "Spellcasting is the rules engine that turns this class into a caster. It should clearly define your spell ability, slot progression, preparation or known-spell rules, "
-            "and where those spells are surfaced in the sheet."
+            "Spellcasting gives you access to magical effects from combat control to healing to utility. Key mechanics:\n\n"
+            "Spell Slots: Expendable fuel for casting spells above cantrip level. Higher-level slots often cast stronger versions of spells. "
+            "All slots return on a Long Rest (Warlocks are the exception — Pact Magic uses Short Rest recovery).\n\n"
+            "Spellcasting Ability: Powers your spell attack rolls and sets your Spell Save DC. Clerics, Druids, and Rangers use Wisdom. "
+            "Wizards use Intelligence. Bards, Sorcerers, Warlocks, and Paladins use Charisma.\n\n"
+            "Spell Save DC: 8 + your proficiency bonus + your spellcasting ability modifier. Enemies roll against this to resist your spells.\n\n"
+            "Prepared vs. Known: Clerics, Druids, Paladins, and Wizards prepare spells from their full list each Long Rest. "
+            "Bards, Rangers, Sorcerers, and Warlocks know a fixed list chosen on level-up."
         ),
         "tags": ["spellcasting", "core"],
     },
@@ -659,25 +757,38 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "type": "special",
         "resourceName": "Sorcery Points",
         "trackUses": True,
-        "summary": "Your sorcery points let you bend spellcasting into a more flexible economy.",
+        "summary": "Your Sorcery Points pool lets you convert between spell slots and raw magical currency — fueling both extra slots and Metamagic.",
         "description": (
-            "Font of Magic is the sorcerer’s resource engine. It lets you convert between magical fuel and spell output, so the sheet should make both the pool and the spend paths easy to audit."
+            "You have a number of Sorcery Points equal to your Sorcerer level. Two conversion modes:\n\n"
+            "Creating Spell Slots (Flexible Casting): On your turn, spend Sorcery Points to create a spell slot you use immediately or on a future turn. "
+            "Cost: 1st-level = 2 points, 2nd = 3, 3rd = 5, 4th = 6, 5th = 7.\n\n"
+            "Converting Slots to Points: As a Bonus Action, destroy a spell slot to regain Sorcery Points equal to that slot’s level.\n\n"
+            "Sorcery Points also pay for Metamagic (1–2 points per option). Budget your pool for each fight: spending all points on Metamagic "
+            "leaves nothing for emergency extra slots, and vice versa. Sorcery Points return on a Long Rest."
         ),
-        "usage": "Spend Sorcery Points to create slots, or spend spell slots to regain Sorcery Points per class rules.",
-        "recovery": "Sorcery Points refresh on a Long Rest.",
+        "usage": "Spend Sorcery Points to create spell slots; destroy spell slots as a Bonus Action to regain points.",
+        "recovery": "All Sorcery Points return on a Long Rest.",
         "tags": ["spellcasting", "resource"],
     },
     "metamagic": {
         "section": "Class Features",
         "type": "special",
         "resourceName": "Sorcery Points",
-        "summary": "Alter how your spells work instead of merely choosing which spell to cast.",
+        "summary": "Spend Sorcery Points when casting spells to reshape their range, targets, timing, damage, or save difficulty.",
         "description": (
-            "Metamagic is a major sorcerer identity feature because it changes spell delivery itself. It should show the available options, their costs, and the kinds of spell turns they improve."
+            "When you cast a spell, you can apply one or more Metamagic options by spending the listed Sorcery Points. Common options:\n\n"
+            "Careful Spell (1 pt): Up to Charisma-modifier creatures automatically succeed on the spell's saving throw — protect your allies in an AoE.\n\n"
+            "Distant Spell (1 pt): Double a spell's range, or change a touch spell to 30-foot range.\n\n"
+            "Empowered Spell (1 pt): Reroll up to Charisma-modifier damage dice — you must keep the new results.\n\n"
+            "Extended Spell (1 pt): Double a concentration spell's duration (max 24 hours).\n\n"
+            "Heightened Spell (2 pts): One target of the spell has Disadvantage on its first saving throw against it.\n\n"
+            "Quickened Spell (2 pts): Change a 1-Action spell to a Bonus Action cast — then you can still cast a cantrip with your Action.\n\n"
+            "Subtle Spell (1 pt): Cast without verbal or somatic components — useful in stealth or anti-counterspell situations.\n\n"
+            "Twinned Spell (1 pt per spell level, min 1): Target a second creature with a single-target spell that does not affect multiple targets at its base level."
         ),
-        "trigger": "Apply when you cast an eligible spell and want to reshape range, target count, timing, or save pressure.",
-        "usage": "Spend Sorcery Points based on the selected Metamagic option.",
-        "recovery": "Uses depend on Sorcery Point recovery (typically Long Rest).",
+        "trigger": "Apply when casting an eligible spell, deciding the option and spending points before the spell resolves.",
+        "usage": "Spend 1–2 Sorcery Points per Metamagic option applied.",
+        "recovery": "Uses depend on Sorcery Point recovery (Long Rest).",
         "tags": ["spellcasting", "resource", "customization"],
     },
     "sorcery incarnate": {
@@ -697,10 +808,16 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
     "arcane recovery": {
         "resourceName": "Arcane Recovery",
         "trackUses": True,
-        "summary": "Recover a chunk of spell economy during rest so the wizard can keep solving problems.",
+        "summary": "Once per day during a Short Rest, recover expended spell slots whose total levels equal up to half your Wizard level (round up).",
         "description": (
-            "Arcane Recovery is a pacing feature. It rewards good rest timing and ensures the wizard does not feel empty too early in a long adventuring day."
+            "Once per day, when you finish a Short Rest, choose a number of expended spell slots to recover. The total levels of the recovered "
+            "slots must be equal to or less than half your Wizard level (rounded up). You cannot recover slots of 6th level or higher with this feature.\n\n"
+            "Example: A level 5 Wizard can recover up to 3 levels worth of slots — one 3rd-level slot, three 1st-level slots, one 2nd + one 1st, etc.\n\n"
+            "This is your primary mid-day recharge mechanism. Time it after a tough encounter when you've spent key high-value slots, but still have "
+            "encounters ahead. Arcane Recovery returns on a Long Rest."
         ),
+        "usage": "1 use per day (during a Short Rest)",
+        "recovery": "Returns on a Long Rest.",
         "tags": ["spellcasting", "rest", "resource"],
     },
     "memorize spell": {
@@ -729,18 +846,33 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "type": "passive",
         "resourceName": "Pact Slots",
         "trackUses": True,
-        "summary": "Your spell slots are few, high-leverage, and refreshed on a different cadence than most casters.",
+        "summary": "Your spell slots are few, high-powered, and recover on Short Rests — a completely different economy from other casters.",
         "description": (
-            "Pact Magic is the heart of warlock spellcasting. It should be obvious that you are not using the same slot economy as a wizard or sorcerer."
+            "Pact Magic is the Warlock's spellcasting system and it works differently from every other caster:\n\n"
+            "Few slots, high level: You have only 1–4 Pact Slots at most levels, but they always function at your highest available Pact Slot "
+            "level. A 5th-level Warlock always casts Warlock spells at 3rd level — never lower.\n\n"
+            "Short Rest recovery: All Pact Slots return on a Short Rest (or Long Rest). No other full caster does this. Coordinate short rests "
+            "with your party to stay magically relevant throughout the day.\n\n"
+            "Cantrips and Invocations fill the gaps: Eldritch Blast costs no slots, and many Eldritch Invocations grant spell-like abilities "
+            "without consuming Pact Slots at all.\n\n"
+            "Mystic Arcanum (level 11+): At higher levels you gain bonus once-per-day spell-like abilities at 6th–9th spell level that do not "
+            "use Pact Slots."
         ),
-        "usage": "Spend pact slots to cast warlock spells; all pact slots cast at your current pact slot level.",
-        "recovery": "Pact slots refresh on a Short Rest and Long Rest.",
+        "usage": "Spend 1 Pact Slot to cast a Warlock spell; all Pact Slots cast at your current Pact Slot level.",
+        "recovery": "All Pact Slots return on a Short Rest or Long Rest.",
         "tags": ["spellcasting", "resource"],
     },
     "eldritch invocations": {
-        "summary": "You bolt permanent magical customizations onto your character one choice at a time.",
+        "summary": "Choose permanent magical boons at each qualifying level that reshape how your Warlock plays — from enhanced Eldritch Blast to at-will spells.",
         "description": (
-            "Eldritch Invocations are a major warlock customization surface. Each one changes how the character plays, so the sheet should treat them as meaningful build-defining unlocks."
+            "Eldritch Invocations are permanent upgrades chosen as you level. Each one changes a specific aspect of your Warlock's play:\n\n"
+            "Eldritch Blast enhancements: Invocations like Agonizing Blast (add Charisma modifier to damage), Repelling Blast (push targets 10 feet), "
+            "and Eldritch Spear (range 300 feet) make Eldritch Blast one of the most customizable damage cantrips in the game.\n\n"
+            "At-will spell access: Some invocations let you cast specific spells without using a slot — Armor of Shadows (Mage Armor at will), "
+            "Devil's Sight (see in magical darkness), Misty Visions (Silent Image at will).\n\n"
+            "Passive upgrades: Others give constant benefits like darkvision range, advantage on specific checks, or access to additional spell "
+            "options that expand your toolkit.\n\n"
+            "You gain your first invocations at level 2 and continue gaining them on subsequent levels. Some have level or Pact Boon prerequisites."
         ),
         "tags": ["customization", "spellcasting"],
     },
@@ -762,10 +894,14 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["spellcasting", "endgame"],
     },
     "magical cunning": {
-        "summary": "You squeeze better sustained value out of your limited magical economy.",
+        "summary": "Once per Long Rest, spend 1 minute to recover half your Pact Slots if you cannot take a Short Rest.",
         "description": (
-            "Magical Cunning supports the warlock’s unique pacing. It matters because the class often lives or dies on whether it can stay relevant between short rests."
+            "If you have expended all your Pact Slots and cannot immediately take a Short Rest, you can spend 1 minute in meditation to recover "
+            "half your maximum number of Pact Slots (rounded up). Requires no rest — just 1 uninterrupted minute.\n\n"
+            "This is a Long Rest once-per-day safety valve for dungeon crawls and marathon sessions where Short Rests are hard to schedule. "
+            "It keeps Warlock magic relevant in long-haul encounters rather than running dry mid-dungeon."
         ),
+        "usage": "1 use per Long Rest (1 minute to activate)",
         "tags": ["spellcasting", "resource"],
     },
     "brutal strike": {
@@ -861,6 +997,196 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         ),
         "tags": ["spellcasting", "capstone", "resource"],
     },
+    "extra attack": {
+        "summary": "When you take the Attack action, you attack twice instead of once. (Higher levels grant 3 or 4 attacks for some classes.)",
+        "description": (
+            "When you take the Attack action on your turn, you can make two attacks instead of one. This doubles your weapon attack output "
+            "with no resource cost whatsoever.\n\n"
+            "Attack count by class:\n\n"
+            "Fighter: 2 attacks at level 5, 3 at level 11, 4 at level 20.\n\n"
+            "Barbarian, Monk, Paladin, Ranger, Warlock (Pact of the Blade path): 2 attacks at level 5.\n\n"
+            "Extra Attack applies only to the Attack action — it does not stack with spells that produce their own attacks (like Scorching Ray), "
+            "and Bonus Action attacks are separate. With Action Surge, you can take the Attack action twice in one turn, effectively quadrupling "
+            "your attack volume at level 5 Fighter."
+        ),
+        "effect": "Make two or more attacks when you take the Attack action on your turn.",
+        "tags": ["combat", "passive"],
+    },
+    "flexible casting": {
+        "section": "Class Features",
+        "type": "special",
+        "resourceName": "Sorcery Points",
+        "summary": "Convert Sorcery Points into spell slots or destroy spell slots to regain Sorcery Points.",
+        "description": (
+            "Flexible Casting is one of the two core uses of Sorcery Points (alongside Metamagic). As a Bonus Action on your turn:\n\n"
+            "Points → Slot: Spend Sorcery Points to create one spell slot (does not require a spell to be cast). "
+            "Cost: 1st-level = 2, 2nd = 3, 3rd = 5, 4th = 6, 5th = 7 points. You can create a maximum of one slot of 6th level or higher per Long Rest.\n\n"
+            "Slot → Points: Destroy one spell slot to gain Sorcery Points equal to that slot's level.\n\n"
+            "This conversion loop gives Sorcerers flexibility no other class has: convert low-value slots into a powerful slot for a key spell, "
+            "or convert a slot you won't use into points for Metamagic."
+        ),
+        "usage": "Spend Sorcery Points to create a slot (Bonus Action), or expend a slot to gain points (Bonus Action).",
+        "recovery": "Sorcery Points return on a Long Rest.",
+        "tags": ["spellcasting", "resource", "sorcerer"],
+    },
+    "sorcery points": {
+        "section": "Class Features",
+        "type": "special",
+        "resourceName": "Sorcery Points",
+        "trackUses": True,
+        "summary": "Your core Sorcerer resource — equal to your Sorcerer level — spent on Metamagic and Flexible Casting.",
+        "description": (
+            "You have Sorcery Points equal to your Sorcerer level. They power two key features:\n\n"
+            "Metamagic: Spend 1–2 points per option when casting a spell to change its range, targets, timing, or damage.\n\n"
+            "Flexible Casting: Spend points to create extra spell slots (as a Bonus Action), or destroy slots to regain points.\n\n"
+            "Budget your Sorcery Points carefully between these two uses. Spending everything on Metamagic leaves nothing for emergency "
+            "extra slots; saving everything for slot conversion means you miss Metamagic upgrades that could have changed the fight."
+        ),
+        "recovery": "All Sorcery Points return on a Long Rest.",
+        "tags": ["resource", "spellcasting", "sorcerer"],
+    },
+    "arcane tradition": {
+        "summary": "Your Wizard subclass choice defines your school specialty and grants unique arcane features starting at level 2.",
+        "description": (
+            "At level 2 you join an Arcane Tradition — a school of magic or magical philosophy that shapes your Wizard's specific strengths:\n\n"
+            "School bonuses: Most traditions give you discounted gold and time to copy spells from your school, and enhanced effects when "
+            "casting school spells.\n\n"
+            "Subclass features: Unique abilities at levels 2, 6, 10, and 14 that define your specialty. For example: "
+            "Evocation Wizards sculpt spell areas, Conjuration Wizards teleport precisely, Divination Wizards alter die rolls with Portent, "
+            "Abjuration Wizards build arcane ward HP pools.\n\n"
+            "Your tradition does not limit your spell list — you can still learn and prepare any Wizard spell. It gives you a mechanical "
+            "identity and extra power within your chosen school."
+        ),
+        "tags": ["subclass", "spellcasting", "wizard"],
+    },
+    "favored enemy": {
+        "summary": "You gain advantage and bonus features when dealing with specific enemy types or environments tied to your Ranger specialization.",
+        "description": (
+            "Favored Enemy varies by Ranger subclass and ruleset, but the core concept is the same: you are more effective against "
+            "a chosen category of creature or situation.\n\n"
+            "In the 2024 rules, Rangers gain a specific Favored Enemy style tied to their subclass identity rather than a generic list — "
+            "for example, Hunter Rangers excel at single-target elimination or horde control, Beast Master Rangers specialize in working "
+            "with an animal companion.\n\n"
+            "Check your specific subclass features for the exact enemy type, skill bonus, or combat rider this feature provides."
+        ),
+        "tags": ["ranger", "combat", "utility"],
+    },
+    "hunter's mark": {
+        "summary": "Concentration spell: Mark one creature to deal 1d6 extra damage on each weapon hit against it, and track it even if it hides.",
+        "description": (
+            "Hunter's Mark (1st-level Ranger spell) is cast as a Bonus Action. While the spell is active:\n\n"
+            "Deal 1d6 extra damage each time you hit the marked creature with a weapon attack.\n\n"
+            "Advantage on Perception and Survival checks to find the marked creature.\n\n"
+            "If the marked creature dies before the spell ends, you can use a Bonus Action on a subsequent turn to mark a new creature "
+            "without spending another spell slot.\n\n"
+            "Concentration: Hunter's Mark requires concentration, which means it conflicts with other concentration spells. "
+            "Duration: 1 hour (1st-level slot), 8 hours (3rd-level), 24 hours (5th-level)."
+        ),
+        "effect": "+1d6 weapon damage against the marked target on each hit.",
+        "duration": "1 hour (concentration), upgradeable with higher-level slots.",
+        "trigger": "Cast as a Bonus Action before attacking your priority target.",
+        "usage": "Spend 1 spell slot (1st-level or higher)",
+        "tags": ["ranger", "combat", "spellcasting", "concentration"],
+    },
+    "divine sense": {
+        "section": "Actions",
+        "type": "action",
+        "summary": "Sense the location of celestials, fiends, and undead within 60 feet, and detect consecrated or desecrated objects.",
+        "description": (
+            "As an Action, you open your awareness to detect powerful supernatural presences. Until the end of your next turn, you know "
+            "the location of any Celestial, Fiend, or Undead within 60 feet that is not behind total cover. You also sense whether "
+            "any place or object within 60 feet has been consecrated or desecrated.\n\n"
+            "Uses: 1 + Charisma modifier (minimum 1) per Long Rest.\n\n"
+            "Best used before entering a suspicious area, at the start of a potential ambush, or when trying to detect hidden evil "
+            "without triggering it. Divine Sense cannot be blocked by Nondetection but is blocked by total cover."
+        ),
+        "range": "60 feet",
+        "duration": "Until end of your next turn",
+        "usage": "1 + Charisma modifier uses per Long Rest",
+        "recovery": "All uses return on a Long Rest.",
+        "tags": ["utility", "divine", "action"],
+    },
+    "aura of protection": {
+        "summary": "You and friendly creatures within 10 feet add your Charisma modifier (minimum +1) to all saving throws.",
+        "description": (
+            "While you are conscious, you and friendly creatures within 10 feet of you add your Charisma modifier to all saving throws "
+            "(minimum bonus of +1). This applies to Strength, Dexterity, Constitution, Intelligence, Wisdom, and Charisma saves.\n\n"
+            "At level 18, the aura's range expands from 10 feet to 30 feet.\n\n"
+            "Positioning matters: allies only benefit while within range. In cramped dungeons this is nearly always active; "
+            "on open battlefields, you may need to consciously stay near squishier allies to share the benefit.\n\n"
+            "A Paladin with +5 Charisma gives every nearby ally +5 to all saving throws — one of the strongest passive team bonuses in the game."
+        ),
+        "range": "10 feet (30 feet at level 18)",
+        "tags": ["aura", "support", "defense"],
+    },
+    "cunning action": {
+        "section": "Bonus Actions",
+        "type": "bonus action",
+        "summary": "Use your Bonus Action to Dash, Disengage, or Hide on every turn — keeping you mobile and hard to lock down.",
+        "description": (
+            "As a Bonus Action, you can take the Dash, Disengage, or Hide action. This means you can:\n\n"
+            "Dash + Attack: Move a full combat sprint and still attack in the same turn.\n\n"
+            "Disengage + Attack: Escape a surrounded position and attack without provoking Opportunity Attacks.\n\n"
+            "Hide + Attack: Move to cover, hide, and attack from stealth in a single turn — resetting Sneak Attack setup.\n\n"
+            "Cunning Action costs nothing but your Bonus Action, making it one of the highest-value passive features in the game. "
+            "It is what makes Rogues feel slippery — they can almost always be in a better position than where they started the turn."
+        ),
+        "tags": ["mobility", "stealth", "combat"],
+    },
+    "uncanny dodge": {
+        "section": "Reactions",
+        "type": "reaction",
+        "summary": "When an attacker you can see hits you, use your Reaction to halve the damage from that hit.",
+        "description": (
+            "When an attacker you can see hits you with an attack, you can use your Reaction to halve the attack's damage against you. "
+            "No roll required — the damage is simply cut in half.\n\n"
+            "Use it on the biggest single hit of a round — a boss attack, a sniper shot, or any attack you know will hurt badly "
+            "based on the enemy's damage die. You only have one Reaction per round, so do not waste it on a weak hit "
+            "when a heavier one may be coming."
+        ),
+        "trigger": "When an attacker you can see hits you with an attack.",
+        "tags": ["reaction", "defense"],
+    },
+    "evasion": {
+        "summary": "When a Dexterity save would deal half damage, you instead take no damage on a success and only half on a failure.",
+        "description": (
+            "When you are subjected to an effect that allows a Dexterity saving throw to take only half damage, you instead take no damage "
+            "on a successful save and only half damage on a failed save.\n\n"
+            "This turns most area-of-effect damage spells (Fireball, Lightning Bolt, dragon breath, trap blasts) into either non-events "
+            "or manageable half-damage. As long as you maintain high Dexterity and pass the save, you are immune to the damage.\n\n"
+            "Evasion is passive — it applies automatically whenever the conditions are met, no action or resource needed."
+        ),
+        "tags": ["defense", "agility"],
+    },
+    "bardic inspiration recovery": {
+        "summary": "Your Bardic Inspiration uses now return on a Short Rest instead of only on a Long Rest.",
+        "description": (
+            "At higher Bard levels (Font of Inspiration), your Bardic Inspiration uses replenish on both Short Rests and Long Rests. "
+            "This dramatically increases how often you can inspire allies throughout a full adventuring day.\n\n"
+            "Coordinate Short Rests with your party whenever possible — each one restores your full inspiration pool."
+        ),
+        "tags": ["support", "resource", "rest"],
+    },
+    "song of rest": {
+        "summary": "Your music or storytelling during a Short Rest lets allies regain extra hit points when they spend Hit Dice.",
+        "description": (
+            "When you or any friendly creatures who can hear your performance spend Hit Dice to recover HP at the end of a Short Rest, "
+            "each of those creatures can roll a bonus die and add it to the HP regained. The die size increases with Bard level:\n\n"
+            "Levels 2–8: d6. Level 9–12: d8. Level 13–16: d10. Level 17+: d12.\n\n"
+            "Song of Rest applies to each creature that uses Hit Dice — it can add up across the whole party after a tough fight."
+        ),
+        "tags": ["healing", "rest", "support"],
+    },
+    "jack of all trades": {
+        "summary": "Add half your proficiency bonus (rounded down) to any ability check that does not already use your proficiency bonus.",
+        "description": (
+            "You can add half your proficiency bonus (rounded down) to any ability check you make using a skill you are not proficient in. "
+            "This applies to tool checks and ability checks as well.\n\n"
+            "At level 1 with proficiency +2, this adds +1 to every untrained check. At level 9 with proficiency +4, it adds +2. "
+            "It makes the Bard the most broadly competent skill character in the game — rarely useless on any check."
+        ),
+        "tags": ["skills", "utility", "passive"],
+    },
 }
 
 
@@ -886,8 +1212,13 @@ _STAGE5B_FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["mobility", "exploration"],
     },
     "heightened focus": {
-        "summary": "Your focus engine becomes more forgiving, making your best techniques easier to sustain through a long fight.",
-        "description": "Heightened Focus improves the reliability of your core monk resource loop. The player should be able to tell that spending focus is less punishing and that the class can stay online longer across repeated encounters.",
+        "summary": "Your Focus Point economy becomes more forgiving — Flurry of Blows costs 1 point and certain defensive techniques cost less.",
+        "description": (
+            "Heightened Focus (level 15) reduces the cost of your core monk techniques:\n\n"
+            "Flurry of Blows: Still costs 1 Focus Point for two unarmed strikes.\n\n"
+            "Patient Defense and Step of the Wind: These may become free or cost less, depending on ruleset — check your specific class text.\n\n"
+            "The net effect is that you can stay aggressive with Flurry of Blows more rounds per fight without exhausting your Focus Point pool."
+        ),
         "tags": ["resource", "combat"],
     },
     "self-restoration": {
@@ -923,13 +1254,26 @@ _STAGE5B_FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["aura", "support", "progression"],
     },
     "cunning strike": {
-        "summary": "Your Sneak Attack turns into a toolkit of rider effects instead of only raw damage.",
-        "description": "Cunning Strike lets the rogue trade some damage for control, setup, and disruption. The important in-app job is making it clear that Sneak Attack is now also a menu of tactical choices, not just a single damage number.",
+        "summary": "When you deal Sneak Attack damage, sacrifice some dice to apply a control or utility rider to the hit.",
+        "description": (
+            "Starting at level 5, when you deal Sneak Attack damage you can apply a Cunning Strike option by reducing your Sneak Attack dice by the listed amount:\n\n"
+            "Poison (cost 1d6): Target makes a Constitution save or is Poisoned until the start of your next turn.\n\n"
+            "Trip (cost 1d6): Target makes a Dexterity save or is knocked Prone (works on Large or smaller creatures).\n\n"
+            "Withdraw (cost 1d6): After the attack, move up to half your speed without provoking Opportunity Attacks.\n\n"
+            "Additional options open at higher levels. Each use trades raw damage for a battlefield effect — prioritize control options "
+            "against high-value targets where losing 1d6 damage is worth the condition or repositioning."
+        ),
         "tags": ["combat", "control", "precision"],
     },
     "improved cunning strike": {
-        "summary": "Your precision damage choices get broader and more threatening, giving the rogue more ways to decide a turn.",
-        "description": "Improved Cunning Strike means the rogue’s on-hit control package matures. By this point the player should feel like each correct hit can reshape movement, setup, or the enemy’s next action.",
+        "summary": "Your Cunning Strike options expand — new effects let you Daze, Knock Out, or Obscure targets by trading more Sneak Attack dice.",
+        "description": (
+            "At level 11, additional Cunning Strike options become available:\n\n"
+            "Daze (cost 2d6): Target must make a Constitution save or have Disadvantage on its next attack roll and cannot take Reactions until its next turn.\n\n"
+            "Knock Out (cost 6d6): Target makes a Constitution save or falls Unconscious for 1 minute (it wakes when it takes damage or someone shakes it).\n\n"
+            "Obscure (cost 3d6): Target must succeed on a Dexterity save or be Blinded until the start of your next turn.\n\n"
+            "Higher Sneak Attack dice cost means bigger control — save Knock Out for high-value targets you want fully removed from a fight."
+        ),
         "tags": ["combat", "control", "precision"],
     },
     "devious strikes": {
@@ -948,18 +1292,41 @@ _STAGE5B_FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["combat", "tempo"],
     },
     "eldritch patron": {
-        "summary": "Your patron choice defines the special pressure, utility, and weirdness layered on top of the base warlock engine.",
-        "description": "This is the identity fork for the class. The sheet should make it obvious that your patron is not flavor-only; it decides which control tools, defenses, and signature powers begin to appear in later levels.",
+        "summary": "Your patron choice defines your Warlock subclass — determining your expanded spell list and subclass features at levels 3, 6, 10, and 14.",
+        "description": (
+            "Your patron is not just flavor — it provides concrete mechanical benefits that shape every aspect of your Warlock:\n\n"
+            "Expanded Spell List: Bonus spells always prepared, pulled from your patron's thematic domain. These do not count against your "
+            "Spells Known limit and are available whenever you have a Pact Slot to cast them.\n\n"
+            "Subclass Features: Unique abilities at levels 3, 6, 10, and 14 that define your patron's combat and utility style. For example: "
+            "Archfey (charm, fear, and fey escape), Fiend (infernal damage, survival, and destruction), Great Old One (telepathy, mind control, "
+            "and alien pressure).\n\n"
+            "Your patron determines which problems you can solve that other Warlocks cannot — choose based on the role you want in and out of combat."
+        ),
         "tags": ["subclass", "spellcasting", "customization"],
     },
     "eldritch blast": {
-        "summary": "Your signature at-will blast is a core offensive tool that scales with you and works especially well with invocations.",
-        "description": "Eldritch Blast is one of the main reasons warlocks stay threatening all day. The feature entry should point the player toward the spell card and make it obvious that invocations can dramatically change how this attack behaves.",
+        "summary": "Your signature at-will damage cantrip fires force beams that scale with character level and become highly customizable via Eldritch Invocations.",
+        "description": (
+            "Eldritch Blast fires 1 beam at level 1, growing to 2 beams at level 5, 3 at level 11, and 4 at level 17. Each beam is a separate "
+            "spell attack roll (+Charisma to hit) dealing 1d10 force damage.\n\n"
+            "Invocations transform it: Agonizing Blast adds your Charisma modifier to each beam's damage. Repelling Blast pushes the target 10 feet "
+            "per beam. Eldritch Spear extends range to 300 feet. You can apply multiple beam-targeting invocations and can split beams between "
+            "different targets.\n\n"
+            "This is your primary damage source and costs no spell slots — use it freely every turn when you have no better option."
+        ),
         "tags": ["spellcasting", "combat", "cantrip"],
     },
     "combat superiority": {
-        "summary": "You gain Superiority Dice and maneuvers that turn the fighter into a tactical battlefield controller, not just a damage stick.",
-        "description": "Combat Superiority is the whole Battle Master engine. The important thing is seeing your die pool, maneuver list, save DC, and recovery timing clearly enough that you actually spend the resource instead of forgetting it exists.",
+        "summary": "You gain Superiority Dice and Combat Maneuvers that add tactical riders to attacks, movement, and defense.",
+        "description": (
+            "Battle Masters gain a pool of Superiority Dice and choose Combat Maneuvers from a broad list. Key mechanics:\n\n"
+            "Die pool: 4 dice at level 3, scaling to 6 by level 7. Die size starts at d8, increasing to d10 at level 10 and d12 at level 18.\n\n"
+            "Maneuver examples: Disarming Attack (force a weapon drop), Trip Attack (knock Prone), Menacing Attack (impose Frightened), "
+            "Riposte (attack as a reaction on a miss), Rally (give temporary HP to an ally), Commander's Strike (let an ally attack as a reaction).\n\n"
+            "Save DC: 8 + your proficiency bonus + Strength or Dexterity modifier (chosen when you gain this feature).\n\n"
+            "Recovery: All Superiority Dice return on a Short or Long Rest. Spend them freely — saving them rarely pays off better than using "
+            "them to influence the current fight."
+        ),
         "resourceName": "Superiority Dice",
         "trackUses": True,
         "tags": ["combat", "resource", "control", "subclass"],
@@ -990,8 +1357,14 @@ _STAGE5B_FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["mobility", "utility", "subclass"],
     },
     "fighting style plus": {
-        "summary": "You double down on your combat identity by gaining more permanent style shaping than most martial characters get.",
-        "description": "Fighting Style Plus strengthens the Champion’s straightforward identity: better fundamentals, fewer gimmicks, more clean efficiency. The sheet should make the expanded style package easy to see.",
+        "summary": "You gain an additional Fighting Style choice — stacking a second permanent combat specialty on top of your first.",
+        "description": (
+            "The Champion subclass (and some other progression paths) grants an additional Fighting Style at level 10. "
+            "You can pick any Fighting Style you do not already have — common choices include Defense (+1 AC while in armor), "
+            "Archery (+2 attack rolls with ranged weapons), Dueling (+2 damage with one-handed weapon and no other weapon held), "
+            "and Great Weapon Fighting (reroll 1s and 2s on damage dice with two-handed weapons).\n\n"
+            "Two Fighting Styles stack, giving Champions more passive combat bonuses than any other Fighter subclass."
+        ),
         "tags": ["combat", "subclass", "passive"],
     },
     "survivor": {
@@ -1014,8 +1387,13 @@ _STAGE5B_FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["combat", "subclass", "spellcasting"],
     },
     "eldritch strike": {
-        "summary": "A weapon hit softens the target up for your next spell, creating a clean martial-to-magic combo line.",
-        "description": "Eldritch Strike rewards sequencing. Hit first, then pressure the weakened save with a spell before the window closes. The sheet should make that combo logic obvious.",
+        "summary": "When you hit with a weapon, the target has Disadvantage on the next saving throw against your spells until the end of your next turn.",
+        "description": (
+            "When you hit a creature with a weapon attack, that creature has Disadvantage on the first saving throw it makes against a spell you cast "
+            "before the end of your next turn.\n\n"
+            "Combo sequence: Attack with your weapon → hit → then cast a save-based spell (Hold Person, Web, Thunderwave, etc.) against the same target "
+            "before your next turn ends. The Disadvantage on the save dramatically improves the spell's chance of landing."
+        ),
         "tags": ["combat", "subclass", "spellcasting", "control"],
     },
     "arcane charge": {
@@ -1036,8 +1414,13 @@ _STAGE5B_FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["utility", "subclass", "spellcasting"],
     },
     "magical ambush": {
-        "summary": "Hidden casting becomes much nastier because your target is easier to catch with the save-based spell that follows.",
-        "description": "Magical Ambush rewards stealth-first spell play. Set up from hiding, fire the effect, and make the enemy struggle to shrug it off. The subclass should clearly communicate that hidden casting is part of the plan now.",
+        "summary": "When you cast a spell while hidden, the target has Disadvantage on any saving throw it makes against that spell.",
+        "description": (
+            "If you are hidden from a creature when you cast a spell, that creature has Disadvantage on any saving throw it makes against the spell.\n\n"
+            "Workflow: Use Cunning Action to Hide as a Bonus Action → move into position → cast a save-based spell (Hold Person, Sleep, Hypnotic Pattern, etc.) "
+            "while still hidden. The target rolls its save with Disadvantage, dramatically improving the spell's chance of sticking.\n\n"
+            "This feature is what makes Arcane Trickster into a real control threat — the setup work is worth it when a critical spell lands."
+        ),
         "tags": ["subclass", "spellcasting", "stealth", "control"],
     },
     "versatile trickster": {
@@ -1198,8 +1581,15 @@ _STAGE5B_FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["subclass", "capstone", "divine", "fear"],
     },
     "expanded spells": {
-        "summary": "Your patron expands the list of magic that naturally fits your build, giving your warlock more thematic answers to real problems.",
-        "description": "Expanded Spells are not passive trivia. They shape which control, utility, and burst options feel native to your patron and should be visible wherever the player is checking what this subclass actually adds.",
+        "summary": "Your patron adds bonus spells to your Warlock list that are always prepared and do not count against your Spells Known limit.",
+        "description": (
+            "Expanded Spells add patron-themed spells to your Warlock spell list. These spells:\n\n"
+            "Are always available — you do not need to choose them as Spells Known; they are treated as always known while you are subscribed to this patron.\n\n"
+            "Do not count against your Spells Known limit — they are a free addition to your normal selection.\n\n"
+            "Cost Pact Slots to cast normally — they use the same slot economy as your other Warlock spells.\n\n"
+            "Each patron's Expanded Spells list defines a thematic toolkit: Archfey adds charm and control spells, Fiend adds destructive and survival magic, "
+            "Great Old One adds telepathy and perception spells."
+        ),
         "tags": ["subclass", "spellcasting", "customization"],
     },
     "fey presence": {
@@ -1964,10 +2354,21 @@ _STAGE5D_FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["spellcasting", "resource", "burst"],
     },
     "flexible casting": {
-        "summary": "Convert your spell resources in the direction the moment needs instead of being locked into one rigid budget.",
-        "description": "Flexible Casting is the engine that makes sorcery points feel different from ordinary spell slots. It matters because the player can trade between staying power and burst depending on whether the scene demands more casts, more metamagic, or a better late-fight refill.",
+        "section": "Class Features",
+        "type": "special",
         "resourceName": "Sorcery Points",
         "trackUses": True,
+        "summary": "As a Bonus Action, convert Sorcery Points into a spell slot — or destroy a spell slot to regain Sorcery Points.",
+        "description": (
+            "Flexible Casting gives Sorcerers a two-way conversion between Sorcery Points and spell slots:\n\n"
+            "Points → Slot (Bonus Action): Spend Sorcery Points to create a spell slot you can use now or later. "
+            "Cost: 1st = 2 pts, 2nd = 3 pts, 3rd = 5 pts, 4th = 6 pts, 5th = 7 pts.\n\n"
+            "Slot → Points (Bonus Action): Destroy a spell slot to regain Sorcery Points equal to the slot's level.\n\n"
+            "This loop lets you trade sustained spellcasting for Metamagic burst, or convert unused lower-level slots into "
+            "points for a premium slot when one big spell is what the moment needs."
+        ),
+        "usage": "Bonus Action to convert in either direction.",
+        "recovery": "Sorcery Points return on a Long Rest.",
         "tags": ["spellcasting", "resource", "economy"],
     },
     "sorcerous vitality": {
@@ -1976,13 +2377,24 @@ _STAGE5D_FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["defense", "resource", "spellcasting"],
     },
     "arcane apotheosis": {
-        "summary": "At high level your magic stops feeling merely learned and starts feeling mythic.",
-        "description": "Arcane Apotheosis is the endgame payoff for a sorcerer: your signature casting identity becomes louder, cleaner, and more decisive. The sheet should make this feel like a top-end power spike rather than a generic capstone label.",
+        "summary": "At high level, your innate magic reaches a peak where sustained casting and Metamagic become more effortless.",
+        "description": (
+            "Arcane Apotheosis (level 20 in some ruleset variants) is the Sorcerer capstone. Depending on the specific rules, "
+            "it may allow you to use Metamagic without spending Sorcery Points once per turn, or amplify your magical output in another way.\n\n"
+            "Check your specific class text for the exact benefit — at its best, this feature removes the resource tension that defined "
+            "earlier Sorcerer play and lets you cast freely without counting every point."
+        ),
         "tags": ["capstone", "spellcasting", "burst"],
     },
     "sorcerous origin": {
-        "summary": "Your bloodline or magical source is the fork that defines what kind of sorcerer you actually are.",
-        "description": "Sorcerous Origin is the subclass gate for the class. It matters because the rest of the sorcerer experience should now start picking up subclass-flavored features, spell choices, and identity cues instead of feeling generic.",
+        "summary": "Your subclass defines your magical bloodline or innate power source, granting subclass features at levels 3, 6, 10, and 14.",
+        "description": (
+            "Sorcerous Origin (or Sorcerous Restoration, depending on ruleset) is your Sorcerer subclass choice. Each origin provides:\n\n"
+            "Themed spells added to your Spells Known list (Draconic Ancestry gives elemental damage options, Wild Magic gives wild surge tables, etc.).\n\n"
+            "Subclass features at levels 3, 6, 10, and 14 that shape your identity — from Draconic Resilience (bonus HP and natural armor) "
+            "to Wild Magic Surge (random magical effects on spell cast).\n\n"
+            "Your origin does not limit your spell selection — you still choose any Sorcerer spells you know. It defines your bonus tricks."
+        ),
         "tags": ["subclass", "build", "spellcasting"],
     },
     "scholar": {
@@ -1991,8 +2403,13 @@ _STAGE5D_FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["utility", "knowledge", "wizard"],
     },
     "cantrip formulas": {
-        "summary": "Swap or reshape simple magical routines more easily so your low-level utility stays relevant.",
-        "description": "Cantrip Formulas is about flexibility at the bottom end of your spellbook. It matters because cantrips are used constantly, and this feature makes those ever-present choices feel less locked in over a long campaign.",
+        "summary": "During a Short Rest, you can replace one Wizard cantrip you know with a different one from the Wizard spell list.",
+        "description": (
+            "Whenever you finish a Short Rest, you can replace one cantrip you know with a different cantrip from the Wizard spell list. "
+            "This gives you day-to-day flexibility — swap a damage cantrip for a utility one before a social encounter, "
+            "or pick up a specific cantrip you need for a particular dungeon section and change back afterward.\n\n"
+            "Unlike spell preparation (which only changes on Long Rests), cantrips can now adapt more frequently."
+        ),
         "tags": ["spellcasting", "utility", "wizard"],
     },
     "arcane tradition": {
@@ -2001,13 +2418,25 @@ _STAGE5D_FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["subclass", "build", "spellcasting"],
     },
     "magical cunning": {
-        "summary": "Recover a bit of magical momentum when the adventuring day would otherwise leave you dry.",
-        "description": "Magical Cunning matters because warlocks live on a tight resource rhythm. This feature helps the class stay relevant between rests and makes the player less afraid that one bad encounter will drain the entire pact magic engine.",
+        "summary": "Once per Long Rest, spend 1 minute to recover half your Pact Slots without taking a Short Rest.",
+        "description": (
+            "If you have expended all your Pact Slots and cannot take a Short Rest, you can spend 1 uninterrupted minute to recover "
+            "half your maximum Pact Slots (rounded up). This requires no rest — just focused meditation.\n\n"
+            "This is a once-per-Long-Rest safety valve for long dungeon crawls where Short Rests are hard to take. "
+            "It keeps your Warlock magic flowing through multi-encounter sequences without needing the table to schedule a break."
+        ),
+        "usage": "1 use per Long Rest (1 minute of meditation)",
+        "recovery": "Returns on a Long Rest.",
         "tags": ["resource", "spellcasting", "warlock"],
     },
     "mystic arcanum improvement": {
-        "summary": "Your once-per-day signature magic gets sharper, broader, or easier to rely on than before.",
-        "description": "An arcanum improvement is not filler. It means one of the warlock’s most dramatic magical options has become better enough that the player should revisit how they plan major fights and high-stakes scenes around it.",
+        "summary": "Your Mystic Arcanum spells increase in power or gain additional uses as you progress in Warlock levels.",
+        "description": (
+            "Mystic Arcanum gives Warlocks access to high-level spells (6th through 9th level) as once-per-Long-Rest abilities "
+            "that do not consume Pact Slots. Each improvement either adds a new spell level or refreshes an existing one.\n\n"
+            "These are premium once-per-day spells — use them for the highest-stakes moment in each Long Rest cycle, not as filler "
+            "when you still have Pact Slots available."
+        ),
         "tags": ["spellcasting", "warlock", "upgrade"],
     },
     "deft explorer": {

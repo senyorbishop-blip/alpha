@@ -569,29 +569,39 @@
     const facts = _featurePlayerFacts(feature);
     const description = _trimRepeatedLead(summary, _firstText(feature && feature.description, ''));
     const generatedGuidance = _featureGeneratedGuidance(feature);
-    const fallbackLines = [];
-    if (!description) {
-      if (facts.length) {
-        fallbackLines.push(
-          facts
-            .map(function (fact) { return `${fact.label}: ${fact.value}`; })
-            .join(' • ')
-        );
-      }
-      if (generatedGuidance) fallbackLines.push(generatedGuidance);
-      fallbackLines.push(_featureWhenItMatters(feature));
-    }
-    const fallbackCopy = fallbackLines.filter(Boolean).join('\n\n');
+    const whenItMatters = _featureWhenItMatters(feature);
+
     const factsHtml = facts.length ? `<div class="cs-feature-facts">${facts.map(function (fact) {
       return `<div class="cs-feature-fact"><span class="cs-feature-fact-label">${_esc(fact.label)}</span><span class="cs-feature-fact-value">${_esc(fact.value)}</span></div>`;
     }).join('')}</div>` : '';
-    const rulesHtml = (description || fallbackCopy)
-      ? `<div class="cs-feature-body-rules">${_descHtml(description || fallbackCopy)}</div>`
-      : '<div class="cs-feature-body-rules"><p>Full rules text is not linked for this feature yet.</p></div>';
+
+    if (!description) {
+      const fallbackLines = [];
+      if (facts.length) {
+        fallbackLines.push(facts.map(function (fact) { return `${fact.label}: ${fact.value}`; }).join(' • '));
+      }
+      if (generatedGuidance) fallbackLines.push(generatedGuidance);
+      fallbackLines.push(whenItMatters);
+      const fallbackCopy = fallbackLines.filter(Boolean).join('\n\n');
+      return `
+        <div class="cs-feature-body-summary"><strong>${_esc(summary)}</strong></div>
+        ${factsHtml}
+        <div class="cs-feature-body-rules">${_descHtml(fallbackCopy || 'No additional detail is available for this feature yet.')}</div>
+      `;
+    }
+
+    const rulesHtml = `<div class="cs-feature-body-rules">${_descHtml(description)}</div>`;
+    const guidanceHtml = generatedGuidance
+      ? `<div class="cs-feature-use-note"><span class="cs-feature-note-label">Rules note — </span>${_esc(generatedGuidance)}</div>`
+      : '';
+    const whenHtml = `<div class="cs-feature-use-note"><span class="cs-feature-note-label">When to use — </span>${_esc(whenItMatters)}</div>`;
+
     return `
       <div class="cs-feature-body-summary"><strong>${_esc(summary)}</strong></div>
       ${factsHtml}
       ${rulesHtml}
+      ${guidanceHtml}
+      ${whenHtml}
     `;
   }
 
