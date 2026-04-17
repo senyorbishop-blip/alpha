@@ -161,6 +161,22 @@
     var icon = entry.icon || SPECIES_ICONS[normalizeId(entry.id)] || DEFAULT_SPECIES_ICON;
     var traits = Array.isArray(entry.traits) ? entry.traits : [];
 
+    // Combo portrait preview using the resolved species + current class + gender
+    var speciesPortraitHtml = '';
+    var portraitLib = global.CasualDnDPortraitLibrary;
+    if (portraitLib && typeof portraitLib.resolve === 'function') {
+      var previewUrl = portraitLib.resolve({
+        speciesId: speciesId,
+        classId: draft && draft.class && draft.class.id,
+        gender: draft && draft.identity && draft.identity.gender,
+      });
+      if (previewUrl) {
+        speciesPortraitHtml = '<div style="float:right;width:72px;height:80px;border-radius:10px;overflow:hidden;' +
+          'border:1px solid rgba(201,168,76,0.25);margin:0 0 8px 10px;flex-shrink:0;">' +
+          '<img src="' + escAttr(previewUrl) + '" style="width:100%;height:100%;object-fit:cover" alt="Hero preview"></div>';
+      }
+    }
+
     var traitCards = traits.map(function toTraitCard(trait) {
       if (!trait || typeof trait !== 'object') return '';
       var mechStr = getTraitMech(trait);
@@ -175,6 +191,7 @@
 
     panel.innerHTML = [
       '<div class="sd-header">',
+      speciesPortraitHtml,
       '<div>',
       '<div class="sd-name" style="color:' + escAttr(color) + '">' + escHtml(icon) + ' ' + escHtml(entry.name) + '</div>',
       '<div class="sd-meta">',
@@ -265,6 +282,7 @@
     },
     bind: function bindSpeciesStep(root, context) {
       // 1. Card click handler
+      var bindDraft = context && context.draft || {};
       root.querySelectorAll('.species-card').forEach(function(card) {
         card.addEventListener('click', function() {
           var id = card.dataset.speciesId;
@@ -277,14 +295,13 @@
             c.classList.remove('selected');
           });
           card.classList.add('selected');
-          showSpeciesDetailPanel(root, id);
+          showSpeciesDetailPanel(root, id, context && context.draft);
         });
       });
       // 2. Auto-show detail for already-selected species
-      var draft = context && context.draft || {};
-      var currentId = draft.species && draft.species.id;
+      var currentId = bindDraft.species && bindDraft.species.id;
       if (currentId) {
-        showSpeciesDetailPanel(root, currentId);
+        showSpeciesDetailPanel(root, currentId, bindDraft);
       }
       // 3. Help button
       var helpBtn = root.querySelector('.help-btn[data-help-topic]');

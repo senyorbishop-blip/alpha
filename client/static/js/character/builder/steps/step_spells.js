@@ -51,17 +51,50 @@
     document.head.appendChild(style);
   }
 
-  function levelLabel(level) {
-    if (level === 0) return 'Cantrips';
-    if (level === 1) return '1st';
-    if (level === 2) return '2nd';
-    if (level === 3) return '3rd';
-    return level + 'th';
-  }
+  function getMaxUnlockedSpellLevel(classRow, classLevel) {
+    var slots = classRow && classRow.spellSlots && typeof classRow.spellSlots === 'object'
+      ? classRow.spellSlots
+      : {};
+    var levelKey = String(Number.isFinite(classLevel) && classLevel > 0 ? classLevel : 1);
+    var levelSlots = slots[levelKey] && typeof slots[levelKey] === 'object' ? slots[levelKey] : {};
+    var highest = 0;
+    Object.keys(levelSlots).forEach(function checkSlot(key) {
+      var count = parseInt(levelSlots[key], 10);
+      if (!Number.isFinite(count) || count <= 0) return;
+      var level = parseInt(key, 10);
+      if (Number.isFinite(level) && level > highest) highest = level;
+    });
+    if (highest > 0) return highest;
 
-  function parseLevel(key) {
-    var val = parseInt(key, 10);
-    return Number.isFinite(val) ? val : 0;
+    // Fallback: derive max spell level from caster type + class level
+    var casterType = normalizeId(classRow && classRow.spellcastingType);
+    if (!casterType || casterType === 'none') return 0;
+    var lvl = Number.isFinite(classLevel) && classLevel > 0 ? classLevel : 1;
+    if (casterType === 'pact') {
+      if (lvl <= 2) return 1;
+      if (lvl <= 4) return 2;
+      if (lvl <= 6) return 3;
+      if (lvl <= 8) return 4;
+      return 5;
+    }
+    if (casterType === 'half') {
+      if (lvl <= 2) return 1;
+      if (lvl <= 4) return 2;
+      if (lvl <= 6) return 3;
+      if (lvl <= 8) return 4;
+      if (lvl <= 10) return 5;
+      return Math.min(Math.ceil(lvl / 2), 9);
+    }
+    // Full caster table
+    if (lvl <= 2) return 1;
+    if (lvl <= 4) return 2;
+    if (lvl <= 6) return 3;
+    if (lvl <= 8) return 4;
+    if (lvl <= 10) return 5;
+    if (lvl <= 12) return 6;
+    if (lvl <= 14) return 7;
+    if (lvl <= 16) return 8;
+    return 9;
   }
 
   function asArray(value) {
@@ -180,6 +213,44 @@
       var levelKeys = Object.keys(grouped).map(parseLevel).sort(function(a, b) { return a - b; });
       var activeLevel = levelKeys.length ? levelKeys[0] : 0;
 
+      const knownSpells = Array.isArray(spellbook.known) ? spellbook.known : [];
+      const preparedSpells = Array.isArray(spellbook.prepared) ? spellbook.prepared : [];
+
+      // Count cantrips and levelled known spells for live caps
+      const currentCantrips = knownSpells.filter(function isCantrip(id) {
+        const row = _spellRows.find(function findSpell(r) { return r && r.id === id; });
+        return row && parseInt(row.level, 10) === 0;
+      }).length;
+      const currentKnownLevelled = knownSpells.filter(function isLevelled(id) {
+        const row = _spellRows.find(function findSpell(r) { return r && r.id === id; });
+        return row && parseInt(row.level, 10) > 0;
+      }).length;
+
+      // Build selected spell chips (known + prepared)
+      function buildSelectedChips(ids, label) {
+        if (!ids.length) return '';
+        return '<div class="spell-slot-row" style="margin-bottom:6px"><strong>' + escHtml(label) + ':</strong> ' +
+          ids.map(function(id) {
+            var r = _spellRows.find(function(s) { return s && s.id === id; });
+            var name = (r && r.displayName) || id;
+            return '<span class="spell-dmg-tag" style="margin:0 2px;padding:2px 7px;border-radius:999px;background:rgba(0,229,204,0.12);border:1px solid rgba(0,229,204,0.3);cursor:pointer;" ' +
+              'data-builder-spell-remove="' + escHtml(id) + '" data-builder-spell-remove-list="' + escHtml(label === 'Cantrips / Known' ? 'known' : 'prepared') + '" title="Click to remove">' +
+              escHtml(name) + ' ×</span>';
+          }).join('') +
+          '</div>';
+      }
+
+      const selectedKnownChips = buildSelectedChips(knownSpells, 'Cantrips / Known');
+      const selectedPreparedChips = buildSelectedChips(preparedSpells, 'Prepared');
+
+      // Counter display
+      const cantripCapHtml = cantripsAllowed !== null
+        ? '<span style="color:' + (currentCantrips >= cantripsAllowed ? '#ff8d8d' : 'rgba(0,229,204,0.9)') + '">' + currentCantrips + '/' + cantripsAllowed + ' cantrips</span>'
+        : '';
+      const knownCapHtml = spellsKnownAllowed !== null
+        ? '<span style="color:' + (currentKnownLevelled >= spellsKnownAllowed ? '#ff8d8d' : 'rgba(0,229,204,0.9)') + '">' + currentKnownLevelled + '/' + spellsKnownAllowed + ' spells known</span>'
+        : '';
+
       return [
         '<div class="screen-header">',
         '<div class="screen-title">Choose Your Spells</div>',
@@ -226,12 +297,59 @@
             }).join('') || '<div class="builder-help-text">No legal spells in this tier.</div>')
             + '</section>';
         }).join(''),
-        '<div class="cb-spell-detail">',
-        '<div><strong>Known IDs:</strong> <span data-spell-known-display="1">' + escHtml(toCsv(spellbook.known)) + '</span></div>',
-        '<div><strong>Prepared IDs:</strong> <span data-spell-prepared-display="1">' + escHtml(toCsv(spellbook.prepared)) + '</span></div>',
-        '</div>',
-        loading ? '<div class="builder-help-text">Refreshing spell options for your class and level…</div>' : '',
-        '</div>',
+        '</select></div>',
+        castingMode === 'none'
+          ? '<div class="builder-help-text">Select a casting style above to browse and pick class spells.</div>'
+          : [
+            // Caps + selected spells display
+            (cantripCapHtml || knownCapHtml)
+              ? '<div class="spell-slot-row" style="display:flex;gap:14px;margin-bottom:8px">' + cantripCapHtml + knownCapHtml + '</div>'
+              : '',
+            spellSlots
+              ? '<div class="spell-slot-row"><strong>Spell Slots at Lv ' + safeClassLevel + ':</strong> ' + escHtml(Object.keys(spellSlots).map(function toSlot(key) { return key + ' ×' + spellSlots[key]; }).join(' · ')) + '</div>'
+              : '',
+            selectedKnownChips,
+            selectedPreparedChips,
+            '<div class="spell-browser-shell">',
+            '<input class="spell-browser-search" type="search" data-builder-spell-search="1" placeholder="Search ' + escHtml(className || 'class') + ' spells…" />',
+            '<div class="spell-level-tabs">',
+            filteredLevelKeys.map(function toTab(levelKey) {
+              const activeClass = levelKey === activeLevel ? ' active' : '';
+              return '<button type="button" class="spell-level-tab' + activeClass + '" data-spell-level-tab="' + escHtml(levelKey) + '">' + escHtml(levelLabel(levelKey)) + '</button>';
+            }).join(''),
+            '</div>',
+            filteredLevelKeys.map(function toGroup(levelKey) {
+              const rows = groups[levelKey] || [];
+              const activeClass = levelKey === activeLevel ? ' active' : '';
+              return [
+                '<section class="spell-level-group' + activeClass + '" data-spell-level-group="' + escHtml(levelKey) + '">',
+                rows.map(function toSpellEntry(spell) {
+                  const damageType = String(spell && spell.damageType || '').trim();
+                  const isSelected = knownSpells.includes(spell.id) || preparedSpells.includes(spell.id);
+                  return [
+                    '<div class="spell-entry' + (isSelected ? '" style="border-color:rgba(0,229,204,0.55);background:rgba(0,229,204,0.07)' : '') + '"',
+                    ' data-builder-spell-add="' + escHtml(spell.id || spell.displayName || '') + '"',
+                    ' data-builder-spell-name="' + escHtml(spell.displayName || spell.id || '') + '"',
+                    ' data-builder-spell-id="' + escHtml(spell.id || '') + '"',
+                    ' data-builder-spell-level="' + escHtml(String(spell.level || 0)) + '"',
+                    ' data-builder-spell-search-text="' + escHtml([spell.displayName, spell.school, spell.castingTime, spell.range, damageType, spell.description, spell.damageFormula].join(' ').toLowerCase()) + '">',
+                    '<div class="spell-entry-name">' + (isSelected ? '✓ ' : '') + escHtml(spell.displayName || spell.id || 'Spell') + '</div>',
+                    '<div class="spell-entry-meta">',
+                    '<span>' + escHtml(spell.school || '—') + '</span>',
+                    '<span>' + escHtml(spell.castingTime || '—') + '</span>',
+                    '<span>Range ' + escHtml(spell.range || '—') + '</span>',
+                    damageType ? ('<span class="spell-dmg-tag' + getDamageTypeClass(damageType) + '">' + escHtml(damageType) + '</span>') : '',
+                    '</div>',
+                    '</div>',
+                  ].join('');
+                }).join('') || '<div class="builder-help-text">No spells found for this level.</div>',
+                '</section>',
+              ].join('');
+            }).join(''),
+            filtered.length ? '' : '<div class="builder-help-text">No spells available for your current class and level selection.</div>',
+            '</div>',
+          ].join(''),
+        '<div class="builder-help-text">Click spells to add them. Click the × chip above to remove. Your selections carry into gameplay.</div>',
       ].join('');
     },
     bind: function bindSpellStep(root, context) {
@@ -260,55 +378,57 @@
         context.onSetField(['spellbook', 'prepared'], nextPrepared);
       }
 
-      function canAddSpell(spellId, spellLevel, targetList, knownList, preparedList) {
-        if (targetList === 'known' && knownList.indexOf(spellId) >= 0) return true;
-        if (targetList === 'prepared' && preparedList.indexOf(spellId) >= 0) return true;
+      const classLevelBind = parseInt(draft.progression && draft.progression.level, 10);
+      const safeClassLevelBind = Number.isFinite(classLevelBind) && classLevelBind > 0 ? classLevelBind : 1;
+      const cantripsAllowedBind = getCantripsAllowed(classRow, safeClassLevelBind);
+      const spellsKnownAllowedBind = getSpellsKnownAllowed(classRow, safeClassLevelBind);
 
-        if (spellLevel === 0) {
-          if (limits.cantripsKnown != null) {
-            var currentCantrips = knownList.filter(function(id) { return parseInt(cardById[id] && cardById[id].level, 10) === 0; }).length;
-            if (currentCantrips >= parseInt(limits.cantripsKnown, 10)) return false;
+      // Remove-chip handler: click the × chip to remove a spell
+      root.querySelectorAll('[data-builder-spell-remove]').forEach(function bindRemove(chipEl) {
+        chipEl.addEventListener('click', function onRemove(evt) {
+          evt.stopPropagation();
+          const spellId = String(chipEl.dataset.builderSpellRemove || '').trim();
+          const listKey = String(chipEl.dataset.builderSpellRemoveList || 'known').trim();
+          if (!spellId) return;
+          const current = Array.isArray(spellbook[listKey]) ? spellbook[listKey].slice() : [];
+          const idx = current.indexOf(spellId);
+          if (idx !== -1) {
+            current.splice(idx, 1);
+            context.onSetField(['spellbook', listKey], current);
           }
-          return true;
-        }
+        });
+      });
 
-        if (targetList === 'known' && limits.spellsKnown != null) {
-          var currentKnownLevelled = knownList.filter(function(id) { return parseInt(cardById[id] && cardById[id].level, 10) > 0; }).length;
-          if (currentKnownLevelled >= parseInt(limits.spellsKnown, 10)) return false;
-        }
-        if (targetList === 'prepared' && limits.preparedLimit != null) {
-          var currentPrepared = preparedList.filter(function(id) { return parseInt(cardById[id] && cardById[id].level, 10) > 0; }).length;
-          if (currentPrepared >= parseInt(limits.preparedLimit, 10)) return false;
-        }
-        return true;
-      }
-
-      root.querySelectorAll('[data-spell-level-tab]').forEach(function(tab) {
-        tab.addEventListener('click', function() {
-          var level = String(tab.dataset.spellLevelTab || '').trim();
-          root.querySelectorAll('[data-spell-level-tab]').forEach(function(el){ el.classList.toggle('active', el === tab); });
-          root.querySelectorAll('[data-spell-level-group]').forEach(function(group) {
-            group.classList.toggle('active', String(group.dataset.spellLevelGroup || '').trim() === level);
+      // Tab navigation
+      root.querySelectorAll('[data-spell-level-tab]').forEach(function bindTab(tabEl) {
+        tabEl.addEventListener('click', function onTabClick() {
+          const targetLevel = String(tabEl.dataset.spellLevelTab || '').trim();
+          root.querySelectorAll('[data-spell-level-tab]').forEach(function clearTab(other) {
+            other.classList.toggle('active', other === tabEl);
+          });
+          root.querySelectorAll('[data-spell-level-group]').forEach(function toggleGroup(groupEl) {
+            groupEl.classList.toggle('active', String(groupEl.dataset.spellLevelGroup || '').trim() === targetLevel);
           });
         });
       });
 
-      var search = root.querySelector('[data-builder-spell-search="1"]');
-      if (search) {
-        search.addEventListener('input', function() {
-          var query = normalizeId(search.value);
-          root.querySelectorAll('[data-spell-search]').forEach(function(cardEl) {
-            var haystack = String(cardEl.dataset.spellSearch || '');
-            cardEl.style.display = !query || haystack.indexOf(query) >= 0 ? '' : 'none';
+      // Search filter
+      if (searchInput) {
+        searchInput.addEventListener('input', function onSearch() {
+          const query = normalizeId(searchInput.value);
+          root.querySelectorAll('.spell-entry[data-builder-spell-search-text]').forEach(function filterEntry(entryEl) {
+            const haystack = String(entryEl.dataset.builderSpellSearchText || '');
+            const visible = !query || haystack.indexOf(query) >= 0;
+            entryEl.style.display = visible ? '' : 'none';
           });
         });
       }
 
-      root.querySelectorAll('[data-spell-id]').forEach(function(cardEl) {
-        cardEl.addEventListener('click', function() {
-          var accessible = String(cardEl.dataset.spellAccessible || '1') !== '0';
-          if (!accessible) return;
-          var spellId = String(cardEl.dataset.spellId || '').trim();
+      // Click-to-add spell entries
+      root.querySelectorAll('.spell-entry[data-builder-spell-name]').forEach(function bindSpellEntry(entryEl) {
+        entryEl.addEventListener('click', function onSpellAdd() {
+          const spellId = String(entryEl.dataset.builderSpellId || '').trim();
+          const spellLevel = parseInt(entryEl.dataset.builderSpellLevel || '0', 10);
           if (!spellId) return;
           var spellLevel = parseInt(cardEl.dataset.spellLevel, 10) || 0;
           var knownList = asArray(spellbook.known).slice();
@@ -325,19 +445,23 @@
             rerenderWith(knownList, preparedList);
             return;
           }
-          if (preparedList.indexOf(spellId) >= 0) {
-            preparedList = preparedList.filter(function(id){ return id !== spellId; });
-            rerenderWith(knownList, preparedList);
-            return;
+          const current = target === 'known' ? knownList : preparedList;
+          if (target === 'prepared' && spellLevel === 0) return;
+          // Enforce cantrip limit
+          if (spellLevel === 0 && cantripsAllowedBind !== null) {
+            const cantripCount = knownList.filter(function isCantrip(id) {
+              var row = _spellRows.find(function findSpell(r) { return r && r.id === id; });
+              return row && parseInt(row.level, 10) === 0;
+            }).length;
+            if (cantripCount >= cantripsAllowedBind) return;
           }
-
-          if (!canAddSpell(spellId, spellLevel, targetList, knownList, preparedList)) return;
-          if (spellLevel === 0) {
-            knownList.push(spellId);
-          } else if (targetList === 'prepared') {
-            preparedList.push(spellId);
-          } else {
-            knownList.push(spellId);
+          // Enforce known spell limit
+          if (target === 'known' && spellLevel > 0 && spellsKnownAllowedBind !== null) {
+            const levelledCount = knownList.filter(function isLevelled(id) {
+              var row = _spellRows.find(function findSpell(r) { return r && r.id === id; });
+              return row && parseInt(row.level, 10) > 0;
+            }).length;
+            if (levelledCount >= spellsKnownAllowedBind) return;
           }
           rerenderWith(knownList, preparedList);
         });
