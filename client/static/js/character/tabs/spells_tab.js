@@ -1074,12 +1074,6 @@ function _spellAttackSaveCell(spell, charData) {
     setTimeout(function () { row.classList.remove('cs-row-pulse'); }, 520);
   }
 
-  function _renderSurfaceNavButtons() {
-    return '<div class="cs-surface-nav">' +
-      '<button type="button" class="cs-launch-btn" data-map-panel-open="spelllib">Open map spells</button>' +
-      '<button type="button" class="cs-launch-btn muted" data-map-panel-open="combat">Open map combat</button>' +
-    '</div>';
-  }
 
   function _spellCanCastFromCard(spell) {
     const key = String(spell && (spell.id || _spellName(spell) || '') || '').trim();
