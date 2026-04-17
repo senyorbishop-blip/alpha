@@ -23,6 +23,7 @@ from server.character.spell_compendium import (
     get_effective_document_spell_state,
     get_spell_by_id as get_compendium_spell_by_id,
     list_spells as list_compendium_spells,
+    repair_spell_state_for_document,
     validate_spell_selection,
 )
 from server.character.progression import LevelupApplyError
@@ -674,6 +675,18 @@ async def api_character_levelup_preview(request: Request):
 
     try:
         canonical_document = normalize_incoming_document(incoming_document)
+        classes = canonical_document.get("classes") if isinstance(canonical_document.get("classes"), list) else []
+        primary_class = classes[0] if classes and isinstance(classes[0], dict) else {}
+        class_id = str(primary_class.get("classId") or primary_class.get("id") or primary_class.get("name") or "").strip().lower()
+        class_level = _safe_int(primary_class.get("level"), default=1, minimum=1, maximum=20)
+        if class_id:
+            repair_spell_state_for_document(
+                canonical_document,
+                class_id=class_id,
+                class_level=class_level,
+                abilities=canonical_document.get("abilities") if isinstance(canonical_document.get("abilities"), dict) else {},
+                subclass_id=str(primary_class.get("subclassId") or "").strip().lower(),
+            )
         preview = preview_levelup(canonical_document)
     except CharacterValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -712,6 +725,18 @@ async def api_character_levelup_apply(request: Request):
 
     try:
         canonical_document = normalize_incoming_document(incoming_document)
+        classes = canonical_document.get("classes") if isinstance(canonical_document.get("classes"), list) else []
+        primary_class = classes[0] if classes and isinstance(classes[0], dict) else {}
+        class_id = str(primary_class.get("classId") or primary_class.get("id") or primary_class.get("name") or "").strip().lower()
+        class_level = _safe_int(primary_class.get("level"), default=1, minimum=1, maximum=20)
+        if class_id:
+            repair_spell_state_for_document(
+                canonical_document,
+                class_id=class_id,
+                class_level=class_level,
+                abilities=canonical_document.get("abilities") if isinstance(canonical_document.get("abilities"), dict) else {},
+                subclass_id=str(primary_class.get("subclassId") or "").strip().lower(),
+            )
         applied = apply_character_levelup(
             canonical_document,
             choices=payload.get("choices") if isinstance(payload.get("choices"), dict) else {},
@@ -1368,6 +1393,19 @@ async def get_character_spells_manifest(
             profile = found
 
     native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
+    if native:
+        classes = native.get("classes") if isinstance(native.get("classes"), list) else []
+        primary_class = classes[0] if classes and isinstance(classes[0], dict) else {}
+        class_id = str(primary_class.get("classId") or primary_class.get("id") or primary_class.get("name") or "").strip().lower()
+        class_level = _safe_int(primary_class.get("level"), default=1, minimum=1, maximum=20)
+        if class_id:
+            repair_spell_state_for_document(
+                native,
+                class_id=class_id,
+                class_level=class_level,
+                abilities=native.get("abilities") if isinstance(native.get("abilities"), dict) else {},
+                subclass_id=str(primary_class.get("subclassId") or "").strip().lower(),
+            )
     spell_state = native.get("spellState") if isinstance(native.get("spellState"), dict) else {}
     manifest = build_character_spell_manifest(native) if native else {"known": spell_state.get("known") or [], "prepared": spell_state.get("prepared") or [], "cards": []}
 
@@ -1402,6 +1440,19 @@ async def get_character_spells_known(
             profile = found
 
     native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
+    if native:
+        classes = native.get("classes") if isinstance(native.get("classes"), list) else []
+        primary_class = classes[0] if classes and isinstance(classes[0], dict) else {}
+        class_id = str(primary_class.get("classId") or primary_class.get("id") or primary_class.get("name") or "").strip().lower()
+        class_level = _safe_int(primary_class.get("level"), default=1, minimum=1, maximum=20)
+        if class_id:
+            repair_spell_state_for_document(
+                native,
+                class_id=class_id,
+                class_level=class_level,
+                abilities=native.get("abilities") if isinstance(native.get("abilities"), dict) else {},
+                subclass_id=str(primary_class.get("subclassId") or "").strip().lower(),
+            )
     spell_state = native.get("spellState") if isinstance(native.get("spellState"), dict) else {}
     manifest = build_character_spell_manifest(native) if native else {"known": spell_state.get("known") or [], "prepared": spell_state.get("prepared") or [], "cards": []}
 

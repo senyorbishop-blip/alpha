@@ -841,6 +841,88 @@ def validate_spell_selection(*, class_id: str, class_level: int, abilities: dict
     }
 
 
+def repair_spell_state_for_document(
+    document: dict[str, Any],
+    *,
+    class_id: str,
+    class_level: int,
+    abilities: dict[str, Any] | None = None,
+    subclass_id: str | None = None,
+) -> dict[str, Any]:
+    """Repair polluted spellState lists against strict class/level validation.
+
+    Keeps validator strict and removes stale illegal spell entries from
+    known/prepared lists so old UI corruption does not block progression flows.
+    """
+    if not isinstance(document, dict):
+        return {
+            "changed": False,
+            "known": [],
+            "prepared": [],
+            "removedKnown": [],
+            "removedPrepared": [],
+            "validation": {
+                "ok": True,
+                "errors": [],
+                "warnings": [],
+                "known": [],
+                "prepared": [],
+            },
+        }
+
+    spell_state = document.get("spellState") if isinstance(document.get("spellState"), dict) else {}
+    if not spell_state:
+        spell_state = {}
+        document["spellState"] = spell_state
+
+    raw_known = []
+    seen_known: set[str] = set()
+    for row in spell_state.get("known") if isinstance(spell_state.get("known"), list) else []:
+        spell_id = str(row or "").strip()
+        if not spell_id or spell_id in seen_known:
+            continue
+        seen_known.add(spell_id)
+        raw_known.append(spell_id)
+
+    raw_prepared = []
+    seen_prepared: set[str] = set()
+    for row in spell_state.get("prepared") if isinstance(spell_state.get("prepared"), list) else []:
+        spell_id = str(row or "").strip()
+        if not spell_id or spell_id in seen_prepared:
+            continue
+        seen_prepared.add(spell_id)
+        raw_prepared.append(spell_id)
+
+    validation = validate_spell_selection(
+        class_id=class_id,
+        class_level=class_level,
+        abilities=abilities if isinstance(abilities, dict) else {},
+        known=raw_known,
+        prepared=raw_prepared,
+        document=document,
+        subclass_id=subclass_id,
+    )
+    known = list(validation.get("known") or [])
+    prepared = list(validation.get("prepared") or [])
+    removed_known = [spell_id for spell_id in raw_known if spell_id not in set(known)]
+    removed_prepared = [spell_id for spell_id in raw_prepared if spell_id not in set(prepared)]
+
+    changed = (raw_known != known) or (raw_prepared != prepared)
+    if changed:
+        spell_state["known"] = known
+        spell_state["prepared"] = prepared
+        document["spellState"] = spell_state
+
+    return {
+        "changed": changed,
+        "known": known,
+        "prepared": prepared,
+        "removedKnown": removed_known,
+        "removedPrepared": removed_prepared,
+        "validation": validation,
+    }
+
+
 def build_spell_card(spell: dict[str, Any], *, character_context: dict[str, Any] | None = None) -> dict[str, Any]:
     ctx = character_context if isinstance(character_context, dict) else {}
     spell = _clone(spell)

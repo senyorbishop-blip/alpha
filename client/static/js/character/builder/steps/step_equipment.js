@@ -154,6 +154,34 @@
     ],
   };
 
+  var STARTER_WEAPON_STATS = {
+    'club': { damage_dice: '1d4', damage_type: 'bludgeoning', weapon_properties: ['Light'], range: 'Melee 5 ft' },
+    'dagger': { damage_dice: '1d4', damage_type: 'piercing', weapon_properties: ['Finesse', 'Light', 'Thrown'], range: '20/60 ft' },
+    'dart': { damage_dice: '1d4', damage_type: 'piercing', weapon_properties: ['Finesse', 'Thrown'], range: '20/60 ft' },
+    'greatsword': { damage_dice: '2d6', damage_type: 'slashing', weapon_properties: ['Heavy', 'Two-Handed'], range: 'Melee 5 ft' },
+    'greataxe': { damage_dice: '1d12', damage_type: 'slashing', weapon_properties: ['Heavy', 'Two-Handed'], range: 'Melee 5 ft' },
+    'halberd': { damage_dice: '1d10', damage_type: 'slashing', weapon_properties: ['Heavy', 'Reach', 'Two-Handed'], range: 'Melee 10 ft' },
+    'hand crossbow': { damage_dice: '1d6', damage_type: 'piercing', weapon_properties: ['Ammunition', 'Light', 'Loading'], range: '30/120 ft' },
+    'handaxe': { damage_dice: '1d6', damage_type: 'slashing', weapon_properties: ['Light', 'Thrown'], range: '20/60 ft' },
+    'javelin': { damage_dice: '1d6', damage_type: 'piercing', weapon_properties: ['Thrown'], range: '30/120 ft' },
+    'light crossbow': { damage_dice: '1d8', damage_type: 'piercing', weapon_properties: ['Ammunition', 'Loading', 'Two-Handed'], range: '80/320 ft' },
+    'light hammer': { damage_dice: '1d4', damage_type: 'bludgeoning', weapon_properties: ['Light', 'Thrown'], range: '20/60 ft' },
+    'longbow': { damage_dice: '1d8', damage_type: 'piercing', weapon_properties: ['Ammunition', 'Heavy', 'Two-Handed'], range: '150/600 ft' },
+    'longsword': { damage_dice: '1d8', damage_type: 'slashing', versatile_damage: '1d10', weapon_properties: ['Versatile'], range: 'Melee 5 ft' },
+    'mace': { damage_dice: '1d6', damage_type: 'bludgeoning', weapon_properties: [], range: 'Melee 5 ft' },
+    'maul': { damage_dice: '2d6', damage_type: 'bludgeoning', weapon_properties: ['Heavy', 'Two-Handed'], range: 'Melee 5 ft' },
+    'musket': { damage_dice: '1d12', damage_type: 'piercing', weapon_properties: ['Ammunition', 'Loading', 'Two-Handed'], range: '40/120 ft' },
+    'pistol': { damage_dice: '1d10', damage_type: 'piercing', weapon_properties: ['Ammunition', 'Loading'], range: '30/90 ft' },
+    'quarterstaff': { damage_dice: '1d6', damage_type: 'bludgeoning', versatile_damage: '1d8', weapon_properties: ['Versatile'], range: 'Melee 5 ft' },
+    'rapier': { damage_dice: '1d8', damage_type: 'piercing', weapon_properties: ['Finesse'], range: 'Melee 5 ft' },
+    'scimitar': { damage_dice: '1d6', damage_type: 'slashing', weapon_properties: ['Finesse', 'Light'], range: 'Melee 5 ft' },
+    'shortbow': { damage_dice: '1d6', damage_type: 'piercing', weapon_properties: ['Ammunition', 'Two-Handed'], range: '80/320 ft' },
+    'shortsword': { damage_dice: '1d6', damage_type: 'piercing', weapon_properties: ['Finesse', 'Light'], range: 'Melee 5 ft' },
+    'sling': { damage_dice: '1d4', damage_type: 'bludgeoning', weapon_properties: ['Ammunition'], range: '30/120 ft' },
+    'spear': { damage_dice: '1d6', damage_type: 'piercing', versatile_damage: '1d8', weapon_properties: ['Thrown', 'Versatile'], range: '20/60 ft' },
+    'warhammer': { damage_dice: '1d8', damage_type: 'bludgeoning', versatile_damage: '1d10', weapon_properties: ['Versatile'], range: 'Melee 5 ft' },
+  };
+
   function parseQtyLine(raw) {
     var text = String(raw || '').trim();
     if (!text) return null;
@@ -176,10 +204,18 @@
     return 'gear';
   }
 
+  function weaponStatsForName(name) {
+    var lower = String(name || '').trim().toLowerCase();
+    if (!lower) return null;
+    lower = lower.replace(/\s*[×x]\s*\d+$/, '').trim().replace(/\s*\(\d+\)$/, '').trim();
+    var singular = lower.replace(/s$/, '').trim();
+    return STARTER_WEAPON_STATS[lower] || STARTER_WEAPON_STATS[singular] || null;
+  }
+
   function toInventoryItem(row) {
     var parsed = parseQtyLine(row);
     if (!parsed) return null;
-    return {
+    var out = {
       name: parsed.name,
       qty: parsed.qty,
       equipment_kind: inferEquipmentKind(parsed.name),
@@ -187,6 +223,16 @@
       source: 'builder_starting_choice',
       equipped: false,
     };
+    var weaponStats = weaponStatsForName(parsed.name);
+    if (weaponStats) {
+      out.damage_dice = String(weaponStats.damage_dice || '').trim();
+      out.damage = out.damage_dice;
+      out.damage_type = String(weaponStats.damage_type || '').trim();
+      out.versatile_damage = String(weaponStats.versatile_damage || '').trim();
+      out.range = String(weaponStats.range || '').trim();
+      out.weapon_properties = Array.isArray(weaponStats.weapon_properties) ? weaponStats.weapon_properties.slice() : [];
+    }
+    return out;
   }
 
   function buildPackContainer(packId) {
