@@ -296,8 +296,8 @@ function _renderFlagshipHeader(charData) {
       <div class="cs-hero-card">
         <div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
           <div style="flex:0 0 auto;">
-            <div style="width:110px;height:110px;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;">
-              ${portraitUrl ? `<img src="${_esc(portraitUrl)}" alt="Portrait of ${_esc(charData.name || 'Adventurer')}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">` : `<span style="font-family:'Cinzel',serif;font-size:2rem;color:rgba(255,255,255,0.72);">${_esc(String(charData.name || 'A').slice(0, 1).toUpperCase())}</span>`}
+            <div style="width:110px;height:110px;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,0.14);background:radial-gradient(circle at 35% 20%,rgba(255,255,255,0.1),rgba(255,255,255,0.02));display:flex;align-items:center;justify-content:center;padding:6px;">
+              ${portraitUrl ? `<img src="${_esc(portraitUrl)}" alt="Portrait of ${_esc(charData.name || 'Adventurer')}" loading="lazy" style="width:100%;height:100%;object-fit:contain;object-position:center center;display:block;image-rendering:auto;">` : `<span style="font-family:'Cinzel',serif;font-size:2rem;color:rgba(255,255,255,0.72);">${_esc(String(charData.name || 'A').slice(0, 1).toUpperCase())}</span>`}
             </div>
           </div>
           <div style="flex:1;min-width:220px;">
