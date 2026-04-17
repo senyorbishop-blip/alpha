@@ -108,8 +108,8 @@
         const firstClass = classes[0] && typeof classes[0] === 'object' ? classes[0] : {};
         const classData = native.class && typeof native.class === 'object' ? native.class : {};
         const portraitLibrary = global.CasualDnDPortraitLibrary;
-        const portraitUrl = String(identity.portraitUrl || '').trim();
-        const tokenUrl = String(identity.tokenImageUrl || '').trim();
+        const portraitUrl = String(identity.portraitUrl || entry.portraitUrl || entry.avatarUrl || '').trim();
+        const tokenUrl = String(identity.tokenImageUrl || entry.tokenImageUrl || '').trim();
         const resolvedComboPortrait = (!portraitUrl && !tokenUrl && portraitLibrary && typeof portraitLibrary.resolve === 'function')
           ? String(portraitLibrary.resolve({
               speciesId: String(species.id || species.name || '').trim(),

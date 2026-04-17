@@ -75,12 +75,17 @@
       && draft.class
       && String(draft.class.id || '').trim()
     );
-    var finalPortrait = hasComboSelections ? comboPortrait : '';
-    var finalToken = hasComboSelections ? comboPortrait : '';
+    var manualPortrait = String(identity.portraitUrl || '').trim();
+    var manualToken = String(identity.tokenImageUrl || '').trim();
+    var resolvedPortrait = hasComboSelections ? comboPortrait : '';
+    var finalPortrait = manualPortrait || manualToken || resolvedPortrait;
+    var finalToken = manualToken || manualPortrait || resolvedPortrait;
     var previewMarkup = finalPortrait
       ? '<img class="avatar-render portrait" src="' + escHtml(finalPortrait) + '" alt="Portrait preview" style="width:100%;height:100%;object-fit:contain;object-position:center;" />'
       : '<div style="font-size:.62rem;color:rgba(180,170,150,.92);line-height:1.5;text-align:center;padding:0 6px;">Portrait preview will appear once species and class are selected.</div>';
-    var sourceLabel = comboPortrait ? 'Combo portrait (auto)' : (hasComboSelections ? 'No combo portrait found for this selection yet.' : 'Awaiting species + class selection.');
+    var sourceLabel = manualPortrait || manualToken
+      ? 'Manual portrait/token override'
+      : (comboPortrait ? 'Combo portrait (auto)' : (hasComboSelections ? 'No combo portrait found for this selection yet.' : 'Awaiting species + class selection.'));
 
     return [
       '<div class="cb-identity-preview" style="display:flex;gap:12px;align-items:center;padding:10px 12px;border:1px solid rgba(201,168,76,0.18);border-radius:10px;background:rgba(8,12,18,.52);margin:8px 0 12px;">',

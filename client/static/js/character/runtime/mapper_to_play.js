@@ -618,6 +618,20 @@
     );
   }
 
+  function resolveImageFieldsForDoc(doc, identity, existingAvatar, existingToken) {
+    var resolvedIdentity = asObject(identity);
+    var comboPortrait = resolveComboPortraitForDoc(doc, resolvedIdentity);
+    var docPortrait = firstNonEmpty(doc.portraitUrl, doc.avatarUrl);
+    var docToken = firstNonEmpty(doc.tokenImageUrl, docPortrait);
+    var avatarUrl = firstNonEmpty(resolvedIdentity.portraitUrl, resolvedIdentity.avatarUrl, comboPortrait, docPortrait, existingAvatar);
+    var tokenImageUrl = firstNonEmpty(resolvedIdentity.tokenImageUrl, resolvedIdentity.portraitUrl, comboPortrait, docToken, avatarUrl, existingToken);
+    return {
+      avatarUrl: avatarUrl,
+      tokenImageUrl: tokenImageUrl,
+      comboPortrait: comboPortrait,
+    };
+  }
+
   function nativeToLegacyCharSheet(nativeCharacter, nativeRuntime, existing) {
     var doc = asObject(nativeCharacter);
     var runtime = asObject(nativeRuntime);
@@ -650,9 +664,9 @@
     out.currency = buildNativeCurrency(doc);
     out.spellState = clone(asObject(doc.spellState));
 
-    var comboPortrait = resolveComboPortraitForDoc(doc, identity);
-    out.avatarUrl = firstNonEmpty(identity.portraitUrl, comboPortrait, out.avatarUrl);
-    out.tokenImageUrl = firstNonEmpty(identity.tokenImageUrl, identity.portraitUrl, comboPortrait, out.tokenImageUrl, out.avatarUrl);
+    var imageFields = resolveImageFieldsForDoc(doc, identity, out.avatarUrl, out.tokenImageUrl);
+    out.avatarUrl = imageFields.avatarUrl;
+    out.tokenImageUrl = imageFields.tokenImageUrl;
     out.portraitFrame = firstNonEmpty(presentation.portraitFrame, out.portraitFrame, 'classic');
     out.tokenDisplay = Object.assign({}, asObject(out.tokenDisplay), tokenDisplay);
     out.inventory = buildNativeInventoryEntries(doc);
@@ -817,9 +831,9 @@
     out.className = firstNonEmpty(classDisplay.className, primaryClass.name, out.className);
     out.subclass = firstNonEmpty(classDisplay.subclassName, primaryClass.subclass, out.subclass);
     out.level = level;
-    var comboPortrait = resolveComboPortraitForDoc(doc, identity);
-    out.avatarUrl = firstNonEmpty(identity.portraitUrl, comboPortrait, out.avatarUrl);
-    out.tokenImageUrl = firstNonEmpty(identity.tokenImageUrl, identity.portraitUrl, comboPortrait, out.tokenImageUrl);
+    var imageFields = resolveImageFieldsForDoc(doc, identity, out.avatarUrl, out.tokenImageUrl);
+    out.avatarUrl = imageFields.avatarUrl;
+    out.tokenImageUrl = imageFields.tokenImageUrl;
     out.portraitFrame = firstNonEmpty(presentation.portraitFrame, out.portraitFrame, 'classic');
     out.tokenDisplay = Object.assign({}, asObject(out.tokenDisplay), tokenDisplay);
 
@@ -1144,12 +1158,12 @@
       ]);
     }
 
-    var comboPortrait = resolveComboPortraitForDoc(doc, identity);
+    var imageFields = resolveImageFieldsForDoc(doc, identity, token.portraitUrl, token.tokenImageUrl);
     return {
       ...token,
       name: firstNonEmpty(doc.name, identity.name, token.name),
-      portraitUrl: firstNonEmpty(identity.portraitUrl, comboPortrait, doc.portraitUrl, token.portraitUrl),
-      tokenImageUrl: firstNonEmpty(identity.tokenImageUrl, identity.portraitUrl, comboPortrait, doc.tokenImageUrl, doc.portraitUrl, token.tokenImageUrl),
+      portraitUrl: imageFields.avatarUrl,
+      tokenImageUrl: imageFields.tokenImageUrl,
       maxHP: mappedMaxHp,
       currentHP: mappedCurrentHp,
       tempHP: mappedTempHp,

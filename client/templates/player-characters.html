@@ -284,8 +284,8 @@
       overflow: hidden;
       border:1px solid rgba(229,198,151,0.08);
     }
-    .token img { width:100%; height:100%; object-fit:cover; display:block; }
-    .avatar-render.token { width:100%; height:100%; object-fit:cover; display:block; }
+    .token img { width:100%; height:100%; object-fit:contain; object-position:center; display:block; background:rgba(0,0,0,0.22); }
+    .avatar-render.token { width:100%; height:100%; object-fit:contain; object-position:center; display:block; background:rgba(0,0,0,0.22); }
     .avatar-render.mini { width:108px; height:118px; object-fit:contain; display:block; }
     .character-main {
       min-width: 0;
@@ -660,7 +660,7 @@
       const renderer = window.CasualDnDAvatarRenderer;
       const portraitLibrary = window.CasualDnDPortraitLibrary;
       const portraitUrl = String(entry.portraitUrl || '').trim();
-      const tokenImageUrl = String(entry.tokenImageUrl || portraitUrl).trim();
+      const tokenImageUrl = String(entry.tokenImageUrl || '').trim();
       const comboPortraitUrl = portraitLibrary && typeof portraitLibrary.resolve === 'function'
         ? String(portraitLibrary.resolve({
             speciesId: entry.speciesId || entry.speciesLabel || '',
@@ -669,8 +669,9 @@
             neutralFallback: '',
           }) || '').trim()
         : '';
-      const avatarMarkup = tokenImageUrl
-        ? `<img class="avatar-render mini" src="${escapeHtml(tokenImageUrl)}" alt="${escapeHtml(entry.name || 'Hero')}">`
+      const resolvedCardImage = tokenImageUrl || portraitUrl || comboPortraitUrl;
+      const avatarMarkup = resolvedCardImage
+        ? `<img class="avatar-render mini" src="${escapeHtml(resolvedCardImage)}" alt="${escapeHtml(entry.name || 'Hero')}">`
         : (lib
           ? lib.renderImgMarkup(buildAvatarOptions(entry), 110, 'mini', 'mini')
           : (renderer
