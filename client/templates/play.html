@@ -24420,8 +24420,32 @@ function _classEntryLevel(entry) {
 
 function _getStructuredClassFeatures() {
   const classes = Array.isArray(_charSheet?.classes) ? _charSheet.classes : [];
+  const nativeClassFeatures = Array.isArray(_charSheet?.nativeClassFeatures)
+    ? _charSheet.nativeClassFeatures
+    : (Array.isArray(_charSheet?.book?.nativeClassFeatures) ? _charSheet.book.nativeClassFeatures : []);
+  const normalizedClassLevels = new Map();
+  classes.forEach((entry) => {
+    const classToken = _normalizeClassToken(entry?.name || entry?.className || entry?.classId);
+    if (!classToken) return;
+    normalizedClassLevels.set(classToken, Math.max(normalizedClassLevels.get(classToken) || 0, _classEntryLevel(entry)));
+  });
+  const normalizeFeatureName = (raw) => String(raw || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const normalizedNativeByClassAndName = new Map();
+  nativeClassFeatures.forEach((row) => {
+    if (!row || typeof row !== 'object') return;
+    const nameToken = normalizeFeatureName(row.name || row.label || row.id);
+    if (!nameToken) return;
+    const classToken = _normalizeClassToken(row.className || row.details?.source || row.sourceClass || '');
+    if (classToken) {
+      const scopedKey = `${classToken}::${nameToken}`;
+      if (!normalizedNativeByClassAndName.has(scopedKey)) normalizedNativeByClassAndName.set(scopedKey, row);
+    }
+    if (!normalizedNativeByClassAndName.has(nameToken)) normalizedNativeByClassAndName.set(nameToken, row);
+  });
   const out = [];
   const seen = new Set();
+  const seenNames = new Set();
+  const consumedNativeFeatureIds = new Set();
   classes.forEach((entry, classIndex) => {
     const classToken = _normalizeClassToken(entry?.name);
     const subclassToken = _normalizeClassToken(entry?.subclass);
@@ -24433,21 +24457,62 @@ function _getStructuredClassFeatures() {
       if (minLevel > 0 && classLevel > 0 && classLevel < minLevel) return;
       const key = String(tpl.key || `${classToken}_${featureIndex}`).trim();
       if (!key || seen.has(key)) return;
+      const nameToken = normalizeFeatureName(tpl?.name || key);
+      const nativeMatch = normalizedNativeByClassAndName.get(`${classToken}::${nameToken}`) || normalizedNativeByClassAndName.get(nameToken) || null;
+      const nativeId = String(nativeMatch?.id || '').trim();
+      if (nativeId) consumedNativeFeatureIds.add(nativeId);
       seen.add(key);
+      seenNames.add(`${classToken}::${nameToken}`);
       out.push({
         key,
         id: `class_feature_${key}_${classIndex}`,
         name: String(tpl.name || key).trim(),
-        section: String(tpl.section || 'Class Features').trim(),
+        section: String(nativeMatch?.section || tpl.section || 'Class Features').trim(),
         className: String(entry?.name || '').trim(),
         subclass: String(entry?.subclass || '').trim(),
         classLevel,
         minLevel,
-        resourceName: String(tpl.resourceName || '').trim(),
+        resourceName: String(nativeMatch?.resourceName || tpl.resourceName || '').trim(),
         aliases: Array.isArray(tpl.aliases) ? tpl.aliases.slice() : [],
-        trackUses: !!tpl.trackUses,
-        tags: Array.isArray(tpl.tags) ? tpl.tags.slice() : [],
+        trackUses: !!(nativeMatch?.trackUses || tpl.trackUses),
+        tags: Array.isArray(nativeMatch?.tags) ? nativeMatch.tags.slice() : (Array.isArray(tpl.tags) ? tpl.tags.slice() : []),
+        summary: String(nativeMatch?.summary || tpl.summary || '').trim(),
+        description: String(nativeMatch?.description || tpl.description || '').trim(),
       });
+    });
+  });
+  nativeClassFeatures.forEach((row, featureIndex) => {
+    if (!row || typeof row !== 'object') return;
+    const name = String(row.name || row.label || row.id || '').trim();
+    if (!name) return;
+    const featureId = String(row.id || '').trim();
+    if (featureId && consumedNativeFeatureIds.has(featureId)) return;
+    const classToken = _normalizeClassToken(row.className || row.details?.source || row.sourceClass || '');
+    const nameToken = normalizeFeatureName(name);
+    if (!nameToken) return;
+    if (classToken && seenNames.has(`${classToken}::${nameToken}`)) return;
+    const minLevel = _safeCharacterLevel(row.minLevel ?? row.details?.level ?? row.level, 0);
+    const classLevel = classToken ? (normalizedClassLevels.get(classToken) || 0) : 0;
+    if (minLevel > 0 && classLevel > 0 && classLevel < minLevel) return;
+    const key = String(row.id || row.key || `${classToken || 'native'}_${nameToken}_${featureIndex}`).trim().toLowerCase().replace(/[^a-z0-9_:-]+/g, '_');
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    if (classToken) seenNames.add(`${classToken}::${nameToken}`);
+    out.push({
+      key,
+      id: `class_feature_native_${featureIndex}_${key}`,
+      name,
+      section: String(row.section || row.type || 'Class Features').trim(),
+      className: String(row.className || row.details?.source || '').trim(),
+      subclass: String(row.subclassName || row.subclass || '').trim(),
+      classLevel,
+      minLevel,
+      resourceName: String(row.resourceName || '').trim(),
+      aliases: [],
+      trackUses: !!row.trackUses,
+      tags: Array.isArray(row.tags) ? row.tags.slice() : [],
+      summary: String(row.summary || '').trim(),
+      description: String(row.description || row.details?.description || row.details?.effect || '').trim(),
     });
   });
   return out;
