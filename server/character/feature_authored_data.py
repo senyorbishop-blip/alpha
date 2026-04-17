@@ -140,6 +140,10 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
             "remaining uses, and refresh timing obvious."
         ),
         "effect": "Creates a flexible support resource that helps the party pass important rolls.",
+        "range": "60 feet",
+        "duration": "10 minutes",
+        "trigger": "Use before an ally makes an ability check, attack roll, or saving throw that matters.",
+        "usage": "Spend 1 Bardic Inspiration use",
         "recovery": "Refresh depends on level; later bard progression improves how often this comes back.",
         "tags": ["support", "resource", "social"],
     },
@@ -281,6 +285,9 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
             "In play, the important questions are what form you can currently access, how many uses remain, and what happens to your resources and state "
             "while transformed."
         ),
+        "duration": "Usually hours equal to half your druid level (minimum 1 hour), unless ended early.",
+        "trigger": "Use when you need beast mobility, survivability, scouting, or circle-specific combat form pressure.",
+        "usage": "Spend 1 Wild Shape use",
         "recovery": "Track uses and rest refresh directly in the sheet resource area.",
         "tags": ["shapechange", "resource", "exploration"],
     },
@@ -347,6 +354,8 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["healing", "resource", "combat"],
     },
     "action surge": {
+        "section": "Class Features",
+        "type": "special",
         "resourceName": "Action Surge",
         "trackUses": True,
         "summary": "Explode your tempo for one turn and do something extra that most characters simply cannot.",
@@ -355,6 +364,9 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
             "the remaining uses obvious because the player’s whole tactical plan may hinge on it."
         ),
         "effect": "Gain an extra action on your turn within the feature’s current limits.",
+        "duration": "This turn only",
+        "trigger": "Use when an extra action will decisively finish a target, secure position, or rescue tempo.",
+        "usage": "Spend 1 Action Surge use",
         "recovery": "Usually returns on a Short or Long Rest.",
         "tags": ["combat", "resource", "burst"],
     },
@@ -502,6 +514,9 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
             "whether the moment calls for topping off, picking someone up, or removing a key condition."
         ),
         "effect": "Convert points from a limited pool into healing or specific restorative effects.",
+        "range": "Touch",
+        "trigger": "Use when an ally needs immediate healing, stabilization, or condition support.",
+        "usage": "Spend points from your Lay on Hands pool (up to pool maximum).",
         "recovery": "The pool refreshes on a Long Rest.",
         "tags": ["healing", "resource", "divine"],
     },
@@ -640,19 +655,29 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["spellcasting", "core"],
     },
     "font of magic": {
+        "section": "Class Features",
+        "type": "special",
         "resourceName": "Sorcery Points",
         "trackUses": True,
         "summary": "Your sorcery points let you bend spellcasting into a more flexible economy.",
         "description": (
             "Font of Magic is the sorcerer’s resource engine. It lets you convert between magical fuel and spell output, so the sheet should make both the pool and the spend paths easy to audit."
         ),
+        "usage": "Spend Sorcery Points to create slots, or spend spell slots to regain Sorcery Points per class rules.",
+        "recovery": "Sorcery Points refresh on a Long Rest.",
         "tags": ["spellcasting", "resource"],
     },
     "metamagic": {
+        "section": "Class Features",
+        "type": "special",
+        "resourceName": "Sorcery Points",
         "summary": "Alter how your spells work instead of merely choosing which spell to cast.",
         "description": (
             "Metamagic is a major sorcerer identity feature because it changes spell delivery itself. It should show the available options, their costs, and the kinds of spell turns they improve."
         ),
+        "trigger": "Apply when you cast an eligible spell and want to reshape range, target count, timing, or save pressure.",
+        "usage": "Spend Sorcery Points based on the selected Metamagic option.",
+        "recovery": "Uses depend on Sorcery Point recovery (typically Long Rest).",
         "tags": ["spellcasting", "resource", "customization"],
     },
     "sorcery incarnate": {
@@ -700,10 +725,16 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["spellcasting", "capstone"],
     },
     "pact magic": {
+        "section": "Class Features",
+        "type": "passive",
+        "resourceName": "Pact Slots",
+        "trackUses": True,
         "summary": "Your spell slots are few, high-leverage, and refreshed on a different cadence than most casters.",
         "description": (
             "Pact Magic is the heart of warlock spellcasting. It should be obvious that you are not using the same slot economy as a wizard or sorcerer."
         ),
+        "usage": "Spend pact slots to cast warlock spells; all pact slots cast at your current pact slot level.",
+        "recovery": "Pact slots refresh on a Short Rest and Long Rest.",
         "tags": ["spellcasting", "resource"],
     },
     "eldritch invocations": {
@@ -714,10 +745,13 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
         "tags": ["customization", "spellcasting"],
     },
     "pact boon": {
+        "section": "Class Features",
+        "type": "passive",
         "summary": "Your patron relationship manifests as a concrete magical tool or companion style.",
         "description": (
             "Pact Boon is a foundational warlock identity pick. It changes how the class behaves in combat, exploration, or utility scenes and should never feel buried."
         ),
+        "trigger": "Use this to define your core warlock lane (weapon, tome, chain, or other boon path).",
         "tags": ["build", "patron"],
     },
     "mystic arcanum": {

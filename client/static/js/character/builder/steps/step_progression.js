@@ -38,6 +38,16 @@
     return Array.isArray(row && row.progressionSummary) ? row.progressionSummary.slice(0, 20) : [];
   }
 
+  function getProgressionTable(draft) {
+    const api = global.CharacterBuilderAPI;
+    const classId = getClassId(draft);
+    if (!api || !classId) return [];
+    const catalog = api.getCachedCatalog && api.getCachedCatalog();
+    const rows = Array.isArray(catalog && catalog.classes) ? catalog.classes : [];
+    const row = rows.find(function(r) { return String(r && r.id || '').trim().toLowerCase() === classId; });
+    return Array.isArray(row && row.progressionTable) ? row.progressionTable.slice(0, 20) : [];
+  }
+
   function getFeaturesAtLevel(progressionSummary, level) {
     const entry = progressionSummary.find(function(item) {
       return parseInt(item && item.level, 10) === level;
@@ -67,9 +77,55 @@
       if (!row || typeof row !== 'object') return false;
       const id = String(row.id || '').trim();
       if (!id) return false;
+      const restrictions = Array.isArray(row.classRestrictions) ? row.classRestrictions : [];
+      if (restrictions.length) {
+        return restrictions.some(function(v) { return String(v || '').trim().toLowerCase() === classId; });
+      }
       const cls = String(row.classId || row.class || '').trim().toLowerCase();
       return !cls || cls === classId;
     });
+  }
+
+  function getLevelRow(progressionTable, level) {
+    return progressionTable.find(function(item) {
+      return parseInt(item && item.level, 10) === level;
+    }) || null;
+  }
+
+  function hasFeatOrAsiChoice(levelRow, progressionSummary, level) {
+    if (levelRow && levelRow.asiOrFeat === true) return true;
+    return isFeatLevel(progressionSummary, level);
+  }
+
+  function getSubclassUnlockLevel(draft) {
+    const api = global.CharacterBuilderAPI;
+    const classId = getClassId(draft);
+    if (!api || !classId) return 0;
+    const catalog = api.getCachedCatalog && api.getCachedCatalog();
+    const rows = Array.isArray(catalog && catalog.classes) ? catalog.classes : [];
+    const row = rows.find(function(r) { return String(r && r.id || '').trim().toLowerCase() === classId; });
+    const level = parseInt(row && row.subclassLevel, 10);
+    return Number.isFinite(level) && level > 0 ? level : 0;
+  }
+
+  function getAbilityChoiceState(progression, defaultMode) {
+    const state = progression && progression.choiceState && typeof progression.choiceState === 'object'
+      ? progression.choiceState
+      : {};
+    const fromStructured = Array.isArray(state.asiAbilities)
+      ? state.asiAbilities.map(function (v) { return String(v || '').trim().toLowerCase(); }).filter(Boolean)
+      : [];
+    if (fromStructured.length) return fromStructured;
+    if (defaultMode !== 'ability') return [];
+    const legacy = progression && progression.asiChoice && typeof progression.asiChoice === 'object'
+      ? progression.asiChoice
+      : {};
+    const legacyAbilities = Array.isArray(legacy.abilities)
+      ? legacy.abilities.map(function (v) { return String(v || '').trim().toLowerCase(); }).filter(Boolean)
+      : [];
+    if (legacyAbilities.length) return legacyAbilities;
+    const single = String(legacy.ability || '').trim().toLowerCase();
+    return single ? [single] : [];
   }
 
   function renderLevelPicker(safeLevel) {
@@ -99,18 +155,28 @@
       const classId = getClassId(draft);
       const className = getClassName(draft);
       const progressionSummary = getProgressionSummary(draft);
+      const progressionTable = getProgressionTable(draft);
+      const levelRow = getLevelRow(progressionTable, safeLevel);
       const featureText = getFeaturesAtLevel(progressionSummary, safeLevel);
-      const featLevel = isFeatLevel(progressionSummary, safeLevel);
+      const featLevel = hasFeatOrAsiChoice(levelRow, progressionSummary, safeLevel);
       const featRows = getFeatRows();
-      const talentRows = getTalentRowsForClass(classId);
+      const talentRows = getTalentRowsForClass(classId).filter(function (row) {
+        var minLevel = parseInt(row && row.minimumLevel, 10);
+        if (!Number.isFinite(minLevel) || minLevel < 1) minLevel = 1;
+        return safeLevel >= minLevel;
+      });
 
       const asiChoice = progression.asiChoice && typeof progression.asiChoice === 'object' ? progression.asiChoice : {};
       const asiMode = String(asiChoice.mode || 'ability').toLowerCase() === 'feat' ? 'feat' : 'ability';
       const featChoice = String(asiChoice.featId || (Array.isArray(progression.feats) ? progression.feats[0] : '') || '').trim();
       const choiceState = progression.choiceState && typeof progression.choiceState === 'object' ? progression.choiceState : {};
+      const asiAbilities = getAbilityChoiceState(progression, asiMode);
       const selectedTalents = Array.isArray(choiceState.talentIds)
         ? choiceState.talentIds.map(function (v) { return String(v || '').trim(); }).filter(Boolean)
         : (Array.isArray(progression.talents) ? progression.talents.map(function (v) { return String(v || '').trim(); }).filter(Boolean) : []);
+      const subclassUnlockLevel = getSubclassUnlockLevel(draft);
+      const subclassRequiredNow = !!(subclassUnlockLevel && safeLevel >= subclassUnlockLevel && !String(draft && draft.class && draft.class.subclassId || '').trim());
+      const subclassSelection = String(draft && draft.class && draft.class.subclassId || '').trim();
 
       var milestoneHtml = '';
       if (featureText) {
@@ -139,6 +205,17 @@
             '<button type="button" data-builder-asi-mode="ability" class="sheet-book-btn' + (asiMode === 'ability' ? ' active' : '') + '">Ability Score Improvement</button>',
             '<button type="button" data-builder-asi-mode="feat" class="sheet-book-btn' + (asiMode === 'feat' ? ' active' : '') + '">Choose a Feat</button>',
             '</div></div>',
+            '<div class="field"><label>Ability Score Improvement</label>',
+            '<div class="builder-help-text">Pick one ability for +2, or two different abilities for +1 each.</div>',
+            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:8px;">',
+            ['str','dex','con','int','wis','cha'].map(function (abilityKey) {
+              var names = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' };
+              var selected = asiAbilities.indexOf(abilityKey) >= 0;
+              return '<button type="button" data-builder-asi-ability="' + abilityKey + '" class="sheet-book-btn' + (selected ? ' active' : '') + '" ' + (asiMode === 'ability' ? '' : 'disabled') + '>' + names[abilityKey] + '</button>';
+            }).join(''),
+            '</div>',
+            '<div class="builder-help-text">Selected: ' + (asiAbilities.length ? escHtml(asiAbilities.map(function (k) { return ({ str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' })[k] || k.toUpperCase(); }).join(', ')) : 'None yet') + '</div>',
+            '</div>',
             '<div class="field"><label>Feat Selection</label>',
             '<select data-builder-progression-feat-pick="1" ' + (asiMode === 'feat' ? '' : 'disabled') + '>',
             '<option value="">Choose a feat…</option>',
@@ -153,19 +230,30 @@
           ].join('')
         : '<div class="builder-help-text">No feat/ASI pick is required at Level ' + safeLevel + '.</div>';
 
-      var talentPickerHtml = [
+      var talentPickerHtml = talentRows.length ? [
         '<div class="field"><label>Talents</label>',
         '<div class="builder-help-text">Choose talent cards. This stores structured picks (no CSV typing).</div>',
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:8px;">',
-        (talentRows.length ? talentRows.map(function (row) {
+        talentRows.map(function (row) {
           var id = String(row.id || '').trim();
           var selected = selectedTalents.indexOf(id) >= 0;
           return '<button type="button" data-builder-talent-pick="' + escHtml(id) + '" class="sheet-book-btn' + (selected ? ' active' : '') + '">'
             + escHtml(String(row.displayName || row.name || id))
             + '</button>';
-        }).join('') : '<div class="builder-help-text">No structured talents are available for this class in the current catalog.</div>'),
+        }).join(''),
         '</div></div>',
-      ].join('');
+      ].join('') : '';
+
+      var subclassPromptHtml = '';
+      if (subclassUnlockLevel > 0) {
+        if (subclassRequiredNow) {
+          subclassPromptHtml = '<div class="cb-level-unlock" style="margin-top:8px;"><span class="cb-level-unlock-label">Subclass Choice Required</span><span class="cb-level-unlock-text">Your class unlocks subclass selection at level ' + subclassUnlockLevel + '. Continue to the Subclass step to choose it now.</span></div>';
+        } else if (subclassSelection) {
+          subclassPromptHtml = '<div class="builder-help-text" style="margin-top:8px;">Subclass selected: <strong>' + escHtml(subclassSelection) + '</strong></div>';
+        } else {
+          subclassPromptHtml = '<div class="builder-help-text" style="margin-top:8px;">Subclass unlock level: ' + subclassUnlockLevel + '.</div>';
+        }
+      }
 
       return [
         '<div class="screen-header">',
@@ -178,6 +266,7 @@
         hiddenLevelInput,
         renderLevelPicker(safeLevel),
         milestoneHtml,
+        subclassPromptHtml,
 
         '<details class="cb-optional-section" data-section-key="progression-advanced"' + (_advancedOpen ? ' open' : '') + '>',
         '<summary class="cb-optional-section-summary">Advanced Options <span class="cb-optional">feats &amp; talents</span></summary>',
@@ -217,9 +306,16 @@
           var existing = context && context.draft && context.draft.progression && context.draft.progression.asiChoice
             ? context.draft.progression.asiChoice
             : {};
+          var currentChoiceState = context.draft.progression && context.draft.progression.choiceState || {};
           var next = Object.assign({}, existing, { mode: mode === 'feat' ? 'feat' : 'ability' });
+          if (mode === 'feat') {
+            next.ability = '';
+            next.abilities = [];
+          } else {
+            next.featId = '';
+          }
           context.onSetField(['progression', 'asiChoice'], next);
-          context.onSetField(['progression', 'choiceState'], Object.assign({}, context.draft.progression && context.draft.progression.choiceState || {}, { asiMode: next.mode }));
+          context.onSetField(['progression', 'choiceState'], Object.assign({}, currentChoiceState, { asiMode: next.mode }, mode === 'feat' ? {} : { featId: '' }));
           if (mode !== 'feat') context.onSetField(['progression', 'feats'], []);
         });
       });
@@ -239,6 +335,35 @@
           }));
         });
       }
+      root.querySelectorAll('[data-builder-asi-ability]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var ability = String(btn.getAttribute('data-builder-asi-ability') || '').trim().toLowerCase();
+          if (!ability) return;
+          var current = Array.isArray(context.draft.progression && context.draft.progression.choiceState && context.draft.progression.choiceState.asiAbilities)
+            ? context.draft.progression.choiceState.asiAbilities.map(function (v) { return String(v || '').trim().toLowerCase(); }).filter(Boolean)
+            : [];
+          var has = current.indexOf(ability) >= 0;
+          var next = has ? current.filter(function (id) { return id !== ability; }) : current.concat([ability]);
+          if (next.length > 2) next = next.slice(next.length - 2);
+          var asiChoice = context && context.draft && context.draft.progression && context.draft.progression.asiChoice
+            ? Object.assign({}, context.draft.progression.asiChoice)
+            : {};
+          asiChoice.mode = 'ability';
+          if (next.length === 1) {
+            asiChoice.ability = next[0];
+            asiChoice.abilities = [next[0]];
+          } else {
+            asiChoice.ability = '';
+            asiChoice.abilities = next.slice();
+          }
+          context.onSetField(['progression', 'asiChoice'], asiChoice);
+          context.onSetField(['progression', 'choiceState'], Object.assign({}, context.draft.progression && context.draft.progression.choiceState || {}, {
+            asiMode: 'ability',
+            asiAbilities: next,
+          }));
+          context.onSetField(['progression', 'feats'], []);
+        });
+      });
       root.querySelectorAll('[data-builder-talent-pick]').forEach(function (btn) {
         btn.addEventListener('click', function () {
           var talentId = String(btn.getAttribute('data-builder-talent-pick') || '').trim();

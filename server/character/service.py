@@ -333,6 +333,8 @@ def _normalize_builder_draft_document(raw: dict) -> dict:
     origins_proficiencies = origins.get("proficiencies") if isinstance(origins.get("proficiencies"), list) else []
     progression_feats = progression.get("feats") if isinstance(progression.get("feats"), list) else []
     progression_talents = progression.get("talents") if isinstance(progression.get("talents"), list) else []
+    progression_choice_state = progression.get("choiceState") if isinstance(progression.get("choiceState"), dict) else {}
+    progression_asi_choice = progression.get("asiChoice") if isinstance(progression.get("asiChoice"), dict) else {}
 
     portrait_url = _safe_str(identity.get("portraitUrl") or identity.get("avatarUrl"))
     token_image_url = _safe_str(identity.get("tokenImageUrl")) or portrait_url
@@ -351,6 +353,42 @@ def _normalize_builder_draft_document(raw: dict) -> dict:
                     row["equip_slot"] = "main_hand"
                 break
     equipped_loadout = _build_equipped_loadout_from_inventory(normalized_equipment_inventory or fallback_inventory)
+
+    normalized_feat_ids: list[str] = []
+    for item in progression_feats:
+        if isinstance(item, dict):
+            feat_id = _safe_str(item.get("featId") or item.get("id") or item.get("name")).lower()
+        else:
+            feat_id = _safe_str(item).lower()
+        if feat_id and feat_id not in normalized_feat_ids:
+            normalized_feat_ids.append(feat_id)
+    legacy_feat_csv = _safe_str(progression.get("featCsv") or progression.get("featsCsv") or progression.get("startingFeats"))
+    if legacy_feat_csv:
+        for token in [part.strip().lower() for part in legacy_feat_csv.split(",")]:
+            if token and token not in normalized_feat_ids:
+                normalized_feat_ids.append(token)
+    asi_feat_id = _safe_str(progression_asi_choice.get("featId") or progression_choice_state.get("featId")).lower()
+    if asi_feat_id and asi_feat_id not in normalized_feat_ids:
+        normalized_feat_ids.append(asi_feat_id)
+
+    normalized_talent_ids: list[str] = []
+    for item in progression_talents:
+        if isinstance(item, dict):
+            talent_id = _safe_str(item.get("talentId") or item.get("id") or item.get("name")).lower()
+        else:
+            talent_id = _safe_str(item).lower()
+        if talent_id and talent_id not in normalized_talent_ids:
+            normalized_talent_ids.append(talent_id)
+    choice_state_talents = progression_choice_state.get("talentIds") if isinstance(progression_choice_state.get("talentIds"), list) else []
+    for item in choice_state_talents:
+        talent_id = _safe_str(item).lower()
+        if talent_id and talent_id not in normalized_talent_ids:
+            normalized_talent_ids.append(talent_id)
+    legacy_talent_csv = _safe_str(progression.get("talentCsv") or progression.get("talentsCsv") or progression.get("startingTalents"))
+    if legacy_talent_csv:
+        for token in [part.strip().lower() for part in legacy_talent_csv.split(",")]:
+            if token and token not in normalized_talent_ids:
+                normalized_talent_ids.append(token)
 
     return {
         "schemaVersion": _safe_int(raw.get("schemaVersion"), 1, minimum=1),
@@ -428,8 +466,8 @@ def _normalize_builder_draft_document(raw: dict) -> dict:
             "sources": abilities.get("sources") if isinstance(abilities.get("sources"), dict) else {},
         },
         "classes": classes,
-        "feats": [str(item or "").strip() for item in progression_feats if str(item or "").strip()],
-        "talents": [{"talentId": str(item or "").strip()} for item in progression_talents if str(item or "").strip()],
+        "feats": [{"featId": feat_id} for feat_id in normalized_feat_ids],
+        "talents": [{"talentId": talent_id} for talent_id in normalized_talent_ids],
         "awakening": {
             "stage": _safe_int(awakening.get("tier"), 0, minimum=0),
             "pathId": _safe_str(awakening.get("track")),
