@@ -36,6 +36,9 @@ def test_structured_class_features_are_synchronized_into_character_sheet_state()
     assert 'const allowedFeatureKeys = new Set((_charSheet.classFeatures || []).map(feature => String(feature?.key || \'\')).filter(Boolean));' in src
     assert 'const minLevel = _safeCharacterLevel(tpl?.minLevel, 0);' in src
     assert 'if (minLevel > 0 && classLevel > 0 && classLevel < minLevel) return;' in src
+    assert 'const nativeClassFeatures = Array.isArray(_charSheet?.nativeClassFeatures)' in src
+    assert 'nativeClassFeatures.forEach((row, featureIndex) => {' in src
+    assert "description: String(nativeMatch?.description || tpl.description || '').trim()," in src
 
 
 def test_player_state_panel_renders_structured_class_resources_with_usage_controls():
