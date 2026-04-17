@@ -279,6 +279,7 @@
       versatile_damage: firstNonEmpty(entry.versatile_damage, ''),
       notes: firstNonEmpty(entry.notes, entry.note),
       range: firstNonEmpty(entry.range, entry.reach),
+      reach: firstNonEmpty(entry.reach, ''),
       properties: Array.isArray(entry.properties) ? clone(entry.properties) : [],
       price: firstNonEmpty(entry.price, ''),
       ammo_kind: firstNonEmpty(entry.ammo_kind, entry.ammoKind, ''),
@@ -321,7 +322,14 @@
         if (!existing.damage_type) existing.damage_type = normalized.damage_type || existing.damage_type;
         if (!existing.versatile_damage) existing.versatile_damage = normalized.versatile_damage || existing.versatile_damage;
         if (!existing.range) existing.range = normalized.range || existing.range;
+        if (!existing.reach) existing.reach = normalized.reach || existing.reach;
         if (!existing.handedness) existing.handedness = normalized.handedness || existing.handedness;
+        if ((!existing.properties || !existing.properties.length) && Array.isArray(normalized.properties) && normalized.properties.length) {
+          existing.properties = clone(normalized.properties);
+        }
+        if ((!existing.weapon_properties || !existing.weapon_properties.length) && Array.isArray(normalized.weapon_properties) && normalized.weapon_properties.length) {
+          existing.weapon_properties = clone(normalized.weapon_properties);
+        }
         if (!existing.armor_type) existing.armor_type = normalized.armor_type || existing.armor_type;
         ['base_ac', 'dex_cap', 'ac_bonus', 'strength_requirement'].forEach(function copyNumber(key) {
           if (existing[key] == null && normalized[key] != null) existing[key] = normalized[key];
