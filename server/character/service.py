@@ -84,6 +84,12 @@ def _enrich_inventory_weapon_fields(item: dict[str, Any]) -> None:
     stats = _weapon_stats_for_name(item.get("name"))
     if not stats:
         return
+    item["kind"] = "weapon"
+    item["type"] = "weapon"
+    item["equipment_kind"] = "weapon"
+    item["item_type"] = "weapon"
+    if "equipped" not in item:
+        item["equipped"] = True
     if not _safe_str(item.get("damage_dice")):
         item["damage_dice"] = _safe_str(stats.get("damage_dice"))
     if not _safe_str(item.get("damage")) and _safe_str(item.get("damage_dice")):
@@ -94,10 +100,14 @@ def _enrich_inventory_weapon_fields(item: dict[str, Any]) -> None:
         item["versatile_damage"] = _safe_str(stats.get("versatile_damage"))
     if not _safe_str(item.get("range")) and _safe_str(stats.get("range")):
         item["range"] = _safe_str(stats.get("range"))
+    if not _safe_str(item.get("reach")) and _safe_str(item.get("range")):
+        item["reach"] = _safe_str(item.get("range"))
     if not isinstance(item.get("weapon_properties"), list) or not item.get("weapon_properties"):
         props = [str(v or "").strip() for v in (stats.get("properties") or []) if str(v or "").strip()]
         if props:
             item["weapon_properties"] = props[:12]
+    if not isinstance(item.get("properties"), list) and isinstance(item.get("weapon_properties"), list):
+        item["properties"] = list(item.get("weapon_properties") or [])
 
 
 def _build_class_summary(char_sheet: dict) -> str:

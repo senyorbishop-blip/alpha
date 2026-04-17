@@ -67,8 +67,6 @@
 
   function renderPortraitPreview(draft) {
     var identity = draft && draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
-    var manualPortrait = String(identity.portraitUrl || '').trim();
-    var manualToken = String(identity.tokenImageUrl || '').trim();
     var comboPortrait = resolvePortrait(draft);
     var hasComboSelections = !!(
       draft
@@ -77,14 +75,12 @@
       && draft.class
       && String(draft.class.id || '').trim()
     );
-    var finalPortrait = manualPortrait || comboPortrait || '';
-    var finalToken = manualToken || manualPortrait || comboPortrait || '';
+    var finalPortrait = hasComboSelections ? comboPortrait : '';
+    var finalToken = hasComboSelections ? comboPortrait : '';
     var previewMarkup = finalPortrait
-      ? '<img class="avatar-render portrait" src="' + escHtml(finalPortrait) + '" alt="Portrait preview" />'
+      ? '<img class="avatar-render portrait" src="' + escHtml(finalPortrait) + '" alt="Portrait preview" style="width:100%;height:100%;object-fit:contain;object-position:center;" />'
       : '<div style="font-size:.62rem;color:rgba(180,170,150,.92);line-height:1.5;text-align:center;padding:0 6px;">Portrait preview will appear once species and class are selected.</div>';
-    var sourceLabel = manualPortrait || manualToken
-      ? 'Manual artwork override'
-      : (comboPortrait ? 'Combo portrait (auto)' : (hasComboSelections ? 'No combo portrait found for this selection yet.' : 'Awaiting species + class selection.'));
+    var sourceLabel = comboPortrait ? 'Combo portrait (auto)' : (hasComboSelections ? 'No combo portrait found for this selection yet.' : 'Awaiting species + class selection.');
 
     return [
       '<div class="cb-identity-preview" style="display:flex;gap:12px;align-items:center;padding:10px 12px;border:1px solid rgba(201,168,76,0.18);border-radius:10px;background:rgba(8,12,18,.52);margin:8px 0 12px;">',
@@ -116,17 +112,17 @@
       var portraitPreviewHtml = '';
       var portraitLib = global.CasualDnDPortraitLibrary;
       if (portraitLib && typeof portraitLib.resolve === 'function') {
-        var previewSrc = identity.portraitUrl || identity.tokenImageUrl || portraitLib.resolve({
+        var previewSrc = portraitLib.resolve({
           speciesId: draft.species && draft.species.id,
           classId: draft.class && draft.class.id,
           gender: gender,
         });
-        if (previewSrc) {
+        if (previewSrc && draft.species && draft.class && draft.species.id && draft.class.id) {
           portraitPreviewHtml = [
             '<div style="float:right;width:82px;height:92px;border-radius:14px;overflow:hidden;',
             'border:1px solid rgba(201,168,76,0.3);margin:0 0 12px 14px;',
             'box-shadow:0 8px 20px rgba(0,0,0,0.3);flex-shrink:0;">',
-            '<img src="' + escHtml(previewSrc) + '" style="width:100%;height:100%;object-fit:cover" alt="Character preview" />',
+            '<img src="' + escHtml(previewSrc) + '" style="width:100%;height:100%;object-fit:contain;object-position:center;" alt="Character preview" />',
             '</div>',
           ].join('');
         }

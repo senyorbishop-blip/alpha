@@ -59,6 +59,19 @@
     });
   }
 
+  function getTalentRowsForClass(classId) {
+    const api = global.CharacterBuilderAPI;
+    const catalog = api && typeof api.getCachedCatalog === 'function' ? api.getCachedCatalog() : {};
+    const rows = Array.isArray(catalog && catalog.talents) ? catalog.talents : [];
+    return rows.filter(function (row) {
+      if (!row || typeof row !== 'object') return false;
+      const id = String(row.id || '').trim();
+      if (!id) return false;
+      const cls = String(row.classId || row.class || '').trim().toLowerCase();
+      return !cls || cls === classId;
+    });
+  }
+
   function renderLevelPicker(safeLevel) {
     var buttons = '';
     for (var lvl = 1; lvl <= 20; lvl++) {
@@ -89,10 +102,15 @@
       const featureText = getFeaturesAtLevel(progressionSummary, safeLevel);
       const featLevel = isFeatLevel(progressionSummary, safeLevel);
       const featRows = getFeatRows();
+      const talentRows = getTalentRowsForClass(classId);
 
       const asiChoice = progression.asiChoice && typeof progression.asiChoice === 'object' ? progression.asiChoice : {};
       const asiMode = String(asiChoice.mode || 'ability').toLowerCase() === 'feat' ? 'feat' : 'ability';
       const featChoice = String(asiChoice.featId || (Array.isArray(progression.feats) ? progression.feats[0] : '') || '').trim();
+      const choiceState = progression.choiceState && typeof progression.choiceState === 'object' ? progression.choiceState : {};
+      const selectedTalents = Array.isArray(choiceState.talentIds)
+        ? choiceState.talentIds.map(function (v) { return String(v || '').trim(); }).filter(Boolean)
+        : (Array.isArray(progression.talents) ? progression.talents.map(function (v) { return String(v || '').trim(); }).filter(Boolean) : []);
 
       var milestoneHtml = '';
       if (featureText) {
@@ -135,6 +153,20 @@
           ].join('')
         : '<div class="builder-help-text">No feat/ASI pick is required at Level ' + safeLevel + '.</div>';
 
+      var talentPickerHtml = [
+        '<div class="field"><label>Talents</label>',
+        '<div class="builder-help-text">Choose talent cards. This stores structured picks (no CSV typing).</div>',
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:8px;">',
+        (talentRows.length ? talentRows.map(function (row) {
+          var id = String(row.id || '').trim();
+          var selected = selectedTalents.indexOf(id) >= 0;
+          return '<button type="button" data-builder-talent-pick="' + escHtml(id) + '" class="sheet-book-btn' + (selected ? ' active' : '') + '">'
+            + escHtml(String(row.displayName || row.name || id))
+            + '</button>';
+        }).join('') : '<div class="builder-help-text">No structured talents are available for this class in the current catalog.</div>'),
+        '</div></div>',
+      ].join('');
+
       return [
         '<div class="screen-header">',
         '<div class="screen-title">Starting Level</div>',
@@ -151,12 +183,7 @@
         '<summary class="cb-optional-section-summary">Advanced Options <span class="cb-optional">feats &amp; talents</span></summary>',
         '<div class="cb-optional-section-body">',
         featPickerHtml,
-        '<div class="field">',
-        '<label>Talents <span class="cb-optional">comma-separated (optional)</span></label>',
-        '<input type="text" data-builder-progression-talents="1"',
-        ' value="' + escHtml(Array.isArray(progression.talents) ? progression.talents.join(', ') : '') + '"',
-        ' maxlength="280" placeholder="fighter-bulwark-stance…" />',
-        '</div>',
+        talentPickerHtml,
         '</div>',
         '</details>',
       ].join('');
@@ -192,6 +219,7 @@
             : {};
           var next = Object.assign({}, existing, { mode: mode === 'feat' ? 'feat' : 'ability' });
           context.onSetField(['progression', 'asiChoice'], next);
+          context.onSetField(['progression', 'choiceState'], Object.assign({}, context.draft.progression && context.draft.progression.choiceState || {}, { asiMode: next.mode }));
           if (mode !== 'feat') context.onSetField(['progression', 'feats'], []);
         });
       });
@@ -205,21 +233,25 @@
             : {};
           context.onSetField(['progression', 'asiChoice'], Object.assign({}, existing, { mode: 'feat', featId: featId }));
           context.onSetField(['progression', 'feats'], featId ? [featId] : []);
+          context.onSetField(['progression', 'choiceState'], Object.assign({}, context.draft.progression && context.draft.progression.choiceState || {}, {
+            asiMode: 'feat',
+            featId: featId,
+          }));
         });
       }
-
-      var talentsInput = root.querySelector('[data-builder-progression-talents="1"]');
-      function parseCsv(value) {
-        return String(value || '')
-          .split(',')
-          .map(function(item) { return String(item || '').trim(); })
-          .filter(Boolean);
-      }
-      if (talentsInput) {
-        talentsInput.addEventListener('input', function() {
-          context.onSetField(['progression', 'talents'], parseCsv(talentsInput.value));
+      root.querySelectorAll('[data-builder-talent-pick]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var talentId = String(btn.getAttribute('data-builder-talent-pick') || '').trim();
+          if (!talentId) return;
+          var current = Array.isArray(context.draft.progression && context.draft.progression.choiceState && context.draft.progression.choiceState.talentIds)
+            ? context.draft.progression.choiceState.talentIds.map(function (v) { return String(v || '').trim(); }).filter(Boolean)
+            : [];
+          var has = current.indexOf(talentId) >= 0;
+          var next = has ? current.filter(function (id) { return id !== talentId; }) : current.concat([talentId]);
+          context.onSetField(['progression', 'choiceState'], Object.assign({}, context.draft.progression && context.draft.progression.choiceState || {}, { talentIds: next }));
+          context.onSetField(['progression', 'talents'], next);
         });
-      }
+      });
     },
   });
 })(window);

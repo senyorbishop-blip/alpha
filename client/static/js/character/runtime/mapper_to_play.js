@@ -146,7 +146,15 @@
 
   function rebuildRuntimeHp(nativeCharacter, nativeRuntime, fallback) {
     var runtime = asObject(nativeRuntime);
+    var canonicalFromDocument = resolveCanonicalHp(nativeCharacter, runtime, fallback, { includeRuntime: false });
     var canonicalHp = resolveCanonicalHp(nativeCharacter, runtime, fallback, { includeRuntime: true });
+    if (!(Number.isFinite(canonicalHp.max) && canonicalHp.max > 0)) {
+      if (Number.isFinite(canonicalFromDocument.max) && canonicalFromDocument.max > 0) {
+        canonicalHp = canonicalFromDocument;
+      } else {
+        return runtime;
+      }
+    }
     if (!(Number.isFinite(canonicalHp.max) && canonicalHp.max > 0)) {
       return runtime;
     }
@@ -447,6 +455,22 @@
     var notes = [];
     if (entry.source) notes.push(titleCaseWord(entry.source));
     if (entry.tier != null) notes.push('Tier ' + asInt(entry.tier, 1));
+    var actionType = String(entry.type || entry.actionType || details.actionType || '').trim();
+    var resourceLink = String(entry.resourceName || details.resourceName || '').trim();
+    var range = String(entry.range || details.range || '').trim();
+    var duration = String(entry.duration || details.duration || '').trim();
+    var save = String(entry.save || details.save || '').trim();
+    var trigger = String(entry.trigger || details.trigger || '').trim();
+    var usage = String(entry.usage || details.usage || '').trim();
+    var recovery = String(entry.recovery || details.recovery || '').trim();
+    if (actionType) notes.push('Action ' + actionType);
+    if (resourceLink) notes.push('Resource ' + resourceLink);
+    if (range) notes.push('Range ' + range);
+    if (duration) notes.push('Duration ' + duration);
+    if (save) notes.push('Save ' + save);
+    if (trigger) notes.push('Trigger ' + trigger);
+    if (usage) notes.push('Uses ' + usage);
+    if (recovery) notes.push('Recovery ' + recovery);
     if (tags.length) notes.push(tags.join(', '));
     var suffix = notes.length ? ' [' + notes.join(' · ') + ']' : '';
     return summary ? (name + suffix + ' — ' + summary) : (name + suffix);
@@ -1004,11 +1028,19 @@
       runtime = asObject(doc.nativeRuntime);
     }
     var combat = asObject(runtime.combat);
+    var runtimeHp = asObject(runtime.hp);
     var hp = resolveCanonicalHp(doc, runtime, {
       max: asInt(combat.maxHP, asInt(token.maxHP, 10)),
       current: asInt(combat.currentHP, asInt(token.currentHP, 10)),
       temp: asInt(token.tempHP, 0),
     });
+    if (Number.isFinite(asInt(runtimeHp.max, null)) && asInt(runtimeHp.max, 0) > 0) {
+      hp = {
+        max: asInt(runtimeHp.max, asInt(hp.max, 10)),
+        current: asInt(runtimeHp.current, asInt(runtimeHp.max, asInt(hp.current, 10))),
+        temp: Math.max(0, asInt(runtimeHp.temp, asInt(hp.temp, 0))),
+      };
+    }
     var species = asObject(doc.species);
     var identity = asObject(doc.identity);
 
