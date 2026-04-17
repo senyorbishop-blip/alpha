@@ -545,9 +545,13 @@
     },
     "tinker-ability-score-improvement": {
       "summary": "Improve your key stats or take a feat to sharpen your engineering style.",
+      "description": "Tinkers receive Ability Score Improvements at levels 4, 8, 12, and 16. Intelligence is the primary target since it powers gadget DCs, spell attacks, and engineering utility checks. Constitution keeps you alive while operating in the middle of a fight. Alternatively, feats like Moderately Armored, War Caster, Alert, or class-specific options can define your tactical identity.",
+      "section": "Class Features",
+      "type": "passive",
       "tags": [
         "progression",
-        "feat"
+        "feat",
+        "ability-score"
       ]
     },
     "tinker-overclocked-device": {
@@ -582,6 +586,9 @@
     },
     "tinker-improved-rig": {
       "summary": "Your rig becomes tougher, smarter, and better at holding multiple combat-ready solutions at once.",
+      "description": "Improved Rig at level 9 is a structural upgrade to your entire engineering platform. Your rig gains resilience, increased module capacity, and improved reliability under combat stress. This is the mid-tier confirmation that your setup has evolved beyond a prototype into a true field instrument built for sustained operation.",
+      "section": "Class Features",
+      "type": "passive",
       "tags": [
         "equipment",
         "upgrade",
@@ -590,9 +597,13 @@
     },
     "tinker-subclass-feature": {
       "summary": "Your specialization deepens with a more advanced module, formula package, or combat behavior.",
+      "description": "At levels 10 and 15, your Field Specialization delivers its next major unlocks. These features deepen the subclass identity established at level 3 — an Artillerist gains more explosive output, an Alchemist gains greater adaptive chemistry, a Mechanist unlocks more powerful construct interactions, or a Saboteur gains more surgical disruption tools.",
+      "section": "Class Features",
+      "type": "passive",
       "tags": [
         "subclass",
-        "progression"
+        "progression",
+        "identity"
       ]
     },
     "tinker-signature-device": {
@@ -615,6 +626,9 @@
     },
     "tinker-masterwork-infusions": {
       "summary": "Your upgrades become polished, efficient, and worth shaping a whole build around.",
+      "description": "Masterwork Infusions at level 14 represents the point where your engineering has transitioned from capable to exceptional. Each infusion slot now produces a result of noticeably higher quality — stronger effects, longer duration, or added mechanical dimensions that make your pre-combat loadout decisions genuinely interesting at high tier play.",
+      "section": "Class Features",
+      "type": "passive",
       "tags": [
         "upgrade",
         "passive",
@@ -634,6 +648,9 @@
     },
     "tinker-dual-deployment": {
       "summary": "Run two meaningful device states or battlefield tools at once without collapsing your action economy.",
+      "description": "Dual Deployment at level 18 is a major late-game capability expansion. You can now maintain two separate device configurations simultaneously — a turret and a shield emitter, a toxin cloud and a field scanner, a construct and an active trap. This doubles your battlefield footprint and makes the Tinker one of the most resource-generating classes at this tier.",
+      "section": "Class Features",
+      "type": "passive",
       "tags": [
         "tempo",
         "loadout",
@@ -641,10 +658,14 @@
       ]
     },
     "tinker-epic-boon": {
-      "summary": "Gain a final feat-style capstone upgrade from the epic boon layer.",
+      "summary": "Gain an Epic Boon — a legendary feat-level upgrade that marks entry into near-mythic engineering capability.",
+      "description": "Epic Boon at level 19 elevates the Tinker beyond normal heroic limits. Epic Boons are stronger than standard feats and represent extraordinary capstone-level enhancements. For a Tinker this might manifest as an engineering breakthrough, extraordinary gadget resilience, or a permanent upgrade that makes the entire class fantasy feel complete.",
+      "section": "Class Features",
+      "type": "passive",
       "tags": [
         "progression",
-        "epic"
+        "epic",
+        "feat"
       ]
     },
     "tinker-grand-invention": {
@@ -659,68 +680,68 @@
   },
   "levelUnlockIds": {
     "1": [
-      "tinker-l1-1",
-      "tinker-l1-2",
-      "tinker-l1-3"
+      "tinker-tinkercraft",
+      "tinker-prototype-rig",
+      "tinker-spellcasting"
     ],
     "2": [
-      "tinker-l2-1",
-      "tinker-l2-2"
+      "tinker-quick-deployment",
+      "tinker-tool-expertise"
     ],
     "3": [
-      "tinker-l3-1",
-      "tinker-l3-2"
+      "tinker-field-specialization-subclass",
+      "tinker-specialty-spells"
     ],
     "4": [
-      "tinker-l4-1"
+      "tinker-ability-score-improvement"
     ],
     "5": [
-      "tinker-l5-1"
+      "tinker-overclocked-device"
     ],
     "6": [
-      "tinker-l6-1"
+      "tinker-modular-infusions"
     ],
     "7": [
-      "tinker-l7-1"
+      "tinker-reactive-countermeasure"
     ],
     "8": [
-      "tinker-l8-1"
+      "tinker-ability-score-improvement"
     ],
     "9": [
-      "tinker-l9-1"
+      "tinker-improved-rig"
     ],
     "10": [
-      "tinker-l10-1"
+      "tinker-subclass-feature"
     ],
     "11": [
-      "tinker-l11-1"
+      "tinker-signature-device"
     ],
     "12": [
-      "tinker-l12-1"
+      "tinker-ability-score-improvement"
     ],
     "13": [
-      "tinker-l13-1"
+      "tinker-emergency-repairs"
     ],
     "14": [
-      "tinker-l14-1"
+      "tinker-masterwork-infusions"
     ],
     "15": [
-      "tinker-l15-1"
+      "tinker-subclass-feature"
     ],
     "16": [
-      "tinker-l16-1"
+      "tinker-ability-score-improvement"
     ],
     "17": [
-      "tinker-l17-1"
+      "tinker-overcharge"
     ],
     "18": [
-      "tinker-l18-1"
+      "tinker-dual-deployment"
     ],
     "19": [
-      "tinker-l19-1"
+      "tinker-epic-boon"
     ],
     "20": [
-      "tinker-l20-1"
+      "tinker-grand-invention"
     ]
   },
   "progressionSummary": [
@@ -728,144 +749,144 @@
       "level": 1,
       "summary": "Tinkercraft, Prototype Rig, Spellcasting.",
       "unlockIds": [
-        "tinker-l1-1",
-        "tinker-l1-2",
-        "tinker-l1-3"
+        "tinker-tinkercraft",
+        "tinker-prototype-rig",
+        "tinker-spellcasting"
       ]
     },
     {
       "level": 2,
       "summary": "Quick Deployment, Tool Expertise.",
       "unlockIds": [
-        "tinker-l2-1",
-        "tinker-l2-2"
+        "tinker-quick-deployment",
+        "tinker-tool-expertise"
       ]
     },
     {
       "level": 3,
       "summary": "Field Specialization (Subclass), Specialty Spells.",
       "unlockIds": [
-        "tinker-l3-1",
-        "tinker-l3-2"
+        "tinker-field-specialization-subclass",
+        "tinker-specialty-spells"
       ]
     },
     {
       "level": 4,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "tinker-l4-1"
+        "tinker-ability-score-improvement"
       ]
     },
     {
       "level": 5,
       "summary": "Overclocked Device.",
       "unlockIds": [
-        "tinker-l5-1"
+        "tinker-overclocked-device"
       ]
     },
     {
       "level": 6,
       "summary": "Modular Infusions.",
       "unlockIds": [
-        "tinker-l6-1"
+        "tinker-modular-infusions"
       ]
     },
     {
       "level": 7,
       "summary": "Reactive Countermeasure.",
       "unlockIds": [
-        "tinker-l7-1"
+        "tinker-reactive-countermeasure"
       ]
     },
     {
       "level": 8,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "tinker-l8-1"
+        "tinker-ability-score-improvement"
       ]
     },
     {
       "level": 9,
       "summary": "Improved Rig.",
       "unlockIds": [
-        "tinker-l9-1"
+        "tinker-improved-rig"
       ]
     },
     {
       "level": 10,
       "summary": "Subclass Feature.",
       "unlockIds": [
-        "tinker-l10-1"
+        "tinker-subclass-feature"
       ]
     },
     {
       "level": 11,
       "summary": "Signature Device.",
       "unlockIds": [
-        "tinker-l11-1"
+        "tinker-signature-device"
       ]
     },
     {
       "level": 12,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "tinker-l12-1"
+        "tinker-ability-score-improvement"
       ]
     },
     {
       "level": 13,
       "summary": "Emergency Repairs.",
       "unlockIds": [
-        "tinker-l13-1"
+        "tinker-emergency-repairs"
       ]
     },
     {
       "level": 14,
       "summary": "Masterwork Infusions.",
       "unlockIds": [
-        "tinker-l14-1"
+        "tinker-masterwork-infusions"
       ]
     },
     {
       "level": 15,
       "summary": "Subclass Feature.",
       "unlockIds": [
-        "tinker-l15-1"
+        "tinker-subclass-feature"
       ]
     },
     {
       "level": 16,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "tinker-l16-1"
+        "tinker-ability-score-improvement"
       ]
     },
     {
       "level": 17,
       "summary": "Overcharge.",
       "unlockIds": [
-        "tinker-l17-1"
+        "tinker-overcharge"
       ]
     },
     {
       "level": 18,
       "summary": "Dual Deployment.",
       "unlockIds": [
-        "tinker-l18-1"
+        "tinker-dual-deployment"
       ]
     },
     {
       "level": 19,
       "summary": "Epic Boon.",
       "unlockIds": [
-        "tinker-l19-1"
+        "tinker-epic-boon"
       ]
     },
     {
       "level": 20,
       "summary": "Grand Invention.",
       "unlockIds": [
-        "tinker-l20-1"
+        "tinker-grand-invention"
       ]
     }
   ],

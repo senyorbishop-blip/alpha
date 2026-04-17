@@ -584,74 +584,200 @@
         "identity",
         "endgame"
       ]
+    },
+    "wizard-spell-level-2": {
+      "summary": "You unlock 2nd-level spell slots, opening access to the first tier of significantly more powerful spells.",
+      "description": "At level 3, the wizard gains 2nd-level spell slots. This tier introduces spells with sharper control, better damage, or stronger utility — Misty Step, Hold Person, Web, Suggestion, and many others. Revisit your prepared spell list and spellbook to incorporate these new options.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "progression"]
+    },
+    "wizard-ability-score-improvement-4": {
+      "summary": "Increase one ability score by 2, or two scores by 1 each, or take a feat instead.",
+      "description": "At level 4, the wizard gets their first ASI. Intelligence should be the primary target — every point increases your spell save DC and spell attack bonus. Constitution helps keep Concentration spells running. Alternatively, the War Caster or Resilient (Constitution) feat dramatically improves Concentration checks in dangerous fights.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "ability-score"]
+    },
+    "wizard-cantrips-known-4": {
+      "summary": "Your cantrip count increases to 4, giving you more at-will options for offense, utility, and roleplay.",
+      "description": "At level 4, you learn a fourth cantrip from the wizard spell list. Cantrips are used constantly — every turn in combat where spell slots aren't needed. This is a good time to add a utility cantrip (Mage Hand, Prestidigitation, Detect Magic) if you focused your early picks on damage, or vice versa.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "cantrip", "progression"]
+    },
+    "wizard-spell-level-3": {
+      "summary": "You unlock 3rd-level spell slots, the threshold where wizard spells become genuinely fight-defining.",
+      "description": "3rd-level spells are a major jump in wizard capability. Fireball, Counterspell, Fly, Hypnotic Pattern, and Lightning Bolt all live here. At this tier the wizard's ability to swing entire combat encounters dramatically increases. Make sure your spellbook is stocked with versatile options from this tier.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "progression"]
+    },
+    "wizard-subclass-feature-6": {
+      "summary": "Your Arcane Tradition grants its next ability, reinforcing the specialized identity of your chosen school.",
+      "description": "The level 6 subclass feature is the first major expansion of your Arcane Tradition's mechanical identity beyond the foundation laid at level 3. An Evoker gets more precise blasts, an Illusionist gains deeper illusion mastery, a Diviner stretches their foresight further, or an Abjurer builds out their ward.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["subclass", "spellcasting", "identity"]
+    },
+    "wizard-spell-level-4": {
+      "summary": "You unlock 4th-level spell slots, including some of the best crowd-control spells in the game.",
+      "description": "4th-level spells add another tier of high-impact options. Polymorph, Banishment, Dimension Door, Ice Storm, and Black Tentacles all become available. At this tier wizard battlefield control reaches its mid-game peak, and spell selection decisions become extremely high-value.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "progression"]
+    },
+    "wizard-ability-score-improvement-8": {
+      "summary": "Increase one ability score by 2, or two scores by 1 each, or take a feat instead.",
+      "description": "Level 8 is a natural point to cap Intelligence at 20 if you haven't already, pushing your spell save DC and attack bonus to maximum. With Intelligence maxed, subsequent ASIs can target Constitution for Concentration or a high-value combat feat like Lucky, Alert, or Magic Initiate.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "ability-score"]
+    },
+    "wizard-spell-level-5": {
+      "summary": "You unlock 5th-level spell slots, entering the tier of legendary magic.",
+      "description": "5th-level spells are among the most powerful in the game. Wall of Force, Animate Objects, Telekinesis, Hold Monster, and Cone of Cold define this tier. A wizard with 5th-level slots can end encounters outright or render enemies completely helpless. Treat these slots as precious resources to be spent on the right target at the right moment.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "progression"]
+    },
+    "wizard-subclass-feature-10": {
+      "summary": "Your Arcane Tradition delivers a more powerful mid-tier ability, marking the peak of your school's identity.",
+      "description": "The level 10 subclass feature is a significant power milestone. By this point the Arcane Tradition should define a clear tactical role — an Evoker who shapes bursts, an Illusionist whose tricks become hard to counter, a Diviner who can rewrite fate, or an Abjurer whose defenses feel truly formidable. This feature deepens the gap between traditions.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["subclass", "spellcasting", "identity"]
+    },
+    "wizard-cantrips-known-5": {
+      "summary": "Your cantrip count increases to 5, completing your at-will magical toolkit.",
+      "description": "At level 10, you learn a fifth cantrip and also gain Cantrip Formulas — both features arrive together to fully round out your fallback options. Five cantrips give you a flexible suite of offense, utility, and roleplay tools available every single turn without depleting your spell slots.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "cantrip", "progression"]
+    },
+    "wizard-spell-level-6": {
+      "summary": "You unlock 6th-level spell slots — rare, powerful, and almost impossible to fully block.",
+      "description": "6th-level spells are extremely scarce (only one slot at first) but enormously powerful. Disintegrate, Globe of Invulnerability, Eyebite, Chain Lightning, and True Seeing all occupy this tier. A single 6th-level slot spent perfectly can end a fight before it fully begins. Protect these slots carefully.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "progression"]
+    },
+    "wizard-ability-score-improvement-12": {
+      "summary": "Increase one ability score by 2, or two scores by 1 each, or take a feat instead.",
+      "description": "The level 12 ASI gives a wizard with a maxed Intelligence the freedom to invest in defensive or versatility feats. War Caster, Resilient (Con), Lucky, or Telekinetic all serve a high-level wizard extremely well. If Intelligence isn't yet at 20, this is the time to fix that.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "ability-score"]
+    },
+    "wizard-spell-level-7": {
+      "summary": "You unlock 7th-level spell slots, including some of the most decisive spells ever written.",
+      "description": "7th-level spells include Forcecage, Simulacrum, Finger of Death, Reverse Gravity, and Prismatic Spray. At this tier wizards wield magic that can permanently alter the state of an encounter. These spells reward creative problem-solving and thorough dungeon preparation.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "progression"]
+    },
+    "wizard-subclass-feature-14": {
+      "summary": "Your Arcane Tradition delivers its late-game defining ability.",
+      "description": "The level 14 subclass feature is the final major upgrade before the capstone. It represents the mature expression of your tradition — at this level an Evoker has almost completely tamed their blast radius, an Illusionist's creations take on a life of their own, a Diviner can see fate in real time, and an Abjurer's ward is nearly impenetrable.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["subclass", "spellcasting", "identity"]
+    },
+    "wizard-spell-level-8": {
+      "summary": "You unlock 8th-level spell slots, the penultimate tier of arcane magic.",
+      "description": "8th-level spells include Dominate Monster, Feeblemind, Power Word Stun, Maze, and Antimagic Field. These spells affect even the most powerful creatures in the game. A single well-chosen 8th-level spell can dictate the flow of a major boss encounter.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "progression"]
+    },
+    "wizard-ability-score-improvement-16": {
+      "summary": "Increase one ability score by 2, or two scores by 1 each, or take a feat instead.",
+      "description": "By level 16 the wizard's core stats should be locked in. This ASI is most valuable as a feat for elite-tier combat capabilities — Spell Sniper, Lucky, Metamagic Adept, or any feat that adds a new dimension to your high-level spell game.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "ability-score"]
+    },
+    "wizard-spell-level-9": {
+      "summary": "You unlock 9th-level spell slots — the pinnacle of mortal spellcasting.",
+      "description": "9th-level spells include Wish, Time Stop, Meteor Swarm, Power Word Kill, and True Polymorph. These are the most powerful spells that exist outside of divine intervention or artifact-level magic. A single 9th-level slot represents an opportunity to reshape the course of an entire campaign. Use it with total certainty.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "progression", "pinnacle"]
+    },
+    "wizard-epic-boon": {
+      "summary": "Gain an Epic Boon — a legendary feat-level upgrade that marks entry into near-mythic power.",
+      "description": "Epic Boon at level 19 elevates the wizard beyond the limits of normal heroism. Epic Boons represent abilities that are fundamentally stronger than standard feats and reward the long investment in a single class. For a wizard this often means extraordinary spell resilience, near-permanent magical effects, or the ability to bend the rules of spellcasting itself.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "epic", "feat"]
     }
   },
   "levelUnlockIds": {
     "1": [
-      "wizard-l1-1",
-      "wizard-l1-2"
+      "wizard-spellcasting",
+      "wizard-arcane-recovery"
     ],
     "2": [
-      "wizard-l2-1"
+      "wizard-scholar"
     ],
     "3": [
-      "wizard-l3-1",
-      "wizard-l3-2",
-      "wizard-l3-3"
+      "wizard-arcane-tradition-subclass",
+      "wizard-memorize-spell",
+      "wizard-spell-level-2"
     ],
     "4": [
-      "wizard-l4-1",
-      "wizard-l4-2"
+      "wizard-ability-score-improvement-4",
+      "wizard-cantrips-known-4"
     ],
     "5": [
-      "wizard-l5-1"
+      "wizard-spell-level-3"
     ],
     "6": [
-      "wizard-l6-1"
+      "wizard-subclass-feature-6"
     ],
     "7": [
-      "wizard-l7-1"
+      "wizard-spell-level-4"
     ],
     "8": [
-      "wizard-l8-1"
+      "wizard-ability-score-improvement-8"
     ],
     "9": [
-      "wizard-l9-1"
+      "wizard-spell-level-5"
     ],
     "10": [
-      "wizard-l10-1",
-      "wizard-l10-2",
-      "wizard-l10-3"
+      "wizard-subclass-feature-10",
+      "wizard-cantrip-formulas",
+      "wizard-cantrips-known-5"
     ],
     "11": [
-      "wizard-l11-1"
+      "wizard-spell-level-6"
     ],
     "12": [
-      "wizard-l12-1"
+      "wizard-ability-score-improvement-12"
     ],
     "13": [
-      "wizard-l13-1"
+      "wizard-spell-level-7"
     ],
     "14": [
-      "wizard-l14-1"
+      "wizard-subclass-feature-14"
     ],
     "15": [
-      "wizard-l15-1"
+      "wizard-spell-level-8"
     ],
     "16": [
-      "wizard-l16-1"
+      "wizard-ability-score-improvement-16"
     ],
     "17": [
-      "wizard-l17-1"
+      "wizard-spell-level-9"
     ],
     "18": [
-      "wizard-l18-1"
+      "wizard-spell-mastery"
     ],
     "19": [
-      "wizard-l19-1"
+      "wizard-epic-boon"
     ],
     "20": [
-      "wizard-l20-1"
+      "wizard-signature-spells"
     ]
   },
   "progressionSummary": [
@@ -659,146 +785,146 @@
       "level": 1,
       "summary": "Spellcasting, Arcane Recovery.",
       "unlockIds": [
-        "wizard-l1-1",
-        "wizard-l1-2"
+        "wizard-spellcasting",
+        "wizard-arcane-recovery"
       ]
     },
     {
       "level": 2,
       "summary": "Scholar.",
       "unlockIds": [
-        "wizard-l2-1"
+        "wizard-scholar"
       ]
     },
     {
       "level": 3,
       "summary": "Arcane Tradition (Subclass), Memorize Spell, 2nd-level Spells.",
       "unlockIds": [
-        "wizard-l3-1",
-        "wizard-l3-2",
-        "wizard-l3-3"
+        "wizard-arcane-tradition-subclass",
+        "wizard-memorize-spell",
+        "wizard-spell-level-2"
       ]
     },
     {
       "level": 4,
       "summary": "Ability Score Improvement, Cantrips Known: 4.",
       "unlockIds": [
-        "wizard-l4-1",
-        "wizard-l4-2"
+        "wizard-ability-score-improvement-4",
+        "wizard-cantrips-known-4"
       ]
     },
     {
       "level": 5,
       "summary": "3rd-level Spells.",
       "unlockIds": [
-        "wizard-l5-1"
+        "wizard-spell-level-3"
       ]
     },
     {
       "level": 6,
       "summary": "Subclass Feature.",
       "unlockIds": [
-        "wizard-l6-1"
+        "wizard-subclass-feature-6"
       ]
     },
     {
       "level": 7,
       "summary": "4th-level Spells.",
       "unlockIds": [
-        "wizard-l7-1"
+        "wizard-spell-level-4"
       ]
     },
     {
       "level": 8,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "wizard-l8-1"
+        "wizard-ability-score-improvement-8"
       ]
     },
     {
       "level": 9,
       "summary": "5th-level Spells.",
       "unlockIds": [
-        "wizard-l9-1"
+        "wizard-spell-level-5"
       ]
     },
     {
       "level": 10,
       "summary": "Subclass Feature, Cantrip Formulas, Cantrips Known: 5.",
       "unlockIds": [
-        "wizard-l10-1",
-        "wizard-l10-2",
-        "wizard-l10-3"
+        "wizard-subclass-feature-10",
+        "wizard-cantrip-formulas",
+        "wizard-cantrips-known-5"
       ]
     },
     {
       "level": 11,
       "summary": "6th-level Spells.",
       "unlockIds": [
-        "wizard-l11-1"
+        "wizard-spell-level-6"
       ]
     },
     {
       "level": 12,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "wizard-l12-1"
+        "wizard-ability-score-improvement-12"
       ]
     },
     {
       "level": 13,
       "summary": "7th-level Spells.",
       "unlockIds": [
-        "wizard-l13-1"
+        "wizard-spell-level-7"
       ]
     },
     {
       "level": 14,
       "summary": "Subclass Feature.",
       "unlockIds": [
-        "wizard-l14-1"
+        "wizard-subclass-feature-14"
       ]
     },
     {
       "level": 15,
       "summary": "8th-level Spells.",
       "unlockIds": [
-        "wizard-l15-1"
+        "wizard-spell-level-8"
       ]
     },
     {
       "level": 16,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "wizard-l16-1"
+        "wizard-ability-score-improvement-16"
       ]
     },
     {
       "level": 17,
       "summary": "9th-level Spells.",
       "unlockIds": [
-        "wizard-l17-1"
+        "wizard-spell-level-9"
       ]
     },
     {
       "level": 18,
       "summary": "Spell Mastery.",
       "unlockIds": [
-        "wizard-l18-1"
+        "wizard-spell-mastery"
       ]
     },
     {
       "level": 19,
       "summary": "Epic Boon.",
       "unlockIds": [
-        "wizard-l19-1"
+        "wizard-epic-boon"
       ]
     },
     {
       "level": 20,
       "summary": "Signature Spells.",
       "unlockIds": [
-        "wizard-l20-1"
+        "wizard-signature-spells"
       ]
     }
   ],

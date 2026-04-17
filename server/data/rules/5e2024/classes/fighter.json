@@ -509,6 +509,171 @@
         "tempo",
         "passive"
       ]
+    },
+    "fighter-ability-score-improvement-4": {
+      "summary": "Increase one ability score by 2, or two scores by 1 each, or take a feat instead.",
+      "description": "At level 4, the fighter earns their first Ability Score Improvement. Use it to push Strength or Dexterity higher for better attack and damage, boost Constitution for more HP and saving throws, or take a feat that complements your archetype and fighting style.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "ability-score"]
+    },
+    "fighter-extra-attack-2": {
+      "summary": "You can now make two attacks whenever you take the Attack action, doubling your basic damage output.",
+      "description": "Extra Attack (2) is one of the most important damage milestones for the fighter. At level 5, each Attack action becomes two swings, and combined with Action Surge or your Fighting Style the increase in pressure is significant. This is where fighters begin to outpace most other classes in pure attack output.",
+      "section": "Class Features",
+      "type": "passive",
+      "effect": "Make 2 attacks whenever you take the Attack action.",
+      "tags": ["combat", "passive", "damage"]
+    },
+    "fighter-ability-score-improvement-6": {
+      "summary": "Increase one ability score by 2, or two scores by 1 each, or take a feat instead.",
+      "description": "At level 6 fighters get a second ASI opportunity. Fighters receive more ASIs than most other classes, so this is a chance to lock in a key offensive stat or take a combat feat that defines the character's tactical identity.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "ability-score"]
+    },
+    "fighter-subclass-feature-7": {
+      "summary": "Your Martial Archetype grants a new ability that deepens your combat specialization.",
+      "description": "At level 7 your chosen subclass (Battle Master, Champion, Eldritch Knight, Psi Warrior, or another archetype) unlocks its first mid-tier feature. This deepens the tactical identity set at level 3 and gives the fighter a signature play pattern beyond basic attack actions.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["subclass", "combat", "identity"]
+    },
+    "fighter-weapon-mastery-4-weapons": {
+      "summary": "You can now apply Weapon Mastery properties to four weapons, widening your tactical toolkit.",
+      "description": "Weapon Mastery (4 weapons) at level 7 gives you an extra mastered weapon. Each mastered weapon carries a special rider property — Push, Vex, Nick, Slow, Topple, or others — that adds control, pressure, or positioning value on top of raw damage. More mastered weapons means more situational flexibility.",
+      "section": "Class Features",
+      "type": "passive",
+      "effect": "Apply Weapon Mastery to 4 weapons simultaneously.",
+      "tags": ["combat", "weapons", "passive"]
+    },
+    "fighter-ability-score-improvement-8": {
+      "summary": "Increase one ability score by 2, or two scores by 1 each, or take a feat instead.",
+      "description": "Level 8 delivers the fighter's third ASI, one more than most classes get by this point. This is a natural place to max out a primary combat stat or invest in a feat that rounds out utility, defense, or advanced combat maneuvers.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "ability-score"]
+    },
+    "fighter-subclass-feature-10": {
+      "summary": "Your Martial Archetype grants another advanced ability, solidifying your combat identity at mid-tier.",
+      "description": "The level 10 subclass feature is a major identity marker. By this point your archetype should feel distinctly different from other fighters — a Battle Master has a deep maneuver repertoire, a Champion crits more often, an Eldritch Knight weaves spells and attacks together, or a Psi Warrior projects psychic force.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["subclass", "combat", "identity"]
+    },
+    "fighter-extra-attack-3": {
+      "summary": "You can now make three attacks whenever you take the Attack action.",
+      "description": "Extra Attack (3) at level 11 is the first three-attack baseline in the game, a fighter-exclusive milestone at this tier. Three attacks per action means exceptional Action Surge turns and sustained DPR that very few other characters can match. Combined with Weapon Mastery riders, this level marks the fighter's entry into truly elite offensive territory.",
+      "section": "Class Features",
+      "type": "passive",
+      "effect": "Make 3 attacks whenever you take the Attack action.",
+      "tags": ["combat", "passive", "damage"]
+    },
+    "fighter-ability-score-improvement-12": {
+      "summary": "Increase one ability score by 2, or two scores by 1 each, or take a feat instead.",
+      "description": "The level 12 ASI is the fourth improvement, which is two more than most classes have at this point. Fighters are among the most feat-efficient classes in the game precisely because of this extra ASI density — use it to push a key stat to its ceiling or take a high-value combat or utility feat.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "ability-score"]
+    },
+    "fighter-indomitable-2-uses": {
+      "summary": "You can now use Indomitable twice per long rest to deny a failed saving throw.",
+      "description": "Indomitable (2 uses) at level 13 makes the fighter significantly harder to take down with debilitating effects. With two rerolls per long rest you can push through a crippling save in one combat and still have insurance for the next — turning what would be guaranteed shutdowns into recoverable setbacks.",
+      "section": "Class Features",
+      "type": "special",
+      "resourceName": "Indomitable",
+      "trackUses": true,
+      "usage": "2 uses available",
+      "recovery": "Regain all expended uses on a Long Rest.",
+      "tags": ["defense", "resource", "survival"]
+    },
+    "fighter-subclass-feature-13": {
+      "summary": "Your Martial Archetype unlocks a high-tier ability that sets up your endgame power.",
+      "description": "The level 13 subclass feature is the second-to-last major archetype upgrade. By this point the archetype's mechanical identity should feel complete and well-integrated — your approach to combat should read clearly from the character sheet without any explanation.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["subclass", "combat", "identity"]
+    },
+    "fighter-ability-score-improvement-14": {
+      "summary": "Increase one ability score by 2, or two scores by 1 each, or take a feat instead.",
+      "description": "Level 14 gives the fighter a fifth ASI — more than any other class. At this stage most primary stats are maxed, so this is often a great time for a feat that adds a new dimension to combat, utility, or roleplay capability.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "ability-score"]
+    },
+    "fighter-weapon-mastery-5-weapons": {
+      "summary": "You can now apply Weapon Mastery properties to five weapons, maximizing your arsenal's versatility.",
+      "description": "Weapon Mastery (5 weapons) at level 14 gives you the broadest possible coverage of mastery riders. With five weapons mastered you can adapt to almost any combat situation — close quarters, reach threats, ranged harassment, mounted combat — while always carrying a rider that creates meaningful tactical interaction.",
+      "section": "Class Features",
+      "type": "passive",
+      "effect": "Apply Weapon Mastery to 5 weapons simultaneously.",
+      "tags": ["combat", "weapons", "passive"]
+    },
+    "fighter-subclass-feature-15": {
+      "summary": "Your Martial Archetype delivers its most powerful mid-to-late tier ability.",
+      "description": "The level 15 subclass feature often includes one of the archetype's most powerful abilities — a major mechanical payoff that rewards staying in the subclass all the way to this level. This feature should feel like a real capstone to the identity established at level 3.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["subclass", "combat", "identity"]
+    },
+    "fighter-ability-score-improvement-16": {
+      "summary": "Increase one ability score by 2, or two scores by 1 each, or take a feat instead.",
+      "description": "The level 16 ASI is the sixth improvement, making fighters the most stat-flexible class at this tier. Nearly every important combat stat should be maxed by now, freeing this slot for feats that round out utility, add roleplay hooks, or push into epic-tier readiness.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "ability-score"]
+    },
+    "fighter-action-surge-2-uses": {
+      "summary": "You can now Action Surge twice per short or long rest, unlocking two explosive turns per encounter.",
+      "description": "Action Surge (2 uses) at level 17 is a dramatic late-game power spike. With four attacks per action and two Action Surges available, a single short rest encounter can see the fighter deliver eight or more attacks — a burst of offense that can define an entire combat and reliably finish boss-tier enemies in a single focused round.",
+      "section": "Class Features",
+      "type": "special",
+      "resourceName": "Action Surge",
+      "trackUses": true,
+      "usage": "2 uses available",
+      "recovery": "Regain all expended uses on a Short or Long Rest.",
+      "effect": "Gain one extra action on your turn.",
+      "tags": ["combat", "burst", "resource"]
+    },
+    "fighter-indomitable-3-uses": {
+      "summary": "You can now use Indomitable three times per long rest for sustained defensive resilience.",
+      "description": "Indomitable (3 uses) at level 17 makes the fighter one of the most resistant classes to save-or-suck effects across an entire adventuring day. Three rerolls means you can absorb nearly every serious magical debuff the dungeon can throw at you over a full rest cycle, keeping you in the fight when lesser warriors would be incapacitated.",
+      "section": "Class Features",
+      "type": "special",
+      "resourceName": "Indomitable",
+      "trackUses": true,
+      "usage": "3 uses available",
+      "recovery": "Regain all expended uses on a Long Rest.",
+      "tags": ["defense", "resource", "survival"]
+    },
+    "fighter-subclass-feature-18": {
+      "summary": "Your Martial Archetype delivers its final pre-capstone ability.",
+      "description": "The level 18 subclass feature is the last major archetype unlock before the capstone at level 20. It rounds out the subclass kit and ensures the archetype feels complete across every combat scenario — this is where the gap between archetypes is widest and most meaningful.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["subclass", "combat", "identity"]
+    },
+    "fighter-epic-boon": {
+      "summary": "Gain an Epic Boon — a powerful feat-level upgrade that marks entry into legendary tier.",
+      "description": "Epic Boon at level 19 is the fighter's penultimate power unlock. Epic Boons are stronger than standard feats and represent the fighter crossing into legendary martial territory. Options typically include extraordinary combat resilience, once-per-rest power resets, or signature abilities that anchor an entire build identity.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "epic", "feat"]
+    },
+    "fighter-extra-attack-4": {
+      "summary": "You can now make four attacks whenever you take the Attack action — the pinnacle of martial offense.",
+      "description": "Extra Attack (4) at level 20 is the fighter's ultimate offensive capstone, unique among all classes. Four attacks per action means that a single Attack action produces more swings than most full-attack sequences in prior editions. Combined with Action Surge (2 uses), Weapon Mastery riders, and your subclass capstone, a level 20 fighter can deliver the most concentrated burst damage of any martial class in a single combat turn.",
+      "section": "Class Features",
+      "type": "passive",
+      "effect": "Make 4 attacks whenever you take the Attack action.",
+      "tags": ["combat", "passive", "damage", "capstone"]
+    },
+    "fighter-subclass-capstone": {
+      "summary": "Your Martial Archetype's ultimate ability defines the peak expression of your combat identity.",
+      "description": "The subclass capstone at level 20 is the culmination of your chosen archetype. This ability should feel like the complete realization of the fighter identity you've been building since level 3 — a Battle Master with legendary tactical mastery, a Champion whose critical hits are devastating, an Eldritch Knight who blurs the line between warrior and wizard, or another archetype delivering its defining statement.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["subclass", "combat", "identity", "capstone"]
     }
   },
   "levelUnlockIds": {

@@ -427,6 +427,7 @@
     },
     "pirate-pirate-calling-subclass": {
       "summary": "Choose the style of Pirate you became: duelist, captain, infiltrator, or terror of the seas.",
+      "description": "Pirate Calling is the subclass gate that defines your fighting identity at level 3. Each calling takes the class's core swagger-and-footwork chassis in a different direction — a Dread Corsair specializes in fear and brutal pressure, a Captain of Fortune leads through inspiration and resource sharing, a Cutthroat thrives on ambush and dirty tricks, and a Sea Devil dominates aquatic and boarding combat. This choice shapes which tricks, movement options, and late-game capstone abilities you accumulate.",
       "section": "Class Features",
       "type": "passive",
       "tags": [
@@ -447,50 +448,63 @@
     },
     "pirate-ability-score-improvement-1": {
       "summary": "Increase ability scores or take a feat.",
+      "description": "At level 4 the Pirate earns their first Ability Score Improvement. Strength or Dexterity are the primary targets since they power weapon attacks and AC. Charisma serves the class's social identity and some Calling features. Alternatively, feats like Tavern Brawler, Mobile, or Lucky complement the Pirate's mobile, opportunistic combat style especially well.",
       "section": "Class Features",
       "type": "passive",
       "tags": [
         "progression",
-        "feat"
+        "feat",
+        "ability-score"
       ]
     },
     "pirate-ability-score-improvement-2": {
       "summary": "Increase ability scores or take a feat.",
+      "description": "At level 8 the Pirate gains a second ASI. If the primary attack stat isn't maxed yet this is the time to finish it. Alternatively, Constitution for more HP and Concentration durability, or a combat feat that adds a tactical layer to your Swagger Dice and Dirty Fighting options are strong investments at this level.",
       "section": "Class Features",
       "type": "passive",
       "tags": [
         "progression",
-        "feat"
+        "feat",
+        "ability-score"
       ]
     },
     "pirate-ability-score-improvement-3": {
       "summary": "Increase ability scores or take a feat.",
+      "description": "At level 12 the Pirate gains a third ASI. By this point primary combat stats are usually maxed, making this a strong opportunity for a feat. Options like Alert (better initiative for opening-round advantage), Resilient (Wisdom for save defense), or Sentinel (controlling adjacent enemies) all serve a mid-tier Pirate well.",
       "section": "Class Features",
       "type": "passive",
       "tags": [
         "progression",
-        "feat"
+        "feat",
+        "ability-score"
       ]
     },
     "pirate-ability-score-improvement-4": {
       "summary": "Increase ability scores or take a feat.",
+      "description": "At level 16 the Pirate gains their fourth and final standard ASI. At this stage the character should be fully realized mechanically, making this a natural slot for a feat that adds a unique high-level signature ability rather than further stat improvements. Epic Boon eligibility is one level away so choose something that complements the final shape of the build.",
       "section": "Class Features",
       "type": "passive",
       "tags": [
         "progression",
-        "feat"
+        "feat",
+        "ability-score"
       ]
     },
     "pirate-extra-attack": {
       "summary": "Attack twice whenever you take the Attack action.",
+      "description": "Extra Attack at level 5 is the most important offensive milestone for the Pirate. Two attacks per action means consistent damage output and more opportunities to proc Dirty Fighting triggers, Swagger Dice effects, and Marked Quarry bonuses on the same turn. This level is where the Pirate's action economy starts to feel decisively stronger than most opponents.",
       "section": "Class Features",
       "type": "passive",
+      "effect": "Make 2 attacks whenever you take the Attack action.",
       "tags": [
-        "combat"
+        "combat",
+        "passive",
+        "damage"
       ]
     },
     "pirate-swagger-dice-d8": {
       "summary": "Your Swagger Dice improve to d8s, making your tricks and support sharper.",
+      "description": "At level 5, your Swagger Dice upgrade from d6s to d8s. Every Swagger Die you spend on tricks, support, or pressure now delivers a stronger result. This upgrade is automatic — all existing uses of Swagger Dice simply become more powerful, making all your level 1–4 tricks retroactively better without changing how they work.",
       "section": "Class Features",
       "type": "passive",
       "resourceName": "Swagger Dice",
@@ -512,11 +526,13 @@
     },
     "pirate-uncanny-balance": {
       "summary": "Stay upright, mobile, and dangerous even in terrain that should slow everyone else down.",
+      "description": "Uncanny Balance at level 7 is the Pirate's signature mobility mastery. Slippery decks, ice, difficult terrain, ropes, narrow ledges, and unstable footing that knock other characters prone or force Dexterity saves barely register for you. In fights where terrain is a factor — and for a Pirate, terrain always matters — this feature means you operate at full effectiveness while enemies are compromised.",
       "section": "Class Features",
       "type": "passive",
       "tags": [
         "mobility",
-        "defense"
+        "defense",
+        "terrain"
       ]
     },
     "pirate-menacing-reputation": {
@@ -532,11 +548,13 @@
     },
     "pirate-subclass-feature-10": {
       "summary": "Gain your next major subclass feature.",
+      "description": "At level 10 your Pirate Calling delivers a significant mid-tier ability that deepens your combat identity. A Dread Corsair becomes harder to escape and more terrifying in sustained combat, a Captain of Fortune gains stronger leadership tools, a Cutthroat gains more devastating ambush capabilities, or a Sea Devil gains advanced aquatic and boarding dominance. This feature is the second major architectural piece of your calling's kit.",
       "section": "Class Features",
       "type": "passive",
       "tags": [
         "subclass",
-        "progression"
+        "progression",
+        "identity"
       ]
     },
     "pirate-press-the-advantage": {
@@ -552,6 +570,7 @@
     },
     "pirate-swagger-dice-d10": {
       "summary": "Your Swagger Dice improve to d10s.",
+      "description": "At level 13, your Swagger Dice upgrade from d8s to d10s — the highest die size in the class. Every trick, morale effect, and support ability powered by Swagger Dice now hits harder or reaches further. This is the final die upgrade and marks the point where the Pirate's signature resource is operating at full power.",
       "section": "Class Features",
       "type": "passive",
       "resourceName": "Swagger Dice",
@@ -563,6 +582,7 @@
     },
     "pirate-master-of-the-boarding-line": {
       "summary": "Own ladders, rails, gangways, and other narrow spaces where movement decides the fight.",
+      "description": "Master of the Boarding Line at level 13 makes you extraordinarily difficult to counter in the cramped, vertical, and chaotic terrain that defines a Pirate's natural environment. Narrow corridors, ship rigging, ladders, gangplanks, and tight chokepoints become your domain — spaces where your movement superiority and balance give you advantages that heavily armored enemies simply cannot match.",
       "section": "Class Features",
       "type": "passive",
       "tags": [
@@ -573,6 +593,7 @@
     },
     "pirate-legend-of-the-waves": {
       "summary": "Your sheer confidence and seamanship let you dictate the flow of chaotic battles.",
+      "description": "Legend of the Waves at level 14 is the point where the Pirate's reputation and mastery transcend ordinary skill. Your presence alone changes how enemies behave — your confidence radiates across the battlefield, your positioning is impossible to anticipate, and your ability to redirect chaos in your favor makes you a force multiplier for the entire party. This feature represents the full realization of the Pirate as a battlefield presence rather than just a fighter.",
       "section": "Class Features",
       "type": "passive",
       "tags": [
@@ -583,11 +604,13 @@
     },
     "pirate-subclass-feature-15": {
       "summary": "Gain your capstone subclass feature.",
+      "description": "At level 15 your Pirate Calling delivers its final and most powerful ability. This is the ultimate expression of your chosen calling — the feature that makes a Dread Corsair truly terrifying, a Captain of Fortune a genuine force multiplier, a Cutthroat an unstoppable assassination engine, or a Sea Devil a sovereign of the seas. This completes your subclass kit and sets up the class capstone at level 20.",
       "section": "Class Features",
       "type": "passive",
       "tags": [
         "subclass",
-        "capstone"
+        "capstone",
+        "identity"
       ]
     },
     "pirate-dread-volley": {
@@ -605,6 +628,7 @@
     },
     "pirate-indomitable-swagger": {
       "summary": "Refuse to fold when fear, pain, or bad odds should make lesser fighters break.",
+      "description": "Indomitable Swagger at level 18 is the Pirate's ultimate resilience feature. When the situation is grim, the odds are against you, or an effect should by all rights shut you down, this feature lets you push through on raw defiance and nerve. A legendary Pirate does not break — they adapt, they bluster, and they find the gap. This feature makes that fantasy mechanically real.",
       "section": "Class Features",
       "type": "passive",
       "tags": [
@@ -614,12 +638,14 @@
       ]
     },
     "pirate-epic-boon": {
-      "summary": "Gain an Epic Boon.",
+      "summary": "Gain an Epic Boon — a legendary feat-level upgrade that marks entry into near-mythic capability.",
+      "description": "Epic Boon at level 19 is the penultimate power unlock for the Pirate. Epic Boons are stronger than standard feats and represent abilities that cross into the realm of legendary achievement. For a Pirate this might manifest as extraordinary combat resilience, an ability that bends the rules of their signature swagger, or a permanent upgrade that rounds out the class into a complete and definitive combat identity.",
       "section": "Class Features",
       "type": "passive",
       "tags": [
         "epic",
-        "progression"
+        "progression",
+        "feat"
       ]
     },
     "pirate-king-of-the-black-flag": {

@@ -971,6 +971,132 @@
         "cantrip",
         "progression"
       ]
+    },
+    "druid-l4-1": {
+      "summary": "Increase one ability score by 2, or two scores by 1 each, or take a feat instead.",
+      "description": "At level 4, the druid earns their first Ability Score Improvement. Wisdom is the primary target since it powers your spell save DC, spell attack bonus, and many class features. Constitution helps maintain Concentration on long-duration spells like Call Lightning. Alternatively, War Caster or Resilient (Constitution) are excellent feat choices for improving Concentration checks in dangerous forms and fights.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "ability-score"]
+    },
+    "druid-l4-2": {
+      "summary": "Your Wild Shape now allows CR 1/2 forms and forms with a swim speed.",
+      "description": "Wild Shape (CR 1/2, swim) at level 4 is a meaningful expansion of your beast options. You can now shift into forms like giant frogs, giant spiders, or reef sharks — creatures with higher HP, better attacks, or aquatic mobility. Swim speed unlocks exploration utility in water encounters and hazard traversal without using spell slots.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["transformation", "progression", "wild-shape"]
+    },
+    "druid-l5-1": {
+      "summary": "You unlock 3rd-level spell slots, a major jump in druid magical power.",
+      "description": "3rd-level spells are a significant leap for druids. Call Lightning, Plant Growth, Conjure Animals, Sleet Storm, and Erupting Earth all live here. At this tier the druid's ability to control terrain and summon reinforcements dramatically increases. Stock your preparation list with versatile options from this tier.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "progression"]
+    },
+    "druid-l6-1": {
+      "summary": "Your Druid Circle grants its next ability, deepening your specialized wildshaper or casting identity.",
+      "description": "The level 6 subclass feature is the first major expansion beyond the foundation laid at level 3. A Moon druid can take more powerful beast forms. A Land druid gains Natural Recovery for slot refresh. Other circles gain abilities that deepen their signature play pattern. This feature typically defines how the archetype handles mid-tier encounters.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["subclass", "spellcasting", "identity"]
+    },
+    "druid-l7-1": {
+      "summary": "You unlock 4th-level spell slots, including powerful control and transformation options.",
+      "description": "4th-level spells expand the druid's toolkit significantly. Polymorph, Conjure Woodland Beings, Control Water, Ice Storm, and Grasping Vine all become available. At this tier druid battlefield control and summon options reach their mid-game peak. Polymorph in particular is one of the most flexible spells available to any caster.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "progression"]
+    },
+    "druid-l8-1": {
+      "summary": "Increase one ability score by 2, or two scores by 1 each, or take a feat instead.",
+      "description": "The level 8 ASI is a natural point to cap Wisdom at 20 if it isn't already, pushing spell save DC and attack bonus to maximum. With Wisdom maxed, Constitution or a feat like War Caster, Observant, or Fey Touched are excellent next choices for a high-level druid.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "ability-score"]
+    },
+    "druid-l8-2": {
+      "summary": "Your Wild Shape now allows CR 1 forms and forms with a fly speed.",
+      "description": "Wild Shape (CR 1, fly) is the most significant Wild Shape upgrade since level 2. CR 1 forms include creatures like the giant eagle, giant hyena, and lion — stronger combat options with better action economy. Fly speed is transformative for scouting, bypassing ground hazards, and combat positioning at heights that enemies can't easily reach.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["transformation", "progression", "wild-shape"]
+    },
+    "druid-l9-1": {
+      "summary": "You unlock 5th-level spell slots, entering the tier of legendary natural magic.",
+      "description": "5th-level spells represent a dramatic leap for druids. Conjure Elemental, Wrath of Nature, Wall of Stone, Antilife Shell, and Commune with Nature all live here. At this tier the druid can summon major elemental forces and dominate entire battlefield zones. Treat these slots as precious resources deployed at pivotal moments.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "progression"]
+    },
+    "druid-l10-1": {
+      "summary": "Your Druid Circle delivers a powerful mid-tier ability, marking the peak of your circle's identity.",
+      "description": "The level 10 subclass feature is a significant power milestone. By this point the Druid Circle should define a clear tactical role — a Moon druid who can shift into elementals and powerful beasts, a Land druid with broad terrain-specific spell access and slot recovery, or another circle with a deep and distinctive play pattern.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["subclass", "spellcasting", "identity"]
+    },
+    "druid-l11-1": {
+      "summary": "You unlock 6th-level spell slots — rare, potent, and ideal for dramatically reshaping encounters.",
+      "description": "6th-level spells arrive with only one slot but enormous power. Heal, Sunbeam, Transport via Plants, Wall of Thorns, and Bones of the Earth all occupy this tier. A single 6th-level slot spent at the right moment can end a fight, provide decisive healing, or create impassable terrain across a battlefield.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "progression"]
+    },
+    "druid-l12-1": {
+      "summary": "Increase one ability score by 2, or two scores by 1 each, or take a feat instead.",
+      "description": "The level 12 ASI gives a druid with maxed Wisdom room to invest in defensive or versatility feats. War Caster, Resilient (Con), Lucky, or Telekinetic all serve a high-level druid extremely well. Wild Shape endurance and Concentration reliability are the most common areas where additional investment pays off.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "ability-score"]
+    },
+    "druid-l13-1": {
+      "summary": "You unlock 7th-level spell slots, the tier of game-altering natural force.",
+      "description": "7th-level spells include Fire Storm, Regenerate, Whirlwind, Mirage Arcane, and Reverse Gravity. At this tier druids wield magic that reshapes the physical landscape of an encounter. These spells reward creative use and reward a druid who has studied their environment.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "progression"]
+    },
+    "druid-l14-1": {
+      "summary": "Your Druid Circle delivers its late-game defining ability.",
+      "description": "The level 14 subclass feature is the final major upgrade before the capstone. It represents the mature expression of your circle — at this level a Moon druid is an elemental force of nature, a Land druid has access to the broadest magical toolkit available to any prepared caster, or another circle has fully realized its unique identity.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["subclass", "spellcasting", "identity"]
+    },
+    "druid-l15-1": {
+      "summary": "You unlock 8th-level spell slots, the penultimate tier of primal magic.",
+      "description": "8th-level spells include Sunburst, Animal Shapes, Control Weather, Earthquake, and Tsunami. These spells affect entire environments and can reshape the flow of an entire encounter or wilderness journey. A single 8th-level slot spent on the right effect can decisively end a confrontation.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "progression"]
+    },
+    "druid-l16-1": {
+      "summary": "Increase one ability score by 2, or two scores by 1 each, or take a feat instead.",
+      "description": "By level 16 the druid's core stats are fully developed. This ASI is most valuable as a feat for elite-tier capabilities. Spell Sniper, Lucky, Metamagic Adept, or any feat that adds a new dimension to your high-level nature magic or Wild Shape game will serve well at this tier.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "ability-score"]
+    },
+    "druid-l17-1": {
+      "summary": "You unlock 9th-level spell slots — the pinnacle of mortal spellcasting.",
+      "description": "9th-level spells represent the apex of accessible primal magic. True Resurrection, Foresight, Shapechange, Storm of Vengeance, and Wish (if taken via Shapechange) are all within reach. At this level the druid channels the raw, world-shaping power of nature at its most elemental. A single 9th-level slot is an event; plan its use with total clarity.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["spellcasting", "progression", "pinnacle"]
+    },
+    "druid-l18-1": {
+      "summary": "Age and ordinary time sit more lightly on you, reinforcing the druid's connection to a deeper natural cycle.",
+      "description": "Timeless Body at level 18 marks the druid's full transcendence of ordinary biological limitation. The character has lived deeply enough in the primal rhythms of nature that normal aging barely touches them. This is primarily an identity and roleplay feature, but it represents a powerful moment in a druid's character arc.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["passive", "identity", "capstone-adjacent"]
+    },
+    "druid-l19-1": {
+      "summary": "Gain an Epic Boon — a legendary feat-level upgrade that marks entry into near-mythic natural power.",
+      "description": "Epic Boon at level 19 elevates the druid beyond the limits of normal heroism. Epic Boons represent abilities fundamentally stronger than standard feats, and for a druid they often manifest as extraordinary resilience in beast forms, near-permanent magical effects, or the ability to bend the rules of natural magic itself.",
+      "section": "Class Features",
+      "type": "passive",
+      "tags": ["build", "progression", "epic", "feat"]
     }
   },
   "levelUnlockIds": {
