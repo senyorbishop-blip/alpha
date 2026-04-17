@@ -656,6 +656,7 @@
       const selectedId = joinGateway && joinGateway.getSelectedProfileId ? joinGateway.getSelectedProfileId() : '';
       card.className = 'character-card' + (entry.id === selectedId ? ' selected' : '');
       card.dataset.profileId = entry.id;
+      const lib = window.CasualDnDPortraitLibrary;
       const renderer = window.CasualDnDAvatarRenderer;
       const portraitLibrary = window.CasualDnDPortraitLibrary;
       const tokenImageUrl = String(entry.tokenImageUrl || '').trim();
@@ -669,8 +670,8 @@
         : '';
       const avatarMarkup = tokenImageUrl
         ? `<img class="avatar-render mini" src="${escapeHtml(tokenImageUrl)}" alt="${escapeHtml(entry.name || 'Hero')}">`
-        : (comboPortraitUrl
-          ? `<img class="avatar-render mini" src="${escapeHtml(comboPortraitUrl)}" alt="${escapeHtml(entry.name || 'Hero')}">`
+        : (lib
+          ? lib.renderImgMarkup(buildAvatarOptions(entry), 110, 'mini', 'mini')
           : (renderer
             ? renderer.renderImgMarkup(buildAvatarOptions(entry), 110, 'mini', 'mini')
             : `<span>${(entry.name || '?').slice(0, 2).toUpperCase()}</span>`));
@@ -790,7 +791,9 @@
           },
         },
         elements: {
-          charGrid: els.characterList,
+          // Pass null for charGrid so gateway_modal's old renderer never overwrites this page's premium cards.
+          // renderRosterFromState (subscribed below) is the sole authority for #character-list on this page.
+          charGrid: null,
           useExistingBtn: els.enterBtn,
           createNativeBtn: els.createBtn,
           importDdbBtn: els.importBtn,
@@ -800,19 +803,9 @@
           emptyHint: null,
         },
       });
-      const originalLoadCharacters = joinGateway.loadCharacters.bind(joinGateway);
-      joinGateway.loadCharacters = function patchedLoadCharacters(entries, preferredId) {
-        originalLoadCharacters(entries, preferredId);
-        renderRosterFromState();
-      };
-      const originalSelectProfile = joinGateway.selectProfile ? joinGateway.selectProfile.bind(joinGateway) : null;
-      if (originalSelectProfile) {
-        joinGateway.selectProfile = function patchedSelectProfile(id) {
-          originalSelectProfile(id);
-          renderRosterFromState();
-        };
-      }
       joinGateway.init();
+      // Subscribe the premium renderer to every state change so it stays authoritative.
+      gatewayState.subscribe(renderRosterFromState);
     }
 
     function renderRosterFromState() {

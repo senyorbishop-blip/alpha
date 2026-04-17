@@ -91,8 +91,24 @@
     return (entry && entry.featureDefinitions && typeof entry.featureDefinitions === 'object') ? entry.featureDefinitions : {};
   }
 
-  function renderDetailPane(entry) {
+  function renderDetailPane(entry, draft) {
     var color = getClassColor(entry);
+
+    // Combo portrait preview for the currently selected combo
+    var portraitPreviewHtml = '';
+    var portraitLib = global.CasualDnDPortraitLibrary;
+    if (portraitLib && typeof portraitLib.resolve === 'function' && draft) {
+      var previewUrl = portraitLib.resolve({
+        classId: entry.id,
+        speciesId: draft.species && draft.species.id,
+        gender: draft.identity && draft.identity.gender,
+      });
+      if (previewUrl) {
+        portraitPreviewHtml = '<div style="float:right;width:72px;height:80px;border-radius:10px;overflow:hidden;' +
+          'border:1px solid rgba(201,168,76,0.25);margin:0 0 8px 10px;flex-shrink:0;">' +
+          '<img src="' + escHtml(previewUrl) + '" style="width:100%;height:100%;object-fit:cover" alt="Hero preview"></div>';
+      }
+    }
     var casterType = normalizeId(entry.spellcastingType);
     var spellStatHtml;
     var spellAbility = String(entry.spellcastingAbility || '').trim().toUpperCase();
@@ -182,6 +198,7 @@
     }).join('');
 
     return '<div class="cls-detail-inner">' +
+      portraitPreviewHtml +
       '<div class="cls-detail-title" style="color:' + color + '">' + escHtml(entry.name) + '</div>' +
       '<div class="cd-stats" style="margin:12px 0 16px">' +
         '<div class="cd-stat"><div class="cd-stat-val">d' + escHtml(entry.hitDie) + '</div><div class="cd-stat-lbl">Hit Die</div></div>' +
@@ -211,7 +228,7 @@
     '</div>';
   }
 
-  function showClassDetailPanel(root, classId) {
+  function showClassDetailPanel(root, classId, draft) {
     var entries = getClassCatalogEntries();
     var entry = entries.find(function findEntry(e) { return normalizeId(e.id) === normalizeId(classId); });
     var panel = root.querySelector('#builder-class-detail');
@@ -220,7 +237,7 @@
       panel.innerHTML = '<div class="cls-detail-empty"><div style="font-size:2.5rem;opacity:0.25">⚔</div><div>Select a class to view details</div></div>';
       return;
     }
-    panel.innerHTML = renderDetailPane(entry);
+    panel.innerHTML = renderDetailPane(entry, draft);
   }
 
   function resolveComboPortrait(draft) {
@@ -287,7 +304,7 @@
       var detailContent = selectedId
         ? (function() {
             var sel = entries.find(function(e) { return normalizeId(e.id) === normalizeId(selectedId); });
-            return sel ? renderDetailPane(sel) : '<div class="cls-detail-empty"><div style="font-size:2.5rem;opacity:0.25">⚔</div><div>Select a class to view details</div></div>';
+            return sel ? renderDetailPane(sel, draft) : '<div class="cls-detail-empty"><div style="font-size:2.5rem;opacity:0.25">⚔</div><div>Select a class to view details</div></div>';
           })()
         : '<div class="cls-detail-empty"><div style="font-size:2.5rem;opacity:0.25">⚔</div><div>Select a class to view details</div></div>';
 
@@ -325,7 +342,7 @@
           }
           root.querySelectorAll('.cls-list-item').forEach(function(i) { i.classList.remove('selected'); });
           item.classList.add('selected');
-          showClassDetailPanel(root, id);
+          showClassDetailPanel(root, id, context && context.draft);
         });
       });
     },

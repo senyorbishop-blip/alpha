@@ -112,40 +112,7 @@
     return parts.join(' \u00b7 ');
   }
 
-  function resolveComboPortrait(draft) {
-    var portraitLib = global.CasualDnDPortraitLibrary;
-    if (!portraitLib || typeof portraitLib.resolve !== 'function') return '';
-    var species = draft && draft.species && typeof draft.species === 'object' ? draft.species : {};
-    var classData = draft && draft.class && typeof draft.class === 'object' ? draft.class : {};
-    var identity = draft && draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
-    return String(portraitLib.resolve({
-      speciesId: species.id || species.name || '',
-      classId: classData.id || '',
-      gender: identity.gender || 'neutral',
-      neutralFallback: '',
-    }) || '').trim();
-  }
-
-  function renderPreviewTile(draft) {
-    var identity = draft && draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
-    var renderer = global.CasualDnDAvatarRenderer;
-    var combo = resolveComboPortrait(draft);
-    var finalPortrait = String(identity.portraitUrl || '').trim() || combo || String(identity.tokenImageUrl || '').trim();
-    var markup = finalPortrait
-      ? '<img class="avatar-render portrait" src="' + escAttr(finalPortrait) + '" alt="Preview portrait" />'
-      : (renderer ? renderer.renderImgMarkup({
-          name: identity.name || 'Hero',
-          classId: draft && draft.class && draft.class.id || '',
-          speciesId: draft && draft.species && draft.species.id || '',
-          gender: identity.gender || 'neutral',
-        }, 120, 'portrait', 'portrait') : '<span style="font-size:1.8rem;opacity:.55;">🧙</span>');
-    return '<div style="margin:10px 0 14px;padding:9px 12px;border:1px solid rgba(201,168,76,.16);border-radius:10px;background:rgba(7,10,14,.58);display:flex;gap:12px;align-items:center;">'
-      + '<div style="width:62px;height:62px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.24);display:flex;align-items:center;justify-content:center;">' + markup + '</div>'
-      + '<div style="font-size:.66rem;color:rgba(231,223,206,.92);line-height:1.45;"><div style="font-family:var(--cb-font-display);font-size:.72rem;color:#E8C97A;">Live Portrait Preview</div><div>' + escHtml(combo ? 'Combo art active for current species/class.' : 'Combo art will appear when species + class are set.') + '</div></div>'
-      + '</div>';
-  }
-
-  function showSpeciesDetailPanel(root, speciesId) {
+  function showSpeciesDetailPanel(root, speciesId, draft) {
     var entries = getSpeciesCatalogEntries();
     var entry = null;
     for (var i = 0; i < entries.length; i++) {
@@ -159,6 +126,22 @@
     var color = SPECIES_COLORS[normalizeId(entry.id)] || DEFAULT_SPECIES_COLOR;
     var icon = entry.icon || SPECIES_ICONS[normalizeId(entry.id)] || DEFAULT_SPECIES_ICON;
     var traits = Array.isArray(entry.traits) ? entry.traits : [];
+
+    // Combo portrait preview using the resolved species + current class + gender
+    var speciesPortraitHtml = '';
+    var portraitLib = global.CasualDnDPortraitLibrary;
+    if (portraitLib && typeof portraitLib.resolve === 'function') {
+      var previewUrl = portraitLib.resolve({
+        speciesId: speciesId,
+        classId: draft && draft.class && draft.class.id,
+        gender: draft && draft.identity && draft.identity.gender,
+      });
+      if (previewUrl) {
+        speciesPortraitHtml = '<div style="float:right;width:72px;height:80px;border-radius:10px;overflow:hidden;' +
+          'border:1px solid rgba(201,168,76,0.25);margin:0 0 8px 10px;flex-shrink:0;">' +
+          '<img src="' + escAttr(previewUrl) + '" style="width:100%;height:100%;object-fit:cover" alt="Hero preview"></div>';
+      }
+    }
 
     var traitCards = traits.map(function toTraitCard(trait) {
       if (!trait || typeof trait !== 'object') return '';
@@ -174,6 +157,7 @@
 
     panel.innerHTML = [
       '<div class="sd-header">',
+      speciesPortraitHtml,
       '<div>',
       '<div class="sd-name" style="color:' + escAttr(color) + '">' + escHtml(icon) + ' ' + escHtml(entry.name) + '</div>',
       '<div class="sd-meta">',
@@ -264,6 +248,7 @@
     },
     bind: function bindSpeciesStep(root, context) {
       // 1. Card click handler
+      var bindDraft = context && context.draft || {};
       root.querySelectorAll('.species-card').forEach(function(card) {
         card.addEventListener('click', function() {
           var id = card.dataset.speciesId;
@@ -287,14 +272,13 @@
             c.classList.remove('selected');
           });
           card.classList.add('selected');
-          showSpeciesDetailPanel(root, id);
+          showSpeciesDetailPanel(root, id, context && context.draft);
         });
       });
       // 2. Auto-show detail for already-selected species
-      var draft = context && context.draft || {};
-      var currentId = draft.species && draft.species.id;
+      var currentId = bindDraft.species && bindDraft.species.id;
       if (currentId) {
-        showSpeciesDetailPanel(root, currentId);
+        showSpeciesDetailPanel(root, currentId, bindDraft);
       }
       // 3. Help button
       var helpBtn = root.querySelector('.help-btn[data-help-topic]');

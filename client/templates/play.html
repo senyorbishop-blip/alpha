@@ -22875,6 +22875,11 @@ function _formatSignedDiceMod(value) {
   return `${n >= 0 ? '+' : ''}${n}`;
 }
 
+function signed(value) {
+  const n = parseInt(value, 10) || 0;
+  return `${n >= 0 ? '+' : ''}${n}`;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   refreshDiceModifierSelector();
   setDiceRollMode(getDiceRollMode());
