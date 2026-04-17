@@ -11,7 +11,7 @@ def test_resolver_uses_document_hp_and_equipment_ac_as_runtime_authority():
     src = _read('server/character/resolver.py')
     assert 'def _runtime_hp_from_document' in src
     assert 'def _compute_equipment_ac' in src
-    assert 'runtime["hp"] = _runtime_hp_from_document' in src
+    assert 'runtime["hp"] = _compute_base_hp' in src
     assert 'runtime["ac"] = _compute_equipment_ac' in src
     assert '"tempHP": runtime["hp"]["temp"]' in src
 
@@ -28,6 +28,9 @@ def test_mapper_keeps_token_vitals_synced_with_runtime_hp_and_senses():
     assert 'tempHP: asInt(hp.temp, asInt(token.tempHP, 0))' in src
     assert 'speed: asInt(combat.speed, asInt(asObject(runtime.speed).walk, asInt(token.speed, 30)))' in src
     assert 'darkvision: asInt(combat.darkvision, asInt(asObject(runtime.senses).darkvision, asInt(token.darkvision, 0)))' in src
+    assert 'reach: firstNonEmpty(entry.reach, \'\'),' in src
+    assert 'existing.properties = clone(normalized.properties);' in src
+    assert 'existing.weapon_properties = clone(normalized.weapon_properties);' in src
 
 
 def test_actions_tab_prefers_equipped_weapons_and_shows_attack_math_context():
@@ -36,6 +39,8 @@ def test_actions_tab_prefers_equipped_weapons_and_shows_attack_math_context():
     assert 'const sourceRows = equippedRows.length ? equippedRows : weaponRows;' in src
     assert "resourceName: ammoKind ? ('Ammo: ' + ammoKind) : ''" in src
     assert "item.equipped ? 'Equipped' : 'Inventory only'" in src
+    assert "const hasUsableWeaponCard = combined.some(function (entry) {" in src
+    assert "return source === 'weapon' || source === 'equip_only';" in src
 
 
 def test_spells_tab_uses_shared_spell_access_math_for_attack_and_dc_labels():

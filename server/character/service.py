@@ -110,6 +110,34 @@ def _enrich_inventory_weapon_fields(item: dict[str, Any]) -> None:
         item["properties"] = list(item.get("weapon_properties") or [])
 
 
+def _build_equipped_loadout_from_inventory(inventory_rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    equipped: dict[str, dict[str, Any]] = {}
+    if not isinstance(inventory_rows, list):
+        return equipped
+
+    for row in inventory_rows:
+        if not isinstance(row, dict) or not bool(row.get("equipped")):
+            continue
+        slot = _safe_str(row.get("equip_slot")).lower()
+        kind = _safe_str(row.get("equipment_kind") or row.get("kind") or row.get("item_type")).lower()
+        handedness = _safe_str(row.get("handedness")).lower()
+        target_slot = ""
+        if slot:
+            target_slot = slot
+        elif kind == "weapon":
+            target_slot = "off_hand" if handedness in {"off_hand", "offhand"} else "main_hand"
+        elif kind == "shield":
+            target_slot = "off_hand"
+        elif kind == "armor":
+            target_slot = "armor"
+        if not target_slot:
+            continue
+        equipped[target_slot] = dict(row)
+        equipped[target_slot]["equipped"] = True
+        equipped[target_slot]["equip_slot"] = target_slot
+    return equipped
+
+
 def _build_class_summary(char_sheet: dict) -> str:
     if not isinstance(char_sheet, dict):
         return ""
@@ -149,10 +177,32 @@ def _normalize_builder_inventory_entry(raw: Any) -> dict | None:
     if kind_hint:
         out["kind"] = kind_hint
         out["type"] = kind_hint
-    for key in ("source", "notes", "price", "id", "category", "item_type", "equipment_kind", "armor_type", "handedness", "equip_slot", "damage_dice", "damage_type", "versatile_damage"):
+    for key in (
+        "source",
+        "notes",
+        "price",
+        "id",
+        "category",
+        "item_type",
+        "equipment_kind",
+        "armor_type",
+        "handedness",
+        "equip_slot",
+        "damage",
+        "damage_dice",
+        "damage_type",
+        "versatile_damage",
+        "range",
+        "reach",
+    ):
         value = _safe_str(raw.get(key))
         if value:
             out[key] = value
+    raw_props = raw.get("properties")
+    if isinstance(raw_props, list):
+        cleaned_props = [str(v or "").strip()[:32] for v in raw_props if str(v or "").strip()]
+        if cleaned_props:
+            out["properties"] = cleaned_props[:12]
     for key in ("equipped", "is_container", "extradimensional", "is_devouring"):
         if key in raw:
             out[key] = bool(raw.get(key))
@@ -265,7 +315,20 @@ def _normalize_builder_draft_document(raw: dict) -> dict:
                 kind = str(entry.get("equipment_kind") or entry.get("kind") or entry.get("item_type") or "").strip().lower()
                 if kind == "weapon":
                     entry["equipped"] = True
+                    if not _safe_str(entry.get("equip_slot")):
+                        entry["equip_slot"] = "main_hand"
                     break
+        else:
+            primary_slot_claimed = False
+            for entry in normalized_equipment_inventory:
+                if not isinstance(entry, dict):
+                    continue
+                kind = str(entry.get("equipment_kind") or entry.get("kind") or entry.get("item_type") or "").strip().lower()
+                if kind == "weapon" and bool(entry.get("equipped")) and not _safe_str(entry.get("equip_slot")):
+                    entry["equip_slot"] = "main_hand" if not primary_slot_claimed else "off_hand"
+                    primary_slot_claimed = True
+                elif kind == "shield" and bool(entry.get("equipped")) and not _safe_str(entry.get("equip_slot")):
+                    entry["equip_slot"] = "off_hand"
     origins_languages = origins.get("languages") if isinstance(origins.get("languages"), list) else []
     origins_proficiencies = origins.get("proficiencies") if isinstance(origins.get("proficiencies"), list) else []
     progression_feats = progression.get("feats") if isinstance(progression.get("feats"), list) else []
@@ -284,7 +347,10 @@ def _normalize_builder_draft_document(raw: dict) -> dict:
         for row in fallback_inventory:
             if str(row.get("equipment_kind") or row.get("kind") or row.get("item_type") or "").strip().lower() == "weapon":
                 row["equipped"] = True
+                if not _safe_str(row.get("equip_slot")):
+                    row["equip_slot"] = "main_hand"
                 break
+    equipped_loadout = _build_equipped_loadout_from_inventory(normalized_equipment_inventory or fallback_inventory)
 
     return {
         "schemaVersion": _safe_int(raw.get("schemaVersion"), 1, minimum=1),
@@ -377,7 +443,7 @@ def _normalize_builder_draft_document(raw: dict) -> dict:
                 "pp": _safe_int(equipment_currency.get("pp"), 0, minimum=0),
             },
             "inventory": normalized_equipment_inventory or fallback_inventory,
-            "equipped": {},
+            "equipped": equipped_loadout,
             "containers": [],
             "builderChoices": equipment_choices,
             "walletGoldUnits": _currency_to_gold_units(equipment_currency),

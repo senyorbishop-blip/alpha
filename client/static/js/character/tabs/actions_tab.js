@@ -2540,7 +2540,13 @@
       }
       fromQuick.forEach(push);
       fromInventory.forEach(push);
-      if (!combined.some(function (entry) { return String(entry && entry.source || '').toLowerCase() === 'system_unarmed' || String(entry && entry.name || '').toLowerCase() === 'unarmed strike'; })) {
+      const hasUsableWeaponCard = combined.some(function (entry) {
+        const source = String(entry && entry.source || '').toLowerCase();
+        const name = String(entry && entry.name || '').toLowerCase();
+        if (source === 'system_unarmed' || name === 'unarmed strike') return false;
+        return source === 'weapon' || source === 'equip_only';
+      });
+      if (!hasUsableWeaponCard && !combined.some(function (entry) { return String(entry && entry.source || '').toLowerCase() === 'system_unarmed' || String(entry && entry.name || '').toLowerCase() === 'unarmed strike'; })) {
         push(_unarmedStrikeCard(charData || {}));
       }
       return combined;
