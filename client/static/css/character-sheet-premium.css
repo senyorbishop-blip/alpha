@@ -634,6 +634,16 @@
 .cs-feature-body-rules p + p {
   margin-top: 0.7rem;
 }
+
+.cs-feature-note-label {
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--csp-accent, #00d4b8);
+  opacity: 0.85;
+}
+
 @keyframes csp-expand {
   from { opacity: 0; }
   to   { opacity: 1; }
