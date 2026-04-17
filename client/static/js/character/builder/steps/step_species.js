@@ -146,7 +146,7 @@
       + '</div>';
   }
 
-  function showSpeciesDetailPanel(root, speciesId) {
+  function showSpeciesDetailPanel(root, speciesId, currentDraft) {
     var entries = getSpeciesCatalogEntries();
     var entry = null;
     for (var i = 0; i < entries.length; i++) {
@@ -165,15 +165,16 @@
     var speciesPortraitHtml = '';
     var portraitLib = global.CasualDnDPortraitLibrary;
     if (portraitLib && typeof portraitLib.resolve === 'function') {
+      var previewDraft = currentDraft && typeof currentDraft === 'object' ? currentDraft : {};
       var previewUrl = portraitLib.resolve({
         speciesId: speciesId,
-        classId: draft && draft.class && draft.class.id,
-        gender: draft && draft.identity && draft.identity.gender,
+        classId: previewDraft && previewDraft.class && previewDraft.class.id,
+        gender: previewDraft && previewDraft.identity && previewDraft.identity.gender,
       });
       if (previewUrl) {
         speciesPortraitHtml = '<div style="float:right;width:72px;height:80px;border-radius:10px;overflow:hidden;' +
           'border:1px solid rgba(201,168,76,0.25);margin:0 0 8px 10px;flex-shrink:0;">' +
-          '<img src="' + escAttr(previewUrl) + '" style="width:100%;height:100%;object-fit:cover" alt="Hero preview"></div>';
+          '<img src="' + escAttr(previewUrl) + '" style="width:100%;height:100%;object-fit:contain;object-position:center;background:rgba(4,8,12,.45);" alt="Hero preview"></div>';
       }
     }
 
@@ -292,10 +293,15 @@
             context.onSetField(['species', 'id'], id);
           }
           root.querySelectorAll('.species-card').forEach(function(c) {
-            c.classList.remove('selected');
+            var cardId = c && c.dataset ? c.dataset.speciesId : '';
+            var selected = normalizeId(cardId) === normalizeId(id);
+            c.classList.toggle('selected', selected);
           });
-          card.classList.add('selected');
-          showSpeciesDetailPanel(root, id, context && context.draft);
+          var currentDraft = context && context.draft && typeof context.draft === 'object' ? context.draft : {};
+          var nextDraft = Object.assign({}, currentDraft, {
+            species: Object.assign({}, currentDraft.species || {}, { id: id }),
+          });
+          showSpeciesDetailPanel(root, id, nextDraft);
         });
       });
       // 2. Auto-show detail for already-selected species

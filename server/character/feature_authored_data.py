@@ -217,13 +217,21 @@ _FEATURE_OVERRIDES: dict[str, dict[str, Any]] = {
     "turn undead": {
         "section": "Actions",
         "type": "action",
-        "summary": "Project divine force to repel or break the momentum of undead foes.",
+        "actionType": "Action",
+        "resourceName": "Channel Divinity",
+        "summary": "Present your holy symbol and force undead in range to make a Wisdom save or be turned.",
         "description": (
-            "Turn Undead is a battlefield control tool against a specific creature family. It is not raw damage first; its value is forcing undead to lose "
-            "ground, lose tempo, or stop pressuring the party."
+            "Each undead that fails its save is Turned for 1 minute (or until it takes damage). A turned creature must spend its turns trying to move away "
+            "from you, cannot willingly move closer, and cannot take reactions. It can only Dash or try to escape effects that stop movement."
         ),
-        "effect": "Area control against undead, often decided by a saving throw or divine threshold.",
-        "tags": ["divine", "control", "action"],
+        "effect": "Undead control aura; later cleric levels may destroy low-CR undead based on your class progression.",
+        "range": "30 ft from you",
+        "duration": "Up to 1 minute (ends early when the target takes damage)",
+        "save": "Wisdom saving throw (your cleric spell save DC)",
+        "trigger": "Use when undead pressure the front line or threaten fragile allies.",
+        "usage": "Spend 1 Channel Divinity use",
+        "recovery": "Channel Divinity usually refreshes on a Short or Long Rest per class progression.",
+        "tags": ["divine", "control", "action", "resource"],
     },
     "divine spark": {
         "section": "Actions",

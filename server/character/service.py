@@ -135,6 +135,10 @@ def _normalize_builder_inventory_entry(raw: Any) -> dict | None:
         "name": name,
         "qty": max(1, min(9999, qty)),
     }
+    kind_hint = _safe_str(raw.get("kind") or raw.get("type") or raw.get("equipment_kind") or raw.get("item_type")).lower()
+    if kind_hint:
+        out["kind"] = kind_hint
+        out["type"] = kind_hint
     for key in ("source", "notes", "price", "id", "category", "item_type", "equipment_kind", "armor_type", "handedness", "equip_slot", "damage_dice", "damage_type", "versatile_damage"):
         value = _safe_str(raw.get(key))
         if value:
@@ -155,6 +159,7 @@ def _normalize_builder_inventory_entry(raw: Any) -> dict | None:
         cleaned = [str(v or "").strip()[:32] for v in weapon_props if str(v or "").strip()]
         if cleaned:
             out["weapon_properties"] = cleaned[:12]
+            out["properties"] = cleaned[:12]
     contents = raw.get("bag_contents")
     if isinstance(contents, list):
         out["bag_contents"] = [entry for entry in (_normalize_builder_inventory_entry(row) for row in contents) if entry]
@@ -236,6 +241,21 @@ def _normalize_builder_draft_document(raw: dict) -> dict:
     normalized_equipment_inventory = [
         entry for entry in (_normalize_builder_inventory_entry(item) for item in equipment_inventory_raw) if entry
     ]
+    if normalized_equipment_inventory:
+        has_equipped_weapon = any(
+            isinstance(entry, dict)
+            and str(entry.get("equipment_kind") or entry.get("kind") or entry.get("item_type") or "").strip().lower() == "weapon"
+            and bool(entry.get("equipped"))
+            for entry in normalized_equipment_inventory
+        )
+        if not has_equipped_weapon:
+            for entry in normalized_equipment_inventory:
+                if not isinstance(entry, dict):
+                    continue
+                kind = str(entry.get("equipment_kind") or entry.get("kind") or entry.get("item_type") or "").strip().lower()
+                if kind == "weapon":
+                    entry["equipped"] = True
+                    break
     origins_languages = origins.get("languages") if isinstance(origins.get("languages"), list) else []
     origins_proficiencies = origins.get("proficiencies") if isinstance(origins.get("proficiencies"), list) else []
     progression_feats = progression.get("feats") if isinstance(progression.get("feats"), list) else []
@@ -243,6 +263,18 @@ def _normalize_builder_draft_document(raw: dict) -> dict:
 
     portrait_url = _safe_str(identity.get("portraitUrl") or identity.get("avatarUrl"))
     token_image_url = _safe_str(identity.get("tokenImageUrl")) or portrait_url
+
+    fallback_inventory = [
+        {"name": str(item or "").strip(), "source": "builder_starting_choice"}
+        for item in (equipment_choices.get("additionalItems") or [])
+        if str(item or "").strip()
+    ]
+    fallback_inventory = [entry for entry in (_normalize_builder_inventory_entry(item) for item in fallback_inventory) if entry]
+    if fallback_inventory and not any(bool(row.get("equipped")) for row in fallback_inventory):
+        for row in fallback_inventory:
+            if str(row.get("equipment_kind") or row.get("kind") or row.get("item_type") or "").strip().lower() == "weapon":
+                row["equipped"] = True
+                break
 
     return {
         "schemaVersion": _safe_int(raw.get("schemaVersion"), 1, minimum=1),
@@ -334,11 +366,7 @@ def _normalize_builder_draft_document(raw: dict) -> dict:
                 "gp": _safe_int(equipment_currency.get("gp"), 0, minimum=0),
                 "pp": _safe_int(equipment_currency.get("pp"), 0, minimum=0),
             },
-            "inventory": normalized_equipment_inventory or [
-                {"name": str(item or "").strip(), "source": "builder_starting_choice"}
-                for item in (equipment_choices.get("additionalItems") or [])
-                if str(item or "").strip()
-            ],
+            "inventory": normalized_equipment_inventory or fallback_inventory,
             "equipped": {},
             "containers": [],
             "builderChoices": equipment_choices,

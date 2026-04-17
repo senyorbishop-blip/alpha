@@ -1530,6 +1530,8 @@ async def update_character_spells_known(
         abilities=native.get("abilities") if isinstance(native.get("abilities"), dict) else {},
         known=known,
         prepared=list(spell_state.get("prepared") or []),
+        document=native,
+        subclass_id=str(primary_class.get("subclassId") or "").strip().lower(),
     )
     if not validation.get("ok"):
         raise HTTPException(status_code=400, detail={"errors": validation.get("errors") or [], "limits": validation.get("limits") or {}})
@@ -1609,6 +1611,8 @@ async def update_character_spells_prepared(
         abilities=native.get("abilities") if isinstance(native.get("abilities"), dict) else {},
         known=list(spell_state.get("known") or []),
         prepared=prepared,
+        document=native,
+        subclass_id=str(primary_class.get("subclassId") or "").strip().lower(),
     )
     if not validation.get("ok"):
         raise HTTPException(status_code=400, detail={"errors": validation.get("errors") or [], "limits": validation.get("limits") or {}})
