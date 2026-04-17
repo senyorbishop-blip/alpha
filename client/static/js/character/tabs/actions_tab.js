@@ -1399,12 +1399,6 @@
     setTimeout(function () { row.classList.remove('cs-row-pulse'); }, 520);
   }
 
-  function _renderSurfaceNavButtons() {
-    return `<div class="cs-surface-nav">
-      <button type="button" class="cs-launch-btn" data-map-panel-open="combat">Open map combat</button>
-      <button type="button" class="cs-launch-btn muted" data-map-panel-open="inventory">Open map inventory</button>
-    </div>`;
-  }
 
   function _renderSummaryCard(label, value, note, accent) {
     return `<div class="cs-combat-summary-card${accent ? ' ' + _esc(accent) : ''}">
@@ -2631,23 +2625,11 @@
 
     container.innerHTML = `
       <div class="cs-combat-hero-grid">
-        ${_renderSummaryCard('Combat Surface', String(totalActions), totalActions ? 'Usable attacks and action cards' : 'Still missing attack/action inputs', totalActions ? 'teal' : '')}
-        ${_renderSummaryCard('Tracked Resources', String(resources.length), resources.length ? 'Linked class pools and spendable uses' : 'No structured pools loaded yet', resources.length ? 'gold' : '')}
-        ${_renderSummaryCard('Target State', selectedTarget && selectedTarget.name ? selectedTarget.name : 'No target', selectedTarget ? 'Damage / heal apply will use this target.' : 'Click a token on the map to set the current target.', selectedTarget ? 'violet' : '')}
-        ${_renderSummaryCard('Concentration', concentration || 'None', concentration ? 'Spell state is active on your token.' : 'Cast a concentration spell to track it automatically.', concentration ? 'violet' : '')}
+        ${_renderSummaryCard('Actions Ready', String(totalActions), totalActions ? 'Attacks and action cards available' : 'No action cards loaded yet', totalActions ? 'teal' : '')}
+        ${_renderSummaryCard('Resources', String(resources.length), resources.length ? 'Spendable class pools' : 'No tracked class pools loaded yet', resources.length ? 'gold' : '')}
+        ${_renderSummaryCard('Target', selectedTarget && selectedTarget.name ? selectedTarget.name : 'No target', selectedTarget ? 'Damage and healing apply to this target.' : 'Select a token on the map to set your target.', selectedTarget ? 'violet' : '')}
+        ${_renderSummaryCard('Concentration', concentration || 'None', concentration ? 'Active on your token.' : 'Cast a concentration spell to track it here.', concentration ? 'violet' : '')}
       </div>
-      <div class="cs-combat-callout-grid">
-        <div class="cs-combat-callout">
-          <div class="cs-combat-callout-title">Combat flow</div>
-          <div class="cs-combat-callout-copy">Use attack cards, actions, bonus actions, and reactions from here. Open any row to read the full rules text and resource details.</div>
-        </div>
-        <div class="cs-combat-callout muted">
-          <div class="cs-combat-callout-title">Tracked resources</div>
-          <div class="cs-combat-callout-copy">Spendable class resources appear below so you can quickly see what is ready, what is spent, and what will recharge later.</div>
-        </div>
-      </div>
-      ${_renderSurfaceNavButtons()}
-      ${_renderCustomSurfaceCallout(charData || {}, resources)}
       ${_renderDruidWildShapeControls(charData || {})}
       ${_renderBeastMasterCompanionControls(beastMasterCompanion)}
       ${_renderSection('Quick Attacks', quickAttacks, { emptyLabel: 'No quick attack cards are loaded yet.' })}

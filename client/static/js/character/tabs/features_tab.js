@@ -512,7 +512,6 @@
   function _renderFeatureControls() {
     return `<section class="cs-overview-section cs-feature-controls-section">
       <div class="cs-overview-section-title">Features & Traits</div>
-      ${_renderSurfaceNavButtons()}
       <div class="cs-overview-copy">Each row starts with a short rules summary. Open any feature card to view full details.</div>
       <div class="cs-feature-toolbar">
         <input type="search" class="cs-feature-search" data-feature-search placeholder="Search features, traits, feats, resources…" aria-label="Search features" />
@@ -631,13 +630,6 @@
       </div>`;
   }
 
-  function _renderSurfaceNavButtons() {
-    return `<div class="cs-surface-nav">
-      <button type="button" class="cs-launch-btn" data-map-panel-open="combat">Open map combat</button>
-      <button type="button" class="cs-launch-btn muted" data-map-panel-open="spelllib">Open map spells</button>
-      <button type="button" class="cs-launch-btn muted" data-map-panel-open="inventory">Open map inventory</button>
-    </div>`;
-  }
 
   function _renderSection(title, items, opts = {}) {
     if (!items || !items.length) {
