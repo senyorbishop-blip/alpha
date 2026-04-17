@@ -126,23 +126,28 @@
     }) || '').trim();
   }
 
-  function renderPreviewTile(draft) {
-    var identity = draft && draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
-    var combo = resolveComboPortrait(draft);
-    var hasComboSelections = !!(
+  function hasComboSelections(draft) {
+    return !!(
       draft
       && draft.species
       && String(draft.species.id || draft.species.name || '').trim()
       && draft.class
       && String(draft.class.id || '').trim()
     );
-    var finalPortrait = hasComboSelections ? combo : '';
+  }
+
+  function renderPreviewTile(draft) {
+    var identity = draft && draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
+    var combo = resolveComboPortrait(draft);
+    var manualPortrait = String(identity.portraitUrl || identity.tokenImageUrl || '').trim();
+    var comboReady = hasComboSelections(draft);
+    var finalPortrait = manualPortrait || (comboReady ? combo : '');
     var markup = finalPortrait
       ? '<img class="avatar-render portrait" src="' + escAttr(finalPortrait) + '" alt="Preview portrait" style="width:100%;height:100%;object-fit:contain;object-position:center;" />'
       : '<div style="font-size:.62rem;color:rgba(180,170,150,.92);line-height:1.5;text-align:center;padding:0 6px;">Portrait preview will appear once species and class are selected.</div>';
     return '<div style="margin:10px 0 14px;padding:9px 12px;border:1px solid rgba(201,168,76,.16);border-radius:10px;background:rgba(7,10,14,.58);display:flex;gap:12px;align-items:center;">'
       + '<div style="width:62px;height:62px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.24);display:flex;align-items:center;justify-content:center;">' + markup + '</div>'
-      + '<div style="font-size:.66rem;color:rgba(231,223,206,.92);line-height:1.45;"><div style="font-family:var(--cb-font-display);font-size:.72rem;color:#E8C97A;">Live Portrait Preview</div><div>' + escHtml(combo ? 'Combo art active for current species/class.' : (hasComboSelections ? 'No combo portrait was found for this species/class yet.' : 'Combo art will appear when species + class are set.')) + '</div></div>'
+      + '<div style="font-size:.66rem;color:rgba(231,223,206,.92);line-height:1.45;"><div style="font-family:var(--cb-font-display);font-size:.72rem;color:#E8C97A;">Live Portrait Preview</div><div>' + escHtml(manualPortrait ? 'Manual portrait override active.' : (combo ? 'Combo art active for current species/class.' : (comboReady ? 'No combo portrait was found for this species/class yet.' : 'Combo art will appear when species + class are set.'))) + '</div></div>'
       + '</div>';
   }
 
@@ -171,7 +176,7 @@
         classId: previewDraft && previewDraft.class && previewDraft.class.id,
         gender: previewDraft && previewDraft.identity && previewDraft.identity.gender,
       });
-      if (previewUrl) {
+      if (previewUrl && hasComboSelections(previewDraft)) {
         speciesPortraitHtml = '<div style="float:right;width:72px;height:80px;border-radius:10px;overflow:hidden;' +
           'border:1px solid rgba(201,168,76,0.25);margin:0 0 8px 10px;flex-shrink:0;">' +
           '<img src="' + escAttr(previewUrl) + '" style="width:100%;height:100%;object-fit:contain;object-position:center;background:rgba(4,8,12,.45);" alt="Hero preview"></div>';
@@ -244,7 +249,7 @@
         var traitPreview = Array.isArray(entry.traits) ? entry.traits.slice(0, 3) : [];
 
         return [
-          '<div class="species-card' + (isSelected ? ' selected' : '') + '" data-species-id="' + escAttr(entry.id) + '">',
+          '<div class="species-card' + (isSelected ? ' selected' : '') + '" data-species-id="' + escAttr(entry.id) + '" aria-selected="' + (isSelected ? 'true' : 'false') + '">',
           '<div class="sc-selected-check">\u2713</div>',
           '<div class="sc-icon" style="border-color:' + escAttr(color) + '33;background:' + escAttr(color) + '11">' + escHtml(icon) + '</div>',
           '<div class="sc-name">' + escHtml(entry.name) + '</div>',
@@ -296,6 +301,7 @@
             var cardId = c && c.dataset ? c.dataset.speciesId : '';
             var selected = normalizeId(cardId) === normalizeId(id);
             c.classList.toggle('selected', selected);
+            c.setAttribute('aria-selected', selected ? 'true' : 'false');
           });
           var currentDraft = context && context.draft && typeof context.draft === 'object' ? context.draft : {};
           var nextDraft = Object.assign({}, currentDraft, {

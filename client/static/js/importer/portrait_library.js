@@ -33,7 +33,7 @@
   }
   function speciesKey(value) {
     const key = norm(value);
-    return SPECIES_ALIASES[key] || key || 'human';
+    return SPECIES_ALIASES[key] || key || '';
   }
   function classKey(value) {
     const key = norm(value);
@@ -41,7 +41,7 @@
   }
   function genderKey(value) {
     const key = norm(value);
-    return GENDER_ALIASES[key] || 'female';
+    return GENDER_ALIASES[key] || 'neutral';
   }
 
   const base = '/static/importer/portraits';
@@ -240,6 +240,10 @@
     const neutralFallback = String((options && options.neutralFallback) || '').trim();
 
     if (!cls) return neutralFallback;
+    if (!sp) {
+      if (allowClassFallback && manifest.classes[cls]) return manifest.classes[cls];
+      return neutralFallback;
+    }
 
     // 1. Try exact combo (e.g. human__fighter__female)
     const exact = `${sp}__${cls}__${gender}`;

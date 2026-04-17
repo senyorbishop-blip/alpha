@@ -66,6 +66,10 @@
         const signature = [
           normalizeName(item.name),
           normalizeName(item.classSummary),
+          normalizeName(item.speciesLabel),
+          String(item.classId || ''),
+          String(item.speciesId || ''),
+          String(item.tokenImageUrl || item.portraitUrl || ''),
           String(item.level || ''),
           String(item.libraryId || ''),
           String(item.claimTokenId || item.id || ''),
@@ -91,10 +95,13 @@
       const canonicalDraft = draft && typeof draft === 'object' ? JSON.parse(JSON.stringify(draft)) : {};
       const identity = canonicalDraft.identity && typeof canonicalDraft.identity === 'object' ? canonicalDraft.identity : {};
       const portraitLibrary = global.CasualDnDPortraitLibrary;
+      const firstClass = Array.isArray(canonicalDraft.classes) && canonicalDraft.classes[0] && typeof canonicalDraft.classes[0] === 'object'
+        ? canonicalDraft.classes[0]
+        : {};
       const resolvedPortrait = portraitLibrary && typeof portraitLibrary.resolve === 'function'
         ? String(portraitLibrary.resolve({
             speciesId: canonicalDraft.species && (canonicalDraft.species.id || canonicalDraft.species.name) || '',
-            classId: canonicalDraft.class && canonicalDraft.class.id || '',
+            classId: canonicalDraft.class && canonicalDraft.class.id || firstClass.classId || firstClass.name || '',
             gender: identity.gender || 'neutral',
             neutralFallback: '',
           }) || '').trim()
@@ -231,9 +238,12 @@
             var hasManualPortrait = !!String(draftIdentity.portraitUrl || '').trim();
             var hasManualToken = !!String(draftIdentity.tokenImageUrl || '').trim();
             if (!hasManualPortrait || !hasManualToken) {
+              var firstClass = Array.isArray(draft.classes) && draft.classes[0] && typeof draft.classes[0] === 'object'
+                ? draft.classes[0]
+                : {};
               var resolvedPortrait = portraitLib.resolve({
                 speciesId: draft.species && draft.species.id,
-                classId: draft.class && draft.class.id,
+                classId: draft.class && draft.class.id || firstClass.classId || firstClass.name || '',
                 gender: draftIdentity.gender,
               });
               if (resolvedPortrait) {

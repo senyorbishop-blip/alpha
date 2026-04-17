@@ -103,10 +103,10 @@
         speciesId: draft.species && draft.species.id,
         gender: draft.identity && draft.identity.gender,
       });
-      if (previewUrl) {
+      if (previewUrl && draft && draft.species && draft.species.id && entry && entry.id) {
         portraitPreviewHtml = '<div style="float:right;width:72px;height:80px;border-radius:10px;overflow:hidden;' +
           'border:1px solid rgba(201,168,76,0.25);margin:0 0 8px 10px;flex-shrink:0;">' +
-          '<img src="' + escHtml(previewUrl) + '" style="width:100%;height:100%;object-fit:cover" alt="Hero preview"></div>';
+          '<img src="' + escHtml(previewUrl) + '" style="width:100%;height:100%;object-fit:contain;object-position:center;background:rgba(4,8,12,.45);" alt="Hero preview"></div>';
       }
     }
     var casterType = normalizeId(entry.spellcastingType);
@@ -264,13 +264,14 @@
       && draft.class
       && String(draft.class.id || '').trim()
     );
-    var finalPortrait = hasComboSelections ? combo : '';
+    var manualPortrait = String(identity.portraitUrl || identity.tokenImageUrl || '').trim();
+    var finalPortrait = manualPortrait || (hasComboSelections ? combo : '');
     var markup = finalPortrait
       ? '<img class="avatar-render portrait" src="' + escHtml(finalPortrait) + '" alt="Portrait preview" style="width:100%;height:100%;object-fit:contain;object-position:center;" />'
       : '<div style="font-size:.62rem;color:rgba(180,170,150,.92);line-height:1.5;text-align:center;padding:0 6px;">Portrait preview will appear once species and class are selected.</div>';
     return '<div style="margin:8px 0 12px;padding:10px 12px;border:1px solid rgba(201,168,76,.15);border-radius:10px;background:rgba(7,10,14,.58);display:flex;gap:12px;align-items:center;">'
       + '<div style="width:62px;height:62px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.24);display:flex;align-items:center;justify-content:center;">' + markup + '</div>'
-      + '<div style="font-size:.66rem;color:rgba(231,223,206,.92);line-height:1.45;"><div style="font-family:var(--cb-font-display);font-size:.72rem;color:#E8C97A;">Live Portrait Preview</div><div>' + escHtml(combo ? 'Combo portrait resolved for your class/species.' : (hasComboSelections ? 'No combo portrait was found for this species/class yet.' : 'Select species + class to preview combo portrait.')) + '</div></div>'
+      + '<div style="font-size:.66rem;color:rgba(231,223,206,.92);line-height:1.45;"><div style="font-family:var(--cb-font-display);font-size:.72rem;color:#E8C97A;">Live Portrait Preview</div><div>' + escHtml(manualPortrait ? 'Manual portrait override active.' : (combo ? 'Combo portrait resolved for your class/species.' : (hasComboSelections ? 'No combo portrait was found for this species/class yet.' : 'Select species + class to preview combo portrait.'))) + '</div></div>'
       + '</div>';
   }
 
