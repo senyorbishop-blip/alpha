@@ -192,7 +192,34 @@
           if (!draft || typeof draft !== 'object') {
             return;
           }
-          return saveNativeCharacterToProfileLibrary(draft)
+
+          // Resolve combo portrait URL and bake it into the draft so the saved
+          // character carries the correct token/portrait image without needing a
+          // manual URL. Respect any explicit portrait the player already entered.
+          var draftToSave = draft;
+          var portraitLib = global.CasualDnDPortraitLibrary;
+          if (portraitLib && typeof portraitLib.resolve === 'function') {
+            var draftIdentity = draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
+            var hasManualPortrait = !!String(draftIdentity.portraitUrl || '').trim();
+            var hasManualToken = !!String(draftIdentity.tokenImageUrl || '').trim();
+            if (!hasManualPortrait || !hasManualToken) {
+              var resolvedPortrait = portraitLib.resolve({
+                speciesId: draft.species && draft.species.id,
+                classId: draft.class && draft.class.id,
+                gender: draftIdentity.gender,
+              });
+              if (resolvedPortrait) {
+                draftToSave = Object.assign({}, draft, {
+                  identity: Object.assign({}, draftIdentity, {
+                    portraitUrl: hasManualPortrait ? draftIdentity.portraitUrl : resolvedPortrait,
+                    tokenImageUrl: hasManualToken ? draftIdentity.tokenImageUrl : resolvedPortrait,
+                  }),
+                });
+              }
+            }
+          }
+
+          return saveNativeCharacterToProfileLibrary(draftToSave)
             .then(function onSaved(result) {
               const savedProfile = result && result.profile && typeof result.profile === 'object'
                 ? result.profile

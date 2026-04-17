@@ -13,6 +13,15 @@
     global.CharacterBuilderStepModules[step.id] = step;
   }
 
+  function ensureBuilderStyles() {
+    if (document.getElementById('character-builder-css')) return;
+    var link = document.createElement('link');
+    link.id = 'character-builder-css';
+    link.rel = 'stylesheet';
+    link.href = '/static/css/character-builder.css';
+    document.head.appendChild(link);
+  }
+
   function sectionHeader(icon, title, subtitle) {
     return [
       '<div class="cb-section-header">',
@@ -37,12 +46,33 @@
     id: 'identity',
     label: 'Identity',
     render: function renderIdentityStep(context) {
+      ensureBuilderStyles();
       const draft = context && context.draft && typeof context.draft === 'object' ? context.draft : {};
       const identity = draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
       const presentation = draft.presentation && typeof draft.presentation === 'object' ? draft.presentation : {};
       const portraitFrame = String(presentation.portraitFrame || 'classic');
       const GENDER_OPTIONS = ['male', 'female', 'nonbinary', 'custom'];
       const gender = GENDER_OPTIONS.includes(identity.gender) ? identity.gender : 'male';
+
+      // Combo portrait preview — resolves from library when species + class are set
+      var portraitPreviewHtml = '';
+      var portraitLib = global.CasualDnDPortraitLibrary;
+      if (portraitLib && typeof portraitLib.resolve === 'function') {
+        var previewSrc = identity.portraitUrl || identity.tokenImageUrl || portraitLib.resolve({
+          speciesId: draft.species && draft.species.id,
+          classId: draft.class && draft.class.id,
+          gender: gender,
+        });
+        if (previewSrc) {
+          portraitPreviewHtml = [
+            '<div style="float:right;width:82px;height:92px;border-radius:14px;overflow:hidden;',
+            'border:1px solid rgba(201,168,76,0.3);margin:0 0 12px 14px;',
+            'box-shadow:0 8px 20px rgba(0,0,0,0.3);flex-shrink:0;">',
+            '<img src="' + escHtml(previewSrc) + '" style="width:100%;height:100%;object-fit:cover" alt="Character preview" />',
+            '</div>',
+          ].join('');
+        }
+      }
 
       function detailsOpen(key) {
         return _expanded[key] ? ' open' : '';
@@ -51,6 +81,7 @@
       return [
         // ── Primary: Name ─────────────────────────────────────────────
         '<div class="cb-section">',
+        portraitPreviewHtml,
         sectionHeader('✦', 'Your Character', 'Give your adventurer a name to begin.'),
 
         '<div class="cb-field-row cb-field-row--full" style="margin-bottom:10px;">',
