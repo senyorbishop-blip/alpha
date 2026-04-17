@@ -136,9 +136,9 @@
       && draft.class
       && String(draft.class.id || '').trim()
     );
-    var finalPortrait = String(identity.portraitUrl || '').trim() || combo || '';
+    var finalPortrait = hasComboSelections ? combo : '';
     var markup = finalPortrait
-      ? '<img class="avatar-render portrait" src="' + escAttr(finalPortrait) + '" alt="Preview portrait" />'
+      ? '<img class="avatar-render portrait" src="' + escAttr(finalPortrait) + '" alt="Preview portrait" style="width:100%;height:100%;object-fit:contain;object-position:center;" />'
       : '<div style="font-size:.62rem;color:rgba(180,170,150,.92);line-height:1.5;text-align:center;padding:0 6px;">Portrait preview will appear once species and class are selected.</div>';
     return '<div style="margin:10px 0 14px;padding:9px 12px;border:1px solid rgba(201,168,76,.16);border-radius:10px;background:rgba(7,10,14,.58);display:flex;gap:12px;align-items:center;">'
       + '<div style="width:62px;height:62px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.24);display:flex;align-items:center;justify-content:center;">' + markup + '</div>'

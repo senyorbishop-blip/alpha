@@ -2,11 +2,11 @@
   'use strict';
 
   var _state = {
-    cacheByKey: {},
-    inflightByKey: {},
-    activeTabByKey: {},
-    searchByKey: {},
-    statusByKey: {},
+    cacheByKey: Object.create(null),
+    inflightByKey: Object.create(null),
+    tabByKey: Object.create(null),
+    searchByKey: Object.create(null),
+    statusByKey: Object.create(null),
   };
 
   function asArray(value) { return Array.isArray(value) ? value : []; }
@@ -20,6 +20,18 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  function dedupeIds(rows) {
+    var seen = Object.create(null);
+    var out = [];
+    asArray(rows).forEach(function (entry) {
+      var id = String(entry || '').trim();
+      if (!id || seen[id]) return;
+      seen[id] = true;
+      out.push(id);
+    });
+    return out;
   }
 
   function registerStep(step) {
@@ -81,18 +93,6 @@
     return [norm(cls.id), norm(cls.subclassId), parseInt(progression.level, 10) || 1].join('|');
   }
 
-  function dedupeIds(rows) {
-    var seen = {};
-    var out = [];
-    asArray(rows).forEach(function (entry) {
-      var id = String(entry || '').trim();
-      if (!id || seen[id]) return;
-      seen[id] = true;
-      out.push(id);
-    });
-    return out;
-  }
-
   function fetchOptions(draft) {
     var cls = asObject(draft && draft.class);
     var classId = String(cls.id || '').trim();
@@ -126,7 +126,6 @@
       .finally(function () {
         _state.inflightByKey[key] = null;
       });
-
     return _state.inflightByKey[key];
   }
 
@@ -137,7 +136,7 @@
   }
 
   function indexCards(cards) {
-    var out = {};
+    var out = Object.create(null);
     asArray(cards).forEach(function (card) {
       var id = String(card && card.id || '').trim();
       if (id) out[id] = card;
@@ -145,21 +144,34 @@
     return out;
   }
 
-  function currentSelection(draft, data) {
+  function bonusSpellSets(data) {
     var validation = asObject(data && data.validation);
-    if (Array.isArray(validation.known) || Array.isArray(validation.prepared)) {
-      return { known: dedupeIds(validation.known), prepared: dedupeIds(validation.prepared) };
+    var grants = asObject(validation.subclassGrants);
+    return {
+      alwaysPrepared: new Set(asArray(grants.alwaysPrepared).map(function (v) { return String(v || '').trim(); }).filter(Boolean)),
+      alwaysKnown: new Set(asArray(grants.alwaysKnown).map(function (v) { return String(v || '').trim(); }).filter(Boolean)),
+    };
+  }
+
+  function sanitizedSelection(draft, data) {
+    var validation = asObject(data && data.validation);
+    var known = dedupeIds(validation.known);
+    var prepared = dedupeIds(validation.prepared);
+    if (!known.length && !prepared.length) {
+      var spellbook = asObject(draft && draft.spellbook);
+      known = dedupeIds(spellbook.known);
+      prepared = dedupeIds(spellbook.prepared);
     }
-    var spellbook = asObject(draft && draft.spellbook);
-    return { known: dedupeIds(spellbook.known), prepared: dedupeIds(spellbook.prepared) };
+    return { known: known, prepared: prepared };
   }
 
   function countsForSelection(data, selected) {
     var limits = asObject(data && data.limits);
     var cardById = indexCards(data && data.cards);
+    var bonus = bonusSpellSets(data);
     var cantrips = selected.known.filter(function (id) { return parseInt(cardById[id] && cardById[id].level, 10) === 0; }).length;
-    var knownLevelled = selected.known.filter(function (id) { return parseInt(cardById[id] && cardById[id].level, 10) > 0; }).length;
-    var preparedLevelled = selected.prepared.filter(function (id) { return parseInt(cardById[id] && cardById[id].level, 10) > 0; }).length;
+    var knownLevelled = selected.known.filter(function (id) { return parseInt(cardById[id] && cardById[id].level, 10) > 0 && !bonus.alwaysKnown.has(id); }).length;
+    var preparedLevelled = selected.prepared.filter(function (id) { return parseInt(cardById[id] && cardById[id].level, 10) > 0 && !bonus.alwaysPrepared.has(id); }).length;
     return {
       mode: modeFromLimits(limits),
       cantrips: cantrips,
@@ -168,7 +180,16 @@
       cantripLimit: limits.cantripsKnown,
       knownLimit: limits.spellsKnown,
       preparedLimit: limits.preparedLimit,
+      bonus: bonus,
     };
+  }
+
+  function setSelection(context, known, prepared, status) {
+    var knownNext = dedupeIds(known);
+    var preparedNext = dedupeIds(prepared);
+    context.onSetField(['spellbook', 'known'], knownNext);
+    context.onSetField(['spellbook', 'prepared'], preparedNext);
+    _state.statusByKey[requestKey(context.draft)] = status || '';
   }
 
   function renderCard(card, selected, blocked, reason) {
@@ -187,14 +208,6 @@
     ].join('');
   }
 
-  function setSelection(context, known, prepared, status) {
-    var knownNext = dedupeIds(known);
-    var preparedNext = dedupeIds(prepared);
-    context.onSetField(['spellbook', 'known'], knownNext);
-    context.onSetField(['spellbook', 'prepared'], preparedNext);
-    _state.statusByKey[requestKey(context.draft)] = status || '';
-  }
-
   function render(context) {
     ensureStyles();
     var draft = asObject(context && context.draft);
@@ -207,7 +220,7 @@
     if (_state.inflightByKey[key] && !data) return '<div class="loading-msg" style="text-align:left;padding:0">Loading spell options…</div>';
     if (!data) return '<div class="builder-help-text">Could not load spell options. Re-open this step after checking class/subclass selections.</div>';
 
-    var selected = currentSelection(draft, data);
+    var selected = sanitizedSelection(draft, data);
     var counts = countsForSelection(data, selected);
     var mode = counts.mode;
     var cards = asArray(data.cards);
@@ -215,7 +228,7 @@
     var highestUnlocked = parseInt(data.highestUnlockedSpellLevel, 10);
     if (!Number.isFinite(highestUnlocked) || highestUnlocked < 0) highestUnlocked = 0;
 
-    var groups = {};
+    var groups = Object.create(null);
     cards.forEach(function (card) {
       var lvl = parseInt(card && card.level, 10);
       if (!Number.isFinite(lvl) || lvl < 0) lvl = 0;
@@ -225,15 +238,17 @@
       if (!groups[lvl]) groups[lvl] = [];
       groups[lvl].push(card);
     });
-    var levels = Object.keys(groups).map(function (v) { return parseInt(v, 10); }).filter(function (v) { return Number.isFinite(v); }).sort(function (a, b) { return a - b; });
-    var activeLevel = _state.activeTabByKey[key];
+
+    var levels = Object.keys(groups).map(function (v) { return parseInt(v, 10); })
+      .filter(function (v) { return Number.isFinite(v); })
+      .sort(function (a, b) { return a - b; });
+    var activeLevel = _state.tabByKey[key];
     if (levels.indexOf(activeLevel) < 0) activeLevel = levels.length ? levels[0] : 0;
-    _state.activeTabByKey[key] = activeLevel;
+    _state.tabByKey[key] = activeLevel;
 
     var search = String(_state.searchByKey[key] || '').trim().toLowerCase();
     var status = String(_state.statusByKey[key] || '').trim();
     var statusTone = /limit reached|locked|illegal|only|not unlocked/i.test(status) ? ' warn' : '';
-
     var knownChips = selected.known.map(function (id) { return cardById[id]; }).filter(Boolean);
     var preparedChips = selected.prepared.map(function (id) { return cardById[id]; }).filter(Boolean);
 
@@ -253,7 +268,7 @@
       mode === 'prepared' && preparedChips.length ? ('<h4>Prepared Spells</h4><div class="cb-spell-chip-row">' + preparedChips.map(function (row) { return '<span class="cb-spell-chip" data-builder-spell-remove="' + escHtml(String(row.id || '')) + '">' + escHtml(String(row.displayName || row.name || row.id || '')) + '<button type="button">×</button></span>'; }).join('') + '</div>') : '',
       (!knownChips.length && !preparedChips.length) ? '<div class="builder-help-text" style="margin:0">No spells selected yet.</div>' : '',
       '</div>',
-      '<div class="cb-spells-toolbar"><div class="builder-help-text" style="margin:0">Click cards to select. Bonus/granted spells remain legal and do not consume manual prepared slots.</div><input type="search" class="cb-spells-search" data-builder-spell-search-input="1" value="' + escHtml(search) + '" placeholder="Search legal spells…" /></div>',
+      '<div class="cb-spells-toolbar"><div class="builder-help-text" style="margin:0">Granted always-prepared spells never consume normal prepared slots.</div><input type="search" class="cb-spells-search" data-builder-spell-search-input="1" value="' + escHtml(search) + '" placeholder="Search legal spells…" /></div>',
       '<div class="cb-spells-tabs">',
       levels.map(function (lvl) { return '<button type="button" class="cb-spells-tab' + (lvl === activeLevel ? ' active' : '') + '" data-builder-spell-tab="' + escHtml(String(lvl)) + '">' + escHtml(levelLabel(lvl)) + '</button>'; }).join(''),
       '</div>',
@@ -297,7 +312,7 @@
 
     function toggleSpell(spellId, level) {
       withData(function (data) {
-        var selected = currentSelection(context.draft, data);
+        var selected = sanitizedSelection(context.draft, data);
         var counts = countsForSelection(data, selected);
         var mode = counts.mode;
         var known = selected.known.slice();
@@ -322,12 +337,12 @@
             setSelection(context, known, prepared.filter(function (id) { return id !== spellId; }), 'Spell unprepared.');
             return;
           }
-          if (counts.preparedLimit != null && counts.preparedLevelled >= parseInt(counts.preparedLimit, 10)) {
+          if (counts.preparedLimit != null && counts.preparedLevelled >= parseInt(counts.preparedLimit, 10) && !counts.bonus.alwaysPrepared.has(spellId)) {
             setSelection(context, known, prepared, 'Limit reached: prepared cap is ' + counts.preparedLimit + '.');
             return;
           }
           prepared.push(spellId);
-          setSelection(context, known, prepared, 'Spell prepared.');
+          setSelection(context, known, prepared, counts.bonus.alwaysPrepared.has(spellId) ? 'Granted spell prepared (does not consume limit).' : 'Spell prepared.');
           return;
         }
 
@@ -335,29 +350,27 @@
           setSelection(context, known.filter(function (id) { return id !== spellId; }), prepared.filter(function (id) { return id !== spellId; }), 'Spell removed.');
           return;
         }
-        if (counts.knownLimit != null && counts.knownLevelled >= parseInt(counts.knownLimit, 10)) {
+        if (counts.knownLimit != null && counts.knownLevelled >= parseInt(counts.knownLimit, 10) && !counts.bonus.alwaysKnown.has(spellId)) {
           setSelection(context, known, prepared, 'Limit reached: known cap is ' + counts.knownLimit + '.');
           return;
         }
         known.push(spellId);
-        setSelection(context, known, prepared, 'Spell learned.');
+        setSelection(context, known, prepared, counts.bonus.alwaysKnown.has(spellId) ? 'Granted spell known (does not consume limit).' : 'Spell learned.');
       });
     }
 
     root.querySelectorAll('[data-builder-spell-tab]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        _state.activeTabByKey[key] = parseInt(btn.getAttribute('data-builder-spell-tab'), 10) || 0;
+        _state.tabByKey[key] = parseInt(btn.getAttribute('data-builder-spell-tab'), 10) || 0;
         _state.statusByKey[key] = '';
       });
     });
-
     var searchInput = root.querySelector('[data-builder-spell-search-input="1"]');
     if (searchInput) {
       searchInput.addEventListener('input', function () {
         _state.searchByKey[key] = String(searchInput.value || '');
       });
     }
-
     root.querySelectorAll('[data-builder-spell-remove]').forEach(function (chip) {
       chip.addEventListener('click', function (event) {
         event.preventDefault();
@@ -372,7 +385,6 @@
         );
       });
     });
-
     root.querySelectorAll('[data-builder-spell-id]').forEach(function (card) {
       card.addEventListener('click', function () {
         if (String(card.getAttribute('data-builder-spell-blocked') || '') === '1') {

@@ -549,6 +549,9 @@ async def api_character_builder_spell_options(
     highest_unlocked = _highest_unlocked_spell_level(limits.get("spellSlots") if isinstance(limits, dict) else {})
     known_set = set(validation.get("known") or [])
     prepared_set = set(validation.get("prepared") or [])
+    subclass_grants = validation.get("subclassGrants") if isinstance(validation.get("subclassGrants"), dict) else {}
+    class_bonus = validation.get("classBonus") if isinstance(validation.get("classBonus"), dict) else {}
+    bonus_access = set(subclass_grants.get("alwaysPrepared") or []) | set(subclass_grants.get("alwaysKnown") or []) | set(class_bonus.get("alwaysKnown") or [])
     cards: list[dict] = []
     for spell in list_compendium_spells():
         if not isinstance(spell, dict):
@@ -557,9 +560,9 @@ async def api_character_builder_spell_options(
         if not spell_id:
             continue
         unlock = (spell.get("classUnlockLevels") or {}).get(normalized_class_id)
-        is_accessible = unlock is not None and class_level >= _safe_int(unlock, 99)
+        is_accessible = (unlock is not None and class_level >= _safe_int(unlock, 99)) or (spell_id in bonus_access)
         spell_level = _safe_int(spell.get("level"), 0)
-        if spell_level > 0 and highest_unlocked > 0 and spell_level > highest_unlocked:
+        if spell_level > 0 and highest_unlocked >= 0 and spell_level > highest_unlocked and spell_id not in bonus_access:
             is_accessible = False
         if not is_accessible and spell_id not in known_set and spell_id not in prepared_set:
             continue
