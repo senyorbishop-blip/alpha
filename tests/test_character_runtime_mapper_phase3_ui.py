@@ -476,3 +476,18 @@ def test_features_tab_hides_spell_progression_bookkeeping_rows():
     src = _read("client/static/js/character/tabs/features_tab.js")
     assert "spellcasting progression" in src
     assert "cantrip|spell" in src
+
+
+def test_mapper_token_mapping_keeps_native_runtime_hp_authoritative_when_present():
+    src = _read("client/static/js/character/runtime/mapper_to_play.js")
+    assert "var hasAuthoritativeRuntimeHp = Number.isFinite(runtimeMaxHp) && runtimeMaxHp > 0;" in src
+    assert "var mappedMaxHp = hasAuthoritativeRuntimeHp ? runtimeMaxHp" in src
+    assert "var mappedCurrentHp = hasAuthoritativeRuntimeHp" in src
+    assert "var mappedTempHp = hasAuthoritativeRuntimeHp" in src
+
+
+def test_mapper_logs_hp_conflicts_in_dev_without_switching_authority():
+    src = _read("client/static/js/character/runtime/mapper_to_play.js")
+    assert "function warnHpConflictInDev(scope, canonicalHp, comparisons)" in src
+    assert "warnHpConflictInDev('resolveCanonicalHp'" in src
+    assert "warnHpConflictInDev('mapCharacterToToken'" in src
