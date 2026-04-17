@@ -288,6 +288,18 @@ def _parse_spell_ids(raw_value: str | None) -> list[str]:
     return out
 
 
+def _parse_abilities_payload(raw_value: str | None) -> dict:
+    if not raw_value:
+        return {}
+    try:
+        parsed = json.loads(raw_value)
+    except Exception:
+        return {}
+    if isinstance(parsed, dict):
+        return parsed
+    return {}
+
+
 def _highest_unlocked_spell_level(spell_slots: dict) -> int:
     highest = 0
     if not isinstance(spell_slots, dict):
@@ -512,6 +524,7 @@ async def api_character_builder_spell_options(
     subclass_id: str = "",
     known: str = "",
     prepared: str = "",
+    abilities: str = "",
 ):
     auth_user = get_request_user(request)
     if not auth_user:
@@ -521,6 +534,7 @@ async def api_character_builder_spell_options(
     class_level = _safe_int(level, default=1, minimum=1, maximum=20)
     known_ids = _parse_spell_ids(known)
     prepared_ids = _parse_spell_ids(prepared)
+    abilities_payload = _parse_abilities_payload(abilities)
     pseudo_document = {
         "classes": [{
             "classId": normalized_class_id,
@@ -532,14 +546,14 @@ async def api_character_builder_spell_options(
     limits = build_spell_limits_for_class(
         normalized_class_id,
         class_level,
-        {},
+        abilities_payload,
         document=pseudo_document,
         subclass_id=str(subclass_id or "").strip().lower(),
     )
     validation = validate_spell_selection(
         class_id=normalized_class_id,
         class_level=class_level,
-        abilities={},
+        abilities=abilities_payload,
         known=known_ids,
         prepared=prepared_ids,
         document=pseudo_document,
@@ -550,7 +564,7 @@ async def api_character_builder_spell_options(
     known_set = set(validation.get("known") or [])
     prepared_set = set(validation.get("prepared") or [])
     subclass_grants = validation.get("subclassGrants") if isinstance(validation.get("subclassGrants"), dict) else {}
-    class_bonus = validation.get("classBonus") if isinstance(validation.get("classBonus"), dict) else {}
+    class_bonus = validation.get("classBonusGrants") if isinstance(validation.get("classBonusGrants"), dict) else {}
     bonus_access = set(subclass_grants.get("alwaysPrepared") or []) | set(subclass_grants.get("alwaysKnown") or []) | set(class_bonus.get("alwaysKnown") or [])
     cards: list[dict] = []
     for spell in list_compendium_spells():
