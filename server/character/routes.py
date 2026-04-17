@@ -19,6 +19,7 @@ from server.character.validation import CharacterValidationError
 from server.character.spell_compendium import (
     build_character_spell_manifest,
     build_spell_card,
+    build_spell_limits_for_class,
     get_effective_document_spell_state,
     get_spell_by_id as get_compendium_spell_by_id,
     list_spells as list_compendium_spells,
@@ -272,6 +273,39 @@ def _rules_mode_allows_row(row: dict, rules_mode: str) -> bool:
     return True
 
 
+def _parse_spell_ids(raw_value: str | None) -> list[str]:
+    if not raw_value:
+        return []
+    out: list[str] = []
+    seen: set[str] = set()
+    for part in str(raw_value).split(","):
+        spell_id = str(part or "").strip()
+        if not spell_id or spell_id in seen:
+            continue
+        seen.add(spell_id)
+        out.append(spell_id)
+    return out
+
+
+def _highest_unlocked_spell_level(spell_slots: dict) -> int:
+    highest = 0
+    if not isinstance(spell_slots, dict):
+        return highest
+    for key, raw_count in spell_slots.items():
+        try:
+            count = int(raw_count)
+        except Exception:
+            count = 0
+        if count <= 0:
+            continue
+        token = str(key or "").strip().lower()
+        digits = "".join(ch for ch in token if ch.isdigit())
+        level = _safe_int(digits, default=0) if digits else 0
+        if level > highest:
+            highest = level
+    return highest
+
+
 @router.get("/api/character/content/catalog")
 async def api_character_content_catalog(request: Request, rules_mode: str = "casual"):
     auth_user = get_request_user(request)
@@ -467,6 +501,93 @@ async def api_character_content_catalog(request: Request, rules_mode: str = "cas
             },
         }
     )
+
+
+@router.get("/api/character/builder/spells/options")
+async def api_character_builder_spell_options(
+    request: Request,
+    class_id: str,
+    level: int = 1,
+    subclass_id: str = "",
+    known: str = "",
+    prepared: str = "",
+):
+    auth_user = get_request_user(request)
+    if not auth_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    normalized_class_id = str(class_id or "").strip().lower()
+    class_level = _safe_int(level, default=1, minimum=1, maximum=20)
+    known_ids = _parse_spell_ids(known)
+    prepared_ids = _parse_spell_ids(prepared)
+    pseudo_document = {
+        "classes": [{
+            "classId": normalized_class_id,
+            "level": class_level,
+            "subclassId": str(subclass_id or "").strip().lower(),
+        }],
+        "spellState": {"known": known_ids, "prepared": prepared_ids},
+    }
+    limits = build_spell_limits_for_class(
+        normalized_class_id,
+        class_level,
+        {},
+        document=pseudo_document,
+        subclass_id=str(subclass_id or "").strip().lower(),
+    )
+    validation = validate_spell_selection(
+        class_id=normalized_class_id,
+        class_level=class_level,
+        abilities={},
+        known=known_ids,
+        prepared=prepared_ids,
+        document=pseudo_document,
+        subclass_id=str(subclass_id or "").strip().lower(),
+    )
+
+    highest_unlocked = _highest_unlocked_spell_level(limits.get("spellSlots") if isinstance(limits, dict) else {})
+    known_set = set(validation.get("known") or [])
+    prepared_set = set(validation.get("prepared") or [])
+    cards: list[dict] = []
+    for spell in list_compendium_spells():
+        if not isinstance(spell, dict):
+            continue
+        spell_id = str(spell.get("id") or "").strip()
+        if not spell_id:
+            continue
+        unlock = (spell.get("classUnlockLevels") or {}).get(normalized_class_id)
+        is_accessible = unlock is not None and class_level >= _safe_int(unlock, 99)
+        spell_level = _safe_int(spell.get("level"), 0)
+        if spell_level > 0 and highest_unlocked > 0 and spell_level > highest_unlocked:
+            is_accessible = False
+        if not is_accessible and spell_id not in known_set and spell_id not in prepared_set:
+            continue
+        cards.append(
+            build_spell_card(
+                spell,
+                character_context={
+                    "unlockLevel": unlock,
+                    "isKnown": spell_id in known_set,
+                    "isPrepared": spell_id in prepared_set,
+                    "isAccessible": is_accessible,
+                    "blockedReason": "" if is_accessible else "Not unlocked at current class level.",
+                    "highestAvailableSlot": highest_unlocked,
+                    "selectionMode": "prepared" if limits.get("preparedLimit") is not None else ("known" if limits.get("spellsKnown") is not None else "library"),
+                },
+            )
+        )
+
+    return JSONResponse({
+        "ok": True,
+        "classId": normalized_class_id,
+        "level": class_level,
+        "limits": limits,
+        "validation": validation,
+        "cards": cards,
+        "known": validation.get("known") or [],
+        "prepared": validation.get("prepared") or [],
+        "highestUnlockedSpellLevel": highest_unlocked,
+    })
 
 
 @router.get("/api/character/library")

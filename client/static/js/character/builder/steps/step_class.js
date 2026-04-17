@@ -223,6 +223,39 @@
     panel.innerHTML = renderDetailPane(entry);
   }
 
+  function resolveComboPortrait(draft) {
+    var portraitLib = global.CasualDnDPortraitLibrary;
+    if (!portraitLib || typeof portraitLib.resolve !== 'function') return '';
+    var species = draft && draft.species && typeof draft.species === 'object' ? draft.species : {};
+    var classData = draft && draft.class && typeof draft.class === 'object' ? draft.class : {};
+    var identity = draft && draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
+    return String(portraitLib.resolve({
+      speciesId: species.id || species.name || '',
+      classId: classData.id || '',
+      gender: identity.gender || 'neutral',
+      neutralFallback: '',
+    }) || '').trim();
+  }
+
+  function renderPreviewTile(draft) {
+    var identity = draft && draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
+    var renderer = global.CasualDnDAvatarRenderer;
+    var combo = resolveComboPortrait(draft);
+    var finalPortrait = String(identity.portraitUrl || '').trim() || combo || String(identity.tokenImageUrl || '').trim();
+    var markup = finalPortrait
+      ? '<img class="avatar-render portrait" src="' + escHtml(finalPortrait) + '" alt="Portrait preview" />'
+      : (renderer ? renderer.renderImgMarkup({
+          name: identity.name || 'Hero',
+          classId: draft && draft.class && draft.class.id || '',
+          speciesId: draft && draft.species && draft.species.id || '',
+          gender: identity.gender || 'neutral',
+        }, 120, 'portrait', 'portrait') : '<span style="font-size:1.8rem;opacity:.55;">🧙</span>');
+    return '<div style="margin:8px 0 12px;padding:10px 12px;border:1px solid rgba(201,168,76,.15);border-radius:10px;background:rgba(7,10,14,.58);display:flex;gap:12px;align-items:center;">'
+      + '<div style="width:62px;height:62px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.24);display:flex;align-items:center;justify-content:center;">' + markup + '</div>'
+      + '<div style="font-size:.66rem;color:rgba(231,223,206,.92);line-height:1.45;"><div style="font-family:var(--cb-font-display);font-size:.72rem;color:#E8C97A;">Live Portrait Preview</div><div>' + escHtml(combo ? 'Combo portrait resolved for your class/species.' : 'Select species + class to preview combo portrait.') + '</div></div>'
+      + '</div>';
+  }
+
   registerStep({
     id: 'class',
     label: 'Class',
@@ -263,6 +296,7 @@
           '<div class="screen-divider"></div>' +
           '<div class="screen-subtitle">Your class is your calling — it defines your powers, fighting style, and path forward</div>' +
         '</div>' +
+        renderPreviewTile(draft) +
         '<input type="hidden" data-builder-path="class.id" value="' + escHtml(selectedId) + '" />' +
         '<div class="cls-picker-layout">' +
           '<nav class="cls-sidebar" aria-label="Class list">' + listItems + '</nav>' +
@@ -277,6 +311,17 @@
           if (hiddenInput) hiddenInput.value = id;
           if (context && typeof context.onSetField === 'function') {
             context.onSetField(['class', 'id'], id);
+            var draft = context.draft && typeof context.draft === 'object' ? context.draft : {};
+            var identity = draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
+            var manualPortrait = String(identity.portraitUrl || '').trim();
+            var manualToken = String(identity.tokenImageUrl || '').trim();
+            if (!manualPortrait && !manualToken) {
+              var resolvedPortrait = resolveComboPortrait(Object.assign({}, draft, { class: Object.assign({}, draft.class || {}, { id: id }) }));
+              if (resolvedPortrait) {
+                context.onSetField(['identity', 'portraitUrl'], resolvedPortrait);
+                context.onSetField(['identity', 'tokenImageUrl'], resolvedPortrait);
+              }
+            }
           }
           root.querySelectorAll('.cls-list-item').forEach(function(i) { i.classList.remove('selected'); });
           item.classList.add('selected');

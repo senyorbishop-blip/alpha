@@ -179,6 +179,9 @@ def _normalize_builder_draft_document(raw: dict) -> dict:
     progression_feats = progression.get("feats") if isinstance(progression.get("feats"), list) else []
     progression_talents = progression.get("talents") if isinstance(progression.get("talents"), list) else []
 
+    portrait_url = _safe_str(identity.get("portraitUrl") or identity.get("avatarUrl"))
+    token_image_url = _safe_str(identity.get("tokenImageUrl")) or portrait_url
+
     return {
         "schemaVersion": _safe_int(raw.get("schemaVersion"), 1, minimum=1),
         "rulesMode": _safe_str(raw.get("rulesMode"), "casual"),
@@ -190,8 +193,8 @@ def _normalize_builder_draft_document(raw: dict) -> dict:
             "name": _safe_str(identity.get("name")),
             "displayName": _safe_str(identity.get("displayName") or identity.get("name")),
             "pronouns": _safe_str(identity.get("pronouns")),
-            "portraitUrl": _safe_str(identity.get("portraitUrl") or identity.get("avatarUrl")),
-            "tokenImageUrl": _safe_str(identity.get("tokenImageUrl")),
+            "portraitUrl": portrait_url,
+            "tokenImageUrl": token_image_url,
             "alignment": _safe_str(identity.get("alignment")),
             "deity": _safe_str(identity.get("deity")),
             "age": _safe_str(identity.get("age")),

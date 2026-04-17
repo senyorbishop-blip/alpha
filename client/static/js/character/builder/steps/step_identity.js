@@ -1,4 +1,13 @@
 (function initCharacterBuilderStepIdentity(global) {
+  function ensureBuilderStyles() {
+    if (document.getElementById('character-builder-css')) return;
+    var link = document.createElement('link');
+    link.id = 'character-builder-css';
+    link.rel = 'stylesheet';
+    link.href = '/static/css/character-builder.css';
+    document.head.appendChild(link);
+  }
+
   function escHtml(value) {
     return String(value || '')
       .replace(/&/g, '&amp;')
@@ -33,10 +42,58 @@
     backstory: false,
   };
 
+  function resolvePortrait(draft) {
+    var portraitLib = global.CasualDnDPortraitLibrary;
+    if (!portraitLib || typeof portraitLib.resolve !== 'function') return '';
+    var species = draft && draft.species && typeof draft.species === 'object' ? draft.species : {};
+    var classData = draft && draft.class && typeof draft.class === 'object' ? draft.class : {};
+    var identity = draft && draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
+    return String(portraitLib.resolve({
+      speciesId: species.id || species.name || '',
+      classId: classData.id || '',
+      gender: identity.gender || 'neutral',
+      neutralFallback: '',
+    }) || '').trim();
+  }
+
+  function renderPortraitPreview(draft) {
+    var identity = draft && draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
+    var manualPortrait = String(identity.portraitUrl || '').trim();
+    var manualToken = String(identity.tokenImageUrl || '').trim();
+    var comboPortrait = resolvePortrait(draft);
+    var finalPortrait = manualPortrait || comboPortrait || manualToken;
+    var finalToken = manualToken || manualPortrait || comboPortrait;
+    var renderer = global.CasualDnDAvatarRenderer;
+
+    var previewMarkup = finalPortrait
+      ? '<img class="avatar-render portrait" src="' + escHtml(finalPortrait) + '" alt="Portrait preview" />'
+      : (renderer ? renderer.renderImgMarkup({
+          name: identity.name || 'Hero',
+          speciesId: draft && draft.species && draft.species.id || '',
+          classId: draft && draft.class && draft.class.id || '',
+          gender: identity.gender || 'neutral',
+        }, 140, 'portrait', 'portrait') : '<span style="font-size:2rem;opacity:.6;">🧙</span>');
+    var sourceLabel = manualPortrait || manualToken ? 'Manual artwork override' : (comboPortrait ? 'Combo portrait (auto)' : 'Fallback avatar');
+
+    return [
+      '<div class="cb-identity-preview" style="display:flex;gap:12px;align-items:center;padding:10px 12px;border:1px solid rgba(201,168,76,0.18);border-radius:10px;background:rgba(8,12,18,.52);margin:8px 0 12px;">',
+      '<div style="width:74px;height:74px;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.04);border:1px solid rgba(201,168,76,0.2);">',
+      previewMarkup,
+      '</div>',
+      '<div style="font-size:.68rem;color:rgba(230,224,208,.92);line-height:1.5;">',
+      '<div style="font-family:var(--cb-font-display);font-size:.7rem;color:#E8C97A;letter-spacing:.04em;text-transform:uppercase;">Portrait Preview</div>',
+      '<div>' + escHtml(sourceLabel) + '</div>',
+      '<div style="color:rgba(180,170,150,.9)">Token URL: ' + escHtml(finalToken || 'Will fall back to portrait') + '</div>',
+      '</div>',
+      '</div>',
+    ].join('');
+  }
+
   registerStep({
     id: 'identity',
     label: 'Identity',
     render: function renderIdentityStep(context) {
+      ensureBuilderStyles();
       const draft = context && context.draft && typeof context.draft === 'object' ? context.draft : {};
       const identity = draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
       const presentation = draft.presentation && typeof draft.presentation === 'object' ? draft.presentation : {};
@@ -61,15 +118,16 @@
         ' placeholder="Enter your character\'s full name\u2026" autofocus />',
         '</div>',
         '</div>',
+        renderPortraitPreview(draft),
 
         '<div class="cb-field-row cb-field-row--2col">',
 
         '<div class="field">',
-        '<label>Sex / Gender</label>',
+        '<label>Presentation</label>',
         '<select data-builder-path="identity.gender" id="cb-gender-select">',
-        '<option value="male"' + (gender === 'male' ? ' selected' : '') + '>Male</option>',
-        '<option value="female"' + (gender === 'female' ? ' selected' : '') + '>Female</option>',
-        '<option value="nonbinary"' + (gender === 'nonbinary' ? ' selected' : '') + '>Nonbinary</option>',
+        '<option value="male"' + (gender === 'male' ? ' selected' : '') + '>Masculine</option>',
+        '<option value="female"' + (gender === 'female' ? ' selected' : '') + '>Feminine</option>',
+        '<option value="nonbinary"' + (gender === 'nonbinary' ? ' selected' : '') + '>Neutral</option>',
         '<option value="custom"' + (gender === 'custom' ? ' selected' : '') + '>Custom</option>',
         '</select>',
         '</div>',
@@ -84,13 +142,6 @@
         '</div>',
 
         '<div class="cb-field-row cb-field-row--2col">',
-
-        '<div class="field">',
-        '<label>Pronouns <span class="cb-optional">optional</span></label>',
-        '<input type="text" data-builder-path="identity.pronouns"',
-        ' value="' + escHtml(identity.pronouns || '') + '" maxlength="60"',
-        ' placeholder="they/them, she/her, he/him\u2026" />',
-        '</div>',
 
         '<div class="field">',
         '<label>Age <span class="cb-optional">optional</span></label>',
@@ -123,6 +174,13 @@
         ' placeholder="Kelemvor, Sehanine\u2026" />',
         '</div>',
 
+        '</div>',
+
+        '<div class="field">',
+        '<label>Pronouns <span class="cb-optional">optional</span></label>',
+        '<input type="text" data-builder-path="identity.pronouns"',
+        ' value="' + escHtml(identity.pronouns || '') + '" maxlength="60"',
+        ' placeholder="they/them, she/her, he/him\u2026" />',
         '</div>',
 
         '<div class="field">',
@@ -237,6 +295,21 @@
         }
         ta.addEventListener('input', updateCount);
       });
+
+      var genderSelect = root.querySelector('#cb-gender-select');
+      if (genderSelect && ctx && typeof ctx.onSetField === 'function') {
+        genderSelect.addEventListener('change', function() {
+          var draft = ctx.draft && typeof ctx.draft === 'object' ? ctx.draft : {};
+          var identity = draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
+          var portrait = String(identity.portraitUrl || '').trim();
+          var token = String(identity.tokenImageUrl || '').trim();
+          if (portrait || token) return; // preserve manual override
+          var resolved = resolvePortrait(draft);
+          if (!resolved) return;
+          ctx.onSetField(['identity', 'portraitUrl'], resolved);
+          ctx.onSetField(['identity', 'tokenImageUrl'], resolved);
+        });
+      }
     },
   });
 })(window);
