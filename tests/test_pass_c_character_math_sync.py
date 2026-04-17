@@ -25,7 +25,7 @@ def test_mapper_syncs_spell_math_and_ability_scores_into_sheet_payload():
 
 def test_mapper_keeps_token_vitals_synced_with_runtime_hp_and_senses():
     src = _read('client/static/js/character/runtime/mapper_to_play.js')
-    assert 'tempHP: asInt(hp.temp, asInt(token.tempHP, 0))' in src
+    assert 'tempHP: mappedTempHp' in src
     assert 'speed: asInt(combat.speed, asInt(asObject(runtime.speed).walk, asInt(token.speed, 30)))' in src
     assert 'darkvision: asInt(combat.darkvision, asInt(asObject(runtime.senses).darkvision, asInt(token.darkvision, 0)))' in src
     assert 'reach: firstNonEmpty(entry.reach, \'\'),' in src

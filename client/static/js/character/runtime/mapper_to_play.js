@@ -31,6 +31,38 @@
     return null;
   }
 
+  function isDevMode() {
+    try {
+      if (global && global.__CHARACTER_RUNTIME_DEV__ === true) return true;
+      var host = String((global && global.location && global.location.hostname) || '').toLowerCase();
+      return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host.endsWith('.local');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function warnHpConflictInDev(scope, canonicalHp, comparisons) {
+    if (!isDevMode()) return;
+    if (typeof console === 'undefined' || !console || typeof console.warn !== 'function') return;
+    var mismatches = [];
+    asArray(comparisons).forEach(function checkComparison(entry) {
+      if (!entry || typeof entry !== 'object') return;
+      var source = String(entry.source || '').trim();
+      if (!source) return;
+      var max = parseInt(entry.max, 10);
+      var current = parseInt(entry.current, 10);
+      var temp = parseInt(entry.temp, 10);
+      var mismatch = [];
+      if (Number.isFinite(max) && Number.isFinite(canonicalHp.max) && max !== canonicalHp.max) mismatch.push('max');
+      if (Number.isFinite(current) && Number.isFinite(canonicalHp.current) && current !== canonicalHp.current) mismatch.push('current');
+      if (Number.isFinite(temp) && Number.isFinite(canonicalHp.temp) && temp !== canonicalHp.temp) mismatch.push('temp');
+      if (!mismatch.length) return;
+      mismatches.push(source + ' (' + mismatch.join(', ') + ')');
+    });
+    if (!mismatches.length) return;
+    console.warn('[CharacterRuntimeMappers][' + scope + '] HP conflict detected against nativeRuntime.hp authority. Mismatched sources: ' + mismatches.join('; ') + '.');
+  }
+
   function _collectCanonicalHpNumbers(doc, fallbackHp) {
     var rootHp = asObject(doc.hp);
     var vitals = asObject(doc.vitals);
@@ -97,36 +129,55 @@
         runtimeCurrent = Math.max(0, Math.min(runtimeMax, runtimeCurrent));
         var runtimeTemp = Math.max(0, parseInt(runtimeHp.temp, 10) || 0);
 
-        // Dev-mode conflict warning: alert if doc-level HP fields disagree.
-        if (typeof console !== 'undefined' && console && typeof console.warn === 'function') {
-          var docHp = asObject(doc.hp);
-          var docMax = parseInt(docHp.max != null ? docHp.max : doc.maxHP != null ? doc.maxHP : doc.maxHp, 10);
-          if (Number.isFinite(docMax) && docMax !== runtimeMax) {
-            console.warn(
-              '[CharacterRuntimeMappers] HP source conflict: doc fields report max=' + docMax +
-              ' but nativeRuntime.hp.max=' + runtimeMax + '; using nativeRuntime.hp as authoritative.'
-            );
-          }
-        }
+        var runtimeCanonical = { max: runtimeMax, current: runtimeCurrent, temp: runtimeTemp };
+        var docHp = asObject(doc.hp);
+        var vitals = asObject(doc.vitals);
+        var vitalsCombat = asObject(vitals.combat);
+        warnHpConflictInDev('resolveCanonicalHp', runtimeCanonical, [
+          {
+            source: 'nativeCharacter',
+            max: docHp.max != null ? docHp.max : (doc.maxHP != null ? doc.maxHP : doc.maxHp),
+            current: docHp.current != null ? docHp.current : (doc.currentHP != null ? doc.currentHP : doc.currentHp),
+            temp: docHp.temp != null ? docHp.temp : (doc.tempHP != null ? doc.tempHP : doc.tempHp),
+          },
+          {
+            source: 'nativeCharacter.vitals',
+            max: vitals.maxHP != null ? vitals.maxHP : vitals.maxHp,
+            current: vitals.currentHP != null ? vitals.currentHP : vitals.currentHp,
+            temp: vitals.tempHP != null ? vitals.tempHP : vitals.tempHp,
+          },
+          {
+            source: 'nativeCharacter.vitals.combat',
+            max: vitalsCombat.maxHP != null ? vitalsCombat.maxHP : vitalsCombat.maxHp,
+            current: vitalsCombat.currentHP != null ? vitalsCombat.currentHP : vitalsCombat.currentHp,
+            temp: vitalsCombat.tempHP != null ? vitalsCombat.tempHP : vitalsCombat.tempHp,
+          },
+          {
+            source: 'fallback',
+            max: fallbackHp.max,
+            current: fallbackHp.current,
+            temp: fallbackHp.temp,
+          },
+        ]);
 
-        return { max: runtimeMax, current: runtimeCurrent, temp: runtimeTemp };
+        return runtimeCanonical;
       }
     }
 
     var canonical = _collectCanonicalHpNumbers(doc, fallbackHp);
     var runtimeNumbers = _collectRuntimeHpNumbers(runtime);
-    var max = pickFirstNumber(includeRuntime ? canonical.max.concat(runtimeNumbers.max) : canonical.max);
+    var max = pickFirstNumber(includeRuntime ? runtimeNumbers.max.concat(canonical.max) : canonical.max);
     if (!(Number.isFinite(max) && max > 0)) {
       max = null;
     }
-    var current = pickFirstNumber(includeRuntime ? canonical.current.concat(runtimeNumbers.current) : canonical.current);
+    var current = pickFirstNumber(includeRuntime ? runtimeNumbers.current.concat(canonical.current) : canonical.current);
     if (!Number.isFinite(current)) {
       current = max;
     }
     if (!Number.isFinite(current)) {
       current = null;
     }
-    var temp = pickFirstNumber(includeRuntime ? canonical.temp.concat(runtimeNumbers.temp, [0]) : canonical.temp.concat([0]));
+    var temp = pickFirstNumber(includeRuntime ? runtimeNumbers.temp.concat(canonical.temp, [0]) : canonical.temp.concat([0]));
     if (!Number.isFinite(temp) || temp < 0) {
       temp = 0;
     }
@@ -1037,27 +1088,61 @@
     }
     var combat = asObject(runtime.combat);
     var runtimeHp = asObject(runtime.hp);
-    var hp = resolveCanonicalHp(doc, runtime, {
-      max: asInt(combat.maxHP, asInt(token.maxHP, 10)),
-      current: asInt(combat.currentHP, asInt(token.currentHP, 10)),
-      temp: asInt(token.tempHP, 0),
-    });
-    if (Number.isFinite(asInt(runtimeHp.max, null)) && asInt(runtimeHp.max, 0) > 0) {
-      hp = {
-        max: asInt(runtimeHp.max, asInt(hp.max, 10)),
-        current: asInt(runtimeHp.current, asInt(runtimeHp.max, asInt(hp.current, 10))),
-        temp: Math.max(0, asInt(runtimeHp.temp, asInt(hp.temp, 0))),
-      };
-    }
+    var runtimeMaxHp = parseInt(runtimeHp.max, 10);
+    var hasAuthoritativeRuntimeHp = Number.isFinite(runtimeMaxHp) && runtimeMaxHp > 0;
+    var hp = hasAuthoritativeRuntimeHp
+      ? {
+          max: runtimeMaxHp,
+          current: parseInt(runtimeHp.current, 10),
+          temp: parseInt(runtimeHp.temp, 10),
+        }
+      : resolveCanonicalHp(doc, runtime, {
+          max: asInt(combat.maxHP, asInt(token.maxHP, 10)),
+          current: asInt(combat.currentHP, asInt(token.currentHP, 10)),
+          temp: asInt(combat.tempHP, asInt(token.tempHP, 0)),
+        });
+
     var species = asObject(doc.species);
     var identity = asObject(doc.identity);
 
-    var mappedMaxHp = asInt(hp.max, asInt(combat.maxHP, asInt(token.maxHP, 10)));
+    var mappedMaxHp = hasAuthoritativeRuntimeHp ? runtimeMaxHp : asInt(hp.max, asInt(combat.maxHP, asInt(token.maxHP, 10)));
     if (!Number.isFinite(mappedMaxHp) || mappedMaxHp <= 0) {
       mappedMaxHp = asInt(token.maxHP, 10);
     }
-    var mappedCurrentHp = asInt(hp.current, asInt(combat.currentHP, asInt(token.currentHP, mappedMaxHp)));
+    var mappedCurrentHp = hasAuthoritativeRuntimeHp
+      ? asInt(hp.current, mappedMaxHp)
+      : asInt(hp.current, asInt(combat.currentHP, asInt(token.currentHP, mappedMaxHp)));
     mappedCurrentHp = Math.max(0, Math.min(mappedMaxHp, mappedCurrentHp));
+    var mappedTempHp = hasAuthoritativeRuntimeHp
+      ? Math.max(0, asInt(hp.temp, 0))
+      : Math.max(0, asInt(hp.temp, asInt(combat.tempHP, asInt(token.tempHP, 0))));
+
+    if (hasAuthoritativeRuntimeHp) {
+      warnHpConflictInDev('mapCharacterToToken', {
+        max: mappedMaxHp,
+        current: mappedCurrentHp,
+        temp: mappedTempHp,
+      }, [
+        {
+          source: 'existingTokenData',
+          max: token.maxHP,
+          current: token.currentHP,
+          temp: token.tempHP,
+        },
+        {
+          source: 'runtime.combat',
+          max: combat.maxHP != null ? combat.maxHP : combat.maxHp,
+          current: combat.currentHP != null ? combat.currentHP : combat.currentHp,
+          temp: combat.tempHP != null ? combat.tempHP : combat.tempHp,
+        },
+        {
+          source: 'nativeCharacter',
+          max: doc.maxHP != null ? doc.maxHP : doc.maxHp,
+          current: doc.currentHP != null ? doc.currentHP : doc.currentHp,
+          temp: doc.tempHP != null ? doc.tempHP : doc.tempHp,
+        },
+      ]);
+    }
 
     var comboPortrait = resolveComboPortraitForDoc(doc, identity);
     return {
@@ -1067,7 +1152,7 @@
       tokenImageUrl: firstNonEmpty(identity.tokenImageUrl, identity.portraitUrl, comboPortrait, doc.tokenImageUrl, doc.portraitUrl, token.tokenImageUrl),
       maxHP: mappedMaxHp,
       currentHP: mappedCurrentHp,
-      tempHP: asInt(hp.temp, asInt(token.tempHP, 0)),
+      tempHP: mappedTempHp,
       ac: asInt(combat.ac, asInt(token.ac, 10)),
       speed: asInt(combat.speed, asInt(asObject(runtime.speed).walk, asInt(token.speed, 30))),
       initiative: asInt(combat.initiative, 0),
