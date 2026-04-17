@@ -128,20 +128,21 @@
 
   function renderPreviewTile(draft) {
     var identity = draft && draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
-    var renderer = global.CasualDnDAvatarRenderer;
     var combo = resolveComboPortrait(draft);
-    var finalPortrait = String(identity.portraitUrl || '').trim() || combo || String(identity.tokenImageUrl || '').trim();
+    var hasComboSelections = !!(
+      draft
+      && draft.species
+      && String(draft.species.id || draft.species.name || '').trim()
+      && draft.class
+      && String(draft.class.id || '').trim()
+    );
+    var finalPortrait = String(identity.portraitUrl || '').trim() || combo || '';
     var markup = finalPortrait
       ? '<img class="avatar-render portrait" src="' + escAttr(finalPortrait) + '" alt="Preview portrait" />'
-      : (renderer ? renderer.renderImgMarkup({
-          name: identity.name || 'Hero',
-          classId: draft && draft.class && draft.class.id || '',
-          speciesId: draft && draft.species && draft.species.id || '',
-          gender: identity.gender || 'neutral',
-        }, 120, 'portrait', 'portrait') : '<span style="font-size:1.8rem;opacity:.55;">🧙</span>');
+      : '<div style="font-size:.62rem;color:rgba(180,170,150,.92);line-height:1.5;text-align:center;padding:0 6px;">Portrait preview will appear once species and class are selected.</div>';
     return '<div style="margin:10px 0 14px;padding:9px 12px;border:1px solid rgba(201,168,76,.16);border-radius:10px;background:rgba(7,10,14,.58);display:flex;gap:12px;align-items:center;">'
       + '<div style="width:62px;height:62px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.24);display:flex;align-items:center;justify-content:center;">' + markup + '</div>'
-      + '<div style="font-size:.66rem;color:rgba(231,223,206,.92);line-height:1.45;"><div style="font-family:var(--cb-font-display);font-size:.72rem;color:#E8C97A;">Live Portrait Preview</div><div>' + escHtml(combo ? 'Combo art active for current species/class.' : 'Combo art will appear when species + class are set.') + '</div></div>'
+      + '<div style="font-size:.66rem;color:rgba(231,223,206,.92);line-height:1.45;"><div style="font-family:var(--cb-font-display);font-size:.72rem;color:#E8C97A;">Live Portrait Preview</div><div>' + escHtml(combo ? 'Combo art active for current species/class.' : (hasComboSelections ? 'No combo portrait was found for this species/class yet.' : 'Combo art will appear when species + class are set.')) + '</div></div>'
       + '</div>';
   }
 
@@ -271,17 +272,6 @@
           if (hiddenInput) hiddenInput.value = id;
           if (context && typeof context.onSetField === 'function') {
             context.onSetField(['species', 'id'], id);
-            var draft = context.draft && typeof context.draft === 'object' ? context.draft : {};
-            var identity = draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
-            var manualPortrait = String(identity.portraitUrl || '').trim();
-            var manualToken = String(identity.tokenImageUrl || '').trim();
-            if (!manualPortrait && !manualToken) {
-              var resolvedPortrait = resolveComboPortrait(Object.assign({}, draft, { species: Object.assign({}, draft.species || {}, { id: id }) }));
-              if (resolvedPortrait) {
-                context.onSetField(['identity', 'portraitUrl'], resolvedPortrait);
-                context.onSetField(['identity', 'tokenImageUrl'], resolvedPortrait);
-              }
-            }
           }
           root.querySelectorAll('.species-card').forEach(function(c) {
             c.classList.remove('selected');

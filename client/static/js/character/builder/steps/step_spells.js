@@ -3,6 +3,7 @@
     key: '',
     data: null,
     loading: false,
+    pendingRerenderKey: '',
   };
 
   function escHtml(value) {
@@ -239,6 +240,15 @@
       var spellbook = draft.spellbook && typeof draft.spellbook === 'object' ? draft.spellbook : {};
       var data = _state.data;
       var limits = data && typeof data.limits === 'object' ? data.limits : {};
+      var requestKey = buildRequestKey(draft);
+      if ((!_state.data || _state.key !== requestKey) && _state.pendingRerenderKey !== requestKey) {
+        _state.pendingRerenderKey = requestKey;
+        fetchOptions(draft).then(function() {
+          if (!root || !root.isConnected) return;
+          var knownCopy = asArray(spellbook.known).slice();
+          context.onSetField(['spellbook', 'known'], knownCopy);
+        });
+      }
       var cardById = {};
       asArray(data && data.cards).forEach(function(card) {
         var id = String(card && card.id || '').trim();
@@ -303,7 +313,11 @@
           var spellLevel = parseInt(cardEl.dataset.spellLevel, 10) || 0;
           var knownList = asArray(spellbook.known).slice();
           var preparedList = asArray(spellbook.prepared).slice();
-          var targetList = limits.preparedLimit != null && spellLevel > 0 ? 'prepared' : 'known';
+          var selectionMode = String(cardById[spellId] && cardById[spellId].selectionMode || '').trim().toLowerCase();
+          var targetList = 'known';
+          if (spellLevel > 0 && selectionMode === 'prepared' && limits.preparedLimit != null) {
+            targetList = 'prepared';
+          }
 
           if (knownList.indexOf(spellId) >= 0) {
             knownList = knownList.filter(function(id){ return id !== spellId; });

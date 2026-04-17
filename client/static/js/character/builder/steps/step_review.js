@@ -86,6 +86,20 @@
     return (words[0][0] + words[1][0]).toUpperCase();
   }
 
+  function resolveComboPortrait(draft) {
+    var portraitLib = global.CasualDnDPortraitLibrary;
+    if (!portraitLib || typeof portraitLib.resolve !== 'function') return '';
+    var species = draft && draft.species && typeof draft.species === 'object' ? draft.species : {};
+    var classData = draft && draft.class && typeof draft.class === 'object' ? draft.class : {};
+    var identity = draft && draft.identity && typeof draft.identity === 'object' ? draft.identity : {};
+    return String(portraitLib.resolve({
+      speciesId: species.id || species.name || '',
+      classId: classData.id || '',
+      gender: identity.gender || 'neutral',
+      neutralFallback: '',
+    }) || '').trim();
+  }
+
   function getSpeciesRow(speciesId) {
     var api = global.CharacterBuilderAPI;
     if (!api || typeof api.getCachedCatalog !== 'function') return null;
@@ -175,7 +189,7 @@
       var speciesSize = (speciesRow && speciesRow.size) || 'Medium';
       var levelOneFeatures = getLevelOneFeatures(classRow);
       var characterName = identity.name || 'Unnamed Adventurer';
-      var portrait = identity.portraitUrl || identity.tokenImageUrl || '';
+      var portrait = identity.portraitUrl || identity.tokenImageUrl || resolveComboPortrait(draft) || '';
       var bgName = origins.backgroundName || origins.backgroundId || 'No background';
 
       // --- Banner ---

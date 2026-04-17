@@ -38197,7 +38197,10 @@ function _syncLoadedProfileToOwnedToken(profile) {
     : null;
   const combatMaxHp = parseInt(combatant?.max_hp ?? combatant?.maxHp, 10);
   const combatCurHp = parseInt(combatant?.hp, 10);
+  const hasAuthoritativeNativeRuntimeHp = Number.isFinite(parseInt(profileRuntimeHp?.max, 10)) && parseInt(profileRuntimeHp?.max, 10) > 0;
   const hasActiveCombatHpOverride = !!(
+    !hasAuthoritativeNativeRuntimeHp
+    &&
     _combat?.active
     && combatant
     && Number.isFinite(combatMaxHp)
