@@ -312,7 +312,7 @@ function _renderFlagshipHeader(charData) {
               ${charData.senses ? `<span class="cs-hero-pill">${_esc(String(charData.senses))}</span>` : ''}
             </div>
             <div class="cs-launch-grid">
-              <button class="cs-launch-btn" type="button" data-tab-jump="actions">Open Actions</button>
+              <button class="cs-launch-btn" type="button" data-tab-jump="actions">Open Combat Actions</button>
               <button class="cs-launch-btn" type="button" data-tab-jump="spells">Open Spells</button>
               <button class="cs-launch-btn" type="button" data-tab-jump="inventory">Open Loadout</button>
               <button class="cs-launch-btn" type="button" data-jump="levelup">Open Level Up</button>
@@ -724,6 +724,10 @@ function _buildSkeleton(wrapper, charData) {
       const tabId = jump.getAttribute('data-tab-jump');
       if (tabId) {
         _activateTab(tabId, refs, charData, initialised);
+        if (tabId === 'actions') {
+          const firstActionRow = container.querySelector('#csp-panel-actions .cs-action-row');
+          if (firstActionRow && typeof firstActionRow.focus === 'function') firstActionRow.focus();
+        }
         return;
       }
       const page = jump.getAttribute('data-jump');
@@ -736,7 +740,8 @@ function _buildSkeleton(wrapper, charData) {
   function openMapPanelFromSheet(tabId) {
     const key = String(tabId || '').trim();
     if (!key) return false;
-    const trigger = document.querySelector('[data-rtab-target= + key + ]');
+    const safeKey = key.replace(/"/g, "");
+    const trigger = document.querySelector(`[data-rtab-target="${safeKey}"]`);
     if (trigger && typeof trigger.click === 'function') {
       trigger.click();
       if (typeof global.showToast === 'function') global.showToast('Opened ' + key + ' on the map panel.');

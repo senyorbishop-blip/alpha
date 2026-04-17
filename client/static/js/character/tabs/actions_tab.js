@@ -935,6 +935,7 @@
       const damageType = _firstText(item.damage_type, item.damageType, '');
       const versatile = _firstText(item.versatile_damage, item.versatileDamage, '');
       const rangeLabel = _firstText(item.range, item.reach, '');
+      const properties = propertyText.split(/\s*,\s*|\s*;\s*/).map(function (entry) { return String(entry || '').trim(); }).filter(Boolean);
       const damage = baseDice
         ? (baseDice + (damageType ? (' ' + damageType) : '') + (versatile ? (' (Versatile ' + versatile + (damageType ? (' ' + damageType) : '') + ')') : ''))
         : _firstText(item.notes, item.note, 'Weapon attack');
@@ -952,6 +953,12 @@
         range: rangeLabel,
         resourceName: ammoKind ? ('Ammo: ' + ammoKind) : '',
         tags: [item.equipped ? 'Equipped' : 'Inventory only', item.kind || item.type || 'Weapon', finesse ? 'Finesse' : '', ranged ? 'Ranged' : 'Melee'].filter(Boolean),
+        weaponMeta: {
+          baseDamage: baseDice,
+          damageType: damageType,
+          versatileDamage: versatile,
+          properties: properties,
+        },
         longText: [
           baseDice ? ('Damage: ' + baseDice + (damageType ? (' ' + damageType) : '')) : '',
           versatile ? ('Versatile: ' + versatile + (damageType ? (' ' + damageType) : '')) : '',
@@ -1181,9 +1188,13 @@
           { label: 'Economy', value: economy.join(' / ') || 'Action' },
           { label: 'Attack Bonus', value: action.attackBonus != null ? String(action.attackBonus) : '—' },
           { label: 'Damage', value: action.damage || action.damageText || '—' },
+          { label: 'Damage type', value: _firstText(action.damageType, action.weaponMeta && action.weaponMeta.damageType, '—') },
+          { label: 'Versatile', value: _firstText(action.versatileDamage, action.weaponMeta && action.weaponMeta.versatileDamage, '—') },
           { label: 'Range', value: action.range || action.reach || '—' },
           { label: 'Save / DC', value: action.saveDC || action.hitDc || action.save || '—' },
           { label: 'Resource', value: action.resourceName || action.resource || action.cost || '—' },
+          { label: 'Properties', value: _safeArray(action.weaponMeta && action.weaponMeta.properties).join(', ') || '—' },
+          { label: 'Availability', value: action.disabledReason || (_resourceStateFromAction(action).exhausted ? _actionDisabledReason(action, _actionKind(action), _resourceStateFromAction(action)) : 'Ready') },
         ] },
         ...(action && action.source === 'summon_action' ? [{
           title: 'Summon / Deploy Metadata',
@@ -1458,6 +1469,55 @@
     return !!(isBeastMaster || isWarlockChain || isTinkerMechanist);
   }
 
+
+  function _parseDamageProfile(action) {
+    const rawDamage = _firstText(action && action.damage, action && action.damageText, '');
+    const rawType = _firstText(action && action.damageType, action && action.damage_type, '');
+    const rawVersatile = _firstText(action && action.versatileDamage, action && action.versatile_damage, '');
+    const weaponMeta = action && action.weaponMeta && typeof action.weaponMeta === 'object' ? action.weaponMeta : {};
+    const damageText = rawDamage || _firstText(weaponMeta.baseDamage, '');
+    const versatileText = rawVersatile || _firstText(weaponMeta.versatileDamage, '');
+    const typeFromText = (function () {
+      const m = String(damageText || '').toLowerCase().match(/\b(bludgeoning|piercing|slashing|fire|cold|lightning|thunder|acid|poison|necrotic|radiant|psychic|force)\b/);
+      return m ? m[1] : '';
+    }());
+    const type = _firstText(rawType, _firstText(weaponMeta.damageType, ''), typeFromText, '');
+    const properties = _safeArray(weaponMeta.properties).map(function (entry) { return _firstText(entry, ''); }).filter(Boolean);
+    return {
+      damageText: damageText,
+      damageType: type,
+      versatileDamage: versatileText,
+      properties: properties,
+    };
+  }
+
+  function _actionButtonLabel(action, kind) {
+    const src = String(action && action.source || '').toLowerCase();
+    const text = `${String(action && action.name || '')} ${String(action && action.resourceName || '')} ${String(action && action.resourceSummary || '')}`.toLowerCase();
+    if (src === 'summon_action') return /deploy/i.test(String(action && action.actionType || '')) ? 'Deploy' : 'Summon';
+    if (src === 'spell') return 'Cast';
+    if (kind === 'subclass_gate') return 'Choose subclass';
+    if (src === 'weapon' || src === 'equip_only' || src === 'system_unarmed' || kind === 'attack') return 'Attack';
+    if (kind === 'transformation') return 'Transform';
+    if (/swagger/.test(text)) return 'Spend Swagger';
+    if (/gadget/.test(text)) return 'Use Device';
+    return 'Use';
+  }
+
+  function _actionDisabledReason(action, kind, resourceState) {
+    if (!action) return 'Unavailable';
+    if (kind === 'passive') return 'Passive effect (no direct use action).';
+    if (kind === 'subclass_gate') return action.disabledReason || 'Choose a subclass in Level Up to unlock this action.';
+    if (action.source === 'feature-fallback') return 'Inspect-only fallback entry (no live runtime resolver).';
+    if (action.source === 'summon_action' && !_summonActionRuntimeSupported(action)) return 'Summon runtime is not wired for this class/subclass path yet.';
+    if (action.disabledReason) return action.disabledReason;
+    if (action.disabled) return 'Temporarily unavailable.';
+    if (resourceState && resourceState.exhausted) {
+      return `Out of uses${resourceState.rechargeSource ? ` · Recharges on ${resourceState.rechargeSource}` : ''}`;
+    }
+    return 'Unavailable';
+  }
+
   function _renderActionRow(action) {
     const econ = Array.isArray(action.economy) ? action.economy : [action.economy || 'action'];
     const sourceTag = _firstText(action.source, '').replace(/_/g, ' ').trim();
@@ -1480,15 +1540,20 @@
       laneRows.push({ label: 'Re-summon', value: summonMeta.replaceOnResummon ? 'Replaces existing summon' : 'Adds without replacement' });
       laneRows.push({ label: 'Command', value: _firstText(summonMeta.commandModelSummary, 'Runtime command model pending.') });
     } else if (kind === 'attack') {
-      const effect = _firstText(action.damage, action.damageText, action.effect, '');
+      const damageProfile = _parseDamageProfile(action);
+      const effect = _firstText(damageProfile.damageText, action.effect, '');
       const range = _firstText(action.range, action.reach, '');
       const spend = _firstText(action.resourceSummary, action.resourceName, action.cost, action.usesText, '');
       if (toHit) laneRows.push({ label: 'To hit', value: toHit });
+      if (effect) laneRows.push({ label: 'Damage', value: effect });
+      if (damageProfile.damageType) laneRows.push({ label: 'Damage type', value: damageProfile.damageType });
+      if (damageProfile.versatileDamage) laneRows.push({ label: 'Versatile', value: damageProfile.versatileDamage + (damageProfile.damageType ? (' ' + damageProfile.damageType) : '') });
       if (_firstText(action.saveDC, action.hitDc, action.save, '')) laneRows.push({ label: 'Save / DC', value: _firstText(action.saveDC, action.hitDc, action.save, '') });
-      if (effect) laneRows.push({ label: 'Effect', value: effect });
-      if (range) laneRows.push({ label: 'Range', value: range });
+      if (range) laneRows.push({ label: 'Range / Reach', value: range });
+      if (damageProfile.properties.length) laneRows.push({ label: 'Properties', value: damageProfile.properties.join(', ') });
       if (spend) laneRows.push({ label: 'Spend', value: spend });
       if (resourceState.rechargeSource) laneRows.push({ label: 'Recharge', value: resourceState.rechargeSource });
+      laneRows.push({ label: 'Resolution', value: 'Roll to hit, then apply damage on hit.' });
     } else {
       const actionType = _firstText(action.actionType, action.type, econ[0], 'Feature');
       const trigger = _firstText(action.trigger, action.usage, '');
@@ -1510,24 +1575,12 @@
     if (kind === 'transformation') leadBadges.push('<span class="cs-action-mini-pill">Transformation</span>');
     if (kind === 'subclass_gate') leadBadges.push('<span class="cs-action-mini-pill warn">Subclass choice required</span>');
     if (!leadBadges.length) leadBadges.push('<span class="cs-action-mini-pill ready">Usable now</span>');
-    const useLabel = (function () {
-      const src = String(action.source || '').toLowerCase();
-      const text = `${String(action.name || '')} ${String(action.resourceName || '')} ${String(action.resourceSummary || '')}`.toLowerCase();
-      if (src === 'summon_action') return /deploy/i.test(String(action.actionType || '')) ? 'Deploy' : 'Summon';
-      if (src === 'spell') return 'Cast';
-      if (kind === 'subclass_gate') return 'Choose subclass';
-      if (src === 'weapon' || src === 'equip_only' || src === 'system_unarmed' || kind === 'attack') return 'Attack';
-      if (kind === 'save_effect') return 'Use Effect';
-      if (kind === 'transformation') return 'Transform';
-      if (/swagger/.test(text)) return 'Spend Swagger';
-      if (/gadget/.test(text)) return 'Use Device';
-      return 'Use';
-    }());
+    const useLabel = _actionButtonLabel(action, kind);
     const showUseButton = _canUseAction(action, kind);
     const activeSummons = _safeArray(action && action.summonAction && action.summonAction.activeSummons);
     const showDismissButton = action && action.source === 'summon_action' && activeSummons.length > 0;
-    const disabledReason = action.disabledReason || (resourceState.exhausted ? `Out of uses${resourceState.rechargeSource ? ` · Recharges on ${resourceState.rechargeSource}` : ''}` : 'Unavailable');
-    return `<div class="cs-action-row" tabindex="0" role="button" data-action-name="${_esc(action.name || '')}" aria-label="${_esc(action.name || 'Action')} details">
+    const disabledReason = _actionDisabledReason(action, kind, resourceState);
+    return `<div class="cs-action-row" tabindex="0" role="button" data-action-id="${_esc(String(action.id || ''))}" data-action-name="${_esc(action.name || '')}" aria-label="${_esc(action.name || 'Action')} details">
       <div class="cs-action-icon" aria-hidden="true">${_esc(_actionIcon(action))}</div>
       <div class="cs-action-maincopy">
         <div class="cs-action-topline">
@@ -1542,10 +1595,11 @@
           return `<div class="cs-action-lane"><span class="cs-action-lane-label">${_esc(lane.label)}</span><span class="cs-action-lane-value">${_esc(lane.value || '—')}</span></div>`;
         }).join('')}</div>
         <div class="cs-action-bestuse">${_esc(bestUse)}</div>
-        ${(showUseButton || resourceState.exhausted || action.disabled || showDismissButton) ? `<div class="cs-action-controls" style="margin-top:.55rem;display:flex;gap:.4rem;flex-wrap:wrap;">
-          <button type="button" class="cs-feature-inspect" data-action-use="${_esc(String(action.id || action.name || ''))}" data-action-source="${_esc(String(action.source || 'weapon'))}" ${(showUseButton ? '' : `disabled title="${_esc(disabledReason)}"`)}>${_esc(useLabel)}</button>
+        ${(showUseButton || resourceState.exhausted || action.disabled || showDismissButton || kind === 'passive' || kind === 'subclass_gate') ? `<div class="cs-action-controls" style="margin-top:.55rem;display:flex;gap:.4rem;flex-wrap:wrap;">
+          <button type="button" class="cs-feature-inspect" data-action-use="${_esc(String(action.id || action.name || ''))}" data-action-source="${_esc(String(action.source || 'weapon'))}" ${(showUseButton ? '' : `disabled title="${_esc(disabledReason)}" aria-label="${_esc(disabledReason)}"`)}>${_esc(useLabel)}</button>
           ${showDismissButton ? `<button type="button" class="cs-feature-inspect" data-action-dismiss="${_esc(String(action.id || action.name || ''))}" data-action-source="${_esc(String(action.source || 'weapon'))}">Dismiss</button>` : ''}
         </div>` : ''}
+        ${showUseButton ? '' : `<div class="cs-action-disabled-note">${_esc(disabledReason)}</div>`}
       </div>
       <div class="cs-action-side">${econ.map(_econPip).join('')}</div>
     </div>`;
@@ -1596,6 +1650,9 @@
         card.base_damage_formula,
         card.effect
       );
+      const damageType = _firstText(card.damageType, card.damage_type, card.type);
+      const versatileDamage = _firstText(card.versatileDamage, card.versatile_damage);
+      const properties = _safeArray(card.properties).concat(_safeArray(card.weapon_properties)).map(function (entry) { return _firstText(entry, ''); }).filter(Boolean);
       return {
         id: canonicalId || ('attack-' + fallbackId),
         combatCardId: canonicalId || String(card.name || '').trim(),
@@ -1608,6 +1665,8 @@
         attackBonus: attackBonus,
         damage: damageText,
         damageText: damageText,
+        damageType: damageType,
+        versatileDamage: versatileDamage,
         range: _firstText(card.range, card.reach),
         resourceName: _firstText(card.ammoKind, card.ammoNote),
         tags: [card.source === 'equip_only' ? 'Equipped Loadout' : '', card.modeLabel || '', card.mastery_label || card.masteryLabel || ''].filter(Boolean),
@@ -1864,6 +1923,8 @@
       tags: [card.kind || card.type || '', card.source || 'Native'].filter(Boolean),
       longText: [card.text, card.note, card.effectText].filter(Boolean).join('\n\n'),
       drawerKicker: 'Action Inspector',
+      disabled: !!card.disabled,
+      disabledReason: _firstText(card.disabledReason, card.disabled_reason, ''),
     };
   }
 
@@ -2456,9 +2517,14 @@
       }
       const actionRow = e.target.closest('.cs-action-row');
       if (actionRow) {
+        const actionId = String(actionRow.getAttribute('data-action-id') || '');
         const name = String(actionRow.getAttribute('data-action-name') || '').toLowerCase();
         const all = [].concat(model.quickAttacks, model.itemActions, model.native.actions, model.native.bonusActions, model.native.reactions, model.textAttacks, model.summonActions || []);
-        const action = all.find(function (entry) { return String(entry && entry.name || '').toLowerCase() === name; });
+        const action = all.find(function (entry) {
+          const entryId = String(entry && entry.id || '');
+          if (actionId && entryId && entryId === actionId) return true;
+          return String(entry && entry.name || '').toLowerCase() === name;
+        });
         if (action) _openActionDetails(action);
         return;
       }
