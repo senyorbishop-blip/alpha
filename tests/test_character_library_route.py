@@ -96,6 +96,9 @@ def test_character_library_include_native_returns_native_document_when_requested
                     "name": "Lyra Moonfall",
                     "sourceMode": "native",
                     "nativeCharacter": {"identity": {"name": "Lyra Moonfall"}, "classes": [{"classId": "wizard", "level": 2}]},
+                    "nativeRuntime": {"hp": {"max": 14, "current": 11, "temp": 0}, "ac": 12},
+                    "charBook": {"maxHp": 14, "currentHp": 11, "tempHp": 0, "ac": 12},
+                    "charSheet": {"maxHp": 14, "currentHp": 11, "tempHp": 0, "ac": 12},
                 }
             ]
         }
@@ -112,6 +115,9 @@ def test_character_library_include_native_returns_native_document_when_requested
     assert payload["ok"] is True
     assert payload["profiles"][0]["id"] == "profile-native"
     assert isinstance(payload["profiles"][0].get("nativeCharacter"), dict)
+    assert isinstance(payload["profiles"][0].get("nativeRuntime"), dict)
+    assert isinstance(payload["profiles"][0].get("charBook"), dict)
+    assert isinstance(payload["profiles"][0].get("charSheet"), dict)
 
 
 def test_character_save_persists_native_profile_with_compatibility_payloads(monkeypatch):

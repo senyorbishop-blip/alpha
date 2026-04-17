@@ -241,11 +241,53 @@ def test_resolver_only_accepts_casualdnd_talent_sources(monkeypatch):
             "talents": [{"talentId": "fighter-foreign-talent"}],
         }
     )
-
     runtime = result["runtime"]
     assert runtime["talents"] == []
     assert runtime["talentGrants"] == []
 
+
+def test_native_builder_fighter_level_one_uses_hit_die_plus_con_for_hp():
+    result = resolve_runtime(
+        {
+            "identity": {"name": "Kara"},
+            "classes": [{"classId": "fighter", "level": 1}],
+            "abilities": {"scores": {"con": 14}},
+        }
+    )
+    runtime = result["runtime"]
+    assert runtime["hp"]["max"] == 8
+    assert runtime["hp"]["current"] == 8
+    assert runtime["hp"]["temp"] == 0
+    assert runtime["ac"] >= 10
+
+
+def test_native_builder_spellcaster_level_one_uses_runtime_hp_without_fallback_lock():
+    result = resolve_runtime(
+        {
+            "identity": {"name": "Mira"},
+            "classes": [{"classId": "wizard", "level": 1}],
+            "abilities": {"scores": {"con": 12}},
+        }
+    )
+    runtime = result["runtime"]
+    assert runtime["hp"]["max"] == 5
+    assert runtime["hp"]["current"] == 5
+    assert runtime["hp"]["temp"] == 0
+
+
+def test_runtime_hp_ignores_noncanonical_legacy_hp_root_fields():
+    result = resolve_runtime(
+        {
+            "identity": {"name": "Nyx"},
+            "classes": [{"classId": "fighter", "level": 2}],
+            "abilities": {"scores": {"con": 14}},
+            "hp": {"max": 24, "current": 17, "temp": 5},
+        }
+    )
+    runtime = result["runtime"]
+    assert runtime["hp"]["max"] == 16
+    assert runtime["hp"]["current"] == 16
+    assert runtime["hp"]["temp"] == 0
 
 def test_resolver_exposes_awakening_layer_without_replacing_subclass():
     result = resolve_runtime(

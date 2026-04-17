@@ -501,6 +501,15 @@ async def api_character_library(request: Request, session_id: str = "", include_
                     native_doc = row.get("nativeCharacter") if isinstance(row.get("nativeCharacter"), dict) else None
                     if native_doc:
                         summary["nativeCharacter"] = native_doc
+                    native_runtime = row.get("nativeRuntime") if isinstance(row.get("nativeRuntime"), dict) else None
+                    if native_runtime:
+                        summary["nativeRuntime"] = native_runtime
+                    char_book = row.get("charBook") if isinstance(row.get("charBook"), dict) else None
+                    if char_book:
+                        summary["charBook"] = char_book
+                    char_sheet = row.get("charSheet") if isinstance(row.get("charSheet"), dict) else None
+                    if char_sheet:
+                        summary["charSheet"] = char_sheet
                 profiles.append(summary)
 
     return JSONResponse(
