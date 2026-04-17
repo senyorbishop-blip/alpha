@@ -9259,7 +9259,7 @@
     <span style="color:var(--parchment-dim);"> / </span>
     <span id="hp-popup-max">—</span>
   </div>
-  <input type="number" id="hp-popup-amt" value="1" min="1" max="999"
+  <input type="number" id="hp-popup-amt" value="1" min="1"
     style="width:100%;text-align:center;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:3px;color:var(--parchment);font-size:1rem;padding:0.3rem;box-sizing:border-box;margin-bottom:0.45rem;" />
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.35rem;margin-bottom:0.45rem;">
     <button onclick="hpPopupNudge(-10)" style="padding:0.35rem;background:rgba(139,26,26,0.16);border:1px solid rgba(139,26,26,0.5);border-radius:3px;color:#e74c3c;font-size:0.72rem;cursor:pointer;font-family:'Cinzel',serif;">-10</button>
@@ -9313,11 +9313,11 @@
   <div style="display:flex;gap:0.5rem;margin-bottom:0.6rem;">
     <div style="flex:1;">
       <div style="font-size:0.58rem;color:var(--gold-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.2rem;">Max HP</div>
-      <input type="number" id="te-maxhp" min="0" max="9999" oninput="refreshTokenEditorSummary()" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:3px;color:var(--parchment);font-size:0.85rem;padding:0.35rem;box-sizing:border-box;text-align:center;" />
+      <input type="number" id="te-maxhp" min="0" oninput="refreshTokenEditorSummary()" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:3px;color:var(--parchment);font-size:0.85rem;padding:0.35rem;box-sizing:border-box;text-align:center;" />
     </div>
     <div style="flex:1;">
       <div style="font-size:0.58rem;color:var(--gold-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.2rem;">Current HP</div>
-      <input type="number" id="te-curhp" min="0" max="9999" oninput="refreshTokenEditorSummary()" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:3px;color:var(--parchment);font-size:0.85rem;padding:0.35rem;box-sizing:border-box;text-align:center;" />
+      <input type="number" id="te-curhp" min="0" oninput="refreshTokenEditorSummary()" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:3px;color:var(--parchment);font-size:0.85rem;padding:0.35rem;box-sizing:border-box;text-align:center;" />
     </div>
   </div>
   <div style="font-size:0.58rem;color:var(--gold-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem;">Token Color</div>
@@ -9325,7 +9325,7 @@
   <div style="display:flex;gap:0.5rem;margin-bottom:0.6rem;">
     <div style="flex:1;">
       <div style="font-size:0.58rem;color:var(--gold-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.2rem;">Temp HP</div>
-      <input type="number" id="te-temphp" min="0" max="9999" oninput="refreshTokenEditorSummary()" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:3px;color:var(--parchment);font-size:0.85rem;padding:0.35rem;box-sizing:border-box;text-align:center;" />
+      <input type="number" id="te-temphp" min="0" oninput="refreshTokenEditorSummary()" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:3px;color:var(--parchment);font-size:0.85rem;padding:0.35rem;box-sizing:border-box;text-align:center;" />
     </div>
     <div style="flex:1;">
       <div style="font-size:0.58rem;color:var(--gold-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.2rem;">Initiative Bonus</div>
@@ -9544,8 +9544,8 @@
         <div class="sheet-page-title">Vitals &amp; Core Stats</div>
         <div class="sheet-page-blurb">Use this page to confirm HP, AC, speed, initiative, proficiency bonus, passive perception, and ability scores.</div>
         <div class="sheet-book-kpi-row">
-          <div class="sheet-book-kpi"><div class="sheet-book-kpi-label">Current HP</div><input id="cb-cur-hp" class="sheet-book-input mono" type="number" min="0" max="9999" oninput="updateCharacterBookDerivedValues()" /><div class="sheet-book-kpi-sub">Live HP to place on the token.</div></div>
-          <div class="sheet-book-kpi"><div class="sheet-book-kpi-label">Max HP</div><input id="cb-max-hp" class="sheet-book-input mono" type="number" min="0" max="9999" oninput="updateCharacterBookDerivedValues()" /><div class="sheet-book-kpi-sub">Used for token placement and updates.</div></div>
+          <div class="sheet-book-kpi"><div class="sheet-book-kpi-label">Current HP</div><input id="cb-cur-hp" class="sheet-book-input mono" type="number" min="0" oninput="updateCharacterBookDerivedValues()" /><div class="sheet-book-kpi-sub">Live HP to place on the token.</div></div>
+          <div class="sheet-book-kpi"><div class="sheet-book-kpi-label">Max HP</div><input id="cb-max-hp" class="sheet-book-input mono" type="number" min="0" oninput="updateCharacterBookDerivedValues()" /><div class="sheet-book-kpi-sub">Used for token placement and updates.</div></div>
           <div class="sheet-book-kpi"><div class="sheet-book-kpi-label">Armor Class</div><input id="cb-ac" class="sheet-book-input mono" type="number" min="0" max="99" /><div class="sheet-book-kpi-sub">Shield, armor, magical buffs, or custom AC.</div></div>
           <div class="sheet-book-kpi"><div class="sheet-book-kpi-label">Speed</div><input id="cb-speed" class="sheet-book-input mono" type="number" min="0" max="300" /><div class="sheet-book-kpi-sub">Used by combat movement limits.</div></div>
         </div>
@@ -9564,7 +9564,7 @@
           <div class="sheet-book-card span-4">
             <div class="sheet-book-card-title">Combat Basics</div>
             <div class="sheet-book-field-grid">
-              <label class="sheet-book-field span-6"><span>Temp HP</span><input id="cb-temp-hp" class="sheet-book-input mono" type="number" min="0" max="9999" /></label>
+              <label class="sheet-book-field span-6"><span>Temp HP</span><input id="cb-temp-hp" class="sheet-book-input mono" type="number" min="0" /></label>
               <label class="sheet-book-field span-6"><span>Initiative</span><input id="cb-initiative" class="sheet-book-input mono" type="number" min="-20" max="30" /></label>
               <label class="sheet-book-field span-6"><span>Prof. Bonus</span><input id="cb-proficiency-bonus" class="sheet-book-input mono" type="number" min="0" max="20" /></label>
               <label class="sheet-book-field span-6"><span>Passive Perception</span><input id="cb-passive" class="sheet-book-input mono" type="number" min="0" max="99" /></label>
@@ -32702,6 +32702,12 @@ function initPremiumSheetIfNeeded() {
 
 function getCharacterBookDataFromUI() {
   const get = id => document.getElementById(id)?.value ?? '';
+  const parseOptionalInt = (raw) => {
+    const text = String(raw ?? '').trim();
+    if (!text) return null;
+    const parsed = parseInt(text, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
   const data = {
     name: get('cb-name').trim(),
     className: get('cb-class').trim(),
@@ -32711,19 +32717,19 @@ function getCharacterBookDataFromUI() {
     race: (get('cb-species').trim() || get('cb-race-imported').trim()),
     background: get('cb-background').trim(),
     alignment: get('cb-alignment').trim(),
-    level: parseInt(get('cb-level'), 10) || 0,
+    level: parseOptionalInt(get('cb-level')),
     faction: get('cb-faction').trim(),
     experience: get('cb-experience').trim(),
     avatarUrl: get('cb-avatar-url').trim(),
     campaignNotes: get('cb-campaign-notes').trim(),
-    currentHp: parseInt(get('cb-cur-hp'), 10) || 0,
-    maxHp: parseInt(get('cb-max-hp'), 10) || 0,
-    tempHp: parseInt(get('cb-temp-hp'), 10) || 0,
-    initiative: parseInt(get('cb-initiative'), 10) || 0,
-    ac: parseInt(get('cb-ac'), 10) || 0,
-    speed: parseInt(get('cb-speed'), 10) || 0,
-    passivePerception: parseInt(get('cb-passive'), 10) || 0,
-    profBonus: parseInt(get('cb-proficiency-bonus'), 10) || 0,
+    currentHp: parseOptionalInt(get('cb-cur-hp')),
+    maxHp: parseOptionalInt(get('cb-max-hp')),
+    tempHp: parseOptionalInt(get('cb-temp-hp')),
+    initiative: parseOptionalInt(get('cb-initiative')),
+    ac: parseOptionalInt(get('cb-ac')),
+    speed: parseOptionalInt(get('cb-speed')),
+    passivePerception: parseOptionalInt(get('cb-passive')),
+    profBonus: parseOptionalInt(get('cb-proficiency-bonus')),
     hitDice: get('cb-hit-dice').trim(),
     inspiration: get('cb-inspiration').trim(),
     currency: get('cb-currency').trim(),
@@ -32973,8 +32979,24 @@ function applyCharacterBookToQuickPanel(showDone = true) {
   }
 }
 
-function syncCharSheetFromBookData(data) {
+function syncCharSheetFromBookData(data, opts = {}) {
   if (!data) return;
+  const options = (opts && typeof opts === 'object') ? opts : {};
+  const lockVitals = !!options.lockVitals;
+  const overrideVitals = (options.vitals && typeof options.vitals === 'object') ? options.vitals : {};
+  const toMaybeInt = (value) => {
+    const parsed = parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+  const resolvedMaxHp = lockVitals
+    ? toMaybeInt(overrideVitals.maxHp)
+    : toMaybeInt(data.maxHp);
+  const resolvedCurrentHp = lockVitals
+    ? toMaybeInt(overrideVitals.currentHp)
+    : toMaybeInt(data.currentHp);
+  const resolvedTempHp = lockVitals
+    ? toMaybeInt(overrideVitals.tempHp)
+    : toMaybeInt(data.tempHp);
   if (!_charSheet) _charSheet = {};
   _charSheet.name = data.name || _charSheet.name || NAME || 'Adventurer';
   const speciesProfile = ensureSpeciesProfileForBookData(data);
@@ -32986,9 +33008,15 @@ function syncCharSheetFromBookData(data) {
   _charSheet.speciesGameplay = speciesGameplay || _charSheet.speciesGameplay || null;
   _charSheet.background = data.background || _charSheet.background || '';
   _charSheet.alignment = data.alignment || _charSheet.alignment || '';
-  _charSheet.currentHp = data.currentHp ?? _charSheet.currentHp ?? 0;
-  _charSheet.maxHp = data.maxHp ?? _charSheet.maxHp ?? 0;
-  _charSheet.tempHp = data.tempHp ?? _charSheet.tempHp ?? 0;
+  if (resolvedMaxHp != null) _charSheet.maxHp = Math.max(0, resolvedMaxHp);
+  if (resolvedCurrentHp != null) {
+    const maxHpCap = toMaybeInt(_charSheet.maxHp);
+    _charSheet.currentHp = maxHpCap != null ? Math.max(0, Math.min(maxHpCap, resolvedCurrentHp)) : Math.max(0, resolvedCurrentHp);
+  }
+  if (resolvedTempHp != null) _charSheet.tempHp = Math.max(0, resolvedTempHp);
+  if (_charSheet.currentHp == null) _charSheet.currentHp = 0;
+  if (_charSheet.maxHp == null) _charSheet.maxHp = 0;
+  if (_charSheet.tempHp == null) _charSheet.tempHp = 0;
   _charSheet.initiative = data.initiative ?? _charSheet.initiative ?? 0;
   _charSheet.ac = data.ac ?? _charSheet.ac ?? 0;
   if (Number.isFinite(parseInt(data?.ac, 10)) && parseInt(data.ac, 10) > 0) _charAcIsEquipmentDerived = false;
@@ -33106,6 +33134,10 @@ function applyCharSheetToBook(char = _charSheet) {
     data.savingThrows = { ...(data.savingThrows || {}), ...(char.book.savingThrows || {}) };
     data.skills = { ...(data.skills || {}), ...(char.book.skills || {}) };
   }
+  data.currentHp = char.currentHp ?? data.currentHp;
+  data.maxHp = char.maxHp ?? data.maxHp;
+  data.tempHp = char.tempHp ?? data.tempHp;
+  data.ac = char.ac ?? data.ac;
   enrichCharacterBookDataFromRawFields(data, char._rawFields || {});
   applyCharacterBookDataToUI(data, { skipQuickSync: true });
   renderImportedSpellbookPreview();
@@ -38304,6 +38336,15 @@ function applyCharProfileRecord(p, opts = {}) {
     ?? profile?.charSheet?.level
     ?? profile?.charBook?.level
     ?? profile?.level;
+  const numOrNull = (value) => {
+    const parsed = parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+  const canonicalVitals = {
+    currentHp: numOrNull(resolvedCurHp),
+    maxHp: numOrNull(resolvedMaxHp),
+    tempHp: numOrNull(resolvedTempHp),
+  };
   const setCharVal = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
   setCharVal('char-name', profile.name || '');
   const mappedClassId = String(profile.classId || profile.charSheet?.classes?.[0]?.classId || profile.charSheet?.classes?.[0]?.id || '').trim();
@@ -38338,8 +38379,12 @@ function applyCharProfileRecord(p, opts = {}) {
   initCharacterBook();
   if (profile.charBook) {
     applyCharacterBookDataToUI(profile.charBook, { skipQuickSync: true });
-    // Restore runtime current HP — may have decreased from charBook value due to combat damage
-    if (resolvedCurHp !== undefined) setCharVal('char-curhp', resolvedCurHp != null ? String(resolvedCurHp) : '');
+    if (canonicalVitals.currentHp != null) setCharVal('cb-cur-hp', String(canonicalVitals.currentHp));
+    if (canonicalVitals.maxHp != null) setCharVal('cb-max-hp', String(canonicalVitals.maxHp));
+    if (canonicalVitals.tempHp != null) setCharVal('cb-temp-hp', String(canonicalVitals.tempHp));
+    if (canonicalVitals.currentHp != null) setCharVal('char-curhp', String(canonicalVitals.currentHp));
+    if (canonicalVitals.maxHp != null) setCharVal('char-hp', String(canonicalVitals.maxHp));
+    if (canonicalVitals.tempHp != null) setCharVal('char-temp-hp', String(canonicalVitals.tempHp));
   } else {
     seedCharacterBookFromCurrentState();
   }
@@ -38353,7 +38398,7 @@ function applyCharProfileRecord(p, opts = {}) {
   _refreshActiveNativeRuntimeHpFromCanonical(resolvedMaxHp, resolvedCurHp, resolvedTempHp);
   _activeCharacterSheetMode = _resolveCharacterSheetModeFromProfile(profile);
   _activeCharProfileUpdatedAt = _safeProfileTimestamp(profile.updated_at || profile.updatedAt || 0);
-  syncCharSheetFromBookData(getCharacterBookDataFromUI());
+  syncCharSheetFromBookData(getCharacterBookDataFromUI(), { lockVitals: true, vitals: canonicalVitals });
   syncSpellSlotBookSummary();
   refreshPlayerColorSwatches();
   applyPlayerPersonalizationTheme();
