@@ -2816,6 +2816,75 @@ def _clean_detail_parts(parts: list[str]) -> list[str]:
 
 
 
+
+_DEEP_FEATURE_PROFILES: dict[str, dict[str, Any]] = {
+    "spellcasting": {
+        "summary": "Your class spellcasting defines your spell list access, spell save DC, and how daily slots fuel combat and utility choices.",
+        "description": (
+            "Spellcasting gives you cantrips, leveled spells, and class-specific progression. Track what spells are prepared or known, "
+            "how many slots remain, and which stat sets your spell attacks and save DC.\n\n"
+            "The gameplay loop is choosing high-impact slot spend moments, protecting concentration, and preserving enough resources for later encounters."
+        ),
+        "tags": ["spellcasting", "resource"],
+    },
+    "jack of all trades": {"summary": "Add half proficiency to ability checks that do not already include proficiency, keeping your baseline performance high."},
+    "song of rest": {"summary": "During a short rest, allies gain additional healing when they spend Hit Dice."},
+    "expertise": {"summary": "Choose key proficiencies and double your proficiency bonus with them."},
+    "turn undead": {"summary": "Force undead in range to save or flee, disrupting enemy positioning and reducing pressure on your party."},
+    "fighting style": {"summary": "A permanent combat specialty that shapes your weapon lane, defense profile, or support approach."},
+    "extra attack": {"summary": "When you take the Attack action, you make additional weapon attacks."},
+    "flurry of blows": {"summary": "Spend Focus to make two extra unarmed strikes as a bonus action after attacking."},
+    "patient defense": {"summary": "Spend Focus to take Dodge as a bonus action when survival matters more than burst damage."},
+    "step of the wind": {"summary": "Spend Focus to Dash or Disengage as a bonus action and improve jump mobility."},
+    "font of magic": {"summary": "Convert Sorcery Points and spell slots to control your spell economy across encounters."},
+    "pact magic": {
+        "summary": "Warlock slots are limited but refresh on short rests and always cast at your pact slot level.",
+        "description": (
+            "Pact Magic differs from standard full-caster pacing. You have fewer slots, but recover them quickly on short rests. "
+            "Every pact slot is cast at your highest pact slot level, so each cast is high value. Build turns around burst timing, invocations, and rest cadence."
+        ),
+    },
+    "arcane recovery": {"summary": "Recover spent spell slots during a short rest to extend your wizard’s daily casting endurance."},
+    "gadget rig": {"summary": "Your rig is the tinker loop: configure devices, then spend charges where each deployment changes the battlefield."},
+    "swagger dice": {"summary": "Pirate tempo resource spent on trick turns, pressure riders, and momentum control."},
+}
+
+
+_CLASS_LOOP_NOTES: dict[str, str] = {
+    "barbarian": "Barbarian loop: open Rage, pressure priority targets, and leverage durability to control the frontline.",
+    "bard": "Bard loop: use Inspiration and spells to swing key rolls while adapting to party needs.",
+    "cleric": "Cleric loop: balance prepared casting with Channel Divinity and domain tools for healing, control, and pressure.",
+    "druid": "Druid loop: alternate between prepared spellcasting and Wild Shape forms based on encounter needs.",
+    "fighter": "Fighter loop: maintain weapon pressure and time Action Surge or Second Wind for decisive turns.",
+    "monk": "Monk loop: spend Focus for mobility, defense, and burst while maintaining strike cadence.",
+    "paladin": "Paladin loop: combine weapon hits, smite timing, support tools, and aura positioning.",
+    "ranger": "Ranger loop: layer weapon pressure, tracking tools, and half-caster support with subclass tactics.",
+    "rogue": "Rogue loop: create Sneak Attack windows each turn through positioning, advantage, or ally setup.",
+    "sorcerer": "Sorcerer loop: manage Sorcery Points, Metamagic, and slot conversion for flexible spell turns.",
+    "warlock": "Warlock loop: rely on short-rest pact slot cadence, invocations, and patron/boon identity.",
+    "wizard": "Wizard loop: prepare the right spells each day and pace slots with Arcane Recovery.",
+    "tinker": "Tinker loop: track gadget charges, deploy engineered tools, and control encounters through prepared devices.",
+    "pirate": "Pirate loop: build momentum with swagger resources, trick timing, and mobile duelist pressure.",
+}
+
+
+def _is_shallow_text(value: Any, *, minimum_words: int = 10) -> bool:
+    text = _sanitize_player_text(value)
+    if not text:
+        return True
+    return len([part for part in re.split(r"\s+", text) if part]) < minimum_words
+
+
+def _deep_profile_for_feature(name: str, class_name: Any) -> dict[str, Any]:
+    key = normalized_feature_name(name)
+    profile = copy.deepcopy(_DEEP_FEATURE_PROFILES.get(key) or {})
+    loop_note = _CLASS_LOOP_NOTES.get(slugify(class_name or ""))
+    if loop_note:
+        existing = str(profile.get("description") or "").strip()
+        profile["description"] = f"{existing}\n\n{loop_note}".strip() if existing else loop_note
+    return profile
+
+
 def build_feature_profile(
     *,
     name: Any,
@@ -2831,6 +2900,25 @@ def build_feature_profile(
     display_name = str(name or "").strip() or "Feature"
     clean_key = normalized_feature_name(display_name)
     authored = copy.deepcopy(_FEATURE_OVERRIDES.get(clean_key) or {})
+    deep_profile = _deep_profile_for_feature(display_name, class_name)
+    if deep_profile:
+        for key, value in deep_profile.items():
+            if key == "summary":
+                if _is_shallow_text(authored.get("summary"), minimum_words=8):
+                    authored["summary"] = value
+                continue
+            if key == "description":
+                if _is_shallow_text(authored.get("description"), minimum_words=20):
+                    authored["description"] = value
+                continue
+            if key == "tags":
+                existing_tags = authored.get("tags") if isinstance(authored.get("tags"), list) else []
+                authored["tags"] = list(dict.fromkeys(
+                    [str(tag or "").strip().lower() for tag in list(existing_tags) + list(value or []) if str(tag or "").strip()]
+                ))
+                continue
+            if not authored.get(key):
+                authored[key] = value
     progression = _progression_profile(display_name)
     raw_description = str(description or authored.get("description") or base.get("description") or "").strip()
     parsed = _parsed_fields(raw_description)
