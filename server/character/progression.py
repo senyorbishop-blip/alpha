@@ -11,6 +11,7 @@ from server.character.spell_compendium import (
     get_effective_document_spell_state,
     get_spell_by_id,
     get_spell_list,
+    repair_spell_state_for_document,
     validate_spell_selection,
 )
 from server.character.validation import validate_or_raise
@@ -156,21 +157,24 @@ def _sort_spell_options(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _current_spell_state(document: dict[str, Any], *, class_id: str, class_level: int) -> dict[str, Any]:
-    effective_spell_state = get_effective_document_spell_state(document, class_id=class_id, class_level=class_level)
-    known = _unique_spell_ids(effective_spell_state.get("known"))
-    prepared = _unique_spell_ids(effective_spell_state.get("prepared"))
-    validation = validate_spell_selection(
+    classes = document.get("classes") if isinstance(document.get("classes"), list) else []
+    primary = classes[0] if classes and isinstance(classes[0], dict) else {}
+    repair = repair_spell_state_for_document(
+        document,
         class_id=class_id,
         class_level=class_level,
         abilities=document.get("abilities") if isinstance(document.get("abilities"), dict) else {},
-        known=known,
-        prepared=prepared,
-        document=document,
+        subclass_id=str(primary.get("subclassId") or "").strip().lower(),
     )
+    validation = repair.get("validation") if isinstance(repair.get("validation"), dict) else {}
+    effective_spell_state = get_effective_document_spell_state(document, class_id=class_id, class_level=class_level)
+    known = _unique_spell_ids(validation.get("known") or effective_spell_state.get("known"))
+    prepared = _unique_spell_ids(validation.get("prepared") or effective_spell_state.get("prepared"))
     return {
-        "known": list(validation.get("known") or []),
-        "prepared": list(validation.get("prepared") or []),
+        "known": list(known),
+        "prepared": list(prepared),
         "validation": validation,
+        "repair": repair,
     }
 
 
@@ -267,36 +271,6 @@ def _build_spell_choices_preview(
         for spell in accessible_spells
         if _safe_int(spell.get("level"), 0) > 0 and str(spell.get("id") or "") not in current_known_set
     ])
-    if (cantrip_required > 0 and not cantrip_options) or (levelled_required > 0 and not levelled_options):
-        class_name_key = str(class_name or "").strip().lower()
-        fallback_spells = []
-        for spell in get_spell_list():
-            spell_level = _safe_int(spell.get("level"), 0, minimum=0, maximum=9)
-            if spell_level > 0 and next_highest_spell_level > 0 and spell_level > next_highest_spell_level:
-                continue
-            classes = spell.get("classes")
-            classish = []
-            if isinstance(classes, list):
-                for row in classes:
-                    if isinstance(row, str):
-                        classish.append(row.strip().lower())
-                    elif isinstance(row, dict):
-                        classish.extend([str(row.get("id") or "").strip().lower(), str(row.get("name") or "").strip().lower()])
-            if class_name_key and class_name_key not in classish and str(class_id or "").strip().lower() not in classish:
-                continue
-            fallback_spells.append(spell)
-        if cantrip_required > 0 and not cantrip_options:
-            cantrip_options = _sort_spell_options([
-                _spell_option_row(spell, class_id=class_id)
-                for spell in fallback_spells
-                if _safe_int(spell.get("level"), 0) <= 0 and str(spell.get("id") or "") not in current_known_set
-            ])
-        if levelled_required > 0 and not levelled_options:
-            levelled_options = _sort_spell_options([
-                _spell_option_row(spell, class_id=class_id)
-                for spell in fallback_spells
-                if _safe_int(spell.get("level"), 0) > 0 and str(spell.get("id") or "") not in current_known_set
-            ])
     replaceable_known = _sort_spell_options([_spell_option_row(spell, class_id=class_id) for spell in known_spells])
     swap_allowed = mode in {"known", "spellbook"} and bool(replaceable_known) and bool(levelled_options)
 

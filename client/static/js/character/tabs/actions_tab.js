@@ -931,22 +931,36 @@
       const ranged = /ranged|bow|crossbow|sling|thrown|ammunition/i.test(String(item.kind || '') + ' ' + String(item.name || '') + ' ' + String(item.range || '') + ' ' + propertyText);
       const abilityMod = ranged ? _abilityMod(stats.dex) : (finesse ? Math.max(_abilityMod(stats.str), _abilityMod(stats.dex)) : _abilityMod(stats.str));
       const attackBonus = profBonus + abilityMod;
-      const damage = _firstText(item.damage, item.damageDice, item.damage_dice, item.versatile_damage, item.notes, item.note, 'Weapon attack');
+      const baseDice = _firstText(item.damage_dice, item.damageDice, item.damage, '');
+      const damageType = _firstText(item.damage_type, item.damageType, '');
+      const versatile = _firstText(item.versatile_damage, item.versatileDamage, '');
+      const rangeLabel = _firstText(item.range, item.reach, '');
+      const damage = baseDice
+        ? (baseDice + (damageType ? (' ' + damageType) : '') + (versatile ? (' (Versatile ' + versatile + (damageType ? (' ' + damageType) : '') + ')') : ''))
+        : _firstText(item.notes, item.note, 'Weapon attack');
       const ammoKind = _firstText(item.ammo_kind, item.ammoKind, '');
       return {
         id: String(item.id || item.name || '').trim() || ('inventory-' + String(item.name || 'weapon').toLowerCase().replace(/[^a-z0-9]+/g, '-')),
         source: item.equipped ? 'equip_only' : 'weapon',
         name: item.name || 'Weapon',
-        desc: _firstText(item.note, item.notes, item.range, 'Inventory weapon'),
-        description: _firstText(item.note, item.notes, item.range, 'Inventory weapon'),
+        desc: _firstText(rangeLabel, item.note, item.notes, 'Inventory weapon'),
+        description: _firstText(item.note, item.notes, rangeLabel, 'Inventory weapon'),
         economy: ['action'],
         icon: String(item.range || '').match(/ft|range/i) ? '[R]' : '[M]',
         attackBonus: attackBonus >= 0 ? '+' + attackBonus : String(attackBonus),
         damage: damage,
-        range: _firstText(item.range, item.reach),
+        range: rangeLabel,
         resourceName: ammoKind ? ('Ammo: ' + ammoKind) : '',
         tags: [item.equipped ? 'Equipped' : 'Inventory only', item.kind || item.type || 'Weapon', finesse ? 'Finesse' : '', ranged ? 'Ranged' : 'Melee'].filter(Boolean),
-        longText: [item.note, item.notes, item.damage, item.range, ammoKind ? ('Ammo type: ' + ammoKind) : '', propertyText ? ('Properties: ' + propertyText) : ''].filter(Boolean).join('\n\n'),
+        longText: [
+          baseDice ? ('Damage: ' + baseDice + (damageType ? (' ' + damageType) : '')) : '',
+          versatile ? ('Versatile: ' + versatile + (damageType ? (' ' + damageType) : '')) : '',
+          rangeLabel ? ('Range/Reach: ' + rangeLabel) : '',
+          propertyText ? ('Properties: ' + propertyText) : '',
+          ammoKind ? ('Ammo type: ' + ammoKind) : '',
+          item.note,
+          item.notes,
+        ].filter(Boolean).join('\n\n'),
       };
     });
   }

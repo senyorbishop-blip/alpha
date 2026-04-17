@@ -2,15 +2,17 @@
   'use strict';
 
   var _state = {
-    cacheKey: '',
-    data: null,
-    loading: false,
-    inflight: null,
-    pendingRerenderKey: '',
-    activeLevelByKey: {},
+    cache: {},
+    activeTabByKey: {},
     searchByKey: {},
     statusByKey: {},
+    loadingByKey: {},
+    inflightByKey: {},
   };
+
+  function asArray(value) { return Array.isArray(value) ? value : []; }
+  function asObject(value) { return value && typeof value === 'object' && !Array.isArray(value) ? value : {}; }
+  function norm(value) { return String(value || '').trim().toLowerCase(); }
 
   function escHtml(value) {
     return String(value == null ? '' : value)
@@ -25,26 +27,7 @@
     if (!global.CharacterBuilderStepModules || typeof global.CharacterBuilderStepModules !== 'object') {
       global.CharacterBuilderStepModules = {};
     }
-    global.CharacterBuilderStepModules[step.id] = step;
-  }
-
-  function asArray(value) {
-    return Array.isArray(value) ? value : [];
-  }
-
-  function asObject(value) {
-    return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
-  }
-
-  function normalizeId(value) {
-    return String(value || '').trim().toLowerCase();
-  }
-
-  function toCsv(rows) {
-    return asArray(rows)
-      .map(function mapEntry(v) { return String(v || '').trim(); })
-      .filter(Boolean)
-      .join(',');
+    global.CharacterBuilderStepModules.spells = step;
   }
 
   function levelLabel(level) {
@@ -89,420 +72,435 @@
       '.cb-spell-badge{font-size:.55rem;padding:2px 7px;border-radius:999px;border:1px solid rgba(201,168,76,.42);background:rgba(201,168,76,.14);color:#ffe3a1;white-space:nowrap;}',
       '.cb-spell-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;font-size:.58rem;color:rgba(188,222,238,.9);}',
       '.cb-spell-desc{margin-top:6px;font-size:.6rem;line-height:1.45;color:rgba(220,232,244,.86);}',
-      '.cb-spell-reason{margin-top:6px;font-size:.56rem;color:#ffc6c6;}',
+      '.cb-spell-reason{margin-top:6px;font-size:.56rem;color:#ffc6c6;}'
     ].join('');
     document.head.appendChild(style);
   }
 
-  function buildRequestKey(draft) {
-    var classData = asObject(draft && draft.class);
-    var progression = asObject(draft && draft.progression);
-    var spellbook = asObject(draft && draft.spellbook);
-    return [
-      normalizeId(classData.id),
-      normalizeId(classData.subclassId),
-      parseInt(progression.level, 10) || 1,
-      toCsv(spellbook.known),
-      toCsv(spellbook.prepared),
-    ].join('|');
+  function csvFrom(value) {
+    return asArray(value).map(function (entry) { return String(entry || '').trim(); }).filter(Boolean).join(',');
   }
 
-  function fetchOptions(draft) {
-    var classData = asObject(draft && draft.class);
-    var classId = String(classData.id || '').trim();
-    if (!classId) {
-      _state.cacheKey = '';
-      _state.data = null;
-      _state.loading = false;
-      _state.inflight = null;
-      return Promise.resolve(null);
-    }
-
-    var key = buildRequestKey(draft);
-    if (_state.cacheKey === key && _state.data) return Promise.resolve(_state.data);
-    if (_state.cacheKey === key && _state.loading && _state.inflight) return _state.inflight;
-
+  function requestKey(draft) {
+    var cls = asObject(draft && draft.class);
     var progression = asObject(draft && draft.progression);
-    var spellbook = asObject(draft && draft.spellbook);
-    var q = new URLSearchParams();
-    q.set('class_id', classId);
-    q.set('subclass_id', String(classData.subclassId || '').trim());
-    q.set('level', String(parseInt(progression.level, 10) || 1));
-    q.set('known', toCsv(spellbook.known));
-    q.set('prepared', toCsv(spellbook.prepared));
-
-    _state.cacheKey = key;
-    _state.loading = true;
-    _state.inflight = fetch('/api/character/builder/spells/options?' + q.toString(), { credentials: 'same-origin' })
-      .then(function onResponse(res) {
-        if (!res.ok) throw new Error('spell_options_failed');
-        return res.json();
-      })
-      .then(function onData(data) {
-        _state.data = data || null;
-        _state.loading = false;
-        _state.inflight = null;
-        return _state.data;
-      })
-      .catch(function onErr() {
-        _state.data = null;
-        _state.loading = false;
-        _state.inflight = null;
-        return null;
-      });
-
-    return _state.inflight;
+    return [norm(cls.id), norm(cls.subclassId), parseInt(progression.level, 10) || 1].join('|');
   }
 
-  function getMode(limits) {
+  function idsKey(draft) {
+    var spellbook = asObject(draft && draft.spellbook);
+    return [csvFrom(spellbook.known), csvFrom(spellbook.prepared)].join('|');
+  }
+
+  function modeFromLimits(limits) {
     if (limits && limits.preparedLimit != null) return 'prepared';
     if (limits && (limits.spellsKnown != null || limits.cantripsKnown != null)) return 'known';
     return 'library';
   }
 
-  function indexCards(cards) {
-    var byId = {};
-    asArray(cards).forEach(function each(card) {
-      var id = String(card && card.id || '').trim();
-      if (id) byId[id] = card;
-    });
-    return byId;
+  function fetchOptions(draft) {
+    var cls = asObject(draft && draft.class);
+    var classId = String(cls.id || '').trim();
+    if (!classId) return Promise.resolve(null);
+
+    var progression = asObject(draft && draft.progression);
+    var spellbook = asObject(draft && draft.spellbook);
+    var key = requestKey(draft) + '::' + idsKey(draft);
+
+    if (_state.cache[key]) return Promise.resolve(_state.cache[key]);
+    if (_state.inflightByKey[key]) return _state.inflightByKey[key];
+
+    var params = new URLSearchParams();
+    params.set('class_id', classId);
+    params.set('subclass_id', String(cls.subclassId || '').trim());
+    params.set('level', String(parseInt(progression.level, 10) || 1));
+    params.set('known', csvFrom(spellbook.known));
+    params.set('prepared', csvFrom(spellbook.prepared));
+
+    _state.loadingByKey[key] = true;
+    _state.inflightByKey[key] = fetch('/api/character/builder/spells/options?' + params.toString(), { credentials: 'same-origin' })
+      .then(function (res) {
+        if (!res.ok) throw new Error('spell_options_failed');
+        return res.json();
+      })
+      .then(function (payload) {
+        _state.cache[key] = payload || null;
+        return _state.cache[key];
+      })
+      .catch(function () {
+        _state.cache[key] = null;
+        return null;
+      })
+      .finally(function () {
+        _state.loadingByKey[key] = false;
+        _state.inflightByKey[key] = null;
+      });
+
+    return _state.inflightByKey[key];
   }
 
-  function selectedCounts(data, spellbook) {
-    var limits = asObject(data && data.limits);
-    var mode = getMode(limits);
-    var cardsById = indexCards(data && data.cards);
-    var known = asArray(spellbook && spellbook.known);
-    var prepared = asArray(spellbook && spellbook.prepared);
+  function indexCards(cards) {
+    var out = {};
+    asArray(cards).forEach(function (card) {
+      var id = String(card && card.id || '').trim();
+      if (id) out[id] = card;
+    });
+    return out;
+  }
 
-    var cantrips = known.filter(function(id) {
+  function dedupeIds(rows) {
+    var seen = {};
+    var out = [];
+    asArray(rows).forEach(function (entry) {
+      var id = String(entry || '').trim();
+      if (!id || seen[id]) return;
+      seen[id] = true;
+      out.push(id);
+    });
+    return out;
+  }
+
+  function currentSelection(draft, data) {
+    var spellbook = asObject(draft && draft.spellbook);
+    if (data && data.validation && Array.isArray(data.validation.known)) {
+      return {
+        known: dedupeIds(data.validation.known),
+        prepared: dedupeIds(data.validation.prepared),
+      };
+    }
+    return {
+      known: dedupeIds(spellbook.known),
+      prepared: dedupeIds(spellbook.prepared),
+    };
+  }
+
+  function countsForSelection(data, selected) {
+    var limits = asObject(data && data.limits);
+    var mode = modeFromLimits(limits);
+    var cardsById = indexCards(data && data.cards);
+
+    var cantrips = selected.known.filter(function (id) {
       return parseInt(cardsById[id] && cardsById[id].level, 10) === 0;
     }).length;
-
-    var knownLevelled = known.filter(function(id) {
+    var knownLevelled = selected.known.filter(function (id) {
       return parseInt(cardsById[id] && cardsById[id].level, 10) > 0;
     }).length;
-
-    var preparedLevelled = prepared.filter(function(id) {
+    var preparedLevelled = selected.prepared.filter(function (id) {
       return parseInt(cardsById[id] && cardsById[id].level, 10) > 0;
     }).length;
 
     return {
       mode: mode,
       cantrips: cantrips,
-      cantripLimit: limits.cantripsKnown,
       knownLevelled: knownLevelled,
-      knownLimit: limits.spellsKnown,
       preparedLevelled: preparedLevelled,
+      cantripLimit: limits.cantripsKnown,
+      knownLimit: limits.spellsKnown,
       preparedLimit: limits.preparedLimit,
     };
   }
 
-  function groupedCards(data, draft) {
+  function groupedRows(data, selected) {
     var cards = asArray(data && data.cards);
-    var limits = asObject(data && data.limits);
     var highest = parseInt(data && data.highestUnlockedSpellLevel, 10);
     if (!Number.isFinite(highest) || highest < 0) highest = 0;
-    var mode = getMode(limits);
 
     var groups = {};
-    cards.forEach(function mapCard(card) {
-      var lvl = parseInt(card && card.level, 10);
-      if (!Number.isFinite(lvl) || lvl < 0) lvl = 0;
-      var selected = !!(card && (card.isKnown || card.isPrepared));
-      if (lvl > 0 && highest > 0 && lvl > highest && !selected) return;
-      if (!groups[lvl]) groups[lvl] = [];
-      groups[lvl].push(card);
+    cards.forEach(function (card) {
+      var level = parseInt(card && card.level, 10);
+      if (!Number.isFinite(level) || level < 0) level = 0;
+      var isSelected = selected.known.indexOf(String(card && card.id || '')) >= 0 || selected.prepared.indexOf(String(card && card.id || '')) >= 0;
+      if (level > 0 && highest >= 0 && level > highest && !isSelected) return;
+      if (!groups[level]) groups[level] = [];
+      groups[level].push(card);
     });
 
-    var keys = Object.keys(groups).map(function(v) { return parseInt(v, 10); }).filter(Number.isFinite).sort(function(a, b) { return a - b; });
-    if (keys.indexOf(0) === -1) {
-      var hasCantrips = cards.some(function(c) { return parseInt(c && c.level, 10) === 0; });
-      if (hasCantrips) keys.unshift(0);
-    }
+    var levels = Object.keys(groups)
+      .map(function (v) { return parseInt(v, 10); })
+      .filter(function (v) { return Number.isFinite(v); })
+      .sort(function (a, b) { return a - b; });
 
     return {
       groups: groups,
-      levelKeys: keys,
+      levels: levels,
       highest: highest,
-      mode: mode,
-      levelCapLabel: highest > 0 ? levelLabel(highest) : 'Cantrips only',
-      className: String(limits.className || asObject(draft && draft.class).id || '').trim(),
     };
   }
 
-  function renderSelectedChips(spellbook, cardById, mode) {
-    var known = asArray(spellbook && spellbook.known);
-    var prepared = asArray(spellbook && spellbook.prepared);
+  function renderChipGroup(ids, key, heading, cardById, levelledOnly) {
+    var filtered = ids.filter(function (id) {
+      if (!levelledOnly) return true;
+      return parseInt(cardById[id] && cardById[id].level, 10) > 0;
+    });
+    if (!filtered.length) return '';
 
-    function chips(ids, listKey, title, includeLevelledOnly) {
-      var visibleIds = ids.filter(function(id) {
-        var level = parseInt(cardById[id] && cardById[id].level, 10);
-        if (includeLevelledOnly) return level > 0;
-        return true;
-      });
-      if (!visibleIds.length) return '';
-      return '<h4>' + escHtml(title) + '</h4><div class="cb-spell-chip-row">' + visibleIds.map(function(id) {
-        var row = cardById[id] || {};
-        var name = String(row.displayName || row.name || id).trim() || id;
-        return '<span class="cb-spell-chip" data-builder-spell-remove="' + escHtml(id) + '" data-builder-spell-remove-list="' + escHtml(listKey) + '">' +
-          escHtml(name) +
-          '<button type="button" aria-label="Remove ' + escHtml(name) + '">×</button>' +
-        '</span>';
-      }).join('') + '</div>';
-    }
-
-    var out = '';
-    out += chips(known, 'known', mode === 'prepared' ? 'Known Cantrips' : 'Known Spells', mode === 'prepared');
-    if (mode === 'prepared') {
-      out += chips(prepared, 'prepared', 'Prepared Spells', true);
-    }
-    return out || '<div class="builder-help-text" style="margin:0">No spells selected yet.</div>';
+    return '<h4>' + escHtml(heading) + '</h4><div class="cb-spell-chip-row">' + filtered.map(function (id) {
+      var row = cardById[id] || {};
+      var name = String(row.displayName || row.name || id).trim() || id;
+      return '<span class="cb-spell-chip" data-builder-spell-remove="' + escHtml(id) + '" data-builder-spell-remove-list="' + escHtml(key) + '">' +
+        escHtml(name) +
+        '<button type="button" aria-label="Remove ' + escHtml(name) + '">×</button>' +
+      '</span>';
+    }).join('') + '</div>';
   }
 
-  function renderSpellCard(card, selected, blocked, reason) {
-    var id = String(card && card.id || '').trim();
-    var spellName = String(card && (card.displayName || card.name || id) || 'Spell');
-    var meta = [card && card.school, card && card.castingTime, card && card.range].filter(Boolean);
-    var stateLabel = String(card && card.stateLabel || '').trim();
-    if (stateLabel) meta.push(stateLabel);
-
+  function renderCard(card, selected, blocked, reason) {
+    var spellId = String(card && card.id || '').trim();
+    var spellName = String(card && (card.displayName || card.name || spellId) || 'Spell');
     var classes = ['cb-spell-card'];
     if (selected) classes.push('selected');
     if (blocked) classes.push('blocked');
 
+    var meta = [card && card.school, card && card.castingTime, card && card.range].filter(Boolean);
+
     return [
-      '<article class="' + classes.join(' ') + '"',
-      ' data-builder-spell-id="' + escHtml(id) + '"',
-      ' data-builder-spell-level="' + escHtml(String(parseInt(card && card.level, 10) || 0)) + '"',
-      ' data-builder-spell-search="' + escHtml([spellName, card && card.description, card && card.summary, card && card.school].join(' ').toLowerCase()) + '"',
-      ' data-builder-spell-blocked="' + (blocked ? '1' : '0') + '">',
+      '<article class="' + classes.join(' ') + '" data-builder-spell-id="' + escHtml(spellId) + '" data-builder-spell-level="' + escHtml(String(parseInt(card && card.level, 10) || 0)) + '" data-builder-spell-blocked="' + (blocked ? '1' : '0') + '">',
       '<div class="cb-spell-head"><div class="cb-spell-name">' + escHtml(spellName) + '</div><span class="cb-spell-badge">' + escHtml(levelLabel(card && card.level)) + '</span></div>',
-      '<div class="cb-spell-meta">' + (meta.length ? meta.map(function(m) { return '<span>' + escHtml(m) + '</span>'; }).join('') : '<span>No metadata</span>') + '</div>',
+      '<div class="cb-spell-meta">' + (meta.length ? meta.map(function (v) { return '<span>' + escHtml(v) + '</span>'; }).join('') : '<span>No metadata</span>') + '</div>',
       '<div class="cb-spell-desc">' + escHtml(String(card && (card.summary || card.description) || 'No details available.')) + '</div>',
       reason ? '<div class="cb-spell-reason">' + escHtml(reason) + '</div>' : '',
-      '</article>',
+      '</article>'
     ].join('');
   }
 
   function render(context) {
     ensureStyles();
     var draft = asObject(context && context.draft);
-    var classData = asObject(draft.class);
-    var progression = asObject(draft.progression);
-    var classId = String(classData.id || '').trim();
+    var cls = asObject(draft.class);
+    var classId = String(cls.id || '').trim();
     if (!classId) {
       return '<div class="builder-help-text">Pick a class first to configure spellcasting.</div>';
     }
 
-    var key = buildRequestKey(draft);
-    if (_state.cacheKey !== key || !_state.data) {
+    var dataKey = requestKey(draft) + '::' + idsKey(draft);
+    if (!_state.cache[dataKey] && !_state.loadingByKey[dataKey]) {
       fetchOptions(draft);
     }
 
-    var data = _state.cacheKey === key ? _state.data : null;
-    var loading = _state.cacheKey === key ? _state.loading : true;
-    if (loading && !data) {
+    var data = _state.cache[dataKey] || null;
+    if (_state.loadingByKey[dataKey] && !data) {
       return '<div class="loading-msg" style="text-align:left;padding:0">Loading spell options…</div>';
     }
+    if (!data) {
+      return '<div class="builder-help-text">Could not load spell options. Try changing class level and reopening this step.</div>';
+    }
 
-    var spellbook = asObject(draft.spellbook);
-    var structured = groupedCards(data, draft);
-    var groups = structured.groups;
-    var levelKeys = structured.levelKeys;
-    var counts = selectedCounts(data, spellbook);
-    var cardById = indexCards(data && data.cards);
-    var activeLevel = _state.activeLevelByKey[key];
-    if (levelKeys.indexOf(activeLevel) === -1) activeLevel = levelKeys.length ? levelKeys[0] : 0;
-    _state.activeLevelByKey[key] = activeLevel;
+    var selected = currentSelection(draft, data);
+    var counts = countsForSelection(data, selected);
+    var grouped = groupedRows(data, selected);
+    var levels = grouped.levels;
 
-    var searchValue = String(_state.searchByKey[key] || '').trim();
-    var status = String(_state.statusByKey[key] || '').trim();
-    var statusTone = status.indexOf('Limit reached') >= 0 || status.indexOf('locked') >= 0 ? ' warn' : '';
+    var activeKey = requestKey(draft);
+    var activeLevel = _state.activeTabByKey[activeKey];
+    if (levels.indexOf(activeLevel) < 0) activeLevel = levels.length ? levels[0] : 0;
+    _state.activeTabByKey[activeKey] = activeLevel;
+
+    var search = String(_state.searchByKey[activeKey] || '').trim();
+    var status = String(_state.statusByKey[activeKey] || '').trim();
+    var statusTone = /limit reached|locked|illegal|only/i.test(status) ? ' warn' : '';
+    var cardById = indexCards(data.cards);
+    var mode = modeFromLimits(asObject(data.limits));
+
+    var selectedMarkup = '';
+    selectedMarkup += renderChipGroup(selected.known, 'known', mode === 'prepared' ? 'Known Cantrips' : 'Known Spells', cardById, mode === 'prepared');
+    if (mode === 'prepared') {
+      selectedMarkup += renderChipGroup(selected.prepared, 'prepared', 'Prepared Spells', cardById, true);
+    }
+    if (!selectedMarkup) selectedMarkup = '<div class="builder-help-text" style="margin:0">No spells selected yet.</div>';
+
+    var classLabel = String((data.limits && data.limits.className) || classId).trim();
+    var levelValue = parseInt(asObject(draft.progression).level, 10) || 1;
+    var tierLabel = grouped.highest > 0 ? levelLabel(grouped.highest) : 'Cantrips only';
 
     return [
       '<div class="screen-header">',
       '<div class="screen-title">Spells</div>',
       '<div class="screen-divider"></div>',
-      '<div class="screen-subtitle">Select spells exactly like the spellbook flow: legal tiers only, clear counts, and hard cap enforcement.</div>',
+      '<div class="screen-subtitle">Choose legal class spells only. Unlock tiers and pick limits are enforced by live rules.</div>',
       '</div>',
       '<div class="cb-spells-shell">',
       '<div class="cb-spells-topline">',
-      '<div class="cb-spells-count"><span class="k">Class</span><span class="v">' + escHtml(structured.className || classId) + ' Lv ' + escHtml(String(parseInt(progression.level, 10) || 1)) + '</span></div>',
+      '<div class="cb-spells-count"><span class="k">Class</span><span class="v">' + escHtml(classLabel) + ' Lv ' + escHtml(String(levelValue)) + '</span></div>',
       '<div class="cb-spells-count"><span class="k">Cantrips</span><span class="v">' + escHtml(String(counts.cantrips)) + (counts.cantripLimit != null ? (' / ' + escHtml(String(counts.cantripLimit))) : '') + '</span></div>',
       '<div class="cb-spells-count"><span class="k">Known</span><span class="v">' + escHtml(String(counts.knownLevelled)) + (counts.knownLimit != null ? (' / ' + escHtml(String(counts.knownLimit))) : '') + '</span></div>',
       '<div class="cb-spells-count"><span class="k">Prepared</span><span class="v">' + escHtml(String(counts.preparedLevelled)) + (counts.preparedLimit != null ? (' / ' + escHtml(String(counts.preparedLimit))) : '') + '</span></div>',
-      '<div class="cb-spells-count"><span class="k">Unlocked Tier</span><span class="v">' + escHtml(structured.levelCapLabel) + '</span></div>',
+      '<div class="cb-spells-count"><span class="k">Unlocked Tier</span><span class="v">' + escHtml(tierLabel) + '</span></div>',
       '</div>',
       '<div class="cb-spells-status' + statusTone + '">' + escHtml(status) + '</div>',
-      '<div class="cb-spells-selected">' + renderSelectedChips(spellbook, cardById, structured.mode) + '</div>',
+      '<div class="cb-spells-selected">' + selectedMarkup + '</div>',
       '<div class="cb-spells-toolbar">',
-      '<div class="builder-help-text" style="margin:0">Click a card to select/unselect. Remove chips to quickly undo.</div>',
-      '<input type="search" class="cb-spells-search" data-builder-spell-search-input="1" value="' + escHtml(searchValue) + '" placeholder="Search unlocked spells…" />',
+      '<div class="builder-help-text" style="margin:0">Pick from cards below. When a limit is reached, additional picks are blocked immediately.</div>',
+      '<input type="search" class="cb-spells-search" data-builder-spell-search-input="1" value="' + escHtml(search) + '" placeholder="Search legal spells…" />',
       '</div>',
       '<div class="cb-spells-tabs">',
-      levelKeys.length
-        ? levelKeys.map(function(level) {
-            return '<button type="button" class="cb-spells-tab' + (level === activeLevel ? ' active' : '') + '" data-builder-spell-tab="' + escHtml(String(level)) + '">' + escHtml(levelLabel(level)) + '</button>';
-          }).join('')
-        : '<span class="builder-help-text">No legal spell tiers available for this class and level.</span>',
+      levels.length ? levels.map(function (lvl) {
+        return '<button type="button" class="cb-spells-tab' + (lvl === activeLevel ? ' active' : '') + '" data-builder-spell-tab="' + escHtml(String(lvl)) + '">' + escHtml(levelLabel(lvl)) + '</button>';
+      }).join('') : '<span class="builder-help-text">No legal spell tiers available for this class at this level.</span>',
       '</div>',
-      levelKeys.map(function(level) {
-        var rows = asArray(groups[level]);
-        var filteredRows = rows.filter(function(card) {
-          if (!searchValue) return true;
+      levels.map(function (lvl) {
+        var rows = asArray(grouped.groups[lvl]);
+        var filtered = rows.filter(function (card) {
+          if (!search) return true;
           var hay = String([card && card.displayName, card && card.description, card && card.summary, card && card.school].join(' ')).toLowerCase();
-          return hay.indexOf(searchValue.toLowerCase()) >= 0;
+          return hay.indexOf(search.toLowerCase()) >= 0;
         });
-        return '<section class="cb-spells-group' + (level === activeLevel ? ' active' : '') + '" data-builder-spell-group="' + escHtml(String(level)) + '">' +
-          (filteredRows.length ? filteredRows.map(function(card) {
-            var spellId = String(card && card.id || '').trim();
-            var spellLevel = parseInt(card && card.level, 10) || 0;
-            var isSelected = spellLevel === 0
-              ? asArray(spellbook.known).indexOf(spellId) >= 0
-              : (structured.mode === 'prepared'
-                ? asArray(spellbook.prepared).indexOf(spellId) >= 0
-                : asArray(spellbook.known).indexOf(spellId) >= 0);
-            var cardBlocked = card && card.isAccessible === false && !isSelected;
-            var blockedReason = cardBlocked ? (card.blockedReason || 'This spell is currently locked.') : '';
-            return renderSpellCard(card, isSelected, cardBlocked, blockedReason);
-          }).join('') : '<div class="builder-help-text">No spells match the current search for this tier.</div>') +
-        '</section>';
+
+        var block = filtered.length ? filtered.map(function (card) {
+          var spellId = String(card && card.id || '').trim();
+          var spellLevel = parseInt(card && card.level, 10) || 0;
+          var isSelected = spellLevel === 0
+            ? selected.known.indexOf(spellId) >= 0
+            : (mode === 'prepared' ? selected.prepared.indexOf(spellId) >= 0 : selected.known.indexOf(spellId) >= 0);
+          var isBlocked = !isSelected && card && card.isAccessible === false;
+          var blockedReason = isBlocked ? (card.blockedReason || 'Not unlocked yet for this class/level.') : '';
+          return renderCard(card, isSelected, isBlocked, blockedReason);
+        }).join('') : '<div class="builder-help-text">No spells match the current search for this tier.</div>';
+
+        return '<section class="cb-spells-group' + (lvl === activeLevel ? ' active' : '') + '" data-builder-spell-group="' + escHtml(String(lvl)) + '">' + block + '</section>';
       }).join(''),
-      '</div>',
+      '</div>'
     ].join('');
+  }
+
+  function setSelection(context, nextKnown, nextPrepared, statusMsg) {
+    var draft = asObject(context && context.draft);
+    var currentSpellbook = asObject(draft.spellbook);
+    var knownNow = dedupeIds(currentSpellbook.known);
+    var preparedNow = dedupeIds(currentSpellbook.prepared);
+    var knownNext = dedupeIds(nextKnown);
+    var preparedNext = dedupeIds(nextPrepared);
+
+    if (knownNow.join('|') !== knownNext.join('|')) {
+      context.onSetField(['spellbook', 'known'], knownNext);
+    }
+    if (preparedNow.join('|') !== preparedNext.join('|')) {
+      context.onSetField(['spellbook', 'prepared'], preparedNext);
+    }
+
+    var reqKey = requestKey(draft);
+    _state.statusByKey[reqKey] = statusMsg || '';
   }
 
   function bind(root, context) {
     if (!root || !context || typeof context.onSetField !== 'function') return;
-    var draft = asObject(context.draft);
-    var key = buildRequestKey(draft);
 
-    if ((_state.cacheKey !== key || !_state.data) && _state.pendingRerenderKey !== key) {
-      _state.pendingRerenderKey = key;
-      fetchOptions(draft).then(function done() {
-        _state.pendingRerenderKey = '';
-        if (!root.isConnected) return;
-        var currentKnown = asArray(asObject(context.draft && context.draft.spellbook).known).slice();
-        context.onSetField(['spellbook', 'known'], currentKnown);
+    var draft = asObject(context.draft);
+    var reqKey = requestKey(draft);
+    var fullKey = reqKey + '::' + idsKey(draft);
+
+    fetchOptions(draft).then(function (data) {
+      if (!data || !root.isConnected) return;
+      var serverKnown = asArray(data.known && data.known.length ? data.known : (data.validation && data.validation.known));
+      var serverPrepared = asArray(data.prepared && data.prepared.length ? data.prepared : (data.validation && data.validation.prepared));
+      setSelection(context, serverKnown, serverPrepared, '');
+    });
+
+    function withData(fn) {
+      var data = _state.cache[fullKey];
+      if (data) {
+        fn(data);
+        return;
+      }
+      fetchOptions(context.draft).then(function (fresh) {
+        if (fresh) fn(fresh);
       });
     }
 
-    function commit(nextKnown, nextPrepared, statusMsg) {
-      _state.statusByKey[key] = statusMsg || '';
-      context.onSetField(['spellbook', 'known'], nextKnown);
-      context.onSetField(['spellbook', 'prepared'], nextPrepared);
-    }
+    function toggleSpell(spellId, level) {
+      withData(function (data) {
+        var selection = currentSelection(context.draft, data);
+        var limits = asObject(data.limits);
+        var mode = modeFromLimits(limits);
+        var counts = countsForSelection(data, selection);
 
-    function cardById() {
-      return indexCards(_state.data && _state.data.cards);
-    }
+        var known = selection.known.slice();
+        var prepared = selection.prepared.slice();
 
-    function toggleSpell(spellId, spellLevel) {
-      var spellbook = asObject(context.draft && context.draft.spellbook);
-      var known = asArray(spellbook.known).slice();
-      var prepared = asArray(spellbook.prepared).slice();
-      var limits = asObject(_state.data && _state.data.limits);
-      var mode = getMode(limits);
-      var counts = selectedCounts(_state.data, spellbook);
-
-      if (spellLevel === 0) {
-        var knownIdx = known.indexOf(spellId);
-        if (knownIdx >= 0) {
-          known.splice(knownIdx, 1);
-          prepared = prepared.filter(function(id) { return id !== spellId; });
-          commit(known, prepared, 'Cantrip removed.');
+        if (level === 0) {
+          if (known.indexOf(spellId) >= 0) {
+            known = known.filter(function (id) { return id !== spellId; });
+            prepared = prepared.filter(function (id) { return id !== spellId; });
+            setSelection(context, known, prepared, 'Cantrip removed.');
+            return;
+          }
+          if (counts.cantripLimit != null && counts.cantrips >= parseInt(counts.cantripLimit, 10)) {
+            setSelection(context, known, prepared, 'Limit reached: cantrip cap is ' + counts.cantripLimit + '.');
+            return;
+          }
+          known.push(spellId);
+          setSelection(context, known, prepared, 'Cantrip learned.');
           return;
         }
-        if (counts.cantripLimit != null && counts.cantrips >= parseInt(counts.cantripLimit, 10)) {
-          commit(known, prepared, 'Limit reached: cantrip cap is ' + counts.cantripLimit + '.');
+
+        if (mode === 'prepared') {
+          if (prepared.indexOf(spellId) >= 0) {
+            prepared = prepared.filter(function (id) { return id !== spellId; });
+            setSelection(context, known, prepared, 'Spell unprepared.');
+            return;
+          }
+          if (counts.preparedLimit != null && counts.preparedLevelled >= parseInt(counts.preparedLimit, 10)) {
+            setSelection(context, known, prepared, 'Limit reached: prepared cap is ' + counts.preparedLimit + '.');
+            return;
+          }
+          prepared.push(spellId);
+          setSelection(context, known, prepared, 'Spell prepared.');
+          return;
+        }
+
+        if (known.indexOf(spellId) >= 0) {
+          known = known.filter(function (id) { return id !== spellId; });
+          prepared = prepared.filter(function (id) { return id !== spellId; });
+          setSelection(context, known, prepared, 'Spell removed.');
+          return;
+        }
+        if (counts.knownLimit != null && counts.knownLevelled >= parseInt(counts.knownLimit, 10)) {
+          setSelection(context, known, prepared, 'Limit reached: known cap is ' + counts.knownLimit + '.');
           return;
         }
         known.push(spellId);
-        commit(known, prepared, 'Cantrip learned.');
-        return;
-      }
-
-      if (mode === 'prepared') {
-        var prepIdx = prepared.indexOf(spellId);
-        if (prepIdx >= 0) {
-          prepared.splice(prepIdx, 1);
-          commit(known, prepared, 'Spell unprepared.');
-          return;
-        }
-        if (counts.preparedLimit != null && counts.preparedLevelled >= parseInt(counts.preparedLimit, 10)) {
-          commit(known, prepared, 'Limit reached: prepared cap is ' + counts.preparedLimit + '.');
-          return;
-        }
-        prepared.push(spellId);
-        commit(known, prepared, 'Spell prepared.');
-        return;
-      }
-
-      var knownIdxLevelled = known.indexOf(spellId);
-      if (knownIdxLevelled >= 0) {
-        known.splice(knownIdxLevelled, 1);
-        prepared = prepared.filter(function(id) { return id !== spellId; });
-        commit(known, prepared, 'Spell removed.');
-        return;
-      }
-      if (counts.knownLimit != null && counts.knownLevelled >= parseInt(counts.knownLimit, 10)) {
-        commit(known, prepared, 'Limit reached: known cap is ' + counts.knownLimit + '.');
-        return;
-      }
-      known.push(spellId);
-      commit(known, prepared, 'Spell learned.');
+        setSelection(context, known, prepared, 'Spell learned.');
+      });
     }
 
-    root.querySelectorAll('[data-builder-spell-tab]').forEach(function(tabEl) {
-      tabEl.addEventListener('click', function onTabClick() {
-        _state.activeLevelByKey[key] = parseInt(tabEl.dataset.builderSpellTab, 10) || 0;
-        var known = asArray(asObject(context.draft && context.draft.spellbook).known).slice();
-        context.onSetField(['spellbook', 'known'], known);
+    root.querySelectorAll('[data-builder-spell-tab]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        _state.activeTabByKey[reqKey] = parseInt(btn.dataset.builderSpellTab, 10) || 0;
+        setSelection(context, asArray(asObject(context.draft && context.draft.spellbook).known), asArray(asObject(context.draft && context.draft.spellbook).prepared), '');
       });
     });
 
     var searchInput = root.querySelector('[data-builder-spell-search-input="1"]');
     if (searchInput) {
-      searchInput.addEventListener('input', function onSearch() {
-        _state.searchByKey[key] = String(searchInput.value || '');
-        var known = asArray(asObject(context.draft && context.draft.spellbook).known).slice();
-        context.onSetField(['spellbook', 'known'], known);
+      searchInput.addEventListener('input', function () {
+        _state.searchByKey[reqKey] = String(searchInput.value || '');
+        setSelection(context, asArray(asObject(context.draft && context.draft.spellbook).known), asArray(asObject(context.draft && context.draft.spellbook).prepared), '');
       });
     }
 
-    root.querySelectorAll('[data-builder-spell-remove]').forEach(function(chipEl) {
-      chipEl.addEventListener('click', function onRemove(evt) {
-        evt.preventDefault();
-        evt.stopPropagation();
-        var spellId = String(chipEl.dataset.builderSpellRemove || '').trim();
-        var listKey = String(chipEl.dataset.builderSpellRemoveList || 'known').trim();
-        if (!spellId || (listKey !== 'known' && listKey !== 'prepared')) return;
-
-        var spellbook = asObject(context.draft && context.draft.spellbook);
-        var known = asArray(spellbook.known).slice().filter(function(id) { return id !== spellId; });
-        var prepared = asArray(spellbook.prepared).slice();
-        if (listKey === 'prepared' || listKey === 'known') {
-          prepared = prepared.filter(function(id) { return id !== spellId; });
-        }
-        commit(known, prepared, 'Spell removed.');
+    root.querySelectorAll('[data-builder-spell-remove]').forEach(function (chip) {
+      chip.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        var spellId = String(chip.dataset.builderSpellRemove || '').trim();
+        if (!spellId) return;
+        var selection = currentSelection(context.draft, _state.cache[fullKey]);
+        var known = selection.known.filter(function (id) { return id !== spellId; });
+        var prepared = selection.prepared.filter(function (id) { return id !== spellId; });
+        setSelection(context, known, prepared, 'Spell removed.');
       });
     });
 
-    root.querySelectorAll('[data-builder-spell-id]').forEach(function(cardEl) {
-      cardEl.addEventListener('click', function onSpellCardClick() {
-        if (String(cardEl.dataset.builderSpellBlocked || '') === '1') {
-          _state.statusByKey[key] = 'This spell is locked for your current class level.';
-          var known = asArray(asObject(context.draft && context.draft.spellbook).known).slice();
-          context.onSetField(['spellbook', 'known'], known);
+    root.querySelectorAll('[data-builder-spell-id]').forEach(function (card) {
+      card.addEventListener('click', function () {
+        if (String(card.dataset.builderSpellBlocked || '') === '1') {
+          _state.statusByKey[reqKey] = 'This spell is not unlocked for the current class/level.';
+          setSelection(context, asArray(asObject(context.draft && context.draft.spellbook).known), asArray(asObject(context.draft && context.draft.spellbook).prepared), _state.statusByKey[reqKey]);
           return;
         }
-        var spellId = String(cardEl.dataset.builderSpellId || '').trim();
-        var spellLevel = parseInt(cardEl.dataset.builderSpellLevel, 10) || 0;
-        var spell = cardById()[spellId];
-        if (!spellId || !spell) return;
-        toggleSpell(spellId, spellLevel);
+        var spellId = String(card.dataset.builderSpellId || '').trim();
+        var level = parseInt(card.dataset.builderSpellLevel, 10) || 0;
+        if (!spellId) return;
+        toggleSpell(spellId, level);
       });
     });
   }

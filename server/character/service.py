@@ -22,6 +22,33 @@ from server.character.validation import ensure_character_defaults, validate_or_r
 
 
 _NATIVE_SERVICE_VERSION = 1
+_STARTER_WEAPON_STATS: dict[str, dict[str, Any]] = {
+    "club": {"damage_dice": "1d4", "damage_type": "bludgeoning", "properties": ["Light"], "range": "Melee 5 ft"},
+    "dagger": {"damage_dice": "1d4", "damage_type": "piercing", "properties": ["Finesse", "Light", "Thrown"], "range": "20/60 ft"},
+    "dart": {"damage_dice": "1d4", "damage_type": "piercing", "properties": ["Finesse", "Thrown"], "range": "20/60 ft"},
+    "greatsword": {"damage_dice": "2d6", "damage_type": "slashing", "properties": ["Heavy", "Two-Handed"], "range": "Melee 5 ft"},
+    "greataxe": {"damage_dice": "1d12", "damage_type": "slashing", "properties": ["Heavy", "Two-Handed"], "range": "Melee 5 ft"},
+    "halberd": {"damage_dice": "1d10", "damage_type": "slashing", "properties": ["Heavy", "Reach", "Two-Handed"], "range": "Melee 10 ft"},
+    "hand crossbow": {"damage_dice": "1d6", "damage_type": "piercing", "properties": ["Ammunition", "Light", "Loading"], "range": "30/120 ft"},
+    "handaxe": {"damage_dice": "1d6", "damage_type": "slashing", "properties": ["Light", "Thrown"], "range": "20/60 ft"},
+    "javelin": {"damage_dice": "1d6", "damage_type": "piercing", "properties": ["Thrown"], "range": "30/120 ft"},
+    "light crossbow": {"damage_dice": "1d8", "damage_type": "piercing", "properties": ["Ammunition", "Loading", "Two-Handed"], "range": "80/320 ft"},
+    "light hammer": {"damage_dice": "1d4", "damage_type": "bludgeoning", "properties": ["Light", "Thrown"], "range": "20/60 ft"},
+    "longbow": {"damage_dice": "1d8", "damage_type": "piercing", "properties": ["Ammunition", "Heavy", "Two-Handed"], "range": "150/600 ft"},
+    "longsword": {"damage_dice": "1d8", "damage_type": "slashing", "versatile_damage": "1d10", "properties": ["Versatile"], "range": "Melee 5 ft"},
+    "mace": {"damage_dice": "1d6", "damage_type": "bludgeoning", "properties": [], "range": "Melee 5 ft"},
+    "maul": {"damage_dice": "2d6", "damage_type": "bludgeoning", "properties": ["Heavy", "Two-Handed"], "range": "Melee 5 ft"},
+    "musket": {"damage_dice": "1d12", "damage_type": "piercing", "properties": ["Ammunition", "Loading", "Two-Handed"], "range": "40/120 ft"},
+    "pistol": {"damage_dice": "1d10", "damage_type": "piercing", "properties": ["Ammunition", "Loading"], "range": "30/90 ft"},
+    "quarterstaff": {"damage_dice": "1d6", "damage_type": "bludgeoning", "versatile_damage": "1d8", "properties": ["Versatile"], "range": "Melee 5 ft"},
+    "rapier": {"damage_dice": "1d8", "damage_type": "piercing", "properties": ["Finesse"], "range": "Melee 5 ft"},
+    "scimitar": {"damage_dice": "1d6", "damage_type": "slashing", "properties": ["Finesse", "Light"], "range": "Melee 5 ft"},
+    "shortbow": {"damage_dice": "1d6", "damage_type": "piercing", "properties": ["Ammunition", "Two-Handed"], "range": "80/320 ft"},
+    "shortsword": {"damage_dice": "1d6", "damage_type": "piercing", "properties": ["Finesse", "Light"], "range": "Melee 5 ft"},
+    "sling": {"damage_dice": "1d4", "damage_type": "bludgeoning", "properties": ["Ammunition"], "range": "30/120 ft"},
+    "spear": {"damage_dice": "1d6", "damage_type": "piercing", "versatile_damage": "1d8", "properties": ["Thrown", "Versatile"], "range": "20/60 ft"},
+    "warhammer": {"damage_dice": "1d8", "damage_type": "bludgeoning", "versatile_damage": "1d10", "properties": ["Versatile"], "range": "Melee 5 ft"},
+}
 
 
 def _safe_int(value: Any, fallback: int = 0, *, minimum: int | None = None) -> int:
@@ -37,6 +64,40 @@ def _safe_int(value: Any, fallback: int = 0, *, minimum: int | None = None) -> i
 def _safe_str(value: Any, fallback: str = "") -> str:
     text = str(value or "").strip()
     return text or fallback
+
+
+def _weapon_stats_for_name(name: Any) -> dict[str, Any]:
+    import re
+
+    clean = str(name or "").strip().lower()
+    if not clean:
+        return {}
+    clean = re.sub(r"\s*[×x]\s*\d+$", "", clean).strip()
+    clean = re.sub(r"\s*\(\d+\)$", "", clean).strip()
+    singular = re.sub(r"s$", "", clean).strip()
+    return dict(_STARTER_WEAPON_STATS.get(clean) or _STARTER_WEAPON_STATS.get(singular) or {})
+
+
+def _enrich_inventory_weapon_fields(item: dict[str, Any]) -> None:
+    if not isinstance(item, dict):
+        return
+    stats = _weapon_stats_for_name(item.get("name"))
+    if not stats:
+        return
+    if not _safe_str(item.get("damage_dice")):
+        item["damage_dice"] = _safe_str(stats.get("damage_dice"))
+    if not _safe_str(item.get("damage")) and _safe_str(item.get("damage_dice")):
+        item["damage"] = _safe_str(item.get("damage_dice"))
+    if not _safe_str(item.get("damage_type")):
+        item["damage_type"] = _safe_str(stats.get("damage_type"))
+    if not _safe_str(item.get("versatile_damage")) and _safe_str(stats.get("versatile_damage")):
+        item["versatile_damage"] = _safe_str(stats.get("versatile_damage"))
+    if not _safe_str(item.get("range")) and _safe_str(stats.get("range")):
+        item["range"] = _safe_str(stats.get("range"))
+    if not isinstance(item.get("weapon_properties"), list) or not item.get("weapon_properties"):
+        props = [str(v or "").strip() for v in (stats.get("properties") or []) if str(v or "").strip()]
+        if props:
+            item["weapon_properties"] = props[:12]
 
 
 def _build_class_summary(char_sheet: dict) -> str:
@@ -97,6 +158,7 @@ def _normalize_builder_inventory_entry(raw: Any) -> dict | None:
     contents = raw.get("bag_contents")
     if isinstance(contents, list):
         out["bag_contents"] = [entry for entry in (_normalize_builder_inventory_entry(row) for row in contents) if entry]
+    _enrich_inventory_weapon_fields(out)
     return out
 
 
