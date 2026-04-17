@@ -2936,3 +2936,115 @@ body.cs-detail-open {
     grid-template-columns: 1fr;
   }
 }
+
+/* Features tab redesign (player-reference hierarchy) */
+.cs-features-redesign-shell {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.cs-features-redesign-controls {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, rgba(18, 16, 24, 0.96), rgba(18, 16, 24, 0.88));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(6px);
+}
+
+.cs-features-redesign-summary {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.cs-feature-item {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cs-feature-item:last-child {
+  border-bottom: none;
+}
+
+.cs-feature-header {
+  align-items: flex-start;
+  gap: 0.9rem;
+}
+
+.cs-feature-maincopy {
+  gap: 0.35rem;
+}
+
+.cs-feature-title-row {
+  align-items: baseline;
+}
+
+.cs-feature-inline-meta {
+  color: rgba(217, 207, 191, 0.72);
+  font-size: 0.77rem;
+}
+
+.cs-feature-preview {
+  color: rgba(242, 236, 223, 0.95);
+  line-height: 1.4;
+}
+
+.cs-feature-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.cs-feature-kind-badge {
+  border-radius: 999px;
+  border: 1px solid rgba(225, 180, 110, 0.34);
+  background: rgba(225, 180, 110, 0.13);
+  color: rgba(245, 224, 183, 0.98);
+  font-size: 0.69rem;
+  letter-spacing: 0.02em;
+}
+
+.cs-feature-body-shell {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.cs-feature-facts {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.5rem;
+}
+
+.cs-feature-fact {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(17, 15, 23, 0.58);
+  padding: 0.42rem 0.5rem;
+}
+
+.cs-feature-fact-label {
+  color: rgba(225, 204, 168, 0.88);
+  font-size: 0.68rem;
+}
+
+.cs-feature-fact-value {
+  color: rgba(245, 239, 230, 0.97);
+  font-size: 0.8rem;
+}
+
+.cs-feature-body-rules {
+  background: rgba(8, 7, 13, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 9px;
+  padding: 0.62rem 0.72rem;
+}
+
+.cs-feature-section-copy {
+  margin-bottom: 0.42rem;
+}
+
+@media (max-width: 900px) {
+  .cs-feature-meta {
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+}
