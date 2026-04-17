@@ -657,12 +657,23 @@
       card.className = 'character-card' + (entry.id === selectedId ? ' selected' : '');
       card.dataset.profileId = entry.id;
       const renderer = window.CasualDnDAvatarRenderer;
+      const portraitLibrary = window.CasualDnDPortraitLibrary;
       const tokenImageUrl = String(entry.tokenImageUrl || '').trim();
+      const comboPortraitUrl = portraitLibrary && typeof portraitLibrary.resolve === 'function'
+        ? String(portraitLibrary.resolve({
+            speciesId: entry.speciesId || entry.speciesLabel || '',
+            classId: entry.classId || entry.classSummary || '',
+            gender: entry.gender || 'neutral',
+            neutralFallback: '',
+          }) || '').trim()
+        : '';
       const avatarMarkup = tokenImageUrl
         ? `<img class="avatar-render mini" src="${escapeHtml(tokenImageUrl)}" alt="${escapeHtml(entry.name || 'Hero')}">`
-        : (renderer
-          ? renderer.renderImgMarkup(buildAvatarOptions(entry), 110, 'mini', 'mini')
-          : `<span>${(entry.name || '?').slice(0, 2).toUpperCase()}</span>`);
+        : (comboPortraitUrl
+          ? `<img class="avatar-render mini" src="${escapeHtml(comboPortraitUrl)}" alt="${escapeHtml(entry.name || 'Hero')}">`
+          : (renderer
+            ? renderer.renderImgMarkup(buildAvatarOptions(entry), 110, 'mini', 'mini')
+            : `<span>${(entry.name || '?').slice(0, 2).toUpperCase()}</span>`));
       const canDelete = entry.kind === 'library-profile' || (entry.kind === 'session-token' && entry.mine);
       card.innerHTML = `
         <div class="token">${avatarMarkup}</div>
@@ -747,6 +758,7 @@
       joinGateway = window.CharacterJoinGateway.createJoinGateway({
         state: gatewayState,
         modal: window.CharacterGatewayModal,
+        externalRosterRenderer: true,
         hooks: {
           onUseExisting(profileId, selectedEntry) {
             const selectedId = String(profileId || '').trim();

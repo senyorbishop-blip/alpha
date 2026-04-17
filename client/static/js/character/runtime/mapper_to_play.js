@@ -945,6 +945,9 @@
     var doc = asObject(charDocument);
     var token = asObject(existingTokenData);
     var runtime = asObject(doc.runtime);
+    if (!Object.keys(runtime).length) {
+      runtime = asObject(doc.nativeRuntime);
+    }
     var combat = asObject(runtime.combat);
     var hp = resolveCanonicalHp(doc, runtime, {
       max: asInt(combat.maxHP, asInt(token.maxHP, 10)),
@@ -961,7 +964,7 @@
       ...token,
       name: firstNonEmpty(doc.name, identity.name, token.name),
       portraitUrl: firstNonEmpty(identity.portraitUrl, doc.portraitUrl, token.portraitUrl),
-      tokenImageUrl: firstNonEmpty(identity.tokenImageUrl, doc.tokenImageUrl, token.tokenImageUrl),
+      tokenImageUrl: firstNonEmpty(identity.tokenImageUrl, identity.portraitUrl, doc.tokenImageUrl, doc.portraitUrl, token.tokenImageUrl),
       maxHP: mappedMaxHp,
       currentHP: mappedCurrentHp,
       tempHP: asInt(hp.temp, asInt(token.tempHP, 0)),
