@@ -320,6 +320,41 @@ def _highest_unlocked_spell_level(spell_slots: dict) -> int:
     return highest
 
 
+def _fallback_highest_unlocked_spell_level(class_id: str, class_level: int, class_spell_pool: set[str]) -> int:
+    """Infer highest unlocked spell level from class spell unlock metadata.
+
+    Some classes (notably pact casters) do not expose tiered entries in
+    spellSlots for all levels, so relying on slot maps alone can report
+    "cantrips only" even when leveled spells are legal at this class level.
+    """
+    normalized_class_id = str(class_id or "").strip().lower()
+    if not normalized_class_id or class_level <= 0:
+        return 0
+
+    class_row = get_class_catalog_row(normalized_class_id) if normalized_class_id else {}
+    progression = class_row.get("progressionTable") if isinstance(class_row.get("progressionTable"), list) else []
+    level_row = next(
+        (
+            row for row in progression
+            if isinstance(row, dict) and _safe_int(row.get("level"), default=0, minimum=0, maximum=20) == class_level
+        ),
+        None,
+    )
+    mechanics = level_row.get("classMechanics") if isinstance(level_row, dict) and isinstance(level_row.get("classMechanics"), dict) else {}
+
+    pact_slot_level = _safe_int(mechanics.get("pactSlotLevel"), default=0, minimum=0, maximum=9)
+    if pact_slot_level > 0:
+        return pact_slot_level
+
+    # Fallback floor for known/prepared casters with legal leveled spells but no
+    # explicit slot map exposed on this endpoint payload.
+    if _safe_int(mechanics.get("spellsKnown"), default=0, minimum=0, maximum=99) > 0:
+        return 1
+    if str(mechanics.get("spellsPreparedFormula") or "").strip():
+        return 1
+    return 0
+
+
 @lru_cache(maxsize=1)
 def _builder_class_spell_pool() -> dict[str, set[str]]:
     root = Path(__file__).resolve().parents[1] / "data" / "rules" / "5e2024" / "class_spell_lists.json"
@@ -619,6 +654,8 @@ async def api_character_builder_spell_options(
             for row in list_compendium_spells(cls=normalized_class_id)
             if isinstance(row, dict)
         }
+    if highest_unlocked <= 0:
+        highest_unlocked = _fallback_highest_unlocked_spell_level(normalized_class_id, class_level, class_spell_pool)
 
     cards: list[dict] = []
     for spell in list_compendium_spells():

@@ -199,15 +199,16 @@
 
   function resolveCreateBuilderOpts(initialDraftOrOptions) {
     if (!initialDraftOrOptions || typeof initialDraftOrOptions !== 'object') {
-      return { initialDraft: null, resumeMemoryDraft: false };
+      return { initialDraft: null, resumeMemoryDraft: false, loadPersistedDraft: false };
     }
-    if ('initialDraft' in initialDraftOrOptions || 'resumeMemoryDraft' in initialDraftOrOptions) {
+    if ('initialDraft' in initialDraftOrOptions || 'resumeMemoryDraft' in initialDraftOrOptions || 'loadPersistedDraft' in initialDraftOrOptions) {
       return {
         initialDraft: initialDraftOrOptions.initialDraft || null,
         resumeMemoryDraft: initialDraftOrOptions.resumeMemoryDraft === true,
+        loadPersistedDraft: initialDraftOrOptions.loadPersistedDraft === true,
       };
     }
-    return { initialDraft: initialDraftOrOptions, resumeMemoryDraft: false };
+    return { initialDraft: initialDraftOrOptions, resumeMemoryDraft: false, loadPersistedDraft: false };
   }
 
   function createBuilderState(initialDraftOrOptions) {
@@ -222,7 +223,7 @@
 
     const startingDraft = createOpts.initialDraft
       || (createOpts.resumeMemoryDraft ? _memoryDraft : null)
-      || (createOpts.resumeMemoryDraft ? null : loadPersistedDraft())
+      || (createOpts.loadPersistedDraft ? loadPersistedDraft() : null)
       || createDefaultDraft();
 
     const state = {
