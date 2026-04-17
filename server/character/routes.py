@@ -442,6 +442,15 @@ async def api_character_content_catalog(request: Request, rules_mode: str = "cas
                     "featuresByLevel": row.get("featuresByLevel")
                     if isinstance(row.get("featuresByLevel"), list)
                     else [],
+                    "spellSlots": row.get("spellSlots")
+                    if isinstance(row.get("spellSlots"), dict)
+                    else {},
+                    "cantripsKnownByLevel": row.get("cantripsKnownByLevel")
+                    if isinstance(row.get("cantripsKnownByLevel"), dict)
+                    else {},
+                    "spellsKnownByLevel": row.get("spellsKnownByLevel")
+                    if isinstance(row.get("spellsKnownByLevel"), dict)
+                    else {},
                 }
                 for row in class_rows
             ],

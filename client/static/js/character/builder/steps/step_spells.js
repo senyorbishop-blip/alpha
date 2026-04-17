@@ -54,6 +54,41 @@
     document.head.appendChild(style);
   }
 
+  function getMaxUnlockedSpellLevel(classRow, classLevel) {
+    var slots = classRow && classRow.spellSlots && typeof classRow.spellSlots === 'object'
+      ? classRow.spellSlots
+      : {};
+    var levelKey = String(Number.isFinite(classLevel) && classLevel > 0 ? classLevel : 1);
+    var levelSlots = slots[levelKey] && typeof slots[levelKey] === 'object' ? slots[levelKey] : {};
+    var highest = 0;
+    Object.keys(levelSlots).forEach(function checkSlot(key) {
+      var count = parseInt(levelSlots[key], 10);
+      if (!Number.isFinite(count) || count <= 0) return;
+      // Slot keys are either numeric ("1","2",...) or ordinal ("1st","2nd",...)
+      var level = parseInt(key, 10);
+      if (Number.isFinite(level) && level > highest) highest = level;
+    });
+    return highest;
+  }
+
+  function getCantripsAllowed(classRow, classLevel) {
+    var byLevel = classRow && classRow.cantripsKnownByLevel && typeof classRow.cantripsKnownByLevel === 'object'
+      ? classRow.cantripsKnownByLevel
+      : {};
+    var key = Number.isFinite(classLevel) && classLevel > 0 ? classLevel : 1;
+    var val = byLevel[String(key)] != null ? byLevel[String(key)] : byLevel[key];
+    return val != null ? Math.max(0, parseInt(val, 10) || 0) : null;
+  }
+
+  function getSpellsKnownAllowed(classRow, classLevel) {
+    var byLevel = classRow && classRow.spellsKnownByLevel && typeof classRow.spellsKnownByLevel === 'object'
+      ? classRow.spellsKnownByLevel
+      : {};
+    var key = Number.isFinite(classLevel) && classLevel > 0 ? classLevel : 1;
+    var val = byLevel[String(key)] != null ? byLevel[String(key)] : byLevel[key];
+    return val != null ? Math.max(0, parseInt(val, 10) || 0) : null;
+  }
+
   function ensureSpellsLoaded() {
     if (_spellRows.length) return Promise.resolve(_spellRows);
     if (_spellFetchPromise) return _spellFetchPromise;
@@ -153,8 +188,12 @@
       const classRow = getClassRow(classId);
       const className = String(classRow && classRow.displayName || classId || '').trim();
       const classLevel = parseInt(draft.progression && draft.progression.level, 10);
-      const spellSlots = classRow && classRow.spellSlots && classRow.spellSlots[String(Number.isFinite(classLevel) && classLevel > 0 ? classLevel : 1)]
-        ? classRow.spellSlots[String(classLevel)]
+      const safeClassLevel = Number.isFinite(classLevel) && classLevel > 0 ? classLevel : 1;
+      const maxSpellLevel = getMaxUnlockedSpellLevel(classRow, safeClassLevel);
+      const cantripsAllowed = getCantripsAllowed(classRow, safeClassLevel);
+      const spellsKnownAllowed = getSpellsKnownAllowed(classRow, safeClassLevel);
+      const spellSlots = classRow && classRow.spellSlots && classRow.spellSlots[String(safeClassLevel)]
+        ? classRow.spellSlots[String(safeClassLevel)]
         : null;
 
       const filtered = _spellRows.filter(function byClass(spell) {
@@ -166,16 +205,25 @@
         const classMatch = classes.some(function includesClass(entry) {
           return normalizeId(entry) === normalizeId(className) || normalizeId(entry) === normalizeId(classId);
         });
-        if (classMatch) return true;
-        return subclassId && subclassLists.some(function includesSubclass(entry) {
+        if (!classMatch && !(subclassId && subclassLists.some(function includesSubclass(entry) {
           return normalizeId(entry) === normalizeId(subclassId);
-        });
+        }))) return false;
+        // Only show spell levels that have been unlocked at the current character level.
+        const spellLevel = parseInt(spell && spell.level, 10);
+        if (Number.isFinite(spellLevel) && spellLevel > 0 && maxSpellLevel > 0 && spellLevel > maxSpellLevel) return false;
+        return true;
       });
       const groups = groupByLevel(filtered);
       const levelKeys = Object.keys(groups).sort(function sortLevels(a, b) {
         return parseInt(a, 10) - parseInt(b, 10);
       });
-      const activeLevel = levelKeys[0] || '0';
+      // Remove cantrip group if the class grants no cantrips at this level.
+      const filteredLevelKeys = levelKeys.filter(function excludeLockedLevels(key) {
+        const lvl = parseInt(key, 10);
+        if (lvl === 0 && cantripsAllowed !== null && cantripsAllowed <= 0) return false;
+        return true;
+      });
+      const activeLevel = filteredLevelKeys[0] || '0';
 
       return [
         '<div class="field"><label>Spellcasting Style</label>',
@@ -202,15 +250,17 @@
           : [
             '<div class="spell-browser-shell">',
             '<div class="spell-slot-row"><strong>Spell Slots:</strong> ' + escHtml(spellSlots ? Object.keys(spellSlots).map(function toSlot(key) { return key + ' ' + spellSlots[key]; }).join(' · ') : 'No slots at current level') + '</div>',
+            cantripsAllowed !== null ? ('<div class="spell-slot-row"><strong>Cantrips allowed:</strong> ' + escHtml(String(cantripsAllowed)) + '</div>') : '',
+            spellsKnownAllowed !== null ? ('<div class="spell-slot-row"><strong>Spells known limit:</strong> ' + escHtml(String(spellsKnownAllowed)) + '</div>') : '',
             '<div class="builder-help-text">Use spell IDs as the saved value. Cantrips belong in Known. Levelled spells go in Prepared for prepared casters or Known for known casters.</div>',
             '<input class="spell-browser-search" type="search" data-builder-spell-search="1" placeholder="Search ' + escHtml(className || 'class') + ' spells…" />',
             '<div class="spell-level-tabs">',
-            levelKeys.map(function toTab(levelKey) {
+            filteredLevelKeys.map(function toTab(levelKey) {
               const activeClass = levelKey === activeLevel ? ' active' : '';
               return '<button type="button" class="spell-level-tab' + activeClass + '" data-spell-level-tab="' + escHtml(levelKey) + '">' + escHtml(levelLabel(levelKey)) + '</button>';
             }).join(''),
             '</div>',
-            levelKeys.map(function toGroup(levelKey) {
+            filteredLevelKeys.map(function toGroup(levelKey) {
               const rows = groups[levelKey] || [];
               const activeClass = levelKey === activeLevel ? ' active' : '';
               return [
@@ -282,19 +332,38 @@
         });
       }
 
+      const classLevelBind = parseInt(draft.progression && draft.progression.level, 10);
+      const safeClassLevelBind = Number.isFinite(classLevelBind) && classLevelBind > 0 ? classLevelBind : 1;
+      const cantripsAllowedBind = getCantripsAllowed(classRow, safeClassLevelBind);
+      const spellsKnownAllowedBind = getSpellsKnownAllowed(classRow, safeClassLevelBind);
+
       root.querySelectorAll('.spell-entry[data-builder-spell-name]').forEach(function bindSpellEntry(entryEl) {
         entryEl.addEventListener('click', function onSpellAdd() {
           const spellId = String(entryEl.dataset.builderSpellId || '').trim();
-          const spellName = String(entryEl.dataset.builderSpellName || '').trim();
           const spellLevel = parseInt(entryEl.dataset.builderSpellLevel || '0', 10);
           if (!spellId) return;
           const target = pickTargetList(String(spellbook.castingMode || 'none'), classRow);
           const current = Array.isArray(spellbook[target]) ? spellbook[target].slice() : [];
           if (target === 'prepared' && spellLevel === 0) return;
-          if (!current.includes(spellId)) {
-            current.push(spellId);
-            context.onSetField(['spellbook', target], current);
+          if (current.includes(spellId)) return;
+          // Enforce cantrip limit
+          if (spellLevel === 0 && cantripsAllowedBind !== null) {
+            const currentCantrips = (Array.isArray(spellbook.known) ? spellbook.known : []).filter(function isCantrip(id) {
+              var row = _spellRows.find(function findSpell(r) { return r && r.id === id; });
+              return row && parseInt(row.level, 10) === 0;
+            }).length;
+            if (currentCantrips >= cantripsAllowedBind) return;
           }
+          // Enforce known spell limit for known-casters
+          if (target === 'known' && spellLevel > 0 && spellsKnownAllowedBind !== null) {
+            const currentKnownLevelled = (Array.isArray(spellbook.known) ? spellbook.known : []).filter(function isLevelled(id) {
+              var row = _spellRows.find(function findSpell(r) { return r && r.id === id; });
+              return row && parseInt(row.level, 10) > 0;
+            }).length;
+            if (currentKnownLevelled >= spellsKnownAllowedBind) return;
+          }
+          current.push(spellId);
+          context.onSetField(['spellbook', target], current);
         });
       });
     },

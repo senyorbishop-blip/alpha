@@ -58,7 +58,7 @@ def test_resolve_runtime_computes_level_and_proficiency_bonus():
     assert runtime["levelTotal"] == 5
     assert runtime["proficiencyBonus"] == 3
     assert runtime["speed"]["walk"] == 35
-    assert runtime["hp"]["max"] == 38
+    assert runtime["hp"]["max"] == 45
 
 
 def test_profile_entry_mapper_keeps_legacy_and_native_shapes_together():
@@ -255,8 +255,9 @@ def test_native_builder_fighter_level_one_uses_hit_die_plus_con_for_hp():
         }
     )
     runtime = result["runtime"]
-    assert runtime["hp"]["max"] == 8
-    assert runtime["hp"]["current"] == 8
+    # Fighter d10 full die at level 1 + CON mod +2 = 12
+    assert runtime["hp"]["max"] == 12
+    assert runtime["hp"]["current"] == 12
     assert runtime["hp"]["temp"] == 0
     assert runtime["ac"] >= 10
 
@@ -270,8 +271,9 @@ def test_native_builder_spellcaster_level_one_uses_runtime_hp_without_fallback_l
         }
     )
     runtime = result["runtime"]
-    assert runtime["hp"]["max"] == 5
-    assert runtime["hp"]["current"] == 5
+    # Wizard d6 full die at level 1 + CON mod +1 = 7
+    assert runtime["hp"]["max"] == 7
+    assert runtime["hp"]["current"] == 7
     assert runtime["hp"]["temp"] == 0
 
 
@@ -285,8 +287,10 @@ def test_runtime_hp_ignores_noncanonical_legacy_hp_root_fields():
         }
     )
     runtime = result["runtime"]
-    assert runtime["hp"]["max"] == 16
-    assert runtime["hp"]["current"] == 16
+    # Fighter level 2 CON 14: d10 (full at lvl1) + d10_avg (lvl2) + 2+2 CON = 10+6+4 = 20
+    # Legacy doc.hp fields must NOT override native computed max.
+    assert runtime["hp"]["max"] == 20
+    assert runtime["hp"]["current"] == 20
     assert runtime["hp"]["temp"] == 0
 
 def test_resolver_exposes_awakening_layer_without_replacing_subclass():
@@ -549,3 +553,73 @@ def test_resolver_populates_native_runtime_actions_passives_and_resources_from_c
     assert "Fighting Style" in passive_names
     assert "Action Surge" in resource_names
     assert runtime.get("classFeatures"), "Resolver should emit classFeatures for downstream UI"
+
+
+def test_native_hp_level3_sorcerer_uses_full_die_at_level_one():
+    result = resolve_runtime(
+        {
+            "identity": {"name": "Lyra"},
+            "classes": [{"classId": "sorcerer", "level": 3}],
+            "abilities": {"scores": {"con": 10}},
+        }
+    )
+    runtime = result["runtime"]
+    # Sorcerer d6: level1=6, level2=avg4, level3=avg4, CON mod=0
+    # Total = 6+4+4 = 14, NOT the broken 12 from all-average formula
+    assert runtime["hp"]["max"] == 14
+    assert runtime["hp"]["current"] == runtime["hp"]["max"]
+    assert runtime["hp"]["temp"] == 0
+
+
+def test_native_hp_level1_fighter_con14():
+    result = resolve_runtime(
+        {
+            "classes": [{"classId": "fighter", "level": 1}],
+            "abilities": {"scores": {"con": 14}},
+        }
+    )
+    runtime = result["runtime"]
+    # Fighter d10 full die at level 1 + CON +2 = 12
+    assert runtime["hp"]["max"] == 12
+    assert runtime["hp"]["current"] == 12
+
+
+def test_native_hp_level1_wizard_con12():
+    result = resolve_runtime(
+        {
+            "classes": [{"classId": "wizard", "level": 1}],
+            "abilities": {"scores": {"con": 12}},
+        }
+    )
+    runtime = result["runtime"]
+    # Wizard d6 full die + CON +1 = 7
+    assert runtime["hp"]["max"] == 7
+    assert runtime["hp"]["current"] == 7
+
+
+def test_native_hp_current_equals_max_on_fresh_creation():
+    result = resolve_runtime(
+        {
+            "classes": [{"classId": "fighter", "level": 1}],
+            "abilities": {"scores": {"con": 10}},
+        }
+    )
+    runtime = result["runtime"]
+    # Fresh character: currentHp must equal maxHp
+    assert runtime["hp"]["current"] == runtime["hp"]["max"]
+
+
+def test_native_hp_legacy_fallback_42_cannot_override_native_runtime():
+    result = resolve_runtime(
+        {
+            "classes": [{"classId": "wizard", "level": 1}],
+            "abilities": {"scores": {"con": 10}},
+            "maxHP": 42,
+            "maxHp": 42,
+            "hp": {"max": 42, "current": 42, "temp": 0},
+        }
+    )
+    runtime = result["runtime"]
+    # Wizard d6 CON 10 = 6; legacy fields must not override native computation
+    assert runtime["hp"]["max"] == 6
+    assert runtime["hp"]["current"] == 6

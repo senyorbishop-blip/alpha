@@ -85,6 +85,34 @@
     var fallbackHp = asObject(fallback);
     var options = asObject(opts);
     var includeRuntime = options.includeRuntime !== false;
+
+    // When nativeRuntime.hp is present and valid it is the authoritative source.
+    // Do NOT let doc/vitals/combat legacy fields overwrite it.
+    if (includeRuntime) {
+      var runtimeHp = asObject(runtime.hp);
+      var runtimeMax = parseInt(runtimeHp.max, 10);
+      if (Number.isFinite(runtimeMax) && runtimeMax > 0) {
+        var runtimeCurrent = parseInt(runtimeHp.current, 10);
+        if (!Number.isFinite(runtimeCurrent)) runtimeCurrent = runtimeMax;
+        runtimeCurrent = Math.max(0, Math.min(runtimeMax, runtimeCurrent));
+        var runtimeTemp = Math.max(0, parseInt(runtimeHp.temp, 10) || 0);
+
+        // Dev-mode conflict warning: alert if doc-level HP fields disagree.
+        if (typeof console !== 'undefined' && console && typeof console.warn === 'function') {
+          var docHp = asObject(doc.hp);
+          var docMax = parseInt(docHp.max != null ? docHp.max : doc.maxHP != null ? doc.maxHP : doc.maxHp, 10);
+          if (Number.isFinite(docMax) && docMax !== runtimeMax) {
+            console.warn(
+              '[CharacterRuntimeMappers] HP source conflict: doc fields report max=' + docMax +
+              ' but nativeRuntime.hp.max=' + runtimeMax + '; using nativeRuntime.hp as authoritative.'
+            );
+          }
+        }
+
+        return { max: runtimeMax, current: runtimeCurrent, temp: runtimeTemp };
+      }
+    }
+
     var canonical = _collectCanonicalHpNumbers(doc, fallbackHp);
     var runtimeNumbers = _collectRuntimeHpNumbers(runtime);
     var max = pickFirstNumber(includeRuntime ? canonical.max.concat(runtimeNumbers.max) : canonical.max);
