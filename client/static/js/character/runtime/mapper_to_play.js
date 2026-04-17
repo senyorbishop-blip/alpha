@@ -510,6 +510,24 @@
     return '';
   }
 
+  function resolveComboPortraitForDoc(doc, identity) {
+    var portraitLib = global.CasualDnDPortraitLibrary;
+    if (!portraitLib || typeof portraitLib.resolve !== 'function') return '';
+    var species = asObject(doc.species);
+    var classBlock = asObject(doc.class);
+    var classes = asArray(doc.classes);
+    var firstClass = (classes[0] && typeof classes[0] === 'object') ? classes[0] : {};
+    return firstNonEmpty(
+      portraitLib.resolve({
+        speciesId: firstNonEmpty(species.id, species.name),
+        classId: firstNonEmpty(firstClass.classId, classBlock.id, firstClass.name),
+        gender: firstNonEmpty(identity.gender, 'neutral'),
+        neutralFallback: '',
+      }),
+      ''
+    );
+  }
+
   function nativeToLegacyCharSheet(nativeCharacter, nativeRuntime, existing) {
     var doc = asObject(nativeCharacter);
     var runtime = asObject(nativeRuntime);
@@ -542,8 +560,9 @@
     out.currency = buildNativeCurrency(doc);
     out.spellState = clone(asObject(doc.spellState));
 
-    out.avatarUrl = firstNonEmpty(identity.portraitUrl, out.avatarUrl);
-    out.tokenImageUrl = firstNonEmpty(identity.tokenImageUrl, out.tokenImageUrl, out.avatarUrl);
+    var comboPortrait = resolveComboPortraitForDoc(doc, identity);
+    out.avatarUrl = firstNonEmpty(identity.portraitUrl, comboPortrait, out.avatarUrl);
+    out.tokenImageUrl = firstNonEmpty(identity.tokenImageUrl, identity.portraitUrl, comboPortrait, out.tokenImageUrl, out.avatarUrl);
     out.portraitFrame = firstNonEmpty(presentation.portraitFrame, out.portraitFrame, 'classic');
     out.tokenDisplay = Object.assign({}, asObject(out.tokenDisplay), tokenDisplay);
     out.inventory = buildNativeInventoryEntries(doc);
@@ -708,8 +727,9 @@
     out.className = firstNonEmpty(classDisplay.className, primaryClass.name, out.className);
     out.subclass = firstNonEmpty(classDisplay.subclassName, primaryClass.subclass, out.subclass);
     out.level = level;
-    out.avatarUrl = firstNonEmpty(identity.portraitUrl, out.avatarUrl);
-    out.tokenImageUrl = firstNonEmpty(identity.tokenImageUrl, out.tokenImageUrl);
+    var comboPortrait = resolveComboPortraitForDoc(doc, identity);
+    out.avatarUrl = firstNonEmpty(identity.portraitUrl, comboPortrait, out.avatarUrl);
+    out.tokenImageUrl = firstNonEmpty(identity.tokenImageUrl, identity.portraitUrl, comboPortrait, out.tokenImageUrl);
     out.portraitFrame = firstNonEmpty(presentation.portraitFrame, out.portraitFrame, 'classic');
     out.tokenDisplay = Object.assign({}, asObject(out.tokenDisplay), tokenDisplay);
 
@@ -960,11 +980,12 @@
     var mappedMaxHp = asInt(hp.max, asInt(combat.maxHP, asInt(token.maxHP, 10)));
     var mappedCurrentHp = asInt(hp.current, asInt(combat.currentHP, asInt(hp.max, asInt(combat.maxHP, asInt(token.currentHP, 10)))));
 
+    var comboPortrait = resolveComboPortraitForDoc(doc, identity);
     return {
       ...token,
       name: firstNonEmpty(doc.name, identity.name, token.name),
-      portraitUrl: firstNonEmpty(identity.portraitUrl, doc.portraitUrl, token.portraitUrl),
-      tokenImageUrl: firstNonEmpty(identity.tokenImageUrl, identity.portraitUrl, doc.tokenImageUrl, doc.portraitUrl, token.tokenImageUrl),
+      portraitUrl: firstNonEmpty(identity.portraitUrl, comboPortrait, doc.portraitUrl, token.portraitUrl),
+      tokenImageUrl: firstNonEmpty(identity.tokenImageUrl, identity.portraitUrl, comboPortrait, doc.tokenImageUrl, doc.portraitUrl, token.tokenImageUrl),
       maxHP: mappedMaxHp,
       currentHP: mappedCurrentHp,
       tempHP: asInt(hp.temp, asInt(token.tempHP, 0)),

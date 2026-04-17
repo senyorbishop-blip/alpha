@@ -91,25 +91,28 @@
       const canonicalDraft = draft && typeof draft === 'object' ? JSON.parse(JSON.stringify(draft)) : {};
       const identity = canonicalDraft.identity && typeof canonicalDraft.identity === 'object' ? canonicalDraft.identity : {};
       const portraitLibrary = global.CasualDnDPortraitLibrary;
-      const hasManualPortrait = !!String(identity.portraitUrl || '').trim();
-      const hasManualToken = !!String(identity.tokenImageUrl || '').trim();
-      if (portraitLibrary && typeof portraitLibrary.resolve === 'function' && !hasManualPortrait && !hasManualToken) {
-        const resolvedPortrait = String(portraitLibrary.resolve({
-          speciesId: canonicalDraft.species && (canonicalDraft.species.id || canonicalDraft.species.name) || '',
-          classId: canonicalDraft.class && canonicalDraft.class.id || '',
-          gender: identity.gender || 'neutral',
-          neutralFallback: '',
-        }) || '').trim();
-        if (resolvedPortrait) {
-          canonicalDraft.identity = Object.assign({}, identity, {
-            portraitUrl: resolvedPortrait,
-            tokenImageUrl: resolvedPortrait,
-          });
-        }
+      const resolvedPortrait = portraitLibrary && typeof portraitLibrary.resolve === 'function'
+        ? String(portraitLibrary.resolve({
+            speciesId: canonicalDraft.species && (canonicalDraft.species.id || canonicalDraft.species.name) || '',
+            classId: canonicalDraft.class && canonicalDraft.class.id || '',
+            gender: identity.gender || 'neutral',
+            neutralFallback: '',
+          }) || '').trim()
+        : '';
+      const rawPortrait = String(identity.portraitUrl || '').trim();
+      const rawToken = String(identity.tokenImageUrl || '').trim();
+      const hasManualPortrait = !!rawPortrait && (!resolvedPortrait || rawPortrait !== resolvedPortrait);
+      const hasManualToken = !!rawToken && (!resolvedPortrait || rawToken !== resolvedPortrait);
+
+      if (!hasManualPortrait && !hasManualToken && resolvedPortrait) {
+        canonicalDraft.identity = Object.assign({}, identity, {
+          portraitUrl: resolvedPortrait,
+          tokenImageUrl: resolvedPortrait,
+        });
       } else if (hasManualPortrait && !hasManualToken) {
-        canonicalDraft.identity = Object.assign({}, identity, { tokenImageUrl: String(identity.portraitUrl || '').trim() });
+        canonicalDraft.identity = Object.assign({}, identity, { tokenImageUrl: rawPortrait });
       } else if (!hasManualPortrait && hasManualToken) {
-        canonicalDraft.identity = Object.assign({}, identity, { portraitUrl: String(identity.tokenImageUrl || '').trim() });
+        canonicalDraft.identity = Object.assign({}, identity, { portraitUrl: rawToken });
       }
 
       const res = await fetch('/api/character/save', {

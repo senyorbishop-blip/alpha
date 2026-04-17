@@ -70,19 +70,21 @@
     var manualPortrait = String(identity.portraitUrl || '').trim();
     var manualToken = String(identity.tokenImageUrl || '').trim();
     var comboPortrait = resolvePortrait(draft);
-    var finalPortrait = manualPortrait || comboPortrait || manualToken;
-    var finalToken = manualToken || manualPortrait || comboPortrait;
-    var renderer = global.CasualDnDAvatarRenderer;
-
+    var hasComboSelections = !!(
+      draft
+      && draft.species
+      && String(draft.species.id || draft.species.name || '').trim()
+      && draft.class
+      && String(draft.class.id || '').trim()
+    );
+    var finalPortrait = manualPortrait || comboPortrait || '';
+    var finalToken = manualToken || manualPortrait || comboPortrait || '';
     var previewMarkup = finalPortrait
       ? '<img class="avatar-render portrait" src="' + escHtml(finalPortrait) + '" alt="Portrait preview" />'
-      : (renderer ? renderer.renderImgMarkup({
-          name: identity.name || 'Hero',
-          speciesId: draft && draft.species && draft.species.id || '',
-          classId: draft && draft.class && draft.class.id || '',
-          gender: identity.gender || 'neutral',
-        }, 140, 'portrait', 'portrait') : '<span style="font-size:2rem;opacity:.6;">🧙</span>');
-    var sourceLabel = manualPortrait || manualToken ? 'Manual artwork override' : (comboPortrait ? 'Combo portrait (auto)' : 'Fallback avatar');
+      : '<div style="font-size:.62rem;color:rgba(180,170,150,.92);line-height:1.5;text-align:center;padding:0 6px;">Portrait preview will appear once species and class are selected.</div>';
+    var sourceLabel = manualPortrait || manualToken
+      ? 'Manual artwork override'
+      : (comboPortrait ? 'Combo portrait (auto)' : (hasComboSelections ? 'No combo portrait found for this selection yet.' : 'Awaiting species + class selection.'));
 
     return [
       '<div class="cb-identity-preview" style="display:flex;gap:12px;align-items:center;padding:10px 12px;border:1px solid rgba(201,168,76,0.18);border-radius:10px;background:rgba(8,12,18,.52);margin:8px 0 12px;">',
@@ -92,7 +94,7 @@
       '<div style="font-size:.68rem;color:rgba(230,224,208,.92);line-height:1.5;">',
       '<div style="font-family:var(--cb-font-display);font-size:.7rem;color:#E8C97A;letter-spacing:.04em;text-transform:uppercase;">Portrait Preview</div>',
       '<div>' + escHtml(sourceLabel) + '</div>',
-      '<div style="color:rgba(180,170,150,.9)">Token URL: ' + escHtml(finalToken || 'Will fall back to portrait') + '</div>',
+      '<div style="color:rgba(180,170,150,.9)">Token URL: ' + escHtml(finalToken || 'Will use combo portrait when available') + '</div>',
       '</div>',
       '</div>',
     ].join('');
@@ -204,13 +206,6 @@
         ' placeholder="Kelemvor, Sehanine\u2026" />',
         '</div>',
 
-        '</div>',
-
-        '<div class="field">',
-        '<label>Pronouns <span class="cb-optional">optional</span></label>',
-        '<input type="text" data-builder-path="identity.pronouns"',
-        ' value="' + escHtml(identity.pronouns || '') + '" maxlength="60"',
-        ' placeholder="they/them, she/her, he/him\u2026" />',
         '</div>',
 
         '<div class="field">',
@@ -334,10 +329,8 @@
           var portrait = String(identity.portraitUrl || '').trim();
           var token = String(identity.tokenImageUrl || '').trim();
           if (portrait || token) return; // preserve manual override
-          var resolved = resolvePortrait(draft);
-          if (!resolved) return;
-          ctx.onSetField(['identity', 'portraitUrl'], resolved);
-          ctx.onSetField(['identity', 'tokenImageUrl'], resolved);
+          // Do not force-write auto-combo portraits into identity URLs;
+          // keep them as computed previews unless the user overrides manually.
         });
       }
     },

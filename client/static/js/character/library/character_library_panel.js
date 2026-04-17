@@ -106,6 +106,18 @@
         const species = native.species && typeof native.species === 'object' ? native.species : {};
         const classes = Array.isArray(native.classes) ? native.classes : [];
         const firstClass = classes[0] && typeof classes[0] === 'object' ? classes[0] : {};
+        const classData = native.class && typeof native.class === 'object' ? native.class : {};
+        const portraitLibrary = global.CasualDnDPortraitLibrary;
+        const portraitUrl = String(identity.portraitUrl || '').trim();
+        const tokenUrl = String(identity.tokenImageUrl || '').trim();
+        const resolvedComboPortrait = (!portraitUrl && !tokenUrl && portraitLibrary && typeof portraitLibrary.resolve === 'function')
+          ? String(portraitLibrary.resolve({
+              speciesId: String(species.id || species.name || '').trim(),
+              classId: String(firstClass.classId || classData.id || firstClass.name || '').trim(),
+              gender: String(identity.gender || '').trim() || 'neutral',
+              neutralFallback: '',
+            }) || '').trim()
+          : '';
 
         return {
           id: 'library:' + id,
@@ -121,11 +133,12 @@
           sourceBadge: formatSourceBadge(sourceMode),
           ownerLabel: resolveOwnerLabel(),
           nativeCharacter: native || null,
-          tokenImageUrl: String(identity.tokenImageUrl || identity.portraitUrl || '').trim(),
+          portraitUrl: portraitUrl || resolvedComboPortrait,
+          tokenImageUrl: tokenUrl || portraitUrl || resolvedComboPortrait,
           speciesId: String(species.id || '').trim().toLowerCase(),
           speciesLabel: String(species.name || '').trim(),
           gender: String(identity.gender || '').trim().toLowerCase(),
-          classId: String(firstClass.classId || firstClass.name || '').trim().toLowerCase(),
+          classId: String(firstClass.classId || classData.id || firstClass.name || '').trim().toLowerCase(),
           color: '#5a4f8f',
           shape: 'rect',
         };

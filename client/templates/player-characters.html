@@ -641,7 +641,7 @@
       return {
         name: entry.name || 'Hero',
         className: classLabel || 'Adventurer',
-        classId: classLabel.toLowerCase(),
+        classId: String(entry.classId || '').trim().toLowerCase(),
         species: entry.speciesLabel || entry.speciesName || '',
         speciesId: String(entry.speciesId || entry.species || '').trim().toLowerCase(),
         gender: entry.gender || 'neutral',
@@ -659,11 +659,12 @@
       const lib = window.CasualDnDPortraitLibrary;
       const renderer = window.CasualDnDAvatarRenderer;
       const portraitLibrary = window.CasualDnDPortraitLibrary;
-      const tokenImageUrl = String(entry.tokenImageUrl || '').trim();
+      const portraitUrl = String(entry.portraitUrl || '').trim();
+      const tokenImageUrl = String(entry.tokenImageUrl || portraitUrl).trim();
       const comboPortraitUrl = portraitLibrary && typeof portraitLibrary.resolve === 'function'
         ? String(portraitLibrary.resolve({
             speciesId: entry.speciesId || entry.speciesLabel || '',
-            classId: entry.classId || entry.classSummary || '',
+            classId: entry.classId || '',
             gender: entry.gender || 'neutral',
             neutralFallback: '',
           }) || '').trim()

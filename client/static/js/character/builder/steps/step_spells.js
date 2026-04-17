@@ -3,6 +3,7 @@
     key: '',
     data: null,
     loading: false,
+    pendingRerenderKey: '',
   };
 
   function escHtml(value) {
@@ -353,11 +354,29 @@
     },
     bind: function bindSpellStep(root, context) {
       if (!context || typeof context.onSetField !== 'function') return;
-      const searchInput = root.querySelector('[data-builder-spell-search="1"]');
-      const draft = context.draft && typeof context.draft === 'object' ? context.draft : {};
-      const spellbook = draft.spellbook && typeof draft.spellbook === 'object' ? draft.spellbook : {};
-      const classId = String(draft.class && draft.class.id || '').trim();
-      const classRow = getClassRow(classId);
+      var draft = context.draft && typeof context.draft === 'object' ? context.draft : {};
+      var spellbook = draft.spellbook && typeof draft.spellbook === 'object' ? draft.spellbook : {};
+      var data = _state.data;
+      var limits = data && typeof data.limits === 'object' ? data.limits : {};
+      var requestKey = buildRequestKey(draft);
+      if ((!_state.data || _state.key !== requestKey) && _state.pendingRerenderKey !== requestKey) {
+        _state.pendingRerenderKey = requestKey;
+        fetchOptions(draft).then(function() {
+          if (!root || !root.isConnected) return;
+          var knownCopy = asArray(spellbook.known).slice();
+          context.onSetField(['spellbook', 'known'], knownCopy);
+        });
+      }
+      var cardById = {};
+      asArray(data && data.cards).forEach(function(card) {
+        var id = String(card && card.id || '').trim();
+        if (id) cardById[id] = card;
+      });
+
+      function rerenderWith(nextKnown, nextPrepared) {
+        context.onSetField(['spellbook', 'known'], nextKnown);
+        context.onSetField(['spellbook', 'prepared'], nextPrepared);
+      }
 
       const classLevelBind = parseInt(draft.progression && draft.progression.level, 10);
       const safeClassLevelBind = Number.isFinite(classLevelBind) && classLevelBind > 0 ? classLevelBind : 1;
@@ -411,17 +430,19 @@
           const spellId = String(entryEl.dataset.builderSpellId || '').trim();
           const spellLevel = parseInt(entryEl.dataset.builderSpellLevel || '0', 10);
           if (!spellId) return;
-          const target = pickTargetList(String(spellbook.castingMode || 'none'), classRow);
-          const knownList = Array.isArray(spellbook.known) ? spellbook.known.slice() : [];
-          const preparedList = Array.isArray(spellbook.prepared) ? spellbook.prepared.slice() : [];
-          // Toggle off if already in either list
-          if (knownList.includes(spellId) || preparedList.includes(spellId)) {
-            const ki = knownList.indexOf(spellId);
-            if (ki !== -1) knownList.splice(ki, 1);
-            const pi = preparedList.indexOf(spellId);
-            if (pi !== -1) preparedList.splice(pi, 1);
-            context.onSetField(['spellbook', 'known'], knownList);
-            if (pi !== -1) context.onSetField(['spellbook', 'prepared'], preparedList);
+          var spellLevel = parseInt(cardEl.dataset.spellLevel, 10) || 0;
+          var knownList = asArray(spellbook.known).slice();
+          var preparedList = asArray(spellbook.prepared).slice();
+          var selectionMode = String(cardById[spellId] && cardById[spellId].selectionMode || '').trim().toLowerCase();
+          var targetList = 'known';
+          if (spellLevel > 0 && selectionMode === 'prepared' && limits.preparedLimit != null) {
+            targetList = 'prepared';
+          }
+
+          if (knownList.indexOf(spellId) >= 0) {
+            knownList = knownList.filter(function(id){ return id !== spellId; });
+            preparedList = preparedList.filter(function(id){ return id !== spellId; });
+            rerenderWith(knownList, preparedList);
             return;
           }
           const current = target === 'known' ? knownList : preparedList;
