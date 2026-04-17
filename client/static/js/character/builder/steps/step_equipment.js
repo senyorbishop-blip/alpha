@@ -218,6 +218,8 @@
     var out = {
       name: parsed.name,
       qty: parsed.qty,
+      kind: inferEquipmentKind(parsed.name),
+      type: inferEquipmentKind(parsed.name),
       equipment_kind: inferEquipmentKind(parsed.name),
       item_type: inferEquipmentKind(parsed.name),
       source: 'builder_starting_choice',
@@ -287,6 +289,12 @@
       loadout.items.forEach(function (line) {
         var item = toInventoryItem(line);
         if (item) inventory.push(item);
+      });
+      var equippedPrimary = false;
+      inventory.forEach(function markPrimaryWeapon(item) {
+        if (equippedPrimary || !item || String(item.equipment_kind || '').toLowerCase() !== 'weapon') return;
+        item.equipped = true;
+        equippedPrimary = true;
       });
     }
     var packItem = buildPackContainer(choices.startingPackId || equipment.startingPack || '');

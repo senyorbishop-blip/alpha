@@ -256,9 +256,11 @@
     if (!name) return null;
     var kind = firstNonEmpty(entry.kind, entry.type, entry.category, entry.equipment_kind, entry.item_type, 'gear').toLowerCase();
     var out = {
+      id: firstNonEmpty(entry.id, (name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''))),
       name: name,
       qty: asInt(entry.qty != null ? entry.qty : entry.quantity, 1),
       kind: kind,
+      type: firstNonEmpty(entry.type, kind),
       equipment_kind: firstNonEmpty(entry.equipment_kind, kind),
       item_type: firstNonEmpty(entry.item_type, entry.type, kind),
       category: firstNonEmpty(entry.category, kind),
@@ -283,6 +285,9 @@
     });
     if (entry.stealth_disadvantage != null) out.stealth_disadvantage = !!entry.stealth_disadvantage;
     if (Array.isArray(entry.weapon_properties)) out.weapon_properties = clone(entry.weapon_properties);
+    if ((!out.properties || !out.properties.length) && Array.isArray(out.weapon_properties) && out.weapon_properties.length) {
+      out.properties = clone(out.weapon_properties);
+    }
     return out;
   }
 
@@ -941,6 +946,27 @@
       out.hp = mappedMaxHp;
       out.curhp = mappedCurrentHp;
       out.tempHp = mappedTempHp;
+      out.vitals = Object.assign({}, asObject(out.vitals), {
+        maxHP: mappedMaxHp,
+        currentHP: mappedCurrentHp,
+        tempHP: mappedTempHp,
+        combat: Object.assign({}, asObject(asObject(out.vitals).combat), {
+          maxHP: mappedMaxHp,
+          currentHP: mappedCurrentHp,
+          tempHP: mappedTempHp,
+        }),
+      });
+      if (out.charSheet && typeof out.charSheet === 'object') {
+        out.charSheet.maxHp = mappedMaxHp;
+        out.charSheet.currentHp = mappedCurrentHp;
+        out.charSheet.tempHp = mappedTempHp;
+        out.charSheet.hp = { max: mappedMaxHp, current: mappedCurrentHp, temp: mappedTempHp };
+      }
+      if (out.charBook && typeof out.charBook === 'object') {
+        out.charBook.maxHp = mappedMaxHp;
+        out.charBook.currentHp = mappedCurrentHp;
+        out.charBook.tempHp = mappedTempHp;
+      }
     }
 
     var baseRuntime = Object.assign({}, asObject(out.nativeRuntime), runtimeWithCanonicalHp);
