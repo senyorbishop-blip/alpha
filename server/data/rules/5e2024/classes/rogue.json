@@ -343,8 +343,8 @@
   ],
   "featureDefinitions": {
     "rogue-expertise-1": {
-      "summary": "Push chosen proficiencies into elite territory so your rogue feels exceptional, not just trained.",
-      "description": "Expertise is one of the rogue's defining out-of-combat and scouting strengths. It makes the class feel dependable in the scenes that set fights up or solve problems before steel is drawn.",
+      "summary": "Choose 2 skills or tools you are proficient in and double your proficiency bonus for those checks.",
+      "description": "Choose 2 of your skill or tool proficiencies. Your proficiency bonus is doubled for any ability check using one of those proficiencies. At level 6 you choose 2 more proficiencies to apply Expertise to.",
       "tags": [
         "skills",
         "identity",
@@ -352,9 +352,9 @@
       ]
     },
     "rogue-sneak-attack-1d6": {
-      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "Sneak Attack is your main combat loop: create or exploit an opening, land one quality hit, and convert it into precision burst damage.\n\nSetup tools like Cunning Action, Steady Aim, ally positioning, and subclass tricks are there to make this trigger happen consistently.",
-      "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
+      "summary": "Once per turn, deal 1d6 extra damage when you hit with a Finesse or ranged weapon and have Advantage or a nearby ally.",
+      "description": "Once per turn, you can deal extra damage to one creature you hit with an attack if you have Advantage on the attack roll, or if at least one of your allies is within 5 feet of the target and that ally doesn't have the Incapacitated condition — provided you don't have Disadvantage on the attack roll. The attack must use a Finesse or a ranged weapon. The extra damage starts at 1d6 and increases by 1d6 at every odd-numbered rogue level (2d6 at level 3, 3d6 at level 5, and so on up to 10d6 at level 19).",
+      "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or a non-incapacitated ally within 5 feet of the target) with no Disadvantage on your roll, add 1d6 extra damage.",
       "tags": [
         "combat",
         "precision",
@@ -362,8 +362,8 @@
       ]
     },
     "rogue-thieves-cant": {
-      "summary": "You understand and communicate through covert criminal shorthand, signs, and coded speech.",
-      "description": "Thieves' Cant reinforces the rogue fantasy outside combat. It matters in infiltration, underworld scenes, and any campaign where hidden information and coded messages matter.",
+      "summary": "You know the secret language and signs of the criminal underworld, and can pass hidden messages through ordinary conversation.",
+      "description": "You know Thieves' Cant, a secret mix of dialect, jargon, and code used by rogues and criminals. You can use it to pass hidden messages to other Thieves' Cant speakers in normal conversation — only another speaker can understand the hidden meaning. It takes four times as long to convey a message this way as to speak plainly.",
       "tags": [
         "social",
         "utility",
@@ -371,8 +371,8 @@
       ]
     },
     "rogue-cunning-action": {
-      "summary": "Turn movement and repositioning into a regular part of your round instead of a luxury.",
-      "description": "Use Dash, Disengage, or Hide as a bonus action to control distance, escape danger, or create a Sneak Attack angle without spending your main action.",
+      "summary": "Use your Bonus Action to Dash, Disengage, or Hide on every turn.",
+      "description": "On each of your turns you can use a Bonus Action to take the Dash, Disengage, or Hide action. Dash doubles your movement speed for the turn. Disengage means your movement doesn't provoke Opportunity Attacks. Hide lets you attempt to become Hidden (Stealth check vs. passive Perception).",
       "section": "Bonus Actions",
       "type": "bonus action",
       "tags": [
@@ -382,8 +382,8 @@
       ]
     },
     "rogue-roguish-archetype-subclass": {
-      "summary": "Your archetype defines what kind of rogue you really are: killer, thief, arcane trickster, or another style of precision operator.",
-      "description": "Roguish Archetype is the subclass gate for rogue. It should immediately shift how the sheet reads the character by introducing a stronger fantasy lane and the tools to support it.",
+      "summary": "Choose your Roguish Archetype subclass, which grants you specialized features at levels 3, 9, 13, and 17.",
+      "description": "At level 3 you choose a Roguish Archetype — the criminal specialty you have pursued. Your choice grants you features at level 3, and again at levels 9, 13, and 17.",
       "tags": [
         "subclass",
         "identity",
@@ -391,8 +391,8 @@
       ]
     },
     "rogue-steady-aim": {
-      "summary": "Slow down, line up the strike, and trade movement freedom for a cleaner chance to land your damage spike.",
-      "description": "Use a bonus action to gain Advantage on your next attack this turn, but your speed becomes 0 until turn end. Use it when landing Sneak Attack is worth giving up movement.",
+      "summary": "Use your Bonus Action to give yourself Advantage on your next attack this turn; your Speed becomes 0 until the end of the turn.",
+      "description": "As a Bonus Action, you give yourself Advantage on your next attack roll this turn. Your Speed becomes 0 until the end of the turn, and you can't take reactions until the start of your next turn. You must use this Bonus Action before making the attack roll it affects.",
       "section": "Bonus Actions",
       "type": "bonus action",
       "tags": [
@@ -402,8 +402,8 @@
       ]
     },
     "rogue-cunning-strike": {
-      "summary": "Spend part of your Sneak Attack pressure on control or utility riders instead of raw damage alone.",
-      "description": "When Sneak Attack lands, you can trade part of its damage for tactical riders (such as control or positioning effects). Choose this when battlefield advantage is stronger than raw damage.",
+      "summary": "When you deal Sneak Attack damage, forgo 1d6 of it to impose a bonus effect on the target.",
+      "description": "When you deal Sneak Attack damage, you can forgo some of those dice to impose one of the following effects on the target. The save DC equals 8 + your proficiency bonus + your Dexterity modifier.\n\n- Disarm (costs 1d6): The target must succeed on a Constitution saving throw or drop one item it is holding (your choice).\n- Poison (costs 1d6): The target must succeed on a Constitution saving throw or be Poisoned until the start of your next turn.\n- Trip (costs 1d6): The target must succeed on a Dexterity saving throw or be knocked Prone. Large or smaller creatures only.\n- Withdraw (costs 1d6): Your movement this turn doesn't provoke Opportunity Attacks from the target.",
       "tags": [
         "combat",
         "control",
@@ -411,8 +411,8 @@
       ]
     },
     "rogue-evasion": {
-      "summary": "Explosive effects that would ruin most characters become much less reliable against you.",
-      "description": "Evasion is a signature rogue defensive passive. It rewards high Dexterity and reinforces the idea that the class survives by skillful movement rather than raw durability.",
+      "summary": "When an effect lets you make a Dexterity saving throw for half damage, you take no damage on a success and only half on a failure.",
+      "description": "When you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage on a successful save and only half damage on a failed save. You can't use this feature if you are Incapacitated.",
       "tags": [
         "defense",
         "passive",
@@ -420,8 +420,8 @@
       ]
     },
     "rogue-reliable-talent": {
-      "summary": "Your practiced skills become difficult to sabotage with bad luck alone.",
-      "description": "Reliable Talent is one of the rogue's biggest quality-of-life spikes for noncombat play. It turns trained expertise into true consistency and should be reflected clearly in how the sheet explains skill outcomes.",
+      "summary": "When you make an ability check using a skill or tool you are proficient in, treat any d20 roll of 9 or lower as a 10.",
+      "description": "Whenever you make an ability check that lets you add your proficiency bonus, you can treat a d20 roll of 9 or lower as a 10. This applies to any check — skill, tool, or otherwise — where your proficiency bonus is added, including checks where you have Expertise.",
       "tags": [
         "skills",
         "passive",
@@ -429,8 +429,8 @@
       ]
     },
     "rogue-improved-cunning-strike": {
-      "summary": "Your precision damage riders become more flexible and punishing as your control options deepen.",
-      "description": "Your Cunning Strike options improve, letting you convert Sneak Attack damage into stronger control outcomes when needed. This deepens your turn-by-turn tactical choices.",
+      "summary": "You can now apply two Cunning Strike effects on the same Sneak Attack, paying both dice costs.",
+      "description": "When you use Cunning Strike, you can now apply two Cunning Strike effects on the same attack, deducting the Sneak Attack dice cost for each effect separately. You must have enough Sneak Attack dice remaining to pay for both effects.",
       "tags": [
         "combat",
         "control",
@@ -438,8 +438,8 @@
       ]
     },
     "rogue-devious-strikes": {
-      "summary": "Your dirty-fighting toolkit becomes nastier and more layered, pushing the rogue deeper into battlefield manipulation.",
-      "description": "Your precision riders become nastier. At this tier, you should regularly decide between maximum damage and disruptive effects that set up the party or protect your next turn.",
+      "summary": "Gain three new, more powerful Cunning Strike options: Daze, Knock Out, and Obscure.",
+      "description": "You gain three new Cunning Strike options. The save DC equals 8 + your proficiency bonus + your Dexterity modifier.\n\n- Daze (costs 2d6): The target must succeed on a Constitution saving throw or be Incapacitated until the end of your next turn.\n- Knock Out (costs 6d6): The target must succeed on a Constitution saving throw or be Unconscious for 1 minute. The unconscious condition ends early if the target takes any damage or if another creature uses an action to shake the target awake.\n- Obscure (costs 3d6): The target must succeed on a Dexterity saving throw or be Blinded until the end of your next turn.",
       "tags": [
         "combat",
         "control",
@@ -447,8 +447,8 @@
       ]
     },
     "rogue-slippery-mind": {
-      "summary": "Your mental defenses harden so hostile influence has a harder time pinning you down.",
-      "description": "Slippery Mind is a late-game defensive upgrade that helps rogues stay functional against spell-heavy encounters and mental pressure.",
+      "summary": "You gain proficiency in Wisdom saving throws and Intelligence saving throws.",
+      "description": "Your mind becomes resistant to outside influence. You gain proficiency in Wisdom saving throws and Intelligence saving throws. If you already have proficiency in one of these saving throws from another source, you gain proficiency in the other one instead.",
       "tags": [
         "defense",
         "mental",
@@ -456,8 +456,8 @@
       ]
     },
     "rogue-subtle-strikes": {
-      "summary": "You find cleaner openings against distracted enemies and turn pressure into easier precision damage.",
-      "description": "Subtle Strikes improves how often the rogue can cash in on the class's signature damage engine without needing perfect circumstances every round.",
+      "summary": "When an ally is within 5 feet of a creature, you have Advantage on your attacks against that creature even if you have a source of Disadvantage.",
+      "description": "When you make an attack roll against a creature, you have Advantage on the roll if at least one of your allies is within 5 feet of the creature and that ally doesn't have the Incapacitated condition. This Advantage applies even if you would otherwise have Disadvantage on the roll — the two conditions cancel, and you roll with Advantage.",
       "tags": [
         "combat",
         "precision",
@@ -465,8 +465,8 @@
       ]
     },
     "rogue-elusive": {
-      "summary": "You become frustratingly hard to pin down, making direct offense against you less reliable.",
-      "description": "Elusive is a high-level defensive identity feature. By this point the rogue should feel like a nightmare target to read and punish cleanly.",
+      "summary": "No attack roll has Advantage against you while you are not Incapacitated.",
+      "description": "You are so evasive that attackers rarely get the upper hand against you. No attack roll can have Advantage against you while you are not Incapacitated. This benefit applies regardless of how the attacker gained Advantage — spells, features, conditions, or flanking.",
       "tags": [
         "defense",
         "capstone",
@@ -474,8 +474,8 @@
       ]
     },
     "rogue-stroke-of-luck": {
-      "summary": "When the moment is too important to leave to chance, you can simply force success where it matters most.",
-      "description": "Stroke of Luck is the rogue capstone fantasy: supreme clutch reliability when a key attack misses or a vital check nearly fails.",
+      "summary": "Once per Short or Long Rest, treat a missed attack or failed ability check as though you rolled a 20 on the d20.",
+      "description": "If you fail an ability check, you can treat the d20 roll as a 20. If you miss with an attack roll, you can treat the d20 roll as a 20. Once you use this feature, you can't use it again until you finish a Short Rest or Long Rest.",
       "tags": [
         "capstone",
         "clutch",
@@ -483,8 +483,8 @@
       ]
     },
     "rogue-expertise-2": {
-      "summary": "Double down on two more signature proficiencies so your skill ceiling stays exceptional deep into the campaign.",
-      "description": "The rogue gets a second wave of Expertise because the class is meant to stay the table's specialist, not flatten into generic competence at higher levels.",
+      "summary": "Choose 2 more skills or tools you are proficient in and double your proficiency bonus for those checks.",
+      "description": "You gain Expertise in two more skills or tools of your choice from your existing proficiencies. Your proficiency bonus is doubled for any ability check using those selected proficiencies.",
       "tags": [
         "skills",
         "identity",
@@ -492,8 +492,8 @@
       ]
     },
     "rogue-sneak-attack-l3": {
-      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "summary": "Your Sneak Attack damage increases to 2d6.",
+      "description": "Your Sneak Attack damage is now 2d6. Once per turn, when you hit with a Finesse or ranged weapon attack and you have Advantage on the roll, or when a non-incapacitated ally is within 5 feet of the target and you don't have Disadvantage, you deal an extra 2d6 damage.",
       "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
@@ -502,8 +502,8 @@
       ]
     },
     "rogue-sneak-attack-l5": {
-      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "summary": "Your Sneak Attack damage increases to 3d6.",
+      "description": "Your Sneak Attack damage is now 3d6. Once per turn, when you hit with a Finesse or ranged weapon attack and you have Advantage on the roll, or when a non-incapacitated ally is within 5 feet of the target and you don't have Disadvantage, you deal an extra 3d6 damage.",
       "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
@@ -512,8 +512,8 @@
       ]
     },
     "rogue-sneak-attack-l7": {
-      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "summary": "Your Sneak Attack damage increases to 4d6.",
+      "description": "Your Sneak Attack damage is now 4d6. Once per turn, when you hit with a Finesse or ranged weapon attack and you have Advantage on the roll, or when a non-incapacitated ally is within 5 feet of the target and you don't have Disadvantage, you deal an extra 4d6 damage.",
       "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
@@ -522,8 +522,8 @@
       ]
     },
     "rogue-sneak-attack-l9": {
-      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "summary": "Your Sneak Attack damage increases to 5d6.",
+      "description": "Your Sneak Attack damage is now 5d6. Once per turn, when you hit with a Finesse or ranged weapon attack and you have Advantage on the roll, or when a non-incapacitated ally is within 5 feet of the target and you don't have Disadvantage, you deal an extra 5d6 damage.",
       "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
@@ -532,8 +532,8 @@
       ]
     },
     "rogue-sneak-attack-l11": {
-      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "summary": "Your Sneak Attack damage increases to 6d6.",
+      "description": "Your Sneak Attack damage is now 6d6. Once per turn, when you hit with a Finesse or ranged weapon attack and you have Advantage on the roll, or when a non-incapacitated ally is within 5 feet of the target and you don't have Disadvantage, you deal an extra 6d6 damage.",
       "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
@@ -542,8 +542,8 @@
       ]
     },
     "rogue-sneak-attack-l13": {
-      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "summary": "Your Sneak Attack damage increases to 7d6.",
+      "description": "Your Sneak Attack damage is now 7d6. Once per turn, when you hit with a Finesse or ranged weapon attack and you have Advantage on the roll, or when a non-incapacitated ally is within 5 feet of the target and you don't have Disadvantage, you deal an extra 7d6 damage.",
       "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
@@ -552,8 +552,8 @@
       ]
     },
     "rogue-sneak-attack-l15": {
-      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "summary": "Your Sneak Attack damage increases to 8d6.",
+      "description": "Your Sneak Attack damage is now 8d6. Once per turn, when you hit with a Finesse or ranged weapon attack and you have Advantage on the roll, or when a non-incapacitated ally is within 5 feet of the target and you don't have Disadvantage, you deal an extra 8d6 damage.",
       "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
@@ -562,8 +562,8 @@
       ]
     },
     "rogue-sneak-attack-l17": {
-      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "summary": "Your Sneak Attack damage increases to 9d6.",
+      "description": "Your Sneak Attack damage is now 9d6. Once per turn, when you hit with a Finesse or ranged weapon attack and you have Advantage on the roll, or when a non-incapacitated ally is within 5 feet of the target and you don't have Disadvantage, you deal an extra 9d6 damage.",
       "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
@@ -572,8 +572,8 @@
       ]
     },
     "rogue-sneak-attack-l19": {
-      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "summary": "Your Sneak Attack damage increases to 10d6.",
+      "description": "Your Sneak Attack damage is now 10d6. Once per turn, when you hit with a Finesse or ranged weapon attack and you have Advantage on the roll, or when a non-incapacitated ally is within 5 feet of the target and you don't have Disadvantage, you deal an extra 10d6 damage.",
       "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
@@ -582,8 +582,8 @@
       ]
     },
     "rogue-sneak-attack-l20": {
-      "summary": "Once each turn, convert the right opening into extra precision damage instead of trading blows fairly.",
-      "description": "This level increases your Sneak Attack dice. Keep prioritizing setup and positioning so your once-per-turn precision burst lands as often as possible.",
+      "summary": "Your Sneak Attack damage remains at 10d6 at level 20.",
+      "description": "Your Sneak Attack damage remains 10d6 at level 20. Once per turn, when you hit with a Finesse or ranged weapon attack and you have Advantage on the roll, or when a non-incapacitated ally is within 5 feet of the target and you don't have Disadvantage, you deal an extra 10d6 damage.",
       "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",
@@ -592,8 +592,8 @@
       ]
     },
     "rogue-ability-score-improvement-l4": {
-      "summary": "Increase your key ability scores or take a feat to sharpen your rogue plan.",
-      "description": "This level is a build-shaping checkpoint. Most rogues raise Dexterity first, but this can also be where you lock in a feat that strengthens setup, stealth, or survivability.",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each, or gain a feat.",
+      "description": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. Alternatively, if your DM allows the use of feats, you may instead take a feat. You can't increase an ability score above 20 using this feature.",
       "tags": [
         "build",
         "asi",
@@ -601,8 +601,8 @@
       ]
     },
     "rogue-ability-score-improvement-l8": {
-      "summary": "Another ability or feat breakpoint to tighten your precision and survivability profile.",
-      "description": "Use this checkpoint to reinforce your role: higher Dexterity for attack quality and AC, stronger Constitution for durability, or a feat that supports your preferred rogue loop.",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each, or gain a feat.",
+      "description": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. Alternatively, if your DM allows the use of feats, you may instead take a feat. You can't increase an ability score above 20 using this feature.",
       "tags": [
         "build",
         "asi",
@@ -610,8 +610,8 @@
       ]
     },
     "rogue-ability-score-improvement-l12": {
-      "summary": "Mid-game build spike to keep your rogue scaling with encounter pressure.",
-      "description": "At this tier, ASI or feat choices should support the way you actually play: accuracy, stealth reliability, mobility, or tactical control options from your subclass.",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each, or gain a feat.",
+      "description": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. Alternatively, if your DM allows the use of feats, you may instead take a feat. You can't increase an ability score above 20 using this feature.",
       "tags": [
         "build",
         "asi",
@@ -619,8 +619,8 @@
       ]
     },
     "rogue-ability-score-improvement-l16": {
-      "summary": "Late-game build adjustment so your rogue remains sharp in high-tier play.",
-      "description": "Use this level to patch a weakness or double down on your strongest lane. High-level rogues feel best when their setup, damage delivery, and defenses all stay reliable.",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each, or gain a feat.",
+      "description": "You can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. Alternatively, if your DM allows the use of feats, you may instead take a feat. You can't increase an ability score above 20 using this feature.",
       "tags": [
         "build",
         "asi",
@@ -628,8 +628,8 @@
       ]
     },
     "rogue-subclass-feature-l10": {
-      "summary": "Your archetype adds a new defining tool that should change how your turns or missions are planned.",
-      "description": "This is not filler progression. Level 10 is where your chosen rogue archetype deepens into a clearer gameplay identity in combat, infiltration, or utility play.",
+      "summary": "Your Roguish Archetype grants you an additional feature at level 10.",
+      "description": "Your chosen Roguish Archetype grants you a feature at level 10. The specific feature depends on your subclass. Consult your archetype's description for details.",
       "tags": [
         "subclass",
         "progression",
@@ -637,8 +637,8 @@
       ]
     },
     "rogue-subclass-feature-l14": {
-      "summary": "Your subclass package gains another major identity upgrade.",
-      "description": "By now your archetype should strongly shape your turn planning and role in scenes. This feature is part of what separates Assassin, Thief, and Arcane Trickster in real play.",
+      "summary": "Your Roguish Archetype grants you an additional feature at level 14.",
+      "description": "Your chosen Roguish Archetype grants you a feature at level 14. The specific feature depends on your subclass. Consult your archetype's description for details.",
       "tags": [
         "subclass",
         "progression",
@@ -646,8 +646,8 @@
       ]
     },
     "rogue-subclass-feature-l15": {
-      "summary": "High-tier subclass payoff that pushes your archetype into endgame territory.",
-      "description": "This level usually unlocks one of your subclass\u2019s most impactful tactical tools. Expect it to matter in boss encounters and high-stakes mission moments.",
+      "summary": "Your Roguish Archetype grants you an additional feature at level 15.",
+      "description": "Your chosen Roguish Archetype grants you a feature at level 15. The specific feature depends on your subclass. Consult your archetype's description for details.",
       "tags": [
         "subclass",
         "progression",
@@ -655,8 +655,8 @@
       ]
     },
     "rogue-epic-boon-l19": {
-      "summary": "You gain an Epic Boon on top of your Sneak Attack increase.",
-      "description": "This endgame milestone combines top-tier precision damage with a powerful boon pick, letting you tailor one final major edge before capstone play.",
+      "summary": "Gain an Epic Boon feat, which also increases one ability score by 1 (up to a maximum of 30).",
+      "description": "You gain an Epic Boon feat, or another feat of your choice for which you qualify. If you choose an Epic Boon feat, that feat's ability score increase can raise an ability score above 20, up to a maximum of 30.",
       "tags": [
         "epic",
         "build",
