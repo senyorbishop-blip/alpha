@@ -543,8 +543,8 @@
   ],
   "featureDefinitions": {
     "warlock-eldritch-patron-subclass": {
-      "summary": "Your patron decides the flavor of your power, the bargains you carry, and the special tools that distinguish your pact from any other.",
-      "description": "Eldritch Patron is the subclass gate for warlock. It should immediately make the class feel specific: fey manipulation, fiendish bargains, or cosmic mind pressure instead of a generic arcane shell.",
+      "summary": "Choose your Otherworldly Patron at level 1. Your patron shapes your expanded spell list and grants subclass features at levels 1, 6, 10, and 14.",
+      "description": "At level 1, you forge a pact with an Otherworldly Patron — an Archfey, Fiend, Great Old One, or similar entity. Your patron choice determines your expanded spell options and grants you subclass features at levels 1, 6, 10, and 14. Each patron reshapes your spell identity and provides unique abilities that no other Warlock subclass replicates.",
       "tags": [
         "subclass",
         "identity",
@@ -552,11 +552,11 @@
       ]
     },
     "warlock-pact-magic": {
-      "summary": "You work with very few slots, but every one lands at maximum pact strength and refreshes faster than normal spellcasting.",
-      "description": "Pact Magic is what makes warlock feel different from every other caster. Your slots are limited, but they always hit at the highest pact level and come back on a Short Rest.\n\nIn play, this should encourage bold casting, not timid hoarding, because your recovery cadence is part of the class fantasy.",
+      "summary": "Charisma-based spellcasting with a small number of spell slots that all recharge on a Short or Long Rest. Slots are always cast at your highest available pact slot level.",
+      "description": "Your spellcasting ability is Charisma. You have a limited number of Pact Magic spell slots, but all of them recharge on a Short Rest or Long Rest. All Pact Magic slots are cast at your current maximum slot level — 1st at levels 1–2, 2nd at levels 3–4, 3rd at levels 5–6, 4th at levels 7–8, and 5th at levels 9–20. Slot count: 1 slot at level 1, 2 slots at levels 2–10, 3 slots at levels 11–16, and 4 slots at levels 17–20.",
       "resourceName": "Pact Slots",
       "trackUses": true,
-      "recovery": "Pact Magic slots refresh on a Short Rest.",
+      "recovery": "Pact Magic slots refresh on a Short or Long Rest.",
       "tags": [
         "spellcasting",
         "resource",
@@ -564,8 +564,8 @@
       ]
     },
     "warlock-eldritch-blast": {
-      "summary": "Your signature ranged cantrip gives the class a dependable, scaling combat baseline even when slots are gone.",
-      "description": "Eldritch Blast is a major part of warlock identity. It is the at-will pressure engine that lets the class stay threatening between pact-slot casts and combine strongly with invocations.",
+      "summary": "A ranged spell attack that deals 1d10 Force damage at 120-foot range. Fires additional beams as you level: 2 beams at level 5, 3 at level 11, 4 at level 17. Roll a separate attack for each beam.",
+      "description": "Eldritch Blast is a cantrip (evocation). Range: 120 feet. You make one ranged spell attack against a creature. On a hit, the target takes 1d10 Force damage. The number of beams increases with your Warlock level: 2 beams at level 5, 3 beams at level 11, and 4 beams at level 17. You can direct all beams at the same target or split them among different targets. Roll a separate attack roll for each beam. Many Eldritch Invocations modify how Eldritch Blast behaves.",
       "tags": [
         "combat",
         "cantrip",
@@ -573,8 +573,8 @@
       ]
     },
     "warlock-eldritch-invocations-2": {
-      "summary": "Choose supernatural upgrades that personalize your pact and reshape how your at-will toolkit actually plays.",
-      "description": "Eldritch Invocations are one of the reasons warlock feels uniquely customizable. They alter combat lines, utility options, senses, disguises, and spell pressure in ways other casters do not.",
+      "summary": "Learn 2 Eldritch Invocations at level 2. Gain one additional invocation at levels 3, 5, 7, 9, 11, 13, 15, 17, and 19. You can replace one known invocation each time you gain a Warlock level.",
+      "description": "Eldritch Invocations are supernatural boons granted by your patron. You learn 2 invocations at level 2 and gain additional invocations as you level up (one more at levels 3, 5, 7, 9, 11, 13, 15, 17, and 19). Whenever you gain a Warlock level, you can replace one invocation you know with a different one you qualify for. Some invocations have a minimum Warlock level requirement.",
       "tags": [
         "build",
         "customization",
@@ -584,33 +584,33 @@
         {
           "id": "agonizing-blast",
           "name": "Agonizing Blast",
-          "description": "Add Charisma to Eldritch Blast damage to sharpen your at-will pressure."
+          "description": "When you cast Eldritch Blast, add your Charisma modifier to the damage of each beam that hits."
         },
         {
           "id": "repelling-blast",
           "name": "Repelling Blast",
-          "description": "Push targets with Eldritch Blast to create forced movement and control."
+          "description": "When Eldritch Blast hits a creature, you can push that creature up to 10 feet directly away from you."
         },
         {
           "id": "eldritch-spear",
           "name": "Eldritch Spear",
-          "description": "Extend Eldritch Blast range for safer long-lane pressure."
+          "description": "When you cast Eldritch Blast, its range is 300 feet."
         },
         {
           "id": "devils-sight",
           "name": "Devil's Sight",
-          "description": "See through darkness, including magical darkness, for tactical advantage."
+          "description": "You can see normally in darkness — both magical and nonmagical — to a distance of 120 feet."
         },
         {
           "id": "mask-of-many-faces",
           "name": "Mask of Many Faces",
-          "description": "Gain at-will disguise utility for social and infiltration play."
+          "description": "You can cast Disguise Self at will, without expending a spell slot."
         }
       ]
     },
     "warlock-magical-cunning": {
-      "summary": "You can recover momentum faster than most casters, reinforcing the warlock's short-rest rhythm.",
-      "description": "Magical Cunning supports the warlock pacing model by helping you regain meaningful magical fuel between major encounters.",
+      "summary": "As a Magic action, once per Long Rest, if you have no Pact Magic slots remaining you can regain half your maximum number of Pact Magic slots (rounded up).",
+      "description": "Once per Long Rest, you can use a Magic action to call on your patron for aid. If you have expended all of your Pact Magic spell slots, you immediately regain a number of Pact Magic slots equal to half your maximum (rounded up). For example, a level 2 Warlock with a maximum of 2 slots regains 1 slot. This ability has no effect if you still have any Pact Magic slots remaining.",
       "tags": [
         "resource",
         "spellcasting",
@@ -618,8 +618,8 @@
       ]
     },
     "warlock-pact-boon": {
-      "summary": "Your boon defines the form your bargain takes in daily play: weapon, tome, familiar, or another pact expression.",
-      "description": "Pact Boon is where the class becomes deeply personal. This choice should shift what the player looks for in combat, exploration, and spell usage and should be surfaced clearly in the sheet.",
+      "summary": "Choose Pact of the Blade (summon a magical weapon as a Bonus Action), Pact of the Chain (cast Find Familiar with special familiar options; familiar can attack using your Reaction), or Pact of the Tome (gain a Book of Shadows with 3 cantrips from any class list).",
+      "description": "At level 3, your patron grants you a Pact Boon. Choose one of the following:\n\n**Pact of the Blade:** As a Bonus Action, you can summon a pact weapon in your empty hand. You choose its form — any simple or martial melee weapon — each time you summon it. You are proficient with it while you wield it, and it counts as magical for the purpose of overcoming resistance and immunity. The weapon disappears if it is more than 5 feet away from you for 1 minute or more, or if you use this feature again.\n\n**Pact of the Chain:** You can cast Find Familiar as a ritual without expending a spell slot. When you do, you can choose the familiar's form from the standard list or from the following special forms: imp, pseudodragon, quasit, sprite, or slaad tadpole. Additionally, when you take the Attack action, you can forgo one of your own attacks to allow your familiar to make one attack of its own using your Reaction.\n\n**Pact of the Tome:** Your patron gives you a grimoire called the Book of Shadows. When you gain this boon, choose three cantrips from any class's spell list (the spells needn't be from the same list). While the book is on your person, you can cast those cantrips at will. They count as Warlock spells for you. If you lose the Book of Shadows, you can perform a 1-hour ceremony to receive a replacement from your patron.",
       "tags": [
         "build",
         "identity",
@@ -629,17 +629,17 @@
         {
           "id": "pact-of-the-blade",
           "name": "Pact of the Blade",
-          "description": "Lean into weapon pressure and melee invocations like Thirsting Blade."
+          "description": "As a Bonus Action, summon a magical pact weapon you are proficient with. It counts as magical. Unlocks invocations such as Thirsting Blade and Lifedrinker."
         },
         {
           "id": "pact-of-the-tome",
           "name": "Pact of the Tome",
-          "description": "Expand cantrip and ritual-like utility through a broader magical toolkit."
+          "description": "Gain the Book of Shadows: choose 3 cantrips from any class list. You can cast them at will as Warlock spells while the book is on your person."
         },
         {
           "id": "pact-of-the-chain",
           "name": "Pact of the Chain",
-          "description": "Gain a stronger familiar identity for scouting, utility, and setup."
+          "description": "Cast Find Familiar as a ritual without a spell slot, choosing from special forms (imp, pseudodragon, quasit, sprite, slaad tadpole). Your familiar can attack using your Reaction."
         }
       ],
       "grantsSummons": true,
@@ -662,8 +662,8 @@
       "variantGroup": "warlock-pact-chain-familiar"
     },
     "warlock-mystic-arcanum-6th": {
-      "summary": "Your patron grants a higher-tier spell effect outside the normal pact-slot loop, marking a major jump in magical reach.",
-      "description": "Mystic Arcanum represents access to special top-end magic that is not meant to feel like ordinary slot casting. It should be presented as a memorable once-per-day style reward rather than blended into normal pact slots.",
+      "summary": "Choose one 6th-level spell from the Warlock spell list. You can cast it once per Long Rest without expending a spell slot. This spell is separate from your Pact Magic slots.",
+      "description": "Your patron bestows a Mystic Arcanum — a powerful spell beyond your Pact Magic. Choose one 6th-level spell from the Warlock spell list as your arcanum. You can cast this spell once without expending a spell slot. You must finish a Long Rest before you can cast it this way again. At higher levels you gain additional arcana: a 7th-level spell at Warlock level 7 (gained from the warlock-mystic-arcanum-7th feature), an 8th-level spell at level 9, and a 9th-level spell at level 11.",
       "tags": [
         "spellcasting",
         "boon",
@@ -673,23 +673,23 @@
         {
           "id": "mass-suggestion-arcanum",
           "name": "Mass Suggestion Arcanum",
-          "description": "Take social-control dominance for large encounters and intrigue scenes."
+          "description": "Cast Mass Suggestion (6th level) once per Long Rest without a spell slot: suggest a course of activity to up to 12 creatures that can hear and understand you."
         },
         {
           "id": "circle-of-death-arcanum",
           "name": "Circle of Death Arcanum",
-          "description": "Take heavy area damage pressure for packed enemy formations."
+          "description": "Cast Circle of Death (6th level) once per Long Rest without a spell slot: 8d6 Necrotic damage to all creatures in a 60-foot-radius sphere (Con save halves)."
         },
         {
           "id": "true-seeing-arcanum",
           "name": "True Seeing Arcanum",
-          "description": "Take high-value perception and anti-deception utility."
+          "description": "Cast True Seeing (6th level) once per Long Rest without a spell slot: a willing creature gains truesight and can see hidden doors and into the Ethereal Plane to 120 ft for 1 hour."
         }
       ]
     },
     "warlock-cantrips-known-3": {
-      "summary": "Your at-will toolkit expands, making your no-slot turns more flexible and expressive.",
-      "description": "Extra cantrips matter more on warlock than on many classes because the class often leans on at-will pressure and utility between pact-slot spikes.",
+      "summary": "You now know 3 Warlock cantrips. Choose one additional cantrip from the Warlock spell list.",
+      "description": "At level 4, your cantrips known increases to 3. Choose one additional cantrip from the Warlock spell list. Cantrips can be cast at will without expending a spell slot.",
       "tags": [
         "cantrip",
         "utility",
@@ -697,8 +697,8 @@
       ]
     },
     "warlock-pact-slot-level-3": {
-      "summary": "Your pact slots jump in raw power, so every spell you cast with them now lands at a stronger tier.",
-      "description": "Because all pact slots cast at the same maximum level, each slot-level increase is a meaningful warlock power spike rather than a bookkeeping footnote.",
+      "summary": "Your Pact Magic spell slots are now 3rd level. All spells cast using Pact Magic slots are automatically cast at 3rd level.",
+      "description": "At level 5, your Pact Magic slot level increases to 3rd. Because all your Pact Magic slots are always cast at your highest available slot level, every spell you cast using a Pact Magic slot is automatically upcast to 3rd level with no additional cost. Your slot count remains 2.",
       "tags": [
         "spellcasting",
         "upgrade",
@@ -706,8 +706,8 @@
       ]
     },
     "warlock-contact-patron": {
-      "summary": "Your bond with the patron deepens into a more direct line of influence and support.",
-      "description": "At higher levels, the class fantasy leans harder into active relationship with the patron rather than vague background flavor. This kind of feature should read like a real escalation in that bond.",
+      "summary": "You can communicate directly with your patron. Use a Magic action to telepathically contact your patron — they can answer questions or offer guidance at the DM's discretion.",
+      "description": "Your bond with your Otherworldly Patron has grown strong enough to allow direct communication. You can use a Magic action to telepathically contact your patron. Your patron can hear you, and you can hear a response. Your patron is not compelled to answer truthfully, and the nature of the exchange depends on your patron and the DM. This feature does not grant mechanical effects beyond the communication itself.",
       "tags": [
         "roleplay",
         "identity",
@@ -715,8 +715,8 @@
       ]
     },
     "warlock-hex-master": {
-      "summary": "Your signature curse magic reaches an endgame state where maintaining pressure feels effortless.",
-      "description": "Hex Master is capstone-style warlock pressure. It supports the fantasy of an inexhaustible cursed duelist or blaster who can keep a target under supernatural pressure all fight long.",
+      "summary": "You can cast Hex without expending a spell slot, and it no longer requires Concentration. Once cast this way, Hex lasts until dispelled or you finish a Long Rest.",
+      "description": "At this level, your mastery of cursing magic means Hex costs you nothing to maintain. You can cast Hex once without expending a Pact Magic slot; the spell cast this way does not require Concentration and lasts until it is dispelled or until you finish a Long Rest. Once you cast Hex in this way, you must finish a Long Rest before you can do so again. You can still cast Hex using a Pact Magic slot normally.",
       "tags": [
         "capstone",
         "curse",
@@ -724,8 +724,8 @@
       ]
     },
     "warlock-eldritch-master": {
-      "summary": "At the top end of the class, recovering pact fuel becomes even more reliable and reinforces your relentless cadence.",
-      "description": "Eldritch Master is about endgame tempo. It should make the warlock feel as though running dry is only temporary and that the pact remains an engine of sustained pressure.",
+      "summary": "As a Magic action, spend 1 minute in earnest entreaty to your patron to regain all expended Pact Magic spell slots. Usable once per Long Rest.",
+      "description": "At level 20, you can entreat your patron for aid in extremis. As a Magic action, you can spend 1 minute in earnest supplication and bargaining with your patron. At the end of that minute, you regain all expended Pact Magic spell slots. Once you use this feature, you must finish a Long Rest before you can use it again.",
       "tags": [
         "capstone",
         "resource",
@@ -733,48 +733,48 @@
       ]
     },
     "warlock-asi-or-feat": {
-      "summary": "Sharpen your core stats or claim a feat that reinforces your pact identity.",
-      "description": "Warlock ASI levels are where you lock in your long-term game plan: stronger Charisma pressure, tougher concentration, or a feat that supports your pact rhythm.",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each (neither above 20), or gain a feat you qualify for.",
+      "description": "Your ability scores improve or you gain a feat. Choose one: increase one ability score of your choice by 2 (maximum 20), increase two different ability scores by 1 each (maximum 20 each), or gain a feat for which you meet the prerequisites. Warlock ASI levels occur at levels 4, 8, 12, 16, and 19.",
       "tags": [
         "progression",
         "build"
       ]
     },
     "warlock-patron-feature-6": {
-      "summary": "Your patron grants a level 6 signature escalation.",
-      "description": "At level 6, your subclass adds a concrete new pressure tool that should feel different for Fiend, Archfey, and Great Old One warlocks.",
+      "summary": "Your Otherworldly Patron grants you a subclass feature at level 6. The specific ability depends on your chosen patron.",
+      "description": "At level 6, your pact with your Otherworldly Patron deepens, granting you a new feature determined by your subclass. This feature is unique to your patron: Fiend Warlocks, Archfey Warlocks, and Great Old One Warlocks each receive different abilities that reflect the nature of their bargain.",
       "tags": [
         "subclass",
         "identity"
       ]
     },
     "warlock-patron-feature-10": {
-      "summary": "Your patron package deepens with another major subclass feature.",
-      "description": "At level 10, your patron identity should become easier to feel in live play through stronger survivability, control, or psychic weirdness depending on your subclass.",
+      "summary": "Your Otherworldly Patron grants you a subclass feature at level 10. The specific ability depends on your chosen patron.",
+      "description": "At level 10, your patron grants you another subclass feature. This is one of four subclass features you receive across levels 1, 6, 10, and 14. Consult your chosen patron subclass for the specific mechanical effect.",
       "tags": [
         "subclass",
         "identity"
       ]
     },
     "warlock-patron-feature-14": {
-      "summary": "Your patron grants a high-impact signature capstone move.",
-      "description": "At level 14, subclass identity should feel unmistakable: nightmare punishment, fey mind-prisons, or long-term enthrallment.",
+      "summary": "Your Otherworldly Patron grants you a subclass feature at level 14. This is the final feature in your patron's progression.",
+      "description": "At level 14, your patron grants you the final feature of your subclass progression. This is the most powerful of the four patron features (levels 1, 6, 10, 14) and represents the fullest expression of your pact. Consult your chosen patron subclass for the specific mechanical effect.",
       "tags": [
         "subclass",
         "capstone"
       ]
     },
     "warlock-patron-feature-18": {
-      "summary": "Your patron path reaches its final expression with endgame reliability.",
-      "description": "This level cements your patron role in late-campaign play and should remain visible in both feature and action surfaces.",
+      "summary": "Your Otherworldly Patron grants you a subclass feature at level 18.",
+      "description": "At level 18, your patron grants you an additional subclass feature. Note that the standard Warlock subclass progression ends at level 14; if a feature appears here it is specific to certain patron subclasses that extend beyond that baseline. Consult your subclass for the specific mechanical effect.",
       "tags": [
         "subclass",
         "capstone"
       ]
     },
     "warlock-mystic-arcanum-7th": {
-      "summary": "Gain a 7th-level Mystic Arcanum, separate from your pact-slot pool.",
-      "description": "This Arcanum is premium magic outside ordinary pact slots. Keep it mentally separate from short-rest pact-slot budgeting.",
+      "summary": "Choose one 7th-level spell from the Warlock spell list. You can cast it once per Long Rest without expending a spell slot.",
+      "description": "At level 7, your patron bestows a second Mystic Arcanum. Choose one 7th-level spell from the Warlock spell list. You can cast this spell once without expending a spell slot. You must finish a Long Rest before you can cast it this way again. This arcanum is completely separate from your Pact Magic slots and does not consume them.",
       "tags": [
         "spellcasting",
         "arcanum"
@@ -783,23 +783,23 @@
         {
           "id": "forcecage-arcanum",
           "name": "Forcecage Arcanum",
-          "description": "Lock key enemies out of the fight with no concentration drop from your pact slot economy."
+          "description": "Cast Forcecage (7th level) once per Long Rest without a spell slot: create a 20-foot cube cage of force bars or a solid box, trapping creatures inside with no saving throw."
         },
         {
           "id": "plane-shift-arcanum",
           "name": "Plane Shift Arcanum",
-          "description": "Use high-tier banishment and travel utility without spending pact slots."
+          "description": "Cast Plane Shift (7th level) once per Long Rest without a spell slot: transport yourself and up to eight willing creatures to another plane of existence, or banish an unwilling creature (Cha save)."
         },
         {
           "id": "finger-of-death-arcanum",
           "name": "Finger of Death Arcanum",
-          "description": "Pick a lethal single-target finisher for boss pressure."
+          "description": "Cast Finger of Death (7th level) once per Long Rest without a spell slot: deal 7d8+30 Necrotic damage to one creature (Con save halves). A humanoid killed by it rises as a zombie under your control."
         }
       ]
     },
     "warlock-mystic-arcanum-8th": {
-      "summary": "Gain an 8th-level Mystic Arcanum as a separate high-tier cast lane.",
-      "description": "Mystic Arcanum remains distinct from pact slots: this is premium top-end magic, not part of your short-rest slot loop.",
+      "summary": "Choose one 8th-level spell from the Warlock spell list. You can cast it once per Long Rest without expending a spell slot.",
+      "description": "At level 9, your patron bestows a third Mystic Arcanum. Choose one 8th-level spell from the Warlock spell list. You can cast this spell once without expending a spell slot. You must finish a Long Rest before you can cast it this way again. This arcanum is completely separate from your Pact Magic slots.",
       "tags": [
         "spellcasting",
         "arcanum"
@@ -808,17 +808,17 @@
         {
           "id": "power-word-stun-arcanum",
           "name": "Power Word Stun Arcanum",
-          "description": "Take a control-first arcanum that creates hard momentum swings."
+          "description": "Cast Power Word Stun (8th level) once per Long Rest without a spell slot: stun one creature with 150 hit points or fewer — it makes a Con save at the end of each of its turns to end the effect."
         },
         {
           "id": "demiplane-arcanum",
           "name": "Demiplane Arcanum",
-          "description": "Add utility and containment options for campaign-scale problems."
+          "description": "Cast Demiplane (8th level) once per Long Rest without a spell slot: open a shadowy door to a 30-foot-cube extradimensional space for 1 hour."
         },
         {
           "id": "feeblemind-arcanum",
           "name": "Feeblemind Arcanum",
-          "description": "Pick devastating anti-caster mind-break pressure."
+          "description": "Cast Feeblemind (8th level) once per Long Rest without a spell slot: deal 4d6 Psychic damage and reduce a creature's Intelligence and Charisma to 1 (Int save negates); the creature can't cast spells or use magic items."
         }
       ]
     },
