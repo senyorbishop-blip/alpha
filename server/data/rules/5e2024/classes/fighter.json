@@ -509,6 +509,208 @@
         "tempo",
         "passive"
       ]
+    },
+    "fighter-ability-score-improvement-4": {
+      "summary": "Increase core stats or pick a feat to sharpen your combat identity early.",
+      "description": "At this tier the fighter can lock in accuracy, damage, durability, or utility through Ability Score Improvement or a feat. This is a major build pivot that should feel explicit in level-up UI.",
+      "tags": [
+        "build",
+        "progression",
+        "asi"
+      ]
+    },
+    "fighter-extra-attack-2": {
+      "summary": "Your Attack action now delivers two weapon swings each turn.",
+      "description": "Extra Attack is the fighter's baseline damage jump at level 5. It defines the class cadence in sustained fights and combines strongly with weapon mastery riders.",
+      "tags": [
+        "combat",
+        "offense",
+        "scaling"
+      ]
+    },
+    "fighter-ability-score-improvement-6": {
+      "summary": "Another stat/feat choice keeps your core game plan ahead of encounter scaling.",
+      "description": "This second early ASI helps fighters stay numerically reliable and lets specialized builds branch into control, defense, or burst options without falling behind.",
+      "tags": [
+        "build",
+        "progression",
+        "asi"
+      ]
+    },
+    "fighter-subclass-feature-7": {
+      "summary": "Your martial archetype deepens with a defining mid-tier technique.",
+      "description": "Level 7 is where subclass identity becomes more than flavor. Surface this as a real tactical unlock tied to your archetype's unique combat approach.",
+      "tags": [
+        "subclass",
+        "combat",
+        "identity"
+      ]
+    },
+    "fighter-weapon-mastery-4-weapons": {
+      "summary": "Expand your mastered arsenal to four weapons for better matchup coverage.",
+      "description": "More mastery slots means broader tactical options: swap between control, push, reach, and damage profiles as encounters change.",
+      "tags": [
+        "weapons",
+        "build",
+        "combat"
+      ]
+    },
+    "fighter-ability-score-improvement-8": {
+      "summary": "Take a third foundational stat/feat step before late-tier threats ramp up.",
+      "description": "By level 8 this ASI is often used to finish primary ability caps or secure a signature feat that defines the fighter's table role.",
+      "tags": [
+        "build",
+        "progression",
+        "asi"
+      ]
+    },
+    "fighter-subclass-feature-10": {
+      "summary": "Your archetype grants a stronger advanced pattern at level 10.",
+      "description": "This subclass milestone should be presented as a practical new lever in combat planning, not just a passive line item.",
+      "tags": [
+        "subclass",
+        "identity",
+        "combat"
+      ]
+    },
+    "fighter-extra-attack-3": {
+      "summary": "Your Attack action now makes three attacks each turn.",
+      "description": "This major scaling breakpoint keeps the fighter ahead in sustained weapon throughput and reinforces its frontline striker role.",
+      "tags": [
+        "combat",
+        "offense",
+        "scaling"
+      ]
+    },
+    "fighter-ability-score-improvement-12": {
+      "summary": "Late-tier ASI/feat selection to refine survivability or burst reliability.",
+      "description": "At level 12, fighters can either cap key stats or add utility feats that close common tactical weaknesses.",
+      "tags": [
+        "build",
+        "progression",
+        "asi"
+      ]
+    },
+    "fighter-subclass-feature-13": {
+      "summary": "Subclass kit gains another high-tier specialization feature.",
+      "description": "Level 13 subclass features often reinforce the archetype's signature loop; keep their role-specific impact visible in UI text.",
+      "tags": [
+        "subclass",
+        "identity",
+        "combat"
+      ]
+    },
+    "fighter-indomitable-2-uses": {
+      "summary": "Gain a second Indomitable use to resist high-stakes failed saves.",
+      "description": "Extra Indomitable uses increase late-game resilience against debilitating control effects that can remove a fighter from a fight.",
+      "resourceName": "Indomitable",
+      "trackUses": true,
+      "usage": "2 uses available",
+      "recovery": "Regain all expended uses on a Long Rest.",
+      "tags": [
+        "defense",
+        "resource",
+        "saves"
+      ]
+    },
+    "fighter-ability-score-improvement-14": {
+      "summary": "Another ASI/feat window for polishing endgame accuracy and durability.",
+      "description": "This progression choice helps fighters stay dependable when enemy ACs, save DCs, and encounter complexity increase.",
+      "tags": [
+        "build",
+        "progression",
+        "asi"
+      ]
+    },
+    "fighter-subclass-feature-15": {
+      "summary": "Subclass power spikes again with a specialized veteran-tier benefit.",
+      "description": "Treat this as a meaningful tactical upgrade that shifts encounter choices, not a background passive.",
+      "tags": [
+        "subclass",
+        "combat",
+        "identity"
+      ]
+    },
+    "fighter-action-surge-2-uses": {
+      "summary": "Gain a second Action Surge use for more frequent tempo-breaking turns.",
+      "description": "Two Action Surge uses let fighters create multiple swing rounds in difficult encounters or long adventuring days.",
+      "resourceName": "Action Surge",
+      "trackUses": true,
+      "usage": "2 uses available",
+      "recovery": "Regain all expended uses on a Short or Long Rest.",
+      "effect": "Gain one extra action on your turn when activated.",
+      "tags": [
+        "combat",
+        "burst",
+        "resource"
+      ]
+    },
+    "fighter-ability-score-improvement-16": {
+      "summary": "Penultimate ASI/feat to lock in your final form before capstone play.",
+      "description": "Level 16 is typically used to complete core optimization or pick a final feat that rounds out mobility, control, or defense.",
+      "tags": [
+        "build",
+        "progression",
+        "asi"
+      ]
+    },
+    "fighter-indomitable-3-uses": {
+      "summary": "Indomitable reaches three uses, greatly reducing the risk of failed clutch saves.",
+      "description": "High-level encounters throw repeated save pressure; this upgrade helps fighters keep acting through control and burst effects.",
+      "resourceName": "Indomitable",
+      "trackUses": true,
+      "usage": "3 uses available",
+      "recovery": "Regain all expended uses on a Long Rest.",
+      "tags": [
+        "defense",
+        "resource",
+        "saves"
+      ]
+    },
+    "fighter-subclass-feature-18": {
+      "summary": "Your archetype unlocks a near-capstone technique at level 18.",
+      "description": "This late subclass milestone should read as a practical headline benefit that changes how turns are sequenced.",
+      "tags": [
+        "subclass",
+        "identity",
+        "combat"
+      ]
+    },
+    "fighter-extra-attack-4": {
+      "summary": "Your Attack action now makes four attacks each turn.",
+      "description": "At level 20, four attacks define the fighter's top-end sustained weapon pressure and synergy with mastery effects.",
+      "tags": [
+        "combat",
+        "offense",
+        "capstone"
+      ]
+    },
+    "fighter-subclass-capstone": {
+      "summary": "Your martial archetype culminates with its defining capstone payoff.",
+      "description": "The subclass capstone is the final expression of your archetype identity and should be surfaced as a marquee power.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "identity"
+      ]
+    },
+    "fighter-epic-boon": {
+      "summary": "Gain an Epic Boon that grants a mythic-tier benefit beyond normal class scaling.",
+      "description": "Epic Boons represent endgame customization and should be tracked as a major reward choice with clear impact text.",
+      "tags": [
+        "epic",
+        "capstone",
+        "build"
+      ]
+    },
+    "fighter-weapon-mastery-5-weapons": {
+      "summary": "Expand mastery to five weapons for maximum tactical coverage.",
+      "description": "At top tier, a fifth mastery slot lets fighters tailor weapon choice to encounter geometry, resistances, and control priorities without losing identity.",
+      "tags": [
+        "weapons",
+        "combat",
+        "scaling"
+      ]
     }
   },
   "levelUnlockIds": {

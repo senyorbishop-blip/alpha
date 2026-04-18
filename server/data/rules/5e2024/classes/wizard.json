@@ -584,6 +584,168 @@
         "identity",
         "endgame"
       ]
+    },
+    "wizard-spell-level-2": {
+      "summary": "You can now prepare and cast 2nd-level wizard spells.",
+      "description": "Second-level spells open broad utility and combat control options that markedly expand tactical planning.",
+      "tags": [
+        "spellcasting",
+        "progression",
+        "power-tier"
+      ]
+    },
+    "wizard-subclass-feature-6": {
+      "summary": "Your Arcane Tradition grants its first advanced specialization feature.",
+      "description": "At level 6, subclass identity should begin to materially change your encounter decisions and spell priorities.",
+      "tags": [
+        "subclass",
+        "spellcasting",
+        "identity"
+      ]
+    },
+    "wizard-ability-score-improvement-4": {
+      "summary": "Increase Intelligence or take a feat to sharpen your arcane toolkit.",
+      "description": "This ASI often determines whether a wizard focuses on higher save DCs, survivability, or utility feat support.",
+      "tags": [
+        "build",
+        "progression",
+        "asi"
+      ]
+    },
+    "wizard-spell-level-3": {
+      "summary": "You gain access to 3rd-level wizard spells and major battlefield swing options.",
+      "description": "Third-level magic is a major breakpoint for control, defense, and encounter-shaping spells.",
+      "tags": [
+        "spellcasting",
+        "progression",
+        "power-tier"
+      ]
+    },
+    "wizard-cantrips-known-4": {
+      "summary": "Learn a fourth cantrip to broaden your at-will magical coverage.",
+      "description": "Additional cantrips reduce dead turns and increase flexibility when conserving spell slots.",
+      "tags": [
+        "spellcasting",
+        "cantrip",
+        "utility"
+      ]
+    },
+    "wizard-subclass-feature-10": {
+      "summary": "Your Arcane Tradition deepens with a high-impact specialist feature.",
+      "description": "This level should feel like a real archetype advancement, not just a ribbon.",
+      "tags": [
+        "subclass",
+        "identity",
+        "spellcasting"
+      ]
+    },
+    "wizard-spell-level-4": {
+      "summary": "You can now cast 4th-level wizard spells.",
+      "description": "Fourth-level spells provide stronger control and mobility options that significantly expand problem-solving patterns.",
+      "tags": [
+        "spellcasting",
+        "progression",
+        "power-tier"
+      ]
+    },
+    "wizard-ability-score-improvement-8": {
+      "summary": "Another ASI/feat choice to improve spell reliability or durability.",
+      "description": "This mid-tier ASI is often used to push Intelligence toward cap or secure concentration-support feats.",
+      "tags": [
+        "build",
+        "progression",
+        "asi"
+      ]
+    },
+    "wizard-spell-level-5": {
+      "summary": "You gain 5th-level spell access and premier midgame arcane effects.",
+      "description": "Fifth-level spells often define encounter pacing and strategic leverage for wizard-focused parties.",
+      "tags": [
+        "spellcasting",
+        "progression",
+        "power-tier"
+      ]
+    },
+    "wizard-spell-level-6": {
+      "summary": "You can cast 6th-level spells, entering high-tier arcane play.",
+      "description": "Sixth-level magic introduces powerful single-cast answers that can reshape hard encounters.",
+      "tags": [
+        "spellcasting",
+        "progression",
+        "power-tier"
+      ]
+    },
+    "wizard-ability-score-improvement-12": {
+      "summary": "Late-tier ASI/feat choice for endgame spellcasting stability.",
+      "description": "At level 12 this choice often strengthens concentration resilience, initiative control, or maximized Intelligence.",
+      "tags": [
+        "build",
+        "progression",
+        "asi"
+      ]
+    },
+    "wizard-subclass-feature-14": {
+      "summary": "Your Arcane Tradition unlocks its capstone specialization feature.",
+      "description": "This is the defining late-tier subclass payoff and should be clearly presented in the feature catalog.",
+      "tags": [
+        "subclass",
+        "capstone",
+        "identity"
+      ]
+    },
+    "wizard-spell-level-7": {
+      "summary": "You can now cast 7th-level wizard spells.",
+      "description": "Seventh-level spell access introduces encounter-defining arcane options with major strategic impact.",
+      "tags": [
+        "spellcasting",
+        "progression",
+        "power-tier"
+      ]
+    },
+    "wizard-spell-level-8": {
+      "summary": "You gain access to 8th-level wizard spells.",
+      "description": "Eighth-level spells provide exceptional control and reality-bending utility suited to late-campaign play.",
+      "tags": [
+        "spellcasting",
+        "progression",
+        "power-tier"
+      ]
+    },
+    "wizard-ability-score-improvement-16": {
+      "summary": "Penultimate ASI/feat to finish your endgame wizard build.",
+      "description": "Level 16 choices typically lock in final survivability or optimization priorities before top-tier spell access.",
+      "tags": [
+        "build",
+        "progression",
+        "asi"
+      ]
+    },
+    "wizard-spell-level-9": {
+      "summary": "You can cast 9th-level wizard spells, the peak of arcane power.",
+      "description": "Ninth-level spells are campaign-shaping resources and should be framed as pinnacle magical capabilities.",
+      "tags": [
+        "spellcasting",
+        "capstone",
+        "power-tier"
+      ]
+    },
+    "wizard-cantrips-known-5": {
+      "summary": "Learn a fifth cantrip for broader at-will utility and damage profiles.",
+      "description": "This helps the wizard maintain flexible no-slot options in long adventuring days.",
+      "tags": [
+        "spellcasting",
+        "cantrip",
+        "utility"
+      ]
+    },
+    "wizard-epic-boon": {
+      "summary": "Gain an Epic Boon for a mythic-tier post-cap progression reward.",
+      "description": "Epic Boons represent endgame personalization beyond standard wizard class scaling.",
+      "tags": [
+        "epic",
+        "capstone",
+        "build"
+      ]
     }
   },
   "levelUnlockIds": {
