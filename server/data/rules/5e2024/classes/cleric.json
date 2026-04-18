@@ -261,7 +261,8 @@
       "level": 5,
       "proficiencyBonus": 3,
       "features": [
-        "3rd-level Spells"
+        "3rd-level Spells",
+        "Smite Undead"
       ],
       "classMechanics": {
         "cantripsKnown": 4,
@@ -269,7 +270,8 @@
         "channelDivinityUses": 1
       },
       "unlockIds": [
-        "cleric-spell-level-3"
+        "cleric-spell-level-3",
+        "cleric-smite-undead"
       ]
     },
     {
@@ -514,8 +516,8 @@
   ],
   "featureDefinitions": {
     "cleric-spellcasting": {
-      "summary": "Prepare and wield divine magic from the full cleric list using Wisdom as your casting ability.",
-      "description": "Cleric spellcasting is the backbone of the class. You prepare spells from the cleric list each day, use Wisdom for your spell attacks and save DC, and pivot between healing, protection, control, and radiant pressure depending on what the party needs.\n\nIn play, this should feel flexible rather than narrow: the same cleric can solve attrition with healing, anchor the front line with buffs, or answer undead and hostile magic with the right prepared list.",
+      "summary": "Prepare spells from the full Cleric list each day using Wisdom as your spellcasting ability.",
+      "description": "You are a full spellcaster who prepares divine spells from the entire Cleric spell list after each Long Rest. The number of spells you can have prepared equals your Wisdom modifier plus your Cleric level (minimum 1). You use Wisdom for spell attack rolls and your spell save DC (8 + proficiency bonus + Wisdom modifier). You can cast any prepared spell using an appropriate spell slot, and you can cast Cleric spells as rituals if they have the ritual tag, without expending a spell slot. You know 3 cantrips at level 1, gaining more at levels 4 and 10.",
       "tags": [
         "spellcasting",
         "divine",
@@ -524,8 +526,8 @@
       ]
     },
     "cleric-divine-order": {
-      "summary": "Choose the side of clerical training you want to emphasize so the class starts with a clearer battlefield and role identity.",
-      "description": "Divine Order is the first big fork in how your cleric plays. It decides whether your build leans harder into scholarship, discipline, and sacred study or into a more armored, battle-ready priest style.\n\nThis choice should be visible in the sheet because it affects how the player understands the class from level 1 onward: support caster, battle priest, or a hybrid of both.",
+      "summary": "Choose Protector (Heavy Armor and Martial weapon proficiency) or Thaumaturge (extra cantrip and Wisdom bonus to Arcana and Religion).",
+      "description": "At level 1, choose one of two Divine Orders that shapes your clerical training:\n\nProtector: You gain proficiency with Heavy Armor and Martial weapons, letting you fight on the front line alongside your allies.\n\nThaumaturge: You learn one additional Cleric cantrip of your choice, and you add your Wisdom modifier to any Intelligence (Arcana) or Intelligence (Religion) check you make.",
       "tags": [
         "build",
         "divine",
@@ -535,18 +537,18 @@
         {
           "id": "protector-order",
           "name": "Protector Order",
-          "description": "Leans battle-priest: heavier armor competency, stronger frontline posture, and easier concentration survival in contested space."
+          "description": "You gain proficiency with Heavy Armor and Martial weapons. This allows you to wear plate armor and wield martial weapons such as longswords and war picks without penalty."
         },
         {
           "id": "thaumaturge-order",
           "name": "Thaumaturge Order",
-          "description": "Leans scholar-priest: stronger cantrip and knowledge-facing expression with a clearer caster-support identity."
+          "description": "You learn one additional Cleric cantrip of your choice. Additionally, you add your Wisdom modifier to any Intelligence (Arcana) or Intelligence (Religion) ability check you make."
         }
       ]
     },
     "cleric-channel-divinity-1-use": {
-      "summary": "Spend Channel Divinity to power major cleric or domain effects when the moment really matters.",
-      "description": "Channel Divinity is your premier class resource. It fuels signature cleric buttons such as Divine Spark, Turn Undead, and subclass-specific options like Radiance of the Dawn or Invoke Duplicity.\n\nIn play, this should feel like a high-value tactical choice rather than background text. The player should always understand how many uses remain, which actions consume a use, and whether the current fight is worth spending one now.",
+      "summary": "Channel divine power to fuel Divine Spark, Turn Undead, and your domain's Channel Divinity options.",
+      "description": "Starting at level 2, you can channel divine energy directly from your deity to fuel magical effects. You start with 1 Channel Divinity use per rest, gaining 2 uses at level 6 and 3 uses at level 18. Each Channel Divinity use powers one of the following actions: Divine Spark, Turn Undead, or a special option granted by your Divine Domain subclass. Spending a use is part of the action that triggers the effect.",
       "resourceName": "Channel Divinity",
       "trackUses": true,
       "section": "Actions",
@@ -560,43 +562,54 @@
       ]
     },
     "cleric-divine-spark": {
-      "summary": "Release focused divine power to either restore an ally or punish a target with radiant or necrotic force.",
-      "description": "Divine Spark is your dependable Channel Divinity option when you need immediate impact. It turns the class resource into direct healing or damage instead of a passive aura or setup effect.\n\nUse it when a single creature needs to swing now: lift an ally, finish a threatening target, or force a visible turn in momentum without spending a spell slot.",
+      "summary": "As a Magic action, spend a Channel Divinity use to roll 1d8 + Wisdom modifier and restore HP or deal Necrotic damage to one creature within 30 feet.",
+      "description": "As a Magic action, spend one Channel Divinity use and point your holy symbol at one creature you can see within 30 feet of yourself. You roll 1d8 and add your Wisdom modifier to the result, then choose one of the following effects:\n\nPositive Energy (Healing): The target regains hit points equal to the roll. No saving throw — the healing simply occurs.\n\nNegative Energy (Necrotic Damage): The target takes Necrotic damage equal to the roll. The target makes a Constitution saving throw against your spell save DC, taking half damage on a success.\n\nYou can spend additional Channel Divinity uses (up to your maximum) as part of the same Magic action to increase the roll — add 1d8 per extra use spent.",
       "section": "Actions",
       "type": "action",
       "resourceName": "Channel Divinity",
       "trackUses": true,
-      "effect": "Immediate healing or divine damage with no spell-slot cost.",
+      "effect": "Roll 1d8 + Wisdom modifier; restore that much HP or deal that much Necrotic damage (Con save for half) to one creature within 30 feet.",
       "tags": [
         "divine",
         "healing",
         "damage",
         "resource"
       ],
-      "usage": "Spend 1 Channel Divinity use",
+      "usage": "Spend 1 or more Channel Divinity uses (Magic action)",
       "recovery": "Channel Divinity refreshes on a Short or Long Rest."
     },
     "cleric-turn-undead": {
-      "summary": "Drive undead back with holy force and break the shape of an encounter that depends on them closing in.",
-      "description": "Turn Undead is a battlefield control Channel Divinity, not just lore flavor. Against undead-heavy encounters it can buy space, protect weaker allies, and stop the enemy line from playing the fight it wanted.\n\nThis feature matters most when the cleric reads the room early and spends it before the undead horde has already collapsed onto the party.",
+      "summary": "As a Magic action, spend a Channel Divinity use to force every Undead within 30 feet to make a Wisdom save or be Turned for 1 minute.",
+      "description": "As a Magic action, spend one Channel Divinity use and present your holy symbol. Each Undead creature within 30 feet of you that can see or hear you must make a Wisdom saving throw against your spell save DC.\n\nOn a failed save, the creature is Turned for 1 minute. A Turned creature must spend its turns trying to move as far away from you as it can, and it can't willingly move to a space within 30 feet of you. It can only take the Dash, Disengage, or Dodge action on its turn, and it can't take Reactions. The Turned condition ends early if the creature takes any damage.\n\nAt level 5, any Undead that fails this save and has a Challenge Rating at or below half your proficiency bonus is instantly destroyed (see Smite Undead).",
       "section": "Actions",
       "type": "action",
       "resourceName": "Channel Divinity",
       "trackUses": true,
-      "save": "Wisdom save",
-      "effect": "Undead creatures that fail are repelled and lose tempo.",
+      "save": "Wisdom saving throw (DC = spell save DC)",
+      "effect": "On a failed save, the Undead is Turned for 1 minute: must flee, can only Dash/Disengage/Dodge, can't take Reactions. Turn ends if the creature takes damage.",
       "tags": [
         "divine",
         "control",
         "resource",
         "undead"
       ],
-      "usage": "Spend 1 Channel Divinity use",
+      "usage": "Spend 1 Channel Divinity use (Magic action)",
       "recovery": "Channel Divinity refreshes on a Short or Long Rest."
     },
+    "cleric-smite-undead": {
+      "summary": "When you use Turn Undead, Undead with a CR at or below half your proficiency bonus are instantly destroyed if they fail the save.",
+      "description": "Starting at level 5, your Turn Undead gains a lethal edge against weaker undead. When you use Turn Undead and an Undead creature fails its Wisdom saving throw, if that creature's Challenge Rating is equal to or less than half your proficiency bonus (rounded down), it is instantly destroyed rather than merely Turned.\n\nAt level 5, your proficiency bonus is +3, so Undead with CR 1 or lower are destroyed. At level 9 (proficiency bonus +4), CR 2 or lower. At level 13 (proficiency bonus +5), CR 2 or lower. At level 17 (proficiency bonus +6), CR 3 or lower.",
+      "section": "Actions",
+      "type": "passive",
+      "tags": [
+        "divine",
+        "undead",
+        "control"
+      ]
+    },
     "cleric-divine-domain-subclass": {
-      "summary": "Your chosen domain defines what kind of cleric you really are and which signature powers start shaping the build.",
-      "description": "Divine Domain is the subclass gate for cleric. It is where the class stops being a generic divine caster and becomes a Light cleric, Trickery cleric, War cleric, or Life cleric with a distinct play pattern.\n\nFrom this point on, the sheet should surface domain actions, passive riders, and any domain-specific uses of Channel Divinity clearly enough that the subclass feels like a real identity shift.",
+      "summary": "Choose your Divine Domain at level 3, gaining domain spells always prepared plus unique Channel Divinity options and features at levels 3, 6, 17.",
+      "description": "At level 3, you choose a Divine Domain that represents your deity's sphere of influence — such as Life, Light, Trickery, War, Knowledge, or Nature. Your choice grants you the following benefits that grow with your level:\n\nDomain Spells: A list of spells that are always prepared for you and don't count against your number of prepared spells. These appear on your sheet automatically.\n\nChannel Divinity Option: A unique Channel Divinity use available only to clerics of your domain (in addition to Divine Spark and Turn Undead).\n\nSubclass Features: Additional class features at levels 3, 6, and 17 that reinforce your domain's combat, support, or utility identity.",
       "tags": [
         "subclass",
         "divine",
@@ -605,8 +618,8 @@
       ]
     },
     "cleric-blessed-strikes": {
-      "summary": "Your regular offense gains a reliable divine rider so your turns stay meaningful even when you are not spending top resources.",
-      "description": "Blessed Strikes keeps the cleric\u2019s baseline pressure relevant by adding divine payoff to weapon attacks or cantrip damage. It matters because not every turn is a perfect high-level spell turn; sometimes you need dependable value while preserving slots.",
+      "summary": "Choose Potent Spellcasting (add Wisdom modifier to Cleric cantrip damage once per turn) or a domain-granted weapon damage rider.",
+      "description": "At level 8, you gain one of the following options (some domains grant a specific version automatically):\n\nPotent Spellcasting: When you deal damage with a Cleric cantrip, you can add your Wisdom modifier to the damage roll once per turn. This applies to cantrips such as Sacred Flame, Toll the Dead, and Word of Radiance.\n\nDivine Strike (granted by some domains): Once per turn when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 damage of a type determined by your domain (such as Radiant for Life or Psychic for Knowledge). This increases to 2d8 at level 14.",
       "tags": [
         "combat",
         "divine",
@@ -614,8 +627,8 @@
       ]
     },
     "cleric-divine-intervention": {
-      "summary": "Call on your deity for a dramatic answer when the situation is too important for ordinary magic to cover alone.",
-      "description": "Divine Intervention is the cleric fantasy spike. It should read like a momentous plea for direct aid rather than a generic spell-like button.\n\nIn play, it belongs in boss fights, desperate rescues, or scenes where the party needs more than efficient math and wants the cleric to ask for something greater than routine casting.",
+      "summary": "As a Magic action, implore your deity for aid and roll a d20 — on 11 or higher, your god intervenes. Once per Long Rest.",
+      "description": "As a Magic action, you describe the type of divine aid you desire and roll a d20. On a 1–10, your plea fails and nothing happens. On an 11–20, your deity intervenes: the DM chooses the form of intervention, which might duplicate any Cleric spell or Channel Divinity option, or take a form the DM decides is appropriate to your deity.\n\nIf your god intervenes, you can't use Divine Intervention again until you finish a Long Rest. If it doesn't intervene, you can try again the next time you take a Magic action to use this feature.\n\nAt level 20, this feature is replaced by Greater Divine Intervention, which automatically succeeds.",
       "section": "Actions",
       "type": "action",
       "tags": [
@@ -623,12 +636,12 @@
         "capstone",
         "miracle"
       ],
-      "usage": "Use per class rules; major class miracle button.",
-      "recovery": "Recovery cadence depends on level and successful intervention outcome."
+      "usage": "Magic action; roll d20 — intervention occurs on 11–20",
+      "recovery": "Once per Long Rest if the intervention occurs. No restriction if it fails."
     },
     "cleric-greater-divine-intervention": {
-      "summary": "Your god answers with far greater certainty, turning Divine Intervention from a gamble into a true endgame class payoff.",
-      "description": "Greater Divine Intervention is the high-level reward for a lifetime of service. By this point the cleric should feel like a chosen instrument of divine power, and the sheet should treat this as a major class-defining button rather than a footnote at level 20.",
+      "summary": "Divine Intervention automatically succeeds. You can cast Holy Aura or Wish without a spell slot as part of the effect. Once per Long Rest.",
+      "description": "At level 20, Divine Intervention is replaced by Greater Divine Intervention. When you use this feature, it automatically succeeds — no d20 roll required. Your deity answers your call and intervenes in a dramatic fashion.\n\nAs part of the intervention, you can cast Holy Aura or Wish without expending a spell slot. The DM may also choose a form of intervention appropriate to your deity in addition to or instead of the spell.\n\nOnce you use Greater Divine Intervention, you can't use it again until you finish a Long Rest.",
       "tags": [
         "divine",
         "capstone",
@@ -794,10 +807,12 @@
       ]
     },
     "cleric-subclass-feature-14": {
-      "summary": "Your Divine Domain does not grant a feature at level 14 in this progression \u2014 this level is covered by the progression table.",
-      "description": "Level 14 is a Subclass Feature placeholder. Verify against your specific domain's roadmap; some domains grant features at different tiers than others.",
+      "summary": "Your domain grants its level 14 feature, and your Blessed Strikes bonus now applies twice per turn instead of once.",
+      "description": "At level 14, two things happen simultaneously:\n\nImproved Blessed Strikes: The benefit you chose for Blessed Strikes at level 8 now applies twice per turn instead of once. If you chose Potent Spellcasting, you can add your Wisdom modifier to Cleric cantrip damage twice per turn (on two different damage rolls or instances). If your domain granted Divine Strike, it now deals 2d8 extra damage per turn instead of 1d8.\n\nSubclass Feature: Your Divine Domain also grants a feature at this level that further develops your domain's identity. The specific feature depends on your chosen domain.",
       "tags": [
-        "subclass"
+        "subclass",
+        "divine",
+        "improvement"
       ]
     },
     "cleric-subclass-feature-17": {
@@ -838,7 +853,8 @@
       "cleric-cantrips-known-4"
     ],
     "5": [
-      "cleric-spell-level-3"
+      "cleric-spell-level-3",
+      "cleric-smite-undead"
     ],
     "6": [
       "cleric-subclass-feature-6",
@@ -927,9 +943,10 @@
     },
     {
       "level": 5,
-      "summary": "3rd-level Spells.",
+      "summary": "3rd-level Spells, Smite Undead.",
       "unlockIds": [
-        "cleric-spell-level-3"
+        "cleric-spell-level-3",
+        "cleric-smite-undead"
       ]
     },
     {
