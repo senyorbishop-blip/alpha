@@ -370,10 +370,16 @@
   ],
   "featureDefinitions": {
     "pirate-sea-legs": {
-      "summary": "Your movement, balance, and footing stay reliable on unstable ground, rigging, and decks.",
-      "description": "Sea Legs is the class foundation. A Pirate should feel immediately harder to pin down in messy spaces: gangplanks, ropes, rocking decks, tavern tables, and cluttered battlefields. Even before the class becomes flashy, the player should feel like they belong in motion.",
+      "id": "pirate-sea-legs",
+      "displayName": "Sea Legs",
+      "name": "Sea Legs",
+      "level": 1,
       "section": "Class Features",
       "type": "passive",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "You ignore difficult terrain from water, ships, rigging, and unstable surfaces. You can't be knocked prone by vehicle or vessel movement, and you have a climbing speed equal to your walking speed.",
+      "description": "Years at sea have given you preternatural balance and footing. You gain the following benefits:\n\n- Difficult terrain caused by water, mud, sand, ship decks, rigging, gangplanks, or other unstable surfaces doesn't cost you extra movement.\n- You can't be knocked Prone by the motion of a vehicle or vessel.\n- You have a climbing speed equal to your walking speed.\n- You have advantage on Dexterity (Acrobatics) checks made to keep your balance.",
       "tags": [
         "mobility",
         "exploration",
@@ -381,12 +387,18 @@
       ]
     },
     "pirate-swagger-dice": {
-      "summary": "Gain Swagger Dice, a renewable pool of daring that powers tricks, pressure, and leadership.",
-      "description": "Swagger Dice are the class resource and social signature. They represent nerve, bravado, timing, and the way a Pirate seizes a room or a fight. The sheet should surface them like a real spendable currency with obvious use buttons later attached to subclass and class tricks.",
+      "id": "pirate-swagger-dice",
+      "displayName": "Swagger Dice",
+      "name": "Swagger Dice",
+      "level": 1,
       "section": "Class Features",
       "type": "passive",
+      "className": "Pirate",
+      "sourceKind": "class",
       "resourceName": "Swagger Dice",
       "trackUses": true,
+      "summary": "You have a pool of Swagger Dice — your class resource — that power your Dirty Fighting tricks and other features. Start with 2 uses (d6); die size and count increase as you level.",
+      "description": "You have a pool of Swagger Dice that represent your nerve, bravado, and timing in a fight. You expend these dice to fuel Dirty Fighting tricks, Boarding Action, Marked Quarry, and other class features.\n\nYou regain all expended Swagger Dice when you finish a Short or Long Rest.\n\n**Swagger Die size by level:**\n- d6: levels 1–4\n- d8: levels 5–12\n- d10: levels 13–16\n- d12: levels 17–20\n\n**Swagger Dice count by level:**\n- 2 dice: levels 1–2\n- 3 dice: levels 3–6\n- 4 dice: levels 7–12\n- 5 dice: levels 13–16\n- 6 dice: levels 17–20",
       "tags": [
         "resource",
         "support",
@@ -394,10 +406,16 @@
       ]
     },
     "pirate-dirty-fighting": {
-      "summary": "Unlock dirty tricks that reward positioning, distraction, and mean little advantages.",
-      "description": "Dirty Fighting is what keeps the Pirate from feeling like a generic rogue-fighter hybrid. The class should encourage opportunistic play: blind the mark, shove them into bad footing, yank them out of position, or set up the crew for a better turn.",
+      "id": "pirate-dirty-fighting",
+      "displayName": "Dirty Fighting",
+      "name": "Dirty Fighting",
+      "level": 1,
       "section": "Actions",
       "type": "special",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "When you hit with a weapon attack, expend one Swagger Die to add its result to damage and apply a dirty trick: Blind, Cheap Shot, Shove Off, or Unfoot.",
+      "description": "When you hit a creature with a weapon attack, you can expend one Swagger Die to perform a dirty trick as part of that attack. Roll the die and add the result to your damage roll, then choose one of the following tricks:\n\n**Blind Them.** The target must succeed on a Constitution saving throw (DC = 8 + your proficiency bonus + your Dexterity modifier) or be Blinded until the end of its next turn.\n\n**Cheap Shot.** The target's speed is reduced by 15 feet until the end of its next turn.\n\n**Shove Off.** You push the target up to 10 feet in a direction of your choice.\n\n**Unfoot.** The target must succeed on a Strength saving throw (same DC) or fall Prone.\n\nYou gain additional trick options as you reach higher levels: 3 tricks at 3rd level, 4 at 6th, 5 at 9th, 6 at 14th, and 7 at 20th.",
       "tags": [
         "combat",
         "control",
@@ -405,20 +423,32 @@
       ]
     },
     "pirate-cunning-footwork": {
-      "summary": "Move through threatened spaces and awkward angles more freely than most warriors.",
-      "description": "This feature pushes the class into mobile skirmisher territory. It should read like clean, practical mobility rather than magic, helping the Pirate get to ladders, rails, cover, and flank lanes without the player feeling trapped.",
+      "id": "pirate-cunning-footwork",
+      "displayName": "Cunning Footwork",
+      "name": "Cunning Footwork",
+      "level": 2,
       "section": "Bonus Actions",
       "type": "bonus action",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "You can take the Disengage or Dodge action as a Bonus Action. You can also move through the space of any creature that is your size or larger.",
+      "description": "Starting at 2nd level, you can take the Disengage or Dodge action as a Bonus Action on each of your turns.\n\nAdditionally, you can move through the space of any creature that is your size or larger. Moving through a hostile creature's space doesn't trigger opportunity attacks from that creature.",
       "tags": [
         "mobility",
         "combat"
       ]
     },
     "pirate-boarding-action": {
-      "summary": "Explode into a fight with a burst of movement or pressure when you close the distance.",
-      "description": "Boarding Action is a tempo feature. When the Pirate commits, the turn should feel dramatic and forward-moving, like a leap over a rail or a rush through smoke into the center of a melee.",
+      "id": "pirate-boarding-action",
+      "displayName": "Boarding Action",
+      "name": "Boarding Action",
+      "level": 2,
       "section": "Bonus Actions",
       "type": "bonus action",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "When you move at least 10 ft toward a creature and hit it with an attack, expend one Swagger Die to add its result to damage and move up to 10 additional feet without provoking opportunity attacks.",
+      "description": "Starting at 2nd level, when you move at least 10 feet in a straight line toward a creature and then hit it with a melee weapon attack, you can expend one Swagger Die as part of that attack.\n\nRoll the Swagger Die and add the result to your attack's damage roll. You can then immediately move up to 10 additional feet in any direction without provoking opportunity attacks.\n\nThis movement occurs after the attack resolves.",
       "tags": [
         "mobility",
         "burst",
@@ -426,19 +456,32 @@
       ]
     },
     "pirate-pirate-calling-subclass": {
-      "summary": "Choose the style of Pirate you became: duelist, captain, infiltrator, or terror of the seas.",
-      "section": "Class Features",
-      "type": "passive",
+      "id": "pirate-pirate-calling-subclass",
+      "displayName": "Pirate Calling",
+      "name": "Pirate Calling",
+      "level": 3,
+      "section": "Subclass",
+      "type": "subclass",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "At 3rd level, choose a Pirate Calling subclass. Your calling defines your style and grants features at levels 3, 10, and 15.",
+      "description": "At 3rd level, you choose the style of pirate you have become — your Pirate Calling. Your calling grants you features at 3rd level, and again at 10th and 15th level.\n\nYour calling might be the cunning **Duelist** (blade-focused, high mobility, parry and riposte), the commanding **Buccaneer Captain** (crew leadership, morale, and momentum), the shadowy **Sea Ghost** (infiltration, ambush, and ghostly presence), or the terrifying **Terror of the Deep** (fear, overwhelming force, and no survivors).",
       "tags": [
         "subclass",
         "identity"
       ]
     },
     "pirate-marked-quarry": {
-      "summary": "Single out a target and pressure them with relentless pursuit and opportunistic punishment.",
-      "description": "Marked Quarry gives the Pirate a target-priority engine. It is less about mystical hunting and more about reading the table, calling the shot, and making one enemy feel hunted by timing and presence.",
+      "id": "pirate-marked-quarry",
+      "displayName": "Marked Quarry",
+      "name": "Marked Quarry",
+      "level": 3,
       "section": "Bonus Actions",
       "type": "bonus action",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "As a Bonus Action, mark one creature you can see within 60 ft. Once per turn when you deal damage to your Quarry, deal extra damage equal to your Swagger Die. Lasts 1 minute. Charisma modifier uses per Long Rest.",
+      "description": "Starting at 3rd level, as a Bonus Action, you mark one creature you can see within 60 feet as your Quarry. The mark lasts for 1 minute.\n\nWhile the mark lasts:\n- Once per turn when you deal damage to your Quarry with a weapon attack, you deal extra damage equal to one roll of your Swagger Die.\n- You have Advantage on Wisdom (Perception) checks to locate your Quarry.\n- You know the direction to your Quarry as long as it is within 1 mile and on the same plane.\n\nThe mark ends early if you mark a different target, fall Unconscious, or finish a Long Rest.\n\nYou can use this feature a number of times equal to your Charisma modifier (minimum once), and you regain all expended uses when you finish a Long Rest.",
       "tags": [
         "combat",
         "focus",
@@ -446,84 +489,145 @@
       ]
     },
     "pirate-ability-score-improvement-1": {
-      "summary": "Increase ability scores or take a feat.",
-      "section": "Class Features",
-      "type": "passive",
+      "id": "pirate-ability-score-improvement-1",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "level": 4,
+      "section": "Ability Score Improvement",
+      "type": "asi",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
+      "description": "When you reach 4th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
       "tags": [
         "progression",
         "feat"
       ]
     },
     "pirate-ability-score-improvement-2": {
-      "summary": "Increase ability scores or take a feat.",
-      "section": "Class Features",
-      "type": "passive",
+      "id": "pirate-ability-score-improvement-2",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "level": 8,
+      "section": "Ability Score Improvement",
+      "type": "asi",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
+      "description": "When you reach 8th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
       "tags": [
         "progression",
         "feat"
       ]
     },
     "pirate-ability-score-improvement-3": {
-      "summary": "Increase ability scores or take a feat.",
-      "section": "Class Features",
-      "type": "passive",
+      "id": "pirate-ability-score-improvement-3",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "level": 12,
+      "section": "Ability Score Improvement",
+      "type": "asi",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
+      "description": "When you reach 12th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
       "tags": [
         "progression",
         "feat"
       ]
     },
     "pirate-ability-score-improvement-4": {
-      "summary": "Increase ability scores or take a feat.",
-      "section": "Class Features",
-      "type": "passive",
+      "id": "pirate-ability-score-improvement-4",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "level": 16,
+      "section": "Ability Score Improvement",
+      "type": "asi",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
+      "description": "When you reach 16th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
       "tags": [
         "progression",
         "feat"
       ]
     },
     "pirate-extra-attack": {
-      "summary": "Attack twice whenever you take the Attack action.",
+      "id": "pirate-extra-attack",
+      "displayName": "Extra Attack",
+      "name": "Extra Attack",
+      "level": 5,
       "section": "Class Features",
       "type": "passive",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "Beginning at 5th level, you can attack twice instead of once whenever you take the Attack action on your turn.",
+      "description": "Beginning at 5th level, you can attack twice, instead of once, whenever you take the Attack action on your turn.",
       "tags": [
         "combat"
       ]
     },
     "pirate-swagger-dice-d8": {
-      "summary": "Your Swagger Dice improve to d8s, making your tricks and support sharper.",
+      "id": "pirate-swagger-dice-d8",
+      "displayName": "Swagger Dice (d8)",
+      "name": "Swagger Dice (d8)",
+      "level": 5,
       "section": "Class Features",
       "type": "passive",
+      "className": "Pirate",
+      "sourceKind": "class",
       "resourceName": "Swagger Dice",
       "trackUses": true,
+      "summary": "At 5th level, your Swagger Dice improve from d6 to d8, increasing the potency of all features that use them.",
+      "description": "At 5th level, your Swagger Dice improve from d6s to d8s. All features that expend or roll a Swagger Die — including Dirty Fighting, Boarding Action, Marked Quarry, and similar abilities — now use the larger die.",
       "tags": [
         "resource",
         "progression"
       ]
     },
     "pirate-no-quarter": {
-      "summary": "Capitalize on fear and disarray when an enemy is already under pressure.",
-      "description": "No Quarter gives the class a vicious midgame identity. Once a Pirate has momentum, they should feel excellent at turning hesitation into collapse, especially against wounded, frightened, or cornered foes.",
+      "id": "pirate-no-quarter",
+      "displayName": "No Quarter",
+      "name": "No Quarter",
+      "level": 6,
       "section": "Class Features",
       "type": "special",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "Once per turn, when you hit a creature that is Frightened, Prone, Restrained, or below half its Hit Point maximum, roll one Swagger Die and add the result to your damage.",
+      "description": "Starting at 6th level, you show no mercy to weakened foes. Once per turn, when you hit a creature with a weapon attack, if that creature is Frightened, Prone, Restrained, Incapacitated, or has fewer Hit Points remaining than half its Hit Point maximum, you can roll one Swagger Die and add the result to your damage roll.\n\nThis additional damage doesn't cost a Swagger Die — it is a free roll.",
       "tags": [
         "combat",
         "pressure"
       ]
     },
     "pirate-uncanny-balance": {
-      "summary": "Stay upright, mobile, and dangerous even in terrain that should slow everyone else down.",
+      "id": "pirate-uncanny-balance",
+      "displayName": "Uncanny Balance",
+      "name": "Uncanny Balance",
+      "level": 7,
       "section": "Class Features",
       "type": "passive",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "You can't be knocked Prone unless you choose to be. You have advantage on Dexterity saving throws to avoid falling, and difficult terrain never costs you extra movement.",
+      "description": "Beginning at 7th level, your footing is nearly impossible to disrupt. You gain the following benefits:\n\n- You can't be knocked Prone against your will. If an effect would knock you Prone, you can choose to remain standing.\n- You have Advantage on Dexterity saving throws to avoid falling.\n- Difficult terrain of any kind never costs you extra movement.",
       "tags": [
         "mobility",
         "defense"
       ]
     },
     "pirate-menacing-reputation": {
-      "summary": "Your name starts affecting scenes before the fight even begins.",
-      "description": "This is the class\u2019s social inflection point. A veteran Pirate should not only win on a map; they should bend negotiations, intimidation, and morale by showing up with a reputation that matters.",
+      "id": "pirate-menacing-reputation",
+      "displayName": "Menacing Reputation",
+      "name": "Menacing Reputation",
+      "level": 9,
       "section": "Class Features",
       "type": "passive",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "You gain Expertise in Intimidation. When you roll initiative, hostile creatures that can see you and fail a Wisdom save (DC 8 + proficiency + Charisma mod) are Frightened of you until the end of their first turn.",
+      "description": "By 9th level, your legend precedes you wherever you sail. You gain the following benefits:\n\n- You gain Expertise in Intimidation (your proficiency bonus is doubled for Charisma (Intimidation) checks). If you already have Expertise, you instead gain a +2 bonus.\n- When you roll initiative, each hostile creature within 60 feet of you that can see or hear you must succeed on a Wisdom saving throw (DC = 8 + your proficiency bonus + your Charisma modifier) or be Frightened of you until the end of its first turn in combat.",
       "tags": [
         "social",
         "exploration",
@@ -531,19 +635,32 @@
       ]
     },
     "pirate-subclass-feature-10": {
-      "summary": "Gain your next major subclass feature.",
-      "section": "Class Features",
-      "type": "passive",
+      "id": "pirate-subclass-feature-10",
+      "displayName": "Pirate Calling Feature",
+      "name": "Pirate Calling Feature",
+      "level": 10,
+      "section": "Subclass",
+      "type": "subclass",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "At 10th level, your Pirate Calling grants its second feature.",
+      "description": "At 10th level, your chosen Pirate Calling grants you an additional feature. Consult your subclass for the specific benefit.",
       "tags": [
         "subclass",
         "progression"
       ]
     },
     "pirate-press-the-advantage": {
-      "summary": "When your crew gains momentum, chain that advantage into extra pressure or support.",
-      "description": "This is the feature that makes the Pirate feel like a battlefield opportunist rather than a rotation class. A good turn should create the next good turn, whether that means more damage, a shove, a reposition, or a setup for an ally.",
-      "section": "Class Features",
-      "type": "special",
+      "id": "pirate-press-the-advantage",
+      "displayName": "Press the Advantage",
+      "name": "Press the Advantage",
+      "level": 11,
+      "section": "Reactions",
+      "type": "reaction",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "When an ally within 30 ft scores a critical hit or reduces a creature to 0 HP, use your Reaction to move up to half your speed and make one weapon attack. Charisma modifier uses per Long Rest.",
+      "description": "Starting at 11th level, when an ally within 30 feet of you scores a critical hit or reduces a creature to 0 Hit Points, you can use your Reaction to move up to half your speed (without provoking opportunity attacks) and make one weapon attack against a creature of your choice.\n\nYou can use this feature a number of times equal to your Charisma modifier (minimum once). You regain all expended uses when you finish a Long Rest.",
       "tags": [
         "combat",
         "support",
@@ -551,20 +668,34 @@
       ]
     },
     "pirate-swagger-dice-d10": {
-      "summary": "Your Swagger Dice improve to d10s.",
+      "id": "pirate-swagger-dice-d10",
+      "displayName": "Swagger Dice (d10)",
+      "name": "Swagger Dice (d10)",
+      "level": 13,
       "section": "Class Features",
       "type": "passive",
+      "className": "Pirate",
+      "sourceKind": "class",
       "resourceName": "Swagger Dice",
       "trackUses": true,
+      "summary": "At 13th level, your Swagger Dice improve from d8 to d10, increasing the potency of all features that use them.",
+      "description": "At 13th level, your Swagger Dice improve from d8s to d10s. All features that expend or roll a Swagger Die now use the larger die.",
       "tags": [
         "resource",
         "progression"
       ]
     },
     "pirate-master-of-the-boarding-line": {
-      "summary": "Own ladders, rails, gangways, and other narrow spaces where movement decides the fight.",
+      "id": "pirate-master-of-the-boarding-line",
+      "displayName": "Master of the Boarding Line",
+      "name": "Master of the Boarding Line",
+      "level": 13,
       "section": "Class Features",
       "type": "passive",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "You move freely through enemy spaces, suffer no opportunity attacks when climbing, and can use a Bonus Action to move up to your speed vertically without falling.",
+      "description": "At 13th level, you have total command of vertical and confined spaces. You gain the following benefits:\n\n- Moving through the space of any creature — regardless of size — doesn't provoke opportunity attacks from that creature.\n- Climbing costs you no extra movement, even on difficult surfaces.\n- As a Bonus Action, you can move up to your speed vertically (along walls, rigging, or rope) without falling, even without a surface to grip. This movement doesn't provoke opportunity attacks.",
       "tags": [
         "mobility",
         "control",
@@ -572,9 +703,16 @@
       ]
     },
     "pirate-legend-of-the-waves": {
-      "summary": "Your sheer confidence and seamanship let you dictate the flow of chaotic battles.",
+      "id": "pirate-legend-of-the-waves",
+      "displayName": "Legend of the Waves",
+      "name": "Legend of the Waves",
+      "level": 14,
       "section": "Class Features",
       "type": "passive",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "You are immune to the Frightened condition. Once per turn when you take the Attack action, you can make one additional weapon attack as part of that action.",
+      "description": "At 14th level, your reputation and seasoned nerves make you immune to fear. You gain the following benefits:\n\n- You are immune to the Frightened condition.\n- Once per turn when you take the Attack action, you can make one additional weapon attack as part of that same action. This attack can target the same creature or a different one.",
       "tags": [
         "presence",
         "mobility",
@@ -582,21 +720,34 @@
       ]
     },
     "pirate-subclass-feature-15": {
-      "summary": "Gain your capstone subclass feature.",
-      "section": "Class Features",
-      "type": "passive",
+      "id": "pirate-subclass-feature-15",
+      "displayName": "Pirate Calling Feature",
+      "name": "Pirate Calling Feature",
+      "level": 15,
+      "section": "Subclass",
+      "type": "subclass",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "At 15th level, your Pirate Calling grants its final feature.",
+      "description": "At 15th level, your chosen Pirate Calling grants you its final feature. Consult your subclass for the specific benefit.",
       "tags": [
         "subclass",
         "capstone"
       ]
     },
     "pirate-dread-volley": {
-      "summary": "Unload a decisive flurry of attacks, shots, or thrown weapons when the moment breaks open.",
-      "description": "At high level, the Pirate should finally get a legendary burst turn that feels like pistols, blades, thrown steel, and ruthless precision all going off in one cinematic sequence.",
+      "id": "pirate-dread-volley",
+      "displayName": "Dread Volley",
+      "name": "Dread Volley",
+      "level": 17,
       "section": "Actions",
       "type": "action",
+      "className": "Pirate",
+      "sourceKind": "class",
       "resourceName": "Swagger Dice",
       "trackUses": true,
+      "summary": "As an Action, expend up to 3 Swagger Dice to make one weapon attack per die spent. Each hit deals weapon damage plus the rolled Swagger Die. Recharges on a Short or Long Rest.",
+      "description": "Starting at 17th level, as an Action, you can expend up to 3 Swagger Dice and unleash a rapid barrage of attacks. Make one weapon attack for each Swagger Die you expend (up to 3 attacks), each targeting a creature within your weapon's range.\n\nFor each attack that hits, deal your normal weapon damage plus roll the expended Swagger Die and add it to the damage.\n\nOnce you use this feature, you can't use it again until you finish a Short or Long Rest.",
       "tags": [
         "combat",
         "burst",
@@ -604,9 +755,16 @@
       ]
     },
     "pirate-indomitable-swagger": {
-      "summary": "Refuse to fold when fear, pain, or bad odds should make lesser fighters break.",
+      "id": "pirate-indomitable-swagger",
+      "displayName": "Indomitable Swagger",
+      "name": "Indomitable Swagger",
+      "level": 18,
       "section": "Class Features",
       "type": "passive",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "When you are reduced to 0 Hit Points but not killed outright, you can expend one Swagger Die to drop to 1 Hit Point instead. Once per Long Rest.",
+      "description": "At 18th level, you refuse to be taken down. When you are reduced to 0 Hit Points but not killed outright, you can expend one Swagger Die — no action required. If you do, you drop to 1 Hit Point instead of 0.\n\nOnce you use this feature, you can't use it again until you finish a Long Rest.\n\nAdditionally, you can't be frightened, charmed, or compelled to flee against your will.",
       "tags": [
         "defense",
         "willpower",
@@ -614,19 +772,32 @@
       ]
     },
     "pirate-epic-boon": {
-      "summary": "Gain an Epic Boon.",
-      "section": "Class Features",
-      "type": "passive",
+      "id": "pirate-epic-boon",
+      "displayName": "Epic Boon",
+      "name": "Epic Boon",
+      "level": 19,
+      "section": "Ability Score Improvement",
+      "type": "asi",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "At 19th level, you gain an Epic Boon feat. The recommended boon for Pirates is Boon of Combat Prowess or Boon of Speed.",
+      "description": "At 19th level, you gain a special ability called an Epic Boon — a feat available only to characters of 19th level or higher. Choose one Epic Boon feat.\n\nThe recommended Epic Boons for Pirates include the Boon of Combat Prowess (never miss when you need it most) or the Boon of Speed (extraordinary mobility at any moment).",
       "tags": [
         "epic",
         "progression"
       ]
     },
     "pirate-king-of-the-black-flag": {
-      "summary": "Become the definitive pirate legend: impossible to ignore, hard to pin down, and deadly once you commit.",
-      "description": "King of the Black Flag is the final statement of the class. At this point the Pirate should feel like the center of a boarding scene or sea duel, combining leadership, panic, movement, and brutal opportunism into one finished fantasy.",
+      "id": "pirate-king-of-the-black-flag",
+      "displayName": "King of the Black Flag",
+      "name": "King of the Black Flag",
+      "level": 20,
       "section": "Class Features",
       "type": "passive",
+      "className": "Pirate",
+      "sourceKind": "class",
+      "summary": "At 20th level, your Swagger Dice become d12s, and when you roll initiative you gain bonus Swagger Dice equal to your Charisma modifier. Once per turn, you can use a Dirty Fighting trick without expending a Swagger Die.",
+      "description": "At 20th level, you become the undisputed terror of any sea, dungeon, or battlefield. You gain the following benefits:\n\n- Your Swagger Dice improve to d12s.\n- When you roll initiative, you immediately gain a number of temporary Swagger Dice equal to your Charisma modifier (minimum 1). These bonus dice last until the end of the encounter and stack with your normal Swagger Dice pool.\n- Once per turn, you can use one Dirty Fighting trick without expending a Swagger Die.\n- Friendly creatures within 30 feet of you who can see or hear you have Advantage on attack rolls on their first turn of each combat.",
       "tags": [
         "capstone",
         "legendary",

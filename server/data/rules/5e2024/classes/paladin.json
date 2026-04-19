@@ -502,14 +502,14 @@
   ],
   "featureDefinitions": {
     "paladin-lay-on-hands": {
-      "summary": "Spend points from a healing pool to restore allies, stabilize the fight, or clear a few nasty conditions without using a spell slot.",
-      "description": "Lay on Hands is one of the paladin's signature support tools. It gives you a pool of healing that can be split across multiple uses, making it perfect for emergency pickups, topping up a key ally, or solving attrition without touching your prepared spell slots.\n\nIn play, this should feel like reliable battlefield triage: not flashy, but one of the safest ways to keep the party functioning when momentum starts to slip.",
+      "summary": "Touch a creature to restore HP from your healing pool, or expend 5 HP from the pool to cure one disease or neutralize one poison. Pool equals 5 × your Paladin level; fully restored on a Long Rest.",
+      "description": "You have a pool of healing power that replenishes on a Long Rest. The pool's total HP equals 5 × your Paladin level (5 HP at level 1, 25 HP at level 5, 100 HP at level 20).\n\nAs an action, you can touch a creature and restore any number of HP from the pool — as much or as little as you choose. Alternatively, you can expend 5 HP from the pool to cure one disease or neutralize one poison affecting the creature; each separate disease or poison costs 5 HP. This has no effect on Constructs or Undead.",
       "section": "Actions",
       "type": "action",
       "resourceName": "Lay on Hands",
       "trackUses": true,
-      "usage": "Spend points from the Lay on Hands pool.",
-      "recovery": "The pool refills on a Long Rest.",
+      "usage": "5 × paladin level HP pool",
+      "recovery": "Long Rest",
       "tags": [
         "healing",
         "resource",
@@ -517,8 +517,8 @@
       ]
     },
     "paladin-spellcasting": {
-      "summary": "Prepare divine spells that reinforce your oath with healing, protection, control, and burst damage.",
-      "description": "Paladin spellcasting supports the class rather than replacing its martial core. Your slots are precious, your prepared list is narrower than a full caster's, and every spell choice should feel like a statement about how your oath fights and protects.\n\nIn play, this means the class swings between weapon pressure and timely divine utility instead of trying to cast every round.",
+      "summary": "Charisma-based half-caster. Prepare a number of Paladin spells equal to half your Paladin level (rounded down) + your Charisma modifier. Spell slots follow the half-caster table, starting at level 2.",
+      "description": "Paladins are half-casters who use Charisma as their spellcasting ability. You gain spell slots beginning at level 2 and prepare your spell list each Long Rest.\n\nSpells Prepared: half your Paladin level (rounded down) + your Charisma modifier (minimum 1 spell). For example, a level 5 Paladin with +3 Charisma prepares 2 + 3 = 5 spells.\n\nSpell save DC = 8 + proficiency bonus + Charisma modifier. Spell attack modifier = proficiency bonus + Charisma modifier.\n\nYour spell slots can be spent either to cast prepared spells or to fuel Divine Smite. Your Sacred Oath also grants additional spells that are always prepared and do not count against your total.",
       "tags": [
         "divine",
         "martial",
@@ -526,28 +526,28 @@
         "spellcasting",
         "support"
       ],
-      "effect": "Prepare paladin spells using Charisma each day; spend slots for spells or Divine Smite.",
-      "usage": "Prepared spells and slot counts update by level; paladins prepare level + Charisma modifier spells (minimum 1)."
+      "effect": "Prepare Paladin spells using Charisma; spell slots begin at level 2 and follow the half-caster progression. Slots may be used to cast spells or to power Divine Smite.",
+      "usage": "Prepared spells = half Paladin level (rounded down) + Charisma modifier, minimum 1. Spell slots per half-caster table."
     },
     "paladin-divine-smite": {
-      "summary": "Turn a weapon hit into explosive radiant punishment by spending a spell slot after you know you connected.",
-      "description": "Divine Smite is the paladin's iconic damage spike. Because it triggers from a hit, it rewards discipline and timing instead of blind slot dumping.\n\nUse it when a dangerous target must drop now, when a critical hit lands, or when radiant burst matters more than conserving resources for later.",
+      "summary": "When you hit with a melee weapon or unarmed strike, expend a spell slot to deal extra Radiant damage: 2d8 for a 1st-level slot, +1d8 per slot level above 1st (max 5d8). Add +1d8 if the target is a Fiend or Undead.",
+      "description": "Immediately after hitting a creature with a melee weapon attack or an unarmed strike, you can expend one spell slot to deal extra Radiant damage to the target.\n\nDamage by slot level:\n- 1st-level slot: 2d8 Radiant\n- 2nd-level slot: 3d8 Radiant\n- 3rd-level slot: 4d8 Radiant\n- 4th-level slot or higher: 5d8 Radiant (maximum)\n\nBonus damage: If the target is a Fiend or an Undead, the smite deals an additional 1d8 Radiant damage on top of the above total.\n\nOn a critical hit, all smite damage dice are doubled along with the weapon's damage dice.",
       "section": "Actions",
       "type": "special",
-      "effect": "Add radiant burst damage based on the slot spent; strongest when used on critical hits or priority targets.",
+      "effect": "Expend a spell slot after a melee hit to deal 2d8 Radiant damage (+1d8 per slot level above 1st, max 5d8). Add +1d8 against Fiends and Undead.",
       "tags": [
         "combat",
         "burst",
         "divine"
       ],
-      "trigger": "After you hit with a melee weapon or unarmed strike.",
+      "trigger": "After hitting with a melee weapon or unarmed strike.",
       "resourceName": "Spell Slots",
       "trackUses": true,
-      "usage": "Spend 1 spell slot when a hit lands."
+      "usage": "Spend 1 spell slot when a melee hit lands."
     },
     "paladin-fighting-style": {
-      "summary": "Choose the combat discipline that shapes how your oath actually fights on the field.",
-      "description": "Fighting Style is where your paladin becomes more than a holy generalist. It clarifies whether you are defending allies, leaning into weapon consistency, or building around a specific battlefield role.",
+      "summary": "Choose one Fighting Style that permanently enhances your combat approach. Options include Defense, Dueling, Great Weapon Fighting, Protection, Blessed Warrior, and Interception.",
+      "description": "At level 2 you adopt a Fighting Style, chosen from the following options:\n\n- Defense: +1 bonus to AC while you are wearing armor.\n- Dueling: +2 bonus to damage rolls when wielding a melee weapon in one hand and no other weapons.\n- Great Weapon Fighting: When you roll a 1 or 2 on a damage die for an attack with a two-handed or versatile melee weapon held in two hands, you can reroll the die and must use the new roll.\n- Protection: When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your Reaction to impose Disadvantage on the attack roll. Requires a shield.\n- Blessed Warrior: Learn two Cleric cantrips of your choice. Charisma is your spellcasting ability for them. They count as Paladin spells for you.\n- Interception: When a creature you can see hits a target other than you that is within 5 feet of you with an attack, you can use your Reaction to reduce the damage the target takes by 1d10 + your proficiency bonus. Requires a weapon or shield.",
       "tags": [
         "build",
         "combat",
@@ -555,14 +555,14 @@
       ]
     },
     "paladin-channel-divinity-1-use": {
-      "summary": "Your oath grants a limited-use divine button that fuels subclass-defining miracles and battlefield swings.",
-      "description": "Channel Divinity is the first major payoff for choosing a Sacred Oath. Unlike generic class passives, this is a visible tactical resource tied directly to your subclass identity.\n\nThe sheet should always make it obvious how many uses remain and which oath options spend one.",
+      "summary": "Channel divine energy to fuel one of your Sacred Oath's Channel Divinity options. 1 use, regained on a Short or Long Rest.",
+      "description": "Starting at level 2, you can channel divine energy directly from your oath to fuel magical effects. You start with 1 Channel Divinity use and regain it when you finish a Short or Long Rest.\n\nThe specific effects available to you are determined by your Sacred Oath subclass, chosen at level 3. Each use of Channel Divinity expends the single charge until you rest.",
       "section": "Actions",
       "type": "action",
       "resourceName": "Channel Divinity",
       "trackUses": true,
-      "usage": "1 use available.",
-      "recovery": "Regain all expended uses on a Short or Long Rest.",
+      "usage": "1 use (2 at L11)",
+      "recovery": "Short Rest",
       "tags": [
         "divine",
         "resource",
@@ -570,8 +570,8 @@
       ]
     },
     "paladin-sacred-oath-subclass": {
-      "summary": "Your oath defines what you stand for, how you channel divine power, and which battlefield tools become uniquely yours.",
-      "description": "Sacred Oath is the subclass gate for paladin. From this point on, the class should stop feeling like a generic holy warrior and start feeling specifically Devotion, Ancients, or Vengeance with distinct Channel Divinity options, aura payoffs, and late-game identity.",
+      "summary": "At level 3, choose your Sacred Oath subclass (Devotion, Ancients, Glory, Vengeance, or another). Your oath grants Oath Spells always prepared, two Channel Divinity options, and additional features at levels 3, 7, 15, and 20.",
+      "description": "At level 3 you swear a Sacred Oath, the solemn commitment that grants your paladin its subclass identity. Your oath provides:\n\n- Oath Spells: A list of spells always prepared for you that do not count against your total number of prepared spells. These are added at level 3 and expand as you gain levels.\n- Channel Divinity Options: Two unique ways to spend a Channel Divinity use, specific to your oath (e.g., Sacred Weapon and Turn the Unholy for Oath of Devotion).\n- Subclass Features: Additional powers at levels 7, 15, and 20 that define your advanced combat role and identity.",
       "tags": [
         "subclass",
         "divine",
@@ -580,8 +580,8 @@
       ]
     },
     "paladin-divine-health": {
-      "summary": "Your connection to divine power hardens you against ordinary corruption and disease.",
-      "description": "Divine Health is passive reliability. It is not a flashy combat button, but it reinforces the feeling that a paladin's body is difficult for mundane sickness to break.",
+      "summary": "Your divine power grants you immunity to disease. No saving throw required — diseases simply have no effect on you.",
+      "description": "Starting at level 3, the divine magic flowing through you makes you immune to disease. You automatically succeed against any effect that would give you a disease, and any existing disease you have is cured when you gain this feature. This immunity is always active and requires no action or resource expenditure.",
       "tags": [
         "passive",
         "defense",
@@ -589,8 +589,8 @@
       ]
     },
     "paladin-extra-attack": {
-      "summary": "Your martial tempo rises so your turn stays threatening without needing to burn a spell every round.",
-      "description": "Extra Attack is what keeps the paladin's baseline turns dangerous. It matters because the class is a weapon user first and a divine spell-user second; your ordinary action should still command respect even before smites and oath powers enter the picture.",
+      "summary": "When you take the Attack action on your turn, you can attack twice instead of once.",
+      "description": "Beginning at level 5, whenever you use the Attack action on your turn, you can make two weapon attacks or unarmed strikes instead of one. Both attacks can benefit from Divine Smite independently (each hit can trigger its own smite by expending a separate spell slot).",
       "tags": [
         "combat",
         "martial",
@@ -598,8 +598,8 @@
       ]
     },
     "paladin-faithful-steed": {
-      "summary": "Call a loyal mount or companion presence that expands your mobility, presence, and oath fantasy.",
-      "description": "Faithful Steed reinforces the paladin as a mobile champion rather than a static bruiser. Whether used for travel, positioning, or theme, it should read as a meaningful class identity beat instead of a side note.",
+      "summary": "Cast Find Steed once per Long Rest without expending a spell slot. You can also cast it using a spell slot on additional castings. Your steed is a spirit that takes an appropriate animal form.",
+      "description": "At level 5, you can cast the Find Steed spell once per Long Rest without expending a spell slot. You can also cast it using a spell slot if you want an additional steed or if the first has been dismissed or killed.\n\nThe steed conjured is a spirit that takes the form of an animal of your choice (warhorse, mastiff, pony, etc.). It has the statistics of the chosen animal but is a Celestial, Fey, or Fiend (your choice), and it can understand your speech. The steed shares your initiative, obeys your commands, and benefits from your Aura of Protection. If it dies, it can be re-summoned with another casting.",
       "tags": [
         "mobility",
         "summon",
@@ -607,8 +607,8 @@
       ]
     },
     "paladin-aura-of-protection": {
-      "summary": "Your conviction steadies allies nearby, turning your presence into one of the class's biggest defensive payoffs.",
-      "description": "Aura of Protection is a major power spike. It turns positioning into defense and makes the paladin feel like the center of a formation.\n\nIn play, this should always be surfaced clearly because it changes how the party wants to stand when danger is coming.",
+      "summary": "While conscious, you and friendly creatures within 10 feet of you add your Charisma modifier (minimum +1) to all saving throws. Expands to 30 feet at level 18.",
+      "description": "Starting at level 6, while you are conscious, you and each friendly creature within 10 feet of you gains a bonus to all saving throws equal to your Charisma modifier (minimum +1).\n\nThis aura is always active — it requires no action, concentration, or resource expenditure. Multiple paladins' auras do not stack. The range increases to 30 feet when you reach level 18 (Aura Expansion).",
       "tags": [
         "aura",
         "defense",
@@ -616,8 +616,8 @@
       ]
     },
     "paladin-radiant-strikes": {
-      "summary": "Weapon hits start carrying dependable radiant pressure even before you decide whether to spend more resources.",
-      "description": "Radiant Strikes gives the paladin a more constant divine edge in ordinary combat turns. It matters because not every encounter justifies repeated smites, but the class should still feel infused with holy force.",
+      "summary": "Your melee weapon attacks and unarmed strikes deal an extra 1d8 Radiant damage on every hit. No resource cost — this bonus applies automatically.",
+      "description": "Starting at level 11, your melee weapon attacks and unarmed strikes are infused with holy power. Each time you hit with a melee weapon attack or an unarmed strike, the attack deals an extra 1d8 Radiant damage in addition to the weapon's normal damage.\n\nThis bonus damage applies automatically on every hit and does not require a spell slot or any action. It stacks with Divine Smite's damage if you also choose to smite on the same hit.",
       "tags": [
         "combat",
         "damage",
@@ -625,8 +625,8 @@
       ]
     },
     "paladin-restoring-touch": {
-      "summary": "Use your holy presence to clear debilitating effects and keep key allies operational.",
-      "description": "Restoring Touch shifts some of the paladin's support power away from pure hit-point recovery and into condition management. It is a strong answer to fights that try to shut characters down instead of merely wearing them down.",
+      "summary": "When you use Lay on Hands to restore HP to a creature, you can also end one condition on that creature (Blinded, Charmed, Deafened, Frightened, Paralyzed, or Stunned) at no additional HP cost.",
+      "description": "Starting at level 14, your Lay on Hands healing carries additional restorative power. When you use Lay on Hands to restore hit points to a creature, you can also end one of the following conditions affecting that creature, at no additional cost from your Lay on Hands pool:\n\n- Blinded\n- Charmed\n- Deafened\n- Frightened\n- Paralyzed\n- Stunned\n\nOnly one condition can be removed per use of Lay on Hands, but the HP restoration and condition removal happen simultaneously with the same action.",
       "tags": [
         "support",
         "cleanse",
@@ -634,8 +634,8 @@
       ]
     },
     "paladin-aura-expansion": {
-      "summary": "Your protective presence reaches farther across the battlefield, letting more allies benefit from your oath.",
-      "description": "This level expands the practical footprint of your aura package. It should be visible in the sheet and token support because it changes how the party wants to position around you.",
+      "summary": "The range of your Aura of Protection and Aura of Courage increases from 10 feet to 30 feet.",
+      "description": "At level 18, your auras grow to cover a much larger area. Both Aura of Protection (saving throw bonus equal to your Charisma modifier) and Aura of Courage (immunity to the Frightened condition) now extend to all friendly creatures within 30 feet of you, rather than 10 feet.\n\nThis passive upgrade requires no action and is always active while you are conscious.",
       "tags": [
         "aura",
         "support",
@@ -643,16 +643,16 @@
       ]
     },
     "paladin-epic-boon": {
-      "summary": "Your paladin path culminates in a final major reward that rounds out the endgame build.",
-      "description": "At this point the class should feel complete: martial core, divine support, aura presence, and oath identity all reinforced by an endgame boon.",
+      "summary": "Gain an Epic Boon feat — a powerful endgame reward available only at level 19. You also increase one ability score by 1 (up to a maximum of 30) as part of this feat.",
+      "description": "At level 19, instead of a standard Ability Score Improvement, you gain an Epic Boon feat. Epic Boon feats represent extraordinary heroic power and are available only at this level.\n\nEach Epic Boon feat also increases one ability score of your choice by 1, with no maximum cap of 20 (the score can reach up to 30). Examples include Boon of Combat Prowess, Boon of Dimensional Travel, Boon of Fate, Boon of Fortitude, Boon of Irresistible Offense, Boon of Recovery, Boon of Skill, Boon of Speed, Boon of Spell Recall, and Boon of the Night Spirit.",
       "tags": [
         "capstone",
         "endgame"
       ]
     },
     "paladin-ability-score-improvement": {
-      "summary": "Improve core abilities or take a feat to sharpen your oath for the next tier of play.",
-      "description": "Ability Score Improvement is your build checkpoint. Paladins can use it to raise Strength for weapon pressure, Charisma for aura and spell support, or Constitution for frontline staying power.",
+      "summary": "Increase one ability score by 2, or two different ability scores by 1 each. Alternatively, replace this improvement with a feat. Maximum ability score of 20 applies. Gained at levels 4, 8, 12, and 16.",
+      "description": "At levels 4, 8, 12, and 16, you gain an Ability Score Improvement. You can use it in one of two ways:\n\n- Increase one ability score by 2 (maximum 20), or\n- Increase two different ability scores by 1 each (maximum 20 each), or\n- Forgo the improvement entirely to take a feat instead.\n\nFor Paladins, common choices include: raising Strength for melee attack and damage rolls, raising Charisma to improve your Aura of Protection bonus and spell save DC, or raising Constitution for more HP and better Concentration saving throws.",
       "tags": [
         "build",
         "progression",
@@ -660,8 +660,8 @@
       ]
     },
     "paladin-aura-of-courage-10ft": {
-      "summary": "Allies within 10 feet can stand firm against fear because your oath steadies them.",
-      "description": "Aura of Courage means your position can protect nearby allies from fear-driven control effects. Keep the party close when morale attacks are expected.",
+      "summary": "While you are conscious, you and friendly creatures within 10 feet of you can't be Frightened. Always active, no resource cost. Expands to 30 feet at level 18.",
+      "description": "Starting at level 7, while you are conscious, you and each friendly creature within 10 feet of you are immune to the Frightened condition.\n\nThis aura is always active and requires no action or resource expenditure. It suppresses fear effects that are already active on affected creatures — a Frightened creature that moves within your aura is no longer Frightened for as long as it remains within range. The range increases to 30 feet at level 18.",
       "tags": [
         "aura",
         "support",
@@ -669,8 +669,8 @@
       ]
     },
     "paladin-subclass-feature-6": {
-      "summary": "Your oath path grants a second defining tool, so subclass identity starts showing up every fight.",
-      "description": "At this tier your Sacred Oath should feel distinct in actual turns, not just in flavor text. Check your oath features and Channel Divinity options together.",
+      "summary": "Your Sacred Oath grants an additional feature at level 7. The exact ability depends on your chosen subclass (e.g., Aura of Devotion for Oath of Devotion, Elder Champion traits for Oath of the Ancients).",
+      "description": "At level 7, your Sacred Oath provides a subclass-specific feature that deepens your oath identity. The feature varies by subclass:\n\n- Oath of Devotion: Aura of Devotion — you and friendly creatures within 10 feet can't be Charmed while you are conscious.\n- Oath of the Ancients: Aura of Warding — you and friendly creatures within 10 feet have resistance to damage from spells.\n- Oath of Vengeance: Relentless Avenger — when you hit a creature with an opportunity attack, you can move up to half your speed as part of the same reaction without provoking opportunity attacks.\n\nRefer to your specific subclass for the exact mechanic.",
       "tags": [
         "subclass",
         "progression",
@@ -678,8 +678,8 @@
       ]
     },
     "paladin-aura-improvements": {
-      "summary": "Your protective presence reaches farther across the battlefield, letting more allies benefit from your oath.",
-      "description": "This level expands the practical footprint of your aura package. It should be visible in the sheet and token support because it changes how the party wants to position around you.",
+      "summary": "Level 9 is a spell slot progression milestone (3rd-level slots unlock). No new named aura feature is granted at this level — aura range expands at level 18.",
+      "description": "At level 9, the paladin gains access to 3rd-level spell slots on the half-caster table, increasing the maximum damage of Divine Smite to 4d8 Radiant (or 5d8 against Fiends and Undead) and opening access to more powerful prepared spells.\n\nNo new aura feature is added at this level. Aura of Protection and Aura of Courage both remain at 10-foot range until level 18 (Aura Expansion).",
       "tags": [
         "aura",
         "support",
@@ -687,8 +687,8 @@
       ]
     },
     "paladin-aura-of-courage-extension": {
-      "summary": "Your courage aura scales so anti-fear support is easier to maintain while the group spreads out.",
-      "description": "This extension widens your anti-fear support coverage, reducing positioning friction for allies during high-mobility encounters.",
+      "summary": "At level 10, you gain your Sacred Oath's level 10 subclass feature. Aura of Courage's range does not expand until level 18 — refer to your subclass for what this level actually grants.",
+      "description": "At level 10, your Sacred Oath grants a subclass-specific feature. Examples:\n\n- Oath of Devotion: Divine Health extension or an additional oath power defined by that subclass's level 10 entry.\n- Oath of the Ancients: Undying Sentinel — when you are reduced to 0 HP and are not killed outright, you can choose to drop to 1 HP instead (once per Long Rest).\n- Oath of Vengeance: Soul of Vengeance — when a creature under your Vow of Enmity makes an attack, you can use your Reaction to make one weapon attack against that creature.\n\nThe Aura of Courage range stays at 10 feet until level 18. Consult your specific subclass for the precise feature text at this level.",
       "tags": [
         "aura",
         "support",
@@ -696,22 +696,22 @@
       ]
     },
     "paladin-subclass-feature-10": {
-      "summary": "Your oath grants another mid-tier payoff that should be visible in your active combat plan.",
-      "description": "Level 10 subclass gains are where oath identity must feel mechanically real in routine play, not only in capstones.",
+      "summary": "Your Sacred Oath grants a subclass feature at level 10. Examples: Oath of Devotion gains Holy Nimbus (level 20 capstone is separate); Oath of the Ancients grants Undying Sentinel; Oath of Vengeance grants Soul of Vengeance.",
+      "description": "At level 10, your Sacred Oath provides a mid-tier subclass feature that gives you a meaningful mechanical edge in the combat encounters of this tier. Unlike earlier levels where oath identity comes primarily from Channel Divinity and Oath Spells, level 10 features typically add a reactive ability, passive defense, or powerful once-per-rest tool.\n\nRefer to your specific subclass entry for the exact feature name, trigger, and mechanical effect at level 10.",
       "tags": [
         "subclass",
         "progression"
       ]
     },
     "paladin-channel-divinity-2-uses": {
-      "summary": "You can call on Channel Divinity twice before resting, letting oath actions show up more often each adventuring day.",
-      "description": "This upgrade increases tactical freedom: use Channel Divinity earlier without feeling forced to hoard your oath options for a single emergency.",
+      "summary": "Your Channel Divinity maximum increases to 2 uses. Both uses are regained when you finish a Short or Long Rest.",
+      "description": "At level 11, you can use Channel Divinity twice between rests, instead of once. Each use is expended separately when you activate one of your Sacred Oath's Channel Divinity options. You regain all expended uses when you finish a Short or Long Rest.\n\nHaving two uses means you can afford to use Channel Divinity in consecutive encounters without waiting for a rest, or deploy two uses within the same fight when stakes are high.",
       "section": "Actions",
       "type": "action",
       "resourceName": "Channel Divinity",
       "trackUses": true,
-      "usage": "2 uses available.",
-      "recovery": "Regain uses on a Short or Long Rest.",
+      "usage": "2 uses",
+      "recovery": "Short Rest",
       "tags": [
         "resource",
         "divine",
@@ -719,8 +719,8 @@
       ]
     },
     "paladin-4th-level-spell-slots": {
-      "summary": "Higher-tier divine slots expand both your prepared spell impact and your smite ceiling.",
-      "description": "Fourth-level slots are a major decision point for paladins: cast a premium support/control spell, unleash a heavier smite, or hold the slot for later attrition.",
+      "summary": "At level 13, you gain your first 4th-level spell slots (1 slot, increasing to 2 at level 15). These allow you to cast 4th-level Paladin spells and deal up to 5d8 Radiant damage with Divine Smite.",
+      "description": "At level 13, the half-caster progression grants your first 4th-level spell slot (you have 1 slot; you gain a second at level 15). This unlocks:\n\n- 4th-level prepared spells: e.g., Banishment, Death Ward, Find Greater Steed, Freedom of Movement, Staggering Smite.\n- Divine Smite ceiling: A 4th-level slot deals 5d8 Radiant damage (the maximum), or 6d8 against a Fiend or Undead.\n\n4th-level slots are your most powerful smite fuel and highest-impact spell options simultaneously, so managing them carefully during long adventuring days is crucial.",
       "tags": [
         "spellcasting",
         "progression",
@@ -728,8 +728,8 @@
       ]
     },
     "paladin-subclass-feature-15": {
-      "summary": "Your oath grants a late-game signature feature that separates paladin archetypes sharply.",
-      "description": "By this level, subclass identity should dominate your tactical style. Your Devotion, Ancients, or Vengeance plan should be obvious from your feature list.",
+      "summary": "Your Sacred Oath grants a powerful level 15 feature. Examples: Oath of Devotion — Holy Nimbus (1/Long Rest); Oath of the Ancients — Elder Champion; Oath of Vengeance — Avenging Angel.",
+      "description": "At level 15, your Sacred Oath grants its penultimate feature — typically a once-per-Long-Rest transformation or a powerful passive that defines late-game play. Examples by subclass:\n\n- Oath of Devotion: Holy Nimbus — As a Bonus Action, emit bright light in a 30-foot radius for 1 minute. Enemies that start their turn in this light take 10 Radiant damage. You have Advantage on saving throws against spells cast by Fiends and Undead. 1 use per Long Rest.\n- Oath of the Ancients: Elder Champion — As a Bonus Action, transform for 1 minute: regain 10 HP at the start of each of your turns, cast spells as a Bonus Action once per turn, and enemies within 10 feet have Disadvantage on saves against your Paladin spells and Channel Divinity. 1 use per Long Rest.\n- Oath of Vengeance: Avenging Angel — As a Bonus Action, transform for 1 hour: gain a flying speed of 60 feet, and enemies that start their turn within 30 feet must succeed on a Wisdom save or become Frightened of you for 1 minute. 1 use per Long Rest.\n\nRefer to your specific subclass for exact text.",
       "tags": [
         "subclass",
         "identity",
@@ -737,8 +737,8 @@
       ]
     },
     "paladin-aura-of-protection-30ft": {
-      "summary": "Aura of Protection expands to 30 feet, making your saving-throw support a large-zone battlefield anchor.",
-      "description": "This is a major team-defense spike. Wider aura range changes party spacing and lets allies benefit from your presence in larger engagements.",
+      "summary": "Your Aura of Protection now extends to 30 feet. You and friendly creatures within 30 feet add your Charisma modifier (minimum +1) to all saving throws while you are conscious.",
+      "description": "At level 18 (via Aura Expansion), your Aura of Protection doubles in radius from 10 feet to 30 feet. All friendly creatures within 30 feet of you now add your Charisma modifier (minimum +1) to every saving throw as long as you are conscious.\n\nAt high levels with a strong Charisma score, this aura can add +5 or more to every saving throw for allies across a wide area, significantly reducing the impact of enemy spells and effects that require saving throws.",
       "tags": [
         "aura",
         "support",
@@ -747,8 +747,8 @@
       ]
     },
     "paladin-aura-of-courage-30ft": {
-      "summary": "Aura of Courage expands to 30 feet so fear immunity covers most of the active formation.",
-      "description": "The wider anti-fear aura keeps your team stable during chaotic fights and reduces the risk of allies being forced out of position by fear effects.",
+      "summary": "Your Aura of Courage now extends to 30 feet. You and friendly creatures within 30 feet can't be Frightened while you are conscious.",
+      "description": "At level 18 (via Aura Expansion), your Aura of Courage doubles in radius from 10 feet to 30 feet. All friendly creatures within 30 feet of you are immune to the Frightened condition while you are conscious.\n\nThis passive immunity suppresses active Frightened conditions on creatures that enter your expanded aura and prevents new fear effects from taking hold for as long as the creature remains within 30 feet of you.",
       "tags": [
         "aura",
         "support",
@@ -756,8 +756,8 @@
       ]
     },
     "paladin-subclass-capstone": {
-      "summary": "Your Sacred Oath reaches its final expression with a class-defining capstone feature.",
-      "description": "Subclass capstone is the top-end payoff for your oath path. At level 20, Devotion, Ancients, and Vengeance should feel unmistakably different in live play.",
+      "summary": "At level 20, your Sacred Oath grants its capstone feature — a transformative once-per-Long-Rest power that defines the pinnacle of your oath's identity.",
+      "description": "At level 20, your Sacred Oath grants its ultimate feature. Examples by subclass:\n\n- Oath of Devotion: Holy Nimbus (if not granted at 15) or an upgraded version — emit a 30-foot radius of bright light as a Bonus Action for 1 minute; enemies starting their turn in the aura take 10 Radiant damage; you have Advantage on saves against Fiend and Undead spells. 1 use per Long Rest.\n- Oath of the Ancients: Blessed Guardian — your Aura of Warding (spell damage resistance) extends to 30 feet, and you can use Elder Champion without expending a use once per Short Rest.\n- Oath of Vengeance: Avenging Angel form becomes permanent-at-will, or a significantly enhanced version specific to the 2024 rules.\n\nRefer to your specific subclass for the exact level 20 capstone text, as these features vary considerably in the 2024 Player's Handbook.",
       "tags": [
         "subclass",
         "capstone",

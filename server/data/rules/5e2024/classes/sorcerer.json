@@ -561,9 +561,12 @@
       }
     ],
     "sorcerer-l1-1": {
-      "summary": "Awaken a heightened magical state that makes your innate power feel sharper, louder, and more dangerous.",
-      "description": "Innate Sorcery is a signature identity button. It tells the player this magic comes from within, and it should read like a heightened casting state rather than a wizard-style study engine.",
+      "name": "Innate Sorcery",
+      "displayName": "Innate Sorcery",
+      "summary": "As a Bonus Action, enter a heightened magical state for 1 minute. While active, you have Advantage on the spell attack rolls of Sorcerer spells you cast, and the spell save DC of your Sorcerer spells increases by 1.",
+      "description": "As a Bonus Action, you can unleash the sorcerous power within yourself. Doing so grants you the following benefits for 1 minute:\n- You have Advantage on the spell attack rolls of Sorcerer spells you cast.\n- The spell save DC of your Sorcerer spells increases by 1.\n\nYou can use this feature twice, and you regain all expended uses when you finish a Long Rest.",
       "resourceName": "Innate Sorcery",
+      "maxUses": 2,
       "trackUses": true,
       "tags": [
         "signature",
@@ -572,12 +575,14 @@
       ],
       "section": "Bonus Actions",
       "type": "bonus action",
-      "usage": "Activate your heightened sorcerous state when the encounter demands a power spike.",
-      "recovery": "Refreshes on a long rest."
+      "usage": "Use as a Bonus Action to enter your heightened sorcerous state. Lasts 1 minute. 2 uses per Long Rest.",
+      "recovery": "Regain all uses on a Long Rest."
     },
     "sorcerer-l1-2": {
-      "summary": "Your spells are known instinctively rather than prepared from study, making your list narrower but more personal.",
-      "description": "Sorcerer spellcasting should feel intimate and identity-driven. You know fewer tools than a wizard, but the spells you carry should feel like they belong to your bloodline, chaos, or innate magical force.",
+      "name": "Spellcasting",
+      "displayName": "Spellcasting",
+      "summary": "You cast Sorcerer spells using Charisma. You know a fixed number of spells (no daily preparation) and cast them using the Sorcerer spell slot table.",
+      "description": "You have the innate ability to cast spells, drawing on magic that flows through your very being.\n\n**Cantrips.** At 1st level you know 4 cantrips from the Sorcerer spell list. You learn additional cantrips at higher levels.\n\n**Spell Slots.** The Sorcerer table shows how many spell slots you have at each level. You use these to cast your known Sorcerer spells.\n\n**Spells Known.** You know 2 spells at 1st level. Unlike a Wizard, you do not prepare spells — your known spells are always available. You learn additional spells as you gain levels.\n\n**Spellcasting Ability.** Charisma is your spellcasting ability for Sorcerer spells.\n- **Spell Save DC** = 8 + your proficiency bonus + your Charisma modifier\n- **Spell Attack Modifier** = your proficiency bonus + your Charisma modifier\n\n**Ritual Casting.** You can cast a Sorcerer spell as a ritual if it has the ritual tag and you have the spell known.\n\n**Spellcasting Focus.** You can use an arcane focus as a spellcasting focus for your Sorcerer spells.",
       "tags": [
         "spellcasting",
         "arcane",
@@ -585,19 +590,24 @@
       ]
     },
     "sorcerer-l2-1": {
-      "summary": "You gain Sorcery Points, the core resource that fuels your most flexible class tricks.",
-      "description": "Font of Magic is the backbone of the sorcerer. It establishes Sorcery Points as your personal magic economy and should clearly surface your current points, spenders, and recovery assumptions.",
+      "name": "Font of Magic",
+      "displayName": "Font of Magic",
+      "summary": "You have a pool of Sorcery Points equal to your Sorcerer level. Spend them to power Flexible Casting and Metamagic. Regain all Sorcery Points on a Long Rest.",
+      "description": "You tap into a deep wellspring of magic within yourself. You have a number of Sorcery Points equal to your Sorcerer level (2 at 2nd level, scaling to 20 at 20th level). You can use these points to fuel Flexible Casting and Metamagic.\n\nYou regain all expended Sorcery Points when you finish a Long Rest.",
       "resourceName": "Sorcery Points",
       "trackUses": true,
       "tags": [
         "resource",
         "signature",
         "arcane"
-      ]
+      ],
+      "recovery": "Regain all Sorcery Points on a Long Rest."
     },
     "sorcerer-l2-2": {
-      "summary": "Trade between spell slots and Sorcery Points so your magic adapts to the fight in front of you.",
-      "description": "Flexible Casting is what turns Sorcery Points into real decision-making. It lets the sorcerer reshape resources on the fly instead of following a fixed casting pattern.",
+      "name": "Flexible Casting",
+      "displayName": "Flexible Casting",
+      "summary": "Spend Sorcery Points to create spell slots, or sacrifice a spell slot to gain Sorcery Points equal to the slot's level.",
+      "description": "You can use your Sorcery Points to gain additional spell slots, or sacrifice spell slots to gain additional Sorcery Points.\n\n**Creating Spell Slots.** As a Bonus Action, you can transform unexpended Sorcery Points into one spell slot using the following table:\n| Spell Slot Level | Sorcery Point Cost |\n|---|---|\n| 1st | 2 |\n| 2nd | 3 |\n| 3rd | 5 |\n| 4th | 6 |\n| 5th | 7 |\n\nCreated spell slots vanish at the end of a Long Rest. You can't create slots of 6th level or higher with this feature.\n\n**Converting a Spell Slot to Sorcery Points.** As a Bonus Action, you can expend one spell slot and gain Sorcery Points equal to the slot's level.",
       "resourceName": "Sorcery Points",
       "trackUses": true,
       "tags": [
@@ -607,12 +617,14 @@
       ],
       "section": "Class Features",
       "type": "special",
-      "usage": "Convert Sorcery Points into spell slots or convert slots into Sorcery Points using Flexible Casting rates.",
-      "recovery": "Uses Sorcery Points, which refresh on a long rest."
+      "usage": "As a Bonus Action: spend Sorcery Points to create a spell slot, or expend a spell slot to gain Sorcery Points equal to its level.",
+      "recovery": "Sorcery Points refresh on a Long Rest."
     },
     "sorcerer-l3-1": {
-      "summary": "Your origin explains where your magic comes from and what kind of instability or legacy it carries.",
-      "description": "Sorcerous Origin is the subclass gate for sorcerer. It should immediately tell the player whether this power comes from chaos, draconic ancestry, aberrant influence, clockwork structure, or something else.",
+      "name": "Sorcerous Origin",
+      "displayName": "Sorcerous Origin",
+      "summary": "Choose your Sorcerous Origin subclass at 3rd level. This defines the source of your innate magic and grants subclass features at levels 3, 6, 14, and 18.",
+      "description": "At 3rd level, you choose a Sorcerous Origin, which describes the source of your innate magical power. Your choice grants you features at 3rd level and again at 6th, 14th, and 18th level.\n\nAvailable Sorcerous Origins include Draconic Sorcery, Wild Magic Sorcery, Clockwork Sorcery, and Aberrant Mind Sorcery, among others.",
       "tags": [
         "subclass",
         "identity",
@@ -620,8 +632,10 @@
       ]
     },
     "sorcerer-l3-2": {
-      "summary": "Shape your spells with metamagic so the same spell list can play very differently from one sorcerer to another.",
-      "description": "Metamagic is one of the most important sorcerer systems. It should feel like expressive spell customization, not just another passive list entry.",
+      "name": "Metamagic",
+      "displayName": "Metamagic",
+      "summary": "You gain 2 Metamagic options at 3rd level (and 1 more at 10th and 17th). Spend Sorcery Points when you cast a spell to apply a Metamagic effect.",
+      "description": "You gain the ability to twist your spells to suit your needs. You gain 2 of the following Metamagic options of your choice. You gain 1 additional option at 10th and 17th level.\n\nYou can use only one Metamagic option on a spell when you cast it, unless the option says otherwise.\n\n**Careful Spell (1 SP):** Choose up to a number of creatures equal to your Charisma modifier (minimum 1). Those creatures automatically succeed on their saving throws against the spell.\n\n**Distant Spell (1 SP):** If the spell has a range of 5 feet or greater, double the range. If it has a range of Touch, the range becomes 30 feet.\n\n**Empowered Spell (1 SP):** When you roll damage for the spell, reroll a number of damage dice up to your Charisma modifier (minimum 1). You must use the new rolls. You can use Empowered Spell even if you have already used a different Metamagic option during the casting of the spell.\n\n**Extended Spell (1 SP):** Double the duration of the spell, to a maximum of 24 hours.\n\n**Heightened Spell (2 SP):** When you cast a spell that forces a creature to make a saving throw, you can force one target of the spell to make its first saving throw against the spell with Disadvantage.\n\n**Quickened Spell (2 SP):** When you cast a spell that has a casting time of 1 action, you can cast it using a Bonus Action instead.\n\n**Seeking Spell (1 SP):** If you make an attack roll for the spell and miss, you can roll the d20 again and use the new roll. You can use Seeking Spell even if you have already used a different Metamagic option during the casting of the spell.\n\n**Subtle Spell (1 SP):** You can cast the spell without any somatic or verbal components.\n\n**Transmuted Spell (1 SP):** You change the damage type produced by the spell to one of the following types: Acid, Cold, Fire, Lightning, Poison, or Thunder.\n\n**Twinned Spell (1 SP):** When you cast a spell that can target only one creature and doesn't have a range of Self, you can spend 1 Sorcery Point to target a second creature in range with the same spell.",
       "resourceName": "Sorcery Points",
       "trackUses": true,
       "tags": [
@@ -631,94 +645,98 @@
       ],
       "section": "Class Features",
       "type": "special",
-      "usage": "Choose 2 options at this level. Additional options at levels 10 and 17.",
-      "recovery": "Metamagic spends Sorcery Points, which refresh on a long rest.",
+      "usage": "Choose 2 Metamagic options at 3rd level. Spend the listed Sorcery Points when casting a spell to apply the chosen effect.",
+      "recovery": "Metamagic spends Sorcery Points, which refresh on a Long Rest.",
       "choices": [
         {
           "id": "careful-spell",
           "name": "Careful Spell",
-          "description": "Cost: 1 Sorcery Point."
+          "description": "Cost: 1 Sorcery Point. Choose up to your Charisma modifier (minimum 1) creatures; those creatures automatically succeed on their saving throws against the spell."
         },
         {
           "id": "distant-spell",
           "name": "Distant Spell",
-          "description": "Cost: 1 Sorcery Point."
+          "description": "Cost: 1 Sorcery Point. Double the spell's range (minimum 5 ft), or change Touch range to 30 feet."
         },
         {
           "id": "empowered-spell",
           "name": "Empowered Spell",
-          "description": "Cost: 1 Sorcery Point."
+          "description": "Cost: 1 Sorcery Point. Reroll up to your Charisma modifier (minimum 1) damage dice and use the new rolls. Can be combined with one other Metamagic option."
         },
         {
           "id": "extended-spell",
           "name": "Extended Spell",
-          "description": "Cost: 1 Sorcery Point."
+          "description": "Cost: 1 Sorcery Point. Double the spell's duration, to a maximum of 24 hours."
         },
         {
           "id": "heightened-spell",
           "name": "Heightened Spell",
-          "description": "Cost: 3 Sorcery Points."
+          "description": "Cost: 2 Sorcery Points. One target of the spell makes its first saving throw against the spell with Disadvantage."
         },
         {
           "id": "quickened-spell",
           "name": "Quickened Spell",
-          "description": "Cost: 2 Sorcery Points."
+          "description": "Cost: 2 Sorcery Points. Cast a spell with a casting time of 1 action as a Bonus Action instead."
         },
         {
           "id": "seeking-spell",
           "name": "Seeking Spell",
-          "description": "Cost: 1 Sorcery Point."
+          "description": "Cost: 1 Sorcery Point. If you miss with a ranged spell attack roll, reroll the d20 and use the new result. Can be combined with one other Metamagic option."
         },
         {
           "id": "subtle-spell",
           "name": "Subtle Spell",
-          "description": "Cost: 1 Sorcery Point."
+          "description": "Cost: 1 Sorcery Point. Cast the spell without verbal or somatic components."
         },
         {
           "id": "transmuted-spell",
           "name": "Transmuted Spell",
-          "description": "Cost: 1 Sorcery Point."
+          "description": "Cost: 1 Sorcery Point. Change the spell's damage type to Acid, Cold, Fire, Lightning, Poison, or Thunder."
         },
         {
           "id": "twinned-spell",
           "name": "Twinned Spell",
-          "description": "Cost: 1+ Sorcery Points depending on spell level."
+          "description": "Cost: 1 Sorcery Point. Target a second creature in range with a single-target spell that doesn't have a range of Self."
         }
       ]
     },
     "sorcerer-l5-1": {
-      "section": "Bonus Actions",
-      "type": "bonus action",
-      "summary": "Steady yourself with a burst of restored vigor so your fragile caster chassis stays in the fight longer.",
-      "description": "Sorcerous Vitality gives the class a self-stabilizing button. It matters because sorcerers often feel exposed once pressure reaches them, and this feature helps them recover tempo.",
+      "name": "Sorcerous Restoration",
+      "displayName": "Sorcerous Restoration",
+      "section": "Class Features",
+      "type": "passive",
+      "summary": "When you finish a Short Rest, you regain 4 expended Sorcery Points.",
+      "description": "When you finish a Short Rest, you regain 4 expended Sorcery Points. This allows you to partially refuel your Metamagic and Flexible Casting economy without waiting for a Long Rest.",
       "tags": [
-        "survival",
-        "self-heal",
+        "resource",
+        "recovery",
         "arcane"
       ],
-      "resourceName": "Sorcerous Vitality",
-      "trackUses": true,
-      "usage": "Use once per long rest unless other features improve it.",
-      "recovery": "Refreshes on a long rest."
+      "resourceName": "Sorcery Points",
+      "trackUses": false,
+      "usage": "Automatic: regain 4 Sorcery Points whenever you finish a Short Rest.",
+      "recovery": "Triggers on every Short Rest."
     },
     "sorcerer-l7-1": {
-      "summary": "Push your innate state to a more complete form so your signature magic feels fully online in major encounters.",
-      "description": "Sorcery Incarnate is a dramatic identity spike. It should read like the sorcerer no longer merely has power, but actively becomes the vessel for it during a key fight.",
+      "name": "Sorcery Incarnate",
+      "displayName": "Sorcery Incarnate",
+      "summary": "While Innate Sorcery is active, you can use up to 2 Metamagic options simultaneously on a single spell (instead of 1). Additionally, if you have no uses of Innate Sorcery remaining, you can spend 2 Sorcery Points to use it.",
+      "description": "At 7th level, your mastery of your innate magic deepens in two ways:\n\n**Multiple Metamagic.** When you use Innate Sorcery, you can apply up to two Metamagic options to a spell simultaneously (normally you can use only one Metamagic option per spell cast).\n\n**Sorcery Point Activation.** If you have no uses of Innate Sorcery remaining, you can spend 2 Sorcery Points to activate it.",
       "tags": [
         "signature",
         "arcane",
         "power-state"
       ],
-      "section": "Bonus Actions",
-      "type": "bonus action",
+      "section": "Class Features",
+      "type": "passive",
       "resourceName": "Sorcery Points",
-      "trackUses": true,
-      "usage": "Enter your sorcery incarnate state during a key fight.",
-      "recovery": "Sorcery Point spenders refresh on a long rest."
+      "trackUses": false,
+      "usage": "While Innate Sorcery is active, apply up to 2 Metamagic options to a single spell. Spend 2 SP to activate Innate Sorcery if no uses remain.",
+      "recovery": "Innate Sorcery uses refresh on a Long Rest; Sorcery Points refresh on a Long Rest."
     },
     "sorcerer-l18-1": {
       "summary": "Your mastery of raw magic reaches a rarefied peak where high-end casting feels effortless and overwhelming.",
-      "description": "Arcane Apotheosis is the late-game sorcerer fantasy: raw magical force refined to the point that the class feels almost mythic in its command of personal power.",
+      "description": "At 18th level, when you use Innate Sorcery, you can apply up to two Metamagic options to a spell. You can also start Innate Sorcery by spending 2 Sorcery Points when you have no uses remaining.\n\nAdditionally, while Innate Sorcery is active, your spell save DC increases by 2 (instead of 1).",
       "tags": [
         "capstone-adjacent",
         "arcane",
@@ -729,7 +747,7 @@
     },
     "sorcerer-l20-1": {
       "summary": "Your apotheosis sharpens even further, turning your innate magic into something close to a living magical phenomenon.",
-      "description": "Arcane Apotheosis (Improved) is the final expression of the sorcerer fantasy. It should feel like relentless magical presence rather than one more number bump.",
+      "description": "At 20th level, your Innate Sorcery now grants Advantage on concentration checks while active, and the bonus to your spell save DC while active increases to 3. Additionally, your Sorcery Point maximum increases by 5 (to Sorcerer level + 5).",
       "tags": [
         "capstone",
         "arcane",
@@ -739,14 +757,16 @@
       "type": "passive"
     },
     "sorcerer-l10-1": {
+      "name": "Metamagic (3rd Option)",
+      "displayName": "Metamagic (3rd Option)",
       "section": "Class Features",
       "type": "special",
       "resourceName": "Sorcery Points",
       "trackUses": true,
-      "summary": "Expand your Metamagic toolkit with one more way to bend spell delivery.",
-      "description": "Adding another Metamagic option increases turn-to-turn spell shaping depth so your best spells keep scaling with your decisions, not only slot level.",
-      "usage": "Choose 1 additional Metamagic option.",
-      "recovery": "Metamagic spends Sorcery Points, which refresh on a long rest.",
+      "summary": "You learn one additional Metamagic option from the full list, bringing your total to 3 known Metamagic options.",
+      "description": "At 10th level, you learn one additional Metamagic option of your choice from the Metamagic list, bringing your total to 3 known options. Spend the listed Sorcery Points when you cast a spell to apply the chosen Metamagic effect.",
+      "usage": "Choose 1 additional Metamagic option from the list below.",
+      "recovery": "Metamagic spends Sorcery Points, which refresh on a Long Rest.",
       "tags": [
         "spellcasting",
         "customization",
@@ -756,52 +776,52 @@
         {
           "id": "careful-spell",
           "name": "Careful Spell",
-          "description": "Cost: 1 Sorcery Point."
+          "description": "Cost: 1 Sorcery Point. Choose up to your Charisma modifier (minimum 1) creatures; those creatures automatically succeed on their saving throws against the spell."
         },
         {
           "id": "distant-spell",
           "name": "Distant Spell",
-          "description": "Cost: 1 Sorcery Point."
+          "description": "Cost: 1 Sorcery Point. Double the spell's range (minimum 5 ft), or change Touch range to 30 feet."
         },
         {
           "id": "empowered-spell",
           "name": "Empowered Spell",
-          "description": "Cost: 1 Sorcery Point."
+          "description": "Cost: 1 Sorcery Point. Reroll up to your Charisma modifier (minimum 1) damage dice and use the new rolls. Can be combined with one other Metamagic option."
         },
         {
           "id": "extended-spell",
           "name": "Extended Spell",
-          "description": "Cost: 1 Sorcery Point."
+          "description": "Cost: 1 Sorcery Point. Double the spell's duration, to a maximum of 24 hours."
         },
         {
           "id": "heightened-spell",
           "name": "Heightened Spell",
-          "description": "Cost: 3 Sorcery Points."
+          "description": "Cost: 2 Sorcery Points. One target of the spell makes its first saving throw against the spell with Disadvantage."
         },
         {
           "id": "quickened-spell",
           "name": "Quickened Spell",
-          "description": "Cost: 2 Sorcery Points."
+          "description": "Cost: 2 Sorcery Points. Cast a spell with a casting time of 1 action as a Bonus Action instead."
         },
         {
           "id": "seeking-spell",
           "name": "Seeking Spell",
-          "description": "Cost: 1 Sorcery Point."
+          "description": "Cost: 1 Sorcery Point. If you miss with a ranged spell attack roll, reroll the d20 and use the new result. Can be combined with one other Metamagic option."
         },
         {
           "id": "subtle-spell",
           "name": "Subtle Spell",
-          "description": "Cost: 1 Sorcery Point."
+          "description": "Cost: 1 Sorcery Point. Cast the spell without verbal or somatic components."
         },
         {
           "id": "transmuted-spell",
           "name": "Transmuted Spell",
-          "description": "Cost: 1 Sorcery Point."
+          "description": "Cost: 1 Sorcery Point. Change the spell's damage type to Acid, Cold, Fire, Lightning, Poison, or Thunder."
         },
         {
           "id": "twinned-spell",
           "name": "Twinned Spell",
-          "description": "Cost: 1+ Sorcery Points depending on spell level."
+          "description": "Cost: 1 Sorcery Point. Target a second creature in range with a single-target spell that doesn't have a range of Self."
         }
       ]
     },
@@ -811,7 +831,7 @@
       "resourceName": "Sorcery Points",
       "trackUses": true,
       "summary": "Expand your Metamagic toolkit with one more way to bend spell delivery.",
-      "description": "Adding another Metamagic option increases turn-to-turn spell shaping depth so your best spells keep scaling with your decisions, not only slot level.",
+      "description": "At 17th level, you gain one additional Metamagic option of your choice, bringing your total to 4 known Metamagic options. Choose from the full Metamagic list.",
       "usage": "Choose 1 additional Metamagic option.",
       "recovery": "Metamagic spends Sorcery Points, which refresh on a long rest.",
       "tags": [
@@ -873,24 +893,30 @@
       ]
     },
     "sorcerer-l4-1": {
-      "summary": "Improve your core ability scores or take a feat to shape your signature casting style.",
-      "description": "This is a major build fork: increase Charisma/Constitution for cleaner spell output and durability, or take a feat that reinforces your sorcery game plan.",
+      "name": "Ability Score Improvement",
+      "displayName": "Ability Score Improvement",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each (maximum 20), or take a feat.",
+      "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify. As a Sorcerer, increasing Charisma boosts your spell save DC and spell attack rolls. Increasing Constitution improves your hit points and helps you maintain Concentration on key spells.\n\nAlternatively, choose a feat that complements your build — War Caster, Elemental Adept, and Spell Sniper are popular choices for Sorcerers.",
       "tags": [
         "build",
         "progression"
       ]
     },
     "sorcerer-l4-2": {
-      "summary": "Your at-will magic depth increases to five cantrips known.",
-      "description": "Another cantrip widens your no-slot toolkit so the class keeps a personal magical identity even in low-slot fights.",
+      "name": "Cantrips Known: 5",
+      "displayName": "Cantrips Known: 5",
+      "summary": "You learn one additional Sorcerer cantrip, bringing your total to 5 cantrips known.",
+      "description": "At 4th level, you learn one additional cantrip from the Sorcerer spell list, bringing the total number of Sorcerer cantrips you know to 5. Cantrips are at-will spells that don't consume spell slots.",
       "tags": [
         "spellcasting",
         "cantrip"
       ]
     },
     "sorcerer-l6-1": {
-      "summary": "Your Sorcerous Origin advances with a defining subclass feature.",
-      "description": "Level 6 is where your origin starts materially changing your turn decisions, not just your flavor text.",
+      "name": "Sorcerous Origin Feature",
+      "displayName": "Sorcerous Origin Feature",
+      "summary": "Your Sorcerous Origin grants you an additional subclass feature at 6th level.",
+      "description": "At 6th level, you gain a feature from your Sorcerous Origin subclass. This feature varies depending on your chosen origin and typically enhances the core abilities granted at 3rd level or introduces new active or passive capabilities tied to the nature of your innate magic.",
       "tags": [
         "subclass",
         "progression",
@@ -898,16 +924,20 @@
       ]
     },
     "sorcerer-l8-1": {
-      "summary": "Another Ability Score Improvement or feat sharpens your sorcerer game plan.",
-      "description": "Use this to reinforce casting reliability, survivability, or a feat package that complements your Metamagic choices.",
+      "name": "Ability Score Improvement",
+      "displayName": "Ability Score Improvement",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each (maximum 20), or take a feat.",
+      "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify. At this stage, maximizing Charisma for peak spell save DC and attack rolls is common, or choosing a feat to deepen your Metamagic and combat strategy.",
       "tags": [
         "build",
         "progression"
       ]
     },
     "sorcerer-l9-1": {
-      "summary": "You unlock 5th-level spells and a new power tier for encounter-defining casts.",
-      "description": "This spell-tier jump should be obvious in both slot visibility and known-spell planning because it changes what fights you can solve directly.",
+      "name": "5th-Level Spells",
+      "displayName": "5th-Level Spells",
+      "summary": "You gain access to 5th-level spell slots and can learn 5th-level Sorcerer spells.",
+      "description": "At 9th level, you gain your first 5th-level spell slot and can add 5th-level spells from the Sorcerer spell list to your spells known. Fifth-level spells include powerhouse options such as Cone of Cold, Hold Monster, Telekinesis, and Wall of Force, dramatically expanding your combat and utility capabilities.",
       "tags": [
         "spellcasting",
         "progression"
@@ -947,7 +977,7 @@
     },
     "sorcerer-l14-1": {
       "summary": "Your Sorcerous Origin gains another subclass-defining feature.",
-      "description": "This is a subclass identity spike where your origin should feel mechanically distinct in active play.",
+      "description": "At 14th level, your Sorcerous Origin grants you its final defining feature. The exact ability depends on your origin — check your subclass for the full details.",
       "tags": [
         "subclass",
         "progression",
@@ -956,7 +986,7 @@
     },
     "sorcerer-l15-1": {
       "summary": "You unlock 8th-level spells and another major spellcasting tier jump.",
-      "description": "High-tier spell access should be reflected clearly in slot visibility, known spell planning, and combat expectations.",
+      "description": "At 15th level, you gain access to 8th-level spell slots. Notable 8th-level Sorcerer spells include Dominate Monster, Earthquake, Power Word Stun, and Sunburst. Your spells known count increases as shown on the Sorcerer table.",
       "tags": [
         "spellcasting",
         "progression"
