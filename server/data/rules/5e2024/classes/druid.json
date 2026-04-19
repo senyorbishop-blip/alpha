@@ -726,8 +726,16 @@
   ],
   "featureDefinitions": {
     "druid-l1-1": {
-      "summary": "You learn Druidic, a hidden language used for signs, warnings, and sacred communication across druid circles.",
-      "description": "Druidic is a campaign utility language that helps with secret messages, hidden site markers, and faction trust. It is mostly roleplay-facing, but it anchors druid identity from level 1.",
+      "id": "druid-l1-1",
+      "displayName": "Druidic",
+      "name": "Druidic",
+      "level": 1,
+      "section": "Languages",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "You know Druidic, the secret language of druids. You can speak it and use it to leave hidden messages in nature.",
+      "description": "You know Druidic, the secret language of druids. You can speak the language and use it to leave hidden messages. You and others who know this language automatically spot such messages. Others spot the message's presence with a successful DC 15 Wisdom (Perception) check, but can't decipher the message without knowing the language. Druids are forbidden from teaching this language to non-druids.",
       "tags": [
         "identity",
         "utility",
@@ -735,8 +743,16 @@
       ]
     },
     "druid-l1-2": {
-      "summary": "You are a Wisdom-based prepared full caster using primal magic for healing, control, summons, and terrain influence.",
-      "description": "Druid spellcasting uses Wisdom for spell attacks and save DCs. You know cantrips from class progression and prepare leveled spells using Wisdom modifier + druid level. Circle spells (if granted) are extra access and should not be mistaken for Wild Shape resources.",
+      "id": "druid-l1-2",
+      "displayName": "Spellcasting",
+      "name": "Spellcasting",
+      "level": 1,
+      "section": "Spellcasting",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "You are a Wisdom-based prepared full caster. Spell save DC = 8 + proficiency bonus + Wisdom modifier. Prepare Wisdom modifier + Druid level spells after each Long Rest.",
+      "description": "Drawing on the divine essence of nature, you cast spells using Wisdom as your spellcasting ability. Spell save DC = 8 + your proficiency bonus + your Wisdom modifier. Spell attack modifier = your proficiency bonus + your Wisdom modifier. You prepare spells from the Druid spell list after each Long Rest; the number of spells you can prepare equals your Wisdom modifier + your Druid level. You can change your list of prepared spells each Long Rest. Druids traditionally refuse to wear metal armor or use metal shields; if you wear metal armor, you can't cast spells or use any Druid class features.",
       "tags": [
         "spellcasting",
         "prepared",
@@ -745,35 +761,50 @@
       ]
     },
     "druid-l1-3": {
-      "summary": "Choose a Primal Order to establish your early play lane: scholar-naturalist depth or sturdier front-line posture.",
-      "description": "Primal Order is your first major druid fork. The Scholar/Sage lane emphasizes lore and magical versatility, while the Warden-style lane pushes survivability and front-line readiness. This choice should stay visible in class identity surfaces.",
+      "id": "druid-l1-3",
+      "displayName": "Primal Order",
+      "name": "Primal Order",
+      "level": 1,
+      "section": "Class Features",
+      "type": "choice",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "Choose Magician or Warden. Magician grants an extra cantrip and adds your Wisdom modifier to Arcana and Nature checks. Warden grants proficiency with Martial weapons and Medium armor.",
+      "description": "You align yourself with one of two primal orders. Choose one of the following options:\n\n**Magician.** You know one extra Druid cantrip. In addition, when you make an Intelligence (Arcana or Nature) check, you can add your Wisdom modifier to the roll.\n\n**Warden.** Trained for battle, you gain proficiency with Martial weapons and gain the ability to use Medium armor as if it were Heavy armor for the purposes of reducing damage (following normal Medium armor rules for Strength requirements and Stealth disadvantage).",
       "tags": [
         "build",
         "identity",
-        "fork"
+        "choice"
       ],
       "choices": [
         {
           "id": "primal-order-magician",
-          "name": "Magician / Primal Sage",
-          "description": "Lean into druid scholarship, magical flexibility, and utility problem-solving."
+          "name": "Magician",
+          "description": "Gain 1 extra Druid cantrip and add your Wisdom modifier to Intelligence (Arcana) and Intelligence (Nature) checks."
         },
         {
           "id": "primal-order-warden",
-          "name": "Warden / Natural Anchor",
-          "description": "Lean into armor, staff-and-shield posture, and front-line durability."
+          "name": "Warden",
+          "description": "Gain proficiency with Martial weapons and with Medium armor (treated as Heavy armor for damage reduction purposes)."
         }
       ]
     },
     "druid-l2-1": {
+      "id": "druid-l2-1",
+      "displayName": "Wild Shape",
+      "name": "Wild Shape",
+      "level": 2,
       "section": "Bonus Actions",
       "type": "bonus action",
+      "className": "Druid",
+      "sourceKind": "class",
       "resourceName": "Wild Shape",
       "trackUses": true,
-      "summary": "Spend Wild Shape to assume a beast form for scouting, mobility, utility, or combat pressure depending on your circle.",
-      "description": "Wild Shape is a tracked class resource with scaling form limits. It competes with some spellcasting lines early, then cooperates more at high level through Beast Spells and Archdruid. Keep uses, CR limits, and active form state readable in play surfaces.",
-      "usage": "Spend 1 Wild Shape use to transform.",
-      "recovery": "Short or Long Rest refresh (rules-layer dependent).",
+      "summary": "Expend a use of Wild Shape to magically transform into a Beast you have seen. CR limit starts at 1/4, scaling up as you level.",
+      "description": "As a Bonus Action, you can expend one use of Wild Shape to magically assume the shape of a Beast you have seen before. Your game statistics are replaced by the statistics of the Beast, but you retain your personality, memories, and the ability to speak. You also retain your Intelligence, Wisdom, and Charisma scores, your proficiency bonus, your Hit Points and Hit Dice, your ability to speak, and your class features (but not your equipment). You can't cast spells while transformed, though you can use features that allow you to transform (such as Wild Shape again). Your beast form lasts for a number of hours equal to half your Druid level, until you are incapacitated or die, or until you revert as a Bonus Action. You have 2 uses of Wild Shape, which you regain when you finish a Short or Long Rest. CR limit: 1/4 at levels 2–3.",
+      "usage": "Bonus Action. Expend 1 Wild Shape use to transform.",
+      "recovery": "Regain all uses on a Short or Long Rest.",
+      "effect": "You assume the form of a Beast with a CR at or below your limit. You use the Beast's statistics but retain your mental scores, Hit Points, proficiency bonus, and class features. You can't cast spells. Duration: half your Druid level in hours.",
       "tags": [
         "resource",
         "transformation",
@@ -781,59 +812,292 @@
       ]
     },
     "druid-l2-2": {
+      "id": "druid-l2-2",
+      "displayName": "Wild Companion",
+      "name": "Wild Companion",
+      "level": 2,
       "section": "Actions",
       "type": "action",
+      "className": "Druid",
+      "sourceKind": "class",
       "resourceName": "Wild Shape",
       "trackUses": true,
-      "summary": "Spend a Wild Shape use to summon a temporary familiar-style primal companion for scouting and support utility.",
-      "description": "Wild Companion is the non-transform Wild Shape spend option. Use it when battlefield information, touch delivery, or utility support is better than personal transformation.",
+      "summary": "Expend a Wild Shape use to cast Find Familiar without a spell slot or material components. The familiar lasts until you dismiss it or it drops to 0 HP.",
+      "description": "You can expend one use of your Wild Shape feature to cast the Find Familiar spell, without expending a spell slot or requiring material components. When you do so, the familiar is a fey spirit rather than a celestial, fey, or fiend, and it disappears when you finish a Long Rest, or when you dismiss it as a Bonus Action, or when it is reduced to 0 Hit Points.",
       "tags": [
         "resource",
         "summon",
         "utility"
       ],
-      "usage": "Spend 1 Wild Shape use to summon your companion.",
-      "recovery": "Uses are tied to Wild Shape recovery."
+      "usage": "Action. Expend 1 Wild Shape use to summon your familiar.",
+      "recovery": "Uses are tied to Wild Shape recovery (Short or Long Rest)."
     },
     "druid-l3-1": {
-      "summary": "Choose your Druid Circle to define whether your loop centers on battle-shifting, terrain casting, or another future circle identity.",
-      "description": "Circle choice is the long-term druid identity gate. Circle of the Moon emphasizes transformation as combat mode, while Circle of the Land emphasizes prepared casting depth, terrain spells, and slot recovery.",
+      "id": "druid-l3-1",
+      "displayName": "Druid Circle",
+      "name": "Druid Circle",
+      "level": 3,
+      "section": "Subclass",
+      "type": "subclass",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "Choose a Druid Circle subclass. Your circle shapes how you use Wild Shape, spells, and primal power. Features at levels 3, 6, 10, and 14.",
+      "description": "At 3rd level, you choose to identify with a circle of druids. Your choice grants you features at 3rd level and again at 6th, 10th, and 14th level. Circles include: Circle of the Land (extra prepared spells by terrain type, Natural Recovery regains spell slots on Short Rest), Circle of the Moon (enhanced combat Wild Shape, CR scales to half Druid level), Circle of the Sea (ocean-themed spells and abilities), Circle of Stars (celestial forms and divination), and others.",
       "tags": [
         "subclass",
         "identity",
-        "build"
+        "choice"
       ]
     },
     "druid-l18-1": {
-      "summary": "Age and ordinary time sit more lightly on you, reinforcing the druid\u2019s connection to a deeper natural cycle.",
-      "description": "Timeless Body is not a combat spike. It is an identity spike that marks the druid as someone who has moved into an older, steadier relationship with the natural world.",
+      "id": "druid-l18-1",
+      "displayName": "Timeless Body",
+      "name": "Timeless Body",
+      "level": 18,
+      "section": "Class Features",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "You no longer age. You can't be aged magically. You can still die of old age if you reach the end of your natural lifespan.",
+      "description": "Starting at 18th level, the primal magic that you wield causes you to age more slowly. For every 10 years that pass, your body ages only 1 year. Additionally, you can't be aged magically. You can still die of old age, however.",
       "tags": [
         "passive",
         "identity",
         "capstone-adjacent"
       ]
     },
-    "druid-l18-2": {
-      "summary": "You can cast many druid spells while in Wild Shape, reducing cast-vs-shift friction.",
-      "description": "Beast Spells is the major interaction pivot for druid loops. Before this, shifting often displaces casting; after this, high-level druids can blend form play with meaningful magic output.",
-      "tags": [
-        "spellcasting",
-        "transformation",
-        "high-level"
-      ]
+    "druid-l4-1": {
+      "id": "druid-l4-1",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "level": 4,
+      "section": "Ability Score Improvement",
+      "type": "asi",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
+      "description": "When you reach 4th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
+      "tags": ["asi", "progression"]
     },
-    "druid-l20-1": {
-      "summary": "Your capstone removes Wild Shape scarcity and lets the class loop feel effortless at endgame.",
-      "description": "Archdruid is a resource liberation capstone. Wild Shape should feel effectively always available, and the class should read as fully online in both casting and transformation plans.",
-      "tags": [
-        "capstone",
-        "transformation",
-        "resource"
-      ]
+    "druid-l4-2": {
+      "id": "druid-l4-2",
+      "displayName": "Wild Shape Improvement",
+      "name": "Wild Shape Improvement",
+      "level": 4,
+      "section": "Class Features",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "Your Wild Shape CR limit increases to 1/2, and you can now assume beast forms with a swim speed.",
+      "description": "Starting at 4th level, your Wild Shape form CR limit increases to 1/2, and you can assume beast forms that have a swim speed. Any beast with a challenge rating of 1/2 or lower that has a swim speed is now available as a Wild Shape form.",
+      "tags": ["transformation", "progression"]
+    },
+    "druid-l5-1": {
+      "id": "druid-l5-1",
+      "displayName": "3rd-Level Spells",
+      "name": "3rd-Level Spells",
+      "level": 5,
+      "section": "Spellcasting",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 5th level, you gain access to 3rd-level spell slots.",
+      "description": "Starting at 5th level, you gain access to 3rd-level spell slots. You can now prepare 3rd-level spells from the Druid spell list.\n\nNotable 3rd-level Druid spells include: Call Lightning, Conjure Animals, Daylight, Dispel Magic, Meld into Stone, Plant Growth, Protection from Energy, Sleet Storm, Speak with Plants, Water Breathing, Water Walk, Wind Wall.",
+      "tags": ["spellcasting", "progression"]
+    },
+    "druid-l6-1": {
+      "id": "druid-l6-1",
+      "displayName": "Druid Circle Feature",
+      "name": "Druid Circle Feature",
+      "level": 6,
+      "section": "Subclass",
+      "type": "subclass",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 6th level, your Druid Circle grants its second feature.",
+      "description": "At 6th level, your chosen Druid Circle grants you an additional feature. Consult your subclass for the specific benefit.",
+      "tags": ["subclass", "progression"]
+    },
+    "druid-l7-1": {
+      "id": "druid-l7-1",
+      "displayName": "4th-Level Spells",
+      "name": "4th-Level Spells",
+      "level": 7,
+      "section": "Spellcasting",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 7th level, you gain access to 4th-level spell slots.",
+      "description": "Starting at 7th level, you gain access to 4th-level spell slots. You can now prepare 4th-level spells from the Druid spell list.\n\nNotable 4th-level Druid spells include: Blight, Confusion, Conjure Minor Elementals, Conjure Woodland Beings, Control Water, Dominate Beast, Freedom of Movement, Giant Insect, Grasping Vine, Hallucinatory Terrain, Ice Storm, Locate Creature, Polymorph, Stone Shape, Stoneskin, Wall of Fire.",
+      "tags": ["spellcasting", "progression"]
+    },
+    "druid-l8-1": {
+      "id": "druid-l8-1",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "level": 8,
+      "section": "Ability Score Improvement",
+      "type": "asi",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
+      "description": "When you reach 8th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
+      "tags": ["asi", "progression"]
+    },
+    "druid-l8-2": {
+      "id": "druid-l8-2",
+      "displayName": "Wild Shape Improvement",
+      "name": "Wild Shape Improvement",
+      "level": 8,
+      "section": "Class Features",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "Your Wild Shape CR limit increases to 1, and you can now assume beast forms with a fly speed.",
+      "description": "Starting at 8th level, your Wild Shape form CR limit increases to 1, and you can assume beast forms that have a fly speed. Any beast with a challenge rating of 1 or lower is now available as a Wild Shape form, including flying beasts such as the Giant Eagle.",
+      "tags": ["transformation", "progression"]
+    },
+    "druid-l9-1": {
+      "id": "druid-l9-1",
+      "displayName": "5th-Level Spells",
+      "name": "5th-Level Spells",
+      "level": 9,
+      "section": "Spellcasting",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 9th level, you gain access to 5th-level spell slots.",
+      "description": "Starting at 9th level, you gain access to 5th-level spell slots. You can now prepare 5th-level spells from the Druid spell list.\n\nNotable 5th-level Druid spells include: Antilife Shell, Awaken, Commune with Nature, Conjure Elemental, Contagion, Geas, Greater Restoration, Insect Plague, Mass Cure Wounds, Planar Binding, Reincarnate, Scrying, Tree Stride, Wall of Stone.",
+      "tags": ["spellcasting", "progression"]
+    },
+    "druid-l10-1": {
+      "id": "druid-l10-1",
+      "displayName": "Druid Circle Feature",
+      "name": "Druid Circle Feature",
+      "level": 10,
+      "section": "Subclass",
+      "type": "subclass",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 10th level, your Druid Circle grants its third feature.",
+      "description": "At 10th level, your chosen Druid Circle grants you an additional feature. Consult your subclass for the specific benefit.",
+      "tags": ["subclass", "progression"]
+    },
+    "druid-l11-1": {
+      "id": "druid-l11-1",
+      "displayName": "6th-Level Spells",
+      "name": "6th-Level Spells",
+      "level": 11,
+      "section": "Spellcasting",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 11th level, you gain access to 6th-level spell slots.",
+      "description": "Starting at 11th level, you gain access to 6th-level spell slots. You can now prepare 6th-level spells from the Druid spell list.\n\nNotable 6th-level Druid spells include: Conjure Fey, Find the Path, Heal, Heroes' Feast, Move Earth, Sunbeam, Transport via Plants, Wall of Thorns, Wind Walk.",
+      "tags": ["spellcasting", "progression"]
+    },
+    "druid-l12-1": {
+      "id": "druid-l12-1",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "level": 12,
+      "section": "Ability Score Improvement",
+      "type": "asi",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
+      "description": "When you reach 12th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
+      "tags": ["asi", "progression"]
+    },
+    "druid-l13-1": {
+      "id": "druid-l13-1",
+      "displayName": "7th-Level Spells",
+      "name": "7th-Level Spells",
+      "level": 13,
+      "section": "Spellcasting",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 13th level, you gain access to 7th-level spell slots.",
+      "description": "Starting at 13th level, you gain access to 7th-level spell slots. You can now prepare 7th-level spells from the Druid spell list.\n\nNotable 7th-level Druid spells include: Fire Storm, Mirage Arcane, Plane Shift, Regenerate, Reverse Gravity.",
+      "tags": ["spellcasting", "progression"]
+    },
+    "druid-l14-1": {
+      "id": "druid-l14-1",
+      "displayName": "Druid Circle Feature",
+      "name": "Druid Circle Feature",
+      "level": 14,
+      "section": "Subclass",
+      "type": "subclass",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 14th level, your Druid Circle grants its final feature.",
+      "description": "At 14th level, your chosen Druid Circle grants you its final feature. Consult your subclass for the specific benefit.",
+      "tags": ["subclass", "progression"]
+    },
+    "druid-l15-1": {
+      "id": "druid-l15-1",
+      "displayName": "8th-Level Spells",
+      "name": "8th-Level Spells",
+      "level": 15,
+      "section": "Spellcasting",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 15th level, you gain access to 8th-level spell slots.",
+      "description": "Starting at 15th level, you gain access to 8th-level spell slots. You can now prepare 8th-level spells from the Druid spell list.\n\nNotable 8th-level Druid spells include: Animal Shapes, Antipathy/Sympathy, Control Weather, Earthquake, Feeblemind, Sunburst.",
+      "tags": ["spellcasting", "progression"]
+    },
+    "druid-l16-1": {
+      "id": "druid-l16-1",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "level": 16,
+      "section": "Ability Score Improvement",
+      "type": "asi",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
+      "description": "When you reach 16th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
+      "tags": ["asi", "progression"]
+    },
+    "druid-l17-1": {
+      "id": "druid-l17-1",
+      "displayName": "9th-Level Spells",
+      "name": "9th-Level Spells",
+      "level": 17,
+      "section": "Spellcasting",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 17th level, you gain access to 9th-level spell slots.",
+      "description": "Starting at 17th level, you gain access to 9th-level spell slots. You can now prepare 9th-level spells from the Druid spell list.\n\nNotable 9th-level Druid spells include: Foresight, Shapechange, Storm of Vengeance, True Resurrection.",
+      "tags": ["spellcasting", "progression"]
+    },
+    "druid-l19-1": {
+      "id": "druid-l19-1",
+      "displayName": "Epic Boon",
+      "name": "Epic Boon",
+      "level": 19,
+      "section": "Ability Score Improvement",
+      "type": "asi",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 19th level, you gain an Epic Boon feat. The recommended boon for Druids is Boon of Spell Recall.",
+      "description": "At 19th level, you gain a special ability called an Epic Boon — a feat available only to characters of 19th level or higher. Choose one Epic Boon feat.\n\nThe recommended Epic Boon for Druids is the Boon of Spell Recall, which allows you to cast a 1st-level spell without expending a spell slot.",
+      "tags": ["asi", "epic", "progression"]
     },
     "druid-druidic": {
-      "summary": "You learn Druidic, a hidden language used for signs, warnings, and sacred communication across druid circles.",
-      "description": "Druidic is a campaign utility language that helps with secret messages, hidden site markers, and faction trust. It is mostly roleplay-facing, but it anchors druid identity from level 1.",
+      "id": "druid-druidic",
+      "displayName": "Druidic",
+      "name": "Druidic",
+      "level": 1,
+      "section": "Class Features",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "You know Druidic, the secret language of druids, which lets you speak, read, and leave hidden messages.",
+      "description": "You know Druidic, the secret language of druids. You can speak the language and use it to leave hidden messages. You and others who know Druidic automatically spot such a message. Others spot the message's presence with a successful DC 15 Wisdom (Perception) check but can't decipher it without knowing the language. Druids are forbidden from teaching this language to non-druids.",
       "tags": [
         "identity",
         "utility",
@@ -841,8 +1105,16 @@
       ]
     },
     "druid-spellcasting": {
-      "summary": "You are a Wisdom-based prepared full caster using primal magic for healing, control, summons, and terrain influence.",
-      "description": "Druid spellcasting uses Wisdom for spell attacks and save DCs. You know cantrips from class progression and prepare leveled spells using Wisdom modifier + druid level. Circle spells (if granted) are extra access and should not be mistaken for Wild Shape resources.",
+      "id": "druid-spellcasting",
+      "displayName": "Spellcasting",
+      "name": "Spellcasting",
+      "level": 1,
+      "section": "Spellcasting",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "You are a Wisdom-based prepared full caster. Spell save DC = 8 + proficiency bonus + Wisdom modifier. Prepare Wisdom modifier + Druid level spells after each Long Rest.",
+      "description": "Drawing on the divine essence of nature, you cast spells using Wisdom as your spellcasting ability.\n\nSpell save DC = 8 + your proficiency bonus + your Wisdom modifier.\nSpell attack modifier = your proficiency bonus + your Wisdom modifier.\n\nYou prepare spells from the Druid spell list after each Long Rest. The number of spells you can prepare equals your Wisdom modifier + your Druid level (minimum of one spell). You can change your list of prepared spells when you finish a Long Rest.\n\nDruids traditionally refuse to wear metal armor or use metal shields. If you don metal armor, you have disadvantage on attack rolls, and any creature that touches you while you wear it takes 1 lightning damage.",
       "tags": [
         "spellcasting",
         "prepared",
@@ -851,35 +1123,49 @@
       ]
     },
     "druid-primal-order": {
-      "summary": "Choose a Primal Order to establish your early play lane: scholar-naturalist depth or sturdier front-line posture.",
-      "description": "Primal Order is your first major druid fork. The Scholar/Sage lane emphasizes lore and magical versatility, while the Warden-style lane pushes survivability and front-line readiness. This choice should stay visible in class identity surfaces.",
+      "id": "druid-primal-order",
+      "displayName": "Primal Order",
+      "name": "Primal Order",
+      "level": 1,
+      "section": "Class Features",
+      "type": "choice",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "Choose Magician or Warden. Magician grants an extra cantrip and lets you add your Wisdom modifier to Arcana and Nature checks. Warden grants proficiency with Martial weapons and Medium armor.",
+      "description": "You align yourself with one of two primal orders at 1st level:\n\n**Magician.** You know one extra Druid cantrip. In addition, when you make an Intelligence (Arcana) or Intelligence (Nature) check, you can add your Wisdom modifier to the roll.\n\n**Warden.** Trained for battle, you gain proficiency with Martial weapons and with Medium armor.",
       "tags": [
         "build",
         "identity",
-        "fork"
+        "choice"
       ],
       "choices": [
         {
           "id": "primal-order-magician",
-          "name": "Magician / Primal Sage",
-          "description": "Lean into druid scholarship, magical flexibility, and utility problem-solving."
+          "name": "Magician",
+          "description": "Gain 1 extra Druid cantrip and add your Wisdom modifier to Intelligence (Arcana) and Intelligence (Nature) checks."
         },
         {
           "id": "primal-order-warden",
-          "name": "Warden / Natural Anchor",
-          "description": "Lean into armor, staff-and-shield posture, and front-line durability."
+          "name": "Warden",
+          "description": "Gain proficiency with Martial weapons and with Medium armor."
         }
       ]
     },
     "druid-wild-shape": {
+      "id": "druid-wild-shape",
+      "displayName": "Wild Shape",
+      "name": "Wild Shape",
+      "level": 2,
       "section": "Bonus Actions",
       "type": "bonus action",
+      "className": "Druid",
+      "sourceKind": "class",
       "resourceName": "Wild Shape",
       "trackUses": true,
-      "summary": "Spend Wild Shape to assume a beast form for scouting, mobility, utility, or combat pressure depending on your circle.",
-      "description": "Wild Shape is a tracked class resource with scaling form limits. It competes with some spellcasting lines early, then cooperates more at high level through Beast Spells and Archdruid. Keep uses, CR limits, and active form state readable in play surfaces.",
-      "usage": "Spend 1 Wild Shape use to transform.",
-      "recovery": "Short or Long Rest refresh (rules-layer dependent).",
+      "summary": "Expend a use of Wild Shape as a Bonus Action to magically transform into a Beast you have seen. You have 2 uses, regained on a Short or Long Rest.",
+      "description": "As a Bonus Action, you can expend one use of Wild Shape to magically assume the shape of a Beast you have seen before. You remain in beast form for a number of hours equal to half your Druid level (rounded down), until you are incapacitated, die, or revert using a Bonus Action.\n\nWhile transformed:\n- Your game statistics are replaced by the Beast's statistics, but you retain your alignment, personality, and Intelligence, Wisdom, and Charisma scores.\n- You retain your proficiency bonus, skill and saving throw proficiencies, and class features.\n- You can't cast spells, though you can maintain concentration on a spell cast before transforming.\n- You keep your own Hit Points and Hit Dice.\n- Equipment you carry either merges into the form or falls to the ground (your choice).\n\nYou have 2 uses of Wild Shape, which you regain when you finish a Short or Long Rest.\n\nCR Limits by level: CR 1/4 (levels 2–3), CR 1/2 with swim speed (levels 4–7), CR 1 with fly speed (level 8+).",
+      "usage": "Bonus Action. Expend 1 Wild Shape use.",
+      "recovery": "Regain all uses on a Short or Long Rest.",
       "tags": [
         "resource",
         "transformation",
@@ -887,40 +1173,70 @@
       ]
     },
     "druid-wild-companion": {
+      "id": "druid-wild-companion",
+      "displayName": "Wild Companion",
+      "name": "Wild Companion",
+      "level": 2,
       "section": "Actions",
       "type": "action",
+      "className": "Druid",
+      "sourceKind": "class",
       "resourceName": "Wild Shape",
       "trackUses": true,
-      "summary": "Spend a Wild Shape use to summon a temporary familiar-style primal companion for scouting and support utility.",
-      "description": "Wild Companion is the non-transform Wild Shape spend option. Use it when battlefield information, touch delivery, or utility support is better than personal transformation.",
+      "summary": "Expend a Wild Shape use to cast Find Familiar without a spell slot or material components. The familiar disappears at your next Long Rest.",
+      "description": "You can expend one use of your Wild Shape feature to cast the Find Familiar spell, without expending a spell slot or requiring material components.\n\nWhen you do so, the familiar is a fey spirit rather than a celestial, fiend, or undead. It disappears when you finish a Long Rest, when you dismiss it as a Bonus Action, or when it drops to 0 Hit Points.\n\nThe familiar can deliver touch spells for you, take the Help action, and perform other actions as described in the Find Familiar spell.",
+      "usage": "Action. Expend 1 Wild Shape use to summon your familiar.",
+      "recovery": "Uses are tied to Wild Shape (recover on Short or Long Rest).",
       "tags": [
         "resource",
         "summon",
         "utility"
-      ],
-      "usage": "Spend 1 Wild Shape use to summon your companion.",
-      "recovery": "Uses are tied to Wild Shape recovery."
+      ]
     },
     "druid-circle-subclass": {
-      "summary": "Choose your Druid Circle to define whether your loop centers on battle-shifting, terrain casting, or another future circle identity.",
-      "description": "Circle choice is the long-term druid identity gate. Circle of the Moon emphasizes transformation as combat mode, while Circle of the Land emphasizes prepared casting depth, terrain spells, and slot recovery.",
+      "id": "druid-circle-subclass",
+      "displayName": "Druid Circle",
+      "name": "Druid Circle",
+      "level": 3,
+      "section": "Subclass",
+      "type": "subclass",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 3rd level, choose a Druid Circle subclass. Your circle grants features at levels 3, 6, 10, and 14.",
+      "description": "At 3rd level, you choose to identify with a circle of druids. Your choice grants you features at 3rd level and again at 6th, 10th, and 14th level.\n\nAvailable circles include:\n\n**Circle of the Land.** You gain bonus prepared spells based on a chosen terrain type (Arctic, Coast, Desert, Forest, Grassland, Mountain, Swamp, or Underdark). You also gain Natural Recovery, allowing you to regain expended spell slots totaling up to half your Druid level (rounded up) when you finish a Short Rest.\n\n**Circle of the Moon.** You can use Wild Shape as a Bonus Action to assume powerful combat beast forms, with CR limits equal to your Druid level divided by 3 (rounded down, minimum 1).\n\n**Circle of the Sea.** You channel the power of the ocean, gaining water-themed spells and the ability to create warding winds and stormy auras.\n\n**Circle of Stars.** You draw power from star maps and constellations, gaining abilities related to divination, healing, and radiant energy.",
       "tags": [
         "subclass",
         "identity",
-        "build"
+        "choice"
       ]
     },
     "druid-second-circle-magic-tier": {
-      "summary": "You unlock 2nd-level spell slots, expanding prepared options and concentration pressure.",
-      "description": "At this tier druids usually begin carrying stronger control, restoration, and summon-adjacent effects. Revisit prepared spells after leveling.",
+      "id": "druid-second-circle-magic-tier",
+      "displayName": "2nd-Level Spells",
+      "name": "2nd-Level Spells",
+      "level": 3,
+      "section": "Spellcasting",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 3rd level, you gain access to 2nd-level spell slots.",
+      "description": "Starting at 3rd level, you gain access to 2nd-level spell slots. You can now prepare 2nd-level spells from the Druid spell list and cast them using these slots.\n\nNotable 2nd-level Druid spells include: Barkskin, Darkvision, Enhance Ability, Find Traps, Flame Blade, Heat Metal, Hold Person, Locate Animals or Plants, Locate Object, Moonbeam, Pass without Trace, Protection from Poison, Spike Growth.",
       "tags": [
         "spellcasting",
         "progression"
       ]
     },
     "druid-cantrip-progression-4": {
-      "summary": "Your cantrip roster expands to 4 known cantrips.",
-      "description": "This is a scaling utility/combat flexibility bump and should update cantrip counts in level-up and spell management surfaces.",
+      "id": "druid-cantrip-progression-4",
+      "displayName": "Cantrips (4 Known)",
+      "name": "Cantrips (4 Known)",
+      "level": 4,
+      "section": "Spellcasting",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 4th level, you learn one additional Druid cantrip, bringing your total to 4.",
+      "description": "At 4th level, you learn one additional cantrip of your choice from the Druid spell list. You now know 4 Druid cantrips.",
       "tags": [
         "spellcasting",
         "cantrip",
@@ -928,8 +1244,16 @@
       ]
     },
     "druid-cantrip-progression-5": {
-      "summary": "Your cantrip roster expands to 5 known cantrips.",
-      "description": "Late-tier cantrip progression keeps at-will druid utility and fallback combat options relevant between slot spends.",
+      "id": "druid-cantrip-progression-5",
+      "displayName": "Cantrips (5 Known)",
+      "name": "Cantrips (5 Known)",
+      "level": 10,
+      "section": "Spellcasting",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 10th level, you learn one additional Druid cantrip, bringing your total to 5.",
+      "description": "At 10th level, you learn one additional cantrip of your choice from the Druid spell list. You now know 5 Druid cantrips.",
       "tags": [
         "spellcasting",
         "cantrip",
@@ -937,8 +1261,16 @@
       ]
     },
     "druid-beast-spells": {
-      "summary": "You can cast many druid spells while in Wild Shape, reducing cast-vs-shift friction.",
-      "description": "Beast Spells is the major interaction pivot for druid loops. Before this, shifting often displaces casting; after this, high-level druids can blend form play with meaningful magic output.",
+      "id": "druid-beast-spells",
+      "displayName": "Beast Spells",
+      "name": "Beast Spells",
+      "level": 18,
+      "section": "Class Features",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 18th level, you can cast Druid spells while in Wild Shape, performing verbal and somatic components in beast form.",
+      "description": "Beginning at 18th level, you can cast many of your Druid spells in any shape you assume using Wild Shape. You can perform the somatic and verbal components of a Druid spell while in a beast shape, but you aren't able to provide material components that require handling.\n\nFor example, a wolf could cast Call Lightning (verbal and somatic components only), but not a spell requiring a physical material component held in hand.",
       "tags": [
         "spellcasting",
         "transformation",
@@ -946,30 +1278,20 @@
       ]
     },
     "druid-archdruid": {
-      "summary": "Your capstone removes Wild Shape scarcity and lets the class loop feel effortless at endgame.",
-      "description": "Archdruid is a resource liberation capstone. Wild Shape should feel effectively always available, and the class should read as fully online in both casting and transformation plans.",
+      "id": "druid-archdruid",
+      "displayName": "Archdruid",
+      "name": "Archdruid",
+      "level": 20,
+      "section": "Class Features",
+      "type": "passive",
+      "className": "Druid",
+      "sourceKind": "class",
+      "summary": "At 20th level, your Wild Shape uses become unlimited, and you can ignore verbal and somatic components of Druid spells while transformed.",
+      "description": "At 20th level, you can use your Wild Shape an unlimited number of times.\n\nAdditionally, you can ignore the verbal and somatic components of your Druid spells while you are transformed by Wild Shape. You still require material components when applicable.\n\nYou are a force of nature — an archdruid of incomprehensible power, able to shift forms at will while channeling the most devastating primal magic.",
       "tags": [
         "capstone",
         "transformation",
         "resource"
-      ]
-    },
-    "druid-l4-3": {
-      "summary": "Your cantrip roster expands to 4 known cantrips.",
-      "description": "This is a scaling utility/combat flexibility bump and should update cantrip counts in level-up and spell management surfaces.",
-      "tags": [
-        "spellcasting",
-        "cantrip",
-        "progression"
-      ]
-    },
-    "druid-l10-2": {
-      "summary": "Your cantrip roster expands to 5 known cantrips.",
-      "description": "Late-tier cantrip progression keeps at-will druid utility and fallback combat options relevant between slot spends.",
-      "tags": [
-        "spellcasting",
-        "cantrip",
-        "progression"
       ]
     }
   },

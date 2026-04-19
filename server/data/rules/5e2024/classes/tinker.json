@@ -481,8 +481,16 @@
   ],
   "featureDefinitions": {
     "tinker-tinkercraft": {
-      "summary": "Turn tools, scraps, and practical engineering into dependable field solutions.",
-      "description": "Tinkercraft is the class foundation. You are not casting like a scholar or praying like a priest; you solve problems by building, calibrating, patching, and re-routing devices in the middle of the adventure. In play, this should feel like you always have a practical answer close at hand, whether that answer is utility, control, protection, or clever positioning.",
+      "id": "tinker-tinkercraft",
+      "displayName": "Tinkercraft",
+      "name": "Tinkercraft",
+      "level": 1,
+      "section": "Class Features",
+      "type": "passive",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "You gain proficiency with Tinker's Tools. During a Long Rest, you can craft Tiny clockwork devices that produce light, noise, music, or simple mechanical effects.",
+      "description": "You have a knack for building clever devices from scraps and components. You gain proficiency with Tinker's Tools (if not already proficient).\n\nDuring a Long Rest, you can use Tinker's Tools to craft any number of Tiny clockwork devices. Each device ceases to function after 24 hours, or when you dismantle it (no action required). You can have no more than three such devices active at one time.\n\nWhen you create a device, choose one of the following options:\n\n**Clockwork Toy.** A moving figure (animal, monster, or humanoid) that moves 5 feet in a random direction each round.\n\n**Fire Starter.** Produces a miniature flame; acts as a tindertwig. Can light candles, torches, or campfires.\n\n**Music Box.** Plays a single preprogrammed song at a moderate volume when opened.\n\nYou can also use Tinker's Tools during Short Rests to repair damaged mechanical devices or constructs, restoring 1d6 + Intelligence modifier Hit Points.",
       "tags": [
         "core",
         "utility",
@@ -490,9 +498,19 @@
       ]
     },
     "tinker-prototype-rig": {
-      "summary": "Carry a configurable rig of tools, housings, and active modules that defines your battlefield presence.",
-      "description": "Your Prototype Rig is the hardware backbone of the class. It represents the gauntlet, backpack, satchel, drone frame, alchemical harness, or collapsible toolkit you fight through. The rig is where your infusions, specialty modules, and quick deployments live, so it should read like real loadout identity on the sheet.",
-      "effect": "Enables specialty modules, rig upgrades, and deployable-style class play.",
+      "id": "tinker-prototype-rig",
+      "displayName": "Prototype Rig",
+      "name": "Prototype Rig",
+      "level": 1,
+      "section": "Class Features",
+      "type": "passive",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "resourceName": "Gadget Charges",
+      "trackUses": true,
+      "summary": "You construct a wearable Prototype Rig that serves as your spellcasting focus and powers your class features via Gadget Charges. Regain all charges on a Long Rest.",
+      "description": "You construct a Prototype Rig — a wearable mechanical apparatus that serves as both your spellcasting focus and the engine of your engineering abilities. The Rig's form is your choice: a gauntlet, a backpack with articulated arms, an alchemical harness, or a collapsible toolkit.\n\nThe Rig has a number of Gadget Charges as shown in the Tinker table. You expend Gadget Charges to fuel Quick Deployment, Overclocked Device, Reactive Countermeasure, and other class features. You regain all expended Gadget Charges when you finish a Long Rest.\n\nIf the Rig is lost or destroyed, you can rebuild it during a Long Rest using 10 gp worth of components.",
+      "recovery": "Regain all Gadget Charges on a Long Rest.",
       "tags": [
         "core",
         "loadout",
@@ -500,8 +518,16 @@
       ]
     },
     "tinker-spellcasting": {
-      "summary": "Use prepared formulae, calibrated tools, and device housings to produce repeatable magical effects.",
-      "description": "Tinker spellcasting is practical magic expressed through engineering. Your spells are formulae, cartridges, brews, emitters, and tuned devices rather than purely academic gestures. The sheet should present these as reliable tools in a kit, with Intelligence driving the quality of your work.",
+      "id": "tinker-spellcasting",
+      "displayName": "Spellcasting",
+      "name": "Spellcasting",
+      "level": 1,
+      "section": "Spellcasting",
+      "type": "passive",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "You are an Intelligence-based half-caster. Spell save DC = 8 + proficiency bonus + Intelligence modifier. You know spells from the Tinker list and regain slots on a Long Rest.",
+      "description": "You channel magical energy through your engineered devices and formulae, using Intelligence as your spellcasting ability.\n\nSpell save DC = 8 + your proficiency bonus + your Intelligence modifier.\nSpell attack modifier = your proficiency bonus + your Intelligence modifier.\n\nYou know a number of cantrips and spells from the Tinker spell list as shown in the class table. Unlike prepared casters, you know your spells permanently and can't swap them except when you gain a level.\n\nYour Prototype Rig serves as your spellcasting focus. You regain all expended spell slots when you finish a Long Rest.",
       "tags": [
         "spellcasting",
         "intelligence",
@@ -509,9 +535,19 @@
       ]
     },
     "tinker-quick-deployment": {
-      "summary": "Deploy or swap a prepared device fast enough to matter once initiative starts.",
-      "description": "Quick Deployment is the first real tempo feature of the class. It pushes the Tinker away from slow prep-only fantasy and into active combat problem-solving by letting you get a rig, charge, or deployable online without losing your whole turn.",
+      "id": "tinker-quick-deployment",
+      "displayName": "Quick Deployment",
+      "name": "Quick Deployment",
+      "level": 2,
+      "section": "Bonus Actions",
       "type": "bonus action",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "resourceName": "Gadget Charges",
+      "trackUses": true,
+      "summary": "As a Bonus Action, expend 1 Gadget Charge to deploy a prepared gadget, activate a Rig module, or swap your active configuration mid-combat.",
+      "description": "Starting at 2nd level, you can deploy or activate one of your devices with blinding speed. As a Bonus Action, expend 1 Gadget Charge to do one of the following:\n\n- Deploy a gadget you prepared during your last Long Rest, triggering its effect immediately.\n- Activate or switch your Prototype Rig's active module (such as changing from an offensive configuration to a defensive one).\n- Prime a device so it can be triggered later as a free action this turn.\n\nThis feature lets you set up complex interactions without sacrificing your full Action.",
+      "usage": "Bonus Action. Expend 1 Gadget Charge.",
       "tags": [
         "tempo",
         "combat",
@@ -519,8 +555,16 @@
       ]
     },
     "tinker-tool-expertise": {
-      "summary": "Your hands know the job\u2014tools become a real source of advantage and party utility.",
-      "description": "Tool Expertise makes your proficiencies meaningful. The class should feel like the party member who can bypass locks, stabilize damaged gear, identify the right part, and improvise a solution when everyone else is stuck.",
+      "id": "tinker-tool-expertise",
+      "displayName": "Tool Expertise",
+      "name": "Tool Expertise",
+      "level": 2,
+      "section": "Class Features",
+      "type": "passive",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "Your proficiency bonus is doubled for ability checks using any tools you are proficient with (Tinker's Tools, Thieves' Tools, Alchemist's Supplies, and others).",
+      "description": "Starting at 2nd level, your proficiency bonus is doubled for any ability check you make that uses a set of tools you are proficient with. This applies to Tinker's Tools, Thieves' Tools, Alchemist's Supplies, and any other tool proficiencies you have.\n\nThis is Expertise for tool checks — if you already have Expertise with a specific tool, you instead gain a +2 bonus on those checks.",
       "tags": [
         "utility",
         "skills",
@@ -528,33 +572,66 @@
       ]
     },
     "tinker-field-specialization-subclass": {
-      "summary": "Choose the engineering discipline that shapes how your rig fights and supports the party.",
-      "description": "At 3rd level you commit to a field specialization. This is your subclass moment and it should sharply change your action cards, granted spells, and battlefield identity.",
+      "id": "tinker-field-specialization-subclass",
+      "displayName": "Field Specialization",
+      "name": "Field Specialization",
+      "level": 3,
+      "section": "Subclass",
+      "type": "subclass",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "At 3rd level, choose a Field Specialization subclass. Your specialization grants features at levels 3, 10, and 15, and defines your engineering identity.",
+      "description": "At 3rd level, you commit to an engineering Field Specialization — the discipline that defines how your Prototype Rig operates and how you support your party. Your specialization grants features at 3rd level and again at 10th and 15th level.\n\nAvailable specializations include:\n\n**Artillerist.** You construct a magical cannon that can blast enemies, protect allies, or spray fire. Your Rig becomes an offensive platform.\n\n**Alchemist.** You specialize in alchemical formulae — healing compounds, transmutation brews, and volatile concoctions. Your Rig delivers restorative and condition-curing effects.\n\n**Combat Engineer.** You build barriers, traps, and fortifications that control the battlefield.\n\n**Saboteur.** You excel at infiltration, disabling mechanisms, and delivering precise debilitating strikes.",
       "tags": [
         "subclass",
         "choice"
       ]
     },
     "tinker-specialty-spells": {
-      "summary": "Your specialization unlocks a curated list of always-ready formulae that match your engineering discipline.",
-      "description": "Specialty spells do not just pad your list; they define your lane. Artillerists should feel explosive, Alchemists adaptive, Mechanists methodical, and Saboteurs surgical.",
+      "id": "tinker-specialty-spells",
+      "displayName": "Specialty Spells",
+      "name": "Specialty Spells",
+      "level": 3,
+      "section": "Spellcasting",
+      "type": "passive",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "Your Field Specialization grants a list of bonus spells that are always known and don't count against your spells known.",
+      "description": "Starting at 3rd level, your Field Specialization provides a list of specialty spells — formulae that are perfectly calibrated for your engineering discipline. These spells are always known to you; they don't count against the number of Tinker spells you know.\n\nIf a specialty spell isn't on the Tinker spell list, it is still a Tinker spell for you while your specialization grants it.",
       "tags": [
         "subclass",
         "spellcasting"
       ]
     },
     "tinker-ability-score-improvement": {
-      "summary": "Improve your key stats or take a feat to sharpen your engineering style.",
+      "id": "tinker-ability-score-improvement",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "level": 4,
+      "section": "Ability Score Improvement",
+      "type": "asi",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
+      "description": "When you reach 4th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
       "tags": [
         "progression",
         "feat"
       ]
     },
     "tinker-overclocked-device": {
-      "summary": "Push a device beyond safe tolerances for a stronger burst of offense, protection, or reach.",
-      "description": "Overclocked Device is a signature mid-tier Tinker move. You deliberately stress a module to get more out of it right now, accepting the fantasy that your gear is powerful because you know exactly how far you can push it before it fails.",
+      "id": "tinker-overclocked-device",
+      "displayName": "Overclocked Device",
+      "name": "Overclocked Device",
+      "level": 5,
+      "section": "Actions",
+      "type": "action",
+      "className": "Tinker",
+      "sourceKind": "class",
       "resourceName": "Gadget Charges",
       "trackUses": true,
+      "summary": "As an Action, expend 2 Gadget Charges to push one Rig device beyond its limits: +2d6 damage, doubled range, or grant temporary HP equal to your Tinker level + Intelligence modifier.",
+      "description": "Starting at 5th level, as an Action, you can expend 2 Gadget Charges to push one of your active Rig modules into an overclocked state until the start of your next turn. Choose one of the following effects:\n\n**Damage Amplifier.** The device deals an extra 2d6 damage of its type on its next activation this turn.\n\n**Extended Range.** The device's range doubles until the start of your next turn.\n\n**Protective Burst.** You or a creature you touch gains temporary Hit Points equal to your Tinker level + your Intelligence modifier.\n\nAfter being overclocked, the device must cool down during a Short or Long Rest before it can be overclocked again.",
       "tags": [
         "combat",
         "resource",
@@ -562,8 +639,16 @@
       ]
     },
     "tinker-modular-infusions": {
-      "summary": "Maintain more tuned upgrades at once so your rig evolves with the day\u2019s challenges.",
-      "description": "Modular Infusions expands your passive engineering footprint. By this point the class should feel like it brings a real pre-combat loadout puzzle to the table, not just a list of spells.",
+      "id": "tinker-modular-infusions",
+      "displayName": "Modular Infusions",
+      "name": "Modular Infusions",
+      "level": 6,
+      "section": "Class Features",
+      "type": "passive",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "You can maintain magical infusions on items simultaneously. Infusions grant weapons, armor, or tools magical properties. Infusion slots increase as you level.",
+      "description": "Starting at 6th level, you can infuse items with magic during a Long Rest. You have a number of Infusion Slots as shown in the Tinker table. During each Long Rest, you can infuse a number of weapons, armor, or tools equal to your Infusion Slots.\n\nAn infused item gains a magical enhancement of your choice, such as a +1 bonus to attack and damage rolls (for a weapon), a +1 bonus to AC (for armor), or Advantage on checks made with that tool.\n\nAn item's infusion ends when you infuse a different item in its place, or when you finish a Long Rest without re-infusing it.\n\nInfusion Slots: 2 at 2nd level, 3 at 5th, 4 at 9th, 5 at 13th, 6 at 17th.",
       "tags": [
         "loadout",
         "passive",
@@ -571,8 +656,18 @@
       ]
     },
     "tinker-reactive-countermeasure": {
-      "summary": "Answer incoming danger with a prepared defensive trick, interruption, or stabilizing tool.",
-      "description": "Reactive Countermeasure is your defensive identity check. When pressure spikes, you answer with a shield pulse, emergency patch, flash charge, or similar response instead of just absorbing the hit.",
+      "id": "tinker-reactive-countermeasure",
+      "displayName": "Reactive Countermeasure",
+      "name": "Reactive Countermeasure",
+      "level": 7,
+      "section": "Reactions",
+      "type": "reaction",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "resourceName": "Gadget Charges",
+      "trackUses": true,
+      "summary": "When you or a creature within 30 ft is hit by an attack, use your Reaction and expend 1 Gadget Charge to reduce the damage, impose disadvantage on the roll, or blind the attacker.",
+      "description": "Starting at 7th level, when you or a creature within 30 feet of you is hit by an attack, you can use your Reaction and expend 1 Gadget Charge to deploy a countermeasure. Choose one of the following effects:\n\n**Ablative Shield.** Reduce the triggering attack's damage by 1d10 + your Intelligence modifier (applied after the hit is confirmed).\n\n**Flash Charge.** The attacker must succeed on a Constitution saving throw (DC = 8 + your proficiency bonus + your Intelligence modifier) or be Blinded until the end of its next turn.\n\n**Intercept.** You impose disadvantage on the triggering attack roll. Resolve this before the attack deals damage; if it misses, no damage is dealt.",
       "type": "reaction",
       "tags": [
         "reaction",
@@ -581,7 +676,16 @@
       ]
     },
     "tinker-improved-rig": {
-      "summary": "Your rig becomes tougher, smarter, and better at holding multiple combat-ready solutions at once.",
+      "id": "tinker-improved-rig",
+      "displayName": "Improved Rig",
+      "name": "Improved Rig",
+      "level": 9,
+      "section": "Class Features",
+      "type": "passive",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "At 9th level, your Prototype Rig improves: Gadget Charges increase by 1, you gain one additional Infusion Slot, and the Rig gains resistance to damage when struck.",
+      "description": "At 9th level, your Prototype Rig receives a major upgrade. You gain the following benefits:\n\n- Your maximum Gadget Charges increase by 1.\n- You gain one additional Infusion Slot.\n- When your Rig would take damage (such as from a targeted attack or spell), it has resistance to that damage type for 1 minute (no action required to activate).\n- The Rig can now hold two active modules simultaneously, up from one.",
       "tags": [
         "equipment",
         "upgrade",
@@ -589,15 +693,32 @@
       ]
     },
     "tinker-subclass-feature": {
-      "summary": "Your specialization deepens with a more advanced module, formula package, or combat behavior.",
+      "id": "tinker-subclass-feature",
+      "displayName": "Field Specialization Feature",
+      "name": "Field Specialization Feature",
+      "level": 10,
+      "section": "Subclass",
+      "type": "subclass",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "At 10th level, your Field Specialization grants its second feature.",
+      "description": "At 10th level, your chosen Field Specialization grants you an additional feature. Consult your subclass for the specific benefit.",
       "tags": [
         "subclass",
         "progression"
       ]
     },
     "tinker-signature-device": {
-      "summary": "Build one flagship tool that represents your best work and anchors your turn-to-turn identity.",
-      "description": "A Signature Device should feel like the class equivalent of a legendary technique: a trusted turret core, mutagen injector, scout frame, or sabotage engine that players recognize as the center of the build.",
+      "id": "tinker-signature-device",
+      "displayName": "Signature Device",
+      "name": "Signature Device",
+      "level": 11,
+      "section": "Class Features",
+      "type": "passive",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "At 11th level, you build a masterwork Signature Device with 3 charges of its own (recharge at dawn). Choose its type: Turret (ranged attack), Injector (heal or cure), or Scout Drone (reconnaissance).",
+      "description": "At 11th level, you complete a Signature Device — a masterwork gadget that represents the pinnacle of your craft. During a Long Rest, you build the device and choose its type:\n\n**Turret.** As a Bonus Action, activate the turret to make one ranged spell attack (range 60 feet) against a target you can see. On a hit, it deals 2d8 + your Intelligence modifier force damage.\n\n**Injector.** As a Bonus Action, the injector automatically administers a compound to a creature within 5 feet of you. The target regains 2d6 + your Intelligence modifier Hit Points, or one disease or condition (Poisoned, Blinded, or Deafened) is cured.\n\n**Scout Drone.** As a Bonus Action, send the drone to any point within 300 feet. For 1 hour, you can see and hear through the drone's sensors (Perception +5). The drone has AC 13 and 1 Hit Point.\n\nThe Signature Device has 3 charges and regains all charges at dawn. If destroyed, you can rebuild it during a Long Rest for 50 gp of materials.",
       "tags": [
         "signature",
         "combat",
@@ -605,8 +726,20 @@
       ]
     },
     "tinker-emergency-repairs": {
-      "summary": "Keep allies, gear, or constructs in the fight with rapid battlefield repair work.",
-      "description": "Emergency Repairs widens your support identity and lets the class recover value in messy fights where ordinary healing or maintenance would be too slow.",
+      "id": "tinker-emergency-repairs",
+      "displayName": "Emergency Repairs",
+      "name": "Emergency Repairs",
+      "level": 13,
+      "section": "Actions",
+      "type": "action",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "resourceName": "Gadget Charges",
+      "trackUses": true,
+      "summary": "As an Action, expend 2 Gadget Charges to restore 4d8 + Intelligence modifier HP to a creature within 5 ft. Also stabilizes constructs. Once per Short or Long Rest.",
+      "description": "Starting at 13th level, as an Action, you can expend 2 Gadget Charges to perform emergency field repairs on a creature within 5 feet of you (including yourself). The target regains Hit Points equal to 4d8 + your Intelligence modifier.\n\nThis feature works on constructs (including mechanical allies and animated objects) regardless of any restrictions that would otherwise prevent magical healing.\n\nOnce you use this feature, you can't use it again until you finish a Short or Long Rest.",
+      "usage": "Action. Expend 2 Gadget Charges.",
+      "recovery": "Regain use on a Short or Long Rest.",
       "tags": [
         "support",
         "repair",
@@ -614,7 +747,16 @@
       ]
     },
     "tinker-masterwork-infusions": {
-      "summary": "Your upgrades become polished, efficient, and worth shaping a whole build around.",
+      "id": "tinker-masterwork-infusions",
+      "displayName": "Masterwork Infusions",
+      "name": "Masterwork Infusions",
+      "level": 14,
+      "section": "Class Features",
+      "type": "passive",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "At 14th level, your infusions improve: +1 weapons become +2, +1 armor becomes +2, and tool infusions grant Expertise instead of Advantage.",
+      "description": "At 14th level, your mastery of infusion magic elevates your work to masterwork quality. All of your active infusions are upgraded:\n\n- Weapons you infuse with a +1 bonus now grant a +2 bonus to attack and damage rolls.\n- Armor you infuse with a +1 bonus now grants a +2 bonus to AC.\n- Tools you infuse to grant Advantage on checks now grant Expertise (double proficiency bonus) instead.\n\nAdditionally, your infusions no longer expire when you finish a Long Rest without re-infusing — they remain active until you choose to end them or replace them.",
       "tags": [
         "upgrade",
         "passive",
@@ -622,10 +764,20 @@
       ]
     },
     "tinker-overcharge": {
-      "summary": "Spend deep reserves to unleash a dramatic, high-output version of one of your devices.",
-      "description": "Overcharge is your late-game burst switch. It is the moment where a Tinker stops feeling like a careful problem-solver and briefly feels like a controlled disaster aimed in the party\u2019s favor.",
+      "id": "tinker-overcharge",
+      "displayName": "Overcharge",
+      "name": "Overcharge",
+      "level": 17,
+      "section": "Actions",
+      "type": "action",
+      "className": "Tinker",
+      "sourceKind": "class",
       "resourceName": "Gadget Charges",
       "trackUses": true,
+      "summary": "As a Bonus Action, expend 3 Gadget Charges to enter Overcharge for 1 minute: all Gadget Charge costs reduced by 1, spell save DC +2, Rig deals +1d8 on all damage. Once per Long Rest.",
+      "description": "Starting at 17th level, as a Bonus Action, you can expend 3 Gadget Charges to push your entire Prototype Rig into a full Overcharge state for 1 minute. While overcharged:\n\n- All Gadget Charge costs are reduced by 1 (minimum 1).\n- Your spell save DC increases by 2.\n- Whenever your Rig would deal damage, it deals an extra 1d8 damage of the same type.\n- You have resistance to one damage type of your choice for the duration.\n\nOnce you use this feature, you can't use it again until you finish a Long Rest.",
+      "usage": "Bonus Action. Expend 3 Gadget Charges.",
+      "recovery": "Regain use on a Long Rest.",
       "tags": [
         "burst",
         "resource",
@@ -633,7 +785,16 @@
       ]
     },
     "tinker-dual-deployment": {
-      "summary": "Run two meaningful device states or battlefield tools at once without collapsing your action economy.",
+      "id": "tinker-dual-deployment",
+      "displayName": "Dual Deployment",
+      "name": "Dual Deployment",
+      "level": 18,
+      "section": "Class Features",
+      "type": "passive",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "At 18th level, you can have two Rig modules active simultaneously, and when you use your Reaction for a Rig feature you can also use Quick Deployment as part of the same Reaction.",
+      "description": "At 18th level, your Rig's architecture allows you to run two modules in parallel without interference. You gain the following benefits:\n\n- You can have two Prototype Rig modules active simultaneously (previously limited to one).\n- When you use your Reaction to trigger a Rig feature, you can also activate Quick Deployment as part of that same Reaction at no extra Gadget Charge cost.\n- Once per turn, you can use one Gadget Charge feature without spending a Gadget Charge (usable once per Short or Long Rest).",
       "tags": [
         "tempo",
         "loadout",
@@ -641,86 +802,155 @@
       ]
     },
     "tinker-epic-boon": {
-      "summary": "Gain a final feat-style capstone upgrade from the epic boon layer.",
+      "id": "tinker-epic-boon",
+      "displayName": "Epic Boon",
+      "name": "Epic Boon",
+      "level": 19,
+      "section": "Ability Score Improvement",
+      "type": "asi",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "At 19th level, you gain an Epic Boon feat. Recommended for Tinkers: Boon of Spell Recall or Boon of Fortitude.",
+      "description": "At 19th level, you gain a special ability called an Epic Boon — a feat available only to characters of 19th level or higher. Choose one Epic Boon feat.\n\nRecommended Epic Boons for Tinkers include the Boon of Spell Recall (cast a 1st-level spell without a slot) or the Boon of Fortitude (increase your Hit Point maximum significantly).",
       "tags": [
         "progression",
         "epic"
       ]
     },
     "tinker-grand-invention": {
-      "summary": "Complete a masterpiece of engineering that makes the whole class fantasy peak at level 20.",
-      "description": "Grand Invention should read like the culmination of everything the class stands for: layered preparation, practical genius, and a machine or formula that changes encounters when it comes online.",
+      "id": "tinker-grand-invention",
+      "displayName": "Grand Invention",
+      "name": "Grand Invention",
+      "level": 20,
+      "section": "Class Features",
+      "type": "action",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "At 20th level, you complete a legendary masterwork device. Activate it once per turn to devastate enemies, restore allies, or reshape the battlefield.",
+      "description": "At 20th level, you complete your Grand Invention — a legendary device that represents the culmination of your engineering genius. During a Long Rest, you set the Invention's current function. At the start of each of your turns, you can activate the Grand Invention (no action required) to trigger one of the following:\n\n**Annihilator Beam.** All creatures in a 60-foot line must make a Dexterity saving throw (DC = 8 + your proficiency bonus + your Intelligence modifier). On a failure, a target takes 8d8 force damage; half on a success.\n\n**Emergency Restoration.** Each friendly creature within 30 feet of you regains Hit Points equal to 10 + your Intelligence modifier.\n\n**Suppression Field.** A 30-foot sphere centered on a point within 60 feet becomes an interference field for 1 minute. Spellcasters in the field must succeed on a Constitution saving throw (DC 15) to cast spells.\n\nThe Grand Invention recharges after a Long Rest.",
       "tags": [
         "capstone",
         "identity",
         "engineering"
       ]
+    },
+    "tinker-ability-score-improvement-8": {
+      "id": "tinker-ability-score-improvement-8",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "level": 8,
+      "section": "Ability Score Improvement",
+      "type": "asi",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
+      "description": "When you reach 8th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
+      "tags": ["asi", "progression"]
+    },
+    "tinker-ability-score-improvement-12": {
+      "id": "tinker-ability-score-improvement-12",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "level": 12,
+      "section": "Ability Score Improvement",
+      "type": "asi",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
+      "description": "When you reach 12th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
+      "tags": ["asi", "progression"]
+    },
+    "tinker-ability-score-improvement-16": {
+      "id": "tinker-ability-score-improvement-16",
+      "displayName": "Ability Score Improvement",
+      "name": "Ability Score Improvement",
+      "level": 16,
+      "section": "Ability Score Improvement",
+      "type": "asi",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
+      "description": "When you reach 16th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
+      "tags": ["asi", "progression"]
+    },
+    "tinker-subclass-feature-15": {
+      "id": "tinker-subclass-feature-15",
+      "displayName": "Field Specialization Feature",
+      "name": "Field Specialization Feature",
+      "level": 15,
+      "section": "Subclass",
+      "type": "subclass",
+      "className": "Tinker",
+      "sourceKind": "class",
+      "summary": "At 15th level, your Field Specialization grants its final feature.",
+      "description": "At 15th level, your chosen Field Specialization grants you its final and most powerful feature. Consult your subclass for the specific benefit.",
+      "tags": ["subclass", "progression"]
     }
   },
   "levelUnlockIds": {
     "1": [
-      "tinker-l1-1",
-      "tinker-l1-2",
-      "tinker-l1-3"
+      "tinker-tinkercraft",
+      "tinker-prototype-rig",
+      "tinker-spellcasting"
     ],
     "2": [
-      "tinker-l2-1",
-      "tinker-l2-2"
+      "tinker-quick-deployment",
+      "tinker-tool-expertise"
     ],
     "3": [
-      "tinker-l3-1",
-      "tinker-l3-2"
+      "tinker-field-specialization-subclass",
+      "tinker-specialty-spells"
     ],
     "4": [
-      "tinker-l4-1"
+      "tinker-ability-score-improvement"
     ],
     "5": [
-      "tinker-l5-1"
+      "tinker-overclocked-device"
     ],
     "6": [
-      "tinker-l6-1"
+      "tinker-modular-infusions"
     ],
     "7": [
-      "tinker-l7-1"
+      "tinker-reactive-countermeasure"
     ],
     "8": [
-      "tinker-l8-1"
+      "tinker-ability-score-improvement-8"
     ],
     "9": [
-      "tinker-l9-1"
+      "tinker-improved-rig"
     ],
     "10": [
-      "tinker-l10-1"
+      "tinker-subclass-feature"
     ],
     "11": [
-      "tinker-l11-1"
+      "tinker-signature-device"
     ],
     "12": [
-      "tinker-l12-1"
+      "tinker-ability-score-improvement-12"
     ],
     "13": [
-      "tinker-l13-1"
+      "tinker-emergency-repairs"
     ],
     "14": [
-      "tinker-l14-1"
+      "tinker-masterwork-infusions"
     ],
     "15": [
-      "tinker-l15-1"
+      "tinker-subclass-feature-15"
     ],
     "16": [
-      "tinker-l16-1"
+      "tinker-ability-score-improvement-16"
     ],
     "17": [
-      "tinker-l17-1"
+      "tinker-overcharge"
     ],
     "18": [
-      "tinker-l18-1"
+      "tinker-dual-deployment"
     ],
     "19": [
-      "tinker-l19-1"
+      "tinker-epic-boon"
     ],
     "20": [
-      "tinker-l20-1"
+      "tinker-grand-invention"
     ]
   },
   "progressionSummary": [
@@ -728,144 +958,144 @@
       "level": 1,
       "summary": "Tinkercraft, Prototype Rig, Spellcasting.",
       "unlockIds": [
-        "tinker-l1-1",
-        "tinker-l1-2",
-        "tinker-l1-3"
+        "tinker-tinkercraft",
+        "tinker-prototype-rig",
+        "tinker-spellcasting"
       ]
     },
     {
       "level": 2,
       "summary": "Quick Deployment, Tool Expertise.",
       "unlockIds": [
-        "tinker-l2-1",
-        "tinker-l2-2"
+        "tinker-quick-deployment",
+        "tinker-tool-expertise"
       ]
     },
     {
       "level": 3,
       "summary": "Field Specialization (Subclass), Specialty Spells.",
       "unlockIds": [
-        "tinker-l3-1",
-        "tinker-l3-2"
+        "tinker-field-specialization-subclass",
+        "tinker-specialty-spells"
       ]
     },
     {
       "level": 4,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "tinker-l4-1"
+        "tinker-ability-score-improvement"
       ]
     },
     {
       "level": 5,
       "summary": "Overclocked Device.",
       "unlockIds": [
-        "tinker-l5-1"
+        "tinker-overclocked-device"
       ]
     },
     {
       "level": 6,
       "summary": "Modular Infusions.",
       "unlockIds": [
-        "tinker-l6-1"
+        "tinker-modular-infusions"
       ]
     },
     {
       "level": 7,
       "summary": "Reactive Countermeasure.",
       "unlockIds": [
-        "tinker-l7-1"
+        "tinker-reactive-countermeasure"
       ]
     },
     {
       "level": 8,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "tinker-l8-1"
+        "tinker-ability-score-improvement-8"
       ]
     },
     {
       "level": 9,
       "summary": "Improved Rig.",
       "unlockIds": [
-        "tinker-l9-1"
+        "tinker-improved-rig"
       ]
     },
     {
       "level": 10,
       "summary": "Subclass Feature.",
       "unlockIds": [
-        "tinker-l10-1"
+        "tinker-subclass-feature"
       ]
     },
     {
       "level": 11,
       "summary": "Signature Device.",
       "unlockIds": [
-        "tinker-l11-1"
+        "tinker-signature-device"
       ]
     },
     {
       "level": 12,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "tinker-l12-1"
+        "tinker-ability-score-improvement-12"
       ]
     },
     {
       "level": 13,
       "summary": "Emergency Repairs.",
       "unlockIds": [
-        "tinker-l13-1"
+        "tinker-emergency-repairs"
       ]
     },
     {
       "level": 14,
       "summary": "Masterwork Infusions.",
       "unlockIds": [
-        "tinker-l14-1"
+        "tinker-masterwork-infusions"
       ]
     },
     {
       "level": 15,
       "summary": "Subclass Feature.",
       "unlockIds": [
-        "tinker-l15-1"
+        "tinker-subclass-feature-15"
       ]
     },
     {
       "level": 16,
       "summary": "Ability Score Improvement.",
       "unlockIds": [
-        "tinker-l16-1"
+        "tinker-ability-score-improvement-16"
       ]
     },
     {
       "level": 17,
       "summary": "Overcharge.",
       "unlockIds": [
-        "tinker-l17-1"
+        "tinker-overcharge"
       ]
     },
     {
       "level": 18,
       "summary": "Dual Deployment.",
       "unlockIds": [
-        "tinker-l18-1"
+        "tinker-dual-deployment"
       ]
     },
     {
       "level": 19,
       "summary": "Epic Boon.",
       "unlockIds": [
-        "tinker-l19-1"
+        "tinker-epic-boon"
       ]
     },
     {
       "level": 20,
       "summary": "Grand Invention.",
       "unlockIds": [
-        "tinker-l20-1"
+        "tinker-grand-invention"
       ]
     }
   ],
