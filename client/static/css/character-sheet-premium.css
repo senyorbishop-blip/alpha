@@ -233,8 +233,16 @@
 }
 
 /* ── Spell table ────────────────────────────────────────────────────────── */
+.cs-spell-manager-table {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
 .cs-spell-table {
   width: 100%;
+  min-width: 820px;
   border-collapse: collapse;
   font-size: 0.78rem;
 }
