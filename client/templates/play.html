@@ -32623,8 +32623,19 @@ function _buildPremiumSheetCharData() {
     ));
   }
 
-  const slotsObj = (sheet.spellSlots && typeof sheet.spellSlots === 'object' && !Array.isArray(sheet.spellSlots))
-    ? sheet.spellSlots : {};
+  const slotsObj = (() => {
+    if (sheet.spellSlots && typeof sheet.spellSlots === 'object' && !Array.isArray(sheet.spellSlots)) return sheet.spellSlots;
+    if (typeof sheet.spellSlots === 'string') {
+      const parsed = {};
+      String(sheet.spellSlots).split(/\n+/).map(line => String(line || '').trim()).filter(Boolean).forEach(line => {
+        const m = line.match(/^(\d+)\s*:\s*(\d+)(?:\s*\/\s*\d+)?$/);
+        if (!m) return;
+        parsed[String(parseInt(m[1], 10) || 0)] = parseInt(m[2], 10) || 0;
+      });
+      return parsed;
+    }
+    return {};
+  })();
   const spellSlots = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   Object.entries(slotsObj).forEach(([lvl, max]) => {
     const idx = parseInt(lvl, 10);
@@ -36146,8 +36157,8 @@ function syncMyCharacterFormFromToken(preferVisible = true) {
   const lockNonTokenFields = activeMode === 'native';
 
   const displayName = (tok.name || '').replace(/^.\s/, '').trim();
-  const savedHp = _charSheet?.maxHp ?? _charSheet?.book?.maxHp ?? tok.maxHp ?? '';
-  const savedCurHp = _charSheet?.currentHp ?? _charSheet?.book?.currentHp ?? tok.hp ?? savedHp;
+  const savedHp = tok.maxHp ?? _charSheet?.maxHp ?? _charSheet?.book?.maxHp ?? '';
+  const savedCurHp = tok.hp ?? _charSheet?.currentHp ?? _charSheet?.book?.currentHp ?? savedHp;
   const savedTempHp = tok.tempHp ?? 0;
   const savedInit = tok.initiativeMod ?? 0;
   const savedAc = tok.ac ?? _charSheet?.ac ?? '';
@@ -38268,10 +38279,11 @@ function _syncLoadedProfileToOwnedToken(profile) {
   const combatMaxHp = parseInt(combatant?.max_hp ?? combatant?.maxHp, 10);
   const combatCurHp = parseInt(combatant?.hp, 10);
   const hasAuthoritativeNativeRuntimeHp = Number.isFinite(parseInt(profileRuntimeHp?.max, 10)) && parseInt(profileRuntimeHp?.max, 10) > 0;
+  const hasExplicitProfileHp = Number.isFinite(sheetHpOverride) && sheetHpOverride > 0;
   const hasActiveCombatHpOverride = !!(
     !hasAuthoritativeNativeRuntimeHp
-    &&
-    _combat?.active
+    && !hasExplicitProfileHp
+    && _combat?.active
     && combatant
     && Number.isFinite(combatMaxHp)
     && combatMaxHp > 0
