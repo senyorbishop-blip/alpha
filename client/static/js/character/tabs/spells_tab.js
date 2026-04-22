@@ -185,6 +185,18 @@
   function _spellTargetingLabel(spell) {
     return spell.areaText || spell.target || spell.range || '—';
   }
+  function _spellTableRangeLabel(spell) {
+    const raw = _firstText(spell && spell.areaText, spell && spell.area_text, spell && spell.target, spell && spell.range, '—');
+    if (!_meaningful(raw)) return '—';
+    const text = String(raw).replace(/\s+/g, ' ').trim();
+    const normalized = text.match(/\b(self|touch|sight|unlimited)\b/i);
+    if (normalized) return normalized[1].charAt(0).toUpperCase() + normalized[1].slice(1).toLowerCase();
+    const feet = text.match(/(\d+)\s*(?:ft|feet|foot)\b/i);
+    if (feet) return feet[1] + ' ft';
+    const miles = text.match(/(\d+)\s*(?:mi|mile|miles)\b/i);
+    if (miles) return miles[1] + ' mi';
+    return _previewText(text, 24);
+  }
   function _spellClassLabel(spell) {
     return Array.isArray(spell.classes) && spell.classes.length ? spell.classes.join(', ') : '—';
   }
@@ -836,7 +848,7 @@ function _spellAttackSaveCell(spell, charData) {
     const isRitual = Boolean(spell.ritual);
     const effect = _spellEffectLabel(spell);
     const hitDcHtml = _spellAttackSaveCell(spell, charData);
-    const range = spell.areaText || spell.area_text || spell.target || spell.range || '—';
+    const range = _spellTableRangeLabel(spell);
     const rollExpr = _spellRollBaseExpression(spell);
     const canRoll = _looksRollableFormula(rollExpr);
     const effectHtml = canRoll
