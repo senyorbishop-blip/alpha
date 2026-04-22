@@ -230,8 +230,8 @@ def test_backfill_dm_player_key_grants_access_for_legacy_session(monkeypatch):
     assert authority["participant_role"] == "dm"
 
 
-def test_backfill_dm_player_key_blocked_when_key_already_used_by_player(monkeypatch):
-    """Backfill is rejected when the auth user's key belongs to another session participant."""
+def test_backfill_dm_player_key_allows_legacy_duplicate_player_key(monkeypatch):
+    """Backfill should still recover DM authority even if a player row already has the auth key."""
     from server.sessions.service import _backfill_dm_player_key_if_needed
 
     session = Session(id="s-blocked-backfill")
@@ -246,13 +246,13 @@ def test_backfill_dm_player_key_blocked_when_key_already_used_by_player(monkeypa
 
     monkeypatch.setattr(
         "server.sessions.service.get_request_user",
-        lambda _req: {"id": "attacker-auth", "username": "Attacker"},
+        lambda _req: {"id": "attacker-auth", "role": "dm", "username": "Attacker"},
     )
 
     backfilled = _backfill_dm_player_key_if_needed(request, session, fallback_user_id="dm-id")
 
-    assert backfilled is False
-    assert not getattr(dm, "player_key", None)
+    assert backfilled is True
+    assert getattr(dm, "player_key", "") == "auth_attacker-auth"
 
 
 def test_backfill_dm_player_key_rejects_non_dm_authenticated_roles(monkeypatch):
