@@ -26,10 +26,10 @@
     global.CharacterBuilderStepModules[step.id] = step;
   }
 
-  function ensureCatalogLoaded() {
+  function ensureCatalogLoaded(rulesMode) {
     var api = global.CharacterBuilderAPI;
     if (!api || typeof api.fetchCatalog !== 'function') return;
-    api.fetchCatalog({ rulesMode: 'casual' }).catch(function ignoreFailure() {});
+    api.fetchCatalog({ rulesMode: rulesMode || 'casual' }).catch(function ignoreFailure() {});
   }
 
   function normalizeId(value) {
@@ -280,8 +280,9 @@
     label: 'Class',
     render: function renderClassStep(context) {
       ensureBuilderStyles();
-      ensureCatalogLoaded();
       var draft = context && context.draft && typeof context.draft === 'object' ? context.draft : {};
+      var rulesMode = String(draft.rulesMode || 'casual').trim().toLowerCase();
+      ensureCatalogLoaded(rulesMode);
       var classData = draft.class && typeof draft.class === 'object' ? draft.class : {};
       var selectedId = String(classData.id || '').trim();
       var entries = getClassCatalogEntries();

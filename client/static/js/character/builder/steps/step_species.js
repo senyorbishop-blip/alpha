@@ -43,10 +43,10 @@
     global.CharacterBuilderStepModules[step.id] = step;
   }
 
-  function ensureCatalogLoaded() {
+  function ensureCatalogLoaded(rulesMode) {
     var api = global.CharacterBuilderAPI;
     if (!api || typeof api.fetchCatalog !== 'function') return;
-    api.fetchCatalog({ rulesMode: 'casual' }).catch(function ignoreFailure() {});
+    api.fetchCatalog({ rulesMode: rulesMode || 'casual' }).catch(function ignoreFailure() {});
   }
 
   function normalizeId(value) {
@@ -222,8 +222,9 @@
     label: 'Species',
     render: function renderSpeciesStep(context) {
       ensureBuilderStyles();
-      ensureCatalogLoaded();
       var draft = context && context.draft && typeof context.draft === 'object' ? context.draft : {};
+      var rulesMode = String(draft.rulesMode || 'casual').trim().toLowerCase();
+      ensureCatalogLoaded(rulesMode);
       var species = draft.species && typeof draft.species === 'object' ? draft.species : {};
       var selectedId = String(species.id || '').trim();
       var entries = getSpeciesCatalogEntries();

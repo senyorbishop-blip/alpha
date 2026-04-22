@@ -95,9 +95,12 @@
         return _catalogCache;
       })
       .catch(function onCatalogError() {
-        _catalogCache = getEmptyCatalog(rulesMode);
-        dispatchCatalogUpdated(_catalogCache);
-        return _catalogCache;
+        // Do not poison cache on transient auth/network failures.
+        // Returning an empty catalog keeps the UI stable while allowing
+        // the next render to retry immediately.
+        const emptyCatalog = getEmptyCatalog(rulesMode);
+        dispatchCatalogUpdated(emptyCatalog);
+        return emptyCatalog;
       })
       .finally(function clearPromise() {
         _catalogFetchPromise = null;

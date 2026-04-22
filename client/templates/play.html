@@ -38704,18 +38704,18 @@ function collectCurrentCharProfile(opts = {}) {
   const tokenImageUrl = String(_charSheet?.tokenImageUrl || _pendingLoadedCharacterTokenSeed?.tokenImageUrl || portraitUrl || '').trim();
   const tokenDisplay = (_charSheet && typeof _charSheet.tokenDisplay === 'object') ? _charSheet.tokenDisplay : {};
   const profileId = String(opts.profileId || resolveActiveCharProfileId() || `profile_${Date.now()}`);
-  const profileCurHp = parseInt(document.getElementById('char-curhp')?.value || '', 10);
-  const profileMaxHp = parseInt(document.getElementById('char-hp')?.value || '', 10);
-  const profileTempHp = parseInt(document.getElementById('char-temp-hp')?.value || '', 10);
+  const profileCurHp = parseInt(charBook?.currentHp ?? document.getElementById('char-curhp')?.value || '', 10);
+  const profileMaxHp = parseInt(charBook?.maxHp ?? document.getElementById('char-hp')?.value || '', 10);
+  const profileTempHp = parseInt(charBook?.tempHp ?? document.getElementById('char-temp-hp')?.value || '', 10);
   _refreshActiveNativeRuntimeHpFromCanonical(profileMaxHp, profileCurHp, profileTempHp);
   return {
     id: profileId,
     name: (document.getElementById('char-name')?.value || charBook.name || '').trim() || 'Unnamed Character',
     classId: selectedClass?.id || '',
     color: playerColor,
-    curhp: parseInt(document.getElementById('char-curhp')?.value || '') || 0,
-    hp: parseInt(document.getElementById('char-hp')?.value || '') || 0,
-    tempHp: parseInt(document.getElementById('char-temp-hp')?.value || '') || 0,
+    curhp: Number.isFinite(profileCurHp) ? profileCurHp : 0,
+    hp: Number.isFinite(profileMaxHp) ? profileMaxHp : 0,
+    tempHp: Number.isFinite(profileTempHp) ? profileTempHp : 0,
     initiative: parseInt(document.getElementById('char-initiative')?.value || '') || 0,
     ac: parseInt(document.getElementById('char-ac')?.value || '') || 0,
     speed: parseInt(document.getElementById('char-speed')?.value || '') || 0,
