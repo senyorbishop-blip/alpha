@@ -115,6 +115,13 @@
     return '';
   }
 
+  function _previewText(text, limit) {
+    const raw = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!raw) return '';
+    const max = Number(limit || 180);
+    return raw.length > max ? raw.slice(0, max - 1) + '…' : raw;
+  }
+
   function _normalizeActionType(feature) {
     const raw = String(_firstText(feature && feature.actionType, feature && feature.type)).toLowerCase();
     if (!raw || raw === 'passive' || raw === 'always on') return 'Passive';
@@ -208,13 +215,99 @@
     return out.length ? out : ['Core feature resolution path'];
   }
 
-  function _featureTestingGuidance(feature, charData) {
-    const className = String((charData && charData.className) || feature.className || '').trim() || 'your class';
-    return [
-      'Trigger this feature in a live turn where its action timing matters.',
-      'Verify uses/costs decrement correctly and recover at the listed rest cadence.',
-      'Confirm ' + className + ' sheet text matches runtime behavior for the same feature.',
-    ];
+  function _featureUsageLabel(feature) {
+    return _firstText(feature.usage, feature.resourceName ? ('Uses ' + feature.resourceName) : '', 'At will');
+  }
+
+  function _featureSourceLabel(feature) {
+    const source = _firstText(feature.className, feature.source, feature.section, 'Feature');
+    const level = Number(feature.level || 0);
+    return level > 0 ? (source + ' • Level ' + level) : source;
+  }
+
+  function _featureRuleReminder(feature) {
+    const text = [feature.name, feature.summary, feature.description].join(' ').toLowerCase();
+    if (/does not stack|doesn['’]t stack/.test(text)) return 'Does not stack with alternate formulas unless the rule explicitly says so.';
+    if (/concentration/.test(text)) return 'Concentration applies only if this feature tells you to maintain it.';
+    if (/reaction/.test(text)) return 'Use when the trigger happens, not on your own turn unless noted.';
+    if (/bonus action/.test(text)) return 'Uses your bonus action this turn.';
+    return '';
+  }
+
+  function _deriveGameplayImpact(feature) {
+    const impact = [];
+    const text = [feature.name, feature.summary, feature.description, feature.effect].join(' ').toLowerCase();
+    if (/ac|armor class|unarmored defense/.test(text)) impact.push('Changes defensive math and who can reliably hit you.');
+    if (/advantage|disadvantage|save|dc/.test(text)) impact.push('Affects roll outcomes (attacks, saves, or contested checks).');
+    if (/move|speed|dash|teleport/.test(text)) impact.push('Influences positioning and turn economy.');
+    if (/damage|hit|attack/.test(text)) impact.push('Alters damage pressure or attack reliability in combat.');
+    if (/heal|temporary hit points|hp/.test(text)) impact.push('Modifies survivability and recovery decisions.');
+    return impact.length ? impact : ['Primary impact comes from the rules text above.'];
+  }
+
+  function _featureInteractions(feature) {
+    const rows = [];
+    const text = [feature.name, feature.summary, feature.description, feature.effect].join(' ').toLowerCase();
+    if (/does not stack|doesn['’]t stack|alternate ac|mage armor|unarmored defense/.test(text)) {
+      rows.push('Pick one applicable defensive formula; alternate AC formulas do not stack.');
+    }
+    if (/reaction|trigger/.test(text)) rows.push('Requires trigger timing; hold your reaction until the condition occurs.');
+    if (/short rest|long rest|recharge|recover/.test(text)) rows.push('Track recovery timing so uses reset at the right rest cadence.');
+    return rows;
+  }
+
+  function _featureScalingRows(feature) {
+    const rows = [];
+    const text = _firstText(feature.description, feature.summary, '').toLowerCase();
+    if (/at higher levels|at level|when you reach/.test(text)) rows.push('Scales with level according to the rules text.');
+    if (/proficiency bonus/.test(text)) rows.push('Scales with your proficiency bonus.');
+    if (/ability modifier/.test(text)) rows.push('Scales with one or more ability modifiers.');
+    return rows;
+  }
+
+  function _computeUnarmoredDefenseRuntime(feature, charData) {
+    const name = String(feature && feature.name || '').toLowerCase();
+    const text = [feature && feature.summary, feature && feature.description].join(' ').toLowerCase();
+    if (!/unarmored defense/.test(name) && !/unarmored defense/.test(text)) return null;
+
+    const abilities = charData && typeof charData.abilityScores === 'object' ? charData.abilityScores : {};
+    const dex = parseInt(abilities.dexterity, 10) || 10;
+    const con = parseInt(abilities.constitution, 10) || 10;
+    const wis = parseInt(abilities.wisdom, 10) || 10;
+    const dexMod = Math.floor((dex - 10) / 2);
+    const conMod = Math.floor((con - 10) / 2);
+    const wisMod = Math.floor((wis - 10) / 2);
+    const className = String((charData && charData.className) || feature.className || '').toLowerCase();
+    const usesMonkFormula = /monk/.test(className);
+    const formulaLabel = usesMonkFormula ? '10 + Dex modifier + Wis modifier' : '10 + Dex modifier + Con modifier';
+    const baseFormulaAc = usesMonkFormula ? (10 + dexMod + wisMod) : (10 + dexMod + conMod);
+    const inventory = _safeArray(charData && charData.inventory);
+    const equipped = inventory.filter(function (item) { return !!(item && item.equipped); });
+    const armorEquipped = equipped.some(function (item) {
+      const hay = [item && item.name, item && item.category, item && item.type, item && item.slot, item && item.armorType].join(' ').toLowerCase();
+      return /armor|mail|plate|leather|chain|breastplate|scale|half plate/.test(hay) && !/shield/.test(hay);
+    });
+    const shieldEquipped = equipped.some(function (item) {
+      const hay = [item && item.name, item && item.category, item && item.type, item && item.slot].join(' ').toLowerCase();
+      return /shield/.test(hay);
+    });
+    const currentAc = parseInt(charData && charData.ac, 10);
+    const formulaActive = usesMonkFormula ? (!armorEquipped && !shieldEquipped) : !armorEquipped;
+    const reason = formulaActive
+      ? 'Active: no armor is equipped' + (usesMonkFormula ? ' and no shield is equipped.' : '. Shield is still allowed for Barbarian Unarmored Defense.')
+      : (armorEquipped ? 'Inactive: equipped armor supplies AC instead.' : 'Inactive: monk version requires no shield equipped.');
+    return {
+      formulaLabel: formulaLabel,
+      dexMod: dexMod,
+      conMod: conMod,
+      wisMod: wisMod,
+      armorEquipped: armorEquipped,
+      shieldEquipped: shieldEquipped,
+      baseFormulaAc: baseFormulaAc,
+      currentAc: Number.isFinite(currentAc) ? currentAc : null,
+      active: formulaActive,
+      reason: reason
+    };
   }
 
   function _featureWhenItMatters(feature) {
@@ -225,29 +318,30 @@
     return 'Best Time to Use It: keep this feature in mind for every encounter; it is an always-on rule modifier.';
   }
 
-  function _featureRulesBreakdown(feature) {
-    return [
-      'Action Type: ' + _normalizeActionType(feature),
-      'Level Unlock: ' + (feature.level || 0),
-      'Source: ' + _firstText(feature.source, feature.className, 'Class Feature'),
-      'Resource: ' + _firstText(feature.resourceName, 'None'),
-    ];
-  }
-
-  function _featureAutomationCoverage(feature) {
-    return [
-      feature.usage ? 'Usage text is surfaced in the feature card.' : 'Usage is descriptive only; no explicit cost text found.',
-      feature.recovery ? 'Recovery cadence is surfaced in detail view.' : 'Recovery cadence not explicitly authored for this row.',
-      'Search/filter tags include action type, subclass/core state, and resource linkage.',
-    ];
-  }
-
-  function _featureCommonBlockers(feature) {
-    return [
-      'Missing trigger context in combat round order.',
-      feature.resourceName ? 'Resource counter not initialized for ' + feature.resourceName + '.' : 'No named resource linked for automatic tracking.',
-      'Feature text depends on subclass selection not yet applied.',
-    ];
+  function _featureSummaryPresenter(feature, charData) {
+    const runtime = _computeUnarmoredDefenseRuntime(feature, charData);
+    const actionType = _normalizeActionType(feature);
+    const quickSummary = _firstText(feature.summary, feature.effect, _previewText(feature.description, 180), 'Open Inspect for full rules text.');
+    const badges = [actionType];
+    if (feature.resourceName) badges.push(feature.resourceName);
+    if (feature.isSubclass) badges.push('Subclass');
+    return {
+      title: feature.name,
+      sourceLine: _featureSourceLabel(feature),
+      summary: quickSummary,
+      reminder: _featureRuleReminder(feature),
+      badges: Array.from(new Set(badges.filter(Boolean))).slice(0, 3),
+      runtime: runtime,
+      detail: {
+        rulesText: _firstText(feature.description, feature.summary, feature.effect, 'Rules text is not yet authored for this entry.'),
+        usage: _featureUsageLabel(feature),
+        recovery: _firstText(feature.recovery, 'Varies by rest cadence or table ruling'),
+        prerequisites: _firstText(feature.trigger, feature.range, ''),
+        gameplayImpact: _deriveGameplayImpact(feature),
+        interactions: _featureInteractions(feature),
+        scaling: _featureScalingRows(feature),
+      }
+    };
   }
 
   function _featureTagPills(feature) {
@@ -262,15 +356,59 @@
     return String(text).split(/\n{2,}/).map((p) => '<p>' + _esc(p).replace(/\n/g, '<br>') + '</p>').join('');
   }
 
-  function _featureSectionsForDrawer(feature, charData) {
-    return [
-      { title: 'At a Glance', items: _featureRulesBreakdown(feature) },
-      { title: 'How to Use It', items: _featureTestingGuidance(feature, charData) },
-      { title: 'Rules Breakdown', items: _featureRulesBreakdown(feature) },
-      { title: 'Automation Coverage', items: _featureAutomationCoverage(feature) },
-      { title: 'Common Blockers', items: _featureCommonBlockers(feature) },
-      { title: 'Connected Systems', items: _featureConnectedSystems(feature) },
+  function _featureSectionsForDrawer(feature, charData, presented) {
+    const view = presented || _featureSummaryPresenter(feature, charData);
+    const runtime = view.runtime;
+    const sections = [
+      { title: 'Rules Text', body: view.detail.rulesText },
+      { title: 'At a Glance', items: [
+        { label: 'Action Type', value: _normalizeActionType(feature) },
+        { label: 'Source', value: _firstText(feature.source, feature.className, feature.section, 'Feature') },
+        { label: 'Unlock', value: feature.level ? ('Level ' + feature.level) : 'Always available' },
+        { label: 'Usage', value: view.detail.usage },
+        { label: 'Recovery', value: view.detail.recovery },
+      ] },
+      { title: 'Gameplay Impact', items: view.detail.gameplayImpact.map(function (row, idx) { return { label: 'Impact ' + (idx + 1), value: row }; }) },
+      { title: 'Interactions', items: view.detail.interactions.map(function (row, idx) { return { label: 'Rule ' + (idx + 1), value: row }; }) },
+      { title: 'Scaling', items: view.detail.scaling.map(function (row, idx) { return { label: 'Scaling ' + (idx + 1), value: row }; }) },
     ];
+    if (view.detail.prerequisites) {
+      sections.push({ title: 'Prerequisites / Trigger', items: [{ label: 'Requirement', value: view.detail.prerequisites }] });
+    }
+    if (runtime) {
+      sections.push({
+        title: 'Runtime State',
+        items: [
+          { label: 'Formula', value: runtime.formulaLabel },
+          { label: 'Dex modifier', value: String(runtime.dexMod >= 0 ? '+' + runtime.dexMod : runtime.dexMod) },
+          { label: runtime.wisMod != null && /monk/i.test(String((charData && charData.className) || feature.className || '')) ? 'Wis modifier' : 'Con modifier', value: String((runtime.wisMod != null && /monk/i.test(String((charData && charData.className) || feature.className || '')) ? runtime.wisMod : runtime.conMod) >= 0 ? '+' + (runtime.wisMod != null && /monk/i.test(String((charData && charData.className) || feature.className || '')) ? runtime.wisMod : runtime.conMod) : (runtime.wisMod != null && /monk/i.test(String((charData && charData.className) || feature.className || '')) ? runtime.wisMod : runtime.conMod)) },
+          { label: 'Armor equipped', value: runtime.armorEquipped ? 'Yes' : 'No' },
+          { label: 'Shield equipped', value: runtime.shieldEquipped ? 'Yes' : 'No' },
+          { label: 'Formula AC', value: String(runtime.baseFormulaAc) },
+          { label: 'Current applied AC', value: runtime.currentAc != null ? String(runtime.currentAc) : 'Unknown' },
+          { label: 'Active now', value: runtime.active ? 'Yes' : 'No' },
+          { label: 'Why', value: runtime.reason },
+        ]
+      });
+    }
+    return sections;
+  }
+
+  function _openFeatureInspect(feature, charData) {
+    const presenter = _featureSummaryPresenter(feature, charData);
+    const sections = _featureSectionsForDrawer(feature, charData, presenter);
+    if (global.CSContainer && typeof global.CSContainer.openDetailDrawer === 'function') {
+      global.CSContainer.openDetailDrawer({
+        kicker: 'Feature',
+        title: presenter.title || 'Feature',
+        subtitle: presenter.sourceLine || 'Character feature',
+        chips: presenter.badges,
+        sections: sections
+      });
+      return true;
+    }
+    if (typeof global.showToast === 'function') global.showToast('Feature details are unavailable right now.');
+    return false;
   }
 
   function _featureSearchBlob(feature) {
@@ -289,23 +427,27 @@
 
   function _renderFeatureItem(feature, idx, charData) {
     const id = _firstText(feature.id, feature.name, 'feature-' + idx);
-    const summary = _firstText(feature.summary, 'Open to read the full details for this feature.');
-    const sections = _featureSectionsForDrawer(feature, charData);
+    const presented = _featureSummaryPresenter(feature, charData);
     const whenText = _featureWhenItMatters(feature);
 
     return `<article class="cs-feature-item" data-feature-id="${_esc(id)}" data-feature-filters="all ${_esc(_featureTypeKey(feature))} ${_esc(_normalizeActionType(feature).toLowerCase().replace(/\s+/g, '-'))} ${feature.resourceName ? 'resource' : ''}" data-feature-search="${_esc(_featureSearchBlob(feature))}">
       <header class="cs-feature-header" role="button" tabindex="0" aria-expanded="false">
         <div class="cs-feature-maincopy">
-          <div class="cs-feature-title-row"><span class="cs-feature-name">${_esc(feature.name)}</span></div>
-          <div class="cs-feature-inline-meta">${_esc(_firstText(feature.className, feature.source, 'Class Feature'))} • Level ${_esc(String(feature.level || 0))}</div>
-          <div class="cs-feature-preview"><strong>${_esc(summary)}</strong></div>
+          <div class="cs-feature-title-row"><span class="cs-feature-name">${_esc(presented.title)}</span></div>
+          <div class="cs-feature-inline-meta">${_esc(presented.sourceLine)}</div>
+          <div class="cs-feature-preview"><strong>${_esc(presented.summary)}</strong></div>
+          ${presented.reminder ? `<div class="cs-feature-body-summary"><strong>${_esc(presented.reminder)}</strong></div>` : ''}
         </div>
-        <div class="cs-feature-meta">${_featureTagPills(feature).map((t) => `<span class="cs-feature-kind-badge">${_esc(t)}</span>`).join('')}<span class="cs-feature-chevron" aria-hidden="true">&#9658;</span></div>
+        <div class="cs-feature-meta">${presented.badges.map((t) => `<span class="cs-feature-kind-badge">${_esc(t)}</span>`).join('')}<span class="cs-feature-chevron" aria-hidden="true">&#9658;</span></div>
       </header>
       <div class="cs-feature-body">
         <div class="cs-feature-body-shell">
           <div class="cs-feature-body-summary"><strong>${_esc(whenText)}</strong></div>
-          <div class="cs-feature-facts">${sections.map((section) => `<div class="cs-feature-fact"><span class="cs-feature-fact-label">${_esc(section.title)}</span><span class="cs-feature-fact-value">${section.items.map((it) => _esc(it)).join('<br>')}</span></div>`).join('')}</div>
+          <div class="cs-feature-facts">
+            <div class="cs-feature-fact"><span class="cs-feature-fact-label">Action Type</span><span class="cs-feature-fact-value">${_esc(_normalizeActionType(feature))}</span></div>
+            <div class="cs-feature-fact"><span class="cs-feature-fact-label">Usage</span><span class="cs-feature-fact-value">${_esc(presented.detail.usage)}</span></div>
+            <div class="cs-feature-fact"><span class="cs-feature-fact-label">Recovery</span><span class="cs-feature-fact-value">${_esc(presented.detail.recovery)}</span></div>
+          </div>
           <div class="cs-feature-body-rules">${_descHtml(_firstText(feature.description, feature.summary))}</div>
           <button type="button" class="cs-feature-inspect" data-feature-inspect="${_esc(id)}">Inspect</button>
         </div>
@@ -445,12 +587,12 @@
 
       const inspectBtn = event.target.closest('[data-feature-inspect]');
       if (inspectBtn) {
+        event.preventDefault();
+        event.stopPropagation();
         const targetId = String(inspectBtn.getAttribute('data-feature-inspect') || '');
-        const featureRow = container.querySelector('.cs-feature-item[data-feature-id="' + CSS.escape(targetId) + '"]');
-        if (featureRow && !featureRow.classList.contains('open')) {
-          const targetHeader = featureRow.querySelector('.cs-feature-header');
-          if (targetHeader) targetHeader.click();
-        }
+        const all = _safeArray(container.__csFeaturesAll);
+        const feature = all.find(function (row) { return String(_firstText(row && row.id, row && row.name)).toLowerCase().replace(/[^a-z0-9]+/g, '-') === targetId; });
+        if (feature) _openFeatureInspect(feature, container.__csCharData || {});
       }
     });
 
@@ -480,6 +622,7 @@
     container.innerHTML = `<div class="cs-traits-shell cs-traits-shell-readable cs-features-redesign-shell">${_renderFeatureControls()}${overviewCounts}${_renderPlaybook(charData, sections)}${_renderCustomClassGuide(charData)}${_renderSpotlight(allByLevel, level)}${_renderLevelRoadmap(allByLevel, level)}${_renderSection('Class & Subclass Features', sections.classFeatures, 'class', charData, 'All unlocked class and subclass features with detailed player-facing text.')}${_renderSection('Species Traits', sections.traits, 'traits', charData, 'Lineage and species traits affecting passives, actions, and saves.')}${_renderSection('Feats', sections.feats, 'feats', charData, 'Feat choices and exact rule impact.')}</div>`;
 
     container.__csCharData = charData || {};
+    container.__csFeaturesAll = [].concat(sections.classFeatures || [], sections.traits || [], sections.feats || []);
     container.__csFeatureFilter = container.__csFeatureFilter || 'all';
     container.__csFeatureQuery = container.__csFeatureQuery || '';
     _bindInteractions(container);
