@@ -437,12 +437,11 @@ def _backfill_dm_player_key_if_needed(request, session, fallback_user_id: str) -
     auth_pk = auth_player_key(str(auth_user.get('id') or '').strip())
     if not auth_pk:
         return False
-    # Don't overwrite if another non-DM session participant already owns this key
-    for uid, u in session.users.items():
-        if uid == dm_id:
-            continue
-        if str(getattr(u, 'player_key', '') or '').strip() == auth_pk:
-            return False
+    # Legacy recovery note:
+    # Some sessions ended up with the DM account also joined as a player, which
+    # means the auth player_key may already exist on a non-DM participant.
+    # In that case we still backfill the DM slot so authority resolution can
+    # correctly treat the authenticated DM as session DM.
     dm_user.player_key = auth_pk
     import logging as _logging
     _logging.getLogger(__name__).info(
