@@ -143,6 +143,7 @@ def _compute_base_hp(document: dict, level_total: int, runtime_classes: list[dic
     max_hp = 0
     classes = runtime_classes if isinstance(runtime_classes, list) else []
     if classes:
+        level_index = 0
         for row in classes:
             if not isinstance(row, dict):
                 continue
@@ -151,13 +152,19 @@ def _compute_base_hp(document: dict, level_total: int, runtime_classes: list[dic
             class_catalog = get_class_catalog_row(class_id) if class_id else None
             hit_die = _safe_int((class_catalog or {}).get("hitDie"), 8, minimum=1)
             hit_die_average = max(1, (hit_die // 2) + 1)
-            # Level 1 gets the full hit die; each subsequent level gets the average.
-            class_hp = max(1, hit_die + (hit_die_average * (lvl - 1)) + (con_mod * lvl))
+            class_hp = 0
+            # Level-1 bonus is granted once for the character's first total level.
+            for class_level in range(lvl):
+                gain = (hit_die if level_index == 0 else hit_die_average) + con_mod
+                class_hp += max(1, gain)
+                level_index += 1
             max_hp += class_hp
             hit_dice.append({"die": hit_die, "count": lvl, "classId": class_id})
     else:
         default_avg = max(1, (6 // 2) + 1)
-        max_hp = max(1, 6 + (level_total - 1) * default_avg + con_mod * level_total)
+        max_hp = max(1, 6 + con_mod)
+        for _ in range(max(0, level_total - 1)):
+            max_hp += max(1, default_avg + con_mod)
 
     max_hp = max(1, max_hp)
     return {

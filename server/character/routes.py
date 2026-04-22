@@ -865,7 +865,11 @@ async def api_character_levelup_apply(request: Request):
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     profile_id = str(payload.get("profile_id") or payload.get("profileId") or "").strip()
-    upsert_payload = build_profile_upsert_payload(applied.get("document") or {}, profile_id=profile_id)
+    upsert_payload = build_profile_upsert_payload(
+        applied.get("document") or {},
+        profile_id=profile_id,
+        persisted_runtime=payload.get("nativeRuntime"),
+    )
 
     owner_key = _resolve_owner_key(auth_user)
     if not owner_key:
@@ -943,7 +947,11 @@ async def apply_levelup_endpoint(character_id: str, request: Request):
     except LevelupApplyError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    upsert_payload = build_profile_upsert_payload(applied.get("document") or {}, profile_id=character_id)
+    upsert_payload = build_profile_upsert_payload(
+        applied.get("document") or {},
+        profile_id=character_id,
+        persisted_runtime=existing_profile.get("nativeRuntime") if isinstance(existing_profile, dict) else None,
+    )
     saved_profile = upsert_char_profile_for_owner(session, owner_key, upsert_payload)
     if profile_index >= 0 and isinstance(saved_profile, dict):
         profile_rows[profile_index] = saved_profile
@@ -996,7 +1004,11 @@ async def api_character_save(request: Request):
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     profile_id = str(payload.get("profile_id") or payload.get("profileId") or "").strip()
-    upsert_payload = build_profile_upsert_payload(canonical_document, profile_id=profile_id)
+    upsert_payload = build_profile_upsert_payload(
+        canonical_document,
+        profile_id=profile_id,
+        persisted_runtime=payload.get("nativeRuntime"),
+    )
 
     owner_key = _resolve_owner_key(auth_user)
     if not owner_key:
