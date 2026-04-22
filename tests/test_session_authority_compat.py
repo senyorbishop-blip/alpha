@@ -1,7 +1,10 @@
+import asyncio
+import json
 from types import SimpleNamespace
 
 from server.http import session_access
 from server.session import Session, User
+from server.sessions import service as sessions_service
 
 
 def test_resolve_session_authority_does_not_promote_dm_from_name_match(monkeypatch):
@@ -223,3 +226,34 @@ def test_backfill_dm_player_key_blocked_when_key_already_used_by_player(monkeypa
 
     assert backfilled is False
     assert not getattr(dm, "player_key", None)
+
+
+def test_session_authority_response_forces_dm_resolved_role_when_authoritative(monkeypatch):
+    session = Session(id="s-role-force")
+    dm = User(id="dm-1", name="DM", role="dm")
+    session.users[dm.id] = dm
+    session.dm_id = dm.id
+    request = SimpleNamespace(cookies={}, headers={})
+
+    monkeypatch.setattr(sessions_service, "get_or_restore_session", lambda _sid: session)
+    monkeypatch.setattr(sessions_service, "_backfill_dm_player_key_if_needed", lambda *_args, **_kwargs: False)
+    monkeypatch.setattr(
+        sessions_service,
+        "resolve_session_authority",
+        lambda *_args, **_kwargs: {
+            "resolved_user_id": "dm-1",
+            "resolved_session_user_id": "dm-1",
+            "session_dm_id": "dm-1",
+            "participant_role": "player",
+            "is_session_dm": True,
+            "matched_via": "session_user",
+        },
+    )
+
+    response = asyncio.run(
+        sessions_service.session_authority_response(request, "s-role-force", fallback_user_id="dm-1")
+    )
+    body = json.loads(response.body.decode("utf-8"))
+    assert body["is_session_dm"] is True
+    assert body["participant_role"] == "player"
+    assert body["resolved_role"] == "dm"

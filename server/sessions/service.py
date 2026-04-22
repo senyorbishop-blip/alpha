@@ -455,7 +455,7 @@ async def session_authority_response(request, session_id: str, fallback_user_id:
     if _backfill_dm_player_key_if_needed(request, session, fallback_user_id):
         await save_campaign_async(session)
     authority = resolve_session_authority(request, session, fallback_user_id=fallback_user_id)
-    resolved_role = authority.get("participant_role") or ("dm" if authority.get("is_session_dm") else "viewer")
+    resolved_role = "dm" if authority.get("is_session_dm") else (authority.get("participant_role") or "viewer")
     return JSONResponse({
         "session_id": session_id,
         "resolved_user_id": authority.get("resolved_user_id"),
