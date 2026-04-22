@@ -306,6 +306,8 @@
 .cs-spell-hitdc {
   color: var(--csp-text-muted);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cs-spell-level-header {
