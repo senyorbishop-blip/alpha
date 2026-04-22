@@ -185,6 +185,13 @@ def _resolve_fog_map_context(session: Session, payload: dict) -> str:
         normalized_explicit = _normalize_dm_map_context(session, explicit_ctx)
         if normalized_explicit != "world" or explicit_ctx == "world":
             return normalized_explicit
+        # Some local/scene map contexts are runtime IDs that may not yet be
+        # present in `pois`/`map_documents` during a transition. If the client
+        # explicit context matches the DM's current map context, prefer that
+        # active context so fog edits do not incorrectly fall back to world.
+        dm_ctx = str(getattr(session, "dm_map_context", "world") or "world").strip()[:80] or "world"
+        if explicit_ctx == dm_ctx and dm_ctx != "world":
+            return dm_ctx
     fallback = getattr(session, "dm_map_context", "world") or "world"
     return _normalize_dm_map_context(session, fallback)
 
