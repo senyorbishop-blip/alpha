@@ -36,10 +36,10 @@ def test_fog_ui_shows_context_and_disables_manual_tools_in_non_manual_modes():
     fog_src = _read('client/static/js/render/fog.js')
     assert "id=\"fog-map-context-text\"" in src
     assert "id=\"fog-visibility-model-text\"" in src
-    assert "chk.disabled = !manualAllowed;" in src
-    assert "toolsDiv.style.display = fogEnabled && manualAllowed ? 'flex' : 'none';" in src
-    assert "if (fogEnabled && isManualFogEditingAllowed() && ROLE === 'dm'" in src
-    assert "chk.disabled = !manualAllowed;" in fog_src
+    assert "chk.disabled = !(manualAllowed && canEdit);" in src
+    assert "toolsDiv.style.display = fogEnabled && manualAllowed && canEdit ? 'flex' : 'none';" in src
+    assert "if (fogEnabled && isManualFogEditingAllowed() && canCurrentUserEditFog()" in src
+    assert "chk.disabled = !(manualAllowed && canEdit);" in fog_src
     assert "Editing: ${_fogContextLabel(state, env)}" in fog_src
 
 
