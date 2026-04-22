@@ -24755,13 +24755,90 @@ function buildHpSummaryValues(curValue, maxValue, tempValue) {
   };
 }
 
+
+function _resolveCanonicalHpFromProfileAndToken(profile, ownedToken, fallback = {}) {
+  const toIntOrNull = (value) => {
+    const parsed = parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+  const runtime = (profile && typeof profile.nativeRuntime === 'object') ? profile.nativeRuntime : {};
+  const runtimeHp = (runtime && typeof runtime.hp === 'object') ? runtime.hp : {};
+  const runtimeCombat = (runtime && typeof runtime.combat === 'object') ? runtime.combat : {};
+  const profileSheet = (profile && typeof profile.charSheet === 'object') ? profile.charSheet : {};
+  const profileSheetHp = (profileSheet && typeof profileSheet.hp === 'object') ? profileSheet.hp : {};
+  const profileBook = (profile && typeof profile.charBook === 'object') ? profile.charBook : {};
+  const profileBookHp = (profileBook && typeof profileBook.hp === 'object') ? profileBook.hp : {};
+
+  const runtimeMax = toIntOrNull(runtimeHp.max ?? runtimeCombat.maxHP ?? runtimeCombat.maxHp);
+  if (runtimeMax != null && runtimeMax > 0) {
+    const runtimeCurrentRaw = toIntOrNull(runtimeHp.current ?? runtimeCombat.currentHP ?? runtimeCombat.currentHp);
+    const runtimeCurrent = runtimeCurrentRaw == null ? runtimeMax : Math.max(0, Math.min(runtimeMax, runtimeCurrentRaw));
+    const runtimeTemp = Math.max(0, toIntOrNull(runtimeHp.temp ?? runtimeCombat.tempHP ?? runtimeCombat.tempHp) ?? 0);
+    return { maxHp: runtimeMax, currentHp: runtimeCurrent, tempHp: runtimeTemp, source: 'nativeRuntime.hp' };
+  }
+
+  const tokenMax = toIntOrNull(ownedToken?.maxHp);
+  const tokenCurrent = toIntOrNull(ownedToken?.hp);
+  if (tokenMax != null && tokenMax > 0 && tokenCurrent != null) {
+    return {
+      maxHp: tokenMax,
+      currentHp: Math.max(0, Math.min(tokenMax, tokenCurrent)),
+      tempHp: Math.max(0, toIntOrNull(ownedToken?.tempHp) ?? 0),
+      source: 'ownedToken',
+    };
+  }
+
+  const fallbackMax = toIntOrNull(
+    profileSheet.maxHp
+    ?? profileSheetHp.max
+    ?? profileBook.maxHp
+    ?? profileBookHp.max
+    ?? profile?.hp
+    ?? runtimeCombat.maxHP
+    ?? fallback.maxHp
+  );
+  const fallbackCurrent = toIntOrNull(
+    profileSheet.currentHp
+    ?? profileSheetHp.current
+    ?? profileBook.currentHp
+    ?? profileBookHp.current
+    ?? profile?.curhp
+    ?? runtimeCombat.currentHP
+    ?? fallback.currentHp
+  );
+  const fallbackTemp = Math.max(0, toIntOrNull(
+    profileSheet.tempHp
+    ?? profileSheetHp.temp
+    ?? profileBook.tempHp
+    ?? profileBookHp.temp
+    ?? profile?.tempHp
+    ?? runtimeCombat.tempHP
+    ?? fallback.tempHp
+  ) ?? 0);
+
+  if (fallbackMax != null && fallbackMax > 0) {
+    return {
+      maxHp: fallbackMax,
+      currentHp: Math.max(0, Math.min(fallbackMax, fallbackCurrent == null ? fallbackMax : fallbackCurrent)),
+      tempHp: fallbackTemp,
+      source: 'legacyProfile',
+    };
+  }
+
+  return { maxHp: null, currentHp: null, tempHp: fallbackTemp, source: 'none' };
+}
+
 function _activeCharacterFromRuntimeSource() {
   const ownedToken = _getMyOwnedToken();
   const profile = _partyStatusActiveProfile();
   const profileRuntime = (profile && typeof profile.nativeRuntime === 'object') ? profile.nativeRuntime : {};
-  const profileRuntimeHp = (profileRuntime && typeof profileRuntime.hp === 'object') ? profileRuntime.hp : {};
   const profileRuntimeCombat = (profileRuntime && typeof profileRuntime.combat === 'object') ? profileRuntime.combat : {};
   const profileRuntimeSpeed = (profileRuntime && typeof profileRuntime.speed === 'object') ? profileRuntime.speed : {};
+  const canonicalHp = _resolveCanonicalHpFromProfileAndToken(profile, ownedToken, {
+    currentHp: _charSheet?.currentHp,
+    maxHp: _charSheet?.maxHp,
+    tempHp: _charSheet?.tempHp,
+  });
   const toIntOr = (value, fallback = null) => {
     const n = parseInt(value, 10);
     return Number.isNaN(n) ? fallback : n;
@@ -24776,18 +24853,9 @@ function _activeCharacterFromRuntimeSource() {
   return {
     ownedToken,
     name: _stripClassIcon(rawName),
-    currentHp: toIntOr(
-      profileRuntimeHp?.current ?? profileRuntimeCombat?.currentHP,
-      toIntOr(_charSheet?.currentHp, toIntOr(ownedToken?.hp, toIntOr(profile?.curhp, null)))
-    ),
-    maxHp: toIntOr(
-      profileRuntimeHp?.max ?? profileRuntimeCombat?.maxHP,
-      toIntOr(_charSheet?.maxHp, toIntOr(ownedToken?.maxHp, toIntOr(profile?.hp, null)))
-    ),
-    tempHp: toIntOr(
-      profileRuntimeHp?.temp ?? profileRuntimeCombat?.tempHP,
-      toIntOr(_charSheet?.tempHp, toIntOr(ownedToken?.tempHp, toIntOr(profile?.tempHp, 0)))
-    ),
+    currentHp: toIntOr(canonicalHp.currentHp, toIntOr(_charSheet?.currentHp, toIntOr(ownedToken?.hp, toIntOr(profile?.curhp, null)))),
+    maxHp: toIntOr(canonicalHp.maxHp, toIntOr(_charSheet?.maxHp, toIntOr(ownedToken?.maxHp, toIntOr(profile?.hp, null)))),
+    tempHp: toIntOr(canonicalHp.tempHp, toIntOr(_charSheet?.tempHp, toIntOr(ownedToken?.tempHp, toIntOr(profile?.tempHp, 0)))),
     ac: toIntOr(
       profileRuntimeCombat?.ac ?? profileRuntime?.ac,
       toIntOr(_charSheet?.ac, toIntOr(ownedToken?.ac, toIntOr(profile?.ac, null)))
@@ -38252,33 +38320,21 @@ function _syncLoadedProfileToOwnedToken(profile) {
   const profileSheet = (profile && typeof profile.charSheet === 'object') ? profile.charSheet : {};
   const profileBook = (profile && typeof profile.charBook === 'object') ? profile.charBook : {};
   const profileRuntime = (profile && typeof profile.nativeRuntime === 'object') ? profile.nativeRuntime : {};
-  const profileRuntimeHp = (profileRuntime && typeof profileRuntime.hp === 'object') ? profileRuntime.hp : {};
   const profileRuntimeCombat = (profileRuntime && typeof profileRuntime.combat === 'object') ? profileRuntime.combat : {};
   const profileRuntimeSpeed = (profileRuntime && typeof profileRuntime.speed === 'object') ? profileRuntime.speed : {};
-  const sheetHpOverride = parseInt(
-    profileRuntimeHp?.max
-      ?? profileSheet?.maxHp
-      ?? profileBook?.maxHp
-      ?? _charSheet?.maxHp
-      ?? _charSheet?.book?.maxHp
-      ?? _charSheet?.charBook?.maxHp,
-    10
-  );
-  const sheetCurHpOverride = parseInt(
-    profileRuntimeHp?.current
-      ?? profileSheet?.currentHp
-      ?? profileBook?.currentHp
-      ?? _charSheet?.currentHp
-      ?? _charSheet?.book?.currentHp
-      ?? _charSheet?.charBook?.currentHp,
-    10
-  );
+  const canonicalHp = _resolveCanonicalHpFromProfileAndToken(profile, tok, {
+    maxHp: _charSheet?.maxHp,
+    currentHp: _charSheet?.currentHp,
+    tempHp: _charSheet?.tempHp,
+  });
+  const sheetHpOverride = parseInt(canonicalHp.maxHp, 10);
+  const sheetCurHpOverride = parseInt(canonicalHp.currentHp, 10);
   const combatant = (tok && _combat && Array.isArray(_combat.combatants))
     ? _combat.combatants.find(c => String(c?.token_id || '') === String(tok.id || ''))
     : null;
   const combatMaxHp = parseInt(combatant?.max_hp ?? combatant?.maxHp, 10);
   const combatCurHp = parseInt(combatant?.hp, 10);
-  const hasAuthoritativeNativeRuntimeHp = Number.isFinite(parseInt(profileRuntimeHp?.max, 10)) && parseInt(profileRuntimeHp?.max, 10) > 0;
+  const hasAuthoritativeNativeRuntimeHp = canonicalHp.source === 'nativeRuntime.hp';
   const hasExplicitProfileHp = Number.isFinite(sheetHpOverride) && sheetHpOverride > 0;
   const hasActiveCombatHpOverride = !!(
     !hasAuthoritativeNativeRuntimeHp
@@ -38328,12 +38384,7 @@ function _syncLoadedProfileToOwnedToken(profile) {
     if (Number.isFinite(sheetHpOverride) && sheetHpOverride > 0) payload.maxHp = sheetHpOverride;
     if (Number.isFinite(sheetCurHpOverride) && sheetCurHpOverride >= 0) payload.hp = Math.min(payload.maxHp || sheetCurHpOverride, sheetCurHpOverride);
   }
-  const profileTempHpOverride = parseInt(
-    profileRuntimeHp?.temp
-      ?? profileSheet?.tempHp
-      ?? profileBook?.tempHp,
-    10
-  );
+  const profileTempHpOverride = parseInt(canonicalHp.tempHp, 10);
   if (Number.isFinite(profileTempHpOverride) && profileTempHpOverride >= 0) payload.tempHp = profileTempHpOverride;
   if (Number.isFinite(profileAcOverride) && profileAcOverride > 0) payload.ac = profileAcOverride;
   if (Number.isFinite(profileSpeedOverride) && profileSpeedOverride > 0) payload.speed = profileSpeedOverride;
@@ -38392,22 +38443,17 @@ function applyCharProfileRecord(p, opts = {}) {
     profile.charSheet = draft.charSheet || profile.charSheet;
   }
   const profileRuntime = (profile && typeof profile.nativeRuntime === 'object') ? profile.nativeRuntime : {};
-  const profileRuntimeHp = (profileRuntime && typeof profileRuntime.hp === 'object') ? profileRuntime.hp : {};
   const profileRuntimeCombat = (profileRuntime && typeof profileRuntime.combat === 'object') ? profileRuntime.combat : {};
   const profileRuntimeSpeed = (profileRuntime && typeof profileRuntime.speed === 'object') ? profileRuntime.speed : {};
-  const resolvedMaxHp = profileRuntimeHp?.max
-    ?? profile?.charSheet?.maxHp
-    ?? profile?.charBook?.maxHp
-    ?? profile?.hp;
-  const resolvedCurHp = profileRuntimeHp?.current
-    ?? profileRuntimeCombat?.currentHP
-    ?? profile?.charSheet?.currentHp
-    ?? profile?.charBook?.currentHp
-    ?? profile?.curhp;
-  const resolvedTempHp = profileRuntimeHp?.temp
-    ?? profile?.charSheet?.tempHp
-    ?? profile?.charBook?.tempHp
-    ?? profile?.tempHp;
+  const ownedToken = _getMyOwnedToken();
+  const canonicalHp = _resolveCanonicalHpFromProfileAndToken(profile, ownedToken, {
+    maxHp: _charSheet?.maxHp,
+    currentHp: _charSheet?.currentHp,
+    tempHp: _charSheet?.tempHp,
+  });
+  const resolvedMaxHp = canonicalHp.maxHp;
+  const resolvedCurHp = canonicalHp.currentHp;
+  const resolvedTempHp = canonicalHp.tempHp;
   const resolvedAc = profileRuntimeCombat?.ac
     ?? profileRuntime?.ac
     ?? profile?.charSheet?.ac
@@ -38436,6 +38482,35 @@ function applyCharProfileRecord(p, opts = {}) {
     maxHp: numOrNull(resolvedMaxHp),
     tempHp: numOrNull(resolvedTempHp),
   };
+  if (canonicalVitals.maxHp != null && canonicalVitals.maxHp > 0) {
+    const boundedCur = canonicalVitals.currentHp == null
+      ? canonicalVitals.maxHp
+      : Math.max(0, Math.min(canonicalVitals.maxHp, canonicalVitals.currentHp));
+    const boundedTemp = Math.max(0, canonicalVitals.tempHp || 0);
+    profile.hp = canonicalVitals.maxHp;
+    profile.curhp = boundedCur;
+    profile.tempHp = boundedTemp;
+    if (!profile.nativeRuntime || typeof profile.nativeRuntime !== 'object') profile.nativeRuntime = {};
+    if (!profile.nativeRuntime.hp || typeof profile.nativeRuntime.hp !== 'object') profile.nativeRuntime.hp = {};
+    profile.nativeRuntime.hp.max = canonicalVitals.maxHp;
+    profile.nativeRuntime.hp.current = boundedCur;
+    profile.nativeRuntime.hp.temp = boundedTemp;
+    if (!profile.nativeRuntime.combat || typeof profile.nativeRuntime.combat !== 'object') profile.nativeRuntime.combat = {};
+    profile.nativeRuntime.combat.maxHP = canonicalVitals.maxHp;
+    profile.nativeRuntime.combat.currentHP = boundedCur;
+    profile.nativeRuntime.combat.tempHP = boundedTemp;
+    if (profile.charSheet && typeof profile.charSheet === 'object') {
+      profile.charSheet.maxHp = canonicalVitals.maxHp;
+      profile.charSheet.currentHp = boundedCur;
+      profile.charSheet.tempHp = boundedTemp;
+      profile.charSheet.hp = { max: canonicalVitals.maxHp, current: boundedCur, temp: boundedTemp };
+    }
+    if (profile.charBook && typeof profile.charBook === 'object') {
+      profile.charBook.maxHp = canonicalVitals.maxHp;
+      profile.charBook.currentHp = boundedCur;
+      profile.charBook.tempHp = boundedTemp;
+    }
+  }
   const setCharVal = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
   setCharVal('char-name', profile.name || '');
   const mappedClassId = String(profile.classId || profile.charSheet?.classes?.[0]?.classId || profile.charSheet?.classes?.[0]?.id || '').trim();

@@ -122,3 +122,29 @@ def test_legacy_export_charsheet_hp_uses_runtime_hp_without_regression():
     assert sheet["hp"]["max"] == 21
     assert sheet["hp"]["current"] == 13
     assert sheet["hp"]["temp"] == 2
+
+
+def test_level4_sorcerer_con12_resolves_to_22_hp():
+    doc = _build_document(class_id="sorcerer", level=4, con=12)
+    runtime = resolve_runtime(doc)["runtime"]
+
+    assert runtime["hp"]["max"] == 22
+    assert runtime["hp"]["current"] == 22
+
+
+def test_damaged_hp_stays_damaged_across_levelup_and_clamps_to_new_max():
+    level4_doc = _build_document(class_id="sorcerer", level=4, con=12)
+    level5_doc = _build_document(class_id="sorcerer", level=5, con=12)
+
+    old_max = resolve_runtime(level4_doc)["runtime"]["hp"]["max"]
+    payload = build_profile_upsert_payload(
+        level5_doc,
+        profile_id="sorc-1",
+        persisted_runtime={"hp": {"max": old_max, "current": 15, "temp": 3}},
+    )
+
+    hp = payload["nativeRuntime"]["hp"]
+    assert hp["max"] > old_max
+    assert hp["current"] == 15
+    assert hp["current"] <= hp["max"]
+    assert hp["temp"] == 3
