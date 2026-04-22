@@ -342,9 +342,24 @@ function _spellAttackSaveCell(spell, charData) {
 
 
   function _spellEffectLabel(spell) {
-    const formula = _firstText(spell && spell.damageFormula, spell && spell.healingFormula, '');
-    const type = _firstText(spell && spell.damageType, '');
-    const summary = _firstText(spell && spell.effect, spell && spell.playerFacingEffectSummary, '');
+    const formula = _firstText(
+      spell && spell.damageFormula,
+      spell && spell.damage_formula,
+      spell && spell.healingFormula,
+      spell && spell.healing_formula,
+      spell && spell.rollConfig && spell.rollConfig.damageFormula,
+      spell && spell.roll_config && spell.roll_config.damage_formula,
+      ''
+    );
+    const type = _firstText(spell && spell.damageType, spell && spell.damage_type, '');
+    const summary = _firstText(
+      spell && spell.effect,
+      spell && spell.effect_text,
+      spell && spell.base_effect_text,
+      spell && spell.playerFacingEffectSummary,
+      spell && spell.player_facing_effect_summary,
+      ''
+    );
     if (formula && type) return formula + ' ' + type;
     if (formula) return formula;
     if (summary) return summary;
@@ -366,15 +381,28 @@ function _spellAttackSaveCell(spell, charData) {
   function _spellRollBaseExpression(spell) {
     return _firstText(
       spell && spell.rollConfig && spell.rollConfig.damageFormula,
+      spell && spell.rollConfig && spell.rollConfig.damage_formula,
+      spell && spell.roll_config && spell.roll_config.damage_formula,
       spell && spell.damageFormula,
+      spell && spell.damage_formula,
       spell && spell.rollConfig && spell.rollConfig.healingFormula,
+      spell && spell.rollConfig && spell.rollConfig.healing_formula,
+      spell && spell.roll_config && spell.roll_config.healing_formula,
       spell && spell.healingFormula,
+      spell && spell.healing_formula,
       ''
     );
   }
 
   function _spellRollKind(spell) {
-    return _firstText(spell && spell.healingFormula, spell && spell.rollConfig && spell.rollConfig.healingFormula, '') ? 'healing' : 'damage';
+    return _firstText(
+      spell && spell.healingFormula,
+      spell && spell.healing_formula,
+      spell && spell.rollConfig && spell.rollConfig.healingFormula,
+      spell && spell.rollConfig && spell.rollConfig.healing_formula,
+      spell && spell.roll_config && spell.roll_config.healing_formula,
+      ''
+    ) ? 'healing' : 'damage';
   }
 
   function _looksRollableFormula(expr) {
@@ -728,7 +756,7 @@ function _spellAttackSaveCell(spell, charData) {
       if (filter !== 'CANTRIP' && String(level) !== String(LEVEL_LABEL_TO_KEY[filter] || '-1')) return false;
     }
     if (query) {
-      const hay = [_spellName(spell), spell.school, spell.description, spell.damageType, spell.damageFormula, spell.effect].filter(Boolean).join(' ').toLowerCase();
+      const hay = [_spellName(spell), spell.school, spell.description, spell.damageType, spell.damage_type, spell.damageFormula, spell.damage_formula, spell.effect, spell.effect_text, spell.base_effect_text].filter(Boolean).join(' ').toLowerCase();
       if (hay.indexOf(String(query).toLowerCase()) === -1) return false;
     }
     return true;
@@ -808,7 +836,7 @@ function _spellAttackSaveCell(spell, charData) {
     const isRitual = Boolean(spell.ritual);
     const effect = _spellEffectLabel(spell);
     const hitDcHtml = _spellAttackSaveCell(spell, charData);
-    const range = spell.areaText || spell.range || '—';
+    const range = spell.areaText || spell.area_text || spell.target || spell.range || '—';
     const rollExpr = _spellRollBaseExpression(spell);
     const canRoll = _looksRollableFormula(rollExpr);
     const effectHtml = canRoll
@@ -816,7 +844,7 @@ function _spellAttackSaveCell(spell, charData) {
       : _esc(String(effect));
     return '<tr class="cs-spell-row" data-spell-id="' + _esc(String(spell.id || _spellName(spell) || '')) + '" tabindex="0" role="button" aria-label="' + _esc(_spellName(spell)) + '">' +
       '<td><span class="cs-spell-name">' + _esc(_spellName(spell)) + '</span>' + (isConc ? '<span class="cs-spell-indicator" title="Concentration">●</span>' : '') + (isRitual ? '<span class="cs-spell-indicator ritual" title="Ritual">ℝ</span>' : '') + '</td>' +
-      '<td class="cs-spell-time">' + _esc(_abbrevTime(spell.castingTime)) + '</td>' +
+      '<td class="cs-spell-time">' + _esc(_abbrevTime(spell.castingTime || spell.casting_time)) + '</td>' +
       '<td class="cs-spell-range cs-col-range">' + _esc(range) + '</td>' +
       '<td class="cs-spell-hitdc">' + hitDcHtml + '</td>' +
       '<td>' + effectHtml + '</td>' +
