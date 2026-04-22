@@ -243,13 +243,23 @@
 .cs-spell-table {
   width: 100%;
   min-width: 820px;
-  border-collapse: collapse;
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
   font-size: 0.78rem;
 }
-.cs-spell-table thead tr {
+.cs-spell-table-head {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) 72px minmax(110px, 0.9fr) minmax(120px, 0.9fr) minmax(240px, 1.8fr) minmax(96px, auto);
+  gap: 0.5rem;
+  align-items: center;
   border-bottom: 1px solid var(--csp-border);
 }
-.cs-spell-table th {
+.cs-spell-table.no-actions .cs-spell-table-head,
+.cs-spell-table.no-actions .cs-spell-row {
+  grid-template-columns: minmax(180px, 1.2fr) 72px minmax(110px, 0.9fr) minmax(120px, 0.9fr) minmax(240px, 1.8fr);
+}
+.cs-spell-head-cell {
   padding: 0.35rem 0.5rem;
   text-align: left;
   font-size: 0.62rem;
@@ -259,9 +269,13 @@
   color: var(--csp-text-dim);
   white-space: nowrap;
 }
-.cs-spell-table th:first-child { padding-left: 0.25rem; }
+.cs-spell-head-cell:first-child { padding-left: 0.25rem; }
 
 .cs-spell-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) 72px minmax(110px, 0.9fr) minmax(120px, 0.9fr) minmax(240px, 1.8fr) minmax(96px, auto);
+  gap: 0.5rem;
+  align-items: center;
   border-bottom: 1px solid rgba(42, 51, 64, 0.5);
   cursor: pointer;
   transition: background var(--csp-dur-fast) var(--csp-ease);
@@ -269,11 +283,12 @@
 .cs-spell-row:hover {
   background: var(--csp-surface-2);
 }
-.cs-spell-row td {
+.cs-spell-cell {
+  min-width: 0;
   padding: 0.4rem 0.5rem;
   vertical-align: middle;
 }
-.cs-spell-row td:first-child { padding-left: 0.25rem; }
+.cs-spell-cell:first-child { padding-left: 0.25rem; }
 
 .cs-spell-name {
   font-weight: 600;
@@ -302,6 +317,14 @@
   color: var(--csp-gold);
   background: var(--csp-surface-3);
   border-bottom: 1px solid var(--csp-border);
+}
+.cs-spell-level-group {
+  display: flex;
+  flex-direction: column;
+}
+.cs-spell-level-rows {
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Damage type colour coding ──────────────────────────────────────────── */
@@ -878,11 +901,21 @@
 
   .cs-currency-chip { min-width: 36px; padding: 0.3rem 0.45rem; }
 
-  .cs-spell-table th,
-  .cs-spell-table td { padding: 0.35rem 0.3rem; }
+  .cs-spell-head-cell,
+  .cs-spell-cell { padding: 0.35rem 0.3rem; }
 
   /* Hide range column on very small screens */
   .cs-col-range { display: none; }
+  .cs-spell-table-head,
+  .cs-spell-row,
+  .cs-spell-table.no-actions .cs-spell-table-head,
+  .cs-spell-table.no-actions .cs-spell-row {
+    grid-template-columns: minmax(160px, 1.25fr) 64px minmax(110px, 0.9fr) minmax(220px, 1.75fr) minmax(92px, auto);
+  }
+  .cs-spell-table.no-actions .cs-spell-table-head,
+  .cs-spell-table.no-actions .cs-spell-row {
+    grid-template-columns: minmax(160px, 1.25fr) 64px minmax(110px, 0.9fr) minmax(220px, 1.75fr);
+  }
 }
 
 /* ── Stage 14 flagship sheet shell ─────────────────────────────────────── */
@@ -2373,7 +2406,6 @@ body.cs-detail-open {
 }
 
 .cs-spell-actions-cell {
-  width: 1%;
   white-space: nowrap;
   text-align: right;
 }

@@ -842,14 +842,14 @@ function _spellAttackSaveCell(spell, charData) {
     const effectHtml = canRoll
       ? ('<button type="button" class="cs-spell-roll-btn" data-spell-roll="' + _esc(String(spell.id || _spellName(spell) || '')) + '" aria-label="Roll ' + _esc(_spellName(spell)) + '">' + _esc(String(rollExpr)) + ' 🎲</button>' + (String(effect) && String(effect) !== String(rollExpr) ? '<span class="cs-spell-effect-copy">' + _esc(String(effect)) + '</span>' : ''))
       : _esc(String(effect));
-    return '<tr class="cs-spell-row" data-spell-id="' + _esc(String(spell.id || _spellName(spell) || '')) + '" tabindex="0" role="button" aria-label="' + _esc(_spellName(spell)) + '">' +
-      '<td><span class="cs-spell-name">' + _esc(_spellName(spell)) + '</span>' + (isConc ? '<span class="cs-spell-indicator" title="Concentration">●</span>' : '') + (isRitual ? '<span class="cs-spell-indicator ritual" title="Ritual">ℝ</span>' : '') + '</td>' +
-      '<td class="cs-spell-time">' + _esc(_abbrevTime(spell.castingTime || spell.casting_time)) + '</td>' +
-      '<td class="cs-spell-range cs-col-range">' + _esc(range) + '</td>' +
-      '<td class="cs-spell-hitdc">' + hitDcHtml + '</td>' +
-      '<td>' + effectHtml + '</td>' +
-      (actionsHtml ? '<td class="cs-spell-actions-cell">' + actionsHtml + '</td>' : '') +
-      '</tr>';
+    return '<div class="cs-spell-row" data-spell-id="' + _esc(String(spell.id || _spellName(spell) || '')) + '" tabindex="0" role="button" aria-label="' + _esc(_spellName(spell)) + '">' +
+      '<div class="cs-spell-cell"><span class="cs-spell-name">' + _esc(_spellName(spell)) + '</span>' + (isConc ? '<span class="cs-spell-indicator" title="Concentration">●</span>' : '') + (isRitual ? '<span class="cs-spell-indicator ritual" title="Ritual">ℝ</span>' : '') + '</div>' +
+      '<div class="cs-spell-cell cs-spell-time">' + _esc(_abbrevTime(spell.castingTime || spell.casting_time)) + '</div>' +
+      '<div class="cs-spell-cell cs-spell-range cs-col-range">' + _esc(range) + '</div>' +
+      '<div class="cs-spell-cell cs-spell-hitdc">' + hitDcHtml + '</div>' +
+      '<div class="cs-spell-cell cs-spell-effect">' + effectHtml + '</div>' +
+      (actionsHtml ? '<div class="cs-spell-cell cs-spell-actions-cell">' + actionsHtml + '</div>' : '') +
+      '</div>';
   }
 
   function _renderSpellTable(spells, includeActions, actionBuilder, charData) {
@@ -861,15 +861,25 @@ function _spellAttackSaveCell(spell, charData) {
       byLevel[key].push(spell);
     });
     const levelOrder = Object.keys(byLevel).map(Number).sort(function (a, b) { return a - b; });
-    const rows = [];
+    const groups = [];
     levelOrder.forEach(function (lvl) {
       const label = lvl === 0 ? 'Cantrips' : (LEVEL_LABELS[lvl] || ('Level ' + lvl)) + ' Spells';
-      rows.push('<tr><td colspan="' + (includeActions ? '6' : '5') + '" class="cs-spell-level-header">' + _esc(label) + '</td></tr>');
-      byLevel[lvl].forEach(function (spell) {
-        rows.push(_renderSpellRow(spell, includeActions && typeof actionBuilder === 'function' ? actionBuilder(spell) : '', charData || (actionBuilder && actionBuilder.__charData) || null));
-      });
+      const levelRows = byLevel[lvl].map(function (spell) {
+        return _renderSpellRow(spell, includeActions && typeof actionBuilder === 'function' ? actionBuilder(spell) : '', charData || (actionBuilder && actionBuilder.__charData) || null);
+      }).join('');
+      groups.push('<section class="cs-spell-level-group"><div class="cs-spell-level-header">' + _esc(label) + '</div><div class="cs-spell-level-rows">' + levelRows + '</div></section>');
     });
-    return '<table class="cs-spell-table" role="table"><thead><tr><th>Name</th><th>Time</th><th class="cs-col-range">Range</th><th>Attack / Save</th><th>Effect</th>' + (includeActions ? '<th></th>' : '') + '</tr></thead><tbody>' + rows.join('') + '</tbody></table>';
+    return '<div class="cs-spell-table' + (includeActions ? '' : ' no-actions') + '" role="table">' +
+      '<div class="cs-spell-table-head" role="row">' +
+        '<div class="cs-spell-head-cell">Name</div>' +
+        '<div class="cs-spell-head-cell">Time</div>' +
+        '<div class="cs-spell-head-cell cs-col-range">Range</div>' +
+        '<div class="cs-spell-head-cell">Attack / Save</div>' +
+        '<div class="cs-spell-head-cell">Effect</div>' +
+        (includeActions ? '<div class="cs-spell-head-cell cs-spell-head-actions" aria-hidden="true"></div>' : '') +
+      '</div>' +
+      groups.join('') +
+      '</div>';
   }
 
   function _fetchManifest(state, cb) {
