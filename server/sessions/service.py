@@ -431,6 +431,9 @@ def _backfill_dm_player_key_if_needed(request, session, fallback_user_id: str) -
     auth_user = get_request_user(request)
     if not auth_user:
         return False
+    auth_role = str((auth_user or {}).get("role") or "").strip().lower()
+    if auth_role not in {"dm", "assistant_dm"}:
+        return False
     auth_pk = auth_player_key(str(auth_user.get('id') or '').strip())
     if not auth_pk:
         return False
@@ -452,7 +455,11 @@ async def session_authority_response(request, session_id: str, fallback_user_id:
     session = get_or_restore_session(session_id)
     if not session:
         return JSONResponse({"error": "Not found"}, status_code=404)
-    if _backfill_dm_player_key_if_needed(request, session, fallback_user_id):
+    backfilled = _backfill_dm_player_key_if_needed(request, session, fallback_user_id)
+    dm_id = str(getattr(session, "dm_id", "") or "").strip()
+    if not backfilled and dm_id and fallback_user_id != dm_id:
+        backfilled = _backfill_dm_player_key_if_needed(request, session, dm_id)
+    if backfilled:
         await save_campaign_async(session)
     authority = resolve_session_authority(request, session, fallback_user_id=fallback_user_id)
     resolved_role = "dm" if authority.get("is_session_dm") else (authority.get("participant_role") or "viewer")

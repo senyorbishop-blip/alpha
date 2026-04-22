@@ -71,7 +71,8 @@ def resolve_session_authority(request, session, fallback_user_id: str = "") -> d
 
     participant_role = str(getattr(matched_user, 'role', '') or '').strip().lower() or None
     is_session_dm = bool(matched_user_id and str(getattr(session, 'dm_id', '') or '') == matched_user_id) or participant_role == 'dm'
-    resolved_user_id = matched_user_id or fallback_user_id or auth_user_id or None
+    resolved_fallback_user_id = fallback_user_id if fallback_allowed else ""
+    resolved_user_id = matched_user_id or resolved_fallback_user_id or auth_user_id or None
     authority = {
         'auth_user_id': auth_user_id or None,
         'auth_player_key': auth_player_key_id or None,

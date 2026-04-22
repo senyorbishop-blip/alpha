@@ -110,12 +110,19 @@
     bindOutsideShellClose(env);
   }
 
-  function runDOMContentLoaded(env) {
+  async function runDOMContentLoaded(env) {
     // Explicit, ordered startup owner for the live page shell.
+    // Resolve server authority before UI/socket boot so stale URL role/user params
+    // cannot hijack the initial runtime role gates.
+    const authority = await env.safeClientCall(
+      'boot:syncSessionAuthority',
+      () => env.syncSessionAuthority('domcontentloaded'),
+      null,
+    );
+    if (authority && authority.redirected) return;
     env.safeClientCall('boot:initUI', () => initUI(env));
     env.safeClientCall('boot:initCanvas', () => env.initCanvas());
     env.safeClientCall('boot:connectWS', () => env.connectWS());
-    env.safeClientCall('boot:syncSessionAuthority', () => env.syncSessionAuthority('domcontentloaded'));
   }
 
   window.AppBootShell = {

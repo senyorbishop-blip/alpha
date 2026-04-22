@@ -62,10 +62,10 @@
       },
       getRole: function () {
         const resolvedRole = typeof global.getEffectiveRole === 'function' ? global.getEffectiveRole() : '';
-        const fromQuery = readQueryParam(['role']);
-        const fromGlobal = String(global.ROLE || '').trim();
         const fromStore = storeGet('user.role', global.ROLE || 'viewer');
-        return String(resolvedRole || fromQuery || fromGlobal || fromStore || 'viewer').toLowerCase();
+        const fromGlobal = String(global.ROLE || '').trim();
+        const fromQuery = readQueryParam(['role']);
+        return String(resolvedRole || fromStore || fromGlobal || fromQuery || 'viewer').toLowerCase();
       },
       getSocket: function () { return storeGet('socket.instance', global.ws || null); },
       setSocket: function (value) { storeSet('socket.instance', value); global.ws = value; },

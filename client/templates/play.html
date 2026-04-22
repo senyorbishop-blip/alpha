@@ -11669,10 +11669,13 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
   // Legacy fallback path (only when modular shell is unavailable).
-  safeClientCall('boot:initUI', () => initUI());
-  safeClientCall('boot:initCanvas', () => initCanvas());
-  safeClientCall('boot:connectWS', () => connectWS());
-  safeClientCall('boot:syncSessionAuthority', () => syncSessionAuthority('domcontentloaded'));
+  safeClientCall('boot:syncSessionAuthority', () => syncSessionAuthority('domcontentloaded'))
+    .then((authority) => {
+      if (authority && authority.redirected) return;
+      safeClientCall('boot:initUI', () => initUI());
+      safeClientCall('boot:initCanvas', () => initCanvas());
+      safeClientCall('boot:connectWS', () => connectWS());
+    });
 });
 
 function initUI() {
