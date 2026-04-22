@@ -84,6 +84,39 @@ def test_fog_toggle_uses_payload_map_context_not_dm_context(monkeypatch):
     assert {uid for _, uid, _ in sent} == {dm.id, player.id}
 
 
+def test_fog_toggle_local_alias_uses_dm_map_context(monkeypatch):
+    session = Session(id="fog-sync-2b")
+    dm = User(id="dm-1", name="DM", role="dm")
+    session.users[dm.id] = dm
+    session.dm_id = dm.id
+    session.dm_map_context = "poi-crypt"
+    session.pois["poi-crypt"] = POI(id="poi-crypt", x=0, y=0, name="Crypt", map_context="world")
+    session.fog_maps = {
+        "world": {"enabled": False, "cols": 4, "rows": 4, "cells": "0" * 16},
+        "poi-crypt": {"enabled": False, "cols": 4, "rows": 4, "cells": "0" * 16},
+    }
+
+    async def _send_to(*_args, **_kwargs):
+        return True
+
+    async def _save_campaign_async(_session):
+        return True
+
+    monkeypatch.setattr(map_editor, "manager", SimpleNamespace(send_to=_send_to))
+    monkeypatch.setattr(map_editor, "save_campaign_async", _save_campaign_async)
+
+    asyncio.run(
+        map_editor.handle_fog_toggle(
+            {"map_ctx": "__local__", "enabled": True},
+            session,
+            dm,
+        )
+    )
+
+    assert session.fog_maps["poi-crypt"]["enabled"] is True
+    assert session.fog_maps["world"]["enabled"] is False
+
+
 def test_fog_paint_accepts_map_context_alias_and_isolates_world_from_poi(monkeypatch):
     session = Session(id="fog-sync-3")
     dm = User(id="dm-1", name="DM", role="dm")
