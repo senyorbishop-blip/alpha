@@ -18366,7 +18366,7 @@ function onMouseDown(e) {
   if (e.button !== 0) return;
 
   const w = getMouseWorld(e);
-  if (ROLE === 'dm') _fogMouseWorld = w;
+  if (canCurrentUserEditFog()) _fogMouseWorld = w;
 
   // ── Combat targeting mode: next left-click on a token selects it as the target
   if (_combatTargeting) {
@@ -18581,7 +18581,7 @@ function onMouseDown(e) {
 
   // Fog painting — click on map when fog flyout is open
   const fogFlyout = document.getElementById('flyout-fog');
-  if (fogEnabled && isManualFogEditingAllowed() && ROLE === 'dm' && fogFlyout && fogFlyout.classList.contains('open')) {
+  if (fogEnabled && isManualFogEditingAllowed() && canCurrentUserEditFog() && fogFlyout && fogFlyout.classList.contains('open')) {
     if (fogPaintTool === 'brush') {
       fogPainting = true;
       fogPaintAt(w.x, w.y);
@@ -18655,7 +18655,7 @@ function onMouseMove(e) {
   // Compute world coords once per event
   const _pt = getCanvasPointer(e);
   const _mw = screenToWorld(_pt.x, _pt.y);
-  if (ROLE === 'dm') _fogMouseWorld = _mw;
+  if (canCurrentUserEditFog()) _fogMouseWorld = _mw;
   _spellMouseWorld = _mw;
   _editorMouseWorld = _mw;
 
@@ -41284,6 +41284,7 @@ function __createFogModuleEnv() {
     getDmMapContext: () => _dmMapContext,
     getCurrentMapContext: _getCurrentMapContext,
     getMapContextLabel: _resolveFogContextLabel,
+    canEditFog: () => __canAccessDmControl('maps.fog'),
     handlers: { onFogCheckboxChange: _fogChkHandler },
     invalidateFogCache,
     syncShellState: () => _syncFogShellState(),
@@ -41307,8 +41308,12 @@ function isManualFogEditingAllowed() {
   return mode === 'manual' || mode === 'hybrid';
 }
 
+function canCurrentUserEditFog() {
+  return __canAccessDmControl('maps.fog');
+}
+
 function setFogSystemMode(mode) {
-  if (ROLE !== 'dm') return;
+  if (!canCurrentUserEditFog()) return;
   const next = ['off','manual','vision','hybrid'].includes(String(mode)) ? String(mode) : 'manual';
   const select = document.getElementById('fog-mode-select');
   if (select && select.value !== next) select.value = next;
@@ -41453,19 +41458,20 @@ function _syncFogUI() {
   const toolsDiv = document.getElementById('fog-tools');
   const brushDiv = document.getElementById('fog-brush-row');
   const manualAllowed = isManualFogEditingAllowed();
+  const canEdit = canCurrentUserEditFog();
   if (chk) {
     // Set without triggering onchange
     chk.removeEventListener('change', _fogChkHandler);
     chk.checked = fogEnabled;
-    chk.disabled = !manualAllowed;
+    chk.disabled = !(manualAllowed && canEdit);
     chk.addEventListener('change', _fogChkHandler);
   }
-  if (toolsDiv) toolsDiv.style.display = fogEnabled && manualAllowed ? 'flex' : 'none';
-  if (brushDiv) brushDiv.style.display = fogEnabled && manualAllowed ? 'block' : 'none';
+  if (toolsDiv) toolsDiv.style.display = fogEnabled && manualAllowed && canEdit ? 'flex' : 'none';
+  if (brushDiv) brushDiv.style.display = fogEnabled && manualAllowed && canEdit ? 'block' : 'none';
   const toolGrid = document.getElementById('fog-tool-grid');
-  if (toolGrid) toolGrid.style.display = fogEnabled && manualAllowed ? 'grid' : 'none';
+  if (toolGrid) toolGrid.style.display = fogEnabled && manualAllowed && canEdit ? 'grid' : 'none';
   const advancedTools = document.getElementById('fog-advanced-tools');
-  if (advancedTools) advancedTools.style.display = fogEnabled && manualAllowed ? 'block' : 'none';
+  if (advancedTools) advancedTools.style.display = fogEnabled && manualAllowed && canEdit ? 'block' : 'none';
   const mapCtxEl = document.getElementById('fog-map-context-text');
   if (mapCtxEl) {
     const ctx = String(fogMapCtx || 'world');
@@ -41697,7 +41703,7 @@ function drawFogOverlay(W, H) {
 
   // ── DM Brush preview ──
   const fogFlyout = document.getElementById('flyout-fog');
-  if (ROLE === 'dm' && fogEnabled && isManualFogEditingAllowed() && _fogMouseWorld && fogFlyout && fogFlyout.classList.contains('open') && fogPaintTool === 'brush') {
+  if (canCurrentUserEditFog() && fogEnabled && isManualFogEditingAllowed() && _fogMouseWorld && fogFlyout && fogFlyout.classList.contains('open') && fogPaintTool === 'brush') {
     const cellW  = (mw / fogCols) * cam.zoom;
     const brushR = Math.max(fogBrushSize - 1, 0);
     const brushPx = (brushR + 0.5) * cellW;

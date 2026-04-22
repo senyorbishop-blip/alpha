@@ -32,7 +32,7 @@
     return Math.round((revealed / state.fogCells.length) * 100);
   }
   function _isFogPainterActive(state, env) {
-    if (env.ROLE !== 'dm' || !state.fogEnabled || !state.fogMouseWorld) return false;
+    if (!_canEditFog(env) || !state.fogEnabled || !state.fogMouseWorld) return false;
     const mode = String((env && typeof env.getFogSystemMode === 'function' ? env.getFogSystemMode() : '') || '').toLowerCase();
     if (!(mode === 'manual' || mode === 'hybrid')) return false;
     if (String(state.fogMapCtx || 'world') !== _resolveAuthoritativeMapContext(env)) return false;
@@ -44,6 +44,10 @@
   function _manualFogEditingAllowed(env) {
     const mode = String((env && typeof env.getFogSystemMode === 'function' ? env.getFogSystemMode() : '') || '').toLowerCase();
     return mode === 'manual' || mode === 'hybrid';
+  }
+  function _canEditFog(env) {
+    if (env && typeof env.canEditFog === 'function') return !!env.canEditFog();
+    return !!(env && env.ROLE === 'dm');
   }
   function _fogContextLabel(state, env) {
     const ctx = String(state.fogMapCtx || 'world');
@@ -85,18 +89,19 @@
     const toolsDiv = doc.getElementById('fog-tools');
     const brushDiv = doc.getElementById('fog-brush-row');
     const manualAllowed = _manualFogEditingAllowed(env);
+    const canEdit = _canEditFog(env);
     if (chk) {
       chk.removeEventListener('change', handlers.onFogCheckboxChange);
       chk.checked = state.fogEnabled;
-      chk.disabled = !manualAllowed;
+      chk.disabled = !(manualAllowed && canEdit);
       chk.addEventListener('change', handlers.onFogCheckboxChange);
     }
-    if (toolsDiv) toolsDiv.style.display = state.fogEnabled && manualAllowed ? 'flex' : 'none';
-    if (brushDiv) brushDiv.style.display = state.fogEnabled && manualAllowed ? 'block' : 'none';
+    if (toolsDiv) toolsDiv.style.display = state.fogEnabled && manualAllowed && canEdit ? 'flex' : 'none';
+    if (brushDiv) brushDiv.style.display = state.fogEnabled && manualAllowed && canEdit ? 'block' : 'none';
     const toolGrid = doc.getElementById('fog-tool-grid');
-    if (toolGrid) toolGrid.style.display = state.fogEnabled && manualAllowed ? 'grid' : 'none';
+    if (toolGrid) toolGrid.style.display = state.fogEnabled && manualAllowed && canEdit ? 'grid' : 'none';
     const advancedTools = doc.getElementById('fog-advanced-tools');
-    if (advancedTools) advancedTools.style.display = state.fogEnabled && manualAllowed ? 'block' : 'none';
+    if (advancedTools) advancedTools.style.display = state.fogEnabled && manualAllowed && canEdit ? 'block' : 'none';
     const revealBtn = doc.getElementById('fog-btn-reveal');
     const hideBtn = doc.getElementById('fog-btn-hide');
     if (revealBtn) revealBtn.classList.toggle('active', !!state.fogReveal);
