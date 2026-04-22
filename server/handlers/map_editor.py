@@ -170,14 +170,23 @@ def _normalize_dm_map_context(session: Session, value) -> str:
 
 def _resolve_fog_map_context(session: Session, payload: dict) -> str:
     data = payload if isinstance(payload, dict) else {}
-    requested = (
-        data.get("map_ctx")
-        or data.get("map_context")
-        or data.get("dm_map_context")
-        or getattr(session, "dm_map_context", "world")
-        or "world"
-    )
-    return _normalize_dm_map_context(session, requested)
+    explicit_ctx = None
+    for key in ("map_ctx", "map_context", "dm_map_context"):
+        if key in data and str(data.get(key) or "").strip():
+            explicit_ctx = str(data.get(key) or "").strip()[:80]
+            break
+    if explicit_ctx:
+        # Compatibility: older clients may send "__local__" while the server
+        # owns the real POI/map-document context in session.dm_map_context.
+        if explicit_ctx == "__local__":
+            dm_ctx = _normalize_dm_map_context(session, getattr(session, "dm_map_context", "world"))
+            if dm_ctx != "world":
+                return dm_ctx
+        normalized_explicit = _normalize_dm_map_context(session, explicit_ctx)
+        if normalized_explicit != "world" or explicit_ctx == "world":
+            return normalized_explicit
+    fallback = getattr(session, "dm_map_context", "world") or "world"
+    return _normalize_dm_map_context(session, fallback)
 
 
 async def _broadcast_fog_to_visible_users(session: Session, message: dict, map_ctx: str):

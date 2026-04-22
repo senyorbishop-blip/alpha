@@ -21992,7 +21992,9 @@ let _stagingTokens = {};
 let _mapTokensByContext = {};
 
 function _getCurrentMapContext() {
-  return _currentPoi ? (_currentPoi.id || '__local__') : 'world';
+  if (_currentPoi && _currentPoi.id) return String(_currentPoi.id);
+  if (_dmMapContext && _dmMapContext !== 'world') return String(_dmMapContext);
+  return 'world';
 }
 
 function _getAuthoritativeTokenDrawContext() {
@@ -41276,6 +41278,7 @@ function __createFogModuleEnv() {
     ctx,
     mapImage,
     currentPoi: _currentPoi,
+    getDmMapContext: () => _dmMapContext,
     getCurrentMapContext: _getCurrentMapContext,
     getMapContextLabel: _resolveFogContextLabel,
     handlers: { onFogCheckboxChange: _fogChkHandler },

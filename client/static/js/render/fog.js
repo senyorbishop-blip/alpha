@@ -8,7 +8,12 @@
     if (env && typeof env.getCurrentMapContext === 'function') {
       return String(env.getCurrentMapContext() || 'world');
     }
-    return env && env.currentPoi ? (env.currentPoi.id || '__local__') : 'world';
+    if (env && env.currentPoi && env.currentPoi.id) return String(env.currentPoi.id);
+    if (env && typeof env.getDmMapContext === 'function') {
+      const dmCtx = String(env.getDmMapContext() || 'world');
+      if (dmCtx && dmCtx !== 'world') return dmCtx;
+    }
+    return 'world';
   }
   function fogCurrentCtx(env) {
     return _resolveAuthoritativeMapContext(env);
