@@ -376,10 +376,49 @@ async def delete_session_token_response(request, session_id: str, token_id: str)
     return JSONResponse({"ok": True, "token_id": token_id})
 
 
-def session_authority_response(request, session_id: str, fallback_user_id: str = ""):
+def _backfill_dm_player_key_if_needed(request, session, fallback_user_id: str) -> bool:
+    """Set the DM's player_key when missing — one-time migration for sessions created before auth.
+
+    Returns True if a backfill was performed (caller should persist the session).
+    Only backfills when the fallback_user_id matches the DM slot, the DM has no key yet,
+    and the authenticated user's key is not already linked to another participant.
+    """
+    if not fallback_user_id:
+        return False
+    dm_id = str(getattr(session, 'dm_id', '') or '').strip()
+    if not dm_id or fallback_user_id != dm_id:
+        return False
+    dm_user = session.users.get(dm_id)
+    if not dm_user:
+        return False
+    if str(getattr(dm_user, 'player_key', '') or '').strip():
+        return False
+    auth_user = get_request_user(request)
+    if not auth_user:
+        return False
+    auth_pk = auth_player_key(str(auth_user.get('id') or '').strip())
+    if not auth_pk:
+        return False
+    # Don't overwrite if another non-DM session participant already owns this key
+    for uid, u in session.users.items():
+        if uid == dm_id:
+            continue
+        if str(getattr(u, 'player_key', '') or '').strip() == auth_pk:
+            return False
+    dm_user.player_key = auth_pk
+    import logging as _logging
+    _logging.getLogger(__name__).info(
+        '[Authority] backfilled DM player_key for session %s user %s', session.id, dm_id
+    )
+    return True
+
+
+async def session_authority_response(request, session_id: str, fallback_user_id: str = ""):
     session = get_or_restore_session(session_id)
     if not session:
         return JSONResponse({"error": "Not found"}, status_code=404)
+    if _backfill_dm_player_key_if_needed(request, session, fallback_user_id):
+        await save_campaign_async(session)
     authority = resolve_session_authority(request, session, fallback_user_id=fallback_user_id)
     resolved_role = authority.get("participant_role") or ("dm" if authority.get("is_session_dm") else "viewer")
     return JSONResponse({

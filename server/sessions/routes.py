@@ -52,4 +52,4 @@ async def api_delete_session_token(request: Request, session_id: str, token_id: 
 
 @router.get("/api/session/{session_id}/authority")
 async def api_session_authority(request: Request, session_id: str, user_id: str = ""):
-    return session_authority_response(request, session_id, user_id)
+    return await session_authority_response(request, session_id, user_id)
