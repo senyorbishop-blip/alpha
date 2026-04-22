@@ -491,3 +491,16 @@ def test_mapper_logs_hp_conflicts_in_dev_without_switching_authority():
     assert "function warnHpConflictInDev(scope, canonicalHp, comparisons)" in src
     assert "warnHpConflictInDev('resolveCanonicalHp'" in src
     assert "warnHpConflictInDev('mapCharacterToToken'" in src
+
+
+def test_play_html_uses_single_canonical_hp_resolver_for_profile_token_and_sidebar_surfaces():
+    src = _read("client/templates/play.html")
+    assert "function _resolveCanonicalHpFromProfileAndToken(profile, ownedToken, fallback = {}) {" in src
+    assert "source: 'nativeRuntime.hp'" in src
+    assert "source: 'ownedToken'" in src
+    assert "source: 'legacyProfile'" in src
+    assert "const canonicalHp = _resolveCanonicalHpFromProfileAndToken(profile, ownedToken" in src
+    assert "const canonicalHp = _resolveCanonicalHpFromProfileAndToken(profile, tok" in src
+    assert "profile.nativeRuntime.hp.max = canonicalVitals.maxHp;" in src
+    assert "profile.charSheet.hp = { max: canonicalVitals.maxHp, current: boundedCur, temp: boundedTemp };" in src
+    assert "profile.charBook.maxHp = canonicalVitals.maxHp;" in src
