@@ -69,7 +69,6 @@
       ...msg,
       session_id: config.getSessionId(),
       user_id: config.getUserId(),
-      role: config.getRole(),
     };
   }
 

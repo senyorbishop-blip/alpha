@@ -116,6 +116,33 @@ def test_resolve_session_authority_rejects_untrusted_fallback_dm_when_auth_prese
     assert authority["participant_role"] == "player"
     assert authority["matched_via"] == "player_key"
     assert authority["resolved_session_user_id"] == player.id
+    assert authority["resolved_user_id"] == player.id
+
+
+def test_resolve_session_authority_does_not_reuse_disallowed_fallback_user_id(monkeypatch):
+    session = Session(id="s-auth-disallowed-fallback")
+    dm = User(id="dm-1", name="DungeonMaster", role="dm")
+    session.users[dm.id] = dm
+    session.dm_id = dm.id
+
+    request = SimpleNamespace(cookies={}, headers={})
+
+    monkeypatch.setattr(
+        session_access,
+        "get_request_user",
+        lambda _req: {"id": "auth-user-123", "username": "Player"},
+    )
+
+    authority = session_access.resolve_session_authority(
+        request,
+        session,
+        fallback_user_id="stale-player-id",
+    )
+
+    assert authority["fallback_allowed"] is False
+    assert authority["resolved_session_user_id"] is None
+    assert authority["resolved_user_id"] == "auth-user-123"
+    assert authority["participant_role"] is None
 
 
 def test_resolve_session_authority_allows_fallback_when_linked_by_auth_player_key(monkeypatch):
@@ -182,7 +209,7 @@ def test_backfill_dm_player_key_grants_access_for_legacy_session(monkeypatch):
 
     monkeypatch.setattr(
         "server.sessions.service.get_request_user",
-        lambda _req: {"id": "returning-dm-auth", "username": "DM"},
+        lambda _req: {"id": "returning-dm-auth", "role": "dm", "username": "DM"},
     )
 
     backfilled = _backfill_dm_player_key_if_needed(request, session, fallback_user_id="legacy-dm-id")
@@ -226,6 +253,69 @@ def test_backfill_dm_player_key_blocked_when_key_already_used_by_player(monkeypa
 
     assert backfilled is False
     assert not getattr(dm, "player_key", None)
+
+
+def test_backfill_dm_player_key_rejects_non_dm_authenticated_roles(monkeypatch):
+    from server.sessions.service import _backfill_dm_player_key_if_needed
+
+    session = Session(id="s-blocked-role")
+    dm = User(id="dm-id", name="DM", role="dm")
+    session.users[dm.id] = dm
+    session.dm_id = dm.id
+
+    request = SimpleNamespace(cookies={}, headers={})
+
+    monkeypatch.setattr(
+        "server.sessions.service.get_request_user",
+        lambda _req: {"id": "player-auth", "role": "player", "username": "Player"},
+    )
+
+    backfilled = _backfill_dm_player_key_if_needed(request, session, fallback_user_id="dm-id")
+
+    assert backfilled is False
+    assert not getattr(dm, "player_key", None)
+
+
+def test_session_authority_response_backfills_dm_player_key_with_stale_fallback_user(monkeypatch):
+    session = Session(id="s-role-stale-fallback")
+    dm = User(id="legacy-dm", name="DM", role="dm")
+    session.users[dm.id] = dm
+    session.dm_id = dm.id
+
+    # Stale URL fallback points at an old player id, not the DM id.
+    stale_fallback_user_id = "player-123"
+    request = SimpleNamespace(cookies={}, headers={})
+
+    monkeypatch.setattr(sessions_service, "get_or_restore_session", lambda _sid: session)
+    monkeypatch.setattr(
+        sessions_service,
+        "get_request_user",
+        lambda _req: {"id": "auth-dm-321", "role": "dm", "username": "DM"},
+    )
+    monkeypatch.setattr(
+        session_access,
+        "get_request_user",
+        lambda _req: {"id": "auth-dm-321", "role": "dm", "username": "DM"},
+    )
+    monkeypatch.setattr(
+        sessions_service,
+        "save_campaign_async",
+        lambda _session: asyncio.sleep(0),
+    )
+
+    response = asyncio.run(
+        sessions_service.session_authority_response(
+            request,
+            "s-role-stale-fallback",
+            fallback_user_id=stale_fallback_user_id,
+        )
+    )
+    body = json.loads(response.body.decode("utf-8"))
+
+    assert body["is_session_dm"] is True
+    assert body["resolved_role"] == "dm"
+    assert body["resolved_session_user_id"] == "legacy-dm"
+    assert body["matched_via"] == "player_key"
 
 
 def test_session_authority_response_forces_dm_resolved_role_when_authoritative(monkeypatch):
