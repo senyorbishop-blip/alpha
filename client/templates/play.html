@@ -41501,7 +41501,7 @@ function _syncFogUI() {
       if (fogCells && fogCells.length) for (let i = 0; i < fogCells.length; i++) if (fogCells[i] === 1) revealed += 1;
       const pct = Math.round((revealed / Math.max(1, total)) * 100);
       const prefix = mode === 'hybrid' ? 'Hybrid Fog' : 'Manual Fog';
-      statusEl.textContent = `${prefix} · explored ${pct}% · visible areas are brightest.`;
+      statusEl.textContent = `${prefix} · explored ${pct}% · DM view stays mostly visible; use player preview to verify exactly what players see.`;
     }
   }
 }

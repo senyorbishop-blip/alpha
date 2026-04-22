@@ -80,8 +80,7 @@
       return;
     }
     const pct = _fogRevealPercent(state);
-    const prefix = mode === 'hybrid' ? 'Hybrid Fog' : 'Manual Fog';
-    statusEl.textContent = `${prefix} · players can currently see about ${pct}% of this map.`;
+    statusEl.textContent = `Fog is ON · players can currently see about ${pct}% of this map. DM view stays mostly visible; use player preview to verify exactly what players see.`;
   }
   function syncFogUI(state, env, handlers) {
     const doc = (env && env.document) || document;
