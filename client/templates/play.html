@@ -41300,7 +41300,9 @@ function __createFogModuleEnv() {
 function getFogSystemMode() {
   const mode = String((currentMapSettings() || {}).fog_mode || '').toLowerCase();
   if (mode === 'off' || mode === 'manual' || mode === 'vision' || mode === 'hybrid') return mode;
-  return fogEnabled ? 'manual' : 'off';
+  // Back-compat default: maps without an explicit fog_mode should stay in
+  // manual mode so the DM can always re-enable fog after disabling it.
+  return 'manual';
 }
 
 function isManualFogEditingAllowed() {
