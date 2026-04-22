@@ -59,6 +59,15 @@ def resolve_session_authority(request, session, fallback_user_id: str = "") -> d
             matched_user_id = candidate
             matched_via = "session_dm_id"
             break
+    # Secondary: find session users by stored player_key (handles auth DM whose session
+    # user is keyed by internal dm_id, not auth user id)
+    if not matched_user_id and auth_player_key_id:
+        for uid, u in session.users.items():
+            if str(getattr(u, 'player_key', '') or '').strip() == auth_player_key_id:
+                matched_user = u
+                matched_user_id = uid
+                matched_via = "player_key"
+                break
 
     participant_role = str(getattr(matched_user, 'role', '') or '').strip().lower() or None
     is_session_dm = bool(matched_user_id and str(getattr(session, 'dm_id', '') or '') == matched_user_id) or participant_role == 'dm'
