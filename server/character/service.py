@@ -551,6 +551,59 @@ def resolve_runtime(document: Any) -> dict:
     return resolve_character_runtime(valid_doc)
 
 
+def _extract_runtime_hp_block(runtime_payload: Any) -> dict[str, int]:
+    runtime = runtime_payload if isinstance(runtime_payload, dict) else {}
+    hp = runtime.get("hp") if isinstance(runtime.get("hp"), dict) else {}
+    max_hp = _safe_int(hp.get("max"), 0, minimum=0)
+    current_hp = _safe_int(hp.get("current"), 0, minimum=0)
+    temp_hp = _safe_int(hp.get("temp"), 0, minimum=0)
+    return {
+        "max": max_hp,
+        "current": current_hp,
+        "temp": temp_hp,
+    }
+
+
+def _merge_persisted_runtime_hp(runtime: dict[str, Any], persisted_runtime: Any = None) -> dict[str, Any]:
+    if not isinstance(runtime, dict):
+        return runtime
+    hp = runtime.get("hp") if isinstance(runtime.get("hp"), dict) else {}
+    derived_max = _safe_int(hp.get("max"), 1, minimum=1)
+    derived_current = _safe_int(hp.get("current"), derived_max, minimum=0)
+    derived_temp = _safe_int(hp.get("temp"), 0, minimum=0)
+
+    persisted = _extract_runtime_hp_block(persisted_runtime)
+    old_max = _safe_int(persisted.get("max"), 0, minimum=0)
+    old_current = _safe_int(persisted.get("current"), 0, minimum=0)
+    old_temp = _safe_int(persisted.get("temp"), 0, minimum=0)
+
+    has_persisted_hp = old_max > 0 or old_current > 0 or old_temp > 0
+    was_full_before = old_max > 0 and old_current >= old_max
+
+    merged_current = derived_current
+    merged_temp = derived_temp
+    if has_persisted_hp:
+        merged_current = old_current
+        merged_temp = old_temp
+    if was_full_before and derived_max > old_max:
+        merged_current = derived_max
+
+    merged_current = max(0, min(derived_max, merged_current))
+    merged_temp = max(0, merged_temp)
+    runtime["hp"] = {
+        "max": derived_max,
+        "current": merged_current,
+        "temp": merged_temp,
+        "hitDice": list(hp.get("hitDice") or []),
+    }
+    combat = runtime.get("combat") if isinstance(runtime.get("combat"), dict) else {}
+    combat["maxHP"] = derived_max
+    combat["currentHP"] = merged_current
+    combat["tempHP"] = merged_temp
+    runtime["combat"] = combat
+    return runtime
+
+
 def to_legacy_character_payload(document: Any) -> dict:
     """Map canonical native character data into current charBook/charSheet consumers.
 
@@ -588,28 +641,31 @@ def apply_character_levelup(document: Any, *, choices: Any = None) -> dict:
     return apply_levelup(valid_doc, choices=choices)
 
 
-def build_profile_library_entry(document: Any, *, profile_id: str = "") -> dict:
+def build_profile_library_entry(document: Any, *, profile_id: str = "", persisted_runtime: Any = None) -> dict:
     """Build a profile-library-safe entry that preserves legacy compatibility fields."""
     mapped = to_legacy_character_payload(document)
+    runtime = _merge_persisted_runtime_hp(dict(mapped.get("nativeRuntime") or {}), persisted_runtime)
     canonical = mapped["nativeCharacter"]
+    char_book = map_character_to_charbook(canonical, runtime)
+    char_sheet = map_character_to_charsheet(canonical, runtime)
     identity = canonical.get("identity") if isinstance(canonical.get("identity"), dict) else {}
 
     return {
         "id": profile_id or identity.get("characterId") or "",
         "name": identity.get("displayName") or identity.get("name") or "",
-        "charBook": mapped["charBook"],
-        "charSheet": mapped["charSheet"],
+        "charBook": char_book,
+        "charSheet": char_sheet,
         "nativeCharacter": mapped["nativeCharacter"],
-        "nativeRuntime": mapped["nativeRuntime"],
+        "nativeRuntime": runtime,
         "nativeMeta": mapped["nativeMeta"],
     }
 
 
-def build_profile_upsert_payload(document: Any, *, profile_id: str = "") -> dict:
+def build_profile_upsert_payload(document: Any, *, profile_id: str = "", persisted_runtime: Any = None) -> dict:
     """Build a session-profile payload preserving legacy + native compatibility fields."""
     if isinstance(document, dict):
         document = reconcile_character_spell_state(document)
-    entry = build_profile_library_entry(document, profile_id=profile_id)
+    entry = build_profile_library_entry(document, profile_id=profile_id, persisted_runtime=persisted_runtime)
     level = None
     try:
         level = _safe_int((entry.get("charSheet") or {}).get("totalLevel"), 1, minimum=1)

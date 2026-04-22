@@ -105,6 +105,41 @@ def _sync_player_state_from_profile(session, user, profile: dict) -> None:
     keep.name = str(profile.get("name") or keep.name or user.name)[:80]
     sheet = profile.get("charSheet") if isinstance(profile.get("charSheet"), dict) else {}
     book = profile.get("charBook") if isinstance(profile.get("charBook"), dict) else {}
+    runtime = profile.get("nativeRuntime") if isinstance(profile.get("nativeRuntime"), dict) else {}
+    runtime_hp = runtime.get("hp") if isinstance(runtime.get("hp"), dict) else {}
+    sheet_hp = sheet.get("hp") if isinstance(sheet.get("hp"), dict) else {}
+    max_hp = runtime_hp.get("max")
+    cur_hp = runtime_hp.get("current")
+    temp_hp = runtime_hp.get("temp")
+    if max_hp is None:
+        max_hp = book.get("maxHp")
+    if cur_hp is None:
+        cur_hp = book.get("currentHp")
+    if temp_hp is None:
+        temp_hp = book.get("tempHp")
+    if max_hp is None:
+        max_hp = sheet_hp.get("max")
+    if cur_hp is None:
+        cur_hp = sheet_hp.get("current")
+    if temp_hp is None:
+        temp_hp = sheet_hp.get("temp")
+    try:
+        if max_hp is not None:
+            keep.max_hp = max(1, int(max_hp))
+    except Exception:
+        pass
+    try:
+        if cur_hp is not None:
+            keep.hp = max(0, int(cur_hp))
+            if keep.max_hp is not None:
+                keep.hp = min(keep.hp, keep.max_hp)
+    except Exception:
+        pass
+    try:
+        if temp_hp is not None:
+            keep.temp_hp = max(0, int(temp_hp))
+    except Exception:
+        pass
     token_display = (sheet.get("tokenDisplay") if isinstance(sheet.get("tokenDisplay"), dict) else {}) or (book.get("tokenDisplay") if isinstance(book.get("tokenDisplay"), dict) else {})
     accent = str(token_display.get("accentColor") or keep.color or "#6f5936")[:32]
     if accent:
