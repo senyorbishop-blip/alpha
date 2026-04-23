@@ -31284,6 +31284,7 @@ function handleLegacyMessage(msg) {
     }
     case 'fog_state': {
       fogApplyState(p);
+      drawFrame();
       break;
     }
     case 'fog_update': {
@@ -31291,6 +31292,7 @@ function handleLegacyMessage(msg) {
         const state = __createFogModuleState();
         window.AppFog.fogApplyUpdate(state, __createFogModuleEnv(), p);
         __applyFogModuleState(state);
+        drawFrame();
       } else {
         const updCtx = p.map_ctx || 'world';
         const val = p.reveal ? 1 : 0;
@@ -31309,6 +31311,7 @@ function handleLegacyMessage(msg) {
           setFogMapContext(activeFogCtx);
           fogLoadMap(fogMapCtx);
           invalidateFogCache();
+          drawFrame();
         }
       }
       break;
@@ -41293,6 +41296,7 @@ function __createFogModuleEnv() {
     activeBackgroundImage: () => mapImage,
     worldToScreen,
     getFogSystemMode: getFogSystemMode,
+    drawFrame,
   };
 }
 
@@ -41666,8 +41670,9 @@ function drawFogOverlay(W, H) {
     const buf   = idata.data;
     const isDM  = ROLE === 'dm';
     const settings = currentMapSettings();
-    const dmAlpha = Math.max(0, Math.min(1, Number(settings.fog_dm_alpha ?? 0.66)));
-    const playerAlpha = Math.max(0, Math.min(1, Number(settings.fog_player_alpha ?? 1.0)));
+      const dmAlpha = Math.max(0, Math.min(1, Number(settings.fog_dm_alpha ?? 0.66)));
+      // Keep unrevealed fog fully opaque for players to avoid accidental map leakage.
+      const playerAlpha = 1.0;
     const alpha = Math.round((isDM ? dmAlpha : playerAlpha) * 255);
     for (let i = 0; i < fogCols * fogRows; i++) {
       const base = i * 4;
@@ -41931,6 +41936,7 @@ function fogApplyState(p) {
   }
   // Load (or reload) fog for current map
   fogLoadMap(ctx);
+  drawFrame();
 }
 
 
