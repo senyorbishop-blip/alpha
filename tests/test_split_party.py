@@ -58,6 +58,37 @@ def test_single_party_default_still_sees_world_context():
     assert state["subgroup_map_context"] == "world"
 
 
+def test_single_party_players_follow_dm_map_context_for_visibility_filters():
+    session = Session(id="SPLIT2B")
+    dm = User(id="dm1", name="DM", role="dm")
+    player = User(id="p1", name="Player", role="player")
+    session.users = {dm.id: dm, player.id: player}
+    session.dm_map_context = "poi-ship"
+    _add_token(session, "tok-world", "world")
+    _add_token(session, "tok-ship", "poi-ship")
+
+    state = session.to_state_dict_for_role("player", "p1")
+
+    assert set(state["tokens"].keys()) == {"tok-world", "tok-ship"}
+
+
+def test_split_party_keeps_player_visibility_bound_to_assigned_subgroup():
+    session = Session(id="SPLIT2C")
+    dm = User(id="dm1", name="DM", role="dm")
+    player = User(id="p1", name="Player", role="player")
+    session.users = {dm.id: dm, player.id: player}
+    session.dm_map_context = "poi-ship"
+    session.set_user_subgroup_id("p1", "alpha", actor_id="dm1")
+    session.set_subgroup_map_context("alpha", "poi-cave", actor_id="dm1")
+    _add_token(session, "tok-world", "world")
+    _add_token(session, "tok-cave", "poi-cave")
+    _add_token(session, "tok-ship", "poi-ship")
+
+    state = session.to_state_dict_for_role("player", "p1")
+
+    assert set(state["tokens"].keys()) == {"tok-world", "tok-cave"}
+
+
 def test_split_party_assign_handler_updates_users_and_emits_sync(monkeypatch):
     session = Session(id="SPLIT3")
     dm = User(id="dm1", name="DM", role="dm")
