@@ -190,6 +190,31 @@ def test_fog_toggle_broadcasts_fog_toggle(monkeypatch):
     assert "fog_state" in types
 
 
+def test_fog_toggle_preserves_unresolved_scene_context(monkeypatch):
+    """Fog toggle should keep explicit runtime scene IDs instead of falling back to world."""
+    from server.handlers import map_editor as me
+    session, dm, player = _make_session()
+    session.dm_map_context = "poi-prison"
+    mgr = _fake_manager()
+    monkeypatch.setattr(me, "manager", mgr)
+
+    async def _save(_):
+        return True
+
+    monkeypatch.setattr(me, "save_campaign_async", _save)
+
+    asyncio.run(me.handle_fog_toggle(
+        {"map_ctx": "scene-doc-abc123", "enabled": True},
+        session,
+        dm,
+    ))
+
+    fog = (session.fog_maps or {}).get("scene-doc-abc123", {})
+    assert fog.get("enabled") is True
+    payloads = [msg.get("payload", {}) for _, _, msg in mgr._sent if msg.get("type") == "fog_state"]
+    assert any(p.get("map_ctx") == "scene-doc-abc123" for p in payloads)
+
+
 def test_fog_toggle_player_cannot_toggle(monkeypatch):
     """Players must not be able to toggle fog."""
     from server.handlers import map_editor as me
