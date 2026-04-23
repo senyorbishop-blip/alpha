@@ -41835,9 +41835,14 @@ function fogToggle(enabled) {
   fogEnabled = enabled;
   if (!fogMaps[fogMapCtx]) fogMaps[fogMapCtx] = { enabled: false, cols: 64, rows: 64, cells: null };
   fogMaps[fogMapCtx].enabled = enabled;
-  if (enabled && !fogMaps[fogMapCtx].cells) {
-    fogMaps[fogMapCtx].cells = new Uint8Array(fogCols * fogRows);
-    fogCells = fogMaps[fogMapCtx].cells;
+  if (enabled) {
+    const entry = fogMaps[fogMapCtx];
+    fogCols = entry.cols || fogCols || 64;
+    fogRows = entry.rows || fogRows || 64;
+    if (!entry.cells) {
+      entry.cells = new Uint8Array(fogCols * fogRows);
+    }
+    fogCells = entry.cells;
     if (fogCanvas) { fogCanvas.width = fogCols; fogCanvas.height = fogRows; }
   } else if (!enabled) {
     fogCells = null;
