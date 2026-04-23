@@ -208,7 +208,18 @@ async def _broadcast_fog_to_visible_users(session: Session, message: dict, map_c
             visible = session.visible_map_contexts_for_user(uid)
         except Exception:
             visible = {"world"}
-        if str(map_ctx or "world") in {str(ctx or "world") for ctx in (visible or {"world"})}:
+        target_ctx = str(map_ctx or "world")
+        visible_ctx = {str(ctx or "world") for ctx in (visible or {"world"})}
+        # Guardrail: keep live fog sync resilient when split-party subgroup
+        # metadata lags behind the real board state. If a player currently has
+        # token presence on a map, they should receive fog updates for that map
+        # even when subgroup context bookkeeping is stale.
+        has_presence = False
+        try:
+            has_presence = _user_has_map_presence(session, participant, target_ctx)
+        except Exception:
+            has_presence = False
+        if target_ctx in visible_ctx or has_presence:
             await manager.send_to(session.id, uid, message)
 
 
