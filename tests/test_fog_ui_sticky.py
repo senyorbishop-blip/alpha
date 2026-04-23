@@ -46,8 +46,10 @@ def test_fog_ui_shows_context_and_disables_manual_tools_in_non_manual_modes():
 def test_fog_module_uses_authoritative_map_context_source():
     fog_src = _read('client/static/js/render/fog.js')
     play_src = _read('client/templates/play.html')
+    assert "function _normalizeMapCtx(value, env) {" in fog_src
+    assert "if (raw !== '__local__') return raw;" in fog_src
+    assert "return _normalizeMapCtx(env.getCurrentMapContext(), env);" in fog_src
     assert "if (env && typeof env.getCurrentMapContext === 'function')" in fog_src
-    assert "return String(env.getCurrentMapContext() || 'world');" in fog_src
     assert "getCurrentMapContext: _getCurrentMapContext," in play_src
 
 
@@ -55,7 +57,7 @@ def test_fog_update_applies_payload_by_map_ctx_without_stale_current_poi_assumpt
     fog_src = _read('client/static/js/render/fog.js')
     play_src = _read('client/templates/play.html')
     assert "function fogApplyUpdate(state, env, p) {" in fog_src
-    assert "const updCtx = String((p && p.map_ctx) || 'world');" in fog_src
+    assert "const updCtx = _normalizeMapCtx((p && p.map_ctx) || 'world', env);" in fog_src
     assert "const activeCtx = fogCurrentCtx(env);" in fog_src
     assert "window.AppFog.fogApplyUpdate(state, __createFogModuleEnv(), p);" in play_src
     assert "const activeFogCtx = _getCurrentMapContext();" in play_src
