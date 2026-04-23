@@ -677,6 +677,11 @@ class Session:
             # context for fog/map sync. Split-party assignments remain the
             # authority once enabled.
             contexts.add(dm_ctx)
+        elif role == "player" and split_enabled and subgroup_id == "main":
+            # Guardrail: many sessions keep split-party assignment metadata for
+            # side groups while "main" still follows the DM camera. Ensure fog
+            # broadcasts remain visible to main-party players on DM scene maps.
+            contexts.add(dm_ctx)
         return {str(ctx).strip()[:80] or "world" for ctx in contexts}
 
     def get_connected_users(self) -> List[User]:
