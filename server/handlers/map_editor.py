@@ -192,6 +192,12 @@ def _resolve_fog_map_context(session: Session, payload: dict) -> str:
         dm_ctx = str(getattr(session, "dm_map_context", "world") or "world").strip()[:80] or "world"
         if explicit_ctx == dm_ctx and dm_ctx != "world":
             return dm_ctx
+        # Guardrail: preserve unresolved non-world runtime context IDs
+        # (e.g., newly-created scene-map/map-document IDs) so fog toggle/paint
+        # stays live-synced for players even before POI/map-document indexes
+        # are fully reconciled in-session.
+        if explicit_ctx != "world":
+            return explicit_ctx
     fallback = getattr(session, "dm_map_context", "world") or "world"
     return _normalize_dm_map_context(session, fallback)
 
