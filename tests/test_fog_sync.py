@@ -2,7 +2,7 @@ import asyncio
 from types import SimpleNamespace
 
 from server.handlers import map_editor
-from server.session import POI, Session, User
+from server.session import POI, Session, Token, User
 from server.persistence_schema import extract_persistable_campaign_state
 from server.restore import restore_session_from_db
 
@@ -265,6 +265,57 @@ def test_fog_broadcast_includes_main_party_player_when_split_party_metadata_exis
     assert dm.id in recipients
     assert main_player.id in recipients
     assert side_player.id not in recipients
+
+
+def test_fog_broadcast_includes_player_with_token_presence_when_subgroup_context_is_stale(monkeypatch):
+    session = Session(id="fog-sync-token-presence")
+    dm = User(id="dm-1", name="DM", role="dm")
+    player = User(id="pl-1", name="Player", role="player")
+    session.users[dm.id] = dm
+    session.users[player.id] = player
+    session.dm_id = dm.id
+    session.dm_map_context = "poi-prison"
+    session.pois["poi-prison"] = POI(id="poi-prison", x=0, y=0, name="Prison", map_context="world")
+    # Simulate stale split-party metadata (player still marked world) even
+    # though their live token is already on the DM scene map.
+    session.set_user_subgroup_id(player.id, "alpha", actor_id=dm.id)
+    session.set_subgroup_map_context("alpha", "world", actor_id=dm.id)
+    session.tokens["tok-player"] = Token(
+        id="tok-player",
+        name="Player",
+        x=0,
+        y=0,
+        width=64,
+        height=64,
+        color="#ffffff",
+        shape="circle",
+        owner_id=player.id,
+        map_context="poi-prison",
+    )
+    session.fog_maps = {"poi-prison": {"enabled": True, "cols": 4, "rows": 4, "cells": "0" * 16}}
+
+    sent = []
+
+    async def _send_to(session_id, user_id, message):
+        sent.append((session_id, user_id, message))
+
+    async def _save_campaign_async(_session):
+        return True
+
+    monkeypatch.setattr(map_editor, "manager", SimpleNamespace(send_to=_send_to))
+    monkeypatch.setattr(map_editor, "save_campaign_async", _save_campaign_async)
+
+    asyncio.run(
+        map_editor.handle_fog_toggle(
+            {"map_ctx": "poi-prison", "enabled": True},
+            session,
+            dm,
+        )
+    )
+
+    recipients = {uid for _, uid, _ in sent}
+    assert dm.id in recipients
+    assert player.id in recipients
 
 
 def test_fog_maps_persist_across_restore_and_stay_isolated_per_context():
