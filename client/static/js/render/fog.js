@@ -167,7 +167,8 @@
       const isDM = env.ROLE === 'dm';
       const settings = env.currentMapSettings();
       const dmAlpha = Math.max(0, Math.min(1, Number(settings.fog_dm_alpha ?? 0.66)));
-      const playerAlpha = Math.max(0, Math.min(1, Number(settings.fog_player_alpha ?? 1.0)));
+      // Keep unrevealed fog fully opaque for players to avoid accidental map leakage.
+      const playerAlpha = 1.0;
       const alpha = Math.round((isDM ? dmAlpha : playerAlpha) * 255);
       for (let i = 0; i < state.fogCols * state.fogRows; i++) {
         const base = i * 4;
@@ -319,6 +320,7 @@
     const ctx = fogCurrentCtx(env);
     if (p.map_ctx !== undefined && p.map_ctx !== ctx) return;
     fogLoadMap(state, env, ctx);
+    if (env && typeof env.drawFrame === 'function') env.drawFrame();
   }
   function fogApplyUpdate(state, env, p) {
     const updCtx = String((p && p.map_ctx) || 'world');
@@ -335,6 +337,7 @@
     if (updCtx === activeCtx) {
       fogLoadMap(state, env, activeCtx);
       env.invalidateFogCache();
+      if (env && typeof env.drawFrame === 'function') env.drawFrame();
     }
   }
   window.AppFog = { fogCurrentCtx, fogSaveCurrentMap, syncFogUI, fogLoadMap, fogInitCells, drawFogOverlay, fogWorldToCell, fogPaintAt, fogFlushBatch, fogToggle, setFogMode, fogRevealAll, fogHideAll, fogApplyState, fogApplyUpdate };
