@@ -225,6 +225,48 @@ def test_fog_broadcast_only_reaches_users_with_map_visibility(monkeypatch):
     assert player_world.id not in recipients
 
 
+def test_fog_broadcast_includes_main_party_player_when_split_party_metadata_exists(monkeypatch):
+    session = Session(id="fog-sync-main-follow-dm")
+    dm = User(id="dm-1", name="DM", role="dm")
+    main_player = User(id="pl-main", name="Main", role="player")
+    side_player = User(id="pl-side", name="Side", role="player")
+    session.users[dm.id] = dm
+    session.users[main_player.id] = main_player
+    session.users[side_player.id] = side_player
+    session.dm_id = dm.id
+    session.dm_map_context = "poi-prison"
+    session.pois["poi-prison"] = POI(id="poi-prison", x=0, y=0, name="Prison", map_context="world")
+    # Split-party metadata exists (side group assigned), but main party still
+    # follows the DM context.
+    session.set_user_subgroup_id(side_player.id, "beta", actor_id=dm.id)
+    session.set_subgroup_map_context("beta", "world", actor_id=dm.id)
+    session.fog_maps = {"poi-prison": {"enabled": True, "cols": 4, "rows": 4, "cells": "0" * 16}}
+
+    sent = []
+
+    async def _send_to(session_id, user_id, message):
+        sent.append((session_id, user_id, message))
+
+    async def _save_campaign_async(_session):
+        return True
+
+    monkeypatch.setattr(map_editor, "manager", SimpleNamespace(send_to=_send_to))
+    monkeypatch.setattr(map_editor, "save_campaign_async", _save_campaign_async)
+
+    asyncio.run(
+        map_editor.handle_fog_toggle(
+            {"map_ctx": "poi-prison", "enabled": True},
+            session,
+            dm,
+        )
+    )
+
+    recipients = {uid for _, uid, _ in sent}
+    assert dm.id in recipients
+    assert main_player.id in recipients
+    assert side_player.id not in recipients
+
+
 def test_fog_maps_persist_across_restore_and_stay_isolated_per_context():
     session = Session(id="fog-sync-5")
     session.name = "Fog Restore"
