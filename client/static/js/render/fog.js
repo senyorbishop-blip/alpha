@@ -4,13 +4,22 @@
   //   and fog overlay rendering through env/state compatibility wrappers
   // - deliberately does NOT own gameplay collections or the broader draw loop,
   //   which still live in play.html during the staged migration
+  function _normalizeMapCtx(value, env) {
+    const raw = String(value || 'world').trim() || 'world';
+    if (raw !== '__local__') return raw;
+    if (env && typeof env.getDmMapContext === 'function') {
+      const dmCtx = String(env.getDmMapContext() || 'world').trim() || 'world';
+      if (dmCtx && dmCtx !== '__local__') return dmCtx;
+    }
+    return 'world';
+  }
   function _resolveAuthoritativeMapContext(env) {
     if (env && typeof env.getCurrentMapContext === 'function') {
-      return String(env.getCurrentMapContext() || 'world');
+      return _normalizeMapCtx(env.getCurrentMapContext(), env);
     }
-    if (env && env.currentPoi && env.currentPoi.id) return String(env.currentPoi.id);
+    if (env && env.currentPoi && env.currentPoi.id) return _normalizeMapCtx(env.currentPoi.id, env);
     if (env && typeof env.getDmMapContext === 'function') {
-      const dmCtx = String(env.getDmMapContext() || 'world');
+      const dmCtx = _normalizeMapCtx(env.getDmMapContext(), env);
       if (dmCtx && dmCtx !== 'world') return dmCtx;
     }
     return 'world';
@@ -108,7 +117,7 @@
     _syncFogStatus(state, env);
   }
   function fogLoadMap(state, env, ctx) {
-    state.fogMapCtx = String(ctx || 'world');
+    state.fogMapCtx = _normalizeMapCtx(ctx, env);
     const entry = state.fogMaps[state.fogMapCtx];
     if (entry) {
       state.fogEnabled = entry.enabled || false;
@@ -315,15 +324,16 @@
       const arr = new Uint8Array(total);
       const str = p.fog_cells || '';
       for (let i = 0; i < Math.min(str.length, total); i++) arr[i] = str[i] === '1' ? 1 : 0;
-      state.fogMaps[p.map_ctx] = { enabled: p.fog_enabled || false, cols: p.fog_cols || 64, rows: p.fog_rows || 64, cells: arr };
+      const mapCtx = _normalizeMapCtx(p.map_ctx, env);
+      state.fogMaps[mapCtx] = { enabled: p.fog_enabled || false, cols: p.fog_cols || 64, rows: p.fog_rows || 64, cells: arr };
     }
     const ctx = fogCurrentCtx(env);
-    if (p.map_ctx !== undefined && p.map_ctx !== ctx) return;
+    if (p.map_ctx !== undefined && _normalizeMapCtx(p.map_ctx, env) !== ctx) return;
     fogLoadMap(state, env, ctx);
     if (env && typeof env.drawFrame === 'function') env.drawFrame();
   }
   function fogApplyUpdate(state, env, p) {
-    const updCtx = String((p && p.map_ctx) || 'world');
+    const updCtx = _normalizeMapCtx((p && p.map_ctx) || 'world', env);
     const val = p && p.reveal ? 1 : 0;
     if (!state.fogMaps[updCtx]) state.fogMaps[updCtx] = { enabled: true, cols: 64, rows: 64, cells: new Uint8Array(64 * 64) };
     const entry = state.fogMaps[updCtx];
