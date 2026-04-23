@@ -667,8 +667,15 @@ class Session:
         if subgroup_ctx:
             contexts.add(subgroup_ctx)
         participant = (self.users or {}).get(str(user_id or ""))
-        if participant and str(getattr(participant, "role", "") or "").strip().lower() == "viewer":
-            dm_ctx = str(getattr(self, "dm_map_context", "world") or "world").strip()[:80] or "world"
+        role = str(getattr(participant, "role", "") or "").strip().lower() if participant else ""
+        dm_ctx = str(getattr(self, "dm_map_context", "world") or "world").strip()[:80] or "world"
+        split_enabled = bool((self._split_party_store().get("assignments") or {}))
+        if role == "viewer":
+            contexts.add(dm_ctx)
+        elif role == "player" and not split_enabled:
+            # Single-party default: players should follow the DM's active scene
+            # context for fog/map sync. Split-party assignments remain the
+            # authority once enabled.
             contexts.add(dm_ctx)
         return {str(ctx).strip()[:80] or "world" for ctx in contexts}
 
