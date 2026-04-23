@@ -267,9 +267,14 @@
     if (typeof env.syncShellState === 'function') env.syncShellState(state);
     if (!state.fogMaps[state.fogMapCtx]) state.fogMaps[state.fogMapCtx] = { enabled: false, cols: 64, rows: 64, cells: null };
     state.fogMaps[state.fogMapCtx].enabled = enabled;
-    if (enabled && !state.fogMaps[state.fogMapCtx].cells) {
-      state.fogMaps[state.fogMapCtx].cells = new Uint8Array(state.fogCols * state.fogRows);
-      state.fogCells = state.fogMaps[state.fogMapCtx].cells;
+    if (enabled) {
+      const entry = state.fogMaps[state.fogMapCtx];
+      state.fogCols = entry.cols || state.fogCols || 64;
+      state.fogRows = entry.rows || state.fogRows || 64;
+      if (!entry.cells) {
+        entry.cells = new Uint8Array(state.fogCols * state.fogRows);
+      }
+      state.fogCells = entry.cells;
       if (state.fogCanvas) { state.fogCanvas.width = state.fogCols; state.fogCanvas.height = state.fogRows; }
     } else if (!enabled) {
       state.fogCells = null;
