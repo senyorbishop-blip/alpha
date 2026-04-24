@@ -7874,6 +7874,24 @@
     </div>
     <div class="map-uploading" id="map-uploading">Uploading…</div>
     <button class="map-clear-btn" id="map-clear-btn" onclick="clearMap()">✕ Remove Map</button>
+    <div style="margin-top:0.7rem;padding-top:0.55rem;border-top:1px solid rgba(255,255,255,0.1);display:grid;gap:0.42rem;">
+      <div style="font-size:0.62rem;color:var(--parchment-dim);line-height:1.35;">
+        <strong style="color:var(--parchment);font-size:0.68rem;">Editor Grid Size</strong><br>
+        Changes map cell density (not camera zoom).
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:0.45rem;align-items:center;">
+        <input id="editor-grid-size-slider" type="range" min="16" max="256" step="4" value="64" oninput="setEditorGridSizePx(this.value, { debounceSave: true })" />
+        <input id="editor-grid-size-input" type="number" min="16" max="256" step="1" value="64" style="width:72px;" onchange="setEditorGridSizePx(this.value, { saveNow: true })" />
+      </div>
+      <div style="font-size:0.58rem;color:var(--parchment-dim);">Grid size: <span id="editor-grid-size-readout">64</span> px/cell</div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0.28rem;">
+        <button class="modal-btn" style="padding:0.24rem 0.32rem;font-size:0.62rem;" onclick="setEditorGridSizePx(24, { saveNow: true })">Tiny 24</button>
+        <button class="modal-btn" style="padding:0.24rem 0.32rem;font-size:0.62rem;" onclick="setEditorGridSizePx(32, { saveNow: true })">Small 32</button>
+        <button class="modal-btn" style="padding:0.24rem 0.32rem;font-size:0.62rem;" onclick="setEditorGridSizePx(64, { saveNow: true })">Standard 64</button>
+        <button class="modal-btn" style="padding:0.24rem 0.32rem;font-size:0.62rem;" onclick="setEditorGridSizePx(96, { saveNow: true })">Large 96</button>
+        <button class="modal-btn" style="padding:0.24rem 0.32rem;font-size:0.62rem;grid-column:span 2;" onclick="setEditorGridSizePx(128, { saveNow: true })">Huge 128</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -11489,13 +11507,66 @@ let _sceneDescTimer    = null;   // debounce timer for scene description
 let rulerUnit  = 'ft';       // 'ft' | 'miles'
 let rulerScale = 5;          // units per grid square
 let rulerDiagonalRule = '5e'; // 'straight' | '5e'
-const PX_PER_GRID = 50;      // canvas pixels per grid square (fixed)
+const GRID_SIZE_MIN_PX = 16;
+const GRID_SIZE_MAX_PX = 256;
+const GRID_SIZE_DEFAULT_PX = 64;
+let PX_PER_GRID = GRID_SIZE_DEFAULT_PX; // canvas pixels per grid square
 const TOKEN_SIZE_PRESETS = [
   { key: '1', label: '1x1 · Small / Medium', width: 40, height: 40, squares: 1 },
   { key: '2', label: '2x2 · Large', width: 100, height: 100, squares: 2 },
   { key: '3', label: '3x3 · Huge', width: 150, height: 150, squares: 3 },
   { key: '4', label: '4x4 · Gargantuan', width: 200, height: 200, squares: 4 },
 ];
+
+let _gridSizeSaveTimer = null;
+
+function _sanitizeGridSizePx(value, fallback = GRID_SIZE_DEFAULT_PX) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(GRID_SIZE_MIN_PX, Math.min(GRID_SIZE_MAX_PX, Math.round(parsed)));
+}
+
+function getCurrentGridSizePx() {
+  const size = currentMapSettings()?.grid?.size_px;
+  return _sanitizeGridSizePx(size, GRID_SIZE_DEFAULT_PX);
+}
+
+function _syncGridSizeControls() {
+  const value = _sanitizeGridSizePx(PX_PER_GRID, GRID_SIZE_DEFAULT_PX);
+  const slider = document.getElementById('editor-grid-size-slider');
+  const input = document.getElementById('editor-grid-size-input');
+  const readout = document.getElementById('editor-grid-size-readout');
+  if (slider) slider.value = String(value);
+  if (input) input.value = String(value);
+  if (readout) readout.textContent = String(value);
+}
+
+function applyGridSizeFromSettings() {
+  PX_PER_GRID = getCurrentGridSizePx();
+  _syncGridSizeControls();
+}
+
+function setEditorGridSizePx(rawValue, options) {
+  const opts = options && typeof options === 'object' ? options : {};
+  const next = _sanitizeGridSizePx(rawValue, PX_PER_GRID || GRID_SIZE_DEFAULT_PX);
+  PX_PER_GRID = next;
+  _syncGridSizeControls();
+  _editorTerrainCache.dirty = true;
+  drawFrame();
+  if (ROLE !== 'dm') return;
+  const persist = () => {
+    const settings = JSON.parse(JSON.stringify(currentMapSettings() || {}));
+    settings.grid = { ...(settings.grid || {}), size_px: next };
+    sendWS({ type: 'map_settings_save', payload: { map_context: editorMapContextKey(), settings } });
+  };
+  if (opts.saveNow) {
+    if (_gridSizeSaveTimer) clearTimeout(_gridSizeSaveTimer);
+    persist();
+  } else if (opts.debounceSave) {
+    if (_gridSizeSaveTimer) clearTimeout(_gridSizeSaveTimer);
+    _gridSizeSaveTimer = setTimeout(persist, 180);
+  }
+}
 
 function getTokenFootprint(token) {
   const w = Math.max(1, Number(token?.width) || 40);
@@ -12218,6 +12289,7 @@ function refreshEditorMapStyleControls() {
   }
   const brush = document.getElementById('editor-brush-size');
   if (brush) brush.max = '12';
+  applyGridSizeFromSettings();
   _editorTerrainCache.dirty = true;
 }
 function saveEditorMapStyleSettings(debounceOnly) {
@@ -12287,7 +12359,7 @@ function rebuildEditorTerrainCache() {
     cache.canvas.width = 1; cache.canvas.height = 1; cache.bounds = null; cache.dirty = false; return;
   }
   const pad = mode === 'world' ? 3 : 1;
-  const cellSize = 50;
+  const cellSize = PX_PER_GRID;
   const widthCells = (maxX - minX + 1) + pad * 2;
   const heightCells = (maxY - minY + 1) + pad * 2;
   cache.canvas.width = Math.max(1, widthCells * cellSize);
@@ -17468,7 +17540,7 @@ function drawGrid(W, H) {
   const worldMode = isWorldMapMode();
   const showWorldGrid = !!currentMapSettings()?.world?.show_grid;
   if (worldMode && !showWorldGrid) return;
-  const gridSize = 50 * cam.zoom;
+  const gridSize = PX_PER_GRID * cam.zoom;
   if (gridSize < (worldMode ? 16 : 8)) return;
   const offX = ((cam.x * cam.zoom) + W / 2) % gridSize;
   const offY = ((cam.y * cam.zoom) + H / 2) % gridSize;
@@ -19488,6 +19560,7 @@ document.addEventListener('DOMContentLoaded', () => {
       rulerScale = parseFloat(scaleInput.value) || 1;
     });
   }
+  applyGridSizeFromSettings();
 });
 
 // ═══════════════════════════════════════════════════════════════════
@@ -30213,6 +30286,7 @@ function handleLegacyMessage(msg) {
       _editorPropsAll = preserveDirtyEditorContextInSync('props', p.editor_props || {});
       if (shouldReloadEditorLayerFromSync('props')) ensureEditorPropsLoaded(true);
       _mapSettingsAll = { ...(p.map_settings || {}) };
+      applyGridSizeFromSettings();
       refreshPingPermissionUi();
       if (currentTool === 'ping' && !canCurrentUserPingMap(false)) setTool('select');
       _editorPathsAll = { ...(p.editor_paths || {}) };
@@ -30748,6 +30822,7 @@ function handleLegacyMessage(msg) {
 
     case 'map_settings_sync': {
       _mapSettingsAll = { ...(p.map_settings || {}) };
+      applyGridSizeFromSettings();
       refreshPingPermissionUi();
       if (currentTool === 'ping' && !canCurrentUserPingMap(false)) setTool('select');
       invalidateFogCache();

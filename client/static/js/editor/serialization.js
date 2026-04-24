@@ -25,7 +25,7 @@
       version: VERSION,
       map_context: safeCtx(src.map_context || mapContext),
       map_type: String(src.map_type || src.type || ((src.settings || {}).editor_mode || 'tactical')).toLowerCase() === 'world' ? 'world' : 'tactical',
-      grid: clone(src.grid && typeof src.grid === 'object' ? src.grid : { tile_size_px: 50, feet_per_tile: 5, snap: true }),
+      grid: clone(src.grid && typeof src.grid === 'object' ? src.grid : { tile_size_px: 64, feet_per_tile: 5, snap: true }),
       assets: clone(src.assets && typeof src.assets === 'object' ? src.assets : {}),
       settings: clone(src.settings && typeof src.settings === 'object' ? src.settings : {}),
       meta: clone(src.meta && typeof src.meta === 'object' ? src.meta : {}),
@@ -47,6 +47,7 @@
     const ctx = safeCtx(mapContext);
     const settingsAll = rt._mapSettingsAll || {};
     const settings = clone(settingsAll[ctx] || {});
+    const gridSizePx = Math.max(16, Math.min(256, Number((settings.grid || {}).size_px || 64))) || 64;
     const mapType = String(settings.editor_mode || 'tactical').toLowerCase() === 'world' ? 'world' : 'tactical';
     let backgroundUrl = null;
     if (ctx === 'world') {
@@ -59,7 +60,7 @@
     return normalizeMapDocument({
       map_context: ctx,
       map_type: mapType,
-      grid: { tile_size_px: 50, feet_per_tile: 5, snap: true },
+      grid: { tile_size_px: gridSizePx, feet_per_tile: 5, snap: true },
       assets: { background_url: backgroundUrl },
       settings,
       meta: { schema: 'casual-dnd.map-document', generated_on_client: true },

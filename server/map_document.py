@@ -84,12 +84,15 @@ def build_map_document(session, map_context: str) -> dict:
     if map_type not in {"world", "tactical"}:
         map_type = "tactical"
 
+    grid_settings = settings.get("grid") if isinstance(settings.get("grid"), dict) else {}
+    tile_size_px = int(grid_settings.get("size_px") or EDITOR_GRID_SIZE)
+
     doc = {
         "version": MAP_DOCUMENT_VERSION,
         "map_context": ctx,
         "map_type": map_type,
         "grid": {
-            "tile_size_px": EDITOR_GRID_SIZE,
+            "tile_size_px": tile_size_px,
             "feet_per_tile": FT_PER_GRID,
             "snap": True,
         },
