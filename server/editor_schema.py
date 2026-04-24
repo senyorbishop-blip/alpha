@@ -95,6 +95,7 @@ def normalize_map_settings(raw: dict | None) -> dict:
     vision = dict(src.get('vision') or {})
     lighting = dict(src.get('lighting') or {})
     world = dict(src.get('world') or {})
+    grid = dict(src.get('grid') or {})
     editor_mode = str(src.get('editor_mode') or 'tactical').lower()
     if editor_mode not in {'world', 'tactical'}:
         editor_mode = 'tactical'
@@ -106,6 +107,9 @@ def normalize_map_settings(raw: dict | None) -> dict:
             'show_grid': bool(world.get('show_grid', False)),
             'terrain_opacity': _clamp_float(world.get('terrain_opacity', 0.82), 0.82, 0.35, 1.0),
             'allow_player_ping': bool(world.get('allow_player_ping', True)),
+        },
+        'grid': {
+            'size_px': int(_clamp_float(grid.get('size_px', 64), 64, 16, 256)),
         },
         'weather': {
             'enabled': bool(weather.get('enabled', False)),
