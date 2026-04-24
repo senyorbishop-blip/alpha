@@ -53,6 +53,7 @@
     { id: 'room',    label: 'Room',     title: 'Click two corners to draw a four-wall room' },
     { id: 'door',    label: 'Door',     title: 'Click a wall segment to cut a door gap' },
     { id: 'opening', label: 'Opening',  title: 'Click a wall segment to cut an open gap' },
+    { id: 'stamp',   label: 'Stamp',    title: 'Select a preset and stamp walls/doors/structures' },
   ];
 
   const PROP_FILTER_CHIPS = ['All', 'Walls', 'Furniture', 'Chest', 'Doors', 'Lighting', 'Store'];
@@ -72,6 +73,7 @@
     paintMode:   'paint',   // 'paint' | 'erase'
     brush:       1,
     wallTool:    'segment',
+    stampPreset: '',
     wallAssist:  true,
     propFilter:  'All',
     propSearch:  '',
@@ -592,6 +594,60 @@
 
     frag.appendChild(grid);
 
+    const stampPresets = (window.EditorStampPresets && typeof window.EditorStampPresets.list === 'function')
+      ? window.EditorStampPresets.list()
+      : [];
+    if (stampPresets.length) {
+      const byCategory = new Map();
+      stampPresets.forEach((preset) => {
+        const key = String(preset.category || 'Misc');
+        if (!byCategory.has(key)) byCategory.set(key, []);
+        byCategory.get(key).push(preset);
+      });
+      const stampWrap = document.createElement('div');
+      stampWrap.className = 'ep-stamp-wrap';
+      const hint = document.createElement('div');
+      hint.className = 'ep-wall-note';
+      hint.textContent = 'Stamp workflow: select preset → ghost preview follows cursor → click to place. Esc or right-click cancels.';
+      stampWrap.appendChild(hint);
+      byCategory.forEach((entries, category) => {
+        const sub = document.createElement('details');
+        sub.className = 'ep-collapsible';
+        sub.open = category === 'Rooms';
+        const summary = document.createElement('summary');
+        summary.textContent = category;
+        sub.appendChild(summary);
+        const body = document.createElement('div');
+        body.className = 'ep-collapsible-body';
+        const stampGrid = document.createElement('div');
+        stampGrid.className = 'ep-stamp-grid';
+        entries.forEach((preset) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'ep-stamp-btn' + (_state.stampPreset === preset.id ? ' active' : '');
+          btn.dataset.stampPreset = preset.id;
+          btn.innerHTML = `<span class="ep-stamp-name">${esc(preset.name)}</span><span class="ep-stamp-meta">${esc((preset.widthCells || 1) + '×' + (preset.heightCells || 1))}</span>`;
+          btn.addEventListener('click', () => {
+            _state.stampPreset = preset.id;
+            _state.wallTool = 'stamp';
+            call('setEditorWallStampPreset', preset.id);
+            call('setEditorWallTool', 'stamp');
+            stampGrid.querySelectorAll('.ep-stamp-btn').forEach((node) =>
+              node.classList.toggle('active', node.dataset.stampPreset === preset.id)
+            );
+            grid.querySelectorAll('.ep-wall-btn').forEach((node) =>
+              node.classList.toggle('active', node.dataset.wallTool === 'stamp')
+            );
+          });
+          stampGrid.appendChild(btn);
+        });
+        body.appendChild(stampGrid);
+        sub.appendChild(body);
+        stampWrap.appendChild(sub);
+      });
+      frag.appendChild(stampWrap);
+    }
+
     // Straight-assist + wall-mode guidance (collapsed by default on mobile)
     const advanced = document.createElement('details');
     advanced.className = 'ep-collapsible';
@@ -1033,6 +1089,7 @@
     if (typeof window.editorPropRotation === 'number') _state.propRotation = window.editorPropRotation;
     if (typeof window.editorPaintMode === 'string')  _state.paintMode = window.editorPaintMode;
     if (typeof window.editorWallTool  === 'string')  _state.wallTool  = window.editorWallTool;
+    if (typeof window.editorWallStampPresetId === 'string') _state.stampPreset = window.editorWallStampPresetId;
     if (typeof window.editorActiveLayer === 'string') {
       const l = window.editorActiveLayer;
       _state.tab = l === 'walls' ? 'walls' : (l === 'props' || l === 'images') ? 'props' : 'terrain';
