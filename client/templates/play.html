@@ -10664,6 +10664,7 @@ Shortbow — +5 to hit, 1d6+3 piercing"></textarea>
 -->
 <script src="/static/js/core/csrf.js"></script>
 <script src="/static/js/editor/serialization.js"></script>
+<script src="/static/js/editor/stamp_presets.js"></script>
 <script src="/static/js/editor/terrain_manifest.js"></script>
 <script src="/static/js/assets/dnd_assets.js"></script>
 <script src="/static/js/editor/asset_initializer.js"></script>
@@ -11975,6 +11976,11 @@ let editorPathWidth = 1.2;
 let editorMarkerKind = 'city';
 let editorWallDraftStart = null;
 let editorWallTool = 'segment';
+let editorWallStampPresetId = '';
+let editorWallStampRotation = 0;
+let editorWallStampFlipX = false;
+let editorWallStampSnap = true;
+window.editorWallStampPresetId = editorWallStampPresetId;
 let editorWallHoverIndex = -1;
 let editorWallStraightAssist = true;
 let editorPropKind = 'barrel';
@@ -13751,11 +13757,17 @@ function setEditorLayerMode(layer) {
   }
 }
 function setEditorWallTool(tool) {
-  editorWallTool = (tool === 'room' || tool === 'door' || tool === 'opening') ? tool : 'segment';
+  editorWallTool = (tool === 'room' || tool === 'door' || tool === 'opening' || tool === 'stamp') ? tool : 'segment';
+  if (editorWallTool === 'stamp' && !editorWallStampPresetId) {
+    const first = getEditorStampPresets()[0];
+    if (first) setEditorWallStampPreset(first.id);
+  }
+  window.editorWallTool = editorWallTool;
   document.getElementById('editor-wall-tool-segment')?.classList.toggle('active', editorWallTool === 'segment');
   document.getElementById('editor-wall-tool-room')?.classList.toggle('active', editorWallTool === 'room');
   document.getElementById('editor-wall-tool-door')?.classList.toggle('active', editorWallTool === 'door');
   document.getElementById('editor-wall-tool-opening')?.classList.toggle('active', editorWallTool === 'opening');
+  document.getElementById('editor-wall-tool-stamp')?.classList.toggle('active', editorWallTool === 'stamp');
   const note = document.getElementById('editor-wall-mode-note');
   if (note) {
     note.textContent = editorWallTool === 'room'
@@ -13764,13 +13776,38 @@ function setEditorWallTool(tool) {
         ? 'Door mode: click a hovered horizontal or vertical wall to cut a one-square gap and place a saved door marker.'
         : (editorWallTool === 'opening'
           ? 'Opening mode: click a hovered horizontal or vertical wall to cut a one-square gap and place a saved opening marker.'
-          : 'Segment mode: click once to start a wall, then click again to finish. Straight Assist locks new segments to horizontal or vertical.'));
+          : (editorWallTool === 'stamp'
+            ? 'Stamp mode: choose a preset from the panel, preview on map, click to place. R rotates, F flips, Esc/right-click cancels.'
+            : 'Segment mode: click once to start a wall, then click again to finish. Straight Assist locks new segments to horizontal or vertical.')));
   }
   editorWallDraftStart = null;
   editorWallHoverIndex = -1;
 }
 function setEditorWallStraightAssist(enabled) {
   editorWallStraightAssist = !!enabled;
+}
+function getEditorStampPresets() {
+  if (!window.EditorStampPresets || typeof window.EditorStampPresets.list !== 'function') return [];
+  return window.EditorStampPresets.list();
+}
+function getEditorStampPresetById(id) {
+  if (!window.EditorStampPresets || typeof window.EditorStampPresets.byId !== 'function') return null;
+  return window.EditorStampPresets.byId(id);
+}
+function setEditorWallStampPreset(id) {
+  const picked = getEditorStampPresetById(id);
+  editorWallStampPresetId = picked ? String(picked.id || '') : '';
+  window.editorWallStampPresetId = editorWallStampPresetId;
+}
+function rotateEditorWallStamp(delta = 90) {
+  editorWallStampRotation = ((Number(editorWallStampRotation || 0) + Number(delta || 0)) % 360 + 360) % 360;
+}
+function flipEditorWallStamp() {
+  editorWallStampFlipX = !editorWallStampFlipX;
+}
+function cancelEditorWallStampPlacement() {
+  editorWallDraftStart = null;
+  drawFrame();
 }
 function setEditorPropRotation(v) {
   const normalized = Number.isFinite(Number(v)) ? Number(v) : 0;
@@ -14147,6 +14184,100 @@ function constrainEditorWallPoint(start, pt) {
   const dx = Math.abs(pt.x - start.x);
   const dy = Math.abs(pt.y - start.y);
   return dx >= dy ? { x: pt.x, y: start.y } : { x: start.x, y: pt.y };
+}
+function _stampRotTurns() {
+  return ((Math.round(Number(editorWallStampRotation || 0) / 90) % 4) + 4) % 4;
+}
+function _transformStampCellPoint(x, y, width, height) {
+  let tx = Number(x || 0);
+  let ty = Number(y || 0);
+  let tw = Number(width || 1);
+  let th = Number(height || 1);
+  if (editorWallStampFlipX) tx = tw - tx;
+  const turns = _stampRotTurns();
+  for (let i = 0; i < turns; i++) {
+    const nextX = th - ty;
+    const nextY = tx;
+    tx = nextX;
+    ty = nextY;
+    const tmp = tw;
+    tw = th;
+    th = tmp;
+  }
+  return { x: tx, y: ty };
+}
+function _transformStampFacing(facing) {
+  const base = String(facing || 'h').toLowerCase().startsWith('v') ? 'v' : 'h';
+  const turns = _stampRotTurns();
+  const rotated = (turns % 2 === 1) ? (base === 'h' ? 'v' : 'h') : base;
+  return rotated;
+}
+function buildEditorStampPreview(preset, wx, wy) {
+  if (!preset) return null;
+  const snapped = editorWallStampSnap ? snapEditorWallPoint(wx, wy) : { x: wx, y: wy };
+  const gridSize = PX_PER_GRID;
+  const walls = (Array.isArray(preset.walls) ? preset.walls : []).map((wall) => {
+    const a = _transformStampCellPoint(wall.x1, wall.y1, preset.widthCells, preset.heightCells);
+    const b = _transformStampCellPoint(wall.x2, wall.y2, preset.widthCells, preset.heightCells);
+    return normalizeEditorWallSegment({
+      x1: Math.round(snapped.x + a.x * gridSize),
+      y1: Math.round(snapped.y + a.y * gridSize),
+      x2: Math.round(snapped.x + b.x * gridSize),
+      y2: Math.round(snapped.y + b.y * gridSize),
+    });
+  }).filter(Boolean);
+  const doors = (Array.isArray(preset.doors) ? preset.doors : []).flatMap((door) => {
+    const at = _transformStampCellPoint(door.x, door.y, preset.widthCells, preset.heightCells);
+    const kind = String(door.kind || 'door').toLowerCase() === 'opening' ? 'opening' : 'door';
+    const facing = _transformStampFacing(door.facing || 'h');
+    if (String(door.kind || '').toLowerCase() === 'double') {
+      const at2 = facing === 'h' ? { x: at.x + 1, y: at.y } : { x: at.x, y: at.y + 1 };
+      return [
+        normalizeEditorPropItem({ kind, x: snapped.x + at.x * gridSize, y: snapped.y + at.y * gridSize, w: 1, h: 1, facing }),
+        normalizeEditorPropItem({ kind, x: snapped.x + at2.x * gridSize, y: snapped.y + at2.y * gridSize, w: 1, h: 1, facing }),
+      ].filter(Boolean);
+    }
+    return [normalizeEditorPropItem({ kind, x: snapped.x + at.x * gridSize, y: snapped.y + at.y * gridSize, w: 1, h: 1, facing })].filter(Boolean);
+  });
+  const props = (Array.isArray(preset.props) ? preset.props : []).map((prop) => {
+    const at = _transformStampCellPoint(prop.x, prop.y, preset.widthCells, preset.heightCells);
+    return normalizeEditorPropItem({
+      kind: prop.kind || 'crate',
+      x: snapped.x + at.x * gridSize,
+      y: snapped.y + at.y * gridSize,
+      w: Math.max(1, Number(prop.w || 1)),
+      h: Math.max(1, Number(prop.h || 1)),
+    });
+  }).filter(Boolean);
+  return { anchor: snapped, walls, doors, props };
+}
+function placeEditorWallStamp(wx, wy) {
+  const preset = getEditorStampPresetById(editorWallStampPresetId);
+  if (!preset) return false;
+  ensureEditorWallsLoaded();
+  ensureEditorPropsLoaded();
+  const preview = buildEditorStampPreview(preset, wx, wy);
+  if (!preview) return false;
+  const beforeWalls = _editorWallSegments.map((seg) => ({ ...seg }));
+  const beforeProps = (_editorPropItems || []).map((item) => ({ ...item }));
+  let changed = false;
+  preview.walls.forEach((wall) => { if (addEditorWallSegment(wall)) changed = true; });
+  if (preview.doors.length || preview.props.length) {
+    _editorPropItems = dedupeEditorProps([...(Array.isArray(_editorPropItems) ? _editorPropItems : []), ...preview.doors, ...preview.props]);
+    changed = true;
+  }
+  if (!changed) return false;
+  const afterWalls = _editorWallSegments.map((seg) => ({ ...seg }));
+  const afterProps = (_editorPropItems || []).map((item) => ({ ...item }));
+  pushEditorUndo(
+    () => { ensureEditorWallsLoaded(); ensureEditorPropsLoaded(); _editorWallSegments = beforeWalls.map((seg) => ({ ...seg })); _editorPropItems = beforeProps.map((item) => ({ ...item })); markEditorLayerDirty('walls', 0); markEditorLayerDirty('props', 0); saveEditorWalls(true); saveEditorProps(true); drawFrame(); },
+    () => { ensureEditorWallsLoaded(); ensureEditorPropsLoaded(); _editorWallSegments = afterWalls.map((seg) => ({ ...seg })); _editorPropItems = afterProps.map((item) => ({ ...item })); markEditorLayerDirty('walls', 0); markEditorLayerDirty('props', 0); saveEditorWalls(true); saveEditorProps(true); drawFrame(); }
+  );
+  markEditorLayerDirty('walls', 120);
+  markEditorLayerDirty('props', 120);
+  saveEditorWalls(true);
+  saveEditorProps(true);
+  return true;
 }
 function editorPointLineDistance(px, py, x1, y1, x2, y2) {
   const dx = x2 - x1, dy = y2 - y1;
@@ -15967,6 +16098,12 @@ function openLinkedEditorMarker(marker) {
 }
 function handleEditorWallClick(wx, wy) {
   ensureEditorWallsLoaded();
+  if (editorWallTool === 'stamp') {
+    const ok = placeEditorWallStamp(wx, wy);
+    if (!ok) showToast('Choose a stamp preset first.');
+    drawFrame();
+    return;
+  }
   if (editorPaintMode === 'erase') {
     const idx = findEditorWallIndexAt(wx, wy);
     editorWallHoverIndex = idx;
@@ -16706,6 +16843,31 @@ function drawEditorWalls() {
 }
 function drawEditorWallPreview() {
   if (!isEditorOpen() || editorActiveLayer !== 'walls' || !_editorMouseWorld) return;
+  if (editorWallTool === 'stamp') {
+    const preset = getEditorStampPresetById(editorWallStampPresetId);
+    if (!preset) return;
+    const preview = buildEditorStampPreview(preset, _editorMouseWorld.x, _editorMouseWorld.y);
+    if (!preview) return;
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.setLineDash([10 / cam.zoom, 7 / cam.zoom]);
+    ctx.strokeStyle = 'rgba(255,219,127,0.96)';
+    ctx.fillStyle = 'rgba(255,219,127,0.14)';
+    ctx.lineWidth = 4 / cam.zoom;
+    preview.walls.forEach((wall) => {
+      ctx.beginPath();
+      ctx.moveTo(wall.x1, wall.y1);
+      ctx.lineTo(wall.x2, wall.y2);
+      ctx.stroke();
+    });
+    preview.doors.forEach((door) => {
+      const w = Math.max(1, Number(door.w || 1)) * PX_PER_GRID;
+      const h = Math.max(1, Number(door.h || 1)) * PX_PER_GRID;
+      ctx.fillRect(Number(door.x || 0), Number(door.y || 0), w, h);
+    });
+    ctx.restore();
+    return;
+  }
   if ((editorWallTool === 'door' || editorWallTool === 'opening') && editorWallHoverIndex >= 0) {
     const seg = (_editorWallSegments || [])[editorWallHoverIndex];
     const cut = splitEditorWallSegmentForDoor(seg, _editorMouseWorld.x, _editorMouseWorld.y);
@@ -18895,7 +19057,13 @@ function onRightClick(e) {
     return;
   }
   const w = getMouseWorld(e);
-  if (isEditorOpen()) return;
+  if (isEditorOpen()) {
+    if (editorActiveLayer === 'walls' && editorWallTool === 'stamp') {
+      cancelEditorWallStampPlacement();
+      return;
+    }
+    return;
+  }
   const hit = hitTestTokens(w.x, w.y);
   const canOpenCorpseMenu = hit && (_corpseActionAllowed(hit, 'search') || _corpseActionAllowed(hit, 'harvest'));
   if (hit && (ROLE === 'dm' || _tokenOwnedByMe(hit) || canOpenCorpseMenu)) {
@@ -36737,6 +36905,18 @@ document.getElementById('char-token-image')?.addEventListener('change', refreshT
 document.getElementById('te-image-file')?.addEventListener('change', refreshTokenImageFieldLabels);
 
 document.addEventListener('keydown', e => {
+  if (ROLE === 'dm' && isEditorOpen() && editorActiveLayer === 'walls' && editorWallTool === 'stamp' && e.key && e.key.toLowerCase() === 'r') {
+    e.preventDefault();
+    rotateEditorWallStamp(90);
+    drawFrame();
+    return;
+  }
+  if (ROLE === 'dm' && isEditorOpen() && editorActiveLayer === 'walls' && editorWallTool === 'stamp' && e.key && e.key.toLowerCase() === 'f') {
+    e.preventDefault();
+    flipEditorWallStamp();
+    drawFrame();
+    return;
+  }
   if (ROLE === 'dm' && isEditorOpen() && (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') {
     e.preventDefault();
     applyEditorUndo();
@@ -36767,6 +36947,10 @@ document.addEventListener('keydown', e => {
     return;
   }
   if (e.key === 'Escape') {
+    if (ROLE === 'dm' && isEditorOpen() && editorActiveLayer === 'walls' && editorWallTool === 'stamp') {
+      cancelEditorWallStampPlacement();
+      return;
+    }
     if (_bigScreenDisplayMode) {
       setBigScreenDisplayMode(false);
       return;
