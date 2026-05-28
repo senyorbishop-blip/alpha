@@ -342,6 +342,11 @@
     const val = p && p.reveal ? 1 : 0;
     if (!state.fogMaps[updCtx]) state.fogMaps[updCtx] = { enabled: true, cols: 64, rows: 64, cells: new Uint8Array(64 * 64) };
     const entry = state.fogMaps[updCtx];
+    // A sparse paint update is only emitted by the server after that map's
+    // manual fog is enabled. If this client missed the prior fog_state (common
+    // during map-entry races), promote the local entry to enabled so the newly
+    // synced cells actually render instead of waiting for a refresh.
+    entry.enabled = true;
     if (!entry.cells || !(entry.cells instanceof Uint8Array)) {
       entry.cells = new Uint8Array((entry.cols || 64) * (entry.rows || 64));
     }

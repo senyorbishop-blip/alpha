@@ -370,3 +370,71 @@ def test_fog_maps_persist_across_restore_and_stay_isolated_per_context():
     assert "world" in dm_view["fog_maps"]
     assert "poi-a" in dm_view["fog_maps"]
     assert "poi-b" in dm_view["fog_maps"]
+
+
+def test_local_map_enter_includes_destination_fog_snapshot(monkeypatch):
+    session = Session(id="fog-sync-nav")
+    dm = User(id="dm-1", name="DM", role="dm")
+    player = User(id="pl-1", name="Player", role="player")
+    session.users[dm.id] = dm
+    session.users[player.id] = player
+    session.dm_id = dm.id
+    session.pois["poi-keep"] = POI(
+        id="poi-keep",
+        x=0,
+        y=0,
+        name="Keep",
+        map_context="world",
+        local_map_url="/static/maps/keep.png",
+    )
+    session.fog_maps = {
+        "poi-keep": {"enabled": True, "cols": 4, "rows": 4, "cells": "1010000000000000"},
+    }
+
+    broadcasts = []
+    sent = []
+
+    async def _broadcast(session_id, message, exclude_user=None):
+        broadcasts.append((session_id, message, exclude_user))
+
+    async def _send_to(session_id, user_id, message):
+        sent.append((session_id, user_id, message))
+
+    async def _save_campaign_async(_session):
+        return True
+
+    monkeypatch.setattr(map_editor, "manager", SimpleNamespace(broadcast=_broadcast, send_to=_send_to))
+    monkeypatch.setattr(map_editor, "save_campaign_async", _save_campaign_async)
+
+    asyncio.run(
+        map_editor.handle_local_map_nav(
+            {
+                "poi_id": "poi-keep",
+                "poi_name": "Keep",
+                "map_url": "/static/maps/keep.png",
+                "dm_map_context": "poi-keep",
+            },
+            session,
+            dm,
+        )
+    )
+
+    assert session.dm_map_context == "poi-keep"
+    assert broadcasts, "players should receive the local-map navigation broadcast"
+    nav_payload = broadcasts[0][1]["payload"]
+    assert broadcasts[0][1]["type"] == "local_map_enter"
+    assert nav_payload["map_ctx"] == "poi-keep"
+    assert nav_payload["fog_enabled"] is True
+    assert nav_payload["fog_cols"] == 4
+    assert nav_payload["fog_rows"] == 4
+    assert nav_payload["fog_cells"] == "1010000000000000"
+    assert sent and sent[0][2]["payload"]["fog_cells"] == "1010000000000000"
+
+
+def test_client_fog_update_promotes_stale_entry_to_enabled():
+    module_src = open("client/static/js/render/fog.js", encoding="utf-8").read()
+    play_src = open("client/templates/play.html", encoding="utf-8").read()
+
+    assert "entry.enabled = true;" in module_src
+    assert "entry.enabled = true;" in play_src
+    assert "if (p.map_ctx !== undefined) fogApplyState(p);" in play_src
