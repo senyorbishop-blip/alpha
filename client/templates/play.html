@@ -22697,6 +22697,10 @@ function handleLocalMapEnter(p) {
   propPopupClose();
   ensureEditorLayerLoaded(true);
   ensureEditorWallsLoaded(true);
+  ensureEditorPropsLoaded(true);
+  setFogMapContext(_dmMapContext);
+  fogLoadMap(fogMapCtx);
+  invalidateFogCache();
 }
 
 function _getNavVersion(payload) {
@@ -31543,6 +31547,10 @@ function handleLegacyMessage(msg) {
           fogMaps[updCtx] = { enabled: true, cols: 64, rows: 64, cells: new Uint8Array(64*64) };
         }
         const entry = fogMaps[updCtx];
+        // Sparse fog updates imply server-side manual fog is enabled; promote
+        // stale/disabled local entries so players do not need a refresh after
+        // missing an earlier fog_state during navigation.
+        entry.enabled = true;
         if (!entry.cells || !(entry.cells instanceof Uint8Array)) {
           entry.cells = new Uint8Array((entry.cols||64) * (entry.rows||64));
         }
@@ -31643,6 +31651,7 @@ function handleLegacyMessage(msg) {
       _acceptNavVersion(p);
       if (p.dm_map_context) _dmMapContext = p.dm_map_context;
       __syncMapShellState();
+      if (p.map_ctx !== undefined) fogApplyState(p);
       handleLocalMapEnter(p);
       break;
     }
@@ -31657,6 +31666,7 @@ function handleLegacyMessage(msg) {
       _acceptNavVersion(p);
       if (p.dm_map_context !== undefined) _dmMapContext = p.dm_map_context;
       __syncMapShellState();
+      if (p.map_ctx !== undefined) fogApplyState(p);
       handleLocalMapExit(p);
       // Safety fallback: ensure fog is loaded for the returned-to map context.
       setFogMapContext(_dmMapContext || 'world');

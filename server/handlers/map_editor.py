@@ -202,6 +202,32 @@ def _resolve_fog_map_context(session: Session, payload: dict) -> str:
     return _normalize_dm_map_context(session, fallback)
 
 
+def _fog_state_payload_for_context(session: Session, map_ctx: str) -> dict:
+    """Return a compact full fog snapshot for a single map context."""
+    ctx = str(map_ctx or "world").strip()[:80] or "world"
+    entry = dict((getattr(session, "fog_maps", {}) or {}).get(ctx) or {})
+    try:
+        cols = int(entry.get("cols") or 64)
+    except Exception:
+        cols = 64
+    try:
+        rows = int(entry.get("rows") or 64)
+    except Exception:
+        rows = 64
+    cols = max(1, min(cols, 512))
+    rows = max(1, min(rows, 512))
+    total = cols * rows
+    cells = str(entry.get("cells") or "")
+    if len(cells) != total:
+        cells = (cells[:total]).ljust(total, "0")
+    return {
+        "map_ctx": ctx,
+        "fog_enabled": bool(entry.get("enabled", False)),
+        "fog_cols": cols,
+        "fog_rows": rows,
+        "fog_cells": cells,
+    }
+
 async def _broadcast_fog_to_visible_users(session: Session, message: dict, map_ctx: str):
     """Deliver fog updates only to users whose visible map contexts include map_ctx."""
     users = dict(getattr(session, "users", {}) or {})
@@ -1236,6 +1262,11 @@ async def handle_local_map_nav(payload: dict, session: Session, user: User):
         nav_payload["dm_current_map_url"] = getattr(session, "dm_current_map_url", None)
         nav_payload["nav_version"] = int(getattr(session, "map_nav_version", 0) or 0)
         nav_payload["client_nav_intent"] = int(getattr(session, "dm_nav_intent", 0) or 0)
+        # Include the authoritative fog snapshot for the destination map in the
+        # same navigation message. Players may not have had this POI/local-map
+        # context in their previous visible state yet, so relying on a later
+        # refresh leaves them seeing an unfogged map until reconnect.
+        nav_payload.update(_fog_state_payload_for_context(session, nav_payload["dm_map_context"]))
 
         msg_type = "local_map_enter" if is_enter else "local_map_exit"
         msg = {"type": msg_type, "payload": nav_payload}
