@@ -82,3 +82,31 @@ def test_character_book_defaults_to_live_sheet_page_on_open():
     src = Path('client/static/js/ui/character_book.js').read_text(encoding='utf-8')
     assert "function openCharacterBook(env, page = 'premiumsheet')" in src
     assert "|| 'premiumsheet';" in src
+
+
+def test_native_builder_progression_tracks_asi_choices_by_level():
+    src = Path('client/static/js/character/builder/steps/step_progression.js').read_text(encoding='utf-8')
+    assert 'Level-by-Level ASI / Feat Choices' in src
+    assert 'data-builder-asi-level' in src
+    assert 'asiChoicesByLevel' in src
+    assert 'writeAsiChoice(context, levelKey' in src
+    assert 'For higher-level starts, work down this list like D&amp;D Beyond' in src
+    assert 'hasPerLevelChoices' in src
+
+
+def test_native_builder_progression_does_not_block_before_subclass_step():
+    src = Path('client/static/js/character/builder/builder_validators.js').read_text(encoding='utf-8')
+    assert "pending.filter(function (item) { return item && item.type === 'asi'; })" in src
+    assert 'Choose your subclass to resolve required progression choices.' not in src
+
+
+def test_builder_state_defaults_level_asi_choice_map():
+    src = Path('client/static/js/character/builder/builder_state.js').read_text(encoding='utf-8')
+    assert 'asiChoicesByLevel: {}' in src
+    assert 'draft.progression.asiChoicesByLevel = {}' in src
+
+
+def test_builder_service_reads_feats_from_level_asi_choice_map():
+    src = Path('server/character/service.py').read_text(encoding='utf-8')
+    assert 'asi_choices_by_level = progression.get("asiChoicesByLevel")' in src
+    assert 'progression_choice_state.get("asiChoicesByLevel")' in src

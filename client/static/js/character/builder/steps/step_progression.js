@@ -140,10 +140,47 @@
     return out;
   }
 
-  function resolvedAsiChoiceCount(progression) {
+  function normalizeAsiMode(value) {
+    var mode = String(value || 'ability').trim().toLowerCase();
+    return mode === 'feat' ? 'feat' : 'ability';
+  }
+
+  function normalizeAbilityList(values) {
+    return uniqueStrings((Array.isArray(values) ? values : []).map(function (value) {
+      return String(value || '').trim().toLowerCase();
+    }).filter(function (value) {
+      return ['str', 'dex', 'con', 'int', 'wis', 'cha'].indexOf(value) >= 0;
+    })).slice(0, 2);
+  }
+
+  function getAsiChoicesByLevel(progression) {
+    var row = progression && typeof progression === 'object' ? progression : {};
+    var choiceState = row.choiceState && typeof row.choiceState === 'object' ? row.choiceState : {};
+    var raw = row.asiChoicesByLevel && typeof row.asiChoicesByLevel === 'object'
+      ? row.asiChoicesByLevel
+      : (choiceState.asiChoicesByLevel && typeof choiceState.asiChoicesByLevel === 'object' ? choiceState.asiChoicesByLevel : {});
+    var out = {};
+    Object.keys(raw || {}).forEach(function (levelKey) {
+      var level = parseInt(levelKey, 10);
+      if (!Number.isFinite(level) || level < 1 || level > 20) return;
+      var choice = raw[levelKey] && typeof raw[levelKey] === 'object' ? raw[levelKey] : {};
+      var mode = normalizeAsiMode(choice.mode);
+      var featId = String(choice.featId || '').trim();
+      var abilities = normalizeAbilityList(choice.abilities || (choice.ability ? [choice.ability] : []));
+      out[String(level)] = {
+        level: level,
+        mode: mode,
+        featId: featId,
+        abilities: abilities,
+      };
+    });
+    return out;
+  }
+
+  function getLegacyAsiChoice(progression) {
     var row = progression && typeof progression === 'object' ? progression : {};
     var asiChoice = row.asiChoice && typeof row.asiChoice === 'object' ? row.asiChoice : {};
-    var asiMode = String(asiChoice.mode || 'ability').toLowerCase() === 'feat' ? 'feat' : 'ability';
+    var asiMode = normalizeAsiMode(asiChoice.mode || (row.choiceState && row.choiceState.asiMode));
     var asiAbilities = getAbilityChoiceState(row, asiMode);
     var featChoice = String(
       asiChoice.featId
@@ -151,9 +188,41 @@
       || (Array.isArray(row.feats) ? row.feats[0] : '')
       || ''
     ).trim();
+    return {
+      mode: asiMode,
+      featId: featChoice,
+      abilities: normalizeAbilityList(asiAbilities),
+    };
+  }
+
+  function isAsiChoiceResolved(choice) {
+    var row = choice && typeof choice === 'object' ? choice : {};
+    var mode = normalizeAsiMode(row.mode);
+    if (mode === 'feat') return !!String(row.featId || '').trim();
+    return normalizeAbilityList(row.abilities || (row.ability ? [row.ability] : [])).length > 0;
+  }
+
+  function resolvedAsiChoiceCount(progression) {
+    var row = progression && typeof progression === 'object' ? progression : {};
+    var byLevel = getAsiChoicesByLevel(row);
+    var explicitLevels = Object.keys(byLevel).filter(function (levelKey) {
+      return isAsiChoiceResolved(byLevel[levelKey]);
+    }).length;
+    var legacy = getLegacyAsiChoice(row);
+    var explicitAsi = isAsiChoiceResolved(legacy) ? 1 : 0;
     var storedFeats = uniqueStrings(Array.isArray(row.feats) ? row.feats : []);
-    var explicitAsi = (asiMode === 'ability' && asiAbilities.length > 0) || (asiMode === 'feat' && !!featChoice) ? 1 : 0;
-    return Math.max(storedFeats.length, explicitAsi);
+    return Math.max(storedFeats.length, explicitLevels, explicitAsi);
+  }
+
+  function getChoiceForAsiLevel(progression, asiLevels, level) {
+    var byLevel = getAsiChoicesByLevel(progression);
+    var key = String(level);
+    if (byLevel[key]) return byLevel[key];
+    var legacy = getLegacyAsiChoice(progression);
+    if (asiLevels && asiLevels.length && level === asiLevels[0] && isAsiChoiceResolved(legacy)) {
+      return Object.assign({ level: level }, legacy);
+    }
+    return { level: level, mode: 'ability', featId: '', abilities: [] };
   }
 
   function computeCumulativeRequirements(draft) {
@@ -173,8 +242,14 @@
       }
     }
 
+    var byLevelChoices = getAsiChoicesByLevel(progression);
+    var hasPerLevelChoices = Object.keys(byLevelChoices).length > 0;
     var resolvedCount = resolvedAsiChoiceCount(progression);
-    var unresolvedAsiLevels = asiLevels.slice(resolvedCount);
+    var unresolvedAsiLevels = hasPerLevelChoices
+      ? asiLevels.filter(function (lvl) {
+        return !isAsiChoiceResolved(byLevelChoices[String(lvl)]);
+      })
+      : asiLevels.slice(resolvedCount);
     var required = [];
     if (subclassUnlockLevel > 0 && safeLevel >= subclassUnlockLevel && !subclassSelection) {
       required.push({
@@ -222,6 +297,62 @@
     return '<div class="cb-level-picker">' + buttons + '</div>';
   }
 
+
+  function sortLevelKeys(keys) {
+    return (Array.isArray(keys) ? keys : []).slice().sort(function (a, b) {
+      return parseInt(a, 10) - parseInt(b, 10);
+    });
+  }
+
+  function collectFeatIdsFromChoices(byLevel) {
+    var out = [];
+    sortLevelKeys(Object.keys(byLevel || {})).forEach(function (levelKey) {
+      var choice = byLevel[levelKey] && typeof byLevel[levelKey] === 'object' ? byLevel[levelKey] : {};
+      var featId = String(choice.featId || '').trim();
+      if (normalizeAsiMode(choice.mode) === 'feat' && featId && out.indexOf(featId) < 0) {
+        out.push(featId);
+      }
+    });
+    return out;
+  }
+
+  function writeAsiChoice(context, level, patch) {
+    if (!context || typeof context.onSetField !== 'function') return;
+    var draft = context.draft && typeof context.draft === 'object' ? context.draft : {};
+    var progression = draft.progression && typeof draft.progression === 'object' ? draft.progression : {};
+    var requirements = computeCumulativeRequirements(draft);
+    var levelKey = String(parseInt(level, 10));
+    if (!levelKey || levelKey === 'NaN') return;
+
+    var existing = getChoiceForAsiLevel(progression, requirements.asiLevels, parseInt(levelKey, 10));
+    var next = Object.assign({}, existing, patch || {});
+    next.level = parseInt(levelKey, 10);
+    next.mode = normalizeAsiMode(next.mode);
+    next.featId = next.mode === 'feat' ? String(next.featId || '').trim() : '';
+    next.abilities = next.mode === 'ability'
+      ? normalizeAbilityList(next.abilities || (next.ability ? [next.ability] : []))
+      : [];
+    next.ability = next.abilities.length === 1 ? next.abilities[0] : '';
+
+    var byLevel = getAsiChoicesByLevel(progression);
+    byLevel[levelKey] = next;
+    var feats = collectFeatIdsFromChoices(byLevel);
+    var currentChoiceState = progression.choiceState && typeof progression.choiceState === 'object' ? progression.choiceState : {};
+    var compatibilityChoice = next.mode === 'feat'
+      ? { mode: 'feat', featId: next.featId, ability: '', abilities: [] }
+      : { mode: 'ability', featId: '', ability: next.ability, abilities: next.abilities.slice() };
+
+    context.onSetField(['progression', 'asiChoicesByLevel'], byLevel);
+    context.onSetField(['progression', 'choiceState'], Object.assign({}, currentChoiceState, {
+      asiChoicesByLevel: byLevel,
+      asiMode: next.mode,
+      featId: next.featId,
+      asiAbilities: next.abilities.slice(),
+    }));
+    context.onSetField(['progression', 'feats'], feats);
+    context.onSetField(['progression', 'asiChoice'], compatibilityChoice);
+  }
+
   var _advancedOpen = false;
 
   registerStep({
@@ -238,10 +369,7 @@
       const requirements = computeCumulativeRequirements(draft);
       const progressionSummary = requirements.progressionSummary;
       const progressionTable = requirements.progressionTable;
-      const levelRow = getLevelRow(progressionTable, safeLevel);
       const featureText = getFeaturesAtLevel(progressionSummary, safeLevel);
-      const featLevel = requirements.unresolvedAsiLevels.length > 0;
-      const featTargetLevel = featLevel ? requirements.unresolvedAsiLevels[0] : safeLevel;
       const featRows = getFeatRows();
       const talentRows = getTalentRowsForClass(classId).filter(function (row) {
         var minLevel = parseInt(row && row.minimumLevel, 10);
@@ -249,11 +377,7 @@
         return safeLevel >= minLevel;
       });
 
-      const asiChoice = progression.asiChoice && typeof progression.asiChoice === 'object' ? progression.asiChoice : {};
-      const asiMode = String(asiChoice.mode || 'ability').toLowerCase() === 'feat' ? 'feat' : 'ability';
-      const featChoice = String(asiChoice.featId || (Array.isArray(progression.feats) ? progression.feats[0] : '') || '').trim();
       const choiceState = progression.choiceState && typeof progression.choiceState === 'object' ? progression.choiceState : {};
-      const asiAbilities = getAbilityChoiceState(progression, asiMode);
       const selectedTalents = Array.isArray(choiceState.talentIds)
         ? choiceState.talentIds.map(function (v) { return String(v || '').trim(); }).filter(Boolean)
         : (Array.isArray(progression.talents) ? progression.talents.map(function (v) { return String(v || '').trim(); }).filter(Boolean) : []);
@@ -294,38 +418,67 @@
         ? '<div style="margin-top:10px;"><div class="cb-level-unlock"><span class="cb-level-unlock-label">Required unresolved picks</span><span class="cb-level-unlock-text">' + requirements.required.map(function (item) { return 'Lv ' + item.level + ': ' + item.title; }).join(' · ') + '</span></div></div>'
         : '<div class="builder-help-text" style="margin-top:10px;">All mandatory progression choices through level ' + safeLevel + ' are resolved.</div>';
 
-      var featPickerHtml = featLevel
-        ? [
-            '<div class="field"><label>Level ' + featTargetLevel + ' Required Choice</label>',
-            '<div class="builder-help-text">Resolve this required Ability Score Improvement or Feat before continuing.</div>',
-            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:8px;">',
-            '<button type="button" data-builder-asi-mode="ability" class="sheet-book-btn' + (asiMode === 'ability' ? ' active' : '') + '">Ability Score Improvement</button>',
-            '<button type="button" data-builder-asi-mode="feat" class="sheet-book-btn' + (asiMode === 'feat' ? ' active' : '') + '">Choose a Feat</button>',
-            '</div></div>',
-            '<div class="field"><label>Ability Score Improvement</label>',
-            '<div class="builder-help-text">Pick one ability for +2, or two different abilities for +1 each.</div>',
+      var abilityNames = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' };
+      var abilityLabels = { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' };
+      function renderFeatOptions(selectedFeatId) {
+        var selectedKey = String(selectedFeatId || '').trim();
+        return featRows.map(function (row) {
+          var id = String(row.id || '').trim();
+          var selected = id && id === selectedKey ? ' selected' : '';
+          return '<option value="' + escHtml(id) + '"' + selected + '>' + escHtml(String(row.displayName || row.name || id)) + '</option>';
+        }).join('');
+      }
+
+      var asiChoiceRowsHtml = requirements.asiLevels.length
+        ? requirements.asiLevels.map(function (asiLevel) {
+          var choice = getChoiceForAsiLevel(progression, requirements.asiLevels, asiLevel);
+          var mode = normalizeAsiMode(choice.mode);
+          var featChoice = String(choice.featId || '').trim();
+          var asiAbilities = normalizeAbilityList(choice.abilities || (choice.ability ? [choice.ability] : []));
+          var resolved = isAsiChoiceResolved(choice);
+          var statusText = resolved
+            ? (mode === 'feat'
+              ? 'Feat selected: ' + (featChoice || '—')
+              : 'ASI selected: ' + asiAbilities.map(function (k) { return abilityLabels[k] || k.toUpperCase(); }).join(', '))
+            : 'Selection needed';
+          return [
+            '<section class="cb-asi-level-row" data-builder-asi-level="' + asiLevel + '" style="margin-top:10px;padding:12px;border:1px solid rgba(201,168,76,0.16);border-radius:12px;background:rgba(6,8,10,0.34);">',
+            '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;">',
+            '<div><label style="margin:0;color:#E8C97A;">Level ' + asiLevel + ' ASI / Feat</label><div class="builder-help-text" style="margin-top:4px;">Choose one ability for +2, two different abilities for +1 each, or take one feat.</div></div>',
+            '<span class="cc-tag" style="align-self:center;">' + escHtml(statusText) + '</span>',
+            '</div>',
+            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:10px;">',
+            '<button type="button" data-builder-asi-mode="ability" data-builder-asi-level="' + asiLevel + '" class="sheet-book-btn' + (mode === 'ability' ? ' active' : '') + '">Ability Score Improvement</button>',
+            '<button type="button" data-builder-asi-mode="feat" data-builder-asi-level="' + asiLevel + '" class="sheet-book-btn' + (mode === 'feat' ? ' active' : '') + '">Choose a Feat</button>',
+            '</div>',
+            '<div class="field" style="margin-top:10px;"><label>Ability Score Improvement</label>',
             '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:8px;">',
             ['str','dex','con','int','wis','cha'].map(function (abilityKey) {
-              var names = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' };
               var selected = asiAbilities.indexOf(abilityKey) >= 0;
-              return '<button type="button" data-builder-asi-ability="' + abilityKey + '" class="sheet-book-btn' + (selected ? ' active' : '') + '" ' + (asiMode === 'ability' ? '' : 'disabled') + '>' + names[abilityKey] + '</button>';
+              return '<button type="button" data-builder-asi-ability="' + abilityKey + '" data-builder-asi-level="' + asiLevel + '" class="sheet-book-btn' + (selected ? ' active' : '') + '" ' + (mode === 'ability' ? '' : 'disabled') + '>' + abilityNames[abilityKey] + '</button>';
             }).join(''),
             '</div>',
-            '<div class="builder-help-text">Selected: ' + (asiAbilities.length ? escHtml(asiAbilities.map(function (k) { return ({ str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' })[k] || k.toUpperCase(); }).join(', ')) : 'None yet') + '</div>',
+            '<div class="builder-help-text">Selected: ' + (asiAbilities.length ? escHtml(asiAbilities.map(function (k) { return abilityLabels[k] || k.toUpperCase(); }).join(', ')) : 'None yet') + '</div>',
             '</div>',
             '<div class="field"><label>Feat Selection</label>',
-            '<select data-builder-progression-feat-pick="1" ' + (asiMode === 'feat' ? '' : 'disabled') + '>',
+            '<select data-builder-progression-feat-pick="' + asiLevel + '" ' + (mode === 'feat' ? '' : 'disabled') + '>',
             '<option value="">Choose a feat…</option>',
-            featRows.map(function (row) {
-              var id = String(row.id || '').trim();
-              var selected = id && id === featChoice ? ' selected' : '';
-              return '<option value="' + escHtml(id) + '"' + selected + '>' + escHtml(String(row.displayName || row.name || id)) + '</option>';
-            }).join(''),
+            renderFeatOptions(featChoice),
             '</select>',
-            '<div class="builder-help-text">Your feat selection saves automatically.</div>',
+            '</div>',
+            '</section>',
+          ].join('');
+        }).join('')
+        : '';
+
+      var featPickerHtml = requirements.asiLevels.length
+        ? [
+            '<div class="field"><label>Level-by-Level ASI / Feat Choices</label>',
+            '<div class="builder-help-text">For higher-level starts, work down this list like D&amp;D Beyond and resolve each ASI/feat level separately before continuing.</div>',
+            asiChoiceRowsHtml,
             '</div>',
           ].join('')
-        : '<div class="builder-help-text">No unresolved ASI/feat choices remain up to this starting level.</div>';
+        : '<div class="builder-help-text">No ASI/feat choices unlock up to this starting level.</div>';
 
       var talentPickerHtml = talentRows.length ? [
         '<div class="field"><label>Talents</label>',
@@ -399,68 +552,38 @@
         });
       });
 
-      root.querySelectorAll('[data-builder-asi-mode]').forEach(function(btn) {
+      root.querySelectorAll('[data-builder-asi-mode][data-builder-asi-level]').forEach(function(btn) {
         btn.addEventListener('click', function () {
           var mode = String(btn.getAttribute('data-builder-asi-mode') || 'ability').trim();
-          var existing = context && context.draft && context.draft.progression && context.draft.progression.asiChoice
-            ? context.draft.progression.asiChoice
-            : {};
-          var currentChoiceState = context.draft.progression && context.draft.progression.choiceState || {};
-          var next = Object.assign({}, existing, { mode: mode === 'feat' ? 'feat' : 'ability' });
-          if (mode === 'feat') {
-            next.ability = '';
-            next.abilities = [];
-          } else {
-            next.featId = '';
-          }
-          context.onSetField(['progression', 'asiChoice'], next);
-          context.onSetField(['progression', 'choiceState'], Object.assign({}, currentChoiceState, { asiMode: next.mode }, mode === 'feat' ? {} : { featId: '' }));
-          if (mode !== 'feat') context.onSetField(['progression', 'feats'], []);
+          var levelKey = parseInt(btn.getAttribute('data-builder-asi-level'), 10);
+          var patch = mode === 'feat'
+            ? { mode: 'feat', abilities: [], ability: '' }
+            : { mode: 'ability', featId: '' };
+          writeAsiChoice(context, levelKey, patch);
         });
       });
 
-      var featSelect = root.querySelector('[data-builder-progression-feat-pick="1"]');
-      if (featSelect) {
+      root.querySelectorAll('[data-builder-progression-feat-pick]').forEach(function(featSelect) {
         featSelect.addEventListener('change', function() {
+          var levelKey = parseInt(featSelect.getAttribute('data-builder-progression-feat-pick'), 10);
           var featId = String(featSelect.value || '').trim();
-          var existing = context && context.draft && context.draft.progression && context.draft.progression.asiChoice
-            ? context.draft.progression.asiChoice
-            : {};
-          context.onSetField(['progression', 'asiChoice'], Object.assign({}, existing, { mode: 'feat', featId: featId }));
-          context.onSetField(['progression', 'feats'], featId ? [featId] : []);
-          context.onSetField(['progression', 'choiceState'], Object.assign({}, context.draft.progression && context.draft.progression.choiceState || {}, {
-            asiMode: 'feat',
-            featId: featId,
-          }));
+          writeAsiChoice(context, levelKey, { mode: 'feat', featId: featId, abilities: [], ability: '' });
         });
-      }
-      root.querySelectorAll('[data-builder-asi-ability]').forEach(function (btn) {
+      });
+      root.querySelectorAll('[data-builder-asi-ability][data-builder-asi-level]').forEach(function (btn) {
         btn.addEventListener('click', function () {
+          var levelKey = parseInt(btn.getAttribute('data-builder-asi-level'), 10);
           var ability = String(btn.getAttribute('data-builder-asi-ability') || '').trim().toLowerCase();
           if (!ability) return;
-          var current = Array.isArray(context.draft.progression && context.draft.progression.choiceState && context.draft.progression.choiceState.asiAbilities)
-            ? context.draft.progression.choiceState.asiAbilities.map(function (v) { return String(v || '').trim().toLowerCase(); }).filter(Boolean)
-            : [];
+          var draft = context.draft && typeof context.draft === 'object' ? context.draft : {};
+          var progression = draft.progression && typeof draft.progression === 'object' ? draft.progression : {};
+          var requirements = computeCumulativeRequirements(draft);
+          var currentChoice = getChoiceForAsiLevel(progression, requirements.asiLevels, levelKey);
+          var current = normalizeAbilityList(currentChoice.abilities || (currentChoice.ability ? [currentChoice.ability] : []));
           var has = current.indexOf(ability) >= 0;
           var next = has ? current.filter(function (id) { return id !== ability; }) : current.concat([ability]);
           if (next.length > 2) next = next.slice(next.length - 2);
-          var asiChoice = context && context.draft && context.draft.progression && context.draft.progression.asiChoice
-            ? Object.assign({}, context.draft.progression.asiChoice)
-            : {};
-          asiChoice.mode = 'ability';
-          if (next.length === 1) {
-            asiChoice.ability = next[0];
-            asiChoice.abilities = [next[0]];
-          } else {
-            asiChoice.ability = '';
-            asiChoice.abilities = next.slice();
-          }
-          context.onSetField(['progression', 'asiChoice'], asiChoice);
-          context.onSetField(['progression', 'choiceState'], Object.assign({}, context.draft.progression && context.draft.progression.choiceState || {}, {
-            asiMode: 'ability',
-            asiAbilities: next,
-          }));
-          context.onSetField(['progression', 'feats'], []);
+          writeAsiChoice(context, levelKey, { mode: 'ability', abilities: next, ability: next.length === 1 ? next[0] : '', featId: '' });
         });
       });
       root.querySelectorAll('[data-builder-talent-pick]').forEach(function (btn) {
