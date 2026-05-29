@@ -367,6 +367,17 @@ def _normalize_builder_draft_document(raw: dict) -> dict:
         for token in [part.strip().lower() for part in legacy_feat_csv.split(",")]:
             if token and token not in normalized_feat_ids:
                 normalized_feat_ids.append(token)
+    asi_choices_by_level = progression.get("asiChoicesByLevel") if isinstance(progression.get("asiChoicesByLevel"), dict) else {}
+    if not asi_choices_by_level and isinstance(progression_choice_state.get("asiChoicesByLevel"), dict):
+        asi_choices_by_level = progression_choice_state.get("asiChoicesByLevel") or {}
+    for _, choice in sorted(asi_choices_by_level.items(), key=lambda item: _safe_int(item[0], 0)):
+        if not isinstance(choice, dict):
+            continue
+        if _safe_str(choice.get("mode")).lower() != "feat":
+            continue
+        feat_id = _safe_str(choice.get("featId") or choice.get("id") or choice.get("name")).lower()
+        if feat_id and feat_id not in normalized_feat_ids:
+            normalized_feat_ids.append(feat_id)
     asi_feat_id = _safe_str(progression_asi_choice.get("featId") or progression_choice_state.get("featId")).lower()
     if asi_feat_id and asi_feat_id not in normalized_feat_ids:
         normalized_feat_ids.append(asi_feat_id)

@@ -135,11 +135,8 @@
     if (progressionRequirements && typeof progressionRequirements.compute === 'function') {
       const requirements = progressionRequirements.compute(draft);
       const pending = Array.isArray(requirements && requirements.required) ? requirements.required : [];
-      if (pending.length > 0) {
-        const first = pending[0] || {};
-        if (first.type === 'subclass') {
-          return { ok: false, error: 'Choose your subclass to resolve required progression choices.' };
-        }
+      const pendingAsi = pending.filter(function (item) { return item && item.type === 'asi'; });
+      if (pendingAsi.length > 0) {
         return { ok: false, error: 'Resolve required progression choices (ASI/Feat) before continuing.' };
       }
     }

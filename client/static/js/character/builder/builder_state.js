@@ -108,6 +108,7 @@
         xp: 0,
         feats: [],
         talents: [],
+        asiChoicesByLevel: {},
         awakening: {
           track: '',
           tier: 0,
@@ -151,13 +152,16 @@
       draft.classes = [];
     }
     if (!draft.progression || typeof draft.progression !== 'object') {
-      draft.progression = { level: 1, xp: 0, feats: [], talents: [], awakening: { track: '', tier: 0 } };
+      draft.progression = { level: 1, xp: 0, feats: [], talents: [], asiChoicesByLevel: {}, awakening: { track: '', tier: 0 } };
     }
     if (!Array.isArray(draft.progression.feats)) {
       draft.progression.feats = [];
     }
     if (!Array.isArray(draft.progression.talents)) {
       draft.progression.talents = [];
+    }
+    if (!draft.progression.asiChoicesByLevel || typeof draft.progression.asiChoicesByLevel !== 'object' || Array.isArray(draft.progression.asiChoicesByLevel)) {
+      draft.progression.asiChoicesByLevel = {};
     }
     if (!draft.spellbook || typeof draft.spellbook !== 'object') {
       draft.spellbook = { castingMode: 'none', spellcastingAbility: '', known: [], prepared: [] };
