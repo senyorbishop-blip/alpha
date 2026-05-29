@@ -15,6 +15,7 @@ from server.handlers.common import (
     Session, User, manager,
     save_campaign_async,
     normalize_map_settings,
+    _broadcast_token_state_sync,
     _refresh_map_documents,
 )
 
@@ -85,6 +86,78 @@ async def _broadcast_editor_world_state(session: Session):
     }
     await manager.broadcast(session.id, {"type": "editor_world_sync", "payload": payload})
 
+
+def _map_grid_size_px(settings: dict | None) -> int:
+    normalized = normalize_map_settings(settings or {})
+    return int(((normalized.get("grid") or {}).get("size_px")) or 64)
+
+
+def _rescale_grid_bound_value(value, old_grid: int, new_grid: int) -> float:
+    try:
+        numeric = float(value)
+    except Exception:
+        return 0.0
+    if old_grid <= 0 or new_grid <= 0 or old_grid == new_grid:
+        return numeric
+    return round(numeric / old_grid) * new_grid
+
+
+def _rescale_grid_extent_value(value, old_grid: int, new_grid: int) -> float:
+    try:
+        numeric = float(value)
+    except Exception:
+        numeric = float(old_grid or new_grid or 64)
+    if old_grid <= 0 or new_grid <= 0 or old_grid == new_grid:
+        return numeric
+    squares = max(1, round(numeric / old_grid))
+    return float(squares * new_grid)
+
+
+def _rescale_props_for_grid_change(session: Session, map_ctx: str, old_grid: int, new_grid: int) -> bool:
+    if old_grid == new_grid:
+        return False
+    props_all = dict(getattr(session, "editor_props", {}) or {})
+    items = list(props_all.get(map_ctx) or [])
+    if not items:
+        return False
+    scaled = []
+    changed = False
+    for raw in items:
+        if not isinstance(raw, dict):
+            scaled.append(raw)
+            continue
+        item = dict(raw)
+        next_x = _rescale_grid_bound_value(item.get("x", 0), old_grid, new_grid)
+        next_y = _rescale_grid_bound_value(item.get("y", 0), old_grid, new_grid)
+        if item.get("x") != next_x or item.get("y") != next_y:
+            changed = True
+        item["x"] = next_x
+        item["y"] = next_y
+        scaled.append(item)
+    if changed:
+        props_all[map_ctx] = scaled
+        session.editor_props = props_all
+    return changed
+
+
+def _rescale_tokens_for_grid_change(session: Session, map_ctx: str, old_grid: int, new_grid: int) -> bool:
+    if old_grid == new_grid:
+        return False
+    changed = False
+    for token in (getattr(session, "tokens", {}) or {}).values():
+        if str(getattr(token, "map_context", "world") or "world") != map_ctx:
+            continue
+        next_x = _rescale_grid_bound_value(getattr(token, "x", 0), old_grid, new_grid)
+        next_y = _rescale_grid_bound_value(getattr(token, "y", 0), old_grid, new_grid)
+        next_w = _rescale_grid_extent_value(getattr(token, "width", new_grid), old_grid, new_grid)
+        next_h = _rescale_grid_extent_value(getattr(token, "height", new_grid), old_grid, new_grid)
+        if (getattr(token, "x", None), getattr(token, "y", None), getattr(token, "width", None), getattr(token, "height", None)) != (next_x, next_y, next_w, next_h):
+            token.x = next_x
+            token.y = next_y
+            token.width = next_w
+            token.height = next_h
+            changed = True
+    return changed
 
 def _merge_wall_segments(segments: list[dict]) -> list[dict]:
     horizontal: dict[int, list[tuple[int, int]]] = {}
@@ -693,8 +766,9 @@ async def handle_editor_props_save(payload: dict, session: Session, user: User):
         if kind not in allowed:
             kind = "crate"
         try:
-            x = int(round(float(item.get("x", 0)) / 50.0) * 50)
-            y = int(round(float(item.get("y", 0)) / 50.0) * 50)
+            grid_size = _map_grid_size_px((getattr(session, "map_settings", {}) or {}).get(map_ctx) or {})
+            x = int(round(float(item.get("x", 0)) / float(grid_size)) * grid_size)
+            y = int(round(float(item.get("y", 0)) / float(grid_size)) * grid_size)
             w = max(1, min(6, int(item.get("w", 1))))
             h = max(1, min(6, int(item.get("h", 1))))
             default_slot_count = default_slots.get(kind, 0)
@@ -941,6 +1015,10 @@ async def handle_map_settings_save(payload: dict, session: Session, user: User):
     map_ctx = str(payload.get("map_context") or "world")[:80]
     settings = normalize_map_settings(payload.get("settings") or {})
     all_settings = dict(getattr(session, "map_settings", {}) or {})
+    old_grid = _map_grid_size_px(all_settings.get(map_ctx) or {})
+    new_grid = _map_grid_size_px(settings)
+    props_changed = _rescale_props_for_grid_change(session, map_ctx, old_grid, new_grid)
+    tokens_changed = _rescale_tokens_for_grid_change(session, map_ctx, old_grid, new_grid)
     all_settings[map_ctx] = settings
     session.map_settings = all_settings
     _refresh_map_documents(session, map_ctx)
@@ -948,6 +1026,10 @@ async def handle_map_settings_save(payload: dict, session: Session, user: User):
         "type": "map_settings_sync",
         "payload": {"map_settings": dict(session.map_settings or {})}
     })
+    if props_changed:
+        await _broadcast_editor_props_state(session)
+    if tokens_changed:
+        await _broadcast_token_state_sync(session)
     await save_campaign_async(session)
 
 

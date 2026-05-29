@@ -11540,6 +11540,10 @@ function getCurrentGridSizePx() {
   return _sanitizeGridSizePx(size, GRID_SIZE_DEFAULT_PX);
 }
 
+function getEditorGridSizePx() {
+  return _sanitizeGridSizePx(PX_PER_GRID || getCurrentGridSizePx(), GRID_SIZE_DEFAULT_PX);
+}
+
 function _syncGridSizeControls() {
   const value = _sanitizeGridSizePx(PX_PER_GRID, GRID_SIZE_DEFAULT_PX);
   const slider = document.getElementById('editor-grid-size-slider');
@@ -11591,7 +11595,10 @@ function getTokenSizePresetForToken(token) {
 }
 
 function getTokenSizePresetByKey(key) {
-  return TOKEN_SIZE_PRESETS.find(p => p.key === String(key)) || TOKEN_SIZE_PRESETS[0];
+  const preset = TOKEN_SIZE_PRESETS.find(p => p.key === String(key)) || TOKEN_SIZE_PRESETS[0];
+  const gridSize = getEditorGridSizePx();
+  const squares = Math.max(1, Number(preset.squares || 1));
+  return { ...preset, width: gridSize * squares, height: gridSize * squares };
 }
 
 function getRulerGridDelta(dx, dy) {
@@ -13122,8 +13129,9 @@ function canUserSeeEditorProp(item) {
   }
   const x = Number(item.x || 0);
   const y = Number(item.y || 0);
-  const w = Math.max(1, Number(item.w || 1)) * 50;
-  const h = Math.max(1, Number(item.h || 1)) * 50;
+  const gridSize = getEditorGridSizePx();
+  const w = Math.max(1, Number(item.w || 1)) * gridSize;
+  const h = Math.max(1, Number(item.h || 1)) * gridSize;
   return _isRectVisibleToPlayer(x, y, w, h, 6);
 }
 function shouldReloadEditorLayerFromSync(layer) {
@@ -13346,8 +13354,9 @@ function normalizeEditorPropItem(item) {
   if (!item || typeof item !== 'object') return null;
   const kind = _editorPropKinds.has(String(item.kind || '').toLowerCase()) ? String(item.kind).toLowerCase() : 'crate';
   const base = _editorPropBaseSize[kind] || { w: 1, h: 1 };
-  const x = Math.round(Number(item.x) / 50) * 50;
-  const y = Math.round(Number(item.y) / 50) * 50;
+  const gridSize = getEditorGridSizePx();
+  const x = Math.round(Number(item.x) / gridSize) * gridSize;
+  const y = Math.round(Number(item.y) / gridSize) * gridSize;
   const w = Math.max(1, Math.min(6, Math.round(Number(item.w) || base.w)));
   const h = Math.max(1, Math.min(6, Math.round(Number(item.h) || base.h)));
   if (![x, y, w, h].every(Number.isFinite)) return null;
@@ -14257,7 +14266,8 @@ function isEditorOpen() {
   return ROLE === 'dm' && document.getElementById('flyout-editor')?.classList.contains('open');
 }
 function snapEditorWallPoint(wx, wy) {
-  return { x: Math.round(wx / 50) * 50, y: Math.round(wy / 50) * 50 };
+  const gridSize = getEditorGridSizePx();
+  return { x: Math.round(wx / gridSize) * gridSize, y: Math.round(wy / gridSize) * gridSize };
 }
 function constrainEditorWallPoint(start, pt) {
   if (!editorWallStraightAssist || !start || !pt) return pt;
@@ -14393,19 +14403,21 @@ function getEditorDoorGapFromSegment(seg, wx, wy) {
   if (normalized.y1 === normalized.y2) {
     const start = Math.min(normalized.x1, normalized.x2);
     const end = Math.max(normalized.x1, normalized.x2);
-    if ((end - start) < 50) return null;
-    let gapStart = Math.floor(wx / 50) * 50;
-    gapStart = Math.max(start, Math.min(gapStart, end - 50));
-    const gapEnd = gapStart + 50;
+    const gridSize = getEditorGridSizePx();
+    if ((end - start) < gridSize) return null;
+    let gapStart = Math.floor(wx / gridSize) * gridSize;
+    gapStart = Math.max(start, Math.min(gapStart, end - gridSize));
+    const gapEnd = gapStart + gridSize;
     return { orientation: 'h', gapStart, gapEnd, anchorX: gapStart, anchorY: normalized.y1 };
   }
   if (normalized.x1 === normalized.x2) {
     const start = Math.min(normalized.y1, normalized.y2);
     const end = Math.max(normalized.y1, normalized.y2);
-    if ((end - start) < 50) return null;
-    let gapStart = Math.floor(wy / 50) * 50;
-    gapStart = Math.max(start, Math.min(gapStart, end - 50));
-    const gapEnd = gapStart + 50;
+    const gridSize = getEditorGridSizePx();
+    if ((end - start) < gridSize) return null;
+    let gapStart = Math.floor(wy / gridSize) * gridSize;
+    gapStart = Math.max(start, Math.min(gapStart, end - gridSize));
+    const gapEnd = gapStart + gridSize;
     return { orientation: 'v', gapStart, gapEnd, anchorX: normalized.x1, anchorY: gapStart };
   }
   return null;
@@ -14470,16 +14482,18 @@ function applyEditorWallCut(kind, wx, wy) {
 function getEditorPropHitBounds(item) {
   if (!item) return null;
   if (isDoorLikeEditorPropKind(item.kind)) {
-    const pw = Math.max(1, Number(item.w || 1)) * 50;
-    const ph = Math.max(1, Number(item.h || 1)) * 50;
+    const gridSize = getEditorGridSizePx();
+    const pw = Math.max(1, Number(item.w || 1)) * gridSize;
+    const ph = Math.max(1, Number(item.h || 1)) * gridSize;
     return { left: item.x, top: item.y, width: pw, height: ph };
   }
   if (item.kind === 'custom_asset') {
     const dp = getCustomAssetDrawParams(item);
     return { left: dp.boxX, top: dp.boxY, width: dp.boxW, height: dp.boxH };
   }
-  const pw = item.w * 50;
-  const ph = item.h * 50;
+  const gridSize = getEditorGridSizePx();
+  const pw = item.w * gridSize;
+  const ph = item.h * gridSize;
   return { left: item.x, top: item.y, width: pw, height: ph };
 }
 function findEditorPropIndexAt(wx, wy, options) {
@@ -14872,8 +14886,9 @@ function editorPathSnapPoint(wx, wy) {
   let best = { x: grid.x, y: grid.y, score: Infinity };
   (Array.isArray(_editorPropItems) ? _editorPropItems : []).forEach(item => {
     if (!item || !isSettlementStructureKind(item.kind)) return;
-    const targetX = Number(item.x || 0) + Number(item.w || 1) * 25;
-    const targetY = Number(item.y || 0) + Number(item.h || 1) * 50;
+    const gridSize = getEditorGridSizePx();
+    const targetX = Number(item.x || 0) + Number(item.w || 1) * (gridSize / 2);
+    const targetY = Number(item.y || 0) + Number(item.h || 1) * gridSize;
     const d = Math.hypot(wx - targetX, wy - targetY);
     if (d < threshold && d < best.score) best = { x: targetX, y: targetY, score: d };
   });
@@ -14896,8 +14911,9 @@ function editorPathSnapPoint(wx, wy) {
 let _editorDebugAnchors = false;
 
 function getEditorPropBox(item) {
-  const w = Math.max(1, Number(item?.w || 1)) * 50;
-  const h = Math.max(1, Number(item?.h || 1)) * 50;
+  const gridSize = getEditorGridSizePx();
+  const w = Math.max(1, Number(item?.w || 1)) * gridSize;
+  const h = Math.max(1, Number(item?.h || 1)) * gridSize;
   const x = Number(item?.x || 0);
   const y = Number(item?.y || 0);
   return { x, y, w, h };
@@ -14964,7 +14980,7 @@ function drawEditorAssetImage(filePath, drawX, drawY, w, h, options) {
   const drawMode = String(options?.mode || 'contain').toLowerCase();
   const fit = (drawMode === 'stretch')
     ? { drawX, drawY, drawW: w, drawH: h, boxX: drawX, boxY: drawY, boxW: w, boxH: h }
-    : getFileBackedPropDrawBounds({ x: drawX, y: drawY, w: w / 50, h: h / 50, offsetX: options?.offsetX || 0, offsetY: options?.offsetY || 0 }, img);
+    : getFileBackedPropDrawBounds({ x: drawX, y: drawY, w: w / getEditorGridSizePx(), h: h / getEditorGridSizePx(), offsetX: options?.offsetX || 0, offsetY: options?.offsetY || 0 }, img);
   if (img.complete && img.naturalWidth > 0 && !img._failed) {
     try {
       ctx.drawImage(img, fit.drawX, fit.drawY, fit.drawW, fit.drawH);
@@ -14990,8 +15006,9 @@ function drawEditorProps() {
     const hovered = idx === editorPropHoverIndex && isEditorOpen() && (editorActiveLayer === 'props' || editorActiveLayer === 'images');
     const x = item.x;
     const y = item.y;
-    const w = item.w * 50;
-    const h = item.h * 50;
+    const gridSize = getEditorGridSizePx();
+    const w = item.w * gridSize;
+    const h = item.h * gridSize;
     const hiddenChest = item.kind === 'chest' && normalizeEditorBool(item.hidden);
     const rotation = ((Number(item.rotation) || 0) % 360 + 360) % 360;
     const assetFile = getPreferredEditorPropAssetFile(item);
@@ -25388,10 +25405,10 @@ function placeCharacter() {
     name: tokenName,
     color: playerColor,
     shape: 'circle',
-    x: center.x - 20,
-    y: center.y - 20,
-    width: 40,
-    height: 40,
+    x: center.x - (getEditorGridSizePx() / 2),
+    y: center.y - (getEditorGridSizePx() / 2),
+    width: getEditorGridSizePx(),
+    height: getEditorGridSizePx(),
     owner_id: USER_ID,
     map_context: mapCtx,
     client_nonce: clientNonce,
@@ -25511,9 +25528,10 @@ function placeBeastMasterCompanionToken(companionData = {}) {
     return;
   }
   const sizeHint = String(companionData.size || '').toLowerCase();
+  const companionGridSize = getEditorGridSizePx();
   const tokenSize = sizeHint === 'small'
-    ? { width: 32, height: 32 }
-    : { width: 40, height: 40 };
+    ? { width: companionGridSize, height: companionGridSize }
+    : { width: companionGridSize, height: companionGridSize };
   const center = screenToWorld(canvas.width / 2, canvas.height / 2);
   const clientNonce = 'tok_' + Math.random().toString(36).slice(2, 10);
   const hp = Math.max(1, parseInt(companionData.hp ?? companionData.maxHp ?? 20, 10) || 20);
