@@ -3,7 +3,8 @@
     return String(value || '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   function registerStep(step) {
@@ -12,7 +13,6 @@
     }
     global.CharacterBuilderStepModules[step.id] = step;
   }
-
   var PACK_DEFS = {
     backpack: {
       id: 'backpack',
@@ -268,6 +268,125 @@
     return all.find(function (row) { return String(row.id) === selectedId; }) || null;
   }
 
+
+  function normalizeLibraryItem(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    var name = String(raw.name || '').trim().slice(0, 80);
+    if (!name) return null;
+    var id = String(raw.id || name).trim().slice(0, 80) || name;
+    var qty = Math.max(1, Math.min(999, parseInt(raw.qty != null ? raw.qty : raw.default_qty, 10) || 1));
+    var out = {
+      id: id,
+      name: name,
+      qty: qty,
+      category: String(raw.category || raw.type || 'Gear').trim().slice(0, 40) || 'Gear',
+      rarity: String(raw.rarity || 'Common').trim().slice(0, 32) || 'Common',
+      price: String(raw.price || raw.default_price || '').trim().slice(0, 32),
+      notes: String(raw.notes || raw.description || '').trim().slice(0, 240),
+    };
+    ['equipment_kind','item_type','armor_type','handedness','damage_dice','damage_type','versatile_damage','source'].forEach(function (key) {
+      var value = raw[key];
+      if (value != null && String(value).trim() !== '') out[key] = String(value).trim();
+    });
+    ['base_ac','dex_cap','ac_bonus','strength_requirement','weight_lbs','own_weight_lbs','capacity_lbs','volume_ft3'].forEach(function (key) {
+      if (raw[key] == null || String(raw[key]).trim() === '') return;
+      var num = key.indexOf('_lbs') >= 0 || key === 'volume_ft3' ? parseFloat(raw[key]) : parseInt(raw[key], 10);
+      if (Number.isFinite(num)) out[key] = num;
+    });
+    if ('stealth_disadvantage' in raw) out.stealth_disadvantage = !!raw.stealth_disadvantage;
+    if (Array.isArray(raw.weapon_properties)) out.weapon_properties = raw.weapon_properties.map(function (v) { return String(v || '').trim(); }).filter(Boolean).slice(0, 12);
+    return out;
+  }
+
+  function getLibraryEntries() {
+    var source = global.CharacterBuilderItemLibrary;
+    var rows = [];
+    if (source && typeof source === 'object') {
+      if (Array.isArray(source.entries)) rows = rows.concat(source.entries);
+      if (Array.isArray(source.srdItems)) rows = rows.concat(source.srdItems);
+    }
+    if (!rows.length && global.itemLibraryEntries && typeof global.itemLibraryEntries === 'object') {
+      rows = rows.concat(Object.keys(global.itemLibraryEntries).map(function (key) { return global.itemLibraryEntries[key]; }));
+    }
+    if (!rows.length && Array.isArray(global._srdItems)) rows = rows.concat(global._srdItems);
+    var seen = {};
+    return rows.map(normalizeLibraryItem).filter(function (entry) {
+      if (!entry || !entry.id || seen[entry.id]) return false;
+      seen[entry.id] = true;
+      return true;
+    });
+  }
+
+  function getSelectedLibraryItems(choices) {
+    var selected = Array.isArray(choices && choices.libraryItems) ? choices.libraryItems : [];
+    return selected.map(normalizeLibraryItem).filter(Boolean);
+  }
+
+  function libraryItemToInventoryItem(row) {
+    var item = normalizeLibraryItem(row);
+    if (!item) return null;
+    var kind = String(item.equipment_kind || item.item_type || inferEquipmentKind(item.name) || 'gear').trim().toLowerCase() || 'gear';
+    var out = {
+      id: item.id,
+      name: item.name,
+      qty: item.qty,
+      kind: kind,
+      type: kind,
+      equipment_kind: kind,
+      item_type: kind,
+      category: item.category,
+      rarity: item.rarity,
+      source: item.source || 'builder_item_library',
+      equipped: false,
+    };
+    ['notes','price','armor_type','handedness','damage_dice','damage_type','versatile_damage','base_ac','dex_cap','ac_bonus','strength_requirement','stealth_disadvantage','weight_lbs','own_weight_lbs','capacity_lbs','volume_ft3'].forEach(function (key) {
+      if (item[key] != null && item[key] !== '') out[key] = item[key];
+    });
+    if (Array.isArray(item.weapon_properties)) out.weapon_properties = item.weapon_properties.slice(0, 12);
+    return out;
+  }
+
+  function renderLibraryPicker(choices) {
+    var entries = getLibraryEntries();
+    var selected = getSelectedLibraryItems(choices);
+    var selectedIds = {};
+    selected.forEach(function (item) { selectedIds[item.id] = true; });
+    var visible = entries.slice();
+    if (!entries.length) {
+      return [
+        '<div class="field"><label>Library Bonus Items</label>',
+        '<div class="builder-help-text">No campaign/SRD item library entries are available yet. You can still type items above.</div>',
+        '</div>',
+      ].join('');
+    }
+    return [
+      '<div class="field cb-library-field"><label>Library Bonus Items <span class="cb-optional">optional</span></label>',
+      '<div class="builder-help-text">If the DM allows “one rare item” or extra starting gear, search here and tap Add. Selected items are saved into your starting inventory.</div>',
+      '<div class="cb-library-toolbar">',
+      '<input type="search" data-builder-library-search="1" placeholder="Search item library by name, rarity, or category…" autocomplete="off" />',
+      '<select data-builder-library-rarity="1"><option value="">All rarities</option><option>Common</option><option>Uncommon</option><option>Rare</option><option>Very Rare</option><option>Legendary</option></select>',
+      '</div>',
+      '<div class="cb-library-selected" data-builder-library-selected="1">',
+      selected.length ? selected.map(function (item) {
+        return '<span class="cb-library-chip">' + escHtml(item.name) + ' ×' + escHtml(item.qty) + '<button type="button" data-builder-library-remove="' + escHtml(item.id) + '" aria-label="Remove ' + escHtml(item.name) + '">×</button></span>';
+      }).join('') : '<span class="builder-help-text" style="margin:0;">No library items selected yet.</span>',
+      '</div>',
+      '<div class="cb-library-list" data-builder-library-list="1">',
+      visible.map(function (entry) {
+        var picked = selectedIds[entry.id];
+        return '<button type="button" class="cb-library-card" data-builder-library-id="' + escHtml(entry.id) + '" data-builder-library-name="' + escHtml(entry.name) + '" data-builder-library-rarity-value="' + escHtml(entry.rarity) + '" data-builder-library-category="' + escHtml(entry.category) + '"' + (picked ? ' disabled' : '') + '>'
+          + '<strong>' + escHtml(entry.name) + '</strong>'
+          + '<span>' + escHtml(entry.rarity) + ' • ' + escHtml(entry.category) + (entry.price ? ' • ' + escHtml(entry.price) : '') + '</span>'
+          + (entry.notes ? '<em>' + escHtml(entry.notes.slice(0, 110)) + '</em>' : '')
+          + '<small>' + (picked ? 'Added' : 'Add') + '</small>'
+          + '</button>';
+      }).join(''),
+      '</div>',
+      '',
+      '</div>',
+    ].join('');
+  }
+
   function hydrateEquipmentState(draft) {
     var equipment = draft && draft.equipment && typeof draft.equipment === 'object' ? draft.equipment : {};
     var currency = equipment.currency && typeof equipment.currency === 'object'
@@ -281,6 +400,7 @@
         additionalItems: Array.isArray(equipment.choices) ? equipment.choices : [],
       };
     if (!Array.isArray(choices.additionalItems)) choices.additionalItems = [];
+    if (!Array.isArray(choices.libraryItems)) choices.libraryItems = [];
     var loadout = getSelectedLoadout(choices, classId);
     if (!choices.starterLoadoutId && loadout) choices.starterLoadoutId = loadout.id;
 
@@ -309,6 +429,10 @@
       }
       var item = toInventoryItem(line);
       if (item) inventory.push(item);
+    });
+    getSelectedLibraryItems(choices).forEach(function (row) {
+      var libraryItem = libraryItemToInventoryItem(row);
+      if (libraryItem) inventory.push(libraryItem);
     });
 
     return {
@@ -375,12 +499,15 @@
         '<div class="builder-help-text">These are also converted into real inventory items. "Bag of Holding" becomes a container entry.</div>',
         '</div>',
 
+        renderLibraryPicker(choices),
+
         '<div class="field"><label>Starting Currency</label>',
+        '<div class="builder-help-text">Type normally, including 0. The builder saves coin after you pause typing or leave the field.</div>',
         '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;">',
         ['cp', 'sp', 'ep', 'gp', 'pp'].map(function toCoin(coin) {
           return '<label style="display:flex;flex-direction:column;gap:3px;font-size:0.65rem;">'
             + escHtml(coin.toUpperCase())
-            + '<input type="number" min="0" max="99999" step="1" data-builder-path="equipment.currency.' + coin + '" value="' + escHtml(equipment.currency[coin] != null ? equipment.currency[coin] : 0) + '" />'
+            + '<input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" data-builder-equipment-currency="' + coin + '" value="' + escHtml(equipment.currency[coin] != null ? equipment.currency[coin] : 0) + '" />'
             + '</label>';
         }).join(''),
         '</div></div>',
@@ -424,6 +551,68 @@
           commitEquipment();
         });
       }
+
+      var currencyTimer = null;
+      function commitCurrencySoon(delay) {
+        if (currencyTimer) clearTimeout(currencyTimer);
+        currencyTimer = setTimeout(function () {
+          state.equipment = hydrateEquipmentState({ class: draft.class, equipment: state.equipment }).equipment;
+          commitEquipment();
+        }, delay == null ? 260 : delay);
+      }
+      root.querySelectorAll('[data-builder-equipment-currency]').forEach(function (input) {
+        input.addEventListener('focus', function () {
+          if (String(input.value || '') === '0' && typeof input.select === 'function') input.select();
+        });
+        input.addEventListener('input', function () {
+          var coin = String(input.dataset.builderEquipmentCurrency || '').trim();
+          if (!coin) return;
+          var cleaned = String(input.value || '').replace(/[^0-9]/g, '').slice(0, 5);
+          if (input.value !== cleaned) input.value = cleaned;
+          state.equipment.currency[coin] = cleaned === '' ? 0 : Math.max(0, parseInt(cleaned, 10) || 0);
+          commitCurrencySoon(260);
+        });
+        input.addEventListener('blur', function () {
+          var coin = String(input.dataset.builderEquipmentCurrency || '').trim();
+          var value = String(input.value || '').replace(/[^0-9]/g, '').slice(0, 5);
+          if (value === '') value = '0';
+          input.value = value;
+          if (coin) state.equipment.currency[coin] = Math.max(0, parseInt(value, 10) || 0);
+          commitCurrencySoon(0);
+        });
+      });
+
+      function applyLibraryFilter() {
+        var search = String(root.querySelector('[data-builder-library-search="1"]') && root.querySelector('[data-builder-library-search="1"]').value || '').trim().toLowerCase();
+        var rarity = String(root.querySelector('[data-builder-library-rarity="1"]') && root.querySelector('[data-builder-library-rarity="1"]').value || '').trim().toLowerCase();
+        root.querySelectorAll('[data-builder-library-id]').forEach(function (card) {
+          var hay = [card.dataset.builderLibraryName, card.dataset.builderLibraryRarityValue, card.dataset.builderLibraryCategory].join(' ').toLowerCase();
+          var cardRarity = String(card.dataset.builderLibraryRarityValue || '').trim().toLowerCase();
+          card.hidden = !!((search && hay.indexOf(search) < 0) || (rarity && cardRarity !== rarity));
+        });
+      }
+      var librarySearch = root.querySelector('[data-builder-library-search="1"]');
+      var libraryRarity = root.querySelector('[data-builder-library-rarity="1"]');
+      if (librarySearch) librarySearch.addEventListener('input', applyLibraryFilter);
+      if (libraryRarity) libraryRarity.addEventListener('change', applyLibraryFilter);
+      root.querySelectorAll('[data-builder-library-id]').forEach(function (card) {
+        card.addEventListener('click', function () {
+          var id = String(card.dataset.builderLibraryId || '').trim();
+          var entry = getLibraryEntries().find(function (row) { return row.id === id; });
+          if (!entry) return;
+          state.choices.libraryItems = getSelectedLibraryItems(state.choices).concat([entry]);
+          state.equipment = hydrateEquipmentState({ class: draft.class, equipment: state.equipment }).equipment;
+          commitEquipment();
+        });
+      });
+      root.querySelectorAll('[data-builder-library-remove]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = String(btn.dataset.builderLibraryRemove || '').trim();
+          state.choices.libraryItems = getSelectedLibraryItems(state.choices).filter(function (row) { return row.id !== id; });
+          state.equipment = hydrateEquipmentState({ class: draft.class, equipment: state.equipment }).equipment;
+          commitEquipment();
+        });
+      });
 
       commitEquipment();
     },
