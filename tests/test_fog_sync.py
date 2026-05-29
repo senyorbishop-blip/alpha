@@ -438,3 +438,67 @@ def test_client_fog_update_promotes_stale_entry_to_enabled():
     assert "entry.enabled = true;" in module_src
     assert "entry.enabled = true;" in play_src
     assert "if (p.map_ctx !== undefined) fogApplyState(p);" in play_src
+
+
+def test_map_grid_resize_rescales_tokens_props_and_syncs(monkeypatch):
+    session = Session(id="grid-sync-1")
+    dm = User(id="dm-1", name="DM", role="dm")
+    player = User(id="pl-1", name="Player", role="player")
+    session.users[dm.id] = dm
+    session.users[player.id] = player
+    session.map_settings = {"world": {"grid": {"size_px": 64}}}
+    session.tokens["tok-1"] = Token(
+        id="tok-1", name="Ogre", x=128, y=64, width=128, height=128,
+        color="#fff", shape="circle", owner_id=None, map_context="world",
+    )
+    session.tokens["tok-local"] = Token(
+        id="tok-local", name="Crypt Bat", x=128, y=64, width=64, height=64,
+        color="#fff", shape="circle", owner_id=None, map_context="poi-crypt",
+    )
+    session.editor_props = {
+        "world": [{"id": "prop-1", "kind": "crate", "x": 192, "y": 64, "w": 2, "h": 1}],
+        "poi-crypt": [{"id": "prop-2", "kind": "crate", "x": 192, "y": 64, "w": 1, "h": 1}],
+    }
+
+    sent = []
+    token_sync_calls = []
+
+    class _Manager:
+        async def broadcast(self, session_id, message):
+            sent.append(("broadcast", session_id, None, message))
+
+        async def send_to(self, session_id, user_id, message):
+            sent.append(("send_to", session_id, user_id, message))
+
+    async def _save_campaign_async(_session):
+        return True
+
+    async def _token_sync(_session):
+        token_sync_calls.append(_session.id)
+
+    monkeypatch.setattr(map_editor, "manager", _Manager())
+    monkeypatch.setattr(map_editor, "save_campaign_async", _save_campaign_async)
+    monkeypatch.setattr(map_editor, "_broadcast_token_state_sync", _token_sync)
+
+    asyncio.run(
+        map_editor.handle_map_settings_save(
+            {"map_context": "world", "settings": {"grid": {"size_px": 32}}},
+            session,
+            dm,
+        )
+    )
+
+    assert session.map_settings["world"]["grid"]["size_px"] == 32
+    assert session.tokens["tok-1"].x == 64
+    assert session.tokens["tok-1"].y == 32
+    assert session.tokens["tok-1"].width == 64
+    assert session.tokens["tok-1"].height == 64
+    assert session.tokens["tok-local"].x == 128, "other map token must not be rescaled"
+    assert session.editor_props["world"][0]["x"] == 96
+    assert session.editor_props["world"][0]["y"] == 32
+    assert session.editor_props["world"][0]["w"] == 2, "prop footprint squares stay stable"
+    assert session.editor_props["poi-crypt"][0]["x"] == 192, "other map prop must not be rescaled"
+    assert token_sync_calls == [session.id]
+    message_types = [entry[3].get("type") for entry in sent]
+    assert "map_settings_sync" in message_types
+    assert "editor_props_sync" in message_types
