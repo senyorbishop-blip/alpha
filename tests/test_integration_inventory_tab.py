@@ -18,6 +18,7 @@ Tests cover:
 import asyncio
 import sys
 import os
+from pathlib import Path
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
@@ -84,6 +85,37 @@ def test_inventory_add_item_happy_path(monkeypatch):
     names = [i["name"] for i in items]
     assert "Health Potion" in names
 
+
+
+def test_inventory_add_item_dm_targets_player_inventory(monkeypatch):
+    """DM award payloads with target_user_id should add to that player's inventory."""
+    from server.handlers import inventory as inv
+    from server.session import get_player_inventory_for_user
+    session, dm, player = _make_session()
+    _patch_manager(monkeypatch)
+
+    async def _save(_):
+        return True
+
+    monkeypatch.setattr(inv, "save_campaign_async", _save)
+
+    asyncio.run(inv.handle_inventory_add_item(
+        {
+            "entry": {"name": "Vicious Rapier", "qty": 1, "damage_dice": "1d8", "damage_type": "piercing", "weapon_properties": ["Finesse", "Vex"]},
+            "source_name": "Item Library",
+            "target_user_id": player.id,
+        },
+        session,
+        dm,
+    ))
+
+    player_items = get_player_inventory_for_user(session, player.id)
+    dm_items = get_player_inventory_for_user(session, dm.id)
+    rapier = next((i for i in player_items if i.get("name") == "Vicious Rapier"), None)
+    assert rapier is not None
+    assert rapier.get("damage_dice") == "1d8"
+    assert "Vex" in rapier.get("weapon_properties", [])
+    assert not any(i.get("name") == "Vicious Rapier" for i in dm_items)
 
 def test_inventory_add_item_stacks_duplicates(monkeypatch):
     """Adding the same item twice should increase quantity, not create a new entry."""
@@ -193,6 +225,18 @@ def test_inventory_add_item_player_receives_error_not_state_change(monkeypatch):
     ]
     assert error_msgs
 
+
+
+def test_inventory_award_ui_sends_target_user_id():
+    """DM manual/library award controls must include recipient selectors and send target_user_id."""
+    play_src = Path("client/templates/play.html").read_text(encoding="utf-8")
+    assert 'id="inventory-manual-target"' in play_src
+    assert 'id="itemlib-pick-target"' in play_src
+    assert "refreshInventoryAwardTargetSelect('inventory-manual-target', 'inventory-manual-target-wrap')" in play_src
+    assert "refreshInventoryAwardTargetSelect('itemlib-pick-target', 'itemlib-pick-target-wrap')" in play_src
+    assert "target_user_id: targetUserId" in play_src
+    assert "function enrichItemLibraryEquipmentFromText" in play_src
+    assert "Vex" in play_src
 
 # ---------------------------------------------------------------------------
 # handle_inventory_remove_item
