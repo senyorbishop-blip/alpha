@@ -2141,38 +2141,50 @@ async def handle_inventory_add_item(payload: dict, session: Session, user: User)
     qty = _safe_int(entry.get("qty"), 1, minimum=1, maximum=9999)
     source_name = str(payload.get("source_name") or entry.get("source") or "Manual Add").strip()[:60] or "Manual Add"
     price = str(entry.get("price") or payload.get("price") or "").strip()[:32]
+    target_user = _inventory_target_user(session, user, payload.get("target_user_id"))
     item_name = str(entry.get("name") or "").strip()
     if _is_gold_item_name(item_name):
         added_units = max(0, qty) * 100
-        new_total = _add_gold_to_player(session, user, added_units)
+        new_total = _add_gold_to_player(session, target_user, added_units)
         _append_party_loot_log(session, {
             "player_name": user.name,
             "player_role": user.role,
             "action": "add",
             "item_name": "Gold",
             "qty": qty,
+            "target_name": target_user.name if target_user.id != user.id else "",
             "source_name": source_name,
             "price": _format_gold_units(added_units),
             "source_kind": "inventory",
         })
         await _broadcast_inventory_state(session)
         await save_campaign_async(session)
-        return await _send_inventory_action_result(session, user.id, f"Added {_format_gold_units(added_units)}. {_format_gold_units(new_total)} on hand.")
-    _add_item_to_player_inventory(session, user, entry, qty, source_name=source_name, price=price)
-    _recompute_equipment_effects(session, user)
+        msg = f"Added {_format_gold_units(added_units)}. {target_user.name} now has {_format_gold_units(new_total)} on hand." if target_user.id != user.id else f"Added {_format_gold_units(added_units)}. {_format_gold_units(new_total)} on hand."
+        await _send_inventory_action_result(session, user.id, msg)
+        if target_user.id != user.id:
+            await _send_inventory_action_result(session, target_user.id, f"Received {_format_gold_units(added_units)} from {user.name}. {_format_gold_units(new_total)} on hand.")
+        return
+    _add_item_to_player_inventory(session, target_user, entry, qty, source_name=source_name, price=price)
+    _recompute_equipment_effects(session, target_user)
     _append_party_loot_log(session, {
         "player_name": user.name,
         "player_role": user.role,
         "action": "add",
         "item_name": entry.get("name"),
         "qty": qty,
+        "target_name": target_user.name if target_user.id != user.id else "",
         "source_name": source_name,
         "price": price,
         "source_kind": "inventory",
     })
     await _broadcast_inventory_state(session)
     await save_campaign_async(session)
-    await _send_inventory_action_result(session, user.id, f"Added {qty}× {entry.get('name')} to your inventory." if qty != 1 else f"Added {entry.get('name')} to your inventory.")
+    msg = f"Added {qty}× {entry.get('name')} to {target_user.name}'s inventory." if qty != 1 else f"Added {entry.get('name')} to {target_user.name}'s inventory."
+    if target_user.id == user.id:
+        msg = f"Added {qty}× {entry.get('name')} to your inventory." if qty != 1 else f"Added {entry.get('name')} to your inventory."
+    await _send_inventory_action_result(session, user.id, msg)
+    if target_user.id != user.id:
+        await _send_inventory_action_result(session, target_user.id, f"Received {qty}× {entry.get('name')} from {user.name}." if qty != 1 else f"Received {entry.get('name')} from {user.name}.")
 
 
 async def handle_inventory_remove_item(payload: dict, session: Session, user: User):

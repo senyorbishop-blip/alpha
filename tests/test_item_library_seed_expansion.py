@@ -275,6 +275,20 @@ def test_magic_item_expansion_contains_new_potions():
     assert not missing, f"Missing new potion/oil expansion IDs: {missing}"
 
 
+
+def test_magic_item_expansion_contains_vicious_rapier():
+    """The D&D Beyond-style rare vicious rapier should be available in the item library seed."""
+    from server.rules_db import _SRD_MAGIC_ITEMS
+
+    by_id = {item.get("id"): item for item in _SRD_MAGIC_ITEMS}
+    rapier = by_id.get("mi_vicious_rapier")
+    assert rapier is not None
+    assert rapier["name"] == "Vicious Rapier"
+    assert rapier["rarity"] == "rare"
+    assert rapier["item_type"] == "weapon"
+    assert "Vex" in rapier["effect"]
+    assert "extra 7 piercing damage" in rapier["effect"]
+
 def test_magic_items_no_duplicate_ids():
     """_SRD_MAGIC_ITEMS must have no duplicate IDs."""
     from server.rules_db import _SRD_MAGIC_ITEMS
