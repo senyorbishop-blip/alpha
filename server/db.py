@@ -190,6 +190,7 @@ def init_db():
             "ALTER TABLE pois ADD COLUMN local_map_url TEXT",
             "ALTER TABLE pois ADD COLUMN map_context TEXT NOT NULL DEFAULT 'world'",
             "ALTER TABLE pois ADD COLUMN interactable TEXT NOT NULL DEFAULT '{}'",
+            "ALTER TABLE pois ADD COLUMN revealed_to_players INTEGER NOT NULL DEFAULT 1",
             "ALTER TABLE tokens ADD COLUMN hp INTEGER",
             "ALTER TABLE tokens ADD COLUMN max_hp INTEGER",
             "ALTER TABLE tokens ADD COLUMN hidden_hp INTEGER NOT NULL DEFAULT 0",
@@ -432,6 +433,7 @@ def init_db():
             local_map_url TEXT,
             map_context   TEXT NOT NULL DEFAULT 'world',
             interactable  TEXT NOT NULL DEFAULT '{}',
+            revealed_to_players INTEGER NOT NULL DEFAULT 1,
             FOREIGN KEY (campaign_id) REFERENCES campaigns(id)
         );
 
@@ -776,8 +778,17 @@ def _save_pois(conn, session) -> None:
     for p in session.pois.values():
         interactable = _json_dumps_compact(getattr(p, "interactable", None) or {})
         conn.execute(
-            "INSERT OR REPLACE INTO pois (id, campaign_id, x, y, name, description, dm_notes, poi_type, local_map_url, map_context, interactable) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-            (p.id, session.id, p.x, p.y, p.name, p.description, p.dm_notes, p.poi_type, p.local_map_url, p.map_context, interactable)
+            """
+            INSERT OR REPLACE INTO pois (
+                id, campaign_id, x, y, name, description, dm_notes, poi_type,
+                local_map_url, map_context, interactable, revealed_to_players
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                p.id, session.id, p.x, p.y, p.name, p.description, p.dm_notes,
+                p.poi_type, p.local_map_url, p.map_context, interactable,
+                1 if getattr(p, "revealed_to_players", True) else 0,
+            ),
         )
 
 

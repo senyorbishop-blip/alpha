@@ -420,6 +420,35 @@ def test_restore_session_from_db_normalizes_legacy_payload_defaults():
     }
 
 
+
+def test_save_campaign_roundtrips_poi_player_visibility_flag():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        paths_mod, db_mod = _reload_db_modules(tmpdir)
+        try:
+            from server.session import POI
+
+            session = _build_session()
+            session.pois = {
+                "poi-hidden": POI(id="poi-hidden", x=10, y=20, name="Secret Shrine", revealed_to_players=False),
+                "poi-visible": POI(id="poi-visible", x=30, y=40, name="Town Gate", revealed_to_players=True),
+            }
+
+            assert db_mod.save_campaign(session) is True
+
+            loaded = db_mod.load_campaign(session.id)
+            assert loaded is not None
+            by_id = {poi["id"]: poi for poi in loaded["pois"]}
+            assert by_id["poi-hidden"]["revealed_to_players"] == 0
+            assert by_id["poi-visible"]["revealed_to_players"] == 1
+
+            from server.restore import restore_session_from_db
+
+            restored, _ = restore_session_from_db(loaded)
+            assert restored.pois["poi-hidden"].revealed_to_players is False
+            assert restored.pois["poi-visible"].revealed_to_players is True
+        finally:
+            _cleanup_modules(paths_mod, db_mod)
+
 def test_load_campaign_invalid_poi_interactable_json_falls_back_to_empty_dict():
     with tempfile.TemporaryDirectory() as tmpdir:
         paths_mod, db_mod = _reload_db_modules(tmpdir)
