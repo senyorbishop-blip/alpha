@@ -411,6 +411,45 @@ def _command_model_summary(command_model: str) -> str:
     return mapping.get(command_model, "Command economy rules will be applied in runtime.")
 
 
+
+def _imported_runtime_rows(document: dict[str, Any], key: str) -> list[dict[str, Any]]:
+    import_meta = document.get("importMeta") if isinstance(document.get("importMeta"), dict) else {}
+    rows = import_meta.get(key) if isinstance(import_meta.get(key), list) else []
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for idx, row in enumerate(rows):
+        if not isinstance(row, dict):
+            continue
+        name = str(row.get("name") or row.get("displayName") or "").strip()
+        if not name:
+            continue
+        item = _clone(row)
+        item.setdefault("id", f"ddb-import-{key}-{idx}")
+        item.setdefault("displayName", name)
+        item.setdefault("source", "D&D Beyond import")
+        item.setdefault("tags", ["dndbeyond", "imported"])
+        dedupe = f"{str(item.get('id') or '').lower()}::{name.lower()}::{str(item.get('actionType') or item.get('type') or '').lower()}"
+        if dedupe in seen:
+            continue
+        seen.add(dedupe)
+        out.append(item)
+    return out
+
+
+def _bucket_imported_actions(document: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    buckets = {"actions": [], "bonusActions": [], "reactions": [], "passives": []}
+    for row in _imported_runtime_rows(document, "importedActions"):
+        action_type = str(row.get("actionType") or row.get("type") or "action").strip().lower()
+        if "reaction" in action_type:
+            buckets["reactions"].append(row)
+        elif "bonus" in action_type:
+            buckets["bonusActions"].append(row)
+        elif action_type in {"passive", "none", "no action"}:
+            buckets["passives"].append(row)
+        else:
+            buckets["actions"].append(row)
+    return buckets
+
 def _build_runtime_summon_actions(
     document: dict[str, Any],
     runtime_classes: list[dict[str, Any]],
@@ -741,12 +780,15 @@ def resolve_character_runtime(document: Any) -> dict:
             seen_resource_keys.add(dedupe_key)
             merged_resources.append(_clone(row))
 
+    imported_action_buckets = _bucket_imported_actions(normalized)
+    imported_features = _imported_runtime_rows(normalized, "importedFeatures")
+
     runtime["resources"] = merged_resources
-    runtime["actions"] = [item for payload in runtime_feature_sets for item in (payload.get("actions") or [])]
-    runtime["bonusActions"] = [item for payload in runtime_feature_sets for item in (payload.get("bonusActions") or [])]
-    runtime["reactions"] = [item for payload in runtime_feature_sets for item in (payload.get("reactions") or [])]
-    runtime["passives"] = [item for payload in runtime_feature_sets for item in (payload.get("passives") or [])]
-    runtime["classFeatures"] = [item for payload in runtime_feature_sets for item in (payload.get("classFeatures") or [])]
+    runtime["actions"] = [item for payload in runtime_feature_sets for item in (payload.get("actions") or [])] + imported_action_buckets["actions"]
+    runtime["bonusActions"] = [item for payload in runtime_feature_sets for item in (payload.get("bonusActions") or [])] + imported_action_buckets["bonusActions"]
+    runtime["reactions"] = [item for payload in runtime_feature_sets for item in (payload.get("reactions") or [])] + imported_action_buckets["reactions"]
+    runtime["passives"] = [item for payload in runtime_feature_sets for item in (payload.get("passives") or [])] + imported_action_buckets["passives"]
+    runtime["classFeatures"] = [item for payload in runtime_feature_sets for item in (payload.get("classFeatures") or [])] + imported_features
     has_first_turn_path = bool(runtime["actions"] or runtime["bonusActions"] or runtime.get("summonActions"))
     if not has_first_turn_path:
         runtime["actions"] = [_build_first_turn_strike_action(proficiency_bonus=proficiency_bonus, str_mod=str_mod)]
