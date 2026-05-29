@@ -5,6 +5,7 @@ import re
 import time
 from typing import Any
 
+from server.character.spell_compendium import get_spell_by_id
 from server.character.validation import validate_or_raise
 
 
@@ -37,6 +38,81 @@ _SPECIES_ALIAS_MAP: dict[str, list[str]] = {
     "dwarf": ["hill dwarf", "mountain dwarf"],
     "gnome": ["forest gnome", "rock gnome"],
     "halfling": ["lightfoot halfling", "stout halfling"],
+}
+
+
+_DDB_ACTION_TYPE_MAP = {
+    1: "action",
+    2: "none",
+    3: "bonus action",
+    4: "reaction",
+    5: "minute",
+    6: "hour",
+    7: "special",
+    8: "legendary action",
+}
+
+_DDB_ABILITY_NAME_MAP = {
+    "strength": "str",
+    "dexterity": "dex",
+    "constitution": "con",
+    "intelligence": "int",
+    "wisdom": "wis",
+    "charisma": "cha",
+}
+
+_COMMON_ARMOR_STATS: dict[str, dict[str, Any]] = {
+    "padded": {"base_ac": 11, "armor_type": "light", "stealth_disadvantage": True},
+    "leather": {"base_ac": 11, "armor_type": "light"},
+    "studded leather": {"base_ac": 12, "armor_type": "light"},
+    "hide": {"base_ac": 12, "armor_type": "medium", "dex_cap": 2},
+    "chain shirt": {"base_ac": 13, "armor_type": "medium", "dex_cap": 2},
+    "scale mail": {"base_ac": 14, "armor_type": "medium", "dex_cap": 2, "stealth_disadvantage": True},
+    "breastplate": {"base_ac": 14, "armor_type": "medium", "dex_cap": 2},
+    "half plate": {"base_ac": 15, "armor_type": "medium", "dex_cap": 2, "stealth_disadvantage": True},
+    "ring mail": {"base_ac": 14, "armor_type": "heavy", "stealth_disadvantage": True},
+    "chain mail": {"base_ac": 16, "armor_type": "heavy", "strength_requirement": 13, "stealth_disadvantage": True},
+    "splint": {"base_ac": 17, "armor_type": "heavy", "strength_requirement": 15, "stealth_disadvantage": True},
+    "plate": {"base_ac": 18, "armor_type": "heavy", "strength_requirement": 15, "stealth_disadvantage": True},
+}
+
+_COMMON_WEAPON_STATS: dict[str, dict[str, Any]] = {
+    "club": {"damage_dice": "1d4", "damage_type": "bludgeoning", "properties": ["Light"], "range": "Melee 5 ft"},
+    "dagger": {"damage_dice": "1d4", "damage_type": "piercing", "properties": ["Finesse", "Light", "Thrown"], "range": "20/60 ft"},
+    "dart": {"damage_dice": "1d4", "damage_type": "piercing", "properties": ["Finesse", "Thrown"], "range": "20/60 ft"},
+    "greatclub": {"damage_dice": "1d8", "damage_type": "bludgeoning", "properties": ["Two-Handed"], "range": "Melee 5 ft"},
+    "handaxe": {"damage_dice": "1d6", "damage_type": "slashing", "properties": ["Light", "Thrown"], "range": "20/60 ft"},
+    "javelin": {"damage_dice": "1d6", "damage_type": "piercing", "properties": ["Thrown"], "range": "30/120 ft"},
+    "light hammer": {"damage_dice": "1d4", "damage_type": "bludgeoning", "properties": ["Light", "Thrown"], "range": "20/60 ft"},
+    "mace": {"damage_dice": "1d6", "damage_type": "bludgeoning", "properties": [], "range": "Melee 5 ft"},
+    "quarterstaff": {"damage_dice": "1d6", "damage_type": "bludgeoning", "versatile_damage": "1d8", "properties": ["Versatile"], "range": "Melee 5 ft"},
+    "sickle": {"damage_dice": "1d4", "damage_type": "slashing", "properties": ["Light"], "range": "Melee 5 ft"},
+    "spear": {"damage_dice": "1d6", "damage_type": "piercing", "versatile_damage": "1d8", "properties": ["Thrown", "Versatile"], "range": "20/60 ft"},
+    "light crossbow": {"damage_dice": "1d8", "damage_type": "piercing", "properties": ["Ammunition", "Loading", "Two-Handed"], "range": "80/320 ft"},
+    "shortbow": {"damage_dice": "1d6", "damage_type": "piercing", "properties": ["Ammunition", "Two-Handed"], "range": "80/320 ft"},
+    "sling": {"damage_dice": "1d4", "damage_type": "bludgeoning", "properties": ["Ammunition"], "range": "30/120 ft"},
+    "battleaxe": {"damage_dice": "1d8", "damage_type": "slashing", "versatile_damage": "1d10", "properties": ["Versatile"], "range": "Melee 5 ft"},
+    "flail": {"damage_dice": "1d8", "damage_type": "bludgeoning", "properties": [], "range": "Melee 5 ft"},
+    "glaive": {"damage_dice": "1d10", "damage_type": "slashing", "properties": ["Heavy", "Reach", "Two-Handed"], "range": "Melee 10 ft"},
+    "greataxe": {"damage_dice": "1d12", "damage_type": "slashing", "properties": ["Heavy", "Two-Handed"], "range": "Melee 5 ft"},
+    "greatsword": {"damage_dice": "2d6", "damage_type": "slashing", "properties": ["Heavy", "Two-Handed"], "range": "Melee 5 ft"},
+    "halberd": {"damage_dice": "1d10", "damage_type": "slashing", "properties": ["Heavy", "Reach", "Two-Handed"], "range": "Melee 10 ft"},
+    "lance": {"damage_dice": "1d12", "damage_type": "piercing", "properties": ["Reach", "Special"], "range": "Melee 10 ft"},
+    "longsword": {"damage_dice": "1d8", "damage_type": "slashing", "versatile_damage": "1d10", "properties": ["Versatile"], "range": "Melee 5 ft"},
+    "maul": {"damage_dice": "2d6", "damage_type": "bludgeoning", "properties": ["Heavy", "Two-Handed"], "range": "Melee 5 ft"},
+    "morningstar": {"damage_dice": "1d8", "damage_type": "piercing", "properties": [], "range": "Melee 5 ft"},
+    "pike": {"damage_dice": "1d10", "damage_type": "piercing", "properties": ["Heavy", "Reach", "Two-Handed"], "range": "Melee 10 ft"},
+    "rapier": {"damage_dice": "1d8", "damage_type": "piercing", "properties": ["Finesse"], "range": "Melee 5 ft"},
+    "scimitar": {"damage_dice": "1d6", "damage_type": "slashing", "properties": ["Finesse", "Light"], "range": "Melee 5 ft"},
+    "shortsword": {"damage_dice": "1d6", "damage_type": "piercing", "properties": ["Finesse", "Light"], "range": "Melee 5 ft"},
+    "trident": {"damage_dice": "1d6", "damage_type": "piercing", "versatile_damage": "1d8", "properties": ["Thrown", "Versatile"], "range": "20/60 ft"},
+    "war pick": {"damage_dice": "1d8", "damage_type": "piercing", "properties": [], "range": "Melee 5 ft"},
+    "warhammer": {"damage_dice": "1d8", "damage_type": "bludgeoning", "versatile_damage": "1d10", "properties": ["Versatile"], "range": "Melee 5 ft"},
+    "whip": {"damage_dice": "1d4", "damage_type": "slashing", "properties": ["Finesse", "Reach"], "range": "Melee 10 ft"},
+    "blowgun": {"damage_dice": "1", "damage_type": "piercing", "properties": ["Ammunition", "Loading"], "range": "25/100 ft"},
+    "hand crossbow": {"damage_dice": "1d6", "damage_type": "piercing", "properties": ["Ammunition", "Light", "Loading"], "range": "30/120 ft"},
+    "heavy crossbow": {"damage_dice": "1d10", "damage_type": "piercing", "properties": ["Ammunition", "Heavy", "Loading", "Two-Handed"], "range": "100/400 ft"},
+    "longbow": {"damage_dice": "1d8", "damage_type": "piercing", "properties": ["Ammunition", "Heavy", "Two-Handed"], "range": "150/600 ft"},
 }
 
 _KNOWN_FEATS: set[str] = {
@@ -108,6 +184,443 @@ def _make_warning(
         "details": copy.deepcopy(details or {}),
     }
 
+
+
+def _slugify(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    text = re.sub(r"[^a-z0-9]+", "-", text)
+    return text.strip("-")
+
+
+def _strip_html(value: Any, *, limit: int = 1200) -> str:
+    text = str(value or "").replace("\r", " ").strip()
+    if not text:
+        return ""
+    text = re.sub(r"<\s*br\s*/?\s*>", "\n", text, flags=re.I)
+    text = re.sub(r"</\s*p\s*>", "\n\n", text, flags=re.I)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"&nbsp;", " ", text)
+    text = re.sub(r"&amp;", "&", text)
+    text = re.sub(r"&lt;", "<", text)
+    text = re.sub(r"&gt;", ">", text)
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()[:limit]
+
+
+def _clean_item_name(value: Any) -> str:
+    name = _safe_str(value, "", limit=120)
+    name = re.sub(r"\s*[×x]\s*\d+$", "", name).strip()
+    name = re.sub(r"\s*\(\d+\)$", "", name).strip()
+    return name
+
+
+def _lookup_common_weapon(name: Any) -> dict[str, Any]:
+    clean = _clean_item_name(name).lower()
+    clean = re.sub(r"^\+\d+\s+", "", clean).strip()
+    clean = re.sub(r"\s*,\s*\+\d+$", "", clean).strip()
+    clean = re.sub(r"\b(masterwork|silvered|adamantine)\b", "", clean).strip()
+    clean = re.sub(r"\s+", " ", clean)
+    if clean in _COMMON_WEAPON_STATS:
+        return copy.deepcopy(_COMMON_WEAPON_STATS[clean])
+    for key, stats in _COMMON_WEAPON_STATS.items():
+        if clean.endswith(key) or key in clean:
+            return copy.deepcopy(stats)
+    return {}
+
+
+def _lookup_common_armor(name: Any) -> dict[str, Any]:
+    clean = _clean_item_name(name).lower()
+    clean = re.sub(r"^\+\d+\s+", "", clean).strip()
+    clean = clean.replace(" armor", "").strip()
+    if clean in _COMMON_ARMOR_STATS:
+        return copy.deepcopy(_COMMON_ARMOR_STATS[clean])
+    for key, stats in _COMMON_ARMOR_STATS.items():
+        if clean.endswith(key) or key in clean:
+            return copy.deepcopy(stats)
+    return {}
+
+
+def _definition_from_ddb_row(row: dict[str, Any]) -> dict[str, Any]:
+    definition = row.get("definition") if isinstance(row.get("definition"), dict) else {}
+    if not definition and isinstance(row.get("item"), dict):
+        definition = row.get("item") or {}
+    return definition
+
+
+def _damage_dice_from_definition(definition: dict[str, Any]) -> str:
+    damage = definition.get("damage") if isinstance(definition.get("damage"), dict) else {}
+    dice = damage.get("dice") if isinstance(damage.get("dice"), dict) else {}
+    candidates = (
+        definition.get("damageDice"),
+        definition.get("damageDiceString"),
+        damage.get("diceString"),
+        dice.get("diceString"),
+    )
+    for value in candidates:
+        text = _safe_str(value, "", limit=24)
+        if text:
+            return text
+    dice_count = _safe_int(dice.get("diceCount") or damage.get("diceCount"), 0, minimum=0)
+    dice_value = _safe_int(dice.get("diceValue") or damage.get("diceValue"), 0, minimum=0)
+    if dice_count and dice_value:
+        return f"{dice_count}d{dice_value}"
+    fixed = _safe_int(damage.get("fixedValue"), 0, minimum=0)
+    return str(fixed) if fixed else ""
+
+
+def _damage_type_from_definition(definition: dict[str, Any]) -> str:
+    damage_type = definition.get("damageType")
+    if isinstance(damage_type, dict):
+        return _safe_str(damage_type.get("name"), "", limit=40).lower()
+    damage = definition.get("damage") if isinstance(definition.get("damage"), dict) else {}
+    damage_type = damage.get("damageType")
+    if isinstance(damage_type, dict):
+        return _safe_str(damage_type.get("name"), "", limit=40).lower()
+    return _safe_str(definition.get("damageTypeName") or damage.get("damageType"), "", limit=40).lower()
+
+
+def _properties_from_definition(definition: dict[str, Any]) -> list[str]:
+    raw_props = definition.get("properties") if isinstance(definition.get("properties"), list) else []
+    out: list[str] = []
+    for prop in raw_props:
+        if isinstance(prop, dict):
+            name = _safe_str(prop.get("name") or prop.get("description"), "", limit=40)
+        else:
+            name = _safe_str(prop, "", limit=40)
+        if name and name not in out:
+            out.append(name)
+    return out[:12]
+
+
+def _range_from_definition(definition: dict[str, Any], properties: list[str]) -> str:
+    long_range = _safe_int(definition.get("longRange"), 0, minimum=0)
+    normal_range = _safe_int(definition.get("range"), 0, minimum=0)
+    if normal_range and long_range:
+        return f"{normal_range}/{long_range} ft"
+    if normal_range:
+        if any(str(prop).lower() == "reach" for prop in properties):
+            return f"Melee {normal_range} ft"
+        return f"{normal_range} ft"
+    if any(str(prop).lower() == "reach" for prop in properties):
+        return "Melee 10 ft"
+    return ""
+
+
+def _normalize_ddb_inventory_row(row: Any) -> dict[str, Any] | None:
+    if not isinstance(row, dict):
+        return None
+    definition = _definition_from_ddb_row(row)
+    name = _safe_str(definition.get("name") or row.get("name"), "", limit=120)
+    if not name:
+        return None
+    qty = _safe_int(row.get("quantity") or row.get("qty"), 1, minimum=1)
+    filter_type = _safe_str(definition.get("filterType") or definition.get("type") or row.get("filterType"), "", limit=60).lower()
+    type_name = _safe_str(definition.get("type") or row.get("type"), "", limit=60).lower()
+    category = _safe_str(definition.get("category") or definition.get("subType") or row.get("category"), "", limit=80)
+    properties = _properties_from_definition(definition)
+    damage_dice = _damage_dice_from_definition(definition)
+    damage_type = _damage_type_from_definition(definition)
+
+    kind = "gear"
+    if "weapon" in filter_type or "weapon" in type_name or damage_dice:
+        kind = "weapon"
+    elif "shield" in name.lower():
+        kind = "shield"
+    elif "armor" in filter_type or "armour" in filter_type or "armor" in type_name or definition.get("armorClass"):
+        kind = "armor"
+    elif "potion" in filter_type or "potion" in type_name or "potion" in name.lower():
+        kind = "potion"
+    elif "scroll" in filter_type or "scroll" in type_name or "spell scroll" in name.lower():
+        kind = "scroll"
+
+    out: dict[str, Any] = {
+        "id": _safe_str(row.get("id") or definition.get("id"), _slugify(name), limit=80),
+        "name": name,
+        "qty": qty,
+        "kind": kind,
+        "type": kind,
+        "item_type": kind,
+        "equipment_kind": kind,
+        "category": category or filter_type.title(),
+        "source": "D&D Beyond import",
+        "equipped": bool(row.get("equipped")),
+        "notes": _strip_html(definition.get("description") or definition.get("snippet"), limit=700),
+    }
+    if row.get("isAttuned") is not None:
+        out["attuned"] = bool(row.get("isAttuned"))
+    if definition.get("canAttune") is not None or definition.get("requiresAttunement") is not None:
+        out["attunement_required"] = bool(definition.get("canAttune") or definition.get("requiresAttunement"))
+    weight = definition.get("weight")
+    if weight is not None and str(weight).strip() != "":
+        try:
+            out["weight_lbs"] = float(weight)
+        except Exception:
+            pass
+    price = definition.get("cost") or definition.get("price")
+    if isinstance(price, dict):
+        out["price"] = _safe_str(price.get("quantity") or price.get("value"), "", limit=40)
+    elif price is not None:
+        out["price"] = _safe_str(price, "", limit=80)
+
+    if kind == "weapon":
+        common = _lookup_common_weapon(name)
+        out.update({k: v for k, v in common.items() if v not in (None, "", [])})
+        if damage_dice:
+            out["damage_dice"] = damage_dice
+            out["damage"] = damage_dice
+        if damage_type:
+            out["damage_type"] = damage_type
+        if properties:
+            out["properties"] = properties
+            out["weapon_properties"] = properties
+        if _range_from_definition(definition, properties):
+            out["range"] = _range_from_definition(definition, properties)
+        if bool(row.get("equipped")):
+            out["equip_slot"] = "main_hand"
+    elif kind == "shield":
+        out["ac_bonus"] = _safe_int(definition.get("armorClass"), 2, minimum=0) or 2
+        out["equip_slot"] = "off_hand" if bool(row.get("equipped")) else ""
+    elif kind == "armor":
+        common = _lookup_common_armor(name)
+        out.update({k: v for k, v in common.items() if v not in (None, "", [])})
+        base_ac = _safe_int(definition.get("armorClass"), 0, minimum=0)
+        if base_ac:
+            out["base_ac"] = base_ac
+        armor_type = _safe_str(definition.get("armorType") or definition.get("armorTypeName"), "", limit=40).lower()
+        if armor_type:
+            out["armor_type"] = armor_type
+        if bool(row.get("equipped")):
+            out["equip_slot"] = "armor"
+    return out
+
+
+def _normalize_ddb_inventory(ddb: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+    inventory_rows = ddb.get("inventory") if isinstance(ddb.get("inventory"), list) else []
+    inventory = [item for item in (_normalize_ddb_inventory_row(row) for row in inventory_rows) if item]
+    if inventory and not any(row.get("equipped") and row.get("equipment_kind") == "weapon" for row in inventory):
+        for item in inventory:
+            if item.get("equipment_kind") == "weapon":
+                item["equipped"] = True
+                item.setdefault("equip_slot", "main_hand")
+                break
+    equipped: dict[str, dict[str, Any]] = {}
+    for item in inventory:
+        if not item.get("equipped"):
+            continue
+        slot = _safe_str(item.get("equip_slot"), "", limit=40)
+        if not slot:
+            kind = _safe_str(item.get("equipment_kind"), "", limit=40)
+            slot = "main_hand" if kind == "weapon" else "off_hand" if kind == "shield" else "armor" if kind == "armor" else ""
+        if slot:
+            equipped[slot] = copy.deepcopy(item)
+            equipped[slot]["equip_slot"] = slot
+            equipped[slot]["equipped"] = True
+    return inventory, equipped
+
+
+def _normalize_ddb_activation(row: dict[str, Any]) -> str:
+    activation = row.get("activation") if isinstance(row.get("activation"), dict) else {}
+    raw = row.get("actionType") or row.get("activationType") or activation.get("activationType") or activation.get("type")
+    if isinstance(raw, dict):
+        text = _safe_str(raw.get("name") or raw.get("type"), "", limit=40).lower()
+    elif isinstance(raw, int):
+        text = _DDB_ACTION_TYPE_MAP.get(raw, "action")
+    else:
+        text = _safe_str(raw, "", limit=40).lower()
+    if not text:
+        raw_id = _safe_int(row.get("actionTypeId") or activation.get("activationTypeId"), 0, minimum=0)
+        text = _DDB_ACTION_TYPE_MAP.get(raw_id, "action") if raw_id else "action"
+    if "bonus" in text:
+        return "bonus action"
+    if "reaction" in text:
+        return "reaction"
+    if text in {"none", "no action", "special", "minute", "hour"}:
+        return text
+    return "action"
+
+
+def _normalize_ddb_action_row(row: Any, *, source: str) -> dict[str, Any] | None:
+    if not isinstance(row, dict):
+        return None
+    definition = row.get("definition") if isinstance(row.get("definition"), dict) else row
+    name = _safe_str(definition.get("name") or row.get("name") or definition.get("displayAs"), "", limit=120)
+    if not name:
+        return None
+    action_type = _normalize_ddb_activation({**definition, **row})
+    summary = _strip_html(definition.get("snippet") or row.get("snippet") or definition.get("summary"), limit=360)
+    description = _strip_html(definition.get("description") or row.get("description") or summary, limit=1400)
+    limited = row.get("limitedUse") if isinstance(row.get("limitedUse"), dict) else definition.get("limitedUse") if isinstance(definition.get("limitedUse"), dict) else {}
+    uses = _safe_int(limited.get("maxUses") or limited.get("numberUsed") or row.get("uses"), 0, minimum=0)
+    damage = _damage_dice_from_definition(definition)
+    damage_type = _damage_type_from_definition(definition)
+    out: dict[str, Any] = {
+        "id": f"ddb-{source}-{_slugify(name)}",
+        "name": name,
+        "displayName": name,
+        "actionType": action_type,
+        "type": action_type,
+        "classification": "imported",
+        "source": f"D&D Beyond {source}",
+        "summary": summary or description[:240],
+        "description": description or summary,
+        "tags": ["dndbeyond", source],
+        "trackUses": bool(limited),
+    }
+    if uses:
+        out["uses"] = uses
+        out["maxUses"] = uses
+    if damage:
+        out["damage"] = {"formula": damage, "type": damage_type}
+        out["damageFormula"] = damage
+        out["damageType"] = damage_type
+    save_ability = definition.get("saveAbility") if isinstance(definition.get("saveAbility"), dict) else {}
+    save_name = _safe_str(save_ability.get("name") or definition.get("saveAbility"), "", limit=40).lower()
+    if save_name:
+        out["save"] = _DDB_ABILITY_NAME_MAP.get(save_name, save_name)
+    range_text = _range_from_definition(definition, _properties_from_definition(definition))
+    if range_text:
+        out["range"] = range_text
+    return out
+
+
+def _iter_ddb_action_candidates(ddb: dict[str, Any]) -> list[tuple[Any, str]]:
+    rows: list[tuple[Any, str]] = []
+    actions = ddb.get("actions") if isinstance(ddb.get("actions"), dict) else {}
+    for key, bucket in actions.items():
+        if isinstance(bucket, list):
+            rows.extend((row, str(key or "action")) for row in bucket)
+    for key in ("customActions", "characterActions", "actions"):
+        bucket = ddb.get(key)
+        if isinstance(bucket, list):
+            rows.extend((row, str(key)) for row in bucket)
+    return rows
+
+
+def _normalize_ddb_actions(ddb: dict[str, Any]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for row, source in _iter_ddb_action_candidates(ddb):
+        action = _normalize_ddb_action_row(row, source=source)
+        if not action:
+            continue
+        key = f"{action.get('name', '').lower()}::{action.get('actionType', '')}"
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(action)
+    return out[:80]
+
+
+def _normalize_ddb_feature_row(row: Any, *, source: str, level: int = 0) -> dict[str, Any] | None:
+    if not isinstance(row, dict):
+        return None
+    definition = row.get("definition") if isinstance(row.get("definition"), dict) else row
+    name = _safe_str(definition.get("name") or row.get("name"), "", limit=120)
+    if not name:
+        return None
+    description = _strip_html(definition.get("description") or row.get("description") or definition.get("snippet"), limit=1600)
+    feature_type = _normalize_ddb_activation({**definition, **row}) if (definition.get("activation") or row.get("activation") or definition.get("actionType") or row.get("actionType")) else "passive"
+    return {
+        "id": f"ddb-{source}-{_slugify(name)}",
+        "name": name,
+        "displayName": name,
+        "section": source.title(),
+        "type": feature_type,
+        "source": f"D&D Beyond {source}",
+        "minLevel": _safe_int(row.get("requiredLevel") or definition.get("requiredLevel") or level, 0, minimum=0),
+        "summary": _strip_html(definition.get("snippet") or row.get("snippet") or description, limit=360),
+        "description": description,
+        "tags": ["dndbeyond", source],
+        "kind": source,
+    }
+
+
+def _normalize_ddb_features(ddb: dict[str, Any], classes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    def add(row: Any, source: str, level: int = 0) -> None:
+        feature = _normalize_ddb_feature_row(row, source=source, level=level)
+        if not feature:
+            return
+        key = str(feature.get("name") or "").strip().lower()
+        if not key or key in seen:
+            return
+        seen.add(key)
+        out.append(feature)
+
+    for row in ddb.get("classFeatures") if isinstance(ddb.get("classFeatures"), list) else []:
+        add(row, "class")
+    for class_row in ddb.get("classes") if isinstance(ddb.get("classes"), list) else []:
+        if not isinstance(class_row, dict):
+            continue
+        level = _safe_int(class_row.get("level"), 0, minimum=0)
+        for row in class_row.get("classFeatures") if isinstance(class_row.get("classFeatures"), list) else []:
+            add(row, "class", level)
+        for row in class_row.get("features") if isinstance(class_row.get("features"), list) else []:
+            add(row, "class", level)
+    for row in ddb.get("racialTraits") if isinstance(ddb.get("racialTraits"), list) else []:
+        add(row, "species")
+    race = ddb.get("race") if isinstance(ddb.get("race"), dict) else {}
+    for row in race.get("racialTraits") if isinstance(race.get("racialTraits"), list) else []:
+        add(row, "species")
+    for row in ddb.get("feats") if isinstance(ddb.get("feats"), list) else []:
+        add(row, "feat")
+    return out[:120]
+
+
+def _normalize_ddb_spell_entry(row: Any) -> dict[str, Any] | None:
+    if not isinstance(row, dict):
+        return None
+    definition = row.get("definition") if isinstance(row.get("definition"), dict) else row
+    name = _safe_str(definition.get("name") or row.get("name"), "", limit=120)
+    if not name:
+        return None
+    spell = get_spell_by_id(name)
+    spell_id = _safe_str((spell or {}).get("id"), _slugify(name), limit=120)
+    prepared = bool(row.get("prepared") or row.get("alwaysPrepared") or row.get("isPrepared"))
+    return {
+        "id": spell_id,
+        "name": _safe_str((spell or {}).get("name"), name, limit=120),
+        "prepared": prepared,
+        "source": "D&D Beyond import",
+        "matchedNative": bool(spell),
+    }
+
+
+def _normalize_ddb_spell_state(ddb: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]], int]:
+    spell_rows = ddb.get("spells") if isinstance(ddb.get("spells"), dict) else {}
+    entries: list[dict[str, Any]] = []
+    missing = 0
+    for bucket in spell_rows.values():
+        if not isinstance(bucket, list):
+            continue
+        for row in bucket:
+            entry = _normalize_ddb_spell_entry(row)
+            if entry:
+                entries.append(entry)
+                if not entry.get("matchedNative"):
+                    missing += 1
+    seen: set[str] = set()
+    deduped: list[dict[str, Any]] = []
+    for entry in entries:
+        spell_id = str(entry.get("id") or "").strip()
+        if not spell_id or spell_id in seen:
+            continue
+        seen.add(spell_id)
+        deduped.append(entry)
+    known = [entry["id"] for entry in deduped]
+    prepared = [entry["id"] for entry in deduped if entry.get("prepared")]
+    return {
+        "known": known,
+        "prepared": prepared,
+        "slots": {},
+        "focus": {},
+        "rituals": [],
+        "spellbookEntries": deduped,
+        "classSources": [],
+    }, deduped, missing
 
 def _normalize_resolution_payload(src: dict[str, Any]) -> dict[str, str]:
     resolution = src.get("import_resolution")
@@ -246,6 +759,16 @@ def normalize_ddb_json_payload(raw_payload: Any, *, external_id: str = "") -> di
     except Exception:
         speed = 30
 
+    imported_inventory, imported_equipped = _normalize_ddb_inventory(ddb)
+    imported_actions = _normalize_ddb_actions(ddb)
+    imported_features = _normalize_ddb_features(ddb, classes)
+    imported_spell_state, imported_spell_entries, unmatched_spell_count = _normalize_ddb_spell_state(ddb)
+    species_traits = [
+        copy.deepcopy(row)
+        for row in imported_features
+        if isinstance(row, dict) and row.get("kind") == "species"
+    ]
+
     document = {
         "schemaVersion": 1,
         "rulesMode": "casual",
@@ -263,6 +786,7 @@ def normalize_ddb_json_payload(raw_payload: Any, *, external_id: str = "") -> di
             "name": _safe_str(race.get("fullName") or race.get("baseName"), "", limit=80),
             "size": "medium",
             "speed": speed,
+            "traits": species_traits,
         },
         "background": {
             "id": _safe_str((background.get("definition") or {}).get("name") or background.get("name"), "", limit=80).lower().replace(" ", "-"),
@@ -287,10 +811,11 @@ def normalize_ddb_json_payload(raw_payload: Any, *, external_id: str = "") -> di
                 "gp": _safe_int(ddb.get("currencies", {}).get("gp"), 0, minimum=0) if isinstance(ddb.get("currencies"), dict) else 0,
                 "pp": _safe_int(ddb.get("currencies", {}).get("pp"), 0, minimum=0) if isinstance(ddb.get("currencies"), dict) else 0,
             },
-            "inventory": [],
-            "equipped": {},
+            "inventory": imported_inventory,
+            "equipped": imported_equipped,
             "containers": [],
         },
+        "spellState": imported_spell_state,
         "importMeta": source_meta,
     }
 
@@ -345,31 +870,44 @@ def normalize_ddb_json_payload(raw_payload: Any, *, external_id: str = "") -> di
         )
 
     spell_rows = ddb.get("spells") if isinstance(ddb.get("spells"), dict) else {}
-    class_spells = spell_rows.get("class") if isinstance(spell_rows.get("class"), list) else []
     missing_spell_names = 0
-    for row in class_spells:
-        if not isinstance(row, dict):
+    for bucket in spell_rows.values():
+        if not isinstance(bucket, list):
             continue
-        definition = row.get("definition") if isinstance(row.get("definition"), dict) else {}
-        if not _safe_str(definition.get("name"), ""):
-            missing_spell_names += 1
-    if missing_spell_names:
+        for row in bucket:
+            if not isinstance(row, dict):
+                continue
+            definition = row.get("definition") if isinstance(row.get("definition"), dict) else {}
+            if not _safe_str(definition.get("name") or row.get("name"), ""):
+                missing_spell_names += 1
+    if missing_spell_names or unmatched_spell_count:
         warnings.append(
             _make_warning(
                 code="missing_spell_mapping",
-                message=f"{missing_spell_names} imported spell rows could not be mapped and were skipped.",
+                message=(
+                    f"{missing_spell_names} imported spell rows had no name; "
+                    f"{unmatched_spell_count} named spells were preserved but did not exactly match the native spell compendium."
+                ),
                 blocking=False,
-                details={"count": missing_spell_names},
+                details={"missingNameCount": missing_spell_names, "unmatchedNameCount": unmatched_spell_count},
             )
         )
 
     feat_rows = ddb.get("feats") if isinstance(ddb.get("feats"), list) else []
+    imported_feats: list[dict[str, Any]] = []
     for feat_row in feat_rows:
         if not isinstance(feat_row, dict):
             continue
-        feat_name = _safe_str((feat_row.get("definition") or {}).get("name"), "", limit=120)
+        definition = feat_row.get("definition") if isinstance(feat_row.get("definition"), dict) else feat_row
+        feat_name = _safe_str(definition.get("name"), "", limit=120)
         if not feat_name:
             continue
+        imported_feats.append({
+            "featId": _slugify(feat_name),
+            "name": feat_name,
+            "source": "D&D Beyond import",
+            "description": _strip_html(definition.get("description") or definition.get("snippet"), limit=1200),
+        })
         if feat_name.lower() not in _KNOWN_FEATS:
             warnings.append(
                 _make_warning(
@@ -379,9 +917,21 @@ def normalize_ddb_json_payload(raw_payload: Any, *, external_id: str = "") -> di
                     details={"feat": feat_name},
                 )
             )
+    if imported_feats:
+        document["feats"] = imported_feats
 
     source_meta["nativeImportMode"] = "ddb_import"
     source_meta["resolution"] = resolution
+    source_meta["importedActions"] = imported_actions
+    source_meta["importedFeatures"] = imported_features
+    source_meta["importedSpells"] = imported_spell_entries
+    source_meta["importedInventoryCount"] = len(imported_inventory)
+    source_meta["mappingNotes"] = [
+        f"Imported {len(imported_inventory)} inventory item(s) from D&D Beyond.",
+        f"Imported {len(imported_actions)} action card(s) from D&D Beyond.",
+        f"Imported {len(imported_features)} feature/trait row(s) from D&D Beyond.",
+        f"Imported {len(imported_spell_entries)} spell row(s) from D&D Beyond.",
+    ]
     source_meta["warnings"] = copy.deepcopy(warnings)
 
     canonical = validate_or_raise(document)
