@@ -11261,6 +11261,7 @@ let _lootInspectState   = null;
 let _lootRollPromptState = null;
 let itemLibraryEntries = {};
 let _srdItems = [];  // Global SRD items from import script
+window.CharacterBuilderItemLibrary = window.CharacterBuilderItemLibrary || { entries: [], srdItems: [] };
 let _itemLibrarySelectedId = null;
 let _itemLibraryModalMode = null;
 let charProfiles = [];
@@ -30904,6 +30905,7 @@ function handleLegacyMessage(msg) {
           return entry;
         }).filter(Boolean);
       }
+      publishCharacterBuilderItemLibrary();
       loadItemLibraryEntries(p.entries || []);
       break;
     }
@@ -39415,6 +39417,14 @@ function normalizeItemLibraryEntry(raw) {
   return enrichItemLibraryEquipmentFromText(raw, out);
 }
 
+function publishCharacterBuilderItemLibrary() {
+  window.CharacterBuilderItemLibrary = {
+    entries: Object.values(itemLibraryEntries || {}),
+    srdItems: Array.isArray(_srdItems) ? _srdItems.slice() : [],
+    updatedAt: Date.now(),
+  };
+}
+
 function loadItemLibraryEntries(entries) {
   const next = {};
   (entries || []).forEach(entry => {
@@ -39422,6 +39432,7 @@ function loadItemLibraryEntries(entries) {
     if (normalized && normalized.id) next[normalized.id] = normalized;
   });
   itemLibraryEntries = next;
+  publishCharacterBuilderItemLibrary();
   if (_itemLibrarySelectedId && !itemLibraryEntries[_itemLibrarySelectedId]) _itemLibrarySelectedId = null;
   renderItemLibraryList();
   renderItemLibraryEditor();
