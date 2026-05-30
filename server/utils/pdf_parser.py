@@ -92,6 +92,9 @@ def parse_character_pdf_data(data: bytes) -> dict:
     for key, value in (fields or {}).items():
         _store_field(key, value)
 
+    if not all_fields:
+        raise ValueError("PDF has no form fields. Export a fillable D&D Beyond PDF or use JSON import.")
+
     def normalize_key(value: str) -> str:
         return re.sub(r"[^a-z0-9]+", "", str(value or "").lower())
 

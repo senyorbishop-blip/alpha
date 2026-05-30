@@ -71,6 +71,9 @@
 
     const importMeta = entry.importMeta && typeof entry.importMeta === 'object' ? entry.importMeta : {};
     const source = String(importMeta.source || '').trim().toLowerCase();
+    const origin = String(importMeta.origin || '').trim().toLowerCase();
+    const nativeImportMode = String(importMeta.nativeImportMode || '').trim().toLowerCase();
+    if (source.includes('pdf') || origin.includes('pdf') || nativeImportMode.includes('pdf')) return 'ddb_pdf';
     if (source.includes('ddb') || source.includes('d&d beyond')) return 'ddb';
     if (source) return source;
 
@@ -80,7 +83,9 @@
   function formatSourceBadge(mode) {
     const key = String(mode || 'legacy').toLowerCase();
     if (key === 'native') return 'Casual D&D';
+    if (key === 'ddb_pdf' || key === 'dndbeyond_pdf' || key === 'pdf') return 'D&D Beyond PDF';
     if (key === 'ddb') return 'D&D Beyond';
+    if (key === 'dndbeyond' || key === 'dndbeyond_json' || key === 'json') return 'D&D Beyond';
     if (key === 'legacy') return 'Legacy';
     return key;
   }
