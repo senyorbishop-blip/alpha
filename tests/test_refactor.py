@@ -1220,6 +1220,27 @@ def test_play_html_exists():
     assert os.path.exists(PLAY_HTML_PATH), "client/templates/play.html must exist"
 
 
+
+
+def test_play_html_initiative_roll_uses_shared_modifier_resolver():
+    """Initiative rolling must reuse the same modifier resolver for token/profile variants."""
+    content = _play_html_content()
+    assert "function _resolveCombatantInitiativeModifier(" in content
+    assert "function _resolveCharacterSheetInitiativeModifier(" in content
+    assert "sheet.initiativeBonus" in content
+    assert "sheet.charBook?.initiative" in content
+    assert "const modifier = _resolveCombatantInitiativeModifier(com, combatTok);" in content
+    assert "const initMod = _resolveCombatantInitiativeModifier(null, t);" in content
+
+
+def test_play_html_initiative_roll_preserves_raw_d20_display():
+    """The physical die result remains raw while the initiative total adds the modifier."""
+    content = _play_html_content()
+    assert "Keep the physical d20 result unchanged, then add the character initiative modifier." in content
+    assert "rolls: [roll]" in content
+    assert "const total = roll + modifier;" in content
+    assert "return modText ? `${total} (${rawRoll}${modText})` : `${total} (${rawRoll})`;" in content
+
 def test_play_html_loads_required_external_modules():
     """play.html must load all required external JS modules via <script src=...> tags."""
     content = _play_html_content()

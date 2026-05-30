@@ -609,19 +609,24 @@ async def handle_combat_roll_initiative(payload: dict, session: Session, user: U
     DMs can roll for any combatant. Players may only roll for their own combatant.
     Assistant DMs with combat.manage_limited scope can roll for any combatant.
     """
-    combatant_id = payload.get("combatant_id")
-    modifier = int(payload.get("modifier", 0))
-    roll = int(payload.get("roll", 0))
-    total = roll + modifier
+    combatant_id = str(payload.get("combatant_id") or "").strip()
+    token_id = str(payload.get("token_id") or "").strip()
+    roll = _safe_int(payload.get("roll"), 0, minimum=1, maximum=20)
 
     coms = session.combat.get("combatants", [])
     target_combatant = None
     for c in coms:
-        if c.get("id") == combatant_id:
+        if combatant_id and str(c.get("id") or "") == combatant_id:
+            target_combatant = c
+            break
+        if token_id and str(c.get("token_id") or "") == token_id:
             target_combatant = c
             break
     if target_combatant is None:
         return
+
+    modifier = _safe_int(payload.get("modifier"), _safe_int(target_combatant.get("modifier"), 0, minimum=-99, maximum=99), minimum=-99, maximum=99)
+    total = roll + modifier
 
     # Role check: DM and assistant DMs with combat scope can roll for anyone.
     # Players may only roll initiative for their own combatant.

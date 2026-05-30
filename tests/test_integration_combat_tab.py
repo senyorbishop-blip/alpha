@@ -344,6 +344,35 @@ def test_combat_roll_initiative_broadcasts_combat_state(monkeypatch):
 
     types = [msg["type"] for _, msg, _ in broadcasts]
     assert "combat_state" in types
+    combatant = session.combat["combatants"][0]
+    assert combatant["roll"] == 15
+    assert combatant["modifier"] == 3
+    assert combatant["initiative"] == 18
+
+
+def test_combat_roll_initiative_uses_combatant_id_and_stored_modifier(monkeypatch):
+    """A client can send combatant_id only; server preserves raw d20 and adds stored modifier."""
+    from server.handlers import combat as ch
+    session, dm, player = _make_session_with_combat([
+        {"id": "c1", "token_id": "tok1", "name": "Alice", "initiative": None, "is_player": True, "owner_id": "player1", "modifier": 4},
+    ])
+    broadcasts, sent = _noop_broadcasts(monkeypatch)
+
+    async def _save(_):
+        return True
+
+    monkeypatch.setattr(ch, "save_campaign_async", _save)
+    asyncio.run(ch.handle_combat_roll_initiative(
+        {"combatant_id": "c1", "roll": 15},
+        session,
+        player,
+    ))
+
+    combatant = session.combat["combatants"][0]
+    assert combatant["roll"] == 15
+    assert combatant["modifier"] == 4
+    assert combatant["initiative"] == 19
+    assert any(msg["type"] == "combat_state" for _, msg, _ in broadcasts)
 
 
 # ---------------------------------------------------------------------------
