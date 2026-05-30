@@ -944,30 +944,332 @@ def normalize_ddb_json_payload(raw_payload: Any, *, external_id: str = "") -> di
     }
 
 
+_PDF_SKILL_ABILITY = {
+    "acrobatics": "dex",
+    "animal handling": "wis",
+    "arcana": "int",
+    "athletics": "str",
+    "deception": "cha",
+    "history": "int",
+    "insight": "wis",
+    "intimidation": "cha",
+    "investigation": "int",
+    "medicine": "wis",
+    "nature": "int",
+    "perception": "wis",
+    "performance": "cha",
+    "persuasion": "cha",
+    "religion": "int",
+    "sleight of hand": "dex",
+    "stealth": "dex",
+    "survival": "wis",
+}
+
+_ABILITY_LABEL_TO_KEY = {
+    "strength": "str",
+    "str": "str",
+    "dexterity": "dex",
+    "dex": "dex",
+    "constitution": "con",
+    "con": "con",
+    "intelligence": "int",
+    "int": "int",
+    "wisdom": "wis",
+    "wis": "wis",
+    "charisma": "cha",
+    "cha": "cha",
+}
+
+
+def _first_present(src: dict[str, Any], *keys: str, default: Any = None) -> Any:
+    for key in keys:
+        if key in src and src.get(key) not in (None, ""):
+            return src.get(key)
+    return default
+
+
+def _parse_signed_int(value: Any, fallback: int = 0) -> int:
+    if isinstance(value, (int, float)):
+        return int(value)
+    match = re.search(r"[-+]?\d+", str(value or ""))
+    if not match:
+        return fallback
+    return _safe_int(match.group(0), fallback)
+
+
+def _normalize_pdf_saving_throws(value: Any) -> dict[str, int]:
+    rows = value if isinstance(value, dict) else {}
+    out: dict[str, int] = {}
+    for key, raw in rows.items():
+        ability = _ABILITY_LABEL_TO_KEY.get(str(key or "").strip().lower())
+        if ability:
+            out[ability] = _parse_signed_int(raw, 0)
+    return out
+
+
+def _normalize_pdf_skills(src: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    raw_skills = _first_present(src, "skills", "skillData", default={})
+    raw_prof = src.get("profSkills") if isinstance(src.get("profSkills"), list) else []
+    raw_half = src.get("halfSkills") if isinstance(src.get("halfSkills"), list) else []
+    out: dict[str, dict[str, Any]] = {}
+    if isinstance(raw_skills, dict):
+        for name, value in raw_skills.items():
+            label = _safe_str(name, "", limit=80)
+            if not label:
+                continue
+            key = _slugify(label).replace("-", "_")
+            out[key] = {
+                "name": label,
+                "ability": _PDF_SKILL_ABILITY.get(label.lower(), ""),
+                "total": _parse_signed_int(value, 0),
+                "raw": _safe_str(value, "", limit=40),
+                "proficient": label in raw_prof,
+                "halfProficient": label in raw_half,
+                "source": "PDF import",
+            }
+    return out
+
+
+def _split_pdf_text_lines(value: Any) -> list[str]:
+    text = _strip_html(value, limit=5000)
+    if not text:
+        return []
+    return [line.strip(" •\t-") for line in re.split(r"[\n;]+", text) if line.strip(" •\t-")]
+
+
+def _parse_pdf_equipment_line(line: str) -> dict[str, Any] | None:
+    original = _safe_str(line, "", limit=240)
+    if not original or original.lower() in {"equipment", "attuned magic items"}:
+        return None
+    name_part = re.split(r"\s+[—-]\s+", original, maxsplit=1)[0].strip()
+    qty = 1
+    match = re.search(r"(?:[×x]\s*(\d+)|\((\d+)\)\s*$|^(\d+)\s+)", name_part)
+    if match:
+        qty = max(1, _safe_int(next((g for g in match.groups() if g), "1"), 1, minimum=1))
+        if match.group(3):
+            name_part = name_part[match.end(3):].strip()
+        else:
+            name_part = re.sub(r"\s*(?:[×x]\s*\d+|\(\d+\))\s*$", "", name_part).strip()
+    name = _clean_item_name(name_part)
+    if not name:
+        return None
+    row = {
+        "id": f"pdf-item-{_slugify(name)}",
+        "name": name,
+        "qty": qty,
+        "kind": "gear",
+        "type": "gear",
+        "item_type": "gear",
+        "equipment_kind": "gear",
+        "category": "PDF Equipment",
+        "source": "PDF import",
+        "equipped": False,
+        "notes": original if original != name else "",
+    }
+    weapon = _lookup_common_weapon(name)
+    armor = _lookup_common_armor(name)
+    if weapon:
+        row.update({k: v for k, v in weapon.items() if v not in (None, "", [])})
+        row.update({"kind": "weapon", "type": "weapon", "item_type": "weapon", "equipment_kind": "weapon"})
+    elif "shield" in name.lower():
+        row.update({"kind": "shield", "type": "shield", "item_type": "shield", "equipment_kind": "shield", "ac_bonus": 2})
+    elif armor:
+        row.update({k: v for k, v in armor.items() if v not in (None, "", [])})
+        row.update({"kind": "armor", "type": "armor", "item_type": "armor", "equipment_kind": "armor"})
+    elif "potion" in name.lower():
+        row.update({"kind": "potion", "type": "potion", "item_type": "potion", "equipment_kind": "potion"})
+    return row
+
+
+def _normalize_pdf_inventory(src: dict[str, Any]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    raw_entries = _first_present(src, "inventoryEntries", "importedInventoryItems", "equipment", default=[])
+    if isinstance(raw_entries, list):
+        for idx, item in enumerate(raw_entries):
+            if isinstance(item, dict):
+                name = _safe_str(item.get("name"), "", limit=120)
+                if not name:
+                    continue
+                row = _parse_pdf_equipment_line(f"{name} x{_safe_int(item.get('qty'), 1, minimum=1)}") or {}
+                row.update({
+                    "id": _safe_str(item.get("id"), row.get("id") or f"pdf-item-{idx+1}", limit=80),
+                    "name": name,
+                    "qty": _safe_int(item.get("qty"), row.get("qty") or 1, minimum=1),
+                    "notes": _safe_str(item.get("notes"), row.get("notes") or "", limit=700),
+                    "source": "PDF import",
+                })
+                rows.append(row)
+            elif isinstance(item, str):
+                parsed = _parse_pdf_equipment_line(item)
+                if parsed:
+                    rows.append(parsed)
+    if not rows:
+        for line in _split_pdf_text_lines(_first_present(src, "gearText", "equipmentText", default="") or (src.get("book") or {}).get("gear")):
+            parsed = _parse_pdf_equipment_line(line)
+            if parsed:
+                rows.append(parsed)
+    seen: set[str] = set()
+    deduped: list[dict[str, Any]] = []
+    for row in rows:
+        key = f"{str(row.get('name') or '').lower()}::{row.get('qty')}"
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(row)
+    return deduped[:200]
+
+
+def _normalize_pdf_attack_row(row: Any, idx: int) -> dict[str, Any] | None:
+    if isinstance(row, str):
+        pieces = [part.strip() for part in re.split(r"\s+[—-]\s+", row) if part.strip()]
+        row = {"name": pieces[0] if pieces else row, "notes": " — ".join(pieces[1:])}
+    if not isinstance(row, dict):
+        return None
+    name = _safe_str(row.get("name") or row.get("weapon") or row.get("title"), "", limit=120)
+    if not name:
+        return None
+    attack_raw = _safe_str(row.get("attack") or row.get("attackBonus") or row.get("toHit"), "", limit=40)
+    damage_raw = _safe_str(row.get("damage") or row.get("damageDice") or row.get("damageFormula"), "", limit=120)
+    notes = _strip_html(row.get("notes") or row.get("description"), limit=700)
+    damage_formula = ""
+    damage_type = ""
+    match = re.search(r"(\d+d\d+(?:\s*[-+]\s*\d+)?)\s*([A-Za-z]+)?", damage_raw)
+    if match:
+        damage_formula = re.sub(r"\s+", "", match.group(1))
+        damage_type = _safe_str(match.group(2), "", limit=40).lower()
+    common = _lookup_common_weapon(name)
+    if not damage_formula:
+        damage_formula = _safe_str(common.get("damage_dice"), "", limit=40)
+    if not damage_type:
+        damage_type = _safe_str(common.get("damage_type"), "", limit=40)
+    action = {
+        "id": f"pdf-attack-{_slugify(name) or idx+1}",
+        "name": name,
+        "displayName": name,
+        "actionType": "action",
+        "classification": "attack",
+        "attackBonus": _parse_signed_int(attack_raw, 0) if attack_raw else 0,
+        "attackBonusRaw": attack_raw,
+        "damage": {"formula": damage_formula or damage_raw, "type": damage_type},
+        "summary": notes or damage_raw,
+        "description": notes,
+        "range": _safe_str(row.get("range") or common.get("range"), "", limit=80),
+        "source": "PDF import",
+        "tags": ["pdf", "imported", "attack"],
+    }
+    return action
+
+
+def _normalize_pdf_attacks(src: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = _first_present(src, "attacks", "attackEntries", default=[])
+    if isinstance(rows, str):
+        rows = _split_pdf_text_lines(rows)
+    if not isinstance(rows, list):
+        rows = []
+    actions: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for idx, row in enumerate(rows):
+        action = _normalize_pdf_attack_row(row, idx)
+        if not action:
+            continue
+        key = f"{action.get('name','').lower()}::{action.get('attackBonusRaw','')}::{(action.get('damage') or {}).get('formula','')}"
+        if key in seen:
+            continue
+        seen.add(key)
+        actions.append(action)
+    return actions[:40]
+
+
+def _normalize_pdf_spell_entries(src: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]], int]:
+    raw_entries = _first_present(src, "spellbookEntries", "spells", "spellEntries", default=[])
+    entries: list[dict[str, Any]] = []
+    if isinstance(raw_entries, str):
+        raw_entries = [{"name": line} for line in _split_pdf_text_lines(raw_entries)]
+    if isinstance(raw_entries, list):
+        for row in raw_entries:
+            if isinstance(row, dict):
+                name = _safe_str(row.get("name"), "", limit=120)
+                section = _safe_str(row.get("section") or row.get("level"), "", limit=80)
+                notes = _strip_html(row.get("notes") or row.get("description"), limit=700)
+                prepared = bool(row.get("prepared") or row.get("isPrepared"))
+            else:
+                name = _safe_str(row, "", limit=120)
+                section = ""
+                notes = ""
+                prepared = False
+            if not name:
+                continue
+            spell = get_spell_by_id(name)
+            spell_id = _safe_str((spell or {}).get("id"), _slugify(name), limit=120)
+            entries.append({
+                "id": spell_id,
+                "name": _safe_str((spell or {}).get("name"), name, limit=120),
+                "prepared": prepared,
+                "source": "PDF import",
+                "matchedNative": bool(spell),
+                "section": section,
+                "notes": notes,
+            })
+    seen: set[str] = set()
+    deduped: list[dict[str, Any]] = []
+    unmatched = 0
+    for entry in entries:
+        spell_id = str(entry.get("id") or "").strip()
+        if not spell_id or spell_id in seen:
+            continue
+        seen.add(spell_id)
+        deduped.append(entry)
+        if not entry.get("matchedNative"):
+            unmatched += 1
+    spell_slots = src.get("spellSlots") if isinstance(src.get("spellSlots"), dict) else {}
+    known = [entry["id"] for entry in deduped if entry.get("matchedNative")]
+    prepared = [entry["id"] for entry in deduped if entry.get("prepared") and entry.get("matchedNative")]
+    return {
+        "known": known,
+        "prepared": prepared,
+        "slots": copy.deepcopy(spell_slots),
+        "focus": {},
+        "rituals": [],
+        "spellbookEntries": deduped,
+        "classSources": [],
+    }, deduped, unmatched
+
+
 def normalize_pdf_payload(raw_payload: Any, *, filename: str = "") -> dict[str, Any]:
     src = raw_payload if isinstance(raw_payload, dict) else {}
-    warnings: list[str] = []
+    warnings: list[dict[str, Any]] = []
 
     classes = src.get("classes") if isinstance(src.get("classes"), list) else []
     canonical_classes: list[dict[str, Any]] = []
     for row in classes:
         if not isinstance(row, dict):
             continue
-        name = _safe_str(row.get("name"), "")
+        name = _safe_str(row.get("name"), "", limit=80)
         if not name:
             continue
+        class_id = name.lower().replace(" ", "-")
         canonical_classes.append(
             {
                 "name": name,
-                "classId": name.lower().replace(" ", "-"),
+                "classId": class_id,
                 "level": _safe_int(row.get("level"), 1, minimum=1),
                 "subclass": _safe_str(row.get("subclass"), "", limit=80),
             }
         )
+        if class_id not in _KNOWN_SUBCLASS_BY_CLASS and class_id != "adventurer":
+            warnings.append(_make_warning(
+                code="ambiguous_class",
+                message=f'Class "{name}" came from PDF text and may need review against native class options.',
+                details={"className": name},
+            ))
 
     if not canonical_classes:
         canonical_classes = [{"name": "Adventurer", "classId": "adventurer", "level": 1}]
-        warnings.append("Class data was incomplete in PDF import; defaulted to Adventurer level 1.")
+        warnings.append(_make_warning(
+            code="ambiguous_class",
+            message="Class data was incomplete in the PDF; defaulted to Adventurer level 1.",
+            details={"resolutionKey": "class"},
+        ))
 
     stats = src.get("stats") if isinstance(src.get("stats"), list) else []
     ability_scores = {
@@ -980,9 +1282,48 @@ def normalize_pdf_payload(raw_payload: Any, *, filename: str = "") -> dict[str, 
     }
 
     book = src.get("book") if isinstance(src.get("book"), dict) else {}
-    currency = _parse_coin_text(_safe_str(src.get("currency") or book.get("currency"), ""))
+    currency_src = src.get("currencyBreakdown") if isinstance(src.get("currencyBreakdown"), dict) else None
+    currency = {
+        "cp": _safe_int((currency_src or {}).get("cp"), 0, minimum=0),
+        "sp": _safe_int((currency_src or {}).get("sp"), 0, minimum=0),
+        "ep": _safe_int((currency_src or {}).get("ep"), 0, minimum=0),
+        "gp": _safe_int((currency_src or {}).get("gp"), 0, minimum=0),
+        "pp": _safe_int((currency_src or {}).get("pp"), 0, minimum=0),
+    } if currency_src else _parse_coin_text(_safe_str(src.get("currency") or book.get("currency"), ""))
+
     imported_id = _safe_str(src.get("id") or src.get("name") or filename, "", limit=120)
     character_id = f"pdf-{re.sub(r'[^a-zA-Z0-9]+', '-', imported_id).strip('-').lower()}" if imported_id else f"pdf-{int(time.time())}"
+    name = _safe_str(src.get("name"), "Unnamed Character", limit=120)
+    race_name = _safe_str(src.get("race") or book.get("race"), "", limit=80)
+    background_name = _safe_str(src.get("background") or book.get("background"), "", limit=80)
+
+    saving_throws = _normalize_pdf_saving_throws(_first_present(src, "savingThrows", default=book.get("savingThrows")))
+    skills = _normalize_pdf_skills(src if src.get("skills") is not None else {**src, "skills": book.get("skills", {})})
+    imported_inventory = _normalize_pdf_inventory(src)
+    imported_actions = _normalize_pdf_attacks(src)
+    spell_state, spell_entries, unmatched_spell_count = _normalize_pdf_spell_entries(src)
+
+    passive_perception = _safe_int(_first_present(src, "passivePerception", default=book.get("passivePerception")), 0, minimum=0)
+    passive_insight = _safe_int(_first_present(src, "passiveInsight", default=book.get("passiveInsight")), 0, minimum=0)
+    passive_investigation = _safe_int(_first_present(src, "passiveInvestigation", default=book.get("passiveInvestigation")), 0, minimum=0)
+    passives = {
+        key: value for key, value in {
+            "perception": passive_perception,
+            "insight": passive_insight,
+            "investigation": passive_investigation,
+        }.items() if value
+    }
+
+    proficiencies_text = _safe_str(_first_present(src, "proficiencies", default=book.get("proficiencies")), "", limit=2000)
+    senses_text = _safe_str(_first_present(src, "senses", default=book.get("senses")), "", limit=1200)
+    resistances_text = _safe_str(_first_present(src, "resistances", "defenses", default=book.get("resistances")), "", limit=1200)
+    personality_notes = _strip_html(
+        _first_present(src, "personality", "personalityTraits", "featuresText", default="")
+        or book.get("campaignNotes")
+        or book.get("features")
+        or "",
+        limit=3000,
+    )
 
     document = {
         "schemaVersion": 1,
@@ -991,31 +1332,53 @@ def normalize_pdf_payload(raw_payload: Any, *, filename: str = "") -> dict[str, 
         "sourceMode": "dndbeyond",
         "identity": {
             "characterId": character_id,
-            "name": _safe_str(src.get("name"), "Unnamed Character", limit=120),
-            "displayName": _safe_str(src.get("name"), "Unnamed Character", limit=120),
-            "alignment": _safe_str(src.get("alignment"), "", limit=60),
+            "name": name,
+            "displayName": name,
+            "alignment": _safe_str(src.get("alignment") or book.get("alignment"), "", limit=60),
+            "personalityTraits": personality_notes,
+            "backstory": _strip_html(_first_present(src, "backstory", default=book.get("backstory")), limit=3000),
+            "notes": _strip_html(book.get("campaignNotes") or src.get("notes"), limit=3000),
         },
         "species": {
-            "id": _safe_str(src.get("race"), "", limit=80).lower().replace(" ", "-"),
-            "name": _safe_str(src.get("race"), "", limit=80),
+            "id": race_name.lower().replace(" ", "-"),
+            "name": race_name,
             "size": "medium",
-            "speed": _safe_int(src.get("speed"), 30, minimum=0),
+            "speed": _safe_int(_first_present(src, "speed", default=book.get("speed")), 30, minimum=0),
+            "senses": [{"name": "Imported senses", "type": "text", "description": senses_text}] if senses_text else [],
+            "resistances": [{"name": "Imported defenses", "description": resistances_text}] if resistances_text else [],
         },
         "background": {
-            "id": _safe_str(src.get("background"), "", limit=80).lower().replace(" ", "-"),
-            "name": _safe_str(src.get("background"), "", limit=80),
+            "id": background_name.lower().replace(" ", "-"),
+            "name": background_name,
+            "proficiencies": _split_pdf_text_lines(proficiencies_text),
+            "languages": _split_pdf_text_lines(proficiencies_text),
         },
         "abilities": {
             "generationMode": "imported",
             "scores": ability_scores,
+            "saves": saving_throws,
+            "skills": skills,
         },
         "classes": canonical_classes,
+        "maxHP": _safe_int(_first_present(src, "maxHp", "maxHP", default=book.get("maxHp")), 1, minimum=1),
+        "currentHP": _safe_int(_first_present(src, "currentHp", "currentHP", default=book.get("currentHp")), 1, minimum=0),
+        "tempHP": _safe_int(_first_present(src, "tempHp", "tempHP", default=book.get("tempHp")), 0, minimum=0),
+        "ac": _safe_int(_first_present(src, "ac", "armorClass", default=book.get("ac")), 10, minimum=1),
+        "initiative": _parse_signed_int(_first_present(src, "initiative", default=book.get("initiative")), 0),
+        "proficiencyBonus": _safe_int(_first_present(src, "profBonus", "proficiencyBonus", default=book.get("profBonus")), 2, minimum=0),
+        "passives": passives,
+        "defenses": {
+            "senses": senses_text,
+            "resistances": resistances_text,
+            "proficiencies": proficiencies_text,
+        },
         "equipment": {
             "currency": currency,
-            "inventory": [],
+            "inventory": imported_inventory,
             "equipped": {},
             "containers": [],
         },
+        "spellState": spell_state,
         "importMeta": {
             "origin": "dndbeyond_pdf",
             "source": "pdf",
@@ -1023,17 +1386,74 @@ def normalize_pdf_payload(raw_payload: Any, *, filename: str = "") -> dict[str, 
             "importedAt": time.time(),
             "rawVersion": "",
             "rawSnapshot": copy.deepcopy(src),
-            "mappingNotes": [],
+            "nativeImportMode": "pdf_import",
+            "mappingNotes": [
+                f"Imported {len(imported_inventory)} inventory item(s) from PDF text.",
+                f"Imported {len(imported_actions)} attack/action card(s) from PDF text.",
+                f"Imported {len(spell_entries)} spell row(s) from PDF text.",
+            ],
+            "importedActions": imported_actions,
+            "importedSpells": spell_entries,
+            "importedInventoryCount": len(imported_inventory),
+            "pdfFieldSummary": {
+                "hasSkills": bool(skills),
+                "hasSavingThrows": bool(saving_throws),
+                "hasPassives": bool(passives),
+                "hasDefenses": bool(senses_text or resistances_text),
+            },
         },
     }
 
-    if not document["species"]["name"]:
-        warnings.append("Species/Race was not found in PDF import.")
-    if not document["background"]["name"]:
-        warnings.append("Background was not found in PDF import.")
-    if src.get("_rawFields") is None:
-        warnings.append("Raw PDF fields were unavailable; import may be partial.")
+    if not race_name:
+        warnings.append(_make_warning(
+            code="ambiguous_species",
+            message="Species/Race was not found in the PDF import and should be reviewed.",
+            details={"resolutionKey": "species"},
+        ))
+    elif race_name.lower() in _SPECIES_ALIAS_MAP:
+        warnings.append(_make_warning(
+            code="ambiguous_species",
+            message=f'Species "{race_name}" may map to multiple native species options.',
+            details={"options": list(_SPECIES_ALIAS_MAP.get(race_name.lower()) or [])},
+        ))
+    if not background_name:
+        warnings.append(_make_warning(
+            code="partial_pdf_fields",
+            message="Background was not found in the PDF import.",
+            details={"field": "background"},
+        ))
+    if not imported_inventory:
+        warnings.append(_make_warning(
+            code="missing_inventory",
+            message="No parseable equipment rows were found in the PDF, so inventory may need to be entered manually.",
+        ))
+    if not spell_entries:
+        warnings.append(_make_warning(
+            code="missing_spells",
+            message="No parseable spell rows were found in the PDF. This is expected for non-spellcasters.",
+        ))
+    elif unmatched_spell_count:
+        warnings.append(_make_warning(
+            code="missing_spells",
+            message=f"{unmatched_spell_count} PDF spell(s) did not match the native spell compendium and were preserved as unmatched spellbook entries.",
+            details={"unmatchedNameCount": unmatched_spell_count},
+        ))
+    missing_core = [
+        key for key, present in {
+            "skills": bool(skills),
+            "saving_throws": bool(saving_throws),
+            "attacks": bool(imported_actions),
+            "passive_scores": bool(passives),
+        }.items() if not present
+    ]
+    if missing_core or src.get("_rawFields") is None:
+        warnings.append(_make_warning(
+            code="partial_pdf_fields",
+            message="Some PDF fields could not be parsed and were left for manual review.",
+            details={"missing": missing_core, "rawFieldsAvailable": src.get("_rawFields") is not None},
+        ))
 
+    document["importMeta"]["warnings"] = copy.deepcopy(warnings)
     canonical = validate_or_raise(document)
     return {
         "document": canonical,

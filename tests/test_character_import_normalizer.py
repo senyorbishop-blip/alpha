@@ -57,8 +57,8 @@ def test_normalize_pdf_payload_reports_missing_content_warnings():
     assert result["document"]["sourceMode"] == "dndbeyond"
     assert result["document"]["equipment"]["currency"]["gp"] == 12
     assert result["document"]["equipment"]["currency"]["sp"] == 3
-    assert any("Species" in warning for warning in result["warnings"])
-    assert any("Background" in warning for warning in result["warnings"])
+    assert any(warning.get("code") == "ambiguous_species" for warning in result["warnings"])
+    assert any(warning.get("code") == "partial_pdf_fields" and warning.get("details", {}).get("field") == "background" for warning in result["warnings"])
 
 
 def test_ddb_json_import_preserves_playable_inventory_actions_features_and_spells():
@@ -201,3 +201,115 @@ def test_ddb_imported_actions_and_features_resolve_into_runtime_cards():
     assert "Wand Spark" in action_names
     assert "Arcane Recovery" in passive_names
     assert "Sculpt Spells" in feature_names
+
+
+def test_pdf_import_with_attacks_creates_runtime_action_cards():
+    result = normalize_pdf_payload(
+        {
+            "name": "Ser Kael",
+            "race": "Human",
+            "background": "Soldier",
+            "classes": [{"name": "Fighter", "level": 3}],
+            "stats": [16, 12, 14, 10, 10, 8],
+            "maxHp": 28,
+            "currentHp": 21,
+            "tempHp": 4,
+            "ac": 18,
+            "speed": 30,
+            "initiative": 1,
+            "profBonus": 2,
+            "attacks": [
+                {"name": "Longsword", "attack": "+5", "damage": "1d8+3 slashing", "notes": "Versatile 1d10."}
+            ],
+        },
+        filename="kael.pdf",
+    )
+
+    doc = result["document"]
+    imported = doc["importMeta"]["importedActions"]
+    assert imported[0]["name"] == "Longsword"
+    assert imported[0]["classification"] == "attack"
+    assert imported[0]["damage"]["formula"] == "1d8+3"
+    assert doc["maxHP"] == 28
+    assert doc["currentHP"] == 21
+    assert doc["tempHP"] == 4
+    assert doc["ac"] == 18
+
+    from server.character.resolver import resolve_character_runtime
+
+    runtime = resolve_character_runtime(doc)["runtime"]
+    assert any(action.get("name") == "Longsword" for action in runtime["actions"])
+    assert runtime["combat"]["currentHP"] == 21
+    assert runtime["combat"]["tempHP"] == 4
+    assert runtime["combat"]["ac"] == 18
+
+
+def test_pdf_import_with_skills_keeps_skill_data():
+    result = normalize_pdf_payload(
+        {
+            "name": "Nyx",
+            "race": "Tiefling",
+            "background": "Charlatan",
+            "classes": [{"name": "Rogue", "level": 2}],
+            "stats": [8, 16, 12, 13, 10, 14],
+            "skills": {"Stealth": "+7", "Perception": "+4", "Deception": "+6"},
+            "profSkills": ["Stealth", "Deception"],
+            "savingThrows": {"Dexterity": "+5", "Intelligence": "+3"},
+            "passivePerception": 14,
+            "passiveInsight": 10,
+            "passiveInvestigation": 13,
+        },
+        filename="nyx.pdf",
+    )
+
+    doc = result["document"]
+    assert doc["abilities"]["skills"]["stealth"]["total"] == 7
+    assert doc["abilities"]["skills"]["stealth"]["proficient"] is True
+    assert doc["abilities"]["saves"]["dex"] == 5
+    assert doc["passives"]["perception"] == 14
+
+    from server.character.resolver import resolve_character_runtime
+
+    runtime = resolve_character_runtime(doc)["runtime"]
+    assert runtime["skills"]["deception"]["total"] == 6
+    assert runtime["combat"]["savingThrows"]["dex"] == 5
+    assert runtime["senses"]["passiveInvestigation"] == 13
+
+
+def test_pdf_import_with_spells_maps_known_and_preserves_unknown_spells():
+    result = normalize_pdf_payload(
+        {
+            "name": "Mira",
+            "race": "High Elf",
+            "background": "Sage",
+            "classes": [{"name": "Wizard", "level": 3}],
+            "stats": [8, 14, 12, 16, 10, 10],
+            "spellbookEntries": [
+                {"name": "Magic Missile", "prepared": True, "section": "1st Level"},
+                {"name": "Moonlit Spoon", "section": "Cantrip", "notes": "Homebrew cantrip."},
+            ],
+        },
+        filename="mira.pdf",
+    )
+
+    doc = result["document"]
+    entries = {entry["name"]: entry for entry in doc["spellState"]["spellbookEntries"]}
+    assert entries["Magic Missile"]["id"] == "magic-missile"
+    assert entries["Magic Missile"]["matchedNative"] is True
+    assert entries["Moonlit Spoon"]["id"] == "moonlit-spoon"
+    assert entries["Moonlit Spoon"]["matchedNative"] is False
+    assert "magic-missile" in doc["spellState"]["known"]
+    assert any(warning.get("code") == "missing_spells" for warning in result["warnings"])
+
+
+def test_pdf_import_with_missing_data_warns_but_still_imports():
+    result = normalize_pdf_payload(
+        {"name": "Sparse", "stats": [10, 10, 10, 10, 10, 10], "classes": []},
+        filename="sparse.pdf",
+    )
+
+    doc = result["document"]
+    warning_codes = {warning.get("code") for warning in result["warnings"]}
+    assert doc["identity"]["name"] == "Sparse"
+    assert doc["classes"][0]["classId"] == "adventurer"
+    assert {"missing_inventory", "missing_spells", "partial_pdf_fields", "ambiguous_class", "ambiguous_species"}.issubset(warning_codes)
