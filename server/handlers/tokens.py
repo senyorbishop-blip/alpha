@@ -1,7 +1,7 @@
 """
 server/handlers/tokens.py — Token creation, movement, and state handlers.
 """
-from server.session import create_token, assistant_dm_has_scope
+from server.session import create_token, assistant_dm_has_scope, build_token_runtime_payload
 from server.map_logic import find_movement_blocker
 from server.handlers.common import (
     Session, User, manager,
@@ -541,6 +541,9 @@ async def handle_token_create(payload: dict, session: Session, user: User):
         creature_type=str(payload.get("creature_type", payload.get("creatureType", "")) or "")[:40],
         monster_type=str(payload.get("monster_type", payload.get("monsterType", "")) or "")[:60],
         cr=str(payload.get("cr", ""))[:16],
+        profile_id=str(payload.get("profile_id", payload.get("profileId", "")) or "")[:120],
+        library_id=str(payload.get("libraryId", payload.get("library_id", "")) or "")[:120],
+        character_id=str(payload.get("characterId", payload.get("character_id", "")) or "")[:120],
         **vision_cfg,
     )
 
@@ -550,7 +553,7 @@ async def handle_token_create(payload: dict, session: Session, user: User):
         manager,
         session,
         "token_created",
-        {"token": token.to_dict(), "log": log_entry, "client_nonce": payload.get("client_nonce")},
+        {"token": build_token_runtime_payload(session, token), "log": log_entry, "client_nonce": payload.get("client_nonce")},
         token,
     )
     await _broadcast_token_state_sync(session)
@@ -739,6 +742,12 @@ async def handle_token_edit(payload: dict, session: Session, user: User):
         token.monster_type = str(payload.get("monster_type", payload.get("monsterType", "")) or "")[:60]
     if is_dm and "cr" in payload:
         token.cr = str(payload.get("cr", "") or "")[:16]
+    if any(k in payload for k in ("profile_id", "profileId")):
+        token.profile_id = str(payload.get("profile_id", payload.get("profileId", "")) or "")[:120]
+    if any(k in payload for k in ("libraryId", "library_id")):
+        token.library_id = str(payload.get("libraryId", payload.get("library_id", "")) or "")[:120]
+    if any(k in payload for k in ("characterId", "character_id")):
+        token.character_id = str(payload.get("characterId", payload.get("character_id", "")) or "")[:120]
 
     if is_dm and any(k in payload for k in ("visionEnabled", "vision_enabled", "visionRadius", "vision_radius", "brightRadius", "bright_radius", "dimRadius", "dim_radius", "hasDarkvision", "has_darkvision", "darkvisionRadius", "darkvision_radius", "owner_id", "tokenType", "token_type")):
         vision_cfg = _sanitize_token_vision_payload(payload, owner_id=token.owner_id, token_type=token.token_type, existing=token)
@@ -793,7 +802,7 @@ async def handle_token_placed(payload: dict, session: Session, user: User):
 
     placed_payload = {
         **payload,
-        "token": token.to_dict(),
+        "token": build_token_runtime_payload(session, token),
     }
     await manager.broadcast(session.id, {"type": "token_placed", "payload": placed_payload})
     await _broadcast_token_state_sync(session)
@@ -812,7 +821,7 @@ async def handle_token_send_to_staging(payload: dict, session: Session, user: Us
     token.staged = True
     await manager.broadcast(session.id, {
         "type": "token_sent_to_staging",
-        "payload": {"token": token.to_dict()}
+        "payload": {"token": build_token_runtime_payload(session, token)}
     })
     await _broadcast_token_state_sync(session)
     await save_campaign_async(session)

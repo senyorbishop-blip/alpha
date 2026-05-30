@@ -25351,6 +25351,8 @@ function placeCharacter() {
     existingTok.notes = notesVal;
     sendWS({ type: 'token_edit', payload: {
       token_id: updateTokId,
+      profile_id: resolveActiveCharProfileId(),
+      libraryId: resolveActiveCharProfileId(),
       name: name,
       initiativeMod: initVal,
       tempHp: tempHpVal,
@@ -25413,6 +25415,8 @@ function placeCharacter() {
     owner_id: USER_ID,
     map_context: mapCtx,
     client_nonce: clientNonce,
+    profile_id: resolveActiveCharProfileId(),
+    libraryId: resolveActiveCharProfileId(),
   };
   if (tokenImageCandidate) payload.image_url = tokenImageCandidate;
   if (hpVal !== null) {
@@ -36656,6 +36660,8 @@ function updateMyChar() {
     myTok.notes = notes;
     sendWS({ type: 'token_edit', payload: {
       token_id: myTok.id,
+      profile_id: resolveActiveCharProfileId(),
+      libraryId: resolveActiveCharProfileId(),
       name: name,
       initiativeMod: init,
       tempHp: tempHp,
@@ -38616,6 +38622,9 @@ function _syncLoadedProfileToOwnedToken(profile) {
     notes: String(document.getElementById('char-notes')?.value || _charSheet?.notes || '').trim(),
     hasDarkvision: speciesDarkvisionRadius > 0,
     darkvisionRadius: speciesDarkvisionRadius,
+    profile_id: String(profile?.id || resolveActiveCharProfileId() || '').trim(),
+    libraryId: String(profile?.libraryId || profile?.library_id || profile?.id || resolveActiveCharProfileId() || '').trim(),
+    characterId: String(profile?.characterId || profile?.character_id || profile?.nativeCharacter?.identity?.characterId || profile?.nativeCharacter?.identity?.id || '').trim(),
   };
 
   const nativeCharacter = (profile && typeof profile.nativeCharacter === 'object') ? profile.nativeCharacter : null;
