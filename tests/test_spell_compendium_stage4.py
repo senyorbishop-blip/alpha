@@ -242,3 +242,41 @@ def test_build_character_spell_manifest_cards_include_cast_level_context():
     assert missile['selectionMode'] == 'known'
     assert missile['highestAvailableSlot'] == 3
     assert missile['availableCastLevels'] == [1, 2, 3]
+
+
+def test_wizard_spellbook_limit_is_separate_from_prepared_limit():
+    from server.character.spell_compendium import build_spell_limits_for_class, validate_spell_selection
+
+    abilities = {"scores": {"int": 16}}
+    limits = build_spell_limits_for_class("wizard", 1, abilities)
+
+    assert limits["spellbookSpells"] == 6
+    assert limits["preparedLimit"] == 4
+
+    validation = validate_spell_selection(
+        class_id="wizard",
+        class_level=1,
+        abilities=abilities,
+        known=["burning-hands", "charm-person", "detect-magic", "disguise-self", "find-familiar", "identify"],
+        prepared=["burning-hands", "detect-magic"],
+        document={"classes": [{"classId": "wizard", "level": 1}], "spellState": {}},
+    )
+
+    assert validation["ok"] is True
+    assert len([sid for sid in validation["known"] if sid in {"burning-hands", "charm-person", "detect-magic", "disguise-self", "find-familiar", "identify"}]) == 6
+
+
+def test_wizard_cannot_prepare_spell_missing_from_spellbook():
+    from server.character.spell_compendium import validate_spell_selection
+
+    validation = validate_spell_selection(
+        class_id="wizard",
+        class_level=1,
+        abilities={"scores": {"int": 16}},
+        known=["burning-hands"],
+        prepared=["burning-hands", "find-familiar"],
+        document={"classes": [{"classId": "wizard", "level": 1}], "spellState": {}},
+    )
+
+    assert validation["ok"] is False
+    assert any("cannot be prepared because it is not known" in err for err in validation["errors"])

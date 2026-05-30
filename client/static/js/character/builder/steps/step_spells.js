@@ -182,6 +182,7 @@
 
   function modeFromLimits(limits) {
     var row = asObject(limits);
+    if (row.spellbookSpells != null) return 'spellbook';
     if (row.preparedLimit != null) return 'prepared';
     if (row.spellsKnown != null || row.cantripsKnown != null) return 'known';
     return 'library';
@@ -245,7 +246,8 @@
       knownLevelled: knownLevelled,
       preparedLevelled: preparedLevelled,
       cantripLimit: limits.cantripsKnown,
-      knownLimit: limits.spellsKnown,
+      knownLimit: limits.spellsKnown != null ? limits.spellsKnown : limits.spellbookSpells,
+      spellbookLimit: limits.spellbookSpells,
       preparedLimit: limits.preparedLimit,
       grants: grants,
     };
@@ -375,14 +377,14 @@
       '<div class="cb-spells-summary">',
       '<div class="cb-spells-pill"><span class="k">Class</span><span class="v">' + esc(String(limits.className || classId)) + ' Lv ' + esc(String(parseInt(asObject(draft.progression).level, 10) || 1)) + '</span></div>',
       '<div class="cb-spells-pill"><span class="k">Cantrips</span><span class="v">' + esc(String(counts.knownCantrips)) + (counts.cantripLimit != null ? (' / ' + esc(String(counts.cantripLimit))) : '') + '</span></div>',
-      '<div class="cb-spells-pill"><span class="k">Known</span><span class="v">' + esc(String(counts.knownLevelled)) + (counts.knownLimit != null ? (' / ' + esc(String(counts.knownLimit))) : '') + '</span></div>',
+      '<div class="cb-spells-pill"><span class="k">' + esc(counts.mode === 'spellbook' ? 'Spellbook' : 'Known') + '</span><span class="v">' + esc(String(counts.knownLevelled)) + (counts.knownLimit != null ? (' / ' + esc(String(counts.knownLimit))) : '') + '</span></div>',
       '<div class="cb-spells-pill"><span class="k">Prepared</span><span class="v">' + esc(String(counts.preparedLevelled)) + (counts.preparedLimit != null ? (' / ' + esc(String(counts.preparedLimit))) : '') + '</span></div>',
       '<div class="cb-spells-pill"><span class="k">Unlocked Tier</span><span class="v">' + esc(highestUnlocked > 0 ? levelLabel(highestUnlocked) : 'Cantrips only') + '</span></div>',
       '</div>',
       '<div class="cb-spells-status' + warnClass + '">' + esc(status) + '</div>',
       '<div class="cb-spells-legend">Once you reach your legal pick cap, additional non-granted picks are blocked. Granted subclass/class spells do not consume your normal limit.</div>',
       '<div class="cb-selected-pane">',
-      '<h4>' + esc(counts.mode === 'prepared' ? 'Known Spells & Cantrips' : 'Selected Spells') + '</h4>',
+      '<h4>' + esc(counts.mode === 'prepared' ? 'Known Spells & Cantrips' : (counts.mode === 'spellbook' ? 'Spellbook & Cantrips' : 'Selected Spells')) + '</h4>',
       chipKnown.length ? ('<div class="cb-spell-chip-row">' + chipKnown.map(function (row) { return '<span class="cb-spell-chip" data-builder-spell-remove="' + esc(String(row.id || '')) + '">' + esc(String(row.displayName || row.name || row.id || '')) + '<button type="button">×</button></span>'; }).join('') + '</div>') : '<div class="cb-spells-empty">No spells selected yet.</div>',
       counts.mode === 'prepared' ? '<h4 style="margin-top:8px">Prepared Spells</h4>' : '',
       counts.mode === 'prepared'
@@ -594,6 +596,20 @@
           }
           known.push(spellId);
           setSelection(context, known, prepared, 'Cantrip learned.');
+          return;
+        }
+
+        if (mode === 'spellbook') {
+          if (known.indexOf(spellId) >= 0) {
+            setSelection(context, known.filter(function (id) { return id !== spellId; }), prepared.filter(function (id) { return id !== spellId; }), 'Spell removed from spellbook.');
+            return;
+          }
+          if (counts.knownLimit != null && counts.knownLevelled >= parseInt(counts.knownLimit, 10) && !counts.grants.alwaysKnown.has(spellId) && !counts.grants.classAlwaysKnown.has(spellId)) {
+            setSelection(context, known, prepared, 'Limit reached: spellbook cap is ' + counts.knownLimit + '.');
+            return;
+          }
+          known.push(spellId);
+          setSelection(context, known, prepared, 'Spell added to spellbook.');
           return;
         }
 

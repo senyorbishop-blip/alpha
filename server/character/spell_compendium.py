@@ -562,6 +562,7 @@ def build_spell_limits_for_class(
     ability_mod = _ability_modifier(scores.get(spell_ability, 10)) if spell_ability else 0
     cantrips_known = (caster_override or {}).get("cantripsKnownByLevel", {}).get(class_level, mechanics.get('cantripsKnown'))
     spells_known = (caster_override or {}).get("spellsKnownByLevel", {}).get(class_level, mechanics.get('spellsKnown'))
+    spellbook_spells = mechanics.get('spellbookSpells')
     formula = str(mechanics.get('spellsPreparedFormula') or '').strip().lower()
     prepared_limit = None
     if formula:
@@ -577,6 +578,7 @@ def build_spell_limits_for_class(
         'spellcastingAbility': spell_ability,
         'cantripsKnown': _safe_int(cantrips_known, 0) if cantrips_known is not None else None,
         'spellsKnown': _safe_int(spells_known, 0) if spells_known is not None else None,
+        'spellbookSpells': _safe_int(spellbook_spells, 0) if spellbook_spells is not None else None,
         'preparedLimit': prepared_limit,
         'spellSlots': spell_slots,
         'sourceSubclassId': active_subclass_id if caster_override else '',
@@ -796,6 +798,8 @@ def validate_spell_selection(*, class_id: str, class_level: int, abilities: dict
     if cantrip_limit is not None and known_cantrips > int(cantrip_limit):
         errors.append(f'Cantrip limit exceeded ({known_cantrips}/{cantrip_limit}).')
     known_limit = limits.get('spellsKnown')
+    if known_limit is None and limits.get('spellbookSpells') is not None:
+        known_limit = limits.get('spellbookSpells')
     if known_limit is not None and known_levelled > int(known_limit):
         errors.append(f'Spells known limit exceeded ({known_levelled}/{known_limit}).')
     known_set = set(allowed_known)
@@ -804,7 +808,7 @@ def validate_spell_selection(*, class_id: str, class_level: int, abilities: dict
         if not spell:
             warnings.append(f'Unknown spell id kept out of prepared list: {spell_id}')
             continue
-        if spell_id not in known_set and limits.get('preparedLimit') is None:
+        if spell_id not in known_set and (limits.get('preparedLimit') is None or limits.get('spellbookSpells') is not None) and spell_id not in bonus_access:
             errors.append(f"{spell.get('name')} cannot be prepared because it is not known.")
             continue
         unlock = (spell.get('classUnlockLevels') or {}).get(class_id)
@@ -1006,7 +1010,7 @@ def build_character_spell_manifest(document: dict[str, Any]) -> dict[str, Any]:
             'isAccessible': accessible,
             'blockedReason': '' if accessible else 'Not unlocked for current class/level.',
             'highestAvailableSlot': highest_available_slot,
-            'selectionMode': 'prepared' if limits.get('preparedLimit') is not None else ('known' if limits.get('spellsKnown') is not None else 'library'),
+            'selectionMode': 'spellbook' if limits.get('spellbookSpells') is not None else ('prepared' if limits.get('preparedLimit') is not None else ('known' if limits.get('spellsKnown') is not None else 'library')),
         }))
     return {
         'limits': limits,

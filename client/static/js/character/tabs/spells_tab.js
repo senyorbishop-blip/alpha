@@ -140,11 +140,11 @@
     } else {
       cards.push(_renderSummaryCard('Spell Model', 'Library', 'This class currently reads from linked spell cards and library data.', 'violet'));
     }
-    if (snap.mode === 'prepared' && snap.preparedLimit != null) {
+    if ((snap.mode === 'prepared' || snap.mode === 'spellbook') && snap.preparedLimit != null) {
       cards.push(_renderSummaryCard('Prepared Limit', String(snap.preparedCount) + ' / ' + String(snap.preparedLimit), 'Leveled spells currently ready for this adventuring day.', snap.preparedCount <= snap.preparedLimit ? 'teal' : ''));
     }
-    if (snap.mode === 'known' && snap.knownLimit != null) {
-      cards.push(_renderSummaryCard('Known Limit', String(snap.knownCount) + ' / ' + String(snap.knownLimit), 'Leveled spells currently learned by this class.', snap.knownCount <= snap.knownLimit ? 'gold' : ''));
+    if ((snap.mode === 'known' || snap.mode === 'spellbook') && snap.knownLimit != null) {
+      cards.push(_renderSummaryCard(snap.mode === 'spellbook' ? 'Spellbook Limit' : 'Known Limit', String(snap.knownCount) + ' / ' + String(snap.knownLimit), snap.mode === 'spellbook' ? 'Leveled spells written in this wizard spellbook.' : 'Leveled spells currently learned by this class.', snap.knownCount <= snap.knownLimit ? 'gold' : ''));
     }
     if (classKey === 'warlock' && pact && pact.enabled) {
       hint += 'Warlock flow: use at-will cantrips between pact-slot spikes; pact slots refresh on short rest. ';
@@ -775,6 +775,7 @@ function _spellAttackSaveCell(spell, charData) {
   }
 
   function _selectionMode(limits) {
+    if (limits && limits.spellbookSpells != null) return 'spellbook';
     if (limits && limits.preparedLimit != null) return 'prepared';
     if (limits && (limits.spellsKnown != null || limits.cantripsKnown != null)) return 'known';
     return 'library';
@@ -817,8 +818,8 @@ function _spellAttackSaveCell(spell, charData) {
       if (level === 0) return !!(spell && (spell.isKnown || spell.isPrepared || (!hasTrackedSelections && spell.__source)));
       return !!(spell && (spell.isPrepared || (!hasTrackedSelections && spell.__source)));
     }
-    if (mode === 'known') {
-      return !!(spell && (spell.isKnown || (!hasTrackedSelections && spell.__source)));
+    if (mode === 'known' || mode === 'spellbook') {
+      return !!(spell && (spell.isKnown || spell.isPrepared || (!hasTrackedSelections && spell.__source)));
     }
     return !!(spell && (spell.isKnown || spell.isPrepared || spell.__source));
   }
@@ -1000,7 +1001,7 @@ function _spellAttackSaveCell(spell, charData) {
     const cantripCountFromCards = cards.filter(function (spell) { return _spellLevelNumber(spell) === 0 && _spellIsSelectedInPlayView(spell, state); }).length;
     const cantripCount = Math.max(cantripCountFromCards, knownCantripCountFromManifest);
     const preparedCount = cards.filter(function (spell) { return _spellLevelNumber(spell) > 0 && !!spell.isPrepared; }).length;
-    const knownCount = cards.filter(function (spell) { return _spellLevelNumber(spell) > 0 && _spellIsSelectedInPlayView(spell, state); }).length;
+    const knownCount = cards.filter(function (spell) { return _spellLevelNumber(spell) > 0 && !!spell.isKnown; }).length;
     return {
       mode: mode,
       cantripCount: cantripCount,
@@ -1008,17 +1009,18 @@ function _spellAttackSaveCell(spell, charData) {
       preparedCount: preparedCount,
       preparedLimit: limits.preparedLimit,
       knownCount: knownCount,
-      knownLimit: limits.spellsKnown
+      knownLimit: limits.spellsKnown != null ? limits.spellsKnown : limits.spellbookSpells,
+      spellbookLimit: limits.spellbookSpells
     };
   }
 
   function _renderManagerSummary(state) {
     const snap = _limitSnapshot(state);
     const cards = [];
-    cards.push(_renderSummaryCard('Spell Mode', snap.mode === 'prepared' ? 'Prepare' : (snap.mode === 'known' ? 'Learn' : 'Library'), snap.mode === 'prepared' ? 'Pick cantrips you know, then prepare the leveled spells you want ready.' : (snap.mode === 'known' ? 'Learn cantrips and leveled spells until you hit your class limit.' : 'This class currently reads from a simple spell library.'), snap.mode === 'prepared' ? 'teal' : (snap.mode === 'known' ? 'gold' : 'violet')));
+    cards.push(_renderSummaryCard('Spell Mode', snap.mode === 'spellbook' ? 'Spellbook' : (snap.mode === 'prepared' ? 'Prepare' : (snap.mode === 'known' ? 'Learn' : 'Library')), snap.mode === 'spellbook' ? 'Learn spells into your spellbook, then prepare daily spells from that book.' : (snap.mode === 'prepared' ? 'Pick cantrips you know, then prepare the leveled spells you want ready.' : (snap.mode === 'known' ? 'Learn cantrips and known spells until you hit your class limit.' : 'This class currently reads from a simple spell library.')), (snap.mode === 'prepared' || snap.mode === 'spellbook') ? 'teal' : (snap.mode === 'known' ? 'gold' : 'violet')));
     if (snap.cantripLimit != null) cards.push(_renderSummaryCard('Cantrips', String(snap.cantripCount) + ' / ' + String(snap.cantripLimit), 'At-will spells you currently have.', 'violet'));
-    if (snap.mode === 'prepared' && snap.preparedLimit != null) cards.push(_renderSummaryCard('Prepared', String(snap.preparedCount) + ' / ' + String(snap.preparedLimit), 'Leveled spells currently ready to cast.', 'teal'));
-    if (snap.mode === 'known' && snap.knownLimit != null) cards.push(_renderSummaryCard('Known', String(snap.knownCount) + ' / ' + String(snap.knownLimit), 'Leveled spells you currently know.', 'gold'));
+    if ((snap.mode === 'prepared' || snap.mode === 'spellbook') && snap.preparedLimit != null) cards.push(_renderSummaryCard('Prepared', String(snap.preparedCount) + ' / ' + String(snap.preparedLimit), 'Leveled spells currently ready to cast.', 'teal'));
+    if ((snap.mode === 'known' || snap.mode === 'spellbook') && snap.knownLimit != null) cards.push(_renderSummaryCard(snap.mode === 'spellbook' ? 'Spellbook' : 'Known', String(snap.knownCount) + ' / ' + String(snap.knownLimit), snap.mode === 'spellbook' ? 'Leveled spells written in your spellbook.' : 'Leveled spells you currently know.', 'gold'));
     return cards.join('');
   }
 
@@ -1032,6 +1034,14 @@ function _spellAttackSaveCell(spell, charData) {
     if (level === 0) {
       const overLimit = snap.cantripLimit != null && !selectedCantrip && snap.cantripCount >= snap.cantripLimit;
       return '<button type="button" class="cs-spell-manager-btn' + (selectedCantrip ? ' alt' : '') + '" data-spell-action="cantrip" data-spell-id="' + _esc(String(spell.id || '')) + '"' + (overLimit ? ' disabled title="Cantrip limit reached"' : '') + '>' + _esc(selectedCantrip ? 'Remove' : 'Learn Cantrip') + '</button>';
+    }
+    if (snap.mode === 'spellbook') {
+      if (!selectedKnown) {
+        const overKnown = snap.knownLimit != null && snap.knownCount >= snap.knownLimit;
+        return '<button type="button" class="cs-spell-manager-btn" data-spell-action="known" data-spell-id="' + _esc(String(spell.id || '')) + '"' + (overKnown ? ' disabled title="Spellbook limit reached"' : '') + '>Add to Spellbook</button>';
+      }
+      const overPrepared = snap.preparedLimit != null && !selectedPrepared && snap.preparedCount >= snap.preparedLimit;
+      return '<button type="button" class="cs-spell-manager-btn' + (selectedPrepared ? ' alt' : '') + '" data-spell-action="prepared" data-spell-id="' + _esc(String(spell.id || '')) + '"' + (overPrepared ? ' disabled title="Prepared limit reached"' : '') + '>' + _esc(selectedPrepared ? 'Unprepare' : 'Prepare') + '</button>';
     }
     if (snap.mode === 'prepared') {
       const overLimit = snap.preparedLimit != null && !selectedPrepared && snap.preparedCount >= snap.preparedLimit;
@@ -1053,9 +1063,11 @@ function _spellAttackSaveCell(spell, charData) {
       if (highest > 0 && level > highest && !spell.isKnown && !spell.isPrepared) return false;
       return _matchesSpellFilter(spell, state.filter, state.query);
     });
-    const note = snap.mode === 'prepared'
-      ? 'You only see spells unlocked for your class and level here. Cantrips are learned permanently; leveled spells below are the ones you prepare for the day.'
-      : snap.mode === 'known'
+    const note = snap.mode === 'spellbook'
+      ? 'You only see spells unlocked for your class and level here. Add leveled spells to your spellbook first, then prepare daily spells from that book.'
+      : snap.mode === 'prepared'
+        ? 'You only see spells unlocked for your class and level here. Cantrips are learned permanently; leveled spells below are the ones you prepare for the day.'
+        : snap.mode === 'known'
         ? 'You only see spells unlocked for your class and level here. Learn cantrips and known spells until you hit your class limit.'
         : 'Use this list to manage the spells tied to this character.';
     return '<div class="cs-action-section cs-spell-manager">' +

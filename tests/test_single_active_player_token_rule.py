@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 
 from server.handlers import combat as combat_handlers
 from server.handlers import tokens as token_handlers
@@ -255,3 +256,19 @@ async def test_combat_turn_flow_still_works_after_duplicate_cleanup(monkeypatch)
     assert session.combat.get("active") is True
     assert len(session.combat.get("combatants") or []) == 1
     assert int(session.combat.get("turn", -1)) == 0
+
+
+def test_play_page_can_reposition_off_map_owned_token_instead_of_duplicate_create():
+    src = Path("client/templates/play.html").read_text(encoding="utf-8")
+
+    assert "function findOwnedOffMapActiveTokenForPlacement()" in src
+    assert "placeExistingOwnedTokenOnCurrentMap(offMapOwnedToken, center, name)" in src
+    assert "sendWS({ type: 'token_placed', payload });" in src
+
+
+def test_play_page_normalizes_token_size_when_grid_changes():
+    src = Path("client/templates/play.html").read_text(encoding="utf-8")
+
+    assert "function normalizeTokenSizeForCurrentGrid(token)" in src
+    assert "normalizeAllTokenSizesForCurrentGrid();" in src
+    assert "normalizeTokenSizeForCurrentGrid(tok);" in src

@@ -11558,6 +11558,7 @@ function _syncGridSizeControls() {
 function applyGridSizeFromSettings() {
   PX_PER_GRID = getCurrentGridSizePx();
   _syncGridSizeControls();
+  normalizeAllTokenSizesForCurrentGrid();
 }
 
 function setEditorGridSizePx(rawValue, options) {
@@ -11565,6 +11566,7 @@ function setEditorGridSizePx(rawValue, options) {
   const next = _sanitizeGridSizePx(rawValue, PX_PER_GRID || GRID_SIZE_DEFAULT_PX);
   PX_PER_GRID = next;
   _syncGridSizeControls();
+  normalizeAllTokenSizesForCurrentGrid();
   _editorTerrainCache.dirty = true;
   drawFrame();
   if (ROLE !== 'dm') return;
@@ -11600,6 +11602,37 @@ function getTokenSizePresetByKey(key) {
   const gridSize = getEditorGridSizePx();
   const squares = Math.max(1, Number(preset.squares || 1));
   return { ...preset, width: gridSize * squares, height: gridSize * squares };
+}
+
+function inferTokenGridSquares(rawSize, fallbackSquares = 1) {
+  const size = Math.max(1, Number(rawSize) || 0);
+  const exactPreset = TOKEN_SIZE_PRESETS.find(p => Math.abs(Number(p.width || 0) - size) <= 1 || Math.abs(Number(p.height || 0) - size) <= 1);
+  if (exactPreset) return Math.max(1, Number(exactPreset.squares || 1));
+  for (const base of [GRID_SIZE_DEFAULT_PX, 50, 40]) {
+    const rounded = Math.round(size / base);
+    if (rounded >= 1 && rounded <= 4 && Math.abs(size - (rounded * base)) <= Math.max(2, base * 0.08)) return rounded;
+  }
+  const current = getEditorGridSizePx();
+  const byCurrent = Math.round(size / Math.max(1, current));
+  return Math.max(1, Math.min(4, Number.isFinite(byCurrent) && byCurrent > 0 ? byCurrent : fallbackSquares));
+}
+
+function normalizeTokenSizeForCurrentGrid(token) {
+  if (!token || typeof token !== 'object') return token;
+  const gridSize = getEditorGridSizePx();
+  const squaresWide = inferTokenGridSquares(token.width, 1);
+  const squaresHigh = inferTokenGridSquares(token.height, squaresWide);
+  token.width = Math.max(1, squaresWide) * gridSize;
+  token.height = Math.max(1, squaresHigh) * gridSize;
+  return token;
+}
+
+function normalizeAllTokenSizesForCurrentGrid() {
+  Object.values(tokens || {}).forEach(normalizeTokenSizeForCurrentGrid);
+  Object.values(_stagingTokens || {}).forEach(normalizeTokenSizeForCurrentGrid);
+  Object.values(_mapTokensByContext || {}).forEach(bucket => {
+    Object.values(bucket || {}).forEach(normalizeTokenSizeForCurrentGrid);
+  });
 }
 
 function getRulerGridDelta(dx, dy) {
@@ -22289,6 +22322,7 @@ function _removeTokenFromAllMapCaches(tokenId) {
 
 function _cacheTokenByContext(tok) {
   if (!tok || !tok.id) return;
+  normalizeTokenSizeForCurrentGrid(tok);
   const ctx = String(tok.map_context || 'world');
   _removeTokenFromAllMapCaches(tok.id);
   if (!_mapTokensByContext[ctx]) _mapTokensByContext[ctx] = {};
@@ -25272,6 +25306,34 @@ function openMyTokenStats(tok) {
   refreshCharSummary();
 }
 
+function findOwnedOffMapActiveTokenForPlacement() {
+  const drawCtx = _getAuthoritativeTokenDrawContext();
+  return Object.values(_stagingTokens || {}).find(t => (
+    _tokenOwnedByMe(t)
+    && !Boolean(t?.staged)
+    && String(t?.map_context || 'world') !== String(drawCtx || 'world')
+  )) || null;
+}
+
+function placeExistingOwnedTokenOnCurrentMap(token, center, nameForToast) {
+  if (!token || !token.id) return false;
+  const gridSize = getEditorGridSizePx();
+  const width = Math.max(1, Number(token.width || gridSize) || gridSize);
+  const height = Math.max(1, Number(token.height || gridSize) || gridSize);
+  const payload = {
+    token_id: token.id,
+    x: center.x - (width / 2),
+    y: center.y - (height / 2),
+    map_context: _getAuthoritativeTokenDrawContext(),
+  };
+  const snapped = snapTokenToGrid(payload.x, payload.y, { width, height });
+  payload.x = snapped.x;
+  payload.y = snapped.y;
+  sendWS({ type: 'token_placed', payload });
+  showToast(`${nameForToast || token.name || 'Token'} moved to this map.`);
+  return true;
+}
+
 function placeCharacter() {
   const rawName = (document.getElementById('char-name')?.value || '').trim();
   const name    = rawName || NAME || 'Adventurer';
@@ -25392,6 +25454,10 @@ function placeCharacter() {
   const hasActiveOwnedToken = Object.values(tokens).some(t => _tokenOwnedByMe(t) && !Boolean(t?.staged));
   if (hasActiveOwnedToken) {
     showToast('You already have an active token on the field. Remove or stage it before placing another.');
+    return;
+  }
+  const offMapOwnedToken = findOwnedOffMapActiveTokenForPlacement();
+  if (offMapOwnedToken && placeExistingOwnedTokenOnCurrentMap(offMapOwnedToken, center, name)) {
     return;
   }
 

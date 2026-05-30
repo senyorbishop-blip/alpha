@@ -691,7 +691,7 @@ async def api_character_builder_spell_options(
                     "isAccessible": is_accessible,
                     "blockedReason": "" if is_accessible else "Not unlocked at current class level.",
                     "highestAvailableSlot": highest_unlocked,
-                    "selectionMode": "prepared" if limits.get("preparedLimit") is not None else ("known" if limits.get("spellsKnown") is not None else "library"),
+                    "selectionMode": "spellbook" if limits.get("spellbookSpells") is not None else ("prepared" if limits.get("preparedLimit") is not None else ("known" if limits.get("spellsKnown") is not None else "library")),
                 },
             )
         )
@@ -1000,6 +1000,54 @@ async def api_character_save(request: Request):
 
     try:
         canonical_document = normalize_incoming_document(incoming_document)
+        classes = canonical_document.get("classes") if isinstance(canonical_document.get("classes"), list) else []
+        primary_class = classes[0] if classes and isinstance(classes[0], dict) else {}
+        class_id = str(primary_class.get("classId") or primary_class.get("id") or primary_class.get("name") or "").strip().lower()
+        class_level = _safe_int(primary_class.get("level"), default=1, minimum=1, maximum=20)
+        spell_state = canonical_document.get("spellState") if isinstance(canonical_document.get("spellState"), dict) else {}
+        raw_known_spell_ids = [str(v or "").strip() for v in (spell_state.get("known") or []) if str(v or "").strip()] if isinstance(spell_state, dict) else []
+        raw_prepared_spell_ids = [str(v or "").strip() for v in (spell_state.get("prepared") or []) if str(v or "").strip()] if isinstance(spell_state, dict) else []
+        raw_aliases_by_canonical = {}
+        for _spell_id in raw_known_spell_ids + raw_prepared_spell_ids:
+            _spell = get_compendium_spell_by_id(_spell_id)
+            if _spell and str(_spell.get("id") or "").strip():
+                raw_aliases_by_canonical.setdefault(str(_spell.get("id") or "").strip(), _spell_id)
+        if class_id:
+            repair_spell_state_for_document(
+                canonical_document,
+                class_id=class_id,
+                class_level=class_level,
+                abilities=canonical_document.get("abilities") if isinstance(canonical_document.get("abilities"), dict) else {},
+                subclass_id=str(primary_class.get("subclassId") or "").strip().lower(),
+            )
+        spell_state = canonical_document.get("spellState") if isinstance(canonical_document.get("spellState"), dict) else {}
+        # Preserve the player's/importer's original spell IDs on save. Strict
+        # validation canonicalizes aliases (for example spell_minor_illusion ->
+        # minor-illusion) and removes illegal compendium spells, but the profile
+        # payload should keep the IDs the character builder/sheet already holds.
+        def _restore_spell_aliases(_ids):
+            restored = []
+            for _spell_id in list(_ids or []):
+                restored.append(raw_aliases_by_canonical.get(str(_spell_id or "").strip(), _spell_id))
+            return restored
+        spell_state["known"] = _restore_spell_aliases(spell_state.get("known") or [])
+        spell_state["prepared"] = _restore_spell_aliases(spell_state.get("prepared") or [])
+        if (class_id and not (spell_state.get("known") or []) and raw_known_spell_ids):
+            spell_state["known"] = list(raw_known_spell_ids)
+        if (class_id and not (spell_state.get("prepared") or []) and raw_prepared_spell_ids):
+            spell_state["prepared"] = list(raw_prepared_spell_ids)
+        for _spell_id in raw_known_spell_ids:
+            if get_compendium_spell_by_id(_spell_id) is None and _spell_id not in (spell_state.get("known") or []):
+                spell_state.setdefault("known", []).append(_spell_id)
+        for _spell_id in raw_prepared_spell_ids:
+            if get_compendium_spell_by_id(_spell_id) is None and _spell_id not in (spell_state.get("prepared") or []):
+                spell_state.setdefault("prepared", []).append(_spell_id)
+        canonical_document["spellState"] = spell_state
+        _sync_native_spellbook_entries(
+            canonical_document,
+            known_ids=list(spell_state.get("known") or []),
+            prepared_ids=list(spell_state.get("prepared") or []),
+        )
     except CharacterValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -1356,7 +1404,10 @@ async def get_spell_library(
                         parsed = int(slot_text[:1]) if slot_text[:1].isdigit() else 0
                         if parsed > highest_available_slot:
                             highest_available_slot = parsed
-                selection_mode = 'prepared' if isinstance((manifest or {}).get("limits"), dict) and (manifest or {}).get("limits", {}).get("preparedLimit") is not None else ('known' if isinstance((manifest or {}).get("limits"), dict) and (manifest or {}).get("limits", {}).get("spellsKnown") is not None else 'library')
+                selection_mode = 'library'
+                if isinstance((manifest or {}).get("limits"), dict):
+                    _limits = (manifest or {}).get("limits", {})
+                    selection_mode = 'spellbook' if _limits.get("spellbookSpells") is not None else ('prepared' if _limits.get("preparedLimit") is not None else ('known' if _limits.get("spellsKnown") is not None else 'library'))
                 for row in rows:
                     row_id = str(row.get("id") or "")
                     if row_id in card_map:
