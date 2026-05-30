@@ -14,6 +14,15 @@
     }
   }
 
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function ensureModalDom() {
     let root = document.getElementById(MODAL_ID);
     if (root) return root;
@@ -30,28 +39,28 @@
     root.style.pointerEvents = 'none';
 
     root.innerHTML = ''
-      + '<div style="width:min(720px, calc(100vw - 24px)); max-height:calc(100vh - 24px); overflow:auto;'
+      + '<div style="width:min(760px, calc(100vw - 24px)); max-height:calc(100vh - 24px); overflow:auto;'
       + ' background:#13100a; border:1px solid rgba(0,229,204,0.28); border-radius:8px; padding:16px; color:#e8dcc8; box-shadow:0 14px 44px rgba(0,0,0,0.45);">'
       + '  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">'
       + '    <div>'
       + '      <div style="font-family:Cinzel, serif; letter-spacing:0.1em; text-transform:uppercase; color:#00e5cc; font-size:0.72rem;">Import Character</div>'
-      + '      <div style="font-size:0.85rem; opacity:0.85; margin-top:2px;">Import from D&D Beyond into your native profile library.</div>'
+      + '      <div style="font-size:0.85rem; opacity:0.85; margin-top:2px;">Preview imports before saving them to your native profile library.</div>'
       + '    </div>'
       + '    <button type="button" id="character-import-close" style="background:transparent; color:#e8dcc8; border:1px solid rgba(0,229,204,0.25); border-radius:4px; padding:4px 8px; cursor:pointer;">Close</button>'
       + '  </div>'
-      + '  <div style="display:grid; gap:12px;">'
+      + '  <div id="character-import-source-panel" style="display:grid; gap:12px;">'
       + '    <section style="border:1px solid rgba(0,229,204,0.16); border-radius:6px; padding:10px;">'
-      + '      <div style="font-family:Cinzel, serif; font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:#00e5cc; margin-bottom:6px;">D&D Beyond Character ID</div>'
+      + '      <div style="font-family:Cinzel, serif; font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:#00e5cc; margin-bottom:6px;">D&amp;D Beyond Character ID</div>'
       + '      <div style="display:flex; gap:8px; flex-wrap:wrap;">'
       + '        <input type="text" id="character-import-ddb-id" placeholder="e.g. 1234567" style="flex:1; min-width:220px; background:#21190d; border:1px solid rgba(0,229,204,0.2); color:#e8dcc8; border-radius:4px; padding:7px 10px;" />'
-      + '        <button type="button" id="character-import-ddb-id-btn" style="background:#00b4a0; color:#02110f; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Import by ID</button>'
+      + '        <button type="button" id="character-import-ddb-id-btn" style="background:#00b4a0; color:#02110f; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Preview by ID</button>'
       + '      </div>'
       + '    </section>'
       + '    <section style="border:1px solid rgba(0,229,204,0.16); border-radius:6px; padding:10px;">'
-      + '      <div style="font-family:Cinzel, serif; font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:#00e5cc; margin-bottom:6px;">D&D Beyond JSON</div>'
-      + '      <textarea id="character-import-json" placeholder="Paste exported D&D Beyond JSON here…" style="width:100%; min-height:120px; resize:vertical; background:#21190d; border:1px solid rgba(0,229,204,0.2); color:#e8dcc8; border-radius:4px; padding:8px;"></textarea>'
+      + '      <div style="font-family:Cinzel, serif; font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:#00e5cc; margin-bottom:6px;">D&amp;D Beyond JSON</div>'
+      + '      <textarea id="character-import-json" placeholder="Paste exported D&amp;D Beyond JSON here…" style="width:100%; min-height:120px; resize:vertical; background:#21190d; border:1px solid rgba(0,229,204,0.2); color:#e8dcc8; border-radius:4px; padding:8px;"></textarea>'
       + '      <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">'
-      + '        <button type="button" id="character-import-json-btn" style="background:#00b4a0; color:#02110f; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Import JSON Text</button>'
+      + '        <button type="button" id="character-import-json-btn" style="background:#00b4a0; color:#02110f; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Preview JSON Text</button>'
       + '        <label style="display:inline-flex; align-items:center; gap:6px; border:1px solid rgba(0,229,204,0.25); border-radius:4px; padding:6px 10px; cursor:pointer;">'
       + '          <span>JSON File</span>'
       + '          <input id="character-import-json-file" type="file" accept=".json,application/json" style="display:none;" />'
@@ -59,7 +68,7 @@
       + '      </div>'
       + '    </section>'
       + '    <section style="border:1px solid rgba(0,229,204,0.16); border-radius:6px; padding:10px;">'
-      + '      <div style="font-family:Cinzel, serif; font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:#00e5cc; margin-bottom:6px;">D&D Beyond PDF</div>'
+      + '      <div style="font-family:Cinzel, serif; font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:#00e5cc; margin-bottom:6px;">D&amp;D Beyond PDF</div>'
       + '      <div style="display:flex; gap:8px; flex-wrap:wrap;">'
       + '        <label style="display:inline-flex; align-items:center; gap:6px; border:1px solid rgba(0,229,204,0.25); border-radius:4px; padding:6px 10px; cursor:pointer;">'
       + '          <span>Choose PDF</span>'
@@ -77,10 +86,19 @@
       + '  </div>'
       + '  <div id="character-import-status" style="display:none; margin-top:12px; border-radius:4px; padding:8px 10px; font-size:0.84rem;"></div>'
       + '  <div id="character-import-review" style="display:none; margin-top:12px; border:1px solid rgba(201,162,39,0.4); border-radius:6px; padding:10px; background:rgba(201,162,39,0.12);">'
-      + '    <div style="font-family:Cinzel, serif; font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:#f5ddb0; margin-bottom:8px;">Import Review</div>'
+      + '    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px;">'
+      + '      <div style="font-family:Cinzel, serif; font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:#f5ddb0;">Import Review</div>'
+      + '      <div id="character-import-review-source" style="font-size:0.7rem; opacity:0.75;"></div>'
+      + '    </div>'
+      + '    <div id="character-import-summary" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:8px; margin-bottom:10px;"></div>'
       + '    <div id="character-import-review-list" style="display:grid; gap:8px;"></div>'
       + '    <div id="character-import-resolution-actions" style="display:none; margin-top:10px; gap:8px; flex-wrap:wrap;">'
-      + '      <button type="button" id="character-import-resolve-save-btn" style="background:#c9a227; color:#1a1204; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Resolve & Re-import</button>'
+      + '      <button type="button" id="character-import-resolve-preview-btn" style="background:#c9a227; color:#1a1204; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Update Preview With Fixes</button>'
+      + '    </div>'
+      + '    <div id="character-import-final-actions" style="display:flex; margin-top:10px; gap:8px; flex-wrap:wrap;">'
+      + '      <button type="button" id="character-import-save-btn" style="background:#00b4a0; color:#02110f; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Save Imported Character</button>'
+      + '      <button type="button" id="character-import-edit-btn" style="background:transparent; color:#e8dcc8; border:1px solid rgba(0,229,204,0.25); border-radius:4px; padding:7px 12px; cursor:pointer;">Edit Before Saving</button>'
+      + '      <button type="button" id="character-import-cancel-btn" style="background:transparent; color:#e8dcc8; border:1px solid rgba(229,90,90,0.35); border-radius:4px; padding:7px 12px; cursor:pointer;">Cancel</button>'
       + '    </div>'
       + '  </div>'
       + '</div>';
@@ -123,11 +141,27 @@
     return String(payload.detail || payload.error || fallback || 'Import failed.');
   }
 
+  function getCsrfToken() {
+    if (global.AppAPI && typeof global.AppAPI.getCsrfToken === 'function') {
+      return global.AppAPI.getCsrfToken();
+    }
+    if (typeof global.getCsrfToken === 'function') {
+      return global.getCsrfToken();
+    }
+    const match = document.cookie ? document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/) : null;
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+
+  function withCsrfHeaders(headers) {
+    const token = getCsrfToken();
+    return token ? Object.assign({ 'X-CSRF-Token': token }, headers || {}) : (headers || {});
+  }
+
   async function postJson(url, body) {
     const res = await fetch(url, {
       method: 'POST',
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
+      headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(body || {}),
     });
     let data = {};
@@ -146,6 +180,7 @@
     const res = await fetch(url, {
       method: 'POST',
       credentials: 'same-origin',
+      headers: withCsrfHeaders(),
       body: formData,
     });
     let data = {};
@@ -158,19 +193,6 @@
       throw new Error(toErrorMessage(data, 'Upload import failed.'));
     }
     return data;
-  }
-
-  function renderWarnings(payload) {
-    const warnings = Array.isArray(payload && payload.warnings) ? payload.warnings : [];
-    if (!warnings.length) return '';
-    const labels = warnings.map(function toLabel(item) {
-      if (item && typeof item === 'object') {
-        return String(item.message || item.code || 'Import warning').trim();
-      }
-      return String(item || '').trim();
-    }).filter(Boolean);
-    if (!labels.length) return '';
-    return ' Warnings: ' + labels.join(' | ');
   }
 
   function normalizeWarningItem(item) {
@@ -190,57 +212,154 @@
     };
   }
 
-  function clearReview(root) {
-    const review = root.querySelector('#character-import-review');
-    const reviewList = root.querySelector('#character-import-review-list');
-    const actionRow = root.querySelector('#character-import-resolution-actions');
-    if (review) review.style.display = 'none';
-    if (reviewList) reviewList.innerHTML = '';
-    if (actionRow) actionRow.style.display = 'none';
+  function normalizedWarnings(payload) {
+    const warnings = Array.isArray(payload && payload.warnings) ? payload.warnings : [];
+    const required = Array.isArray(payload && payload.required_choices) ? payload.required_choices : [];
+    const rows = warnings.concat(required).map(normalizeWarningItem).filter(function keep(row) {
+      return row.message || row.code;
+    });
+    const seen = new Set();
+    return rows.filter(function unique(row) {
+      const key = [row.code, row.message, Boolean(row.blocking)].join('|');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
 
-  function renderReview(root, warnings, allowResolve) {
+  function arrayCount(value) {
+    return Array.isArray(value) ? value.length : 0;
+  }
+
+  function countObjectValues(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return 0;
+    return Object.keys(value).filter(function hasValue(key) {
+      const row = value[key];
+      if (Array.isArray(row)) return row.length > 0;
+      return row != null && row !== '';
+    }).length;
+  }
+
+  function summarizeDocument(document) {
+    const doc = document && typeof document === 'object' ? document : {};
+    const identity = doc.identity && typeof doc.identity === 'object' ? doc.identity : {};
+    const species = doc.species && typeof doc.species === 'object' ? doc.species : {};
+    const background = doc.background && typeof doc.background === 'object' ? doc.background : {};
+    const classes = Array.isArray(doc.classes) ? doc.classes : [];
+    const classLabels = classes.map(function labelClass(cls) {
+      if (!cls || typeof cls !== 'object') return '';
+      const name = String(cls.name || cls.className || cls.classId || '').trim();
+      const level = cls.level == null ? '' : String(cls.level).trim();
+      return name ? (name + (level ? ' ' + level : '')) : '';
+    }).filter(Boolean);
+    const totalLevel = classes.reduce(function sum(acc, cls) {
+      const level = parseInt(cls && cls.level, 10);
+      return acc + (Number.isFinite(level) ? level : 0);
+    }, 0);
+    const abilities = doc.abilities && typeof doc.abilities === 'object' ? doc.abilities : {};
+    const scores = abilities.scores && typeof abilities.scores === 'object' ? abilities.scores : {};
+    const equipment = doc.equipment && typeof doc.equipment === 'object' ? doc.equipment : {};
+    const spellState = doc.spellState && typeof doc.spellState === 'object' ? doc.spellState : {};
+    const importMeta = doc.importMeta && typeof doc.importMeta === 'object' ? doc.importMeta : {};
+    const importedSpells = arrayCount(importMeta.importedSpells);
+    const preparedSpells = arrayCount(spellState.knownSpells) + arrayCount(spellState.preparedSpells) + arrayCount(spellState.spells);
+    const importedActions = arrayCount(importMeta.importedActions);
+    const importedFeatures = arrayCount(importMeta.importedFeatures);
+
+    return {
+      name: String(identity.name || identity.displayName || doc.name || 'Unnamed Character').trim() || 'Unnamed Character',
+      classLevel: classLabels.length ? classLabels.join(' / ') : (totalLevel ? 'Level ' + String(totalLevel) : 'Unknown'),
+      species: String(species.name || species.id || 'Unknown').trim() || 'Unknown',
+      background: String(background.name || background.id || 'Unknown').trim() || 'Unknown',
+      statsFound: countObjectValues(scores),
+      inventoryCount: arrayCount(equipment.inventory),
+      spellCount: importedSpells || preparedSpells,
+      actionFeatureCount: importedActions + importedFeatures + arrayCount(doc.actions) + arrayCount(doc.features),
+    };
+  }
+
+  function clearReview(root) {
     const review = root.querySelector('#character-import-review');
+    const summary = root.querySelector('#character-import-summary');
     const reviewList = root.querySelector('#character-import-review-list');
     const actionRow = root.querySelector('#character-import-resolution-actions');
-    if (!review || !reviewList || !actionRow) return;
+    const sourceLabel = root.querySelector('#character-import-review-source');
+    if (review) review.style.display = 'none';
+    if (summary) summary.innerHTML = '';
+    if (reviewList) reviewList.innerHTML = '';
+    if (actionRow) actionRow.style.display = 'none';
+    if (sourceLabel) sourceLabel.textContent = '';
+  }
 
-    const items = Array.isArray(warnings) ? warnings.map(normalizeWarningItem) : [];
-    if (!items.length) {
-      clearReview(root);
-      return;
+  function renderSummaryCard(label, value) {
+    return '<div style="border:1px solid rgba(245,221,176,0.18); border-radius:4px; padding:8px; background:rgba(0,0,0,0.12);">'
+      + '<div style="font-size:0.62rem; letter-spacing:0.08em; text-transform:uppercase; color:#f5ddb0; opacity:0.75;">' + escapeHtml(label) + '</div>'
+      + '<div style="margin-top:3px; font-size:0.9rem;">' + escapeHtml(value) + '</div>'
+      + '</div>';
+  }
+
+  function renderReview(root, payload, allowResolve) {
+    const review = root.querySelector('#character-import-review');
+    const summary = root.querySelector('#character-import-summary');
+    const reviewList = root.querySelector('#character-import-review-list');
+    const actionRow = root.querySelector('#character-import-resolution-actions');
+    const finalActions = root.querySelector('#character-import-final-actions');
+    const saveBtn = root.querySelector('#character-import-save-btn');
+    const sourceLabel = root.querySelector('#character-import-review-source');
+    if (!review || !summary || !reviewList || !actionRow || !finalActions || !saveBtn) return;
+
+    const document = payload && payload.preview_document && typeof payload.preview_document === 'object'
+      ? payload.preview_document
+      : {};
+    const summaryData = summarizeDocument(document);
+    const items = normalizedWarnings(payload);
+    const hasBlocking = Boolean(payload && payload.requires_resolution) || items.some(function (item) { return item.blocking; });
+
+    if (sourceLabel) {
+      sourceLabel.textContent = payload && payload.source ? String(payload.source).replace(/_/g, ' ') : '';
     }
+    summary.innerHTML = [
+      renderSummaryCard('Character name', summaryData.name),
+      renderSummaryCard('Class/level', summaryData.classLevel),
+      renderSummaryCard('Species', summaryData.species),
+      renderSummaryCard('Background', summaryData.background),
+      renderSummaryCard('Stats found', String(summaryData.statsFound) + '/6'),
+      renderSummaryCard('Inventory count', String(summaryData.inventoryCount)),
+      renderSummaryCard('Spell count', String(summaryData.spellCount)),
+      renderSummaryCard('Actions/features count', String(summaryData.actionFeatureCount)),
+    ].join('');
 
-    reviewList.innerHTML = items.map(function renderRow(item, idx) {
+    const warningsHtml = items.length ? items.map(function renderRow(item, idx) {
       const resolutionKey = String(item.details && item.details.resolutionKey || '').trim();
       const options = Array.isArray(item.details && item.details.options) ? item.details.options : [];
-      const select = item.blocking && allowResolve && resolutionKey && options.length
+      const select = item.blocking && allowResolve && resolutionKey
         ? (
           '<div style="margin-top:6px;">'
-          + '<label style="font-size:0.75rem; opacity:0.9;">Required choice:</label>'
-          + '<select data-resolution-key="' + resolutionKey.replace(/"/g, '&quot;') + '" data-warning-index="' + String(idx) + '"'
+          + '<label style="font-size:0.75rem; opacity:0.9;">Required fix:</label>'
+          + '<select data-resolution-key="' + escapeHtml(resolutionKey) + '" data-warning-index="' + String(idx) + '"'
           + ' style="display:block; margin-top:4px; width:100%; background:#21190d; border:1px solid rgba(0,229,204,0.25); color:#e8dcc8; border-radius:4px; padding:6px;">'
           + '<option value="">Select…</option>'
           + options.map(function (opt) {
             const value = String(opt || '').trim();
-            const esc = value.replace(/"/g, '&quot;');
-            return '<option value="' + esc + '">' + value + '</option>';
+            return '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>';
           }).join('')
           + '</select>'
           + '</div>'
         )
         : '';
       return '<div style="border:1px solid rgba(245,221,176,0.2); border-radius:4px; padding:8px;">'
-        + '<div style="font-size:0.82rem; color:' + (item.blocking ? '#ffd6a2' : '#f5ddb0') + ';">'
-        + (item.blocking ? 'Required: ' : 'Warning: ')
-        + item.message
+        + '<div style="font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:' + (item.blocking ? '#ffd6a2' : '#f5ddb0') + ';">'
+        + (item.blocking ? 'Required fix' : 'Warning')
         + '</div>'
+        + '<div style="font-size:0.84rem; margin-top:3px;">' + escapeHtml(item.message) + '</div>'
         + select
         + '</div>';
-    }).join('');
+    }).join('') : '<div style="border:1px solid rgba(0,229,204,0.16); border-radius:4px; padding:8px; color:#a9ffe7;">No warnings found.</div>';
 
-    const hasBlocking = items.some(function (item) { return item.blocking; });
+    reviewList.innerHTML = warningsHtml;
     actionRow.style.display = (allowResolve && hasBlocking) ? 'flex' : 'none';
+    saveBtn.style.display = hasBlocking ? 'none' : '';
+    finalActions.style.display = 'flex';
     review.style.display = 'block';
   }
 
@@ -262,11 +381,14 @@
     const pdfPreviewWrap = root.querySelector('#character-import-pdf-preview-wrap');
     const pdfPreviewHost = root.querySelector('#character-import-pdf-preview-host');
     const pdfPreviewClearBtn = root.querySelector('#character-import-pdf-clear-btn');
-    const resolveSaveBtn = root.querySelector('#character-import-resolve-save-btn');
+    const resolvePreviewBtn = root.querySelector('#character-import-resolve-preview-btn');
+    const saveBtn = root.querySelector('#character-import-save-btn');
+    const editBtn = root.querySelector('#character-import-edit-btn');
+    const cancelBtn = root.querySelector('#character-import-cancel-btn');
 
     const sessionId = getSessionId(cfg.sessionId);
-    let pendingResolver = null;
     let activePdfPreviewUrl = '';
+    let pendingImport = null;
 
     function clearPdfPreview() {
       if (pdfPreviewHost) {
@@ -305,58 +427,102 @@
 
     function close() {
       clearPdfPreview();
+      pendingImport = null;
       root.style.display = 'none';
       root.style.pointerEvents = 'none';
       if (typeof cfg.onClose === 'function') cfg.onClose();
     }
 
-    async function handleImported(payload, successLabel) {
+    function getResolution() {
+      const selects = Array.from(root.querySelectorAll('select[data-resolution-key]'));
+      const resolution = {};
+      for (const sel of selects) {
+        const key = String(sel && sel.getAttribute('data-resolution-key') || '').trim().toLowerCase();
+        const value = String(sel && sel.value || '').trim();
+        if (!key) continue;
+        if (!value) {
+          setStatus(root, 'Resolve all required choices before continuing.', 'error');
+          return null;
+        }
+        resolution[key] = value;
+      }
+      return resolution;
+    }
+
+    async function previewImport(importConfig, resolution) {
+      if (!importConfig) return;
+      const label = importConfig.previewingLabel || 'Building import preview…';
+      setStatus(root, label, 'info');
       clearReview(root);
-      pendingResolver = null;
-      const warnings = renderWarnings(payload);
-      const warningItems = Array.isArray(payload && payload.warnings) ? payload.warnings.map(normalizeWarningItem) : [];
-      const hasBlocking = warningItems.some(function (item) { return item.blocking; });
-      setStatus(root, successLabel + warnings, (warnings || hasBlocking) ? 'info' : 'success');
-      if (warningItems.length) {
-        renderReview(root, warningItems, false);
-      }
-      if (hasBlocking) {
-        setStatus(root, 'Import contains required mismatches. Resolve them and re-import before final save.', 'error');
-        return;
-      }
-      if (typeof cfg.onImported === 'function') {
-        await cfg.onImported(payload);
+      try {
+        let data;
+        if (typeof importConfig.buildPreviewForm === 'function') {
+          data = await postForm(importConfig.previewUrl, importConfig.buildPreviewForm(resolution || {}));
+        } else {
+          data = await postJson(importConfig.previewUrl, importConfig.buildPreviewBody(resolution || {}));
+        }
+        pendingImport = Object.assign({}, importConfig, { previewPayload: data });
+        renderReview(root, data, true);
+        if (data.requires_resolution) {
+          setStatus(root, 'Review the preview and fix required choices before saving.', 'error');
+          return;
+        }
+        setStatus(root, 'Preview ready. Review the character, then save or edit before saving.', 'success');
+      } catch (err) {
+        setStatus(root, String(err && err.message || 'Import preview failed.'), 'error');
       }
     }
 
-    function buildResolutionAndRetry(buildRequest) {
-      return async function onResolveRetry() {
-        if (typeof buildRequest !== 'function') return;
-        const selects = Array.from(root.querySelectorAll('select[data-resolution-key]'));
-        const resolution = {};
-        for (const sel of selects) {
-          const key = String(sel && sel.getAttribute('data-resolution-key') || '').trim().toLowerCase();
-          const value = String(sel && sel.value || '').trim();
-          if (!key) continue;
-          if (!value) {
-            setStatus(root, 'Resolve all required choices before continuing.', 'error');
-            return;
-          }
-          resolution[key] = value;
+    async function commitPendingImport() {
+      if (!pendingImport || !pendingImport.previewPayload) {
+        setStatus(root, 'Preview an imported character before saving.', 'error');
+        return;
+      }
+      if (pendingImport.previewPayload.requires_resolution) {
+        setStatus(root, 'Fix required import choices before saving.', 'error');
+        return;
+      }
+      setStatus(root, 'Saving imported character…', 'info');
+      try {
+        const previewDocument = pendingImport.previewPayload.preview_document || {};
+        let data;
+        if (typeof pendingImport.buildCommitForm === 'function') {
+          data = await postForm(pendingImport.commitUrl, pendingImport.buildCommitForm(previewDocument));
+        } else {
+          data = await postJson(pendingImport.commitUrl, pendingImport.buildCommitBody(previewDocument));
         }
-        try {
-          setStatus(root, 'Re-importing with selected resolutions…', 'info');
-          const req = buildRequest(resolution);
-          const data = await postJson(req.url, req.body);
-          await handleImported(data, req.successLabel);
-        } catch (err) {
-          setStatus(root, String(err && err.message || 'Re-import failed.'), 'error');
+        setStatus(root, 'Imported character saved.', 'success');
+        if (typeof cfg.onImported === 'function') {
+          await cfg.onImported(data);
         }
-      };
+      } catch (err) {
+        setStatus(root, String(err && err.message || 'Import save failed.'), 'error');
+      }
     }
 
     if (closeBtn) {
       closeBtn.onclick = close;
+    }
+    if (cancelBtn) {
+      cancelBtn.onclick = close;
+    }
+    if (editBtn) {
+      editBtn.onclick = function onEditBeforeSaving() {
+        pendingImport = null;
+        clearReview(root);
+        setStatus(root, 'Make changes to the import source, then preview again.', 'info');
+        if (jsonText) jsonText.focus();
+      };
+    }
+    if (saveBtn) {
+      saveBtn.onclick = commitPendingImport;
+    }
+    if (resolvePreviewBtn) {
+      resolvePreviewBtn.onclick = function onResolvePreview() {
+        const resolution = getResolution();
+        if (!resolution || !pendingImport) return;
+        previewImport(pendingImport, resolution);
+      };
     }
     if (pdfPreviewClearBtn) {
       pdfPreviewClearBtn.onclick = function onClearPdfPreview() {
@@ -371,7 +537,7 @@
     };
 
     if (ddbIdBtn) {
-      ddbIdBtn.onclick = async function onImportById() {
+      ddbIdBtn.onclick = async function onPreviewById() {
         const characterId = String(ddbIdInput && ddbIdInput.value || '').trim();
         if (!sessionId) {
           setStatus(root, 'Missing session_id in join URL.', 'error');
@@ -381,23 +547,52 @@
           setStatus(root, 'Enter a D&D Beyond character ID first.', 'error');
           return;
         }
+        await previewImport({
+          previewUrl: '/api/character/import/ddb-id/preview',
+          commitUrl: '/api/character/import/ddb-id/commit',
+          previewingLabel: 'Building D&D Beyond ID preview…',
+          buildPreviewBody: function buildPreviewBody(resolution) {
+            return {
+              session_id: sessionId,
+              character_id: characterId,
+              import_resolution: resolution,
+            };
+          },
+          buildCommitBody: function buildCommitBody(previewDocument) {
+            return {
+              session_id: sessionId,
+              character_id: characterId,
+              preview_document: previewDocument,
+            };
+          },
+        });
+      };
+    }
 
-        setStatus(root, 'Importing character by D&D Beyond ID…', 'info');
-        clearReview(root);
-        try {
-          const data = await postJson('/api/character/import/ddb-id', {
+    function jsonImportConfig(parsed, label) {
+      return {
+        previewUrl: '/api/character/import/json/preview',
+        commitUrl: '/api/character/import/json/commit',
+        previewingLabel: label || 'Building JSON import preview…',
+        buildPreviewBody: function buildPreviewBody(resolution) {
+          return {
             session_id: sessionId,
-            character_id: characterId,
-          });
-          await handleImported(data, 'Imported from D&D Beyond ID.');
-        } catch (err) {
-          setStatus(root, String(err && err.message || 'Import failed.'), 'error');
-        }
+            ddb_json: parsed,
+            import_resolution: resolution,
+          };
+        },
+        buildCommitBody: function buildCommitBody(previewDocument) {
+          return {
+            session_id: sessionId,
+            ddb_json: parsed,
+            preview_document: previewDocument,
+          };
+        },
       };
     }
 
     if (jsonBtn) {
-      jsonBtn.onclick = async function onImportJsonText() {
+      jsonBtn.onclick = async function onPreviewJsonText() {
         const raw = String(jsonText && jsonText.value || '').trim();
         if (!sessionId) {
           setStatus(root, 'Missing session_id in join URL.', 'error');
@@ -416,36 +611,7 @@
           return;
         }
 
-        setStatus(root, 'Importing pasted JSON…', 'info');
-        clearReview(root);
-        try {
-          const importPayload = {
-            session_id: sessionId,
-            ddb_json: parsed,
-          };
-          const data = await postJson('/api/character/import/json', importPayload);
-          const warningItems = Array.isArray(data && data.warnings) ? data.warnings.map(normalizeWarningItem) : [];
-          const hasBlocking = warningItems.some(function (item) { return item.blocking; });
-          if (hasBlocking) {
-            renderReview(root, warningItems, true);
-            setStatus(root, 'Imported preview has required mismatches. Resolve and re-import.', 'error');
-            pendingResolver = buildResolutionAndRetry(function (resolution) {
-              return {
-                url: '/api/character/import/json',
-                body: {
-                  session_id: sessionId,
-                  ddb_json: Object.assign({}, parsed, { import_resolution: resolution }),
-                },
-                successLabel: 'Imported from JSON payload.',
-              };
-            });
-            if (resolveSaveBtn) resolveSaveBtn.onclick = pendingResolver;
-            return;
-          }
-          await handleImported(data, 'Imported from JSON payload.');
-        } catch (err) {
-          setStatus(root, String(err && err.message || 'Import failed.'), 'error');
-        }
+        await previewImport(jsonImportConfig(parsed, 'Building pasted JSON preview…'));
       };
     }
 
@@ -464,32 +630,9 @@
         try {
           const text = await file.text();
           const parsed = JSON.parse(text);
-          const importPayload = {
-            session_id: sessionId,
-            ddb_json: parsed,
-          };
-          const data = await postJson('/api/character/import/json', importPayload);
-          const warningItems = Array.isArray(data && data.warnings) ? data.warnings.map(normalizeWarningItem) : [];
-          const hasBlocking = warningItems.some(function (item) { return item.blocking; });
-          if (hasBlocking) {
-            renderReview(root, warningItems, true);
-            setStatus(root, 'Imported preview has required mismatches. Resolve and re-import.', 'error');
-            pendingResolver = buildResolutionAndRetry(function (resolution) {
-              return {
-                url: '/api/character/import/json',
-                body: {
-                  session_id: sessionId,
-                  ddb_json: Object.assign({}, parsed, { import_resolution: resolution }),
-                },
-                successLabel: 'Imported from JSON file.',
-              };
-            });
-            if (resolveSaveBtn) resolveSaveBtn.onclick = pendingResolver;
-            return;
-          }
-          await handleImported(data, 'Imported from JSON file.');
+          await previewImport(jsonImportConfig(parsed, 'Building JSON file preview…'));
         } catch (err) {
-          setStatus(root, String(err && err.message || 'JSON file import failed.'), 'error');
+          setStatus(root, String(err && err.message || 'JSON file preview failed.'), 'error');
         } finally {
           jsonFileInput.value = '';
         }
@@ -507,17 +650,29 @@
           return;
         }
 
-        setStatus(root, 'Uploading PDF for parse/import…', 'info');
-        clearReview(root);
-        const fd = new FormData();
-        fd.set('session_id', sessionId);
-        fd.set('file', file);
+        const config = {
+          previewUrl: '/api/character/import/pdf/preview',
+          commitUrl: '/api/character/import/pdf/commit',
+          previewingLabel: 'Uploading PDF for import preview…',
+          buildPreviewForm: function buildPreviewForm(resolution) {
+            const fd = new FormData();
+            fd.set('session_id', sessionId);
+            if (resolution && Object.keys(resolution).length) {
+              fd.set('import_resolution', JSON.stringify(resolution));
+            }
+            fd.set('file', file);
+            return fd;
+          },
+          buildCommitForm: function buildCommitForm(previewDocument) {
+            const fd = new FormData();
+            fd.set('session_id', sessionId);
+            fd.set('preview_document', JSON.stringify(previewDocument || {}));
+            return fd;
+          },
+        };
 
         try {
-          const data = await postForm('/api/character/import/pdf', fd);
-          await handleImported(data, 'Imported from PDF.');
-        } catch (err) {
-          setStatus(root, String(err && err.message || 'PDF import failed.'), 'error');
+          await previewImport(config);
         } finally {
           pdfFileInput.value = '';
         }
@@ -526,7 +681,7 @@
 
     setStatus(root, '', 'info');
     clearReview(root);
-    if (resolveSaveBtn) resolveSaveBtn.onclick = null;
+    pendingImport = null;
     root.style.pointerEvents = 'auto';
     root.style.display = 'flex';
   }
