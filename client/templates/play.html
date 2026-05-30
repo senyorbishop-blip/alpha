@@ -44376,6 +44376,44 @@ function _canRollInitiative(com, idx) {
 }
 
 // ── Start Combat ──────────────────────────────────────────────────
+function _parseInitiativeModifierValue(value, fallback = null) {
+  if (value === null || value === undefined || value === '') return fallback;
+  const parsed = parseInt(String(value).replace(/[^+\-\d]/g, ''), 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function _resolveCharacterSheetInitiativeModifier(sheet = _charSheet) {
+  if (!sheet || typeof sheet !== 'object') return 0;
+  const candidates = [
+    sheet.initiative,
+    sheet.initiativeBonus,
+    sheet.initBonus,
+    sheet.charSheet?.initiative,
+    sheet.charSheet?.initiativeBonus,
+    sheet.charBook?.initiative,
+    sheet.charBook?.initiativeBonus,
+    sheet.book?.initiative,
+    sheet.book?.initiativeBonus,
+  ];
+  for (const candidate of candidates) {
+    const parsed = _parseInitiativeModifierValue(candidate, null);
+    if (parsed !== null) return parsed;
+  }
+  return _getCharacterModifiersForDice().initiative || 0;
+}
+
+function _resolveCombatantInitiativeModifier(combatant, token = null) {
+  const combatTok = token || (combatant?.token_id ? tokens[combatant.token_id] : null);
+  const tokenMod = _parseInitiativeModifierValue(combatTok?.initiativeMod, null);
+  if (tokenMod !== null) return tokenMod;
+
+  const ownedByCurrentUser = !!(combatTok && _tokenOwnedByMe(combatTok));
+  if (ownedByCurrentUser) return _resolveCharacterSheetInitiativeModifier();
+
+  const combatantMod = _parseInitiativeModifierValue(combatant?.modifier, null);
+  return combatantMod !== null ? combatantMod : 0;
+}
+
 function combatStart() {
   if (ROLE !== 'dm') return;
   // Grab all tokens on the current map context only
@@ -44385,13 +44423,7 @@ function combatStart() {
   );
   if (!mapTokens.length) { showToast('No tokens on this map'); return; }
   const coms = mapTokens.map(t => {
-    // Include the player's initiative modifier if this is their own token
-    let initMod = 0;
-    if (t.initiativeMod !== undefined) {
-      initMod = parseInt(t.initiativeMod) || 0;
-    } else if (t.owner_id === USER_ID && _charSheet?.initiative) {
-      initMod = parseInt(_charSheet.initiative) || 0;
-    }
+    const initMod = _resolveCombatantInitiativeModifier(null, t);
     return {
       id:         Math.random().toString(36).slice(2),
       token_id:   t.id,
@@ -44453,17 +44485,10 @@ function combatRollInitiative(combatantId) {
   const com = _combat.combatants.find(c => c.id === combatantId);
   if (!com) return;
 
-  // Use modifier stored on combatant (set at combat start, or updated via updateMyChar)
-  // Player rolling own token: also check live _charSheet in case it was updated
-  let modifier = parseInt(com.modifier) || 0;
+  // Keep the physical d20 result unchanged, then add the character initiative modifier.
   const combatTok = com.token_id ? tokens[com.token_id] : null;
-  if (combatTok && combatTok.initiativeMod !== undefined) {
-    modifier = parseInt(combatTok.initiativeMod) || 0;
-    com.modifier = modifier;
-  } else if (com.token_id && tokens[com.token_id]?.owner_id === USER_ID && _charSheet?.initiative !== undefined) {
-    modifier = parseInt(_charSheet.initiative) || 0;
-    com.modifier = modifier; // keep in sync
-  }
+  const modifier = _resolveCombatantInitiativeModifier(com, combatTok);
+  com.modifier = modifier;
 
   const roll  = Math.floor(Math.random() * 20) + 1;
   const total = roll + modifier;
