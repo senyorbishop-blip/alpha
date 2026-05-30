@@ -97,7 +97,7 @@
       + '      <textarea id="character-import-edit-json" style="width:100%; min-height:180px; resize:vertical; background:#21190d; border:1px solid rgba(0,229,204,0.2); color:#e8dcc8; border-radius:4px; padding:8px; font-family:monospace; font-size:0.78rem;"></textarea>'
       + '    </div>'
       + '    <div id="character-import-resolution-actions" style="display:none; margin-top:10px; gap:8px; flex-wrap:wrap;">'
-      + '      <button type="button" id="character-import-resolve-save-btn" style="background:#c9a227; color:#1a1204; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Apply Choices & Preview</button>'
+      + '      <button type="button" id="character-import-resolve-save-btn" style="background:#c9a227; color:#1a1204; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Update Preview With Fixes</button>'
       + '      <button type="button" id="character-import-save-btn" style="background:#00b4a0; color:#02110f; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Save Imported Character</button>'
       + '      <button type="button" id="character-import-edit-btn" style="background:transparent; color:#e8dcc8; border:1px solid rgba(0,229,204,0.25); border-radius:4px; padding:7px 12px; cursor:pointer;">Edit Before Saving</button>'
       + '    </div>'
@@ -147,11 +147,16 @@
     return match ? decodeURIComponent(match[1]) : '';
   }
 
+  function withCsrfHeaders(headers) {
+    const token = getCsrfToken();
+    return Object.assign({}, headers || {}, token ? { 'X-CSRF-Token': token } : {});
+  }
+
   async function postJson(url, body) {
     const res = await fetch(url, {
       method: 'POST',
       credentials: 'same-origin',
-      headers: Object.assign({ 'Content-Type': 'application/json' }, getCsrfToken() ? { 'X-CSRF-Token': getCsrfToken() } : {}),
+      headers: withCsrfHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(body || {}),
     });
     let data = {};
@@ -170,7 +175,7 @@
     const res = await fetch(url, {
       method: 'POST',
       credentials: 'same-origin',
-      headers: getCsrfToken() ? { 'X-CSRF-Token': getCsrfToken() } : {},
+      headers: withCsrfHeaders(),
       body: formData,
     });
     let data = {};
@@ -296,17 +301,18 @@
     const finalActions = root.querySelector('#character-import-final-actions');
     const saveBtn = root.querySelector('#character-import-save-btn');
     const sourceLabel = root.querySelector('#character-import-review-source');
-    if (!review || !summary || !reviewList || !actionRow || !finalActions || !saveBtn) return;
+    if (!review || !summary || !reviewList || !actionRow || !saveBtn) return;
 
-    const document = payload && payload.preview_document && typeof payload.preview_document === 'object'
-      ? payload.preview_document
+    const data = payload && typeof payload === 'object' ? payload : {};
+    const document = data.preview_document && typeof data.preview_document === 'object'
+      ? data.preview_document
       : {};
     const summaryData = summarizeDocument(document);
     const items = normalizedWarnings(payload);
-    const hasBlocking = Boolean(payload && payload.requires_resolution) || items.some(function (item) { return item.blocking; });
+    const hasBlocking = Boolean(data.requires_resolution) || items.some(function (item) { return item.blocking; });
 
     if (sourceLabel) {
-      sourceLabel.textContent = payload && payload.source ? String(payload.source).replace(/_/g, ' ') : '';
+      sourceLabel.textContent = data.source ? String(data.source).replace(/_/g, ' ') : '';
     }
     summary.innerHTML = [
       renderSummaryCard('Character name', summaryData.name),
@@ -352,7 +358,7 @@
     reviewList.innerHTML = warningsHtml;
     actionRow.style.display = (allowResolve && hasBlocking) ? 'flex' : 'none';
     saveBtn.style.display = hasBlocking ? 'none' : '';
-    finalActions.style.display = 'flex';
+    if (finalActions) finalActions.style.display = 'flex';
     review.style.display = 'block';
   }
 
@@ -385,6 +391,7 @@
       sessionId: '',
       onImported: null,
       onPreview: null,
+      onEditBeforeSave: null,
       onClose: null,
       initialMethod: '',
       autoCloseOnImported: false,
@@ -493,7 +500,7 @@
       const rows = [summaryRow].concat(items);
       if (review && reviewList) {
         reviewList.innerHTML = '';
-        renderReview(root, rows, hasBlocking);
+        renderReview(root, payload, Boolean(resolver));
         review.style.display = 'block';
       }
       pendingPreview = payload;
@@ -502,7 +509,7 @@
       setActionVisibility(hasBlocking, true);
       if (resolveSaveBtn) resolveSaveBtn.onclick = pendingResolver;
       if (saveBtn) saveBtn.onclick = savePendingPreview;
-      if (editBtn) editBtn.onclick = toggleEditPreview;
+      if (editBtn) editBtn.onclick = openBuilderForPendingPreview;
       if (typeof cfg.onPreview === 'function') cfg.onPreview(payload);
       setStatus(root, hasBlocking ? 'Import preview needs required choices before saving.' : 'Import preview is clean. Save now or edit before saving.', hasBlocking ? 'error' : 'success');
     }
@@ -539,7 +546,26 @@
       }
       editJson.value = JSON.stringify(getPreviewDocument(pendingPreview), null, 2);
       editWrap.style.display = 'block';
-      if (editBtn) editBtn.textContent = 'Hide Editor';
+      if (editBtn) editBtn.textContent = 'Hide Raw JSON';
+    }
+
+    async function openBuilderForPendingPreview() {
+      const doc = getPreviewDocument(pendingPreview);
+      if (!doc || typeof doc !== 'object' || Object.keys(doc).length === 0) {
+        setStatus(root, 'No import preview is available to edit.', 'error');
+        return;
+      }
+      if (typeof cfg.onEditBeforeSave !== 'function') {
+        toggleEditPreview();
+        return;
+      }
+      try {
+        setStatus(root, 'Opening native character builder with imported fields…', 'info');
+        await cfg.onEditBeforeSave(doc, pendingPreview);
+        close();
+      } catch (err) {
+        setStatus(root, String(err && err.message || 'Unable to open the character builder.'), 'error');
+      }
     }
 
     function jsonCommitter(source) {
@@ -583,9 +609,7 @@
         } catch (err) {
           setStatus(root, String(err && err.message || 'Import preview failed.'), 'error');
         }
-      } catch (err) {
-        setStatus(root, String(err && err.message || 'Import save failed.'), 'error');
-      }
+      };
     }
 
     async function previewDdbId() {

@@ -16,7 +16,7 @@ DEFAULT_SOURCE_MODE = "native"
 
 
 _RULES_MODES = {"casual", "classic", "custom"}
-_SOURCE_MODES = {"native", "dndbeyond", "existing"}
+_SOURCE_MODES = {"native", "dndbeyond", "dndbeyond_json", "dndbeyond_pdf", "existing"}
 
 
 def _clone(value: Any) -> Any:

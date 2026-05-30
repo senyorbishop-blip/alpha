@@ -132,7 +132,14 @@
     if (classId === 'monk') ac = 10 + dexMod + wisMod;
 
     var maxHP = hitDie + conMod + (Math.max(0, level - 1) * (Math.floor(hitDie / 2) + 1 + conMod));
-    var speed = speciesRow && speciesRow.movement ? parseInt(speciesRow.movement.walk, 10) || 30 : 30;
+    var speed = speciesRow && speciesRow.movement ? parseInt(speciesRow.movement.walk, 10) || 30 : (parseInt(speciesData.speed, 10) || 30);
+    var importedStats = draft.compatibility && typeof draft.compatibility === 'object' && draft.compatibility.importedStats && typeof draft.compatibility.importedStats === 'object'
+      ? draft.compatibility.importedStats
+      : {};
+    var importedHp = importedStats.hp && typeof importedStats.hp === 'object' ? importedStats.hp : {};
+    if (parseInt(importedHp.max, 10) > 0) maxHP = parseInt(importedHp.max, 10);
+    if (parseInt(importedStats.ac, 10) > 0) ac = parseInt(importedStats.ac, 10);
+    if (parseInt(importedStats.speed, 10) > 0) speed = parseInt(importedStats.speed, 10);
     var darkvision = speciesRow && speciesRow.senses ? parseInt(speciesRow.senses.darkvision, 10) || 0 : 0;
 
     var savingThrows = Array.isArray(classRow.savingThrows) ? classRow.savingThrows : [];

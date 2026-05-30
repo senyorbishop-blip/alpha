@@ -623,3 +623,12 @@ def test_native_hp_legacy_fallback_42_cannot_override_native_runtime():
     # Wizard d6 CON 10 = 6; legacy fields must not override native computation
     assert runtime["hp"]["max"] == 6
     assert runtime["hp"]["current"] == 6
+
+
+def test_schema_preserves_pdf_import_source_mode():
+    doc = default_character_document()
+    doc["sourceMode"] = "dndbeyond_pdf"
+
+    normalized = resolve_runtime(doc)["document"]
+
+    assert normalized["sourceMode"] == "dndbeyond_pdf"
