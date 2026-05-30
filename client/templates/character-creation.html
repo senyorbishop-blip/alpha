@@ -531,8 +531,10 @@
   </div>
   <script src="/static/js/importer/avatar_renderer.js"></script>
   <script src="/static/js/importer/portrait_library.js"></script>
+  <script src="/static/js/character/library/character_import_modal.js"></script>
   <script>
     const STEPS = [
+      { key: 'start', title: 'Start Method', copy: 'Choose whether to build a new hero or import an existing character sheet.' },
       { key: 'hero', title: 'Hero Identity', copy: 'Start with the core identity of the hero entering this realm.' },
       { key: 'species', title: 'Species & Look', copy: 'Pick the ancestry and visual type. The preview updates immediately.' },
       { key: 'class', title: 'Class & Style', copy: 'Choose a class. Starter gold, weapons, and style all update from this choice.' },
@@ -742,6 +744,7 @@
       authUser: null,
       campaignName: 'Unknown realm',
       step: 0,
+      startMethod: '',
       species: [],
       classes: [],
       subclassesByClass: {},
@@ -1385,9 +1388,23 @@ function renderSpeciesListItem(item, selectedId) {
   </button>`;
 }
 
+function renderStartMethodStep() {
+  const methods = [
+    { id: 'scratch', title: 'Build from scratch', copy: 'Use the guided native builder exactly as before, step by step.', cta: 'Start Builder' },
+    { id: 'ddb-id', title: 'Import from D&D Beyond ID', copy: 'Preview a public D&D Beyond character by ID before saving.', cta: 'Import by ID' },
+    { id: 'upload-json', title: 'Upload JSON file', copy: 'Upload an exported D&D Beyond JSON file and review it first.', cta: 'Choose JSON' },
+    { id: 'paste-json', title: 'Paste JSON', copy: 'Paste a JSON payload, preview native mapping, then save.', cta: 'Paste JSON' },
+    { id: 'upload-pdf', title: 'Upload PDF', copy: 'Upload a character sheet PDF for parsing and review.', cta: 'Choose PDF' },
+  ];
+  return `<div class="class-stage"><div class="class-browser" style="max-width:none;"><div class="class-list">${methods.map((method) => `<button type="button" class="option-card class-card compact${state.startMethod===method.id ? ' selected' : ''}" data-start-method="${escapeHtml(method.id)}"><div><h3>${escapeHtml(method.title)}</h3><p>${escapeHtml(method.copy)}</p></div><span class="tag">${escapeHtml(method.cta)}</span></button>`).join('')}</div></div><div class="class-detail"><div class="detail-block"><h4>Begin with the sheet you already have</h4><p>Imports always run a preview first, show an Import Review, and save into the same profile library as native characters. Clean imports can save immediately; required choices must be fixed before saving; and the imported document can be edited before final save.</p></div><div class="trait-highlight"><h5>Native builder still available</h5><p>Choose Build from scratch to continue the existing manual character creation flow unchanged.</p></div></div></div>`;
+}
+
 function renderStepMarkup() {
   const step = STEPS[state.step].key;
   const hero = state.hero;
+  if (step === 'start') {
+    return renderStartMethodStep();
+  }
   if (step === 'hero') {
     return `
       <div class="form-grid">
@@ -1502,7 +1519,19 @@ function renderAbilityCard(key, label, mode) {
     
 function bindStepMarkup() {
   const step = STEPS[state.step].key;
-  if (step === 'hero') {
+  if (step === 'start') {
+    document.querySelectorAll('[data-start-method]').forEach(btn => btn.addEventListener('click', () => {
+      const method = String(btn.getAttribute('data-start-method') || '').trim();
+      state.startMethod = method;
+      if (method === 'scratch') {
+        state.step = 1;
+        renderAll();
+        return;
+      }
+      openStartImport(method);
+      renderAll();
+    }));
+  } else if (step === 'hero') {
     document.getElementById('hero-name')?.addEventListener('input', e => { state.hero.name = e.target.value; renderPreview(); });
     document.getElementById('hero-homeland')?.addEventListener('input', e => { state.hero.homeland = e.target.value; });
     document.getElementById('hero-deity')?.addEventListener('input', e => { state.hero.deity = e.target.value; });
@@ -1621,6 +1650,7 @@ function bindStepMarkup() {
     
 function canProceed() {
   const step = STEPS[state.step].key;
+  if (step === 'start') return !!state.startMethod;
   if (step === 'hero') return !!state.hero.name.trim();
   if (step === 'species') return !!state.hero.speciesId;
   if (step === 'class') return !!state.hero.classId && Number(state.hero.startingLevel || 1) >= 1;
@@ -1787,6 +1817,31 @@ function canProceed() {
         },
       };
     }
+    function extractProfileId(payload) {
+      return String(
+        (payload && payload.profile_id)
+        || (payload && payload.profile && payload.profile.id)
+        || (payload && payload.id)
+        || ''
+      ).trim();
+    }
+    function openStartImport(method) {
+      if (!window.CharacterImportModal || typeof window.CharacterImportModal.open !== 'function') {
+        setFeedback('Character import tools are unavailable. Try reloading the page.', 'error');
+        return;
+      }
+      setFeedback('Import preview opens in a review dialog. Save there when the preview is ready.', '');
+      window.CharacterImportModal.open({
+        sessionId: SESSION_ID,
+        initialMethod: method,
+        autoCloseOnImported: true,
+        onImported(result) {
+          const profileId = extractProfileId(result);
+          setFeedback('Imported hero saved. Returning to your roster…', 'success');
+          location.href = getRosterUrl(profileId);
+        },
+      });
+    }
     function rememberSelectedProfile(sessionData, profileId) {
       if (!profileId || !sessionData || !sessionData.session_id) return;
       const identitySeed = String(sessionData.user_id || sessionData.name || (state.authUser && state.authUser.username) || 'player').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
@@ -1823,14 +1878,8 @@ function canProceed() {
           body: JSON.stringify({ session_id: SESSION_ID, character_document: buildDraftDocument() }),
         });
         const profileId = String(saveData.profile_id || (saveData.profile && saveData.profile.id) || '').trim();
-        setFeedback('Hero forged. Binding them to the realm…');
-        const sessionData = await fetchJson('/api/session/join', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ session_id: SESSION_ID, invite_code: INVITE, claim_token: null, profile_id: profileId }),
-        });
-        rememberSelectedProfile(sessionData, profileId);
-        saveAndEnter(sessionData);
+        setFeedback('Hero forged. Returning to your roster…', 'success');
+        location.href = getRosterUrl(profileId);
       } catch (err) {
         setFeedback(err.message || 'The forging ritual failed.', 'error');
       }
@@ -1901,6 +1950,11 @@ function canProceed() {
     els.cancel.addEventListener('click', goBack);
     els.back.addEventListener('click', () => { if (state.step === 0) goBack(); else { state.step = Math.max(0, state.step - 1); renderAll(); } });
     els.next.addEventListener('click', () => {
+      const stepKey = STEPS[state.step] && STEPS[state.step].key;
+      if (stepKey === 'start') {
+        if (!state.startMethod) { setFeedback('Choose how you want to start this character.', 'error'); return; }
+        if (state.startMethod !== 'scratch') { openStartImport(state.startMethod); return; }
+      }
       if (state.step === STEPS.length - 1) { handleFinish(); return; }
       if (!canProceed()) { setFeedback('Complete this step before moving on.', 'error'); return; }
       state.step = Math.min(STEPS.length - 1, state.step + 1);
