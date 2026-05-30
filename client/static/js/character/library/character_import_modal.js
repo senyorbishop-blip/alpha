@@ -79,8 +79,14 @@
       + '  <div id="character-import-review" style="display:none; margin-top:12px; border:1px solid rgba(201,162,39,0.4); border-radius:6px; padding:10px; background:rgba(201,162,39,0.12);">'
       + '    <div style="font-family:Cinzel, serif; font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:#f5ddb0; margin-bottom:8px;">Import Review</div>'
       + '    <div id="character-import-review-list" style="display:grid; gap:8px;"></div>'
+      + '    <div id="character-import-edit-wrap" style="display:none; margin-top:10px;">'
+      + '      <label for="character-import-edit-json" style="display:block; font-size:0.74rem; opacity:0.9; margin-bottom:4px;">Edit imported character document before saving</label>'
+      + '      <textarea id="character-import-edit-json" style="width:100%; min-height:180px; resize:vertical; background:#21190d; border:1px solid rgba(0,229,204,0.2); color:#e8dcc8; border-radius:4px; padding:8px; font-family:monospace; font-size:0.78rem;"></textarea>'
+      + '    </div>'
       + '    <div id="character-import-resolution-actions" style="display:none; margin-top:10px; gap:8px; flex-wrap:wrap;">'
-      + '      <button type="button" id="character-import-resolve-save-btn" style="background:#c9a227; color:#1a1204; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Resolve & Re-import</button>'
+      + '      <button type="button" id="character-import-resolve-save-btn" style="background:#c9a227; color:#1a1204; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Apply Choices & Preview</button>'
+      + '      <button type="button" id="character-import-save-btn" style="background:#00b4a0; color:#02110f; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Save Imported Character</button>'
+      + '      <button type="button" id="character-import-edit-btn" style="background:transparent; color:#e8dcc8; border:1px solid rgba(0,229,204,0.25); border-radius:4px; padding:7px 12px; cursor:pointer;">Edit Before Saving</button>'
       + '    </div>'
       + '  </div>'
       + '</div>';
@@ -123,11 +129,16 @@
     return String(payload.detail || payload.error || fallback || 'Import failed.');
   }
 
+  function getCsrfToken() {
+    const match = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+
   async function postJson(url, body) {
     const res = await fetch(url, {
       method: 'POST',
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
+      headers: Object.assign({ 'Content-Type': 'application/json' }, getCsrfToken() ? { 'X-CSRF-Token': getCsrfToken() } : {}),
       body: JSON.stringify(body || {}),
     });
     let data = {};
@@ -146,6 +157,7 @@
     const res = await fetch(url, {
       method: 'POST',
       credentials: 'same-origin',
+      headers: getCsrfToken() ? { 'X-CSRF-Token': getCsrfToken() } : {},
       body: formData,
     });
     let data = {};
@@ -214,19 +226,22 @@
     reviewList.innerHTML = items.map(function renderRow(item, idx) {
       const resolutionKey = String(item.details && item.details.resolutionKey || '').trim();
       const options = Array.isArray(item.details && item.details.options) ? item.details.options : [];
-      const select = item.blocking && allowResolve && resolutionKey && options.length
+      const resolutionControl = item.blocking && allowResolve && resolutionKey
         ? (
           '<div style="margin-top:6px;">'
           + '<label style="font-size:0.75rem; opacity:0.9;">Required choice:</label>'
-          + '<select data-resolution-key="' + resolutionKey.replace(/"/g, '&quot;') + '" data-warning-index="' + String(idx) + '"'
-          + ' style="display:block; margin-top:4px; width:100%; background:#21190d; border:1px solid rgba(0,229,204,0.25); color:#e8dcc8; border-radius:4px; padding:6px;">'
-          + '<option value="">Select…</option>'
-          + options.map(function (opt) {
-            const value = String(opt || '').trim();
-            const esc = value.replace(/"/g, '&quot;');
-            return '<option value="' + esc + '">' + value + '</option>';
-          }).join('')
-          + '</select>'
+          + (options.length
+            ? ('<select data-resolution-key="' + resolutionKey.replace(/"/g, '&quot;') + '" data-warning-index="' + String(idx) + '"'
+              + ' style="display:block; margin-top:4px; width:100%; background:#21190d; border:1px solid rgba(0,229,204,0.25); color:#e8dcc8; border-radius:4px; padding:6px;">'
+              + '<option value="">Select…</option>'
+              + options.map(function (opt) {
+                const value = String(opt || '').trim();
+                const esc = value.replace(/"/g, '&quot;');
+                return '<option value="' + esc + '">' + value + '</option>';
+              }).join('')
+              + '</select>')
+            : ('<input data-resolution-key="' + resolutionKey.replace(/"/g, '&quot;') + '" data-warning-index="' + String(idx) + '" placeholder="Type the required choice"'
+              + ' style="display:block; margin-top:4px; width:100%; background:#21190d; border:1px solid rgba(0,229,204,0.25); color:#e8dcc8; border-radius:4px; padding:6px;" />'))
           + '</div>'
         )
         : '';
@@ -235,7 +250,7 @@
         + (item.blocking ? 'Required: ' : 'Warning: ')
         + item.message
         + '</div>'
-        + select
+        + resolutionControl
         + '</div>';
     }).join('');
 
@@ -244,11 +259,38 @@
     review.style.display = 'block';
   }
 
+  function getPreviewDocument(payload) {
+    if (!payload || typeof payload !== 'object') return {};
+    const doc = payload.preview_document || payload.character_document || payload.document || payload.nativeCharacter;
+    return doc && typeof doc === 'object' ? doc : {};
+  }
+
+  function getReviewItems(payload) {
+    const seen = new Set();
+    const rows = [];
+    function add(item) {
+      const normalized = normalizeWarningItem(item);
+      const key = [normalized.code, normalized.message, normalized.blocking ? '1' : '0'].join('|');
+      if (seen.has(key)) return;
+      seen.add(key);
+      rows.push(normalized);
+    }
+    (Array.isArray(payload && payload.warnings) ? payload.warnings : []).forEach(add);
+    (Array.isArray(payload && payload.required_choices) ? payload.required_choices : []).forEach(function (item) {
+      if (item && typeof item === 'object') add(Object.assign({}, item, { blocking: true }));
+      else add({ message: item, blocking: true });
+    });
+    return rows;
+  }
+
   function open(config) {
     const cfg = Object.assign({
       sessionId: '',
       onImported: null,
+      onPreview: null,
       onClose: null,
+      initialMethod: '',
+      autoCloseOnImported: false,
     }, config || {});
 
     const root = ensureModalDom();
@@ -263,24 +305,22 @@
     const pdfPreviewHost = root.querySelector('#character-import-pdf-preview-host');
     const pdfPreviewClearBtn = root.querySelector('#character-import-pdf-clear-btn');
     const resolveSaveBtn = root.querySelector('#character-import-resolve-save-btn');
+    const saveBtn = root.querySelector('#character-import-save-btn');
+    const editBtn = root.querySelector('#character-import-edit-btn');
+    const editWrap = root.querySelector('#character-import-edit-wrap');
+    const editJson = root.querySelector('#character-import-edit-json');
 
     const sessionId = getSessionId(cfg.sessionId);
+    let pendingPreview = null;
+    let pendingCommitter = null;
     let pendingResolver = null;
     let activePdfPreviewUrl = '';
 
     function clearPdfPreview() {
-      if (pdfPreviewHost) {
-        pdfPreviewHost.innerHTML = '';
-      }
-      if (pdfPreviewWrap) {
-        pdfPreviewWrap.style.display = 'none';
-      }
+      if (pdfPreviewHost) pdfPreviewHost.innerHTML = '';
+      if (pdfPreviewWrap) pdfPreviewWrap.style.display = 'none';
       if (activePdfPreviewUrl) {
-        try {
-          URL.revokeObjectURL(activePdfPreviewUrl);
-        } catch (_) {
-          // ignore revoke failures; browser may have already reclaimed it
-        }
+        try { URL.revokeObjectURL(activePdfPreviewUrl); } catch (_) {}
       }
       activePdfPreviewUrl = '';
     }
@@ -310,31 +350,123 @@
       if (typeof cfg.onClose === 'function') cfg.onClose();
     }
 
-    async function handleImported(payload, successLabel) {
-      clearReview(root);
+    function resetPending() {
+      pendingPreview = null;
+      pendingCommitter = null;
       pendingResolver = null;
-      const warnings = renderWarnings(payload);
-      const warningItems = Array.isArray(payload && payload.warnings) ? payload.warnings.map(normalizeWarningItem) : [];
-      const hasBlocking = warningItems.some(function (item) { return item.blocking; });
-      setStatus(root, successLabel + warnings, (warnings || hasBlocking) ? 'info' : 'success');
-      if (warningItems.length) {
-        renderReview(root, warningItems, false);
+      if (editWrap) editWrap.style.display = 'none';
+      if (editJson) editJson.value = '';
+      if (saveBtn) saveBtn.onclick = null;
+      if (editBtn) editBtn.onclick = null;
+      if (resolveSaveBtn) resolveSaveBtn.onclick = null;
+    }
+
+    function setActionVisibility(hasBlocking, hasPreview) {
+      const actionRow = root.querySelector('#character-import-resolution-actions');
+      if (!actionRow) return;
+      actionRow.style.display = (hasBlocking || hasPreview) ? 'flex' : 'none';
+      if (resolveSaveBtn) resolveSaveBtn.style.display = hasBlocking ? 'inline-block' : 'none';
+      if (saveBtn) saveBtn.style.display = (!hasBlocking && hasPreview) ? 'inline-block' : 'none';
+      if (editBtn) editBtn.style.display = (!hasBlocking && hasPreview) ? 'inline-block' : 'none';
+    }
+
+    function renderPreviewReview(payload, committer, resolver) {
+      const review = root.querySelector('#character-import-review');
+      const reviewList = root.querySelector('#character-import-review-list');
+      const items = getReviewItems(payload);
+      const hasBlocking = items.some(function (item) { return item.blocking; }) || Boolean(payload && payload.requires_resolution);
+      const doc = getPreviewDocument(payload);
+      const identity = doc && doc.identity && typeof doc.identity === 'object' ? doc.identity : {};
+      const classes = Array.isArray(doc && doc.classes) ? doc.classes : [];
+      const primaryClass = classes[0] && typeof classes[0] === 'object' ? classes[0] : {};
+      const species = doc && doc.species && typeof doc.species === 'object' ? doc.species : {};
+      const summaryRow = {
+        code: 'preview_ready',
+        message: 'Preview ready: ' + [
+          String(identity.name || identity.displayName || doc.name || 'Imported Hero').trim(),
+          String(species.name || species.id || '').trim(),
+          String(primaryClass.name || primaryClass.classId || '').trim(),
+          primaryClass.level ? ('Level ' + primaryClass.level) : '',
+        ].filter(Boolean).join(' · '),
+        blocking: false,
+        details: {},
+      };
+      const rows = [summaryRow].concat(items);
+      if (review && reviewList) {
+        reviewList.innerHTML = '';
+        renderReview(root, rows, hasBlocking);
+        review.style.display = 'block';
       }
-      if (hasBlocking) {
-        setStatus(root, 'Import contains required mismatches. Resolve them and re-import before final save.', 'error');
-        return;
+      pendingPreview = payload;
+      pendingCommitter = committer;
+      pendingResolver = resolver;
+      setActionVisibility(hasBlocking, true);
+      if (resolveSaveBtn) resolveSaveBtn.onclick = pendingResolver;
+      if (saveBtn) saveBtn.onclick = savePendingPreview;
+      if (editBtn) editBtn.onclick = toggleEditPreview;
+      if (typeof cfg.onPreview === 'function') cfg.onPreview(payload);
+      setStatus(root, hasBlocking ? 'Import preview needs required choices before saving.' : 'Import preview is clean. Save now or edit before saving.', hasBlocking ? 'error' : 'success');
+    }
+
+    async function savePendingPreview() {
+      if (!pendingCommitter) return;
+      let editedDoc = null;
+      if (editWrap && editWrap.style.display !== 'none' && editJson && String(editJson.value || '').trim()) {
+        try {
+          editedDoc = JSON.parse(editJson.value);
+        } catch (_) {
+          setStatus(root, 'Edited character JSON is invalid.', 'error');
+          return;
+        }
       }
-      if (typeof cfg.onImported === 'function') {
-        await cfg.onImported(payload);
+      try {
+        setStatus(root, 'Saving imported character to your profile library…', 'info');
+        const result = await pendingCommitter(editedDoc || getPreviewDocument(pendingPreview));
+        setStatus(root, 'Imported character saved to your profile library.', 'success');
+        if (typeof cfg.onImported === 'function') await cfg.onImported(result);
+        if (cfg.autoCloseOnImported) close();
+      } catch (err) {
+        setStatus(root, String(err && err.message || 'Imported character save failed.'), 'error');
       }
     }
 
-    function buildResolutionAndRetry(buildRequest) {
+    function toggleEditPreview() {
+      if (!editWrap || !editJson) return;
+      const isOpen = editWrap.style.display !== 'none';
+      if (isOpen) {
+        editWrap.style.display = 'none';
+        if (editBtn) editBtn.textContent = 'Edit Before Saving';
+        return;
+      }
+      editJson.value = JSON.stringify(getPreviewDocument(pendingPreview), null, 2);
+      editWrap.style.display = 'block';
+      if (editBtn) editBtn.textContent = 'Hide Editor';
+    }
+
+    function jsonCommitter(source) {
+      return function commitJson(previewDocument) {
+        return postJson(source === 'ddb-id' ? '/api/character/import/ddb-id/commit' : '/api/character/import/json/commit', {
+          session_id: sessionId,
+          preview_document: previewDocument,
+        });
+      };
+    }
+
+    function pdfCommitter() {
+      return function commitPdf(previewDocument) {
+        const fd = new FormData();
+        fd.set('session_id', sessionId);
+        fd.set('preview_document', JSON.stringify(previewDocument || {}));
+        return postForm('/api/character/import/pdf/commit', fd);
+      };
+    }
+
+    function buildResolutionAndPreview(buildRequest) {
       return async function onResolveRetry() {
         if (typeof buildRequest !== 'function') return;
-        const selects = Array.from(root.querySelectorAll('select[data-resolution-key]'));
+        const controls = Array.from(root.querySelectorAll('[data-resolution-key]'));
         const resolution = {};
-        for (const sel of selects) {
+        for (const sel of controls) {
           const key = String(sel && sel.getAttribute('data-resolution-key') || '').trim().toLowerCase();
           const value = String(sel && sel.value || '').trim();
           if (!key) continue;
@@ -345,149 +477,100 @@
           resolution[key] = value;
         }
         try {
-          setStatus(root, 'Re-importing with selected resolutions…', 'info');
+          setStatus(root, 'Refreshing import preview with selected choices…', 'info');
           const req = buildRequest(resolution);
-          const data = await postJson(req.url, req.body);
-          await handleImported(data, req.successLabel);
+          const preview = req.formData ? await postForm(req.url, req.formData) : await postJson(req.url, req.body);
+          renderPreviewReview(preview, req.committer, buildResolutionAndPreview(buildRequest));
         } catch (err) {
-          setStatus(root, String(err && err.message || 'Re-import failed.'), 'error');
+          setStatus(root, String(err && err.message || 'Import preview failed.'), 'error');
         }
       };
     }
 
-    if (closeBtn) {
-      closeBtn.onclick = close;
-    }
-    if (pdfPreviewClearBtn) {
-      pdfPreviewClearBtn.onclick = function onClearPdfPreview() {
-        clearPdfPreview();
-      };
-    }
-
-    root.onclick = function onRootClick(event) {
-      if (event.target === root) {
-        close();
+    async function previewDdbId() {
+      const characterId = String(ddbIdInput && ddbIdInput.value || '').trim();
+      if (!sessionId) return setStatus(root, 'Missing session_id in join URL.', 'error');
+      if (!characterId) return setStatus(root, 'Enter a D&D Beyond character ID first.', 'error');
+      setStatus(root, 'Building D&D Beyond import preview…', 'info');
+      clearReview(root);
+      resetPending();
+      try {
+        const buildRequest = function (resolution) {
+          return {
+            url: '/api/character/import/ddb-id/preview',
+            body: { session_id: sessionId, character_id: characterId, import_resolution: resolution || {} },
+            committer: jsonCommitter('ddb-id'),
+          };
+        };
+        const req = buildRequest({});
+        const preview = await postJson(req.url, req.body);
+        renderPreviewReview(preview, req.committer, buildResolutionAndPreview(buildRequest));
+      } catch (err) {
+        setStatus(root, String(err && err.message || 'Import preview failed.'), 'error');
       }
-    };
-
-    if (ddbIdBtn) {
-      ddbIdBtn.onclick = async function onImportById() {
-        const characterId = String(ddbIdInput && ddbIdInput.value || '').trim();
-        if (!sessionId) {
-          setStatus(root, 'Missing session_id in join URL.', 'error');
-          return;
-        }
-        if (!characterId) {
-          setStatus(root, 'Enter a D&D Beyond character ID first.', 'error');
-          return;
-        }
-
-        setStatus(root, 'Importing character by D&D Beyond ID…', 'info');
-        clearReview(root);
-        try {
-          const data = await postJson('/api/character/import/ddb-id', {
-            session_id: sessionId,
-            character_id: characterId,
-          });
-          await handleImported(data, 'Imported from D&D Beyond ID.');
-        } catch (err) {
-          setStatus(root, String(err && err.message || 'Import failed.'), 'error');
-        }
-      };
     }
 
+    async function previewJsonPayload(parsed, successSource) {
+      if (!sessionId) return setStatus(root, 'Missing session_id in join URL.', 'error');
+      setStatus(root, 'Building JSON import preview…', 'info');
+      clearReview(root);
+      resetPending();
+      try {
+        const buildRequest = function (resolution) {
+          return {
+            url: '/api/character/import/json/preview',
+            body: { session_id: sessionId, ddb_json: parsed, import_resolution: resolution || {} },
+            committer: jsonCommitter('json'),
+            successSource,
+          };
+        };
+        const req = buildRequest({});
+        const preview = await postJson(req.url, req.body);
+        renderPreviewReview(preview, req.committer, buildResolutionAndPreview(buildRequest));
+      } catch (err) {
+        setStatus(root, String(err && err.message || 'Import preview failed.'), 'error');
+      }
+    }
+
+    async function previewPdfFile(file) {
+      if (!sessionId) return setStatus(root, 'Missing session_id in join URL.', 'error');
+      setStatus(root, 'Uploading PDF for import preview…', 'info');
+      clearReview(root);
+      resetPending();
+      try {
+        const buildRequest = function () {
+          const fd = new FormData();
+          fd.set('session_id', sessionId);
+          fd.set('file', file);
+          return { url: '/api/character/import/pdf/preview', formData: fd, committer: pdfCommitter() };
+        };
+        const req = buildRequest({});
+        const preview = await postForm(req.url, req.formData);
+        renderPreviewReview(preview, req.committer, null);
+      } catch (err) {
+        setStatus(root, String(err && err.message || 'PDF import preview failed.'), 'error');
+      }
+    }
+
+    if (closeBtn) closeBtn.onclick = close;
+    if (pdfPreviewClearBtn) pdfPreviewClearBtn.onclick = clearPdfPreview;
+    root.onclick = function onRootClick(event) { if (event.target === root) close(); };
+    if (ddbIdBtn) ddbIdBtn.onclick = previewDdbId;
     if (jsonBtn) {
       jsonBtn.onclick = async function onImportJsonText() {
         const raw = String(jsonText && jsonText.value || '').trim();
-        if (!sessionId) {
-          setStatus(root, 'Missing session_id in join URL.', 'error');
-          return;
-        }
-        if (!raw) {
-          setStatus(root, 'Paste JSON first.', 'error');
-          return;
-        }
-
-        let parsed;
-        try {
-          parsed = JSON.parse(raw);
-        } catch (_) {
-          setStatus(root, 'Invalid JSON payload.', 'error');
-          return;
-        }
-
-        setStatus(root, 'Importing pasted JSON…', 'info');
-        clearReview(root);
-        try {
-          const importPayload = {
-            session_id: sessionId,
-            ddb_json: parsed,
-          };
-          const data = await postJson('/api/character/import/json', importPayload);
-          const warningItems = Array.isArray(data && data.warnings) ? data.warnings.map(normalizeWarningItem) : [];
-          const hasBlocking = warningItems.some(function (item) { return item.blocking; });
-          if (hasBlocking) {
-            renderReview(root, warningItems, true);
-            setStatus(root, 'Imported preview has required mismatches. Resolve and re-import.', 'error');
-            pendingResolver = buildResolutionAndRetry(function (resolution) {
-              return {
-                url: '/api/character/import/json',
-                body: {
-                  session_id: sessionId,
-                  ddb_json: Object.assign({}, parsed, { import_resolution: resolution }),
-                },
-                successLabel: 'Imported from JSON payload.',
-              };
-            });
-            if (resolveSaveBtn) resolveSaveBtn.onclick = pendingResolver;
-            return;
-          }
-          await handleImported(data, 'Imported from JSON payload.');
-        } catch (err) {
-          setStatus(root, String(err && err.message || 'Import failed.'), 'error');
-        }
+        if (!raw) return setStatus(root, 'Paste JSON first.', 'error');
+        try { await previewJsonPayload(JSON.parse(raw), 'pasted JSON'); }
+        catch (_) { setStatus(root, 'Invalid JSON payload.', 'error'); }
       };
     }
-
     if (jsonFileInput) {
       jsonFileInput.onchange = async function onJsonFileChange() {
         const file = jsonFileInput.files && jsonFileInput.files[0];
         if (!file) return;
-        if (!sessionId) {
-          setStatus(root, 'Missing session_id in join URL.', 'error');
-          jsonFileInput.value = '';
-          return;
-        }
-
-        setStatus(root, 'Reading JSON file…', 'info');
-        clearReview(root);
         try {
-          const text = await file.text();
-          const parsed = JSON.parse(text);
-          const importPayload = {
-            session_id: sessionId,
-            ddb_json: parsed,
-          };
-          const data = await postJson('/api/character/import/json', importPayload);
-          const warningItems = Array.isArray(data && data.warnings) ? data.warnings.map(normalizeWarningItem) : [];
-          const hasBlocking = warningItems.some(function (item) { return item.blocking; });
-          if (hasBlocking) {
-            renderReview(root, warningItems, true);
-            setStatus(root, 'Imported preview has required mismatches. Resolve and re-import.', 'error');
-            pendingResolver = buildResolutionAndRetry(function (resolution) {
-              return {
-                url: '/api/character/import/json',
-                body: {
-                  session_id: sessionId,
-                  ddb_json: Object.assign({}, parsed, { import_resolution: resolution }),
-                },
-                successLabel: 'Imported from JSON file.',
-              };
-            });
-            if (resolveSaveBtn) resolveSaveBtn.onclick = pendingResolver;
-            return;
-          }
-          await handleImported(data, 'Imported from JSON file.');
+          const parsed = JSON.parse(await file.text());
+          await previewJsonPayload(parsed, 'JSON file');
         } catch (err) {
           setStatus(root, String(err && err.message || 'JSON file import failed.'), 'error');
         } finally {
@@ -495,40 +578,30 @@
         }
       };
     }
-
     if (pdfFileInput) {
       pdfFileInput.onchange = async function onPdfFileChange() {
         const file = pdfFileInput.files && pdfFileInput.files[0];
         if (!file) return;
         renderPdfPreview(file);
-        if (!sessionId) {
-          setStatus(root, 'Missing session_id in join URL.', 'error');
-          pdfFileInput.value = '';
-          return;
-        }
-
-        setStatus(root, 'Uploading PDF for parse/import…', 'info');
-        clearReview(root);
-        const fd = new FormData();
-        fd.set('session_id', sessionId);
-        fd.set('file', file);
-
-        try {
-          const data = await postForm('/api/character/import/pdf', fd);
-          await handleImported(data, 'Imported from PDF.');
-        } catch (err) {
-          setStatus(root, String(err && err.message || 'PDF import failed.'), 'error');
-        } finally {
-          pdfFileInput.value = '';
-        }
+        await previewPdfFile(file);
+        pdfFileInput.value = '';
       };
     }
 
     setStatus(root, '', 'info');
     clearReview(root);
-    if (resolveSaveBtn) resolveSaveBtn.onclick = null;
+    resetPending();
+    setActionVisibility(false, false);
     root.style.pointerEvents = 'auto';
     root.style.display = 'flex';
+
+    const initial = String(cfg.initialMethod || '').trim().toLowerCase();
+    setTimeout(function focusInitialMethod() {
+      if (initial === 'ddb-id' && ddbIdInput) ddbIdInput.focus();
+      if (initial === 'paste-json' && jsonText) jsonText.focus();
+      if (initial === 'upload-json' && jsonFileInput) jsonFileInput.click();
+      if (initial === 'upload-pdf' && pdfFileInput) pdfFileInput.click();
+    }, 0);
   }
 
   global.CharacterImportModal = {
