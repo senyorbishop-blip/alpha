@@ -631,7 +631,7 @@ def resolve_character_runtime(document: Any) -> dict:
     runtime = default_runtime()
 
     level_total = _compute_total_level(normalized)
-    proficiency_bonus = _compute_proficiency_bonus(level_total)
+    proficiency_bonus = _safe_int(normalized.get("proficiencyBonus"), _compute_proficiency_bonus(level_total), minimum=0)
 
     runtime["levelTotal"] = level_total
     runtime["proficiencyBonus"] = proficiency_bonus
@@ -640,7 +640,8 @@ def resolve_character_runtime(document: Any) -> dict:
     speed = _safe_int(species.get("speed"), 30, minimum=0)
     runtime["speed"] = {"walk": speed}
     runtime_classes = _resolve_runtime_classes(normalized)
-    runtime["hp"] = _compute_base_hp(normalized, level_total, runtime_classes)
+    base_hp = _compute_base_hp(normalized, level_total, runtime_classes)
+    runtime["hp"] = _runtime_hp_from_document(normalized, base_hp)
     runtime["classes"] = runtime_classes
     if runtime_classes:
         primary = runtime_classes[0]
@@ -690,7 +691,16 @@ def resolve_character_runtime(document: Any) -> dict:
         if sense_name == "darkvision":
             darkvision = max(darkvision, sense_range)
     runtime["senses"]["darkvision"] = darkvision
-    runtime["senses"]["passivePerception"] = 10 + wis_mod
+    imported_passives = normalized.get("passives") if isinstance(normalized.get("passives"), dict) else {}
+    runtime["senses"]["passivePerception"] = _safe_int(imported_passives.get("perception"), 10 + wis_mod, minimum=0)
+    if imported_passives.get("insight") is not None:
+        runtime["senses"]["passiveInsight"] = _safe_int(imported_passives.get("insight"), 10 + wis_mod, minimum=0)
+    if imported_passives.get("investigation") is not None:
+        runtime["senses"]["passiveInvestigation"] = _safe_int(imported_passives.get("investigation"), 10 + int_mod, minimum=0)
+
+    imported_skills = (abilities.get("skills") if isinstance(abilities.get("skills"), dict) else {})
+    if imported_skills:
+        runtime["skills"] = _clone(imported_skills)
 
     # TODO(character-native): class/species/background feature resolution.
     # TODO(character-native): spell list, slot, and resource progression resolution.
@@ -880,6 +890,11 @@ def resolve_character_runtime(document: Any) -> dict:
         key: base + (proficiency_bonus if key in class_saving_throws else 0)
         for key, base in saving_throw_lookup.items()
     }
+    imported_saves = abilities.get("saves") if isinstance(abilities.get("saves"), dict) else {}
+    for key, value in imported_saves.items():
+        ability_key = str(key or "").strip().lower()
+        if ability_key in saving_throws:
+            saving_throws[ability_key] = _safe_int(value, saving_throws[ability_key])
 
     walk_speed = _safe_int(species.get("speed"), _safe_int(runtime["speed"].get("walk"), 30, minimum=0), minimum=0)
     if isinstance(species.get("movement"), dict):
@@ -889,15 +904,17 @@ def resolve_character_runtime(document: Any) -> dict:
         armor_class = max(armor_class, 10 + dex_mod + con_mod)
     elif primary_class_id == "monk":
         armor_class = max(armor_class, 10 + dex_mod + wis_mod)
-    runtime["ac"] = _compute_equipment_ac(normalized, dex_mod=dex_mod, fallback_ac=armor_class)
+    imported_ac = _safe_int(normalized.get("ac"), 0, minimum=0)
+    runtime["ac"] = max(imported_ac, _compute_equipment_ac(normalized, dex_mod=dex_mod, fallback_ac=armor_class))
     runtime["speed"]["walk"] = walk_speed
+    imported_initiative = _safe_int(normalized.get("initiative"), dex_mod)
 
     runtime["combat"] = {
         "ac": runtime["ac"],
         "maxHP": runtime["hp"]["max"],
         "currentHP": runtime["hp"]["current"],
         "tempHP": runtime["hp"]["temp"],
-        "initiative": dex_mod,
+        "initiative": imported_initiative,
         "speed": walk_speed,
         "proficiencyBonus": proficiency_bonus,
         "attackBonus": {

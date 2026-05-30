@@ -279,4 +279,24 @@ def normalize_character_document(raw: Any) -> dict:
         if isinstance(value, list):
             base[key] = list(value)
 
+    # Preserve resolver-consumed PDF import facts that live outside the
+    # canonical nested sections without re-enabling legacy root combat fields
+    # for native documents. Validation permits extension fields; PDF imports use
+    # these to keep parsed combat values playable.
+    import_meta = src.get("importMeta") if isinstance(src.get("importMeta"), dict) else {}
+    import_origin = str(import_meta.get("origin") or import_meta.get("source") or "").strip().lower()
+    if source_mode in {"dndbeyond", "dndbeyond_pdf"} or "pdf" in import_origin:
+        for key in (
+            "maxHP",
+            "currentHP",
+            "tempHP",
+            "ac",
+            "initiative",
+            "proficiencyBonus",
+            "defenses",
+            "passives",
+        ):
+            if key in src:
+                base[key] = _clone(src.get(key))
+
     return base
