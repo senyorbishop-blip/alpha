@@ -48,6 +48,11 @@ async def fetch_ddb_character_response(char_id: str):
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.get(url, headers=headers)
         if response.status_code != 200:
+            if response.status_code in {401, 403, 404}:
+                return JSONResponse(
+                    {"error": "Private D&D Beyond character. Make the character public, then try again."},
+                    status_code=502,
+                )
             return JSONResponse({"error": f"D&D Beyond returned {response.status_code}"}, status_code=502)
         return JSONResponse(response.json())
     except Exception as exc:

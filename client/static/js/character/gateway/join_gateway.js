@@ -347,8 +347,9 @@
               hooks.onNativeSaved(savedProfile);
             }
             if (typeof hooks.onImportDDB === 'function') {
-              hooks.onImportDDB(result);
+              return hooks.onImportDDB(result, savedProfile);
             }
+            return null;
           });
         },
       });

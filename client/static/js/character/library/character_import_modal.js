@@ -8,7 +8,7 @@
     if (fromGlobal) return fromGlobal;
     try {
       const params = new URLSearchParams(global.location && global.location.search ? global.location.search : '');
-      return String(params.get('session') || '').trim();
+      return String(params.get('session') || params.get('session_id') || '').trim();
     } catch (_) {
       return '';
     }
@@ -44,13 +44,14 @@
       + '  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">'
       + '    <div>'
       + '      <div style="font-family:Cinzel, serif; letter-spacing:0.1em; text-transform:uppercase; color:#00e5cc; font-size:0.72rem;">Import Character</div>'
-      + '      <div style="font-size:0.85rem; opacity:0.85; margin-top:2px;">Preview imports before saving them to your native profile library.</div>'
+      + '      <div style="font-size:0.85rem; opacity:0.85; margin-top:2px;">Preview imports before saving them to your native profile library. JSON import gives best results; PDF import may need review.</div>'
       + '    </div>'
       + '    <button type="button" id="character-import-close" style="background:transparent; color:#e8dcc8; border:1px solid rgba(0,229,204,0.25); border-radius:4px; padding:4px 8px; cursor:pointer;">Close</button>'
       + '  </div>'
       + '  <div id="character-import-source-panel" style="display:grid; gap:12px;">'
       + '    <section style="border:1px solid rgba(0,229,204,0.16); border-radius:6px; padding:10px;">'
       + '      <div style="font-family:Cinzel, serif; font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:#00e5cc; margin-bottom:6px;">D&amp;D Beyond Character ID</div>'
+      + '      <div style="font-size:0.78rem; opacity:0.78; margin-bottom:8px;">Your D&amp;D Beyond character must be public. Private sheets cannot be imported by ID.</div>'
       + '      <div style="display:flex; gap:8px; flex-wrap:wrap;">'
       + '        <input type="text" id="character-import-ddb-id" placeholder="e.g. 1234567" style="flex:1; min-width:220px; background:#21190d; border:1px solid rgba(0,229,204,0.2); color:#e8dcc8; border-radius:4px; padding:7px 10px;" />'
       + '        <button type="button" id="character-import-ddb-id-btn" style="background:#00b4a0; color:#02110f; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Preview by ID</button>'
@@ -58,6 +59,7 @@
       + '    </section>'
       + '    <section style="border:1px solid rgba(0,229,204,0.16); border-radius:6px; padding:10px;">'
       + '      <div style="font-family:Cinzel, serif; font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:#00e5cc; margin-bottom:6px;">D&amp;D Beyond JSON</div>'
+      + '      <div style="font-size:0.78rem; opacity:0.78; margin-bottom:8px;">Best quality: name, class, stats, items, spells, and actions are usually preserved.</div>'
       + '      <textarea id="character-import-json" placeholder="Paste exported D&amp;D Beyond JSON here…" style="width:100%; min-height:120px; resize:vertical; background:#21190d; border:1px solid rgba(0,229,204,0.2); color:#e8dcc8; border-radius:4px; padding:8px;"></textarea>'
       + '      <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">'
       + '        <button type="button" id="character-import-json-btn" style="background:#00b4a0; color:#02110f; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Preview JSON Text</button>'
@@ -69,6 +71,7 @@
       + '    </section>'
       + '    <section style="border:1px solid rgba(0,229,204,0.16); border-radius:6px; padding:10px;">'
       + '      <div style="font-family:Cinzel, serif; font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:#00e5cc; margin-bottom:6px;">D&amp;D Beyond PDF</div>'
+      + '      <div style="font-size:0.78rem; opacity:0.78; margin-bottom:8px;">PDF import may be partial and works only with fillable form-field sheets.</div>'
       + '      <div style="display:flex; gap:8px; flex-wrap:wrap;">'
       + '        <label style="display:inline-flex; align-items:center; gap:6px; border:1px solid rgba(0,229,204,0.25); border-radius:4px; padding:6px 10px; cursor:pointer;">'
       + '          <span>Choose PDF</span>'
@@ -139,7 +142,20 @@
 
   function toErrorMessage(payload, fallback) {
     if (!payload || typeof payload !== 'object') return fallback;
-    return String(payload.detail || payload.error || fallback || 'Import failed.');
+    return friendlyErrorMessage(payload.detail || payload.error || payload.message || fallback || 'Import failed.');
+  }
+
+  function friendlyErrorMessage(message) {
+    const raw = String(message || '').trim();
+    const lower = raw.toLowerCase();
+    if (!raw) return 'Import failed.';
+    if (lower.includes('session_id')) return 'Missing session_id. Open your player invite link again before importing.';
+    if (lower.includes('invalid json') || lower.includes('valid json') || lower.includes('json payload')) return 'Invalid JSON. Paste the full D&D Beyond JSON export or choose a .json file.';
+    if (lower.includes('no form fields') || lower.includes('form-field') || lower.includes('fillable')) return 'PDF has no form fields. Export a fillable D&D Beyond PDF or use JSON import.';
+    if (lower.includes('403') || lower.includes('401') || lower.includes('private')) return 'Private D&D Beyond character. Make the character public, then try importing by ID again.';
+    if (lower.includes('unsupported_species') || lower.includes('unsupported species')) return 'Unsupported species. Pick the closest supported species in the required choices, or edit before saving.';
+    if (lower.includes('unsupported_subclass') || lower.includes('unsupported subclass')) return 'Unsupported subclass. Pick the closest supported subclass in the required choices, or edit before saving.';
+    return raw;
   }
 
   function getCsrfToken() {
@@ -266,10 +282,58 @@
       classLevel: classLabels.length ? classLabels.join(' / ') : (totalLevel ? 'Level ' + String(totalLevel) : 'Unknown'),
       species: String(species.name || species.id || 'Unknown').trim() || 'Unknown',
       background: String(background.name || background.id || 'Unknown').trim() || 'Unknown',
+      hasName: Boolean(String(identity.name || identity.displayName || doc.name || '').trim()),
+      hasClass: classLabels.length > 0 || totalLevel > 0,
       statsFound: countObjectValues(scores),
       inventoryCount: arrayCount(equipment.inventory),
       spellCount: importedSpells || preparedSpells,
       actionFeatureCount: importedActions + importedFeatures + arrayCount(doc.actions) + arrayCount(doc.features),
+    };
+  }
+
+  function sourceBadgeLabel(source) {
+    const key = String(source || '').trim().toLowerCase();
+    if (key === 'native') return 'Casual D&D';
+    if (key.includes('pdf')) return 'D&D Beyond PDF';
+    if (key.includes('dndbeyond') || key.includes('ddb') || key.includes('json')) return 'D&D Beyond';
+    if (key === 'legacy') return 'Legacy';
+    return key ? key.replace(/_/g, ' ') : 'Legacy';
+  }
+
+  function importQualitySummary(summaryData, items, hasBlocking) {
+    const missingCore = [];
+    if (!summaryData.hasName) missingCore.push('name');
+    if (!summaryData.hasClass) missingCore.push('class');
+    if (summaryData.statsFound < 6) missingCore.push('stats');
+    if (summaryData.inventoryCount < 1) missingCore.push('items');
+    if (summaryData.spellCount < 1) missingCore.push('spells');
+    if (summaryData.actionFeatureCount < 1) missingCore.push('actions');
+
+    if (hasBlocking) {
+      return {
+        label: 'Needs review',
+        detail: 'Blocking choices required before saving.',
+        tone: '#ffd6a2',
+      };
+    }
+    if (missingCore.includes('items') || missingCore.includes('spells') || missingCore.includes('actions')) {
+      return {
+        label: 'Partial',
+        detail: 'Missing items/spells/actions. Save is allowed, but review before play.',
+        tone: '#ffd6a2',
+      };
+    }
+    if (items.length || missingCore.length) {
+      return {
+        label: 'Good',
+        detail: 'Main sheet found with minor warnings.',
+        tone: '#f5ddb0',
+      };
+    }
+    return {
+      label: 'Excellent',
+      detail: 'Name/class/stats/items/spells/actions found.',
+      tone: '#a9ffe7',
     };
   }
 
@@ -310,11 +374,16 @@
     const summaryData = summarizeDocument(document);
     const items = normalizedWarnings(payload);
     const hasBlocking = Boolean(data.requires_resolution) || items.some(function (item) { return item.blocking; });
+    const quality = importQualitySummary(summaryData, items, hasBlocking);
 
     if (sourceLabel) {
-      sourceLabel.textContent = data.source ? String(data.source).replace(/_/g, ' ') : '';
+      sourceLabel.textContent = sourceBadgeLabel(data.source);
     }
     summary.innerHTML = [
+      '<div style="grid-column:1 / -1; border:1px solid rgba(245,221,176,0.26); border-radius:6px; padding:10px; background:rgba(0,0,0,0.16);">'
+        + '<div style="font-family:Cinzel, serif; font-size:0.7rem; letter-spacing:0.08em; text-transform:uppercase; color:' + quality.tone + ';">Import quality: ' + escapeHtml(quality.label) + '</div>'
+        + '<div style="margin-top:4px; font-size:0.86rem; color:#e8dcc8; opacity:0.9;">' + escapeHtml(quality.detail) + '</div>'
+      + '</div>',
       renderSummaryCard('Character name', summaryData.name),
       renderSummaryCard('Class/level', summaryData.classLevel),
       renderSummaryCard('Species', summaryData.species),
@@ -351,6 +420,7 @@
         + '<div style="font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:' + (item.blocking ? '#ffd6a2' : '#f5ddb0') + ';">'
         + (item.blocking ? 'Required fix' : 'Warning')
         + '</div>'
+        + '<div style="margin-top:4px; line-height:1.35;">' + escapeHtml(item.message || item.code || 'Review this imported field.') + '</div>'
         + resolutionControl
         + '</div>';
     }).join('') : '<div style="border:1px solid rgba(0,229,204,0.16); border-radius:4px; padding:8px; color:#a9ffe7;">No warnings found.</div>';
@@ -532,7 +602,7 @@
         if (typeof cfg.onImported === 'function') await cfg.onImported(result);
         if (cfg.autoCloseOnImported) close();
       } catch (err) {
-        setStatus(root, String(err && err.message || 'Imported character save failed.'), 'error');
+        setStatus(root, friendlyErrorMessage(err && err.message || 'Imported character save failed.'), 'error');
       }
     }
 
@@ -564,7 +634,7 @@
         await cfg.onEditBeforeSave(doc, pendingPreview);
         close();
       } catch (err) {
-        setStatus(root, String(err && err.message || 'Unable to open the character builder.'), 'error');
+        setStatus(root, friendlyErrorMessage(err && err.message || 'Unable to open the character builder.'), 'error');
       }
     }
 
@@ -607,7 +677,7 @@
           const preview = req.formData ? await postForm(req.url, req.formData) : await postJson(req.url, req.body);
           renderPreviewReview(preview, req.committer, buildResolutionAndPreview(buildRequest));
         } catch (err) {
-          setStatus(root, String(err && err.message || 'Import preview failed.'), 'error');
+          setStatus(root, friendlyErrorMessage(err && err.message || 'Import preview failed.'), 'error');
         }
       };
     }
@@ -631,7 +701,7 @@
         const preview = await postJson(req.url, req.body);
         renderPreviewReview(preview, req.committer, buildResolutionAndPreview(buildRequest));
       } catch (err) {
-        setStatus(root, String(err && err.message || 'Import preview failed.'), 'error');
+        setStatus(root, friendlyErrorMessage(err && err.message || 'Import preview failed.'), 'error');
       }
     }
 
@@ -653,7 +723,7 @@
         const preview = await postJson(req.url, req.body);
         renderPreviewReview(preview, req.committer, buildResolutionAndPreview(buildRequest));
       } catch (err) {
-        setStatus(root, String(err && err.message || 'Import preview failed.'), 'error');
+        setStatus(root, friendlyErrorMessage(err && err.message || 'Import preview failed.'), 'error');
       }
     }
 
@@ -673,7 +743,7 @@
         const preview = await postForm(req.url, req.formData);
         renderPreviewReview(preview, req.committer, null);
       } catch (err) {
-        setStatus(root, String(err && err.message || 'PDF import preview failed.'), 'error');
+        setStatus(root, friendlyErrorMessage(err && err.message || 'PDF import preview failed.'), 'error');
       }
     }
 
@@ -686,7 +756,7 @@
         const raw = String(jsonText && jsonText.value || '').trim();
         if (!raw) return setStatus(root, 'Paste JSON first.', 'error');
         try { await previewJsonPayload(JSON.parse(raw), 'pasted JSON'); }
-        catch (_) { setStatus(root, 'Invalid JSON payload.', 'error'); }
+        catch (_) { setStatus(root, friendlyErrorMessage('Invalid JSON payload.'), 'error'); }
       };
     }
     if (jsonFileInput) {
@@ -697,7 +767,7 @@
           const parsed = JSON.parse(await file.text());
           await previewJsonPayload(parsed, 'JSON file');
         } catch (err) {
-          setStatus(root, String(err && err.message || 'JSON file preview failed.'), 'error');
+          setStatus(root, friendlyErrorMessage(err && err.message || 'JSON file preview failed.'), 'error');
         } finally {
           jsonFileInput.value = '';
         }

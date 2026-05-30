@@ -315,6 +315,25 @@
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(229, 198, 151, 0.1);
     }
+    .source-badge {
+      color: #dffefa;
+      border-color: rgba(156, 224, 219, 0.28);
+      background: rgba(24, 81, 76, 0.34);
+    }
+    .roster-helper {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: -6px;
+    }
+    .helper-pill {
+      border: 1px solid rgba(229, 198, 151, 0.14);
+      border-radius: 18px;
+      padding: 12px 14px;
+      background: rgba(10, 6, 5, 0.42);
+      color: rgba(246, 236, 221, 0.88);
+      line-height: 1.35;
+    }
     .character-check {
       width: 34px;
       height: 34px;
@@ -411,6 +430,7 @@
     @media (max-width: 1120px) {
       .hero, .panel { min-height: auto; }
       .summary-grid { grid-template-columns: 1fr; }
+      .roster-helper { grid-template-columns: 1fr; }
       .status-stack { min-width: 0; }
       .panel-head { flex-direction: column; }
       .status-pill { text-align: left; }
@@ -419,7 +439,12 @@
       .scene { padding: 20px 16px 28px; }
       .hero, .panel { padding: 22px; border-radius: 24px; }
       .actions { grid-template-columns: 1fr; }
-      .character-card { grid-template-columns: 84px 1fr; }
+      .character-card { grid-template-columns: 72px 1fr; gap: 12px; padding: 14px; }
+      .token, .avatar-render.mini { width: 72px; height: 88px; border-radius: 18px; }
+      .character-name { font-size: 1.18rem; white-space: normal; }
+      .character-meta { gap: 7px; font-size: 0.86rem; }
+      .character-tag { padding: 6px 9px; }
+      .footer-row { align-items: flex-start; flex-direction: column; }
       .character-check { display: none; }
     }
   </style>
@@ -431,7 +456,7 @@
         <div>
           <div class="eyebrow">Player Invite · Hero Selection</div>
           <h1>Choose<br>Your Hero</h1>
-          <p id="hero-copy">Sign in, pick a character linked to your account, or build a new one and enter the campaign.</p>
+          <p id="hero-copy">Sign in, pick a character linked to your account, or build a new one and enter the campaign. Create from scratch or import your D&amp;D Beyond sheet.</p>
           <div class="summary-grid">
             <div class="summary-card">
               <strong>Pick or forge</strong>
@@ -467,6 +492,12 @@
         </div>
 
         <div id="feedback" class="feedback">Loading invite and character data…</div>
+
+        <div class="roster-helper" aria-label="Character roster import guidance">
+          <div class="helper-pill">Create from scratch or import your D&amp;D Beyond sheet.</div>
+          <div class="helper-pill">JSON import gives best results.</div>
+          <div class="helper-pill">PDF import may need review.</div>
+        </div>
 
         <div id="character-list" class="character-list"></div>
 
@@ -686,6 +717,7 @@
             <span class="character-tag">${escapeHtml(entry.ownerLabel || (entry.mine ? 'Your character' : 'Campaign character'))}</span>
             ${entry.classSummary ? `<span class="character-tag">${escapeHtml(entry.classSummary)}</span>` : ''}
             ${entry.level ? `<span class="character-tag">Level ${escapeHtml(String(entry.level))}</span>` : ''}
+            ${entry.sourceBadge ? `<span class="character-tag source-badge">${escapeHtml(entry.sourceBadge)}</span>` : ''}
             ${entry.libraryId ? '<span class="character-tag">Library</span>' : '<span class="character-tag">Session</span>'}
           </div>
         </div>
@@ -785,8 +817,18 @@
               setFeedback('Saved ' + savedProfile.name + ' to your character library.', 'success');
             }
           },
-          onImportDDB() {
-            setFeedback('Import ready. Finish the import and then choose the new hero to enter.', 'success');
+          async onImportDDB(result, savedProfile) {
+            const profile = savedProfile || (result && result.profile && typeof result.profile === 'object' ? result.profile : null);
+            const profileId = profile && profile.id ? String(profile.id).trim() : '';
+            const profileName = profile && profile.name ? String(profile.name).trim() : 'your hero';
+            if (profileId) selectedProfileId = profileId;
+            await refreshRoster();
+            if (profileId && joinGateway && typeof joinGateway.selectProfile === 'function') {
+              joinGateway.selectProfile('library:' + profileId);
+              renderRosterFromState();
+            }
+            notifyRosterMutation('import', profileId);
+            setFeedback('Imported ' + profileName + '. Review them or enter the realm.', 'success');
           },
           onError(message) {
             setFeedback(message || 'Something went wrong in the hero gateway.', 'error');

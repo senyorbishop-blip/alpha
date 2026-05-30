@@ -40,3 +40,22 @@ def test_import_modal_posts_with_csrf_header():
     assert "X-CSRF-Token" in source
     assert "headers: withCsrfHeaders({ 'Content-Type': 'application/json' })" in source
     assert "headers: withCsrfHeaders()" in source
+
+
+def test_import_modal_explains_quality_sources_and_failures():
+    source = _modal_source()
+
+    assert "Import quality:" in source
+    assert "Excellent" in source
+    assert "Good" in source
+    assert "Partial" in source
+    assert "Needs review" in source
+    assert "D&D Beyond PDF" in source
+    assert "JSON import gives best results" in source
+    assert "PDF import may need review" in source
+    assert "Private D&D Beyond character" in source
+    assert "Invalid JSON" in source
+    assert "PDF has no form fields" in source
+    assert "Missing session_id" in source
+    assert "Unsupported species" in source
+    assert "Unsupported subclass" in source
