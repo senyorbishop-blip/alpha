@@ -468,3 +468,234 @@ def test_character_profile_delete_removes_duplicate_owner_buckets(monkeypatch):
     assert [row["id"] for row in session.char_profiles["lyra prime"]] == []
     assert [row["id"] for row in session.char_profiles["lyra"]] == ["profile-b"]
     assert [row["id"] for row in session.char_profiles["u1"]] == []
+
+
+def _ddb_import_payload(*, race: dict | None = None, background: dict | None = None, spells: dict | None = None) -> dict:
+    return {
+        "data": {
+            "id": 4242,
+            "name": "Import Tester",
+            "stats": [
+                {"id": 1, "value": 10},
+                {"id": 2, "value": 14},
+                {"id": 3, "value": 12},
+                {"id": 4, "value": 13},
+                {"id": 5, "value": 8},
+                {"id": 6, "value": 11},
+            ],
+            "classes": [{"level": 1, "definition": {"name": "Wizard"}}],
+            "race": race if race is not None else {"fullName": "Human"},
+            "background": background if background is not None else {"definition": {"name": "Sage"}},
+            "spells": spells or {},
+        }
+    }
+
+
+def _assert_no_profiles_saved(session):
+    assert getattr(session, "char_profiles", {}) == {}
+
+
+def test_character_json_import_preview_blocks_ambiguous_species_without_saving(monkeypatch):
+    auth_user = {"id": "user-7", "username": "Nova"}
+    session = SimpleNamespace(char_profiles={})
+    saved = {"count": 0}
+
+    async def _fake_save_campaign(_session):
+        saved["count"] += 1
+
+    monkeypatch.setattr(character_routes, "get_request_user", lambda request: auth_user)
+    monkeypatch.setattr(character_routes, "get_or_restore_session", lambda session_id: session)
+    monkeypatch.setattr(character_routes, "save_campaign_async", _fake_save_campaign)
+
+    ddb_payload = _ddb_import_payload(race={"fullName": "Elf", "baseName": "Elf"})
+
+    with TestClient(main.app, raise_server_exceptions=False) as client:
+        headers = _csrf_headers(client)
+        preview = client.post(
+            "/api/character/import/json/preview",
+            json={"session_id": "s1", "ddb_json": ddb_payload},
+            headers=headers,
+        )
+        legacy_commit = client.post(
+            "/api/character/import/json",
+            json={"session_id": "s1", "ddb_json": ddb_payload},
+            headers=headers,
+        )
+
+    assert preview.status_code == 200
+    preview_payload = preview.json()
+    assert preview_payload["ok"] is True
+    assert preview_payload["requires_resolution"] is True
+    assert preview_payload["required_choices"][0]["code"] == "ambiguous_species"
+    assert isinstance(preview_payload["preview_document"], dict)
+    assert legacy_commit.status_code == 400
+    assert legacy_commit.json()["ok"] is False
+    _assert_no_profiles_saved(session)
+    assert saved["count"] == 0
+
+
+def test_character_json_import_commit_with_resolved_species_saves(monkeypatch):
+    auth_user = {"id": "user-7", "username": "Nova"}
+    session = SimpleNamespace(char_profiles={})
+    saved = {"count": 0}
+
+    async def _fake_save_campaign(_session):
+        saved["count"] += 1
+
+    monkeypatch.setattr(character_routes, "get_request_user", lambda request: auth_user)
+    monkeypatch.setattr(character_routes, "get_or_restore_session", lambda session_id: session)
+    monkeypatch.setattr(character_routes, "save_campaign_async", _fake_save_campaign)
+
+    with TestClient(main.app, raise_server_exceptions=False) as client:
+        headers = _csrf_headers(client)
+        res = client.post(
+            "/api/character/import/json/commit",
+            json={
+                "session_id": "s1",
+                "ddb_json": _ddb_import_payload(race={"fullName": "Elf", "baseName": "Elf"}),
+                "import_resolution": {"species": "High Elf"},
+            },
+            headers=headers,
+        )
+
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["ok"] is True
+    assert payload["profile"]["name"] == "Import Tester"
+    profile = session.char_profiles["nova"][0]
+    assert profile["nativeCharacter"]["species"]["name"] == "High Elf"
+    assert saved["count"] == 1
+
+
+def test_character_json_import_commit_allows_non_blocking_warnings(monkeypatch):
+    auth_user = {"id": "user-7", "username": "Nova"}
+    session = SimpleNamespace(char_profiles={})
+
+    async def _fake_save_campaign(_session):
+        return None
+
+    monkeypatch.setattr(character_routes, "get_request_user", lambda request: auth_user)
+    monkeypatch.setattr(character_routes, "get_or_restore_session", lambda session_id: session)
+    monkeypatch.setattr(character_routes, "save_campaign_async", _fake_save_campaign)
+
+    with TestClient(main.app, raise_server_exceptions=False) as client:
+        headers = _csrf_headers(client)
+        res = client.post(
+            "/api/character/import/json/commit",
+            json={
+                "session_id": "s1",
+                "ddb_json": _ddb_import_payload(
+                    race={"fullName": "Human"},
+                    background={},
+                    spells={"class": [{"definition": {"name": "Definitely Not Native Spell"}}]},
+                ),
+            },
+            headers=headers,
+        )
+
+    assert res.status_code == 200
+    payload = res.json()
+    warning_codes = {row.get("code") for row in payload["warnings"] if isinstance(row, dict)}
+    assert "unknown_feat" in warning_codes
+    assert "missing_spell_mapping" in warning_codes
+    assert len(session.char_profiles["nova"]) == 1
+
+
+def _pdf_import_response():
+    from fastapi.responses import JSONResponse
+
+    character = {
+        "name": "PDF Hero",
+        "race": "Human",
+        "classes": [{"name": "Fighter", "level": 2}],
+        "stats": [15, 12, 14, 8, 10, 11],
+        "background": "Soldier",
+    }
+    return JSONResponse({"ok": True, "character": character})
+
+
+def test_character_pdf_preview_does_not_save(monkeypatch):
+    auth_user = {"id": "user-7", "username": "Nova"}
+    session = SimpleNamespace(char_profiles={})
+    saved = {"count": 0}
+
+    async def _fake_save_campaign(_session):
+        saved["count"] += 1
+
+    monkeypatch.setattr(character_routes, "get_request_user", lambda request: auth_user)
+    monkeypatch.setattr(character_routes, "get_or_restore_session", lambda session_id: session)
+    monkeypatch.setattr(character_routes, "save_campaign_async", _fake_save_campaign)
+    monkeypatch.setattr(character_routes, "parse_character_pdf_response", lambda _content: _pdf_import_response())
+
+    with TestClient(main.app, raise_server_exceptions=False) as client:
+        headers = _csrf_headers(client)
+        res = client.post(
+            "/api/character/import/pdf/preview",
+            data={"session_id": "s1"},
+            files={"file": ("hero.pdf", b"%PDF-pretend", "application/pdf")},
+            headers=headers,
+        )
+
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["ok"] is True
+    assert payload["source"] == "dndbeyond_pdf"
+    assert payload["preview_document"]["identity"]["name"] == "PDF Hero"
+    _assert_no_profiles_saved(session)
+    assert saved["count"] == 0
+
+
+def test_character_pdf_commit_saves(monkeypatch):
+    auth_user = {"id": "user-7", "username": "Nova"}
+    session = SimpleNamespace(char_profiles={})
+    saved = {"count": 0}
+
+    async def _fake_save_campaign(_session):
+        saved["count"] += 1
+
+    monkeypatch.setattr(character_routes, "get_request_user", lambda request: auth_user)
+    monkeypatch.setattr(character_routes, "get_or_restore_session", lambda session_id: session)
+    monkeypatch.setattr(character_routes, "save_campaign_async", _fake_save_campaign)
+    monkeypatch.setattr(character_routes, "parse_character_pdf_response", lambda _content: _pdf_import_response())
+
+    with TestClient(main.app, raise_server_exceptions=False) as client:
+        headers = _csrf_headers(client)
+        res = client.post(
+            "/api/character/import/pdf/commit",
+            data={"session_id": "s1"},
+            files={"file": ("hero.pdf", b"%PDF-pretend", "application/pdf")},
+            headers=headers,
+        )
+
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["ok"] is True
+    assert payload["profile"]["name"] == "PDF Hero"
+    assert session.char_profiles["nova"][0]["nativeCharacter"]["identity"]["name"] == "PDF Hero"
+    assert saved["count"] == 1
+
+
+def test_character_legacy_pdf_import_endpoint_still_saves(monkeypatch):
+    auth_user = {"id": "user-7", "username": "Nova"}
+    session = SimpleNamespace(char_profiles={})
+
+    async def _fake_save_campaign(_session):
+        return None
+
+    monkeypatch.setattr(character_routes, "get_request_user", lambda request: auth_user)
+    monkeypatch.setattr(character_routes, "get_or_restore_session", lambda session_id: session)
+    monkeypatch.setattr(character_routes, "save_campaign_async", _fake_save_campaign)
+    monkeypatch.setattr(character_routes, "parse_character_pdf_response", lambda _content: _pdf_import_response())
+
+    with TestClient(main.app, raise_server_exceptions=False) as client:
+        headers = _csrf_headers(client)
+        res = client.post(
+            "/api/character/import/pdf",
+            data={"session_id": "s1"},
+            files={"file": ("hero.pdf", b"%PDF-pretend", "application/pdf")},
+            headers=headers,
+        )
+
+    assert res.status_code == 200
+    assert res.json()["ok"] is True
+    assert session.char_profiles["nova"][0]["nativeCharacter"]["identity"]["name"] == "PDF Hero"

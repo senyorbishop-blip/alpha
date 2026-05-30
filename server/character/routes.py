@@ -253,6 +253,65 @@ async def _persist_imported_document(*, session_id: str, auth_user: dict, docume
     return _normalize_profile_entry(saved_profile if isinstance(saved_profile, dict) else {}, fallback_id="imported")
 
 
+def _character_import_preview_payload(*, source: str, normalized: dict) -> dict:
+    return {
+        "ok": True,
+        "source": source,
+        "preview_document": normalized.get("document") or {},
+        "warnings": normalized.get("warnings") or [],
+        "requires_resolution": bool(normalized.get("requires_resolution")),
+        "required_choices": normalized.get("required_choices") or [],
+    }
+
+
+def _blocking_import_choices(normalized: dict) -> list:
+    required = normalized.get("required_choices")
+    if isinstance(required, list):
+        return required
+    warnings = normalized.get("warnings") if isinstance(normalized.get("warnings"), list) else []
+    return [item for item in warnings if isinstance(item, dict) and item.get("blocking")]
+
+
+def _merge_import_resolution(raw_payload, resolution: dict | None):
+    if not isinstance(raw_payload, dict):
+        return raw_payload
+    if not isinstance(resolution, dict) or not resolution:
+        return raw_payload
+    merged = dict(raw_payload)
+    existing = merged.get("import_resolution") if isinstance(merged.get("import_resolution"), dict) else {}
+    merged["import_resolution"] = {**existing, **resolution}
+    return merged
+
+
+def _document_import_required_choices(document: dict) -> list:
+    if not isinstance(document, dict):
+        return []
+    import_meta = document.get("importMeta") if isinstance(document.get("importMeta"), dict) else {}
+    warnings = import_meta.get("warnings") if isinstance(import_meta.get("warnings"), list) else []
+    return [item for item in warnings if isinstance(item, dict) and item.get("blocking")]
+
+
+def _normalize_commit_document(payload: dict) -> dict | None:
+    for key in ("preview_document", "canonical_document", "character_document", "document"):
+        candidate = payload.get(key) if isinstance(payload, dict) else None
+        if isinstance(candidate, dict):
+            return normalize_incoming_document(candidate)
+    return None
+
+
+def _unresolved_import_response(*, source: str, normalized: dict) -> JSONResponse:
+    return JSONResponse(
+        {
+            "ok": False,
+            "source": source,
+            "warnings": normalized.get("warnings") or [],
+            "requires_resolution": True,
+            "required_choices": _blocking_import_choices(normalized),
+        },
+        status_code=400,
+    )
+
+
 def _normalize_rules_mode(value: str) -> str:
     mode = str(value or "").strip().lower()
     if mode in _KNOWN_RULES_MODES:
@@ -1074,8 +1133,8 @@ async def api_character_profile_delete(request: Request, profile_id: str):
     return JSONResponse({"ok": True, "profile_id": normalized_profile_id})
 
 
-@router.post("/api/character/import/ddb-id")
-async def api_character_import_ddb_id(request: Request):
+@router.post("/api/character/import/ddb-id/preview")
+async def api_character_import_ddb_id_preview(request: Request):
     auth_user = get_request_user(request)
     if not auth_user:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -1103,26 +1162,82 @@ async def api_character_import_ddb_id(request: Request):
     if ddb_response.status_code != 200:
         raise HTTPException(status_code=400, detail=str(response_payload.get("error") or "D&D Beyond import failed"))
 
-    normalized = normalize_ddb_json_payload(response_payload, external_id=character_id)
-    profile = await _persist_imported_document(
-        session_id=session_id,
-        auth_user=auth_user,
-        document=normalized["document"],
+    normalized = normalize_ddb_json_payload(
+        _merge_import_resolution(response_payload, payload.get("import_resolution")),
+        external_id=character_id,
     )
+    return JSONResponse(_character_import_preview_payload(source="dndbeyond", normalized=normalized))
 
+
+@router.post("/api/character/import/ddb-id/commit")
+async def api_character_import_ddb_id_commit(request: Request):
+    auth_user = get_request_user(request)
+    if not auth_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    session_id = str(payload.get("session_id") or payload.get("sessionId") or "").strip().upper()
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id is required")
+
+    document = _normalize_commit_document(payload)
+    normalized: dict | None = None
+    if document is None:
+        character_id = str(payload.get("character_id") or payload.get("characterId") or "").strip()
+        if not character_id:
+            raise HTTPException(status_code=400, detail="character_id or preview_document is required")
+        ddb_response = await fetch_ddb_character_response(character_id)
+        try:
+            response_payload = json.loads((ddb_response.body or b"{}").decode("utf-8"))
+        except Exception:
+            response_payload = {}
+        if ddb_response.status_code != 200:
+            raise HTTPException(status_code=400, detail=str(response_payload.get("error") or "D&D Beyond import failed"))
+        normalized = normalize_ddb_json_payload(
+            _merge_import_resolution(response_payload, payload.get("import_resolution")),
+            external_id=character_id,
+        )
+        if normalized.get("requires_resolution"):
+            return _unresolved_import_response(source="dndbeyond", normalized=normalized)
+        document = normalized["document"]
+
+    required_choices = _document_import_required_choices(document)
+    if required_choices:
+        return _unresolved_import_response(
+            source="dndbeyond",
+            normalized={
+                "warnings": (document.get("importMeta") or {}).get("warnings") or [],
+                "required_choices": required_choices,
+            },
+        )
+
+    profile = await _persist_imported_document(
+        session_id=session_id, auth_user=auth_user, document=document
+    )
     return JSONResponse(
         {
             "ok": True,
             "session_id": session_id,
             "profile": profile,
-            "warnings": normalized.get("warnings") or [],
+            "warnings": (normalized or {}).get("warnings") or [],
             "source": "dndbeyond",
         }
     )
 
 
-@router.post("/api/character/import/json")
-async def api_character_import_json(request: Request):
+@router.post("/api/character/import/ddb-id")
+async def api_character_import_ddb_id(request: Request):
+    return await api_character_import_ddb_id_commit(request)
+
+
+@router.post("/api/character/import/json/preview")
+async def api_character_import_json_preview(request: Request):
     auth_user = get_request_user(request)
     if not auth_user:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -1146,26 +1261,77 @@ async def api_character_import_json(request: Request):
     if not isinstance(ddb_payload, dict):
         raise HTTPException(status_code=400, detail="ddb_json object is required")
 
-    normalized = normalize_ddb_json_payload(ddb_payload)
-    profile = await _persist_imported_document(
-        session_id=session_id,
-        auth_user=auth_user,
-        document=normalized["document"],
+    normalized = normalize_ddb_json_payload(
+        _merge_import_resolution(ddb_payload, payload.get("import_resolution"))
     )
+    return JSONResponse(_character_import_preview_payload(source="dndbeyond_json", normalized=normalized))
 
+
+@router.post("/api/character/import/json/commit")
+async def api_character_import_json_commit(request: Request):
+    auth_user = get_request_user(request)
+    if not auth_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    session_id = str(payload.get("session_id") or payload.get("sessionId") or "").strip().upper()
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id is required")
+
+    document = _normalize_commit_document(payload)
+    normalized: dict | None = None
+    if document is None:
+        ddb_payload = payload.get("ddb_json")
+        if ddb_payload is None:
+            ddb_payload = payload.get("character")
+        if ddb_payload is None:
+            ddb_payload = payload.get("payload")
+        if not isinstance(ddb_payload, dict):
+            raise HTTPException(status_code=400, detail="ddb_json object or preview_document is required")
+        normalized = normalize_ddb_json_payload(
+            _merge_import_resolution(ddb_payload, payload.get("import_resolution"))
+        )
+        if normalized.get("requires_resolution"):
+            return _unresolved_import_response(source="dndbeyond_json", normalized=normalized)
+        document = normalized["document"]
+
+    required_choices = _document_import_required_choices(document)
+    if required_choices:
+        return _unresolved_import_response(
+            source="dndbeyond_json",
+            normalized={
+                "warnings": (document.get("importMeta") or {}).get("warnings") or [],
+                "required_choices": required_choices,
+            },
+        )
+
+    profile = await _persist_imported_document(
+        session_id=session_id, auth_user=auth_user, document=document
+    )
     return JSONResponse(
         {
             "ok": True,
             "session_id": session_id,
             "profile": profile,
-            "warnings": normalized.get("warnings") or [],
+            "warnings": (normalized or {}).get("warnings") or [],
             "source": "dndbeyond_json",
         }
     )
 
 
-@router.post("/api/character/import/pdf")
-async def api_character_import_pdf(
+@router.post("/api/character/import/json")
+async def api_character_import_json(request: Request):
+    return await api_character_import_json_commit(request)
+
+
+@router.post("/api/character/import/pdf/preview")
+async def api_character_import_pdf_preview(
     request: Request,
     session_id: str = Form(""),
     file: UploadFile = File(...),
@@ -1189,20 +1355,88 @@ async def api_character_import_pdf(
         raise HTTPException(status_code=400, detail=str(parsed_payload.get("error") or "PDF import failed"))
 
     normalized = normalize_pdf_payload(parsed_payload.get("character"), filename=file.filename or "")
-    profile = await _persist_imported_document(
-        session_id=normalized_session_id,
-        auth_user=auth_user,
-        document=normalized["document"],
-    )
+    return JSONResponse(_character_import_preview_payload(source="dndbeyond_pdf", normalized=normalized))
 
+
+@router.post("/api/character/import/pdf/commit")
+async def api_character_import_pdf_commit(
+    request: Request,
+    session_id: str = Form(""),
+    preview_document: str = Form(""),
+    character_document: str = Form(""),
+    file: UploadFile | None = File(None),
+):
+    auth_user = get_request_user(request)
+    if not auth_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    normalized_session_id = str(session_id or "").strip().upper()
+    if not normalized_session_id:
+        raise HTTPException(status_code=400, detail="session_id is required")
+
+    document = None
+    normalized: dict | None = None
+    raw_document = preview_document or character_document
+    if raw_document:
+        try:
+            parsed_document = json.loads(raw_document)
+        except Exception:
+            raise HTTPException(status_code=400, detail="preview_document must be valid JSON")
+        if not isinstance(parsed_document, dict):
+            raise HTTPException(status_code=400, detail="preview_document object is required")
+        document = normalize_incoming_document(parsed_document)
+    elif file is not None:
+        content = await file.read()
+        parsed_response = parse_character_pdf_response(content)
+        try:
+            parsed_payload = json.loads((parsed_response.body or b"{}").decode("utf-8"))
+        except Exception:
+            parsed_payload = {}
+        if parsed_response.status_code != 200 or not parsed_payload.get("ok"):
+            raise HTTPException(status_code=400, detail=str(parsed_payload.get("error") or "PDF import failed"))
+        normalized = normalize_pdf_payload(parsed_payload.get("character"), filename=file.filename or "")
+        if normalized.get("requires_resolution"):
+            return _unresolved_import_response(source="dndbeyond_pdf", normalized=normalized)
+        document = normalized["document"]
+    else:
+        raise HTTPException(status_code=400, detail="file or preview_document is required")
+
+    required_choices = _document_import_required_choices(document)
+    if required_choices:
+        return _unresolved_import_response(
+            source="dndbeyond_pdf",
+            normalized={
+                "warnings": (document.get("importMeta") or {}).get("warnings") or [],
+                "required_choices": required_choices,
+            },
+        )
+
+    profile = await _persist_imported_document(
+        session_id=normalized_session_id, auth_user=auth_user, document=document
+    )
     return JSONResponse(
         {
             "ok": True,
             "session_id": normalized_session_id,
             "profile": profile,
-            "warnings": normalized.get("warnings") or [],
+            "warnings": (normalized or {}).get("warnings") or [],
             "source": "dndbeyond_pdf",
         }
+    )
+
+
+@router.post("/api/character/import/pdf")
+async def api_character_import_pdf(
+    request: Request,
+    session_id: str = Form(""),
+    file: UploadFile = File(...),
+):
+    return await api_character_import_pdf_commit(
+        request,
+        session_id=session_id,
+        preview_document="",
+        character_document="",
+        file=file,
     )
 
 
