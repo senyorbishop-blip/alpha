@@ -7,7 +7,7 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 from server.session import (
-    Session, User,
+    Session, User, build_token_runtime_payload,
 )
 from server.db import save_campaign_async
 from server.connections import manager
@@ -58,14 +58,14 @@ def _visible_tokens_payload_for_user(session: Session, user: User) -> dict:
     tokens = {}
     for tid, token in (session.tokens or {}).items():
         if role == "dm":
-            tokens[tid] = token.to_dict()
+            tokens[tid] = build_token_runtime_payload(session, token)
             continue
         if getattr(token, "hidden", False):
             continue
         token_ctx = str(getattr(token, "map_context", "world") or "world")
         if token_ctx not in visible_contexts:
             continue
-        tokens[tid] = token.to_dict()
+        tokens[tid] = build_token_runtime_payload(session, token)
     return tokens
 
 
@@ -242,7 +242,7 @@ def _sanitize_save_bonuses(raw) -> dict:
 
 async def _broadcast_token_visibility(session, token, msg_type: str = "token_hidden_changed"):
     """Send token visibility/update state per user when a token is edited or hidden/revealed."""
-    token_payload = token.to_dict()
+    token_payload = build_token_runtime_payload(session, token)
     for uid, u in session.users.items():
         if _is_token_visible_to_user(session, token, u):
             await manager.send_to(session.id, uid, {"type": msg_type, "payload": token_payload})

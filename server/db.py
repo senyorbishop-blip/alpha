@@ -162,6 +162,9 @@ def _sanitize_token_row(row: dict) -> dict:
     row["creature_type"] = str(row.get("creature_type") or "")[:40]
     row["monster_type"] = str(row.get("monster_type") or "")[:60]
     row["cr"] = str(row.get("cr") or "")[:16]
+    row["profile_id"] = str(row.get("profile_id") or row.get("profileId") or "")[:120]
+    row["library_id"] = str(row.get("library_id") or row.get("libraryId") or "")[:120]
+    row["character_id"] = str(row.get("character_id") or row.get("characterId") or "")[:120]
     return row
 
 
@@ -220,6 +223,9 @@ def init_db():
             "ALTER TABLE tokens ADD COLUMN creature_type TEXT NOT NULL DEFAULT ''",
             "ALTER TABLE tokens ADD COLUMN monster_type TEXT NOT NULL DEFAULT ''",
             "ALTER TABLE tokens ADD COLUMN cr TEXT NOT NULL DEFAULT ''",
+            "ALTER TABLE tokens ADD COLUMN profile_id TEXT NOT NULL DEFAULT ''",
+            "ALTER TABLE tokens ADD COLUMN library_id TEXT NOT NULL DEFAULT ''",
+            "ALTER TABLE tokens ADD COLUMN character_id TEXT NOT NULL DEFAULT ''",
             "ALTER TABLE campaigns ADD COLUMN dm_map_context TEXT NOT NULL DEFAULT 'world'",
             "ALTER TABLE campaigns ADD COLUMN dm_current_map_url TEXT",
             "ALTER TABLE campaigns ADD COLUMN fog_maps TEXT NOT NULL DEFAULT '{}'",
@@ -418,6 +424,9 @@ def init_db():
             creature_type TEXT NOT NULL DEFAULT '',
             monster_type TEXT NOT NULL DEFAULT '',
             cr TEXT NOT NULL DEFAULT '',
+            profile_id TEXT NOT NULL DEFAULT '',
+            library_id TEXT NOT NULL DEFAULT '',
+            character_id TEXT NOT NULL DEFAULT '',
             FOREIGN KEY (campaign_id) REFERENCES campaigns(id)
         );
 
@@ -830,13 +839,13 @@ def _save_tokens(conn, session) -> None:
             (id, campaign_id, name, x, y, width, height, color, shape, owner_id,
              hp, max_hp, temp_hp, hidden_hp, hidden, initiative_mod, ac, speed, token_type, notes,
              conditions, condition_timers, level, faction, passive_perception, save_bonuses,
-             vision_enabled, vision_radius, bright_radius, dim_radius, has_darkvision, darkvision_radius, map_context, staged, image_url, creature_id, creature_type, monster_type, cr)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             vision_enabled, vision_radius, bright_radius, dim_radius, has_darkvision, darkvision_radius, map_context, staged, image_url, creature_id, creature_type, monster_type, cr, profile_id, library_id, character_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (t.id, session.id, t_name, t.x, t.y, t.width, t.height, t.color, t.shape, t.owner_id,
               t.hp, t.max_hp, int(getattr(t, 'temp_hp', 0) or 0), int(t.hidden_hp), int(t.hidden), int(getattr(t, 'initiative_mod', 0) or 0),
               getattr(t, 'ac', None), getattr(t, 'speed', None), str(getattr(t, 'token_type', 'player') or 'player'),
               str(getattr(t, 'notes', '') or '')[:2000], t_cond, t_condition_timers, getattr(t, 'level', None), str(getattr(t, 'faction', '') or '')[:100],
-              getattr(t, 'passive_perception', None), t_save_bonuses, int(bool(getattr(t, 'vision_enabled', False))), int(getattr(t, 'vision_radius', 0) or 0), int(getattr(t, 'bright_radius', 0) or 0), int(getattr(t, 'dim_radius', 0) or 0), int(bool(getattr(t, 'has_darkvision', False))), int(getattr(t, 'darkvision_radius', 0) or 0), t.map_context, int(getattr(t, 'staged', False)), t_image_url, str(getattr(t, 'creature_id', '') or '')[:120], str(getattr(t, 'creature_type', '') or '')[:40], str(getattr(t, 'monster_type', '') or '')[:60], str(getattr(t, 'cr', '') or '')[:16]))
+              getattr(t, 'passive_perception', None), t_save_bonuses, int(bool(getattr(t, 'vision_enabled', False))), int(getattr(t, 'vision_radius', 0) or 0), int(getattr(t, 'bright_radius', 0) or 0), int(getattr(t, 'dim_radius', 0) or 0), int(bool(getattr(t, 'has_darkvision', False))), int(getattr(t, 'darkvision_radius', 0) or 0), t.map_context, int(getattr(t, 'staged', False)), t_image_url, str(getattr(t, 'creature_id', '') or '')[:120], str(getattr(t, 'creature_type', '') or '')[:40], str(getattr(t, 'monster_type', '') or '')[:60], str(getattr(t, 'cr', '') or '')[:16], str(getattr(t, 'profile_id', '') or '')[:120], str(getattr(t, 'library_id', '') or '')[:120], str(getattr(t, 'character_id', '') or '')[:120]))
 
 
 def _save_logs(conn, session) -> None:

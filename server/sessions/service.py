@@ -7,7 +7,7 @@ from server.connections import manager
 from server.db import save_campaign_async
 from server.http.auth import auth_display_name, auth_player_key, get_request_user
 from server.http.session_access import get_or_restore_session, resolve_session_authority
-from server.session import create_session, get_session, join_session, normalize_profile_owner_key, set_player_gold_for_user
+from server.session import create_session, get_session, join_session, normalize_profile_owner_key, set_player_gold_for_user, build_token_runtime_payload
 
 
 
@@ -102,6 +102,10 @@ def _sync_player_state_from_profile(session, user, profile: dict) -> None:
     keep = tokens[0]
     for extra in tokens[1:]:
         session.tokens.pop(extra.id, None)
+    keep.profile_id = str(profile.get("id") or getattr(keep, "profile_id", "") or "")[:120]
+    keep.library_id = str(profile.get("libraryId") or profile.get("library_id") or keep.profile_id or getattr(keep, "library_id", "") or "")[:120]
+    native_identity = ((profile.get("nativeCharacter") or {}).get("identity") if isinstance(profile.get("nativeCharacter"), dict) else {}) or {}
+    keep.character_id = str(profile.get("characterId") or profile.get("character_id") or native_identity.get("characterId") or native_identity.get("id") or getattr(keep, "character_id", "") or "")[:120]
     keep.name = str(profile.get("name") or keep.name or user.name)[:80]
     sheet = profile.get("charSheet") if isinstance(profile.get("charSheet"), dict) else {}
     book = profile.get("charBook") if isinstance(profile.get("charBook"), dict) else {}
@@ -282,39 +286,19 @@ def lobby_response(request, session_id: str, role: str = "", player_key: str = "
             for t in session.tokens.values():
                 if t.owner_id != matched_user.id:
                     continue
-                tokens.append({
-                    "id": t.id,
-                    "name": t.name,
-                    "color": t.color,
-                    "shape": t.shape,
-                    "image_url": getattr(t, "image_url", ""),
-                    "class_summary": getattr(t, "class_summary", ""),
-                    "class_id": getattr(t, "class_id", ""),
-                    "species_id": getattr(t, "species_id", ""),
-                    "species_name": getattr(t, "species_name", ""),
-                    "level": getattr(t, "level", 0),
-                    "owner_id": t.owner_id,
-                    "owner_name": matched_user.name,
-                })
+                row = build_token_runtime_payload(session, t)
+                row["owner_name"] = matched_user.name
+                row["class_summary"] = row.get("classSummary", row.get("class_summary", ""))
+                tokens.append(row)
     elif role == "dm":
         authority = resolve_session_authority(request, session, fallback_user_id="")
         if authority.get("is_session_dm"):
             for t in session.tokens.values():
                 owner_name = session.users[t.owner_id].name if t.owner_id and t.owner_id in session.users else ""
-                tokens.append({
-                    "id": t.id,
-                    "name": t.name,
-                    "color": t.color,
-                    "shape": t.shape,
-                    "image_url": getattr(t, "image_url", ""),
-                    "class_summary": getattr(t, "class_summary", ""),
-                    "class_id": getattr(t, "class_id", ""),
-                    "species_id": getattr(t, "species_id", ""),
-                    "species_name": getattr(t, "species_name", ""),
-                    "level": getattr(t, "level", 0),
-                    "owner_id": t.owner_id,
-                    "owner_name": owner_name,
-                })
+                row = build_token_runtime_payload(session, t)
+                row["owner_name"] = owner_name
+                row["class_summary"] = row.get("classSummary", row.get("class_summary", ""))
+                tokens.append(row)
     return JSONResponse({
         "session_id": session_id,
         "campaign_name": getattr(session, "name", "Campaign"),

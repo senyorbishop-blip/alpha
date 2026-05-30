@@ -381,6 +381,9 @@ class Token:
     creature_type: str = ""
     monster_type: str = ""
     cr: str = ""
+    profile_id: str = ""
+    library_id: str = ""
+    character_id: str = ""
 
     def to_dict(self) -> dict:
         d = {
@@ -430,6 +433,14 @@ class Token:
             d["monster_type"] = str(self.monster_type)
         if self.cr:
             d["cr"] = str(self.cr)
+        if self.profile_id:
+            d["profile_id"] = str(self.profile_id)
+        if self.library_id:
+            d["libraryId"] = str(self.library_id)
+            d["library_id"] = str(self.library_id)
+        if self.character_id:
+            d["characterId"] = str(self.character_id)
+            d["character_id"] = str(self.character_id)
         return d
 
     def can_move(self, user_id: str, role: str) -> bool:
@@ -703,7 +714,7 @@ class Session:
         """Full state snapshot for new joiners."""
         return {
             "session_id": self.id,
-            "tokens": {tid: t.to_dict() for tid, t in self.tokens.items()},
+            "tokens": {tid: build_token_runtime_payload(self, t) for tid, t in self.tokens.items()},
             "users": {
                 uid: {"id": u.id, "name": u.name, "role": u.role, "connected": u.connected, "subgroup_id": self.get_user_subgroup_id(uid)}
                 for uid, u in self.users.items()
@@ -1056,7 +1067,7 @@ class Session:
             d.pop("active_char_profiles", None)
             # Players and viewers can see any token that is not hidden by the DM.
             d["tokens"] = {
-                tid: t.to_dict()
+                tid: build_token_runtime_payload(self, t)
                 for tid, t in self.tokens.items()
                 if (not t.hidden) and (str(getattr(t, "map_context", "world") or "world") in visible_contexts)
             }
@@ -1562,6 +1573,177 @@ def filter_editor_props_for_role(editor_props: dict, role: str) -> dict:
     return filtered
 
 
+def _clean_character_ref(value: Any, limit: int = 120) -> str:
+    return str(value or "").strip()[:limit]
+
+def _profile_ref_candidates(profile: dict) -> set[str]:
+    if not isinstance(profile, dict):
+        return set()
+    native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
+    identity = native.get("identity") if isinstance(native.get("identity"), dict) else {}
+    import_meta = profile.get("importMeta") if isinstance(profile.get("importMeta"), dict) else {}
+    native_meta = profile.get("nativeMeta") if isinstance(profile.get("nativeMeta"), dict) else {}
+    raw = [
+        profile.get("id"), profile.get("profile_id"), profile.get("profileId"),
+        profile.get("libraryId"), profile.get("library_id"),
+        profile.get("characterId"), profile.get("character_id"),
+        identity.get("id"), identity.get("characterId"), identity.get("libraryId"),
+        import_meta.get("character_id"), import_meta.get("characterId"), import_meta.get("ddbId"),
+        native_meta.get("character_id"), native_meta.get("characterId"), native_meta.get("libraryId"),
+    ]
+    out: set[str] = set()
+    for value in raw:
+        text = _clean_character_ref(value)
+        if not text:
+            continue
+        out.add(text)
+        if text.startswith("library:"):
+            out.add(text.split(":", 1)[1])
+        else:
+            out.add(f"library:{text}")
+    return out
+
+def resolve_token_character_profile(session: "Session", token) -> dict | None:
+    """Resolve the saved character profile linked to *token*.
+
+    Tokens intentionally store only lightweight profile references plus board state;
+    the profile row remains the character-sheet source of truth.
+    """
+    if session is None or token is None:
+        return None
+    profiles = dict(getattr(session, "char_profiles", {}) or {})
+    refs = {
+        _clean_character_ref(getattr(token, "profile_id", "")),
+        _clean_character_ref(getattr(token, "library_id", "")),
+        _clean_character_ref(getattr(token, "character_id", "")),
+    }
+    refs.discard("")
+    owner_id = _clean_character_ref(getattr(token, "owner_id", ""), 64)
+    active_id = _clean_character_ref((getattr(session, "active_char_profiles", {}) or {}).get(owner_id))
+    if active_id:
+        refs.add(active_id)
+    owner_keys = []
+    if owner_id:
+        owner_keys.append(owner_id)
+        user = (getattr(session, "users", {}) or {}).get(owner_id)
+        name_key = normalize_profile_owner_key(getattr(user, "name", "")) if user else ""
+        if name_key:
+            owner_keys.append(name_key)
+    search_buckets = []
+    for key in owner_keys:
+        if key in profiles and key not in search_buckets:
+            search_buckets.append(key)
+    for key in profiles.keys():
+        if key not in search_buckets:
+            search_buckets.append(key)
+    fallback = None
+    for key in search_buckets:
+        rows = profiles.get(key) or []
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            candidates = _profile_ref_candidates(row)
+            if refs and candidates.intersection(refs):
+                return row
+            if active_id and active_id in candidates:
+                return row
+            if fallback is None and owner_id and key in owner_keys:
+                fallback = row
+    return fallback
+
+def _first_int(*values, minimum: int | None = None) -> int | None:
+    for value in values:
+        if value is None or str(value).strip() == "":
+            continue
+        try:
+            parsed = int(value)
+        except Exception:
+            continue
+        if minimum is not None and parsed < minimum:
+            continue
+        return parsed
+    return None
+
+def _profile_runtime_summary(profile: dict) -> dict:
+    if not isinstance(profile, dict):
+        return {}
+    native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
+    runtime = profile.get("nativeRuntime") if isinstance(profile.get("nativeRuntime"), dict) else {}
+    identity = native.get("identity") if isinstance(native.get("identity"), dict) else {}
+    presentation = native.get("presentation") if isinstance(native.get("presentation"), dict) else {}
+    species = native.get("species") if isinstance(native.get("species"), dict) else {}
+    classes = native.get("classes") if isinstance(native.get("classes"), list) else []
+    first_class = classes[0] if classes and isinstance(classes[0], dict) else {}
+    class_data = native.get("class") if isinstance(native.get("class"), dict) else {}
+    sheet = profile.get("charSheet") if isinstance(profile.get("charSheet"), dict) else {}
+    book = profile.get("charBook") if isinstance(profile.get("charBook"), dict) else {}
+    runtime_hp = runtime.get("hp") if isinstance(runtime.get("hp"), dict) else {}
+    runtime_combat = runtime.get("combat") if isinstance(runtime.get("combat"), dict) else {}
+    runtime_speed = runtime.get("speed") if isinstance(runtime.get("speed"), dict) else {}
+    sheet_hp = sheet.get("hp") if isinstance(sheet.get("hp"), dict) else {}
+    max_hp = _first_int(runtime_hp.get("max"), runtime_combat.get("maxHP"), runtime_combat.get("maxHp"), sheet_hp.get("max"), book.get("maxHp"), profile.get("hp"), minimum=1)
+    cur_hp = _first_int(runtime_hp.get("current"), runtime_combat.get("currentHP"), runtime_combat.get("currentHp"), sheet_hp.get("current"), book.get("currentHp"), profile.get("curhp"), minimum=0)
+    temp_hp = _first_int(runtime_hp.get("temp"), runtime_combat.get("tempHP"), runtime_combat.get("tempHp"), sheet_hp.get("temp"), book.get("tempHp"), profile.get("tempHp"), minimum=0)
+    class_name = str(first_class.get("name") or class_data.get("name") or book.get("className") or profile.get("classSummary") or "").strip()
+    subclass = str(first_class.get("subclassName") or first_class.get("subclass") or book.get("subclass") or "").strip()
+    class_summary = str(profile.get("classSummary") or (f"{class_name} ({subclass})" if class_name and subclass else class_name)).strip()
+    portrait = str(identity.get("portraitUrl") or sheet.get("avatarUrl") or book.get("avatarUrl") or profile.get("avatarUrl") or "").strip()
+    token_image = str(identity.get("tokenImageUrl") or sheet.get("tokenImageUrl") or book.get("tokenImageUrl") or profile.get("tokenImageUrl") or portrait).strip()
+    return {
+        "profile_id": _clean_character_ref(profile.get("id")),
+        "library_id": _clean_character_ref(profile.get("libraryId") or profile.get("library_id") or profile.get("id")),
+        "character_id": _clean_character_ref(profile.get("characterId") or profile.get("character_id") or identity.get("characterId") or identity.get("id")),
+        "name": str(profile.get("name") or identity.get("name") or book.get("name") or sheet.get("name") or "").strip(),
+        "image_url": token_image,
+        "portraitUrl": portrait,
+        "tokenImageUrl": token_image,
+        "classSummary": class_summary,
+        "class_id": str(first_class.get("classId") or class_data.get("id") or profile.get("classId") or "").strip().lower(),
+        "species_id": str(species.get("id") or "").strip().lower(),
+        "species_name": str(species.get("name") or sheet.get("species") or book.get("race") or book.get("species") or "").strip(),
+        "level": _first_int(runtime.get("levelTotal"), sheet.get("totalLevel"), sheet.get("level"), book.get("level"), profile.get("level"), minimum=0),
+        "maxHp": max_hp,
+        "hp": cur_hp,
+        "tempHp": temp_hp,
+        "ac": _first_int(runtime_combat.get("ac"), runtime.get("ac"), sheet.get("ac"), book.get("ac"), profile.get("ac"), minimum=0),
+        "speed": _first_int(runtime_combat.get("speed"), runtime_speed.get("walk"), sheet.get("speed"), book.get("speed"), profile.get("speed"), minimum=0),
+        "actions": list(runtime.get("actions") or native.get("actions") or []),
+        "spells": list(runtime.get("spells") or native.get("spells") or []),
+    }
+
+def build_token_runtime_payload(session: "Session", token) -> dict:
+    payload = token.to_dict()
+    profile = resolve_token_character_profile(session, token)
+    if not profile:
+        return payload
+    summary = _profile_runtime_summary(profile)
+    payload["profile_id"] = _clean_character_ref(getattr(token, "profile_id", "") or summary.get("profile_id"))
+    payload["libraryId"] = _clean_character_ref(getattr(token, "library_id", "") or summary.get("library_id"))
+    payload["characterId"] = _clean_character_ref(getattr(token, "character_id", "") or summary.get("character_id"))
+    payload["characterProfileLinked"] = True
+    for key in ("name", "image_url", "portraitUrl", "tokenImageUrl", "classSummary", "class_id", "species_id", "species_name", "level", "ac", "speed"):
+        value = summary.get(key)
+        if value is not None and value != "":
+            payload[key] = value
+    if summary.get("maxHp") is not None:
+        payload["maxHp"] = summary["maxHp"]
+    current_hp = getattr(token, "hp", None)
+    if current_hp is None:
+        current_hp = summary.get("hp")
+    if current_hp is not None:
+        payload["hp"] = max(0, int(current_hp))
+        if payload.get("maxHp") is not None:
+            payload["hp"] = min(int(payload["maxHp"]), int(payload["hp"]))
+    payload["tempHp"] = max(0, int(getattr(token, "temp_hp", summary.get("tempHp") or 0) or 0))
+    if summary.get("actions"):
+        payload["actions"] = summary["actions"]
+    if summary.get("spells"):
+        payload["spells"] = summary["spells"]
+    return payload
+
+
 # Global session store (Phase 1: in-memory only)
 _sessions: Dict[str, Session] = {}
 
@@ -1666,12 +1848,15 @@ def create_token(session: Session, dm_id: str, name: str, x: float, y: float,
              creature_id: str = "",
              creature_type: str = "",
              monster_type: str = "",
-             cr: str = "") -> Token:
+             cr: str = "",
+             profile_id: str = "",
+             library_id: str = "",
+             character_id: str = "") -> Token:
     token_id = secrets.token_hex(6)
     token = Token(
         id=token_id, name=name, x=x, y=y,
         width=width, height=height, color=color,
-        shape=shape, owner_id=owner_id, hp=hp, max_hp=max_hp, temp_hp=int(temp_hp or 0), hidden_hp=hidden_hp, hidden=hidden, initiative_mod=int(initiative_mod or 0), ac=(int(ac) if ac is not None else None), speed=(int(speed) if speed is not None else None), token_type=str(token_type or "player"), notes=str(notes or "")[:2000], conditions=list(conditions or []), condition_timers=dict(condition_timers or {}), level=(int(level) if level is not None else None), faction=str(faction or "")[:100], passive_perception=(int(passive_perception) if passive_perception is not None else None), map_context=map_context, staged=staged, image_url=(str(image_url or "")[:300] or None), save_bonuses=dict(save_bonuses or {}), vision_enabled=bool(vision_enabled), vision_radius=max(0, int(vision_radius or 0)), bright_radius=max(0, int(bright_radius or 0)), dim_radius=max(0, int(dim_radius or 0)), has_darkvision=bool(has_darkvision), darkvision_radius=max(0, int(darkvision_radius or 0)), creature_id=str(creature_id or "")[:120], creature_type=str(creature_type or "")[:40], monster_type=str(monster_type or "")[:60], cr=str(cr or "")[:16],
+        shape=shape, owner_id=owner_id, hp=hp, max_hp=max_hp, temp_hp=int(temp_hp or 0), hidden_hp=hidden_hp, hidden=hidden, initiative_mod=int(initiative_mod or 0), ac=(int(ac) if ac is not None else None), speed=(int(speed) if speed is not None else None), token_type=str(token_type or "player"), notes=str(notes or "")[:2000], conditions=list(conditions or []), condition_timers=dict(condition_timers or {}), level=(int(level) if level is not None else None), faction=str(faction or "")[:100], passive_perception=(int(passive_perception) if passive_perception is not None else None), map_context=map_context, staged=staged, image_url=(str(image_url or "")[:300] or None), save_bonuses=dict(save_bonuses or {}), vision_enabled=bool(vision_enabled), vision_radius=max(0, int(vision_radius or 0)), bright_radius=max(0, int(bright_radius or 0)), dim_radius=max(0, int(dim_radius or 0)), has_darkvision=bool(has_darkvision), darkvision_radius=max(0, int(darkvision_radius or 0)), creature_id=str(creature_id or "")[:120], creature_type=str(creature_type or "")[:40], monster_type=str(monster_type or "")[:60], cr=str(cr or "")[:16], profile_id=str(profile_id or "")[:120], library_id=str(library_id or "")[:120], character_id=str(character_id or "")[:120],
     )
     session.tokens[token_id] = token
     return token

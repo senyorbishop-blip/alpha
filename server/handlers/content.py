@@ -36,6 +36,7 @@ from server.handlers.common import (
     manager,
     save_campaign_async,
     _safe_int,
+    _broadcast_token_state_sync,
 )
 from server.handlers.inventory import (
     _update_encumbrance_cache,
@@ -273,6 +274,32 @@ def _hydrate_active_profile_inventory_state(session: Session, user: User, profil
         wallet_units = _currency_dict_to_gold_units(currency)
     set_player_gold_for_user(session, user.id, wallet_units)
 
+def _link_owned_tokens_to_profile(session: Session, user: User, profile: dict) -> bool:
+    if not isinstance(profile, dict):
+        return False
+    profile_id = str(profile.get("id") or "").strip()[:ACTIVE_PROFILE_ID_KEY_LIMIT]
+    if not profile_id:
+        return False
+    native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
+    identity = native.get("identity") if isinstance(native.get("identity"), dict) else {}
+    changed = False
+    for token in (getattr(session, "tokens", {}) or {}).values():
+        if str(getattr(token, "owner_id", "") or "") != str(getattr(user, "id", "") or ""):
+            continue
+        if getattr(token, "profile_id", "") != profile_id:
+            token.profile_id = profile_id
+            changed = True
+        library_id = str(profile.get("libraryId") or profile.get("library_id") or profile_id).strip()[:120]
+        if library_id and getattr(token, "library_id", "") != library_id:
+            token.library_id = library_id
+            changed = True
+        character_id = str(profile.get("characterId") or profile.get("character_id") or identity.get("characterId") or identity.get("id") or "").strip()[:120]
+        if character_id and getattr(token, "character_id", "") != character_id:
+            token.character_id = character_id
+            changed = True
+    return changed
+
+
 def _resolve_profile_level(payload: dict) -> int | None:
     """Resolve a canonical profile level while preserving legacy payload shapes."""
     if not isinstance(payload, dict):
@@ -496,6 +523,8 @@ async def handle_char_profile_upsert(payload: dict, session: Session, user: User
     _update_encumbrance_cache(session, user.id)
     _recompute_equipment_effects(session, user)
     await _broadcast_inventory_state(session)
+    _link_owned_tokens_to_profile(session, user, saved_profile)
+    await _broadcast_token_state_sync(session)
     await save_campaign_async(session)
 
 
@@ -518,6 +547,9 @@ async def handle_char_profile_select(payload: dict, session: Session, user: User
     _update_encumbrance_cache(session, user.id)
     _recompute_equipment_effects(session, user)
     await _broadcast_inventory_state(session)
+    if selected_profile:
+        _link_owned_tokens_to_profile(session, user, selected_profile)
+    await _broadcast_token_state_sync(session)
     await save_campaign_async(session)
 
 

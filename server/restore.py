@@ -215,6 +215,9 @@ def restore_session_from_db(data: dict):
             creature_type=str(t.get("creature_type") or "")[:40],
             monster_type=str(t.get("monster_type") or "")[:60],
             cr=str(t.get("cr") or "")[:16],
+            profile_id=str(t.get("profile_id") or t.get("profileId") or "")[:120],
+            library_id=str(t.get("library_id") or t.get("libraryId") or "")[:120],
+            character_id=str(t.get("character_id") or t.get("characterId") or "")[:120],
         )
         session.tokens[tok.id] = tok
 
