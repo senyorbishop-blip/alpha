@@ -246,6 +246,293 @@ def _compute_equipment_ac(document: dict[str, Any], *, dex_mod: int, fallback_ac
     return max(fallback_ac, armor_ac + shield_bonus)
 
 
+def _format_signed(value: int) -> str:
+    return f"+{value}" if value >= 0 else str(value)
+
+
+def _display_item_name(row: dict[str, Any] | None, fallback: str = "None") -> str:
+    if not isinstance(row, dict):
+        return fallback
+    return str(row.get("name") or row.get("displayName") or row.get("id") or fallback).strip() or fallback
+
+
+def _warning(code: str, message: str, *, details: dict[str, Any] | None = None) -> dict[str, Any]:
+    out: dict[str, Any] = {"code": code, "message": message}
+    if details:
+        out["details"] = details
+    return out
+
+
+def _equipped_inventory_rows(document: dict[str, Any]) -> list[dict[str, Any]]:
+    equipment = document.get("equipment") if isinstance(document.get("equipment"), dict) else {}
+    inventory = equipment.get("inventory") if isinstance(equipment.get("inventory"), list) else []
+    return [row for row in inventory if isinstance(row, dict) and bool(row.get("equipped"))]
+
+
+def _inventory_kind(row: dict[str, Any]) -> str:
+    return str(row.get("equipment_kind") or row.get("kind") or row.get("item_type") or row.get("type") or "").strip().lower()
+
+
+def _resolve_ac_audit(
+    document: dict[str, Any],
+    *,
+    dex_mod: int,
+    con_mod: int,
+    wis_mod: int,
+    primary_class_id: str,
+    fallback_ac: int,
+) -> dict[str, Any]:
+    equipped_rows = _equipped_inventory_rows(document)
+    armor_rows = [row for row in equipped_rows if _inventory_kind(row) == "armor"]
+    shield_rows = [row for row in equipped_rows if _inventory_kind(row) == "shield"]
+
+    warnings: list[dict[str, Any]] = []
+    missing_data: list[str] = []
+    active_bonuses: list[dict[str, Any]] = []
+    breakdown: list[str] = []
+
+    unarmored_formula = "Base unarmored: 10"
+    base_unarmored = 10 + dex_mod
+    if primary_class_id == "barbarian":
+        class_unarmored = 10 + dex_mod + con_mod
+        if class_unarmored >= base_unarmored:
+            base_unarmored = class_unarmored
+            unarmored_formula = f"Barbarian Unarmored Defense: 10 + Dex {_format_signed(dex_mod)} + Con {_format_signed(con_mod)} = {base_unarmored}"
+    elif primary_class_id == "monk":
+        class_unarmored = 10 + dex_mod + wis_mod
+        if class_unarmored >= base_unarmored:
+            base_unarmored = class_unarmored
+            unarmored_formula = f"Monk Unarmored Defense: 10 + Dex {_format_signed(dex_mod)} + Wis {_format_signed(wis_mod)} = {base_unarmored}"
+    if unarmored_formula == "Base unarmored: 10":
+        unarmored_formula = f"Base unarmored: 10 + Dex {_format_signed(dex_mod)} = {base_unarmored}"
+    breakdown.append(unarmored_formula)
+
+    best_armor_value = base_unarmored
+    best_armor: dict[str, Any] | None = None
+    best_armor_breakdown = "No equipped armour; using unarmoured AC."
+    for armor in armor_rows:
+        name = _display_item_name(armor, "Unknown armour")
+        base_ac = _safe_int(armor.get("base_ac"), 0, minimum=0)
+        if base_ac <= 0:
+            warnings.append(_warning("unknown_armor", f'Unknown armour "{name}"; AC may need manual verification.', details={"item": name}))
+            missing_data.append(f"Armour base AC for {name}")
+            continue
+        armor_type = str(armor.get("armor_type") or "").strip().lower()
+        dex_cap = armor.get("dex_cap")
+        if armor_type == "heavy":
+            dex_for_ac = 0
+            dex_text = "Dex modifier ignored for heavy armour"
+        elif armor_type == "medium":
+            cap = _safe_int(dex_cap, 2)
+            dex_for_ac = min(dex_mod, cap)
+            dex_text = f"Dex modifier capped at +{cap}: {_format_signed(dex_for_ac)}"
+        else:
+            dex_for_ac = min(dex_mod, _safe_int(dex_cap, dex_mod)) if dex_cap not in (None, "") else dex_mod
+            dex_text = f"Dex modifier: {_format_signed(dex_for_ac)}"
+        armor_bonus = _safe_int(armor.get("ac_bonus"), 0)
+        if armor_bonus:
+            active_bonuses.append({"source": name, "type": "armor_ac_bonus", "value": armor_bonus})
+        value = base_ac + dex_for_ac + armor_bonus
+        parts = [f"Base armour: {name} = {base_ac}", dex_text]
+        if armor_bonus:
+            parts.append(f"Armour bonus: {_format_signed(armor_bonus)}")
+        parts.append(f"Armour total: {value}")
+        if best_armor is None or value > best_armor_value:
+            best_armor = armor
+            best_armor_value = value
+            best_armor_breakdown = "; ".join(parts)
+
+    breakdown.append(best_armor_breakdown)
+
+    shield_bonus = 0
+    equipped_shield: dict[str, Any] | None = None
+    if shield_rows:
+        for shield in shield_rows:
+            name = _display_item_name(shield, "Unknown shield")
+            if shield.get("ac_bonus") in (None, ""):
+                warnings.append(_warning("unknown_shield", f'Shield "{name}" has no explicit AC bonus; assuming +2.', details={"item": name}))
+                missing_data.append(f"Shield AC bonus for {name}")
+            bonus = _safe_int(shield.get("ac_bonus"), 2)
+            shield_bonus += bonus
+            equipped_shield = equipped_shield or shield
+            active_bonuses.append({"source": name, "type": "shield_ac_bonus", "value": bonus})
+        breakdown.append(f"Shield: {_display_item_name(equipped_shield)} = {_format_signed(shield_bonus)}")
+    else:
+        breakdown.append("Shield: +0")
+
+    for row in equipped_rows:
+        name = _display_item_name(row, "Unknown item")
+        if bool(row.get("attuned")) and ("magic" in str(row.get("category") or row.get("notes") or "").lower()) and not any(key in row for key in ("ac_bonus", "bonus", "attack_bonus")):
+            warnings.append(_warning("unknown_magic_item_bonus", f'Magic item "{name}" may have bonuses Alpha cannot infer yet.', details={"item": name}))
+        if row.get("custom") or row.get("isCustom") or str(row.get("source") or "").strip().lower() in {"custom", "d&d beyond custom"}:
+            warnings.append(_warning("unknown_custom_dndbeyond_modifier", f'Custom imported item/modifier "{name}" needs manual verification.', details={"item": name}))
+
+    calculated_value = max(fallback_ac, best_armor_value + shield_bonus)
+    imported_ac = _safe_int(document.get("ac"), 0, minimum=0)
+    final_value = max(imported_ac, calculated_value)
+    if imported_ac and imported_ac != calculated_value:
+        breakdown.append(f"Imported AC: {imported_ac}; Alpha calculation: {calculated_value}; final uses higher value {final_value}.")
+    else:
+        breakdown.append(f"Final AC: {final_value}")
+
+    return {
+        "value": final_value,
+        "calculatedValue": calculated_value,
+        "importedValue": imported_ac or None,
+        "breakdown": breakdown,
+        "warnings": warnings,
+        "missingData": missing_data,
+        "equippedArmour": _clone(best_armor) if best_armor else None,
+        "equippedArmor": _clone(best_armor) if best_armor else None,
+        "equippedShield": _clone(equipped_shield) if equipped_shield else None,
+        "activeBonuses": active_bonuses,
+    }
+
+
+def _build_hp_audit(document: dict[str, Any], runtime_classes: list[dict[str, Any]], runtime_hp: dict[str, Any]) -> dict[str, Any]:
+    abilities = document.get("abilities") if isinstance(document.get("abilities"), dict) else {}
+    scores = abilities.get("scores") if isinstance(abilities.get("scores"), dict) else {}
+    con_mod = _ability_modifier(scores.get("con", 10))
+    warnings: list[dict[str, Any]] = []
+    missing_data: list[str] = []
+    breakdown: list[str] = []
+    level_index = 0
+    calculated = 0
+    for row in runtime_classes if isinstance(runtime_classes, list) else []:
+        if not isinstance(row, dict):
+            continue
+        lvl = _safe_int(row.get("level"), 1, minimum=1)
+        class_id = str(row.get("classId") or "").strip().lower()
+        class_name = str(row.get("className") or row.get("name") or class_id or "Unknown class").strip()
+        class_catalog = get_class_catalog_row(class_id) if class_id else None
+        if not isinstance(class_catalog, dict) or not class_catalog.get("hitDie"):
+            warnings.append(_warning("missing_class_hit_die", f'Class "{class_name}" is missing hit die data; assuming d8.', details={"classId": class_id}))
+            missing_data.append(f"Class hit die for {class_name}")
+        hit_die = _safe_int((class_catalog or {}).get("hitDie"), 8, minimum=1)
+        average = max(1, (hit_die // 2) + 1)
+        class_total = 0
+        if level_index == 0 and lvl > 0:
+            first_gain = max(1, hit_die + con_mod)
+            class_total += first_gain
+            calculated += first_gain
+            breakdown.append(f"Level 1 {class_name} hit die: {hit_die} + Con {_format_signed(con_mod)} = {first_gain}")
+            level_index += 1
+            remaining = lvl - 1
+        else:
+            remaining = lvl
+        if remaining > 0:
+            per_level = max(1, average + con_mod)
+            gain = remaining * per_level
+            class_total += gain
+            calculated += gain
+            breakdown.append(f"Levels {level_index + 1}-{level_index + remaining} {class_name} average gain: {average} + Con {_format_signed(con_mod)} = {per_level} per level ({gain})")
+            level_index += remaining
+        if lvl > 0:
+            breakdown.append(f"{class_name} subtotal: {class_total}")
+    if not breakdown:
+        default_first = max(1, 6 + con_mod)
+        calculated = default_first
+        breakdown.append(f"Fallback level 1 hit die: 6 + Con {_format_signed(con_mod)} = {default_first}")
+        warnings.append(_warning("missing_class_hit_die", "No class rows were available; assuming d6 fallback HP."))
+        missing_data.append("Class levels and hit dice")
+    final_max = _safe_int(runtime_hp.get("max"), calculated, minimum=1)
+    if final_max != calculated:
+        breakdown.append(f"Imported/manual max HP overrides calculated HP: {final_max} (calculated {calculated}).")
+    else:
+        breakdown.append(f"Final max HP: {final_max}")
+    return {
+        "value": final_max,
+        "calculatedValue": calculated,
+        "breakdown": breakdown,
+        "warnings": warnings,
+        "missingData": missing_data,
+    }
+
+
+def _build_character_audit_result(
+    document: dict[str, Any],
+    *,
+    runtime_classes: list[dict[str, Any]],
+    runtime: dict[str, Any],
+    dex_mod: int,
+    con_mod: int,
+    wis_mod: int,
+    spellcasting_ability: str,
+    spellcasting_mod: int,
+    is_caster: bool,
+    primary_class_id: str,
+) -> dict[str, Any]:
+    level_total = _safe_int(runtime.get("levelTotal"), _compute_total_level(document), minimum=1)
+    proficiency_bonus = _safe_int(runtime.get("proficiencyBonus"), _compute_proficiency_bonus(level_total), minimum=0)
+    fallback_ac = max(10, 10 + dex_mod)
+    if primary_class_id == "barbarian":
+        fallback_ac = max(fallback_ac, 10 + dex_mod + con_mod)
+    elif primary_class_id == "monk":
+        fallback_ac = max(fallback_ac, 10 + dex_mod + wis_mod)
+    ac_audit = _resolve_ac_audit(
+        document,
+        dex_mod=dex_mod,
+        con_mod=con_mod,
+        wis_mod=wis_mod,
+        primary_class_id=primary_class_id,
+        fallback_ac=fallback_ac,
+    )
+    hp_audit = _build_hp_audit(document, runtime_classes, runtime.get("hp") if isinstance(runtime.get("hp"), dict) else {})
+
+    warnings = list(ac_audit.get("warnings") or []) + list(hp_audit.get("warnings") or [])
+    missing_data = list(ac_audit.get("missingData") or []) + list(hp_audit.get("missingData") or [])
+
+    species = document.get("species") if isinstance(document.get("species"), dict) else {}
+    if not str(species.get("id") or species.get("name") or "").strip():
+        warnings.append(_warning("missing_species_race_feature", "Species/race is missing; species features cannot be fully resolved."))
+        missing_data.append("Species/race features")
+    for row in runtime_classes:
+        if not isinstance(row, dict):
+            continue
+        level = _safe_int(row.get("level"), 1, minimum=1)
+        subclass_level = _safe_int(row.get("subclassUnlockLevel"), 0, minimum=0)
+        if subclass_level and level >= subclass_level and not str(row.get("subclassId") or row.get("subclassName") or "").strip():
+            warnings.append(_warning("missing_subclass_feature", f'{row.get("className") or row.get("classId") or "Class"} has no subclass selected; subclass features may be missing.'))
+            missing_data.append("Subclass features")
+    feats = document.get("feats") if isinstance(document.get("feats"), list) else []
+    for feat in feats:
+        feat_id = str((feat or {}).get("featId") or (feat or {}).get("id") or (feat or {}).get("name") or "").strip() if isinstance(feat, dict) else str(feat or "").strip()
+        if feat_id and _rules_feat_by_id(feat_id) is None:
+            warnings.append(_warning("missing_feat", f'Feat "{feat_id}" is not mapped in the native rules catalog.', details={"feat": feat_id}))
+            missing_data.append(f"Feat: {feat_id}")
+    import_meta = document.get("importMeta") if isinstance(document.get("importMeta"), dict) else {}
+    raw_snapshot = import_meta.get("rawSnapshot") if isinstance(import_meta.get("rawSnapshot"), dict) else {}
+    if raw_snapshot.get("customModifiers") or raw_snapshot.get("customValues"):
+        warnings.append(_warning("unknown_custom_dndbeyond_modifier", "D&D Beyond custom modifiers were present in the import and need manual verification."))
+        missing_data.append("D&D Beyond custom modifiers")
+
+    spell_state = document.get("spellState") if isinstance(document.get("spellState"), dict) else {}
+    spell_entries = spell_state.get("spellbookEntries") if isinstance(spell_state.get("spellbookEntries"), list) else []
+    for spell in spell_entries:
+        if isinstance(spell, dict) and spell.get("matchedNative") is False:
+            name = str(spell.get("name") or spell.get("id") or "Unknown spell").strip()
+            warnings.append(_warning("missing_spell", f'Spell "{name}" is preserved but not matched to the native spell compendium.', details={"spell": name}))
+            missing_data.append(f"Spell: {name}")
+
+    spell_save_dc = 8 + proficiency_bonus + spellcasting_mod if is_caster else None
+    spell_attack_bonus = proficiency_bonus + spellcasting_mod if is_caster else None
+    initiative = _safe_int((runtime.get("combat") or {}).get("initiative") if isinstance(runtime.get("combat"), dict) else document.get("initiative"), dex_mod)
+    return {
+        "ac": {key: value for key, value in ac_audit.items() if key not in {"equippedArmour", "equippedArmor", "equippedShield", "activeBonuses", "missingData"}},
+        "hp": {key: value for key, value in hp_audit.items() if key != "missingData"},
+        "initiative": {"value": initiative, "breakdown": [f"Dex modifier: {_format_signed(dex_mod)}"]},
+        "proficiencyBonus": {"value": proficiency_bonus, "breakdown": [f"Total level {level_total} => proficiency bonus {_format_signed(proficiency_bonus)}"]},
+        "spellSaveDC": {"value": spell_save_dc, "breakdown": ([f"8 + proficiency {_format_signed(proficiency_bonus)} + {spellcasting_ability.upper()} {_format_signed(spellcasting_mod)} = {spell_save_dc}"] if is_caster else ["No spellcasting ability resolved."])},
+        "spellAttackBonus": {"value": spell_attack_bonus, "breakdown": ([f"Proficiency {_format_signed(proficiency_bonus)} + {spellcasting_ability.upper()} {_format_signed(spellcasting_mod)} = {_format_signed(spell_attack_bonus or 0)}"] if is_caster else ["No spellcasting ability resolved."])},
+        "equippedArmour": ac_audit.get("equippedArmour"),
+        "equippedArmor": ac_audit.get("equippedArmor"),
+        "equippedShield": ac_audit.get("equippedShield"),
+        "activeBonuses": ac_audit.get("activeBonuses") or [],
+        "warnings": warnings,
+        "missingData": missing_data,
+    }
+
+
 def _resource_dedupe_key(resource_id: Any, name: Any) -> str:
     import re
 
@@ -640,8 +927,8 @@ def resolve_character_runtime(document: Any) -> dict:
     speed = _safe_int(species.get("speed"), 30, minimum=0)
     runtime["speed"] = {"walk": speed}
     runtime_classes = _resolve_runtime_classes(normalized)
-    base_hp = _compute_base_hp(normalized, level_total, runtime_classes)
-    runtime["hp"] = _runtime_hp_from_document(normalized, base_hp)
+    runtime["hp"] = _compute_base_hp(normalized, level_total, runtime_classes)
+    runtime["hp"] = _runtime_hp_from_document(normalized, runtime["hp"])
     runtime["classes"] = runtime_classes
     if runtime_classes:
         primary = runtime_classes[0]
@@ -905,7 +1192,8 @@ def resolve_character_runtime(document: Any) -> dict:
     elif primary_class_id == "monk":
         armor_class = max(armor_class, 10 + dex_mod + wis_mod)
     imported_ac = _safe_int(normalized.get("ac"), 0, minimum=0)
-    runtime["ac"] = max(imported_ac, _compute_equipment_ac(normalized, dex_mod=dex_mod, fallback_ac=armor_class))
+    runtime["ac"] = _compute_equipment_ac(normalized, dex_mod=dex_mod, fallback_ac=armor_class)
+    runtime["ac"] = max(imported_ac, runtime["ac"])
     runtime["speed"]["walk"] = walk_speed
     imported_initiative = _safe_int(normalized.get("initiative"), dex_mod)
 
@@ -944,9 +1232,24 @@ def resolve_character_runtime(document: Any) -> dict:
     runtime["awakeningGrants"] = awakening_resolution.get("grants") or []
     apply_awakening_grants(runtime, runtime["awakeningGrants"])
 
+    character_audit_result = _build_character_audit_result(
+        normalized,
+        runtime_classes=runtime_classes,
+        runtime=runtime,
+        dex_mod=dex_mod,
+        con_mod=con_mod,
+        wis_mod=wis_mod,
+        spellcasting_ability=spellcasting_ability,
+        spellcasting_mod=spellcasting_mod,
+        is_caster=is_caster,
+        primary_class_id=primary_class_id,
+    )
+    runtime["characterAudit"] = _clone(character_audit_result)
+
     audit = normalized.get("audit") if isinstance(normalized.get("audit"), dict) else {}
     audit["resolverVersion"] = _RESOLVER_VERSION
     audit["lastResolvedAt"] = time.time()
+    audit["characterAudit"] = _clone(character_audit_result)
     normalized["audit"] = audit
 
     return {
