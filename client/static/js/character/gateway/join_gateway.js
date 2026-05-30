@@ -17,6 +17,7 @@
     let sessionCharacters = [];
     let libraryCharacters = [];
     let builder = null;
+    let builderState = null;
 
     function getSessionId() {
       const explicit = String(cfg.sessionId || '').trim();
@@ -213,7 +214,7 @@
         return null;
       }
 
-      const builderState = global.CharacterBuilderState.createBuilderState({ resumeMemoryDraft: false });
+      builderState = global.CharacterBuilderState.createBuilderState({ resumeMemoryDraft: false });
       builder = global.CharacterBuilderShell.createBuilderShell({
         mountEl: els.actionsSection,
         state: builderState,
@@ -307,6 +308,21 @@
       return null;
     }
 
+    async function openImportedDocumentInBuilder(importedDocument) {
+      const readyBuilder = await ensureBuilderReady();
+      if (!readyBuilder || typeof readyBuilder.open !== 'function' || !builderState || typeof builderState.replaceDraft !== 'function') {
+        throw new Error('Character builder unavailable');
+      }
+      builderState.replaceDraft(importedDocument, {
+        markDirty: true,
+        routeTo: 'review_or_first_missing',
+      });
+      if (els.gatewayButtonsWrap) {
+        els.gatewayButtonsWrap.style.display = 'none';
+      }
+      readyBuilder.open();
+    }
+
     async function openImportModal() {
       const modalApi = await ensureImportModalReady();
       if (!modalApi || typeof modalApi.open !== 'function') {
@@ -315,6 +331,7 @@
 
       modalApi.open({
         sessionId: getSessionId(),
+        onEditBeforeSave: openImportedDocumentInBuilder,
         onImported: function onImported(result) {
           const savedProfile = result && result.profile && typeof result.profile === 'object'
             ? result.profile
