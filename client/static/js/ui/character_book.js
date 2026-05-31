@@ -5,12 +5,31 @@
     env.document.getElementById('char-sheet-panel')?.classList.remove('open');
   }
 
+  function updateCharacterBookModeRibbon(env, page) {
+    const ribbon = env.document.getElementById('char-book-mode-ribbon');
+    if (!ribbon) return;
+    const labels = {
+      premiumsheet: ['Live Play mode', 'The Sheet ✦ dashboard keeps Actions, Spells, Inventory, Features, and Notes easy to find during the session.'],
+      import: ['Import Review mode', 'Review pasted, JSON, or PDF import data here before trusting AC, HP, spells, or equipment.'],
+      levelup: ['Level Up mode', 'Use this progression flow after the live sheet and source data look correct.'],
+      identity: ['Build/Edit mode', 'Edit notes and identity source data here; the live player dashboard remains on Sheet ✦.'],
+      abilities: ['Build/Edit mode', 'Confirm vitals, proficiency, passive perception, and ability scores here.'],
+      skills: ['Build/Edit mode', 'Confirm saves and skill math here.'],
+      combat: ['Build/Edit mode', 'Review legacy action source data here; use the Sheet ✦ Actions tab during live play.'],
+      inventory: ['Build/Edit mode', 'Review imported carried gear here; use the Sheet ✦ Inventory tab during live play.'],
+      spelllibrary: ['Build/Edit mode', 'Manage spell library details here; use the Sheet ✦ Spells tab during live play.'],
+    };
+    const entry = labels[page] || labels.premiumsheet;
+    ribbon.innerHTML = '<strong>' + entry[0] + '</strong><span>' + entry[1] + '</span>';
+  }
+
   function updateCharacterBookTabs(env, page) {
     env.document.querySelectorAll('.sheet-page-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.page === page));
     env.document.querySelectorAll('.sheet-workflow-btn').forEach(btn => {
       const target = String(btn.dataset.page || '').trim();
       btn.classList.toggle('active', target === page);
     });
+    updateCharacterBookModeRibbon(env, page);
   }
 
   function goCharacterBookPage(env, page, instant = false) {

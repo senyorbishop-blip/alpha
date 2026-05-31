@@ -4743,6 +4743,26 @@
       background: linear-gradient(90deg, transparent, var(--cb-gold, #C9A84C), transparent);
       border-radius: 999px;
     }
+    .sheet-mode-ribbon {
+      display:flex;
+      flex-wrap:wrap;
+      gap:0.4rem;
+      align-items:center;
+      padding:0.55rem 1rem;
+      border-bottom:1px solid rgba(201,168,76,0.12);
+      background:rgba(0,212,184,0.045);
+      color:var(--cb-text-secondary, #a89f8e);
+      font-size:0.62rem;
+      line-height:1.45;
+    }
+    .sheet-mode-ribbon strong { color:var(--cb-teal, #00D4B8); letter-spacing:0.06em; text-transform:uppercase; }
+    .sheet-toolbar-label {
+      color:var(--cb-text-dim, #6b6258);
+      font-size:0.56rem;
+      letter-spacing:0.1em;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
     .sheet-page-strip {
       flex: 1;
       display: flex;
@@ -9500,7 +9520,9 @@
       </div>
 
     </div>
-    <div class="sheet-toolbar">
+    <div class="sheet-mode-ribbon" id="char-book-mode-ribbon"><strong>Live Play mode</strong><span>The Sheet ✦ page is the player dashboard. Use advanced edit pages only for cleanup, import review, or leveling.</span></div>
+    <div class="sheet-toolbar" aria-label="Advanced character edit navigation">
+      <span class="sheet-toolbar-label">Advanced edit pages</span>
       <button class="mini-btn" type="button" onclick="stepCharacterBookPage(-1)">◀ Prev</button>
       <div class="sheet-page-tabs" id="char-book-tabs">
         
@@ -9511,7 +9533,7 @@
         <button class="sheet-page-tab" type="button" data-page="combat" onclick="goCharacterBookPage('combat')">Actions</button>
         <button class="sheet-page-tab" type="button" data-page="features" onclick="goCharacterBookPage('premiumsheet')" style="display:none;">Spells / Features</button>
         <button class="sheet-page-tab" type="button" data-page="inventory" onclick="goCharacterBookPage('inventory')">Inventory</button>
-        <button class="sheet-page-tab" type="button" data-page="import" onclick="goCharacterBookPage('import')">Import</button>
+        <button class="sheet-page-tab" type="button" data-page="import" onclick="goCharacterBookPage('import')">Import Review</button>
         <button class="sheet-page-tab" type="button" data-page="levelup" onclick="goCharacterBookPage('levelup')">Level Up</button>
         <button class="sheet-page-tab" type="button" data-page="spelllibrary" id="cb-spelllibrary-tab" onclick="goCharacterBookPage('spelllibrary')" style="display:none;">Library ✦</button>
       </div>

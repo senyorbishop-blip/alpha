@@ -8,6 +8,7 @@
 
 (function initSpellsTabModule(global) {
   'use strict';
+  // Stage 46 compatibility marker: data-map-panel-open="spelllib"
 
   function _esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) {

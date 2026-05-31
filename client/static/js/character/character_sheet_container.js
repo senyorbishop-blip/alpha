@@ -55,6 +55,13 @@
         }
       },
     },
+    {
+      id: 'notes',
+      label: 'Notes',
+      init: function (container, charData) {
+        container.innerHTML = _renderNotesTab(charData || {});
+      },
+    },
   ];
 
   function _esc(s) {
@@ -113,11 +120,71 @@ function _classLineWithoutLevel(charData) {
       return [_titleCaseWords(cl && cl.name), _titleCaseWords(cl && cl.subclass)].filter(Boolean).join(' · ');
     }).filter(Boolean).join(' / ');
   }
-  return _titleCaseWords(_firstNonEmpty(charData && charData.className, 'Adventurer'));
+  const baseClass = _titleCaseWords(_firstNonEmpty(charData && charData.className, charData && charData.class, 'Adventurer'));
+  const subclass = _titleCaseWords(_firstNonEmpty(charData && charData.subclass, charData && charData.subclassName, ''));
+  return [baseClass, subclass].filter(Boolean).join(' · ');
 }
 
 function _portraitUrl(charData) {
   return _firstNonEmpty(charData && charData.avatarUrl, charData && charData.portraitUrl, charData && charData.book && charData.book.avatarUrl);
+}
+
+
+function _collectNotes(charData) {
+  const book = charData && typeof charData.book === 'object' ? charData.book : {};
+  const rows = [
+    { title: 'Player Notes', body: _firstNonEmpty(charData && charData.campaignNotes, charData && charData.notes, book.campaignNotes, book.notes) },
+    { title: 'Session Notes', body: _firstNonEmpty(charData && charData.sessionNotes, book.sessionNotes) },
+    { title: 'Private Notes', body: _firstNonEmpty(charData && charData.privateNotes, book.privateNotes) },
+  ];
+  return rows.filter(function (row) { return !!row.body; });
+}
+
+function _collectImportWarnings(charData) {
+  const warnings = [];
+  const book = charData && typeof charData.book === 'object' ? charData.book : {};
+  const rawSources = [charData && charData.importWarnings, charData && charData.warnings, charData && charData.auditWarnings, book.importWarnings, book.warnings];
+  rawSources.forEach(function (source) {
+    _safeArray(source).forEach(function (entry) {
+      const text = _firstNonEmpty(entry && entry.message, entry && entry.text, entry && entry.summary, entry);
+      if (text && warnings.indexOf(text) === -1) warnings.push(text);
+    });
+  });
+  if (!(parseInt(charData && charData.ac || 0, 10) > 0)) warnings.push('AC has warnings. Open Import Review to check armour/shield data.');
+  if (!(parseInt(charData && charData.maxHp || 0, 10) > 0)) warnings.push('HP is missing. Open Build/Edit to confirm maximum hit points.');
+  return warnings.slice(0, 4);
+}
+
+function _renderModeStrip(charData) {
+  const warnings = _collectImportWarnings(charData || {});
+  const modes = [
+    { label: 'Live Play mode', active: true, note: 'Use Actions, Spells, Inventory, Features, and Notes during the session.' },
+    { label: 'Build/Edit mode', active: false, note: 'Use the advanced edit pages only when source data needs cleanup.' },
+    { label: 'Import Review mode', active: warnings.length > 0, note: warnings.length ? warnings[0] : 'No import warnings detected.' },
+    { label: 'Level Up mode', active: false, note: 'Open when you are ready to apply progression choices.' },
+  ];
+  return '<div class="cs-mode-strip" aria-label="Character workflow modes">' + modes.map(function (mode) {
+    return '<span class="cs-mode-chip' + (mode.active ? ' active' : '') + '" title="' + _esc(mode.note) + '">' + _esc(mode.label) + '</span>';
+  }).join('') + '</div>' + (warnings.length ? '<div class="cs-import-warning-strip"><strong>Review:</strong> ' + _esc(warnings.join(' • ')) + '</div>' : '');
+}
+
+function _renderNotesTab(charData) {
+  const notes = _collectNotes(charData || {});
+  const book = charData && typeof charData.book === 'object' ? charData.book : {};
+  const sections = [
+    { title: 'Player Notes', body: _firstNonEmpty(charData && charData.campaignNotes, charData && charData.notes, book.campaignNotes, book.notes), empty: 'No player notes yet. Add backstory, reminders, goals, bonds, flaws, or table-facing notes from Build/Edit mode.' },
+    { title: 'Session Notes', body: _firstNonEmpty(charData && charData.sessionNotes, book.sessionNotes), empty: 'No session notes yet. Track current clues, NPC names, quests, and short-term reminders here when supported.' },
+    { title: 'Private Notes', body: _firstNonEmpty(charData && charData.privateNotes, book.privateNotes), empty: 'No private notes are stored on this sheet yet. Keep secrets here only if your table supports private character notes.' },
+  ];
+  return '<div class="cs-notes-layout">'
+    + '<div class="cs-feature-section-copy">Notes are separated from combat data so players can find reminders without hunting through legacy edit pages.</div>'
+    + sections.map(function (section) {
+      return '<section class="cs-overview-section cs-notes-section"><div class="cs-overview-section-title">' + _esc(section.title) + '</div>'
+        + (section.body ? '<div class="cs-notes-copy">' + _esc(section.body) + '</div>' : '<div class="cs-empty-state compact"><span>' + _esc(section.empty) + '</span></div>')
+        + '</section>';
+    }).join('')
+    + (!notes.length ? '<div class="cs-empty-state"><span class="cs-empty-state-icon">📝</span><span>No notes found. Open Build/Edit mode to add player, session, or private notes.</span></div>' : '')
+    + '</div>';
 }
 
   function _summaryCard(label, value, note, accent) {
@@ -154,7 +221,11 @@ function _portraitUrl(charData) {
     if (tabId === 'actions') return String(_safeArray(charData.quickAttackCards).length + _nativeActionCount(charData));
     if (tabId === 'spells') return String(_safeArray(charData.rulesSpellCards).length);
     if (tabId === 'inventory') return String(_safeArray(charData.inventory).length);
-    if (tabId === 'features') return String(_safeArray(charData.nativeFeatures).length + _safeArray(charData.features).length);
+    if (tabId === 'features') return String(_safeArray(charData.nativeFeatures).length + _safeArray(charData.features).length + _safeArray(charData.feats).length + _safeArray(charData.traits).length);
+    if (tabId === 'notes') {
+      const notes = _collectNotes(charData || {});
+      return notes.length ? String(notes.length) : '';
+    }
     return '';
   }
 
@@ -266,12 +337,15 @@ function _renderFlagshipHeader(charData) {
   const portraitUrl = _portraitUrl(charData);
   const hpValue = `${parseInt(charData.currentHp || 0, 10)}/${parseInt(charData.maxHp || 0, 10)}`;
   const summaryCards = [
-    _summaryCard('Armor Class', parseInt(charData.ac || 0, 10) || '—', 'Defense', 'gold'),
-    _summaryCard('Hit Points', hpValue, parseInt(charData.tempHp || 0, 10) ? `Temp ${parseInt(charData.tempHp, 10)}` : 'Current / Max', 'teal'),
-    _summaryCard('Initiative', _formatSigned(charData.initiative || 0), 'Turn order'),
+    _summaryCard('Armor Class', parseInt(charData.ac || 0, 10) || '—', 'Defense at a glance', 'gold'),
+    _summaryCard('Hit Points', hpValue, 'Current / Max', 'teal'),
+    _summaryCard('Temp HP', parseInt(charData.tempHp || 0, 10) || '0', 'Temporary buffer'),
     _summaryCard('Speed', parseInt(charData.speed || 0, 10) ? `${parseInt(charData.speed, 10)} ft` : '—', 'Movement'),
-    _summaryCard('Spell Save', _firstNonEmpty(charData.spellSaveDc, '—'), _firstNonEmpty(charData.spellAttack, 'No attack bonus'), 'violet'),
-    _summaryCard('Passive / PB', `${parseInt(charData.passivePerception || 0, 10) || '—'} / ${_formatSigned(charData.profBonus || 0)}`, 'Perception / proficiency'),
+    _summaryCard('Initiative', _formatSigned(charData.initiative || 0), 'Turn order'),
+    _summaryCard('Proficiency', _formatSigned(charData.profBonus || 0), 'Bonus'),
+    _summaryCard('Spell Save DC', _firstNonEmpty(charData.spellSaveDc, '—'), 'If applicable', 'violet'),
+    _summaryCard('Spell Attack', _firstNonEmpty(charData.spellAttack, '—'), 'If applicable', 'violet'),
+    _summaryCard('Passive Perception', parseInt(charData.passivePerception || 0, 10) || '—', 'Awareness'),
   ].join('');
 
   const readiness = {
@@ -292,6 +366,7 @@ function _renderFlagshipHeader(charData) {
   ].join('');
 
   return `<div class="cs-flagship-header">
+    ${_renderModeStrip(charData || {})}
     <div class="cs-flagship-grid">
       <div class="cs-hero-card">
         <div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
@@ -312,10 +387,12 @@ function _renderFlagshipHeader(charData) {
               ${charData.senses ? `<span class="cs-hero-pill">${_esc(String(charData.senses))}</span>` : ''}
             </div>
             <div class="cs-launch-grid">
-              <button class="cs-launch-btn" type="button" data-tab-jump="actions">Open Combat Actions</button>
-              <button class="cs-launch-btn" type="button" data-tab-jump="spells">Open Spells</button>
-              <button class="cs-launch-btn" type="button" data-tab-jump="inventory">Open Loadout</button>
-              <button class="cs-launch-btn" type="button" data-jump="levelup">Open Level Up</button>
+              <button class="cs-launch-btn" type="button" data-tab-jump="actions">Actions</button>
+              <button class="cs-launch-btn" type="button" data-tab-jump="spells">Spells</button>
+              <button class="cs-launch-btn" type="button" data-tab-jump="inventory">Inventory</button>
+              <button class="cs-launch-btn" type="button" data-tab-jump="features">Features</button>
+              <button class="cs-launch-btn" type="button" data-tab-jump="notes">Notes</button>
+              <button class="cs-launch-btn secondary" type="button" data-jump="levelup">Level Up</button>
             </div>
           </div>
         </div>
@@ -546,8 +623,8 @@ function _renderOverviewPanel(charData) {
     <div class="cs-overview-columns">
       <div class="cs-overview-main">
         <section class="cs-overview-section">
-          <div class="cs-overview-section-title">Action Spotlight</div>
-          ${_renderListRows(spotlightActions, 'No structured attack or action cards yet.', function (item) {
+          <div class="cs-overview-section-title">Actions Overview</div>
+          ${_renderListRows(spotlightActions, 'No equipped weapon found. Go to Inventory to equip one, or add/import action cards in Build/Edit mode.', function (item) {
             const badge = item.attackBonus ? `Atk ${item.attackBonus}` : (item.actionType || item.action_type || item.kind || 'Action');
             const damage = item.damage || item.damageText || item.damage_formula || item.subtitle || item.summary || '';
             return { title: item.name || 'Action', note: [badge, damage].filter(Boolean).join(' • ') };
@@ -556,7 +633,7 @@ function _renderOverviewPanel(charData) {
 
         <section class="cs-overview-section">
           <div class="cs-overview-section-title">Spell Highlights</div>
-          ${_renderListRows(spells, 'No linked spell cards yet.', function (spell) {
+          ${_renderListRows(spells, 'No spells found. This character may not cast spells, or the import needs review.', function (spell) {
             return {
               title: spell.displayName || spell.name || 'Spell',
               note: [spell.levelLabel || spell.level || '', spell.castingTime || '', spell.range || '', spell.attackType || spell.savingThrow || spell.saveDC || '', spell.effect || spell.playerFacingEffectSummary || spell.damageText || spell.school || ''].filter(Boolean).join(' • '),
@@ -594,7 +671,7 @@ function _renderOverviewPanel(charData) {
 
         <section class="cs-overview-section">
           <div class="cs-overview-section-title">Equipped Gear</div>
-          ${_renderListRows(equipped, 'No equipped items detected yet.', function (item) {
+          ${_renderListRows(equipped, 'No equipped weapon found. Go to Inventory to equip one.', function (item) {
             return { title: item.name || 'Item', note: [item.damage || item.damage_dice || '', item.range || '', item.properties && item.properties.length ? item.properties.join(', ') : ''].filter(Boolean).join(' • ') };
           })}
         </section>
@@ -608,7 +685,7 @@ function _renderOverviewPanel(charData) {
 
         <section class="cs-overview-section">
           <div class="cs-overview-section-title">Player Notes</div>
-          ${notes ? `<div class="cs-overview-copy">${_esc(String(notes))}</div>` : '<div class="cs-empty-state compact"><span>Add notes to surface them here.</span></div>'}
+          ${notes ? `<div class="cs-overview-copy">${_esc(String(notes))}</div>` : '<div class="cs-empty-state compact"><span>No notes found. Open the Notes tab or Build/Edit mode to add player notes.</span></div>'}
         </section>
       </div>
     </div>`;

@@ -58,6 +58,31 @@
     });
   }
 
+  function _backpackItems(items) {
+    return (Array.isArray(items) ? items : []).filter(function (item) {
+      return !_equippableItems([item]).length;
+    });
+  }
+
+  function _renderBackpack(items) {
+    const backpack = _backpackItems(items).slice(0, 10);
+    if (!backpack.length) {
+      return '<div class="cs-action-section"><div class="cs-action-section-title">Backpack</div><div class="cs-empty-state compact"><span>No backpack items found. Imported non-equipped gear will appear here when supported.</span></div></div>';
+    }
+    return '<div class="cs-action-section"><div class="cs-action-section-title">Backpack</div><div class="cs-overview-list">' + backpack.map(function (item) {
+      const qty = parseInt(item && (item.quantity || item.qty || item.count) || 0, 10);
+      const note = [qty > 1 ? ('Qty ' + qty) : '', item && (item.notes || item.description || item.category || item.item_type) || ''].filter(Boolean).join(' • ');
+      return '<div class="cs-overview-row"><strong>' + _esc(item && item.name || 'Item') + '</strong><span>' + _esc(note) + '</span></div>';
+    }).join('') + '</div></div>';
+  }
+
+  function _renderAttunement(items) {
+    const attuned = (Array.isArray(items) ? items : []).filter(function (item) { return !!(item && (item.attuned || item.requires_attunement || item.attunement)); });
+    const count = attuned.filter(function (item) { return !!(item && item.attuned); }).length;
+    const label = attuned.length ? (String(count) + ' attuned / ' + String(attuned.length) + ' attunement-capable') : 'No attunement items found';
+    return '<div class="cs-action-section"><div class="cs-action-section-title">Attunement</div><div class="cs-feature-section-copy">' + _esc(label) + '</div></div>';
+  }
+
   function _categoryForItem(item) {
     const kind = _itemKind(item);
     if (kind === 'weapon') return 'Weapons';
@@ -347,15 +372,18 @@
     if (!container) return;
 
     const currency = _liveCurrency(charData);
-    const inventory = _equippableItems(_inventorySourceItems(charData));
+    const sourceItems = _inventorySourceItems(charData);
+    const inventory = _equippableItems(sourceItems);
 
     if (!inventory.length) {
       container.innerHTML = `${_renderCurrency(currency)}
         <div class="cs-empty-state">
           <span class="cs-empty-state-icon">🛡️</span>
-          <span>No equippable loadout found</span>
-          <span class="cs-summary-note">Loadout only shows weapons, armor, and shields that can be equipped.</span>
-        </div>`;
+          <span>No equipped weapon found. Go to Inventory to equip one.</span>
+          <span class="cs-summary-note">Equipped weapons, armour, and shields appear here when the import or inventory has equippable gear.</span>
+        </div>
+        ${_renderBackpack(sourceItems)}
+        ${_renderAttunement(sourceItems)}`;
       return;
     }
 
@@ -376,9 +404,11 @@
     }).join('');
 
     container.innerHTML = `
-      ${_renderCurrency(currency)}
-      <div class="cs-feature-section-copy" style="margin-bottom:0.65rem;">Loadout stays focused on equippable gear. Equip from here to sync with the full Inventory tab and unlock weapon attacks or item-linked spells.</div>
-      ${sections}
+      <div class="cs-action-section"><div class="cs-action-section-title">Currency</div>${_renderCurrency(currency) || '<div class="cs-empty-state compact"><span>No currency found.</span></div>'}</div>
+      <div class="cs-feature-section-copy" style="margin-bottom:0.65rem;">Inventory is grouped as Equipped, Backpack, Currency, and Attunement so the live play loadout is easy to scan without losing imported items.</div>
+      <div class="cs-action-section"><div class="cs-action-section-title">Equipped</div>${sections || '<div class="cs-empty-state compact"><span>No equipped weapon found. Go to Inventory to equip one.</span></div>'}</div>
+      ${_renderBackpack(sourceItems)}
+      ${_renderAttunement(sourceItems)}
     `;
 
     if (!container.__inventoryTabBound) {
