@@ -2561,9 +2561,7 @@
     });
   }
 
-  function initActionsTab(container, charData) {
-    if (!container) return;
-
+  function _buildActionsTabModel(charData) {
     const native = _nativeActionGroups(charData || {});
     const isWildShapeActive = !!_druidWildShapeState(charData || {}).active;
     const quickAttacks = (function () {
@@ -2623,6 +2621,68 @@
     const selectedTarget = charData && charData.selectedTarget ? charData.selectedTarget : null;
     const concentration = _firstText(charData && charData.activeConcentration, '');
     const totalActions = quickAttacks.length + itemActions.length + native.actions.length + native.bonusActions.length + native.reactions.length + textAttacks.length + summonActions.length;
+    return {
+      native,
+      isWildShapeActive,
+      quickAttacks,
+      itemActions,
+      nativeActionsForSection,
+      resources,
+      textAttacks,
+      summonActions,
+      beastMasterCompanion,
+      selectedTarget,
+      concentration,
+      totalActions,
+    };
+  }
+
+  function buildQuickActionModel(charData) {
+    const model = _buildActionsTabModel(charData || {});
+    function decorate(action, lane) {
+      const kind = _actionKind(action);
+      const resourceState = _resourceStateFromAction(action);
+      const economy = Array.isArray(action && action.economy) ? action.economy : [action && (action.economy || action.actionType || lane || 'action')];
+      const needsTarget = !!(action && (_firstText(action.range, action.reach, '') || _parseAttackBonusValue(action.attackBonus) != null || _firstText(action.damage, action.damageText, '')));
+      const canUse = _canUseAction(action, kind);
+      return Object.assign({}, action || {}, {
+        quickBarLane: lane || economy[0] || 'action',
+        quickBarKind: kind,
+        quickBarEconomy: economy,
+        quickBarCanUse: canUse,
+        quickBarDisabledReason: canUse ? '' : _actionDisabledReason(action, kind, resourceState),
+        quickBarResourceState: resourceState,
+        quickBarNeedsTarget: needsTarget,
+        quickBarButtonLabel: _actionButtonLabel(action, kind),
+      });
+    }
+    return {
+      primaryActions: [].concat(model.quickAttacks || [], model.nativeActionsForSection || []).map(function (action) { return decorate(action, 'action'); }),
+      bonusActions: _safeArray(model.native && model.native.bonusActions).map(function (action) { return decorate(action, 'bonus'); }),
+      reactions: _safeArray(model.native && model.native.reactions).map(function (action) { return decorate(action, 'reaction'); }),
+      topSpells: [],
+      resources: _safeArray(model.resources),
+      concentration: model.concentration || null,
+      _allActions: [].concat(model.quickAttacks || [], model.itemActions || [], model.nativeActionsForSection || [], _safeArray(model.native && model.native.bonusActions), _safeArray(model.native && model.native.reactions), model.textAttacks || [], model.summonActions || []).map(function (action) { return decorate(action, 'action'); }),
+    };
+  }
+
+  function initActionsTab(container, charData) {
+    if (!container) return;
+
+    const model = _buildActionsTabModel(charData || {});
+    const native = model.native;
+    const isWildShapeActive = model.isWildShapeActive;
+    const quickAttacks = model.quickAttacks;
+    const itemActions = model.itemActions;
+    const nativeActionsForSection = model.nativeActionsForSection;
+    const resources = model.resources;
+    const textAttacks = model.textAttacks;
+    const summonActions = model.summonActions;
+    const beastMasterCompanion = model.beastMasterCompanion;
+    const selectedTarget = model.selectedTarget;
+    const concentration = model.concentration;
+    const totalActions = model.totalActions;
 
     container.innerHTML = `
       <div class="cs-combat-hero-grid">
@@ -2651,5 +2711,5 @@
     });
   }
 
-  global.ActionsTab = { initActionsTab };
+  global.ActionsTab = { initActionsTab, buildQuickActionModel };
 }(window));
