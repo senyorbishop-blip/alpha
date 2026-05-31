@@ -39,6 +39,8 @@ def test_combat_quick_selectors_keep_expected_shape_and_reuse_actions_tab():
     assert 'resources' in src
     assert 'concentration' in src
     assert 'markUsed' in src
+    assert 'quickBarAttackText' in src
+    assert 'quickBarDamageText' in src
 
 
 def test_combat_quick_bar_has_required_player_controls_and_states():
@@ -48,6 +50,10 @@ def test_combat_quick_bar_has_required_player_controls_and_states():
     assert 'pointerdown' in src
     assert 'localStorage' in src
     assert 'Open Full Sheet' in src
+    assert 'data-qb-open-notes' in src
+    assert 'openCharacterStickyNotes' in src
+    assert 'Atk ' in src
+    assert 'Dmg ' in src
     assert 'Used this turn' in src
     assert 'Needs target' in src
     assert 'Needs slot' in src

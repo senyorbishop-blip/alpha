@@ -1227,8 +1227,9 @@ def test_play_html_initiative_roll_uses_shared_modifier_resolver():
     content = _play_html_content()
     assert "function _resolveCombatantInitiativeModifier(" in content
     assert "function _resolveCharacterSheetInitiativeModifier(" in content
-    assert "sheet.initiativeBonus" in content
-    assert "sheet.charBook?.initiative" in content
+    assert "sheet?.initiativeBonus" in content
+    assert "activeProfile?.charBook?.initiative" in content
+    assert "document.getElementById('char-initiative')?.value" in content
     assert "const modifier = _resolveCombatantInitiativeModifier(com, combatTok);" in content
     assert "const initMod = _resolveCombatantInitiativeModifier(null, t);" in content
 

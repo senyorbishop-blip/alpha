@@ -42827,7 +42827,7 @@ function combatApplyState(state) {
     if ((nc.initiative === null || nc.initiative === undefined) && _prevById[nc.id]) {
       const prev = _prevById[nc.id];
       if (prev.initiative !== null && prev.initiative !== undefined) {
-        return Object.assign({}, nc, { initiative: prev.initiative });
+        return Object.assign({}, nc, { initiative: prev.initiative, roll: prev.roll, modifier: prev.modifier });
       }
     }
     return nc;
@@ -44595,17 +44595,43 @@ function _parseInitiativeModifierValue(value, fallback = null) {
 }
 
 function _resolveCharacterSheetInitiativeModifier(sheet = _charSheet) {
-  if (!sheet || typeof sheet !== 'object') return 0;
+  const activeProfile = (typeof resolveActiveCharProfileId === 'function' && Array.isArray(charProfiles))
+    ? charProfiles.find(profile => String(profile?.id || '') === String(resolveActiveCharProfileId() || ''))
+    : null;
+  const runtime = activeProfile?.nativeRuntime || {};
+  const runtimeCombat = (runtime && typeof runtime.combat === 'object') ? runtime.combat : {};
+  const uiHiddenValue = document.getElementById('char-initiative')?.value;
+  const bookValue = document.getElementById('cb-initiative')?.value;
   const candidates = [
-    sheet.initiative,
-    sheet.initiativeBonus,
-    sheet.initBonus,
-    sheet.charSheet?.initiative,
-    sheet.charSheet?.initiativeBonus,
-    sheet.charBook?.initiative,
-    sheet.charBook?.initiativeBonus,
-    sheet.book?.initiative,
-    sheet.book?.initiativeBonus,
+    sheet?.initiativeBonus,
+    sheet?.initBonus,
+    sheet?.initiative,
+    sheet?.charSheet?.initiativeBonus,
+    sheet?.charSheet?.initBonus,
+    sheet?.charSheet?.initiative,
+    sheet?.charBook?.initiativeBonus,
+    sheet?.charBook?.initBonus,
+    sheet?.charBook?.initiative,
+    sheet?.book?.initiativeBonus,
+    sheet?.book?.initBonus,
+    sheet?.book?.initiative,
+    runtimeCombat?.initiativeBonus,
+    runtimeCombat?.initBonus,
+    runtimeCombat?.initiative,
+    runtime?.initiativeBonus,
+    runtime?.initBonus,
+    runtime?.initiative,
+    activeProfile?.charSheet?.initiativeBonus,
+    activeProfile?.charSheet?.initBonus,
+    activeProfile?.charSheet?.initiative,
+    activeProfile?.charBook?.initiativeBonus,
+    activeProfile?.charBook?.initBonus,
+    activeProfile?.charBook?.initiative,
+    activeProfile?.initiativeBonus,
+    activeProfile?.initBonus,
+    activeProfile?.initiative,
+    uiHiddenValue,
+    bookValue,
   ];
   for (const candidate of candidates) {
     const parsed = _parseInitiativeModifierValue(candidate, null);
