@@ -1,0 +1,187 @@
+/*
+ * Combat Quick Action selectors.
+ *
+ * This module intentionally reuses the premium character sheet action model
+ * exported by ActionsTab instead of re-parsing attacks/features or duplicating
+ * combat math.  It adds only the compact grouping needed by the movable combat
+ * quick bar.
+ *
+ * Exposes: window.CombatQuickSelectors
+ */
+(function initCombatQuickSelectors(global) {
+  'use strict';
+
+  function _safeArray(value) {
+    return Array.isArray(value) ? value : [];
+  }
+
+  function _firstText() {
+    for (let i = 0; i < arguments.length; i += 1) {
+      const value = arguments[i];
+      if (value === null || value === undefined) continue;
+      const text = String(value).trim();
+      if (text) return text;
+    }
+    return '';
+  }
+
+  function _runtime() {
+    if (typeof global.getCombatQuickBarRuntime === 'function') {
+      return global.getCombatQuickBarRuntime() || {};
+    }
+    return {
+      combat: global._combat || { active: false, turn: 0, combatants: [] },
+      charSheet: global._charSheet || {},
+      selectedTargetId: global._combat && global._combat.selected_target_id,
+    };
+  }
+
+  function _uniqueByName(items, limit) {
+    const seen = new Set();
+    const out = [];
+    _safeArray(items).forEach(function (item) {
+      const key = _firstText(item && item.id, item && item.name).toLowerCase();
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      out.push(item);
+    });
+    return out.slice(0, limit || out.length);
+  }
+
+  function _combatTurnKey(combat) {
+    if (!combat || !combat.active) return '';
+    const current = _safeArray(combat.combatants)[Math.max(0, Number(combat.turn || 0))] || null;
+    return [combat.round || 1, combat.turn || 0, current && (current.token_id || current.id || current.name || '')].join(':');
+  }
+
+  function _usedThisTurnStoreKey(runtime) {
+    const sessionId = _firstText(runtime && runtime.sessionId, global.SESSION_ID, 'session');
+    const userId = _firstText(runtime && runtime.userId, global.USER_ID, 'anon');
+    return 'combat_quick_bar.used.' + sessionId + '.' + userId;
+  }
+
+  function _readUsedThisTurn(runtime) {
+    try {
+      const raw = global.localStorage && global.localStorage.getItem(_usedThisTurnStoreKey(runtime));
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (!parsed || parsed.turnKey !== _combatTurnKey(runtime.combat)) return { turnKey: _combatTurnKey(runtime.combat), used: {} };
+      return { turnKey: parsed.turnKey, used: parsed.used || {} };
+    } catch (_err) {
+      return { turnKey: _combatTurnKey(runtime.combat), used: {} };
+    }
+  }
+
+  function markUsed(actionKey) {
+    const runtime = _runtime();
+    if (!actionKey) return;
+    const state = _readUsedThisTurn(runtime);
+    state.used[String(actionKey)] = true;
+    try {
+      global.localStorage && global.localStorage.setItem(_usedThisTurnStoreKey(runtime), JSON.stringify(state));
+    } catch (_err) {}
+  }
+
+
+  function _spellLevel(spell) {
+    const card = spell && spell.card ? spell.card : {};
+    return Number(((spell && (spell.level ?? spell.spell_level)) ?? (card && (card.level ?? card.spell_level))) || 0) || 0;
+  }
+
+  function _spellNeedsSlot(spell) {
+    return _spellLevel(spell) > 0;
+  }
+
+  function _spellSlotSummary(spell, runtime) {
+    const level = _spellLevel(spell);
+    if (!level) return 'Cantrip';
+    const slots = runtime && runtime.spellSlots ? runtime.spellSlots : {};
+    const used = runtime && runtime.spellSlotState ? runtime.spellSlotState : {};
+    const max = Number(slots[level] ?? slots[String(level)] ?? 0) || 0;
+    const spent = Number(used[level] ?? used[String(level)] ?? 0) || 0;
+    if (!max) return 'Needs slot';
+    return 'L' + level + ' slots ' + Math.max(0, max - spent) + '/' + max;
+  }
+
+  function _spellAvailable(spell, runtime) {
+    const level = _spellLevel(spell);
+    if (!level) return true;
+    const slots = runtime && runtime.spellSlots ? runtime.spellSlots : {};
+    const used = runtime && runtime.spellSlotState ? runtime.spellSlotState : {};
+    const max = Number(slots[level] ?? slots[String(level)] ?? 0) || 0;
+    const spent = Number(used[level] ?? used[String(level)] ?? 0) || 0;
+    return max > 0 && spent < max;
+  }
+
+  function _topSpells(runtime) {
+    let spells = [];
+    if (typeof global.getCombatQuickBarSpells === 'function') {
+      spells = global.getCombatQuickBarSpells() || [];
+    } else if (typeof global._getCombatQuickSpells === 'function') {
+      spells = global._getCombatQuickSpells() || [];
+    } else {
+      const sheet = runtime && runtime.charSheet ? runtime.charSheet : {};
+      spells = _safeArray(sheet.rulesSpellCards || sheet.rulesSpellbook || sheet.spellbookEntries);
+    }
+    return _uniqueByName(spells, 3).map(function (spell) {
+      const card = spell && spell.card ? spell.card : spell;
+      const level = _spellLevel(spell);
+      const needsSlot = _spellNeedsSlot(spell);
+      const available = _spellAvailable(spell, runtime);
+      const concentration = /concentration/i.test(_firstText(card && card.duration, card && card.base_effect_text, card && card.description, spell && spell.duration));
+      return Object.assign({}, spell, {
+        quickBarType: 'spell',
+        quickBarLane: level === 0 ? 'cantrip' : 'spell',
+        quickBarSlotSummary: _spellSlotSummary(spell, runtime),
+        quickBarNeedsSlot: needsSlot,
+        quickBarCanUse: available,
+        quickBarDisabledReason: available ? '' : 'Needs spell slot',
+        quickBarConcentration: concentration,
+      });
+    });
+  }
+
+  function _resourceRows(model) {
+    return _uniqueByName(_safeArray(model.resources), 4).map(function (resource) {
+      const current = Number(resource && resource.current);
+      const max = Number(resource && resource.max);
+      const limited = Number.isFinite(current) && Number.isFinite(max) && max > 0;
+      return Object.assign({}, resource, {
+        quickBarType: 'resource',
+        quickBarCanUse: !limited || current > 0,
+        quickBarDisabledReason: limited && current <= 0 ? 'Out of uses' : '',
+        quickBarUsesText: limited ? (current + '/' + max) : _firstText(resource && resource.summary, 'Tracked'),
+      });
+    });
+  }
+
+  function selectQuickActions(charData) {
+    const runtime = _runtime();
+    const sheet = charData || runtime.charSheet || {};
+    const actionModel = global.ActionsTab && typeof global.ActionsTab.buildQuickActionModel === 'function'
+      ? global.ActionsTab.buildQuickActionModel(sheet)
+      : { primaryActions: [], bonusActions: [], reactions: [], resources: [], concentration: null, _allActions: [] };
+    const usedState = _readUsedThisTurn(runtime);
+    function mark(items) {
+      return _safeArray(items).map(function (item) {
+        const key = _firstText(item && item.id, item && item.name);
+        return Object.assign({}, item, { quickBarUsedThisTurn: !!(key && usedState.used[key]) });
+      });
+    }
+    return {
+      primaryActions: mark(_uniqueByName(actionModel.primaryActions, 2)),
+      bonusActions: mark(_uniqueByName(actionModel.bonusActions, 2)),
+      reactions: mark(_uniqueByName(actionModel.reactions, 2)),
+      topSpells: _topSpells(runtime),
+      resources: _resourceRows(actionModel),
+      concentration: actionModel.concentration || (runtime.charSheet && runtime.charSheet.activeConcentration) || null,
+      combat: runtime.combat || { active: false },
+      selectedTargetId: runtime.selectedTargetId || '',
+      allActions: actionModel._allActions || [],
+    };
+  }
+
+  global.CombatQuickSelectors = {
+    selectQuickActions: selectQuickActions,
+    markUsed: markUsed,
+  };
+}(window));

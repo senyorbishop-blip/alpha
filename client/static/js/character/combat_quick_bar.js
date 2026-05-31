@@ -1,0 +1,293 @@
+/*
+ * Movable Combat Quick Actions Bar.
+ * Renders compact player combat choices from CombatQuickSelectors.
+ * Exposes: window.CombatQuickBar
+ */
+(function initCombatQuickBar(global) {
+  'use strict';
+
+  const STORAGE_KEY = 'combat_quick_bar.v1';
+  const DEFAULT_STATE = { x: null, y: null, minimized: false, manual: false, combatWasActive: false };
+  let state = Object.assign({}, DEFAULT_STATE);
+  let root = null;
+  let dragging = null;
+
+  function _esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+    });
+  }
+
+  function _safeArray(v) { return Array.isArray(v) ? v : []; }
+  function _firstText() {
+    for (let i = 0; i < arguments.length; i += 1) {
+      const v = arguments[i];
+      if (v === null || v === undefined) continue;
+      const t = String(v).trim();
+      if (t) return t;
+    }
+    return '';
+  }
+
+  function _runtime() {
+    return typeof global.getCombatQuickBarRuntime === 'function' ? (global.getCombatQuickBarRuntime() || {}) : {};
+  }
+
+  function _loadState() {
+    try {
+      const parsed = JSON.parse(global.localStorage.getItem(STORAGE_KEY) || '{}');
+      state = Object.assign({}, DEFAULT_STATE, parsed || {});
+    } catch (_err) {
+      state = Object.assign({}, DEFAULT_STATE);
+    }
+  }
+
+  function _saveState() {
+    try { global.localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_err) {}
+  }
+
+  function _installStyles() {
+    if (document.getElementById('combat-quick-bar-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'combat-quick-bar-styles';
+    style.textContent = `
+      .combat-quick-bar-toggle{position:fixed;right:18px;bottom:84px;z-index:1085;border:1px solid rgba(0,229,204,.45);border-radius:999px;background:rgba(13,18,24,.88);color:#dffbf7;padding:.42rem .62rem;font-size:.72rem;box-shadow:0 8px 22px rgba(0,0,0,.35);cursor:pointer;}
+      .combat-quick-bar{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);z-index:1086;width:min(720px,calc(100vw - 28px));max-height:min(58vh,520px);display:flex;flex-direction:column;gap:.48rem;border:1px solid rgba(0,229,204,.32);border-radius:16px;background:linear-gradient(145deg,rgba(13,18,24,.96),rgba(28,20,13,.94));box-shadow:0 18px 44px rgba(0,0,0,.48),inset 0 0 0 1px rgba(255,255,255,.04);color:#f5ead6;font-family:inherit;overflow:hidden;}
+      .combat-quick-bar.is-minimized{width:min(360px,calc(100vw - 28px));}
+      .combat-quick-bar[hidden],.combat-quick-bar-toggle[hidden]{display:none!important;}
+      .combat-quick-bar-head{display:flex;align-items:center;justify-content:space-between;gap:.7rem;padding:.55rem .7rem .42rem;cursor:grab;background:rgba(255,255,255,.035);border-bottom:1px solid rgba(255,255,255,.08);user-select:none;}
+      .combat-quick-bar-title{display:flex;align-items:center;gap:.45rem;font-weight:800;font-size:.78rem;letter-spacing:.03em;text-transform:uppercase;color:#9ff6ea;}
+      .combat-quick-bar-sub{font-size:.62rem;color:rgba(245,234,214,.68);font-weight:500;text-transform:none;letter-spacing:0;}
+      .combat-quick-bar-head-actions{display:flex;gap:.35rem;align-items:center;}
+      .combat-quick-bar-icon-btn{border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(0,0,0,.28);color:#f5ead6;min-width:1.8rem;height:1.8rem;cursor:pointer;}
+      .combat-quick-bar-body{display:grid;gap:.55rem;padding:.58rem .7rem .72rem;overflow:auto;}
+      .combat-quick-bar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:.42rem;}
+      .combat-quick-bar-section{display:grid;gap:.35rem;}
+      .combat-quick-bar-section-title{font-size:.61rem;color:rgba(245,234,214,.62);text-transform:uppercase;letter-spacing:.08em;}
+      .combat-quick-tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:.22rem;min-height:4.1rem;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.045);color:#f7ecd8;padding:.5rem .55rem;text-align:left;cursor:pointer;}
+      .combat-quick-tile:hover{border-color:rgba(0,229,204,.45);background:rgba(0,229,204,.08);}
+      .combat-quick-tile:disabled,.combat-quick-tile.is-disabled{opacity:.5;cursor:not-allowed;filter:saturate(.65);}
+      .combat-quick-tile.is-used{border-color:rgba(255,210,90,.42);}
+      .combat-quick-tile.needs-target:after,.combat-quick-tile.needs-slot:after{content:attr(data-state);position:absolute;right:.42rem;top:.38rem;font-size:.52rem;border:1px solid rgba(255,210,90,.35);border-radius:999px;padding:.08rem .28rem;color:#ffe8a3;background:rgba(80,52,0,.45);}
+      .combat-quick-name{font-weight:800;font-size:.72rem;line-height:1.15;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+      .combat-quick-meta{font-size:.58rem;color:rgba(245,234,214,.68);line-height:1.25;}
+      .combat-quick-pill-row{display:flex;flex-wrap:wrap;gap:.22rem;margin-top:auto;}
+      .combat-quick-pill{font-size:.52rem;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:.08rem .28rem;color:rgba(245,234,214,.72);background:rgba(0,0,0,.18);}
+      .combat-quick-pill.good{border-color:rgba(0,229,204,.32);color:#9ff6ea;}.combat-quick-pill.warn{border-color:rgba(255,210,90,.35);color:#ffe8a3;}.combat-quick-pill.danger{border-color:rgba(231,76,60,.42);color:#ffb4a8;}
+      .combat-quick-status{display:flex;gap:.35rem;flex-wrap:wrap;align-items:center;font-size:.6rem;color:rgba(245,234,214,.66);}
+      .combat-quick-resource-row{display:flex;gap:.3rem;flex-wrap:wrap;}.combat-quick-resource{font-size:.58rem;border:1px solid rgba(255,210,90,.24);border-radius:999px;padding:.14rem .38rem;color:#ffe8a3;background:rgba(96,64,8,.25);}
+      .combat-quick-empty{font-size:.63rem;color:rgba(245,234,214,.58);padding:.35rem .1rem;}
+      .combat-quick-sheet-btn{border:1px solid rgba(0,229,204,.4);border-radius:999px;background:rgba(0,229,204,.12);color:#dffbf7;padding:.35rem .55rem;font-weight:800;cursor:pointer;}
+      @media(max-width:760px){.combat-quick-bar{bottom:72px}.combat-quick-bar-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.combat-quick-bar-toggle{bottom:72px;right:12px;}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function _ensureRoot() {
+    if (root) return root;
+    _installStyles();
+    root = document.createElement('aside');
+    root.id = 'combat-quick-bar';
+    root.className = 'combat-quick-bar';
+    root.setAttribute('aria-label', 'Combat quick actions');
+    document.body.appendChild(root);
+    const toggle = document.createElement('button');
+    toggle.id = 'combat-quick-bar-toggle';
+    toggle.type = 'button';
+    toggle.className = 'combat-quick-bar-toggle';
+    toggle.textContent = '⚔ Quick Bar';
+    toggle.addEventListener('click', function () { toggleManual(); });
+    document.body.appendChild(toggle);
+    root.addEventListener('click', _handleClick);
+    root.addEventListener('pointermove', _drag);
+    root.addEventListener('pointerup', _stopDrag);
+    root.addEventListener('pointercancel', _stopDrag);
+    return root;
+  }
+
+  function _applyPosition() {
+    if (!root) return;
+    if (Number.isFinite(Number(state.x)) && Number.isFinite(Number(state.y))) {
+      root.style.left = Math.max(8, Math.min(global.innerWidth - 80, Number(state.x))) + 'px';
+      root.style.top = Math.max(8, Math.min(global.innerHeight - 48, Number(state.y))) + 'px';
+      root.style.bottom = 'auto';
+      root.style.transform = 'none';
+    } else {
+      root.style.left = '50%';
+      root.style.top = 'auto';
+      root.style.bottom = '88px';
+      root.style.transform = 'translateX(-50%)';
+    }
+  }
+
+  function _startDrag(ev) {
+    if (ev.target.closest('button')) return;
+    const rect = root.getBoundingClientRect();
+    dragging = { dx: ev.clientX - rect.left, dy: ev.clientY - rect.top };
+    root.setPointerCapture && root.setPointerCapture(ev.pointerId);
+  }
+  function _drag(ev) {
+    if (!dragging) return;
+    state.x = ev.clientX - dragging.dx;
+    state.y = ev.clientY - dragging.dy;
+    _applyPosition();
+  }
+  function _stopDrag() {
+    if (!dragging) return;
+    dragging = null;
+    _saveState();
+  }
+
+  function _typeLabel(action, fallback) {
+    const lane = _firstText(action && action.quickBarLane, action && action.actionType, fallback, 'action').toLowerCase();
+    if (/bonus/.test(lane)) return 'bonus action';
+    if (/reaction/.test(lane)) return 'reaction';
+    if (/cantrip/.test(lane)) return 'cantrip';
+    if (/spell/.test(lane)) return 'spell';
+    return 'action';
+  }
+
+  function _tile(action, category, idx) {
+    const key = _firstText(action && action.id, action && action.name, category + '-' + idx);
+    const disabled = action && action.quickBarCanUse === false;
+    const used = !!(action && action.quickBarUsedThisTurn);
+    const needsTarget = !!(action && action.quickBarNeedsTarget);
+    const needsSlot = !!(action && action.quickBarNeedsSlot && disabled);
+    const stateText = needsSlot ? 'Needs slot' : needsTarget ? 'Needs target' : '';
+    const classes = ['combat-quick-tile'];
+    if (disabled) classes.push('is-disabled');
+    if (used) classes.push('is-used');
+    if (needsTarget) classes.push('needs-target');
+    if (needsSlot) classes.push('needs-slot');
+    const name = _firstText(action && action.name, action && action.displayName, 'Action');
+    const type = action && action.quickBarType === 'spell' ? _typeLabel(action, 'spell') : _typeLabel(action, category);
+    const summary = _firstText(action && action.desc, action && action.description, action && action.current && action.current.effect, action && action.quickBarSlotSummary, action && action.resourceSummary, 'Open for details');
+    const uses = action && action.quickBarResourceState ? action.quickBarResourceState : null;
+    const usesText = _firstText(action && action.quickBarUsesText, uses && Number.isFinite(Number(uses.remaining)) && Number.isFinite(Number(uses.max)) ? (uses.remaining + '/' + uses.max) : '', action && action.quickBarSlotSummary, '');
+    const pillTone = disabled ? 'danger' : used ? 'warn' : 'good';
+    return `<button type="button" class="${classes.join(' ')}" data-qb-kind="${_esc(category)}" data-qb-key="${_esc(key)}" data-state="${_esc(stateText)}" ${disabled ? `title="${_esc(action && action.quickBarDisabledReason || 'Unavailable')}"` : ''}>
+      <span class="combat-quick-name">${_esc(name)}</span>
+      <span class="combat-quick-meta">${_esc(summary)}</span>
+      <span class="combat-quick-pill-row">
+        <span class="combat-quick-pill ${pillTone}">${_esc(disabled ? (action && action.quickBarDisabledReason || 'Unavailable') : used ? 'Used this turn' : 'Available')}</span>
+        <span class="combat-quick-pill">${_esc(type)}</span>
+        ${usesText ? `<span class="combat-quick-pill">${_esc(usesText)}</span>` : ''}
+        ${action && action.quickBarConcentration ? '<span class="combat-quick-pill warn">Concentration</span>' : ''}
+      </span>
+    </button>`;
+  }
+
+  function _section(title, items, category, empty) {
+    const rows = _safeArray(items);
+    if (!rows.length) return `<section class="combat-quick-bar-section"><div class="combat-quick-bar-section-title">${_esc(title)}</div><div class="combat-quick-empty">${_esc(empty || 'None')}</div></section>`;
+    return `<section class="combat-quick-bar-section"><div class="combat-quick-bar-section-title">${_esc(title)}</div><div class="combat-quick-bar-grid">${rows.map(function (item, idx) { return _tile(item, category, idx); }).join('')}</div></section>`;
+  }
+
+  function render() {
+    _ensureRoot();
+    const runtime = _runtime();
+    const combat = runtime.combat || { active: false };
+    const role = _firstText(runtime.role, global.ROLE, '').toLowerCase();
+    const shouldShow = role === 'player' && (!!combat.active || !!state.manual);
+    const toggle = document.getElementById('combat-quick-bar-toggle');
+    if (toggle) toggle.hidden = role !== 'player';
+    if (!shouldShow) {
+      root.hidden = true;
+      state.combatWasActive = !!combat.active;
+      _saveState();
+      return;
+    }
+    if (combat.active && !state.combatWasActive) state.minimized = false;
+    state.combatWasActive = !!combat.active;
+    const model = global.CombatQuickSelectors && typeof global.CombatQuickSelectors.selectQuickActions === 'function'
+      ? global.CombatQuickSelectors.selectQuickActions(runtime.charSheet || {})
+      : { primaryActions: [], bonusActions: [], reactions: [], topSpells: [], resources: [], concentration: null };
+    const current = _safeArray(combat.combatants)[Math.max(0, Number(combat.turn || 0))] || null;
+    const targetName = runtime.selectedTargetId && runtime.tokens ? _firstText(runtime.tokens[runtime.selectedTargetId] && runtime.tokens[runtime.selectedTargetId].name, 'Selected') : 'No target';
+    root.hidden = false;
+    root.classList.toggle('is-minimized', !!state.minimized);
+    root.innerHTML = `<header class="combat-quick-bar-head">
+      <div class="combat-quick-bar-title">⚔ Quick Actions <span class="combat-quick-bar-sub">${combat.active ? `Round ${_esc(combat.round || 1)} · ${_esc(current && current.name || 'Turn')}` : 'Manual'}</span></div>
+      <div class="combat-quick-bar-head-actions">
+        <button type="button" class="combat-quick-sheet-btn" data-qb-open-sheet>Open Full Sheet</button>
+        <button type="button" class="combat-quick-bar-icon-btn" data-qb-minimize title="Minimise">${state.minimized ? '▣' : '—'}</button>
+        <button type="button" class="combat-quick-bar-icon-btn" data-qb-hide title="Hide">×</button>
+      </div>
+    </header>
+    ${state.minimized ? '' : `<div class="combat-quick-bar-body">
+      <div class="combat-quick-status"><span>Target: ${_esc(targetName)}</span>${model.concentration ? `<span class="combat-quick-resource">Concentration: ${_esc(model.concentration)}</span>` : '<span>Concentration: none</span>'}</div>
+      ${_section('Primary', model.primaryActions, 'action', 'No attacks/actions found on the sheet.')}
+      ${_section('Spells', model.topSpells, 'spell', 'No spell clutter for this character.')}
+      ${_section('Bonus', model.bonusActions, 'bonus', 'No bonus actions found.')}
+      ${_section('Reaction', model.reactions, 'reaction', 'No reactions found.')}
+      ${model.resources && model.resources.length ? `<div class="combat-quick-resource-row">${model.resources.map(function (r) { return `<button type="button" class="combat-quick-resource" data-qb-kind="resource" data-qb-key="${_esc(_firstText(r.name))}">${_esc(_firstText(r.name, 'Resource'))}: ${_esc(_firstText(r.quickBarUsesText, r.summary, 'Tracked'))}</button>`; }).join('')}</div>` : ''}
+    </div>`}`;
+    const head = root.querySelector('.combat-quick-bar-head');
+    if (head) {
+      head.addEventListener('pointerdown', _startDrag);
+    }
+    _applyPosition();
+    _saveState();
+  }
+
+  function _findAction(key) {
+    const model = global.CombatQuickSelectors && global.CombatQuickSelectors.selectQuickActions(_runtime().charSheet || {});
+    const all = [].concat(model.primaryActions || [], model.bonusActions || [], model.reactions || [], model.resources || []);
+    return all.find(function (item) { return _firstText(item && item.id, item && item.name) === key; }) || null;
+  }
+
+  function _findSpell(key) {
+    const model = global.CombatQuickSelectors && global.CombatQuickSelectors.selectQuickActions(_runtime().charSheet || {});
+    return _safeArray(model.topSpells).find(function (item) { return _firstText(item && item.id, item && item.name) === key; }) || null;
+  }
+
+  function _handleClick(ev) {
+    const min = ev.target.closest('[data-qb-minimize]');
+    if (min) { state.minimized = !state.minimized; _saveState(); render(); return; }
+    const hide = ev.target.closest('[data-qb-hide]');
+    if (hide) { state.manual = false; state.minimized = true; _saveState(); render(); return; }
+    const sheet = ev.target.closest('[data-qb-open-sheet]');
+    if (sheet) { if (typeof global.openCharacterBook === 'function') global.openCharacterBook('premiumsheet'); else if (typeof global.toggleSheet === 'function') global.toggleSheet(); return; }
+    const tile = ev.target.closest('[data-qb-kind][data-qb-key]');
+    if (!tile || tile.disabled || tile.classList.contains('is-disabled')) return;
+    const kind = tile.getAttribute('data-qb-kind');
+    const key = tile.getAttribute('data-qb-key');
+    if (kind === 'spell') {
+      const spell = _findSpell(key);
+      if (spell && typeof global.executeCombatQuickBarSpell === 'function') {
+        global.executeCombatQuickBarSpell(spell);
+        global.CombatQuickSelectors && global.CombatQuickSelectors.markUsed(key);
+      } else if (spell && typeof global.playerInspectSpell === 'function') {
+        global.playerInspectSpell(spell.id || spell.name);
+      }
+      render();
+      return;
+    }
+    if (kind === 'resource') {
+      if (global.CSContainer && typeof global.CSContainer.openDetailDrawer === 'function') {
+        const action = _findAction(key) || { name: key };
+        global.CSContainer.openDetailDrawer({ kicker: 'Resource', title: action.name || key, subtitle: action.summary || 'Tracked character resource', sections: [{ title: 'Summary', body: action.note || action.summary || 'Open the full sheet to spend or recover this resource.' }] });
+      }
+      return;
+    }
+    const action = _findAction(key);
+    if (action && typeof global.playerUseAction === 'function') {
+      global.playerUseAction(_firstText(action.source, kind), _firstText(action.id, action.name));
+      global.CombatQuickSelectors && global.CombatQuickSelectors.markUsed(key);
+    } else if (action && global.CSContainer && typeof global.CSContainer.openDetailDrawer === 'function') {
+      global.CSContainer.openDetailDrawer({ kicker: 'Action', title: action.name || key, subtitle: action.desc || action.description || 'Quick action', sections: [{ title: 'Details', body: action.longText || action.description || action.desc || 'Open the full sheet for details.' }] });
+    }
+    render();
+  }
+
+  function toggleManual() {
+    state.manual = !state.manual;
+    if (state.manual) state.minimized = false;
+    _saveState();
+    render();
+  }
+
+  _loadState();
+  global.CombatQuickBar = { render: render, toggleManual: toggleManual };
+  document.addEventListener('DOMContentLoaded', render);
+}(window));

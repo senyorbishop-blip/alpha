@@ -44145,6 +44145,7 @@ function renderCombat() {
   if (controls) controls.style.display = isActive ? 'flex' : 'none';
   if (addRow)   addRow.style.display   = (ROLE === 'dm' && isActive)  ? 'flex' : 'none';
   renderPlayerActionsHub();
+  if (window.CombatQuickBar && typeof window.CombatQuickBar.render === 'function') window.CombatQuickBar.render();
   if (roundLbl) roundLbl.textContent = isActive ? `Round ${_combat.round ?? _combatRound}` : 'Round —';
   if (turnSummary) {
     if (!isActive || !coms.length) {
@@ -45153,6 +45154,32 @@ function _getCombatQuickSpells() {
   // Sort: cantrips first, then by level
   spells.sort((a, b) => (a.level || 0) - (b.level || 0));
   return spells;
+}
+
+function getCombatQuickBarRuntime() {
+  return {
+    combat: _combat || { active: false, turn: 0, combatants: [] },
+    charSheet: _charSheet || {},
+    role: ROLE,
+    userId: USER_ID,
+    sessionId: SESSION_ID,
+    tokens,
+    selectedTargetId: _combat?.selected_target_id || '',
+    spellSlots: (_charSheet && typeof _charSheet.spellSlots === 'object') ? _charSheet.spellSlots : {},
+    spellSlotState: (_spellSlotState && typeof _spellSlotState === 'object') ? _spellSlotState : {},
+  };
+}
+
+function getCombatQuickBarSpells() {
+  return _getCombatQuickSpells();
+}
+
+function executeCombatQuickBarSpell(spell) {
+  if (!spell) return null;
+  const baseLevel = Number(spell.level ?? spell.spell_level ?? spell.card?.level ?? spell.card?.spell_level ?? 0) || 0;
+  const result = _executeCombatSpellCast(spell, baseLevel);
+  if (window.CombatQuickBar && typeof window.CombatQuickBar.render === 'function') window.CombatQuickBar.render();
+  return result;
 }
 
 function _parseSpellLevelFromSection(section) {
@@ -47181,6 +47208,8 @@ async function bestiaryMakeVariant() {
 <script src="/static/js/character/tabs/spells_tab.js"></script>
 <script src="/static/js/character/tabs/features_tab.js"></script>
 <script src="/static/js/character/character_sheet_container.js"></script>
+<script src="/static/js/character/combat_quick_selectors.js"></script>
+<script src="/static/js/character/combat_quick_bar.js"></script>
 <script src="/static/js/character/sticky_notes.js"></script>
 </body>
 </html>
