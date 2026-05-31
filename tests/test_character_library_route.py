@@ -701,3 +701,43 @@ def test_character_legacy_pdf_import_endpoint_still_saves(monkeypatch):
     assert res.status_code == 200
     assert res.json()["ok"] is True
     assert session.char_profiles["nova"][0]["nativeCharacter"]["identity"]["name"] == "PDF Hero"
+
+
+def test_character_library_gaps_endpoint_returns_top_missing_for_dm(monkeypatch):
+    auth_user = {"id": "dm-1", "username": "DM"}
+    session = SimpleNamespace(
+        users={"dm-1": SimpleNamespace(id="dm-1", role="dm")},
+        char_profiles={
+            "lyra": [
+                {
+                    "id": "gap-profile",
+                    "name": "Lyra Gaps",
+                    "sourceMode": "dndbeyond_json",
+                    "nativeCharacter": {
+                        "identity": {"name": "Lyra Gaps"},
+                        "importMeta": {
+                            "libraryGapReport": {
+                                "items": {"exact": [], "alias": [], "partial": [], "missing": [{"imported_name": "Xyzzyq Lantern", "content_type": "item"}]},
+                                "spells": {"exact": [], "alias": [], "partial": [], "missing": [{"imported_name": "Xyzzyq Spark", "content_type": "spell"}]},
+                                "features": {"exact": [], "alias": [], "partial": [], "missing": [{"imported_name": "Xyzzyq Legacy", "content_type": "class_feature"}]},
+                            }
+                        },
+                    },
+                }
+            ]
+        },
+    )
+
+    monkeypatch.setattr(character_routes, "get_request_user", lambda request: auth_user)
+    monkeypatch.setattr(character_routes, "get_or_restore_session", lambda session_id: session)
+
+    with TestClient(main.app, raise_server_exceptions=False) as client:
+        res = client.get("/api/character/library-gaps?session_id=s1")
+
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["ok"] is True
+    assert payload["session_id"] == "S1"
+    assert payload["top_missing"]["items"][0]["name"] == "Xyzzyq Lantern"
+    assert payload["top_missing"]["spells"][0]["sources"][0]["character"] == "Lyra Gaps"
+    assert payload["top_missing"]["features"][0]["sources"][0]["source"] == "dndbeyond_json"
