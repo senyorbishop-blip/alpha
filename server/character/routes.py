@@ -9,6 +9,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 
 from server.character.import_normalizer import normalize_ddb_json_payload, normalize_pdf_payload
+from server.character.import_review import build_import_review, normalize_import_source
 from server.character.service import (
     apply_character_levelup,
     build_profile_upsert_payload,
@@ -132,9 +133,11 @@ def _resolve_source_mode(payload: dict) -> str:
     import_meta = payload.get("importMeta") if isinstance(payload.get("importMeta"), dict) else {}
     import_source = str(import_meta.get("source") or "").strip().lower()
     if import_source:
-        if "ddb" in import_source or "d&d beyond" in import_source:
-            return "ddb"
-        return import_source[:40]
+        return normalize_import_source(import_source)
+
+    source_type = str(import_meta.get("sourceType") or "").strip().lower()
+    if source_type:
+        return normalize_import_source(source_type)
 
     return "legacy"
 
@@ -237,7 +240,7 @@ def _resolve_owner_key(auth_user: dict) -> str:
     return owner_key
 
 
-async def _persist_imported_document(*, session_id: str, auth_user: dict, document: dict, profile_id: str = "") -> dict:
+async def _persist_imported_document(*, session_id: str, auth_user: dict, document: dict, profile_id: str = "", source: str = "unknown") -> dict:
     session = get_or_restore_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -247,19 +250,55 @@ async def _persist_imported_document(*, session_id: str, auth_user: dict, docume
         raise HTTPException(status_code=400, detail="Unable to resolve profile owner")
 
     upsert_payload = build_profile_upsert_payload(document, profile_id=profile_id)
+    review = _attach_import_review(
+        upsert_payload.get("nativeCharacter") if isinstance(upsert_payload.get("nativeCharacter"), dict) else document,
+        source=source,
+        runtime=upsert_payload.get("nativeRuntime") if isinstance(upsert_payload.get("nativeRuntime"), dict) else None,
+    )
+    if review:
+        native = upsert_payload.get("nativeCharacter") if isinstance(upsert_payload.get("nativeCharacter"), dict) else {}
+        upsert_payload["nativeCharacter"] = native
+        upsert_payload["importMeta"] = native.get("importMeta") if isinstance(native.get("importMeta"), dict) else upsert_payload.get("importMeta", {})
     saved_profile = upsert_char_profile_for_owner(session, owner_key, upsert_payload)
     await save_campaign_async(session)
 
     return _normalize_profile_entry(saved_profile if isinstance(saved_profile, dict) else {}, fallback_id="imported")
 
 
+def _source_type_for_api(source: str) -> str:
+    return normalize_import_source(source)
+
+
+def _attach_import_review(document: dict, *, source: str, runtime: dict | None = None) -> dict:
+    if not isinstance(document, dict):
+        return {}
+    review = build_import_review(document, source_type=_source_type_for_api(source), runtime=runtime)
+    import_meta = document.get("importMeta") if isinstance(document.get("importMeta"), dict) else {}
+    import_meta = dict(import_meta)
+    import_meta["sourceType"] = review.get("sourceType")
+    import_meta["importReview"] = review
+    document["importMeta"] = import_meta
+    return review
+
+
 def _character_import_preview_payload(*, source: str, normalized: dict) -> dict:
+    document = normalized.get("document") or {}
+    runtime = None
+    if isinstance(document, dict):
+        try:
+            preview_payload = build_profile_upsert_payload(document)
+            runtime = preview_payload.get("nativeRuntime") if isinstance(preview_payload.get("nativeRuntime"), dict) else None
+        except Exception:
+            runtime = None
+    review = _attach_import_review(document, source=source, runtime=runtime) if isinstance(document, dict) else {}
     return {
         "ok": True,
         "source": source,
-        "preview_document": normalized.get("document") or {},
+        "source_type": review.get("sourceType") or _source_type_for_api(source),
+        "preview_document": document,
+        "import_review": review,
         "warnings": normalized.get("warnings") or [],
-        "requires_resolution": bool(normalized.get("requires_resolution")),
+        "requires_resolution": bool(normalized.get("requires_resolution")) or bool(review.get("blockingIssues")),
         "required_choices": normalized.get("required_choices") or [],
     }
 
@@ -1218,7 +1257,7 @@ async def api_character_import_ddb_id_commit(request: Request):
         )
 
     profile = await _persist_imported_document(
-        session_id=session_id, auth_user=auth_user, document=document
+        session_id=session_id, auth_user=auth_user, document=document, source="dndbeyond"
     )
     return JSONResponse(
         {
@@ -1227,6 +1266,8 @@ async def api_character_import_ddb_id_commit(request: Request):
             "profile": profile,
             "warnings": (normalized or {}).get("warnings") or [],
             "source": "dndbeyond",
+            "source_type": "dndbeyond",
+            "import_review": ((profile.get("importMeta") or {}).get("importReview") if isinstance(profile, dict) else {}) or {},
         }
     )
 
@@ -1312,7 +1353,7 @@ async def api_character_import_json_commit(request: Request):
         )
 
     profile = await _persist_imported_document(
-        session_id=session_id, auth_user=auth_user, document=document
+        session_id=session_id, auth_user=auth_user, document=document, source="dndbeyond"
     )
     return JSONResponse(
         {
@@ -1321,6 +1362,8 @@ async def api_character_import_json_commit(request: Request):
             "profile": profile,
             "warnings": (normalized or {}).get("warnings") or [],
             "source": "dndbeyond_json",
+            "source_type": "dndbeyond",
+            "import_review": ((profile.get("importMeta") or {}).get("importReview") if isinstance(profile, dict) else {}) or {},
         }
     )
 
@@ -1355,7 +1398,7 @@ async def api_character_import_pdf_preview(
         raise HTTPException(status_code=400, detail=str(parsed_payload.get("error") or "PDF import failed"))
 
     normalized = normalize_pdf_payload(parsed_payload.get("character"), filename=file.filename or "")
-    return JSONResponse(_character_import_preview_payload(source="dndbeyond_pdf", normalized=normalized))
+    return JSONResponse(_character_import_preview_payload(source="pdf", normalized=normalized))
 
 
 @router.post("/api/character/import/pdf/commit")
@@ -1396,7 +1439,7 @@ async def api_character_import_pdf_commit(
             raise HTTPException(status_code=400, detail=str(parsed_payload.get("error") or "PDF import failed"))
         normalized = normalize_pdf_payload(parsed_payload.get("character"), filename=file.filename or "")
         if normalized.get("requires_resolution"):
-            return _unresolved_import_response(source="dndbeyond_pdf", normalized=normalized)
+            return _unresolved_import_response(source="pdf", normalized=normalized)
         document = normalized["document"]
     else:
         raise HTTPException(status_code=400, detail="file or preview_document is required")
@@ -1404,7 +1447,7 @@ async def api_character_import_pdf_commit(
     required_choices = _document_import_required_choices(document)
     if required_choices:
         return _unresolved_import_response(
-            source="dndbeyond_pdf",
+            source="pdf",
             normalized={
                 "warnings": (document.get("importMeta") or {}).get("warnings") or [],
                 "required_choices": required_choices,
@@ -1412,7 +1455,7 @@ async def api_character_import_pdf_commit(
         )
 
     profile = await _persist_imported_document(
-        session_id=normalized_session_id, auth_user=auth_user, document=document
+        session_id=normalized_session_id, auth_user=auth_user, document=document, source="pdf"
     )
     return JSONResponse(
         {
@@ -1420,7 +1463,9 @@ async def api_character_import_pdf_commit(
             "session_id": normalized_session_id,
             "profile": profile,
             "warnings": (normalized or {}).get("warnings") or [],
-            "source": "dndbeyond_pdf",
+            "source": "pdf",
+            "source_type": "pdf",
+            "import_review": ((profile.get("importMeta") or {}).get("importReview") if isinstance(profile, dict) else {}) or {},
         }
     )
 
