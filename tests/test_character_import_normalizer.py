@@ -34,6 +34,7 @@ def test_normalize_ddb_json_payload_produces_canonical_document():
 
     assert doc["schema"] == "casual-dnd.character"
     assert doc["sourceMode"] == "dndbeyond"
+    assert doc["importMeta"]["sourceType"] == "dndbeyond"
     assert doc["identity"]["characterId"] == "987654"
     assert doc["identity"]["name"] == "Aela"
     assert doc["classes"][0]["name"] == "Rogue"
@@ -54,7 +55,8 @@ def test_normalize_pdf_payload_reports_missing_content_warnings():
 
     result = normalize_pdf_payload(parsed, filename="imported.pdf")
 
-    assert result["document"]["sourceMode"] == "dndbeyond"
+    assert result["document"]["sourceMode"] == "pdf"
+    assert result["document"]["importMeta"]["sourceType"] == "pdf"
     assert result["document"]["equipment"]["currency"]["gp"] == 12
     assert result["document"]["equipment"]["currency"]["sp"] == 3
     assert any(warning.get("code") == "ambiguous_species" for warning in result["warnings"])
@@ -313,3 +315,43 @@ def test_pdf_import_with_missing_data_warns_but_still_imports():
     assert doc["identity"]["name"] == "Sparse"
     assert doc["classes"][0]["classId"] == "adventurer"
     assert {"missing_inventory", "missing_spells", "partial_pdf_fields", "ambiguous_class", "ambiguous_species"}.issubset(warning_codes)
+
+
+def test_import_review_model_marks_missing_spell_item_feature_and_source_type():
+    from server.character.import_review import build_import_review
+
+    document = {
+        "sourceMode": "pdf",
+        "identity": {"name": "Review Hero", "displayName": "Review Hero"},
+        "species": {"name": "Human"},
+        "background": {"name": "Sage"},
+        "classes": [{"name": "Wizard", "level": 5, "subclass": "School of Evocation"}],
+        "maxHP": 30,
+        "ac": 12,
+        "equipment": {"inventory": [{"name": "Quarterstaff"}]},
+        "spellState": {
+            "spellbookEntries": [
+                {"name": "Magic Missile", "matchedNative": True},
+                {"name": "Homebrew Spark", "matchedNative": False},
+            ]
+        },
+        "importMeta": {
+            "sourceType": "pdf",
+            "warnings": [
+                {"code": "missing_inventory", "message": "No shield found."},
+                {"code": "unknown_feat", "message": "Feature was preserved as text."},
+            ],
+        },
+    }
+
+    review = build_import_review(document, runtime={"hp": {"max": 30}, "ac": 12})
+
+    assert review["sourceType"] == "pdf"
+    assert review["characterName"] == "Review Hero"
+    assert review["reviewStatus"] == "needs_review"
+    assert review["canContinueToPlay"] is True
+    assert "Magic Missile" in review["spellsMatched"]
+    assert "Homebrew Spark" in review["spellsMissing"]
+    assert "Quarterstaff" in review["itemsMatched"]
+    assert review["itemsMissing"]
+    assert review["featuresMissing"]
