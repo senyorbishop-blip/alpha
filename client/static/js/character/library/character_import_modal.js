@@ -51,9 +51,9 @@
       + '  <div id="character-import-source-panel" style="display:grid; gap:12px;">'
       + '    <section style="border:1px solid rgba(0,229,204,0.16); border-radius:6px; padding:10px;">'
       + '      <div style="font-family:Cinzel, serif; font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:#00e5cc; margin-bottom:6px;">D&amp;D Beyond Character ID</div>'
-      + '      <div style="font-size:0.78rem; opacity:0.78; margin-bottom:8px;">Your D&amp;D Beyond character must be public. Private sheets cannot be imported by ID.</div>'
+      + '      <div style="font-size:0.78rem; opacity:0.78; margin-bottom:8px;">Your D&amp;D Beyond character must be public. Paste the numeric ID, a public /characters/ URL, or a sheet PDF URL; private sheets cannot be imported by ID.</div>'
       + '      <div style="display:flex; gap:8px; flex-wrap:wrap;">'
-      + '        <input type="text" id="character-import-ddb-id" placeholder="e.g. 1234567" style="flex:1; min-width:220px; background:#21190d; border:1px solid rgba(0,229,204,0.2); color:#e8dcc8; border-radius:4px; padding:7px 10px;" />'
+      + '        <input type="text" id="character-import-ddb-id" placeholder="e.g. 1234567 or dndbeyond.com/characters/1234567" style="flex:1; min-width:220px; background:#21190d; border:1px solid rgba(0,229,204,0.2); color:#e8dcc8; border-radius:4px; padding:7px 10px;" />'
       + '        <button type="button" id="character-import-ddb-id-btn" style="background:#00b4a0; color:#02110f; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Preview by ID</button>'
       + '      </div>'
       + '    </section>'
@@ -158,7 +158,7 @@
     if (lower.includes('session_id')) return 'Missing session_id. Open your player invite link again before importing.';
     if (lower.includes('invalid json') || lower.includes('valid json') || lower.includes('json payload')) return 'Invalid JSON. Paste the full D&D Beyond JSON export or choose a .json file.';
     if (lower.includes('no form fields') || lower.includes('form-field') || lower.includes('fillable')) return 'PDF has no form fields. Export a fillable D&D Beyond PDF or use JSON import.';
-    if (lower.includes('403') || lower.includes('401') || lower.includes('private')) return 'Private D&D Beyond character. Make the character public, then try importing by ID again.';
+    if (lower.includes('403') || lower.includes('401') || lower.includes('409') || lower.includes('private') || lower.includes('could not return that character')) return 'Private D&D Beyond character or unavailable link. Make the sheet public, then paste the numeric ID, a /characters/ URL, or the ID from the sheet PDF link.';
     if (lower.includes('unsupported_species') || lower.includes('unsupported species')) return 'Unsupported species. Pick the closest supported species in the required choices, or edit before saving.';
     if (lower.includes('unsupported_subclass') || lower.includes('unsupported subclass')) return 'Unsupported subclass. Pick the closest supported subclass in the required choices, or edit before saving.';
     return raw;

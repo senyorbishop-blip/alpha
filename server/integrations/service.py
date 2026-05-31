@@ -1,4 +1,6 @@
 import os
+import re
+from urllib.parse import parse_qs, unquote, urlparse
 
 import httpx
 from fastapi.responses import JSONResponse
@@ -33,12 +35,62 @@ def _tts_runtime_summary() -> dict:
     }
 
 
-async def fetch_ddb_character_response(char_id: str):
-    import re
+def extract_ddb_character_id(value: str) -> str:
+    """Extract a D&D Beyond character ID from IDs, character URLs, or sheet PDF URLs."""
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
 
-    char_id = re.sub(r"[^0-9]", "", char_id)
+    # Fast path for the normal UI hint: just the numeric character ID.
+    if re.fullmatch(r"\d+", raw):
+        return raw
+
+    decoded = unquote(raw)
+    candidates = [decoded]
+
+    try:
+        parsed = urlparse(decoded if re.match(r"^[a-z][a-z0-9+.-]*://", decoded, re.I) else f"https://{decoded}")
+        path = unquote(parsed.path or "")
+        candidates.append(path)
+
+        query = parse_qs(parsed.query or "")
+        for key in ("characterId", "character_id", "id"):
+            for item in query.get(key, []):
+                if re.fullmatch(r"\d+", str(item or "").strip()):
+                    return str(item).strip()
+
+        # Public character URLs are commonly /characters/123456789 or
+        # /profile/<user>/characters/123456789.
+        match = re.search(r"/(?:profile/[^/]+/)?characters/(\d+)(?:[/?#]|$)", path, re.I)
+        if match:
+            return match.group(1)
+
+        # Exported sheet links look like /sheet-pdfs/username_123456789.pdf.
+        # Usernames may contain digits, so do not collapse every digit in the URL.
+        match = re.search(r"/sheet-pdfs/[^/?#]*_(\d+)\.pdf(?:[?#].*)?$", path, re.I)
+        if match:
+            return match.group(1)
+    except Exception:
+        pass
+
+    for candidate in candidates:
+        match = re.search(r"(?:^|[^0-9])characters/(\d+)(?:[^0-9]|$)", candidate, re.I)
+        if match:
+            return match.group(1)
+        match = re.search(r"_(\d+)\.pdf(?:[^0-9]|$)", candidate, re.I)
+        if match:
+            return match.group(1)
+
+    # Last-resort parsing for pasted text. Prefer the last group so
+    # `user165_87369199.pdf` resolves to `87369199`, not `16587369199`.
+    groups = re.findall(r"\d+", decoded)
+    return groups[-1] if groups else ""
+
+
+async def fetch_ddb_character_response(char_id: str):
+    char_id = extract_ddb_character_id(char_id)
     if not char_id:
-        return JSONResponse({"error": "Invalid character ID"}, status_code=400)
+        return JSONResponse({"error": "Invalid D&D Beyond character ID or URL"}, status_code=400)
     url = f"https://character-service.dndbeyond.com/character/v5/character/{char_id}"
     headers = {
         "User-Agent": "Mozilla/5.0",
@@ -48,9 +100,9 @@ async def fetch_ddb_character_response(char_id: str):
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.get(url, headers=headers)
         if response.status_code != 200:
-            if response.status_code in {401, 403, 404}:
+            if response.status_code in {401, 403, 404, 409}:
                 return JSONResponse(
-                    {"error": "Private D&D Beyond character. Make the character public, then try again."},
+                    {"error": "D&D Beyond could not return that character. Make sure the sheet is public and paste the numeric character ID, a /characters/ URL, or the ID from the sheet PDF link."},
                     status_code=502,
                 )
             return JSONResponse({"error": f"D&D Beyond returned {response.status_code}"}, status_code=502)

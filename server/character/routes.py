@@ -9,6 +9,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 
 from server.character.import_normalizer import normalize_ddb_json_payload, normalize_pdf_payload
+from server.character.import_review import build_import_review, normalize_import_source
 from server.character.library_matcher import attach_library_gap_report, summarize_library_gaps_from_profiles
 from server.character.service import (
     apply_character_levelup,
@@ -289,11 +290,14 @@ def _character_import_preview_payload(*, source: str, normalized: dict) -> dict:
         "spells": {"exact": [], "alias": [], "partial": [], "missing": []},
         "features": {"exact": [], "alias": [], "partial": [], "missing": []},
     }
+    review = _attach_import_review(document, source=source) if document else build_import_review({}, source_type=_source_type_for_api(source))
     return {
         "ok": True,
         "source": source,
+        "source_type": _source_type_for_api(source),
         "preview_document": document,
         "library_gap_report": gap_report,
+        "import_review": review,
         "warnings": normalized.get("warnings") or [],
         "requires_resolution": bool(normalized.get("requires_resolution")) or bool(review.get("blockingIssues")),
         "required_choices": normalized.get("required_choices") or [],
