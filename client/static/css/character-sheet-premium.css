@@ -3090,3 +3090,59 @@ body.cs-detail-open {
     margin-left: 0;
   }
 }
+
+/* Stage 4: simplified player dashboard and sheet navigation */
+.cs-mode-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+}
+.cs-mode-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.26rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.035);
+  color: var(--csp-text-muted);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.cs-mode-chip.active {
+  border-color: rgba(0,229,204,0.45);
+  background: rgba(0,229,204,0.12);
+  color: var(--csp-teal);
+}
+.cs-import-warning-strip {
+  margin: -0.25rem 0 0.75rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid rgba(245,158,11,0.32);
+  border-radius: var(--csp-r-md);
+  background: rgba(245,158,11,0.09);
+  color: #f6d9a5;
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+.cs-launch-btn.secondary {
+  border-color: rgba(255,255,255,0.16);
+  color: var(--csp-text-muted);
+  background: rgba(255,255,255,0.04);
+}
+.cs-notes-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.cs-notes-section {
+  min-height: auto;
+}
+.cs-notes-copy {
+  white-space: pre-wrap;
+  color: var(--csp-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}

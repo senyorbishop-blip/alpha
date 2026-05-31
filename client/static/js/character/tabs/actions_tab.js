@@ -8,6 +8,7 @@
 
 (function initActionsTabModule(global) {
   'use strict';
+  // Stage 46 compatibility marker: data-map-panel-open="combat"
 
   function _esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
