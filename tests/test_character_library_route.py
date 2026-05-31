@@ -639,7 +639,9 @@ def test_character_pdf_preview_does_not_save(monkeypatch):
     assert res.status_code == 200
     payload = res.json()
     assert payload["ok"] is True
-    assert payload["source"] == "dndbeyond_pdf"
+    assert payload["source"] == "pdf"
+    assert payload["source_type"] == "pdf"
+    assert payload["import_review"]["sourceType"] == "pdf"
     assert payload["preview_document"]["identity"]["name"] == "PDF Hero"
     _assert_no_profiles_saved(session)
     assert saved["count"] == 0

@@ -95,14 +95,20 @@
       + '    </div>'
       + '    <div id="character-import-summary" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:8px; margin-bottom:10px;"></div>'
       + '    <div id="character-import-review-list" style="display:grid; gap:8px;"></div>'
+      + '    <details id="character-import-debug-wrap" style="display:none; margin-top:10px; border:1px solid rgba(245,221,176,0.2); border-radius:4px; padding:8px;">'
+      + '      <summary style="cursor:pointer; color:#f5ddb0; font-size:0.78rem;">Import review JSON</summary>'
+      + '      <pre id="character-import-debug-json" style="white-space:pre-wrap; overflow:auto; max-height:260px; font-size:0.72rem; background:#0a0f11; border-radius:4px; padding:8px;"></pre>'
+      + '    </details>'
       + '    <div id="character-import-edit-wrap" style="display:none; margin-top:10px;">'
       + '      <label for="character-import-edit-json" style="display:block; font-size:0.74rem; opacity:0.9; margin-bottom:4px;">Edit imported character document before saving</label>'
       + '      <textarea id="character-import-edit-json" style="width:100%; min-height:180px; resize:vertical; background:#21190d; border:1px solid rgba(0,229,204,0.2); color:#e8dcc8; border-radius:4px; padding:8px; font-family:monospace; font-size:0.78rem;"></textarea>'
       + '    </div>'
       + '    <div id="character-import-resolution-actions" style="display:none; margin-top:10px; gap:8px; flex-wrap:wrap;">'
       + '      <button type="button" id="character-import-resolve-save-btn" style="background:#c9a227; color:#1a1204; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Update Preview With Fixes</button>'
-      + '      <button type="button" id="character-import-save-btn" style="background:#00b4a0; color:#02110f; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Save Imported Character</button>'
+      + '      <button type="button" id="character-import-save-btn" style="background:#00b4a0; color:#02110f; border:0; border-radius:4px; padding:7px 12px; cursor:pointer;">Continue to Play</button>'
+      + '      <button type="button" id="character-import-review-later-btn" style="background:#c9a227; color:#1a1204; border:0; border-radius:4px; padding:7px 12px; cursor:pointer; display:none;">Review Later</button>'
       + '      <button type="button" id="character-import-edit-btn" style="background:transparent; color:#e8dcc8; border:1px solid rgba(0,229,204,0.25); border-radius:4px; padding:7px 12px; cursor:pointer;">Edit Before Saving</button>'
+      + '      <button type="button" id="character-import-debug-btn" style="background:transparent; color:#f5ddb0; border:1px solid rgba(245,221,176,0.25); border-radius:4px; padding:7px 12px; cursor:pointer;">Show Review JSON</button>'
       + '    </div>'
       + '  </div>'
       + '</div>';
@@ -294,7 +300,7 @@
   function sourceBadgeLabel(source) {
     const key = String(source || '').trim().toLowerCase();
     if (key === 'native') return 'Casual D&D';
-    if (key.includes('pdf')) return 'D&D Beyond PDF';
+    if (key.includes('pdf')) return 'PDF';
     if (key.includes('dndbeyond') || key.includes('ddb') || key.includes('json')) return 'D&D Beyond';
     if (key === 'legacy') return 'Legacy';
     return key ? key.replace(/_/g, ' ') : 'Legacy';
@@ -357,6 +363,43 @@
       + '</div>';
   }
 
+
+  function importReviewFromPayload(payload) {
+    const direct = payload && payload.import_review && typeof payload.import_review === 'object' ? payload.import_review : null;
+    if (direct) return direct;
+    const doc = getPreviewDocument(payload);
+    const meta = doc && doc.importMeta && typeof doc.importMeta === 'object' ? doc.importMeta : {};
+    return meta.importReview && typeof meta.importReview === 'object' ? meta.importReview : {};
+  }
+
+  function reviewTone(status) {
+    const key = String(status || '').toLowerCase();
+    if (key === 'blocked') return { label: 'Blocked', color: '#ff8b8b', border: 'rgba(220,90,90,0.55)', bg: 'rgba(160,45,45,0.18)' };
+    if (key === 'needs_review') return { label: 'Needs review', color: '#ffd36a', border: 'rgba(201,162,39,0.55)', bg: 'rgba(201,162,39,0.14)' };
+    if (key === 'playable_with_warnings') return { label: 'Playable with warnings', color: '#ffd36a', border: 'rgba(201,162,39,0.55)', bg: 'rgba(201,162,39,0.14)' };
+    return { label: 'Exact', color: '#72f0b4', border: 'rgba(70,210,140,0.55)', bg: 'rgba(30,150,90,0.14)' };
+  }
+
+  function renderPillList(items, emptyText, tone) {
+    const color = tone === 'red' ? '#ffb9b9' : tone === 'yellow' ? '#f5ddb0' : '#a9ffe7';
+    const border = tone === 'red' ? 'rgba(220,90,90,0.4)' : tone === 'yellow' ? 'rgba(201,162,39,0.4)' : 'rgba(0,229,204,0.28)';
+    const bg = tone === 'red' ? 'rgba(160,45,45,0.16)' : tone === 'yellow' ? 'rgba(201,162,39,0.12)' : 'rgba(0,170,130,0.12)';
+    const rows = Array.isArray(items) ? items : [];
+    if (!rows.length) return '<div style="color:' + color + '; opacity:0.86;">' + escapeHtml(emptyText) + '</div>';
+    return rows.slice(0, 24).map(function (item) {
+      return '<span style="display:inline-block; margin:2px 4px 2px 0; padding:3px 7px; border:1px solid ' + border + '; border-radius:999px; background:' + bg + '; color:' + color + '; font-size:0.74rem;">' + escapeHtml(item) + '</span>';
+    }).join('') + (rows.length > 24 ? '<span style="opacity:0.75;"> +' + String(rows.length - 24) + ' more</span>' : '');
+  }
+
+  function renderReviewSection(title, html, tone) {
+    const border = tone === 'red' ? 'rgba(220,90,90,0.48)' : tone === 'yellow' ? 'rgba(201,162,39,0.45)' : 'rgba(0,229,204,0.24)';
+    const color = tone === 'red' ? '#ffb9b9' : tone === 'yellow' ? '#f5ddb0' : '#a9ffe7';
+    return '<section style="border:1px solid ' + border + '; border-radius:5px; padding:9px; background:rgba(0,0,0,0.12);">'
+      + '<div style="font-family:Cinzel, serif; font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:' + color + '; margin-bottom:6px;">' + escapeHtml(title) + '</div>'
+      + '<div style="font-size:0.82rem; line-height:1.42;">' + html + '</div>'
+      + '</section>';
+  }
+
   function renderReview(root, payload, allowResolve) {
     const review = root.querySelector('#character-import-review');
     const summary = root.querySelector('#character-import-summary');
@@ -375,11 +418,17 @@
     const items = normalizedWarnings(payload);
     const hasBlocking = Boolean(data.requires_resolution) || items.some(function (item) { return item.blocking; });
     const quality = importQualitySummary(summaryData, items, hasBlocking);
+    const reviewData = importReviewFromPayload(data);
+    const tone = reviewTone(reviewData.reviewStatus || (hasBlocking ? 'blocked' : 'needs_review'));
 
     if (sourceLabel) {
-      sourceLabel.textContent = sourceBadgeLabel(data.source);
+      sourceLabel.textContent = sourceBadgeLabel(reviewData.sourceType || data.source_type || data.source);
     }
     summary.innerHTML = [
+      '<div style="grid-column:1 / -1; border:1px solid ' + tone.border + '; border-radius:6px; padding:10px; background:' + tone.bg + ';">'
+        + '<div style="font-family:Cinzel, serif; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:' + tone.color + ';">Review status: ' + escapeHtml(tone.label) + '</div>'
+        + '<div style="margin-top:4px; font-size:0.84rem;">' + (reviewData.canContinueToPlay ? 'Safe to continue to play.' : 'Not safe to continue until blocking issues are fixed.') + '</div>'
+      + '</div>',
       '<div style="grid-column:1 / -1; border:1px solid rgba(245,221,176,0.26); border-radius:6px; padding:10px; background:rgba(0,0,0,0.16);">'
         + '<div style="font-family:Cinzel, serif; font-size:0.7rem; letter-spacing:0.08em; text-transform:uppercase; color:' + quality.tone + ';">Import quality: ' + escapeHtml(quality.label) + '</div>'
         + '<div style="margin-top:4px; font-size:0.86rem; color:#e8dcc8; opacity:0.9;">' + escapeHtml(quality.detail) + '</div>'
@@ -394,7 +443,30 @@
       renderSummaryCard('Actions/features count', String(summaryData.actionFeatureCount)),
     ].join('');
 
-    const warningsHtml = items.length ? items.map(function renderRow(item, idx) {
+    const ac = reviewData.acComparison || {};
+    const hp = reviewData.hpComparison || {};
+    const reviewSections = [
+      renderReviewSection('Character basics', [
+        'Name: ' + escapeHtml(reviewData.characterName || summaryData.name),
+        'Class: ' + escapeHtml(reviewData.class || summaryData.classLevel),
+        'Subclass: ' + escapeHtml(reviewData.subclass || '—'),
+        'Level: ' + escapeHtml(reviewData.level || ''),
+        'Species/Race: ' + escapeHtml(reviewData.speciesRace || summaryData.species),
+        'Background: ' + escapeHtml(reviewData.background || summaryData.background),
+      ].filter(Boolean).join('<br>'), (reviewData.blockingIssues || []).length ? 'red' : 'green'),
+      renderReviewSection('AC/HP', [
+        'AC source/resolved: ' + escapeHtml((ac.source == null ? '—' : ac.source) + ' / ' + (ac.resolved == null ? '—' : ac.resolved) + ' (' + (ac.status || 'unknown') + ')'),
+        'HP source/resolved: ' + escapeHtml((hp.source == null ? '—' : hp.source) + ' / ' + (hp.resolved == null ? '—' : hp.resolved) + ' (' + (hp.status || 'unknown') + ')'),
+      ].join('<br>'), (reviewData.hasAC && reviewData.hasHP) ? 'green' : 'red'),
+      renderReviewSection('Equipment', renderPillList(reviewData.itemsMatched, 'No matched equipment found.', 'green'), 'green'),
+      renderReviewSection('Inventory', renderPillList(reviewData.itemsMissing, 'No missing inventory reported.', (reviewData.itemsMissing || []).length ? 'red' : 'green'), (reviewData.itemsMissing || []).length ? 'red' : 'green'),
+      renderReviewSection('Spells', '<div>Matched:</div>' + renderPillList(reviewData.spellsMatched, 'No matched spells found.', 'green') + '<div style="margin-top:6px;">Missing / unmatched:</div>' + renderPillList(reviewData.spellsMissing, 'No missing spells reported.', (reviewData.spellsMissing || []).length ? 'yellow' : 'green'), (reviewData.spellsMissing || []).length ? 'yellow' : 'green'),
+      renderReviewSection('Features', '<div>Matched:</div>' + renderPillList(reviewData.featuresMatched, 'No matched features found.', 'green') + '<div style="margin-top:6px;">Missing / unmatched:</div>' + renderPillList(reviewData.featuresMissing, 'No missing features reported.', (reviewData.featuresMissing || []).length ? 'yellow' : 'green'), (reviewData.featuresMissing || []).length ? 'yellow' : 'green'),
+      renderReviewSection('Warnings', renderPillList(reviewData.warnings, 'No warnings reported.', (reviewData.warnings || []).length ? 'yellow' : 'green'), (reviewData.warnings || []).length ? 'yellow' : 'green'),
+      renderReviewSection('Blocking issues', renderPillList(reviewData.blockingIssues, 'No blocking issues.', (reviewData.blockingIssues || []).length ? 'red' : 'green'), (reviewData.blockingIssues || []).length ? 'red' : 'green'),
+    ].join('');
+
+    const warningsHtml = reviewSections + (items.length ? items.map(function renderRow(item, idx) {
       const resolutionKey = String(item.details && item.details.resolutionKey || '').trim();
       const options = Array.isArray(item.details && item.details.options) ? item.details.options : [];
       const resolutionControl = item.blocking && allowResolve && resolutionKey
@@ -423,11 +495,17 @@
         + '<div style="margin-top:4px; line-height:1.35;">' + escapeHtml(item.message || item.code || 'Review this imported field.') + '</div>'
         + resolutionControl
         + '</div>';
-    }).join('') : '<div style="border:1px solid rgba(0,229,204,0.16); border-radius:4px; padding:8px; color:#a9ffe7;">No warnings found.</div>';
+    }).join('') : '<div style="border:1px solid rgba(0,229,204,0.16); border-radius:4px; padding:8px; color:#a9ffe7;">No legacy warning rows found.</div>');
 
     reviewList.innerHTML = warningsHtml;
     actionRow.style.display = (allowResolve && hasBlocking) ? 'flex' : 'none';
-    saveBtn.style.display = hasBlocking ? 'none' : '';
+    saveBtn.style.display = (!hasBlocking && reviewData.canContinueToPlay) ? '' : 'none';
+    const reviewLaterBtn = root.querySelector('#character-import-review-later-btn');
+    if (reviewLaterBtn) reviewLaterBtn.style.display = (!hasBlocking && reviewData.canReviewLater) ? 'inline-block' : 'none';
+    const debugWrap = root.querySelector('#character-import-debug-wrap');
+    const debugJson = root.querySelector('#character-import-debug-json');
+    if (debugJson) debugJson.textContent = JSON.stringify(reviewData || {}, null, 2);
+    if (debugWrap) debugWrap.style.display = 'none';
     if (finalActions) finalActions.style.display = 'flex';
     review.style.display = 'block';
   }
@@ -481,6 +559,8 @@
     const resolveSaveBtn = root.querySelector('#character-import-resolve-save-btn');
     const saveBtn = root.querySelector('#character-import-save-btn');
     const editBtn = root.querySelector('#character-import-edit-btn');
+    const reviewLaterBtn = root.querySelector('#character-import-review-later-btn');
+    const debugBtn = root.querySelector('#character-import-debug-btn');
     const editWrap = root.querySelector('#character-import-edit-wrap');
     const editJson = root.querySelector('#character-import-edit-json');
 
@@ -534,6 +614,8 @@
       if (editJson) editJson.value = '';
       if (saveBtn) saveBtn.onclick = null;
       if (editBtn) editBtn.onclick = null;
+      if (reviewLaterBtn) reviewLaterBtn.onclick = null;
+      if (debugBtn) debugBtn.onclick = null;
       if (resolveSaveBtn) resolveSaveBtn.onclick = null;
     }
 
@@ -542,8 +624,11 @@
       if (!actionRow) return;
       actionRow.style.display = (hasBlocking || hasPreview) ? 'flex' : 'none';
       if (resolveSaveBtn) resolveSaveBtn.style.display = hasBlocking ? 'inline-block' : 'none';
-      if (saveBtn) saveBtn.style.display = (!hasBlocking && hasPreview) ? 'inline-block' : 'none';
+      const reviewData = importReviewFromPayload(pendingPreview || {});
+      if (saveBtn) saveBtn.style.display = (!hasBlocking && hasPreview && reviewData.canContinueToPlay) ? 'inline-block' : 'none';
       if (editBtn) editBtn.style.display = (!hasBlocking && hasPreview) ? 'inline-block' : 'none';
+      if (reviewLaterBtn) reviewLaterBtn.style.display = (!hasBlocking && hasPreview && reviewData.canReviewLater) ? 'inline-block' : 'none';
+      if (debugBtn) debugBtn.style.display = hasPreview ? 'inline-block' : 'none';
     }
 
     function renderPreviewReview(payload, committer, resolver) {
@@ -579,9 +664,19 @@
       setActionVisibility(hasBlocking, true);
       if (resolveSaveBtn) resolveSaveBtn.onclick = pendingResolver;
       if (saveBtn) saveBtn.onclick = savePendingPreview;
+      if (reviewLaterBtn) reviewLaterBtn.onclick = savePendingPreview;
+      if (debugBtn) debugBtn.onclick = toggleReviewDebug;
       if (editBtn) editBtn.onclick = openBuilderForPendingPreview;
       if (typeof cfg.onPreview === 'function') cfg.onPreview(payload);
-      setStatus(root, hasBlocking ? 'Import preview needs required choices before saving.' : 'Import preview is clean. Save now or edit before saving.', hasBlocking ? 'error' : 'success');
+      setStatus(root, hasBlocking ? 'Import preview needs required choices before saving.' : 'Import review is ready. Continue to Play, Review Later when allowed, or edit before saving.', hasBlocking ? 'error' : 'success');
+    }
+
+    function toggleReviewDebug() {
+      const debugWrap = root.querySelector('#character-import-debug-wrap');
+      if (!debugWrap) return;
+      const isOpen = debugWrap.style.display !== 'none';
+      debugWrap.style.display = isOpen ? 'none' : 'block';
+      if (debugBtn) debugBtn.textContent = isOpen ? 'Show Review JSON' : 'Hide Review JSON';
     }
 
     async function savePendingPreview() {
@@ -596,9 +691,9 @@
         }
       }
       try {
-        setStatus(root, 'Saving imported character to your profile library…', 'info');
+        setStatus(root, 'Continuing with imported character…', 'info');
         const result = await pendingCommitter(editedDoc || getPreviewDocument(pendingPreview));
-        setStatus(root, 'Imported character saved to your profile library.', 'success');
+        setStatus(root, 'Imported character saved; you can continue to play.', 'success');
         if (typeof cfg.onImported === 'function') await cfg.onImported(result);
         if (cfg.autoCloseOnImported) close();
       } catch (err) {

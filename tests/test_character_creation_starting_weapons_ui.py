@@ -42,5 +42,5 @@ def test_character_import_modal_uses_preview_then_commit_flow():
     assert "/api/character/import/pdf/preview" in src
     assert "/api/character/import/json/commit" in src
     assert "/api/character/import/pdf/commit" in src
-    assert "Save Imported Character" in src
+    assert "Continue to Play" in src
     assert "Edit Before Saving" in src

@@ -16,7 +16,7 @@ DEFAULT_SOURCE_MODE = "native"
 
 
 _RULES_MODES = {"casual", "classic", "custom"}
-_SOURCE_MODES = {"native", "dndbeyond", "dndbeyond_json", "dndbeyond_pdf", "existing"}
+_SOURCE_MODES = {"native", "dndbeyond", "dndbeyond_json", "dndbeyond_pdf", "pdf", "manual", "unknown", "existing"}
 
 
 def _clone(value: Any) -> Any:
@@ -285,7 +285,7 @@ def normalize_character_document(raw: Any) -> dict:
     # these to keep parsed combat values playable.
     import_meta = src.get("importMeta") if isinstance(src.get("importMeta"), dict) else {}
     import_origin = str(import_meta.get("origin") or import_meta.get("source") or "").strip().lower()
-    if source_mode in {"dndbeyond", "dndbeyond_pdf"} or "pdf" in import_origin:
+    if source_mode in {"dndbeyond", "dndbeyond_pdf", "pdf"} or "pdf" in import_origin:
         for key in (
             "maxHP",
             "currentHP",
