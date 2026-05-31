@@ -9,6 +9,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 
 from server.character.import_normalizer import normalize_ddb_json_payload, normalize_pdf_payload
+from server.character.library_matcher import attach_library_gap_report, summarize_library_gaps_from_profiles
 from server.character.service import (
     apply_character_levelup,
     build_profile_upsert_payload,
@@ -246,6 +247,7 @@ async def _persist_imported_document(*, session_id: str, auth_user: dict, docume
     if not owner_key:
         raise HTTPException(status_code=400, detail="Unable to resolve profile owner")
 
+    attach_library_gap_report(document)
     upsert_payload = build_profile_upsert_payload(document, profile_id=profile_id)
     saved_profile = upsert_char_profile_for_owner(session, owner_key, upsert_payload)
     await save_campaign_async(session)
@@ -254,10 +256,17 @@ async def _persist_imported_document(*, session_id: str, auth_user: dict, docume
 
 
 def _character_import_preview_payload(*, source: str, normalized: dict) -> dict:
+    document = normalized.get("document") if isinstance(normalized.get("document"), dict) else {}
+    gap_report = attach_library_gap_report(document) if document else {
+        "items": {"exact": [], "alias": [], "partial": [], "missing": []},
+        "spells": {"exact": [], "alias": [], "partial": [], "missing": []},
+        "features": {"exact": [], "alias": [], "partial": [], "missing": []},
+    }
     return {
         "ok": True,
         "source": source,
-        "preview_document": normalized.get("document") or {},
+        "preview_document": document,
+        "library_gap_report": gap_report,
         "warnings": normalized.get("warnings") or [],
         "requires_resolution": bool(normalized.get("requires_resolution")),
         "required_choices": normalized.get("required_choices") or [],
@@ -827,6 +836,38 @@ async def api_character_library(request: Request, session_id: str = "", include_
             "profiles": profiles,
         }
     )
+
+@router.get("/api/character/library-gaps")
+async def api_character_library_gaps(request: Request, session_id: str = "", limit: int = 20):
+    """Return an aggregate dev/admin view of missing imported character content."""
+    auth_user = get_request_user(request)
+    if not auth_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    normalized_session_id = str(session_id or "").strip().upper()
+    if not normalized_session_id:
+        raise HTTPException(status_code=400, detail="session_id is required")
+
+    session = get_or_restore_session(normalized_session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    all_profiles = dict(getattr(session, "char_profiles", {}) or {})
+
+    # DMs/admin-dev users can see campaign-wide gaps; players only see their own
+    # imported gaps so the endpoint does not leak unrelated character details.
+    requester_id = str(auth_user.get("id") or "").strip()
+    requester = session.users.get(requester_id) if requester_id else None
+    if requester is not None and requester.role != "dm":
+        owner_key = _resolve_owner_key(auth_user)
+        all_profiles = {owner_key: all_profiles.get(owner_key) or []}
+
+    try:
+        normalized_limit = int(limit or 20)
+    except Exception:
+        normalized_limit = 20
+    summary = summarize_library_gaps_from_profiles(all_profiles, limit=max(1, min(normalized_limit, 100)))
+    return JSONResponse({"session_id": normalized_session_id, **summary})
 
 
 @router.post("/api/character/levelup/preview")
