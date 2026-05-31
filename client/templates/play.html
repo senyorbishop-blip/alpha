@@ -7133,6 +7133,7 @@
   <link rel="stylesheet" href="/static/css/spotlight.css">
   <link rel="stylesheet" href="/static/css/character-builder.css">
   <link rel="stylesheet" href="/static/css/character-sheet-premium.css">
+  <link rel="stylesheet" href="/static/css/combat-quick-bar.css">
 </head>
 <body>
 
@@ -47149,6 +47150,20 @@ async function bestiaryMakeVariant() {
   }
 }
 
+
+// Narrow compatibility bridge for the movable combat quick bar. The selectors
+// still call the same live play.html action helpers; this only exposes state
+// that is stored in play.html lexical bindings rather than on window.
+window.CombatQuickRuntime = {
+  getRole: () => ROLE,
+  getUserId: () => USER_ID,
+  getSessionId: () => SESSION_ID,
+  getName: () => NAME,
+  getCombat: () => _combat,
+  getCharSheet: () => _charSheet,
+  getTokens: () => tokens,
+};
+
 </script>
 
 <!-- 3-D Dice Physics System — ES module, loads Three.js via importmap -->
@@ -47164,5 +47179,7 @@ async function bestiaryMakeVariant() {
 <script src="/static/js/character/tabs/spells_tab.js"></script>
 <script src="/static/js/character/tabs/features_tab.js"></script>
 <script src="/static/js/character/character_sheet_container.js"></script>
+<script src="/static/js/character/combat_quick_selectors.js"></script>
+<script src="/static/js/character/combat_quick_bar.js"></script>
 </body>
 </html>
