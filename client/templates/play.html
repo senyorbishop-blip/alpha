@@ -7459,7 +7459,10 @@
     </div>
     <div class="char-section-title">Name</div>
     <input type="text" class="char-name-input" id="char-name" placeholder="Character name…" maxlength="24" oninput="refreshCharSummary()" />
-    <div class="char-section-title">Notes</div>
+    <div class="char-section-title" style="display:flex;align-items:center;justify-content:space-between;gap:0.45rem;">
+      <span>Notes</span>
+      <button class="mini-btn" type="button" onclick="window.openCharacterStickyNotes && window.openCharacterStickyNotes()" style="padding:0.16rem 0.38rem;font-size:0.6rem;">Sticky</button>
+    </div>
     <textarea class="mini-input" id="char-notes" placeholder="Token notes…"
       style="width:100%;min-height:64px;resize:vertical;margin-bottom:0.45rem;padding:0.45rem;"></textarea>
     <div class="char-section-title">Character Workflow</div>
@@ -32954,6 +32957,7 @@ function stepCharacterBookPage(delta) {
 function _buildPremiumSheetCharData() {
   const sheet = _charSheet || {};
   const profileId = resolveActiveCharProfileId() || '';
+  const profile = (Array.isArray(charProfiles) ? charProfiles : []).find(p => String(p?.id || '') === String(profileId || '')) || {};
   const bookData = (typeof getCharacterBookDataFromUI === 'function') ? getCharacterBookDataFromUI() : {};
 
   /* --- Inventory: prefer live synced player inventory, then imported book entries --- */
@@ -33124,6 +33128,11 @@ function _buildPremiumSheetCharData() {
     proficiencies: bookData.proficiencies || sheet.proficiencies || '',
     gear: book.gear || '',
     campaignNotes: bookData.campaignNotes || sheet.notes || '',
+    sessionNotes: sheet.sessionNotes || bookData.sessionNotes || '',
+    privateNotes: sheet.privateNotes || '',
+    characterNotes: (window.CharacterStickyNotes && typeof window.CharacterStickyNotes.getCanonicalNotesForSave === 'function')
+      ? window.CharacterStickyNotes.getCanonicalNotesForSave()
+      : (profile && profile.characterNotes) || {},
     abilityScores,
     savingThrows,
     skills,
@@ -38877,7 +38886,7 @@ function applyCharProfileRecord(p, opts = {}) {
   setCharVal('char-level', resolvedLevel != null ? String(resolvedLevel) : '');
   setCharVal('char-passive', profile.passive != null ? String(profile.passive) : '');
   setCharVal('char-faction', profile.faction || '');
-  setCharVal('char-notes', profile.notes || '');
+  setCharVal('char-notes', profile.characterNotes?.private || profile.notes || '');
   setCharVal('char-accent-color', _coerceHexColor(profile.accentColor, '#00e5cc'));
   setCharVal('char-dice-theme', profile.diceTheme || 'aether');
   setCharVal('char-portrait-frame', profile.portraitFrame || 'classic');
@@ -38925,6 +38934,11 @@ function applyCharProfileRecord(p, opts = {}) {
   persistCurrentCharProfileDraft(collectCurrentCharProfile({ profileId: profile.id }));
   _syncLoadedProfileToOwnedToken(profile);
   syncMyCharacterFormFromToken();
+  try {
+    if (window.CharacterStickyNotes && typeof window.CharacterStickyNotes.refreshFromProfile === 'function') {
+      window.CharacterStickyNotes.refreshFromProfile(profile);
+    }
+  } catch {}
   setTimeout(() => { try { renderPartyStatusPanel(); } catch {} }, 0);
   if (!opts.silent) showToast(`Loaded profile: ${profile.name}`);
 }
@@ -39146,6 +39160,9 @@ function collectCurrentCharProfile(opts = {}) {
     passive: parseInt(document.getElementById('char-passive')?.value || '') || 0,
     faction: document.getElementById('char-faction')?.value || '',
     notes: document.getElementById('char-notes')?.value || '',
+    characterNotes: (window.CharacterStickyNotes && typeof window.CharacterStickyNotes.getCanonicalNotesForSave === 'function')
+      ? window.CharacterStickyNotes.getCanonicalNotesForSave()
+      : undefined,
     accentColor: personalization.accentColor,
     diceTheme: personalization.diceTheme,
     portraitFrame: personalization.portraitFrame,
@@ -47164,5 +47181,6 @@ async function bestiaryMakeVariant() {
 <script src="/static/js/character/tabs/spells_tab.js"></script>
 <script src="/static/js/character/tabs/features_tab.js"></script>
 <script src="/static/js/character/character_sheet_container.js"></script>
+<script src="/static/js/character/sticky_notes.js"></script>
 </body>
 </html>

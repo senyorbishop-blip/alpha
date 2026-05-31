@@ -473,6 +473,7 @@ The current `play.html` script-load boundary for the audited areas is:
 | Fog / vision shell helpers | `render/fog.js`, `render/vision.js` | n/a |
 | Audio / narration | `ui/sound_engine.js`, `ui/narration.js`, plus fallback `ambient_engine.js` / `sfx_engine.js` | n/a |
 | Combat | inline `play.html` combat block | `gameplay/combat.js` |
+| Character sticky notes | `character/sticky_notes.js` plus `play.html` profile glue | n/a |
 | Editor serialization | `editor/serialization.js` | `editor/runtime.js`, `editor/state.js` |
 
 When changing ownership in one of these areas, update both the docs and the script-load tests in `tests/` in the same patch so the repo map and test suite stay aligned.

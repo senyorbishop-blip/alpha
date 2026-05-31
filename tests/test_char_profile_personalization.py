@@ -247,3 +247,70 @@ def test_char_profile_level_change_keeps_class_and_species_data_stable():
     assert saved["charBook"]["species"] == "Elf"
     assert saved["charSheet"]["classes"][0]["name"] == "Druid"
     assert saved["charSheet"]["species"] == "Elf"
+
+
+def test_char_profile_upsert_persists_canonical_character_notes_widget_state():
+    session = Session(id="sess-sticky-notes")
+    player = User(id="p7", name="Pip", role="player")
+    session.users[player.id] = player
+
+    saved = content.upsert_char_profile_for_owner(session, "pip", {
+        "id": "profile_pip",
+        "name": "Pip",
+        "notes": "legacy reminder",
+        "characterNotes": {
+            "session": "Ask the goblin about moon keys.",
+            "private": "legacy reminder plus secret",
+            "updated_at": "2026-05-31T12:00:00Z",
+            "pinned": True,
+            "minimized": True,
+            "widget_position": {"x": 222, "y": 123},
+            "widget_size": {"width": 420, "height": 310},
+        },
+    })
+
+    assert saved["characterNotes"] == {
+        "session": "Ask the goblin about moon keys.",
+        "private": "legacy reminder plus secret",
+        "updated_at": "2026-05-31T12:00:00Z",
+        "pinned": True,
+        "minimized": True,
+        "widget_position": {"x": 222, "y": 123},
+        "widget_size": {"width": 420, "height": 310},
+    }
+    assert saved["notes"] == "legacy reminder plus secret"
+
+
+def test_char_profile_upsert_backfills_character_notes_from_legacy_notes():
+    session = Session(id="sess-sticky-notes-legacy")
+
+    saved = content.upsert_char_profile_for_owner(session, "pip", {
+        "id": "profile_legacy_pip",
+        "name": "Pip",
+        "notes": "old quick-panel note",
+        "charBook": {"campaignNotes": "book note"},
+    })
+
+    assert saved["characterNotes"]["private"] == "old quick-panel note"
+    assert saved["characterNotes"]["session"] == ""
+    assert saved["characterNotes"]["widget_position"] == {"x": 100, "y": 100}
+    assert saved["characterNotes"]["widget_size"] == {"width": 320, "height": 260}
+
+
+def test_char_profile_upsert_can_clear_canonical_private_notes():
+    session = Session(id="sess-sticky-notes-clear")
+    content.upsert_char_profile_for_owner(session, "pip", {
+        "id": "profile_clear_pip",
+        "name": "Pip",
+        "characterNotes": {"private": "old note"},
+    })
+
+    saved = content.upsert_char_profile_for_owner(session, "pip", {
+        "id": "profile_clear_pip",
+        "name": "Pip",
+        "notes": "old note",
+        "characterNotes": {"private": "", "session": ""},
+    })
+
+    assert saved["characterNotes"]["private"] == ""
+    assert saved["notes"] == ""

@@ -171,13 +171,15 @@ function _renderModeStrip(charData) {
 function _renderNotesTab(charData) {
   const notes = _collectNotes(charData || {});
   const book = charData && typeof charData.book === 'object' ? charData.book : {};
+  const sticky = (charData && typeof charData.characterNotes === 'object') ? charData.characterNotes : {};
   const sections = [
-    { title: 'Player Notes', body: _firstNonEmpty(charData && charData.campaignNotes, charData && charData.notes, book.campaignNotes, book.notes), empty: 'No player notes yet. Add backstory, reminders, goals, bonds, flaws, or table-facing notes from Build/Edit mode.' },
-    { title: 'Session Notes', body: _firstNonEmpty(charData && charData.sessionNotes, book.sessionNotes), empty: 'No session notes yet. Track current clues, NPC names, quests, and short-term reminders here when supported.' },
+    { title: 'Player Notes', body: _firstNonEmpty(sticky.private, charData && charData.campaignNotes, charData && charData.notes, book.campaignNotes, book.notes), empty: 'No player notes yet. Add backstory, reminders, goals, bonds, flaws, or table-facing notes from Build/Edit mode.' },
+    { title: 'Session Notes', body: _firstNonEmpty(sticky.session, charData && charData.sessionNotes, book.sessionNotes), empty: 'No session notes yet. Track current clues, NPC names, quests, and short-term reminders here when supported.' },
     { title: 'Private Notes', body: _firstNonEmpty(charData && charData.privateNotes, book.privateNotes), empty: 'No private notes are stored on this sheet yet. Keep secrets here only if your table supports private character notes.' },
   ];
+  const stickyLauncher = '<button type="button" class="cs-launch-btn" onclick="window.openCharacterStickyNotes && window.openCharacterStickyNotes()">Open Sticky Notes</button>';
   return '<div class="cs-notes-layout">'
-    + '<div class="cs-feature-section-copy">Notes are separated from combat data so players can find reminders without hunting through legacy edit pages.</div>'
+    + '<div class="cs-feature-section-copy">Notes are separated from combat data so players can find reminders without hunting through legacy edit pages. ' + stickyLauncher + '</div>'
     + sections.map(function (section) {
       return '<section class="cs-overview-section cs-notes-section"><div class="cs-overview-section-title">' + _esc(section.title) + '</div>'
         + (section.body ? '<div class="cs-notes-copy">' + _esc(section.body) + '</div>' : '<div class="cs-empty-state compact"><span>' + _esc(section.empty) + '</span></div>')

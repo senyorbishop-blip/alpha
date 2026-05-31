@@ -346,6 +346,51 @@ def _resolve_profile_level(payload: dict) -> int | None:
     return None
 
 
+
+def _normalize_character_notes(payload: dict, existing: dict | None = None) -> dict:
+    """Normalize the canonical per-character live notes widget state."""
+    existing_notes = existing.get("characterNotes") if isinstance(existing, dict) and isinstance(existing.get("characterNotes"), dict) else {}
+    raw = payload.get("characterNotes") if isinstance(payload.get("characterNotes"), dict) else {}
+    legacy_text = payload.get("notes")
+    char_book = payload.get("charBook") if isinstance(payload.get("charBook"), dict) else {}
+    char_sheet = payload.get("charSheet") if isinstance(payload.get("charSheet"), dict) else {}
+
+    def _text(key: str, *fallbacks, limit: int = 12000) -> str:
+        for value in (raw.get(key), *fallbacks, existing_notes.get(key)):
+            if value is None:
+                continue
+            return str(value)[:limit]
+        return ""
+
+    def _num_pair(key: str, defaults: tuple[int, int], limits: tuple[int, int]) -> dict:
+        raw_pair = raw.get(key) if isinstance(raw.get(key), dict) else {}
+        existing_pair = existing_notes.get(key) if isinstance(existing_notes.get(key), dict) else {}
+        out = {}
+        for axis, default, maximum in ((limits[0], defaults[0], 4096), (limits[1], defaults[1], 4096)):
+            try:
+                value = int(raw_pair.get(axis, existing_pair.get(axis, default)))
+            except (TypeError, ValueError):
+                value = default
+            out[axis] = max(0, min(maximum, value))
+        return out
+
+    session_text = _text("session", char_book.get("sessionNotes"), char_sheet.get("sessionNotes"))
+    private_text = _text("private", legacy_text, char_book.get("campaignNotes"), char_sheet.get("notes"))
+    updated_raw = raw.get("updated_at") or existing_notes.get("updated_at") or ""
+    updated_at = str(updated_raw or "")[:40]
+    if not updated_at and (session_text or private_text):
+        updated_at = str(time.time())
+
+    return {
+        "session": session_text,
+        "private": private_text,
+        "updated_at": updated_at,
+        "pinned": bool(raw.get("pinned", existing_notes.get("pinned", False))),
+        "minimized": bool(raw.get("minimized", existing_notes.get("minimized", False))),
+        "widget_position": _num_pair("widget_position", (100, 100), ("x", "y")),
+        "widget_size": _num_pair("widget_size", (320, 260), ("width", "height")),
+    }
+
 def upsert_char_profile_for_owner(session: Session, owner_key: str, payload: dict) -> dict:
     """Upsert a character profile in a specific owner bucket (legacy-compatible)."""
     profiles = dict(getattr(session, "char_profiles", {}) or {})
@@ -358,6 +403,9 @@ def upsert_char_profile_for_owner(session: Session, owner_key: str, payload: dic
         sheet_payload = dict(sheet_payload)
         sheet_payload["level"] = resolved_level
         sheet_payload["totalLevel"] = resolved_level
+
+    existing = next((p for p in mine if p.get("id") == profile_id), None)
+    character_notes = _normalize_character_notes(payload, existing)
 
     profile = {
         "id": profile_id,
@@ -374,7 +422,8 @@ def upsert_char_profile_for_owner(session: Session, owner_key: str, payload: dic
         "level": resolved_level,
         "passive": payload.get("passive"),
         "faction": str(payload.get("faction") or "")[:80],
-        "notes": str(payload.get("notes") or "")[:500],
+        "notes": str(character_notes.get("private", ""))[:500],
+        "characterNotes": character_notes,
         "classId": str(payload.get("classId") or "")[:40],
         "color": str(payload.get("color") or "")[:16],
         "accentColor": str(payload.get("accentColor") or "")[:16],
@@ -388,7 +437,6 @@ def upsert_char_profile_for_owner(session: Session, owner_key: str, payload: dic
         if key in payload:
             profile[key] = payload.get(key)
 
-    existing = next((p for p in mine if p.get("id") == profile_id), None)
     if existing:
         created = existing.get("created_at", now)
         # Preserve ac_from_equipment flag so equipment-based AC tracking
