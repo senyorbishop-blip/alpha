@@ -2117,7 +2117,7 @@ async def handle_session_quest_progress_override(payload: dict, session: Session
 
 
 # Whitelist of settings that DMs can broadcast to players
-ALLOWED_DM_SETTINGS = {'show_vision_fallback_banner'}
+ALLOWED_DM_SETTINGS = {'show_vision_fallback_banner', 'viewer_fx_intensity', 'viewer_fx_disable_disruptive'}
 
 
 async def handle_setting_update(payload: dict, session: Session, user: User):

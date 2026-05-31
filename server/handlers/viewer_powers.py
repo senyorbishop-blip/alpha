@@ -704,10 +704,11 @@ async def _resolve_viewer_power(session: Session, actor_name: str, power_id: str
                 pass
             new_x, new_y = cand_x, cand_y
             break
+        old_cx, old_cy = _token_center(token)
         token.x = new_x
         token.y = new_y
         tcx, tcy = _token_center(token)
-        await _broadcast_viewer_fx(session, 'knockback', {'x': tcx, 'y': tcy, 'token_id': token.id})
+        await _broadcast_viewer_fx(session, 'knockback', {'x': tcx, 'y': tcy, 'x1': old_cx, 'y1': old_cy, 'x2': tcx, 'y2': tcy, 'token_id': token.id, 'label': power['name']})
         affected = [token]
         msg = f"{actor_name} used {power['name']}, blasting {token.name} back."
     elif power['kind'] == 'grant_item':
@@ -733,7 +734,7 @@ async def _resolve_viewer_power(session: Session, actor_name: str, power_id: str
         _add_item_to_player_inventory(session, target_user, raw_entry, qty, source_name=f'Viewer: {actor_name}')
         await _broadcast_inventory_state(session)
         tcx, tcy = _token_center(token)
-        await _broadcast_viewer_fx(session, 'healing_spark', {'x': tcx, 'y': tcy, 'token_id': token.id, 'label': item_name})
+        await _broadcast_viewer_fx(session, 'item_gift', {'x': tcx, 'y': tcy, 'token_id': token.id, 'label': item_name})
         affected = [token]
         msg = f"{actor_name} gave {token.name} a {item_name} (×{qty})."
     else:
@@ -750,6 +751,41 @@ async def _resolve_viewer_power(session: Session, actor_name: str, power_id: str
 
 async def _broadcast_viewer_fx(session: Session, effect_type: str, payload: dict):
     await manager.broadcast(session.id, {'type': 'viewer_fx', 'payload': {'effect': effect_type, **payload}})
+
+
+def _viewer_power_fx_payload(power_def: dict, power_id: str, power_name: str, viewer_name: str, target: dict | None, result: list | tuple | None, msg: str, approval_status: str) -> dict:
+    kind = str((power_def or {}).get('kind') or '')
+    targets = []
+    if isinstance(result, (list, tuple)):
+        for tok in result:
+            try:
+                targets.append({'token_id': str(getattr(tok, 'id', '') or ''), 'name': str(getattr(tok, 'name', '') or 'Target')[:80]})
+            except Exception:
+                pass
+    payload = {
+        'power_id': power_id,
+        'power_name': power_name,
+        'viewer_name': viewer_name,
+        'kind': kind,
+        'fx_color': _fx_color_for_kind(kind),
+        'approval_status': approval_status,
+        'targets': targets,
+        'target_count': len(targets),
+        'recap_text': str(msg or '').strip()[:500],
+    }
+    tp = _extract_target_point(target or {}, result)
+    if tp:
+        payload['target_point'] = tp
+    radius_ft = (power_def or {}).get('radius_ft')
+    if radius_ft is not None:
+        payload['radius_ft'] = float(radius_ft)
+    condition = str((power_def or {}).get('condition') or '').strip()
+    if condition:
+        payload['condition'] = condition
+    if kind == 'grant_item':
+        item = dict((power_def or {}).get('item_payload') or {})
+        payload['item_name'] = str(item.get('name') or 'Gift')[:120]
+    return payload
 
 
 def _extract_target_point(target: dict | None, result: list | tuple | None) -> dict | None:
@@ -931,21 +967,10 @@ async def handle_viewer_power_use(payload: dict, session: Session, user: User):
     power_name = power_def.get('name', power_id)
     status_msg = f"{power_name} was used! It has been removed until the DM grants it again."
     await manager.send_to(session.id, user.id, {'type': 'viewer_power_status', 'payload': {'kind': 'used', 'message': status_msg}})
-    # Broadcast visual FX announcement to all clients
-    kind = power_def.get('kind', '')
-    fx_payload = {
-        'power_id': power_id,
-        'power_name': power_name,
-        'viewer_name': str(user.name or 'Viewer')[:40],
-        'kind': kind,
-        'fx_color': _fx_color_for_kind(kind),
-    }
-    tp = _extract_target_point(target, result)
-    if tp:
-        fx_payload['target_point'] = tp
-    radius_ft = power_def.get('radius_ft')
-    if radius_ft is not None:
-        fx_payload['radius_ft'] = float(radius_ft)
+    # Broadcast visual FX announcement / recap to all clients.
+    fx_payload = _viewer_power_fx_payload(
+        power_def, power_id, power_name, str(user.name or 'Viewer')[:40], target, result, err or '', 'auto_approved'
+    )
     await manager.broadcast(session.id, {'type': 'viewer_power_fx', 'payload': fx_payload})
 
 
@@ -995,22 +1020,11 @@ async def handle_viewer_power_pending_decision(payload: dict, session: Session, 
     power_name = entry.get('power_name') or power_id
     approved_msg = f"{power_name} was approved and used! It has been removed until the DM grants it again."
     if viewer_user: await manager.send_to(session.id, viewer_user.id, {'type': 'viewer_power_status', 'payload': {'kind': 'approved', 'message': approved_msg}})
-    # Broadcast visual FX announcement to all clients
-    kind = power_def.get('kind', '')
+    # Broadcast visual FX announcement / recap to all clients.
     viewer_name = str(entry.get('viewer_name') or 'Viewer')[:40]
-    fx_payload = {
-        'power_id': power_id,
-        'power_name': power_name,
-        'viewer_name': viewer_name,
-        'kind': kind,
-        'fx_color': _fx_color_for_kind(kind),
-    }
-    tp = _extract_target_point(entry.get('target') or {}, result)
-    if tp:
-        fx_payload['target_point'] = tp
-    radius_ft = power_def.get('radius_ft')
-    if radius_ft is not None:
-        fx_payload['radius_ft'] = float(radius_ft)
+    fx_payload = _viewer_power_fx_payload(
+        power_def, power_id, power_name, viewer_name, entry.get('target') or {}, result, err or '', 'dm_approved'
+    )
     await manager.broadcast(session.id, {'type': 'viewer_power_fx', 'payload': fx_payload})
 
 

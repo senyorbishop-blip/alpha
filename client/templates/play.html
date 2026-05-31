@@ -11322,6 +11322,10 @@ let _customPowerBuilderOpen = false;
 let _viewerPowerTargeting = null;
 let _viewerPowerJustFiredAt = 0;
 let _viewerPowerActivating = false;
+let _viewerFxIntensity = localStorage.getItem('tavern_viewer_fx_intensity') || 'normal';
+let _viewerFxDisableDisruptive = localStorage.getItem('tavern_viewer_fx_disable_disruptive') === '1';
+let _viewerFxReduceMotion = localStorage.getItem('tavern_viewer_fx_reduce_motion') === '1';
+let _viewerPowerRecapLog = [];
 
 // Viewer ghost marker state (spectator cursors)
 // { [user_id]: { name, x, y, map_context, lastSeen } }
@@ -27268,6 +27272,7 @@ function renderViewerPanel() {
     }
     dmBox.innerHTML = `<div onclick="_viewerPowersSectionOpen=!_viewerPowersSectionOpen;renderViewerPanel()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;padding:0.2rem 0.1rem;border-radius:6px;margin-bottom:0.1rem;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background=''"><div class="tab-section-label" style="margin:0;">Viewer Powers</div><span style="font-size:0.62rem;color:var(--parchment-dim);">${_viewerPowersSectionOpen ? '▼' : '▶'}</span></div><div id="viewer-power-dm-body" style="display:${_viewerPowersSectionOpen ? 'block' : 'none'}">
       <div style="font-size:0.66rem;color:var(--parchment-dim);margin-bottom:0.55rem;line-height:1.45;">Grant one-time viewer powers. After a viewer uses one successfully, it disappears until you grant another.</div>
+      ${_viewerPowerFxSettingsHtml()}
       <div style="display:flex;gap:0.45rem;flex-wrap:wrap;align-items:end;">
         <label style="flex:1;min-width:150px;font-size:0.62rem;color:var(--parchment-dim);">Viewer<select id="viewer-power-dm-target" onchange="_dmSelectedViewerId=this.value;renderViewerPanel()" style="width:100%;margin-top:0.18rem;background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:6px;color:var(--parchment);padding:0.34rem;">${viewers.map(v=>`<option value="${escapeHtml(v.id)}" ${v.id===_dmSelectedViewerId?'selected':''}>${escapeHtml(v.name)}</option>`).join('') || '<option value="">No viewers online</option>'}</select></label>
         <label style="flex:1;min-width:160px;font-size:0.62rem;color:var(--parchment-dim);">Power<select id="viewer-power-dm-power" style="width:100%;margin-top:0.18rem;background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:6px;color:var(--parchment);padding:0.34rem;">${powerOptions}</select></label>
@@ -27317,15 +27322,89 @@ function renderViewerPanel() {
       </div>
       <div id="viewer-power-dm-granted" style="margin-top:0.7rem;display:flex;flex-direction:column;gap:0.4rem;">${grantedHtml}</div>
       <div id="viewer-power-dm-pending"><div class="tab-section-label" style="margin-top:0.9rem;">Pending Approvals</div><div style="display:flex;flex-direction:column;gap:0.42rem;">${pendingHtml}</div></div>
+      <div class="tab-section-label" style="margin-top:0.9rem;">Viewer Power Recap</div><div id="viewer-power-recap-log" style="display:flex;flex-direction:column;gap:0.38rem;"></div>
       </div>`;
+      setTimeout(renderViewerPowerRecapLog, 0);
     updateCustomPowerBuilderFields('single_damage');
   } else if (ROLE === 'viewer') {
     const profile = currentViewerProfile();
     const targetOptions = visibleTargetTokensForViewerPowers();
     const entries = profile ? Object.values(profile.powers || {}).filter(e => Number(e?.charges || 0) > 0) : [];
     const queuedCount = currentViewerPendingEntries().length;
-    selfBox.innerHTML = `<div class="tab-section-label" style="margin-top:0;">Your Powers</div><div style="font-size:0.66rem;color:var(--parchment-dim);margin-bottom:0.6rem;line-height:1.45;">Only DM-granted interactions appear here. Charges, cooldowns, and approval state update live so you always know what is currently allowed.</div>${_viewerPowerTargeting ? `<div style="margin-bottom:0.55rem;padding:0.5rem 0.6rem;border-radius:9px;background:rgba(255,163,86,0.1);border:1px solid rgba(255,163,86,0.24);font-size:0.66rem;color:var(--parchment);display:flex;justify-content:space-between;gap:0.5rem;align-items:center;"><span>Targeting ${escapeHtml(viewerPowerName(_viewerPowerTargeting.powerId))}: tap the map${viewerPowerNeedsSourceToken(_viewerPowerTargeting.powerId) ? ' from the chosen token' : ''}.</span><button onclick="cancelViewerPowerTargeting(true)" style="padding:0.28rem 0.46rem;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:7px;color:var(--parchment);cursor:pointer;">Cancel</button></div>` : ''}<label style="display:block;font-size:0.62rem;color:var(--parchment-dim);margin-bottom:0.5rem;">Target / source token<select id="viewer-power-target" style="width:100%;margin-top:0.18rem;background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:6px;color:var(--parchment);padding:0.34rem;">${targetOptions.map(t=>`<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('') || '<option value="">No valid target on this map yet</option>'}</select></label>${queuedCount>0?`<div style="font-size:0.62rem;color:var(--gold-dim);margin-bottom:0.45rem;">⏳ ${queuedCount} power${queuedCount===1?'':'s'} pending DM approval</div>`:''}<div style="display:flex;flex-direction:column;gap:0.42rem;">${entries.length ? entries.map(entry => `<div style="padding:0.55rem 0.62rem;background:rgba(255,255,255,0.04);border:1px solid rgba(93,122,255,0.26);border-radius:9px;color:var(--parchment);"><div style="display:flex;justify-content:space-between;gap:0.45rem;align-items:center;"><span style="font-size:0.74rem;font-weight:700;">${escapeHtml(viewerPowerName(entry.power_id))}</span><span style="font-size:0.64rem;color:var(--gold);white-space:nowrap;">${Number(entry.charges||0)} charge${Number(entry.charges||0)===1?'':'s'}</span></div><div style="font-size:0.62rem;color:var(--parchment-dim);margin-top:0.15rem;">${escapeHtml(viewerPowerDescription(entry.power_id))}${entry.requires_approval ? ' · <em>Needs DM approval.</em>' : ''}</div><div style="font-size:0.6rem;color:var(--gold-dim);margin-top:0.14rem;">${escapeHtml(viewerPowerCooldownLabel(entry))}</div><div style="display:flex;gap:0.4rem;margin-top:0.48rem;">${_viewerPowerBtnHtml(entry)}</div></div>`).join('') : '<div style="font-size:0.68rem;color:var(--parchment-dim);padding:0.5rem 0.2rem;">No active powers. Ask the DM for a grant, then return here to fire it.</div>'}</div>`;
+    selfBox.innerHTML = `<div class="tab-section-label" style="margin-top:0;">Your Powers</div><div style="font-size:0.66rem;color:var(--parchment-dim);margin-bottom:0.6rem;line-height:1.45;">Only DM-granted interactions appear here. Charges, cooldowns, and approval state update live so you always know what is currently allowed.</div>${_viewerPowerFxSettingsHtml()}${_viewerPowerTargeting ? `<div style="margin-bottom:0.55rem;padding:0.5rem 0.6rem;border-radius:9px;background:rgba(255,163,86,0.1);border:1px solid rgba(255,163,86,0.24);font-size:0.66rem;color:var(--parchment);display:flex;justify-content:space-between;gap:0.5rem;align-items:center;"><span>Targeting ${escapeHtml(viewerPowerName(_viewerPowerTargeting.powerId))}: tap the map${viewerPowerNeedsSourceToken(_viewerPowerTargeting.powerId) ? ' from the chosen token' : ''}.</span><button onclick="cancelViewerPowerTargeting(true)" style="padding:0.28rem 0.46rem;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:7px;color:var(--parchment);cursor:pointer;">Cancel</button></div>` : ''}<label style="display:block;font-size:0.62rem;color:var(--parchment-dim);margin-bottom:0.5rem;">Target / source token<select id="viewer-power-target" style="width:100%;margin-top:0.18rem;background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:6px;color:var(--parchment);padding:0.34rem;">${targetOptions.map(t=>`<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('') || '<option value="">No valid target on this map yet</option>'}</select></label>${queuedCount>0?`<div style="font-size:0.62rem;color:var(--gold-dim);margin-bottom:0.45rem;">⏳ ${queuedCount} power${queuedCount===1?'':'s'} pending DM approval</div>`:''}<div style="display:flex;flex-direction:column;gap:0.42rem;">${entries.length ? entries.map(entry => `<div style="padding:0.55rem 0.62rem;background:rgba(255,255,255,0.04);border:1px solid rgba(93,122,255,0.26);border-radius:9px;color:var(--parchment);"><div style="display:flex;justify-content:space-between;gap:0.45rem;align-items:center;"><span style="font-size:0.74rem;font-weight:700;">${escapeHtml(viewerPowerName(entry.power_id))}</span><span style="font-size:0.64rem;color:var(--gold);white-space:nowrap;">${Number(entry.charges||0)} charge${Number(entry.charges||0)===1?'':'s'}</span></div><div style="font-size:0.62rem;color:var(--parchment-dim);margin-top:0.15rem;">${escapeHtml(viewerPowerDescription(entry.power_id))}${entry.requires_approval ? ' · <em>Needs DM approval.</em>' : ''}</div><div style="font-size:0.6rem;color:var(--gold-dim);margin-top:0.14rem;">${escapeHtml(viewerPowerCooldownLabel(entry))}</div><div style="display:flex;gap:0.4rem;margin-top:0.48rem;">${_viewerPowerBtnHtml(entry)}</div></div>`).join('') : '<div style="font-size:0.68rem;color:var(--parchment-dim);padding:0.5rem 0.2rem;">No active powers. Ask the DM for a grant, then return here to fire it.</div>'}</div><div class="tab-section-label" style="margin-top:0.9rem;">Viewer Power Recap</div><div id="viewer-power-recap-log" style="display:flex;flex-direction:column;gap:0.38rem;"></div>`;
+    setTimeout(renderViewerPowerRecapLog, 0);
   }
+}
+
+
+function _viewerFxMotionScale() {
+  if (_viewerFxReduceMotion || _viewerFxDisableDisruptive || window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return 0.35;
+  if (_viewerFxIntensity === 'low') return 0.55;
+  if (_viewerFxIntensity === 'streamer') return 1.15;
+  return 1;
+}
+
+function _viewerFxAllowsDisruptive() {
+  return !_viewerFxDisableDisruptive && _viewerFxMotionScale() > 0.4;
+}
+
+function setViewerFxIntensity(value, broadcast) {
+  const next = ['low', 'normal', 'streamer'].includes(String(value || '')) ? String(value) : 'normal';
+  _viewerFxIntensity = next;
+  try { localStorage.setItem('tavern_viewer_fx_intensity', next); } catch (_) {}
+  const el = document.getElementById('viewer-fx-intensity');
+  if (el && el.value !== next) el.value = next;
+  if (broadcast && ROLE === 'dm') sendWS({ type:'setting_update', payload:{ setting:'viewer_fx_intensity', value: next } });
+}
+
+function setViewerFxDisableDisruptive(value, broadcast) {
+  _viewerFxDisableDisruptive = !!value;
+  try { localStorage.setItem('tavern_viewer_fx_disable_disruptive', _viewerFxDisableDisruptive ? '1' : '0'); } catch (_) {}
+  const el = document.getElementById('viewer-fx-disable-disruptive');
+  if (el) el.checked = _viewerFxDisableDisruptive;
+  if (broadcast && ROLE === 'dm') sendWS({ type:'setting_update', payload:{ setting:'viewer_fx_disable_disruptive', value: _viewerFxDisableDisruptive } });
+}
+
+function setViewerFxReduceMotion(value) {
+  _viewerFxReduceMotion = !!value;
+  try { localStorage.setItem('tavern_viewer_fx_reduce_motion', _viewerFxReduceMotion ? '1' : '0'); } catch (_) {}
+  const el = document.getElementById('viewer-fx-reduce-motion');
+  if (el) el.checked = _viewerFxReduceMotion;
+}
+
+function _viewerPowerFxSettingsHtml() {
+  return `<div style="margin-top:0.62rem;padding:0.55rem 0.62rem;border-radius:9px;background:rgba(0,0,0,0.18);border:1px solid rgba(201,162,39,0.16);">
+    <div class="tab-section-label" style="margin:0 0 0.45rem 0;">Viewer FX Settings</div>
+    <div style="display:grid;grid-template-columns:1fr;gap:0.42rem;">
+      ${ROLE === 'dm' ? `<label style="font-size:0.62rem;color:var(--parchment-dim);">Table intensity<select id="viewer-fx-intensity" onchange="setViewerFxIntensity(this.value, true)" style="width:100%;margin-top:0.18rem;background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:6px;color:var(--parchment);padding:0.34rem;"><option value="low" ${_viewerFxIntensity==='low'?'selected':''}>Low</option><option value="normal" ${_viewerFxIntensity==='normal'?'selected':''}>Normal</option><option value="streamer" ${_viewerFxIntensity==='streamer'?'selected':''}>Streamer mode</option></select></label><label style="display:flex;align-items:center;gap:0.36rem;font-size:0.62rem;color:var(--parchment-dim);"><input id="viewer-fx-disable-disruptive" type="checkbox" ${_viewerFxDisableDisruptive?'checked':''} onchange="setViewerFxDisableDisruptive(this.checked, true)"/> Disable disruptive screen effects</label>` : ''}
+      <label style="display:flex;align-items:center;gap:0.36rem;font-size:0.62rem;color:var(--parchment-dim);"><input id="viewer-fx-reduce-motion" type="checkbox" ${_viewerFxReduceMotion?'checked':''} onchange="setViewerFxReduceMotion(this.checked)"/> Reduce viewer-power motion on this device</label>
+    </div>
+  </div>`;
+}
+
+function _appendViewerPowerRecap(p) {
+  const viewerName = String(p.viewer_name || 'Viewer');
+  const powerName = String(p.power_name || 'Power');
+  const targetCount = Number(p.target_count || (Array.isArray(p.targets) ? p.targets.length : 0));
+  const targetText = Array.isArray(p.targets) && p.targets.length ? p.targets.map(t => t.name || 'Target').join(', ') : (targetCount ? `${targetCount} target${targetCount===1?'':'s'}` : 'No targets');
+  const approval = String(p.approval_status || '').replace(/_/g, ' ');
+  const recap = String(p.recap_text || `${viewerName} used ${powerName}.`).trim();
+  const entry = { time: Date.now(), viewerName, powerName, targetText, approval, recap };
+  _viewerPowerRecapLog.unshift(entry);
+  _viewerPowerRecapLog = _viewerPowerRecapLog.slice(0, 12);
+  const line = `${viewerName} used ${powerName}: ${recap}${approval ? ` (${approval})` : ''}`;
+  try { if (typeof appendChatLogSystem === 'function') appendChatLogSystem(line); } catch (_) {}
+  renderViewerPowerRecapLog();
+}
+
+function renderViewerPowerRecapLog() {
+  const host = document.getElementById('viewer-power-recap-log');
+  if (!host) return;
+  if (!_viewerPowerRecapLog.length) {
+    host.innerHTML = '<div style="font-size:0.66rem;color:var(--parchment-dim);">Viewer power recaps will appear here when powers resolve.</div>';
+    return;
+  }
+  host.innerHTML = _viewerPowerRecapLog.map((entry) => `<div style="padding:0.45rem 0.5rem;border-radius:8px;background:rgba(0,0,0,0.18);border:1px solid rgba(255,255,255,0.08);"><div style="font-size:0.68rem;color:var(--parchment);font-weight:700;">${escapeHtml(entry.viewerName)} used ${escapeHtml(entry.powerName)}</div><div style="font-size:0.6rem;color:var(--gold-dim);margin-top:0.12rem;">Targets: ${escapeHtml(entry.targetText)}${entry.approval ? ` · ${escapeHtml(entry.approval)}` : ''}</div><div style="font-size:0.62rem;color:var(--parchment-dim);margin-top:0.14rem;line-height:1.35;">${escapeHtml(entry.recap)}</div></div>`).join('');
 }
 
 function grantViewerPower() {
@@ -27432,8 +27511,16 @@ function showViewerFx(payload) {
     if (String(payload.token_id || '')) { const tok = tokens[String(payload.token_id)]; if (tok) { const cx = Number(tok.x||0)+Number(tok.width||0)/2; const cy = Number(tok.y||0)+Number(tok.height||0)/2; return worldToScreen(cx, cy); } }
     return null;
   }
-  if (payload.effect === 'area_shape') payload = { ...payload, effect: (payload.area_shape === 'burst' ? 'fireball' : 'power') };
+  const wasAreaShape = payload.effect === 'area_shape';
+  if (wasAreaShape) payload = { ...payload, effect: (payload.area_shape === 'burst' ? 'fireball' : 'power') };
   const screenPt = fxScreenPt();
+  if (wasAreaShape && payload.effect === 'fireball') {
+    _drawViewerPowerTelegraph(wrap, screenPt, payload.color || '#ff9a5c', Number(payload.radius || 80));
+    if (_viewerFxAllowsDisruptive()) {
+      setTimeout(() => showViewerFx({ ...payload, effect: 'fireball' }), Math.round(280 * _viewerFxMotionScale()));
+    }
+    return;
+  }
   if (payload.effect === 'healing_spark') {
     const pt = screenPt || { x: wrap.clientWidth / 2, y: wrap.clientHeight * 0.3 };
     const halo = document.createElement('div'); halo.style.cssText = `position:absolute;pointer-events:none;z-index:10021;left:${pt.x}px;top:${pt.y}px;width:18px;height:18px;margin-left:-9px;margin-top:-9px;border-radius:999px;opacity:0.98;transform:scale(0.4);background:radial-gradient(circle,rgba(250,255,240,0.98) 0%,rgba(171,255,214,0.95) 28%,rgba(46,204,113,0.62) 58%,rgba(46,204,113,0) 78%);box-shadow:0 0 18px rgba(171,255,214,0.95),0 0 36px rgba(74,222,128,0.65);`;
@@ -27460,11 +27547,36 @@ function showViewerFx(payload) {
   }
   if (payload.effect === 'knockback') {
     const pt = screenPt || { x: wrap.clientWidth / 2, y: wrap.clientHeight / 2 };
+    let fromPt = null;
+    if (Number.isFinite(Number(payload.x1)) && Number.isFinite(Number(payload.y1))) fromPt = worldToScreen(Number(payload.x1), Number(payload.y1));
+    if (fromPt) _drawViewerPowerKnockbackArrow(wrap, fromPt, pt, payload.color || '#f97316');
     const ring = document.createElement('div'); ring.style.cssText = `position:absolute;pointer-events:none;z-index:10021;left:${pt.x}px;top:${pt.y}px;width:44px;height:44px;margin-left:-22px;margin-top:-22px;border-radius:999px;border:2px solid rgba(255,214,170,0.92);box-shadow:0 0 24px rgba(255,190,92,0.34);transform:scale(0.25);opacity:0.95;`;
     const burst = document.createElement('div'); burst.style.cssText = `position:absolute;pointer-events:none;z-index:10021;left:${pt.x}px;top:${pt.y}px;width:18px;height:18px;margin-left:-9px;margin-top:-9px;border-radius:999px;background:radial-gradient(circle,rgba(255,247,237,0.98),rgba(251,191,36,0.95) 45%,rgba(234,88,12,0.1) 78%);box-shadow:0 0 20px rgba(251,191,36,0.55);transform:scale(0.4);opacity:1;`;
     [ring, burst].forEach(n => wrap.appendChild(n));
     requestAnimationFrame(() => { ring.style.transition='transform 420ms ease,opacity 520ms ease'; ring.style.transform='scale(2.6)'; ring.style.opacity='0'; burst.style.transition='transform 280ms ease,opacity 360ms ease'; burst.style.transform='scale(2.2)'; burst.style.opacity='0'; });
     setTimeout(() => [ring, burst].forEach(n => n.remove()), 640);
+    return;
+  }
+  if (payload.effect === 'status_ring') {
+    const pt = screenPt || { x: wrap.clientWidth / 2, y: wrap.clientHeight / 2 };
+    const ring = document.createElement('div');
+    ring.style.cssText = `position:absolute;pointer-events:none;z-index:10021;left:${pt.x}px;top:${pt.y}px;width:58px;height:58px;margin-left:-29px;margin-top:-29px;border-radius:999px;border:3px dashed ${payload.color || '#c084fc'};box-shadow:0 0 20px rgba(192,132,252,0.45);transform:scale(0.5) rotate(0deg);opacity:0.96;`;
+    const lbl = document.createElement('div');
+    lbl.style.cssText = `position:absolute;pointer-events:none;z-index:10022;left:${pt.x}px;top:${pt.y - 38}px;transform:translate(-50%,-50%) scale(0.86);padding:0.36rem 0.7rem;border-radius:999px;font-family:'Cinzel',serif;color:#f5e8ff;background:linear-gradient(180deg,rgba(126,34,206,0.88),rgba(74,20,110,0.72));white-space:nowrap;`;
+    lbl.textContent = payload.label || payload.condition || 'STATUS';
+    [ring, lbl].forEach(n => wrap.appendChild(n));
+    requestAnimationFrame(() => { ring.style.transition='transform 760ms ease, opacity 780ms ease'; ring.style.transform='scale(1.45) rotate(70deg)'; ring.style.opacity='0'; lbl.style.transition='transform 700ms ease, opacity 760ms ease'; lbl.style.transform='translate(-50%,-88%) scale(1.04)'; lbl.style.opacity='0'; });
+    setTimeout(() => [ring, lbl].forEach(n => n.remove()), 860);
+    return;
+  }
+  if (payload.effect === 'item_gift') {
+    const pt = screenPt || { x: wrap.clientWidth / 2, y: wrap.clientHeight / 2 };
+    const gift = document.createElement('div');
+    gift.style.cssText = `position:absolute;pointer-events:none;z-index:10022;left:${pt.x}px;top:${pt.y - 20}px;transform:translate(-50%,-50%) scale(0.72);padding:0.42rem 0.82rem;border-radius:999px;font-family:'Cinzel',serif;color:#fff7d6;background:linear-gradient(180deg,rgba(201,162,39,0.94),rgba(120,82,18,0.76));border:1px solid rgba(255,235,160,0.62);box-shadow:0 0 24px rgba(251,191,36,0.36);white-space:nowrap;`;
+    gift.textContent = `🎁 ${payload.label || 'Gift'}`;
+    wrap.appendChild(gift);
+    requestAnimationFrame(() => { gift.style.transition='transform 820ms ease, opacity 860ms ease'; gift.style.transform='translate(-50%,-105%) scale(1.05)'; gift.style.opacity='0'; });
+    setTimeout(() => gift.remove(), 940);
     return;
   }
   if (payload.effect === 'projectile') {
@@ -27552,21 +27664,38 @@ function _handleViewerPowerFx(p) {
   const fxColor    = String(p.fx_color || '#a855f7');
   const targetPt   = p.target_point || null;
   const radiusFt   = Number(p.radius_ft || 0);
+  const targetCount = Number(p.target_count || (Array.isArray(p.targets) ? p.targets.length : 0));
 
-  // 1. Floating announcement banner
-  _showViewerPowerBanner(viewerName, powerName);
+  _appendViewerPowerRecap(p);
 
-  // 2. Canvas effect
+  // 1. Floating announcement banner with readable resolution details.
+  _showViewerPowerBanner(viewerName, powerName, {
+    targetLine: targetCount ? `Target: ${targetCount} ${targetCount === 1 ? 'target' : 'targets'}` : 'Target: no effect',
+    detailLine: p.recap_text || '',
+  });
+
+  // 2. Canvas effect. Short, non-blocking; game state is already authoritative.
   const wrap = document.getElementById('canvas-wrap') || document.body;
   if (wrap) {
     let screenPt = null;
     if (targetPt && Number.isFinite(Number(targetPt.x)) && Number.isFinite(Number(targetPt.y))) {
       screenPt = worldToScreen(Number(targetPt.x), Number(targetPt.y));
     }
-    if (kind === 'area_damage' || kind === 'area_status') {
-      _drawViewerPowerAreaCircle(wrap, screenPt, fxColor, radiusFt);
+    const radiusPx = Math.max(34, (radiusFt / 5) * 50);
+    if (kind === 'area_damage') {
+      _drawViewerPowerTelegraph(wrap, screenPt, fxColor, radiusPx);
+      if (_viewerFxAllowsDisruptive()) {
+        setTimeout(() => showViewerFx({ effect:'fireball', x: targetPt?.x, y: targetPt?.y, radius: radiusPx, label: powerName, color: fxColor }), Math.round(280 * _viewerFxMotionScale()));
+      }
+    } else if (kind === 'area_status' || kind === 'single_status') {
+      _drawViewerPowerAreaCircle(wrap, screenPt, fxColor, radiusFt || 5);
+      showViewerFx({ effect:'status_ring', x: targetPt?.x, y: targetPt?.y, label: p.condition || powerName, color: fxColor });
     } else if (kind === 'knockback') {
       _drawViewerPowerShockwave(wrap, screenPt, fxColor);
+    } else if (kind === 'single_heal') {
+      showViewerFx({ effect:'healing_spark', x: targetPt?.x, y: targetPt?.y, label: powerName, color: fxColor });
+    } else if (kind === 'grant_item') {
+      showViewerFx({ effect:'item_gift', x: targetPt?.x, y: targetPt?.y, label: p.item_name || powerName, color: fxColor });
     } else {
       _drawViewerPowerBeam(wrap, screenPt, fxColor);
     }
@@ -27576,7 +27705,7 @@ function _handleViewerPowerFx(p) {
   try { _soundEngine.playSfx('viewer_power_fire'); } catch (_) { /* sound engine may not be ready */ }
 }
 
-function _showViewerPowerBanner(viewerName, powerName) {
+function _showViewerPowerBanner(viewerName, powerName, details) {
   const banner = document.createElement('div');
   banner.style.cssText = 'position:fixed;top:-60px;left:50%;transform:translateX(-50%);z-index:99999;' +
     'padding:0.6rem 1.6rem;border-radius:10px;font-family:"Cinzel",serif;font-size:1.08rem;font-weight:700;' +
@@ -27585,11 +27714,41 @@ function _showViewerPowerBanner(viewerName, powerName) {
     'border:1.5px solid rgba(192,132,252,0.7);' +
     'box-shadow:0 0 24px rgba(168,85,247,0.45),0 4px 16px rgba(0,0,0,0.35);' +
     'transition:top 0.4s cubic-bezier(.18,.74,.18,1);';
-  banner.textContent = '\u{1F441} ' + viewerName + ' used ' + powerName + '!';
+  const title = document.createElement('div');
+  title.textContent = '\u{1F441} ' + viewerName + ' used ' + powerName + '!';
+  banner.appendChild(title);
+  if (details && (details.targetLine || details.detailLine)) {
+    const sub = document.createElement('div');
+    sub.style.cssText = 'font-family:Inter,system-ui,sans-serif;font-size:0.72rem;letter-spacing:0.02em;text-transform:none;color:#f8eaff;margin-top:0.18rem;max-width:560px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    sub.textContent = [details.targetLine, details.detailLine].filter(Boolean).join(' · ');
+    banner.appendChild(sub);
+  }
   document.body.appendChild(banner);
   requestAnimationFrame(function() { banner.style.top = '18px'; });
   setTimeout(function() { banner.style.top = '-60px'; }, 2500);
   setTimeout(function() { banner.remove(); }, 2950);
+}
+
+function _drawViewerPowerTelegraph(wrap, screenPt, fxColor, radiusPx) {
+  const pt = screenPt || { x: wrap.clientWidth / 2, y: wrap.clientHeight / 2 };
+  const radius = Math.max(30, Number(radiusPx || 80));
+  const tele = document.createElement('div');
+  tele.style.cssText = `position:absolute;pointer-events:none;z-index:10018;left:${pt.x}px;top:${pt.y}px;width:${radius*2}px;height:${radius*2}px;margin-left:${-radius}px;margin-top:${-radius}px;border-radius:999px;border:2px solid ${fxColor};background:radial-gradient(circle,rgba(255,140,40,0.08),rgba(255,60,20,0.04) 55%,transparent 72%);box-shadow:0 0 18px ${fxColor};opacity:0.78;transform:scale(0.82);`;
+  wrap.appendChild(tele);
+  requestAnimationFrame(() => { tele.style.transition='transform 260ms ease, opacity 320ms ease'; tele.style.transform='scale(1.02)'; tele.style.opacity='0.28'; });
+  setTimeout(() => tele.remove(), Math.round(360 * _viewerFxMotionScale()));
+}
+
+function _drawViewerPowerKnockbackArrow(wrap, fromPt, toPt, fxColor) {
+  const dx = toPt.x - fromPt.x;
+  const dy = toPt.y - fromPt.y;
+  const len = Math.max(22, Math.sqrt(dx * dx + dy * dy));
+  const angle = Math.atan2(dy, dx);
+  const arrow = document.createElement('div');
+  arrow.style.cssText = `position:absolute;pointer-events:none;z-index:10023;left:${fromPt.x}px;top:${fromPt.y}px;width:${len}px;height:14px;margin-top:-7px;transform-origin:0 50%;transform:rotate(${angle}rad) scaleX(0.2);opacity:0.98;background:linear-gradient(90deg,rgba(255,255,255,0),${fxColor} 28%,${fxColor} 78%,rgba(255,247,237,0.98));clip-path:polygon(0% 38%,78% 38%,78% 8%,100% 50%,78% 92%,78% 62%,0% 62%);filter:drop-shadow(0 0 10px ${fxColor});`;
+  wrap.appendChild(arrow);
+  requestAnimationFrame(() => { arrow.style.transition='transform 420ms cubic-bezier(.18,.74,.18,1), opacity 620ms ease'; arrow.style.transform=`rotate(${angle}rad) scaleX(1)`; arrow.style.opacity='0'; });
+  setTimeout(() => arrow.remove(), 720);
 }
 
 function _drawViewerPowerAreaCircle(wrap, screenPt, fxColor, radiusFt) {
@@ -31989,6 +32148,10 @@ function handleLegacyMessage(msg) {
       if (setting === 'show_vision_fallback_banner') {
         _setVisionFallbackBannerEnabled(!!value);
         refreshVisionPreviewUi();
+      } else if (setting === 'viewer_fx_intensity') {
+        setViewerFxIntensity(value, false);
+      } else if (setting === 'viewer_fx_disable_disruptive') {
+        setViewerFxDisableDisruptive(!!value, false);
       }
       break;
     }
