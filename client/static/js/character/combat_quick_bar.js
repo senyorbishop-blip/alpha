@@ -73,7 +73,7 @@
       .combat-quick-meta{font-size:.58rem;color:rgba(245,234,214,.68);line-height:1.25;}
       .combat-quick-pill-row{display:flex;flex-wrap:wrap;gap:.22rem;margin-top:auto;}
       .combat-quick-pill{font-size:.52rem;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:.08rem .28rem;color:rgba(245,234,214,.72);background:rgba(0,0,0,.18);}
-      .combat-quick-pill.good{border-color:rgba(0,229,204,.32);color:#9ff6ea;}.combat-quick-pill.warn{border-color:rgba(255,210,90,.35);color:#ffe8a3;}.combat-quick-pill.danger{border-color:rgba(231,76,60,.42);color:#ffb4a8;}
+      .combat-quick-pill.good{border-color:rgba(0,229,204,.32);color:#9ff6ea;}.combat-quick-pill.warn{border-color:rgba(255,210,90,.35);color:#ffe8a3;}.combat-quick-pill.danger{border-color:rgba(231,76,60,.42);color:#ffb4a8;}.combat-quick-pill.accent{border-color:rgba(112,167,255,.38);color:#b8d2ff;}.combat-quick-pill.damage{border-color:rgba(255,121,87,.36);color:#ffc0aa;}
       .combat-quick-status{display:flex;gap:.35rem;flex-wrap:wrap;align-items:center;font-size:.6rem;color:rgba(245,234,214,.66);}
       .combat-quick-resource-row{display:flex;gap:.3rem;flex-wrap:wrap;}.combat-quick-resource{font-size:.58rem;border:1px solid rgba(255,210,90,.24);border-radius:999px;padding:.14rem .38rem;color:#ffe8a3;background:rgba(96,64,8,.25);}
       .combat-quick-empty{font-size:.63rem;color:rgba(245,234,214,.58);padding:.35rem .1rem;}
@@ -147,6 +147,46 @@
     return 'action';
   }
 
+  function _formatAttackBonus(value) {
+    const raw = _firstText(value, '');
+    if (!raw) return '';
+    const parsed = Number(String(raw).replace(/[^+\-\d.]/g, ''));
+    if (Number.isFinite(parsed)) return parsed >= 0 ? '+' + parsed : String(parsed);
+    return raw;
+  }
+
+  function _actionAttackText(action) {
+    return _formatAttackBonus(_firstText(
+      action && action.quickBarAttackText,
+      action && action.attackBonus,
+      action && action.attack_bonus,
+      action && action.toHit,
+      ''
+    ));
+  }
+
+  function _actionDamageText(action) {
+    const damage = _firstText(
+      action && action.quickBarDamageText,
+      action && action.damage,
+      action && action.damageText,
+      action && action.damage_formula,
+      action && action.base_damage_formula,
+      ''
+    );
+    const type = _firstText(action && action.damageType, action && action.damage_type, '');
+    return damage ? (damage + (type && String(damage).toLowerCase().indexOf(String(type).toLowerCase()) === -1 ? ' ' + type : '')) : '';
+  }
+
+  function _actionDetailPills(action) {
+    const attackText = _actionAttackText(action);
+    const damageText = _actionDamageText(action);
+    const pills = [];
+    if (attackText) pills.push('<span class="combat-quick-pill accent">Atk ' + _esc(attackText) + '</span>');
+    if (damageText) pills.push('<span class="combat-quick-pill damage">Dmg ' + _esc(damageText) + '</span>');
+    return pills.join('');
+  }
+
   function _tile(action, category, idx) {
     const key = _firstText(action && action.id, action && action.name, category + '-' + idx);
     const disabled = action && action.quickBarCanUse === false;
@@ -172,6 +212,7 @@
         <span class="combat-quick-pill ${pillTone}">${_esc(disabled ? (action && action.quickBarDisabledReason || 'Unavailable') : used ? 'Used this turn' : 'Available')}</span>
         <span class="combat-quick-pill">${_esc(type)}</span>
         ${usesText ? `<span class="combat-quick-pill">${_esc(usesText)}</span>` : ''}
+        ${_actionDetailPills(action)}
         ${action && action.quickBarConcentration ? '<span class="combat-quick-pill warn">Concentration</span>' : ''}
       </span>
     </button>`;
@@ -209,6 +250,7 @@
     root.innerHTML = `<header class="combat-quick-bar-head">
       <div class="combat-quick-bar-title">⚔ Quick Actions <span class="combat-quick-bar-sub">${combat.active ? `Round ${_esc(combat.round || 1)} · ${_esc(current && current.name || 'Turn')}` : 'Manual'}</span></div>
       <div class="combat-quick-bar-head-actions">
+        <button type="button" class="combat-quick-sheet-btn" data-qb-open-notes>Notes</button>
         <button type="button" class="combat-quick-sheet-btn" data-qb-open-sheet>Open Full Sheet</button>
         <button type="button" class="combat-quick-bar-icon-btn" data-qb-minimize title="Minimise">${state.minimized ? '▣' : '—'}</button>
         <button type="button" class="combat-quick-bar-icon-btn" data-qb-hide title="Hide">×</button>
@@ -246,6 +288,8 @@
     if (min) { state.minimized = !state.minimized; _saveState(); render(); return; }
     const hide = ev.target.closest('[data-qb-hide]');
     if (hide) { state.manual = false; state.minimized = true; _saveState(); render(); return; }
+    const notes = ev.target.closest('[data-qb-open-notes]');
+    if (notes) { if (typeof global.openCharacterStickyNotes === 'function') global.openCharacterStickyNotes(); return; }
     const sheet = ev.target.closest('[data-qb-open-sheet]');
     if (sheet) { if (typeof global.openCharacterBook === 'function') global.openCharacterBook('premiumsheet'); else if (typeof global.toggleSheet === 'function') global.toggleSheet(); return; }
     const tile = ev.target.closest('[data-qb-kind][data-qb-key]');

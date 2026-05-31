@@ -112,6 +112,45 @@
     return max > 0 && spent < max;
   }
 
+  function _formatSignedNumber(value) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return _firstText(value, '');
+    return parsed >= 0 ? '+' + parsed : String(parsed);
+  }
+
+  function _spellAttackText(spell, runtime) {
+    const card = spell && spell.card ? spell.card : spell;
+    const sheet = runtime && runtime.charSheet ? runtime.charSheet : {};
+    const raw = _firstText(
+      card && card.attack_bonus,
+      card && card.attackBonus,
+      card && card.spell_attack_bonus,
+      spell && spell.attack_bonus,
+      spell && spell.attackBonus,
+      sheet && sheet.spellAttack,
+      sheet && sheet.spellAttackBonus,
+      ''
+    );
+    return raw ? _formatSignedNumber(raw) : '';
+  }
+
+  function _spellDamageText(spell) {
+    const card = spell && spell.card ? spell.card : spell;
+    const damage = _firstText(
+      card && card.damage_dice,
+      card && card.damage,
+      card && card.damage_formula,
+      card && card.base_damage_formula,
+      spell && spell.damage_dice,
+      spell && spell.damage,
+      spell && spell.damage_formula,
+      spell && spell.base_damage_formula,
+      ''
+    );
+    const type = _firstText(card && card.damage_type, card && card.damageType, spell && spell.damage_type, spell && spell.damageType, '');
+    return damage ? (damage + (type && !String(damage).toLowerCase().includes(String(type).toLowerCase()) ? ' ' + type : '')) : '';
+  }
+
   function _topSpells(runtime) {
     let spells = [];
     if (typeof global.getCombatQuickBarSpells === 'function') {
@@ -128,6 +167,8 @@
       const needsSlot = _spellNeedsSlot(spell);
       const available = _spellAvailable(spell, runtime);
       const concentration = /concentration/i.test(_firstText(card && card.duration, card && card.base_effect_text, card && card.description, spell && spell.duration));
+      const attackText = _spellAttackText(spell, runtime);
+      const damageText = _spellDamageText(spell);
       return Object.assign({}, spell, {
         quickBarType: 'spell',
         quickBarLane: level === 0 ? 'cantrip' : 'spell',
@@ -136,6 +177,8 @@
         quickBarCanUse: available,
         quickBarDisabledReason: available ? '' : 'Needs spell slot',
         quickBarConcentration: concentration,
+        quickBarAttackText: attackText,
+        quickBarDamageText: damageText,
       });
     });
   }
