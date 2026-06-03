@@ -45381,8 +45381,8 @@ function getCombatQuickBarSpells() {
 
 function executeCombatQuickBarSpell(spell) {
   if (!spell) return null;
-  const baseLevel = Number(spell.level ?? spell.spell_level ?? spell.card?.level ?? spell.card?.spell_level ?? 0) || 0;
-  const result = _executeCombatSpellCast(spell, baseLevel);
+  const spellId = String(spell.id || spell.name || '').trim();
+  const result = spellId ? combatQuickCastSpell(spellId) : _executeCombatSpellCast(spell, Number(spell.level ?? spell.spell_level ?? spell.card?.level ?? spell.card?.spell_level ?? 0) || 0);
   if (window.CombatQuickBar && typeof window.CombatQuickBar.render === 'function') window.CombatQuickBar.render();
   return result;
 }
@@ -45588,6 +45588,28 @@ function _isSupportedRuntimeSpellSummon(spellId) {
   return !!_spellSummonRuntimeTemplateForSpell(spellId);
 }
 
+function _spellCardAttackKindForCombat(card, spell) {
+  const attackType = String(card?.attack_type || card?.attackType || spell?.attack_type || spell?.attackType || '').toLowerCase();
+  const text = [
+    card?.base_effect_text,
+    card?.effect,
+    card?.description,
+    card?.fullPlayerDetailText,
+    card?.playerFacingEffectSummary,
+    card?.current?.effect,
+    spell?.base_effect_text,
+    spell?.effect,
+    spell?.description,
+  ].filter(Boolean).join(' ').toLowerCase();
+  if (attackType) {
+    if (attackType.includes('weapon')) return 'weapon';
+    if (attackType.includes('attack') || attackType.includes('spell') || attackType.includes('ranged') || attackType.includes('melee')) return 'spell';
+  }
+  if (/spell attack|ranged spell attack|melee spell attack/.test(text)) return 'spell';
+  if (/weapon attack|melee weapon attack|ranged weapon attack/.test(text)) return 'weapon';
+  return '';
+}
+
 function _executeCombatSpellCast(spell, slotLevel) {
   _recordSpellUsage(spell);
   const baseLevel = Number(spell.level || 0);
@@ -45656,7 +45678,8 @@ function _executeCombatSpellCast(spell, slotLevel) {
   const target = _resolveSpellCastTarget(card);
   const targetName = String(target?.name || '').trim();
   const attackType = String(card.attack_type || '').toLowerCase();
-  const isAttackRoll = attackType.includes('attack');
+  const inferredAttackKind = _spellCardAttackKindForCombat(card, spell);
+  const isAttackRoll = attackType.includes('attack') || inferredAttackKind === 'spell';
   const saveAbility = String(card.save_ability || card.save || '').toLowerCase().replace(/[^a-z]/g, '');
   const isSave = !!saveAbility;
   const isHealing = _spellCardLooksLikeHealing(card);

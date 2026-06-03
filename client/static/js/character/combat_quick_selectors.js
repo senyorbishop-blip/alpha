@@ -118,6 +118,36 @@
     return parsed >= 0 ? '+' + parsed : String(parsed);
   }
 
+  function _spellTextBlob(spell) {
+    const card = spell && spell.card ? spell.card : spell;
+    const current = card && card.current ? card.current : {};
+    return [
+      card && card.attack_type,
+      card && card.description,
+      card && card.fullPlayerDetailText,
+      card && card.playerFacingEffectSummary,
+      card && card.effect,
+      card && card.base_effect_text,
+      current && current.effect,
+      spell && spell.description,
+      spell && spell.effect,
+      spell && spell.base_effect_text,
+    ].filter(Boolean).join(' ');
+  }
+
+  function _spellAttackKind(spell) {
+    const card = spell && spell.card ? spell.card : spell;
+    const attackType = _firstText(card && (card.attack_type || card.attackType), spell && (spell.attack_type || spell.attackType), '').toLowerCase();
+    const text = _spellTextBlob(spell).toLowerCase();
+    if (attackType) {
+      if (/weapon/.test(attackType)) return 'weapon';
+      if (/spell|ranged|melee/.test(attackType) || /attack/.test(attackType)) return 'spell';
+    }
+    if (/spell attack|ranged spell attack|melee spell attack/.test(text)) return 'spell';
+    if (/weapon attack|melee weapon attack|ranged weapon attack/.test(text)) return 'weapon';
+    return '';
+  }
+
   function _spellAttackText(spell, runtime) {
     const card = spell && spell.card ? spell.card : spell;
     const sheet = runtime && runtime.charSheet ? runtime.charSheet : {};
@@ -127,16 +157,30 @@
       card && card.spell_attack_bonus,
       spell && spell.attack_bonus,
       spell && spell.attackBonus,
-      sheet && sheet.spellAttack,
-      sheet && sheet.spellAttackBonus,
+      _spellAttackKind(spell) === 'spell' && sheet && sheet.spellAttack,
+      _spellAttackKind(spell) === 'spell' && sheet && sheet.spellAttackBonus,
       ''
     );
     return raw ? _formatSignedNumber(raw) : '';
   }
 
+  function _spellSaveText(spell, runtime) {
+    const card = spell && spell.card ? spell.card : spell;
+    const sheet = runtime && runtime.charSheet ? runtime.charSheet : {};
+    const saveAbility = _firstText(card && card.save_ability, card && card.saveAbility, card && card.save, spell && spell.save_ability, spell && spell.saveAbility, spell && spell.save, '');
+    const explicitSaveDc = _firstText(card && card.save_dc, card && card.saveDC, spell && spell.save_dc, spell && spell.saveDC, '');
+    const saveDc = _firstText(explicitSaveDc, saveAbility && sheet && sheet.spellSaveDc, saveAbility && sheet && sheet.spell_save_dc, '');
+    if (saveDc && saveAbility) return 'DC ' + saveDc + ' ' + String(saveAbility).toUpperCase().replace(/[^A-Z]/g, '');
+    if (explicitSaveDc) return 'DC ' + explicitSaveDc;
+    if (saveAbility) return String(saveAbility).toUpperCase().replace(/[^A-Z]/g, '') + ' save';
+    return '';
+  }
+
   function _spellDamageText(spell) {
     const card = spell && spell.card ? spell.card : spell;
+    const current = card && card.current ? card.current : {};
     const damage = _firstText(
+      current && current.formula,
       card && card.damage_dice,
       card && card.damage,
       card && card.damage_formula,
@@ -148,7 +192,38 @@
       ''
     );
     const type = _firstText(card && card.damage_type, card && card.damageType, spell && spell.damage_type, spell && spell.damageType, '');
-    return damage ? (damage + (type && !String(damage).toLowerCase().includes(String(type).toLowerCase()) ? ' ' + type : '')) : '';
+    return damage && damage !== '—' ? (damage + (type && !String(damage).toLowerCase().includes(String(type).toLowerCase()) ? ' ' + type : '')) : '';
+  }
+
+  function _spellInfoSummary(spell) {
+    const card = spell && spell.card ? spell.card : spell;
+    const current = card && card.current ? card.current : {};
+    const text = _firstText(current && current.effect, card && card.base_effect_text, card && card.effect, card && card.description, spell && spell.base_effect_text, spell && spell.effect, spell && spell.description, 'Open for spell details');
+    return text.length > 150 ? text.slice(0, 147) + '…' : text;
+  }
+
+  function _spellCastTimeText(spell) {
+    const card = spell && spell.card ? spell.card : spell;
+    return _firstText(card && card.casting_time, card && card.castingTime, spell && spell.casting_time, spell && spell.castingTime, '1 action');
+  }
+
+  function _spellRangeText(spell) {
+    const card = spell && spell.card ? spell.card : spell;
+    return _firstText(card && card.range, spell && spell.range, '');
+  }
+
+  function _spellQuickScore(spell) {
+    const attackKind = _spellAttackKind(spell);
+    const damage = _spellDamageText(spell);
+    const save = _spellSaveText(spell, _runtime());
+    const cast = _spellCastTimeText(spell).toLowerCase();
+    let score = 0;
+    if (attackKind === 'spell') score += 60;
+    if (damage) score += 30;
+    if (save) score += 18;
+    if (/bonus action|reaction/.test(cast)) score += 12;
+    if (_spellLevel(spell) === 0) score += 8;
+    return score;
   }
 
   function _topSpells(runtime) {
@@ -161,26 +236,42 @@
       const sheet = runtime && runtime.charSheet ? runtime.charSheet : {};
       spells = _safeArray(sheet.rulesSpellCards || sheet.rulesSpellbook || sheet.spellbookEntries);
     }
-    return _uniqueByName(spells, 3).map(function (spell) {
-      const card = spell && spell.card ? spell.card : spell;
-      const level = _spellLevel(spell);
-      const needsSlot = _spellNeedsSlot(spell);
-      const available = _spellAvailable(spell, runtime);
-      const concentration = /concentration/i.test(_firstText(card && card.duration, card && card.base_effect_text, card && card.description, spell && spell.duration));
-      const attackText = _spellAttackText(spell, runtime);
-      const damageText = _spellDamageText(spell);
-      return Object.assign({}, spell, {
-        quickBarType: 'spell',
-        quickBarLane: level === 0 ? 'cantrip' : 'spell',
-        quickBarSlotSummary: _spellSlotSummary(spell, runtime),
-        quickBarNeedsSlot: needsSlot,
-        quickBarCanUse: available,
-        quickBarDisabledReason: available ? '' : 'Needs spell slot',
-        quickBarConcentration: concentration,
-        quickBarAttackText: attackText,
-        quickBarDamageText: damageText,
+    return _uniqueByName(spells, spells.length)
+      .sort(function (a, b) {
+        const scoreDelta = _spellQuickScore(b) - _spellQuickScore(a);
+        if (scoreDelta) return scoreDelta;
+        return (_spellLevel(a) || 0) - (_spellLevel(b) || 0);
+      })
+      .slice(0, 4)
+      .map(function (spell) {
+        const card = spell && spell.card ? spell.card : spell;
+        const level = _spellLevel(spell);
+        const needsSlot = _spellNeedsSlot(spell);
+        const available = _spellAvailable(spell, runtime);
+        const concentration = /concentration/i.test(_firstText(card && card.duration, card && card.base_effect_text, card && card.description, spell && spell.duration));
+        const attackText = _spellAttackText(spell, runtime);
+        const attackKind = _spellAttackKind(spell);
+        const damageText = _spellDamageText(spell);
+        const saveText = _spellSaveText(spell, runtime);
+        const rangeText = _spellRangeText(spell);
+        const castTimeText = _spellCastTimeText(spell);
+        return Object.assign({}, spell, {
+          quickBarType: 'spell',
+          quickBarLane: level === 0 ? 'cantrip' : 'spell',
+          quickBarSlotSummary: _spellSlotSummary(spell, runtime),
+          quickBarNeedsSlot: needsSlot,
+          quickBarCanUse: available,
+          quickBarDisabledReason: available ? '' : 'Needs spell slot',
+          quickBarConcentration: concentration,
+          quickBarAttackKind: attackKind,
+          quickBarAttackText: attackText,
+          quickBarDamageText: damageText,
+          quickBarSaveText: saveText,
+          quickBarRangeText: rangeText,
+          quickBarCastTimeText: castTimeText,
+          quickBarInfoSummary: _spellInfoSummary(spell),
+        });
       });
-    });
   }
 
   function _resourceRows(model) {
