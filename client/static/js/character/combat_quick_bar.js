@@ -7,7 +7,7 @@
   'use strict';
 
   const STORAGE_KEY = 'combat_quick_bar.v1';
-  const DEFAULT_STATE = { x: null, y: null, minimized: false, manual: false, combatWasActive: false };
+  const DEFAULT_STATE = { x: null, y: null, minimized: false, manual: false, combatWasActive: false, customizing: false };
   let state = Object.assign({}, DEFAULT_STATE);
   let root = null;
   let dragging = null;
@@ -69,7 +69,9 @@
       .combat-quick-tile:disabled,.combat-quick-tile.is-disabled{opacity:.5;cursor:not-allowed;filter:saturate(.65);}
       .combat-quick-tile.is-used{border-color:rgba(255,210,90,.42);}
       .combat-quick-tile.needs-target:after,.combat-quick-tile.needs-slot:after{content:attr(data-state);position:absolute;right:.42rem;top:.38rem;font-size:.52rem;border:1px solid rgba(255,210,90,.35);border-radius:999px;padding:.08rem .28rem;color:#ffe8a3;background:rgba(80,52,0,.45);}
-      .combat-quick-name{font-weight:800;font-size:.72rem;line-height:1.15;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+      .combat-quick-pin{position:absolute;right:.35rem;bottom:.35rem;border:1px solid rgba(255,210,90,.32);border-radius:999px;background:rgba(0,0,0,.3);color:#ffe8a3;width:1.35rem;height:1.35rem;line-height:1;cursor:pointer;z-index:2;}
+      .combat-quick-pin.is-pinned{background:rgba(255,210,90,.18);border-color:rgba(255,210,90,.65);}
+      .combat-quick-name{font-weight:800;font-size:.72rem;line-height:1.15;max-width:calc(100% - 1.7rem);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
       .combat-quick-meta{font-size:.58rem;color:rgba(245,234,214,.68);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
       .combat-quick-pill-row{display:flex;flex-wrap:wrap;gap:.22rem;margin-top:auto;}
       .combat-quick-pill{font-size:.52rem;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:.08rem .28rem;color:rgba(245,234,214,.72);background:rgba(0,0,0,.18);}
@@ -78,6 +80,12 @@
       .combat-quick-resource-row{display:flex;gap:.3rem;flex-wrap:wrap;}.combat-quick-resource{font-size:.58rem;border:1px solid rgba(255,210,90,.24);border-radius:999px;padding:.14rem .38rem;color:#ffe8a3;background:rgba(96,64,8,.25);}
       .combat-quick-empty{font-size:.63rem;color:rgba(245,234,214,.58);padding:.35rem .1rem;}
       .combat-quick-sheet-btn{border:1px solid rgba(0,229,204,.4);border-radius:999px;background:rgba(0,229,204,.12);color:#dffbf7;padding:.35rem .55rem;font-weight:800;cursor:pointer;}
+      .combat-quick-customize{display:grid;gap:.42rem;border:1px solid rgba(0,229,204,.18);border-radius:12px;background:rgba(0,0,0,.18);padding:.52rem;}
+      .combat-quick-customize-head{display:flex;justify-content:space-between;gap:.5rem;align-items:center;font-size:.62rem;color:rgba(245,234,214,.72);}
+      .combat-quick-pick-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.3rem;}
+      .combat-quick-pick{border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.04);color:#f5ead6;padding:.34rem .42rem;text-align:left;font-size:.62rem;cursor:pointer;}
+      .combat-quick-pick.is-picked{border-color:rgba(255,210,90,.58);background:rgba(255,210,90,.12);color:#ffe8a3;}
+      .combat-quick-pick small{display:block;color:rgba(245,234,214,.58);font-size:.54rem;margin-top:.08rem;}
       @media(max-width:760px){.combat-quick-bar{bottom:72px}.combat-quick-bar-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.combat-quick-bar-toggle{bottom:72px;right:12px;}}
     `;
     document.head.appendChild(style);
@@ -214,6 +222,7 @@
     const pillTone = disabled ? 'danger' : used ? 'warn' : 'good';
     const titleText = disabled ? (action && action.quickBarDisabledReason || 'Unavailable') : summary;
     return `<button type="button" class="${classes.join(' ')}" data-qb-kind="${_esc(category)}" data-qb-key="${_esc(key)}" data-state="${_esc(stateText)}" title="${_esc(titleText)}">
+      ${category !== 'resource' ? `<span role="button" tabindex="0" class="combat-quick-pin ${action && action.quickBarPinned ? 'is-pinned' : ''}" data-qb-pin="${_esc(action && action.quickBarPickKey ? action.quickBarPickKey : (category + ':' + key))}" data-qb-pin-kind="${_esc(category === 'spell' ? 'spell' : 'action')}" title="${action && action.quickBarPinned ? 'Remove from custom quick picks' : 'Pin to custom top 5'}">${action && action.quickBarPinned ? '★' : '☆'}</span>` : ''}
       <span class="combat-quick-name">${_esc(name)}</span>
       <span class="combat-quick-meta">${_esc(summary)}</span>
       <span class="combat-quick-pill-row">
@@ -230,6 +239,32 @@
     const rows = _safeArray(items);
     if (!rows.length) return `<section class="combat-quick-bar-section"><div class="combat-quick-bar-section-title">${_esc(title)}</div><div class="combat-quick-empty">${_esc(empty || 'None')}</div></section>`;
     return `<section class="combat-quick-bar-section"><div class="combat-quick-bar-section-title">${_esc(title)}</div><div class="combat-quick-bar-grid">${rows.map(function (item, idx) { return _tile(item, category, idx); }).join('')}</div></section>`;
+  }
+
+  function _customizePanel(model) {
+    if (!state.customizing) return '';
+    const picks = _safeArray(model && model.quickPicks);
+    const limit = Number(model && model.quickPickLimit) || 5;
+    const candidates = []
+      .concat(_safeArray(model && model.allActions).map(function (item) { return { kind: 'action', item: item }; }))
+      .concat(_safeArray(model && model.allSpells).map(function (item) { return { kind: 'spell', item: item }; }));
+    const seen = new Set();
+    const rows = candidates.filter(function (entry) {
+      const key = entry.item && entry.item.quickBarPickKey ? entry.item.quickBarPickKey : (entry.kind + ':' + _firstText(entry.item && entry.item.id, entry.item && entry.item.name));
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      entry.pickKey = key;
+      return true;
+    }).slice(0, 80);
+    return `<section class="combat-quick-customize">
+      <div class="combat-quick-customize-head"><strong>Choose your top ${_esc(limit)}</strong><span>${_esc(picks.length)}/${_esc(limit)} selected · click to swap any time</span></div>
+      <div class="combat-quick-pick-list">${rows.map(function (entry) {
+        const item = entry.item || {};
+        const picked = picks.indexOf(entry.pickKey) >= 0;
+        const note = entry.kind === 'spell' ? _firstText(item.quickBarSlotSummary, item.range, 'Spell') : _firstText(item.quickBarLane, item.desc, item.description, 'Action');
+        return `<button type="button" class="combat-quick-pick ${picked ? 'is-picked' : ''}" data-qb-pick-kind="${_esc(entry.kind)}" data-qb-pick-key="${_esc(entry.pickKey)}">${picked ? '★ ' : '☆ '}${_esc(_firstText(item.name, item.displayName, 'Choice'))}<small>${_esc(note)}</small></button>`;
+      }).join('')}</div>
+    </section>`;
   }
 
   function render() {
@@ -258,6 +293,7 @@
     root.innerHTML = `<header class="combat-quick-bar-head">
       <div class="combat-quick-bar-title">⚔ Quick Actions <span class="combat-quick-bar-sub">${combat.active ? `Round ${_esc(combat.round || 1)} · ${_esc(current && current.name || 'Turn')}` : 'Manual'}</span></div>
       <div class="combat-quick-bar-head-actions">
+        <button type="button" class="combat-quick-sheet-btn" data-qb-customize>${state.customizing ? 'Done' : 'Customize Top 5'}</button>
         <button type="button" class="combat-quick-sheet-btn" data-qb-open-notes>Notes</button>
         <button type="button" class="combat-quick-sheet-btn" data-qb-open-sheet>Open Full Sheet</button>
         <button type="button" class="combat-quick-bar-icon-btn" data-qb-minimize title="Minimise">${state.minimized ? '▣' : '—'}</button>
@@ -265,7 +301,8 @@
       </div>
     </header>
     ${state.minimized ? '' : `<div class="combat-quick-bar-body">
-      <div class="combat-quick-status"><span>Target: ${_esc(targetName)}</span>${model.concentration ? `<span class="combat-quick-resource">Concentration: ${_esc(model.concentration)}</span>` : '<span>Concentration: none</span>'}</div>
+      <div class="combat-quick-status"><span>Target: ${_esc(targetName)}</span>${model.concentration ? `<span class="combat-quick-resource">Concentration: ${_esc(model.concentration)}</span>` : '<span>Concentration: none</span>'}${model.quickPicks && model.quickPicks.length ? `<span>Custom picks: ${_esc(model.quickPicks.length)}/${_esc(model.quickPickLimit || 5)}</span>` : '<span>Auto picks · customize top 5 any time</span>'}</div>
+      ${_customizePanel(model)}
       ${_section('Primary', model.primaryActions, 'action', 'No attacks/actions found on the sheet.')}
       ${_section('Spells', model.topSpells, 'spell', 'No spell clutter for this character.')}
       ${_section('Bonus', model.bonusActions, 'bonus', 'No bonus actions found.')}
@@ -296,6 +333,27 @@
     if (min) { state.minimized = !state.minimized; _saveState(); render(); return; }
     const hide = ev.target.closest('[data-qb-hide]');
     if (hide) { state.manual = false; state.minimized = true; _saveState(); render(); return; }
+    const customize = ev.target.closest('[data-qb-customize]');
+    if (customize) { state.customizing = !state.customizing; _saveState(); render(); return; }
+    const pin = ev.target.closest('[data-qb-pin]');
+    if (pin) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (global.CombatQuickSelectors && typeof global.CombatQuickSelectors.toggleQuickPick === 'function') {
+        const raw = String(pin.getAttribute('data-qb-pin') || '');
+        const kind = String(pin.getAttribute('data-qb-pin-kind') || (raw.indexOf('spell:') === 0 ? 'spell' : 'action'));
+        global.CombatQuickSelectors.toggleQuickPick(kind, { id: raw.replace(/^(action|spell):/, '') });
+      }
+      render();
+      return;
+    }
+    const pick = ev.target.closest('[data-qb-pick-key]');
+    if (pick) {
+      const raw = String(pick.getAttribute('data-qb-pick-key') || '');
+      if (global.CombatQuickSelectors && typeof global.CombatQuickSelectors.toggleQuickPick === 'function') global.CombatQuickSelectors.toggleQuickPick(raw.indexOf('spell:') === 0 ? 'spell' : 'action', { id: raw.replace(/^(action|spell):/, '') });
+      render();
+      return;
+    }
     const notes = ev.target.closest('[data-qb-open-notes]');
     if (notes) { if (typeof global.openCharacterStickyNotes === 'function') global.openCharacterStickyNotes(); return; }
     const sheet = ev.target.closest('[data-qb-open-sheet]');
