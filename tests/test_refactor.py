@@ -1237,7 +1237,19 @@ def test_play_html_initiative_roll_uses_shared_modifier_resolver():
 def test_play_html_initiative_roll_preserves_raw_d20_display():
     """The physical die result remains raw while the initiative total adds the modifier."""
     content = _play_html_content()
-    assert "Keep the physical d20 result unchanged, then add the character initiative modifier." in content
+    assert "The settled d20 face is the initiative roll; add the character initiative modifier only after the die finishes." in content
+    assert "modifierMeta: { key: 'initiative', name: 'Initiative', value: modifier }" in content
+
+
+def test_play_html_initiative_waits_for_settled_dice_before_sync():
+    """Initiative should update/send only after the local d20 visual settles."""
+    content = _play_html_content()
+    assert "function _rollLocalDiceAfterSettle(" in content
+    assert "onSettledResult: (settled) => finish" in content
+    assert "const handled = settledCallback({" in content
+    assert "latest.initiative = total;" in content
+    assert content.index("_rollLocalDiceAfterSettle({") < content.index("latest.initiative = total;")
+    assert content.index("latest.initiative = total;") < content.index("sendWS({ type: 'combat_roll_initiative'")
     assert "rolls: [roll]" in content
     assert "const total = roll + modifier;" in content
     assert "return modText ? `${total} (${rawRoll}${modText})` : `${total} (${rawRoll})`;" in content
