@@ -81,6 +81,58 @@
     } catch (_err) {}
   }
 
+  const QUICK_PICK_LIMIT = 5;
+
+  function _quickPickCharacterKey(runtime) {
+    const sheet = runtime && runtime.charSheet ? runtime.charSheet : {};
+    return _firstText(sheet.id, sheet.profileId, sheet.characterId, sheet.name, global.NAME, 'character')
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, '-');
+  }
+
+  function _quickPickStoreKey(runtime) {
+    const sessionId = _firstText(runtime && runtime.sessionId, global.SESSION_ID, 'session');
+    const userId = _firstText(runtime && runtime.userId, global.USER_ID, 'anon');
+    return 'combat_quick_bar.picks.' + sessionId + '.' + userId + '.' + _quickPickCharacterKey(runtime);
+  }
+
+  function _candidateKey(kind, item) {
+    return String(kind || 'action') + ':' + _firstText(item && item.id, item && item.name);
+  }
+
+  function readQuickPicks(runtime) {
+    try {
+      const raw = global.localStorage && global.localStorage.getItem(_quickPickStoreKey(runtime || _runtime()));
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed.map(function (entry) { return String(entry || '').trim(); }).filter(Boolean).slice(0, QUICK_PICK_LIMIT) : [];
+    } catch (_err) {
+      return [];
+    }
+  }
+
+  function writeQuickPicks(picks, runtime) {
+    const next = _safeArray(picks).map(function (entry) { return String(entry || '').trim(); }).filter(Boolean).slice(0, QUICK_PICK_LIMIT);
+    try {
+      if (next.length) global.localStorage && global.localStorage.setItem(_quickPickStoreKey(runtime || _runtime()), JSON.stringify(next));
+      else global.localStorage && global.localStorage.removeItem(_quickPickStoreKey(runtime || _runtime()));
+    } catch (_err) {}
+    return next;
+  }
+
+  function toggleQuickPick(kind, item) {
+    const runtime = _runtime();
+    const key = _candidateKey(kind, item);
+    if (!key || /:$/.test(key)) return readQuickPicks(runtime);
+    const picks = readQuickPicks(runtime);
+    const existing = picks.indexOf(key);
+    if (existing >= 0) picks.splice(existing, 1);
+    else {
+      if (picks.length >= QUICK_PICK_LIMIT) picks.shift();
+      picks.push(key);
+    }
+    return writeQuickPicks(picks, runtime);
+  }
+
 
   function _spellLevel(spell) {
     const card = spell && spell.card ? spell.card : {};
@@ -226,7 +278,7 @@
     return score;
   }
 
-  function _topSpells(runtime) {
+  function _spellCandidates(runtime) {
     let spells = [];
     if (typeof global.getCombatQuickBarSpells === 'function') {
       spells = global.getCombatQuickBarSpells() || [];
@@ -236,42 +288,46 @@
       const sheet = runtime && runtime.charSheet ? runtime.charSheet : {};
       spells = _safeArray(sheet.rulesSpellCards || sheet.rulesSpellbook || sheet.spellbookEntries);
     }
-    return _uniqueByName(spells, spells.length)
-      .sort(function (a, b) {
-        const scoreDelta = _spellQuickScore(b) - _spellQuickScore(a);
-        if (scoreDelta) return scoreDelta;
-        return (_spellLevel(a) || 0) - (_spellLevel(b) || 0);
-      })
-      .slice(0, 4)
-      .map(function (spell) {
-        const card = spell && spell.card ? spell.card : spell;
-        const level = _spellLevel(spell);
-        const needsSlot = _spellNeedsSlot(spell);
-        const available = _spellAvailable(spell, runtime);
-        const concentration = /concentration/i.test(_firstText(card && card.duration, card && card.base_effect_text, card && card.description, spell && spell.duration));
-        const attackText = _spellAttackText(spell, runtime);
-        const attackKind = _spellAttackKind(spell);
-        const damageText = _spellDamageText(spell);
-        const saveText = _spellSaveText(spell, runtime);
-        const rangeText = _spellRangeText(spell);
-        const castTimeText = _spellCastTimeText(spell);
-        return Object.assign({}, spell, {
-          quickBarType: 'spell',
-          quickBarLane: level === 0 ? 'cantrip' : 'spell',
-          quickBarSlotSummary: _spellSlotSummary(spell, runtime),
-          quickBarNeedsSlot: needsSlot,
-          quickBarCanUse: available,
-          quickBarDisabledReason: available ? '' : 'Needs spell slot',
-          quickBarConcentration: concentration,
-          quickBarAttackKind: attackKind,
-          quickBarAttackText: attackText,
-          quickBarDamageText: damageText,
-          quickBarSaveText: saveText,
-          quickBarRangeText: rangeText,
-          quickBarCastTimeText: castTimeText,
-          quickBarInfoSummary: _spellInfoSummary(spell),
-        });
-      });
+    return _uniqueByName(spells, spells.length).sort(function (a, b) {
+      const scoreDelta = _spellQuickScore(b) - _spellQuickScore(a);
+      if (scoreDelta) return scoreDelta;
+      return (_spellLevel(a) || 0) - (_spellLevel(b) || 0);
+    });
+  }
+
+  function _decorateSpell(spell, runtime) {
+    const card = spell && spell.card ? spell.card : spell;
+    const level = _spellLevel(spell);
+    const needsSlot = _spellNeedsSlot(spell);
+    const available = _spellAvailable(spell, runtime);
+    const concentration = /concentration/i.test(_firstText(card && card.duration, card && card.base_effect_text, card && card.description, spell && spell.duration));
+    const attackText = _spellAttackText(spell, runtime);
+    const attackKind = _spellAttackKind(spell);
+    const damageText = _spellDamageText(spell);
+    const saveText = _spellSaveText(spell, runtime);
+    const rangeText = _spellRangeText(spell);
+    const castTimeText = _spellCastTimeText(spell);
+    return Object.assign({}, spell, {
+      quickBarType: 'spell',
+      quickBarLane: level === 0 ? 'cantrip' : 'spell',
+      quickBarPickKey: _candidateKey('spell', spell),
+      quickBarSlotSummary: _spellSlotSummary(spell, runtime),
+      quickBarNeedsSlot: needsSlot,
+      quickBarCanUse: available,
+      quickBarDisabledReason: available ? '' : 'Needs spell slot',
+      quickBarConcentration: concentration,
+      quickBarAttackKind: attackKind,
+      quickBarAttackText: attackText,
+      quickBarDamageText: damageText,
+      quickBarSaveText: saveText,
+      quickBarRangeText: rangeText,
+      quickBarCastTimeText: castTimeText,
+      quickBarInfoSummary: _spellInfoSummary(spell),
+    });
+  }
+
+  function _topSpells(runtime, limit) {
+    return _spellCandidates(runtime).slice(0, limit || QUICK_PICK_LIMIT).map(function (spell) { return _decorateSpell(spell, runtime); });
   }
 
   function _resourceRows(model) {
@@ -295,27 +351,57 @@
       ? global.ActionsTab.buildQuickActionModel(sheet)
       : { primaryActions: [], bonusActions: [], reactions: [], resources: [], concentration: null, _allActions: [] };
     const usedState = _readUsedThisTurn(runtime);
-    function mark(items) {
+    const picks = readQuickPicks(runtime);
+    const pickSet = new Set(picks);
+    function mark(items, kind) {
       return _safeArray(items).map(function (item) {
         const key = _firstText(item && item.id, item && item.name);
-        return Object.assign({}, item, { quickBarUsedThisTurn: !!(key && usedState.used[key]) });
+        const pickKey = _candidateKey(kind || (item && item.quickBarType === 'spell' ? 'spell' : 'action'), item);
+        return Object.assign({}, item, {
+          quickBarPickKey: item && item.quickBarPickKey ? item.quickBarPickKey : pickKey,
+          quickBarPinned: pickSet.has(pickKey),
+          quickBarUsedThisTurn: !!(key && usedState.used[key]),
+        });
       });
     }
+    const allActions = mark(_uniqueByName(actionModel._allActions || [], (actionModel._allActions || []).length), 'action');
+    const allSpells = mark(_spellCandidates(runtime).map(function (spell) { return _decorateSpell(spell, runtime); }), 'spell');
+    const pickedActions = [];
+    const pickedSpells = [];
+    if (picks.length) {
+      picks.forEach(function (pick) {
+        const pool = pick.indexOf('spell:') === 0 ? allSpells : allActions;
+        const found = pool.find(function (item) { return item.quickBarPickKey === pick; });
+        if (!found) return;
+        if (pick.indexOf('spell:') === 0) pickedSpells.push(found);
+        else pickedActions.push(found);
+      });
+    }
+    const primary = picks.length ? pickedActions.filter(function (item) { return String(item.quickBarLane || '').toLowerCase() !== 'bonus' && String(item.quickBarLane || '').toLowerCase() !== 'reaction'; }) : mark(_uniqueByName(actionModel.primaryActions, 2), 'action');
+    const bonus = picks.length ? pickedActions.filter(function (item) { return String(item.quickBarLane || '').toLowerCase() === 'bonus'; }) : mark(_uniqueByName(actionModel.bonusActions, 2), 'action');
+    const reactions = picks.length ? pickedActions.filter(function (item) { return String(item.quickBarLane || '').toLowerCase() === 'reaction'; }) : mark(_uniqueByName(actionModel.reactions, 2), 'action');
     return {
-      primaryActions: mark(_uniqueByName(actionModel.primaryActions, 2)),
-      bonusActions: mark(_uniqueByName(actionModel.bonusActions, 2)),
-      reactions: mark(_uniqueByName(actionModel.reactions, 2)),
-      topSpells: _topSpells(runtime),
+      primaryActions: mark(primary, 'action'),
+      bonusActions: mark(bonus, 'action'),
+      reactions: mark(reactions, 'action'),
+      topSpells: picks.length ? mark(pickedSpells, 'spell') : mark(_topSpells(runtime, QUICK_PICK_LIMIT), 'spell'),
       resources: _resourceRows(actionModel),
       concentration: actionModel.concentration || (runtime.charSheet && runtime.charSheet.activeConcentration) || null,
       combat: runtime.combat || { active: false },
       selectedTargetId: runtime.selectedTargetId || '',
-      allActions: actionModel._allActions || [],
+      allActions: allActions,
+      allSpells: allSpells,
+      quickPicks: picks,
+      quickPickLimit: QUICK_PICK_LIMIT,
     };
   }
 
   global.CombatQuickSelectors = {
     selectQuickActions: selectQuickActions,
     markUsed: markUsed,
+    readQuickPicks: readQuickPicks,
+    writeQuickPicks: writeQuickPicks,
+    toggleQuickPick: toggleQuickPick,
+    quickPickLimit: QUICK_PICK_LIMIT,
   };
 }(window));

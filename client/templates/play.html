@@ -40705,6 +40705,7 @@ function applyPlayerInventoryState(payload) {
   syncLootRevealStateWithInventory();
   renderInventoryPanel();
   renderPlayerActionsHub();
+  if (window.CombatQuickBar && typeof window.CombatQuickBar.render === 'function') window.CombatQuickBar.render();
   if (typeof requestCharacterBookOverviewRender === 'function') requestCharacterBookOverviewRender('player_inventory_sync');
   if (typeof initPremiumSheetIfNeeded === 'function') initPremiumSheetIfNeeded();
 }

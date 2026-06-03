@@ -65,3 +65,17 @@ def test_combat_quick_bar_has_required_player_controls_and_states():
     assert 'Needs target' in src
     assert 'Needs slot' in src
     assert 'Concentration:' in src
+
+
+def test_combat_quick_bar_supports_custom_top_five_and_inventory_refresh():
+    selectors = _read('client/static/js/character/combat_quick_selectors.js')
+    bar = _read('client/static/js/character/combat_quick_bar.js')
+    play = _read('client/templates/play.html')
+    assert 'QUICK_PICK_LIMIT = 5' in selectors
+    assert 'combat_quick_bar.picks.' in selectors
+    assert 'toggleQuickPick' in selectors
+    assert 'allSpells' in selectors
+    assert 'Customize Top 5' in bar
+    assert 'data-qb-pick-key' in bar
+    assert 'data-qb-pin' in bar
+    assert "window.CombatQuickBar.render();\n  if (typeof requestCharacterBookOverviewRender === 'function') requestCharacterBookOverviewRender('player_inventory_sync');" in play
