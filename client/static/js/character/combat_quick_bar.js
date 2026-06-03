@@ -70,7 +70,7 @@
       .combat-quick-tile.is-used{border-color:rgba(255,210,90,.42);}
       .combat-quick-tile.needs-target:after,.combat-quick-tile.needs-slot:after{content:attr(data-state);position:absolute;right:.42rem;top:.38rem;font-size:.52rem;border:1px solid rgba(255,210,90,.35);border-radius:999px;padding:.08rem .28rem;color:#ffe8a3;background:rgba(80,52,0,.45);}
       .combat-quick-name{font-weight:800;font-size:.72rem;line-height:1.15;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-      .combat-quick-meta{font-size:.58rem;color:rgba(245,234,214,.68);line-height:1.25;}
+      .combat-quick-meta{font-size:.58rem;color:rgba(245,234,214,.68);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
       .combat-quick-pill-row{display:flex;flex-wrap:wrap;gap:.22rem;margin-top:auto;}
       .combat-quick-pill{font-size:.52rem;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:.08rem .28rem;color:rgba(245,234,214,.72);background:rgba(0,0,0,.18);}
       .combat-quick-pill.good{border-color:rgba(0,229,204,.32);color:#9ff6ea;}.combat-quick-pill.warn{border-color:rgba(255,210,90,.35);color:#ffe8a3;}.combat-quick-pill.danger{border-color:rgba(231,76,60,.42);color:#ffb4a8;}.combat-quick-pill.accent{border-color:rgba(112,167,255,.38);color:#b8d2ff;}.combat-quick-pill.damage{border-color:rgba(255,121,87,.36);color:#ffc0aa;}
@@ -181,9 +181,16 @@
   function _actionDetailPills(action) {
     const attackText = _actionAttackText(action);
     const damageText = _actionDamageText(action);
+    const saveText = _firstText(action && action.quickBarSaveText, action && action.saveText, '');
+    const rangeText = _firstText(action && action.quickBarRangeText, action && action.range, '');
+    const castTimeText = _firstText(action && action.quickBarCastTimeText, '');
+    const attackLabel = action && action.quickBarAttackKind === 'spell' ? 'Spell atk ' : 'Atk ';
     const pills = [];
-    if (attackText) pills.push('<span class="combat-quick-pill accent">Atk ' + _esc(attackText) + '</span>');
+    if (attackText) pills.push('<span class="combat-quick-pill accent">' + attackLabel + _esc(attackText) + '</span>');
+    if (saveText) pills.push('<span class="combat-quick-pill accent">' + _esc(saveText) + '</span>');
     if (damageText) pills.push('<span class="combat-quick-pill damage">Dmg ' + _esc(damageText) + '</span>');
+    if (rangeText) pills.push('<span class="combat-quick-pill">' + _esc(rangeText) + '</span>');
+    if (castTimeText && !/^action$/i.test(String(castTimeText))) pills.push('<span class="combat-quick-pill">' + _esc(castTimeText) + '</span>');
     return pills.join('');
   }
 
@@ -201,11 +208,12 @@
     if (needsSlot) classes.push('needs-slot');
     const name = _firstText(action && action.name, action && action.displayName, 'Action');
     const type = action && action.quickBarType === 'spell' ? _typeLabel(action, 'spell') : _typeLabel(action, category);
-    const summary = _firstText(action && action.desc, action && action.description, action && action.current && action.current.effect, action && action.quickBarSlotSummary, action && action.resourceSummary, 'Open for details');
+    const summary = _firstText(action && action.quickBarInfoSummary, action && action.desc, action && action.description, action && action.current && action.current.effect, action && action.quickBarSlotSummary, action && action.resourceSummary, 'Open for details');
     const uses = action && action.quickBarResourceState ? action.quickBarResourceState : null;
     const usesText = _firstText(action && action.quickBarUsesText, uses && Number.isFinite(Number(uses.remaining)) && Number.isFinite(Number(uses.max)) ? (uses.remaining + '/' + uses.max) : '', action && action.quickBarSlotSummary, '');
     const pillTone = disabled ? 'danger' : used ? 'warn' : 'good';
-    return `<button type="button" class="${classes.join(' ')}" data-qb-kind="${_esc(category)}" data-qb-key="${_esc(key)}" data-state="${_esc(stateText)}" ${disabled ? `title="${_esc(action && action.quickBarDisabledReason || 'Unavailable')}"` : ''}>
+    const titleText = disabled ? (action && action.quickBarDisabledReason || 'Unavailable') : summary;
+    return `<button type="button" class="${classes.join(' ')}" data-qb-kind="${_esc(category)}" data-qb-key="${_esc(key)}" data-state="${_esc(stateText)}" title="${_esc(titleText)}">
       <span class="combat-quick-name">${_esc(name)}</span>
       <span class="combat-quick-meta">${_esc(summary)}</span>
       <span class="combat-quick-pill-row">

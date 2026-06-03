@@ -15,6 +15,8 @@ def test_combat_quick_bar_modules_are_loaded_after_character_actions():
     assert actions_idx < selectors_idx < bar_idx
     assert 'getCombatQuickBarRuntime' in src
     assert 'executeCombatQuickBarSpell' in src
+    assert 'combatQuickCastSpell(spellId)' in src
+    assert '_spellCardAttackKindForCombat' in src
     assert 'window.CombatQuickBar.render' in src
 
 
@@ -40,7 +42,11 @@ def test_combat_quick_selectors_keep_expected_shape_and_reuse_actions_tab():
     assert 'concentration' in src
     assert 'markUsed' in src
     assert 'quickBarAttackText' in src
+    assert 'quickBarAttackKind' in src
     assert 'quickBarDamageText' in src
+    assert 'quickBarSaveText' in src
+    assert 'quickBarRangeText' in src
+    assert '_spellQuickScore' in src
 
 
 def test_combat_quick_bar_has_required_player_controls_and_states():
@@ -53,6 +59,7 @@ def test_combat_quick_bar_has_required_player_controls_and_states():
     assert 'data-qb-open-notes' in src
     assert 'openCharacterStickyNotes' in src
     assert 'Atk ' in src
+    assert 'Spell atk ' in src
     assert 'Dmg ' in src
     assert 'Used this turn' in src
     assert 'Needs target' in src
