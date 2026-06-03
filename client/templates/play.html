@@ -23989,6 +23989,22 @@ function showDiceAnimation(diceType, qty, result, rollOpts = null) {
         initialPhysicsRollsRaw: physicsRolls.slice(),
         finalVisualRollsRaw: physicsRolls.slice(),
       };
+      const settledCallback = (rollOpts && typeof rollOpts.onSettledResult === 'function') ? rollOpts.onSettledResult : null;
+      if (settledCallback) {
+        const normalizedRolls = _normalizeDiceVisualRolls(physicsRolls, Number(diceType || selectedDice || 20));
+        const handled = settledCallback({
+          rawRolls: physicsRolls.slice(),
+          rolls: normalizedRolls,
+          diceType,
+          qty,
+          rollId,
+          seed: providedSeed,
+        }) === true;
+        if (handled) {
+          _logDiceLifecycle('physics_settled_callback_handled');
+          return;
+        }
+      }
       _tryApplyPendingLocalDiceResult(rollId);
       _logDiceLifecycle('physics_settled');
       _maybeFinalizeDice3DResult();
@@ -24182,6 +24198,86 @@ function _dicePreviewMetaFromExpr(expr, result = null) {
   const total = Number(result?.total);
   const modifier = Number.isFinite(total) ? (total - rollsSum) : 0;
   return { diceType, qty, modifier };
+}
+
+function _randomDiceRolls(diceType, qty) {
+  const sides = Math.max(2, Number(diceType || 20) || 20);
+  const count = Math.max(1, Number(qty || 1) || 1);
+  return Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1);
+}
+
+function _rollLocalDiceAfterSettle(opts = {}) {
+  const diceType = Math.max(2, Number(opts?.diceType || 20) || 20);
+  const qty = Math.max(1, Number(opts?.qty || 1) || 1);
+  const modifier = parseInt(opts?.modifier, 10) || 0;
+  const rollLabel = String(opts?.rollLabel || '').trim();
+  const source = String(opts?.source || 'settled-local').trim() || 'settled-local';
+  const modifierMeta = (opts && typeof opts.modifierMeta === 'object') ? opts.modifierMeta : null;
+  const mode = opts?.mode || getDiceRollMode();
+
+  return new Promise((resolve) => {
+    let resolved = false;
+    const finish = (rawRolls, meta = {}) => {
+      if (resolved) return true;
+      resolved = true;
+      const rolls = _normalizeDiceVisualRolls(Array.isArray(rawRolls) ? rawRolls : [], diceType).slice(0, qty);
+      const safeRolls = rolls.length ? rolls : _randomDiceRolls(diceType, qty);
+      const total = safeRolls.reduce((sum, value) => sum + (parseInt(value, 10) || 0), 0) + modifier;
+      const payload = {
+        rolls: safeRolls,
+        total,
+        diceType,
+        qty,
+        modifier,
+        rollLabel,
+        modifierMeta: modifierMeta || _diceModifierMeta(),
+        rollId: meta.rollId || '',
+        seed: meta.seed || null,
+        source,
+      };
+      fillDiceResult(safeRolls, total, diceType, qty, modifier, rollLabel, payload);
+      resolve(payload);
+      return true;
+    };
+
+    if (!_diceWantsVisuals(mode) || opts?.visualDisabled) {
+      const rolls = _randomDiceRolls(diceType, qty);
+      const total = rolls.reduce((sum, value) => sum + (parseInt(value, 10) || 0), 0) + modifier;
+      const payload = { rolls, total, diceType, qty, modifier, rollLabel, modifierMeta: modifierMeta || _diceModifierMeta(), source, mode: 'result-only' };
+      _showImmediateDiceResult(payload);
+      resolved = true;
+      resolve(payload);
+      return;
+    }
+
+    const dp = window.DicePhysics3D;
+    if (!dp || (dp.isContextLost && dp.isContextLost())) {
+      const rolls = _randomDiceRolls(diceType, qty);
+      const total = rolls.reduce((sum, value) => sum + (parseInt(value, 10) || 0), 0) + modifier;
+      const payload = { rolls, total, diceType, qty, modifier, rollLabel, modifierMeta: modifierMeta || _diceModifierMeta(), source, visualDisabled: true };
+      _showImmediateDiceResult(payload);
+      resolved = true;
+      resolve(payload);
+      return;
+    }
+
+    const seed = _generateDiceSeed();
+    const rollId = _generateDiceRollId('settled-local');
+    showDiceAnimation(diceType, qty, null, {
+      seed,
+      rollId,
+      source,
+      mode,
+      modifierMeta: modifierMeta || _diceModifierMeta(),
+      onSettledResult: (settled) => finish(settled?.rolls || settled?.rawRolls || [], { rollId, seed }),
+    });
+
+    setTimeout(() => {
+      if (resolved) return;
+      const currentRolls = _normalizeDiceVisualRolls(_collectCurrentDiceVisualRolls(), diceType);
+      finish(currentRolls, { rollId, seed });
+    }, 11000);
+  });
 }
 
 function _showLegacySyncedLocalDiceResult(opts = {}) {
@@ -44510,7 +44606,7 @@ function renderCombat() {
     const isCurrent = isActive && i === _combat.turn;
     const isNextUp = isActive && coms.length > 1 && i === ((_combat.turn + 1) % coms.length);
     const isMyTurn  = isCurrent && _isMyToken(com.token_id);
-    const canRoll   = _canRollInitiative(com, i);
+    const canRoll   = _canRollInitiative(com, i) && !com._initiativeRollPending;
 
     const entry = document.createElement('div');
     entry.className = 'combat-entry' + (isCurrent ? ' current' : '');
@@ -44524,7 +44620,9 @@ function renderCombat() {
     let initCell = '';
     const hasRolled = com.initiative !== null && com.initiative !== undefined;
     const initiativeDisplay = _formatInitiativeCellValue(com);
-    if (canRoll && !hasRolled) {
+    if (com._initiativeRollPending) {
+      initCell = `<span class="ce-init" title="Rolling initiative…">…</span>`;
+    } else if (canRoll && !hasRolled) {
       // Unrolled — show pulsing d20 button
       initCell = `<span class="ce-init ce-roll" onclick="combatRollInitiative('${com.id}')" title="Roll d20 initiative">🎲</span>`;
     } else if (canRoll && hasRolled) {
@@ -44738,35 +44836,43 @@ function combatRollDeathSave() {
 // ── Roll Initiative ───────────────────────────────────────────────
 function combatRollInitiative(combatantId) {
   const com = _combat.combatants.find(c => c.id === combatantId);
-  if (!com) return;
+  if (!com || com._initiativeRollPending) return;
 
-  // Keep the physical d20 result unchanged, then add the character initiative modifier.
+  // The settled d20 face is the initiative roll; add the character initiative modifier only after the die finishes.
   const combatTok = com.token_id ? tokens[com.token_id] : null;
   const modifier = _resolveCombatantInitiativeModifier(com, combatTok);
   com.modifier = modifier;
+  com._initiativeRollPending = true;
+  renderCombat();
 
-  const roll  = Math.floor(Math.random() * 20) + 1;
-  const total = roll + modifier;
-  com.roll = roll;
-  com.initiative = total;
-
-  // 🎲 Trigger the d20 dice animation — pass result immediately so it's ready
-  window.appDiceShowLocalResult({
+  _rollLocalDiceAfterSettle({
     diceType: 20,
     qty: 1,
-    rolls: [roll],
-    total,
     modifier,
+    modifierMeta: { key: 'initiative', name: 'Initiative', value: modifier },
     rollLabel: 'Initiative: ' + (com.name || ''),
-    source: 'combatant-initiative',
+    source: 'combatant-initiative-settled',
+  }).then((result) => {
+    const latest = _combat.combatants.find(c => c.id === combatantId);
+    if (!latest) return;
+    const roll = parseInt(result?.rolls?.[0], 10) || 0;
+    const total = roll + modifier;
+    latest.roll = roll;
+    latest.modifier = modifier;
+    latest.initiative = total;
+    delete latest._initiativeRollPending;
+    renderCombat();
+    sendWS({ type: 'combat_roll_initiative', payload: {
+      combatant_id: combatantId,
+      roll:         roll,
+      modifier:     modifier,
+    }});
+  }).catch((err) => {
+    console.error('[Combat] initiative dice roll failed', err);
+    delete com._initiativeRollPending;
+    renderCombat();
+    showToast('Initiative roll failed. Please try again.');
   });
-
-  renderCombat();
-  sendWS({ type: 'combat_roll_initiative', payload: {
-    combatant_id: combatantId,
-    roll:         roll,
-    modifier:     modifier,
-  }});
 }
 
 function _formatInitiativeCellValue(combatant) {
