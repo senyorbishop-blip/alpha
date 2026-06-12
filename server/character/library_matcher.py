@@ -6,44 +6,31 @@ items, spells, or features.
 """
 from __future__ import annotations
 
+import json
 import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from functools import lru_cache
+from pathlib import Path
 from typing import Any, Iterable
 
 from server.character.rules_catalog import load_rules_catalog
 from server.character.spell_compendium import list_spells
 
 _REPORT_GROUPS = ("items", "spells", "features")
-_REPORT_BUCKETS = ("exact", "alias", "partial", "missing")
-
-
-_ALIAS_TABLE: dict[str, dict[str, list[str]]] = {
-    "items": {
-        "Studded Leather Armour": ["Studded Leather Armor", "Studded Leather"],
-        "Leather Armour": ["Leather Armor"],
-        "Padded Armour": ["Padded Armor"],
-        "Hide Armour": ["Hide Armor"],
-        "Scale Mail": ["Scale Mail Armor", "Scale Mail Armour"],
-        "Shield +1": ["+1 Shield", "Shield, +1"],
-        "+1 Shield": ["Shield +1", "Shield, +1"],
-        "Dagger": ["Daggers"],
-        "Arrow": ["Arrows"],
-        "Crossbow Bolt": ["Crossbow Bolts", "Bolts"],
-    },
-    "spells": {
-        "Tasha's Hideous Laughter": ["Hideous Laughter"],
-        "Arcane Hand": ["Bigby's Hand"],
-        "Nystul's Magic Aura": ["Arcanist's Magic Aura", "Magic Aura"],
-    },
-    "features": {
-        "Ability Score Improvement": ["ASI", "Ability Score Increase"],
-        "Drow": ["Dark Elf"],
-        "Wood Elf": ["Elf (Wood)", "Wood-Elf"],
-        "High Elf": ["Elf (High)", "High-Elf"],
-        "Halfling": ["Lightfoot Halfling", "Stout Halfling"],
-    },
+_REPORT_BUCKETS = ("exact", "alias", "normalized", "partial", "missing")
+_RULESET_ROOT = Path(__file__).resolve().parents[1] / "data" / "rules" / "5e2024"
+_ALIAS_ROOT = _RULESET_ROOT / "aliases"
+_ALIAS_FILE_BY_GROUP = {
+    "items": "item_aliases.json",
+    "item": "item_aliases.json",
+    "spells": "spell_aliases.json",
+    "spell": "spell_aliases.json",
+    "features": "feature_aliases.json",
+    "feature": "feature_aliases.json",
+    "subclasses": "subclass_aliases.json",
+    "subclass": "subclass_aliases.json",
+    "species": "species_aliases.json",
 }
 
 
@@ -54,6 +41,50 @@ class LibraryEntry:
     group: str
     source: str
     row_id: str = ""
+
+
+def _coerce_alias_rows(payload: Any) -> dict[str, list[str]]:
+    """Return {canonical_name_or_id: [aliases...]} from a small alias JSON payload."""
+    if not isinstance(payload, dict):
+        return {}
+    rows: dict[str, list[str]] = {}
+    for canonical, aliases in payload.items():
+        canonical_text = str(canonical or "").strip()
+        if not canonical_text:
+            continue
+        alias_values: list[str] = []
+        if isinstance(aliases, list):
+            alias_values = [str(value).strip() for value in aliases if str(value or "").strip()]
+        elif isinstance(aliases, dict):
+            for key in ("aliases", "names", "ddb", "dndBeyond", "ids", "slugs"):
+                values = aliases.get(key)
+                if isinstance(values, list):
+                    alias_values.extend(str(value).strip() for value in values if str(value or "").strip())
+                elif isinstance(values, str) and values.strip():
+                    alias_values.append(values.strip())
+        elif isinstance(aliases, str) and aliases.strip():
+            alias_values = [aliases.strip()]
+        rows[canonical_text] = sorted(set(alias_values), key=str.lower)
+    return rows
+
+
+@lru_cache(maxsize=None)
+def load_alias_table(group: str) -> dict[str, list[str]]:
+    """Load data-driven aliases for a 5e2024 rules group.
+
+    The returned map is keyed by the canonical native display name or internal id;
+    values are D&D Beyond/import aliases that should resolve to that canonical row.
+    """
+    normalized_group = str(group or "").strip().lower()
+    filename = _ALIAS_FILE_BY_GROUP.get(normalized_group)
+    if not filename:
+        return {}
+    path = _ALIAS_ROOT / filename
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return {}
+    return _coerce_alias_rows(payload)
 
 
 def normalize_match_key(value: Any) -> str:
@@ -162,24 +193,39 @@ def load_library_index() -> dict[str, Any]:
     for group, group_entries in entries.items():
         for entry in group_entries:
             exact_by_lower[group].setdefault(entry.name.lower(), entry)
-            key = normalize_match_key(entry.name)
-            if key:
-                by_key[group].setdefault(key, entry)
+            for value in (entry.name, entry.row_id):
+                key = normalize_match_key(value)
+                if key:
+                    by_key[group].setdefault(key, entry)
 
     aliases: dict[str, dict[str, LibraryEntry]] = {group: {} for group in _REPORT_GROUPS}
-    for group, canonical_map in _ALIAS_TABLE.items():
-        for canonical, alias_names in canonical_map.items():
-            canonical_key = normalize_match_key(canonical)
-            canonical_entry = by_key.get(group, {}).get(canonical_key) or LibraryEntry(
-                name=canonical,
-                content_type="alias",
-                group=group,
-                source="alias_table",
-            )
-            for alias in alias_names:
+
+    def _entry_for_alias_canonical(group: str, canonical: str, *, fallback_type: str) -> LibraryEntry:
+        canonical_key = normalize_match_key(canonical)
+        entry = by_key.get(group, {}).get(canonical_key)
+        if entry:
+            return entry
+        return LibraryEntry(
+            name=canonical,
+            content_type=fallback_type,
+            group=group,
+            source="alias_table",
+        )
+
+    alias_sources = (
+        ("items", "items", "alias"),
+        ("spells", "spells", "spell"),
+        ("features", "features", "feature"),
+        ("features", "subclasses", "subclass"),
+        ("features", "species", "species"),
+    )
+    for index_group, alias_group, fallback_type in alias_sources:
+        for canonical, alias_names in load_alias_table(alias_group).items():
+            canonical_entry = _entry_for_alias_canonical(index_group, canonical, fallback_type=fallback_type)
+            for alias in [canonical, *alias_names]:
                 alias_key = normalize_match_key(alias)
                 if alias_key:
-                    aliases[group][alias_key] = canonical_entry
+                    aliases[index_group].setdefault(alias_key, canonical_entry)
 
     return {"entries": entries, "by_key": by_key, "exact_by_lower": exact_by_lower, "aliases": aliases}
 
@@ -277,7 +323,7 @@ def match_name(name: str, group: str, *, content_type: str = "") -> dict[str, An
         return {"status": "alias", "matched_name": alias.name, "matched_id": alias.row_id, "match_type": "alias"}
     normalized = index["by_key"].get(group, {}).get(key)
     if normalized:
-        return {"status": "exact", "matched_name": normalized.name, "matched_id": normalized.row_id, "match_type": "normalized"}
+        return {"status": "normalized", "matched_name": normalized.name, "matched_id": normalized.row_id, "match_type": "normalized"}
     if key:
         candidates = []
         for candidate_key, entry in index["by_key"].get(group, {}).items():
@@ -293,7 +339,7 @@ def match_name(name: str, group: str, *, content_type: str = "") -> dict[str, An
 
 
 def build_library_gap_report(document: dict[str, Any]) -> dict[str, dict[str, list[dict[str, Any]]]]:
-    """Return exact/alias/partial/missing buckets for imported character content."""
+    """Return exact/alias/normalized/partial/missing buckets for imported character content."""
     report = _empty_report()
     imported = collect_imported_library_names(document)
     for group, rows in imported.items():

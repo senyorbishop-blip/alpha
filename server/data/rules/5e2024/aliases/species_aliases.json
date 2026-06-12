@@ -1,0 +1,17 @@
+{
+  "Drow": [
+    "Dark Elf"
+  ],
+  "Wood Elf": [
+    "Elf (Wood)",
+    "Wood-Elf"
+  ],
+  "High Elf": [
+    "Elf (High)",
+    "High-Elf"
+  ],
+  "Halfling": [
+    "Lightfoot Halfling",
+    "Stout Halfling"
+  ]
+}
