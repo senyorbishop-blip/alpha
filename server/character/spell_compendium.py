@@ -1265,6 +1265,196 @@ def repair_spell_state_for_document(
     }
 
 
+
+
+_DICE_FORMULA_RE = re.compile(r"\b\d+d\d+(?:\s*[+\-]\s*\d+)?\b", re.IGNORECASE)
+
+
+def _first_spell_text(row: dict[str, Any], *keys: str) -> str:
+    for key in keys:
+        value = row.get(key)
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            return text
+    return ''
+
+
+def _first_spell_bool(row: dict[str, Any], *keys: str) -> bool:
+    for key in keys:
+        if key not in row:
+            continue
+        value = row.get(key)
+        if isinstance(value, str):
+            if value.strip().lower() in {'true', 'yes', 'y', '1', 'prepared', 'known'}:
+                return True
+            if value.strip().lower() in {'false', 'no', 'n', '0', 'none'}:
+                return False
+        return bool(value)
+    return False
+
+
+def _imported_spell_level(row: dict[str, Any]) -> int:
+    raw = row.get('level') if row.get('level') is not None else row.get('spellLevel')
+    if raw is None:
+        raw = row.get('section')
+    if isinstance(raw, str):
+        lower = raw.strip().lower()
+        if 'cantrip' in lower:
+            return 0
+        match = re.search(r"\b([1-9])(?:st|nd|rd|th)?\b", lower)
+        if match:
+            return _safe_int(match.group(1), 0)
+    return _safe_int(raw, 0)
+
+
+def _normalize_imported_attack_type(value: Any) -> str:
+    text = str(value or '').strip()
+    if not text:
+        return ''
+    lower = text.lower()
+    if lower in {'1', 'melee', 'melee spell', 'melee spell attack'}:
+        return 'Melee spell attack'
+    if lower in {'2', 'ranged', 'ranged spell', 'ranged spell attack'}:
+        return 'Ranged spell attack'
+    if 'attack' not in lower and lower in {'spell', 'melee spell', 'ranged spell'}:
+        return text + ' attack'
+    return text
+
+
+def _normalize_imported_save_ability(value: Any) -> str:
+    text = str(value or '').strip()
+    if not text:
+        return ''
+    lower = text.lower()
+    aliases = {
+        '1': 'str', 'strength': 'str', 'str': 'str',
+        '2': 'dex', 'dexterity': 'dex', 'dex': 'dex',
+        '3': 'con', 'constitution': 'con', 'con': 'con',
+        '4': 'int', 'intelligence': 'int', 'int': 'int',
+        '5': 'wis', 'wisdom': 'wis', 'wis': 'wis',
+        '6': 'cha', 'charisma': 'cha', 'cha': 'cha',
+    }
+    return aliases.get(lower, text)
+
+
+def _extract_imported_formula(row: dict[str, Any], *, healing: bool = False) -> str:
+    keys = (
+        ('healingFormula', 'healing_formula', 'healFormula', 'healing', 'heal')
+        if healing else
+        ('damageFormula', 'damage_formula', 'damageDice', 'damage_dice', 'damage', 'formula')
+    )
+    text = _first_spell_text(row, *keys)
+    if not text:
+        return ''
+    match = _DICE_FORMULA_RE.search(text)
+    return match.group(0).replace(' ', '') if match else text.strip()
+
+
+def build_imported_spell_fallback_card(imported_spell: dict[str, Any], character_context: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Build a playable spell card from preserved imported spell metadata.
+
+    This intentionally uses only the import row and character math context. It does not
+    scrape or synthesize native compendium text for spells that failed native matching.
+    """
+    row = imported_spell if isinstance(imported_spell, dict) else {}
+    ctx = character_context if isinstance(character_context, dict) else {}
+    name = _first_spell_text(row, 'name', 'displayName', 'spellName') or 'Imported Spell'
+    spell_id = _first_spell_text(row, 'id', 'spellId', 'spell_id') or _slug(name)
+    level = _imported_spell_level(row)
+    description = _first_spell_text(
+        row,
+        'description', 'notes', 'summary', 'snippet', 'shortDescription', 'fullPlayerDetailText', 'effect', 'playerFacingEffectSummary'
+    )
+    damage_formula = _extract_imported_formula(row)
+    healing_formula = _extract_imported_formula(row, healing=True)
+    damage_type = _first_spell_text(row, 'damageType', 'damage_type')
+    attack_type = _normalize_imported_attack_type(_first_spell_text(row, 'attackType', 'attack_type'))
+    save_ability = _normalize_imported_save_ability(_first_spell_text(row, 'saveAbility', 'save_ability', 'savingThrow', 'save'))
+    prepared = bool(ctx.get('isPrepared') or _first_spell_bool(row, 'prepared', 'isPrepared', 'alwaysPrepared'))
+    known = bool(ctx.get('isKnown') or prepared or row.get('known') is not False)
+    highest_available_slot = _safe_int(ctx.get('highestAvailableSlot'), 0)
+    max_level = highest_available_slot if highest_available_slot >= level else level
+    available_cast_levels = list(range(level, max_level + 1)) if level > 0 else []
+    formula = damage_formula or healing_formula
+    badges = ['Imported-only', 'Needs DM review']
+    if formula and _DICE_FORMULA_RE.search(formula):
+        badges.append('Rollable')
+    summary_bits = [
+        'Cantrip' if level == 0 else f'Level {level}',
+        _first_spell_text(row, 'school'),
+        _first_spell_text(row, 'castingTime', 'casting_time', 'castTime', 'time'),
+        _first_spell_text(row, 'range'),
+    ]
+    summary = ' • '.join(bit for bit in summary_bits if bit)
+    if description:
+        effect = description
+    elif formula and damage_type:
+        effect = f'{formula} {damage_type}'
+    elif formula:
+        effect = formula
+    else:
+        effect = 'Imported spell metadata preserved. Needs DM review before automation.'
+    roll_config = {
+        'id': f'cast:{spell_id}',
+        'label': 'Cast',
+        'action': 'cast_spell',
+        'spellId': spell_id,
+        'hasAttackRoll': bool(attack_type),
+        'hasSave': bool(save_ability),
+        'saveType': save_ability,
+        'attackType': attack_type,
+        'damageFormula': damage_formula,
+        'healingFormula': healing_formula,
+    }
+    return {
+        'id': spell_id,
+        'spellId': spell_id,
+        'name': name,
+        'displayName': name,
+        'level': level,
+        'spellLevel': level,
+        'school': _first_spell_text(row, 'school'),
+        'castingTime': _first_spell_text(row, 'castingTime', 'casting_time', 'castTime', 'time'),
+        'range': _first_spell_text(row, 'range'),
+        'duration': _first_spell_text(row, 'duration'),
+        'components': _first_spell_text(row, 'components'),
+        'concentration': _first_spell_bool(row, 'concentration', 'isConcentration'),
+        'ritual': _first_spell_bool(row, 'ritual', 'isRitual'),
+        'attackType': attack_type,
+        'savingThrow': save_ability,
+        'saveAbility': save_ability,
+        'saveDC': ctx.get('saveDc') or ctx.get('saveDC') or '',
+        'attackBonus': ctx.get('attackBonus') if ctx.get('attackBonus') is not None else '',
+        'requiresAttackRoll': bool(attack_type),
+        'damageFormula': damage_formula,
+        'healingFormula': healing_formula,
+        'damageType': damage_type,
+        'summary': summary or effect,
+        'description': description,
+        'effect': effect,
+        'playerFacingEffectSummary': effect,
+        'fullPlayerDetailText': description or effect,
+        'rollConfig': roll_config,
+        'rollButtonConfig': roll_config,
+        'classes': list(row.get('classes') or []),
+        'isKnown': known,
+        'isPrepared': prepared,
+        'isAccessible': True,
+        'blockedReason': '',
+        'highestAvailableSlot': highest_available_slot,
+        'availableCastLevels': available_cast_levels,
+        'selectionMode': str(ctx.get('selectionMode') or 'imported'),
+        'stateLabel': 'Prepared' if prepared else 'Known' if known else 'Imported',
+        'source': 'imported',
+        '__source': 'imported',
+        'matchedNative': False,
+        'needsReview': True,
+        'importedOnly': True,
+        'cardUiMeta': {'accent': 'gold', 'badges': badges},
+    }
+
 def build_spell_card(spell: dict[str, Any], *, character_context: dict[str, Any] | None = None) -> dict[str, Any]:
     ctx = character_context if isinstance(character_context, dict) else {}
     spell = _clone(spell)
@@ -1349,16 +1539,8 @@ def build_character_spell_manifest(document: dict[str, Any]) -> dict[str, Any]:
     validation = validate_spell_selection(class_id=class_id, class_level=class_level, abilities=abilities, known=known, prepared=prepared, document=document, subclass_id=_norm(primary.get('subclassId')))
     known_set = set(validation['known'])
     prepared_set = set(validation['prepared'])
-    source_map = context.get('classSourcesBySpell') if isinstance(context.get('classSourcesBySpell'), dict) else {}
-    bonus_access = set((validation.get('subclassGrants') or {}).get('alwaysPrepared') or []) | set((validation.get('subclassGrants') or {}).get('alwaysKnown') or []) | set((validation.get('classBonusGrants') or {}).get('alwaysKnown') or [])
-    raw_spell_state = document.get('spellState') if isinstance(document.get('spellState'), dict) else {}
-    legacy_aliases_by_spell: dict[str, list[str]] = {}
-    for raw_id in list(raw_spell_state.get('known') or []) + list(raw_spell_state.get('prepared') or []):
-        raw_text = str(raw_id or '').strip()
-        resolved = get_spell_by_id(raw_text)
-        canonical = str((resolved or {}).get('id') or '').strip()
-        if raw_text and canonical and raw_text != canonical:
-            legacy_aliases_by_spell.setdefault(canonical, []).append(raw_text)
+    bonus_access = set((validation.get('subclassGrants') or {}).get('alwaysPrepared') or []) | set((validation.get('subclassGrants') or {}).get('alwaysKnown') or [])
+    selection_mode = 'prepared' if limits.get('preparedLimit') is not None else ('known' if limits.get('spellsKnown') is not None else 'library')
     cards = []
     for spell in get_spell_list():
         spell_id = str(spell.get('id') or '')
@@ -1383,18 +1565,27 @@ def build_character_spell_manifest(document: dict[str, Any]) -> dict[str, Any]:
             'blockedReason': '' if accessible else 'Not unlocked for any current class/level.',
             'highestAvailableSlot': highest_available_slot,
             'selectionMode': selection_mode,
-            'sourceClass': source_class,
-            'sourceSubclass': str(primary_source.get('subclassId') or '') if isinstance(primary_source, dict) else '',
-            'sourceType': str(primary_source.get('sourceType') or '') if isinstance(primary_source, dict) else '',
-            'sourceClasses': sources,
-        }
-        card = build_spell_card(spell, character_context=card_context)
-        cards.append(card)
-        for alias_id in _dedupe_preserve(legacy_aliases_by_spell.get(spell_id, [])):
-            alias_card = _clone(card)
-            alias_card['id'] = alias_id
-            alias_card['canonicalId'] = spell_id
-            cards.append(alias_card)
+        }))
+    entries = spell_state.get('spellbookEntries') if isinstance(spell_state.get('spellbookEntries'), list) else []
+    existing_card_ids = {str(card.get('id') or '').strip().lower() for card in cards if isinstance(card, dict)}
+    for entry in entries:
+        if not isinstance(entry, dict) or entry.get('matchedNative') is not False:
+            continue
+        fallback_id = str(entry.get('id') or entry.get('spellId') or _slug(entry.get('name') or 'imported-spell')).strip()
+        if not fallback_id or fallback_id.lower() in existing_card_ids:
+            continue
+        prepared_flag = fallback_id in prepared_set or bool(entry.get('prepared') or entry.get('isPrepared'))
+        known_flag = fallback_id in known_set or prepared_flag or entry.get('known') is not False
+        cards.append(build_imported_spell_fallback_card(entry, {
+            'isKnown': known_flag,
+            'isPrepared': prepared_flag,
+            'highestAvailableSlot': highest_available_slot,
+            'selectionMode': selection_mode,
+            'saveDc': validation.get('saveDc') or validation.get('spellSaveDc') or '',
+            'attackBonus': validation.get('attackBonus') or validation.get('spellAttackBonus') or '',
+        }))
+        existing_card_ids.add(fallback_id.lower())
+
     return {
         'limits': limits,
         'validation': validation,

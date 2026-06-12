@@ -155,8 +155,8 @@ def build_import_review(document: Any, *, source_type: str = "", runtime: Any = 
     inventory_rows = equipment.get("inventory") if isinstance(equipment.get("inventory"), list) else []
 
     spells_matched = _name_list([row for row in imported_spells if not isinstance(row, dict) or row.get("matchedNative", True)])
-    spells_missing = _name_list([row for row in imported_spells if isinstance(row, dict) and row.get("matchedNative") is False])
-    spells_missing.extend(_missing_from_warnings(warnings, {"missing_spell_mapping", "missing_spells"}))
+    spells_imported_only = _name_list([row for row in imported_spells if isinstance(row, dict) and row.get("matchedNative") is False])
+    spells_missing = _missing_from_warnings(warnings, {"missing_spell_mapping", "missing_spells"})
 
     items_matched = _name_list(inventory_rows)
     items_missing = _missing_from_warnings(warnings, {"missing_inventory", "missing_item_mapping", "missing_items"})
@@ -198,7 +198,7 @@ def build_import_review(document: Any, *, source_type: str = "", runtime: Any = 
 
     if blocking_issues:
         status = "blocked"
-    elif spells_missing or items_missing or features_missing:
+    elif spells_imported_only or spells_missing or items_missing or features_missing:
         status = "needs_review"
     elif review_warnings:
         status = "playable_with_warnings"
@@ -220,6 +220,7 @@ def build_import_review(document: Any, *, source_type: str = "", runtime: Any = 
         "acComparison": _comparison(label="Armor Class", source_value=source_ac, resolved_value=resolved_ac),
         "hpComparison": _comparison(label="Hit Points", source_value=source_hp, resolved_value=resolved_hp),
         "spellsMatched": spells_matched,
+        "spellsImportedOnly": spells_imported_only,
         "spellsMissing": spells_missing,
         "itemsMatched": items_matched,
         "itemsMissing": items_missing,

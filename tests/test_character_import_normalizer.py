@@ -351,7 +351,124 @@ def test_import_review_model_marks_missing_spell_item_feature_and_source_type():
     assert review["reviewStatus"] == "needs_review"
     assert review["canContinueToPlay"] is True
     assert "Magic Missile" in review["spellsMatched"]
-    assert "Homebrew Spark" in review["spellsMissing"]
+    assert "Homebrew Spark" in review["spellsImportedOnly"]
+    assert "Homebrew Spark" not in review["spellsMissing"]
     assert "Quarterstaff" in review["itemsMatched"]
     assert review["itemsMissing"]
     assert review["featuresMissing"]
+
+
+def test_imported_unmatched_spell_builds_rollable_fallback_manifest_card():
+    from server.character.spell_compendium import build_character_spell_manifest, get_spell_by_id
+    from server.character.resolver import resolve_character_runtime
+
+    document = {
+        "classes": [{"classId": "wizard", "level": 3}],
+        "abilities": {"scores": {"int": 16}},
+        "spellState": {
+            "known": ["magic-missile"],
+            "prepared": ["magic-missile"],
+            "spellbookEntries": [
+                {"id": "magic-missile", "name": "Magic Missile", "matchedNative": True, "prepared": True},
+                {
+                    "id": "moonlit-spoon",
+                    "spellId": "homebrew-42",
+                    "name": "Moonlit Spoon",
+                    "matchedNative": False,
+                    "prepared": True,
+                    "level": 1,
+                    "school": "Evocation",
+                    "castingTime": "1 action",
+                    "range": "60 feet",
+                    "components": "V, S",
+                    "duration": "Instantaneous",
+                    "attackType": "Ranged spell attack",
+                    "damageFormula": "2d6+3",
+                    "damageType": "radiant",
+                    "notes": "Hurl a silver spoon made of moonlight.",
+                },
+            ],
+        },
+    }
+
+    manifest = build_character_spell_manifest(document)
+    fallback = next(card for card in manifest["cards"] if card["id"] == "moonlit-spoon")
+    native = next(card for card in manifest["cards"] if card["id"] == "magic-missile")
+
+    assert fallback["source"] == "imported"
+    assert fallback["matchedNative"] is False
+    assert fallback["needsReview"] is True
+    assert fallback["importedOnly"] is True
+    assert fallback["isPrepared"] is True
+    assert fallback["attackType"] == "Ranged spell attack"
+    assert fallback["damageFormula"] == "2d6+3"
+    assert fallback["rollConfig"]["damageFormula"] == "2d6+3"
+    assert "Hurl a silver spoon" in fallback["description"]
+    assert native.get("source") != "imported"
+    assert not native.get("importedOnly")
+    assert native["name"] == get_spell_by_id("magic-missile")["name"]
+
+    runtime = resolve_character_runtime(document)["runtime"]
+    runtime_fallback = next(card for card in runtime["spellAccess"]["cards"] if card["id"] == "moonlit-spoon")
+    assert runtime_fallback["damageFormula"] == "2d6+3"
+    assert runtime_fallback["rollConfig"]["damageFormula"] == "2d6+3"
+
+
+def test_imported_unmatched_spell_without_formula_is_readable_and_needs_review():
+    from server.character.spell_compendium import build_character_spell_manifest
+
+    manifest = build_character_spell_manifest({
+        "classes": [{"classId": "wizard", "level": 1}],
+        "abilities": {"scores": {"int": 16}},
+        "spellState": {
+            "spellbookEntries": [
+                {
+                    "id": "quiet-lantern",
+                    "name": "Quiet Lantern",
+                    "matchedNative": False,
+                    "level": "Cantrip",
+                    "school": "Illusion",
+                    "castingTime": "1 action",
+                    "range": "Touch",
+                    "duration": "1 hour",
+                    "notes": "Create a hooded light only allies can see.",
+                }
+            ]
+        },
+    })
+
+    fallback = next(card for card in manifest["cards"] if card["id"] == "quiet-lantern")
+    assert fallback["source"] == "imported"
+    assert fallback["needsReview"] is True
+    assert fallback["importedOnly"] is True
+    assert fallback["damageFormula"] == ""
+    assert fallback["rollConfig"]["damageFormula"] == ""
+    assert "Create a hooded light" in fallback["description"]
+
+
+def test_import_review_lists_unmatched_spells_as_imported_only():
+    from server.character.import_review import build_import_review
+
+    review = build_import_review(
+        {
+            "identity": {"name": "Review Mage"},
+            "species": {"name": "Human"},
+            "background": {"name": "Sage"},
+            "classes": [{"name": "Wizard", "level": 1}],
+            "maxHP": 8,
+            "ac": 12,
+            "spellState": {
+                "spellbookEntries": [
+                    {"name": "Magic Missile", "matchedNative": True},
+                    {"name": "Moonlit Spoon", "matchedNative": False},
+                ]
+            },
+            "importMeta": {"sourceType": "pdf", "warnings": []},
+        },
+        runtime={"hp": {"max": 8}, "ac": 12},
+    )
+
+    assert "Magic Missile" in review["spellsMatched"]
+    assert "Moonlit Spoon" in review["spellsImportedOnly"]
+    assert "Moonlit Spoon" not in review["spellsMissing"]
+    assert review["reviewStatus"] == "needs_review"
