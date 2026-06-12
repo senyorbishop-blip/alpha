@@ -79,3 +79,15 @@ def test_combat_quick_bar_supports_custom_top_five_and_inventory_refresh():
     assert 'data-qb-pick-key' in bar
     assert 'data-qb-pin' in bar
     assert "window.CombatQuickBar.render();\n  if (typeof requestCharacterBookOverviewRender === 'function') requestCharacterBookOverviewRender('player_inventory_sync');" in play
+
+
+def test_combat_quick_spells_enrich_selected_names_from_spell_library_for_roll_cards():
+    src = _read('client/templates/play.html')
+    assert 'function _combatQuickSpellLibraryCardFromName(nameOrId)' in src
+    assert 'function _combatQuickNormalizeSpellCard(raw, fallback = {})' in src
+    assert "_currentSpellSelectionNames(_charSheet).forEach((name, idx) =>" in src
+    assert "addSpellCard(_combatQuickNormalizeSpellCard(libraryCard, { name, source: 'Selected spell state' })" in src
+    assert 'damage_upcast_per_level: perSlotFormula' in src
+    assert 'save_ability: saveAbility' in src
+    assert 'attack_bonus: row.attack_bonus || row.attackBonus || _charSheet?.spellAttack' in src
+    assert 'card: normalizedCard' in src

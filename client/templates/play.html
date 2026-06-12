@@ -45462,32 +45462,37 @@ function _getCombatQuickSpells() {
 
   // Rules spellbook entries (from character import)
   rulesSpells.forEach(card => {
-    const name = _prettyBookSpellName(String(card.displayName || card.name || card.id || '').trim());
+    const libraryCard = _combatQuickSpellLibraryCardFromName(card?.name || card?.displayName || card?.id);
+    const normalizedCard = _combatQuickNormalizeSpellCard(libraryCard || card, card || {});
+    const name = _prettyBookSpellName(String(normalizedCard.displayName || normalizedCard.name || normalizedCard.id || '').trim());
     if (!name || seen.has(name.toLowerCase())) return;
     seen.add(name.toLowerCase());
     spells.push({
-      id: card.id || name,
+      id: normalizedCard.id || name,
       name: name,
-      level: Number(card.spell_level ?? card.level ?? card.current?.spell_level ?? card.default_cast_level ?? 0),
-      casting_time: card.casting_time || '',
-      range: card.range || '',
+      level: Number(normalizedCard.spell_level ?? normalizedCard.level ?? normalizedCard.current?.spell_level ?? normalizedCard.default_cast_level ?? 0),
+      casting_time: normalizedCard.casting_time || '',
+      range: normalizedCard.range || '',
       source: 'rules',
-      card: card,
+      card: normalizedCard,
     });
   });
 
   // Granted spells from DM
   grantedSpells.forEach(sp => {
-    const name = _prettyBookSpellName(String(sp.name || sp.id || '').trim());
+    const libraryCard = _combatQuickSpellLibraryCardFromName(sp?.name || sp?.id);
+    const normalizedCard = _combatQuickNormalizeSpellCard(libraryCard || sp, sp || {});
+    const name = _prettyBookSpellName(String(normalizedCard.name || normalizedCard.id || '').trim());
     if (!name || seen.has(name.toLowerCase())) return;
     seen.add(name.toLowerCase());
     spells.push({
-      id: sp.id || name,
+      id: normalizedCard.id || name,
       name: name,
-      level: Number(sp.spell_level ?? 0),
-      casting_time: sp.casting_time || '',
-      range: sp.range || '',
+      level: Number(normalizedCard.spell_level ?? 0),
+      casting_time: normalizedCard.casting_time || '',
+      range: normalizedCard.range || '',
       source: 'granted',
+      card: normalizedCard,
     });
   });
 
@@ -45547,6 +45552,83 @@ function _parseSpellLevelFromSection(section) {
   return m ? parseInt(m[1], 10) : 0;
 }
 
+function _combatQuickSlug(value) {
+  return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+function _combatQuickSpellLibraryCardFromName(nameOrId) {
+  const key = _combatQuickSlug(nameOrId);
+  if (!key) return null;
+  const library = Array.isArray(_spellLibrary) ? _spellLibrary : [];
+  return library.find(row => {
+    const candidates = [row?.id, row?.spell_id, row?.slug, row?.name, row?.displayName, row?.spellName];
+    return candidates.some(candidate => {
+      const slug = _combatQuickSlug(candidate);
+      return slug === key || slug === `spell-${key}` || `spell-${slug}` === key;
+    });
+  }) || null;
+}
+
+function _combatQuickNormalizeSpellCard(raw, fallback = {}) {
+  const row = (raw && typeof raw === 'object') ? raw : {};
+  const name = _prettyBookSpellName(String(row.displayName || row.name || row.spellName || fallback.name || fallback.displayName || row.id || fallback.id || '').trim());
+  const level = Number(row.spell_level ?? row.spellLevel ?? row.level ?? row.current?.spell_level ?? row.default_cast_level ?? fallback.spell_level ?? fallback.level ?? 0) || 0;
+  const rangeText = String(row.range || row.range_text || row.rangeText || fallback.range || '').trim();
+  const castingTime = String(row.casting_time || row.castingTime || row.time || fallback.casting_time || fallback.castingTime || '1 action').trim();
+  const attackType = String(row.attack_type || row.attackType || row.roll_config?.attackType || fallback.attack_type || fallback.attackType || '').trim();
+  const saveAbility = String(row.save_ability || row.saveAbility || row.savingThrow || row.saveType || row.roll_config?.saveType || fallback.save_ability || fallback.saveAbility || '').trim();
+  const damageFormula = String(row.damage_dice || row.damageFormula || row.damage_formula || row.base_damage_formula || row.damage || row.roll_config?.damageFormula || row.current?.formula || fallback.damage_dice || fallback.damageFormula || fallback.damage_formula || '').trim();
+  const healingFormula = String(row.healingFormula || row.healing_formula || row.roll_config?.healingFormula || fallback.healingFormula || '').trim();
+  const damageType = String(row.damage_type || row.damageType || row.healing_type || fallback.damage_type || fallback.damageType || '').trim();
+  const scalingData = (row.scaling_data && typeof row.scaling_data === 'object') ? row.scaling_data : (row.scalingData && typeof row.scalingData === 'object' ? row.scalingData : {});
+  const perSlotFormula = String(row.damage_upcast_per_level || row.upcastFormula || scalingData.per_slot_formula || scalingData.perSlotFormula || '').trim();
+  const castOptions = (row.cast_options && typeof row.cast_options === 'object') ? row.cast_options : {};
+  const baseFormula = damageFormula || healingFormula || String(castOptions[String(level)]?.formula || '').trim();
+  if (level >= 0 && !castOptions[String(level)] && baseFormula) {
+    castOptions[String(level)] = { cast_level: level, formula: baseFormula, effect: row.base_effect_text || row.description || row.effect || fallback.base_effect_text || 'Spell card' };
+  }
+  return {
+    ...row,
+    id: String(row.id || row.spellId || fallback.id || name || '').trim(),
+    spellId: String(row.spellId || row.id || fallback.spellId || fallback.id || name || '').trim(),
+    name: name || String(row.name || fallback.name || 'Spell'),
+    displayName: name || String(row.displayName || row.name || fallback.name || 'Spell'),
+    spell_level: level,
+    level: level,
+    level_school: row.level_school || row.levelSchool || (level === 0 ? 'Cantrip' : `Level ${level}`),
+    casting_time: castingTime,
+    castingTime: castingTime,
+    range: rangeText,
+    components: String(row.components || fallback.components || '').trim(),
+    duration: String(row.duration || fallback.duration || '').trim(),
+    attack_type: attackType,
+    attackType: attackType,
+    save_ability: saveAbility,
+    saveAbility: saveAbility,
+    save_dc: row.save_dc || row.saveDC || _charSheet?.spellSaveDc || '',
+    saveDC: row.saveDC || row.save_dc || _charSheet?.spellSaveDc || '',
+    attack_bonus: row.attack_bonus || row.attackBonus || _charSheet?.spellAttack || '',
+    attackBonus: row.attackBonus || row.attack_bonus || _charSheet?.spellAttack || '',
+    damage_type: damageType,
+    damageType: damageType,
+    damage_dice: baseFormula,
+    damage: baseFormula,
+    damage_formula: baseFormula,
+    base_damage_formula: baseFormula,
+    healingFormula: healingFormula,
+    damage_upcast_per_level: perSlotFormula,
+    scaling_data: scalingData,
+    base_effect_text: String(row.base_effect_text || row.description || row.summary || row.effect || fallback.base_effect_text || '').trim(),
+    current: {
+      ...(row.current && typeof row.current === 'object' ? row.current : {}),
+      cast_level: Number(row.current?.cast_level ?? level) || level,
+      formula: String(row.current?.formula || baseFormula || '—').trim() || '—',
+      effect: String(row.current?.effect || row.base_effect_text || row.description || row.summary || row.effect || fallback.base_effect_text || 'Spell card').trim(),
+    },
+    cast_options: castOptions,
+  };
+}
+
 function _getStructuredRulesSpellbookCards() {
   const existing = Array.isArray(_charSheet?.rulesSpellbook) && _charSheet.rulesSpellbook.length
     ? _charSheet.rulesSpellbook
@@ -45596,8 +45678,15 @@ function _getStructuredRulesSpellbookCards() {
       source: 'Imported spellbook',
     });
   });
-  _currentSpellSelectionNames(_charSheet).forEach((name, idx) => addSpellCard({ id: `selected-spell-${idx}`, name: name, spell_level: 0, source: 'Selected spell state' }, idx + fallback.length));
-  return fallback;
+  _currentSpellSelectionNames(_charSheet).forEach((name, idx) => {
+    const libraryCard = _combatQuickSpellLibraryCardFromName(name);
+    if (libraryCard) {
+      addSpellCard(_combatQuickNormalizeSpellCard(libraryCard, { name, source: 'Selected spell state' }), idx + fallback.length, { source: 'Selected spell state' });
+    } else {
+      addSpellCard({ id: `selected-spell-${idx}`, name: name, spell_level: 0, source: 'Selected spell state' }, idx + fallback.length);
+    }
+  });
+  return fallback.map(card => _combatQuickNormalizeSpellCard(card));
 }
 
 function combatQuickCastSpell(spellId, preferredLevel) {
