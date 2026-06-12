@@ -174,3 +174,60 @@ def test_dm_can_hydrate_and_update_player_spell_profiles(monkeypatch):
     assert library_res.json()["manifest"]["known"] == ["fireball"]
     assert update_res.status_code == 200
     assert session.char_profiles["player b"][0]["nativeCharacter"]["spellState"]["known"] == ["fireball", "shield"]
+
+
+def test_player_can_update_their_own_prepared_spells(monkeypatch):
+    session = _session()
+    auth_holder = {"user": {"id": "player-b", "username": "Player B"}}
+    _install_common_spell_mocks(monkeypatch, session, auth_holder)
+
+    with TestClient(main.app, raise_server_exceptions=False) as client:
+        res = client.post(
+            "/api/character/profile-b/spells/prepare",
+            json={"session_id": "s1", "prepared": []},
+            headers=_csrf_headers(client),
+        )
+
+    assert res.status_code == 200
+    assert res.json()["prepared"] == []
+    assert session.char_profiles["player b"][0]["nativeCharacter"]["spellState"]["prepared"] == []
+
+
+def test_invalid_prepared_spells_do_not_mutate_native_spell_state(monkeypatch):
+    session = _session()
+    auth_holder = {"user": {"id": "player-b", "username": "Player B"}}
+    _install_common_spell_mocks(monkeypatch, session, auth_holder)
+    calls = {"save": 0, "sync": 0}
+
+    async def _fail_on_save(_session):
+        calls["save"] += 1
+
+    def _invalid_validate(**kwargs):
+        return {
+            "ok": False,
+            "known": list(kwargs.get("known") or []),
+            "prepared": list(kwargs.get("prepared") or []),
+            "limits": {"preparedLimit": 1},
+            "errors": ["Unknown prepared spell: meteor-swarm"],
+        }
+
+    def _record_sync(*args, **kwargs):
+        calls["sync"] += 1
+
+    monkeypatch.setattr(character_routes, "save_campaign_async", _fail_on_save)
+    monkeypatch.setattr(character_routes, "validate_spell_selection", _invalid_validate)
+    monkeypatch.setattr(character_routes, "_sync_native_spellbook_entries", _record_sync)
+
+    native = session.char_profiles["player b"][0]["nativeCharacter"]
+    assert native["spellState"]["prepared"] == ["fireball"]
+
+    with TestClient(main.app, raise_server_exceptions=False) as client:
+        res = client.post(
+            "/api/character/profile-b/spells/prepare",
+            json={"session_id": "s1", "prepared": ["meteor-swarm"]},
+            headers=_csrf_headers(client),
+        )
+
+    assert res.status_code == 400
+    assert native["spellState"]["prepared"] == ["fireball"]
+    assert calls == {"save": 0, "sync": 0}
