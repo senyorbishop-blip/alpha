@@ -35236,7 +35236,8 @@ function openRulesSpellbookCard(rawCard) {
   const card = rawCard && typeof rawCard === 'object' ? rawCard : null;
   if (!card) return false;
   const spellName = String(card.displayName || card.name || 'Spell').replace(/^spell[_-]+/i, '').replace(/[_-]+/g, ' ').replace(/\b([a-z])/g, function (_, ch) { return ch.toUpperCase(); }).trim();
-  const level = Number(card.spell_level ?? card.level ?? card.current?.cast_level ?? 0) || 0;
+  const rawLevel = card.spell_level ?? card.level ?? card.current?.cast_level;
+  const level = rawLevel === null || rawLevel === undefined || rawLevel === '' ? null : (Number(rawLevel) || 0);
   const current = card.current || {};
   const higherText = String(card.higher_level_text || card.higherLevel || card.scalingNote || '').trim();
   const fullText = String(card.fullPlayerDetailText || card.description || card.base_effect_text || current.effect || 'No detailed spell text is loaded for this entry yet.').trim();
@@ -35262,8 +35263,8 @@ function openRulesSpellbookCard(rawCard) {
     window.CSContainer.openDetailDrawer({
       kicker: 'Spell',
       title: spellName || 'Spell',
-      subtitle: [level === 0 ? 'Cantrip' : ('Level ' + level), String(card.school || card.level_school || '').trim()].filter(Boolean).join(' • '),
-      chips: [level === 0 ? 'At Will' : ('Level ' + level), card.concentration || card.is_concentration ? 'Concentration' : '', card.ritual || card.is_ritual ? 'Ritual' : '', String(card.school || '').trim()].filter(Boolean),
+      subtitle: [level === null ? 'Unknown spell level' : (level === 0 ? 'Cantrip' : ('Level ' + level)), String(card.school || card.level_school || '').trim()].filter(Boolean).join(' • '),
+      chips: [level === null ? 'Unknown spell level' : (level === 0 ? 'At Will' : ('Level ' + level)), card.concentration || card.is_concentration ? 'Concentration' : '', card.ritual || card.is_ritual ? 'Ritual' : '', String(card.school || '').trim()].filter(Boolean),
       sections: sections.filter(section => section.body || (Array.isArray(section.items) && section.items.filter(item => String(item && item.value || '').trim() && String(item.value).trim() !== '—').length))
     });
     return true;
@@ -43595,6 +43596,7 @@ function _buildEquippedInventoryAttackCard(item, idx, slot = '') {
   const strMod = _abilityModFromCharacterSheet('str');
   const dexMod = _abilityModFromCharacterSheet('dex');
   const abilityMod = isRanged ? dexMod : (isFinesse ? Math.max(strMod, dexMod) : strMod);
+  const abilityLabel = isRanged ? 'DEX' : (isFinesse ? (dexMod >= strMod ? 'DEX (finesse)' : 'STR (finesse)') : 'STR');
   const prof = _proficiencyBonusFromCharacterSheet();
   const attackBonusValue = prof + abilityMod;
   const baseDamage = String(item.damage_dice || item.versatile_damage || '').trim();
@@ -43619,6 +43621,9 @@ function _buildEquippedInventoryAttackCard(item, idx, slot = '') {
     name,
     attack_bonus: attackBonusValue >= 0 ? `+${attackBonusValue}` : String(attackBonusValue),
     attack_bonus_value: attackBonusValue,
+    ability_label: abilityLabel,
+    proficient: true,
+    proficiency_label: `Proficient (+${prof})`,
     damage_formula: damageFormula,
     base_damage_formula: damageFormula,
     versatile_damage_formula: versatileDamageFormula,
@@ -43701,6 +43706,9 @@ function _getUnifiedQuickAttackCards() {
       name: 'Unarmed Strike',
       attack_bonus: attackBonusValue >= 0 ? `+${attackBonusValue}` : String(attackBonusValue),
       attack_bonus_value: attackBonusValue,
+      ability_label: 'STR',
+      proficient: true,
+      proficiency_label: `Proficient (+${prof})`,
       damage_formula: `1d1${strMod > 0 ? `+${strMod}` : (strMod < 0 ? strMod : '')}`,
       damage_type: 'bludgeoning',
       range: '5 ft',
@@ -43864,6 +43872,8 @@ function _getPlayerActionsSections() {
     const card = sp.card || {};
     const save = String(card.save_ability || card.save || '').toUpperCase();
     const attackType = String(card.attack_type || '').replaceAll('_', ' ');
+    const spellLevel = (sp.level === null || sp.level === undefined) ? null : Number(sp.level || 0);
+    const spellLevelLabel = spellLevel === null ? 'Unknown spell level' : (spellLevel === 0 ? 'Cantrip' : `Spell Slot ${spellLevel}`);
     const badges = [];
     if (card.concentration || card.is_concentration) badges.push('Concentration');
     if (card.ritual || card.is_ritual) badges.push('Ritual');
@@ -43875,10 +43885,11 @@ function _getPlayerActionsSections() {
       damage: card.damage_dice || card.damage || card.damage_formula || card.base_damage_formula || '',
       damageType: card.damage_type || '',
       range: sp.range || card.range || '',
-      resource: Number(sp.level || 0) === 0 ? 'Cantrip' : `Spell Slot ${Number(sp.level || 0)}`,
+      resource: spellLevelLabel,
       desc: [attackType, save ? `Save ${save}` : '', card.base_effect_text || card.effect || ''].filter(Boolean).join(' • ').slice(0, 180),
       badges,
       castOptions: _getCombatSpellCastOptions(sp),
+      levelUnknown: spellLevel === null,
     };
     sections.Spells.push(spellEntry);
     const castText = String(card.casting_time || sp.casting_time || '').toLowerCase();
@@ -44225,7 +44236,9 @@ function _buildPlayerActionMetaHtml(action) {
 
 function _getCombatSpellCastOptions(spell) {
   const ordinals = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'];
-  const baseLevel = Math.max(0, Number(spell?.level || 0));
+  const rawLevel = spell?.level ?? spell?.spell_level ?? spell?.card?.level ?? spell?.card?.spell_level;
+  const baseLevel = rawLevel === null || rawLevel === undefined || rawLevel === '' ? null : Math.max(0, Number(rawLevel || 0));
+  if (baseLevel === null || !Number.isFinite(baseLevel)) return [{ value: '', label: 'Unknown spell level', disabled: true }];
   if (baseLevel === 0) return [{ value: 0, label: 'Cantrip', disabled: false }];
   const options = [];
   for (let lvl = baseLevel; lvl <= 9; lvl++) {
@@ -45471,6 +45484,7 @@ function _getCombatQuickSpells() {
       id: normalizedCard.id || name,
       name: name,
       level: _combatQuickResolveSpellLevel(normalizedCard, card || {}),
+      level_unknown: !!normalizedCard.level_unknown,
       casting_time: normalizedCard.casting_time || '',
       range: normalizedCard.range || '',
       source: 'rules',
@@ -45489,6 +45503,7 @@ function _getCombatQuickSpells() {
       id: normalizedCard.id || name,
       name: name,
       level: _combatQuickResolveSpellLevel(normalizedCard, sp || {}),
+      level_unknown: !!normalizedCard.level_unknown,
       casting_time: normalizedCard.casting_time || '',
       range: normalizedCard.range || '',
       source: 'granted',
@@ -45507,6 +45522,7 @@ function _getCombatQuickSpells() {
         id: name,
         name: name,
         level: _parseSpellLevelFromSection(entry.section),
+        level_unknown: !String(entry.section || '').trim(),
         casting_time: entry.time || '',
         range: entry.range || '',
         source: 'imported',
@@ -45515,7 +45531,7 @@ function _getCombatQuickSpells() {
   }
 
   // Sort: cantrips first, then by level
-  spells.sort((a, b) => (a.level || 0) - (b.level || 0));
+  spells.sort((a, b) => ((a.level ?? 99) - (b.level ?? 99)));
   return spells;
 }
 
@@ -45539,17 +45555,29 @@ function getCombatQuickBarSpells() {
 
 function executeCombatQuickBarSpell(spell) {
   if (!spell) return null;
+  if (window.CombatQuickActions && typeof window.CombatQuickActions.openSpellAction === 'function') {
+    return window.CombatQuickActions.openSpellAction(spell);
+  }
   const spellId = String(spell.id || spell.name || '').trim();
   const result = spellId ? combatQuickCastSpell(spellId) : _executeCombatSpellCast(spell, Number(spell.level ?? spell.spell_level ?? spell.card?.level ?? spell.card?.spell_level ?? 0) || 0);
   if (window.CombatQuickBar && typeof window.CombatQuickBar.render === 'function') window.CombatQuickBar.render();
   return result;
 }
 
+function openCombatQuickBarWeaponAction(actionOrId) {
+  if (window.CombatQuickActions && typeof window.CombatQuickActions.openWeaponAction === 'function') {
+    return window.CombatQuickActions.openWeaponAction(actionOrId);
+  }
+  const id = typeof actionOrId === 'object' ? (actionOrId.id || actionOrId.name) : actionOrId;
+  return combatQuickWeaponAttack(id);
+}
+
 function _parseSpellLevelFromSection(section) {
   const s = String(section || '').toLowerCase();
+  if (!s.trim()) return null;
   if (s.includes('cantrip')) return 0;
   const m = s.match(/(\d)/);
-  return m ? parseInt(m[1], 10) : 0;
+  return m ? parseInt(m[1], 10) : null;
 }
 
 function _combatQuickSlug(value) {
@@ -45584,33 +45612,54 @@ function _combatQuickParseSpellLevel() {
     const levelWord = text.match(/\blevel\s*([1-9])\b/);
     if (levelWord) return Math.max(0, Math.min(9, parseInt(levelWord[1], 10)));
   }
-  return 0;
+  return null;
+}
+
+function _combatQuickHasSpellLevelData(row, fallback = {}) {
+  const text = String(row?.level_school || row?.levelSchool || row?.section || fallback?.level_school || fallback?.levelSchool || fallback?.section || '').trim();
+  if (/\bcantrip\b/i.test(text) || _combatQuickParseSpellLevel(text) !== null) return true;
+  const direct = _combatQuickParseSpellLevel(row?.spell_level, row?.spellLevel, row?.level, fallback?.spell_level, fallback?.spellLevel, fallback?.level);
+  if (direct !== null) return true;
+  const castOptions = row?.cast_options || fallback?.cast_options;
+  return !!(castOptions && typeof castOptions === 'object' && Object.keys(castOptions).some(key => _combatQuickParseSpellLevel(key, castOptions[key]?.cast_level, castOptions[key]?.spell_level) !== null));
+}
+
+function _combatQuickWarnMissingSpellFields(spellName, fields = ['level']) {
+  const cleanName = String(spellName || 'Unknown spell').trim() || 'Unknown spell';
+  if (typeof console !== 'undefined' && console.warn) {
+    console.warn('[CombatQuickActions] Spell metadata missing; showing safe fallback.', { spell: cleanName, missing: fields });
+  }
 }
 
 function _combatQuickBaseLevelFromCastOptions(castOptions) {
-  if (!castOptions || typeof castOptions !== 'object') return 0;
+  if (!castOptions || typeof castOptions !== 'object') return null;
   const levels = Object.keys(castOptions)
     .map(key => _combatQuickParseSpellLevel(key, castOptions[key]?.cast_level, castOptions[key]?.spell_level))
     .filter(level => Number.isFinite(level));
   const positive = levels.filter(level => level > 0);
   if (positive.length) return Math.min(...positive);
-  return levels.length ? Math.min(...levels) : 0;
+  return levels.length ? Math.min(...levels) : null;
 }
 
 function _combatQuickResolveSpellLevel(row, fallback = {}) {
+  const levelText = String(row?.level_school || row?.levelSchool || fallback?.level_school || fallback?.levelSchool || row?.section || fallback?.section || '');
   const explicit = _combatQuickParseSpellLevel(row?.spell_level, row?.spellLevel, row?.level, fallback?.spell_level, fallback?.spellLevel, fallback?.level);
-  if (explicit > 0 || /cantrip/i.test(String(row?.level_school || row?.levelSchool || fallback?.level_school || fallback?.levelSchool || row?.section || fallback?.section || ''))) return explicit;
+  if (explicit !== null) return explicit;
+  if (/cantrip/i.test(levelText)) return 0;
   const fromText = _combatQuickParseSpellLevel(row?.level_school, row?.levelSchool, row?.section, fallback?.level_school, fallback?.levelSchool, fallback?.section);
-  if (fromText > 0) return fromText;
+  if (fromText !== null) return fromText;
   const castOptionLevel = _combatQuickBaseLevelFromCastOptions(row?.cast_options || fallback?.cast_options);
-  if (castOptionLevel > 0) return castOptionLevel;
+  if (castOptionLevel !== null) return castOptionLevel;
   return _combatQuickParseSpellLevel(row?.current?.cast_level, row?.current?.spell_level, row?.default_cast_level, fallback?.current?.cast_level, fallback?.default_cast_level);
 }
 
 function _combatQuickNormalizeSpellCard(raw, fallback = {}) {
   const row = (raw && typeof raw === 'object') ? raw : {};
   const name = _prettyBookSpellName(String(row.displayName || row.name || row.spellName || fallback.name || fallback.displayName || row.id || fallback.id || '').trim());
-  const level = _combatQuickResolveSpellLevel(row, fallback);
+  const levelKnown = _combatQuickHasSpellLevelData(row, fallback);
+  const resolvedLevel = _combatQuickResolveSpellLevel(row, fallback);
+  const level = levelKnown && resolvedLevel !== null ? resolvedLevel : null;
+  if (!levelKnown) _combatQuickWarnMissingSpellFields(name || row.name || fallback.name || row.id || fallback.id, ['level']);
   const rangeText = String(row.range || row.range_text || row.rangeText || fallback.range || '').trim();
   const castingTime = String(row.casting_time || row.castingTime || row.time || fallback.casting_time || fallback.castingTime || '1 action').trim();
   const attackType = String(row.attack_type || row.attackType || row.roll_config?.attackType || fallback.attack_type || fallback.attackType || '').trim();
@@ -45621,8 +45670,9 @@ function _combatQuickNormalizeSpellCard(raw, fallback = {}) {
   const scalingData = (row.scaling_data && typeof row.scaling_data === 'object') ? row.scaling_data : (row.scalingData && typeof row.scalingData === 'object' ? row.scalingData : {});
   const perSlotFormula = String(row.damage_upcast_per_level || row.upcastFormula || scalingData.per_slot_formula || scalingData.perSlotFormula || '').trim();
   const castOptions = (row.cast_options && typeof row.cast_options === 'object') ? row.cast_options : {};
-  const baseFormula = damageFormula || healingFormula || String(castOptions[String(level)]?.formula || '').trim();
-  if (level >= 0 && !castOptions[String(level)] && baseFormula) {
+  const baseLevelKey = level !== null ? String(level) : '';
+  const baseFormula = damageFormula || healingFormula || String((baseLevelKey ? castOptions[baseLevelKey]?.formula : '') || '').trim();
+  if (level !== null && level >= 0 && !castOptions[String(level)] && baseFormula) {
     castOptions[String(level)] = { cast_level: level, formula: baseFormula, effect: row.base_effect_text || row.description || row.effect || fallback.base_effect_text || 'Spell card' };
   }
   return {
@@ -45633,7 +45683,8 @@ function _combatQuickNormalizeSpellCard(raw, fallback = {}) {
     displayName: name || String(row.displayName || row.name || fallback.name || 'Spell'),
     spell_level: level,
     level: level,
-    level_school: row.level_school || row.levelSchool || (level === 0 ? 'Cantrip' : `Level ${level}`),
+    level_unknown: !levelKnown,
+    level_school: row.level_school || row.levelSchool || (level === null ? 'Unknown spell level' : (level === 0 ? 'Cantrip' : `Level ${level}`)),
     casting_time: castingTime,
     castingTime: castingTime,
     range: rangeText,
@@ -45659,7 +45710,7 @@ function _combatQuickNormalizeSpellCard(raw, fallback = {}) {
     base_effect_text: String(row.base_effect_text || row.description || row.summary || row.effect || fallback.base_effect_text || '').trim(),
     current: {
       ...(row.current && typeof row.current === 'object' ? row.current : {}),
-      cast_level: Number(row.current?.cast_level ?? level) || level,
+      cast_level: level === null ? null : (Number(row.current?.cast_level ?? level) || level),
       formula: String(row.current?.formula || baseFormula || '—').trim() || '—',
       effect: String(row.current?.effect || row.base_effect_text || row.description || row.summary || row.effect || fallback.base_effect_text || 'Spell card').trim(),
     },
@@ -45679,14 +45730,18 @@ function _getStructuredRulesSpellbookCards() {
     const key = cleanName.toLowerCase();
     if (seen.has(key)) return;
     seen.add(key);
-    const level = _combatQuickResolveSpellLevel(raw || {}, meta || {});
+    const levelKnown = _combatQuickHasSpellLevelData(raw || {}, meta || {});
+    const resolvedLevel = _combatQuickResolveSpellLevel(raw || {}, meta || {});
+    const level = levelKnown && resolvedLevel !== null ? resolvedLevel : null;
+    if (!levelKnown) _combatQuickWarnMissingSpellFields(cleanName, ['level']);
     fallback.push({
       id: String(raw?.id || `spell-fallback-${idx}`),
       name: cleanName,
       displayName: cleanName,
       spell_level: level,
       level: level,
-      level_school: raw?.level_school || (level === 0 ? 'Cantrip' : `${level} level`),
+      level_unknown: !levelKnown,
+      level_school: raw?.level_school || (level === null ? 'Unknown spell level' : (level === 0 ? 'Cantrip' : `${level} level`)),
       casting_time: String(raw?.casting_time || raw?.castingTime || raw?.time || meta.casting_time || '1 action').trim(),
       range: String(raw?.range || meta.range || '').trim(),
       components: String(raw?.components || meta.components || '').trim(),
@@ -45698,7 +45753,7 @@ function _getStructuredRulesSpellbookCards() {
         formula: String(raw?.damage || raw?.damage_formula || raw?.current?.formula || meta.formula || '').trim() || '—',
         effect: String(raw?.current?.effect || raw?.base_effect_text || raw?.description || raw?.effect || meta.base_effect_text || '').trim() || 'Spell card'
       },
-      cast_options: raw?.cast_options || (level === 0 ? { '0': { cast_level: 0, formula: String(raw?.damage || raw?.damage_formula || '').trim() || '—', effect: String(raw?.description || raw?.effect || '').trim() || 'Spell card' } } : { [String(level)]: { cast_level: level, formula: String(raw?.damage || raw?.damage_formula || '').trim() || '—', effect: String(raw?.description || raw?.effect || '').trim() || 'Spell card' } }),
+      cast_options: raw?.cast_options || (level === null ? {} : (level === 0 ? { '0': { cast_level: 0, formula: String(raw?.damage || raw?.damage_formula || '').trim() || '—', effect: String(raw?.description || raw?.effect || '').trim() || 'Spell card' } } : { [String(level)]: { cast_level: level, formula: String(raw?.damage || raw?.damage_formula || '').trim() || '—', effect: String(raw?.description || raw?.effect || '').trim() || 'Spell card' } })),
       source: raw?.source || meta.source || 'Imported spellbook',
     });
   };
@@ -45721,10 +45776,140 @@ function _getStructuredRulesSpellbookCards() {
     if (libraryCard) {
       addSpellCard(_combatQuickNormalizeSpellCard(libraryCard, { name, source: 'Selected spell state' }), idx + fallback.length, { source: 'Selected spell state' });
     } else {
-      addSpellCard({ id: `selected-spell-${idx}`, name: name, spell_level: 0, source: 'Selected spell state' }, idx + fallback.length);
+      addSpellCard({ id: `selected-spell-${idx}`, name: name, level_unknown: true, source: 'Selected spell state' }, idx + fallback.length);
     }
   });
   return fallback.map(card => _combatQuickNormalizeSpellCard(card));
+}
+
+
+function _findCombatQuickSpellById(spellId) {
+  const raw = String(spellId || '').trim();
+  const normalized = raw.toLowerCase();
+  return (_getCombatQuickSpells() || []).find(s => String(s.id || '') === raw || String(s.name || '').toLowerCase() === normalized) || null;
+}
+
+function _combatQuickSpellBaseLevel(spell) {
+  const raw = spell?.level ?? spell?.spell_level ?? spell?.card?.level ?? spell?.card?.spell_level;
+  if (raw === null || raw === undefined || raw === '') return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? Math.max(0, Math.min(9, Math.floor(n))) : null;
+}
+
+function _combatQuickSpellCastLevelLabel(slotLevel) {
+  const ordinals = ['Cantrip','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
+  const n = Number(slotLevel);
+  if (!Number.isFinite(n)) return 'Unknown level';
+  return n <= 0 ? 'Cantrip' : `${ordinals[n] || `${n}th`}-level`;
+}
+
+function _getCombatSpellDamageExpression(spell, slotLevel) {
+  const card = spell?.card || spell || {};
+  const baseLevel = _combatQuickSpellBaseLevel(spell);
+  const numericSlotLevel = Math.max(0, parseInt(slotLevel, 10) || 0);
+  const effectiveSlot = numericSlotLevel > 0 ? numericSlotLevel : (baseLevel || 0);
+  let dmgExpr = card.damage_dice || card.damage || card.damage_formula || card.base_damage_formula
+    || (card.cast_options && card.cast_options[String(effectiveSlot)])?.formula
+    || card.current?.formula || '';
+  if (baseLevel === 0 && _charSheet?.level) {
+    const charLvl = Number(_charSheet.level || 1);
+    let scaledDice = null;
+    if (Array.isArray(card.cantrip_scaling) && card.cantrip_scaling.length) {
+      const tier = [...card.cantrip_scaling].reverse().find(s => charLvl >= (s.min_level || 1));
+      if (tier && tier.dice) scaledDice = tier.dice;
+    }
+    if (!scaledDice && card.scaling_type === 'cantrip_level' && Array.isArray(card.scaling_data?.tiers)) {
+      const tier = [...card.scaling_data.tiers].reverse().find(t => charLvl >= (t.level || 1));
+      if (tier && tier.formula) scaledDice = tier.formula;
+    }
+    if (scaledDice) dmgExpr = scaledDice;
+  }
+  if (baseLevel > 0 && effectiveSlot > baseLevel) {
+    const extraLevels = effectiveSlot - baseLevel;
+    const upcastDice = card.damage_upcast_per_level || '';
+    if (upcastDice) {
+      const upMatch  = upcastDice.match(/^(\d+)d(\d+)/i);
+      const baseMatch = String(dmgExpr || '').match(/^(\d+)d(\d+)/i);
+      if (upMatch && baseMatch && parseInt(upMatch[2], 10) === parseInt(baseMatch[2], 10)) {
+        const totalDice = parseInt(baseMatch[1], 10) + extraLevels * parseInt(upMatch[1], 10);
+        dmgExpr = `${totalDice}d${baseMatch[2]}` + String(dmgExpr || '').replace(/^\d+d\d+/, '');
+      }
+    }
+  }
+  return String(dmgExpr || '').trim();
+}
+
+function getCombatSpellDamagePreview(spellId, slotLevel) {
+  const spell = typeof spellId === 'object' ? spellId : _findCombatQuickSpellById(spellId);
+  if (!spell) return '';
+  return _getCombatSpellDamageExpression(spell, slotLevel);
+}
+
+function combatQuickRollSpellAttack(spellId, slotLevel) {
+  const spell = typeof spellId === 'object' ? spellId : _findCombatQuickSpellById(spellId);
+  if (!spell) { showToast('Spell not found.'); return null; }
+  const card = spell.card || {};
+  const rawBonusStr = card.attack_bonus || _charSheet?.spellAttack || '0';
+  const rawBonus = parseInt(String(rawBonusStr).replace(/^\s*\+/, '').trim(), 10) || 0;
+  const roll = Math.floor(Math.random() * 20) + 1;
+  const total = roll + rawBonus;
+  const label = `${spell.name || 'Spell'} ${_combatQuickSpellCastLevelLabel(slotLevel)} • Spell Attack`;
+  window.appDiceShowLocalResult({ diceType: 20, qty: 1, rolls: [roll], total, modifier: rawBonus, rollLabel: label, source: 'spell-attack' });
+  const bonusStr = rawBonus >= 0 ? `+${rawBonus}` : String(rawBonus);
+  sendWS({ type: 'chat_message', payload: { message: `✨ **${_charSheet?.name || NAME || 'Character'}** rolls **${spell.name}** ${_combatQuickSpellCastLevelLabel(slotLevel)} spell attack: **${total}** (d20:${roll}${bonusStr}).`, channel: 'everyone' } });
+  return { total, roll, bonus: rawBonus };
+}
+
+function combatQuickRollSpellDamage(spellId, slotLevel) {
+  const spell = typeof spellId === 'object' ? spellId : _findCombatQuickSpellById(spellId);
+  if (!spell) { showToast('Spell not found.'); return null; }
+  const card = spell.card || {};
+  const expr = _getCombatSpellDamageExpression(spell, slotLevel);
+  if (!expr || expr === '—') { showToast(`${spell.name || 'Spell'} has no damage roll.`); return null; }
+  const isHealing = _spellCardLooksLikeHealing(card);
+  const rollKind = isHealing ? 'healing' : 'damage';
+  const result = _rollSpellFormula(card, expr, rollKind, { rollLabel: `${spell.name || 'Spell'} ${_combatQuickSpellCastLevelLabel(slotLevel)} • ${isHealing ? 'Healing' : 'Damage'}` });
+  if (!result) return null;
+  const damageType = String(card.damage_type || card.healing_type || '').trim();
+  sendWS({ type: 'chat_message', payload: { message: `✨ **${_charSheet?.name || NAME || 'Character'}** rolls **${spell.name}** ${_combatQuickSpellCastLevelLabel(slotLevel)} ${isHealing ? 'healing' : 'damage'}: **${result.total}** (${expr})${damageType ? ` ${damageType}` : ''}.`, channel: 'everyone' } });
+  return result;
+}
+
+function combatQuickShowSpellSave(spellId, slotLevel) {
+  const spell = typeof spellId === 'object' ? spellId : _findCombatQuickSpellById(spellId);
+  if (!spell) { showToast('Spell not found.'); return null; }
+  const card = spell.card || {};
+  const saveAbility = String(card.save_ability || card.save || '').toUpperCase().replace(/[^A-Z]/g, '');
+  const saveDC = parseInt(String(card.save_dc || _charSheet?.spellSaveDc || '').replace(/[^0-9]/g, ''), 10) || null;
+  if (!saveAbility && !saveDC) { showToast(`${spell.name || 'Spell'} has no save metadata.`); return null; }
+  sendWS({ type: 'chat_message', payload: { message: `✨ **${_charSheet?.name || NAME || 'Character'}** presents **${spell.name}** ${_combatQuickSpellCastLevelLabel(slotLevel)}: ${saveDC ? `DC **${saveDC}** ` : ''}${saveAbility ? `${saveAbility} save` : 'saving throw'}.`, channel: 'everyone' } });
+  showToast(saveDC ? `DC ${saveDC} ${saveAbility} save` : `${saveAbility} save`);
+  return { saveDC, saveAbility };
+}
+
+function combatQuickRollWeaponDamage(attackId, mode = 'base', critical = false) {
+  const cards = _getUnifiedQuickAttackCards();
+  const rawId = String(attackId || '').trim();
+  const normalizedId = rawId.toLowerCase();
+  const card = (cards || []).find(c => String(c.id || '') === rawId)
+    || (cards || []).find(c => String(c.name || '').trim().toLowerCase() === normalizedId);
+  if (!card) { showToast('Attack not found.'); return null; }
+  const damageMeta = _getInventoryAttackModeMeta(card, mode);
+  if (!damageMeta.formula) { showToast(`${card.name || 'Weapon'} has no damage formula.`); return null; }
+  const normFormula = typeof _normalizeAttackFormula === 'function' ? _normalizeAttackFormula(damageMeta.formula) : damageMeta.formula;
+  const chunks = typeof _expandSpellFormulaChunks === 'function' ? _expandSpellFormulaChunks(normFormula) : [];
+  if (!chunks.length) return null;
+  const rolls = [];
+  let total = 0;
+  chunks.forEach(chunk => {
+    const qty = critical ? chunk.qty * 2 : chunk.qty;
+    for (let i = 0; i < qty; i++) { const r = Math.floor(Math.random() * chunk.die) + 1; rolls.push(r); total += r; }
+    total += chunk.mod || 0;
+  });
+  const primary = chunks[0] || { die: 20, qty: 1 };
+  window.appDiceShowLocalResult({ diceType: primary.die, qty: critical ? primary.qty * 2 : primary.qty, rolls, total, modifier: total - rolls.reduce((sum, value) => sum + value, 0), rollLabel: `${card.name || 'Weapon'} • ${critical ? 'Critical ' : ''}Damage`, source: 'weapon-damage' });
+  sendWS({ type: 'chat_message', payload: { message: `⚔ **${_charSheet?.name || NAME || 'Character'}** rolls **${card.name || 'Weapon'}** ${critical ? 'critical ' : ''}damage: **${total}** (${damageMeta.formula})${card.damage_type ? ` ${card.damage_type}` : ''}.`, channel: 'everyone' } });
+  return { total, rolls, formula: damageMeta.formula, critical };
 }
 
 function combatQuickCastSpell(spellId, preferredLevel) {
@@ -45737,7 +45922,13 @@ function combatQuickCastSpell(spellId, preferredLevel) {
   else if (castTime.includes('reaction')) _consumeActionEconomy('reaction');
   else _consumeActionEconomy('action');
 
-  const baseLevel = Number(spell.level || 0);
+  const baseLevel = _combatQuickSpellBaseLevel(spell);
+  if (baseLevel === null) {
+    _combatQuickWarnMissingSpellFields(spell.name || spellId, ['level']);
+    showToast(`${spell.name || 'Spell'} is missing spell level data; open the spell details before casting.`);
+    if (typeof playerInspectSpell === 'function') playerInspectSpell(spell.id || spell.name || spellId);
+    return null;
+  }
 
   if (baseLevel === 0) {
     // Cantrip — cast immediately, roll damage if defined
@@ -45892,7 +46083,7 @@ function _spellCardAttackKindForCombat(card, spell) {
 
 function _executeCombatSpellCast(spell, slotLevel) {
   _recordSpellUsage(spell);
-  const baseLevel = Number(spell.level || 0);
+  const baseLevel = _combatQuickSpellBaseLevel(spell) ?? 0;
   const ordinals = ['','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
   const numericSlotLevel = Math.max(0, parseInt(slotLevel, 10) || 0);
   const effectiveSlot = numericSlotLevel > 0 ? numericSlotLevel : baseLevel;
@@ -45926,34 +46117,7 @@ function _executeCombatSpellCast(spell, slotLevel) {
     return { spell: spell.name, slotLevel: effectiveSlot, outcome: 'summon', total: null, applied: { applied: false, reason: 'spell_summon_runtime' } };
   }
 
-  let dmgExpr = card.damage_dice || card.damage || card.damage_formula || card.base_damage_formula
-    || (card.cast_options && card.cast_options[String(effectiveSlot)])?.formula
-    || card.current?.formula || '';
-  if (baseLevel === 0 && _charSheet?.level) {
-    const charLvl = Number(_charSheet.level || 1);
-    let scaledDice = null;
-    if (Array.isArray(card.cantrip_scaling) && card.cantrip_scaling.length) {
-      const tier = [...card.cantrip_scaling].reverse().find(s => charLvl >= (s.min_level || 1));
-      if (tier && tier.dice) scaledDice = tier.dice;
-    }
-    if (!scaledDice && card.scaling_type === 'cantrip_level' && Array.isArray(card.scaling_data?.tiers)) {
-      const tier = [...card.scaling_data.tiers].reverse().find(t => charLvl >= (t.level || 1));
-      if (tier && tier.formula) scaledDice = tier.formula;
-    }
-    if (scaledDice) dmgExpr = scaledDice;
-  }
-  if (baseLevel > 0 && effectiveSlot > baseLevel) {
-    const extraLevels = effectiveSlot - baseLevel;
-    const upcastDice = card.damage_upcast_per_level || '';
-    if (upcastDice) {
-      const upMatch  = upcastDice.match(/^(\d+)d(\d+)/i);
-      const baseMatch = String(dmgExpr || '').match(/^(\d+)d(\d+)/i);
-      if (upMatch && baseMatch && parseInt(upMatch[2], 10) === parseInt(baseMatch[2], 10)) {
-        const totalDice = parseInt(baseMatch[1], 10) + extraLevels * parseInt(upMatch[1], 10);
-        dmgExpr = `${totalDice}d${baseMatch[2]}` + String(dmgExpr || '').replace(/^\d+d\d+/, '');
-      }
-    }
-  }
+  let dmgExpr = _getCombatSpellDamageExpression(spell, effectiveSlot);
 
   const target = _resolveSpellCastTarget(card);
   const targetName = String(target?.name || '').trim();
@@ -47734,6 +47898,7 @@ async function bestiaryMakeVariant() {
 <script src="/static/js/character/tabs/spells_tab.js"></script>
 <script src="/static/js/character/tabs/features_tab.js"></script>
 <script src="/static/js/character/character_sheet_container.js"></script>
+<script src="/static/js/character/combat_quick_actions.js"></script>
 <script src="/static/js/character/combat_quick_selectors.js"></script>
 <script src="/static/js/character/combat_quick_bar.js"></script>
 <script src="/static/js/character/sticky_notes.js"></script>

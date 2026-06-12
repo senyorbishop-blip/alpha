@@ -149,38 +149,41 @@
       const levelWord = text.match(/\blevel\s*([1-9])\b/);
       if (levelWord) return Math.max(0, Math.min(9, parseInt(levelWord[1], 10)));
     }
-    return 0;
+    return null;
   }
 
   function _baseLevelFromCastOptions(castOptions) {
-    if (!castOptions || typeof castOptions !== 'object') return 0;
+    if (!castOptions || typeof castOptions !== 'object') return null;
     const levels = Object.keys(castOptions)
       .map(function (key) { return _parseSpellLevelText(key, castOptions[key] && castOptions[key].cast_level, castOptions[key] && castOptions[key].spell_level); })
       .filter(function (level) { return Number.isFinite(level); });
     const positive = levels.filter(function (level) { return level > 0; });
     if (positive.length) return Math.min.apply(null, positive);
-    return levels.length ? Math.min.apply(null, levels) : 0;
+    return levels.length ? Math.min.apply(null, levels) : null;
   }
 
   function _spellLevel(spell) {
     const card = spell && spell.card ? spell.card : {};
     const explicit = _parseSpellLevelText(spell && (spell.level ?? spell.spell_level), card && (card.level ?? card.spell_level));
     const levelText = _firstText(spell && (spell.level_school || spell.levelSchool || spell.section), card && (card.level_school || card.levelSchool || card.section));
-    if (explicit > 0 || /cantrip/i.test(levelText)) return explicit;
+    if (explicit !== null) return explicit;
+    if (/cantrip/i.test(levelText)) return 0;
     const fromText = _parseSpellLevelText(levelText);
-    if (fromText > 0) return fromText;
+    if (fromText !== null) return fromText;
     const fromOptions = _baseLevelFromCastOptions((card && card.cast_options) || (spell && spell.cast_options));
-    if (fromOptions > 0) return fromOptions;
+    if (fromOptions !== null) return fromOptions;
     return _parseSpellLevelText(card && card.default_cast_level, card && card.current && (card.current.cast_level ?? card.current.spell_level), spell && spell.default_cast_level);
   }
 
   function _spellNeedsSlot(spell) {
-    return _spellLevel(spell) > 0;
+    const level = _spellLevel(spell);
+    return level !== null && level > 0;
   }
 
   function _spellSlotSummary(spell, runtime) {
     const level = _spellLevel(spell);
-    if (!level) return 'Cantrip';
+    if (level === null) return 'Unknown spell level';
+    if (level === 0) return 'Cantrip';
     const slots = runtime && runtime.spellSlots ? runtime.spellSlots : {};
     const used = runtime && runtime.spellSlotState ? runtime.spellSlotState : {};
     const max = Number(slots[level] ?? slots[String(level)] ?? 0) || 0;
@@ -191,7 +194,8 @@
 
   function _spellAvailable(spell, runtime) {
     const level = _spellLevel(spell);
-    if (!level) return true;
+    if (level === null) return true;
+    if (level === 0) return true;
     const slots = runtime && runtime.spellSlots ? runtime.spellSlots : {};
     const used = runtime && runtime.spellSlotState ? runtime.spellSlotState : {};
     const max = Number(slots[level] ?? slots[String(level)] ?? 0) || 0;
@@ -326,7 +330,7 @@
     return _uniqueByName(spells, spells.length).sort(function (a, b) {
       const scoreDelta = _spellQuickScore(b) - _spellQuickScore(a);
       if (scoreDelta) return scoreDelta;
-      return (_spellLevel(a) || 0) - (_spellLevel(b) || 0);
+      return ((_spellLevel(a) ?? 99) - (_spellLevel(b) ?? 99));
     });
   }
 
@@ -345,6 +349,7 @@
     return Object.assign({}, spell, {
       quickBarType: 'spell',
       quickBarLane: level === 0 ? 'cantrip' : 'spell',
+      quickBarLevelUnknown: level === null,
       quickBarPickKey: _candidateKey('spell', spell),
       quickBarSlotSummary: _spellSlotSummary(spell, runtime),
       quickBarNeedsSlot: needsSlot,
