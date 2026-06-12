@@ -570,6 +570,48 @@ def _normalize_ddb_features(ddb: dict[str, Any], classes: list[dict[str, Any]]) 
     return out[:120]
 
 
+
+
+def _copy_imported_spell_fields(target: dict[str, Any], row: dict[str, Any], definition: dict[str, Any]) -> dict[str, Any]:
+    source = {}
+    source.update(definition if isinstance(definition, dict) else {})
+    source.update(row if isinstance(row, dict) else {})
+    direct_keys = {
+        "spellId": ("spellId", "spell_id"),
+        "level": ("level", "spellLevel"),
+        "school": ("school",),
+        "castingTime": ("castingTime", "casting_time", "castTime", "time"),
+        "range": ("range",),
+        "components": ("components",),
+        "duration": ("duration",),
+        "attackType": ("attackType", "attack_type"),
+        "saveAbility": ("saveAbility", "save_ability", "savingThrow", "save"),
+        "damageFormula": ("damageFormula", "damage_formula", "damageDice", "damage_dice", "damage"),
+        "healingFormula": ("healingFormula", "healing_formula", "healing", "heal"),
+        "damageType": ("damageType", "damage_type"),
+        "notes": ("notes", "description", "summary", "snippet"),
+    }
+    for out_key, candidates in direct_keys.items():
+        for key in candidates:
+            if source.get(key) not in (None, ""):
+                value = source.get(key)
+                if out_key == "notes":
+                    value = _strip_html(value, limit=1200)
+                elif isinstance(value, str):
+                    value = _safe_str(value, "", limit=700 if out_key in {"notes"} else 160)
+                target[out_key] = value
+                break
+    for out_key, candidates in {
+        "concentration": ("concentration", "isConcentration"),
+        "ritual": ("ritual", "isRitual"),
+        "known": ("known", "isKnown"),
+    }.items():
+        for key in candidates:
+            if key in source:
+                target[out_key] = bool(source.get(key))
+                break
+    return target
+
 def _normalize_ddb_spell_entry(row: Any) -> dict[str, Any] | None:
     if not isinstance(row, dict):
         return None
@@ -580,13 +622,15 @@ def _normalize_ddb_spell_entry(row: Any) -> dict[str, Any] | None:
     spell = get_spell_by_id(name)
     spell_id = _safe_str((spell or {}).get("id"), _slugify(name), limit=120)
     prepared = bool(row.get("prepared") or row.get("alwaysPrepared") or row.get("isPrepared"))
-    return {
+    entry = {
         "id": spell_id,
+        "spellId": _safe_str(definition.get("id") or row.get("spellId") or spell_id, spell_id, limit=120),
         "name": _safe_str((spell or {}).get("name"), name, limit=120),
         "prepared": prepared,
         "source": "D&D Beyond import",
         "matchedNative": bool(spell),
     }
+    return _copy_imported_spell_fields(entry, row, definition)
 
 
 def _normalize_ddb_spell_state(ddb: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]], int]:
@@ -1202,15 +1246,19 @@ def _normalize_pdf_spell_entries(src: dict[str, Any]) -> tuple[dict[str, Any], l
                 continue
             spell = get_spell_by_id(name)
             spell_id = _safe_str((spell or {}).get("id"), _slugify(name), limit=120)
-            entries.append({
+            entry = {
                 "id": spell_id,
+                "spellId": spell_id,
                 "name": _safe_str((spell or {}).get("name"), name, limit=120),
                 "prepared": prepared,
                 "source": "PDF import",
                 "matchedNative": bool(spell),
                 "section": section,
                 "notes": notes,
-            })
+            }
+            if isinstance(row, dict):
+                entry = _copy_imported_spell_fields(entry, row, row)
+            entries.append(entry)
     seen: set[str] = set()
     deduped: list[dict[str, Any]] = []
     unmatched = 0

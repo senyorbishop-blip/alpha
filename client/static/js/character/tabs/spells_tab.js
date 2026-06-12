@@ -1095,6 +1095,8 @@ function _spellAttackSaveCell(spell, charData) {
     badges.push('<span class="cs-resource-pill">' + _esc(_spellRankLabel(spell)) + '</span>');
     if (spell && (spell.concentration || spell.is_concentration)) badges.push('<span class="cs-resource-pill violet">Concentration</span>');
     if (spell && spell.ritual) badges.push('<span class="cs-resource-pill">Ritual</span>');
+    if (spell && (spell.importedOnly || spell.source === 'imported' || spell.__source === 'imported')) badges.push('<span class="cs-resource-pill gold">Imported-only</span>');
+    if (spell && spell.needsReview) badges.push('<span class="cs-resource-pill violet">Needs DM review</span>');
     if (spell && spell.__source === 'linked') badges.push('<span class="cs-resource-pill gold">Ready on map</span>');
     return badges.join('');
   }
@@ -1108,12 +1110,14 @@ function _spellAttackSaveCell(spell, charData) {
   }
 
   function _spellCardLanes(spell, charData) {
-    return [
+    const lanes = [
       { label: 'Attack / Save', value: _spellAttackSaveLabel(spell, charData) },
       { label: 'Effect', value: _spellEffectLabel(spell) },
       { label: 'Range', value: _spellTargetingLabel(spell) },
       { label: 'Use now', value: _spellUseNowLabel(spell, charData) }
     ];
+    if (spell && spell.importedOnly && spell.needsReview) lanes.push({ label: 'Review', value: 'Needs DM review' });
+    return lanes;
   }
 
   function _pulseRowFromTrigger(trigger) {
