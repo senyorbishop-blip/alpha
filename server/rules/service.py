@@ -8,6 +8,7 @@ from server.rules_db import (
     list_review_queue,
     upsert_custom_spell,
     upsert_review_queue,
+    get_spell_library,
 )
 from server.rules_engine import enrich_spellbook
 
@@ -20,6 +21,8 @@ def enrich_spellbook_response(session_id: str, user_id: str, character: dict):
         return JSONResponse({"ok": False, "error": "Viewers cannot enrich character rules"}, status_code=403)
     official_spells = get_official_spells()
     custom_spells = get_custom_spells(session_id)
+    spell_state = character.get("spellState") if isinstance(character.get("spellState"), dict) else {}
+    imported_spell_entries = character.get("spellbookEntries") or spell_state.get("spellbookEntries") or []
     enriched = enrich_spellbook(character, official_spells, custom_spells)
     upsert_review_queue(
         session_id,
@@ -35,6 +38,7 @@ def enrich_spellbook_response(session_id: str, user_id: str, character: dict):
         "spellcasting": enriched.get("spellcasting") or {},
         "total_level": enriched.get("total_level") or 1,
         "official_count": len(official_spells),
+        "spell_library": get_spell_library(session_id, imported_spell_entries if isinstance(imported_spell_entries, list) else []),
     }
     if user.role == "dm":
         payload["custom_spells"] = custom_spells

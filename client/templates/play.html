@@ -35805,7 +35805,7 @@ function renderSpellRulesReviewModal() {
           <div class="rules-spell-title" style="font-size:0.76rem;">${escapeHtml(item.name || item.original_name || 'Unknown')}</div>
           <div class="rules-note-line">${escapeHtml(String(item.status || 'review required').replace(/_/g, ' '))} • score ${escapeHtml(String(item.match_score || 0))}${item.suggested_name ? ` • suggested ${escapeHtml(item.suggested_name)}` : ''}</div>
         </div>
-        <button class="mini-btn" type="button" onclick="prefillCustomSpellRule(decodeURIComponent('${encodeURIComponent(String(item.name || item.original_name || ''))}'))">Create Custom</button>
+        <button class="mini-btn" type="button" onclick="prefillCustomSpellRuleFromImport(decodeURIComponent('${encodeURIComponent(JSON.stringify(item))}'))">Convert to Custom Spell</button>
       </div>
     </div>`).join('') : `<div class="sheet-note">No unmatched spells are waiting for review right now.</div>`;
   const customHtml = customItems.length ? customItems.map(item => `
@@ -35837,10 +35837,56 @@ function resetCustomSpellRuleForm() {
   Object.entries(defaults).forEach(([id, value]) => { const el = document.getElementById(id); if (el) el.value = value; });
 }
 
+function _firstImportedSpellValue(row, keys) {
+  const source = row && typeof row === 'object' ? row : {};
+  const nested = source.imported_entry && typeof source.imported_entry === 'object' ? source.imported_entry : {};
+  for (const key of keys) {
+    if (source[key] !== undefined && source[key] !== null && String(source[key]).trim() !== '') return source[key];
+    if (nested[key] !== undefined && nested[key] !== null && String(nested[key]).trim() !== '') return nested[key];
+  }
+  return '';
+}
+
 function prefillCustomSpellRule(name) {
   resetCustomSpellRuleForm();
   const el = document.getElementById('rules-custom-name');
   if (el) el.value = name || '';
+}
+
+function prefillCustomSpellRuleFromImport(encodedItem) {
+  let item = {};
+  try { item = JSON.parse(encodedItem || '{}'); } catch (err) { item = { name: String(encodedItem || '') }; }
+  resetCustomSpellRuleForm();
+  const setCSVal = (id, v) => { const e = document.getElementById(id); if (e && v !== undefined && v !== null && String(v).trim() !== '') e.value = v; };
+  const normalizeImportedLevel = (value) => {
+    const text = String(value ?? '').trim().toLowerCase();
+    if (!text) return '';
+    if (text.includes('cantrip')) return '0';
+    const match = text.match(/\b([0-9])(?:st|nd|rd|th)?\b/);
+    return match ? match[1] : text;
+  };
+  const normalizeImportedAttack = (value) => {
+    const text = String(value ?? '').trim().toLowerCase();
+    if (!text) return '';
+    if (text.includes('ranged')) return 'ranged_spell_attack';
+    if (text.includes('melee')) return 'melee_spell_attack';
+    return value;
+  };
+  const name = _firstImportedSpellValue(item, ['name', 'original_name', 'displayName', 'spellName']);
+  setCSVal('rules-custom-name', name);
+  setCSVal('rules-custom-source', 'DM Custom / Imported Review');
+  setCSVal('rules-custom-level', normalizeImportedLevel(_firstImportedSpellValue(item, ['level', 'spellLevel', 'section'])));
+  setCSVal('rules-custom-school', _firstImportedSpellValue(item, ['school']));
+  setCSVal('rules-custom-casting', _firstImportedSpellValue(item, ['castingTime', 'casting_time', 'castTime', 'time']));
+  setCSVal('rules-custom-range', _firstImportedSpellValue(item, ['range']));
+  setCSVal('rules-custom-components', _firstImportedSpellValue(item, ['components']));
+  setCSVal('rules-custom-duration', _firstImportedSpellValue(item, ['duration']));
+  setCSVal('rules-custom-attack-type', normalizeImportedAttack(_firstImportedSpellValue(item, ['attackType', 'attack_type'])));
+  setCSVal('rules-custom-save', String(_firstImportedSpellValue(item, ['saveAbility', 'save_ability', 'savingThrow', 'save'])).toUpperCase());
+  setCSVal('rules-custom-damage-type', _firstImportedSpellValue(item, ['damageType', 'damage_type']));
+  setCSVal('rules-custom-base-formula', _firstImportedSpellValue(item, ['damageFormula', 'damage_formula', 'damageDice', 'damage_dice', 'healingFormula', 'healing_formula']));
+  setCSVal('rules-custom-effect', _firstImportedSpellValue(item, ['description', 'notes', 'summary', 'snippet', 'effect', 'playerFacingEffectSummary']));
+  setCSVal('rules-custom-tags', 'imported, needs-review');
 }
 
 function loadCustomSpellIntoForm(spellId) {

@@ -11,7 +11,7 @@
             <div class="rules-spell-title" style="font-size:0.76rem;">${env.escapeHtml(item.name || item.original_name || 'Unknown')}</div>
             <div class="rules-note-line">${env.escapeHtml(String(item.status || 'review required').replace(/_/g, ' '))} • score ${env.escapeHtml(String(item.match_score || 0))}${item.suggested_name ? ` • suggested ${env.escapeHtml(item.suggested_name)}` : ''}</div>
           </div>
-          <button class="mini-btn" type="button" onclick="prefillCustomSpellRule(decodeURIComponent('${encodeURIComponent(String(item.name || item.original_name || ''))}'))">Create Custom</button>
+          <button class="mini-btn" type="button" onclick="prefillCustomSpellRuleFromImport(decodeURIComponent('${encodeURIComponent(JSON.stringify(item))}'))">Convert to Custom Spell</button>
         </div>
       </div>`).join('') : '<div class="sheet-note">No unmatched spells are waiting for review right now.</div>';
     const customHtml = customItems.length ? customItems.map((item) => `

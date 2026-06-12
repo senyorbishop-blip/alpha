@@ -295,6 +295,7 @@ def enrich_spellbook(character: dict, official_spells: List[dict], custom_spells
                 "suggested_name": (suggested or {}).get("name") if suggested else "",
                 "suggested_rule_id": (suggested or {}).get("id") if suggested else "",
                 "source_tag": item.get("source_tag") or "imported",
+                "imported_entry": item.get("entry") or {},
             }
             review.append(review_item)
             unmatched.append(review_item)

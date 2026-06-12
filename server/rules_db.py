@@ -150,6 +150,14 @@ ALL_COLUMNS = [
 
 def _serialize_spell(rule: Dict[str, Any]) -> Dict[str, Any]:
     record = dict(rule or {})
+    if not record.get("base_effect_text") and record.get("description"):
+        record["base_effect_text"] = record.get("description")
+    if not record.get("base_damage_formula"):
+        record["base_damage_formula"] = record.get("damage_formula") or record.get("damageFormula") or record.get("healing_formula") or record.get("healingFormula") or ""
+    if not record.get("attack_type") and record.get("attackSave"):
+        record["attack_type"] = record.get("attackSave")
+    if not record.get("class_lists") and record.get("classes"):
+        record["class_lists"] = record.get("classes")
     record["normalized_name"] = normalize_name(record.get("name"))
     record["concentration"] = 1 if record.get("concentration") else 0
     record["ritual"] = 1 if record.get("ritual") else 0
@@ -158,6 +166,28 @@ def _serialize_spell(rule: Dict[str, Any]) -> Dict[str, Any]:
     for key in ["scaling_data", "targeting_data", "area_data", "tags", "class_lists", "subclass_lists", "granted_by_feat", "granted_by_species", "granted_by_item"]:
         record[key] = _json_dumps(record.get(key, {} if key.endswith("_data") else []))
     record["range_text"] = record.pop("range", record.get("range_text") or "")
+    defaults = {
+        "source": "DM Custom" if record.get("is_homebrew") or record.get("created_by_dm") else "SRD",
+        "source_page": "",
+        "rules_version": "",
+        "spell_level": 0,
+        "school": "",
+        "casting_time": "",
+        "range_text": "",
+        "components": "",
+        "material_component_text": "",
+        "duration": "",
+        "attack_type": "",
+        "save_ability": "",
+        "damage_type": "",
+        "healing_type": "",
+        "base_effect_text": "",
+        "base_damage_formula": "",
+        "higher_level_text": "",
+        "scaling_type": "none",
+    }
+    for key, value in defaults.items():
+        record.setdefault(key, value)
     record.setdefault("updated_at", time.time())
     return record
 
@@ -251,6 +281,8 @@ def upsert_custom_spell(session_id: str, user_id: str, spell: Dict[str, Any]) ->
     now = time.time()
     rec["id"] = rec.get("id") or f"custom_spell_{uuid.uuid4().hex[:12]}"
     rec["session_id"] = session_id
+    rec["is_homebrew"] = 1
+    rec["created_by_dm"] = 1
     rec["created_by"] = str(user_id)
     rec["created_at"] = now
     rec["updated_by"] = str(user_id)
@@ -324,6 +356,19 @@ def get_custom_spell(session_id: str, spell_id: str) -> Dict[str, Any] | None:
     return _deserialize_spell(row) if row else None
 
 
+def get_custom_spell_by_normalized_name(session_id: str, normalized_name: str) -> Dict[str, Any] | None:
+    """Fetch a DM-reviewed custom spell by normalized name for future import matching."""
+    normalized = normalize_name(normalized_name)
+    if not normalized:
+        return None
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM rules_custom_spells WHERE session_id=? AND normalized_name=? ORDER BY updated_at DESC LIMIT 1",
+            (session_id, normalized),
+        ).fetchone()
+    return _deserialize_spell(row) if row else None
+
+
 def delete_custom_spell(session_id: str, spell_id: str) -> None:
     with get_conn() as conn:
         conn.execute("DELETE FROM rules_custom_spells WHERE session_id=? AND id=?", (session_id, spell_id))
@@ -371,15 +416,41 @@ def list_review_queue(session_id: str) -> List[Dict[str, Any]]:
 # SPELL LIBRARY
 # ─────────────────────────────────────────────
 
-def get_spell_library(session_id: str) -> List[Dict[str, Any]]:
-    """Return all SRD spells merged with campaign custom spells."""
+def get_spell_library(session_id: str, imported_spells: List[Dict[str, Any]] | None = None) -> List[Dict[str, Any]]:
+    """Return open/native spells, session custom spells, and optional imported fallback cards."""
     official = get_official_spells()
     for s in official:
         s["spell_source"] = "srd"
     custom = get_custom_spells(session_id)
     for s in custom:
         s["spell_source"] = "custom"
-    return official + custom
+    library = official + custom
+
+    if imported_spells:
+        known_norms = {normalize_name(spell.get("name")) for spell in library if spell.get("name")}
+        known_ids = {str(spell.get("id") or "").strip().lower() for spell in library if spell.get("id")}
+        try:
+            from server.character.spell_compendium import build_imported_spell_fallback_card
+        except Exception:
+            build_imported_spell_fallback_card = None
+        for entry in imported_spells:
+            if not isinstance(entry, dict) or entry.get("matchedNative") is not False:
+                continue
+            name = str(entry.get("name") or entry.get("displayName") or entry.get("spellName") or "").strip()
+            fallback_id = str(entry.get("id") or entry.get("spellId") or "").strip().lower()
+            if not name or normalize_name(name) in known_norms or (fallback_id and fallback_id in known_ids):
+                continue
+            if build_imported_spell_fallback_card:
+                card = build_imported_spell_fallback_card(entry)
+            else:
+                card = {"id": entry.get("id") or normalize_name(name), "name": name, "source": "imported", "matchedNative": False}
+            card["spell_source"] = "imported"
+            card["importedOnly"] = True
+            card["needsReview"] = True
+            library.append(card)
+            known_norms.add(normalize_name(name))
+            known_ids.add(str(card.get("id") or "").strip().lower())
+    return library
 
 
 def get_spell_by_id(spell_id: str) -> Dict[str, Any] | None:
@@ -393,18 +464,26 @@ def get_spell_by_id(spell_id: str) -> Dict[str, Any] | None:
     return None
 
 
-def lookup_spell_id_by_normalized_name(normalized_name: str) -> str | None:
-    """Return the canonical spell id whose normalized_name matches, or None.
+def lookup_spell_id_by_normalized_name(normalized_name: str, session_id: str | None = None) -> str | None:
+    """Return the canonical or DM custom spell id whose normalized_name matches, or None.
 
     Used as a fallback during spell ID reconciliation when an exact id lookup
     fails (e.g. the stored id is a human-readable name rather than a slug).
     """
     if not normalized_name:
         return None
+    normalized = normalize_name(normalized_name)
     with get_conn() as conn:
+        if session_id:
+            custom = conn.execute(
+                "SELECT id FROM rules_custom_spells WHERE session_id=? AND normalized_name = ? ORDER BY updated_at DESC LIMIT 1",
+                (session_id, normalized),
+            ).fetchone()
+            if custom:
+                return str(custom["id"])
         row = conn.execute(
             "SELECT id FROM rules_spells WHERE normalized_name = ? LIMIT 1",
-            (normalized_name,),
+            (normalized,),
         ).fetchone()
     if row:
         return str(row["id"])
