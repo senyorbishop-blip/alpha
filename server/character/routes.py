@@ -2097,13 +2097,12 @@ async def update_character_spells_prepared(
     if not native:
         raise HTTPException(status_code=400, detail="Character does not have a native document")
 
-    spell_state = native.get("spellState") if isinstance(native.get("spellState"), dict) else {}
+    existing_spell_state = native.get("spellState") if isinstance(native.get("spellState"), dict) else None
+    spell_state = existing_spell_state if existing_spell_state is not None else {}
     if not spell_state:
         from server.character.schema import default_character_document
-        default_spell_state = dict(default_character_document().get("spellState") or {})
-        native["spellState"] = default_spell_state
-        spell_state = native["spellState"]
-    spell_state["prepared"] = prepared
+        spell_state = dict(default_character_document().get("spellState") or {})
+    current_known = list(spell_state.get("known") or [])
     primary_class = ((native.get("classes") if isinstance(native.get("classes"), list) else []) or [{}])[0]
     class_id = str(primary_class.get("classId") or primary_class.get("id") or primary_class.get("name") or "").strip().lower()
     class_level = _safe_int(primary_class.get("level"), 1)
@@ -2111,13 +2110,15 @@ async def update_character_spells_prepared(
         class_id=class_id,
         class_level=class_level,
         abilities=native.get("abilities") if isinstance(native.get("abilities"), dict) else {},
-        known=list(spell_state.get("known") or []),
+        known=current_known,
         prepared=prepared,
         document=native,
         subclass_id=str(primary_class.get("subclassId") or "").strip().lower(),
     )
     if not validation.get("ok"):
         raise HTTPException(status_code=400, detail={"errors": validation.get("errors") or [], "limits": validation.get("limits") or {}})
+    if existing_spell_state is None or native.get("spellState") is not spell_state:
+        native["spellState"] = spell_state
     spell_state["prepared"] = validation.get("prepared") or []
     _sync_native_spellbook_entries(native, known_ids=list(spell_state.get("known") or []), prepared_ids=list(spell_state.get("prepared") or []))
 
