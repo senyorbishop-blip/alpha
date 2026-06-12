@@ -98,8 +98,37 @@ def test_combat_quick_spells_parse_leveled_spell_text_for_quick_actions():
     selectors = _read('client/static/js/character/combat_quick_selectors.js')
     assert 'function _combatQuickResolveSpellLevel(row, fallback = {})' in play
     assert "row?.level_school, row?.levelSchool, row?.section" in play
-    assert 'const level = _combatQuickResolveSpellLevel(raw || {}, meta || {});' in play
+    assert 'const resolvedLevel = _combatQuickResolveSpellLevel(raw || {}, meta || {});' in play
     assert 'level: _combatQuickResolveSpellLevel(normalizedCard, card || {})' in play
     assert 'function _parseSpellLevelText()' in selectors
     assert 'const fromText = _parseSpellLevelText(levelText);' in selectors
     assert 'const fromOptions = _baseLevelFromCastOptions((card && card.cast_options) || (spell && spell.cast_options));' in selectors
+
+
+def test_combat_quick_actions_open_modal_flows_instead_of_immediate_spell_cast():
+    play = _read('client/templates/play.html')
+    bar = _read('client/static/js/character/combat_quick_bar.js')
+    actions = _read('client/static/js/character/combat_quick_actions.js')
+    actions_idx = play.index('/static/js/character/combat_quick_actions.js')
+    selectors_idx = play.index('/static/js/character/combat_quick_selectors.js')
+    assert actions_idx < selectors_idx
+    assert 'return window.CombatQuickActions.openSpellAction(spell);' in play
+    assert 'openCombatQuickBarWeaponAction(action)' in bar
+    assert 'data-cqa-cast' in actions
+    assert 'data-cqa-spell-attack' in actions
+    assert 'data-cqa-spell-damage' in actions
+    assert 'data-cqa-spell-save' in actions
+    assert 'data-cqa-weapon-attack' in actions
+    assert 'data-cqa-weapon-damage' in actions
+    assert 'data-cqa-weapon-crit' in actions
+
+
+def test_combat_quick_spell_level_missing_data_is_unknown_not_cantrip():
+    play = _read('client/templates/play.html')
+    selectors = _read('client/static/js/character/combat_quick_selectors.js')
+    assert 'Unknown spell level' in play
+    assert 'Unknown spell level' in selectors
+    assert 'return null;' in selectors
+    assert "spellLevel === null ? 'Unknown spell level'" in play
+    assert "console.warn('[CombatQuickActions] Spell metadata missing; showing safe fallback.'" in play
+    assert 'level_unknown: true' in play

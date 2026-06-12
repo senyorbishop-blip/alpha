@@ -366,7 +366,6 @@
       const spell = _findSpell(key);
       if (spell && typeof global.executeCombatQuickBarSpell === 'function') {
         global.executeCombatQuickBarSpell(spell);
-        global.CombatQuickSelectors && global.CombatQuickSelectors.markUsed(key);
       } else if (spell && typeof global.playerInspectSpell === 'function') {
         global.playerInspectSpell(spell.id || spell.name);
       }
@@ -381,8 +380,11 @@
       return;
     }
     const action = _findAction(key);
-    if (action && typeof global.playerUseAction === 'function') {
-      global.playerUseAction(_firstText(action.source, kind), _firstText(action.id, action.name));
+    const actionSource = _firstText(action && action.source, kind);
+    if (action && /^(weapon|equip_only|system_unarmed|attack)$/i.test(actionSource) && typeof global.openCombatQuickBarWeaponAction === 'function') {
+      global.openCombatQuickBarWeaponAction(action);
+    } else if (action && typeof global.playerUseAction === 'function') {
+      global.playerUseAction(actionSource, _firstText(action.id, action.name));
       global.CombatQuickSelectors && global.CombatQuickSelectors.markUsed(key);
     } else if (action && global.CSContainer && typeof global.CSContainer.openDetailDrawer === 'function') {
       global.CSContainer.openDetailDrawer({ kicker: 'Action', title: action.name || key, subtitle: action.desc || action.description || 'Quick action', sections: [{ title: 'Details', body: action.longText || action.description || action.desc || 'Open the full sheet for details.' }] });
