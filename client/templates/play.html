@@ -45470,7 +45470,7 @@ function _getCombatQuickSpells() {
     spells.push({
       id: normalizedCard.id || name,
       name: name,
-      level: Number(normalizedCard.spell_level ?? normalizedCard.level ?? normalizedCard.current?.spell_level ?? normalizedCard.default_cast_level ?? 0),
+      level: _combatQuickResolveSpellLevel(normalizedCard, card || {}),
       casting_time: normalizedCard.casting_time || '',
       range: normalizedCard.range || '',
       source: 'rules',
@@ -45488,7 +45488,7 @@ function _getCombatQuickSpells() {
     spells.push({
       id: normalizedCard.id || name,
       name: name,
-      level: Number(normalizedCard.spell_level ?? 0),
+      level: _combatQuickResolveSpellLevel(normalizedCard, sp || {}),
       casting_time: normalizedCard.casting_time || '',
       range: normalizedCard.range || '',
       source: 'granted',
@@ -45569,10 +45569,48 @@ function _combatQuickSpellLibraryCardFromName(nameOrId) {
   }) || null;
 }
 
+function _combatQuickParseSpellLevel() {
+  for (let i = 0; i < arguments.length; i += 1) {
+    const value = arguments[i];
+    if (value === null || value === undefined || value === '') continue;
+    if (typeof value === 'number' && Number.isFinite(value)) return Math.max(0, Math.min(9, Math.floor(value)));
+    const text = String(value).trim().toLowerCase();
+    if (!text) continue;
+    if (text === 'cantrip' || /\bcantrip\b/.test(text)) return 0;
+    const direct = Number(text);
+    if (Number.isFinite(direct)) return Math.max(0, Math.min(9, Math.floor(direct)));
+    const ordinal = text.match(/\b([1-9])(?:st|nd|rd|th)?\s*(?:level|lvl|spell|spells)\b/);
+    if (ordinal) return Math.max(0, Math.min(9, parseInt(ordinal[1], 10)));
+    const levelWord = text.match(/\blevel\s*([1-9])\b/);
+    if (levelWord) return Math.max(0, Math.min(9, parseInt(levelWord[1], 10)));
+  }
+  return 0;
+}
+
+function _combatQuickBaseLevelFromCastOptions(castOptions) {
+  if (!castOptions || typeof castOptions !== 'object') return 0;
+  const levels = Object.keys(castOptions)
+    .map(key => _combatQuickParseSpellLevel(key, castOptions[key]?.cast_level, castOptions[key]?.spell_level))
+    .filter(level => Number.isFinite(level));
+  const positive = levels.filter(level => level > 0);
+  if (positive.length) return Math.min(...positive);
+  return levels.length ? Math.min(...levels) : 0;
+}
+
+function _combatQuickResolveSpellLevel(row, fallback = {}) {
+  const explicit = _combatQuickParseSpellLevel(row?.spell_level, row?.spellLevel, row?.level, fallback?.spell_level, fallback?.spellLevel, fallback?.level);
+  if (explicit > 0 || /cantrip/i.test(String(row?.level_school || row?.levelSchool || fallback?.level_school || fallback?.levelSchool || row?.section || fallback?.section || ''))) return explicit;
+  const fromText = _combatQuickParseSpellLevel(row?.level_school, row?.levelSchool, row?.section, fallback?.level_school, fallback?.levelSchool, fallback?.section);
+  if (fromText > 0) return fromText;
+  const castOptionLevel = _combatQuickBaseLevelFromCastOptions(row?.cast_options || fallback?.cast_options);
+  if (castOptionLevel > 0) return castOptionLevel;
+  return _combatQuickParseSpellLevel(row?.current?.cast_level, row?.current?.spell_level, row?.default_cast_level, fallback?.current?.cast_level, fallback?.default_cast_level);
+}
+
 function _combatQuickNormalizeSpellCard(raw, fallback = {}) {
   const row = (raw && typeof raw === 'object') ? raw : {};
   const name = _prettyBookSpellName(String(row.displayName || row.name || row.spellName || fallback.name || fallback.displayName || row.id || fallback.id || '').trim());
-  const level = Number(row.spell_level ?? row.spellLevel ?? row.level ?? row.current?.spell_level ?? row.default_cast_level ?? fallback.spell_level ?? fallback.level ?? 0) || 0;
+  const level = _combatQuickResolveSpellLevel(row, fallback);
   const rangeText = String(row.range || row.range_text || row.rangeText || fallback.range || '').trim();
   const castingTime = String(row.casting_time || row.castingTime || row.time || fallback.casting_time || fallback.castingTime || '1 action').trim();
   const attackType = String(row.attack_type || row.attackType || row.roll_config?.attackType || fallback.attack_type || fallback.attackType || '').trim();
@@ -45641,7 +45679,7 @@ function _getStructuredRulesSpellbookCards() {
     const key = cleanName.toLowerCase();
     if (seen.has(key)) return;
     seen.add(key);
-    const level = Number(raw?.spell_level ?? raw?.level ?? meta.level ?? 0) || 0;
+    const level = _combatQuickResolveSpellLevel(raw || {}, meta || {});
     fallback.push({
       id: String(raw?.id || `spell-fallback-${idx}`),
       name: cleanName,

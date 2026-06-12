@@ -134,9 +134,44 @@
   }
 
 
+  function _parseSpellLevelText() {
+    for (let i = 0; i < arguments.length; i += 1) {
+      const value = arguments[i];
+      if (value === null || value === undefined || value === '') continue;
+      if (typeof value === 'number' && Number.isFinite(value)) return Math.max(0, Math.min(9, Math.floor(value)));
+      const text = String(value).trim().toLowerCase();
+      if (!text) continue;
+      if (text === 'cantrip' || /\bcantrip\b/.test(text)) return 0;
+      const direct = Number(text);
+      if (Number.isFinite(direct)) return Math.max(0, Math.min(9, Math.floor(direct)));
+      const ordinal = text.match(/\b([1-9])(?:st|nd|rd|th)?\s*(?:level|lvl|spell|spells)\b/);
+      if (ordinal) return Math.max(0, Math.min(9, parseInt(ordinal[1], 10)));
+      const levelWord = text.match(/\blevel\s*([1-9])\b/);
+      if (levelWord) return Math.max(0, Math.min(9, parseInt(levelWord[1], 10)));
+    }
+    return 0;
+  }
+
+  function _baseLevelFromCastOptions(castOptions) {
+    if (!castOptions || typeof castOptions !== 'object') return 0;
+    const levels = Object.keys(castOptions)
+      .map(function (key) { return _parseSpellLevelText(key, castOptions[key] && castOptions[key].cast_level, castOptions[key] && castOptions[key].spell_level); })
+      .filter(function (level) { return Number.isFinite(level); });
+    const positive = levels.filter(function (level) { return level > 0; });
+    if (positive.length) return Math.min.apply(null, positive);
+    return levels.length ? Math.min.apply(null, levels) : 0;
+  }
+
   function _spellLevel(spell) {
     const card = spell && spell.card ? spell.card : {};
-    return Number(((spell && (spell.level ?? spell.spell_level)) ?? (card && (card.level ?? card.spell_level))) || 0) || 0;
+    const explicit = _parseSpellLevelText(spell && (spell.level ?? spell.spell_level), card && (card.level ?? card.spell_level));
+    const levelText = _firstText(spell && (spell.level_school || spell.levelSchool || spell.section), card && (card.level_school || card.levelSchool || card.section));
+    if (explicit > 0 || /cantrip/i.test(levelText)) return explicit;
+    const fromText = _parseSpellLevelText(levelText);
+    if (fromText > 0) return fromText;
+    const fromOptions = _baseLevelFromCastOptions((card && card.cast_options) || (spell && spell.cast_options));
+    if (fromOptions > 0) return fromOptions;
+    return _parseSpellLevelText(card && card.default_cast_level, card && card.current && (card.current.cast_level ?? card.current.spell_level), spell && spell.default_cast_level);
   }
 
   function _spellNeedsSlot(spell) {
