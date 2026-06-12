@@ -248,6 +248,63 @@
     return Array.isArray(value) ? value.length : 0;
   }
 
+  function spellIdentityKeys(value) {
+    function addKey(keys, raw) {
+      const key = String(raw == null ? '' : raw).trim().toLowerCase();
+      if (!key) return;
+      keys.push(key);
+      const slug = key.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      if (slug && slug !== key) keys.push(slug);
+    }
+
+    const keys = [];
+    if (value == null || value === '') return keys;
+    if (typeof value === 'string' || typeof value === 'number') {
+      addKey(keys, value);
+    } else if (value && typeof value === 'object') {
+      addKey(keys, value.id);
+      addKey(keys, value.spellId);
+      addKey(keys, value.slug);
+      addKey(keys, value.key);
+      addKey(keys, value.name);
+      addKey(keys, value.displayName);
+      addKey(keys, value.label);
+    }
+    return keys.filter(function unique(key, idx) {
+      return keys.indexOf(key) === idx;
+    });
+  }
+
+  function countUniqueSpellRows(sources) {
+    const seen = new Set();
+    let count = 0;
+    (Array.isArray(sources) ? sources : []).forEach(function scan(source) {
+      if (!Array.isArray(source)) return;
+      source.forEach(function addSpell(row) {
+        const keys = spellIdentityKeys(row);
+        if (!keys.length || keys.some(function alreadySeen(key) { return seen.has(key); })) return;
+        keys.forEach(function remember(key) { seen.add(key); });
+        count += 1;
+      });
+    });
+    return count;
+  }
+
+  function countDocumentSpells(importMeta, spellState) {
+    const currentCount = countUniqueSpellRows([
+      importMeta.importedSpells,
+      spellState.known,
+      spellState.prepared,
+      spellState.spellbookEntries,
+    ]);
+    if (currentCount > 0) return currentCount;
+    return countUniqueSpellRows([
+      spellState.knownSpells,
+      spellState.preparedSpells,
+      spellState.spells,
+    ]);
+  }
+
   function countObjectValues(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return 0;
     return Object.keys(value).filter(function hasValue(key) {
@@ -278,8 +335,7 @@
     const equipment = doc.equipment && typeof doc.equipment === 'object' ? doc.equipment : {};
     const spellState = doc.spellState && typeof doc.spellState === 'object' ? doc.spellState : {};
     const importMeta = doc.importMeta && typeof doc.importMeta === 'object' ? doc.importMeta : {};
-    const importedSpells = arrayCount(importMeta.importedSpells);
-    const preparedSpells = arrayCount(spellState.knownSpells) + arrayCount(spellState.preparedSpells) + arrayCount(spellState.spells);
+    const spellCount = countDocumentSpells(importMeta, spellState);
     const importedActions = arrayCount(importMeta.importedActions);
     const importedFeatures = arrayCount(importMeta.importedFeatures);
 
@@ -292,7 +348,7 @@
       hasClass: classLabels.length > 0 || totalLevel > 0,
       statsFound: countObjectValues(scores),
       inventoryCount: arrayCount(equipment.inventory),
-      spellCount: importedSpells || preparedSpells,
+      spellCount: spellCount,
       actionFeatureCount: importedActions + importedFeatures + arrayCount(doc.actions) + arrayCount(doc.features),
     };
   }
@@ -460,7 +516,7 @@
       ].join('<br>'), (reviewData.hasAC && reviewData.hasHP) ? 'green' : 'red'),
       renderReviewSection('Equipment', renderPillList(reviewData.itemsMatched, 'No matched equipment found.', 'green'), 'green'),
       renderReviewSection('Inventory', renderPillList(reviewData.itemsMissing, 'No missing inventory reported.', (reviewData.itemsMissing || []).length ? 'red' : 'green'), (reviewData.itemsMissing || []).length ? 'red' : 'green'),
-      renderReviewSection('Spells', '<div>Matched:</div>' + renderPillList(reviewData.spellsMatched, 'No matched spells found.', 'green') + '<div style="margin-top:6px;">Missing / unmatched:</div>' + renderPillList(reviewData.spellsMissing, 'No missing spells reported.', (reviewData.spellsMissing || []).length ? 'yellow' : 'green'), (reviewData.spellsMissing || []).length ? 'yellow' : 'green'),
+      renderReviewSection('Spells', '<div>Matched spells are ready for native rolling</div>' + renderPillList(reviewData.spellsMatched, 'No matched spells found.', 'green') + '<div style="margin-top:6px;">Imported-only spells may need DM review</div>' + renderPillList(reviewData.spellsImportedOnly, 'No imported-only spells reported.', (reviewData.spellsImportedOnly || []).length ? 'yellow' : 'green') + '<div style="margin-top:6px;">Missing / unmatched:</div>' + renderPillList(reviewData.spellsMissing, 'No missing spells reported.', (reviewData.spellsMissing || []).length ? 'yellow' : 'green'), ((reviewData.spellsMissing || []).length || (reviewData.spellsImportedOnly || []).length) ? 'yellow' : 'green'),
       renderReviewSection('Features', '<div>Matched:</div>' + renderPillList(reviewData.featuresMatched, 'No matched features found.', 'green') + '<div style="margin-top:6px;">Missing / unmatched:</div>' + renderPillList(reviewData.featuresMissing, 'No missing features reported.', (reviewData.featuresMissing || []).length ? 'yellow' : 'green'), (reviewData.featuresMissing || []).length ? 'yellow' : 'green'),
       renderReviewSection('Warnings', renderPillList(reviewData.warnings, 'No warnings reported.', (reviewData.warnings || []).length ? 'yellow' : 'green'), (reviewData.warnings || []).length ? 'yellow' : 'green'),
       renderReviewSection('Blocking issues', renderPillList(reviewData.blockingIssues, 'No blocking issues.', (reviewData.blockingIssues || []).length ? 'red' : 'green'), (reviewData.blockingIssues || []).length ? 'red' : 'green'),
