@@ -134,6 +134,195 @@ def _resolve_runtime_feat_features(document: dict[str, Any]) -> list[dict[str, A
     return out
 
 
+
+def _safe_text(value: Any, fallback: str = "") -> str:
+    text = str(value if value is not None else "").strip()
+    return text or fallback
+
+
+def _imported_source_type(row: dict[str, Any], fallback: str = "imported") -> str:
+    raw = _safe_text(row.get("sourceType") or row.get("kind") or row.get("classification") or row.get("section") or fallback).lower()
+    if "subclass" in raw:
+        return "subclass"
+    if "class" in raw:
+        return "class"
+    if raw in {"species", "race", "racial", "trait", "origin"} or "species" in raw or "racial" in raw:
+        return "species"
+    if "feat" in raw:
+        return "feat"
+    if "background" in raw:
+        return "background"
+    if "item" in raw or "weapon" in raw or "equipment" in raw:
+        return "item"
+    return "imported"
+
+
+def _imported_recovery_text(row: dict[str, Any]) -> str:
+    limited = row.get("limitedUse") if isinstance(row.get("limitedUse"), dict) else {}
+    reset = _safe_text(row.get("recovery") or row.get("recharge") or limited.get("resetType") or limited.get("resetTypeDescription"))
+    if reset:
+        lowered = reset.lower().replace("_", " ").replace("-", " ")
+        if "short" in lowered and "long" in lowered:
+            return "Short or long rest"
+        if "short" in lowered:
+            return "Short rest"
+        if "long" in lowered:
+            return "Long rest"
+        if "turn" in lowered:
+            return "Start/end of turn"
+        return reset
+    return ""
+
+
+def _imported_usage_text(row: dict[str, Any]) -> str:
+    limited = row.get("limitedUse") if isinstance(row.get("limitedUse"), dict) else {}
+    explicit = _safe_text(row.get("usage") or row.get("resourceSummary") or row.get("usesText") or row.get("activationText"))
+    max_uses = row.get("maxUses") if row.get("maxUses") not in (None, "") else limited.get("maxUses")
+    number_used = row.get("numberUsed") if row.get("numberUsed") not in (None, "") else limited.get("numberUsed")
+    if max_uses not in (None, ""):
+        max_value = _safe_int(max_uses, 0, minimum=0)
+        if max_value:
+            remaining = max(0, max_value - _safe_int(number_used, 0, minimum=0))
+            return f"{remaining}/{max_value} uses" if number_used not in (None, "") else f"{max_value} use{'s' if max_value != 1 else ''}"
+    stat_uses = limited.get("statModifierUsesId") or limited.get("operator")
+    if stat_uses and explicit:
+        return explicit
+    return explicit
+
+
+def _imported_damage_formula(row: dict[str, Any]) -> tuple[str, str]:
+    damage = row.get("damage") if isinstance(row.get("damage"), dict) else {}
+    formula = _safe_text(row.get("damageFormula") or row.get("damageText") or damage.get("formula") or damage.get("dice") or row.get("damage"))
+    damage_type = _safe_text(row.get("damageType") or damage.get("type"))
+    return formula, damage_type
+
+
+def _imported_needs_review(row: dict[str, Any], context: dict[str, Any], *, name: str) -> bool:
+    native_names = context.get("native_names") if isinstance(context.get("native_names"), set) else set()
+    if name.strip().lower() in native_names:
+        return False
+    if row.get("needsReview") is not None:
+        return bool(row.get("needsReview"))
+    if row.get("matchedNative") is not None:
+        return not bool(row.get("matchedNative"))
+    return True
+
+
+def build_imported_feature_card(imported_feature: dict[str, Any], context: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    """Build a readable runtime fallback card from preserved imported feature data."""
+    if not isinstance(imported_feature, dict):
+        return None
+    ctx = context if isinstance(context, dict) else {}
+    name = _safe_text(imported_feature.get("name") or imported_feature.get("displayName") or imported_feature.get("label"))
+    if not name:
+        return None
+    source_type = _imported_source_type(imported_feature)
+    action_type = _safe_text(imported_feature.get("actionType") or imported_feature.get("type"), "passive").lower()
+    summary = _safe_text(imported_feature.get("summary") or imported_feature.get("snippet") or imported_feature.get("effect"))
+    description = _safe_text(imported_feature.get("description") or imported_feature.get("text") or summary, "Needs DM review.")
+    usage = _imported_usage_text(imported_feature)
+    recovery = _imported_recovery_text(imported_feature)
+    needs_review = _imported_needs_review(imported_feature, ctx, name=name)
+    tags = [str(tag).strip() for tag in (imported_feature.get("tags") if isinstance(imported_feature.get("tags"), list) else []) if str(tag).strip()]
+    if "imported" not in {tag.lower() for tag in tags}:
+        tags.append("imported")
+    if needs_review:
+        tags.append("Needs review")
+    card = {
+        "id": _safe_text(imported_feature.get("id"), f"imported-feature-{name.lower().replace(' ', '-')}").lower(),
+        "name": name,
+        "displayName": name,
+        "section": _safe_text(imported_feature.get("section"), "Imported Features" if source_type == "imported" else f"{source_type.title()} Features"),
+        "type": action_type,
+        "actionType": action_type,
+        "sourceType": source_type,
+        "source": _safe_text(imported_feature.get("source"), f"Imported {source_type}"),
+        "kind": source_type if source_type != "species" else "trait",
+        "minLevel": _safe_int(imported_feature.get("minLevel") or imported_feature.get("level"), 0, minimum=0),
+        "summary": summary or description[:240],
+        "description": description,
+        "usage": usage,
+        "recovery": recovery,
+        "activationText": _safe_text(imported_feature.get("activationText") or imported_feature.get("activation")),
+        "resourceName": _safe_text(imported_feature.get("resourceName") or imported_feature.get("resource")),
+        "range": _safe_text(imported_feature.get("range")),
+        "duration": _safe_text(imported_feature.get("duration")),
+        "trigger": _safe_text(imported_feature.get("trigger")),
+        "save": _safe_text(imported_feature.get("save") or imported_feature.get("saveDC")),
+        "needsReview": needs_review,
+        "matchedNative": not needs_review,
+        "tags": tags,
+        "importedFallback": True,
+    }
+    damage_formula, damage_type = _imported_damage_formula(imported_feature)
+    if damage_formula:
+        card["damageFormula"] = damage_formula
+        card["damage"] = {"formula": damage_formula, "type": damage_type}
+        card["damageType"] = damage_type
+    return card
+
+
+def build_imported_action_card(imported_action: dict[str, Any], context: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    """Build a usable runtime fallback action card from preserved imported action data."""
+    if not isinstance(imported_action, dict):
+        return None
+    ctx = context if isinstance(context, dict) else {}
+    name = _safe_text(imported_action.get("name") or imported_action.get("displayName") or imported_action.get("label"))
+    if not name:
+        return None
+    source_type = _imported_source_type(imported_action, "imported")
+    action_type = _safe_text(imported_action.get("actionType") or imported_action.get("type"), "action").lower()
+    if action_type in {"none", "no action"}:
+        action_type = "passive"
+    summary = _safe_text(imported_action.get("summary") or imported_action.get("snippet") or imported_action.get("effect"))
+    description = _safe_text(imported_action.get("description") or imported_action.get("text") or summary, "Needs DM review.")
+    usage = _imported_usage_text(imported_action)
+    recovery = _imported_recovery_text(imported_action)
+    damage_formula, damage_type = _imported_damage_formula(imported_action)
+    needs_review = _imported_needs_review(imported_action, ctx, name=name)
+    tags = [str(tag).strip() for tag in (imported_action.get("tags") if isinstance(imported_action.get("tags"), list) else []) if str(tag).strip()]
+    if "imported" not in {tag.lower() for tag in tags}:
+        tags.append("imported")
+    if needs_review:
+        tags.append("Needs review")
+    card = {
+        "id": _safe_text(imported_action.get("id"), f"imported-action-{name.lower().replace(' ', '-')}").lower(),
+        "name": name,
+        "displayName": name,
+        "type": action_type,
+        "actionType": action_type,
+        "sourceType": source_type,
+        "source": _safe_text(imported_action.get("source"), f"Imported {source_type}"),
+        "classification": _safe_text(imported_action.get("classification"), "imported"),
+        "summary": summary or description[:240],
+        "description": description,
+        "desc": summary or description,
+        "usage": usage,
+        "recovery": recovery,
+        "activationText": _safe_text(imported_action.get("activationText") or imported_action.get("activation")),
+        "attackBonus": imported_action.get("attackBonus", ""),
+        "range": _safe_text(imported_action.get("range")),
+        "duration": _safe_text(imported_action.get("duration")),
+        "trigger": _safe_text(imported_action.get("trigger")),
+        "save": _safe_text(imported_action.get("save") or imported_action.get("saveDC")),
+        "resourceName": _safe_text(imported_action.get("resourceName") or imported_action.get("resource")),
+        "trackUses": bool(imported_action.get("trackUses") or usage),
+        "needsReview": needs_review,
+        "matchedNative": not needs_review,
+        "tags": tags,
+        "importedFallback": True,
+    }
+    if imported_action.get("maxUses") not in (None, ""):
+        card["maxUses"] = _safe_int(imported_action.get("maxUses"), 0, minimum=0)
+    if imported_action.get("uses") not in (None, ""):
+        card["uses"] = _safe_int(imported_action.get("uses"), 0, minimum=0)
+    if damage_formula:
+        card["damage"] = damage_formula
+        card["damageFormula"] = damage_formula
+        card["damageType"] = damage_type
+    return card
+
+
 def _compute_base_hp(document: dict, level_total: int, runtime_classes: list[dict[str, Any]]) -> dict:
     abilities = document.get("abilities") if isinstance(document.get("abilities"), dict) else {}
     scores = abilities.get("scores") if isinstance(abilities.get("scores"), dict) else {}
@@ -723,18 +912,21 @@ def _imported_runtime_rows(document: dict[str, Any], key: str) -> list[dict[str,
     return out
 
 
-def _bucket_imported_actions(document: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+def _bucket_imported_actions(document: dict[str, Any], context: dict[str, Any] | None = None) -> dict[str, list[dict[str, Any]]]:
     buckets = {"actions": [], "bonusActions": [], "reactions": [], "passives": []}
     for row in _imported_runtime_rows(document, "importedActions"):
-        action_type = str(row.get("actionType") or row.get("type") or "action").strip().lower()
+        card = build_imported_action_card(row, context or {})
+        if not card:
+            continue
+        action_type = str(card.get("actionType") or card.get("type") or "action").strip().lower()
         if "reaction" in action_type:
-            buckets["reactions"].append(row)
+            buckets["reactions"].append(card)
         elif "bonus" in action_type:
-            buckets["bonusActions"].append(row)
+            buckets["bonusActions"].append(card)
         elif action_type in {"passive", "none", "no action"}:
-            buckets["passives"].append(row)
+            buckets["passives"].append(card)
         else:
-            buckets["actions"].append(row)
+            buckets["actions"].append(card)
     return buckets
 
 def _build_runtime_summon_actions(
@@ -1077,8 +1269,27 @@ def resolve_character_runtime(document: Any) -> dict:
             seen_resource_keys.add(dedupe_key)
             merged_resources.append(_clone(row))
 
-    imported_action_buckets = _bucket_imported_actions(normalized)
-    imported_features = _imported_runtime_rows(normalized, "importedFeatures")
+    native_feature_names = {
+        str(item.get("name") or item.get("displayName") or "").strip().lower()
+        for payload in runtime_feature_sets
+        for item in (payload.get("classFeatures") or [])
+        if isinstance(item, dict) and str(item.get("name") or item.get("displayName") or "").strip()
+    }
+    native_action_names = {
+        str(item.get("name") or item.get("displayName") or "").strip().lower()
+        for payload in runtime_feature_sets
+        for bucket_name in ("actions", "bonusActions", "reactions", "passives")
+        for item in (payload.get(bucket_name) or [])
+        if isinstance(item, dict) and str(item.get("name") or item.get("displayName") or "").strip()
+    }
+    imported_action_buckets = _bucket_imported_actions(normalized, {"native_names": native_action_names})
+    imported_features = [
+        card for card in (
+            build_imported_feature_card(row, {"native_names": native_feature_names})
+            for row in _imported_runtime_rows(normalized, "importedFeatures")
+        )
+        if card
+    ]
 
     runtime["resources"] = merged_resources
     runtime["actions"] = [item for payload in runtime_feature_sets for item in (payload.get("actions") or [])] + imported_action_buckets["actions"]
@@ -1086,6 +1297,13 @@ def resolve_character_runtime(document: Any) -> dict:
     runtime["reactions"] = [item for payload in runtime_feature_sets for item in (payload.get("reactions") or [])] + imported_action_buckets["reactions"]
     runtime["passives"] = [item for payload in runtime_feature_sets for item in (payload.get("passives") or [])] + imported_action_buckets["passives"]
     runtime["classFeatures"] = [item for payload in runtime_feature_sets for item in (payload.get("classFeatures") or [])] + imported_features
+    runtime["nativeActions"] = {
+        "actions": _clone(runtime["actions"]),
+        "bonusActions": _clone(runtime["bonusActions"]),
+        "reactions": _clone(runtime["reactions"]),
+        "passives": _clone(runtime["passives"]),
+    }
+    runtime["nativeFeatures"] = _clone(runtime["classFeatures"])
     has_first_turn_path = bool(runtime["actions"] or runtime["bonusActions"] or runtime.get("summonActions"))
     if not has_first_turn_path:
         runtime["actions"] = [_build_first_turn_strike_action(proficiency_bonus=proficiency_bonus, str_mod=str_mod)]
@@ -1156,6 +1374,7 @@ def resolve_character_runtime(document: Any) -> dict:
     runtime["originTraits"] = _resolve_runtime_origin_traits(normalized)
     runtime["backgroundFeatures"] = _resolve_runtime_background_features(normalized)
     runtime["featFeatures"] = _resolve_runtime_feat_features(normalized)
+    runtime["nativeFeatures"] = _clone(runtime["classFeatures"] + runtime["originTraits"] + runtime["backgroundFeatures"] + runtime["featFeatures"])
     runtime["summonActions"] = _build_runtime_summon_actions(normalized, runtime_classes)
 
     class_saving_throws = []

@@ -454,6 +454,8 @@ def _normalize_ddb_action_row(row: Any, *, source: str) -> dict[str, Any] | None
     uses = _safe_int(limited.get("maxUses") or limited.get("numberUsed") or row.get("uses"), 0, minimum=0)
     damage = _damage_dice_from_definition(definition)
     damage_type = _damage_type_from_definition(definition)
+    recovery = _safe_str(limited.get("resetTypeDescription") or limited.get("resetType"), "", limit=80)
+    activation_text = _safe_str(row.get("activationTime") or definition.get("activationTime") or action_type, "", limit=80)
     out: dict[str, Any] = {
         "id": f"ddb-{source}-{_slugify(name)}",
         "name": name,
@@ -461,11 +463,18 @@ def _normalize_ddb_action_row(row: Any, *, source: str) -> dict[str, Any] | None
         "actionType": action_type,
         "type": action_type,
         "classification": "imported",
+        "sourceType": source if source in {"class", "item", "feat", "background", "species", "subclass"} else "imported",
         "source": f"D&D Beyond {source}",
         "summary": summary or description[:240],
         "description": description or summary,
         "tags": ["dndbeyond", source],
         "trackUses": bool(limited),
+        "limitedUse": copy.deepcopy(limited),
+        "numberUsed": _safe_int(limited.get("numberUsed"), 0, minimum=0) if limited else 0,
+        "recovery": recovery,
+        "activationText": activation_text,
+        "needsReview": True,
+        "matchedNative": False,
     }
     if uses:
         out["uses"] = uses
@@ -521,18 +530,31 @@ def _normalize_ddb_feature_row(row: Any, *, source: str, level: int = 0) -> dict
         return None
     description = _strip_html(definition.get("description") or row.get("description") or definition.get("snippet"), limit=1600)
     feature_type = _normalize_ddb_activation({**definition, **row}) if (definition.get("activation") or row.get("activation") or definition.get("actionType") or row.get("actionType")) else "passive"
+    limited = row.get("limitedUse") if isinstance(row.get("limitedUse"), dict) else definition.get("limitedUse") if isinstance(definition.get("limitedUse"), dict) else {}
+    recovery = _safe_str(limited.get("resetTypeDescription") or limited.get("resetType"), "", limit=80)
+    uses = _safe_int(limited.get("maxUses") or row.get("uses"), 0, minimum=0)
     return {
         "id": f"ddb-{source}-{_slugify(name)}",
         "name": name,
         "displayName": name,
         "section": source.title(),
         "type": feature_type,
+        "actionType": feature_type,
+        "sourceType": source,
         "source": f"D&D Beyond {source}",
         "minLevel": _safe_int(row.get("requiredLevel") or definition.get("requiredLevel") or level, 0, minimum=0),
         "summary": _strip_html(definition.get("snippet") or row.get("snippet") or description, limit=360),
         "description": description,
         "tags": ["dndbeyond", source],
         "kind": source,
+        "usage": f"{uses} use{'s' if uses != 1 else ''}" if uses else "",
+        "limitedUse": copy.deepcopy(limited),
+        "numberUsed": _safe_int(limited.get("numberUsed"), 0, minimum=0) if limited else 0,
+        "maxUses": uses or None,
+        "recovery": recovery,
+        "activationText": feature_type if feature_type != "passive" else "",
+        "needsReview": True,
+        "matchedNative": False,
     }
 
 
@@ -560,6 +582,11 @@ def _normalize_ddb_features(ddb: dict[str, Any], classes: list[dict[str, Any]]) 
             add(row, "class", level)
         for row in class_row.get("features") if isinstance(class_row.get("features"), list) else []:
             add(row, "class", level)
+        subclass = class_row.get("subclassDefinition") if isinstance(class_row.get("subclassDefinition"), dict) else {}
+        for row in subclass.get("classFeatures") if isinstance(subclass.get("classFeatures"), list) else []:
+            add(row, "subclass", level)
+        for row in subclass.get("features") if isinstance(subclass.get("features"), list) else []:
+            add(row, "subclass", level)
     for row in ddb.get("racialTraits") if isinstance(ddb.get("racialTraits"), list) else []:
         add(row, "species")
     race = ddb.get("race") if isinstance(ddb.get("race"), dict) else {}
@@ -567,6 +594,12 @@ def _normalize_ddb_features(ddb: dict[str, Any], classes: list[dict[str, Any]]) 
         add(row, "species")
     for row in ddb.get("feats") if isinstance(ddb.get("feats"), list) else []:
         add(row, "feat")
+    background = ddb.get("background") if isinstance(ddb.get("background"), dict) else {}
+    background_def = background.get("definition") if isinstance(background.get("definition"), dict) else background
+    feature_name = _safe_str(background_def.get("featureName") or background_def.get("featureTitle"), "", limit=120)
+    feature_desc = _strip_html(background_def.get("featureDescription") or background_def.get("featureSummary"), limit=1600)
+    if feature_name or feature_desc:
+        add({"definition": {"name": feature_name or "Background Feature", "description": feature_desc}}, "background")
     return out[:120]
 
 

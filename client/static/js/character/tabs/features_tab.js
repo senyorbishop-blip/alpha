@@ -165,8 +165,8 @@
       kind: _firstText(obj.kind, base.kind, 'class'),
       source: _firstText(obj.source, base.source, 'Class Feature'),
       section: _firstText(obj.section, base.section, 'Class Features'),
-      summary: _firstText(obj.summary, obj.effect),
-      description: _firstText(obj.description, obj.text),
+      summary: _firstText(obj.summary, obj.snippet, obj.effect),
+      description: _firstText(obj.description, obj.text, obj.snippet),
       actionType: _firstText(obj.actionType, obj.type, base.actionType, 'passive'),
       usage: _firstText(obj.usage, base.usage),
       recovery: _firstText(obj.recovery, base.recovery),
@@ -176,6 +176,12 @@
       duration: _firstText(obj.duration),
       save: _firstText(obj.save),
       effect: _firstText(obj.effect),
+      needsReview: !!obj.needsReview,
+      matchedNative: obj.matchedNative,
+      sourceType: _firstText(obj.sourceType, base.sourceType),
+      activationText: _firstText(obj.activationText),
+      damageFormula: _firstText(obj.damageFormula, obj.damage && obj.damage.formula),
+      damageType: _firstText(obj.damageType, obj.damage && obj.damage.type),
       tags: _safeArray(obj.tags || base.tags),
     };
   }
@@ -198,8 +204,8 @@
   }
 
   function _featureTypeKey(feature) {
-    if (feature && feature.kind === 'feat') return 'feats';
-    if (feature && (feature.kind === 'trait' || feature.kind === 'origin')) return 'traits';
+    if (feature && (feature.kind === 'feat' || feature.sourceType === 'feat')) return 'feats';
+    if (feature && (feature.kind === 'trait' || feature.kind === 'origin' || feature.sourceType === 'species')) return 'traits';
     if (feature && feature.isSubclass) return 'subclass';
     return 'class';
   }
@@ -438,7 +444,7 @@
           <div class="cs-feature-preview"><strong>${_esc(presented.summary)}</strong></div>
           ${presented.reminder ? `<div class="cs-feature-body-summary"><strong>${_esc(presented.reminder)}</strong></div>` : ''}
         </div>
-        <div class="cs-feature-meta">${presented.badges.map((t) => `<span class="cs-feature-kind-badge">${_esc(t)}</span>`).join('')}<span class="cs-feature-chevron" aria-hidden="true">&#9658;</span></div>
+        <div class="cs-feature-meta">${feature.needsReview ? '<span class="cs-feature-kind-badge">Needs review</span>' : ''}${presented.badges.map((t) => `<span class="cs-feature-kind-badge">${_esc(t)}</span>`).join('')}<span class="cs-feature-chevron" aria-hidden="true">&#9658;</span></div>
       </header>
       <div class="cs-feature-body">
         <div class="cs-feature-body-shell">
@@ -447,6 +453,8 @@
             <div class="cs-feature-fact"><span class="cs-feature-fact-label">Action Type</span><span class="cs-feature-fact-value">${_esc(_normalizeActionType(feature))}</span></div>
             <div class="cs-feature-fact"><span class="cs-feature-fact-label">Usage</span><span class="cs-feature-fact-value">${_esc(presented.detail.usage)}</span></div>
             <div class="cs-feature-fact"><span class="cs-feature-fact-label">Recovery</span><span class="cs-feature-fact-value">${_esc(presented.detail.recovery)}</span></div>
+            ${feature.activationText ? `<div class="cs-feature-fact"><span class="cs-feature-fact-label">Activation</span><span class="cs-feature-fact-value">${_esc(feature.activationText)}</span></div>` : ''}
+            ${feature.damageFormula ? `<div class="cs-feature-fact"><span class="cs-feature-fact-label">Formula</span><span class="cs-feature-fact-value">${_esc(feature.damageFormula + (feature.damageType ? ' ' + feature.damageType : ''))}</span></div>` : ''}
           </div>
           <div class="cs-feature-body-rules">${_descHtml(_firstText(feature.description, feature.summary))}</div>
           <button type="button" class="cs-feature-inspect" data-feature-inspect="${_esc(id)}">Inspect</button>
@@ -514,10 +522,23 @@
 
   function _extractFeatureRows(charData, sheetData) {
     const merged = Object.assign({}, charData || {}, sheetData || {});
-    const classFeatures = _dedupeFeatures(_safeArray(merged.features).map((f) => _coerceFeature(f, { kind: 'class', className: merged.className || '' })).filter(Boolean)).filter((f) => !_isBookkeepingFeature(f));
-    const traits = _dedupeFeatures(_safeArray(merged.traits).map((f) => _coerceFeature(f, { kind: 'trait' })).filter(Boolean));
-    const feats = _dedupeFeatures(_safeArray(merged.feats).map((f) => _coerceFeature(f, { kind: 'feat' })).filter(Boolean));
-    return { classFeatures, traits, feats };
+    const allFeatureRows = _safeArray(merged.features)
+      .concat(_safeArray(merged.nativeFeatures))
+      .concat(_safeArray(merged.nativeClassFeatures));
+    const classFeatures = [];
+    const traits = _safeArray(merged.traits).map((f) => _coerceFeature(f, { kind: 'trait' })).filter(Boolean);
+    const feats = _safeArray(merged.feats).map((f) => _coerceFeature(f, { kind: 'feat' })).filter(Boolean);
+    allFeatureRows.map((f) => _coerceFeature(f, { kind: 'class', className: merged.className || '' })).filter(Boolean).forEach(function (feature) {
+      const key = _featureTypeKey(feature);
+      if (key === 'traits') traits.push(feature);
+      else if (key === 'feats') feats.push(feature);
+      else classFeatures.push(feature);
+    });
+    return {
+      classFeatures: _dedupeFeatures(classFeatures).filter((f) => !_isBookkeepingFeature(f)),
+      traits: _dedupeFeatures(traits),
+      feats: _dedupeFeatures(feats),
+    };
   }
 
   function _extractClassRoadmap(sheetData, charData) {
@@ -617,7 +638,8 @@
     const allByLevel = _extractClassRoadmap(sheetData, charData);
     const level = Number((charData && charData.level) || (sheetData && sheetData.level) || 1);
 
-    const overviewCounts = `<section class="cs-overview-section"><div class="cs-overview-section-title">Features at a Glance</div><div class="cs-traits-summary-grid cs-features-redesign-summary"><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Class & Subclass Features</div><div class="cs-traits-summary-value">${_esc(String(sections.classFeatures.length))}</div><div class="cs-traits-summary-note">core and subclass rules</div></div><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Species Traits</div><div class="cs-traits-summary-value">${_esc(String(sections.traits.length))}</div><div class="cs-traits-summary-note">origin and lineage traits</div></div><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Character Snapshot</div><div class="cs-traits-summary-value">Level ${_esc(String(level))}</div><div class="cs-traits-summary-note">full class roadmap visible below</div></div></div></section>`;
+    const needsReviewCount = sections.classFeatures.concat(sections.traits, sections.feats).filter((f) => f && f.needsReview).length;
+    const overviewCounts = `<section class="cs-overview-section"><div class="cs-overview-section-title">Features at a Glance</div><div class="cs-traits-summary-grid cs-features-redesign-summary"><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Class & Subclass Features</div><div class="cs-traits-summary-value">${_esc(String(sections.classFeatures.length))}</div><div class="cs-traits-summary-note">core and subclass rules</div></div><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Species Traits</div><div class="cs-traits-summary-value">${_esc(String(sections.traits.length))}</div><div class="cs-traits-summary-note">origin and lineage traits</div></div><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Needs Review</div><div class="cs-traits-summary-value">${_esc(String(needsReviewCount))}</div><div class="cs-traits-summary-note">imported fallback cards</div></div><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Character Snapshot</div><div class="cs-traits-summary-value">Level ${_esc(String(level))}</div><div class="cs-traits-summary-note">full class roadmap visible below</div></div></div></section>`;
 
     container.innerHTML = `<div class="cs-traits-shell cs-traits-shell-readable cs-features-redesign-shell">${_renderFeatureControls()}${overviewCounts}${_renderPlaybook(charData, sections)}${_renderCustomClassGuide(charData)}${_renderSpotlight(allByLevel, level)}${_renderLevelRoadmap(allByLevel, level)}${_renderSection('Class & Subclass Features', sections.classFeatures, 'class', charData, 'All unlocked class and subclass features with detailed player-facing text.')}${_renderSection('Species Traits', sections.traits, 'traits', charData, 'Lineage and species traits affecting passives, actions, and saves.')}${_renderSection('Feats', sections.feats, 'feats', charData, 'Feat choices and exact rule impact.')}</div>`;
 

@@ -1188,8 +1188,8 @@
         { title: 'Combat Data', items: [
           { label: 'Economy', value: economy.join(' / ') || 'Action' },
           { label: 'Attack Bonus', value: action.attackBonus != null ? String(action.attackBonus) : '—' },
-          { label: 'Damage', value: action.damage || action.damageText || '—' },
-          { label: 'Damage type', value: _firstText(action.damageType, action.weaponMeta && action.weaponMeta.damageType, '—') },
+          { label: 'Damage', value: _actionDamageText(action) || '—' },
+          { label: 'Damage type', value: _firstText(_actionDamageType(action), action.weaponMeta && action.weaponMeta.damageType, '—') },
           { label: 'Versatile', value: _firstText(action.versatileDamage, action.weaponMeta && action.weaponMeta.versatileDamage, '—') },
           { label: 'Range', value: action.range || action.reach || '—' },
           { label: 'Save / DC', value: action.saveDC || action.hitDc || action.save || '—' },
@@ -1422,13 +1422,25 @@
     </div>`;
   }
 
+  function _actionDamageText(action) {
+    const damage = action && action.damage;
+    if (damage && typeof damage === 'object') return _firstText(damage.formula, damage.dice, damage.text, '');
+    return _firstText(damage, action && action.damageFormula, action && action.damageText, '');
+  }
+
+  function _actionDamageType(action) {
+    const damage = action && action.damage;
+    if (damage && typeof damage === 'object') return _firstText(action && action.damageType, damage.type, '');
+    return _firstText(action && action.damageType, action && action.damage_type, '');
+  }
+
   function _actionKind(action) {
     const text = `${String(action && action.name || '')} ${String(action && (action.desc || action.description || action.longText || '') || '')}`.toLowerCase();
     const economy = (Array.isArray(action && action.economy) ? action.economy : [action && action.economy || action && action.actionType || '']).join(' ').toLowerCase();
     const source = String(action && action.source || '').toLowerCase();
     const attackBonus = _parseAttackBonusValue(action && action.attackBonus);
     const hasAttackRoll = attackBonus != null;
-    const hasDamage = !!_firstText(action && action.damage, action && action.damageText, '');
+    const hasDamage = !!_actionDamageText(action);
     const hasSave = !!_firstText(action && action.saveDC, action && action.hitDc, action && action.save, '');
     const hasActionLane = /(action|bonus|reaction|special|trigger)/.test(economy);
     if ((/subclass choice required|choose subclass|subclass required/.test(text)) || action && action.kind === 'subclass_gate') return 'subclass_gate';
@@ -1466,8 +1478,8 @@
 
 
   function _parseDamageProfile(action) {
-    const rawDamage = _firstText(action && action.damage, action && action.damageText, '');
-    const rawType = _firstText(action && action.damageType, action && action.damage_type, '');
+    const rawDamage = _actionDamageText(action);
+    const rawType = _actionDamageType(action);
     const rawVersatile = _firstText(action && action.versatileDamage, action && action.versatile_damage, '');
     const weaponMeta = action && action.weaponMeta && typeof action.weaponMeta === 'object' ? action.weaponMeta : {};
     const damageText = rawDamage || _firstText(weaponMeta.baseDamage, '');
@@ -1569,6 +1581,7 @@
     if (kind === 'passive') leadBadges.push('<span class="cs-action-mini-pill">Passive</span>');
     if (kind === 'transformation') leadBadges.push('<span class="cs-action-mini-pill">Transformation</span>');
     if (kind === 'subclass_gate') leadBadges.push('<span class="cs-action-mini-pill warn">Subclass choice required</span>');
+    if (action && action.needsReview) leadBadges.push('<span class="cs-action-mini-pill warn">Needs review</span>');
     if (!leadBadges.length) leadBadges.push('<span class="cs-action-mini-pill ready">Usable now</span>');
     const useLabel = _actionButtonLabel(action, kind);
     const showUseButton = _canUseAction(action, kind);
@@ -1813,7 +1826,7 @@
   function _nativeActionGroups(charData) {
     const groups = charData && charData.nativeActionCards && typeof charData.nativeActionCards === 'object'
       ? charData.nativeActionCards
-      : { actions: [], bonusActions: [], reactions: [] };
+      : { actions: [], bonusActions: [], reactions: [], passives: [] };
     const fallback = _featureActionFallbacks(charData);
     const custom = _buildCustomClassActionCards(charData);
     const classKey = _classKey(charData);
@@ -1857,6 +1870,7 @@
       actions: _dedupeActionBucket(_safeArray(groups.actions).concat(custom.actions).concat(fallbackFiltered.actions), 'action', classKey).map(function (card, index) { return _normalizeNativeAction(card, 'action', index); }),
       bonusActions: _dedupeActionBucket(_safeArray(groups.bonusActions).concat(custom.bonusActions).concat(fallbackFiltered.bonusActions), 'bonus', classKey).map(function (card, index) { return _normalizeNativeAction(card, 'bonus', index); }),
       reactions: _dedupeActionBucket(_safeArray(groups.reactions).concat(custom.reactions).concat(fallbackFiltered.reactions), 'reaction', classKey).map(function (card, index) { return _normalizeNativeAction(card, 'reaction', index); }),
+      passives: _dedupeActionBucket(_safeArray(groups.passives), 'passive', classKey).map(function (card, index) { return _normalizeNativeAction(card, 'passive', index); }),
     };
     if (isDruid) {
       const beastActions = _wildShapeActionCards(charData || {});
@@ -1888,7 +1902,7 @@
       _firstText(entry.type, entry.kind, fallbackEconomy, ''),
       _firstText(entry.source, details.source, ''),
       _firstText(entry.range, details.range, ''),
-      _firstText(entry.damage, details.damage, details.damageFormula, ''),
+      _firstText(entry.damageFormula, entry.damage && entry.damage.formula, entry.damage, details.damage, details.damageFormula, ''),
       _firstText(entry.save, details.save, ''),
     ].join('::').toLowerCase();
     const slug = signature.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 96);
@@ -1899,14 +1913,15 @@
     const costSummary = _firstText(card.resourceSummary, card.resourceName ? `${card.resourceName}${card.remaining != null && card.max != null ? ` ${card.remaining}/${card.max}` : ''}` : '', card.cost);
     return {
       id: _stableNativeActionId(card, fallbackEconomy, index),
-      source: 'native_action',
+      source: card.source === 'summon_action' ? 'summon_action' : 'native_action',
       name: card.name || 'Native Action',
       desc: _firstText(card.summary, card.description, card.text, 'Structured action card.'),
       description: _firstText(card.summary, card.description, card.text, 'Structured action card.'),
       economy: [String(card.economy || card.actionType || fallbackEconomy || 'action').toLowerCase()],
       icon: card.icon || card.emoji || '',
       attackBonus: card.attackBonus != null ? card.attackBonus : '',
-      damage: _firstText(card.damage, card.damageText, card.effect),
+      damage: _firstText(card.damageFormula, card.damage && card.damage.formula, card.damage, card.damageText, card.effect),
+      damageType: _firstText(card.damageType, card.damage && card.damage.type),
       range: _firstText(card.range, card.reach),
       saveDC: _firstText(card.saveDC, card.hitDc, card.save),
       resourceName: card.resourceName || card.resource || '',
@@ -1915,8 +1930,10 @@
       max: card.max,
       usage: card.usage || '',
       recovery: card.recovery || '',
-      tags: [card.kind || card.type || '', card.source || 'Native'].filter(Boolean),
-      longText: [card.text, card.note, card.effectText].filter(Boolean).join('\n\n'),
+      tags: [card.kind || card.type || '', card.sourceType || '', card.source || 'Native'].concat(card.needsReview ? ['Needs review'] : []).filter(Boolean),
+      longText: [card.text, card.note, card.effectText, card.activationText].filter(Boolean).join('\n\n'),
+      needsReview: !!card.needsReview,
+      sourceType: card.sourceType || '',
       drawerKicker: 'Action Inspector',
       disabled: !!card.disabled,
       disabledReason: _firstText(card.disabledReason, card.disabled_reason, ''),
@@ -2643,7 +2660,7 @@
       const kind = _actionKind(action);
       const resourceState = _resourceStateFromAction(action);
       const economy = Array.isArray(action && action.economy) ? action.economy : [action && (action.economy || action.actionType || lane || 'action')];
-      const needsTarget = !!(action && (_firstText(action.range, action.reach, '') || _parseAttackBonusValue(action.attackBonus) != null || _firstText(action.damage, action.damageText, '')));
+      const needsTarget = !!(action && (_firstText(action.range, action.reach, '') || _parseAttackBonusValue(action.attackBonus) != null || _actionDamageText(action)));
       const canUse = _canUseAction(action, kind);
       return Object.assign({}, action || {}, {
         quickBarLane: lane || economy[0] || 'action',
@@ -2660,10 +2677,11 @@
       primaryActions: [].concat(model.quickAttacks || [], model.nativeActionsForSection || []).map(function (action) { return decorate(action, 'action'); }),
       bonusActions: _safeArray(model.native && model.native.bonusActions).map(function (action) { return decorate(action, 'bonus'); }),
       reactions: _safeArray(model.native && model.native.reactions).map(function (action) { return decorate(action, 'reaction'); }),
+      passives: _safeArray(model.native && model.native.passives).map(function (action) { return decorate(action, 'passive'); }),
       topSpells: [],
       resources: _safeArray(model.resources),
       concentration: model.concentration || null,
-      _allActions: [].concat(model.quickAttacks || [], model.itemActions || [], model.nativeActionsForSection || [], _safeArray(model.native && model.native.bonusActions), _safeArray(model.native && model.native.reactions), model.textAttacks || [], model.summonActions || []).map(function (action) { return decorate(action, 'action'); }),
+      _allActions: [].concat(model.quickAttacks || [], model.itemActions || [], model.nativeActionsForSection || [], _safeArray(model.native && model.native.bonusActions), _safeArray(model.native && model.native.reactions), _safeArray(model.native && model.native.passives), model.textAttacks || [], model.summonActions || []).map(function (action) { return decorate(action, 'action'); }),
     };
   }
 
@@ -2701,6 +2719,7 @@
       ${_renderSection('Native Actions', nativeActionsForSection, { emptyLabel: isWildShapeActive ? 'Wild Shape attacks are currently driving your attack surface.' : 'No structured main actions are loaded yet.' })}
       ${_renderSection('Bonus Actions', native.bonusActions, { emptyLabel: 'No structured bonus actions are loaded yet.' })}
       ${_renderSection('Reactions', native.reactions, { emptyLabel: 'No structured reactions are loaded yet.' })}
+      ${_renderSection('Passives', native.passives, { emptyLabel: 'No structured passive actions are loaded yet.' })}
       ${_renderResourceSection(resources)}
     `;
 

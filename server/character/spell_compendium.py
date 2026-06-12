@@ -1516,7 +1516,9 @@ def build_spell_card(spell: dict[str, Any], *, character_context: dict[str, Any]
 def build_character_spell_manifest(document: dict[str, Any]) -> dict[str, Any]:
     classes = document.get('classes') if isinstance(document.get('classes'), list) else []
     abilities = document.get('abilities') if isinstance(document.get('abilities'), dict) else {}
+    spell_state = document.get('spellState') if isinstance(document.get('spellState'), dict) else {}
     context = build_multiclass_spell_context(document)
+    source_map = context.get('classSourcesBySpell') if isinstance(context.get('classSourcesBySpell'), dict) else {}
     class_contexts = context.get('classes') if isinstance(context.get('classes'), list) else []
     primary = class_contexts[0] if class_contexts else (_class_rows_for_document(document)[0] if _class_rows_for_document(document) else {})
     class_id = _norm(primary.get('classId') or primary.get('id') or primary.get('name'))
@@ -1565,7 +1567,8 @@ def build_character_spell_manifest(document: dict[str, Any]) -> dict[str, Any]:
             'blockedReason': '' if accessible else 'Not unlocked for any current class/level.',
             'highestAvailableSlot': highest_available_slot,
             'selectionMode': selection_mode,
-        }))
+        }
+        cards.append(build_spell_card(spell, character_context=card_context))
     entries = spell_state.get('spellbookEntries') if isinstance(spell_state.get('spellbookEntries'), list) else []
     existing_card_ids = {str(card.get('id') or '').strip().lower() for card in cards if isinstance(card, dict)}
     for entry in entries:

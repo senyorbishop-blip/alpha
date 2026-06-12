@@ -472,3 +472,134 @@ def test_import_review_lists_unmatched_spells_as_imported_only():
     assert "Moonlit Spoon" in review["spellsImportedOnly"]
     assert "Moonlit Spoon" not in review["spellsMissing"]
     assert review["reviewStatus"] == "needs_review"
+
+
+def test_imported_fallback_cards_preserve_unmatched_depth_and_roll_formula():
+    from server.character.resolver import build_imported_action_card, build_imported_feature_card, resolve_character_runtime
+
+    result = normalize_ddb_json_payload(
+        {
+            "data": {
+                "id": 4242,
+                "name": "Mira",
+                "stats": [
+                    {"id": 1, "value": 10},
+                    {"id": 2, "value": 16},
+                    {"id": 3, "value": 12},
+                    {"id": 4, "value": 10},
+                    {"id": 5, "value": 13},
+                    {"id": 6, "value": 10},
+                ],
+                "classes": [
+                    {
+                        "level": 4,
+                        "definition": {"name": "Rogue"},
+                        "subclassDefinition": {
+                            "name": "Thief",
+                            "classFeatures": [
+                                {"definition": {"name": "Rooftop Runner", "description": "Move across rooftops without slowing."}}
+                            ],
+                        },
+                        "classFeatures": [
+                            {"definition": {"name": "Pocket Sand", "description": "Blind a nearby foe until the DM resolves it."}}
+                        ],
+                    }
+                ],
+                "race": {
+                    "fullName": "Forest Gnome",
+                    "racialTraits": [
+                        {"definition": {"name": "Small Beast Speech", "description": "Communicate simple ideas with small beasts."}}
+                    ],
+                },
+                "background": {"definition": {"name": "Guild Artisan", "featureName": "Guild Access", "featureDescription": "Request modest guild assistance."}},
+                "feats": [
+                    {"definition": {"name": "Kitchen Duelist", "description": "Use cooking tools in flashy ways."}}
+                ],
+                "actions": {
+                    "class": [
+                        {
+                            "name": "Pocket Sand",
+                            "description": "Throw sand at a target.",
+                            "activation": {"activationType": 1},
+                            "limitedUse": {"maxUses": 2, "numberUsed": 1, "resetTypeDescription": "Short Rest"},
+                            "definition": {"damage": {"dice": {"diceCount": 1, "diceValue": 4}, "damageType": {"name": "bludgeoning"}}},
+                        }
+                    ],
+                    "bonus": [
+                        {"name": "Duck Behind Barrel", "description": "Take cover in a chaotic tavern.", "activation": {"activationType": 3}}
+                    ],
+                },
+            }
+        },
+        external_id="4242",
+    )
+    doc = result["document"]
+    runtime = resolve_character_runtime(doc)["runtime"]
+
+    action = next(row for row in runtime["actions"] if row.get("name") == "Pocket Sand")
+    assert action["damageFormula"] == "1d4"
+    assert action["damage"] == "1d4"
+    assert action["usage"] == "1/2 uses"
+    assert action["recovery"] == "Short rest"
+    assert action["needsReview"] is True
+
+    assert any(row.get("name") == "Duck Behind Barrel" for row in runtime["bonusActions"])
+    assert any(row.get("name") == "Small Beast Speech" and row.get("sourceType") == "species" for row in runtime["classFeatures"])
+    assert any(row.get("name") == "Kitchen Duelist" and row.get("sourceType") == "feat" for row in runtime["classFeatures"])
+    assert any(row.get("name") == "Guild Access" and row.get("sourceType") == "background" for row in runtime["classFeatures"])
+    assert any(row.get("name") == "Rooftop Runner" and row.get("sourceType") == "subclass" for row in runtime["classFeatures"])
+    assert any(row.get("needsReview") for row in runtime["nativeFeatures"])
+    assert runtime["nativeActions"]["actions"]
+
+    direct_feature = build_imported_feature_card({"name": "Mystery Ribbon"}, {"native_names": set()})
+    direct_action = build_imported_action_card({"name": "Mystery Shove", "damageFormula": "1d6"}, {"native_names": set()})
+    assert direct_feature["description"] == "Needs DM review."
+    assert direct_feature["needsReview"] is True
+    assert direct_action["damage"] == "1d6"
+    assert direct_action["needsReview"] is True
+
+
+def test_imported_barbarian_rage_marks_matched_when_native_exists():
+    from server.character.resolver import resolve_character_runtime
+
+    result = normalize_ddb_json_payload(
+        {
+            "data": {
+                "id": 5252,
+                "name": "Korga",
+                "stats": [
+                    {"id": 1, "value": 16},
+                    {"id": 2, "value": 12},
+                    {"id": 3, "value": 14},
+                    {"id": 4, "value": 8},
+                    {"id": 5, "value": 10},
+                    {"id": 6, "value": 10},
+                ],
+                "classes": [
+                    {
+                        "level": 2,
+                        "definition": {"name": "Barbarian"},
+                        "classFeatures": [
+                            {"definition": {"name": "Rage", "description": "Imported rage text."}}
+                        ],
+                    }
+                ],
+                "race": {"fullName": "Human"},
+                "actions": {
+                    "class": [
+                        {"name": "Rage", "description": "Enter rage.", "activation": {"activationType": 3}, "limitedUse": {"maxUses": 2, "resetTypeDescription": "Long Rest"}}
+                    ]
+                },
+            }
+        },
+        external_id="5252",
+    )
+
+    runtime = resolve_character_runtime(result["document"])["runtime"]
+    rage_features = [row for row in runtime["classFeatures"] if row.get("name") == "Rage"]
+    rage_actions = [row for row in runtime["bonusActions"] if row.get("name") == "Rage"]
+    assert rage_features
+    assert rage_actions
+    assert any(row.get("needsReview") is False for row in rage_features)
+    assert any(row.get("needsReview") is False for row in rage_actions)
+    assert any(row.get("trackUses") for row in rage_actions)
