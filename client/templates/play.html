@@ -46562,6 +46562,7 @@ function normalizeBestiaryCreature(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const source = String(raw.source_type || raw.source || '').toLowerCase() || 'custom';
   const entityType = String(raw.entry_type || raw.creature_type || '').toLowerCase() || 'monster';
+  const tokenSize = Math.max(1, Math.min(4, parseInt(raw.token_size ?? raw.tokenSize ?? 1, 10) || 1));
   const normalized = {
     ...raw,
     id: raw.id != null ? String(raw.id) : '',
@@ -46569,10 +46570,17 @@ function normalizeBestiaryCreature(raw) {
     source_type: source,
     creature_type: entityType,
     entry_type: entityType,
+    token_size: tokenSize,
     owner_user_id: raw.owner_user_id != null ? String(raw.owner_user_id) : '',
     canonical_creature_id: raw.id != null ? String(raw.id) : '',
   };
   return normalized.id ? normalized : null;
+}
+
+function _bestiaryCreatureTokenBounds(creature) {
+  const squares = Math.max(1, Math.min(4, parseInt(creature?.token_size ?? creature?.tokenSize ?? 1, 10) || 1));
+  const gridSizePx = getEditorGridSizePx();
+  return { squares, gridSizePx, width: gridSizePx * squares, height: gridSizePx * squares };
 }
 
 function _bestiaryEncounterStorageKey() {
@@ -46832,8 +46840,9 @@ function _spawnEncounterEntries(entries, templateName) {
       map_context: _currentEncounterMapContext(),
       x: origin.x,
       y: origin.y,
-      spacing: 70,
+      spacing: Math.max(40, getEditorGridSizePx() + 6),
       columns: 3,
+      grid_size_px: getEditorGridSizePx(),
       entries: entries.map(entry => ({ ...entry })),
     }
   });
@@ -47261,6 +47270,14 @@ async function bestiaryPlaceCreatureAt(worldX, worldY) {
   }
 
   const mapCtx = _currentPoi ? (_currentPoi.id || '__local__') : 'world';
+  const tokenBounds = _bestiaryCreatureTokenBounds(creature);
+  const placed = {
+    x: worldX - tokenBounds.width / 2,
+    y: worldY - tokenBounds.height / 2,
+    width: tokenBounds.width,
+    height: tokenBounds.height,
+  };
+  const snapped = snapTokenToGrid(placed.x, placed.y, placed);
 
   try {
     const payload = {
@@ -47271,9 +47288,10 @@ async function bestiaryPlaceCreatureAt(worldX, worldY) {
       creature_id: creature.canonical_creature_id,
       source: creature.source_type || creature.source || 'custom',
       entity_type: creature.entry_type || creature.creature_type || 'monster',
-      x: worldX - 20,
-      y: worldY - 20,
+      x: snapped.x,
+      y: snapped.y,
       map_context: mapCtx,
+      grid_size_px: tokenBounds.gridSizePx,
     };
     await syncSessionAuthority('bestiary_spawn');
     console.info('[Bestiary] spawn request', { ...payload, authority: _serverAuthority, uiMode: _uiViewMode });
