@@ -41,3 +41,27 @@ def test_import_modal_and_gateway_open_builder_before_saving():
     assert "builderState.replaceDraft(importedDocument" in gateway_src
     assert "routeTo: 'review_or_first_missing'" in gateway_src
     assert "/api/character/save" in gateway_src
+
+
+def test_import_modal_summary_counts_canonical_spell_state_fields_before_legacy_fallback():
+    modal_src = Path("client/static/js/character/library/character_import_modal.js").read_text(encoding="utf-8")
+
+    assert "countDocumentSpells(importMeta, spellState)" in modal_src
+    assert "importMeta.importedSpells" in modal_src
+    assert "spellState.known" in modal_src
+    assert "spellState.prepared" in modal_src
+    assert "spellState.spellbookEntries" in modal_src
+    assert "spellState.knownSpells" in modal_src
+    assert "spellState.preparedSpells" in modal_src
+    assert "spellState.spells" in modal_src
+    assert "if (currentCount > 0) return currentCount" in modal_src
+    assert "new Set()" in modal_src
+
+
+def test_import_modal_spell_review_distinguishes_imported_only_from_missing():
+    modal_src = Path("client/static/js/character/library/character_import_modal.js").read_text(encoding="utf-8")
+
+    assert "Imported-only spells may need DM review" in modal_src
+    assert "Matched spells are ready for native rolling" in modal_src
+    assert "reviewData.spellsImportedOnly" in modal_src
+    assert "No imported-only spells reported." in modal_src
