@@ -34,7 +34,7 @@ from server.character.rules_catalog import get_class_catalog_row, get_species_ca
 from server.character.feature_catalog import build_runtime_feature_payload
 from server.handlers.common import save_campaign_async
 from server.handlers.content import upsert_char_profile_for_owner
-from server.http.auth import auth_display_name, get_request_user
+from server.http.auth import auth_display_name, auth_player_key, get_request_user
 from server.http.session_access import get_or_restore_session
 from server.integrations.service import fetch_ddb_character_response, parse_character_pdf_response
 from server.session import normalize_profile_owner_key
@@ -239,6 +239,95 @@ def _resolve_owner_key(auth_user: dict) -> str:
     if not owner_key:
         owner_key = str(auth_user.get("id") or "").strip()
     return owner_key
+
+
+def _profile_owner_candidates(auth_user: dict) -> list[str]:
+    """Return profile owner bucket keys that can belong to an auth principal."""
+    candidates: list[str] = []
+
+    def add(value: str) -> None:
+        value = str(value or "").strip()
+        if value and value not in candidates:
+            candidates.append(value)
+
+    add(_resolve_owner_key(auth_user))
+    add(normalize_profile_owner_key(auth_display_name(auth_user, fallback="")))
+    add(normalize_profile_owner_key(auth_user.get("username") or ""))
+    add(str(auth_user.get("id") or "").strip())
+    return candidates
+
+
+def _auth_user_is_session_dm_or_admin(session, auth_user: dict) -> bool:
+    """Return whether the authenticated user has session-wide character access."""
+    if not isinstance(auth_user, dict) or not auth_user:
+        return False
+    auth_role = str(auth_user.get("role") or auth_user.get("account_role") or "").strip().lower()
+    if auth_role in {"admin", "superadmin"}:
+        return True
+
+    auth_user_id = str(auth_user.get("id") or "").strip()
+    auth_key = auth_player_key(auth_user_id) if auth_user_id else ""
+    session_users = dict(getattr(session, "users", {}) or {})
+    candidate_ids = [value for value in (auth_user_id, auth_key) if value]
+
+    for candidate in candidate_ids:
+        session_user = session_users.get(candidate)
+        role = str(getattr(session_user, "role", "") or "").strip().lower() if session_user else ""
+        if role == "dm":
+            return True
+        if candidate and str(getattr(session, "dm_id", "") or "").strip() == candidate:
+            return True
+
+    if auth_key:
+        for session_user in session_users.values():
+            if str(getattr(session_user, "player_key", "") or "").strip() == auth_key:
+                role = str(getattr(session_user, "role", "") or "").strip().lower()
+                if role == "dm":
+                    return True
+
+    return auth_role == "dm"
+
+
+def _find_profile_in_owner_buckets(session, owner_keys: list[str], profile_id: str) -> dict | None:
+    all_profiles = dict(getattr(session, "char_profiles", {}) or {})
+    target_profile_id = str(profile_id or "").strip()
+    for owner_key in owner_keys:
+        owner_profiles = all_profiles.get(owner_key)
+        if not isinstance(owner_profiles, list):
+            continue
+        for item in owner_profiles:
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("id") or "").strip() == target_profile_id:
+                return item
+    return None
+
+
+def resolve_owned_profile_or_403(session, auth_user: dict, profile_id: str, allow_dm: bool = True) -> dict:
+    """Resolve a character profile without letting players enumerate others' profiles.
+
+    Normal players may only resolve profiles in their own owner-key bucket(s).
+    DM/admin users may resolve any profile in the session when allow_dm is true.
+    """
+    if not isinstance(auth_user, dict) or not auth_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    target_profile_id = str(profile_id or "").strip()
+    if not target_profile_id:
+        raise HTTPException(status_code=404, detail="Character not found")
+
+    owner_candidates = _profile_owner_candidates(auth_user)
+    owned_profile = _find_profile_in_owner_buckets(session, owner_candidates, target_profile_id)
+    if isinstance(owned_profile, dict):
+        return owned_profile
+
+    session_wide_profile = _find_profile_by_id(session, target_profile_id)
+    if not isinstance(session_wide_profile, dict):
+        raise HTTPException(status_code=404, detail="Character not found")
+
+    if allow_dm and _auth_user_is_session_dm_or_admin(session, auth_user):
+        return session_wide_profile
+
+    raise HTTPException(status_code=403, detail="Not authorized for this character")
 
 
 async def _persist_imported_document(*, session_id: str, auth_user: dict, document: dict, profile_id: str = "", source: str = "unknown") -> dict:
@@ -1616,6 +1705,7 @@ def _load_species_data(species_id: str) -> dict:
 
 @router.get("/api/spells")
 async def get_spell_library(
+    request: Request,
     level: str | None = None,
     school: str | None = None,
     cls: str | None = None,
@@ -1644,48 +1734,52 @@ async def get_spell_library(
 
     manifest = None
     if profile_id and session_id:
+        auth_user = get_request_user(request)
+        if not auth_user:
+            raise HTTPException(status_code=401, detail="Not authenticated")
         session = get_or_restore_session(str(session_id).strip().upper())
-        if session:
-            profile = _find_profile_by_id(session, profile_id)
-            native = profile.get("nativeCharacter") if isinstance(profile, dict) and isinstance(profile.get("nativeCharacter"), dict) else {}
-            if native:
-                manifest = build_character_spell_manifest(native)
-                card_map = {str(card.get("id") or ""): card for card in (manifest.get("cards") or []) if isinstance(card, dict)}
-                classes = native.get("classes") if isinstance(native.get("classes"), list) else []
-                primary = classes[0] if classes else {}
-                class_id = str(primary.get("classId") or primary.get("id") or primary.get("name") or "").strip().lower()
-                class_level = _safe_int(primary.get("level"), 1)
-                known_set = set((manifest or {}).get("known") or [])
-                prepared_set = set((manifest or {}).get("prepared") or [])
-                hydrated = []
-                highest_available_slot = 0
-                if isinstance((manifest or {}).get("limits"), dict):
-                    slot_map = (manifest or {}).get("limits", {}).get("spellSlots") or {}
-                    for slot_key, amount in slot_map.items():
-                        if _safe_int(amount) <= 0:
-                            continue
-                        slot_text = str(slot_key or "").strip().lower()
-                        parsed = int(slot_text[:1]) if slot_text[:1].isdigit() else 0
-                        if parsed > highest_available_slot:
-                            highest_available_slot = parsed
-                selection_mode = 'prepared' if isinstance((manifest or {}).get("limits"), dict) and (manifest or {}).get("limits", {}).get("preparedLimit") is not None else ('known' if isinstance((manifest or {}).get("limits"), dict) and (manifest or {}).get("limits", {}).get("spellsKnown") is not None else 'library')
-                for row in rows:
-                    row_id = str(row.get("id") or "")
-                    if row_id in card_map:
-                        hydrated.append({**row, **card_map.get(row_id, {})})
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        profile = resolve_owned_profile_or_403(session, auth_user, profile_id)
+        native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
+        if native:
+            manifest = build_character_spell_manifest(native)
+            card_map = {str(card.get("id") or ""): card for card in (manifest.get("cards") or []) if isinstance(card, dict)}
+            classes = native.get("classes") if isinstance(native.get("classes"), list) else []
+            primary = classes[0] if classes else {}
+            class_id = str(primary.get("classId") or primary.get("id") or primary.get("name") or "").strip().lower()
+            class_level = _safe_int(primary.get("level"), 1)
+            known_set = set((manifest or {}).get("known") or [])
+            prepared_set = set((manifest or {}).get("prepared") or [])
+            hydrated = []
+            highest_available_slot = 0
+            if isinstance((manifest or {}).get("limits"), dict):
+                slot_map = (manifest or {}).get("limits", {}).get("spellSlots") or {}
+                for slot_key, amount in slot_map.items():
+                    if _safe_int(amount) <= 0:
                         continue
-                    unlock = (row.get("classUnlockLevels") or {}).get(class_id) if isinstance(row, dict) else None
-                    accessible = unlock is not None and class_level >= int(unlock)
-                    hydrated.append({**row, **build_spell_card(row, character_context={
-                        "unlockLevel": unlock,
-                        "isKnown": row_id in known_set,
-                        "isPrepared": row_id in prepared_set,
-                        "isAccessible": accessible,
-                        "blockedReason": '' if accessible else 'Not unlocked for current class/level.',
-                        "highestAvailableSlot": highest_available_slot,
-                        "selectionMode": selection_mode,
-                    })})
-                rows = hydrated
+                    slot_text = str(slot_key or "").strip().lower()
+                    parsed = int(slot_text[:1]) if slot_text[:1].isdigit() else 0
+                    if parsed > highest_available_slot:
+                        highest_available_slot = parsed
+            selection_mode = 'prepared' if isinstance((manifest or {}).get("limits"), dict) and (manifest or {}).get("limits", {}).get("preparedLimit") is not None else ('known' if isinstance((manifest or {}).get("limits"), dict) and (manifest or {}).get("limits", {}).get("spellsKnown") is not None else 'library')
+            for row in rows:
+                row_id = str(row.get("id") or "")
+                if row_id in card_map:
+                    hydrated.append({**row, **card_map.get(row_id, {})})
+                    continue
+                unlock = (row.get("classUnlockLevels") or {}).get(class_id) if isinstance(row, dict) else None
+                accessible = unlock is not None and class_level >= int(unlock)
+                hydrated.append({**row, **build_spell_card(row, character_context={
+                    "unlockLevel": unlock,
+                    "isKnown": row_id in known_set,
+                    "isPrepared": row_id in prepared_set,
+                    "isAccessible": accessible,
+                    "blockedReason": '' if accessible else 'Not unlocked for current class/level.',
+                    "highestAvailableSlot": highest_available_slot,
+                    "selectionMode": selection_mode,
+                })})
+            rows = hydrated
 
     capped = min(max(1, limit) if isinstance(limit, int) else 200, 1000)
     total = len(rows)
@@ -1693,46 +1787,50 @@ async def get_spell_library(
 
 
 @router.get("/api/spells/{spell_id}")
-async def get_spell_detail(spell_id: str, profile_id: str | None = None, session_id: str | None = None) -> JSONResponse:
+async def get_spell_detail(spell_id: str, request: Request, profile_id: str | None = None, session_id: str | None = None) -> JSONResponse:
     spell = get_compendium_spell_by_id(spell_id)
     if not spell:
         raise HTTPException(status_code=404, detail="Spell not found")
     card = {}
     manifest = None
     if profile_id and session_id:
+        auth_user = get_request_user(request)
+        if not auth_user:
+            raise HTTPException(status_code=401, detail="Not authenticated")
         session = get_or_restore_session(str(session_id).strip().upper())
-        if session:
-            profile = _find_profile_by_id(session, profile_id)
-            native = profile.get("nativeCharacter") if isinstance(profile, dict) and isinstance(profile.get("nativeCharacter"), dict) else {}
-            if native:
-                manifest = build_character_spell_manifest(native)
-                card = next((entry for entry in (manifest.get("cards") or []) if str(entry.get("id") or "") == spell_id), {}) or {}
-                if not card:
-                    classes = native.get("classes") if isinstance(native.get("classes"), list) else []
-                    primary = classes[0] if classes else {}
-                    class_id = str(primary.get("classId") or primary.get("id") or primary.get("name") or "").strip().lower()
-                    class_level = _safe_int(primary.get("level"), 1)
-                    limits = manifest.get("limits") if isinstance(manifest.get("limits"), dict) else {}
-                    slot_map = limits.get("spellSlots") if isinstance(limits.get("spellSlots"), dict) else {}
-                    highest_available_slot = 0
-                    for slot_key, amount in slot_map.items():
-                        if _safe_int(amount) <= 0:
-                            continue
-                        slot_text = str(slot_key or "").strip().lower()
-                        parsed = int(slot_text[:1]) if slot_text[:1].isdigit() else 0
-                        if parsed > highest_available_slot:
-                            highest_available_slot = parsed
-                    unlock = (spell.get("classUnlockLevels") or {}).get(class_id) if isinstance(spell, dict) else None
-                    accessible = unlock is not None and class_level >= int(unlock)
-                    card = build_spell_card(spell, character_context={
-                        "unlockLevel": unlock,
-                        "isKnown": str(spell.get("id") or "") in set((manifest or {}).get("known") or []),
-                        "isPrepared": str(spell.get("id") or "") in set((manifest or {}).get("prepared") or []),
-                        "isAccessible": accessible,
-                        "blockedReason": '' if accessible else 'Not unlocked for current class/level.',
-                        "highestAvailableSlot": highest_available_slot,
-                        "selectionMode": 'prepared' if limits.get("preparedLimit") is not None else ('known' if limits.get("spellsKnown") is not None else 'library'),
-                    })
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        profile = resolve_owned_profile_or_403(session, auth_user, profile_id)
+        native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
+        if native:
+            manifest = build_character_spell_manifest(native)
+            card = next((entry for entry in (manifest.get("cards") or []) if str(entry.get("id") or "") == spell_id), {}) or {}
+            if not card:
+                classes = native.get("classes") if isinstance(native.get("classes"), list) else []
+                primary = classes[0] if classes else {}
+                class_id = str(primary.get("classId") or primary.get("id") or primary.get("name") or "").strip().lower()
+                class_level = _safe_int(primary.get("level"), 1)
+                limits = manifest.get("limits") if isinstance(manifest.get("limits"), dict) else {}
+                slot_map = limits.get("spellSlots") if isinstance(limits.get("spellSlots"), dict) else {}
+                highest_available_slot = 0
+                for slot_key, amount in slot_map.items():
+                    if _safe_int(amount) <= 0:
+                        continue
+                    slot_text = str(slot_key or "").strip().lower()
+                    parsed = int(slot_text[:1]) if slot_text[:1].isdigit() else 0
+                    if parsed > highest_available_slot:
+                        highest_available_slot = parsed
+                unlock = (spell.get("classUnlockLevels") or {}).get(class_id) if isinstance(spell, dict) else None
+                accessible = unlock is not None and class_level >= int(unlock)
+                card = build_spell_card(spell, character_context={
+                    "unlockLevel": unlock,
+                    "isKnown": str(spell.get("id") or "") in set((manifest or {}).get("known") or []),
+                    "isPrepared": str(spell.get("id") or "") in set((manifest or {}).get("prepared") or []),
+                    "isAccessible": accessible,
+                    "blockedReason": '' if accessible else 'Not unlocked for current class/level.',
+                    "highestAvailableSlot": highest_available_slot,
+                    "selectionMode": 'prepared' if limits.get("preparedLimit") is not None else ('known' if limits.get("spellsKnown") is not None else 'library'),
+                })
     return JSONResponse({"ok": True, "spell": {**spell, **card}, "manifest": manifest or {}})
 
 
@@ -1830,9 +1928,8 @@ async def get_character_spells_manifest(
 
     profile: dict = {}
     if session:
-        found = _find_profile_by_id(session, profile_id)
-        if isinstance(found, dict):
-            profile = found
+        auth_user = get_request_user(request)
+        profile = resolve_owned_profile_or_403(session, auth_user, profile_id)
 
     native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
     if native:
@@ -1877,9 +1974,8 @@ async def get_character_spells_known(
 
     profile: dict = {}
     if session:
-        found = _find_profile_by_id(session, profile_id)
-        if isinstance(found, dict):
-            profile = found
+        auth_user = get_request_user(request)
+        profile = resolve_owned_profile_or_403(session, auth_user, profile_id)
 
     native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
     if native:
@@ -1936,24 +2032,7 @@ async def update_character_spells_known(
     session = get_or_restore_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    all_profiles = dict(getattr(session, "char_profiles", {}) or {})
-    target_owner_key: str | None = None
-    target_index: int = -1
-    for owner_key, owner_profiles in all_profiles.items():
-        if not isinstance(owner_profiles, list):
-            continue
-        for idx, item in enumerate(owner_profiles):
-            if not isinstance(item, dict):
-                continue
-            if str(item.get("id") or "").strip() == profile_id:
-                target_owner_key = owner_key
-                target_index = idx
-                break
-        if target_owner_key is not None:
-            break
-    if target_owner_key is None or target_index < 0:
-        raise HTTPException(status_code=404, detail="Character not found")
-    profile = all_profiles[target_owner_key][target_index]
+    profile = resolve_owned_profile_or_403(session, auth_user, profile_id)
     native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
     if not native:
         raise HTTPException(status_code=400, detail="Character does not have a native document")
@@ -2013,26 +2092,7 @@ async def update_character_spells_prepared(
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    all_profiles = dict(getattr(session, "char_profiles", {}) or {})
-    target_owner_key: str | None = None
-    target_index: int = -1
-    for owner_key, owner_profiles in all_profiles.items():
-        if not isinstance(owner_profiles, list):
-            continue
-        for idx, item in enumerate(owner_profiles):
-            if not isinstance(item, dict):
-                continue
-            if str(item.get("id") or "").strip() == profile_id:
-                target_owner_key = owner_key
-                target_index = idx
-                break
-        if target_owner_key is not None:
-            break
-
-    if target_owner_key is None or target_index < 0:
-        raise HTTPException(status_code=404, detail="Character not found")
-
-    profile = all_profiles[target_owner_key][target_index]
+    profile = resolve_owned_profile_or_403(session, auth_user, profile_id)
     native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
     if not native:
         raise HTTPException(status_code=400, detail="Character does not have a native document")
