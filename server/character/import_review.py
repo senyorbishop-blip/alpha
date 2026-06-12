@@ -124,6 +124,69 @@ def _missing_from_warnings(rows: list[dict[str, Any]], codes: set[str]) -> list[
     return deduped
 
 
+def _count_ability_scores(document: dict[str, Any]) -> int:
+    abilities = document.get("abilities") if isinstance(document.get("abilities"), dict) else {}
+    scores = abilities.get("scores") if isinstance(abilities.get("scores"), dict) else {}
+    count = 0
+    for key in ("str", "dex", "con", "int", "wis", "cha"):
+        if scores.get(key) not in (None, ""):
+            count += 1
+    return count
+
+
+def _row_status(*, found: bool, required: bool = False, warning: bool = False) -> str:
+    if found and warning:
+        return "warning"
+    if found:
+        return "found"
+    return "blocked" if required else "missing"
+
+
+def _checklist_row(
+    key: str,
+    label: str,
+    *,
+    found: bool,
+    detail: str = "",
+    required: bool = False,
+    warning: bool = False,
+) -> dict[str, Any]:
+    status = _row_status(found=found, required=required, warning=warning)
+    return {
+        "key": key,
+        "label": label,
+        "status": status,
+        "ok": bool(found) and status != "warning",
+        "found": bool(found),
+        "required": bool(required),
+        "blocking": bool(required and not found),
+        "detail": _safe_str(detail, limit=240),
+    }
+
+
+def _presence_row(key: str, label: str, *, present: bool, detail: str = "") -> dict[str, Any]:
+    return {
+        "key": key,
+        "label": label,
+        "status": "warning" if present else "clear",
+        "ok": not bool(present),
+        "found": bool(present),
+        "required": False,
+        "blocking": False,
+        "detail": _safe_str(detail, limit=240),
+    }
+
+
+def _ready_label(status: str) -> str:
+    if status == "exact":
+        return "Ready to Play"
+    if status == "playable_with_warnings":
+        return "Playable with Warnings"
+    if status == "blocked":
+        return "Blocked"
+    return "Needs DM Review"
+
+
 def _comparison(*, label: str, source_value: Any, resolved_value: Any) -> dict[str, Any]:
     has_source = source_value not in (None, "")
     has_resolved = resolved_value not in (None, "")
@@ -152,7 +215,10 @@ def build_import_review(document: Any, *, source_type: str = "", runtime: Any = 
     if not imported_spells:
         imported_spells = spell_state.get("spellbookEntries") if isinstance(spell_state.get("spellbookEntries"), list) else []
     imported_features = import_meta.get("importedFeatures") if isinstance(import_meta.get("importedFeatures"), list) else []
+    imported_actions = import_meta.get("importedActions") if isinstance(import_meta.get("importedActions"), list) else []
     inventory_rows = equipment.get("inventory") if isinstance(equipment.get("inventory"), list) else []
+    document_actions = doc.get("actions") if isinstance(doc.get("actions"), list) else []
+    document_features = doc.get("features") if isinstance(doc.get("features"), list) else []
 
     spells_matched = _name_list([row for row in imported_spells if not isinstance(row, dict) or row.get("matchedNative", True)])
     spells_imported_only = _name_list([row for row in imported_spells if isinstance(row, dict) and row.get("matchedNative") is False])
@@ -161,8 +227,10 @@ def build_import_review(document: Any, *, source_type: str = "", runtime: Any = 
     items_matched = _name_list(inventory_rows)
     items_missing = _missing_from_warnings(warnings, {"missing_inventory", "missing_item_mapping", "missing_items"})
 
-    features_matched = _name_list(imported_features)
+    features_matched = _name_list(list(imported_features) + list(document_features))
     features_missing = _missing_from_warnings(warnings, {"unknown_feat", "missing_features", "missing_feature_mapping"})
+    actions_matched = _name_list(list(imported_actions) + list(document_actions))
+    ability_score_count = _count_ability_scores(doc)
 
     runtime_hp = runtime_doc.get("hp") if isinstance(runtime_doc.get("hp"), dict) else {}
     runtime_combat = runtime_doc.get("combat") if isinstance(runtime_doc.get("combat"), dict) else {}
@@ -195,6 +263,14 @@ def build_import_review(document: Any, *, source_type: str = "", runtime: Any = 
         review_warnings.append("Species/race is missing and should be reviewed.")
     if not required_basics["background"]:
         review_warnings.append("Background is missing and should be reviewed.")
+    if ability_score_count < 6:
+        review_warnings.append("Ability scores are incomplete and should be reviewed.")
+    if not items_matched:
+        review_warnings.append("Inventory was not found and should be reviewed.")
+    if not actions_matched:
+        review_warnings.append("Attacks/actions were not found and should be reviewed.")
+    if not features_matched:
+        review_warnings.append("Features were not found and should be reviewed.")
 
     if blocking_issues:
         status = "blocked"
@@ -206,7 +282,24 @@ def build_import_review(document: Any, *, source_type: str = "", runtime: Any = 
         status = "exact"
 
     can_continue = not blocking_issues and required_basics["name"] and required_basics["class"] and has_hp and has_ac
+    ready_to_play = can_continue and status == "exact"
     can_review_later = can_continue and status in {"playable_with_warnings", "needs_review"}
+    missing_mappings = list(spells_missing) + list(items_missing) + list(features_missing)
+    review_checklist = [
+        _checklist_row("name", "Name found", found=required_basics["name"], detail=_safe_str(identity.get("displayName") or identity.get("name") or doc.get("name"), "Missing"), required=True),
+        _checklist_row("class_level", "Class/level found", found=required_basics["class"], detail=_class_summary(doc) or "Missing", required=True),
+        _checklist_row("species", "Species found", found=required_basics["species"], detail=_safe_str(species.get("name") or species.get("id"), "Missing")),
+        _checklist_row("background", "Background found", found=required_basics["background"], detail=_safe_str(background.get("name") or background.get("id"), "Missing")),
+        _checklist_row("hp", "HP found", found=has_hp, detail=str(source_hp if source_hp not in (None, "") else resolved_hp if resolved_hp not in (None, "") else "Missing"), required=True),
+        _checklist_row("ac", "AC found", found=has_ac, detail=str(source_ac if source_ac not in (None, "") else resolved_ac if resolved_ac not in (None, "") else "Missing"), required=True),
+        _checklist_row("ability_scores", "Ability scores found", found=ability_score_count >= 6, detail=f"{ability_score_count}/6 scores found"),
+        _checklist_row("inventory", "Inventory found", found=bool(items_matched), detail=f"{len(items_matched)} item(s) found"),
+        _checklist_row("attacks_actions", "Attacks/actions found", found=bool(actions_matched), detail=f"{len(actions_matched)} action(s) found"),
+        _checklist_row("features", "Features found", found=bool(features_matched), detail=f"{len(features_matched)} feature(s) found"),
+        _checklist_row("spells_matched", "Spells matched", found=bool(spells_matched), detail=f"{len(spells_matched)} matched spell(s)"),
+        _presence_row("imported_only_spells", "Imported-only spells present", present=bool(spells_imported_only), detail=f"{len(spells_imported_only)} imported-only spell(s)"),
+        _presence_row("missing_mappings", "Missing mappings present", present=bool(missing_mappings), detail=f"{len(missing_mappings)} missing mapping(s)"),
+    ]
 
     return {
         "sourceType": source,
@@ -224,6 +317,7 @@ def build_import_review(document: Any, *, source_type: str = "", runtime: Any = 
         "spellsMissing": spells_missing,
         "itemsMatched": items_matched,
         "itemsMissing": items_missing,
+        "actionsMatched": actions_matched,
         "featuresMatched": features_matched,
         "featuresMissing": features_missing,
         "warnings": review_warnings,
@@ -231,6 +325,9 @@ def build_import_review(document: Any, *, source_type: str = "", runtime: Any = 
         "requiredBasics": required_basics,
         "hasHP": has_hp,
         "hasAC": has_ac,
+        "readyToPlay": ready_to_play,
+        "readyLabel": _ready_label(status),
+        "reviewChecklist": review_checklist,
         "canContinueToPlay": can_continue,
         "canReviewLater": can_review_later,
         "reviewStatus": status if status in REVIEW_STATUSES else "needs_review",
