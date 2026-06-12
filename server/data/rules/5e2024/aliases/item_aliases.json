@@ -1,0 +1,33 @@
+{
+  "Studded Leather Armor": [
+    "Studded Leather Armour",
+    "Studded Leather"
+  ],
+  "Leather Armor": [
+    "Leather Armour"
+  ],
+  "Padded Armor": [
+    "Padded Armour"
+  ],
+  "Hide Armor": [
+    "Hide Armour"
+  ],
+  "Scale Mail Armor": [
+    "Scale Mail",
+    "Scale Mail Armour"
+  ],
+  "+1 Shield": [
+    "Shield +1",
+    "Shield, +1"
+  ],
+  "Dagger": [
+    "Daggers"
+  ],
+  "Arrow": [
+    "Arrows"
+  ],
+  "Crossbow Bolt": [
+    "Crossbow Bolts",
+    "Bolts"
+  ]
+}

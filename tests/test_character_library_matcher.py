@@ -49,7 +49,7 @@ def test_library_gap_report_preserves_missing_imported_names_and_notes():
 
     assert set(report) == {"items", "spells", "features"}
     for group in report.values():
-        assert set(group) == {"exact", "alias", "partial", "missing"}
+        assert set(group) == {"exact", "alias", "normalized", "partial", "missing"}
 
     assert any(row["imported_name"] == "Daggers" for row in report["items"]["alias"])
     missing_item = next(row for row in report["items"]["missing"] if row["imported_name"] == "Xyzzyq Uncatalogued Item")
@@ -90,3 +90,43 @@ def test_attach_and_aggregate_library_gap_report_from_profiles():
     assert summary["top_missing"]["items"][0]["name"] == "Uncatalogued Lantern"
     assert summary["top_missing"]["spells"][0]["sources"][0]["character"] == "Gap Hero"
     assert summary["top_missing"]["features"][0]["sources"][0]["source"] == "dndbeyond_json"
+
+
+def test_library_matcher_uses_data_driven_alias_files_for_common_ddb_names():
+    tasha = match_name("Tasha’s Hideous Laughter", "spells")
+    assert tasha["status"] in {"alias", "normalized"}
+    assert tasha["matched_name"] == "Tasha's Hideous Laughter"
+
+    hand = match_name("Arcane Hand", "spells")
+    assert hand["status"] == "alias"
+    assert hand["matched_name"] == "Bigby's Hand"
+
+    armour = match_name("Studded Leather Armour", "items")
+    assert armour["status"] == "alias"
+    assert armour["matched_name"] in {"Studded Leather Armor", "Studded Leather"}
+
+    shield = match_name("Shield +1", "items")
+    assert shield["status"] == "alias"
+    assert shield["matched_name"] == "+1 Shield"
+
+    subclass = match_name("arcane-trickster", "features")
+    assert subclass["status"] == "alias"
+    assert subclass["matched_name"] == "Arcane Trickster"
+
+
+def test_library_gap_report_separates_alias_and_normalized_matches_from_missing():
+    document = {
+        "equipment": {"inventory": [{"name": "Shield +1"}, {"name": "Xyzzyq Missing Bauble"}]},
+        "spellState": {"spellbookEntries": [{"name": "Arcane Hand"}]},
+        "classes": [{"name": "Rogue", "subclass": "arcane-trickster"}],
+    }
+
+    report = build_library_gap_report(document)
+
+    assert any(row["imported_name"] == "Shield +1" for row in report["items"]["alias"])
+    assert any(row["imported_name"] == "Arcane Hand" for row in report["spells"]["alias"])
+    assert any(row["imported_name"] == "arcane-trickster" for row in report["features"]["alias"])
+    assert all(row["imported_name"] != "Shield +1" for row in report["items"]["missing"])
+    assert all(row["imported_name"] != "Arcane Hand" for row in report["spells"]["missing"])
+    assert all(row["imported_name"] != "arcane-trickster" for row in report["features"]["missing"])
+    assert any(row["imported_name"] == "Xyzzyq Missing Bauble" for row in report["items"]["missing"])

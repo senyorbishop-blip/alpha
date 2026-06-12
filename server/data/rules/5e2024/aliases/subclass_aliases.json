@@ -1,0 +1,73 @@
+{
+  "arcane-trickster": [
+    "Arcane Trickster"
+  ],
+  "archfey-patron": [
+    "The Archfey",
+    "Archfey Patron",
+    "Archfey"
+  ],
+  "battlemaster": [
+    "Battle Master"
+  ],
+  "beast-master": [
+    "Beast Master"
+  ],
+  "circle-of-the-land": [
+    "Circle of the Land",
+    "Land Druid"
+  ],
+  "circle-of-the-moon": [
+    "Circle of the Moon",
+    "Moon Druid"
+  ],
+  "college-of-glamour": [
+    "College of Glamour",
+    "Glamour Bard"
+  ],
+  "college-of-lore": [
+    "College of Lore",
+    "Lore Bard"
+  ],
+  "college-of-valor": [
+    "College of Valor",
+    "Valor Bard"
+  ],
+  "draconic-bloodline": [
+    "Draconic Bloodline",
+    "Draconic Sorcery"
+  ],
+  "great-old-one-patron": [
+    "The Great Old One",
+    "Great Old One Patron",
+    "Great Old One"
+  ],
+  "oath-of-the-ancients": [
+    "Oath of the Ancients",
+    "Ancients Paladin"
+  ],
+  "oath-of-devotion": [
+    "Oath of Devotion",
+    "Devotion Paladin"
+  ],
+  "oath-of-vengeance": [
+    "Oath of Vengeance",
+    "Vengeance Paladin"
+  ],
+  "way-of-the-open-hand": [
+    "Way of the Open Hand",
+    "Open Hand"
+  ],
+  "way-of-shadow": [
+    "Way of Shadow",
+    "Shadow Monk"
+  ],
+  "way-of-the-four-elements": [
+    "Way of the Four Elements",
+    "Four Elements"
+  ],
+  "wild-magic": [
+    "Wild Magic",
+    "Wild Magic Sorcery"
+  ]
+}
