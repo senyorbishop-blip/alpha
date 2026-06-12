@@ -309,6 +309,274 @@ def _caster_override_for_subclass(class_id: str, class_level: int, subclass_id: 
         return None
     return row
 
+
+
+_STANDARD_MULTICLASS_SPELL_SLOTS: dict[int, dict[str, int]] = {
+    1: {"1st": 2},
+    2: {"1st": 3},
+    3: {"1st": 4, "2nd": 2},
+    4: {"1st": 4, "2nd": 3},
+    5: {"1st": 4, "2nd": 3, "3rd": 2},
+    6: {"1st": 4, "2nd": 3, "3rd": 3},
+    7: {"1st": 4, "2nd": 3, "3rd": 3, "4th": 1},
+    8: {"1st": 4, "2nd": 3, "3rd": 3, "4th": 2},
+    9: {"1st": 4, "2nd": 3, "3rd": 3, "4th": 3, "5th": 1},
+    10: {"1st": 4, "2nd": 3, "3rd": 3, "4th": 3, "5th": 2},
+    11: {"1st": 4, "2nd": 3, "3rd": 3, "4th": 3, "5th": 2, "6th": 1},
+    12: {"1st": 4, "2nd": 3, "3rd": 3, "4th": 3, "5th": 2, "6th": 1},
+    13: {"1st": 4, "2nd": 3, "3rd": 3, "4th": 3, "5th": 2, "6th": 1, "7th": 1},
+    14: {"1st": 4, "2nd": 3, "3rd": 3, "4th": 3, "5th": 2, "6th": 1, "7th": 1},
+    15: {"1st": 4, "2nd": 3, "3rd": 3, "4th": 3, "5th": 2, "6th": 1, "7th": 1, "8th": 1},
+    16: {"1st": 4, "2nd": 3, "3rd": 3, "4th": 3, "5th": 2, "6th": 1, "7th": 1, "8th": 1},
+    17: {"1st": 4, "2nd": 3, "3rd": 3, "4th": 3, "5th": 2, "6th": 1, "7th": 1, "8th": 1, "9th": 1},
+    18: {"1st": 4, "2nd": 3, "3rd": 3, "4th": 3, "5th": 3, "6th": 1, "7th": 1, "8th": 1, "9th": 1},
+    19: {"1st": 4, "2nd": 3, "3rd": 3, "4th": 3, "5th": 3, "6th": 2, "7th": 1, "8th": 1, "9th": 1},
+    20: {"1st": 4, "2nd": 3, "3rd": 3, "4th": 3, "5th": 3, "6th": 2, "7th": 2, "8th": 1, "9th": 1},
+}
+
+
+def _dedupe_preserve(values: list[str]) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        text = str(value or "").strip()
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        out.append(text)
+    return out
+
+
+def _class_rows_for_document(document: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = document.get("classes") if isinstance(document.get("classes"), list) else []
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        class_id = _class_name_index().get(_norm(row.get("classId") or row.get("id") or row.get("name")), _slug(row.get("classId") or row.get("id") or row.get("name")))
+        if not class_id:
+            continue
+        subclass_id = _norm(row.get("subclassId") or row.get("subclass"))
+        level = max(1, min(20, _safe_int(row.get("level"), 1)))
+        catalog = get_class_catalog_row(class_id) or {}
+        out.append({
+            "classId": class_id,
+            "className": str(catalog.get("displayName") or row.get("name") or class_id).strip(),
+            "level": level,
+            "subclassId": subclass_id,
+            "subclassName": str(row.get("subclassName") or row.get("subclass") or "").strip(),
+        })
+    return out
+
+
+def _add_spell_source(class_sources: dict[str, list[dict[str, Any]]], spell_id: str, source: dict[str, Any]) -> None:
+    if not spell_id:
+        return
+    bucket = class_sources.setdefault(spell_id, [])
+    key = (
+        str(source.get("sourceType") or ""),
+        str(source.get("classId") or ""),
+        str(source.get("subclassId") or ""),
+        str(source.get("origin") or ""),
+    )
+    for existing in bucket:
+        if (
+            str(existing.get("sourceType") or ""),
+            str(existing.get("classId") or ""),
+            str(existing.get("subclassId") or ""),
+            str(existing.get("origin") or ""),
+        ) == key:
+            return
+    bucket.append(source)
+
+
+def _spell_id_from_any(value: Any) -> str:
+    if isinstance(value, dict):
+        raw = value.get("id") or value.get("spellId") or value.get("name") or value.get("displayName")
+    else:
+        raw = value
+    spell = get_spell_by_id(str(raw or ""))
+    return str((spell or {}).get("id") or "").strip()
+
+
+def _extract_extra_spell_sources(document: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    out: dict[str, list[dict[str, Any]]] = {}
+    containers = [
+        ("feat", document.get("feats") if isinstance(document.get("feats"), list) else []),
+        ("species", [document.get("species")] if isinstance(document.get("species"), dict) else []),
+        ("item", ((document.get("equipment") or {}).get("inventory") if isinstance(document.get("equipment"), dict) else []) or []),
+    ]
+    keys = ("spellIds", "spells", "knownSpells", "preparedSpells", "grantedSpells")
+    for source_type, rows in containers:
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            origin = str(row.get("id") or row.get("name") or source_type).strip()
+            for key in keys:
+                values = row.get(key) if isinstance(row.get(key), list) else []
+                for value in values:
+                    spell_id = _spell_id_from_any(value)
+                    if spell_id:
+                        _add_spell_source(out, spell_id, {"sourceType": source_type, "origin": origin})
+    return out
+
+
+def _spellbook_entry_sources(document: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    spell_state = document.get("spellState") if isinstance(document.get("spellState"), dict) else {}
+    entries = spell_state.get("spellbookEntries") if isinstance(spell_state.get("spellbookEntries"), list) else []
+    if not entries:
+        entries = document.get("spellbookEntries") if isinstance(document.get("spellbookEntries"), list) else []
+    out: dict[str, list[dict[str, Any]]] = {}
+    for entry in entries:
+        spell_id = _spell_id_from_any(entry)
+        if not spell_id:
+            continue
+        source_class = _norm((entry or {}).get("classId") or (entry or {}).get("sourceClass") or (entry or {}).get("sourceClassId")) if isinstance(entry, dict) else ""
+        source_subclass = _norm((entry or {}).get("subclassId") or (entry or {}).get("sourceSubclass") or (entry or {}).get("sourceSubclassId")) if isinstance(entry, dict) else ""
+        _add_spell_source(out, spell_id, {
+            "sourceType": "imported_spellbook",
+            "classId": source_class,
+            "subclassId": source_subclass,
+            "origin": str((entry or {}).get("source") or (entry or {}).get("name") or "spellbookEntries").strip() if isinstance(entry, dict) else "spellbookEntries",
+        })
+    return out
+
+
+def _highest_spell_level_for_class(class_id: str, class_level: int, subclass_id: str, document: dict[str, Any]) -> int:
+    highest = 0
+    for spell in get_spell_list():
+        unlock = (spell.get("classUnlockLevels") or {}).get(class_id)
+        subclass_unlock = _subclass_caster_unlock_for_spell(spell, class_id, class_level, subclass_id)
+        if (unlock is not None and class_level >= int(unlock)) or subclass_unlock is not None:
+            highest = max(highest, _safe_int(spell.get("level"), 0))
+    grants = get_subclass_spell_grants(document, class_id=class_id, class_level=class_level)
+    for spell_id in (grants.get("alwaysKnown") or []) + (grants.get("alwaysPrepared") or []):
+        spell = get_spell_by_id(spell_id)
+        if spell:
+            highest = max(highest, _safe_int(spell.get("level"), 0))
+    return highest
+
+
+def _caster_level_contribution(casting_type: str, level: int) -> int:
+    ctype = _norm(casting_type)
+    if ctype == "full":
+        return level
+    if ctype == "half":
+        return level // 2
+    if ctype == "third":
+        return level // 3
+    return 0
+
+
+
+
+def _subclass_caster_list_class(class_id: str, class_level: int, subclass_id: str | None) -> str:
+    override = _caster_override_for_subclass(class_id, class_level, subclass_id)
+    if not override:
+        return ""
+    # Arcane Trickster / Eldritch Knight style subclasses draw from the wizard spell list.
+    if _norm(class_id) in {"rogue", "fighter"}:
+        return "wizard"
+    return ""
+
+
+def _subclass_caster_unlock_for_spell(spell: dict[str, Any], class_id: str, class_level: int, subclass_id: str | None) -> int | None:
+    list_class = _subclass_caster_list_class(class_id, class_level, subclass_id)
+    if not list_class:
+        return None
+    unlock = (spell.get("classUnlockLevels") or {}).get(list_class)
+    if unlock is None:
+        return None
+    if class_level < int(unlock):
+        return None
+    return int(unlock)
+
+def build_multiclass_spell_context(document: dict[str, Any]) -> dict[str, Any]:
+    """Build spell access, slot, and source context across every class row."""
+    if not isinstance(document, dict):
+        document = {}
+    abilities = document.get("abilities") if isinstance(document.get("abilities"), dict) else {}
+    class_rows = _class_rows_for_document(document)
+    total_level = sum(_safe_int(row.get("level"), 0) for row in class_rows)
+    context_classes: list[dict[str, Any]] = []
+    class_sources: dict[str, list[dict[str, Any]]] = {}
+    caster_level = 0
+    pact_magic: dict[str, Any] = {"classes": [], "slots": {}, "highestSlotLevel": 0}
+
+    for row in class_rows:
+        class_id = str(row.get("classId") or "")
+        class_level = _safe_int(row.get("level"), 1)
+        subclass_id = str(row.get("subclassId") or "")
+        limits = build_spell_limits_for_class(class_id, class_level, abilities, document=document, subclass_id=subclass_id)
+        casting_type = str(limits.get("castingType") or "none")
+        if _norm(casting_type) == "pact":
+            mechanics = _class_mechanics_for_level(get_class_catalog_row(class_id), class_level)
+            pact_slots = _safe_int(mechanics.get("pactSlots"), 0)
+            pact_slot_level = _safe_int(mechanics.get("pactSlotLevel"), 0)
+            if pact_slots > 0 and pact_slot_level > 0:
+                pact_magic["classes"].append({"classId": class_id, "level": class_level, "slots": pact_slots, "slotLevel": pact_slot_level})
+                pact_magic["slots"] = {f"{pact_slot_level}{'st' if pact_slot_level == 1 else 'nd' if pact_slot_level == 2 else 'rd' if pact_slot_level == 3 else 'th'}": pact_slots}
+                pact_magic["highestSlotLevel"] = max(_safe_int(pact_magic.get("highestSlotLevel"), 0), pact_slot_level)
+        else:
+            caster_level += _caster_level_contribution(casting_type, class_level)
+
+        highest_unlocked = _highest_spell_level_for_class(class_id, class_level, subclass_id, document)
+        class_context = {**row, "limits": limits, "castingType": casting_type, "spellcastingAbility": limits.get("spellcastingAbility") or "", "highestUnlockedSpellLevel": highest_unlocked}
+        context_classes.append(class_context)
+
+        for spell in get_spell_list():
+            spell_id = str(spell.get("id") or "")
+            unlock = (spell.get("classUnlockLevels") or {}).get(class_id)
+            if unlock is not None and class_level >= int(unlock):
+                _add_spell_source(class_sources, spell_id, {
+                    "sourceType": "class",
+                    "classId": class_id,
+                    "className": row.get("className") or class_id,
+                    "subclassId": "",
+                    "unlockLevel": int(unlock),
+                })
+            subclass_unlock = _subclass_caster_unlock_for_spell(spell, class_id, class_level, subclass_id)
+            if subclass_unlock is not None:
+                _add_spell_source(class_sources, spell_id, {
+                    "sourceType": "subclass",
+                    "classId": class_id,
+                    "className": row.get("className") or class_id,
+                    "subclassId": subclass_id,
+                    "unlockLevel": subclass_unlock,
+                })
+        grants = get_subclass_spell_grants(document, class_id=class_id, class_level=class_level)
+        for spell_id in (grants.get("alwaysKnown") or []) + (grants.get("alwaysPrepared") or []):
+            _add_spell_source(class_sources, spell_id, {
+                "sourceType": "subclass",
+                "classId": class_id,
+                "className": row.get("className") or class_id,
+                "subclassId": subclass_id,
+                "unlockLevel": None,
+            })
+        bonus = get_class_bonus_spell_access(document, class_id=class_id, class_level=class_level)
+        for spell_id in bonus.get("alwaysKnown") or []:
+            _add_spell_source(class_sources, spell_id, {"sourceType": "class_feature", "classId": class_id, "subclassId": "", "unlockLevel": class_level})
+
+    for sources in (_extract_extra_spell_sources(document), _spellbook_entry_sources(document)):
+        for spell_id, rows in sources.items():
+            for source in rows:
+                _add_spell_source(class_sources, spell_id, source)
+
+    caster_level = max(0, min(20, caster_level))
+    combined_slots = _clone(_STANDARD_MULTICLASS_SPELL_SLOTS.get(caster_level, {})) if caster_level else {}
+    return {
+        "classes": context_classes,
+        "totalLevel": total_level,
+        "casterLevel": caster_level,
+        "pactMagic": pact_magic,
+        "spellcastingAbilities": {str(row.get("classId") or ""): row.get("spellcastingAbility") or "" for row in context_classes},
+        "classSourcesBySpell": class_sources,
+        "highestUnlockedSpellLevelByClass": {str(row.get("classId") or ""): row.get("highestUnlockedSpellLevel") or 0 for row in context_classes},
+        "spellSlots": combined_slots,
+        "highestAvailableSlot": _highest_slot_level_from_limits({"spellSlots": combined_slots}),
+    }
+
+
 def _extract_target(description: str, range_text: str) -> str:
     desc = str(description or '').strip()
     if not desc:
@@ -642,25 +910,16 @@ def get_effective_document_spell_state(document: dict[str, Any], *, class_id: st
     known = [str(v or '').strip() for v in (spell_state.get('known') or []) if str(v or '').strip()]
     prepared = [str(v or '').strip() for v in (spell_state.get('prepared') or []) if str(v or '').strip()]
     grants = get_subclass_spell_grants(document, class_id=class_id, class_level=class_level)
-    if known or prepared:
-        merged_known = list(known)
-        merged_prepared = list(prepared)
-        for spell_id in grants.get('alwaysKnown') or []:
-            if spell_id not in merged_known:
-                merged_known.append(spell_id)
-        for spell_id in grants.get('alwaysPrepared') or []:
-            if spell_id not in merged_prepared:
-                merged_prepared.append(spell_id)
-        return {'known': _clone(merged_known), 'prepared': _clone(merged_prepared)}
     fallback_known, fallback_prepared = _infer_spell_ids_from_spellbook_entries(document, class_id=class_id, class_level=class_level)
+    merged_known = _dedupe_preserve(list(known) + list(fallback_known))
+    merged_prepared = _dedupe_preserve(list(prepared) + list(fallback_prepared))
     for spell_id in grants.get('alwaysKnown') or []:
-        if spell_id not in fallback_known:
-            fallback_known.append(spell_id)
+        if spell_id not in merged_known:
+            merged_known.append(spell_id)
     for spell_id in grants.get('alwaysPrepared') or []:
-        if spell_id not in fallback_prepared:
-            fallback_prepared.append(spell_id)
-    return {'known': fallback_known, 'prepared': fallback_prepared}
-
+        if spell_id not in merged_prepared:
+            merged_prepared.append(spell_id)
+    return {'known': _clone(merged_known), 'prepared': _clone(merged_prepared)}
 
 
 
@@ -757,7 +1016,88 @@ def _highest_slot_level_from_limits(limits: dict[str, Any] | None) -> int:
             highest = parsed
     return highest
 
+
+
+def _is_multiclass_document(document: dict[str, Any] | None) -> bool:
+    return isinstance(document, dict) and len(_class_rows_for_document(document)) > 1
+
+
+def _validate_spell_selection_multiclass(*, abilities: dict[str, Any] | None, known: list[str], prepared: list[str], document: dict[str, Any]) -> dict[str, Any]:
+    context = build_multiclass_spell_context(document)
+    known_ids = _dedupe_preserve([str(v or '').strip() for v in known if str(v or '').strip()])
+    prepared_ids = _dedupe_preserve([str(v or '').strip() for v in prepared if str(v or '').strip()])
+    source_map = context.get("classSourcesBySpell") if isinstance(context.get("classSourcesBySpell"), dict) else {}
+    errors: list[str] = []
+    warnings: list[str] = []
+    allowed_known: list[str] = []
+    allowed_prepared: list[str] = []
+    always_known: set[str] = set()
+    always_prepared: set[str] = set()
+    subclass_grants = {"subclassIds": [], "alwaysPrepared": [], "alwaysKnown": [], "unlockedSpells": []}
+    class_bonus = {"alwaysKnown": [], "unlockedSpells": []}
+
+    for cls in context.get("classes") or []:
+        class_id = str(cls.get("classId") or "")
+        class_level = _safe_int(cls.get("level"), 1)
+        grants = get_subclass_spell_grants(document, class_id=class_id, class_level=class_level)
+        subclass_grants["subclassIds"].extend(grants.get("subclassIds") or [])
+        subclass_grants["alwaysPrepared"].extend(grants.get("alwaysPrepared") or [])
+        subclass_grants["alwaysKnown"].extend(grants.get("alwaysKnown") or [])
+        subclass_grants["unlockedSpells"].extend(grants.get("unlockedSpells") or [])
+        always_prepared.update(grants.get("alwaysPrepared") or [])
+        always_known.update(grants.get("alwaysKnown") or [])
+        bonus = get_class_bonus_spell_access(document, class_id=class_id, class_level=class_level)
+        class_bonus["alwaysKnown"].extend(bonus.get("alwaysKnown") or [])
+        class_bonus["unlockedSpells"].extend(bonus.get("unlockedSpells") or [])
+        always_known.update(bonus.get("alwaysKnown") or [])
+
+    for spell_id in known_ids:
+        spell = get_spell_by_id(spell_id)
+        if not spell:
+            warnings.append(f'Unknown spell id kept out of known list: {spell_id}')
+            continue
+        if spell_id not in source_map and spell_id not in always_known and spell_id not in always_prepared:
+            errors.append(f"{spell.get('name')} is not unlocked by any current class, subclass, feat, species, item, or imported spellbook source.")
+            continue
+        allowed_known.append(spell_id)
+    known_set = set(allowed_known)
+    for spell_id in prepared_ids:
+        spell = get_spell_by_id(spell_id)
+        if not spell:
+            warnings.append(f'Unknown spell id kept out of prepared list: {spell_id}')
+            continue
+        if _safe_int(spell.get('level'), 0) == 0:
+            errors.append(f"{spell.get('name')} is a cantrip and should stay in known spells, not prepared spells.")
+            continue
+        if spell_id not in source_map and spell_id not in always_prepared and spell_id not in known_set:
+            errors.append(f"{spell.get('name')} is not unlocked by any current class, subclass, feat, species, item, or imported spellbook source.")
+            continue
+        allowed_prepared.append(spell_id)
+    for spell_id in sorted(always_known):
+        if spell_id not in allowed_known:
+            allowed_known.append(spell_id)
+    for spell_id in sorted(always_prepared):
+        if spell_id not in allowed_prepared:
+            allowed_prepared.append(spell_id)
+    subclass_grants["subclassIds"] = _dedupe_preserve(subclass_grants["subclassIds"])
+    subclass_grants["alwaysPrepared"] = _dedupe_preserve(subclass_grants["alwaysPrepared"])
+    subclass_grants["alwaysKnown"] = _dedupe_preserve(subclass_grants["alwaysKnown"])
+    class_bonus["alwaysKnown"] = _dedupe_preserve(class_bonus["alwaysKnown"])
+    return {
+        'ok': not errors,
+        'errors': errors,
+        'warnings': warnings,
+        'limits': {'classId': 'multiclass', 'level': context.get('totalLevel') or 0, 'castingType': 'multiclass', 'spellSlots': context.get('spellSlots') or {}, 'pactMagic': context.get('pactMagic') or {}, 'classes': context.get('classes') or {}},
+        'known': allowed_known,
+        'prepared': allowed_prepared,
+        'subclassGrants': subclass_grants,
+        'classBonusGrants': class_bonus,
+        'multiclassContext': context,
+    }
+
 def validate_spell_selection(*, class_id: str, class_level: int, abilities: dict[str, Any] | None, known: list[str], prepared: list[str], document: dict[str, Any] | None = None, subclass_id: str | None = None) -> dict[str, Any]:
+    if _is_multiclass_document(document):
+        return _validate_spell_selection_multiclass(abilities=abilities, known=known, prepared=prepared, document=document or {})
     limits = build_spell_limits_for_class(class_id, class_level, abilities, document=document, subclass_id=subclass_id)
     known_ids = [str(v or '').strip() for v in known if str(v or '').strip()]
     prepared_ids = [str(v or '').strip() for v in prepared if str(v or '').strip()]
@@ -778,11 +1118,12 @@ def validate_spell_selection(*, class_id: str, class_level: int, abilities: dict
             warnings.append(f'Unknown spell id kept in known list: {spell_id}')
             continue
         unlock = (spell.get('classUnlockLevels') or {}).get(class_id)
-        has_bonus_access = spell_id in bonus_access
+        subclass_unlock = _subclass_caster_unlock_for_spell(spell, class_id, class_level, subclass_id)
+        has_bonus_access = spell_id in bonus_access or subclass_unlock is not None
         if unlock is None and not has_bonus_access:
             errors.append(f"{spell.get('name')} is not on the {limits.get('className') or class_id} list.")
             continue
-        if unlock is not None and class_level < int(unlock):
+        if unlock is not None and class_level < int(unlock) and subclass_unlock is None:
             errors.append(f"{spell.get('name')} unlocks at level {unlock} for {limits.get('className') or class_id}.")
             continue
         allowed_known.append(spell_id)
@@ -808,11 +1149,12 @@ def validate_spell_selection(*, class_id: str, class_level: int, abilities: dict
             errors.append(f"{spell.get('name')} cannot be prepared because it is not known.")
             continue
         unlock = (spell.get('classUnlockLevels') or {}).get(class_id)
-        has_bonus_access = spell_id in bonus_access
+        subclass_unlock = _subclass_caster_unlock_for_spell(spell, class_id, class_level, subclass_id)
+        has_bonus_access = spell_id in bonus_access or subclass_unlock is not None
         if unlock is None and not has_bonus_access:
             errors.append(f"{spell.get('name')} is not on the {limits.get('className') or class_id} list.")
             continue
-        if unlock is not None and class_level < int(unlock):
+        if unlock is not None and class_level < int(unlock) and subclass_unlock is None:
             errors.append(f"{spell.get('name')} unlocks at level {unlock} for {limits.get('className') or class_id}.")
             continue
         if _safe_int(spell.get('level'), 0) == 0:
@@ -1150,6 +1492,10 @@ def build_spell_card(spell: dict[str, Any], *, character_context: dict[str, Any]
         'attackType': spell.get('attackType') or '',
         'requiresAttackRoll': bool(spell.get('attackType') or ((spell.get('rollButtonConfig') or {}).get('hasAttackRoll'))),
         'classes': spell.get('classes') or [],
+        'sourceClass': ctx.get('sourceClass') or '',
+        'sourceSubclass': ctx.get('sourceSubclass') or '',
+        'sourceType': ctx.get('sourceType') or '',
+        'sourceClasses': ctx.get('sourceClasses') or [],
         'unlockLevel': ctx.get('unlockLevel'),
         'isKnown': bool(ctx.get('isKnown')),
         'isPrepared': bool(ctx.get('isPrepared')),
@@ -1170,32 +1516,53 @@ def build_spell_card(spell: dict[str, Any], *, character_context: dict[str, Any]
 def build_character_spell_manifest(document: dict[str, Any]) -> dict[str, Any]:
     classes = document.get('classes') if isinstance(document.get('classes'), list) else []
     abilities = document.get('abilities') if isinstance(document.get('abilities'), dict) else {}
-    spell_state = document.get('spellState') if isinstance(document.get('spellState'), dict) else {}
-    primary = classes[0] if classes else {}
+    context = build_multiclass_spell_context(document)
+    class_contexts = context.get('classes') if isinstance(context.get('classes'), list) else []
+    primary = class_contexts[0] if class_contexts else (_class_rows_for_document(document)[0] if _class_rows_for_document(document) else {})
     class_id = _norm(primary.get('classId') or primary.get('id') or primary.get('name'))
     class_level = _safe_int(primary.get('level'), 1)
-    limits = build_spell_limits_for_class(class_id, class_level, abilities, document=document, subclass_id=_norm(primary.get('subclassId')))
-    highest_available_slot = _highest_slot_level_from_limits(limits)
-    effective_spell_state = get_effective_document_spell_state(document, class_id=class_id, class_level=class_level)
-    known = list(effective_spell_state.get('known') or [])
-    prepared = list(effective_spell_state.get('prepared') or [])
-    validation = validate_spell_selection(class_id=class_id, class_level=class_level, abilities=abilities, known=known, prepared=prepared, document=document)
+    primary_limits = build_spell_limits_for_class(class_id, class_level, abilities, document=document, subclass_id=_norm(primary.get('subclassId'))) if class_id else {}
+    limits = {**primary_limits, 'classes': class_contexts, 'multiclass': len(class_contexts) > 1, 'combinedSpellSlots': context.get('spellSlots') or {}, 'pactMagic': context.get('pactMagic') or {}, 'casterLevel': context.get('casterLevel') or 0}
+    if len(class_contexts) > 1:
+        limits['spellSlots'] = context.get('spellSlots') or {}
+    highest_available_slot = max(_highest_slot_level_from_limits({'spellSlots': context.get('spellSlots') or {}}), _safe_int((context.get('pactMagic') or {}).get('highestSlotLevel'), 0), _highest_slot_level_from_limits(primary_limits))
+    known: list[str] = []
+    prepared: list[str] = []
+    for cls in class_contexts or [primary]:
+        cid = _norm((cls or {}).get('classId')) or class_id
+        clevel = _safe_int((cls or {}).get('level'), class_level)
+        effective = get_effective_document_spell_state(document, class_id=cid, class_level=clevel)
+        known.extend(effective.get('known') or [])
+        prepared.extend(effective.get('prepared') or [])
+    known = _dedupe_preserve(known)
+    prepared = _dedupe_preserve(prepared)
+    validation = validate_spell_selection(class_id=class_id, class_level=class_level, abilities=abilities, known=known, prepared=prepared, document=document, subclass_id=_norm(primary.get('subclassId')))
     known_set = set(validation['known'])
     prepared_set = set(validation['prepared'])
     bonus_access = set((validation.get('subclassGrants') or {}).get('alwaysPrepared') or []) | set((validation.get('subclassGrants') or {}).get('alwaysKnown') or [])
     selection_mode = 'prepared' if limits.get('preparedLimit') is not None else ('known' if limits.get('spellsKnown') is not None else 'library')
     cards = []
     for spell in get_spell_list():
-        unlock = (spell.get('classUnlockLevels') or {}).get(class_id)
-        accessible = (unlock is not None and class_level >= int(unlock)) or (spell.get('id') in bonus_access)
-        if not accessible and spell.get('id') not in known_set and spell.get('id') not in prepared_set:
+        spell_id = str(spell.get('id') or '')
+        sources = list(source_map.get(spell_id) or [])
+        accessible = bool(sources) or spell_id in bonus_access
+        if not accessible and spell_id not in known_set and spell_id not in prepared_set:
             continue
-        cards.append(build_spell_card(spell, character_context={
+        primary_source = sources[0] if sources else {}
+        unlock = primary_source.get('unlockLevel') if isinstance(primary_source, dict) else None
+        selection_mode = 'library'
+        source_class = str(primary_source.get('classId') or '') if isinstance(primary_source, dict) else ''
+        for cls in class_contexts:
+            if str(cls.get('classId') or '') == source_class:
+                cls_limits = cls.get('limits') if isinstance(cls.get('limits'), dict) else {}
+                selection_mode = 'prepared' if cls_limits.get('preparedLimit') is not None else ('known' if cls_limits.get('spellsKnown') is not None else 'library')
+                break
+        card_context = {
             'unlockLevel': unlock,
-            'isKnown': spell.get('id') in known_set,
-            'isPrepared': spell.get('id') in prepared_set,
+            'isKnown': spell_id in known_set,
+            'isPrepared': spell_id in prepared_set,
             'isAccessible': accessible,
-            'blockedReason': '' if accessible else 'Not unlocked for current class/level.',
+            'blockedReason': '' if accessible else 'Not unlocked for any current class/level.',
             'highestAvailableSlot': highest_available_slot,
             'selectionMode': selection_mode,
         }))
@@ -1225,4 +1592,5 @@ def build_character_spell_manifest(document: dict[str, Any]) -> dict[str, Any]:
         'cards': cards,
         'known': validation['known'],
         'prepared': validation['prepared'],
+        'multiclassContext': context,
     }
