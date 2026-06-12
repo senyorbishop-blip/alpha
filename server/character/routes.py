@@ -21,6 +21,7 @@ from server.character.service import (
 from server.character.validation import CharacterValidationError
 from server.character.spell_compendium import (
     build_character_spell_manifest,
+    build_multiclass_spell_context,
     build_spell_card,
     build_spell_limits_for_class,
     get_effective_document_spell_state,
@@ -1745,39 +1746,34 @@ async def get_spell_library(
         if native:
             manifest = build_character_spell_manifest(native)
             card_map = {str(card.get("id") or ""): card for card in (manifest.get("cards") or []) if isinstance(card, dict)}
-            classes = native.get("classes") if isinstance(native.get("classes"), list) else []
-            primary = classes[0] if classes else {}
-            class_id = str(primary.get("classId") or primary.get("id") or primary.get("name") or "").strip().lower()
-            class_level = _safe_int(primary.get("level"), 1)
+            spell_context = build_multiclass_spell_context(native)
+            source_map = spell_context.get("classSourcesBySpell") if isinstance(spell_context.get("classSourcesBySpell"), dict) else {}
             known_set = set((manifest or {}).get("known") or [])
             prepared_set = set((manifest or {}).get("prepared") or [])
             hydrated = []
-            highest_available_slot = 0
-            if isinstance((manifest or {}).get("limits"), dict):
-                slot_map = (manifest or {}).get("limits", {}).get("spellSlots") or {}
-                for slot_key, amount in slot_map.items():
-                    if _safe_int(amount) <= 0:
-                        continue
-                    slot_text = str(slot_key or "").strip().lower()
-                    parsed = int(slot_text[:1]) if slot_text[:1].isdigit() else 0
-                    if parsed > highest_available_slot:
-                        highest_available_slot = parsed
-            selection_mode = 'prepared' if isinstance((manifest or {}).get("limits"), dict) and (manifest or {}).get("limits", {}).get("preparedLimit") is not None else ('known' if isinstance((manifest or {}).get("limits"), dict) and (manifest or {}).get("limits", {}).get("spellsKnown") is not None else 'library')
+            highest_available_slot = _safe_int(spell_context.get("highestAvailableSlot"), 0)
+            highest_available_slot = max(highest_available_slot, _safe_int((spell_context.get("pactMagic") or {}).get("highestSlotLevel"), 0))
+            selection_mode = 'library'
             for row in rows:
                 row_id = str(row.get("id") or "")
                 if row_id in card_map:
                     hydrated.append({**row, **card_map.get(row_id, {})})
                     continue
-                unlock = (row.get("classUnlockLevels") or {}).get(class_id) if isinstance(row, dict) else None
-                accessible = unlock is not None and class_level >= int(unlock)
+                sources = list(source_map.get(row_id) or [])
+                primary_source = sources[0] if sources else {}
+                accessible = bool(sources)
                 hydrated.append({**row, **build_spell_card(row, character_context={
-                    "unlockLevel": unlock,
+                    "unlockLevel": primary_source.get("unlockLevel") if isinstance(primary_source, dict) else None,
                     "isKnown": row_id in known_set,
                     "isPrepared": row_id in prepared_set,
                     "isAccessible": accessible,
-                    "blockedReason": '' if accessible else 'Not unlocked for current class/level.',
+                    "blockedReason": '' if accessible else 'Not unlocked for any current class/level.',
                     "highestAvailableSlot": highest_available_slot,
                     "selectionMode": selection_mode,
+                    "sourceClass": str(primary_source.get("classId") or "") if isinstance(primary_source, dict) else "",
+                    "sourceSubclass": str(primary_source.get("subclassId") or "") if isinstance(primary_source, dict) else "",
+                    "sourceType": str(primary_source.get("sourceType") or "") if isinstance(primary_source, dict) else "",
+                    "sourceClasses": sources,
                 })})
             rows = hydrated
 
@@ -1806,30 +1802,25 @@ async def get_spell_detail(spell_id: str, request: Request, profile_id: str | No
             manifest = build_character_spell_manifest(native)
             card = next((entry for entry in (manifest.get("cards") or []) if str(entry.get("id") or "") == spell_id), {}) or {}
             if not card:
-                classes = native.get("classes") if isinstance(native.get("classes"), list) else []
-                primary = classes[0] if classes else {}
-                class_id = str(primary.get("classId") or primary.get("id") or primary.get("name") or "").strip().lower()
-                class_level = _safe_int(primary.get("level"), 1)
-                limits = manifest.get("limits") if isinstance(manifest.get("limits"), dict) else {}
-                slot_map = limits.get("spellSlots") if isinstance(limits.get("spellSlots"), dict) else {}
-                highest_available_slot = 0
-                for slot_key, amount in slot_map.items():
-                    if _safe_int(amount) <= 0:
-                        continue
-                    slot_text = str(slot_key or "").strip().lower()
-                    parsed = int(slot_text[:1]) if slot_text[:1].isdigit() else 0
-                    if parsed > highest_available_slot:
-                        highest_available_slot = parsed
-                unlock = (spell.get("classUnlockLevels") or {}).get(class_id) if isinstance(spell, dict) else None
-                accessible = unlock is not None and class_level >= int(unlock)
+                spell_context = build_multiclass_spell_context(native)
+                source_map = spell_context.get("classSourcesBySpell") if isinstance(spell_context.get("classSourcesBySpell"), dict) else {}
+                spell_key = str(spell.get("id") or "")
+                sources = list(source_map.get(spell_key) or [])
+                primary_source = sources[0] if sources else {}
+                accessible = bool(sources)
+                highest_available_slot = max(_safe_int(spell_context.get("highestAvailableSlot"), 0), _safe_int((spell_context.get("pactMagic") or {}).get("highestSlotLevel"), 0))
                 card = build_spell_card(spell, character_context={
-                    "unlockLevel": unlock,
-                    "isKnown": str(spell.get("id") or "") in set((manifest or {}).get("known") or []),
-                    "isPrepared": str(spell.get("id") or "") in set((manifest or {}).get("prepared") or []),
+                    "unlockLevel": primary_source.get("unlockLevel") if isinstance(primary_source, dict) else None,
+                    "isKnown": spell_key in set((manifest or {}).get("known") or []),
+                    "isPrepared": spell_key in set((manifest or {}).get("prepared") or []),
                     "isAccessible": accessible,
-                    "blockedReason": '' if accessible else 'Not unlocked for current class/level.',
+                    "blockedReason": '' if accessible else 'Not unlocked for any current class/level.',
                     "highestAvailableSlot": highest_available_slot,
-                    "selectionMode": 'prepared' if limits.get("preparedLimit") is not None else ('known' if limits.get("spellsKnown") is not None else 'library'),
+                    "selectionMode": 'library',
+                    "sourceClass": str(primary_source.get("classId") or "") if isinstance(primary_source, dict) else "",
+                    "sourceSubclass": str(primary_source.get("subclassId") or "") if isinstance(primary_source, dict) else "",
+                    "sourceType": str(primary_source.get("sourceType") or "") if isinstance(primary_source, dict) else "",
+                    "sourceClasses": sources,
                 })
     return JSONResponse({"ok": True, "spell": {**spell, **card}, "manifest": manifest or {}})
 
