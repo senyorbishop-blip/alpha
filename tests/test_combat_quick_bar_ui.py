@@ -91,3 +91,15 @@ def test_combat_quick_spells_enrich_selected_names_from_spell_library_for_roll_c
     assert 'save_ability: saveAbility' in src
     assert 'attack_bonus: row.attack_bonus || row.attackBonus || _charSheet?.spellAttack' in src
     assert 'card: normalizedCard' in src
+
+
+def test_combat_quick_spells_parse_leveled_spell_text_for_quick_actions():
+    play = _read('client/templates/play.html')
+    selectors = _read('client/static/js/character/combat_quick_selectors.js')
+    assert 'function _combatQuickResolveSpellLevel(row, fallback = {})' in play
+    assert "row?.level_school, row?.levelSchool, row?.section" in play
+    assert 'const level = _combatQuickResolveSpellLevel(raw || {}, meta || {});' in play
+    assert 'level: _combatQuickResolveSpellLevel(normalizedCard, card || {})' in play
+    assert 'function _parseSpellLevelText()' in selectors
+    assert 'const fromText = _parseSpellLevelText(levelText);' in selectors
+    assert 'const fromOptions = _baseLevelFromCastOptions((card && card.cast_options) || (spell && spell.cast_options));' in selectors
