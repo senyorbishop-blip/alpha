@@ -457,7 +457,8 @@
     var resource = entry.resource && typeof entry.resource === 'object' ? entry.resource : {};
     var tags = asArray(entry.tags).map(function toTag(tag) { return String(tag || '').trim(); }).filter(Boolean);
     var cost = String(entry.cost || resource.cost || entry.usage || details.usage || '').trim();
-    var summary = String(entry.summary || details.summary || '').trim();
+    var damageObj = entry.damage && typeof entry.damage === 'object' ? entry.damage : {};
+    var summary = String(entry.summary || entry.snippet || details.summary || '').trim();
     var description = String(entry.description || details.description || details.effect || summary).trim();
     var longText = [String(entry.text || '').trim(), String(details.description || '').trim(), String(entry.effect || details.effect || '').trim(), String(entry.recovery || details.recovery || '').trim()].filter(Boolean).join('\n\n');
     return {
@@ -470,8 +471,8 @@
       desc: summary || description,
       longText: longText || description,
       attackBonus: asInt(entry.attackBonus != null ? entry.attackBonus : details.attackBonus, NaN),
-      damage: String(entry.damage || details.damage || details.damageFormula || '').trim(),
-      damageType: String(entry.damageType || details.damageType || '').trim(),
+      damage: String(entry.damageFormula || damageObj.formula || entry.damageText || details.damage || details.damageFormula || (typeof entry.damage === 'string' ? entry.damage : '') || '').trim(),
+      damageType: String(entry.damageType || damageObj.type || details.damageType || '').trim(),
       range: String(entry.range || details.range || '').trim(),
       duration: String(entry.duration || details.duration || '').trim(),
       save: String(entry.save || details.save || '').trim(),
@@ -485,6 +486,10 @@
       tags: tags,
       cost: cost,
       saveDC: String(entry.saveDC || details.saveDC || '').trim(),
+      sourceType: String(entry.sourceType || details.sourceType || '').trim(),
+      needsReview: !!entry.needsReview,
+      matchedNative: entry.matchedNative,
+      activationText: String(entry.activationText || details.activationText || '').trim(),
     };
   }
 
@@ -762,6 +767,7 @@
         actions: runtimeActions,
         bonusActions: runtimeBonusActions,
         reactions: runtimeReactions,
+        passives: clone(runtimePassives),
       };
     }
     if (runtimePassives.length) {
@@ -780,6 +786,7 @@
     var runtimeClassFeatures = asArray(runtime.classFeatures).filter(function onlyFeatureRows(row) { return row && typeof row === 'object'; });
     if (runtimeClassFeatures.length) {
       out.nativeClassFeatures = clone(runtimeClassFeatures);
+      out.nativeFeatures = clone(runtimeClassFeatures);
     }
     var runtimeSummonActions = asArray(runtime.summonActions).filter(function onlySummonRows(row) { return row && typeof row === 'object'; });
     if (runtimeSummonActions.length) {
@@ -910,6 +917,7 @@
     var runtimeClassFeatures = asArray(runtime.classFeatures).filter(function onlyFeatureRows(row) { return row && typeof row === 'object'; });
     if (runtimeClassFeatures.length) {
       out.nativeClassFeatures = clone(runtimeClassFeatures);
+      out.nativeFeatures = clone(runtimeClassFeatures);
     }
     var runtimeSummonActions = asArray(runtime.summonActions).filter(function onlySummonRows(row) { return row && typeof row === 'object'; });
     if (runtimeSummonActions.length) {
@@ -931,6 +939,7 @@
         actions: clone(runtimeActions),
         bonusActions: clone(runtimeBonusActions),
         reactions: clone(runtimeReactions),
+        passives: clone(runtimePassives),
       };
     }
 
