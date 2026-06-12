@@ -52,6 +52,10 @@ def test_import_modal_explains_quality_sources_and_failures():
     assert "Partial" in source
     assert "Needs review" in source
     assert "Import review JSON" in source
+    assert "Ready-to-play checklist" in source
+    assert "Ready to Play" in source
+    assert "Playable with Warnings" in source
+    assert "Needs DM Review" in source
     assert "PDF import may need review" in source
     assert "JSON import gives best results" in source
     assert "PDF import may need review" in source

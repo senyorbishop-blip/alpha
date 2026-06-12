@@ -474,6 +474,91 @@ def test_import_review_lists_unmatched_spells_as_imported_only():
     assert review["reviewStatus"] == "needs_review"
 
 
+def test_import_review_ready_labels_exact_warning_and_blocked_states():
+    from server.character.import_review import build_import_review
+
+    exact_doc = {
+        "identity": {"name": "Ready Hero"},
+        "species": {"name": "Human"},
+        "background": {"name": "Soldier"},
+        "classes": [{"name": "Fighter", "level": 3}],
+        "maxHP": 28,
+        "ac": 16,
+        "abilities": {"scores": {"str": 16, "dex": 12, "con": 14, "int": 10, "wis": 11, "cha": 9}},
+        "equipment": {"inventory": [{"name": "Longsword"}]},
+        "actions": [{"name": "Longsword"}],
+        "features": [{"name": "Second Wind"}],
+        "spellState": {"spellbookEntries": [{"name": "Shield", "matchedNative": True}]},
+    }
+
+    exact = build_import_review(exact_doc, runtime={"hp": {"max": 28}, "ac": 16})
+    assert exact["reviewStatus"] == "exact"
+    assert exact["readyToPlay"] is True
+    assert exact["readyLabel"] == "Ready to Play"
+    assert exact["canContinueToPlay"] is True
+    assert exact["canReviewLater"] is False
+    assert [row["label"] for row in exact["reviewChecklist"]] == [
+        "Name found",
+        "Class/level found",
+        "Species found",
+        "Background found",
+        "HP found",
+        "AC found",
+        "Ability scores found",
+        "Inventory found",
+        "Attacks/actions found",
+        "Features found",
+        "Spells matched",
+        "Imported-only spells present",
+        "Missing mappings present",
+    ]
+
+    warning_doc = dict(exact_doc)
+    warning_doc["spellState"] = {"spellbookEntries": [{"name": "Homebrew Spark", "matchedNative": False}]}
+    warning = build_import_review(warning_doc, runtime={"hp": {"max": 28}, "ac": 16})
+    assert warning["reviewStatus"] in {"playable_with_warnings", "needs_review"}
+    assert warning["readyLabel"] in {"Playable with Warnings", "Needs DM Review"}
+    assert warning["readyToPlay"] is False
+    assert warning["canContinueToPlay"] is True
+    assert warning["canReviewLater"] is True
+
+    missing_hp = dict(exact_doc)
+    missing_hp.pop("maxHP")
+    blocked_hp = build_import_review(missing_hp, runtime={"ac": 16})
+    assert blocked_hp["reviewStatus"] == "blocked"
+    assert blocked_hp["readyLabel"] == "Blocked"
+    assert blocked_hp["canContinueToPlay"] is False
+    assert any(row["label"] == "HP found" and row["blocking"] for row in blocked_hp["reviewChecklist"])
+
+    missing_ac = dict(exact_doc)
+    missing_ac.pop("ac")
+    blocked_ac = build_import_review(missing_ac, runtime={"hp": {"max": 28}})
+    assert blocked_ac["reviewStatus"] == "blocked"
+    assert blocked_ac["canContinueToPlay"] is False
+    assert any(row["label"] == "AC found" and row["blocking"] for row in blocked_ac["reviewChecklist"])
+
+    pdf_partial = {
+        "sourceMode": "pdf",
+        "identity": {"name": "Partial PDF Hero"},
+        "classes": [{"name": "Rogue", "level": 1}],
+        "maxHP": 9,
+        "ac": 14,
+    }
+    partial = build_import_review(pdf_partial, runtime={"hp": {"max": 9}, "ac": 14})
+    assert partial["sourceType"] == "pdf"
+    assert partial["readyLabel"] == "Playable with Warnings"
+    assert partial["canContinueToPlay"] is True
+    assert partial["canReviewLater"] is True
+    assert any(row["label"] == "Inventory found" and row["status"] == "missing" for row in partial["reviewChecklist"])
+
+    missing_class = dict(exact_doc)
+    missing_class["classes"] = []
+    blocked_class = build_import_review(missing_class, runtime={"hp": {"max": 28}, "ac": 16})
+    assert blocked_class["reviewStatus"] == "blocked"
+    assert blocked_class["canContinueToPlay"] is False
+    assert any(row["label"] == "Class/level found" and row["blocking"] for row in blocked_class["reviewChecklist"])
+
+
 def test_imported_fallback_cards_preserve_unmatched_depth_and_roll_formula():
     from server.character.resolver import build_imported_action_card, build_imported_feature_card, resolve_character_runtime
 

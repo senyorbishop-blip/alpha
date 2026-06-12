@@ -431,9 +431,9 @@
   function reviewTone(status) {
     const key = String(status || '').toLowerCase();
     if (key === 'blocked') return { label: 'Blocked', color: '#ff8b8b', border: 'rgba(220,90,90,0.55)', bg: 'rgba(160,45,45,0.18)' };
-    if (key === 'needs_review') return { label: 'Needs review', color: '#ffd36a', border: 'rgba(201,162,39,0.55)', bg: 'rgba(201,162,39,0.14)' };
-    if (key === 'playable_with_warnings') return { label: 'Playable with warnings', color: '#ffd36a', border: 'rgba(201,162,39,0.55)', bg: 'rgba(201,162,39,0.14)' };
-    return { label: 'Exact', color: '#72f0b4', border: 'rgba(70,210,140,0.55)', bg: 'rgba(30,150,90,0.14)' };
+    if (key === 'needs_review') return { label: 'Needs DM Review', color: '#ffd36a', border: 'rgba(201,162,39,0.55)', bg: 'rgba(201,162,39,0.14)' };
+    if (key === 'playable_with_warnings') return { label: 'Playable with Warnings', color: '#ffd36a', border: 'rgba(201,162,39,0.55)', bg: 'rgba(201,162,39,0.14)' };
+    return { label: 'Ready to Play', color: '#72f0b4', border: 'rgba(70,210,140,0.55)', bg: 'rgba(30,150,90,0.14)' };
   }
 
   function renderPillList(items, emptyText, tone) {
@@ -445,6 +445,36 @@
     return rows.slice(0, 24).map(function (item) {
       return '<span style="display:inline-block; margin:2px 4px 2px 0; padding:3px 7px; border:1px solid ' + border + '; border-radius:999px; background:' + bg + '; color:' + color + '; font-size:0.74rem;">' + escapeHtml(item) + '</span>';
     }).join('') + (rows.length > 24 ? '<span style="opacity:0.75;"> +' + String(rows.length - 24) + ' more</span>' : '');
+  }
+
+
+  function renderChecklistStatus(row) {
+    const status = String(row && row.status || '').toLowerCase();
+    if (row && row.blocking) return { mark: '✕', text: 'Blocked', color: '#ffb9b9', border: 'rgba(220,90,90,0.45)', bg: 'rgba(160,45,45,0.16)' };
+    if (status === 'warning') return { mark: '!', text: 'Review', color: '#f5ddb0', border: 'rgba(201,162,39,0.45)', bg: 'rgba(201,162,39,0.12)' };
+    if (status === 'missing') return { mark: '!', text: 'Missing', color: '#f5ddb0', border: 'rgba(201,162,39,0.38)', bg: 'rgba(201,162,39,0.10)' };
+    if (status === 'clear') return { mark: '✓', text: 'Clear', color: '#a9ffe7', border: 'rgba(0,229,204,0.24)', bg: 'rgba(0,170,130,0.10)' };
+    return { mark: '✓', text: 'Found', color: '#a9ffe7', border: 'rgba(0,229,204,0.28)', bg: 'rgba(0,170,130,0.12)' };
+  }
+
+  function renderChecklistRows(rows) {
+    const checklist = Array.isArray(rows) ? rows : [];
+    if (!checklist.length) {
+      return renderReviewSection('Ready-to-play checklist', '<div style="color:#f5ddb0;">No checklist rows were returned by this older import response.</div>', 'yellow');
+    }
+    const html = '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:7px;">'
+      + checklist.map(function renderRow(row) {
+        const state = renderChecklistStatus(row);
+        return '<div style="border:1px solid ' + state.border + '; border-radius:5px; padding:7px 8px; background:' + state.bg + ';">'
+          + '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">'
+          + '<span style="font-weight:700; color:' + state.color + ';">' + escapeHtml(row && row.label || 'Checklist row') + '</span>'
+          + '<span style="font-size:0.7rem; letter-spacing:0.06em; text-transform:uppercase; color:' + state.color + ';">' + escapeHtml(state.mark + ' ' + state.text) + '</span>'
+          + '</div>'
+          + '<div style="margin-top:3px; opacity:0.82;">' + escapeHtml(row && row.detail || '') + '</div>'
+          + '</div>';
+      }).join('')
+      + '</div>';
+    return renderReviewSection('Ready-to-play checklist', html, checklist.some(function hasBlock(row) { return row && row.blocking; }) ? 'red' : (checklist.some(function hasWarn(row) { return row && (row.status === 'warning' || row.status === 'missing'); }) ? 'yellow' : 'green'));
   }
 
   function renderReviewSection(title, html, tone) {
@@ -476,13 +506,14 @@
     const quality = importQualitySummary(summaryData, items, hasBlocking);
     const reviewData = importReviewFromPayload(data);
     const tone = reviewTone(reviewData.reviewStatus || (hasBlocking ? 'blocked' : 'needs_review'));
+    const readyLabel = String(reviewData.readyLabel || tone.label || '').trim() || tone.label;
 
     if (sourceLabel) {
       sourceLabel.textContent = sourceBadgeLabel(reviewData.sourceType || data.source_type || data.source);
     }
     summary.innerHTML = [
       '<div style="grid-column:1 / -1; border:1px solid ' + tone.border + '; border-radius:6px; padding:10px; background:' + tone.bg + ';">'
-        + '<div style="font-family:Cinzel, serif; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:' + tone.color + ';">Review status: ' + escapeHtml(tone.label) + '</div>'
+        + '<div style="font-family:Cinzel, serif; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:' + tone.color + ';">Review status: ' + escapeHtml(readyLabel) + '</div>'
         + '<div style="margin-top:4px; font-size:0.84rem;">' + (reviewData.canContinueToPlay ? 'Safe to continue to play.' : 'Not safe to continue until blocking issues are fixed.') + '</div>'
       + '</div>',
       '<div style="grid-column:1 / -1; border:1px solid rgba(245,221,176,0.26); border-radius:6px; padding:10px; background:rgba(0,0,0,0.16);">'
@@ -502,6 +533,7 @@
     const ac = reviewData.acComparison || {};
     const hp = reviewData.hpComparison || {};
     const reviewSections = [
+      renderChecklistRows(reviewData.reviewChecklist),
       renderReviewSection('Character basics', [
         'Name: ' + escapeHtml(reviewData.characterName || summaryData.name),
         'Class: ' + escapeHtml(reviewData.class || summaryData.classLevel),
