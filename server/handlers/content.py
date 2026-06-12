@@ -2798,6 +2798,7 @@ async def handle_encounter_spawn_group(payload: dict, session: Session, user: Us
     base_x = _safe_int(payload.get("x"), 120, minimum=-100000, maximum=100000)
     base_y = _safe_int(payload.get("y"), 120, minimum=-100000, maximum=100000)
     spacing = _safe_int(payload.get("spacing"), 60, minimum=40, maximum=160)
+    grid_size_px = _safe_int(payload.get("grid_size_px") or payload.get("gridSizePx"), 0, minimum=0, maximum=256) or None
     max_cols = max(1, min(6, _safe_int(payload.get("columns"), 3, minimum=1, maximum=6)))
     template_name = str(payload.get("template_name") or "Encounter").strip()[:120] or "Encounter"
 
@@ -2817,6 +2818,7 @@ async def handle_encounter_spawn_group(payload: dict, session: Session, user: Us
                 y=float(base_y + (row * spacing)),
                 map_ctx=map_ctx,
                 session_user=session.users.get(user.id),
+                grid_size_px=grid_size_px,
             )
             if token:
                 spawned.append(token.id)

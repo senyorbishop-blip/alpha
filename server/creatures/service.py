@@ -62,6 +62,34 @@ def resolve_library_owner(request: Request, query_owner_id: str = "") -> str:
     return "anonymous"
 
 
+def _map_grid_size_px(session, map_ctx: str, requested_grid_size_px=None) -> int:
+    """Return the active grid size for a map context, matching play.html defaults."""
+    try:
+        requested = int(round(float(requested_grid_size_px)))
+    except Exception:
+        requested = 0
+    if 16 <= requested <= 256:
+        return requested
+    try:
+        settings = (getattr(session, "map_settings", {}) or {}).get(str(map_ctx or "world") or "world") or {}
+        grid = (settings.get("grid") or {}) if isinstance(settings, dict) else {}
+        size = int(round(float(grid.get("size_px") or 64)))
+    except Exception:
+        size = 64
+    return max(16, min(256, size))
+
+
+def _creature_token_squares(creature: dict) -> int:
+    try:
+        return max(1, min(4, int(creature.get("token_size", 1) or 1)))
+    except Exception:
+        return 1
+
+
+def _creature_token_px(creature: dict, grid_size_px: int) -> int:
+    return int(max(1, _creature_token_squares(creature)) * max(16, min(256, int(grid_size_px or 64))))
+
+
 async def spawn_creature_from_library_entry(
     *,
     session,
@@ -73,6 +101,7 @@ async def spawn_creature_from_library_entry(
     y: float = 0.0,
     map_ctx: str = "world",
     session_user=None,
+    grid_size_px=None,
 ):
     creature = get_creature_any(str(creature_id or "").strip())
     if not creature:
@@ -98,9 +127,8 @@ async def spawn_creature_from_library_entry(
     from server.session import create_token
     from server.connections import manager
 
-    size_px = {1: 40, 2: 100, 3: 150, 4: 200}
-    token_size = max(1, min(4, int(creature.get("token_size", 1) or 1)))
-    token_px = size_px.get(token_size, 40)
+    active_grid_size_px = _map_grid_size_px(session, map_ctx, grid_size_px)
+    token_px = _creature_token_px(creature, active_grid_size_px)
     token = create_token(
         session=session,
         dm_id=dm_user_id,
@@ -396,6 +424,7 @@ async def spawn_creature_response(creature_id: str, request: Request, body: dict
         y=y,
         map_ctx=map_ctx,
         session_user=session_user,
+        grid_size_px=body.get("grid_size_px") or body.get("gridSizePx"),
     )
     if not token:
         return error_response(

@@ -1930,6 +1930,74 @@ def test_spawn_custom_monster_owned_by_dm():
         os.unlink(db_path)
 
 
+def test_spawn_library_creature_uses_active_map_grid_size():
+    import asyncio
+    import json
+    import os
+
+    db_path, db, service, session, manager, FakeRequest = _spawn_test_context()
+    try:
+        session.map_settings = {"world": {"grid": {"size_px": 72}}}
+        creature = db.create_creature("dm-user", {
+            "name": "Stone Giant",
+            "entry_type": "monster",
+            "creature_type": "monster",
+            "source": "custom",
+            "hp": 126,
+            "ac": 17,
+            "token_size": 2,
+        })
+        response = asyncio.run(service.spawn_creature_response(creature["id"], FakeRequest({"id": "dm-user"}), {
+            "session_id": session.id,
+            "creature_id": creature["id"],
+            "source": "custom",
+            "entity_type": "monster",
+            "x": 144,
+            "y": 216,
+        }))
+        assert response.status_code == 200
+        body = json.loads(response.body)
+        assert body["token"]["width"] == 144
+        assert body["token"]["height"] == 144
+        assert manager.messages[-1][1]["payload"]["token"]["width"] == 144
+    finally:
+        os.unlink(db_path)
+
+
+def test_spawn_request_grid_size_overrides_unsaved_map_settings():
+    import asyncio
+    import json
+    import os
+
+    db_path, db, service, session, manager, FakeRequest = _spawn_test_context()
+    try:
+        session.map_settings = {"world": {"grid": {"size_px": 64}}}
+        creature = db.create_creature("dm-user", {
+            "name": "Freshly Resized Ogre",
+            "entry_type": "monster",
+            "creature_type": "monster",
+            "source": "custom",
+            "hp": 59,
+            "ac": 13,
+            "token_size": 1,
+        })
+        response = asyncio.run(service.spawn_creature_response(creature["id"], FakeRequest({"id": "dm-user"}), {
+            "session_id": session.id,
+            "creature_id": creature["id"],
+            "source": "custom",
+            "entity_type": "monster",
+            "x": 100,
+            "y": 200,
+            "grid_size_px": 88,
+        }))
+        assert response.status_code == 200
+        body = json.loads(response.body)
+        assert body["token"]["width"] == 88
+        assert body["token"]["height"] == 88
+    finally:
+        os.unlink(db_path)
+
+
 def test_spawn_custom_npc_owned_by_dm():
     import asyncio
     import json
