@@ -45662,13 +45662,13 @@ function _combatQuickNormalizeSpellCard(raw, fallback = {}) {
   if (!levelKnown) _combatQuickWarnMissingSpellFields(name || row.name || fallback.name || row.id || fallback.id, ['level']);
   const rangeText = String(row.range || row.range_text || row.rangeText || fallback.range || '').trim();
   const castingTime = String(row.casting_time || row.castingTime || row.time || fallback.casting_time || fallback.castingTime || '1 action').trim();
-  const attackType = String(row.attack_type || row.attackType || row.roll_config?.attackType || fallback.attack_type || fallback.attackType || '').trim();
-  const saveAbility = String(row.save_ability || row.saveAbility || row.savingThrow || row.saveType || row.roll_config?.saveType || fallback.save_ability || fallback.saveAbility || '').trim();
-  const damageFormula = String(row.damage_dice || row.damageFormula || row.damage_formula || row.base_damage_formula || row.damage || row.roll_config?.damageFormula || row.current?.formula || fallback.damage_dice || fallback.damageFormula || fallback.damage_formula || '').trim();
-  const healingFormula = String(row.healingFormula || row.healing_formula || row.roll_config?.healingFormula || fallback.healingFormula || '').trim();
+  const attackType = String(row.attack_type || row.attackType || row.roll_config?.attackType || row.rollConfig?.attackType || fallback.attack_type || fallback.attackType || '').trim();
+  const saveAbility = String(row.save_ability || row.saveAbility || row.savingThrow || row.saveType || row.roll_config?.saveType || row.rollConfig?.saveType || fallback.save_ability || fallback.saveAbility || '').trim();
+  const damageFormula = String(row.damage_dice || row.damageFormula || row.damage_formula || row.base_damage_formula || row.damage || row.roll_config?.damageFormula || row.rollConfig?.damageFormula || row.current?.formula || fallback.damage_dice || fallback.damageFormula || fallback.damage_formula || '').trim();
+  const healingFormula = String(row.healingFormula || row.healing_formula || row.roll_config?.healingFormula || row.rollConfig?.healingFormula || fallback.healingFormula || '').trim();
   const damageType = String(row.damage_type || row.damageType || row.healing_type || fallback.damage_type || fallback.damageType || '').trim();
   const scalingData = (row.scaling_data && typeof row.scaling_data === 'object') ? row.scaling_data : (row.scalingData && typeof row.scalingData === 'object' ? row.scalingData : {});
-  const perSlotFormula = String(row.damage_upcast_per_level || row.upcastFormula || scalingData.per_slot_formula || scalingData.perSlotFormula || '').trim();
+  const perSlotFormula = String(row.damage_upcast_per_level || row.upcastFormula || row.higherLevelFormula || scalingData.per_slot_formula || scalingData.perSlotFormula || '').trim();
   const castOptions = (row.cast_options && typeof row.cast_options === 'object') ? row.cast_options : {};
   const baseLevelKey = level !== null ? String(level) : '';
   const baseFormula = damageFormula || healingFormula || String((baseLevelKey ? castOptions[baseLevelKey]?.formula : '') || '').trim();
