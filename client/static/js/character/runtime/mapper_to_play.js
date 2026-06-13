@@ -550,46 +550,106 @@
     }).join('\n');
   }
 
+  function spellCardAutomationScore(card) {
+    var row = card && typeof card === 'object' ? card : {};
+    var score = 0;
+    if (row.level != null || row.spell_level != null || row.spellLevel != null) score += 4;
+    if (firstNonEmpty(row.damageFormula, row.damage_formula, row.base_damage_formula, row.damage, row.healingFormula, row.healing_formula)) score += 4;
+    if (firstNonEmpty(row.attackType, row.attack_type, row.saveAbility, row.save_ability, row.savingThrow)) score += 3;
+    if (firstNonEmpty(row.range, row.castingTime, row.casting_time, row.duration, row.components)) score += 2;
+    if (firstNonEmpty(row.description, row.effect, row.summary, row.base_effect_text, row.fullPlayerDetailText)) score += 1;
+    return score;
+  }
+
   function buildRuntimeSpellCards(runtime) {
     var spellAccess = asObject(runtime.spellAccess);
     var known = asArray(spellAccess.known);
-    var preparedSet = new Set(asArray(spellAccess.prepared).map(function toPrepared(name) { return String(name || '').trim().toLowerCase(); }));
-    if (!known.length) return [];
-    return known.map(function toCard(entry, idx) {
+    var accessCards = asArray(spellAccess.cards);
+    var preparedSet = new Set(asArray(spellAccess.prepared).map(function toPrepared(name) {
+      if (name && typeof name === 'object') return String(name.name || name.displayName || name.label || name.id || '').trim().toLowerCase();
+      return String(name || '').trim().toLowerCase();
+    }).filter(Boolean));
+    var cardsByKey = new Map();
+
+    function addCard(card, idx, fallbackName) {
+      if (!card || typeof card !== 'object') return;
+      var cardName = String(card.name || card.displayName || card.label || fallbackName || card.id || '').trim();
+      if (!cardName) return;
+      var cardId = String(card.id || card.spellId || ('native-runtime-spell-' + idx)).trim();
+      var levelValue = card.level != null ? card.level : (card.spell_level != null ? card.spell_level : card.spellLevel);
+      var normalized = Object.assign({}, card, {
+        id: cardId,
+        spellId: String(card.spellId || cardId).trim(),
+        name: cardName,
+        displayName: String(card.displayName || cardName).trim(),
+        spell_level: Math.max(0, asInt(levelValue, 0)),
+        level: Math.max(0, asInt(levelValue, 0)),
+        range: String(card.range || '').trim(),
+        casting_time: String(card.casting_time || card.castingTime || '').trim(),
+        castingTime: String(card.castingTime || card.casting_time || '').trim(),
+        concentration: !!card.concentration,
+        ritual: !!card.ritual,
+        prepared: preparedSet.has(cardName.toLowerCase()) || card.isPrepared === true,
+        base_effect_text: String(card.base_effect_text || card.description || card.effect || card.summary || card.playerFacingEffectSummary || '').trim(),
+      });
+      var key = String(cardId || cardName).trim().toLowerCase();
+      var nameKey = cardName.toLowerCase();
+      [key, nameKey].forEach(function store(candidateKey) {
+        if (!candidateKey) return;
+        var existing = cardsByKey.get(candidateKey);
+        if (!existing || spellCardAutomationScore(normalized) >= spellCardAutomationScore(existing)) {
+          cardsByKey.set(candidateKey, normalized);
+        }
+      });
+    }
+
+    accessCards.forEach(function addAccessCard(entry, idx) { addCard(entry, idx); });
+    known.forEach(function toCard(entry, idx) {
       if (entry && typeof entry === 'object') {
-        var cardName = String(entry.name || entry.label || entry.id || '').trim();
-        if (!cardName) return null;
-        return {
-          id: String(entry.id || ('native-runtime-spell-' + idx)),
-          name: cardName,
-          spell_level: Math.max(0, asInt(entry.level != null ? entry.level : entry.spell_level, 0)),
-          range: String(entry.range || '').trim(),
-          casting_time: String(entry.casting_time || entry.castingTime || '').trim(),
-          concentration: !!entry.concentration,
-          ritual: !!entry.ritual,
-          prepared: preparedSet.has(cardName.toLowerCase()),
-          base_effect_text: String(entry.description || entry.effect || '').trim(),
-        };
+        addCard(entry, idx + accessCards.length);
+        return;
       }
       var name = String(entry || '').trim();
-      if (!name) return null;
-      return {
+      if (!name) return;
+      addCard({
         id: 'native-runtime-spell-' + idx,
         name: name,
         spell_level: 0,
+        level_unknown: true,
         prepared: preparedSet.has(name.toLowerCase()),
-      };
-    }).filter(Boolean);
+      }, idx + accessCards.length, name);
+    });
+
+    var emitted = [];
+    var seenNames = new Set();
+    cardsByKey.forEach(function emit(card) {
+      var nameKey = String(card.name || card.displayName || card.id || '').trim().toLowerCase();
+      if (!nameKey || seenNames.has(nameKey)) return;
+      seenNames.add(nameKey);
+      emitted.push(card);
+    });
+    return emitted;
   }
 
   function mergeSpellCards(existingCards, runtimeCards) {
-    var merged = [];
-    var seen = new Set();
-    asArray(runtimeCards).concat(asArray(existingCards)).forEach(function addCard(card) {
+    var byKey = new Map();
+    function addCard(card) {
       if (!card || typeof card !== 'object') return;
-      var key = String(card.id || card.name || '').trim().toLowerCase();
-      if (!key || seen.has(key)) return;
-      seen.add(key);
+      var key = String(card.id || card.spellId || card.name || '').trim().toLowerCase();
+      var nameKey = String(card.name || card.displayName || '').trim().toLowerCase();
+      var lookupKey = key || nameKey;
+      if (!lookupKey) return;
+      var existing = byKey.get(lookupKey) || (nameKey ? byKey.get(nameKey) : null);
+      var winner = (!existing || spellCardAutomationScore(card) >= spellCardAutomationScore(existing)) ? card : existing;
+      byKey.set(lookupKey, winner);
+      if (nameKey) byKey.set(nameKey, winner);
+    }
+    asArray(existingCards).concat(asArray(runtimeCards)).forEach(addCard);
+    var merged = [];
+    var seenObjects = new Set();
+    byKey.forEach(function emit(card) {
+      if (seenObjects.has(card)) return;
+      seenObjects.add(card);
       merged.push(card);
     });
     return merged;

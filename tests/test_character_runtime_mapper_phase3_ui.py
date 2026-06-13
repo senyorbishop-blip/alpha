@@ -84,9 +84,10 @@ def test_extract_spell_name_helper_exists_in_mapper():
     assert "function extractSpellName(entry)" in src
 
 
-def test_mapper_prefers_runtime_spell_cards_over_stale_existing_spell_cards():
+def test_mapper_prefers_richer_spell_cards_over_stale_existing_spell_cards():
     src = _read("client/static/js/character/runtime/mapper_to_play.js")
-    assert "asArray(runtimeCards).concat(asArray(existingCards))" in src
+    assert "function spellCardAutomationScore(card)" in src
+    assert "spellCardAutomationScore(card) >= spellCardAutomationScore(existing)" in src
 
 
 def test_play_html_normalize_book_text_handles_spell_object_structure():
@@ -504,3 +505,19 @@ def test_play_html_uses_single_canonical_hp_resolver_for_profile_token_and_sideb
     assert "profile.nativeRuntime.hp.max = canonicalVitals.maxHp;" in src
     assert "profile.charSheet.hp = { max: canonicalVitals.maxHp, current: boundedCur, temp: boundedTemp };" in src
     assert "profile.charBook.maxHp = canonicalVitals.maxHp;" in src
+
+
+def test_runtime_mapper_uses_structured_spell_access_cards_before_string_fallbacks():
+    src = _read('client/static/js/character/runtime/mapper_to_play.js')
+    assert 'var accessCards = asArray(spellAccess.cards);' in src
+    assert 'accessCards.forEach(function addAccessCard' in src
+    assert 'level_unknown: true' in src
+    assert 'spellCardAutomationScore(normalized)' in src
+
+
+def test_combat_quick_spell_normalizer_reads_runtime_roll_config_aliases():
+    src = _read('client/templates/play.html')
+    assert 'row.rollConfig?.damageFormula' in src
+    assert 'row.rollConfig?.attackType' in src
+    assert 'row.rollConfig?.saveType' in src
+    assert 'row.higherLevelFormula' in src
