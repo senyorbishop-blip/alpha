@@ -134,6 +134,7 @@
     root.addEventListener('pointermove', _drag);
     root.addEventListener('pointerup', _stopDrag);
     root.addEventListener('pointercancel', _stopDrag);
+    _watchBarResize();
     return root;
   }
 
@@ -150,6 +151,20 @@
       root.style.bottom = '88px';
       root.style.transform = 'translateX(-50%)';
     }
+    if (state.w && Number.isFinite(Number(state.w))) root.style.width = Math.max(280, Math.min(global.innerWidth - 16, Number(state.w))) + 'px';
+    if (state.h && Number.isFinite(Number(state.h))) root.style.maxHeight = Math.max(120, Math.min(global.innerHeight * 0.85, Number(state.h))) + 'px';
+  }
+
+  var _resizeObserver = null;
+  function _watchBarResize() {
+    if (_resizeObserver || typeof ResizeObserver === 'undefined') return;
+    _resizeObserver = new ResizeObserver(function () {
+      if (!root) return;
+      state.w = root.offsetWidth;
+      state.h = root.offsetHeight;
+      _saveState();
+    });
+    _resizeObserver.observe(root);
   }
 
   function _startDrag(ev) {

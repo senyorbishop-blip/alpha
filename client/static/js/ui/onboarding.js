@@ -663,12 +663,12 @@
       '}',
       '.ob-hub-title {',
       '  font-family:"Cinzel",serif; font-size:1.1rem; font-weight:700;',
-      '  color:var(--ob-accent,#00e5cc); text-align:center;',
+      '  color:rgba(180,220,215,0.9); text-align:center;',
       '  margin-bottom:0.6rem; letter-spacing:0.04em;',
       '}',
       '.ob-hub-subtitle {',
       '  font-family:"Crimson Pro",Georgia,serif; font-size:0.88rem;',
-      '  color:rgba(232,220,200,0.7); text-align:center; margin-bottom:1rem;',
+      '  color:rgba(232,220,200,0.6); text-align:center; margin-bottom:1rem;',
       '}',
       '.ob-hub-grid {',
       '  display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;',
@@ -688,7 +688,20 @@
       '.ob-hub-card-icon { font-size:1.2rem; flex-shrink:0; }',
       '.ob-hub-card-label {',
       '  font-size:0.62rem; letter-spacing:0.08em;',
-      '  text-transform:uppercase; color:rgba(200,169,110,0.85);',
+      '  text-transform:uppercase; color:rgba(210,185,140,0.82);',
+      '}',
+
+      /* Element highlight for guided steps */
+      '.ob-highlight {',
+      '  outline:2px solid rgba(0,210,185,0.7) !important;',
+      '  outline-offset:3px !important;',
+      '  border-radius:4px !important;',
+      '  animation:ob-hl-pulse 1.4s ease-in-out 4 !important;',
+      '  position:relative; z-index:9994;',
+      '}',
+      '@keyframes ob-hl-pulse {',
+      '  0%,100%{outline-color:rgba(0,210,185,0.4);}',
+      '  50%{outline-color:rgba(0,210,185,0.9);box-shadow:0 0 14px rgba(0,210,185,0.35);}',
       '}',
 
       /* Keyframes */
@@ -882,6 +895,10 @@
     _el('ob-progress-fill').style.width = pct + '%';
     _el('ob-progress-fill').style.background = accent;
     _el('ob-progress-fill').style.boxShadow  = '0 0 6px ' + accent;
+
+    // Element highlight
+    _clearHighlight();
+    if (data.highlightSelector) _applyHighlight(data.highlightSelector);
   }
 
   function _renderDots() {
@@ -919,6 +936,21 @@
     _el('ob-hub').style.display = 'none';
 
     _goTo(_step);
+  }
+
+  function _clearHighlight() {
+    document.querySelectorAll('.ob-highlight').forEach(function (el) { el.classList.remove('ob-highlight'); });
+  }
+
+  function _applyHighlight(selector) {
+    try {
+      var el = document.querySelector(selector);
+      if (el) {
+        el.classList.add('ob-highlight');
+        // Remove after animation ends (4 × 1.4s ≈ 6s)
+        setTimeout(function () { el && el.classList.remove('ob-highlight'); }, 6200);
+      }
+    } catch (_e) {}
   }
 
   function _closeModal() {
