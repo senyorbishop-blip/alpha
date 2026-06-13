@@ -133,7 +133,11 @@
     const detailHost = overlay.querySelector('[data-cqa-spell-details]');
     if (detailHost) detailHost.innerHTML = _spellDetailsHtml(spell, castLevel);
     const dmg = overlay.querySelector('[data-cqa-damage-preview]');
-    if (dmg) dmg.textContent = _spellDamagePreview(spell, castLevel) || 'No damage roll';
+    if (dmg) {
+      const preview = _spellDamagePreview(spell, castLevel);
+      const baseLevel = _baseSpellLevel(spell);
+      dmg.textContent = preview || (baseLevel !== null && baseLevel > 0 ? '— (formula not loaded)' : 'No damage roll');
+    }
   }
 
   function closeModal() {
@@ -177,17 +181,36 @@
     _installStyles();
     closeModal();
     const card = spell.card || spell || {};
-    const baseLevel = _baseSpellLevel(spell);
+
+    // Resolve base level — if the stored level appears wrong (0/cantrip) but
+    // the spell name, school, or cast-options suggest it is actually leveled,
+    // fall back to those sources so the UI remains usable.
+    let baseLevel = _baseSpellLevel(spell);
+    if ((baseLevel === 0 || baseLevel === null)) {
+      // Try cast-options keys as a level hint
+      const castOptsKeys = Object.keys(card.cast_options || {}).map(Number).filter(function (n) { return Number.isFinite(n) && n > 0; });
+      if (castOptsKeys.length) baseLevel = Math.min.apply(null, castOptsKeys);
+    }
     if (baseLevel === null && global.console && global.console.warn) {
       global.console.warn('[CombatQuickActions] Spell metadata missing; showing safe fallback.', { spell: spell.name || spell.id, missing: ['level'] });
     }
+
     const options = _spellCastOptions(spell);
     const selected = preferredLevel !== undefined ? preferredLevel : (options.find(function (opt) { return !opt.disabled; }) || options[0] || {}).value;
-    const cardDirectDamage = _firstText(card.damage_dice, card.damage, card.damage_formula, card.base_damage_formula, card.current && card.current.formula && card.current.formula !== '—' ? card.current.formula : '', '');
-    const hasDamage = !!_spellDamagePreview(spell, selected) || (!!cardDirectDamage && cardDirectDamage !== '—');
+    const damagePreview = _spellDamagePreview(spell, selected);
+    const hasDamage = !!damagePreview || (baseLevel !== null && baseLevel > 0);
     const hasAttack = _spellHasAttack(card) || !!_firstText(card.attack_bonus, card.attackBonus);
     const hasSave = !!_spellSaveText(card);
     const fullText = _firstText(card.fullPlayerDetailText, card.description, card.base_effect_text, card.current && card.current.effect, 'No spell details are loaded yet.');
+
+    // Determine whether to show the level selector:
+    // Show for any non-cantrip spell, or if options include more than one choice.
+    const showLevelPicker = (baseLevel !== 0 && baseLevel !== null) || options.length > 1;
+
+    // Level label — if it shows 'Cantrip' but we suspect it's leveled, show 'Unknown' instead
+    const resolvedLevelLabel = (baseLevel === 0 && (card.school || '').toLowerCase().includes('cantrip')) ? 'Cantrip' : _levelLabel(baseLevel);
+    const schoolLabel = _firstText(card.school && !card.school.toLowerCase().includes('cantrip') ? card.school : '', card.level_school && !card.level_school.toLowerCase().includes('cantrip') ? card.level_school : '', '');
+
     const overlay = document.createElement('div');
     overlay.id = 'combat-quick-action-modal';
     overlay.className = 'cqa-overlay';
@@ -206,11 +229,12 @@
       if (cells.length) levelScalingHtml = '<div class="cqa-levels"><div class="cqa-levels-title">At each slot level</div><div class="cqa-levels-grid">' + cells.join('') + '</div></div>';
     }
     overlay.innerHTML = '<div class="cqa-panel" role="dialog" aria-modal="true" aria-label="Quick spell action">'
-      + '<div class="cqa-head"><div><div class="cqa-kicker">Quick Spell</div><div class="cqa-title">' + _esc(spell.name || 'Spell') + '</div><div class="cqa-sub">' + _esc(subtitleParts.join(' • ')) + '</div></div><button class="cqa-close" type="button" data-cqa-close>×</button></div>'
-      + (baseLevel === 0 ? '' : '<label class="cqa-kicker" for="combat-quick-spell-level">Cast Level / Slot</label><select id="combat-quick-spell-level" class="cqa-select" onchange="window.CombatQuickActions.refreshSpellModalDamage()">' + options.map(function (opt) { return '<option value="' + _esc(opt.value) + '" ' + (String(opt.value) === String(selected) ? 'selected' : '') + ' ' + (opt.disabled ? 'disabled' : '') + '>' + _esc(opt.label || 'Cast') + '</option>'; }).join('') + '</select>')
+      + '<div class="cqa-head"><div><div class="cqa-kicker">Quick Spell</div><div class="cqa-title">' + _esc(spell.name || 'Spell') + '</div><div class="cqa-sub">' + _esc([resolvedLevelLabel, schoolLabel].filter(Boolean).join(' • ')) + '</div></div><button class="cqa-close" type="button" data-cqa-close>×</button></div>'
+      + (showLevelPicker ? '<label class="cqa-kicker" for="combat-quick-spell-level">Cast Level / Slot</label><select id="combat-quick-spell-level" class="cqa-select" onchange="window.CombatQuickActions.refreshSpellModalDamage()">' + options.map(function (opt) { return '<option value="' + _esc(opt.value) + '" ' + (String(opt.value) === String(selected) ? 'selected' : '') + ' ' + (opt.disabled ? 'disabled' : '') + '>' + _esc(opt.label || 'Cast') + '</option>'; }).join('') + '</select>' : '')
       + '<div class="cqa-meta" data-cqa-spell-details>' + _spellDetailsHtml(spell, selected) + '</div>'
       + (levelScalingHtml ? levelScalingHtml : '')
       + '<div class="cqa-desc">' + _esc(fullText) + '</div>'
+      + '<div class="cqa-sub">Damage preview: <strong data-cqa-damage-preview>' + _esc(damagePreview || (hasDamage ? '—' : 'No damage roll')) + '</strong></div>'
       + '<div class="cqa-controls"><button class="cqa-btn cast" type="button" data-cqa-cast ' + ((options[0] && options[0].disabled) ? 'disabled' : '') + '>Cast</button>'
       + (hasAttack ? '<button class="cqa-btn" type="button" data-cqa-spell-attack>Roll Attack</button>' : '')
       + (hasDamage ? '<button class="cqa-btn damage" type="button" data-cqa-spell-damage>Roll Damage</button>' : '')

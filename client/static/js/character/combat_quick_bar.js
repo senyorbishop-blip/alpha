@@ -7,7 +7,8 @@
   'use strict';
 
   const STORAGE_KEY = 'combat_quick_bar.v1';
-  const DEFAULT_STATE = { x: null, y: null, w: null, h: null, minimized: false, manual: false, combatWasActive: false, customizing: false };
+  const SIZE_KEY = 'combat_quick_bar_size.v1';
+  const DEFAULT_STATE = { x: null, y: null, minimized: false, manual: false, combatWasActive: false, customizing: false };
   let state = Object.assign({}, DEFAULT_STATE);
   let root = null;
   let dragging = null;
@@ -52,8 +53,8 @@
     style.id = 'combat-quick-bar-styles';
     style.textContent = `
       .combat-quick-bar-toggle{position:fixed;right:18px;bottom:84px;z-index:1085;border:1px solid rgba(0,229,204,.45);border-radius:999px;background:rgba(13,18,24,.88);color:#dffbf7;padding:.42rem .62rem;font-size:.72rem;box-shadow:0 8px 22px rgba(0,0,0,.35);cursor:pointer;}
-      .combat-quick-bar{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);z-index:1086;width:min(720px,calc(100vw - 28px));min-width:280px;min-height:120px;max-height:min(58vh,520px);display:flex;flex-direction:column;gap:.48rem;border:1px solid rgba(0,229,204,.32);border-radius:16px;background:linear-gradient(145deg,rgba(13,18,24,.96),rgba(28,20,13,.94));box-shadow:0 18px 44px rgba(0,0,0,.48),inset 0 0 0 1px rgba(255,255,255,.04);color:#f5ead6;font-family:inherit;overflow:auto;resize:both;}
-      .combat-quick-bar.is-minimized{width:min(360px,calc(100vw - 28px));}
+      .combat-quick-bar{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);z-index:1086;width:min(720px,calc(100vw - 28px));min-width:280px;min-height:140px;max-height:min(72vh,600px);display:flex;flex-direction:column;gap:.48rem;border:1px solid rgba(0,229,204,.32);border-radius:16px;background:linear-gradient(145deg,rgba(13,18,24,.96),rgba(28,20,13,.94));box-shadow:0 18px 44px rgba(0,0,0,.48),inset 0 0 0 1px rgba(255,255,255,.04);color:#f5ead6;font-family:inherit;overflow:hidden;resize:both;box-sizing:border-box;}
+      .combat-quick-bar.is-minimized{width:min(360px,calc(100vw - 28px));min-height:unset;resize:none;}
       .combat-quick-bar[hidden],.combat-quick-bar-toggle[hidden]{display:none!important;}
       .combat-quick-bar-head{display:flex;align-items:center;justify-content:space-between;gap:.7rem;padding:.55rem .7rem .42rem;cursor:grab;background:rgba(255,255,255,.035);border-bottom:1px solid rgba(255,255,255,.08);user-select:none;}
       .combat-quick-bar-title{display:flex;align-items:center;gap:.45rem;font-weight:800;font-size:.78rem;letter-spacing:.03em;text-transform:uppercase;color:#9ff6ea;}
@@ -91,6 +92,27 @@
     document.head.appendChild(style);
   }
 
+  function _loadSavedSize() {
+    try {
+      const saved = JSON.parse(global.localStorage.getItem(SIZE_KEY) || 'null');
+      if (saved && saved.w && saved.h && root) {
+        root.style.width  = Math.max(280, Math.min(global.innerWidth  - 28, saved.w)) + 'px';
+        root.style.height = Math.max(140, Math.min(global.innerHeight * 0.72, saved.h)) + 'px';
+      }
+    } catch (_e) {}
+  }
+
+  function _watchSize() {
+    if (typeof ResizeObserver === 'undefined' || !root) return;
+    const ro = new ResizeObserver(function () {
+      if (state.minimized) return;
+      try {
+        global.localStorage.setItem(SIZE_KEY, JSON.stringify({ w: root.offsetWidth, h: root.offsetHeight }));
+      } catch (_e) {}
+    });
+    ro.observe(root);
+  }
+
   function _ensureRoot() {
     if (root) return root;
     _installStyles();
@@ -99,6 +121,8 @@
     root.className = 'combat-quick-bar';
     root.setAttribute('aria-label', 'Combat quick actions');
     document.body.appendChild(root);
+    _loadSavedSize();
+    _watchSize();
     const toggle = document.createElement('button');
     toggle.id = 'combat-quick-bar-toggle';
     toggle.type = 'button';
