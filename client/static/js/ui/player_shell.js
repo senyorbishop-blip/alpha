@@ -256,6 +256,8 @@
         <button type="button" class="player-dashboard-btn" data-player-dashboard-action="token">My Character<span class="btn-kicker">Place/claim token</span></button>
         <button type="button" class="player-dashboard-btn" data-player-dashboard-action="rolls">Roll Dice<span class="btn-kicker">Checks & attacks</span></button>
         <button type="button" class="player-dashboard-btn" data-player-dashboard-action="journal">Journal & Quests<span class="btn-kicker">Canon, clues, quest progress</span></button>
+        <button type="button" class="player-dashboard-btn player-dashboard-btn--combat" data-player-dashboard-action="combat-guide">Combat Guide<span class="btn-kicker">Turn flow, movement, actions</span></button>
+        <button type="button" class="player-dashboard-btn" data-player-dashboard-action="help">Help Hub<span class="btn-kicker">Tours, guides &amp; tips</span></button>
       </div>
       ${savedDiscoveriesMarkup}
       ${privateHooksMarkup}
@@ -286,6 +288,16 @@
     });
     mount.querySelector('[data-player-dashboard-action="journal"]')?.addEventListener('click', function () {
       env?.toggleFlyout?.('flyout-journal');
+    });
+    mount.querySelector('[data-player-dashboard-action="combat-guide"]')?.addEventListener('click', function () {
+      if (window.AppOnboarding && typeof AppOnboarding.showHelpHub === 'function') {
+        AppOnboarding.showHelpHub('player');
+      }
+    });
+    mount.querySelector('[data-player-dashboard-action="help"]')?.addEventListener('click', function () {
+      if (window.AppOnboarding && typeof AppOnboarding.showHelpHub === 'function') {
+        AppOnboarding.showHelpHub('player');
+      }
     });
     mount.querySelectorAll('[data-player-emote-id]').forEach(function (btn) {
       btn.addEventListener('click', function () {

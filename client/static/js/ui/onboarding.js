@@ -3,10 +3,14 @@
  * Tavern Tabletop — Premium role-based onboarding walkthrough & contextual ? help system.
  *
  * Exposes: window.AppOnboarding
- *   .init(role, userId)       — call on page load; shows walkthrough if first visit
- *   .showWalkthrough(role)    — force-show the full walkthrough for a role
- *   .showHelp(topic)          — show a single contextual help card for a topic
- *   .markSeen(role, userId)   — mark walkthrough as seen (skip future auto-show)
+ *   .init(role, userId)            — call on page load; shows walkthrough if first visit
+ *   .showWalkthrough(role)         — force-show the full walkthrough for a role
+ *   .showHelp(topic)               — show a single contextual help card for a topic
+ *   .showHelpHub(role)             — show the Help Hub topic selector
+ *   .showCombatHint(message, dur)  — show a non-blocking transient inline hint
+ *   .markSeen(role, userId)        — mark walkthrough as seen (skip future auto-show)
+ *   .createHelpButton(topic, lbl)  — returns a ? <button> element
+ *   .createHelpHubButton(role,lbl) — returns a Help Hub <button> element
  */
 (function () {
   'use strict';
@@ -130,6 +134,261 @@
     ],
   };
 
+  // ── Specialized guide definitions (independent of role tour) ─────────────
+  var GUIDE_STEPS = {
+    new_player: [
+      {
+        icon: '🛡',
+        title: 'New Player: Getting Started',
+        body: 'Welcome to Tavern Tabletop! Your first step is to open <strong>My Character</strong> on the left rail, fill in your name and class, then place your token on the map.',
+        accent: '#00e5cc',
+        tip: 'The DM can also place your token for you — just let them know your character\'s name.',
+      },
+      {
+        icon: '🎲',
+        title: 'Rolls & Dice',
+        body: 'All dice rolls happen through the <strong>Dice Vault</strong> (🎲) on the left. Click the die you need, or type a custom roll like <code style="color:#00e5cc">2d6+3</code>. Results appear in the chat log.',
+        accent: '#e74c3c',
+        tip: 'Your DM may ask for a specific roll (Perception, Athletics, etc.) — just find that die and roll it!',
+      },
+      {
+        icon: '⚡',
+        title: 'Your First Combat',
+        body: 'When combat starts, the <strong>Combat</strong> tab on the right will glow. Open it to see the initiative order. On your turn it will say <strong>YOUR TURN</strong>. Move your token, then pick an action — attack, spell, or ability.',
+        accent: '#e74c3c',
+        tip: 'End your turn with the "End Turn" button in the Combat panel. This passes to the next combatant.',
+      },
+      {
+        icon: '🎒',
+        title: 'Inventory & Items',
+        body: 'Your gear lives in the <strong>Inventory</strong> tab on the right. The DM can drop items into your inventory. Equip weapons and armor here. Gold and currency are tracked at the bottom.',
+        accent: '#d4a637',
+        tip: 'Check the Journal & Quests flyout on the left for active quest objectives and canon notes.',
+      },
+    ],
+    returning_player: [
+      {
+        icon: '⚔',
+        title: 'Quick Refresh',
+        body: 'Welcome back! Here\'s a fast refresher: your character sheet is in the left rail under <strong>My Character</strong>. The right panel holds Combat, Inventory, Spells, Party, and more via the tabs at the top.',
+        accent: '#d4a637',
+        tip: 'The topbar ? button always reopens this Help Hub whenever you need a refresher.',
+      },
+      {
+        icon: '⚡',
+        title: 'Combat Flow',
+        body: 'Combat uses the right-panel <strong>Combat</strong> tab. On your turn: <strong>1)</strong> move your token, <strong>2)</strong> choose an action (attack, spell, ability), <strong>3)</strong> use a bonus action if available, then <strong>4)</strong> End Turn.',
+        accent: '#e74c3c',
+        tip: 'Dash doubles your movement. Disengage lets you leave melee without opportunity attacks.',
+      },
+      {
+        icon: '🔮',
+        title: 'Spell Slots & Casters',
+        body: 'Open the <strong>Spells</strong> tab to see your prepared spells and remaining slots. Slots refresh on a long rest. Some classes use different resources (Pact Slots, Sorcery Points) — check your class features.',
+        accent: '#9b59b6',
+        tip: 'Concentration spells end early if you take damage and fail a Constitution save (DC 10 or half damage, whichever is higher).',
+      },
+    ],
+    combat_guide: [
+      {
+        icon: '⚡',
+        title: 'Combat Quick Guide',
+        body: 'On your turn you have: one <strong>Action</strong>, one <strong>Bonus Action</strong>, one <strong>Reaction</strong> (off-turn), and movement up to your speed. Open the <strong>Combat</strong> tab to see the current initiative order.',
+        accent: '#e74c3c',
+        tip: 'You can split your movement — move, attack, then move again — as long as you don\'t exceed your total speed.',
+      },
+      {
+        icon: '🎯',
+        title: 'Attacking',
+        body: 'In the Combat panel, click <strong>Select Target</strong> then <strong>Weapon Attack</strong> or <strong>Spell Attack</strong>. The DM will resolve the outcome. Attack rolls, damage, and saving throws are all logged in the chat.',
+        accent: '#e74c3c',
+        tip: 'Critical hits (natural 20) double the damage dice. Critical misses (natural 1) always miss.',
+      },
+      {
+        icon: '🏃',
+        title: 'Movement & Dash',
+        body: 'Your movement is shown in the Combat panel: <strong>Speed / Used / Remaining</strong>. Use the <strong>Dash</strong> button to add your speed again as bonus movement. <strong>Disengage</strong> lets you leave an enemy\'s reach without provoking an opportunity attack.',
+        accent: '#00e5cc',
+        tip: 'Difficult terrain costs 2 ft of movement per 1 ft travelled. Toggle it in the Combat panel when your token enters difficult terrain.',
+      },
+      {
+        icon: '🔚',
+        title: 'Ending Your Turn',
+        body: 'When you\'ve moved and acted, press <strong>End Turn</strong> in the Combat panel. If you forget, the DM can advance the turn. Unused movement and bonus actions are lost — they don\'t carry over.',
+        accent: '#d4a637',
+        tip: 'Your reaction resets at the start of your next turn. Common reactions: Opportunity Attack, Shield spell, Counterspell.',
+      },
+    ],
+    movement_guide: [
+      {
+        icon: '🏃',
+        title: 'Movement in Combat',
+        body: 'Each combatant gets movement equal to their speed each turn. Drag your token on the map to move. The Combat panel shows <strong>Speed / Used / Remaining ft</strong>.',
+        accent: '#00e5cc',
+        tip: 'You can move before and after your action, as long as you don\'t exceed your speed total.',
+      },
+      {
+        icon: '⛰',
+        title: 'Difficult Terrain',
+        body: 'Moving through difficult terrain costs 2 ft per 1 ft of actual distance. Toggle <strong>Difficult Terrain</strong> in the Combat panel when your token moves into it. This halves your effective movement.',
+        accent: '#d4a637',
+        tip: 'Common difficult terrain: deep snow, rubble, shallow water, dense foliage, and magical slow effects.',
+      },
+      {
+        icon: '🏃',
+        title: 'Dash & Disengage',
+        body: '<strong>Dash</strong> is an action that grants extra movement equal to your speed. <strong>Disengage</strong> is an action that lets you move away from enemies without triggering Opportunity Attacks.',
+        accent: '#e74c3c',
+        tip: 'Rogues can Dash or Disengage as a Bonus Action via Cunning Action. Monks can spend Focus to Dash or Disengage as a Bonus Action.',
+      },
+      {
+        icon: '🚫',
+        title: 'Movement Denied',
+        body: 'Movement can be blocked for several reasons: not your turn, speed is 0, you have no movement left, or you\'re Restrained/Grappled. The combat panel will explain which applies. Use <strong>Dash</strong> if you need more range.',
+        accent: '#e74c3c',
+        tip: 'If you\'re grappled, try the Athletics/Acrobatics check to escape before moving. Ask your DM.',
+      },
+    ],
+    spells_guide: [
+      {
+        icon: '🔮',
+        title: 'Casting Spells',
+        body: 'Open the <strong>Spells</strong> tab to see all your prepared or known spells, organized by level. During combat, click a spell to cast it. Higher-level slots deal more damage or have better effects.',
+        accent: '#9b59b6',
+        tip: 'Cantrips (level 0) have no slot cost and can be cast at will.',
+      },
+      {
+        icon: '🕯',
+        title: 'Spell Slots',
+        body: 'Casting a spell of 1st level or higher expends a spell slot. Slots refresh on a <strong>Long Rest</strong>. Warlocks recover Pact Slots on a Short Rest. Check your remaining slots in the Spells tab.',
+        accent: '#9b59b6',
+        tip: 'You can upcast spells by spending a higher-level slot for improved effects. The spell description lists upcasting bonuses.',
+      },
+      {
+        icon: '🎯',
+        title: 'Concentration',
+        body: 'Concentration spells are marked with a ©. You can only concentrate on one spell at a time. Taking damage requires a Constitution save (DC 10 or half damage taken, whichever is higher) to maintain concentration.',
+        accent: '#e74c3c',
+        tip: 'Losing concentration ends the spell immediately. Maintain concentration by avoiding damage or taking the War Caster / Resilient Constitution feat.',
+      },
+      {
+        icon: '⚡',
+        title: 'Bonus Action Spells',
+        body: 'Spells with a Bonus Action casting time (like Healing Word or Misty Step) are cast as your Bonus Action. If you cast a bonus action spell, you may only cast cantrips with your main Action that turn.',
+        accent: '#d4a637',
+        tip: 'Quicken Spell (Sorcerer Metamagic) changes a spell\'s casting time to a Bonus Action for 2 Sorcery Points.',
+      },
+    ],
+    inventory_guide: [
+      {
+        icon: '🎒',
+        title: 'Your Inventory',
+        body: 'The <strong>Inventory</strong> tab shows your equipped items, backpack contents, currency, and attuned magic items. Equip weapons and armor by clicking them. Your AC and attack bonuses update automatically.',
+        accent: '#d4a637',
+        tip: 'Drag items to the Equipped section to equip them. Items must be in your Backpack first.',
+      },
+      {
+        icon: '💰',
+        title: 'Loot & Gold',
+        body: 'When the DM awards loot, items appear in your Inventory automatically. Gold is tracked in the Currency section. You can split gold with the party by right-clicking a gold entry.',
+        accent: '#d4a637',
+        tip: 'Shops let you buy and sell items if the DM has set one up. Right-click a shop token to open it.',
+      },
+      {
+        icon: '⚗',
+        title: 'Attunement',
+        body: 'Powerful magic items require <strong>Attunement</strong>. You can attune to a maximum of 3 items at once. Attuned items appear in the Attunement section of your Inventory. Spending a Short Rest while holding an item attunes you to it.',
+        accent: '#9b59b6',
+        tip: 'Unattune by spending another Short Rest. You lose the item\'s benefits immediately.',
+      },
+      {
+        icon: '⚖',
+        title: 'Encumbrance',
+        body: 'Your carrying capacity is your Strength score × 15 lbs. Exceeding it makes you Encumbered (speed –10 ft). Going over 2× your capacity makes you Heavily Encumbered (speed –20 ft, disadvantage on attacks). Track your load in the Inventory tab.',
+        accent: '#e74c3c',
+        tip: 'Pack saddles and mounts can carry far more weight than you can. Consider distributing heavy gear.',
+      },
+    ],
+    dm_controls_guide: [
+      {
+        icon: '🎮',
+        title: 'DM Controls Overview',
+        body: 'You have full control of the session. The left rail groups your tools: <strong>Map/Editor</strong> for terrain, <strong>Tokens/Fog/Combat</strong> for live play, and <strong>Assistant/Sound/Journal</strong> for storytelling.',
+        accent: '#d4a637',
+        tip: 'Use Live Mode vs Prep Mode (toggle at the top of the left rail) to dim non-relevant tool groups during play.',
+      },
+      {
+        icon: '⚔',
+        title: 'Starting & Running Combat',
+        body: 'Open the <strong>Combat</strong> tab on the right. Click <strong>Start Combat</strong> to pull all tokens on the current map into initiative. Use <strong>Next</strong> to advance turns. Click individual initiative values to edit them.',
+        accent: '#e74c3c',
+        tip: 'Right-click any combatant entry to adjust HP, conditions, or remove them from the tracker without ending combat.',
+      },
+      {
+        icon: '🌫',
+        title: 'Fog of War',
+        body: 'Use the <strong>Fog of War</strong> flyout on the left rail to paint fog, reveal areas, and manage vision. Player tokens with vision enabled automatically reveal the area around them when Fog of War is active.',
+        accent: '#00e5cc',
+        tip: 'Enable "Reveal on token move" to automatically uncover fog when players move their tokens.',
+      },
+      {
+        icon: '🧙',
+        title: 'AI DM Assistant',
+        body: 'The <strong>AI DM Assistant</strong> helps you generate NPCs, encounter descriptions, loot tables, and story hooks on the fly. It is aware of your current session context and players.',
+        accent: '#9b59b6',
+        tip: 'Click Assist in the left rail and ask anything — "describe a tense tavern scene" or "generate a CR 5 monster with a weakness to fire".',
+      },
+    ],
+    viewer_powers_guide: [
+      {
+        icon: '👁',
+        title: 'Viewer Powers',
+        body: 'As a Spectator, the DM may grant you special powers to interact with the session — reaction emotes, lair actions, environmental effects, or even controlling a minor creature.',
+        accent: '#9b59b6',
+        tip: 'Granted powers appear in the Party panel with charge counts and cooldown timers.',
+      },
+      {
+        icon: '⚡',
+        title: 'Using Powers',
+        body: 'When a power is available, its card will be active in the Party panel. Click it to use it. Some powers require DM approval — they enter a pending state until the DM confirms or declines.',
+        accent: '#d4a637',
+        tip: 'If a power is greyed out, it is either on cooldown, out of charges, or not yet approved. Hover for the reason.',
+      },
+      {
+        icon: '💬',
+        title: 'Chat & Presence',
+        body: 'Your chat messages appear in the shared log visible to everyone. Use the Party tab to see which players are connected. Your presence is shown to the DM at all times.',
+        accent: '#9b59b6',
+        tip: 'Viewer reactions in chat are a great way to engage during dramatic moments.',
+      },
+    ],
+  };
+
+  // ── Help Hub topic catalog (shown per role) ────────────────────────────────
+  var HUB_TOPICS = {
+    dm: [
+      { key: 'dm_tour',        label: 'DM Tour',          icon: '⚔', guide: null, tour: true },
+      { key: 'combat_guide',   label: 'Combat Guide',     icon: '⚡', guide: 'combat_guide', tour: false },
+      { key: 'movement_guide', label: 'Movement Guide',   icon: '🏃', guide: 'movement_guide', tour: false },
+      { key: 'dm_controls_guide', label: 'DM Controls',  icon: '🎮', guide: 'dm_controls_guide', tour: false },
+      { key: 'spells_guide',   label: 'Spells Guide',     icon: '🔮', guide: 'spells_guide', tour: false },
+      { key: 'inventory_guide',label: 'Inventory Guide',  icon: '🎒', guide: 'inventory_guide', tour: false },
+    ],
+    player: [
+      { key: 'new_player',     label: 'New Player Tour',  icon: '🛡', guide: 'new_player', tour: false },
+      { key: 'returning_player', label: 'Quick Refresh',  icon: '⚔', guide: 'returning_player', tour: false },
+      { key: 'combat_guide',   label: 'Combat Quick Guide', icon: '⚡', guide: 'combat_guide', tour: false },
+      { key: 'movement_guide', label: 'Movement Guide',   icon: '🏃', guide: 'movement_guide', tour: false },
+      { key: 'spells_guide',   label: 'Spells Guide',     icon: '🔮', guide: 'spells_guide', tour: false },
+      { key: 'inventory_guide',label: 'Inventory Guide',  icon: '🎒', guide: 'inventory_guide', tour: false },
+    ],
+    viewer: [
+      { key: 'viewer_tour',    label: 'Viewer Tour',      icon: '👁', guide: null, tour: true },
+      { key: 'viewer_powers_guide', label: 'Viewer Powers', icon: '⚡', guide: 'viewer_powers_guide', tour: false },
+      { key: 'combat_guide',   label: 'Combat Guide',     icon: '⚡', guide: 'combat_guide', tour: false },
+    ],
+  };
+
   // ── Help topic map (topic → step index for that role) ─────────────────────
   var HELP_TOPICS = {
     dm: {
@@ -174,6 +433,7 @@
   var _step      = 0;
   var _steps     = [];
   var _helpMode  = false; // true when showing a single help topic (no navigation)
+  var _hubMode   = false; // true when showing the hub selector
 
   // ── DOM helpers ───────────────────────────────────────────────────────────
   function _el(id) { return document.getElementById(id); }
@@ -191,6 +451,7 @@
       '      <button id="ob-close-btn" title="Close" aria-label="Close walkthrough">&times;</button>',
       '    </div>',
       '    <div id="ob-dots"></div>',
+      '    <div id="ob-hub" style="display:none;"></div>',
       '    <div id="ob-body">',
       '      <div id="ob-icon"></div>',
       '      <h2 id="ob-title"></h2>',
@@ -392,6 +653,40 @@
       '  color:#00e5cc; box-shadow:0 0 6px rgba(0,229,204,0.35);',
       '}',
 
+      /* Hub styles */
+      '#ob-hub {',
+      '  position:relative; z-index:1; margin-bottom:1rem;',
+      '}',
+      '.ob-hub-title {',
+      '  font-family:"Cinzel",serif; font-size:1.1rem; font-weight:700;',
+      '  color:var(--ob-accent,#00e5cc); text-align:center;',
+      '  margin-bottom:0.6rem; letter-spacing:0.04em;',
+      '}',
+      '.ob-hub-subtitle {',
+      '  font-family:"Crimson Pro",Georgia,serif; font-size:0.88rem;',
+      '  color:rgba(232,220,200,0.7); text-align:center; margin-bottom:1rem;',
+      '}',
+      '.ob-hub-grid {',
+      '  display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;',
+      '}',
+      '.ob-hub-card {',
+      '  display:flex; align-items:center; gap:0.5rem;',
+      '  padding:0.6rem 0.7rem; cursor:pointer; border-radius:4px;',
+      '  border:1px solid rgba(0,229,204,0.18);',
+      '  background:rgba(0,229,204,0.04);',
+      '  transition:all 0.15s; font-family:"Cinzel",serif;',
+      '}',
+      '.ob-hub-card:hover {',
+      '  border-color:rgba(0,229,204,0.5);',
+      '  background:rgba(0,229,204,0.1);',
+      '  box-shadow:0 0 8px rgba(0,229,204,0.2);',
+      '}',
+      '.ob-hub-card-icon { font-size:1.2rem; flex-shrink:0; }',
+      '.ob-hub-card-label {',
+      '  font-size:0.62rem; letter-spacing:0.08em;',
+      '  text-transform:uppercase; color:rgba(200,169,110,0.85);',
+      '}',
+
       /* Keyframes */
       '@keyframes ob-fade-in { from{opacity:0} to{opacity:1} }',
       '@keyframes ob-slide-up {',
@@ -419,8 +714,12 @@
 
     closeBtn.addEventListener('click', _closeModal);
     skipBtn.addEventListener('click', function () { _markSeen(_role, _userId); _closeModal(); });
-    prevBtn.addEventListener('click', function () { if (_step > 0) _goTo(_step - 1); });
+    prevBtn.addEventListener('click', function () {
+      if (_hubMode) return;
+      if (_step > 0) _goTo(_step - 1);
+    });
     nextBtn.addEventListener('click', function () {
+      if (_hubMode) { _closeModal(); return; }
       if (_helpMode) { _closeModal(); return; }
       if (_step < _steps.length - 1) {
         _goTo(_step + 1);
@@ -439,9 +738,73 @@
     document.addEventListener('keydown', function (e) {
       if (!overlay.classList.contains('ob-open')) return;
       if (e.key === 'Escape') { _markSeen(_role, _userId); _closeModal(); }
+      if (_hubMode) return;
       if (e.key === 'ArrowRight' && !_helpMode && _step < _steps.length - 1) _goTo(_step + 1);
       if (e.key === 'ArrowLeft' && !_helpMode && _step > 0) _goTo(_step - 1);
     });
+  }
+
+  // ── Render hub mode ────────────────────────────────────────────────────────
+  function _renderHub() {
+    _ensureModal();
+    var r = _role || 'viewer';
+    var accent = ROLE_ACCENT[r] || '#00e5cc';
+    var topics = HUB_TOPICS[r] || HUB_TOPICS.viewer;
+    var modal = _el('ob-modal');
+    modal.style.setProperty('--ob-accent', accent);
+    modal.style.setProperty('--ob-accent-dim', _dimColor(accent));
+    modal.style.setProperty('--ob-accent-glow', _glowColor(accent));
+    _el('ob-glow').style.background = 'radial-gradient(ellipse at 50% 50%,' + _glowColor(accent) + ' 0%,transparent 70%)';
+
+    // Hide step UI, show hub
+    _el('ob-dots').innerHTML = '';
+    _el('ob-body').style.display = 'none';
+    _el('ob-footer').style.display = 'none';
+    var hub = _el('ob-hub');
+    hub.style.display = 'block';
+
+    var cards = topics.map(function (topic) {
+      return '<button class="ob-hub-card" data-hub-key="' + topic.key + '">' +
+        '<span class="ob-hub-card-icon">' + topic.icon + '</span>' +
+        '<span class="ob-hub-card-label">' + topic.label + '</span>' +
+        '</button>';
+    }).join('');
+
+    hub.innerHTML = '<div class="ob-hub-title">Help Hub</div>' +
+      '<div class="ob-hub-subtitle">Choose a guide or tour for ' + (ROLE_LABEL[r] || r) + '</div>' +
+      '<div class="ob-hub-grid">' + cards + '</div>';
+
+    hub.querySelectorAll('.ob-hub-card').forEach(function (card) {
+      card.addEventListener('click', function () {
+        var key = card.getAttribute('data-hub-key');
+        var topic = topics.find(function (t) { return t.key === key; });
+        if (!topic) return;
+        if (topic.tour) {
+          _closeModal();
+          setTimeout(function () { showWalkthrough(_role); }, 80);
+        } else if (topic.guide && GUIDE_STEPS[topic.guide]) {
+          _closeModal();
+          setTimeout(function () { _showGuide(topic.guide); }, 80);
+        }
+      });
+    });
+
+    // Badge
+    var badge = _el('ob-role-badge');
+    badge.textContent = ROLE_LABEL[r] || r;
+    badge.style.color = accent;
+    badge.style.borderColor = accent;
+  }
+
+  // ── Show a named guide (GUIDE_STEPS entry) ────────────────────────────────
+  function _showGuide(guideKey) {
+    var steps = GUIDE_STEPS[guideKey];
+    if (!steps || !steps.length) return;
+    _steps    = steps.slice();
+    _step     = 0;
+    _helpMode = false;
+    _hubMode  = false;
+    _openModal();
   }
 
   // ── Render a step ─────────────────────────────────────────────────────────
@@ -458,6 +821,11 @@
 
     // Glow
     _el('ob-glow').style.background = 'radial-gradient(ellipse at 50% 50%,' + _glowColor(accent) + ' 0%,transparent 70%)';
+
+    // Make sure non-hub UI is visible
+    _el('ob-body').style.display = '';
+    _el('ob-footer').style.display = '';
+    _el('ob-hub').style.display = 'none';
 
     // Icon (re-trigger animation)
     var iconEl = _el('ob-icon');
@@ -494,7 +862,7 @@
       skipBtn.style.display = '';
       prevBtn.disabled = (_step === 0);
       var isLast = (_step === _steps.length - 1);
-      nextBtn.textContent = isLast ? 'Begin Adventure ⚔' : 'Next →';
+      nextBtn.textContent = isLast ? 'Done ✓' : 'Next →';
     }
 
     // Progress bar
@@ -523,6 +891,7 @@
   // ── Open / Close ──────────────────────────────────────────────────────────
   function _openModal() {
     _ensureModal();
+    _hubMode = false;
     var overlay = _el('ob-overlay');
     overlay.classList.add('ob-open');
 
@@ -532,6 +901,11 @@
     badge.style.color = ROLE_ACCENT[_role] || '#00e5cc';
     badge.style.borderColor = ROLE_ACCENT[_role] || '#00e5cc';
 
+    // Ensure step UI visible, hub hidden
+    _el('ob-body').style.display = '';
+    _el('ob-footer').style.display = '';
+    _el('ob-hub').style.display = 'none';
+
     _goTo(_step);
   }
 
@@ -539,11 +913,11 @@
     var overlay = _el('ob-overlay');
     if (overlay) overlay.classList.remove('ob-open');
     _helpMode = false;
+    _hubMode  = false;
   }
 
   // ── Colour helpers ────────────────────────────────────────────────────────
   function _dimColor(hex) {
-    // darken hex ~40% for button gradient end
     var n = parseInt(hex.replace('#',''), 16);
     var r = Math.floor(((n>>16)&0xff)*0.55);
     var g = Math.floor(((n>>8)&0xff)*0.55);
@@ -568,7 +942,6 @@
     _steps  = (STEPS[_role] || STEPS.viewer).slice();
 
     if (!_hasSeen(_role, _userId)) {
-      // Small delay so the page fully renders before overlay appears
       setTimeout(function () {
         _step     = 0;
         _helpMode = false;
@@ -604,6 +977,47 @@
   }
 
   /**
+   * showHelpHub(role) — show the Help Hub topic selector.
+   */
+  function showHelpHub(role) {
+    _role   = role || _role || 'viewer';
+    _hubMode = true;
+    _ensureModal();
+    var overlay = _el('ob-overlay');
+    overlay.classList.add('ob-open');
+    var badge = _el('ob-role-badge');
+    badge.textContent = 'Help Hub';
+    badge.style.color = ROLE_ACCENT[_role] || '#00e5cc';
+    badge.style.borderColor = ROLE_ACCENT[_role] || '#00e5cc';
+    _renderHub();
+  }
+
+  /**
+   * showCombatHint(message, duration) — show a transient non-blocking inline hint bar.
+   * Looks for #combat-hint-bar in the DOM; falls back to a simple toast if not present.
+   * duration in ms (default 6000).
+   */
+  function showCombatHint(message, duration) {
+    var ms = typeof duration === 'number' ? duration : 6000;
+    var bar = document.getElementById('combat-hint-bar');
+    if (bar) {
+      bar.textContent = message;
+      bar.style.display = 'flex';
+      bar.classList.add('combat-hint-visible');
+      clearTimeout(bar._hintTimer);
+      bar._hintTimer = setTimeout(function () {
+        bar.classList.remove('combat-hint-visible');
+        setTimeout(function () { bar.style.display = 'none'; }, 300);
+      }, ms);
+      return;
+    }
+    // Fallback: use showToast if available
+    if (typeof window.showToast === 'function') {
+      window.showToast(message);
+    }
+  }
+
+  /**
    * markSeen(role, userId) — externally mark as seen.
    */
   function markSeen(role, userId) {
@@ -627,13 +1041,34 @@
     return btn;
   }
 
+  /**
+   * createHelpHubButton(role, label) — returns a Help Hub <button> element.
+   */
+  function createHelpHubButton(role, label) {
+    var btn = document.createElement('button');
+    btn.className = 'ob-help-btn';
+    btn.title = label || 'Help Hub';
+    btn.setAttribute('aria-label', label || 'Help Hub');
+    btn.textContent = '?';
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      showHelpHub(role || _role);
+    });
+    return btn;
+  }
+
   window.AppOnboarding = {
-    init:             init,
-    showWalkthrough:  showWalkthrough,
-    showHelp:         showHelp,
-    markSeen:         markSeen,
-    createHelpButton: createHelpButton,
-    STEPS:            STEPS,
+    init:                init,
+    showWalkthrough:     showWalkthrough,
+    showHelp:            showHelp,
+    showHelpHub:         showHelpHub,
+    showCombatHint:      showCombatHint,
+    markSeen:            markSeen,
+    createHelpButton:    createHelpButton,
+    createHelpHubButton: createHelpHubButton,
+    STEPS:               STEPS,
+    GUIDE_STEPS:         GUIDE_STEPS,
+    HUB_TOPICS:          HUB_TOPICS,
   };
 
 })();
