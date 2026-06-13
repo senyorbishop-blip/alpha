@@ -1873,6 +1873,149 @@
     #rtab-pane-combat.active {
       overflow: hidden;
     }
+
+    /* ── Combat tab attention glow ─────────────────────────────────────────── */
+    @keyframes combat-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(231,76,60,0); }
+      50%       { box-shadow: 0 0 8px 3px rgba(231,76,60,0.45); }
+    }
+    @keyframes combat-your-turn-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0,229,204,0); border-color: rgba(0,229,204,0.4); }
+      50%       { box-shadow: 0 0 12px 4px rgba(0,229,204,0.6); border-color: rgba(0,229,204,0.9); }
+    }
+    #rtab-combat.combat-glow {
+      animation: combat-pulse 1.8s ease-in-out infinite;
+      border-color: rgba(231,76,60,0.5) !important;
+      color: #e74c3c !important;
+    }
+    #rtab-combat.combat-your-turn {
+      animation: combat-your-turn-pulse 1.2s ease-in-out infinite;
+      border-color: rgba(0,229,204,0.8) !important;
+      color: var(--accent) !important;
+      font-weight: 700;
+    }
+    #rtab-combat.combat-your-turn::after {
+      content: 'YOUR TURN';
+      display: block;
+      font-size: 0.42rem;
+      letter-spacing: 0.14em;
+      color: var(--accent);
+      line-height: 1;
+      margin-top: 0.1rem;
+    }
+    /* Dashboard combat button attention */
+    .player-dashboard-btn--combat.combat-attention {
+      border-color: rgba(231,76,60,0.6) !important;
+      color: #e74c3c !important;
+      animation: combat-pulse 1.8s ease-in-out infinite;
+    }
+    .player-dashboard-btn--combat.your-turn-attention {
+      border-color: rgba(0,229,204,0.8) !important;
+      color: var(--accent) !important;
+      animation: combat-your-turn-pulse 1.2s ease-in-out infinite;
+    }
+    /* Character sheet Actions tab attention */
+    .sheet-page-tab[data-page="combat"].combat-attention {
+      border-color: rgba(231,76,60,0.6) !important;
+      color: #e74c3c !important;
+    }
+    .sheet-page-tab[data-page="combat"].your-turn-attention {
+      border-color: rgba(0,229,204,0.8) !important;
+      color: var(--accent) !important;
+    }
+
+    /* ── Combat hint bar ───────────────────────────────────────────────────── */
+    #combat-hint-bar {
+      display: none;
+      align-items: center;
+      gap: 0.45rem;
+      margin: 0.4rem 0.5rem 0;
+      padding: 0.45rem 0.65rem;
+      background: rgba(0,229,204,0.07);
+      border: 1px solid rgba(0,229,204,0.25);
+      border-radius: 8px;
+      font-size: 0.63rem;
+      color: rgba(232,220,200,0.85);
+      line-height: 1.45;
+      font-family: 'Crimson Pro', Georgia, serif;
+      transition: opacity 0.3s;
+    }
+    #combat-hint-bar::before { content: '⚡'; flex-shrink: 0; }
+    #combat-hint-bar.combat-hint-visible { display: flex; }
+
+    /* ── Combat coach checklist ────────────────────────────────────────────── */
+    #combat-coach {
+      display: none;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin: 0.3rem 0.5rem 0;
+      padding: 0.55rem 0.7rem;
+      background: rgba(212,166,55,0.05);
+      border: 1px solid rgba(212,166,55,0.2);
+      border-radius: 10px;
+    }
+    #combat-coach.visible { display: flex; }
+    .coach-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.58rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+      margin-bottom: 0.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .coach-title a {
+      font-size: 0.54rem;
+      color: rgba(0,229,204,0.55);
+      text-decoration: none;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+    }
+    .coach-title a:hover { color: var(--accent); }
+    .coach-item {
+      display: flex;
+      align-items: center;
+      gap: 0.42rem;
+      font-size: 0.64rem;
+      color: var(--parchment-dim);
+      padding: 0.2rem 0.3rem;
+      border-radius: 4px;
+      transition: background 0.12s;
+    }
+    .coach-item:hover { background: rgba(255,255,255,0.04); }
+    .coach-item.done { color: rgba(46,204,113,0.7); text-decoration: line-through; opacity: 0.7; }
+    .coach-item-icon { flex-shrink: 0; font-size: 0.75rem; }
+    .coach-item-label { flex: 1; line-height: 1.35; }
+    .coach-item-tip {
+      font-size: 0.57rem;
+      color: rgba(200,169,110,0.55);
+      font-style: italic;
+      line-height: 1.3;
+    }
+    .coach-class-hint {
+      margin-top: 0.25rem;
+      padding: 0.3rem 0.45rem;
+      background: rgba(0,229,204,0.05);
+      border: 1px solid rgba(0,229,204,0.15);
+      border-radius: 6px;
+      font-size: 0.6rem;
+      color: rgba(0,229,204,0.7);
+      line-height: 1.4;
+    }
+
+    /* Movement denial help link */
+    .move-denied-help {
+      display: inline-block;
+      font-size: 0.58rem;
+      color: rgba(0,229,204,0.6);
+      cursor: pointer;
+      text-decoration: underline;
+      margin-left: 0.35rem;
+    }
+    .move-denied-help:hover { color: var(--accent); }
+
     .rtab-pane-head {
       display: flex;
       align-items: center;
@@ -7171,8 +7314,8 @@
     <div id="ws-status-label">Connecting…</div>
   </div>
   <!-- ? Help / Walkthrough button — always visible in topbar -->
-  <button id="topbar-help-btn" title="Help & Walkthrough"
-    onclick="window.AppOnboarding&&AppOnboarding.showWalkthrough(typeof ROLE!=='undefined'?ROLE:'viewer')"
+  <button id="topbar-help-btn" title="Help Hub &amp; Walkthrough"
+    onclick="window.AppOnboarding&&AppOnboarding.showHelpHub(typeof ROLE!=='undefined'?ROLE:'viewer')"
     style="background:rgba(0,229,204,0.07);border:1px solid rgba(0,229,204,0.25);border-radius:50%;
            width:22px;height:22px;display:flex;align-items:center;justify-content:center;
            color:rgba(0,229,204,0.65);font-size:0.7rem;font-family:'Cinzel',serif;font-weight:700;
@@ -9150,6 +9293,10 @@
 
   <!-- Combat Tab -->
   <div class="rtab-pane" id="rtab-pane-combat" role="tabpanel" aria-labelledby="rtab-combat">
+    <!-- Combat hint bar: non-blocking contextual hints for players -->
+    <div id="combat-hint-bar" role="status" aria-live="polite"></div>
+    <!-- Combat coach checklist: shown on player's turn -->
+    <div id="combat-coach" role="complementary" aria-label="Turn Checklist"></div>
     <!-- Pre-combat: Start Combat button (DM only) -->
     <div id="combat-pre" style="display:none;padding:0.7rem 0.6rem;flex-direction:column;gap:0.4rem;">
       <button type="button" class="combat-btn primary" style="width:100%;padding:0.5rem;" onclick="combatStart()">⚔ Start Combat</button>
@@ -9162,6 +9309,7 @@
         <div class="combat-round" id="combat-round-label" style="flex:1;text-align:center;">Round —</div>
         <button type="button" class="combat-btn small primary" id="combat-next-btn" onclick="combatNext()">Next ▶</button>
         <button type="button" class="combat-btn small danger" id="combat-end-btn" onclick="combatClear()" title="End combat">End</button>
+        <button class="ob-help-btn" title="Combat Help" style="margin-left:0.25rem;" onclick="window.AppOnboarding&&AppOnboarding.showHelpHub(typeof ROLE!=='undefined'?ROLE:'player')">?</button>
       </div>
       <div class="combat-turn-summary" id="combat-turn-summary">No active turn.</div>
     </div>
@@ -9533,7 +9681,7 @@
         <button class="sheet-page-tab" type="button" data-page="identity" onclick="goCharacterBookPage('identity')">Notes</button>
         <button class="sheet-page-tab" type="button" data-page="abilities" onclick="goCharacterBookPage('abilities')">Vitals</button>
         <button class="sheet-page-tab" type="button" data-page="skills" onclick="goCharacterBookPage('skills')">Saves / Skills</button>
-        <button class="sheet-page-tab" type="button" data-page="combat" onclick="goCharacterBookPage('combat')">Actions</button>
+        <button class="sheet-page-tab" id="cb-combat-tab" type="button" data-page="combat" onclick="goCharacterBookPage('combat')">Combat / Actions</button>
         <button class="sheet-page-tab" type="button" data-page="features" onclick="goCharacterBookPage('premiumsheet')" style="display:none;">Spells / Features</button>
         <button class="sheet-page-tab" type="button" data-page="inventory" onclick="goCharacterBookPage('inventory')">Inventory</button>
         <button class="sheet-page-tab" type="button" data-page="import" onclick="goCharacterBookPage('import')">Import Review</button>
@@ -9546,7 +9694,7 @@
       <button class="sheet-workflow-btn active" type="button" data-page="import" onclick="goCharacterBookPage('import')"><span class="step">1</span><span>Import / Paste</span></button>
       <button class="sheet-workflow-btn" type="button" data-page="identity" onclick="goCharacterBookPage('identity')"><span class="step">2</span><span>Builder Setup</span></button>
       <button class="sheet-workflow-btn" type="button" data-page="premiumsheet" onclick="goCharacterBookPage('premiumsheet')"><span class="step">3</span><span>Character Sheet</span></button>
-      <button class="sheet-workflow-btn" type="button" data-page="combat" onclick="goCharacterBookPage('combat')"><span class="step">4</span><span>Actions</span></button>
+      <button class="sheet-workflow-btn" type="button" data-page="combat" onclick="goCharacterBookPage('combat')"><span class="step">4</span><span>Combat / Actions</span></button>
       <button class="sheet-workflow-btn" type="button" data-page="features" onclick="goCharacterBookPage('premiumsheet')" style="display:none;"><span class="step">5</span><span>Spells</span></button>
       <button class="sheet-workflow-btn" type="button" data-page="inventory" onclick="goCharacterBookPage('inventory')"><span class="step">6</span><span>Loadout</span></button>
       <button class="sheet-workflow-btn" type="button" data-page="levelup" onclick="goCharacterBookPage('levelup')"><span class="step">7</span><span>Level Up</span></button>
@@ -18549,14 +18697,20 @@ function getCombatMoveRestrictionForToken(t) {
   const turnIndex = Math.max(0, Number(_combat.turn) || 0);
   const current = combatants[turnIndex] || null;
   if (!current || String(current.token_id || '') !== tokenId) {
-    return { allowed: false, message: 'It is not your turn to move that token.' };
+    const helpLink = _moveDeniedHelpLink ? _moveDeniedHelpLink() : '';
+    return { allowed: false, message: 'It is not your turn to move that token.' + helpLink, helpKey: 'movement' };
   }
   const move = _combat?.movement || null;
   if (move && String(move.token_id || '') === tokenId) {
     const remaining = Number(move.remaining_ft ?? move.speed_ft ?? 0);
     const speed = Number(move.speed_ft ?? 0);
-    if (speed > 0 && remaining <= 0.01) {
-      return { allowed: false, message: 'You have no movement left this turn.' };
+    if (speed <= 0) {
+      const helpLink = _moveDeniedHelpLink ? _moveDeniedHelpLink() : '';
+      return { allowed: false, message: 'This token has no movement speed.' + helpLink, helpKey: 'movement' };
+    }
+    if (remaining <= 0.01) {
+      const helpLink = _moveDeniedHelpLink ? _moveDeniedHelpLink() : '';
+      return { allowed: false, message: 'No movement left this turn. Use Dash to add more.' + helpLink, helpKey: 'movement' };
     }
   }
   return { allowed: true, message: '' };
@@ -41887,6 +42041,22 @@ function switchRTab(tab) {
   }
   if (!(window.AppUITabs && typeof window.AppUITabs.switchRTab === 'function')) return;
   window.AppUITabs.switchRTab(__createTabsEnv(), tab);
+  // Clear combat glow when combat tab is opened; re-apply if leaving it
+  const combatBtn = document.getElementById('rtab-combat');
+  if (tab === 'combat') {
+    combatBtn?.classList.remove('combat-glow', 'combat-your-turn');
+    const dashCombat = document.querySelector('.player-dashboard-btn--combat');
+    const sheetCombat = document.getElementById('cb-combat-tab');
+    dashCombat?.classList.remove('combat-attention', 'your-turn-attention');
+    sheetCombat?.classList.remove('combat-attention', 'your-turn-attention');
+    // Show coach if it's the player's turn
+    _renderCombatCoach();
+  } else {
+    // Re-apply glow if leaving combat tab while combat is active
+    if (typeof _updateCombatTabAttention === 'function') {
+      _updateCombatTabAttention(_combat.active);
+    }
+  }
 }
 
 function bumpLogBadge() {
@@ -43015,8 +43185,14 @@ function combatApplyState(state) {
     if (cur) {
       const badge = document.getElementById('rtab-combat-badge');
       if (ROLE !== 'player' && equipSummary) equipSummary.innerHTML = '';
-  if (badge) { badge.textContent = '!'; badge.classList.add('show'); }
-      setTimeout(() => { const b = document.getElementById('rtab-combat-badge'); if(b){b.textContent='';b.classList.remove('show');} }, 2500);
+      if (badge) {
+        const curTok = cur.token_id && tokens ? tokens[cur.token_id] : null;
+        const isMyBadgeTurn = !!(curTok && _tokenOwnedByMe(curTok));
+        badge.textContent = isMyBadgeTurn ? '★' : '!';
+        badge.classList.add('show');
+        // Badge clears after 2.5 s; persistent glow handled by _updateCombatTabAttention
+        setTimeout(() => { const b = document.getElementById('rtab-combat-badge'); if(b){b.textContent='';b.classList.remove('show');} }, 2500);
+      }
     }
     // Active-turn pulse: highlight the session frame when it is this user's turn
     const canvasWrap = document.getElementById('canvas-wrap');
@@ -43039,6 +43215,175 @@ function combatApplyState(state) {
     const canvasWrap = document.getElementById('canvas-wrap');
     if (canvasWrap) canvasWrap.classList.remove('active-turn');
   }
+  // Update combat tab attention (glow, YOUR TURN badge, coach, hints)
+  _updateCombatTabAttention(prevActive);
+}
+
+// ── Combat tab attention: glow, YOUR TURN, coach, hints ───────────────────
+function _isActiveCombatTab() {
+  const sidebar = document.getElementById('sidebar-right');
+  return sidebar && sidebar.getAttribute('data-active-tab') === 'combat';
+}
+
+function _getMyTurnCombatant() {
+  if (!_combat.active || !Array.isArray(_combat.combatants)) return null;
+  const cur = _combat.combatants[Math.max(0, Number(_combat.turn) || 0)] || null;
+  if (!cur || !cur.token_id) return null;
+  const tok = tokens && tokens[cur.token_id];
+  return (tok && _tokenOwnedByMe(tok)) ? cur : null;
+}
+
+function _updateCombatTabAttention(prevActive) {
+  const combatBtn  = document.getElementById('rtab-combat');
+  const dashCombat = document.querySelector('.player-dashboard-btn--combat');
+  const sheetCombat = document.getElementById('cb-combat-tab');
+
+  const isActive  = !!_combat.active;
+  const wasActive = !!prevActive;
+  const isMyTurn  = !!_getMyTurnCombatant();
+  const onCombatTab = _isActiveCombatTab();
+
+  // Clear all attention classes first
+  [combatBtn, dashCombat, sheetCombat].forEach(el => {
+    if (!el) return;
+    el.classList.remove('combat-glow', 'combat-your-turn', 'combat-attention', 'your-turn-attention');
+  });
+
+  if (isActive && !onCombatTab) {
+    if (isMyTurn && ROLE === 'player') {
+      combatBtn?.classList.add('combat-your-turn');
+      dashCombat?.classList.add('your-turn-attention');
+      sheetCombat?.classList.add('your-turn-attention');
+    } else {
+      combatBtn?.classList.add('combat-glow');
+      dashCombat?.classList.add('combat-attention');
+      sheetCombat?.classList.add('combat-attention');
+    }
+  }
+
+  // Contextual hints (player only)
+  if (ROLE === 'player') {
+    if (isActive && !wasActive) {
+      // Combat just started
+      if (window.AppOnboarding && typeof AppOnboarding.showCombatHint === 'function') {
+        AppOnboarding.showCombatHint(
+          'Combat has started. Open Combat to see turn order, movement, actions, and End Turn.',
+          7000
+        );
+      }
+    } else if (isActive && isMyTurn) {
+      // It's now my turn
+      if (window.AppOnboarding && typeof AppOnboarding.showCombatHint === 'function') {
+        AppOnboarding.showCombatHint(
+          'Your turn. Open Combat, move, choose an action/spell, then End Turn.',
+          8000
+        );
+      }
+    }
+  }
+
+  // Update combat coach checklist
+  _renderCombatCoach();
+}
+
+function _renderCombatCoach() {
+  const coach = document.getElementById('combat-coach');
+  if (!coach) return;
+  const myTurnCombatant = _getMyTurnCombatant();
+  const isPlayer = ROLE === 'player';
+
+  if (!isPlayer || !myTurnCombatant) {
+    coach.classList.remove('visible');
+    coach.innerHTML = '';
+    return;
+  }
+
+  // Build class-specific hint from actions_tab data where available
+  const className = String(_charSheet?.class || _charSheet?.className || '').toLowerCase().split(/[\/,& ]/)[0].trim();
+  const classHints = {
+    barbarian: 'Bonus action: Rage. Then melee attack with Reckless Attack for advantage.',
+    fighter:   'Consider Action Surge for an extra action on critical turns.',
+    monk:      'Bonus action: Flurry of Blows or Patient Defense after attacking.',
+    rogue:     'Set up Sneak Attack with advantage or an ally adjacent to your target.',
+    paladin:   'Use Divine Smite on a hit to expend a spell slot for bonus damage.',
+    cleric:    'Channel Divinity or heal with Healing Word as a bonus action.',
+    druid:     'Wild Shape is a bonus action — consider shifting before engaging.',
+    bard:      'Bardic Inspiration is a bonus action — gift it before your attack.',
+    ranger:    'Apply Hunter\'s Mark to your primary target before attacking.',
+    warlock:   'Eldritch Blast with Agonizing Blast for your main damage cantrip.',
+    wizard:    'Preserve concentration spells — position to avoid AoE damage.',
+    sorcerer:  'Use Quicken Spell (Metamagic) for a bonus-action cast this turn.',
+  };
+  const classHint = classHints[className] || null;
+
+  const move = _combat?.movement;
+  const spentFt   = Number(move?.spent_ft ?? 0);
+  const totalFt   = Math.max(0, Number(move?.speed_ft ?? 0) + Number(move?.bonus_ft ?? 0));
+  const moveDone  = spentFt > 0;
+  const actionEco = _playerActionEconomyRuntime?.state;
+  const actionDone = actionEco ? (actionEco.actions_used >= actionEco.actions_total) : false;
+  const bonusDone  = actionEco ? (actionEco.bonus_actions_used >= actionEco.bonus_actions_total) : false;
+
+  const items = [
+    {
+      icon: '🏃',
+      label: `Move (${Math.round(totalFt - spentFt)} ft remaining)`,
+      tip: 'Drag your token on the map. You can split movement around an action.',
+      done: moveDone && (totalFt - spentFt) < 5,
+    },
+    {
+      icon: '⚔',
+      label: 'Action',
+      tip: 'Attack, cast a spell, use an item, Dash, Dodge, Help, or Ready.',
+      done: actionDone,
+    },
+    {
+      icon: '⚡',
+      label: 'Bonus Action (if available)',
+      tip: 'Only usable if you have a class feature or spell that specifically grants one.',
+      done: bonusDone,
+    },
+    {
+      icon: '🛡',
+      label: 'Reaction (off-turn)',
+      tip: 'Reactions trigger on another creature\'s turn (Opportunity Attack, Shield, Counterspell).',
+      done: false,
+    },
+    {
+      icon: '🔚',
+      label: 'End Turn',
+      tip: 'Press End Turn in the Combat panel when you are done.',
+      done: false,
+    },
+  ];
+
+  const itemsHtml = items.map(item => `
+    <div class="coach-item${item.done ? ' done' : ''}">
+      <span class="coach-item-icon">${item.icon}</span>
+      <span class="coach-item-label">
+        ${item.label}
+        <span class="coach-item-tip">${item.tip}</span>
+      </span>
+    </div>`).join('');
+
+  const classHintHtml = classHint
+    ? `<div class="coach-class-hint">💡 ${escapeHtml(classHint)}</div>`
+    : '';
+
+  coach.innerHTML = `
+    <div class="coach-title">
+      Your Turn Checklist
+      <a onclick="window.AppOnboarding&&AppOnboarding.showHelpHub('player')" role="button">Help Hub</a>
+    </div>
+    ${itemsHtml}
+    ${classHintHtml}
+  `;
+  coach.classList.add('visible');
+}
+
+// ── Movement denial help link helper ──────────────────────────────────────
+function _moveDeniedHelpLink() {
+  return '<a class="move-denied-help" onclick="window.AppOnboarding&&AppOnboarding.showHelp(\'combat\')" role="button">What does this mean?</a>';
 }
 
 function _getCombatCurrentCombatant() {
