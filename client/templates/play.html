@@ -9332,7 +9332,7 @@
 </div>
 
 <!-- Token Editor (DM) -->
-<div id="token-editor" style="display:none;position:fixed;z-index:9998;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(13,17,23,0.98);border:1px solid var(--gold);border-radius:8px;padding:1.2rem;min-width:240px;max-width:280px;box-shadow:0 6px 32px rgba(0,0,0,0.9);">
+<div id="token-editor" style="display:none;position:fixed;z-index:9998;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(13,17,23,0.98);border:1px solid var(--gold);border-radius:8px;padding:1.2rem;min-width:240px;max-width:min(360px,94vw);max-height:90vh;overflow-y:auto;box-shadow:0 6px 32px rgba(0,0,0,0.9);">
   <div style="font-family:'Cinzel',serif;font-size:0.9rem;color:var(--gold);margin-bottom:0.55rem;text-align:center;">Edit Token</div>
   <div id="te-quick-summary" style="margin-bottom:0.7rem;padding:0.55rem 0.6rem;border:1px solid rgba(212,175,55,0.22);border-radius:6px;background:linear-gradient(180deg, rgba(212,175,55,0.08), rgba(0,0,0,0.18));box-shadow:inset 0 0 0 1px rgba(255,255,255,0.03);">
     <div id="te-summary-name" style="font-family:'Cinzel',serif;font-size:0.82rem;color:var(--gold);text-align:center;letter-spacing:0.05em;margin-bottom:0.32rem;">—</div>
@@ -35433,7 +35433,7 @@ function renderSpellLibrary() {
       return {
         id: 'own_' + (s.id || s.name || ''),
         name: s.name || '',
-        spell_level: Number(s.level ?? s.spell_level ?? quick?.level ?? 0),
+        spell_level: (s.level != null ? Number(s.level) : (s.spell_level != null ? Number(s.spell_level) : (quick?.level != null ? Number(quick.level) : null))),
         school: s.school || '',
         class_lists: s.class_lists || [],
         casting_time: s.casting_time || quick?.casting_time || '',
@@ -45473,17 +45473,31 @@ function _getCombatQuickSpells() {
   const seen = new Set();
   const spells = [];
 
+  // Determine if this is a prepared caster (Druid, Cleric, Paladin, Ranger, Wizard)
+  const _cqaMeta = _rulesMeta || (_charSheet && _charSheet.rulesMeta) || {};
+  const _cqaIsPreparedCaster = !!_cqaMeta.isPreparedCaster;
+  const _cqaPreparedIds = new Set(Array.isArray(_cqaMeta.preparedSpellIds) ? _cqaMeta.preparedSpellIds.map(s => String(s).toLowerCase()) : []);
+
   // Rules spellbook entries (from character import)
   rulesSpells.forEach(card => {
     const libraryCard = _combatQuickSpellLibraryCardFromName(card?.name || card?.displayName || card?.id);
     const normalizedCard = _combatQuickNormalizeSpellCard(libraryCard || card, card || {});
     const name = _prettyBookSpellName(String(normalizedCard.displayName || normalizedCard.name || normalizedCard.id || '').trim());
     if (!name || seen.has(name.toLowerCase())) return;
+    // For prepared casters: only cantrips + prepared spells are quick-castable
+    const resolvedLevel = _combatQuickResolveSpellLevel(normalizedCard, card || {});
+    if (_cqaIsPreparedCaster && resolvedLevel !== 0) {
+      const cardId = String(normalizedCard.id || card?.id || '').toLowerCase();
+      const cardName = name.toLowerCase();
+      const isPrepared = !!(card?.prepared || card?.isPrepared || card?.is_prepared_entry ||
+        normalizedCard.prepared || _cqaPreparedIds.has(cardId) || _cqaPreparedIds.has(cardName));
+      if (!isPrepared) return; // Skip non-prepared spells for prepared casters
+    }
     seen.add(name.toLowerCase());
     spells.push({
       id: normalizedCard.id || name,
       name: name,
-      level: _combatQuickResolveSpellLevel(normalizedCard, card || {}),
+      level: resolvedLevel,
       level_unknown: !!normalizedCard.level_unknown,
       casting_time: normalizedCard.casting_time || '',
       range: normalizedCard.range || '',

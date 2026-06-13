@@ -145,8 +145,30 @@
     if (document.getElementById('combat-quick-actions-styles')) return;
     const style = document.createElement('style');
     style.id = 'combat-quick-actions-styles';
-    style.textContent = '.cqa-overlay{position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem}.cqa-panel{width:min(460px,calc(100vw - 28px));max-height:86vh;overflow:auto;border:1px solid rgba(0,229,204,.32);border-radius:16px;background:linear-gradient(145deg,rgba(13,18,24,.98),rgba(28,20,13,.96));box-shadow:0 18px 48px rgba(0,0,0,.62);color:#f5ead6;padding:1rem}.cqa-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.8rem;margin-bottom:.7rem}.cqa-kicker{font-size:.58rem;text-transform:uppercase;letter-spacing:.1em;color:#9ff6ea}.cqa-title{font-family:Cinzel,serif;font-size:1rem;color:var(--gold,#d4af37);font-weight:800}.cqa-sub{font-size:.68rem;color:rgba(245,234,214,.68);margin-top:.15rem}.cqa-close{border:1px solid rgba(255,255,255,.15);border-radius:999px;background:rgba(255,255,255,.05);color:#f5ead6;width:1.9rem;height:1.9rem;cursor:pointer}.cqa-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:.42rem;margin:.6rem 0}.cqa-meta-card{border:1px solid rgba(255,255,255,.11);border-radius:10px;background:rgba(255,255,255,.04);padding:.42rem .5rem;display:grid;gap:.12rem}.cqa-meta-card strong{font-size:.55rem;color:rgba(245,234,214,.62);text-transform:uppercase;letter-spacing:.07em}.cqa-meta-card span{font-size:.72rem;color:#f7ecd8}.cqa-desc{font-size:.7rem;line-height:1.4;color:rgba(245,234,214,.75);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.55rem;background:rgba(0,0,0,.18);margin:.5rem 0}.cqa-controls{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.75rem}.cqa-btn{border:1px solid rgba(0,229,204,.35);border-radius:9px;background:rgba(0,229,204,.12);color:#9ff6ea;padding:.48rem .7rem;cursor:pointer;font-size:.72rem;font-weight:800}.cqa-btn.damage{border-color:rgba(255,120,80,.38);background:rgba(255,120,80,.12);color:#ffb39a}.cqa-btn.save{border-color:rgba(255,210,90,.38);background:rgba(255,210,90,.12);color:#ffe8a3}.cqa-btn.cast{border-color:rgba(155,89,182,.5);background:rgba(155,89,182,.18);color:#d8b7ff}.cqa-btn:disabled{opacity:.45;cursor:not-allowed}.cqa-select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:9px;background:rgba(0,0,0,.24);color:#f7ecd8;padding:.44rem .55rem;margin:.45rem 0 .2rem}';
+    style.textContent = '.cqa-overlay{position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem}.cqa-panel{width:min(460px,calc(100vw - 28px));min-width:240px;max-width:min(820px,96vw);min-height:180px;max-height:90vh;overflow-y:auto;overflow-x:auto;resize:both;border:1px solid rgba(0,229,204,.32);border-radius:16px;background:linear-gradient(145deg,rgba(13,18,24,.98),rgba(28,20,13,.96));box-shadow:0 18px 48px rgba(0,0,0,.62);color:#f5ead6;padding:1rem;box-sizing:border-box}.cqa-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.8rem;margin-bottom:.7rem}.cqa-kicker{font-size:.58rem;text-transform:uppercase;letter-spacing:.1em;color:#9ff6ea}.cqa-title{font-family:Cinzel,serif;font-size:1rem;color:var(--gold,#d4af37);font-weight:800}.cqa-sub{font-size:.68rem;color:rgba(245,234,214,.68);margin-top:.15rem}.cqa-close{border:1px solid rgba(255,255,255,.15);border-radius:999px;background:rgba(255,255,255,.05);color:#f5ead6;width:1.9rem;height:1.9rem;cursor:pointer;flex-shrink:0}.cqa-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:.42rem;margin:.6rem 0}.cqa-meta-card{border:1px solid rgba(255,255,255,.11);border-radius:10px;background:rgba(255,255,255,.04);padding:.42rem .5rem;display:grid;gap:.12rem}.cqa-meta-card strong{font-size:.55rem;color:rgba(245,234,214,.62);text-transform:uppercase;letter-spacing:.07em}.cqa-meta-card span{font-size:.72rem;color:#f7ecd8}.cqa-desc{font-size:.7rem;line-height:1.4;color:rgba(245,234,214,.75);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.55rem;background:rgba(0,0,0,.18);margin:.5rem 0}.cqa-controls{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.75rem}.cqa-btn{border:1px solid rgba(0,229,204,.35);border-radius:9px;background:rgba(0,229,204,.12);color:#9ff6ea;padding:.48rem .7rem;cursor:pointer;font-size:.72rem;font-weight:800}.cqa-btn.damage{border-color:rgba(255,120,80,.38);background:rgba(255,120,80,.12);color:#ffb39a}.cqa-btn.save{border-color:rgba(255,210,90,.38);background:rgba(255,210,90,.12);color:#ffe8a3}.cqa-btn.cast{border-color:rgba(155,89,182,.5);background:rgba(155,89,182,.18);color:#d8b7ff}.cqa-btn:disabled{opacity:.45;cursor:not-allowed}.cqa-select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:9px;background:rgba(0,0,0,.24);color:#f7ecd8;padding:.44rem .55rem;margin:.45rem 0 .2rem}';
     document.head.appendChild(style);
+  }
+
+  var _CQA_LS_KEY = 'cqa_modal_size_v1';
+
+  function _applySavedPanelSize(panel) {
+    try {
+      var saved = JSON.parse(localStorage.getItem(_CQA_LS_KEY) || 'null');
+      if (saved && saved.w && saved.h) {
+        panel.style.width = Math.max(240, Math.min(820, saved.w)) + 'px';
+        panel.style.height = Math.max(180, Math.min(window.innerHeight * 0.9, saved.h)) + 'px';
+      }
+    } catch (e) {}
+  }
+
+  function _watchPanelResize(panel) {
+    if (typeof ResizeObserver === 'undefined') return;
+    var ro = new ResizeObserver(function () {
+      try {
+        localStorage.setItem(_CQA_LS_KEY, JSON.stringify({ w: panel.offsetWidth, h: panel.offsetHeight }));
+      } catch (e) {}
+    });
+    ro.observe(panel);
   }
 
   function openSpellAction(spellOrId, preferredLevel) {
@@ -190,6 +212,8 @@
       if (ev.target.closest('[data-cqa-inspect]') && typeof global.playerInspectSpell === 'function') global.playerInspectSpell(spell.id || spell.name);
     });
     document.body.appendChild(overlay);
+    var panel = overlay.querySelector('.cqa-panel');
+    if (panel) { _applySavedPanelSize(panel); _watchPanelResize(panel); }
     return true;
   }
 
@@ -228,6 +252,8 @@
       if (ev.target.closest('[data-cqa-weapon-crit]')) { global.combatQuickRollWeaponDamage(card.id || card.name, mode, true); return; }
     });
     document.body.appendChild(overlay);
+    var panel = overlay.querySelector('.cqa-panel');
+    if (panel) { _applySavedPanelSize(panel); _watchPanelResize(panel); }
     return true;
   }
 
