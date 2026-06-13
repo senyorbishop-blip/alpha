@@ -99,7 +99,9 @@ def test_combat_quick_spells_parse_leveled_spell_text_for_quick_actions():
     assert 'function _combatQuickResolveSpellLevel(row, fallback = {})' in play
     assert "row?.level_school, row?.levelSchool, row?.section" in play
     assert 'const resolvedLevel = _combatQuickResolveSpellLevel(raw || {}, meta || {});' in play
-    assert 'level: _combatQuickResolveSpellLevel(normalizedCard, card || {})' in play
+    assert ('level: _combatQuickResolveSpellLevel(normalizedCard, card || {})' in play or
+            'level: resolvedLevel,' in play), \
+        "play.html must resolve spell level in _getCombatQuickSpells"
     assert 'function _parseSpellLevelText()' in selectors
     assert 'const fromText = _parseSpellLevelText(levelText);' in selectors
     assert 'const fromOptions = _baseLevelFromCastOptions((card && card.cast_options) || (spell && spell.cast_options));' in selectors

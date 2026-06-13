@@ -45,6 +45,7 @@ from server.item_schema import (
 
 _LOOT_ROLL_RANGE_FT = 30.0
 _LOOT_ROLL_NEED_GREED_CHOICES = {"need", "greed", "pass"}
+_LOOT_ROLL_TIMEOUT_SECONDS = 8
 _HAGGLE_OFFER_TTL_SECONDS = 300
 _SHOP_ACCESS_TTL_SECONDS = 240
 _PLAYER_MAX_PROFESSIONS = 2
@@ -986,6 +987,7 @@ async def _execute_prop_take_item(payload: dict, session: Session, user: User, *
                 "responder_ids": responder_ids,
                 "choices": {},
                 "created_at": time.time(),
+                "deadline": time.time() + _LOOT_ROLL_TIMEOUT_SECONDS,
                 "take_payload": {
                     "map_context": map_ctx,
                     "prop_id": prop_id,
@@ -1010,9 +1012,35 @@ async def _execute_prop_take_item(payload: dict, session: Session, user: User, *
                         "qty": request_qty,
                         "range_ft": int(_LOOT_ROLL_RANGE_FT),
                         "eligible_player_ids": responder_ids,
+                        "deadline_at": state[roll_id]["deadline"],
+                        "timeout_seconds": _LOOT_ROLL_TIMEOUT_SECONDS,
                     },
                 })
             await _send_prop_action_result(session, user.id, f"Loot roll started for {preview_name}. Waiting for Need/Greed/Pass choices.")
+            # Schedule server-side auto-pass for non-responders after deadline
+            async def _auto_pass_loot_roll(sid: str, rid: str, dl: float):
+                import asyncio as _asyncio
+                await _asyncio.sleep(max(0.0, dl - time.time()))
+                loot_state = _init_loot_roll_state(
+                    (getattr(session, '_session_ref', None) or session)
+                )
+                roll_entry = loot_state.get(rid)
+                if not isinstance(roll_entry, dict):
+                    return
+                responders = list(roll_entry.get("responder_ids") or [])
+                choices = dict(roll_entry.get("choices") or {})
+                changed = False
+                for uid in responders:
+                    if uid not in choices:
+                        choices[uid] = {"choice": "pass", "roll": 0, "user_name": "", "chosen_at": time.time(), "auto": True}
+                        changed = True
+                if changed:
+                    roll_entry["choices"] = choices
+                    loot_state[rid] = roll_entry
+                    session.loot_roll_state = loot_state
+                    await _finalize_loot_roll_resolution(session, rid)
+            import asyncio as _asyncio_mod
+            _asyncio_mod.ensure_future(_auto_pass_loot_roll(session.id, roll_id, state[roll_id]["deadline"]))
             return
     inventory = list(prop.get("inventory") or [])
     if item_index >= len(inventory):
@@ -1948,6 +1976,9 @@ async def handle_chest_loot_roll_choice(payload: dict, session: Session, user: U
     responder_ids = list(state.get("responder_ids") or [])
     if user.id not in responder_ids:
         return
+    deadline = float(state.get("deadline") or 0)
+    if deadline and time.time() > deadline:
+        return  # Late vote rejected – auto-pass already ran or will run
     choices = dict(state.get("choices") or {})
     if user.id in choices:
         return

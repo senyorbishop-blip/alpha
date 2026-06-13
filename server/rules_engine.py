@@ -82,7 +82,25 @@ def _spellcasting_meta(character: dict) -> Dict[str, Any]:
                 attack = f"{mod + prof:+d}"
             if not dc:
                 dc = str(8 + prof + mod)
-    return {"ability": ability or "—", "attack": attack or "—", "dc": dc or "—", "prof": prof}
+    classes = (character or {}).get("classes") or []
+    first_class_name = str((classes[0] or {}).get("name") or "").lower() if classes else ""
+    prepared_caster_classes = {"cleric", "druid", "paladin", "ranger", "wizard"}
+    is_prepared_caster = first_class_name in prepared_caster_classes
+    # Collect prepared spell ids from spellbookEntries
+    prepared_ids = []
+    for entry in (character or {}).get("spellbookEntries") or []:
+        if isinstance(entry, dict) and (entry.get("prepared") or entry.get("isPrepared") or entry.get("alwaysPrepared")):
+            sid = str(entry.get("id") or entry.get("spellId") or entry.get("name") or "").strip()
+            if sid:
+                prepared_ids.append(sid)
+    return {
+        "ability": ability or "—",
+        "attack": attack or "—",
+        "dc": dc or "—",
+        "prof": prof,
+        "isPreparedCaster": is_prepared_caster,
+        "preparedSpellIds": prepared_ids,
+    }
 
 
 def _extract_spell_names_from_text(text: str) -> List[str]:
@@ -115,7 +133,8 @@ def extract_imported_spell_names(character: dict) -> List[Dict[str, Any]]:
         if norm in seen:
             continue
         seen.add(norm)
-        results.append({"name": name, "source_tag": "imported", "entry": entry})
+        prepared_flag = bool((entry or {}).get("prepared") or (entry or {}).get("isPrepared") or (entry or {}).get("alwaysPrepared"))
+        results.append({"name": name, "source_tag": "imported", "entry": entry, "prepared": prepared_flag})
     book = (character or {}).get("book") or {}
     for name in _extract_spell_names_from_text(book.get("spells") or ""):
         norm = normalize_name(name)
@@ -217,6 +236,8 @@ def build_spell_card(rule: dict, character: dict, imported_name: str, match_stat
         "match_status": match_status,
         "match_score": round(float(match_score or 0), 3),
         "source_tag": source_tag,
+        "prepared": bool((imported_entry or {}).get("prepared") or (imported_entry or {}).get("isPrepared") or (imported_entry or {}).get("alwaysPrepared")),
+        "is_prepared_entry": bool((imported_entry or {}).get("prepared") or (imported_entry or {}).get("isPrepared")),
         "level_school": ("Cantrip" if int(rule.get("spell_level") or 0) == 0 else f"Level {int(rule.get('spell_level') or 0)}") + f" • {rule.get('school') or 'Spell'}",
         "casting_time": rule.get("casting_time") or "—",
         "range": rule.get("range") or "—",
@@ -285,6 +306,7 @@ def enrich_spellbook(character: dict, official_spells: List[dict], custom_spells
         if matched_rule:
             source_tag = "DM custom" if matched_rule.get("is_homebrew") else "database matched"
             card = build_spell_card(matched_rule, character, item["name"], status, score, source_tag, item.get("entry"))
+            card["prepared"] = bool(item.get("prepared"))
             cards.append(card)
         else:
             review_item = {
