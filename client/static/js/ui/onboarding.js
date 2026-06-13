@@ -252,31 +252,35 @@
     spells_guide: [
       {
         icon: '🔮',
-        title: 'Casting Spells',
-        body: 'Open the <strong>Spells</strong> tab to see all your prepared or known spells, organized by level. During combat, click a spell to cast it. Higher-level slots deal more damage or have better effects.',
+        title: 'Your Spell Panel',
+        body: 'Click the <strong>Spells</strong> tab in the right-side panel to see all your prepared or known spells, organised by level. Each row shows cast time, range, save/attack info, and a 🎲 button for instant damage rolls right in the list.',
         accent: '#9b59b6',
-        tip: 'Cantrips (level 0) have no slot cost and can be cast at will.',
+        tip: 'Cantrips (level 0) are always available and never use a slot. They scale with your character level automatically.',
+        highlight: '#rtab-spelllib',
       },
       {
         icon: '🕯',
-        title: 'Spell Slots',
-        body: 'Casting a spell of 1st level or higher expends a spell slot. Slots refresh on a <strong>Long Rest</strong>. Warlocks recover Pact Slots on a Short Rest. Check your remaining slots in the Spells tab.',
+        title: 'Spell Slots & Upcasting',
+        body: 'Your remaining spell slots appear as pip trackers at the top of the Spells panel. Casting a leveled spell uses one pip. You can cast at a <em>higher</em> slot level to <strong>upcast</strong> — spells that scale show the extra damage inline next to the base formula.',
         accent: '#9b59b6',
-        tip: 'You can upcast spells by spending a higher-level slot for improved effects. The spell description lists upcasting bonuses.',
+        tip: 'Slots refresh on a Long Rest. Warlocks recover Pact Slots on a Short Rest. Slot pips turn grey as you use them.',
+        highlight: '#rtab-pane-spelllib .cs-slots-row',
       },
       {
         icon: '🎯',
         title: 'Concentration',
-        body: 'Concentration spells are marked with a ©. You can only concentrate on one spell at a time. Taking damage requires a Constitution save (DC 10 or half damage taken, whichever is higher) to maintain concentration.',
+        body: 'Concentration spells show a <strong>●</strong> dot next to their name. You can only concentrate on one spell at a time. Taking damage forces a Constitution save (DC 10 or half damage taken, whichever is higher) to keep it active.',
         accent: '#e74c3c',
-        tip: 'Losing concentration ends the spell immediately. Maintain concentration by avoiding damage or taking the War Caster / Resilient Constitution feat.',
+        tip: 'Click any spell to read its full card — it will tell you if concentration is needed before you commit.',
+        highlight: '#rtab-pane-spelllib',
       },
       {
         icon: '⚡',
-        title: 'Bonus Action Spells',
-        body: 'Spells with a Bonus Action casting time (like Healing Word or Misty Step) are cast as your Bonus Action. If you cast a bonus action spell, you may only cast cantrips with your main Action that turn.',
+        title: 'Bonus Action & Reaction Spells',
+        body: 'The <strong>Time</strong> column uses short codes: <strong>1A</strong> = Action, <strong>BA</strong> = Bonus Action, <strong>R</strong> = Reaction. Bonus Action spells (like Healing Word, Misty Step) let you cast with your off-hand action — but if you do, only cantrips are available for your main Action that turn.',
         accent: '#d4a637',
-        tip: 'Quicken Spell (Sorcerer Metamagic) changes a spell\'s casting time to a Bonus Action for 2 Sorcery Points.',
+        tip: 'Quicken Spell (Sorcerer Metamagic) converts any spell\'s casting time to a Bonus Action for 2 Sorcery Points.',
+        highlight: '#rtab-pane-spelllib .cs-spell-time',
       },
     ],
     inventory_guide: [
@@ -672,14 +676,14 @@
       '.ob-hub-card {',
       '  display:flex; align-items:center; gap:0.5rem;',
       '  padding:0.6rem 0.7rem; cursor:pointer; border-radius:4px;',
-      '  border:1px solid rgba(0,229,204,0.18);',
-      '  background:rgba(0,229,204,0.04);',
+      '  border:1px solid rgba(0,229,204,0.1);',
+      '  background:rgba(255,255,255,0.025);',
       '  transition:all 0.15s; font-family:"Cinzel",serif;',
       '}',
       '.ob-hub-card:hover {',
-      '  border-color:rgba(0,229,204,0.5);',
-      '  background:rgba(0,229,204,0.1);',
-      '  box-shadow:0 0 8px rgba(0,229,204,0.2);',
+      '  border-color:rgba(0,229,204,0.38);',
+      '  background:rgba(0,229,204,0.07);',
+      '  box-shadow:0 0 6px rgba(0,229,204,0.14);',
       '}',
       '.ob-hub-card-icon { font-size:1.2rem; flex-shrink:0; }',
       '.ob-hub-card-label {',
@@ -700,6 +704,10 @@
       '@keyframes ob-step-in {',
       '  from { opacity:0; transform:translateX(14px); }',
       '  to   { opacity:1; transform:translateX(0); }',
+      '}',
+      '@keyframes ob-ring-pulse {',
+      '  0%,100% { box-shadow:0 0 0 3px rgba(0,229,204,0.18),0 0 16px rgba(0,229,204,0.32); }',
+      '  50%     { box-shadow:0 0 0 7px rgba(0,229,204,0.08),0 0 28px rgba(0,229,204,0.55); }',
       '}',
     ].join('\n');
     document.head.appendChild(s);
@@ -754,7 +762,8 @@
     modal.style.setProperty('--ob-accent', accent);
     modal.style.setProperty('--ob-accent-dim', _dimColor(accent));
     modal.style.setProperty('--ob-accent-glow', _glowColor(accent));
-    _el('ob-glow').style.background = 'radial-gradient(ellipse at 50% 50%,' + _glowColor(accent) + ' 0%,transparent 70%)';
+    // Hub mode uses a very dim glow so the modal background stays dark and readable
+    _el('ob-glow').style.background = 'radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.05) 0%, transparent 70%)';
 
     // Hide step UI, show hub
     _el('ob-dots').innerHTML = '';
@@ -845,6 +854,9 @@
     _el('ob-tip').innerHTML = data.tip || '';
     _el('ob-tip-box').style.display = data.tip ? 'flex' : 'none';
 
+    // Highlight the relevant UI element for this step
+    _applyStepHighlight(data.highlight || null);
+
     // Dots
     _renderDots();
 
@@ -914,6 +926,60 @@
     if (overlay) overlay.classList.remove('ob-open');
     _helpMode = false;
     _hubMode  = false;
+    _clearHighlight();
+  }
+
+  // ── UI element highlight ring ─────────────────────────────────────────────
+  function _applyStepHighlight(selector) {
+    _clearHighlight();
+    if (!selector) return;
+    try {
+      var el = document.querySelector(selector);
+      if (!el) return;
+      var rect = el.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) return;
+      var ring = document.createElement('div');
+      ring.id = 'ob-highlight-ring';
+      ring.style.cssText = [
+        'position:fixed',
+        'pointer-events:none',
+        'z-index:19999',
+        'border:2px solid rgba(0,229,204,0.88)',
+        'border-radius:6px',
+        'animation:ob-ring-pulse 1.6s ease-in-out infinite',
+        'transition:all 0.25s',
+        'left:' + (rect.left - 5) + 'px',
+        'top:' + (rect.top - 5) + 'px',
+        'width:' + (rect.width + 10) + 'px',
+        'height:' + (rect.height + 10) + 'px',
+      ].join(';');
+      document.body.appendChild(ring);
+      // Reposition on scroll / resize
+      ring._selector = selector;
+      ring._rafId = 0;
+      function _updateRingPos() {
+        if (!document.getElementById('ob-highlight-ring')) return;
+        try {
+          var target = document.querySelector(ring._selector);
+          if (!target) return;
+          var r = target.getBoundingClientRect();
+          ring.style.left = (r.left - 5) + 'px';
+          ring.style.top  = (r.top  - 5) + 'px';
+          ring.style.width  = (r.width  + 10) + 'px';
+          ring.style.height = (r.height + 10) + 'px';
+        } catch (_e) {}
+        ring._rafId = requestAnimationFrame(_updateRingPos);
+      }
+      ring._rafId = requestAnimationFrame(_updateRingPos);
+    } catch (_err) {}
+  }
+
+  function _clearHighlight() {
+    var ring = document.getElementById('ob-highlight-ring');
+    if (ring) {
+      if (ring._rafId) cancelAnimationFrame(ring._rafId);
+      ring.remove();
+    }
   }
 
   // ── Colour helpers ────────────────────────────────────────────────────────

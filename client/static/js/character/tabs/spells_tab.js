@@ -855,12 +855,27 @@ function _spellAttackSaveCell(spell, charData) {
     const effectHtml = canRoll
       ? ('<button type="button" class="cs-spell-roll-btn" data-spell-roll="' + _esc(String(spell.id || _spellName(spell) || '')) + '" aria-label="Roll ' + _esc(_spellName(spell)) + '">' + _esc(String(rollExpr)) + ' 🎲</button>' + (String(effect) && String(effect) !== String(rollExpr) ? '<span class="cs-spell-effect-copy">' + _esc(String(effect)) + '</span>' : ''))
       : _esc(String(effect));
+
+    // Upcast scaling badge — show when the spell can be cast at higher levels for extra effect
+    const baseLevel = _spellLevelNumber(spell);
+    const scalingText = _firstText(spell && spell.scalingNote, spell && spell.higherLevel, spell && spell.atHigherLevels, spell && spell.higher_levels, '');
+    let upcastHtml = '';
+    if (baseLevel > 0 && scalingText) {
+      const upcast = _spellUpcastScaling(spell);
+      const tooltip = scalingText.length > 120 ? scalingText.slice(0, 117) + '…' : scalingText;
+      if (upcast && upcast.count > 0) {
+        upcastHtml = '<span class="cs-spell-upcast-pill" title="' + _esc(tooltip) + '">+' + upcast.count + 'd' + upcast.sides + '/lvl ↑</span>';
+      } else {
+        upcastHtml = '<span class="cs-spell-upcast-pill" title="' + _esc(tooltip) + '">↑ scales</span>';
+      }
+    }
+
     return '<div class="cs-spell-row" data-spell-id="' + _esc(String(spell.id || _spellName(spell) || '')) + '" tabindex="0" role="button" aria-label="' + _esc(_spellName(spell)) + '">' +
       '<div class="cs-spell-cell"><span class="cs-spell-name">' + _esc(_spellName(spell)) + '</span>' + (isConc ? '<span class="cs-spell-indicator" title="Concentration">●</span>' : '') + (isRitual ? '<span class="cs-spell-indicator ritual" title="Ritual">ℝ</span>' : '') + '</div>' +
       '<div class="cs-spell-cell cs-spell-time">' + _esc(_abbrevTime(spell.castingTime || spell.casting_time)) + '</div>' +
       '<div class="cs-spell-cell cs-spell-range cs-col-range">' + _esc(range) + '</div>' +
       '<div class="cs-spell-cell cs-spell-hitdc">' + hitDcHtml + '</div>' +
-      '<div class="cs-spell-cell cs-spell-effect">' + effectHtml + '</div>' +
+      '<div class="cs-spell-cell cs-spell-effect">' + effectHtml + upcastHtml + '</div>' +
       (actionsHtml ? '<div class="cs-spell-cell cs-spell-actions-cell">' + actionsHtml + '</div>' : '') +
       '</div>';
   }
