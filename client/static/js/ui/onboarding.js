@@ -252,31 +252,34 @@
     spells_guide: [
       {
         icon: '🔮',
-        title: 'Casting Spells',
-        body: 'Open the <strong>Spells</strong> tab to see all your prepared or known spells, organized by level. During combat, click a spell to cast it. Higher-level slots deal more damage or have better effects.',
+        title: 'Your Spell List',
+        body: 'Open the <strong>Character Sheet → Spells</strong> page to see all your spells, grouped by level. The DM can also grant you spells that appear in your <strong>Player Book → Library</strong> tab. Each spell card shows its cast time, range, save DC, and damage. Click <em>Cast / Use</em> to cast it.',
         accent: '#9b59b6',
-        tip: 'Cantrips (level 0) have no slot cost and can be cast at will.',
+        tip: 'Cantrips (level 0) never cost a spell slot — cast them as many times as you like.',
+        highlightSelector: '#cb-spelllibrary-tab',
       },
       {
         icon: '🕯',
         title: 'Spell Slots',
-        body: 'Casting a spell of 1st level or higher expends a spell slot. Slots refresh on a <strong>Long Rest</strong>. Warlocks recover Pact Slots on a Short Rest. Check your remaining slots in the Spells tab.',
+        body: 'Casting a 1st-level or higher spell expends a spell slot. Your remaining slots are shown in the <strong>Combat / Actions</strong> tab on your character sheet. Slots refresh on a <strong>Long Rest</strong>. Warlocks regain Pact Slots on a Short Rest.',
         accent: '#9b59b6',
-        tip: 'You can upcast spells by spending a higher-level slot for improved effects. The spell description lists upcasting bonuses.',
-      },
-      {
-        icon: '🎯',
-        title: 'Concentration',
-        body: 'Concentration spells are marked with a ©. You can only concentrate on one spell at a time. Taking damage requires a Constitution save (DC 10 or half damage taken, whichever is higher) to maintain concentration.',
-        accent: '#e74c3c',
-        tip: 'Losing concentration ends the spell immediately. Maintain concentration by avoiding damage or taking the War Caster / Resilient Constitution feat.',
+        tip: 'You can upcast spells — spend a higher-level slot for more damage or better effects. Fireball at 4th level deals 9d6 instead of 8d6.',
+        highlightSelector: '#cb-combat-tab',
       },
       {
         icon: '⚡',
-        title: 'Bonus Action Spells',
-        body: 'Spells with a Bonus Action casting time (like Healing Word or Misty Step) are cast as your Bonus Action. If you cast a bonus action spell, you may only cast cantrips with your main Action that turn.',
-        accent: '#d4a637',
-        tip: 'Quicken Spell (Sorcerer Metamagic) changes a spell\'s casting time to a Bonus Action for 2 Sorcery Points.',
+        title: 'Casting Spells in Combat',
+        body: 'The <strong>Quick Actions bar</strong> (⚔ at the bottom of your screen during combat) shows your top spells ready to cast. Click a spell tile to open its cast panel — choose a slot level, roll attack or damage, then cast. Use the Combat Guide in the Help Hub for the full turn flow.',
+        accent: '#9b59b6',
+        tip: 'Pin your favourite spells to the top 5 using the ☆ icon on each tile.',
+        highlightSelector: '#combat-quick-bar',
+      },
+      {
+        icon: '🎯',
+        title: 'Concentration & Bonus Spells',
+        body: '<strong>Concentration</strong> spells are marked ●. You can only hold one at a time — casting another ends the first. Taking damage requires a Constitution save (DC 10 or half damage) to keep it. <strong>Bonus action</strong> spells like Healing Word use your bonus action; if you cast one, your main action can only use a cantrip that turn.',
+        accent: '#e74c3c',
+        tip: 'War Caster or Resilient (Con) feat greatly improves your concentration checks.',
       },
     ],
     inventory_guide: [
@@ -659,32 +662,45 @@
       '}',
       '.ob-hub-title {',
       '  font-family:"Cinzel",serif; font-size:1.1rem; font-weight:700;',
-      '  color:var(--ob-accent,#00e5cc); text-align:center;',
+      '  color:rgba(180,220,215,0.9); text-align:center;',
       '  margin-bottom:0.6rem; letter-spacing:0.04em;',
       '}',
       '.ob-hub-subtitle {',
       '  font-family:"Crimson Pro",Georgia,serif; font-size:0.88rem;',
-      '  color:rgba(232,220,200,0.7); text-align:center; margin-bottom:1rem;',
+      '  color:rgba(232,220,200,0.6); text-align:center; margin-bottom:1rem;',
       '}',
       '.ob-hub-grid {',
       '  display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;',
       '}',
       '.ob-hub-card {',
       '  display:flex; align-items:center; gap:0.5rem;',
-      '  padding:0.6rem 0.7rem; cursor:pointer; border-radius:4px;',
-      '  border:1px solid rgba(0,229,204,0.18);',
-      '  background:rgba(0,229,204,0.04);',
-      '  transition:all 0.15s; font-family:"Cinzel",serif;',
+      '  padding:0.6rem 0.7rem; cursor:pointer; border-radius:6px;',
+      '  border:1px solid rgba(255,255,255,0.1);',
+      '  background:rgba(255,255,255,0.04);',
+      '  transition:all 0.18s; font-family:"Cinzel",serif;',
       '}',
       '.ob-hub-card:hover {',
-      '  border-color:rgba(0,229,204,0.5);',
-      '  background:rgba(0,229,204,0.1);',
-      '  box-shadow:0 0 8px rgba(0,229,204,0.2);',
+      '  border-color:rgba(0,200,180,0.35);',
+      '  background:rgba(0,180,160,0.08);',
+      '  box-shadow:0 2px 10px rgba(0,0,0,0.25);',
       '}',
       '.ob-hub-card-icon { font-size:1.2rem; flex-shrink:0; }',
       '.ob-hub-card-label {',
       '  font-size:0.62rem; letter-spacing:0.08em;',
-      '  text-transform:uppercase; color:rgba(200,169,110,0.85);',
+      '  text-transform:uppercase; color:rgba(210,185,140,0.82);',
+      '}',
+
+      /* Element highlight for guided steps */
+      '.ob-highlight {',
+      '  outline:2px solid rgba(0,210,185,0.7) !important;',
+      '  outline-offset:3px !important;',
+      '  border-radius:4px !important;',
+      '  animation:ob-hl-pulse 1.4s ease-in-out 4 !important;',
+      '  position:relative; z-index:9994;',
+      '}',
+      '@keyframes ob-hl-pulse {',
+      '  0%,100%{outline-color:rgba(0,210,185,0.4);}',
+      '  50%{outline-color:rgba(0,210,185,0.9);box-shadow:0 0 14px rgba(0,210,185,0.35);}',
       '}',
 
       /* Keyframes */
@@ -870,6 +886,10 @@
     _el('ob-progress-fill').style.width = pct + '%';
     _el('ob-progress-fill').style.background = accent;
     _el('ob-progress-fill').style.boxShadow  = '0 0 6px ' + accent;
+
+    // Element highlight
+    _clearHighlight();
+    if (data.highlightSelector) _applyHighlight(data.highlightSelector);
   }
 
   function _renderDots() {
@@ -909,11 +929,27 @@
     _goTo(_step);
   }
 
+  function _clearHighlight() {
+    document.querySelectorAll('.ob-highlight').forEach(function (el) { el.classList.remove('ob-highlight'); });
+  }
+
+  function _applyHighlight(selector) {
+    try {
+      var el = document.querySelector(selector);
+      if (el) {
+        el.classList.add('ob-highlight');
+        // Remove after animation ends (4 × 1.4s ≈ 6s)
+        setTimeout(function () { el && el.classList.remove('ob-highlight'); }, 6200);
+      }
+    } catch (_e) {}
+  }
+
   function _closeModal() {
     var overlay = _el('ob-overlay');
     if (overlay) overlay.classList.remove('ob-open');
     _helpMode = false;
     _hubMode  = false;
+    _clearHighlight();
   }
 
   // ── Colour helpers ────────────────────────────────────────────────────────
