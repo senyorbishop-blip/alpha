@@ -48,16 +48,17 @@
       const library = Array.isArray(libraryCharacters) ? libraryCharacters : [];
       const session = Array.isArray(sessionCharacters) ? sessionCharacters : [];
       const libraryNameKeys = new Set(library.map((item) => normalizeName(item && item.name)).filter(Boolean));
+      const libraryProfileIds = new Set(library.map((item) => String((item && item.libraryId) || '').trim()).filter(Boolean));
       const merged = []
         .concat(library)
         .concat(session.filter((item) => {
           if (!item) return false;
           if (!item.mine) return true;
+          const libraryId = String(item.libraryId || item.profile_id || item.profileId || '').trim();
+          if (libraryId && libraryProfileIds.has(libraryId)) return false;
           const key = normalizeName(item.name);
-          if (!key || !libraryNameKeys.has(key)) return true;
-          const hasImage = !!String(item.tokenImageUrl || '').trim();
-          const hasClass = !!String(item.classSummary || '').trim();
-          return hasImage && hasClass;
+          if (key && libraryNameKeys.has(key)) return false;
+          return true;
         }));
       const deduped = [];
       const seen = new Set();
