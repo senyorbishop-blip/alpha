@@ -11588,7 +11588,8 @@ let _pendingMoveConfirm = null;
 
 // ── Combat movement path tracking ────────────────────────────────────────
 // Tracks the path taken during a combat drag so we can draw it on the canvas.
-let _combatMovePath = null; // { origX, origY, tokenId, segments: [{x,y}] }
+let _combatMovePath = null; // movement planning preview { origX, origY, previewX, previewY, resolver }
+let _combatMovePlan = null; // current uncommitted combat move plan
 
 // Pan state
 let pan = { active: false, lastX: 0, lastY: 0 };
@@ -18020,8 +18021,10 @@ function drawCombatMovePath() {
   const th = Number(tok.height || PX_PER_GRID);
   const startCX = origX + tw / 2;
   const startCY = origY + th / 2;
-  const endCX = tok.x + tw / 2;
-  const endCY = tok.y + th / 2;
+  const endX = Number(path.previewX ?? tok.x);
+  const endY = Number(path.previewY ?? tok.y);
+  const endCX = endX + tw / 2;
+  const endCY = endY + th / 2;
 
   const dx = endCX - startCX;
   const dy = endCY - startCY;
@@ -18030,7 +18033,7 @@ function drawCombatMovePath() {
   // Draw dashed path line
   ctx.save();
   ctx.setLineDash([8 / cam.zoom, 5 / cam.zoom]);
-  ctx.strokeStyle = '#00e5cc';
+  ctx.strokeStyle = path?.resolver?.valid === false ? '#ff5c5c' : '#00e5cc';
   ctx.lineWidth = 2.5 / cam.zoom;
   ctx.globalAlpha = 0.85;
   ctx.beginPath();
@@ -18057,19 +18060,11 @@ function drawCombatMovePath() {
   ctx.setLineDash([]);
 
   // Distance label
-  const moveFt = _combatMovementFtBetween(origX, origY, tok.x, tok.y);
-  const move = _combat?.movement || {};
-  const multiplier = move.difficult_terrain ? 2 : 1;
-  const costFt = moveFt * multiplier;
-  const remainingFt = _getCombatRemainingFt(tokenId);
-  const totalFt = remainingFt != null ? Math.round(remainingFt) : null;
-
-  let label = `${Math.round(costFt)} ft`;
-  if (totalFt != null) {
-    const after = Math.max(0, totalFt - costFt);
-    label += ` • ${Math.round(after)} ft left`;
-  }
-  if (multiplier > 1) label += ' • DT x2';
+  const resolver = path.resolver || _resolveClientCombatMovement(tok, origX, origY, endX, endY);
+  const costFt = Number(resolver.finalCostFeet || 0);
+  const after = Math.max(0, Number(resolver.remainingFeet || 0) - costFt);
+  let label = resolver.valid ? `Valid move: ${Math.round(costFt)} ft, ${Math.round(after)} ft left` : (resolver.reason || `Too far: ${Math.round(costFt)} ft`);
+  if (Number(resolver.costMultiplier || 1) > 1) label += ' • Difficult terrain: cost doubled';
 
   const midX = (startCX + endCX) / 2;
   const midY = (startCY + endCY) / 2;
@@ -18800,17 +18795,54 @@ function _needsCombatMoveConfirm(t) {
 }
 
 // ── Combat movement distance helpers ─────────────────────────────────────
-function _combatMovementFtBetween(x1, y1, x2, y2) {
-  const dxCells = Math.round((x2 - x1) / PX_PER_GRID);
-  const dyCells = Math.round((y2 - y1) / PX_PER_GRID);
-  const absDx = Math.abs(dxCells);
-  const absDy = Math.abs(dyCells);
-  const diag = Math.min(absDx, absDy);
-  const straight = Math.max(absDx, absDy) - diag;
-  // D&D 5e diagonal: first diagonal = 5ft, second = 10ft, alternating
-  const squares = straight + (diag > 0 ? diag * 2 - 1 : 0);
-  return squares * 5;
+function _combatMovementMode() {
+  const mode = String(_combat?.movement?.movement_mode || _combat?.movement_mode || 'grid_5e_default');
+  return ['grid_5e_default', 'grid_5_10_5', 'euclidean'].includes(mode) ? mode : 'grid_5e_default';
 }
+function _combatMovementModeLabel() {
+  return _combatMovementMode() === 'grid_5_10_5' ? 'Grid movement: diagonal 5/10/5' : 'Grid movement: 5 ft per square';
+}
+function _gridCellForToken(x, y, t) {
+  return { x: Math.round((Number(x || 0) + Number(t?.width || PX_PER_GRID) / 2) / PX_PER_GRID - 0.5), y: Math.round((Number(y || 0) + Number(t?.height || PX_PER_GRID) / 2) / PX_PER_GRID - 0.5) };
+}
+function _buildGridPath(fromGrid, toGrid) {
+  const dx = toGrid.x - fromGrid.x, dy = toGrid.y - fromGrid.y;
+  const steps = Math.max(Math.abs(dx), Math.abs(dy));
+  if (!steps) return [fromGrid];
+  const out = [];
+  for (let i = 0; i <= steps; i++) {
+    const cell = { x: Math.round(fromGrid.x + dx * i / steps), y: Math.round(fromGrid.y + dy * i / steps) };
+    if (!out.length || out[out.length - 1].x !== cell.x || out[out.length - 1].y !== cell.y) out.push(cell);
+  }
+  return out;
+}
+function _movementSquaresForPath(path, mode) {
+  let total = 0, diagIdx = 0;
+  for (let i = 1; i < path.length; i++) {
+    const dx = Math.abs(path[i].x - path[i-1].x), dy = Math.abs(path[i].y - path[i-1].y);
+    if (!dx && !dy) continue;
+    if (mode === 'euclidean') total += Math.hypot(dx, dy);
+    else if (dx && dy) { diagIdx += 1; total += (mode === 'grid_5_10_5' && diagIdx % 2 === 0) ? 2 : 1; }
+    else total += Math.max(dx, dy);
+  }
+  return total;
+}
+function _resolveClientCombatMovement(t, fromX, fromY, toX, toY) {
+  const move = _combat?.movement || {};
+  const mode = _combatMovementMode();
+  const fromGrid = _gridCellForToken(fromX, fromY, t), toGrid = _gridCellForToken(toX, toY, t);
+  const path = _buildGridPath(fromGrid, toGrid);
+  const squares = _movementSquaresForPath(path, mode);
+  const baseFeet = Math.round(squares * 5 * 100) / 100;
+  const costMultiplier = move.difficult_terrain ? 2 : Math.max(1, Number(move.cost_multiplier || 1));
+  const finalCostFeet = Math.round(baseFeet * costMultiplier * 100) / 100;
+  const speedFeet = Math.max(0, Number(move.speed_ft || 0) + Number(move.bonus_ft || 0));
+  const spentFeet = Math.max(0, Number(move.spent_ft || 0));
+  const remainingFeet = Math.max(0, speedFeet - spentFeet);
+  const valid = finalCostFeet <= remainingFeet + 0.01;
+  return { fromGrid, toGrid, path, squares, baseFeet, costMultiplier, finalCostFeet, speedFeet, spentFeet, remainingFeet, valid, movementMode: mode, reason: valid ? (costMultiplier > 1 ? 'Difficult terrain: cost doubled' : 'valid') : `Too far: ${finalCostFeet} ft, only ${remainingFeet} ft available` };
+}
+function _combatMovementFtBetween(x1, y1, x2, y2) { return _resolveClientCombatMovement({width:PX_PER_GRID,height:PX_PER_GRID}, x1, y1, x2, y2).baseFeet; }
 
 function _getCombatRemainingFt(tokenId) {
   const move = _combat?.movement;
@@ -18850,6 +18882,17 @@ function _clampCombatDragPosition(token, targetX, targetY, origX, origY) {
   return { x: clampedX, y: clampedY, clamped: true };
 }
 
+function _resetMovementPreview() {
+  if (!_pendingMoveConfirm) return;
+  _pendingMoveConfirm.previewX = _pendingMoveConfirm.origX;
+  _pendingMoveConfirm.previewY = _pendingMoveConfirm.origY;
+  const tok = tokens[_pendingMoveConfirm.tokenId];
+  _pendingMoveConfirm.resolver = tok ? _resolveClientCombatMovement(tok, _pendingMoveConfirm.origX, _pendingMoveConfirm.origY, _pendingMoveConfirm.origX, _pendingMoveConfirm.origY) : null;
+  _combatMovePlan = _pendingMoveConfirm;
+  _combatMovePath = null;
+  renderCombat();
+}
+
 function _cancelPendingMoveConfirm(showMessage = true) {
   if (!_pendingMoveConfirm) return;
   const pending = _pendingMoveConfirm;
@@ -18860,7 +18903,9 @@ function _cancelPendingMoveConfirm(showMessage = true) {
     _cacheTokenByContext(tok);
   }
   _pendingMoveConfirm = null;
+  _combatMovePlan = null;
   _combatMovePath = null;
+  renderCombat();
   if (showMessage) showToast('Movement cancelled.');
 }
 
@@ -18873,8 +18918,10 @@ function _confirmPendingMoveConfirm() {
     _combatMovePath = null;
     return;
   }
-  sendWS({ type: 'token_move', payload: { token_id: pending.tokenId, x: tok.x, y: tok.y } });
-  _pendingMoveConfirm = null;
+  const resolver = pending.resolver || _resolveClientCombatMovement(tok, pending.origX, pending.origY, pending.previewX, pending.previewY);
+  if (!resolver.valid) { showToast(resolver.reason || 'Move is not valid.'); return; }
+  sendWS({ type: 'combat_move_commit', payload: { token_id: pending.tokenId, from_x: pending.origX, from_y: pending.origY, to_x: pending.previewX, to_y: pending.previewY, path: resolver.path, expected_cost_ft: resolver.finalCostFeet, movement_mode: resolver.movementMode } });
+  _pendingMoveConfirm = null; _combatMovePlan = null;
   _combatMovePath = null;
 }
 
@@ -19266,15 +19313,10 @@ function onMouseMove(e) {
 
     // Update combat movement path for visualization
     if (drag.previewMode) {
-      _combatMovePath = {
-        origX: drag.origX,
-        origY: drag.origY,
-        tokenId: drag.tokenId,
-        curX: t.x,
-        curY: t.y,
-        tokenW: t.width || PX_PER_GRID,
-        tokenH: t.height || PX_PER_GRID,
-      };
+      const resolver = _resolveClientCombatMovement(t, drag.origX, drag.origY, finalSnapped.x, finalSnapped.y);
+      t.x = drag.origX; t.y = drag.origY;
+      _combatMovePlan = _pendingMoveConfirm = { origX: drag.origX, origY: drag.origY, previewX: finalSnapped.x, previewY: finalSnapped.y, tokenId: drag.tokenId, resolver };
+      _combatMovePath = { origX: drag.origX, origY: drag.origY, previewX: finalSnapped.x, previewY: finalSnapped.y, tokenId: drag.tokenId, resolver, tokenW: t.width || PX_PER_GRID, tokenH: t.height || PX_PER_GRID };
     }
 
     // Throttled broadcast
@@ -19366,9 +19408,7 @@ function onMouseUp(e) {
         // Player combat movement now commits on mouse-up. The old extra
         // click-to-confirm step left the token in an unsent local preview,
         // so the next server state could snap it back and feel broken.
-        sendWS({ type: 'token_move', payload: { token_id: drag.tokenId, x: t.x, y: t.y } });
-        _cacheTokenByContext(t);
-        showToast('Movement sent. The DM/server will stop it if blocked or over budget.');
+        showToast(_pendingMoveConfirm?.resolver?.valid ? 'Planning move — choose Confirm Move or Cancel Move.' : (_pendingMoveConfirm?.resolver?.reason || 'Invalid movement preview.'));
       }
     } else if (t) {
       sendWS({ type: 'token_move', payload: { token_id: drag.tokenId, x: t.x, y: t.y } });
@@ -31915,7 +31955,14 @@ function handleLegacyMessage(msg) {
 
     case 'combat_move_state': {
       _combat.movement = p && typeof p === 'object' ? p : null;
+      _pendingMoveConfirm = null; _combatMovePlan = null; _combatMovePath = null;
       renderCombat();
+      break;
+    }
+    case 'combat_move_preview_result': {
+      if (p?.resolver) {
+        showToast(p.resolver.valid ? `Valid move: ${Math.round(Number(p.resolver.finalCostFeet || 0))} ft` : (p.resolver.reason || 'Invalid move'));
+      }
       break;
     }
 
@@ -45345,6 +45392,9 @@ function renderCombat() {
     const diffOn = !!moveState?.difficult_terrain;
     const dashUsed = !!moveState?.dash_used;
     const disengaged = !!moveState?.disengaged;
+    const plan = (_combatMovePlan && current && String(_combatMovePlan.tokenId || '') === String(current.token_id || '')) ? _combatMovePlan : null;
+    const planCost = Number(plan?.resolver?.finalCostFeet || 0);
+    const planAfter = Math.max(0, Number(moveState?.remaining_ft ?? totalFt - spentFt) - planCost);
     const canShow = !!(isActive && current && (ROLE === 'dm' || isMyTurn));
     moveRow.style.display = canShow ? 'flex' : 'none';
     if (canShow) {
@@ -45399,8 +45449,10 @@ function renderCombat() {
           <button class="combat-btn small ${diffOn ? 'primary' : ''}" onclick="combatToggleDifficultTerrain()" ${(ROLE !== 'dm' && !canPlayerAct) ? 'disabled' : ''}>${diffOn ? 'Difficult Terrain: ON' : 'Difficult Terrain'}</button>
           <button class="combat-btn small ${disengaged ? 'primary' : ''}" onclick="combatToggleDisengage()" ${(ROLE !== 'dm' && !canPlayerAct) ? 'disabled' : ''}>${disengaged ? 'Disengaged' : 'Disengage'}</button>
           ${ROLE === 'dm' ? '<button class="combat-btn small" onclick="combatResetMovement()">Reset Move</button>' : ''}
+          ${plan ? `<button class="combat-btn small primary" onclick="_confirmPendingMoveConfirm()" ${plan.resolver && !plan.resolver.valid ? 'disabled' : ''}>Confirm Move</button><button class="combat-btn small" onclick="_cancelPendingMoveConfirm(true)">Cancel Move</button><button class="combat-btn small" onclick="_resetMovementPreview()">Reset Preview</button>` : ''}
           ${canEndTurn ? '<button class="combat-btn small primary" onclick="combatEndTurn()">End Turn</button>' : ''}
-          <span style="margin-left:auto;font-size:0.62rem;color:var(--parchment-dim);white-space:nowrap;">${Math.round(spentFt)}/${Math.round(totalFt)} ft${bonusFt > 0 ? ' • dash' : ''}${diffOn ? ' • x2 cost' : ''}${disengaged ? ' • disengaged' : ''}</span>
+          <span style="margin-left:auto;font-size:0.62rem;color:var(--parchment-dim);white-space:nowrap;">Speed: ${Math.round(speedFt)} ft • Used: ${Math.round(spentFt)} ft • Remaining: ${Math.round(Number(moveState?.remaining_ft ?? totalFt - spentFt))} ft${plan ? ` • Planning move: ${Math.round(planCost)} ft • After move: ${Math.round(planAfter)} ft left` : ''}${bonusFt > 0 ? ' • Dash used' : ' • Dash available'}${diffOn ? ' • Difficult terrain on (cost doubled)' : ' • Difficult terrain off'}${disengaged ? ' • Disengaged' : ''} • ${_combatMovementModeLabel()}</span>
+          ${plan ? `<div style="width:100%;font-size:0.68rem;color:${plan.resolver?.valid ? 'var(--cyan)' : '#ff9d9d'};">Planning move — ${escapeHtml(plan.resolver?.valid ? `Valid move: ${Math.round(planCost)} ft, ${Math.round(planAfter)} ft left` : (plan.resolver?.reason || 'Invalid movement'))}</div>` : ''}
           ${attackHtml}`;
       }
     } else {

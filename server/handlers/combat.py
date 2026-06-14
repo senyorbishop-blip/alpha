@@ -13,6 +13,7 @@ from server.handlers.common import (
     _safe_int,
     _broadcast_combat,
 )
+from server.movement import resolve_movement, normalize_movement_mode
 
 
 def _can_manage_combat(session: Session, user: User, *, full: bool = False) -> bool:
@@ -132,19 +133,31 @@ def _token_speed_ft(session: Session, token, combatant: dict | None = None) -> i
     return base
 
 
-def _movement_squares_from_delta(dx: float, dy: float) -> float:
-    sx = abs(float(dx or 0.0)) / PX_PER_GRID
-    sy = abs(float(dy or 0.0)) / PX_PER_GRID
-    diag = min(sx, sy)
-    straight = max(sx, sy) - diag
-    return straight + (diag * 2.0 - 1.0 if diag > 0 else 0.0)
+def _movement_mode_for_session(session: Session, requested: str | None = None) -> str:
+    if requested:
+        return normalize_movement_mode(requested)
+    settings = getattr(session, "settings", None) or {}
+    combat = getattr(session, "combat", None) or {}
+    mode = combat.get("movement_mode") or settings.get("movement_mode") or settings.get("grid_movement_mode")
+    return normalize_movement_mode(mode)
 
 
-def _movement_ft_between_positions(x1: float | None, y1: float | None, x2: float | None, y2: float | None) -> float:
-    if x1 is None or y1 is None or x2 is None or y2 is None:
-        return 0.0
-    squares = _movement_squares_from_delta(float(x2) - float(x1), float(y2) - float(y1))
-    return round(squares * FT_PER_GRID, 2)
+def _resolve_combat_movement(session: Session, token, move_state: dict, to_x: float, to_y: float, *, path=None, movement_mode: str | None = None) -> dict:
+    return resolve_movement(
+        from_x=float(move_state.get("last_x", getattr(token, "x", 0.0)) or 0.0),
+        from_y=float(move_state.get("last_y", getattr(token, "y", 0.0)) or 0.0),
+        to_x=float(to_x),
+        to_y=float(to_y),
+        token_width=float(getattr(token, "width", PX_PER_GRID) or PX_PER_GRID),
+        token_height=float(getattr(token, "height", PX_PER_GRID) or PX_PER_GRID),
+        path=path,
+        movement_mode=_movement_mode_for_session(session, movement_mode),
+        speed_feet=float(move_state.get("speed_ft", 0.0) or 0.0),
+        bonus_feet=float(move_state.get("bonus_ft", 0.0) or 0.0),
+        spent_feet=float(move_state.get("spent_ft", 0.0) or 0.0),
+        difficult_terrain=bool(move_state.get("difficult_terrain")),
+        cost_multiplier=float(move_state.get("cost_multiplier", 1.0) or 1.0),
+    )
 
 
 def _ensure_combat_movement_state(session: Session, *, reset: bool = False) -> dict:
@@ -176,6 +189,7 @@ def _ensure_combat_movement_state(session: Session, *, reset: bool = False) -> d
             "difficult_terrain": False,
             "disengaged": False,
             "cost_multiplier": 1.0,
+            "movement_mode": _movement_mode_for_session(session),
             "last_x": float(getattr(token, "x", 0.0) or 0.0) if token is not None else None,
             "last_y": float(getattr(token, "y", 0.0) or 0.0) if token is not None else None,
         }
@@ -190,6 +204,7 @@ def _ensure_combat_movement_state(session: Session, *, reset: bool = False) -> d
         existing.setdefault("difficult_terrain", False)
         existing.setdefault("disengaged", False)
         existing.setdefault("cost_multiplier", 1.0)
+        existing["movement_mode"] = _movement_mode_for_session(session, existing.get("movement_mode"))
         total_budget_ft = _movement_total_budget_ft(existing)
         existing["remaining_ft"] = max(0.0, round(total_budget_ft - spent_ft, 2))
         if existing.get("last_x") is None and token is not None:
@@ -279,13 +294,13 @@ async def _enforce_player_combat_movement(session: Session, user: User, token, n
     total_budget_ft = _movement_total_budget_ft(move_state)
     if total_budget_ft <= 0:
         return True
-    segment_ft = _movement_ft_between_positions(move_state.get("last_x"), move_state.get("last_y"), new_x, new_y)
-    if segment_ft <= 0:
+    resolved = _resolve_combat_movement(session, token, move_state, new_x, new_y)
+    move_cost_ft = float(resolved.get("finalCostFeet", 0.0) or 0.0)
+    if move_cost_ft <= 0:
         return True
-    move_cost_ft = round(segment_ft * _movement_cost_multiplier(move_state), 2)
     spent_ft = float(move_state.get("spent_ft", 0.0) or 0.0)
     remaining_ft = max(0.0, round(total_budget_ft - spent_ft, 2))
-    if move_cost_ft > (remaining_ft + 0.01):
+    if not resolved.get("valid", False):
         remaining_text = int(round(remaining_ft)) if abs(remaining_ft - round(remaining_ft)) < 0.05 else round(remaining_ft, 1)
         await _send_token_move_denied(session, user, token, f"Movement limit reached — {remaining_text} ft remaining this turn.")
         return False
@@ -293,8 +308,59 @@ async def _enforce_player_combat_movement(session: Session, user: User, token, n
     move_state["remaining_ft"] = max(0.0, round(total_budget_ft - move_state["spent_ft"], 2))
     move_state["last_x"] = float(new_x)
     move_state["last_y"] = float(new_y)
+    move_state["last_resolver"] = resolved
     session.combat["movement"] = move_state
     return True
+
+
+async def handle_combat_move_preview(payload: dict, session: Session, user: User):
+    await _handle_combat_move_plan(payload, session, user, commit=False)
+
+
+async def handle_combat_move_commit(payload: dict, session: Session, user: User):
+    await _handle_combat_move_plan(payload, session, user, commit=True)
+
+
+async def _handle_combat_move_plan(payload: dict, session: Session, user: User, *, commit: bool):
+    token_id = str(payload.get("token_id") or "").strip()
+    token = session.tokens.get(token_id)
+    if not token:
+        return
+    current = _get_current_combatant(session)
+    if not (getattr(session, "combat", {}) or {}).get("active"):
+        await _send_token_move_denied(session, user, token, "Combat is not active.")
+        return
+    if str((current or {}).get("token_id") or "") != token_id and user.role != "dm":
+        await _send_token_move_denied(session, user, token, "Not your turn")
+        return
+    if user.role != "dm" and not _owner_matches_user(getattr(token, "owner_id", ""), user):
+        await _send_token_move_denied(session, user, token, "You don't own the active token.")
+        return
+    move_state = _ensure_combat_movement_state(session)
+    to_x = float(payload.get("to_x", payload.get("x", getattr(token, "x", 0.0))) or 0.0)
+    to_y = float(payload.get("to_y", payload.get("y", getattr(token, "y", 0.0))) or 0.0)
+    resolved = _resolve_combat_movement(session, token, move_state, to_x, to_y, path=payload.get("path"), movement_mode=payload.get("movement_mode"))
+    expected = payload.get("expected_cost_ft")
+    if expected is not None and abs(float(expected or 0) - float(resolved.get("finalCostFeet") or 0)) > 0.01:
+        resolved["valid"] = False
+        resolved["reason"] = "Movement cost changed on the server; preview again."
+    if not resolved.get("valid"):
+        await manager.send_to(session.id, user.id, {"type": "combat_move_preview_result" if not commit else "token_move_denied", "payload": {"token_id": token_id, "movement": move_state, "resolver": resolved, "message": resolved.get("reason")}})
+        return
+    if not commit:
+        await manager.send_to(session.id, user.id, {"type": "combat_move_preview_result", "payload": {"token_id": token_id, "movement": move_state, "resolver": resolved}})
+        return
+    old_x, old_y = float(getattr(token, "x", 0.0) or 0.0), float(getattr(token, "y", 0.0) or 0.0)
+    token.x, token.y = to_x, to_y
+    move_state["spent_ft"] = round(float(move_state.get("spent_ft", 0.0) or 0.0) + float(resolved.get("finalCostFeet", 0.0) or 0.0), 2)
+    move_state["remaining_ft"] = max(0.0, round(_movement_total_budget_ft(move_state) - move_state["spent_ft"], 2))
+    move_state["last_x"], move_state["last_y"] = to_x, to_y
+    move_state["last_resolver"] = resolved
+    session.combat["movement"] = move_state
+    await manager.broadcast(session.id, {"type": "token_moved", "payload": {"token_id": token_id, "x": token.x, "y": token.y, "moved_by": user.name}})
+    await manager.broadcast(session.id, {"type": "combat_move_state", "payload": move_state})
+    session.add_log(f"{user.name} moved {getattr(token, 'name', 'token')} {resolved.get('finalCostFeet', 0):g} ft ({resolved.get('movementMode')}).", "combat")
+    await save_campaign_async(session)
 
 
 async def _advance_combat_turn(session: Session):
