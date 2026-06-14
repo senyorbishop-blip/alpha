@@ -3,159 +3,1940 @@
   "item_schema_version": 2,
   "items": [
     {
-      "id": "bag-of-holding", "name": "Bag of Holding", "item_schema_version": 2,
-      "category": "wondrous", "subtype": "container", "rarity": "uncommon",
-      "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
-      "passive_effects": [{"type": "note", "summary": "Holds 500 lb / 64 cu ft. Only weighs 15 lb regardless of contents."}],
-      "granted_spells": [],
-      "effect": "This bag has an interior space considerably larger than its outside dimensions. Can hold up to 500 lb / 64 cubic feet. Weighs 15 lb regardless."
-    },
-    {
-      "id": "cloak-of-protection", "name": "Cloak of Protection", "item_schema_version": 2,
-      "category": "wondrous", "subtype": "cloak", "rarity": "uncommon",
-      "requires_attunement": true, "equippable": true, "equip_slot": "cloak",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "id": "amulet-of-health",
+      "name": "Amulet of Health",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
       "passive_effects": [
-        {"type": "ac_bonus", "value": 1, "summary": "+1 bonus to AC while attuned."},
-        {"type": "save_bonus", "value": 1, "summary": "+1 bonus to saving throws while attuned."}
-      ],
-      "granted_spells": [],
-      "effect": "You gain a +1 bonus to AC and saving throws while you wear this cloak."
-    },
-    {
-      "id": "headband-of-intellect", "name": "Headband of Intellect", "item_schema_version": 2,
-      "category": "wondrous", "subtype": "headwear", "rarity": "uncommon",
-      "requires_attunement": true, "equippable": true, "equip_slot": "head",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
-      "passive_effects": [
-        {"type": "ability_set", "ability": "int", "value": 19, "summary": "Your Intelligence score becomes 19 while wearing this."}
-      ],
-      "granted_spells": [],
-      "effect": "Your Intelligence score is 19 while you wear this headband. It has no effect on you if your Intelligence is already 19 or higher."
-    },
-    {
-      "id": "amulet-of-health", "name": "Amulet of Health", "item_schema_version": 2,
-      "category": "wondrous", "subtype": "amulet", "rarity": "rare",
-      "requires_attunement": true, "equippable": true, "equip_slot": "neck",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
-      "passive_effects": [
-        {"type": "ability_set", "ability": "con", "value": 19, "summary": "Your Constitution score becomes 19 while wearing this."}
-      ],
-      "granted_spells": [],
-      "effect": "Your Constitution score is 19 while you wear this amulet. It has no effect on you if your Constitution is already 19 or higher."
-    },
-    {
-      "id": "gauntlets-of-ogre-power", "name": "Gauntlets of Ogre Power", "item_schema_version": 2,
-      "category": "wondrous", "subtype": "gloves", "rarity": "uncommon",
-      "requires_attunement": true, "equippable": true, "equip_slot": "hands",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
-      "passive_effects": [
-        {"type": "ability_set", "ability": "str", "value": 19, "summary": "Your Strength score becomes 19 while wearing these."}
-      ],
-      "granted_spells": [],
-      "effect": "Your Strength score is 19 while you wear these gauntlets. They have no effect on you if your Strength is already 19 or higher."
-    },
-    {
-      "id": "goggles-of-night", "name": "Goggles of Night", "item_schema_version": 2,
-      "category": "wondrous", "subtype": "eyewear", "rarity": "uncommon",
-      "requires_attunement": false, "equippable": true, "equip_slot": "head",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
-      "passive_effects": [
-        {"type": "sense_bonus", "sense": "darkvision", "value": 60, "summary": "Gain darkvision 60 ft, or extend existing darkvision by 60 ft."}
-      ],
-      "granted_spells": [],
-      "effect": "While wearing these dark lenses, you have darkvision out to 60 ft. If you already have darkvision, it extends by 60 ft."
-    },
-    {
-      "id": "boots-of-speed", "name": "Boots of Speed", "item_schema_version": 2,
-      "category": "wondrous", "subtype": "boots", "rarity": "rare",
-      "requires_attunement": true, "equippable": true, "equip_slot": "feet",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
-      "passive_effects": [],
-      "granted_actions": [
-        {"id": "boots-of-speed-activate", "name": "Double Speed", "charge_cost": 0, "activation_type": "bonus_action",
-         "description": "Activate as a bonus action to double your speed until deactivated. While active, opportunity attacks against you have disadvantage."}
-      ],
-      "granted_spells": [],
-      "effect": "While you wear these boots, you can use a bonus action and click the boots' heels together. Your walking speed doubles, and opportunity attacks against you have disadvantage. Deactivate with another bonus action."
-    },
-    {
-      "id": "boots-of-elvenkind", "name": "Boots of Elvenkind", "item_schema_version": 2,
-      "category": "wondrous", "subtype": "boots", "rarity": "uncommon",
-      "requires_attunement": false, "equippable": true, "equip_slot": "feet",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
-      "passive_effects": [
-        {"type": "note", "summary": "Your steps make no sound. Advantage on Dexterity (Stealth) checks that rely on moving silently."}
-      ],
-      "granted_spells": [],
-      "effect": "While you wear these boots, your steps make no sound, regardless of surface. You also have advantage on Dexterity (Stealth) checks that rely on moving silently."
-    },
-    {
-      "id": "cloak-of-elvenkind", "name": "Cloak of Elvenkind", "item_schema_version": 2,
-      "category": "wondrous", "subtype": "cloak", "rarity": "uncommon",
-      "requires_attunement": true, "equippable": true, "equip_slot": "cloak",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
-      "passive_effects": [
-        {"type": "note", "summary": "Hood makes Perception checks against you have disadvantage. Advantage on Stealth checks while hood is up."}
-      ],
-      "granted_spells": [],
-      "effect": "While wearing this cloak with its hood up, Wisdom (Perception) checks made to see you have disadvantage, and you have advantage on Dexterity (Stealth) checks made to hide."
-    },
-    {
-      "id": "amulet-of-the-planes", "name": "Amulet of the Planes", "item_schema_version": 2,
-      "category": "wondrous", "subtype": "amulet", "rarity": "very_rare",
-      "requires_attunement": true, "equippable": true, "equip_slot": "neck",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
-      "passive_effects": [],
-      "granted_spells": [
         {
-          "id": "plane-shift", "name": "Plane Shift",
-          "charge_cost": 0, "cast_level": 7, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "As an action, name a location. DC 15 INT check or end up in a random location on the desired plane."
+          "type": "note",
+          "summary": "Starter magic item metadata."
         }
       ],
-      "effect": "While wearing this amulet, you can use an action to name a location. Make a DC 15 Intelligence check to transport yourself and up to 8 willing creatures to the named location. On a failure, you and anyone else transported land in a random location on the intended plane."
-    },
-    {
-      "id": "necklace-of-fireballs", "name": "Necklace of Fireballs", "item_schema_version": 2,
-      "category": "wondrous", "subtype": "necklace", "rarity": "rare",
-      "requires_attunement": false, "equippable": true, "equip_slot": "neck",
-      "charges_max": 9, "charges_current": 9, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 15,
-      "passive_effects": [],
-      "granted_spells": [
-        {
-          "id": "fireball", "name": "Fireball",
-          "charge_cost": 1, "cast_level": 3, "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Detach and throw a bead (reaction to throw). Each bead = fireball. Throw multiple for higher level effect (+1 level per extra bead). DC 15 DEX save."
-        }
-      ],
-      "effect": "Contains 1–9 beads. Detach and throw a bead (reaction or action) to create a fireball (DC 15, 3d6 per bead above the first). Beads destroyed once used — no recharge."
-    },
-    {
-      "id": "pearl-of-power", "name": "Pearl of Power", "item_schema_version": 2,
-      "category": "wondrous", "subtype": "pearl", "rarity": "uncommon",
-      "requires_attunement": true, "equippable": true, "equip_slot": "neck",
-      "charges_max": 1, "charges_current": 1, "recharge_type": "dawn", "recharge_formula": "",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
-      "passive_effects": [],
       "granted_spells": [],
       "granted_actions": [
-        {"id": "pearl-of-power-recover", "name": "Recover Spell Slot", "charge_cost": 1, "activation_type": "action",
-         "description": "Expend the charge to instantly regain one expended spell slot of 3rd level or lower."}
+        {
+          "id": "amulet-of-health-action",
+          "name": "Amulet of Health",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
       ],
-      "effect": "While this pearl is on your person, you can use an action to speak its command word and regain one expended spell slot of 3rd level or lower. Once used, the pearl can't be used again until the next dawn."
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "bag-of-holding",
+      "name": "Bag of Holding",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "bag-of-holding-action",
+          "name": "Bag of Holding",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "boots-of-elvenkind",
+      "name": "Boots of Elvenkind",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "boots-of-elvenkind-action",
+          "name": "Boots of Elvenkind",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "boots-of-levitation",
+      "name": "Boots of Levitation",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [
+        {
+          "id": "levitate",
+          "name": "Levitate",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "boots-of-levitation-action",
+          "name": "Boots of Levitation",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "boots-of-speed",
+      "name": "Boots of Speed",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "boots-of-speed-action",
+          "name": "Boots of Speed",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "boots-of-striding-and-springing",
+      "name": "Boots of Striding and Springing",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "boots-of-striding-and-springing-action",
+          "name": "Boots of Striding and Springing",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "boots-of-the-winterlands",
+      "name": "Boots of the Winterlands",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "boots-of-the-winterlands-action",
+          "name": "Boots of the Winterlands",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "bracers-of-archery",
+      "name": "Bracers of Archery",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "bracers-of-archery-action",
+          "name": "Bracers of Archery",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "bracers-of-defense",
+      "name": "Bracers of Defense",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "bracers-of-defense-action",
+          "name": "Bracers of Defense",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "brooch-of-shielding",
+      "name": "Brooch of Shielding",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "brooch-of-shielding-action",
+          "name": "Brooch of Shielding",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "broom-of-flying",
+      "name": "Broom of Flying",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "broom-of-flying-action",
+          "name": "Broom of Flying",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "cloak-of-elvenkind",
+      "name": "Cloak of Elvenkind",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "cloak-of-elvenkind-action",
+          "name": "Cloak of Elvenkind",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "cloak-of-protection",
+      "name": "Cloak of Protection",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "cloak-of-protection-action",
+          "name": "Cloak of Protection",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "cloak-of-the-bat",
+      "name": "Cloak of the Bat",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "cloak-of-the-bat-action",
+          "name": "Cloak of the Bat",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "cloak-of-the-manta-ray",
+      "name": "Cloak of the Manta Ray",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "cloak-of-the-manta-ray-action",
+          "name": "Cloak of the Manta Ray",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "decanter-of-endless-water",
+      "name": "Decanter of Endless Water",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "decanter-of-endless-water-action",
+          "name": "Decanter of Endless Water",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "deck-of-illusions",
+      "name": "Deck of Illusions",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "deck-of-illusions-action",
+          "name": "Deck of Illusions",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "dust-of-disappearance",
+      "name": "Dust of Disappearance",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "dust-of-disappearance-action",
+          "name": "Dust of Disappearance",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "dust-of-dryness",
+      "name": "Dust of Dryness",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "dust-of-dryness-action",
+          "name": "Dust of Dryness",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "dust-of-sneezing-and-choking",
+      "name": "Dust of Sneezing and Choking",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "dust-of-sneezing-and-choking-action",
+          "name": "Dust of Sneezing and Choking",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "eyes-of-charming",
+      "name": "Eyes of Charming",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 7,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "eyes-of-charming-action",
+          "name": "Eyes of Charming",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 7,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "eyes-of-minute-seeing",
+      "name": "Eyes of Minute Seeing",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "eyes-of-minute-seeing-action",
+          "name": "Eyes of Minute Seeing",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "eyes-of-the-eagle",
+      "name": "Eyes of the Eagle",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "eyes-of-the-eagle-action",
+          "name": "Eyes of the Eagle",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "gauntlets-of-ogre-power",
+      "name": "Gauntlets of Ogre Power",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "gauntlets-of-ogre-power-action",
+          "name": "Gauntlets of Ogre Power",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "gem-of-brightness",
+      "name": "Gem of Brightness",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 7,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "gem-of-brightness-action",
+          "name": "Gem of Brightness",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 7,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "gloves-of-missile-snaring",
+      "name": "Gloves of Missile Snaring",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "gloves-of-missile-snaring-action",
+          "name": "Gloves of Missile Snaring",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "gloves-of-swimming-and-climbing",
+      "name": "Gloves of Swimming and Climbing",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "gloves-of-swimming-and-climbing-action",
+          "name": "Gloves of Swimming and Climbing",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "goggles-of-night",
+      "name": "Goggles of Night",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "goggles-of-night-action",
+          "name": "Goggles of Night",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "handy-haversack",
+      "name": "Handy Haversack",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "handy-haversack-action",
+          "name": "Handy Haversack",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "hat-of-disguise",
+      "name": "Hat of Disguise",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [
+        {
+          "id": "disguise-self",
+          "name": "Disguise Self",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "hat-of-disguise-action",
+          "name": "Hat of Disguise",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "headband-of-intellect",
+      "name": "Headband of Intellect",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "headband-of-intellect-action",
+          "name": "Headband of Intellect",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "helm-of-comprehending-languages",
+      "name": "Helm of Comprehending Languages",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [
+        {
+          "id": "comprehend-languages",
+          "name": "Comprehend Languages",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "helm-of-comprehending-languages-action",
+          "name": "Helm of Comprehending Languages",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "helm-of-telepathy",
+      "name": "Helm of Telepathy",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "helm-of-telepathy-action",
+          "name": "Helm of Telepathy",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "helm-of-teleportation",
+      "name": "Helm of Teleportation",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 7,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "helm-of-teleportation-action",
+          "name": "Helm of Teleportation",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 7,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "horn-of-blasting",
+      "name": "Horn of Blasting",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "horn-of-blasting-action",
+          "name": "Horn of Blasting",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "horn-of-valhalla",
+      "name": "Horn of Valhalla",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "horn-of-valhalla-action",
+          "name": "Horn of Valhalla",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "instrument-of-the-bards",
+      "name": "Instrument of the Bards",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "instrument-of-the-bards-action",
+          "name": "Instrument of the Bards",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "javelin-of-lightning-wondrous",
+      "name": "Javelin of Lightning",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "javelin-of-lightning-wondrous-action",
+          "name": "Javelin of Lightning",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "medallion-of-thoughts",
+      "name": "Medallion of Thoughts",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [
+        {
+          "id": "detect-thoughts",
+          "name": "Detect Thoughts",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "medallion-of-thoughts-action",
+          "name": "Medallion of Thoughts",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "necklace-of-adaptation",
+      "name": "Necklace of Adaptation",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "necklace-of-adaptation-action",
+          "name": "Necklace of Adaptation",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "necklace-of-fireballs",
+      "name": "Necklace of Fireballs",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 7,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "necklace-of-fireballs-action",
+          "name": "Necklace of Fireballs",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 7,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "periapt-of-health",
+      "name": "Periapt of Health",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "periapt-of-health-action",
+          "name": "Periapt of Health",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "periapt-of-proof-against-poison",
+      "name": "Periapt of Proof against Poison",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "periapt-of-proof-against-poison-action",
+          "name": "Periapt of Proof against Poison",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "periapt-of-wound-closure",
+      "name": "Periapt of Wound Closure",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "periapt-of-wound-closure-action",
+          "name": "Periapt of Wound Closure",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "portable-hole",
+      "name": "Portable Hole",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "portable-hole-action",
+          "name": "Portable Hole",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "robe-of-useful-items",
+      "name": "Robe of Useful Items",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "robe-of-useful-items-action",
+          "name": "Robe of Useful Items",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "robe-of-the-archmagi",
+      "name": "Robe of the Archmagi",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "robe-of-the-archmagi-action",
+          "name": "Robe of the Archmagi",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "slippers-of-spider-climbing",
+      "name": "Slippers of Spider Climbing",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "slippers-of-spider-climbing-action",
+          "name": "Slippers of Spider Climbing",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "stone-of-good-luck",
+      "name": "Stone of Good Luck",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "stone-of-good-luck-action",
+          "name": "Stone of Good Luck",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "wings-of-flying",
+      "name": "Wings of Flying",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "wings-of-flying-action",
+          "name": "Wings of Flying",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
     }
   ]
 }

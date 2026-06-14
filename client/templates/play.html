@@ -10482,15 +10482,29 @@ Shortbow — +5 to hit, 1d6+3 piercing"></textarea>
             <option value="">All Categories</option>
             <option value="Armor">Armor</option>
             <option value="Gear">Gear</option>
+            <option value="Adventuring Gear">Adventuring Gear</option>
+            <option value="Consumable">Consumable</option>
+            <option value="Homebrew">Homebrew</option>
             <option value="Material">Material</option>
             <option value="Mount">Mount</option>
             <option value="Potion">Potion</option>
             <option value="Ring">Ring</option>
+            <option value="Rod">Rod</option>
             <option value="Scroll">Scroll</option>
+            <option value="Shield">Shield</option>
+            <option value="Staff">Staff</option>
             <option value="Tool">Tool</option>
+            <option value="Wand">Wand</option>
             <option value="Weapon">Weapon</option>
             <option value="Wondrous Item">Wondrous Item</option>
           </select>
+        </div>
+        <div style="display:flex;gap:0.55rem;flex-wrap:wrap;font-size:0.62rem;color:var(--parchment-dim);">
+          <label style="display:inline-flex;align-items:center;gap:0.25rem;"><input id="itemlib-filter-attunement" type="checkbox" onchange="renderItemLibraryList()" /> Attunement</label>
+          <label style="display:inline-flex;align-items:center;gap:0.25rem;"><input id="itemlib-filter-spells" type="checkbox" onchange="renderItemLibraryList()" /> Grants spells</label>
+          <label style="display:inline-flex;align-items:center;gap:0.25rem;"><input id="itemlib-filter-weapons" type="checkbox" onchange="renderItemLibraryList()" /> Weapons</label>
+          <label style="display:inline-flex;align-items:center;gap:0.25rem;"><input id="itemlib-filter-armor" type="checkbox" onchange="renderItemLibraryList()" /> Armor/Shields</label>
+          <label style="display:inline-flex;align-items:center;gap:0.25rem;"><input id="itemlib-filter-consumables" type="checkbox" onchange="renderItemLibraryList()" /> Consumables</label>
         </div>
         <div id="itemlib-srd-banner" style="display:none;padding:0.45rem 0.6rem;border:1px solid rgba(212,175,55,0.3);border-radius:7px;background:rgba(212,175,55,0.07);font-size:0.62rem;color:var(--gold);line-height:1.45;">
           💡 Run <code style="font-size:0.6rem;background:rgba(0,0,0,0.3);padding:0.1rem 0.25rem;border-radius:3px;">scripts/import_srd_items.py</code> to populate 400+ SRD items
@@ -10582,6 +10596,7 @@ Shortbow — +5 to hit, 1d6+3 piercing"></textarea>
           </div>
           <div style="display:flex;justify-content:flex-end;gap:0.55rem;flex-wrap:wrap;">
             <button class="mini-btn" type="button" onclick="newItemLibraryEntry()">New</button>
+            <button class="mini-btn" type="button" onclick="duplicateSelectedItemAsHomebrew()">Duplicate as Homebrew</button>
             <button class="mini-btn" type="button" onclick="saveItemLibraryEntry()">Save Entry</button>
             <button class="mini-btn" type="button" onclick="deleteItemLibraryEntry()" style="border-color:rgba(187,84,84,0.28);background:linear-gradient(180deg, rgba(139,26,26,0.18), rgba(0,0,0,0.26));color:#ffb7b7;">Delete</button>
           </div>
@@ -31351,7 +31366,9 @@ function handleLegacyMessage(msg) {
           });
           if (!entry) return null;
           entry.tags = s.tags || '';
-          entry.source = 'srd';
+          entry.requires_attunement = !!s.requires_attunement || /attunement/i.test(String(s.tags || ''));
+          entry.has_spells = !!s.has_spells || /spell-granting/i.test(String(s.tags || ''));
+          entry.source = s.source || 'srd';
           entry.weight_lbs = (typeof s.weight === 'number' ? s.weight : 0);
           entry.stack_limit = (s.stack_limit || 1);
           return entry;
@@ -40185,6 +40202,11 @@ function renderItemLibraryList() {
   const q = (document.getElementById('itemlib-search')?.value || '').trim().toLowerCase();
   const filterRarity = (document.getElementById('itemlib-filter-rarity')?.value || '').trim();
   const filterCategory = (document.getElementById('itemlib-filter-category')?.value || '').trim();
+  const onlyAttunement = !!document.getElementById('itemlib-filter-attunement')?.checked;
+  const onlySpells = !!document.getElementById('itemlib-filter-spells')?.checked;
+  const onlyWeapons = !!document.getElementById('itemlib-filter-weapons')?.checked;
+  const onlyArmor = !!document.getElementById('itemlib-filter-armor')?.checked;
+  const onlyConsumables = !!document.getElementById('itemlib-filter-consumables')?.checked;
 
   // Merge campaign entries and SRD items (campaign entries take precedence by id)
   const campaignEntries = Object.values(itemLibraryEntries);
@@ -40201,7 +40223,14 @@ function renderItemLibraryList() {
     .filter(entry => {
       if (q && !`${entry.name || ''} ${entry.category || ''} ${entry.rarity || ''} ${entry.notes || ''}`.toLowerCase().includes(q)) return false;
       if (filterRarity && (entry.rarity || 'Common') !== filterRarity) return false;
-      if (filterCategory && (entry.category || 'Gear') !== filterCategory) return false;
+      const category = String(entry.category || 'Gear');
+      const tags = String(entry.tags || '').toLowerCase();
+      if (filterCategory && category !== filterCategory) return false;
+      if (onlyAttunement && !entry.requires_attunement && !/attunement/.test(tags)) return false;
+      if (onlySpells && !entry.has_spells && !/spell-granting/.test(tags)) return false;
+      if (onlyWeapons && category !== 'Weapon' && !/\bweapon\b/.test(tags)) return false;
+      if (onlyArmor && !['Armor','Shield'].includes(category) && !/\b(armor|shield)\b/.test(tags)) return false;
+      if (onlyConsumables && !['Potion','Consumable'].includes(category) && !/\bconsumable\b/.test(tags)) return false;
       return true;
     })
     .sort((a, b) => `${a.category || ''} ${a.name || ''}`.localeCompare(`${b.category || ''} ${b.name || ''}`));
@@ -40235,7 +40264,9 @@ function renderItemLibraryList() {
         ${entry.price ? `<span>${escapeHtml(entry.price)}</span>` : ''}
         ${(entry.category === 'Material' && entry.weight_lbs != null) ? `<span style="color:rgba(212,175,55,0.7);">⚖ ${entry.weight_lbs} lb</span>` : ''}
         ${(entry.category === 'Material' && entry.tags) ? `<span style="color:rgba(0,229,204,0.5);font-size:0.55rem;">${escapeHtml(entry.tags.split(',').filter(t=>!t.startsWith('material')).slice(0,3).join(' · '))}</span>` : ''}
-        ${isSrd ? `<span style="color:rgba(0,229,204,0.6);">SRD</span>` : ''}
+        ${entry.requires_attunement ? `<span style="color:rgba(212,175,55,0.75);">Attune</span>` : ''}
+        ${entry.has_spells ? `<span style="color:rgba(0,229,204,0.7);">Spells</span>` : ''}
+        ${isSrd ? `<span style="color:rgba(0,229,204,0.6);">Compendium</span>` : ''}
       </div>
       ${entry.notes ? `<div style="font-size:0.6rem;color:var(--parchment-dim);line-height:1.4;max-height:2.5rem;overflow:hidden;">${escapeHtml((entry.notes || '').slice(0, 120))}</div>` : ''}
     </button>`;
@@ -40284,6 +40315,21 @@ function newItemLibraryEntry() {
   _itemLibrarySelectedId = null;
   renderItemLibraryList();
   renderItemLibraryEditor();
+}
+
+function duplicateSelectedItemAsHomebrew() {
+  if (ROLE !== 'dm') return;
+  const entry = _itemLibrarySelectedId ? _getItemLibraryEntry(_itemLibrarySelectedId) : null;
+  if (!entry) {
+    showToast('Choose an item to duplicate first');
+    return;
+  }
+  const copy = { ...entry, id: `homebrew_${Date.now()}`, name: `${entry.name || 'Item'} (Homebrew Copy)`, category: 'Homebrew', source: 'homebrew', updated_at: Date.now() };
+  itemLibraryEntries[copy.id] = normalizeItemLibraryEntry(copy) || copy;
+  _itemLibrarySelectedId = copy.id;
+  renderItemLibraryList();
+  renderItemLibraryEditor();
+  showToast('Duplicated as an editable homebrew item. Review and save when ready.');
 }
 
 function saveItemLibraryEntry() {

@@ -3,174 +3,744 @@
   "item_schema_version": 2,
   "items": [
     {
-      "id": "thieves-tools", "name": "Thieves' Tools", "item_schema_version": 2, "category": "tool", "subtype": "thieves_tools",
-      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "weight_lbs": 1, "price_gp": 25,
-      "passive_effects": [{"type": "note", "summary": "Required to pick locks and disarm traps (DEX check). Proficiency adds to the check."}],
+      "id": "alchemist-s-supplies",
+      "name": "Alchemist’s Supplies",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "alchemist-s-supplies",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "proficiency_group": "thieves_tools",
-      "description_summary": "Required for picking locks and disabling traps. Proficiency bonus applies.",
-      "effect": "This set of tools includes a small file, a set of lock picks, a small mirror mounted on a metal handle, a set of narrow-bladed scissors, and a pair of pliers. Proficiency with these tools lets you add your proficiency bonus to any ability check you make to disarm traps or open locks."
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "alchemist-s-supplies",
+      "proficiency_tag": "tool:alchemist_s_supplies",
+      "proficiency_group": "alchemist_s_supplies",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
     },
     {
-      "id": "herbalism-kit", "name": "Herbalism Kit", "item_schema_version": 2, "category": "tool", "subtype": "herbalism_kit",
-      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "weight_lbs": 3, "price_gp": 5,
-      "passive_effects": [{"type": "note", "summary": "Required to identify plants and prepare herbal remedies. Craft antitoxin and healing potions."}],
+      "id": "brewer-s-supplies",
+      "name": "Brewer’s Supplies",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "brewer-s-supplies",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "proficiency_group": "herbalism_kit",
-      "description_summary": "Identify plants, prepare herbal remedies, and craft antitoxin or potions of healing.",
-      "effect": "This kit contains a variety of instruments such as clippers, mortar and pestle, and pouches and vials. Proficiency with this kit lets you add your proficiency bonus to any ability checks to identify or apply herbs. Proficiency is also required to craft antitoxin and potions of healing."
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "brewer-s-supplies",
+      "proficiency_tag": "tool:brewer_s_supplies",
+      "proficiency_group": "brewer_s_supplies",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
     },
     {
-      "id": "poisoners-kit", "name": "Poisoner's Kit", "item_schema_version": 2, "category": "tool", "subtype": "poisoners_kit",
-      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "weight_lbs": 2, "price_gp": 50,
-      "passive_effects": [{"type": "note", "summary": "Required to craft and apply poisons. Proficiency bonus applies to related checks."}],
+      "id": "calligrapher-s-supplies",
+      "name": "Calligrapher’s Supplies",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "calligrapher-s-supplies",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "proficiency_group": "poisoners_kit",
-      "description_summary": "Craft and safely handle poisons. Proficiency bonus applies to related checks.",
-      "effect": "A poisoner's kit includes the vials, chemicals, and other equipment necessary for the creation of poisons. Proficiency with this kit lets you add your proficiency bonus to any ability checks you make to craft or use poisons."
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "calligrapher-s-supplies",
+      "proficiency_tag": "tool:calligrapher_s_supplies",
+      "proficiency_group": "calligrapher_s_supplies",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
     },
     {
-      "id": "disguise-kit", "name": "Disguise Kit", "item_schema_version": 2, "category": "tool", "subtype": "disguise_kit",
-      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "weight_lbs": 3, "price_gp": 25,
-      "passive_effects": [{"type": "note", "summary": "Create disguises. Proficiency bonus applies to Charisma (Deception) checks made with a disguise."}],
+      "id": "carpenter-s-tools",
+      "name": "Carpenter’s Tools",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "carpenter-s-tools",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "carpenter-s-tools",
+      "proficiency_tag": "tool:carpenter_s_tools",
+      "proficiency_group": "carpenter_s_tools",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
+    },
+    {
+      "id": "cartographer-s-tools",
+      "name": "Cartographer’s Tools",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "cartographer-s-tools",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "cartographer-s-tools",
+      "proficiency_tag": "tool:cartographer_s_tools",
+      "proficiency_group": "cartographer_s_tools",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
+    },
+    {
+      "id": "cobbler-s-tools",
+      "name": "Cobbler’s Tools",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "cobbler-s-tools",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "cobbler-s-tools",
+      "proficiency_tag": "tool:cobbler_s_tools",
+      "proficiency_group": "cobbler_s_tools",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
+    },
+    {
+      "id": "cook-s-utensils",
+      "name": "Cook’s Utensils",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "cook-s-utensils",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "cook-s-utensils",
+      "proficiency_tag": "tool:cook_s_utensils",
+      "proficiency_group": "cook_s_utensils",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
+    },
+    {
+      "id": "disguise-kit",
+      "name": "Disguise Kit",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "disguise-kit",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "disguise-kit",
+      "proficiency_tag": "tool:disguise_kit",
       "proficiency_group": "disguise_kit",
-      "description_summary": "Create convincing disguises. Proficiency bonus applies to related checks.",
-      "effect": "This pouch of cosmetics, hair dye, and small props lets you create disguises that change your physical appearance. Proficiency with this kit lets you add your proficiency bonus to any ability checks you make to create a visual disguise."
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
     },
     {
-      "id": "forgery-kit", "name": "Forgery Kit", "item_schema_version": 2, "category": "tool", "subtype": "forgery_kit",
-      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "weight_lbs": 5, "price_gp": 15,
-      "passive_effects": [{"type": "note", "summary": "Duplicate written documents and forge signatures. Proficiency bonus applies."}],
+      "id": "forgery-kit",
+      "name": "Forgery Kit",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "forgery-kit",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "forgery-kit",
+      "proficiency_tag": "tool:forgery_kit",
       "proficiency_group": "forgery_kit",
-      "description_summary": "Forge written documents, signatures, and seals. Proficiency bonus applies.",
-      "effect": "This small box contains a variety of papers and parchments, pens and inks, seals and sealing wax, gold and silver leaf, and other supplies necessary to create convincing forgeries of physical documents. Proficiency with this kit lets you add your proficiency bonus to any ability checks you make to create or detect forgeries."
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
     },
     {
-      "id": "navigators-tools", "name": "Navigator's Tools", "item_schema_version": 2, "category": "tool", "subtype": "navigators_tools",
-      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "weight_lbs": 2, "price_gp": 25,
-      "passive_effects": [{"type": "note", "summary": "Navigate by sea or overland. Chart courses and determine location by stars."}],
+      "id": "gaming-set",
+      "name": "Gaming Set",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "gaming-set",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "proficiency_group": "navigators_tools",
-      "description_summary": "Navigate by sea and stars. Chart courses. Proficiency bonus applies.",
-      "effect": "This set of instruments includes a sextant, a compass, calipers, a ruler, parchment, ink, and a quill. Proficiency with navigator's tools lets you chart a ship's course and follow navigation charts. In addition, these tools allow you to add your proficiency bonus to any ability check you make to avoid getting lost at sea."
-    },
-    {
-      "id": "alchemists-supplies", "name": "Alchemist's Supplies", "item_schema_version": 2, "category": "tool", "subtype": "artisans_tools",
-      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "weight_lbs": 8, "price_gp": 50,
-      "passive_effects": [{"type": "note", "summary": "Identify alchemical substances, craft alchemical items (fire, acid, etc.)."}],
-      "granted_spells": [],
-      "proficiency_group": "alchemists_supplies",
-      "description_summary": "Craft alchemical substances and identify reagents. Proficiency bonus applies.",
-      "effect": "Alchemist's supplies enable a character to produce useful concoctions, such as acid or alchemist's fire. Proficiency with these supplies adds your proficiency bonus to ability checks made to identify alchemical substances or craft alchemical items."
-    },
-    {
-      "id": "smiths-tools", "name": "Smith's Tools", "item_schema_version": 2, "category": "tool", "subtype": "artisans_tools",
-      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "weight_lbs": 8, "price_gp": 20,
-      "passive_effects": [{"type": "note", "summary": "Craft and repair metal items including armor and weapons."}],
-      "granted_spells": [],
-      "proficiency_group": "smiths_tools",
-      "description_summary": "Craft and repair metal items and weapons. Proficiency bonus applies.",
-      "effect": "Smith's tools include hammers, tongs, charcoal, rags, and a whetstone. Proficiency with smith's tools lets you add your proficiency bonus to any ability checks made to forge or repair metalwork items."
-    },
-    {
-      "id": "carpenters-tools", "name": "Carpenter's Tools", "item_schema_version": 2, "category": "tool", "subtype": "artisans_tools",
-      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "weight_lbs": 6, "price_gp": 8,
-      "passive_effects": [], "granted_spells": [],
-      "proficiency_group": "carpenters_tools",
-      "description_summary": "Craft and repair wooden structures and objects. Proficiency bonus applies.",
-      "effect": "Carpenter's tools include a saw, a hammer, nails, a hatchet, a square, a ruler, an adze, a plane, and a chisel. Proficiency with carpenter's tools lets you add your proficiency bonus to ability checks to build wooden structures."
-    },
-    {
-      "id": "cooks-utensils", "name": "Cook's Utensils", "item_schema_version": 2, "category": "tool", "subtype": "artisans_tools",
-      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "weight_lbs": 8, "price_gp": 1,
-      "passive_effects": [{"type": "note", "summary": "Prepare meals. Proficient cooking may restore hit points on a long rest."}],
-      "granted_spells": [],
-      "proficiency_group": "cooks_utensils",
-      "description_summary": "Prepare quality meals. Proficiency may grant bonus HP on long rest.",
-      "effect": "Cook's utensils include a metal pot, knives, forks, a stirring spoon, and a ladle. Proficiency with cook's utensils lets you add your proficiency bonus to ability checks made to prepare and serve a meal."
-    },
-    {
-      "id": "leatherworkers-tools", "name": "Leatherworker's Tools", "item_schema_version": 2, "category": "tool", "subtype": "artisans_tools",
-      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "weight_lbs": 5, "price_gp": 5,
-      "passive_effects": [], "granted_spells": [],
-      "proficiency_group": "leatherworkers_tools",
-      "description_summary": "Craft and repair leather goods including armor. Proficiency bonus applies.",
-      "effect": "Leatherworker's tools include a knife, a small mallet, an edger, a hole punch, thread, and leather scraps. Proficiency with leatherworker's tools lets you add your proficiency bonus to ability checks made to craft or repair leather items."
-    },
-    {
-      "id": "tinkers-tools", "name": "Tinker's Tools", "item_schema_version": 2, "category": "tool", "subtype": "artisans_tools",
-      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "weight_lbs": 10, "price_gp": 50,
-      "passive_effects": [{"type": "note", "summary": "Craft and repair small mechanical devices and clockwork objects."}],
-      "granted_spells": [],
-      "proficiency_group": "tinkers_tools",
-      "description_summary": "Craft and repair small mechanical devices. Proficiency bonus applies.",
-      "effect": "These special tools include the items needed to pursue a craft or trade. Proficiency with a set of artisan's tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft."
-    },
-    {
-      "id": "gaming-set-dice", "name": "Gaming Set (Dice)", "item_schema_version": 2, "category": "tool", "subtype": "gaming_set",
-      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "weight_lbs": 0.1, "price_sp": 1,
-      "passive_effects": [], "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "gaming-set",
+      "proficiency_tag": "tool:gaming_set",
       "proficiency_group": "gaming_set",
-      "description_summary": "A set of dice for games of chance. Proficiency adds to related Charisma checks.",
-      "effect": "A game set includes the items needed to play a particular game. Proficiency with a game set lets you add your proficiency bonus to ability checks you make to play the game."
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
     },
     {
-      "id": "lute", "name": "Lute", "item_schema_version": 2, "category": "tool", "subtype": "musical_instrument",
-      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "weight_lbs": 2, "price_gp": 35,
-      "passive_effects": [], "granted_spells": [],
-      "proficiency_group": "lute",
-      "description_summary": "A stringed instrument. Bards use musical instruments as spellcasting foci.",
-      "effect": "If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with it. Bards can use a musical instrument as a spellcasting focus."
+      "id": "herbalism-kit",
+      "name": "Herbalism Kit",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "herbalism-kit",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "herbalism-kit",
+      "proficiency_tag": "tool:herbalism_kit",
+      "proficiency_group": "herbalism_kit",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
     },
     {
-      "id": "flute", "name": "Flute", "item_schema_version": 2, "category": "tool", "subtype": "musical_instrument",
-      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "weight_lbs": 1, "price_gp": 2,
-      "passive_effects": [], "granted_spells": [],
-      "proficiency_group": "flute",
-      "description_summary": "A wind instrument. Bards use musical instruments as spellcasting foci.",
-      "effect": "A flute. Bards can use a musical instrument as a spellcasting focus."
+      "id": "jeweler-s-tools",
+      "name": "Jeweler’s Tools",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "jeweler-s-tools",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "jeweler-s-tools",
+      "proficiency_tag": "tool:jeweler_s_tools",
+      "proficiency_group": "jeweler_s_tools",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
     },
     {
-      "id": "drum", "name": "Drum", "item_schema_version": 2, "category": "tool", "subtype": "musical_instrument",
-      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
-      "charges_max": 0, "recharge_type": "none",
-      "weight_lbs": 3, "price_gp": 6,
-      "passive_effects": [], "granted_spells": [],
-      "proficiency_group": "drum",
-      "description_summary": "A percussion instrument. Bards use musical instruments as spellcasting foci.",
-      "effect": "A drum. Bards can use a musical instrument as a spellcasting focus."
+      "id": "leatherworker-s-tools",
+      "name": "Leatherworker’s Tools",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "leatherworker-s-tools",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "leatherworker-s-tools",
+      "proficiency_tag": "tool:leatherworker_s_tools",
+      "proficiency_group": "leatherworker_s_tools",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
+    },
+    {
+      "id": "mason-s-tools",
+      "name": "Mason’s Tools",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "mason-s-tools",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "mason-s-tools",
+      "proficiency_tag": "tool:mason_s_tools",
+      "proficiency_group": "mason_s_tools",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
+    },
+    {
+      "id": "navigator-s-tools",
+      "name": "Navigator’s Tools",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "navigator-s-tools",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "navigator-s-tools",
+      "proficiency_tag": "tool:navigator_s_tools",
+      "proficiency_group": "navigator_s_tools",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
+    },
+    {
+      "id": "painter-s-supplies",
+      "name": "Painter’s Supplies",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "painter-s-supplies",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "painter-s-supplies",
+      "proficiency_tag": "tool:painter_s_supplies",
+      "proficiency_group": "painter_s_supplies",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
+    },
+    {
+      "id": "poisoner-s-kit",
+      "name": "Poisoner’s Kit",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "poisoner-s-kit",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "poisoner-s-kit",
+      "proficiency_tag": "tool:poisoner_s_kit",
+      "proficiency_group": "poisoner_s_kit",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
+    },
+    {
+      "id": "smith-s-tools",
+      "name": "Smith’s Tools",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "smith-s-tools",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "smith-s-tools",
+      "proficiency_tag": "tool:smith_s_tools",
+      "proficiency_group": "smith_s_tools",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
+    },
+    {
+      "id": "thieves-tools",
+      "name": "Thieves' Tools",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "thieves-tools",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "thieves-tools",
+      "proficiency_tag": "tool:thieves_tools",
+      "proficiency_group": "thieves_tools",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "dexterity",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
+    },
+    {
+      "id": "tinker-s-tools",
+      "name": "Tinker’s Tools",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "tinker-s-tools",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "tinker-s-tools",
+      "proficiency_tag": "tool:tinker_s_tools",
+      "proficiency_group": "tinker_s_tools",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
+    },
+    {
+      "id": "weaver-s-tools",
+      "name": "Weaver’s Tools",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "weaver-s-tools",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "weaver-s-tools",
+      "proficiency_tag": "tool:weaver_s_tools",
+      "proficiency_group": "weaver_s_tools",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
+    },
+    {
+      "id": "woodcarver-s-tools",
+      "name": "Woodcarver’s Tools",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "woodcarver-s-tools",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "tool_type": "woodcarver-s-tools",
+      "proficiency_tag": "tool:woodcarver_s_tools",
+      "proficiency_group": "woodcarver_s_tools",
+      "weight_lbs": 5,
+      "price_gp": 25,
+      "skill_check_helpers": [
+        {
+          "ability": "intelligence",
+          "skill": "varies",
+          "summary": "Apply proficiency to appropriate checks using this tool."
+        }
+      ]
+    },
+    {
+      "id": "lute",
+      "name": "Lute",
+      "item_schema_version": 2,
+      "category": "tool",
+      "subtype": "musical_instrument",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "weight_lbs": 2,
+      "price_gp": 35,
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Musical instrument proficiency can apply to performance checks."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "tool_type": "musical_instrument",
+      "proficiency_tag": "tool:musical_instrument",
+      "proficiency_group": "musical_instrument",
+      "skill_check_helpers": [
+        {
+          "ability": "charisma",
+          "skill": "performance",
+          "summary": "Use with Performance checks."
+        }
+      ]
     }
   ]
 }

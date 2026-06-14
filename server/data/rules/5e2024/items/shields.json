@@ -3,39 +3,389 @@
   "item_schema_version": 2,
   "items": [
     {
-      "id": "shield", "name": "Shield", "item_schema_version": 2, "category": "shield", "subtype": "shield",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "off_hand",
-      "ac_bonus": 2, "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
+      "id": "shield",
+      "name": "Shield",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 2,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 2,
+      "magic_bonus": 0,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 2,
+        "formula": "shield bonus"
+      }
     },
     {
-      "id": "shield-plus-1", "name": "Shield, +1", "item_schema_version": 2, "category": "shield", "subtype": "shield",
-      "rarity": "uncommon", "requires_attunement": false, "equippable": true, "equip_slot": "off_hand",
-      "ac_bonus": 3, "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [{"type": "ac_bonus", "value": 1, "summary": "+1 bonus to AC (total +3 with shield)."}],
-      "granted_spells": []
+      "id": "plus1-shield",
+      "name": "+1 Shield",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 3,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 3,
+      "magic_bonus": 1,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 3,
+        "formula": "shield bonus"
+      }
     },
     {
-      "id": "shield-plus-2", "name": "Shield, +2", "item_schema_version": 2, "category": "shield", "subtype": "shield",
-      "rarity": "rare", "requires_attunement": false, "equippable": true, "equip_slot": "off_hand",
-      "ac_bonus": 4, "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [{"type": "ac_bonus", "value": 2, "summary": "+2 bonus to AC (total +4 with shield)."}],
-      "granted_spells": []
+      "id": "plus2-shield",
+      "name": "+2 Shield",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 4,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 4,
+      "magic_bonus": 2,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 4,
+        "formula": "shield bonus"
+      }
     },
     {
-      "id": "shield-plus-3", "name": "Shield, +3", "item_schema_version": 2, "category": "shield", "subtype": "shield",
-      "rarity": "very_rare", "requires_attunement": false, "equippable": true, "equip_slot": "off_hand",
-      "ac_bonus": 5, "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [{"type": "ac_bonus", "value": 3, "summary": "+3 bonus to AC (total +5 with shield)."}],
-      "granted_spells": []
+      "id": "plus3-shield",
+      "name": "+3 Shield",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 5,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 5,
+      "magic_bonus": 3,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 5,
+        "formula": "shield bonus"
+      }
     },
     {
-      "id": "animated-shield", "name": "Animated Shield", "item_schema_version": 2, "category": "shield", "subtype": "shield",
-      "rarity": "very_rare", "requires_attunement": true, "equippable": true, "equip_slot": "off_hand",
-      "ac_bonus": 2, "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "effect": "While attuned, as a bonus action you can animate this shield to float alongside you for up to 1 minute, granting its +2 AC bonus while freeing your hand. It returns automatically when you use a bonus action or the effect ends.",
-      "passive_effects": [{"type": "note", "value": "Can animate to float alongside you as a bonus action, freeing your hand."}],
-      "granted_spells": []
+      "id": "shield-plus1",
+      "name": "Shield +1",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 3,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 3,
+      "magic_bonus": 1,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 3,
+        "formula": "shield bonus"
+      }
+    },
+    {
+      "id": "shield-plus2",
+      "name": "Shield +2",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 4,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 4,
+      "magic_bonus": 2,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 4,
+        "formula": "shield bonus"
+      }
+    },
+    {
+      "id": "shield-plus3",
+      "name": "Shield +3",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 5,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 5,
+      "magic_bonus": 3,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 5,
+        "formula": "shield bonus"
+      }
+    },
+    {
+      "id": "shield-of-missile-attraction",
+      "name": "Shield of Missile Attraction",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 2,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "shield-of-missile-attraction-attuned-effect",
+          "name": "Shield of Missile Attraction Attuned Effect",
+          "action_type": "passive_effect",
+          "charge_cost": 0,
+          "summary": "Apply this item’s attuned passive effect while worn."
+        }
+      ],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 2,
+      "magic_bonus": 0,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 2,
+        "formula": "shield bonus"
+      }
+    },
+    {
+      "id": "spellguard-shield",
+      "name": "Spellguard Shield",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 2,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "spellguard-shield-attuned-effect",
+          "name": "Spellguard Shield Attuned Effect",
+          "action_type": "passive_effect",
+          "charge_cost": 0,
+          "summary": "Apply this item’s attuned passive effect while worn."
+        }
+      ],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 2,
+      "magic_bonus": 0,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 2,
+        "formula": "shield bonus"
+      }
     }
   ]
 }

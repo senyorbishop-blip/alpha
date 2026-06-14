@@ -3,255 +3,817 @@
   "item_schema_version": 2,
   "items": [
     {
-      "id": "staff-of-fire", "name": "Staff of Fire", "item_schema_version": 2,
-      "category": "staff", "subtype": "staff", "rarity": "very_rare",
-      "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
-      "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 10, "charges_current": 10, "recharge_type": "dawn", "recharge_formula": "1d6+4",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 17,
+      "id": "staff",
+      "name": "Staff",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "staff",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "dawn",
       "passive_effects": [
-        {"type": "resistance", "damage_type": "fire", "summary": "Resistance to fire damage while attuned."}
-      ],
-      "granted_spells": [
         {
-          "id": "burning-hands", "name": "Burning Hands",
-          "charge_cost": 1, "cast_level": 1,
-          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 1 charge to cast burning hands (save DC 17)."
-        },
-        {
-          "id": "fireball", "name": "Fireball",
-          "charge_cost": 3, "cast_level": 3,
-          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 3 charges to cast fireball (save DC 17)."
-        },
-        {
-          "id": "wall-of-fire", "name": "Wall of Fire",
-          "charge_cost": 4, "cast_level": 4,
-          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 4 charges to cast wall of fire (save DC 17)."
+          "type": "note",
+          "summary": "Starter magic item metadata."
         }
       ],
-      "effect": "Has 10 charges. Resistance to fire damage while attuned. Can cast burning hands (1 charge), fireball (3 charges), or wall of fire (4 charges), all with save DC 17. Regains 1d6+4 charges at dawn."
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "staff-action",
+          "name": "Staff",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7,
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
     },
     {
-      "id": "staff-of-frost", "name": "Staff of Frost", "item_schema_version": 2,
-      "category": "staff", "subtype": "staff", "rarity": "very_rare",
-      "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
-      "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 10, "charges_current": 10, "recharge_type": "dawn", "recharge_formula": "1d6+4",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 17,
+      "id": "quarterstaff-plus1",
+      "name": "Quarterstaff +1",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "staff",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "dawn",
       "passive_effects": [
-        {"type": "resistance", "damage_type": "cold", "summary": "Resistance to cold damage while attuned."}
-      ],
-      "granted_spells": [
         {
-          "id": "cone-of-cold", "name": "Cone of Cold",
-          "charge_cost": 5, "cast_level": 5,
-          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 5 charges to cast cone of cold (save DC 17)."
-        },
-        {
-          "id": "fog-cloud", "name": "Fog Cloud",
-          "charge_cost": 1, "cast_level": 1,
-          "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 1 charge to cast fog cloud."
-        },
-        {
-          "id": "ice-storm", "name": "Ice Storm",
-          "charge_cost": 4, "cast_level": 4,
-          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 4 charges to cast ice storm (save DC 17)."
-        },
-        {
-          "id": "wall-of-ice", "name": "Wall of Ice",
-          "charge_cost": 4, "cast_level": 4,
-          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 4 charges to cast wall of ice (save DC 17)."
+          "type": "note",
+          "summary": "Starter magic item metadata."
         }
       ],
-      "effect": "Has 10 charges. Resistance to cold damage while attuned. Can cast cone of cold (5 charges), fog cloud (1 charge), ice storm (4 charges), or wall of ice (4 charges), most with save DC 17. Regains 1d6+4 charges at dawn."
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "quarterstaff-plus1-action",
+          "name": "Quarterstaff +1",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 16,
+      "item_spell_attack_bonus": 8,
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "attack_bonus": 1,
+      "damage_bonus": 1,
+      "magic_bonus": 1,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 1
+      }
     },
     {
-      "id": "staff-of-power", "name": "Staff of Power", "item_schema_version": 2,
-      "category": "staff", "subtype": "staff", "rarity": "very_rare",
-      "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
-      "attack_bonus": 2, "damage_bonus": 2,
-      "charges_max": 20, "charges_current": 20, "recharge_type": "dawn", "recharge_formula": "2d8+4",
-      "item_spell_attack_bonus": 9, "item_spell_save_dc": 17,
+      "id": "quarterstaff-plus2",
+      "name": "Quarterstaff +2",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "staff",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "dawn",
       "passive_effects": [
-        {"type": "ac_bonus", "value": 2, "summary": "+2 bonus to AC while attuned."},
-        {"type": "save_bonus", "value": 2, "summary": "+2 bonus to saving throws while attuned."}
-      ],
-      "granted_spells": [
         {
-          "id": "cone-of-cold", "name": "Cone of Cold",
-          "charge_cost": 5, "cast_level": 5,
-          "uses_item_dc": true, "uses_item_attack_bonus": true, "consume_spell_slot": false,
-          "description": "Expend 5 charges to cast cone of cold (save DC 17)."
-        },
-        {
-          "id": "fireball", "name": "Fireball",
-          "charge_cost": 5, "cast_level": 5,
-          "uses_item_dc": true, "uses_item_attack_bonus": true, "consume_spell_slot": false,
-          "description": "Expend 5 charges to cast fireball at 5th level (save DC 17)."
-        },
-        {
-          "id": "globe-of-invulnerability", "name": "Globe of Invulnerability",
-          "charge_cost": 6, "cast_level": 6,
-          "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 6 charges to cast globe of invulnerability."
-        },
-        {
-          "id": "hold-monster", "name": "Hold Monster",
-          "charge_cost": 5, "cast_level": 5,
-          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 5 charges to cast hold monster (save DC 17)."
-        },
-        {
-          "id": "levitate", "name": "Levitate",
-          "charge_cost": 2, "cast_level": 2,
-          "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 2 charges to cast levitate."
-        },
-        {
-          "id": "lightning-bolt", "name": "Lightning Bolt",
-          "charge_cost": 5, "cast_level": 5,
-          "uses_item_dc": true, "uses_item_attack_bonus": true, "consume_spell_slot": false,
-          "description": "Expend 5 charges to cast lightning bolt at 5th level (save DC 17)."
-        },
-        {
-          "id": "magic-missile", "name": "Magic Missile",
-          "charge_cost": 1, "cast_level": 1,
-          "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 1 charge to cast magic missile."
-        },
-        {
-          "id": "ray-of-enfeeblement", "name": "Ray of Enfeeblement",
-          "charge_cost": 1, "cast_level": 2,
-          "uses_item_dc": false, "uses_item_attack_bonus": true, "consume_spell_slot": false,
-          "description": "Expend 1 charge to cast ray of enfeeblement (+9 to hit)."
-        },
-        {
-          "id": "wall-of-force", "name": "Wall of Force",
-          "charge_cost": 5, "cast_level": 5,
-          "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 5 charges to cast wall of force."
+          "type": "note",
+          "summary": "Starter magic item metadata."
         }
       ],
-      "effect": "Has 20 charges. +2 to attack and damage rolls. +2 bonus to AC and saving throws. Can cast multiple spells with DC 17 or +9 spell attack. Regains 2d8+4 charges at dawn."
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "quarterstaff-plus2-action",
+          "name": "Quarterstaff +2",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 17,
+      "item_spell_attack_bonus": 9,
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "attack_bonus": 2,
+      "damage_bonus": 2,
+      "magic_bonus": 2,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 2
+      }
     },
     {
-      "id": "staff-of-the-magi", "name": "Staff of the Magi", "item_schema_version": 2,
-      "category": "staff", "subtype": "staff", "rarity": "legendary",
-      "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
-      "attack_bonus": 2, "damage_bonus": 2,
-      "charges_max": 50, "charges_current": 50, "recharge_type": "dawn", "recharge_formula": "4d6+2",
-      "item_spell_attack_bonus": 10, "item_spell_save_dc": 18,
+      "id": "quarterstaff-plus3",
+      "name": "Quarterstaff +3",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "staff",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "dawn",
       "passive_effects": [
-        {"type": "note", "summary": "Absorb spells targeting only you, gaining charges equal to spell level."},
-        {"type": "note", "summary": "+2 bonus to spell attack rolls (included in item_spell_attack_bonus)."}
-      ],
-      "granted_spells": [
         {
-          "id": "conjure-elemental", "name": "Conjure Elemental",
-          "charge_cost": 7, "cast_level": 5, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 7 charges to cast conjure elemental."
-        },
-        {
-          "id": "dispel-magic", "name": "Dispel Magic",
-          "charge_cost": 3, "cast_level": 3, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 3 charges to cast dispel magic."
-        },
-        {
-          "id": "fireball", "name": "Fireball",
-          "charge_cost": 7, "cast_level": 7, "uses_item_dc": true, "uses_item_attack_bonus": true, "consume_spell_slot": false,
-          "description": "Expend 7 charges to cast fireball at 7th level (save DC 18)."
-        },
-        {
-          "id": "flaming-sphere", "name": "Flaming Sphere",
-          "charge_cost": 2, "cast_level": 2, "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 2 charges to cast flaming sphere (save DC 18)."
-        },
-        {
-          "id": "ice-storm", "name": "Ice Storm",
-          "charge_cost": 4, "cast_level": 4, "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 4 charges to cast ice storm (save DC 18)."
-        },
-        {
-          "id": "invisibility", "name": "Invisibility",
-          "charge_cost": 2, "cast_level": 2, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 2 charges to cast invisibility."
-        },
-        {
-          "id": "knock", "name": "Knock",
-          "charge_cost": 2, "cast_level": 2, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 2 charges to cast knock."
-        },
-        {
-          "id": "lightning-bolt", "name": "Lightning Bolt",
-          "charge_cost": 7, "cast_level": 7, "uses_item_dc": true, "uses_item_attack_bonus": true, "consume_spell_slot": false,
-          "description": "Expend 7 charges to cast lightning bolt at 7th level (save DC 18)."
-        },
-        {
-          "id": "passwall", "name": "Passwall",
-          "charge_cost": 5, "cast_level": 5, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 5 charges to cast passwall."
-        },
-        {
-          "id": "plane-shift", "name": "Plane Shift",
-          "charge_cost": 7, "cast_level": 7, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 7 charges to cast plane shift."
-        },
-        {
-          "id": "telekinesis", "name": "Telekinesis",
-          "charge_cost": 5, "cast_level": 5, "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 5 charges to cast telekinesis (save DC 18)."
-        },
-        {
-          "id": "wall-of-fire", "name": "Wall of Fire",
-          "charge_cost": 4, "cast_level": 4, "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 4 charges to cast wall of fire (save DC 18)."
-        },
-        {
-          "id": "web", "name": "Web",
-          "charge_cost": 2, "cast_level": 2, "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 2 charges to cast web (save DC 18)."
+          "type": "note",
+          "summary": "Starter magic item metadata."
         }
       ],
-      "effect": "Has 50 charges. Legendary staff granting +2 to spell attack rolls, save DC 18, and a wide selection of powerful spells. Absorbs spells targeted at you. Regains 4d6+2 charges at dawn."
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "quarterstaff-plus3-action",
+          "name": "Quarterstaff +3",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 18,
+      "item_spell_attack_bonus": 10,
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "attack_bonus": 3,
+      "damage_bonus": 3,
+      "magic_bonus": 3,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 3
+      }
     },
     {
-      "id": "staff-of-healing", "name": "Staff of Healing", "item_schema_version": 2,
-      "category": "staff", "subtype": "staff", "rarity": "rare",
-      "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
-      "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 10, "charges_current": 10, "recharge_type": "dawn", "recharge_formula": "1d6+4",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 14,
-      "passive_effects": [],
-      "granted_spells": [
+      "id": "staff-of-healing",
+      "name": "Staff of Healing",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "staff",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 10,
+      "recharge_type": "dawn",
+      "passive_effects": [
         {
-          "id": "cure-wounds", "name": "Cure Wounds",
-          "charge_cost": 1, "cast_level": 1, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 1–4 charges to cast cure wounds at 1st–4th level."
-        },
-        {
-          "id": "lesser-restoration", "name": "Lesser Restoration",
-          "charge_cost": 2, "cast_level": 2, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 2 charges to cast lesser restoration."
-        },
-        {
-          "id": "mass-cure-wounds", "name": "Mass Cure Wounds",
-          "charge_cost": 5, "cast_level": 5, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Expend 5 charges to cast mass cure wounds."
+          "type": "note",
+          "summary": "Starter magic item metadata."
         }
       ],
-      "effect": "Has 10 charges. Can cast cure wounds (1–4 charges), lesser restoration (2 charges), or mass cure wounds (5 charges). Regains 1d6+4 charges at dawn."
+      "granted_spells": [
+        {
+          "id": "cure-wounds",
+          "name": "Cure Wounds",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "staff-of-healing-action",
+          "name": "Staff of Healing",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 10,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7,
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "staff-of-fire",
+      "name": "Staff of Fire",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "staff",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 10,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [
+        {
+          "id": "fireball",
+          "name": "Fireball",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        },
+        {
+          "id": "wall-of-fire",
+          "name": "Wall Of Fire",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "staff-of-fire-action",
+          "name": "Staff of Fire",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 10,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7,
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "staff-of-frost",
+      "name": "Staff of Frost",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "staff",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 10,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [
+        {
+          "id": "ice-storm",
+          "name": "Ice Storm",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        },
+        {
+          "id": "cone-of-cold",
+          "name": "Cone Of Cold",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "staff-of-frost-action",
+          "name": "Staff of Frost",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 10,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7,
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "staff-of-power",
+      "name": "Staff of Power",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "staff",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 10,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "staff-of-power-action",
+          "name": "Staff of Power",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 10,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7,
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "staff-of-striking",
+      "name": "Staff of Striking",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "staff",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 10,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "staff-of-striking-action",
+          "name": "Staff of Striking",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 10,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7,
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "staff-of-thunder-and-lightning",
+      "name": "Staff of Thunder and Lightning",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "staff",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 10,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [
+        {
+          "id": "thunderwave",
+          "name": "Thunderwave",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        },
+        {
+          "id": "lightning-bolt",
+          "name": "Lightning Bolt",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "staff-of-thunder-and-lightning-action",
+          "name": "Staff of Thunder and Lightning",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 10,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7,
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "staff-of-the-woodlands",
+      "name": "Staff of the Woodlands",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "staff",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 10,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [
+        {
+          "id": "pass-without-trace",
+          "name": "Pass Without Trace",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "staff-of-the-woodlands-action",
+          "name": "Staff of the Woodlands",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 10,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7,
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "staff-of-withering",
+      "name": "Staff of Withering",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "staff",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 10,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "staff-of-withering-action",
+          "name": "Staff of Withering",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 10,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7,
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "thunder-mage-quarterstaff-plus-3",
+      "name": "Thunder Mage Quarterstaff, +3",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "quarterstaff",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 10,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [
+        {
+          "id": "thunderwave",
+          "name": "Thunderwave",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        },
+        {
+          "id": "shatter",
+          "name": "Shatter",
+          "charge_cost": 2,
+          "cast_level": 2,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        },
+        {
+          "id": "call-lightning",
+          "name": "Call Lightning",
+          "charge_cost": 3,
+          "cast_level": 3,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        },
+        {
+          "id": "lightning-bolt",
+          "name": "Lightning Bolt",
+          "charge_cost": 3,
+          "cast_level": 3,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        },
+        {
+          "id": "thunder-step",
+          "name": "Thunder Step",
+          "charge_cost": 3,
+          "cast_level": 3,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "thunder-mage-quarterstaff-plus3-action",
+          "name": "Thunder Mage Quarterstaff, +3",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 10,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 18,
+      "item_spell_attack_bonus": 10,
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "attack_bonus": 3,
+      "damage_bonus": 3,
+      "magic_bonus": 3,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 3
+      },
+      "versatile_damage": "1d8"
     }
   ]
 }

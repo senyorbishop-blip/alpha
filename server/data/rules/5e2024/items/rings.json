@@ -3,109 +3,610 @@
   "item_schema_version": 2,
   "items": [
     {
-      "id": "ring-of-protection", "name": "Ring of Protection", "item_schema_version": 2,
-      "category": "ring", "subtype": "ring", "rarity": "rare",
-      "requires_attunement": true, "equippable": true, "equip_slot": "ring",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "id": "ring-of-protection",
+      "name": "Ring of Protection",
+      "item_schema_version": 2,
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
       "passive_effects": [
-        {"type": "ac_bonus", "value": 1, "summary": "+1 bonus to AC while attuned."},
-        {"type": "save_bonus", "value": 1, "summary": "+1 bonus to saving throws while attuned."}
-      ],
-      "granted_spells": [],
-      "effect": "You gain a +1 bonus to AC and saving throws while wearing this ring."
-    },
-    {
-      "id": "ring-of-spell-storing", "name": "Ring of Spell Storing", "item_schema_version": 2,
-      "category": "ring", "subtype": "ring", "rarity": "rare",
-      "requires_attunement": true, "equippable": true, "equip_slot": "ring",
-      "charges_max": 5, "charges_current": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
-      "passive_effects": [
-        {"type": "note", "summary": "Stores up to 5 levels of spells. Cast stored spells using their original spell attack bonus and save DC."}
-      ],
-      "granted_spells": [],
-      "effect": "This ring stores spells cast into it, holding up to 5 spell levels at a time. Any creature can cast a spell of 1st–5th level into the ring; the spell has no effect. When worn, you can cast any spell stored in it."
-    },
-    {
-      "id": "ring-of-fire-resistance", "name": "Ring of Fire Resistance", "item_schema_version": 2,
-      "category": "ring", "subtype": "ring", "rarity": "rare",
-      "requires_attunement": true, "equippable": true, "equip_slot": "ring",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
-      "passive_effects": [
-        {"type": "resistance", "damage_type": "fire", "summary": "Resistance to fire damage while attuned."}
-      ],
-      "granted_spells": [],
-      "effect": "You have resistance to fire damage while wearing this ring."
-    },
-    {
-      "id": "ring-of-feather-falling", "name": "Ring of Feather Falling", "item_schema_version": 2,
-      "category": "ring", "subtype": "ring", "rarity": "rare",
-      "requires_attunement": true, "equippable": true, "equip_slot": "ring",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
-      "passive_effects": [
-        {"type": "note", "summary": "Fall at 60 ft per round when you fall. Take no falling damage. Land safely."}
-      ],
-      "granted_spells": [],
-      "effect": "When you fall while wearing this ring, you descend 60 ft per round and take no damage from falling."
-    },
-    {
-      "id": "ring-of-invisibility", "name": "Ring of Invisibility", "item_schema_version": 2,
-      "category": "ring", "subtype": "ring", "rarity": "legendary",
-      "requires_attunement": true, "equippable": true, "equip_slot": "ring",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
-      "passive_effects": [],
-      "granted_spells": [
         {
-          "id": "invisibility", "name": "Invisibility",
-          "charge_cost": 0, "cast_level": 2, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Turn invisible as an action. Ends if you attack or cast a spell."
+          "type": "note",
+          "summary": "Starter magic item metadata."
         }
       ],
-      "effect": "While wearing this ring, you can turn invisible as an action. Invisibility ends if you attack, deal damage, or cast a spell."
-    },
-    {
-      "id": "ring-of-telekinesis", "name": "Ring of Telekinesis", "item_schema_version": 2,
-      "category": "ring", "subtype": "ring", "rarity": "very_rare",
-      "requires_attunement": true, "equippable": true, "equip_slot": "ring",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
-      "passive_effects": [],
-      "granted_spells": [
+      "granted_spells": [],
+      "granted_actions": [
         {
-          "id": "telekinesis", "name": "Telekinesis",
-          "charge_cost": 0, "cast_level": 5, "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
-          "description": "Cast telekinesis at will (your spellcasting save DC). No charges required."
+          "id": "ring-of-protection-action",
+          "name": "Ring of Protection",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
         }
       ],
-      "effect": "While wearing this ring, you can cast the telekinesis spell at will using your spellcasting save DC."
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
     },
     {
-      "id": "ring-of-regeneration", "name": "Ring of Regeneration", "item_schema_version": 2,
-      "category": "ring", "subtype": "ring", "rarity": "very_rare",
-      "requires_attunement": true, "equippable": true, "equip_slot": "ring",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "id": "ring-of-resistance",
+      "name": "Ring of Resistance",
+      "item_schema_version": 2,
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
       "passive_effects": [
-        {"type": "note", "summary": "Regain 1d6 HP every 10 minutes. Regrow lost limbs in 1d6+1 days."}
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
       ],
       "granted_spells": [],
-      "effect": "While wearing this ring, you regain 1d6 hit points every 10 minutes, provided you have at least 1 hit point. Also regrows lost body parts over 1d6+1 days."
+      "granted_actions": [
+        {
+          "id": "ring-of-resistance-action",
+          "name": "Ring of Resistance",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
     },
     {
-      "id": "ring-of-wizardry-i", "name": "Ring of Wizardry, I", "item_schema_version": 2,
-      "category": "ring", "subtype": "ring", "rarity": "uncommon",
-      "requires_attunement": true, "equippable": true, "equip_slot": "ring",
-      "charges_max": 0, "recharge_type": "none",
-      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "id": "ring-of-free-action",
+      "name": "Ring of Free Action",
+      "item_schema_version": 2,
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
       "passive_effects": [
-        {"type": "note", "summary": "Double the number of 1st-level spell slots you have."}
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
       ],
       "granted_spells": [],
-      "effect": "While wearing this ring, you double your total number of 1st-level spell slots."
+      "granted_actions": [
+        {
+          "id": "ring-of-free-action-action",
+          "name": "Ring of Free Action",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "ring-of-feather-falling",
+      "name": "Ring of Feather Falling",
+      "item_schema_version": 2,
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "ring-of-feather-falling-action",
+          "name": "Ring of Feather Falling",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "ring-of-invisibility",
+      "name": "Ring of Invisibility",
+      "item_schema_version": 2,
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 3,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [
+        {
+          "id": "invisibility",
+          "name": "Invisibility",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "ring-of-invisibility-action",
+          "name": "Ring of Invisibility",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 3,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "ring-of-jumping",
+      "name": "Ring of Jumping",
+      "item_schema_version": 2,
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 3,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [
+        {
+          "id": "jump",
+          "name": "Jump",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "ring-of-jumping-action",
+          "name": "Ring of Jumping",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 3,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "ring-of-mind-shielding",
+      "name": "Ring of Mind Shielding",
+      "item_schema_version": 2,
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "ring-of-mind-shielding-action",
+          "name": "Ring of Mind Shielding",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "ring-of-regeneration",
+      "name": "Ring of Regeneration",
+      "item_schema_version": 2,
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "ring-of-regeneration-action",
+          "name": "Ring of Regeneration",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "ring-of-spell-storing",
+      "name": "Ring of Spell Storing",
+      "item_schema_version": 2,
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 3,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "ring-of-spell-storing-action",
+          "name": "Ring of Spell Storing",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 3,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "ring-of-swimming",
+      "name": "Ring of Swimming",
+      "item_schema_version": 2,
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "ring-of-swimming-action",
+          "name": "Ring of Swimming",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "ring-of-telekinesis",
+      "name": "Ring of Telekinesis",
+      "item_schema_version": 2,
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 3,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [
+        {
+          "id": "telekinesis",
+          "name": "Telekinesis",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "ring-of-telekinesis-action",
+          "name": "Ring of Telekinesis",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 3,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "ring-of-three-wishes",
+      "name": "Ring of Three Wishes",
+      "item_schema_version": 2,
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 3,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [
+        {
+          "id": "wish",
+          "name": "Wish",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": true
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "ring-of-three-wishes-action",
+          "name": "Ring of Three Wishes",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 3,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "ring-of-warmth",
+      "name": "Ring of Warmth",
+      "item_schema_version": 2,
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "ring-of-warmth-action",
+          "name": "Ring of Warmth",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "ring-of-water-walking",
+      "name": "Ring of Water Walking",
+      "item_schema_version": 2,
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "ring-of-water-walking-action",
+          "name": "Ring of Water Walking",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
+    },
+    {
+      "id": "ring-of-x-ray-vision",
+      "name": "Ring of X-Ray Vision",
+      "item_schema_version": 2,
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "wondrous",
+      "charges_max": 3,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "ring-of-x-ray-vision-action",
+          "name": "Ring of X-Ray Vision",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "starter_compendium",
+      "charges_current": 3,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7
     }
   ]
 }
