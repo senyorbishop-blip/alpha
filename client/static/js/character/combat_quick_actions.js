@@ -7,6 +7,10 @@
 (function initCombatQuickActions(global) {
   'use strict';
 
+  // Holds the spell currently open in the modal so refreshSpellModalDamage can
+  // always find it even when the ID-based lookup fails (e.g. ID format mismatch).
+  var _currentModalSpell = null;
+
   function _esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) {
       return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
@@ -82,10 +86,29 @@
   }
 
   function _spellDamagePreview(spell, castLevel) {
-    if (typeof global.getCombatSpellDamagePreview === 'function') return global.getCombatSpellDamagePreview(spell.id || spell.name, castLevel);
+    // Pass the full spell object so preview works even when the ID lookup fails.
+    if (typeof global.getCombatSpellDamagePreview === 'function') {
+      const result = global.getCombatSpellDamagePreview(spell, castLevel);
+      if (result) return result;
+    }
+    // Direct fallback via the shared spell runtime resolver.
+    if (typeof global.resolveSpellRuntime === 'function') {
+      try {
+        const card = spell.card || spell || {};
+        const rt = global.resolveSpellRuntime(
+          Object.assign({}, card, { id: spell.id || card.id, name: spell.name || card.name }),
+          { castLevel: castLevel }
+        );
+        const f = rt.finalHealingFormula || rt.finalDamageFormula || '';
+        if (f) return f;
+      } catch (_e) {}
+    }
     const card = spell.card || spell || {};
     const current = card.current || {};
-    return _firstText((card.cast_options || {})[String(castLevel)] && (card.cast_options || {})[String(castLevel)].formula, current.formula, card.damage_dice, card.damage, card.damage_formula, card.base_damage_formula, '');
+    return _firstText(
+      (card.cast_options || {})[String(castLevel)] && (card.cast_options || {})[String(castLevel)].formula,
+      current.formula, card.damage_dice, card.damage, card.damage_formula, card.base_damage_formula, ''
+    );
   }
 
   function _spellSaveText(card) {
@@ -100,8 +123,9 @@
   function _spellHasAttack(card) {
     // Check the structured attack_type field first (most reliable source).
     const attackType = String(card.attack_type || card.attackType || '').toLowerCase().trim();
-    // Any non-empty attack type that contains ranged/melee/attack but not a pure save notation.
-    if (attackType && /ranged|melee|attack/i.test(attackType)) return true;
+    // Require "ranged" or "melee" to distinguish attack-roll spells from save spells.
+    // A bare "spell" or "spell_save" value must NOT show Roll Attack.
+    if (attackType && /ranged|melee/i.test(attackType) && !/save|saving/i.test(attackType)) return true;
     // Use the shared runtime resolver when available for maximum accuracy.
     if (typeof global.resolveSpellRuntime === 'function') {
       try { const rt = global.resolveSpellRuntime(card, {}); if (rt.requiresAttackRoll) return true; } catch (_e) {}
@@ -136,7 +160,8 @@
   function refreshSpellModalDamage() {
     const overlay = document.getElementById('combat-quick-action-modal');
     if (!overlay) return;
-    const spell = _findSpell(overlay.getAttribute('data-cqa-spell-id'));
+    // Prefer the stored module-level reference; fall back to ID lookup.
+    const spell = _currentModalSpell || _findSpell(overlay.getAttribute('data-cqa-spell-id'));
     if (!spell) return;
     const castLevel = _selectedCastLevel(spell);
     const detailHost = overlay.querySelector('[data-cqa-spell-details]');
@@ -150,6 +175,7 @@
   }
 
   function closeModal() {
+    _currentModalSpell = null;
     const existing = document.getElementById('combat-quick-action-modal');
     if (existing) existing.remove();
   }
@@ -189,6 +215,7 @@
     if (!spell) return false;
     _installStyles();
     closeModal();
+    _currentModalSpell = spell;
     const card = spell.card || spell || {};
 
     // Resolve base level — if the stored level appears wrong (0/cantrip) but
@@ -240,7 +267,7 @@
     }
     overlay.innerHTML = '<div class="cqa-panel" role="dialog" aria-modal="true" aria-label="Quick spell action">'
       + '<div class="cqa-head"><div><div class="cqa-kicker">Quick Spell</div><div class="cqa-title">' + _esc(spell.name || 'Spell') + '</div><div class="cqa-sub">' + _esc([resolvedLevelLabel, schoolLabel].filter(Boolean).join(' • ')) + '</div></div><button class="cqa-close" type="button" data-cqa-close>×</button></div>'
-      + (showLevelPicker ? '<label class="cqa-kicker" for="combat-quick-spell-level">Cast Level / Slot</label><select id="combat-quick-spell-level" class="cqa-select" onchange="window.CombatQuickActions.refreshSpellModalDamage()">' + options.map(function (opt) { return '<option value="' + _esc(opt.value) + '" ' + (String(opt.value) === String(selected) ? 'selected' : '') + ' ' + (opt.disabled ? 'disabled' : '') + '>' + _esc(opt.label || 'Cast') + '</option>'; }).join('') + '</select>' : '')
+      + (showLevelPicker ? '<label class="cqa-kicker" for="combat-quick-spell-level">Cast Level / Slot</label><select id="combat-quick-spell-level" class="cqa-select">' + options.map(function (opt) { return '<option value="' + _esc(opt.value) + '" ' + (String(opt.value) === String(selected) ? 'selected' : '') + ' ' + (opt.disabled ? 'disabled' : '') + '>' + _esc(opt.label || 'Cast') + '</option>'; }).join('') + '</select>' : '')
       + '<div class="cqa-meta" data-cqa-spell-details>' + _spellDetailsHtml(spell, selected) + '</div>'
       + (levelScalingHtml ? levelScalingHtml : '')
       + '<div class="cqa-desc">' + _esc(fullText) + '</div>'
@@ -251,6 +278,9 @@
       + (hasSave ? '<button class="cqa-btn save" type="button" data-cqa-spell-save>Show Save DC</button>' : '')
       + '<button class="cqa-btn" type="button" data-cqa-inspect>Open Full Spell</button></div></div>';
     overlay.addEventListener('click', function (ev) {
+      // Never let clicks on the select or its options close the modal.
+      var tag = ev.target && ev.target.tagName ? ev.target.tagName.toUpperCase() : '';
+      if (tag === 'SELECT' || tag === 'OPTION') { ev.stopPropagation(); return; }
       if (ev.target === overlay || ev.target.closest('[data-cqa-close]')) { ev.preventDefault(); ev.stopPropagation(); closeModal(); return; }
       const castLevel = _selectedCastLevel(spell);
       const spellKey = spell.id || spell.name;
@@ -261,6 +291,18 @@
       if (ev.target.closest('[data-cqa-inspect]') && typeof global.playerInspectSpell === 'function') global.playerInspectSpell(spell.id || spell.name);
     });
     document.body.appendChild(overlay);
+    // Wire the level select via a proper event listener (not onchange attribute)
+    // so it cannot be clobbered by HTML serialisation and stopPropagation works.
+    var levelSelect = document.getElementById('combat-quick-spell-level');
+    if (levelSelect) {
+      levelSelect.addEventListener('change', function (ev) {
+        ev.stopPropagation();
+        refreshSpellModalDamage();
+      });
+      levelSelect.addEventListener('click', function (ev) {
+        ev.stopPropagation(); // Prevent native select open/close from reaching overlay
+      });
+    }
     var panel = overlay.querySelector('.cqa-panel');
     if (panel) { _applySavedPanelSize(panel); _watchPanelResize(panel); }
     return true;
