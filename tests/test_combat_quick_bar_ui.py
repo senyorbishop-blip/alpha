@@ -134,3 +134,21 @@ def test_combat_quick_spell_level_missing_data_is_unknown_not_cantrip():
     assert "spellLevel === null ? 'Unknown spell level'" in play
     assert "console.warn('[CombatQuickActions] Spell metadata missing; showing safe fallback.'" in play
     assert 'level_unknown: true' in play
+
+
+def test_combat_quick_bar_resizes_downward_and_persists_height():
+    src = _read('client/static/js/character/combat_quick_bar.js')
+    assert 'convert the default bottom anchor' in src
+    assert "root.style.top = Math.max" in src
+    assert "root.style.height = Math.max(140, Math.min(global.innerHeight * 0.85" in src
+    assert "root.style.maxHeight = Math.max(120" not in src
+
+
+def test_quick_spell_and_weapon_damage_have_fallbacks_for_roll_buttons():
+    play = _read('client/templates/play.html')
+    assert 'function _combatQuickFallbackSpellDamage(name, slotLevel)' in play
+    assert "'fireball': { level: 3, formula: '8d6'" in play
+    assert "dmgExpr = _combatQuickFallbackSpellDamage" in play
+    assert "const _cardHasDamage = (card) => !!String(card?.damage_formula || card?.base_damage_formula || card?.damage || '').trim();" in play
+    assert "if (!_cardHasDamage(combined[existingIdx]) && _cardHasDamage(card))" in play
+    assert "Equip it from inventory or add damage dice in the item library" in play

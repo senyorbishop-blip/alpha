@@ -43817,8 +43817,8 @@ function _getInventoryAttackModeMeta(card, mode = 'base') {
     ? 'versatile'
     : ((wanted === 'thrown' && card?.can_throw) ? 'thrown' : 'base');
   const formula = selectedMode === 'versatile'
-    ? String(card?.versatile_damage_formula || card?.damage_formula || '').trim()
-    : String(card?.damage_formula || '').trim();
+    ? String(card?.versatile_damage_formula || card?.damage_formula || card?.base_damage_formula || card?.damage || '').trim()
+    : String(card?.damage_formula || card?.base_damage_formula || card?.damage || '').trim();
   const bits = [];
   if (selectedMode === 'versatile') bits.push('two-handed versatile');
   if (selectedMode === 'thrown') bits.push('thrown attack');
@@ -44075,13 +44075,19 @@ function _collectEquippedWeaponActionMeta() {
 }
 
 function _getUnifiedQuickAttackCards() {
-  const seen = new Set();
+  const seen = new Map();
   const combined = [];
+  const _cardHasDamage = (card) => !!String(card?.damage_formula || card?.base_damage_formula || card?.damage || '').trim();
   const push = (card) => {
     if (!card || typeof card !== 'object') return;
     const key = String(card.name || card.id || '').trim().toLowerCase();
-    if (!key || seen.has(key)) return;
-    seen.add(key);
+    if (!key) return;
+    const existingIdx = seen.get(key);
+    if (existingIdx !== undefined) {
+      if (!_cardHasDamage(combined[existingIdx]) && _cardHasDamage(card)) combined[existingIdx] = { ...combined[existingIdx], ...card };
+      return;
+    }
+    seen.set(key, combined.length);
     combined.push(card);
   };
   const parsed = Array.isArray(_rulesAttackCards) && _rulesAttackCards.length
@@ -46269,6 +46275,30 @@ function _combatQuickSpellCastLevelLabel(slotLevel) {
   return n <= 0 ? 'Cantrip' : `${ordinals[n] || `${n}th`}-level`;
 }
 
+function _combatQuickFallbackSpellDamage(name, slotLevel) {
+  const key = String(name || '').trim().toLowerCase();
+  const fallbacks = {
+    'fireball': { level: 3, formula: '8d6', type: 'fire', save: 'DEX', upcast: '1d6' },
+    'lightning bolt': { level: 3, formula: '8d6', type: 'lightning', save: 'DEX', upcast: '1d6' },
+    'thunderwave': { level: 1, formula: '2d8', type: 'thunder', save: 'CON', upcast: '1d8' },
+    'burning hands': { level: 1, formula: '3d6', type: 'fire', save: 'DEX', upcast: '1d6' },
+    'scorching ray': { level: 2, formula: '2d6', type: 'fire', attack: 'ranged_spell_attack' },
+    'magic missile': { level: 1, formula: '1d4+1', type: 'force', upcast: '1d4+1' },
+    'cure wounds': { level: 1, formula: '1d8', type: 'healing', upcast: '1d8' },
+    'healing word': { level: 1, formula: '1d4', type: 'healing', upcast: '1d4' },
+  };
+  const data = fallbacks[key];
+  if (!data) return '';
+  let formula = data.formula;
+  const castLevel = Math.max(0, parseInt(slotLevel, 10) || 0);
+  if (data.upcast && castLevel > data.level) {
+    const base = String(formula).match(/^(\d+)d(\d+)(.*)$/i);
+    const up = String(data.upcast).match(/^(\d+)d(\d+)(.*)$/i);
+    if (base && up && base[2] === up[2] && (base[3] || '') === (up[3] || '')) formula = `${parseInt(base[1], 10) + ((castLevel - data.level) * parseInt(up[1], 10))}d${base[2]}${base[3] || ''}`;
+  }
+  return formula;
+}
+
 function _getCombatSpellDamageExpression(spell, slotLevel) {
   const card = spell?.card || spell || {};
   const baseLevel = _combatQuickSpellBaseLevel(spell);
@@ -46302,6 +46332,7 @@ function _getCombatSpellDamageExpression(spell, slotLevel) {
       }
     }
   }
+  if (!String(dmgExpr || '').trim()) dmgExpr = _combatQuickFallbackSpellDamage(spell?.name || card?.name || spell?.id || card?.id, effectiveSlot);
   return String(dmgExpr || '').trim();
 }
 
@@ -46361,7 +46392,7 @@ function combatQuickRollWeaponDamage(attackId, mode = 'base', critical = false) 
     || (cards || []).find(c => String(c.name || '').trim().toLowerCase() === normalizedId);
   if (!card) { showToast('Attack not found.'); return null; }
   const damageMeta = _getInventoryAttackModeMeta(card, mode);
-  if (!damageMeta.formula) { showToast(`${card.name || 'Weapon'} has no damage formula.`); return null; }
+  if (!damageMeta.formula) { showToast(`${card.name || 'Weapon'} has no damage formula. Equip it from inventory or add damage dice in the item library.`); return null; }
   const normFormula = typeof _normalizeAttackFormula === 'function' ? _normalizeAttackFormula(damageMeta.formula) : damageMeta.formula;
   const chunks = typeof _expandSpellFormulaChunks === 'function' ? _expandSpellFormulaChunks(normFormula) : [];
   if (!chunks.length) return null;

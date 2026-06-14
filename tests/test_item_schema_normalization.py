@@ -108,3 +108,14 @@ def test_to_inventory_entry_exposes_image_pipeline_fields():
     assert entry["subtype_icon_key"] == "sword_basic"
     assert entry["named_item_flag"] is True
     assert entry["legendary_flag"] is True
+
+
+def test_magic_item_library_has_broader_legendary_coverage_and_filled_effects():
+    from server.rules_db import _SRD_MAGIC_ITEMS
+    legendary = [item for item in _SRD_MAGIC_ITEMS if str(item.get('rarity', '')).lower() == 'legendary']
+    assert len(legendary) >= 20
+    for item in legendary:
+      assert item.get('name')
+      assert item.get('description')
+      assert item.get('effect')
+      assert item.get('unidentified_description')
