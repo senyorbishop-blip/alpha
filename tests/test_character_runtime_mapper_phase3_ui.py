@@ -521,3 +521,16 @@ def test_combat_quick_spell_normalizer_reads_runtime_roll_config_aliases():
     assert 'row.rollConfig?.attackType' in src
     assert 'row.rollConfig?.saveType' in src
     assert 'row.higherLevelFormula' in src
+
+
+def test_play_html_spell_upcast_damage_roll_uses_all_scaled_dice():
+    src = _read("client/templates/play.html")
+    assert "const formulaChunks = typeof _expandSpellFormulaChunks === 'function' ? _expandSpellFormulaChunks(cleaned) : [];" in src
+    assert "formulaChunks.reduce((sum, chunk) => sum + (Math.max(1, parseInt(chunk.qty, 10) || 1)), 0)" in src
+
+
+def test_play_html_weapon_damage_roll_accepts_inventory_damage_fields_and_slug_fallback():
+    src = _read("client/templates/play.html")
+    assert "card?.damage_formula || card?.base_damage_formula || card?.damage_dice || card?.damage" in src
+    assert "item.damage_dice || item.damage_formula || item.base_damage_formula || item.damage || item.versatile_damage" in src
+    assert "('attack-' + slug) === normalizedId" in src
