@@ -4,6 +4,44 @@ from typing import Any
 
 
 STAGE4B_AUTHORED_OVERRIDES: dict[str, dict[str, Any]] = {
+    'fireball': {
+        'savingThrow': 'DEX',
+        'damageType': 'fire',
+        'damageFormula': '8d6',
+        'school': 'Evocation',
+        'castingTime': '1 action',
+        'range': '150 feet',
+        'duration': 'Instantaneous',
+        'areaText': '20-foot radius sphere',
+        'effect': 'Explosive sphere of fire; Dexterity save for half',
+        'scalingNote': 'Each slot level above 3rd adds 1d6 fire damage.',
+        'scaling_type': 'slot_damage',
+        'scaling_data': {'base_slot': 3, 'base_formula': '8d6', 'per_slot_formula': '1d6'},
+        'description': (
+            'Choose a point within range and erupt it into a roaring sphere of flame. '
+            'Creatures in the blast make a Dexterity save. A failure takes full fire damage; '
+            'a success takes half.\n\n'
+            'Use this spell to clear clusters, punish enemies hiding behind cover edges, or '
+            'force concentration checks across a wide area.'
+        ),
+        'tags': ['damage', 'save', 'aoe', 'fire'],
+    },
+    'absorb-elements': {
+        'damageType': 'elemental',
+        'damageFormula': '1d6',
+        'castingTime': '1 reaction',
+        'effect': 'Halve incoming elemental damage and add it to your next melee strike',
+        'scalingNote': 'Each slot level above 1st adds 1d6 elemental damage to the melee strike.',
+        'scaling_type': 'slot_damage',
+        'scaling_data': {'base_slot': 1, 'base_formula': '1d6', 'per_slot_formula': '1d6'},
+        'description': (
+            'Use your reaction when you take acid, cold, fire, lightning, or thunder damage. '
+            'You have resistance to the triggering damage type and the spell stores the energy in you until your next turn. '
+            'Your first melee attack on your next turn deals an extra 1d6 of that damage type per slot level used.\n\n'
+            'Absorb Elements is outstanding value: it halves a big hit AND delivers a revenge strike.'
+        ),
+        'tags': ['reaction', 'defense', 'elemental', 'damage'],
+    },
     'fire-bolt': {
         'attackType': 'Ranged Spell Attack',
         'damageType': 'fire',

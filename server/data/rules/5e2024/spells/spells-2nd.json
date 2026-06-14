@@ -383,13 +383,19 @@
         "Wizard"
       ],
       "description": "Flaming Sphere spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "fire",
+      "damageFormula": "2d6",
+      "scalingNote": "Each slot level above 2nd adds 1d6 fire damage.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "DEX",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 2,
+        "base_formula": "2d6",
+        "per_slot_formula": "1d6"
+      }
     },
     {
       "id": "gentle-repose",
@@ -669,13 +675,19 @@
         "Wizard"
       ],
       "description": "Moonbeam spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "radiant",
+      "damageFormula": "2d10",
+      "scalingNote": "Each slot level above 2nd adds 1d10 radiant damage.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "CON",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 2,
+        "base_formula": "2d10",
+        "per_slot_formula": "1d10"
+      }
     },
     {
       "id": "pass-without-trace",
@@ -723,11 +735,18 @@
       "description": "Prayer of Healing spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
       "damageType": null,
       "damageFormula": null,
-      "scalingNote": null,
+      "scalingNote": "Each slot level above 2nd adds 1d8 healing.",
       "attackType": null,
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "healingFormula": "2d8 + spellcasting modifier",
+      "scaling_type": "slot_healing",
+      "scaling_data": {
+        "base_slot": 2,
+        "base_formula": "2d8 + spellcasting modifier",
+        "per_slot_formula": "1d8"
+      }
     },
     {
       "id": "ray-of-enfeeblement",
@@ -773,13 +792,20 @@
         "Wizard"
       ],
       "description": "Scorching Ray spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
-      "attackType": null,
+      "damageType": "fire",
+      "damageFormula": "3 rays × 2d6",
+      "scalingNote": "Each slot level above 2nd adds one extra ray.",
+      "attackType": "Ranged Spell Attack",
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "extra_ray_per_slot",
+      "scaling_data": {
+        "base_slot": 2,
+        "base_rays": 3,
+        "per_slot": 1,
+        "ray_formula": "2d6"
+      }
     },
     {
       "id": "see-invisibility",
@@ -825,13 +851,19 @@
         "Wizard"
       ],
       "description": "Shatter spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "thunder",
+      "damageFormula": "3d8",
+      "scalingNote": "Each slot level above 2nd adds 1d8 thunder damage.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "CON",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 2,
+        "base_formula": "3d8",
+        "per_slot_formula": "1d8"
+      }
     },
     {
       "id": "silence",
@@ -903,13 +935,19 @@
         "Wizard"
       ],
       "description": "Spiritual Weapon spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
-      "attackType": null,
+      "damageType": "force",
+      "damageFormula": "1d8 + spellcasting modifier",
+      "scalingNote": "Each slot level above 2nd adds 1d8 force damage.",
+      "attackType": "Melee Spell Attack",
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 2,
+        "base_formula": "1d8 + spellcasting modifier",
+        "per_slot_formula": "1d8"
+      }
     },
     {
       "id": "suggestion",

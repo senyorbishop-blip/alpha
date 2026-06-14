@@ -679,6 +679,36 @@ def enrich_spell_row(raw: dict[str, Any]) -> dict[str, Any]:
     ]
     short_summary = ' • '.join([p for p in short_summary_parts if p])
 
+    # Derive structured scaling_type / scaling_data from authored or open-5e sources.
+    # Prefer override fields → then row fields → then infer from scalingNote text.
+    scaling_type = (
+        override.get('scaling_type')
+        or open_row.get('scaling_type')
+        or row.get('scaling_type')
+        or ''
+    )
+    scaling_data: dict[str, Any] = (
+        override.get('scaling_data')
+        or open_row.get('scaling_data')
+        or row.get('scaling_data')
+        or {}
+    )
+    if not scaling_type and scaling_note:
+        import re as _re
+        _dice = _re.search(r'\badds?\s+(\d+d\d+)', scaling_note, _re.IGNORECASE)
+        if not _dice:
+            _dice = _re.search(r'(\d+d\d+)\s+(?:per|for each)\s+slot\s+level', scaling_note, _re.IGNORECASE)
+        if _dice:
+            per = _dice.group(1)
+            base_for_scaling = damage_formula or healing_formula or ''
+            is_healing = bool(healing_formula)
+            scaling_type = 'slot_healing' if is_healing else 'slot_damage'
+            scaling_data = {
+                'base_slot': level,
+                'base_formula': base_for_scaling,
+                'per_slot_formula': per,
+            }
+
     row.update({
         'id': spell_id,
         'displayName': name,
@@ -697,6 +727,8 @@ def enrich_spell_row(raw: dict[str, Any]) -> dict[str, Any]:
         'attackType': attack_type or row.get('attackType'),
         'savingThrow': saving_throw or row.get('savingThrow'),
         'scalingNote': scaling_note,
+        'scaling_type': scaling_type or 'none',
+        'scaling_data': scaling_data,
         'effect': base_effect or row.get('effect') or '',
         'tags': list(dict.fromkeys([t for t in tags if t])),
         'shortPlayerSummary': short_summary,

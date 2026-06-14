@@ -19,13 +19,34 @@
         "Wizard"
       ],
       "description": "Acid Splash spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "acid",
+      "damageFormula": "1d6",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d6, 3d6, and 4d6.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "DEX",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d6"
+          },
+          {
+            "level": 5,
+            "formula": "2d6"
+          },
+          {
+            "level": 11,
+            "formula": "3d6"
+          },
+          {
+            "level": 17,
+            "formula": "4d6"
+          }
+        ]
+      }
     },
     {
       "id": "blade-ward",
@@ -97,13 +118,34 @@
         "Wizard"
       ],
       "description": "Chill Touch spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
-      "attackType": null,
+      "damageType": "necrotic",
+      "damageFormula": "1d8",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d8, 3d8, and 4d8.",
+      "attackType": "Ranged Spell Attack",
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d8"
+          },
+          {
+            "level": 5,
+            "formula": "2d8"
+          },
+          {
+            "level": 11,
+            "formula": "3d8"
+          },
+          {
+            "level": 17,
+            "formula": "4d8"
+          }
+        ]
+      }
     },
     {
       "id": "control-flames",
@@ -149,13 +191,34 @@
         "Wizard"
       ],
       "description": "Create Bonfire spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "fire",
+      "damageFormula": "1d8",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d8, 3d8, and 4d8.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "DEX",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d8"
+          },
+          {
+            "level": 5,
+            "formula": "2d8"
+          },
+          {
+            "level": 11,
+            "formula": "3d8"
+          },
+          {
+            "level": 17,
+            "formula": "4d8"
+          }
+        ]
+      }
     },
     {
       "id": "dancing-lights",
@@ -227,13 +290,34 @@
         "Wizard"
       ],
       "description": "Eldritch Blast spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
-      "attackType": null,
+      "damageType": "force",
+      "damageFormula": "1d10",
+      "scalingNote": "At character levels 5, 11, and 17 you create an additional beam (2, 3, or 4 beams total). Each deals 1d10 force damage.",
+      "attackType": "Ranged Spell Attack",
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d10"
+          },
+          {
+            "level": 5,
+            "formula": "2d10"
+          },
+          {
+            "level": 11,
+            "formula": "3d10"
+          },
+          {
+            "level": 17,
+            "formula": "4d10"
+          }
+        ]
+      }
     },
     {
       "id": "encode-thoughts",
@@ -277,11 +361,32 @@
       "description": "You hurl a mote of fire at a creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).",
       "damageType": "fire",
       "damageFormula": "1d10",
-      "scalingNote": "1d10 at 5th, 2d10 at 11th, 3d10 at 17th",
-      "attackType": "ranged-spell",
+      "scalingNote": "At character levels 5, 11, and 17 fire damage increases to 2d10, 3d10, and 4d10.",
+      "attackType": "Ranged Spell Attack",
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d10"
+          },
+          {
+            "level": 5,
+            "formula": "2d10"
+          },
+          {
+            "level": 11,
+            "formula": "3d10"
+          },
+          {
+            "level": 17,
+            "formula": "4d10"
+          }
+        ]
+      }
     },
     {
       "id": "friends",
@@ -327,13 +432,34 @@
         "Wizard"
       ],
       "description": "Frostbite spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "cold",
+      "damageFormula": "1d6",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d6, 3d6, and 4d6.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "CON",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d6"
+          },
+          {
+            "level": 5,
+            "formula": "2d6"
+          },
+          {
+            "level": 11,
+            "formula": "3d6"
+          },
+          {
+            "level": 17,
+            "formula": "4d6"
+          }
+        ]
+      }
     },
     {
       "id": "green-flame-blade",
@@ -457,13 +583,34 @@
         "Wizard"
       ],
       "description": "Infestation spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "poison",
+      "damageFormula": "1d6",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d6, 3d6, and 4d6.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "CON",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d6"
+          },
+          {
+            "level": 5,
+            "formula": "2d6"
+          },
+          {
+            "level": 11,
+            "formula": "3d6"
+          },
+          {
+            "level": 17,
+            "formula": "4d6"
+          }
+        ]
+      }
     },
     {
       "id": "light",
@@ -509,13 +656,34 @@
         "Wizard"
       ],
       "description": "Lightning Lure spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "lightning",
+      "damageFormula": "1d8",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d8, 3d8, and 4d8.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "STR",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d8"
+          },
+          {
+            "level": 5,
+            "formula": "2d8"
+          },
+          {
+            "level": 11,
+            "formula": "3d8"
+          },
+          {
+            "level": 17,
+            "formula": "4d8"
+          }
+        ]
+      }
     },
     {
       "id": "mage-hand",
@@ -639,13 +807,34 @@
         "Wizard"
       ],
       "description": "Mind Sliver spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "psychic",
+      "damageFormula": "1d6",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d6, 3d6, and 4d6.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "INT",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d6"
+          },
+          {
+            "level": 5,
+            "formula": "2d6"
+          },
+          {
+            "level": 11,
+            "formula": "3d6"
+          },
+          {
+            "level": 17,
+            "formula": "4d6"
+          }
+        ]
+      }
     },
     {
       "id": "minor-illusion",
@@ -717,13 +906,34 @@
         "Wizard"
       ],
       "description": "Poison Spray spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "poison",
+      "damageFormula": "1d12",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d12, 3d12, and 4d12.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "CON",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d12"
+          },
+          {
+            "level": 5,
+            "formula": "2d12"
+          },
+          {
+            "level": 11,
+            "formula": "3d12"
+          },
+          {
+            "level": 17,
+            "formula": "4d12"
+          }
+        ]
+      }
     },
     {
       "id": "prestidigitation",
@@ -769,13 +979,34 @@
         "Wizard"
       ],
       "description": "Primal Savagery spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
-      "attackType": null,
+      "damageType": "acid",
+      "damageFormula": "1d10",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d10, 3d10, and 4d10.",
+      "attackType": "Melee Spell Attack",
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d10"
+          },
+          {
+            "level": 5,
+            "formula": "2d10"
+          },
+          {
+            "level": 11,
+            "formula": "3d10"
+          },
+          {
+            "level": 17,
+            "formula": "4d10"
+          }
+        ]
+      }
     },
     {
       "id": "produce-flame",
@@ -795,13 +1026,34 @@
         "Wizard"
       ],
       "description": "Produce Flame spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
-      "attackType": null,
+      "damageType": "fire",
+      "damageFormula": "1d8",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d8, 3d8, and 4d8.",
+      "attackType": "Ranged Spell Attack",
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d8"
+          },
+          {
+            "level": 5,
+            "formula": "2d8"
+          },
+          {
+            "level": 11,
+            "formula": "3d8"
+          },
+          {
+            "level": 17,
+            "formula": "4d8"
+          }
+        ]
+      }
     },
     {
       "id": "ray-of-frost",
@@ -821,13 +1073,34 @@
         "Wizard"
       ],
       "description": "Ray of Frost spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
-      "attackType": null,
+      "damageType": "cold",
+      "damageFormula": "1d8",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d8, 3d8, and 4d8.",
+      "attackType": "Ranged Spell Attack",
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d8"
+          },
+          {
+            "level": 5,
+            "formula": "2d8"
+          },
+          {
+            "level": 11,
+            "formula": "3d8"
+          },
+          {
+            "level": 17,
+            "formula": "4d8"
+          }
+        ]
+      }
     },
     {
       "id": "resistance",
@@ -873,13 +1146,34 @@
         "Wizard"
       ],
       "description": "Sacred Flame spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "radiant",
+      "damageFormula": "1d8",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d8, 3d8, and 4d8.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "DEX",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d8"
+          },
+          {
+            "level": 5,
+            "formula": "2d8"
+          },
+          {
+            "level": 11,
+            "formula": "3d8"
+          },
+          {
+            "level": 17,
+            "formula": "4d8"
+          }
+        ]
+      }
     },
     {
       "id": "shape-water",
@@ -951,13 +1245,34 @@
         "Wizard"
       ],
       "description": "Shocking Grasp spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
-      "attackType": null,
+      "damageType": "lightning",
+      "damageFormula": "1d8",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d8, 3d8, and 4d8.",
+      "attackType": "Melee Spell Attack",
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d8"
+          },
+          {
+            "level": 5,
+            "formula": "2d8"
+          },
+          {
+            "level": 11,
+            "formula": "3d8"
+          },
+          {
+            "level": 17,
+            "formula": "4d8"
+          }
+        ]
+      }
     },
     {
       "id": "spare-the-dying",
@@ -1003,13 +1318,34 @@
         "Wizard"
       ],
       "description": "Sword Burst spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "force",
+      "damageFormula": "1d6",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d6, 3d6, and 4d6.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "DEX",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d6"
+          },
+          {
+            "level": 5,
+            "formula": "2d6"
+          },
+          {
+            "level": 11,
+            "formula": "3d6"
+          },
+          {
+            "level": 17,
+            "formula": "4d6"
+          }
+        ]
+      }
     },
     {
       "id": "thaumaturgy",
@@ -1055,13 +1391,34 @@
         "Wizard"
       ],
       "description": "Thorn Whip spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
-      "attackType": null,
+      "damageType": "piercing",
+      "damageFormula": "1d6",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d6, 3d6, and 4d6.",
+      "attackType": "Melee Spell Attack",
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d6"
+          },
+          {
+            "level": 5,
+            "formula": "2d6"
+          },
+          {
+            "level": 11,
+            "formula": "3d6"
+          },
+          {
+            "level": 17,
+            "formula": "4d6"
+          }
+        ]
+      }
     },
     {
       "id": "thunderclap",
@@ -1081,13 +1438,34 @@
         "Wizard"
       ],
       "description": "Thunderclap spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "thunder",
+      "damageFormula": "1d6",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d6, 3d6, and 4d6.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "CON",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d6"
+          },
+          {
+            "level": 5,
+            "formula": "2d6"
+          },
+          {
+            "level": 11,
+            "formula": "3d6"
+          },
+          {
+            "level": 17,
+            "formula": "4d6"
+          }
+        ]
+      }
     },
     {
       "id": "toll-the-dead",
@@ -1107,13 +1485,34 @@
         "Wizard"
       ],
       "description": "Toll the Dead spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "necrotic",
+      "damageFormula": "1d8",
+      "scalingNote": "At character levels 5, 11, and 17 damage scales to 2, 3, and 4 dice.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "WIS",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d8"
+          },
+          {
+            "level": 5,
+            "formula": "2d8"
+          },
+          {
+            "level": 11,
+            "formula": "3d8"
+          },
+          {
+            "level": 17,
+            "formula": "4d8"
+          }
+        ]
+      }
     },
     {
       "id": "true-strike",
@@ -1159,13 +1558,34 @@
         "Wizard"
       ],
       "description": "Vicious Mockery spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "psychic",
+      "damageFormula": "1d6",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d6, 3d6, and 4d6.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "WIS",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d6"
+          },
+          {
+            "level": 5,
+            "formula": "2d6"
+          },
+          {
+            "level": 11,
+            "formula": "3d6"
+          },
+          {
+            "level": 17,
+            "formula": "4d6"
+          }
+        ]
+      }
     },
     {
       "id": "word-of-radiance",
@@ -1185,13 +1605,34 @@
         "Wizard"
       ],
       "description": "Word of Radiance spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "radiant",
+      "damageFormula": "1d6",
+      "scalingNote": "At character levels 5, 11, and 17 damage increases to 2d6, 3d6, and 4d6.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "CON",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "cantrip_level",
+      "scaling_data": {
+        "tiers": [
+          {
+            "level": 1,
+            "formula": "1d6"
+          },
+          {
+            "level": 5,
+            "formula": "2d6"
+          },
+          {
+            "level": 11,
+            "formula": "3d6"
+          },
+          {
+            "level": 17,
+            "formula": "4d6"
+          }
+        ]
+      }
     }
   ]
 }

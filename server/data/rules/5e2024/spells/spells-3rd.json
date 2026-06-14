@@ -97,13 +97,19 @@
         "Wizard"
       ],
       "description": "Call Lightning spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "lightning",
+      "damageFormula": "3d10",
+      "scalingNote": "Each slot level above 3rd adds 1d10 lightning damage.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "DEX",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 3,
+        "base_formula": "3d10",
+        "per_slot_formula": "1d10"
+      }
     },
     {
       "id": "clairvoyance",
@@ -253,13 +259,19 @@
         "Wizard"
       ],
       "description": "Fireball spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "fire",
+      "damageFormula": "8d6",
+      "scalingNote": "Each slot level above 3rd adds 1d6 fire damage.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "DEX",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 3,
+        "base_formula": "8d6",
+        "per_slot_formula": "1d6"
+      }
     },
     {
       "id": "fly",
@@ -435,13 +447,19 @@
         "Wizard"
       ],
       "description": "Lightning Bolt spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "lightning",
+      "damageFormula": "8d6",
+      "scalingNote": "Each slot level above 3rd adds 1d6 lightning damage.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "DEX",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 3,
+        "base_formula": "8d6",
+        "per_slot_formula": "1d6"
+      }
     },
     {
       "id": "major-image",
@@ -489,11 +507,18 @@
       "description": "Mass Healing Word spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
       "damageType": null,
       "damageFormula": null,
-      "scalingNote": null,
+      "scalingNote": "Each slot level above 3rd adds 1d4 healing.",
       "attackType": null,
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "healingFormula": "1d4 + spellcasting modifier",
+      "scaling_type": "slot_healing",
+      "scaling_data": {
+        "base_slot": 3,
+        "base_formula": "1d4 + spellcasting modifier",
+        "per_slot_formula": "1d4"
+      }
     },
     {
       "id": "nondetection",
@@ -721,13 +746,19 @@
         "Wizard"
       ],
       "description": "Spirit Guardians spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "radiant",
+      "damageFormula": "3d8",
+      "scalingNote": "Each slot level above 3rd adds 1d8 damage.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "WIS",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 3,
+        "base_formula": "3d8",
+        "per_slot_formula": "1d8"
+      }
     },
     {
       "id": "stinking-cloud",
