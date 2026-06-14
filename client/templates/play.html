@@ -634,16 +634,37 @@
     #canvas-wrap.tool-grab.panning { cursor: grabbing; }
     #map-canvas { position: absolute; top: 0; left: 0; }
 
+    /* ── Z-index Layer Hierarchy ──────────────────────────────────────────
+       canvas base / grid / token sprites / rings / nameplates: z 0–9
+       right sidebar panel (#sidebar-right):                     z 10
+       topbar (#topbar):                                         z 100
+       flyout panels (.flyout):                                  z 190–210
+       left icon rail (#sidebar-left):                           z 200
+       misc controls:                                            z 999
+       Quick Bar toggle (.combat-quick-bar-toggle):              z 1085
+       Floating Quick Bar (#combat-quick-bar):                   z 1086
+       context menus / popups:                                   z 2660
+       DM companion panel:                                       z 4700
+       player dashboard shell:                                   z 8500
+       modals / overlays:                                        z 9999
+       combat hit FX:                                            z 10025
+       dice result popup:                                        z 10072
+       spotlight:                                                z 19989
+    ─────────────────────────────────────────────────────────────────── */
+
     /* ── Right Sidebar — Tabbed ── */
     #sidebar-right {
       background: var(--panel);
-      border-left: 1px solid var(--border);
+      border-left: 2px solid var(--border);
       display: flex;
       flex-direction: column;
       overflow: hidden;
       min-width: 0;
       min-height: 0;
-      box-shadow: inset 1px 0 0 rgba(255,255,255,0.03);
+      box-shadow: -2px 0 12px rgba(0,0,0,0.35), inset 1px 0 0 rgba(255,255,255,0.03);
+      position: relative;
+      z-index: 10;
+      isolation: isolate;
     }
     #sidebar-right[data-active-tab="combat"] #right-panel-context-chip {
       border-color: rgba(212,175,55,0.42);
@@ -1442,7 +1463,7 @@
       color: var(--gold-dim); font-weight: 600;
     }
     .combat-spell-grid {
-      display: flex; flex-wrap: wrap; gap: 0.3rem; max-height: 160px; overflow-y: auto;
+      display: flex; flex-wrap: wrap; gap: 0.3rem;
     }
     .combat-spell-chip {
       display: inline-flex; align-items: center; gap: 0.25rem;
@@ -1570,6 +1591,9 @@
       color: var(--parchment);
       font-weight: 700;
       line-height: 1.3;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      min-width: 0;
     }
     .player-action-badges {
       display: flex;
@@ -1919,8 +1943,14 @@
     #rtab-pane-combat.active {
       overflow-y: auto;
       overflow-x: hidden;
-      padding-bottom: 5rem;
+      padding-bottom: 8rem;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,229,204,0.4) rgba(255,255,255,0.04);
     }
+    #rtab-pane-combat::-webkit-scrollbar { width: 6px; }
+    #rtab-pane-combat::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); }
+    #rtab-pane-combat::-webkit-scrollbar-thumb { background: rgba(0,229,204,0.32); border-radius: 3px; }
+    #rtab-pane-combat::-webkit-scrollbar-thumb:hover { background: rgba(0,229,204,0.55); }
 
     /* ── Combat tab attention glow ─────────────────────────────────────────── */
     @keyframes combat-pulse {
@@ -2839,7 +2869,7 @@
       bottom: clamp(1rem, 2.2vh, 1.8rem);
       transform: translateY(18px) scale(0.97);
       z-index: 10072;
-      pointer-events: none;
+      pointer-events: auto;
       font-family: 'Cinzel', serif;
       color: #f4e8d0;
       opacity: 0;
@@ -2923,6 +2953,30 @@
       font-family: 'Share Tech Mono', monospace;
     }
     .dice-result-pill strong { color: #fff8e8; }
+    /* Close button for the result popup */
+    .dice-result-close-btn {
+      position: absolute;
+      top: 0.55rem;
+      right: 0.65rem;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 999px;
+      color: rgba(240,225,200,0.65);
+      width: 1.6rem;
+      height: 1.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease, color var(--dur-fast) ease;
+    }
+    .dice-result-close-btn:hover {
+      background: rgba(231,76,60,0.22);
+      border-color: rgba(231,76,60,0.45);
+      color: #ffb4a8;
+    }
     .dice-results-log-shell {
       margin-top: 0.65rem;
       padding-top: 0.55rem;
@@ -6684,7 +6738,7 @@
         grid-template-columns:1fr;
       }
       #rtab-pane-combat {
-        padding-bottom: 5rem;
+        padding-bottom: 8rem;
       }
       .combat-entry {
         grid-template-columns: auto auto minmax(0, 1fr);
@@ -23591,8 +23645,9 @@ function _showImmediateDiceResult(meta = {}) {
   appendDiceResultLog(payload);
   _renderDiceResultStrip(payload);
   if (popup) popup.classList.add('show');
+  _diceResultShownAt = Date.now();
   clearTimeout(_diceAnimTimeout);
-  _diceAnimTimeout = setTimeout(() => closeDiceOverlay(), 2600);
+  _diceAnimTimeout = setTimeout(() => closeDiceOverlay(), 20000);
   if (diceType === 20 && qty === 1 && rolls.length === 1 && rollLabel) {
     if (rolls[0] === 20) showNat20FX();
     else if (rolls[0] === 1) showNat1FX();
@@ -23767,6 +23822,7 @@ let _dice3dRollMeta   = null;
 let _dice3dServerMeta = null;
 let _dice3dSettled    = false; // true once onSettle has fired for the current throw
 let _diceIsDismissing = false; // guard: blocks new rolls during overlay dismiss
+let _diceResultShownAt = 0;   // timestamp (ms) when the result popup last appeared
 const _pendingAuthoritativeDiceRolls = new Map();
 const _pendingLocalDiceResults = new Map();
 const DICE_ROLL_MODE_STORAGE_KEY = 'dnd_dice_roll_mode';
@@ -24055,6 +24111,7 @@ function _renderDiceResultStrip(meta) {
     : `${rolls.length ? 'No modifier' : 'Awaiting result'}`;
   const pills = rolls.map((value, index) => `<span class="dice-result-pill" title="Die ${index + 1}"><strong>${value}</strong></span>`).join('');
   popup.innerHTML = `
+    <button class="dice-result-close-btn" title="Dismiss result" onclick="closeDiceOverlay()">✕</button>
     <div class="dice-result-strip">
       <div class="dice-result-strip-top"><span>${titleParts.join(' · ')}</span></div>
       <div class="dice-result-strip-total">${total}</div>
@@ -24062,6 +24119,18 @@ function _renderDiceResultStrip(meta) {
       <div class="dice-result-strip-pills">${pills}</div>
       <div class="dice-result-strip-detail">${detail}</div>
     </div>`;
+  // Also write to the chat/combat log so results are not lost
+  if (meta && meta.phase === 'settled' && typeof addLogEntry === 'function') {
+    const logParts = [titleParts.join(' · '), `= ${total}`];
+    if (modifier) logParts.push(breakdown);
+    if (rolls.length > 1) logParts.push(`[${rolls.join(', ')}]`);
+    addLogEntry({
+      id: 'roll_result_' + Date.now(),
+      type: 'dice',
+      user: typeof NAME !== 'undefined' ? NAME : 'Roll',
+      message: logParts.join('  '),
+    });
+  }
 }
 
 
@@ -24189,9 +24258,10 @@ function _showDice3DResultPopup(meta) {
     appendDiceResultLog(payload);
     _renderDiceResultStrip(payload);
     if (popup) popup.classList.add('show');
+    _diceResultShownAt = Date.now();
     clearTimeout(_diceAnimTimeout);
-    // Keep dice + result visible for 6.2 s — meaningful dwell time
-    _diceAnimTimeout = setTimeout(() => closeDiceOverlay(), 3200);
+    // Keep dice + result visible for 20 s — gives players time to read results
+    _diceAnimTimeout = setTimeout(() => closeDiceOverlay(), 20000);
     // Nat 20 / Nat 1 special effects (d20 single roll only)
     if (diceType === 20 && qty === 1 && settledRolls.length === 1 && String(capturedMeta?.integrity || '') !== 'mismatch' && String(rollLabel || '').trim()) {
       if (settledRolls[0] === 20) showNat20FX();
@@ -24225,7 +24295,7 @@ function _showDiceError(message) {
   }
   _hideDiceRollBanner();
   clearTimeout(_diceAnimTimeout);
-  _diceAnimTimeout = setTimeout(() => closeDiceOverlay(), 4000);
+  _diceAnimTimeout = setTimeout(() => closeDiceOverlay(), 20000);
 }
 
 function showDiceAnimation(diceType, qty, result, rollOpts = null) {
@@ -24356,7 +24426,15 @@ function showDiceAnimation(diceType, qty, result, rollOpts = null) {
     }
     _diceAnimTimeout = setTimeout(() => closeDiceOverlay(), rollOpts?.remoteSpectator ? 4600 : 10000);
     setTimeout(() => {
-      _overlayBg.onclick = (e) => { e.stopPropagation(); closeDiceOverlay(); };
+      _overlayBg.onclick = (e) => {
+        e.stopPropagation();
+        const popup = document.getElementById('dice-result-popup');
+        const resultVisible = popup && popup.classList.contains('show');
+        const msSinceResult = Date.now() - (_diceResultShownAt || 0);
+        // If result is showing, require 3 s dwell before outside click dismisses
+        if (resultVisible && msSinceResult < 3000) return;
+        closeDiceOverlay();
+      };
     }, 500);
 
     // ── Render watchdog ────────────────────────────────────────────
