@@ -1974,6 +1974,21 @@
       letter-spacing: 0.06em;
     }
     .coach-title a:hover { color: var(--accent); }
+    .coach-toggle {
+      border: 1px solid rgba(0,229,204,0.35);
+      background: rgba(0,229,204,0.08);
+      color: rgba(0,229,204,0.82);
+      border-radius: 999px;
+      padding: 0.12rem 0.42rem;
+      font-family: 'Cinzel', serif;
+      font-size: 0.52rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .coach-toggle:hover { color: var(--accent); border-color: rgba(0,229,204,0.65); }
+    #combat-coach.coach-collapsed { padding: 0.42rem 0.55rem; }
+    #combat-coach.coach-collapsed .coach-title { margin-bottom: 0; }
     .coach-item {
       display: flex;
       align-items: center;
@@ -19300,23 +19315,12 @@ function onMouseUp(e) {
     const t = tokens[drag.tokenId];
     if (drag.previewMode) {
       if (t) {
-        _pendingMoveConfirm = {
-          tokenId: drag.tokenId,
-          origX: drag.origX,
-          origY: drag.origY,
-        };
-        // Keep path visible during pending confirm
-        _combatMovePath = {
-          origX: drag.origX,
-          origY: drag.origY,
-          tokenId: drag.tokenId,
-          curX: t.x,
-          curY: t.y,
-          tokenW: t.width || PX_PER_GRID,
-          tokenH: t.height || PX_PER_GRID,
-        };
+        // Player combat movement now commits on mouse-up. The old extra
+        // click-to-confirm step left the token in an unsent local preview,
+        // so the next server state could snap it back and feel broken.
+        sendWS({ type: 'token_move', payload: { token_id: drag.tokenId, x: t.x, y: t.y } });
         _cacheTokenByContext(t);
-        showToast('Click the token again to place it, or right-click to cancel.');
+        showToast('Movement sent. The DM/server will stop it if blocked or over budget.');
       }
     } else if (t) {
       sendWS({ type: 'token_move', payload: { token_id: drag.tokenId, x: t.x, y: t.y } });
@@ -19324,8 +19328,7 @@ function onMouseUp(e) {
     drag.active = false;
     drag.tokenId = null;
     drag.previewMode = false;
-    // Keep path visible while move confirmation is pending; cleared on confirm/cancel.
-    if (!_pendingMoveConfirm) _combatMovePath = null;
+    _combatMovePath = null;
   }
   if (pan.active && e.button === 0) {
     pan.active = false;
@@ -43339,6 +43342,7 @@ function _renderCombatCoach() {
   if (!coach) return;
   const myTurnCombatant = _getMyTurnCombatant();
   const isPlayer = ROLE === 'player';
+  const coachCollapsed = _isCombatCoachCollapsed();
 
   if (!isPlayer || !myTurnCombatant) {
     coach.classList.remove('visible');
@@ -43405,7 +43409,7 @@ function _renderCombatCoach() {
     },
   ];
 
-  const itemsHtml = items.map(item => `
+  const itemsHtml = coachCollapsed ? '' : items.map(item => `
     <div class="coach-item${item.done ? ' done' : ''}">
       <span class="coach-item-icon">${item.icon}</span>
       <span class="coach-item-label">
@@ -43414,19 +43418,33 @@ function _renderCombatCoach() {
       </span>
     </div>`).join('');
 
-  const classHintHtml = classHint
+  const classHintHtml = (!coachCollapsed && classHint)
     ? `<div class="coach-class-hint">💡 ${escapeHtml(classHint)}</div>`
     : '';
 
   coach.innerHTML = `
     <div class="coach-title">
       Your Turn Checklist
-      <a onclick="window.AppOnboarding&&AppOnboarding.showHelpHub('player')" role="button">Help Hub</a>
+      <span style="display:flex;gap:0.35rem;align-items:center;">
+        <button class="coach-toggle" type="button" onclick="toggleCombatCoachCollapsed()">${coachCollapsed ? 'Show' : 'Hide'}</button>
+        <a onclick="window.AppOnboarding&&AppOnboarding.showHelpHub('player')" role="button">Help Hub</a>
+      </span>
     </div>
     ${itemsHtml}
     ${classHintHtml}
   `;
+  coach.classList.toggle('coach-collapsed', coachCollapsed);
   coach.classList.add('visible');
+}
+
+function _isCombatCoachCollapsed() {
+  try { return localStorage.getItem('combat_coach_collapsed') === '1'; } catch (_err) { return false; }
+}
+
+function toggleCombatCoachCollapsed() {
+  const next = !_isCombatCoachCollapsed();
+  try { localStorage.setItem('combat_coach_collapsed', next ? '1' : '0'); } catch (_err) {}
+  _renderCombatCoach();
 }
 
 // ── Movement denial help link helper ──────────────────────────────────────

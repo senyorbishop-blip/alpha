@@ -4057,3 +4057,18 @@ def test_handle_poll_create_vote_and_close_broadcasts_party_vote_payloads():
             assert mock_save.await_count >= 3
 
     asyncio.run(_run())
+
+
+def test_player_combat_drag_commits_on_mouseup_without_confirm_click():
+    """Player combat movement should not leave an unsent click-to-confirm preview."""
+    content = open(os.path.join(PROJECT_ROOT, "client/templates/play.html"), encoding="utf-8").read()
+    assert "Player combat movement now commits on mouse-up" in content
+    assert "Click the token again to place it" not in content
+
+
+def test_combat_coach_can_be_collapsed_by_players():
+    """The turn checklist/help hub must expose a persistent hide/show toggle."""
+    content = open(os.path.join(PROJECT_ROOT, "client/templates/play.html"), encoding="utf-8").read()
+    assert "function toggleCombatCoachCollapsed()" in content
+    assert "combat_coach_collapsed" in content
+    assert "coach-collapsed" in content
