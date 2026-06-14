@@ -1468,10 +1468,10 @@
       padding: 0.55rem 0.6rem 0.65rem;
       border-bottom: 1px solid rgba(255,255,255,0.06);
       background: linear-gradient(180deg, rgba(0,229,204,0.04), rgba(0,0,0,0));
-      max-height: min(62vh, 620px);
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      scrollbar-gutter: stable;
+      max-height: none;
+      overflow: visible;
+      overscroll-behavior: auto;
+      scrollbar-gutter: auto;
     }
     .player-actions-header {
       display: flex;
@@ -1547,10 +1547,10 @@
     .player-action-list {
       display: flex;
       flex-direction: column;
-      gap: 0.38rem;
-      padding: 0.42rem;
-      max-height: 230px;
-      overflow-y: auto;
+      gap: 0.55rem;
+      padding: 0.58rem;
+      max-height: none;
+      overflow: visible;
     }
     .player-action-card {
       border: 1px solid rgba(255,255,255,0.08);
@@ -1674,13 +1674,17 @@
       padding: 0.2rem 0.34rem;
     }
     .action-economy-panel {
-      border: 1px solid rgba(0,229,204,0.22);
-      border-radius: 10px;
-      background: linear-gradient(180deg, rgba(0,229,204,0.08), rgba(0,0,0,0.2));
-      padding: 0.42rem;
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      border: 1px solid rgba(0,229,204,0.28);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(11,18,26,0.98), rgba(6,10,17,0.96));
+      box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+      padding: 0.52rem;
       display: flex;
       flex-direction: column;
-      gap: 0.38rem;
+      gap: 0.42rem;
     }
     .action-economy-grid {
       display: grid;
@@ -1737,6 +1741,29 @@
       background: rgba(201,162,39,0.08);
       max-width: 100%;
     }
+
+    .turn-economy-status {
+      display:flex; align-items:center; justify-content:space-between; gap:0.45rem; flex-wrap:wrap;
+      font-size:0.58rem; color:var(--parchment-dim);
+    }
+    .turn-economy-status strong { color:var(--gold); font-family:'Cinzel',serif; letter-spacing:0.08em; text-transform:uppercase; }
+    .action-economy-chip.warn .value { color:#ffd38a; }
+    .player-actions-hub.density-compact .player-action-card { padding:0.38rem; gap:0.28rem; }
+    .player-actions-hub.density-compact .player-action-list { gap:0.35rem; padding:0.4rem; }
+    .player-actions-hub.density-expanded .player-action-card { padding:0.72rem; gap:0.55rem; }
+    .player-actions-hub.density-expanded .player-action-list { gap:0.75rem; padding:0.72rem; }
+    .player-actions-density { display:flex; gap:0.22rem; flex-wrap:wrap; }
+    .player-actions-density button, .player-actions-expand-btn {
+      border:1px solid rgba(255,255,255,0.14); border-radius:999px; background:rgba(255,255,255,0.04);
+      color:var(--parchment-dim); min-height:24px; padding:0.14rem 0.42rem; font-size:0.55rem; cursor:pointer;
+    }
+    .player-actions-density button.active { border-color:rgba(0,229,204,0.55); color:var(--parchment); background:rgba(0,229,204,0.12); }
+    .player-action-section summary { cursor:pointer; list-style:none; }
+    .player-action-section summary::-webkit-details-marker { display:none; }
+    .player-action-card.used-this-turn { border-color:rgba(240,160,160,0.45); background:rgba(80,20,20,0.24); }
+    .player-action-availability { font-size:0.56rem; color:#9ef7cc; }
+    .player-action-availability.blocked { color:#ffb6b6; }
+
     .char-state-panel {
       margin-top: 0.5rem;
       border: 1px solid rgba(0,229,204,0.18);
@@ -1854,13 +1881,12 @@
     @media (max-width: 900px) {
       .player-action-meta { grid-template-columns: 1fr; }
       .player-action-use-btn { width: 100%; min-height: 40px; }
-      .player-action-list { max-height: 260px; }
+      .player-action-list { max-height: none; overflow: visible; }
       .char-state-panel { padding: 0.5rem; gap: 0.46rem; }
       .char-state-chip { font-size: 0.62rem; }
       .char-state-chip.resource { width: 100%; justify-content: space-between; flex-wrap: wrap; row-gap: 0.2rem; }
       .char-state-chip button { min-height: 26px; min-width: 26px; font-size: 0.74rem; }
     }
-
     .combat-add-row input {
       background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 3px;
       color: var(--parchment); font-size: 0.72rem; padding: 0.28rem 0.4rem;
@@ -11606,8 +11632,9 @@ const _PING_STACK_HARD_CAP = 28;
 let _combat = { active: false, turn: 0, combatants: [], movement: null, selected_target_id: '', pending_attack: null };
 let _combatRound = 1;
 let _combatTargeting = false;
-let _playerActionsCollapsed = true;
-let _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false };
+let _playerActionsCollapsed = false;
+let _playerActionsDensity = 'comfortable';
+let _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, usage: {} };
 let _markTargeting = null; // null or { markKind: 'hunters_mark'|'hex' }
 let _monsterQuickCreatureCache = {};
 let _monsterQuickPendingAction = null;
@@ -11998,6 +12025,8 @@ function initUI() {
     const stored = String(localStorage.getItem('combat_player_actions_collapsed') || '').trim();
     if (stored === '0') _playerActionsCollapsed = false;
     else if (stored === '1') _playerActionsCollapsed = true;
+    const density = String(localStorage.getItem('combat_actions_density') || '').trim().toLowerCase();
+    if (['compact', 'comfortable', 'expanded'].includes(density)) _playerActionsDensity = density;
   } catch (_err) {}
 
   // Topbar
@@ -43264,7 +43293,10 @@ function combatApplyState(state) {
   }
   refreshRightPanelContextUI();
   // Reset inspect check results when combat ends (new encounter = fresh attempts)
-  if (!_combat.active && prevActive) _resetInspectResults();
+  if (!_combat.active && prevActive) {
+    _resetInspectResults();
+    _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, usage: {} };
+  }
   renderCombat();
   if (_combat.active && (_combat.turn !== prevTurn || !prevActive)) {
     const cur = _combat.combatants[_combat.turn];
@@ -44198,7 +44230,7 @@ function _extractActionLines(rawText, fallbackKind = 'Class Features') {
 }
 
 function _getPlayerActionsSections() {
-  const sections = { 'Attacks': [], 'Bonus Actions': [], 'Reactions': [], 'Class Features': [], 'Spells': [], 'Item Spells': [] };
+  const sections = { 'Recommended': [], 'Attacks': [], 'Bonus Actions': [], 'Reactions': [], 'Class Features': [], 'Item Actions': [], 'Item Spells': [], 'Spells': [], 'Passives': [] };
 
   const attackCards = _getUnifiedQuickAttackCards();
   attackCards.forEach(card => {
@@ -44351,7 +44383,7 @@ function _getPlayerActionsSections() {
 
   (Array.isArray(_playerItemActions) ? _playerItemActions : []).forEach((itemAction, idx) => {
     const activation = String(itemAction.activation_type || 'action').toLowerCase();
-    const sectionName = activation === 'bonus_action' ? 'Bonus Actions' : (activation === 'reaction' ? 'Reactions' : 'Class Features');
+    const sectionName = activation === 'bonus_action' ? 'Bonus Actions' : (activation === 'reaction' ? 'Reactions' : 'Item Actions');
     const chargesText = Number.isFinite(Number(itemAction.charges_current))
       ? `Charges ${Number(itemAction.charges_current)}/${Number(itemAction.charges_max || 0)}`
       : '';
@@ -44379,7 +44411,7 @@ function _getPlayerActionsSections() {
   (Array.isArray(_playerItemPassives) ? _playerItemPassives : []).forEach((passive, idx) => {
     const effects = Array.isArray(passive.effects) ? passive.effects : [];
     const effectLine = effects.map(effect => String(effect.summary || effect.type || '').trim()).filter(Boolean).join(' • ');
-    sections['Class Features'].push({
+    sections.Passives.push({
       id: `item_passive_${idx}_${String(passive.item_id || '')}`,
       source: 'item_passive',
       name: `${String(passive.item_name || 'Item')} (Passive)`,
@@ -44444,6 +44476,22 @@ function _getPlayerActionsSections() {
       return true;
     });
   });
+
+  const recommended = [];
+  if (sections.Attacks[0]) recommended.push(Object.assign({}, sections.Attacks[0], { recommendedReason: 'Best weapon attack' }));
+  if (sections.Spells[0]) recommended.push(Object.assign({}, sections.Spells[0], { recommendedReason: 'Best available spell' }));
+  if (sections['Class Features'][0]) recommended.push(Object.assign({}, sections['Class Features'][0], { recommendedReason: 'Key class feature' }));
+  if (sections['Bonus Actions'][0]) recommended.push(Object.assign({}, sections['Bonus Actions'][0], { recommendedReason: 'Available bonus action' }));
+  if (sections.Reactions[0]) recommended.push(Object.assign({}, sections.Reactions[0], { recommendedReason: 'Reaction reminder' }));
+  recommended.push({
+    id: 'system_end_turn',
+    source: 'system_end_turn',
+    name: 'End Turn',
+    desc: 'Finish your turn after spending actions and movement.',
+    resource: 'Turn control',
+    badges: ['Recommended', 'Turn'],
+  });
+  sections.Recommended = recommended.slice(0, 6);
 
   return sections;
 }
@@ -44514,9 +44562,97 @@ function _getExtraAttackTotalFromSheet() {
   return hasAnyExtraAttack ? 2 : 1;
 }
 
+function buildTurnEconomyState(character = _charSheet, combatState = _combat, turnState = null) {
+  const combat = combatState || {};
+  const current = turnState || _getCombatCurrentCombatant?.() || null;
+  const isInCombat = !!(combat.active && Array.isArray(combat.combatants) && combat.combatants.length);
+  const isMyTurn = !!(isInCombat && current && _isMyToken(current.token_id));
+  const tokenId = String(current?.token_id || _getMyOwnedToken?.()?.id || character?.token_id || character?.id || 'none');
+  const round = Math.max(1, Number(combat.round || _combatRound || 1));
+  const turn = Math.max(0, Number(combat.turn || 0));
+  const turnKey = `${SESSION_ID || 'session'}:${round}:${turn}:${tokenId}`;
+  const moveState = (combat.movement && String(combat.movement.token_id || '') === tokenId) ? combat.movement : null;
+  const persisted = _readPersistedActionEconomyState(turnKey) || {};
+  const myToken = tokens[tokenId] || _getMyOwnedToken?.() || null;
+  const conditions = _conditionIdsLower(myToken);
+  const features = _visibleStructuredClassFeatures(_getStructuredClassFeatures());
+  const resources = [];
+  const warnings = [];
+  const restrictions = [];
+  const incapacitated = ['incapacitated', 'stunned', 'paralyzed', 'petrified', 'unconscious'].some(id => conditions.has(id));
+  const hasted = conditions.has('haste') || conditions.has('hasted');
+  const restrained = conditions.has('restrained') || conditions.has('grappled');
+  if (!isMyTurn && isInCombat) warnings.push('Waiting for your turn.');
+  if (incapacitated) restrictions.push('Cannot take actions or reactions while incapacitated.');
+  if (restrained) warnings.push('Movement is blocked by restrained/grappled.');
+
+  const classes = Array.isArray(character?.classes) ? character.classes : [];
+  const fighter = classes.find(cl => String(cl?.name || '').trim().toLowerCase() === 'fighter');
+  const fighterLevel = Math.max(0, Number(fighter?.level || 0));
+  const maxSwings = _getExtraAttackTotalFromSheet();
+  const swingSource = maxSwings > 1
+    ? (fighterLevel >= 5 ? `Fighter Extra Attack (level ${fighterLevel})` : 'Extra Attack feature')
+    : 'Attack action';
+  const speed = Math.max(0, Number(moveState?.speed_ft ?? character?.speed ?? myToken?.speed ?? 30) || 0);
+  const bonusFt = Math.max(0, Number(moveState?.bonus_ft || 0) || 0);
+  const movementUsed = Math.max(0, Number(moveState?.spent_ft || 0) || 0);
+  const movementRemaining = Math.max(0, restrained ? 0 : Number(moveState?.remaining_ft ?? (speed + bonusFt - movementUsed)));
+  const bonusConvertedActions = _safeActionEconomyCount(_playerActionEconomyRuntime.bonus_action_converted_actions, 0);
+  const actionMax = 1 + (_playerActionEconomyRuntime.action_surge_armed ? 1 : 0) + (hasted ? 1 : 0) + bonusConvertedActions;
+  const bonusMax = 1;
+  const reactionMax = 1;
+  const actionUsed = Math.min(actionMax, _safeActionEconomyCount(persisted.actions_used, 0));
+  const bonusUsed = Math.min(bonusMax, _safeActionEconomyCount(persisted.bonus_actions_used, 0));
+  const reactionUsed = Math.min(reactionMax, _safeActionEconomyCount(persisted.reactions_used, 0));
+  const usedSwings = Math.min(maxSwings, _safeActionEconomyCount(persisted.attacks_within_action_used, 0));
+  const extraActions = [];
+  const actionSurgeFeature = features.find(f => /action surge/i.test(String(f?.name || '')));
+  const actionSurgeState = actionSurgeFeature ? _getClassFeatureResourceState(actionSurgeFeature) : null;
+  if (actionSurgeState && Number(actionSurgeState.current || 0) > 0) {
+    extraActions.push({ id: 'action_surge', source: 'Action Surge', grants: 'action', restricted: false, detail: `${actionSurgeState.summary} available` });
+    resources.push({ name: 'Action Surge', current: actionSurgeState.current, max: actionSurgeState.max, source: 'class' });
+  }
+  if (hasted) extraActions.push({ id: 'haste_action', source: 'Haste', grants: 'restricted action', restricted: true, detail: 'Attack (one weapon attack), Dash, Disengage, Hide, or Use an Object.' });
+  if (bonusConvertedActions > 0) extraActions.push({ id: 'bonus_conversion', source: 'Bonus Action conversion', grants: 'action', restricted: false, detail: `+${bonusConvertedActions} action this turn.` });
+
+  const hasSorcery = features.some(f => /quickened spell|metamagic|sorcer/i.test(String(f?.name || '') + ' ' + String(f?.desc || f?.description || '')))
+    || JSON.stringify(character?.resources || character?.classResources || {}).toLowerCase().includes('sorcery');
+  const sorceryPoints = Number(character?.resources?.sorcery_points?.current ?? character?.classResources?.sorcery_points?.current ?? character?.sorcery_points ?? 0) || 0;
+  const quickenedAvailable = hasSorcery && sorceryPoints >= 2 && (bonusMax - bonusUsed) > 0;
+  if (hasSorcery) resources.push({ name: 'Sorcery Points', current: sorceryPoints, cost: 'Quickened Spell 2', source: 'class' });
+
+  return {
+    isInCombat,
+    isMyTurn,
+    turnKey,
+    action: { max: actionMax, used: actionUsed, remaining: Math.max(0, actionMax - actionUsed) },
+    bonusAction: { max: bonusMax, used: bonusUsed, remaining: Math.max(0, bonusMax - bonusUsed) },
+    reaction: { max: reactionMax, used: reactionUsed, remaining: Math.max(0, reactionMax - reactionUsed) },
+    movement: { speed: speed + bonusFt, baseSpeed: speed, used: Math.round(movementUsed), remaining: Math.round(movementRemaining), speed_ft: speed, spent_ft: movementUsed, remaining_ft: movementRemaining, dash_used: !!moveState?.dash_used, difficult_terrain: !!moveState?.difficult_terrain, disengaged: !!moveState?.disengaged },
+    attackAction: { maxSwings, usedSwings, remainingSwings: Math.max(0, maxSwings - usedSwings), source: swingSource },
+    spellcasting: {
+      normalSpellCastUsed: !!persisted.normal_spell_cast_used,
+      canCastCantrip: isMyTurn && !incapacitated,
+      canCastLeveledSpell: isMyTurn && !incapacitated && !persisted.normal_spell_cast_used,
+      bonusActionSpellAvailable: quickenedAvailable,
+      bonusActionSpellSource: quickenedAvailable ? 'Quickened Spell / Metamagic' : '',
+      restrictions,
+      warnings: []
+    },
+    extraActions,
+    resources,
+    warnings
+  };
+}
+window.buildTurnEconomyState = buildTurnEconomyState;
+
 function _buildActionEconomyState() {
   const current = _findMyActiveCombatant();
-  if (!current) return null;
+  if (!current) {
+    const modern = buildTurnEconomyState(_charSheet, _combat, _getCombatCurrentCombatant?.() || null);
+    if (!modern?.isInCombat) return null;
+    return _turnEconomyModernToLegacyState(modern);
+  }
   const turnKey = _playerActionTurnKey();
   const moveState = (_combat && _combat.movement && String(_combat.movement.token_id || '') === String(current.token_id || '')) ? _combat.movement : null;
   const myToken = tokens[current.token_id] || _getMyOwnedToken();
@@ -44609,12 +44745,60 @@ function _buildActionEconomyState() {
   _playerActionEconomyRuntime.turn_key = turnKey;
   _playerActionEconomyRuntime.state = state;
   _saveActionEconomyRuntime(state);
-  return state;
+  return Object.assign(state, buildTurnEconomyState(_charSheet, _combat, current));
+}
+
+function _turnEconomyModernToLegacyState(modern) {
+  if (!modern) return null;
+  return {
+    turn_key: modern.turnKey || _playerActionTurnKey(),
+    turn_owner_token_id: String(_getCombatCurrentCombatant?.()?.token_id || ''),
+    turn_owner_name: String(_getCombatCurrentCombatant?.()?.name || 'Active combatant'),
+    reset_timing: 'Start of your turn',
+    actions_total: modern.action.max,
+    actions_used: modern.action.used,
+    bonus_actions_total: modern.bonusAction.max,
+    bonus_actions_used: modern.bonusAction.used,
+    reactions_total: modern.reaction.max,
+    reactions_used: modern.reaction.used,
+    movement_total: modern.movement.speed,
+    movement_used: modern.movement.used,
+    movement_remaining: modern.movement.remaining,
+    attacks_within_action_total: modern.attackAction.maxSwings,
+    attacks_within_action_used: modern.attackAction.usedSwings,
+    extra_action_sources: modern.extraActions || [],
+    bonus_action_sources: [],
+    reaction_sources: [],
+    movement_modifiers: [
+      modern.movement.dash_used ? { source: 'Dash', detail: 'Dash movement added.' } : null,
+      modern.movement.difficult_terrain ? { source: 'Difficult Terrain', detail: 'Movement costs 2x.' } : null,
+      modern.movement.disengaged ? { source: 'Disengage', detail: 'Opportunity attacks avoided.' } : null,
+    ].filter(Boolean),
+    restrictions: modern.spellcasting?.restrictions || [],
+    locks: {
+      actions_disabled: !modern.isMyTurn,
+      bonus_actions_disabled: !modern.isMyTurn,
+      reactions_disabled: false,
+      movement_disabled: !modern.isMyTurn,
+    },
+    updated_at: Date.now(),
+    isInCombat: modern.isInCombat,
+    isMyTurn: modern.isMyTurn,
+    action: modern.action,
+    bonusAction: modern.bonusAction,
+    reaction: modern.reaction,
+    movement: modern.movement,
+    attackAction: modern.attackAction,
+    spellcasting: modern.spellcasting,
+    extraActions: modern.extraActions,
+    resources: modern.resources,
+    warnings: modern.warnings,
+  };
 }
 
 function _renderActionEconomyPanel(state) {
   if (!state) return '';
-  const mk = (label, value, ready) => `<div class="action-economy-chip ${ready ? 'ready' : 'spent'}"><div class="label">${escapeHtml(label)}</div><div class="value">${escapeHtml(value)}</div></div>`;
+  const mk = (label, value, ready, warn = false) => `<div class="action-economy-chip ${warn ? 'warn' : (ready ? 'ready' : 'spent')}"><div class="label">${escapeHtml(label)}</div><div class="value">${escapeHtml(value)}</div></div>`;
   const actionRem = Math.max(0, Number(state.actions_total || 0) - Number(state.actions_used || 0));
   const bonusRem = Math.max(0, Number(state.bonus_actions_total || 0) - Number(state.bonus_actions_used || 0));
   const reactRem = Math.max(0, Number(state.reactions_total || 0) - Number(state.reactions_used || 0));
@@ -44626,22 +44810,26 @@ function _renderActionEconomyPanel(state) {
   (state.movement_modifiers || []).forEach(src => notes.push(`${src.source}: ${src.detail}`));
   (state.restrictions || []).forEach(msg => notes.push(`Restriction: ${msg}`));
   const canConvertBonusToAction = bonusRem > 0 && !state.locks?.bonus_actions_disabled;
-  return `<section class="action-economy-panel" aria-label="Action Economy">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:0.35rem;">
-      <strong style="font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);font-family:'Cinzel',serif;">Action Economy</strong>
-      <span style="font-size:0.56rem;color:var(--parchment-dim);">Turn: ${escapeHtml(state.turn_owner_name || 'You')}</span>
+  const modern = state.action ? state : buildTurnEconomyState(_charSheet, _combat, _getCombatCurrentCombatant?.() || null);
+  const spellAvailable = modern?.spellcasting?.canCastLeveledSpell || modern?.spellcasting?.canCastCantrip || modern?.spellcasting?.bonusActionSpellAvailable;
+  return `<section class="action-economy-panel turn-economy-tracker" aria-label="Turn Economy Tracker">
+    <div class="turn-economy-status">
+      <strong>Turn Economy</strong>
+      <span>${state.isMyTurn === false ? 'Waiting for your turn' : `Turn: ${escapeHtml(state.turn_owner_name || 'You')}`}</span>
+      <button type="button" class="player-actions-expand-btn" onclick="openFullCombatSheet()">Open Full Combat Sheet</button>
     </div>
     <div class="action-economy-grid">
-      ${mk('Action', `${actionRem}/${state.actions_total} ${actionRem > 0 ? 'available' : 'spent'}`, actionRem > 0)}
-      ${mk('Bonus', `${bonusRem}/${state.bonus_actions_total} ${bonusRem > 0 ? 'available' : 'spent'}`, bonusRem > 0)}
-      ${mk('Reaction', `${reactRem}/${state.reactions_total} ${reactRem > 0 ? 'ready' : 'spent'}`, reactRem > 0)}
-      ${mk('Movement', `${state.movement_used}/${state.movement_total} ft used • ${state.movement_remaining} ft left`, state.movement_remaining > 0)}
-      ${mk('Attack action swings', `${attackRem}/${state.attacks_within_action_total} remaining`, attackRem > 0)}
-      ${mk('Reset', String(state.reset_timing || 'Start turn'), true)}
+      ${mk('Action', `${actionRem}/${state.actions_total} left`, state.isMyTurn !== false && actionRem > 0)}
+      ${mk('Attacks', `${attackRem}/${state.attacks_within_action_total} left`, state.isMyTurn !== false && attackRem > 0)}
+      ${mk('Bonus Action', `${bonusRem}/${state.bonus_actions_total} left`, state.isMyTurn !== false && bonusRem > 0)}
+      ${mk('Reaction', reactRem > 0 ? 'ready' : `0/${state.reactions_total}`, reactRem > 0)}
+      ${mk('Movement', `${state.movement_remaining}/${state.movement_total} ft left`, state.isMyTurn !== false && state.movement_remaining > 0, !!modern?.movement?.difficult_terrain)}
+      ${mk('Spell Cast', spellAvailable ? 'available' : 'limited', !!spellAvailable, !spellAvailable)}
     </div>
     <div class="action-economy-notes">
       ${canConvertBonusToAction ? `<button type="button" class="action-economy-convert-btn" onclick="playerConvertBonusActionToAction()" title="Optional table rule: spend a Bonus Action to gain one more Action this turn.">Spend Bonus → +1 Action</button>` : ''}
-      ${notes.slice(0, 8).map(note => `<span class="action-economy-note" title="${escapeHtml(note)}">${escapeHtml(note)}</span>`).join('')}
+      ${modern?.spellcasting?.bonusActionSpellAvailable ? `<span class="action-economy-note">Quickened Spell bonus action available</span>` : ''}
+      ${notes.concat(modern?.warnings || []).slice(0, 10).map(note => `<span class="action-economy-note" title="${escapeHtml(note.detail || note)}">${escapeHtml(note.source ? `${note.source}: ${note.detail || ''}` : note)}</span>`).join('')}
     </div>
   </section>`;
 }
@@ -44649,6 +44837,10 @@ function _renderActionEconomyPanel(state) {
 function _consumeActionEconomy(kind, meta = {}) {
   const state = _buildActionEconomyState();
   if (!state) return;
+  const actionId = String(meta.action_id || meta.id || kind || '').trim();
+  const usageKey = String(state.turn_key || _playerActionTurnKey() || '');
+  if (!_playerActionEconomyRuntime.usage || typeof _playerActionEconomyRuntime.usage !== 'object') _playerActionEconomyRuntime.usage = {};
+  if (!_playerActionEconomyRuntime.usage[usageKey]) _playerActionEconomyRuntime.usage[usageKey] = {};
   if (kind === 'action') {
     state.actions_used = Math.min(state.actions_total, Number(state.actions_used || 0) + 1);
     state.attacks_within_action_used = 0;
@@ -44657,7 +44849,6 @@ function _consumeActionEconomy(kind, meta = {}) {
     state.attacks_within_action_used = used;
     if (used >= state.attacks_within_action_total) {
       state.actions_used = Math.min(state.actions_total, Number(state.actions_used || 0) + 1);
-      state.attacks_within_action_used = 0;
     }
   } else if (kind === 'bonus_action') {
     state.bonus_actions_used = Math.min(state.bonus_actions_total, Number(state.bonus_actions_used || 0) + 1);
@@ -44669,9 +44860,25 @@ function _consumeActionEconomy(kind, meta = {}) {
   if (meta && meta.consume_action_surge) {
     _playerActionEconomyRuntime.action_surge_armed = false;
   }
+  if (meta && meta.normal_spell_cast) {
+    state.normal_spell_cast_used = true;
+  }
+  if (actionId) {
+    _playerActionEconomyRuntime.usage[usageKey][actionId] = {
+      action_id: actionId,
+      kind,
+      used: true,
+      used_at: Date.now(),
+      session_id: SESSION_ID || '',
+      combat_round: Math.max(1, Number(_combat?.round || _combatRound || 1)),
+      combat_turn: Math.max(0, Number(_combat?.turn || 0)),
+      character_id: String(_charSheet?.id || _charSheet?.character_id || state.turn_owner_token_id || ''),
+    };
+  }
   state.turn_key = _playerActionTurnKey();
   _playerActionEconomyRuntime.state = state;
   _saveActionEconomyRuntime(state);
+  renderPlayerActionsHub();
 }
 
 function playerConvertBonusActionToAction() {
@@ -44738,6 +44945,8 @@ function _evaluateActionEconomyAvailability(action, sectionName, state) {
 
 function _buildPlayerActionMetaHtml(action) {
   const rows = [];
+  const cost = _actionEconomyCostLabel(action);
+  if (cost) rows.push(`<div class="player-action-meta-item"><strong>Economy</strong>${escapeHtml(cost)}</div>`);
   if (action.attackBonus) rows.push(`<div class="player-action-meta-item"><strong>Attack</strong>${escapeHtml(String(action.attackBonus || ''))}</div>`);
   if (action.saveDC) rows.push(`<div class="player-action-meta-item"><strong>Save</strong>DC ${escapeHtml(String(action.saveDC || ''))}${action.saveAbility ? ` ${escapeHtml(String(action.saveAbility || ''))}` : ''}</div>`);
   if (action.damage) rows.push(`<div class="player-action-meta-item"><strong>Damage</strong>${escapeHtml(String(action.damage || ''))}</div>`);
@@ -44745,6 +44954,47 @@ function _buildPlayerActionMetaHtml(action) {
   if (action.damageType) rows.push(`<div class="player-action-meta-item"><strong>Type</strong>${escapeHtml(String(action.damageType || ''))}</div>`);
   if (action.resource) rows.push(`<div class="player-action-meta-item"><strong>Cost</strong>${escapeHtml(String(action.resource || ''))}</div>`);
   return rows.length ? `<div class="player-action-meta">${rows.join('')}</div>` : '';
+}
+
+function _actionEconomyCostLabel(action) {
+  const src = String(action?.source || '').toLowerCase();
+  const text = `${String(action?.activation_type || '')} ${String(action?.desc || '')} ${String(action?.resource || '')} ${(action?.badges || []).join(' ')}`.toLowerCase();
+  if (src === 'item_passive' || text.includes('passive')) return 'Passive';
+  if (text.includes('reaction')) return 'Costs Reaction';
+  if (text.includes('bonus action') || text.includes('bonus_action')) return 'Costs Bonus Action';
+  if (src === 'weapon' || src === 'equip_only' || src === 'system_unarmed' || src === 'attack') return 'Costs Attack Swing';
+  if (src === 'spell' || src === 'item_spell') return 'Costs Action or spell casting time';
+  return 'Costs Action';
+}
+
+function _isPlayerActionUsedThisTurn(action) {
+  const state = _buildActionEconomyState();
+  const turnKey = String(state?.turn_key || _playerActionTurnKey() || '');
+  const id = String(action?.id || '').trim();
+  return !!(turnKey && id && _playerActionEconomyRuntime?.usage?.[turnKey]?.[id]?.used);
+}
+
+function openFullCombatSheet() {
+  const existing = document.getElementById('full-combat-sheet-modal');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'full-combat-sheet-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.68);z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px;';
+  const sections = _getPlayerActionsSections();
+  const state = _buildActionEconomyState();
+  const order = ['Recommended', 'Attacks', 'Bonus Actions', 'Reactions', 'Class Features', 'Item Actions', 'Item Spells', 'Spells', 'Passives'];
+  overlay.innerHTML = `<div style="width:min(980px,96vw);max-height:90vh;overflow:auto;border:1px solid rgba(0,229,204,0.28);border-radius:16px;background:#0b1018;padding:1rem;box-shadow:0 18px 60px rgba(0,0,0,0.55);">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:0.7rem;margin-bottom:0.7rem;">
+      <h3 style="margin:0;font-family:'Cinzel',serif;color:var(--gold);">Expanded Actions</h3>
+      <button class="combat-btn small" onclick="document.getElementById('full-combat-sheet-modal')?.remove()">Close</button>
+    </div>
+    ${_renderActionEconomyPanel(state)}
+    <div class="player-actions-sections" style="margin-top:0.8rem;">
+      ${order.filter(k => (sections[k] || []).length).map(k => `<section class="player-action-section" open><div class="player-action-section-header"><span>${escapeHtml(k)}</span><span>${(sections[k] || []).length}</span></div><div class="player-action-list">${(sections[k] || []).map(a => `<article class="player-action-card"><div class="player-action-top"><div class="player-action-name">${escapeHtml(a.name || 'Action')}</div></div>${_buildPlayerActionMetaHtml(a)}${a.desc ? `<div class="player-action-desc">${escapeHtml(a.desc)}</div>` : ''}</article>`).join('')}</div></section>`).join('')}
+    </div>
+  </div>`;
+  overlay.addEventListener('click', ev => { if (ev.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
 }
 
 function _getCombatSpellCastOptions(spell) {
@@ -44811,9 +45061,9 @@ function playerUseAction(source, id) {
   if (src === 'native_action') {
     const native = _findNativeActionCardById(id);
     const actionType = String(native?.actionType || native?.activation || '').toLowerCase();
-    if (actionType.includes('bonus')) _consumeActionEconomy('bonus_action');
-    else if (actionType.includes('reaction')) _consumeActionEconomy('reaction');
-    else _consumeActionEconomy('action');
+    if (actionType.includes('bonus')) _consumeActionEconomy('bonus_action', { action_id: id });
+    else if (actionType.includes('reaction')) _consumeActionEconomy('reaction', { action_id: id });
+    else _consumeActionEconomy('action', { action_id: id });
     useNativeActionCard(id);
     return;
   }
@@ -44822,14 +45072,18 @@ function playerUseAction(source, id) {
     if (!picked || !picked.tokenId || !picked.actionId) return;
     const targetId = String(_combat?.selected_target_id || '').trim();
     sendWS({ type: 'summon_action_use', payload: { token_id: picked.tokenId, action_id: picked.actionId, target_id: targetId } });
-    _consumeActionEconomy('action');
+    _consumeActionEconomy('action', { action_id: id });
     showToast(`Used summon action: ${picked.name || 'Action'}`);
     return;
   }
   if (src === 'system_reaction') {
-    _consumeActionEconomy('reaction');
+    _consumeActionEconomy('reaction', { action_id: id });
     sendWS({ type: 'chat_message', payload: { message: '⚡ **Opportunity Attack** is ready when a creature leaves your reach.', channel: 'everyone' } });
     showToast('Opportunity Attack reaction ready.');
+    return;
+  }
+  if (src === 'system_end_turn') {
+    combatEndTurn();
     return;
   }
   if (src === 'item_action') {
@@ -44848,9 +45102,9 @@ function playerUseAction(source, id) {
       },
     });
     const activation = String(action.activation_type || '').toLowerCase();
-    if (activation === 'bonus_action') _consumeActionEconomy('bonus_action');
-    else if (activation === 'reaction') _consumeActionEconomy('reaction');
-    else _consumeActionEconomy('action');
+    if (activation === 'bonus_action') _consumeActionEconomy('bonus_action', { action_id: id });
+    else if (activation === 'reaction') _consumeActionEconomy('reaction', { action_id: id });
+    else _consumeActionEconomy('action', { action_id: id });
     return;
   }
   if (src === 'item_spell') {
@@ -44874,7 +45128,7 @@ function playerUseAction(source, id) {
         cast_level: Number((card || {}).cast_level || 0),
       },
     });
-    _consumeActionEconomy('action');
+    _consumeActionEconomy('action', { action_id: id });
     return;
   }
   const actionSections = _getPlayerActionsSections();
@@ -44882,13 +45136,13 @@ function playerUseAction(source, id) {
   const picked = entries.find(entry => String(entry.id) === String(id));
   if (!picked) return;
   if (/action surge/i.test(String(picked.name || ''))) {
-    _consumeActionEconomy('action_surge');
+    _consumeActionEconomy('action_surge', { action_id: id });
   } else if (String(picked.source || '') === 'class_feature' && /bonus action/i.test(String(picked.desc || ''))) {
-    _consumeActionEconomy('bonus_action');
+    _consumeActionEconomy('bonus_action', { action_id: id });
   } else if (String(picked.source || '') === 'class_feature' && /reaction/i.test(String(picked.desc || ''))) {
-    _consumeActionEconomy('reaction');
+    _consumeActionEconomy('reaction', { action_id: id });
   } else {
-    _consumeActionEconomy('action');
+    _consumeActionEconomy('action', { action_id: id });
   }
   if (src === 'class_feature' && picked.key) adjustClassFeatureUse(picked.key, 1);
   const label = picked.name || 'Action';
@@ -44964,8 +45218,9 @@ function renderPlayerActionsHub() {
   sections['Class Features'] = filterQuickEntries(sections['Class Features'], 2);
   sections.Spells = filterQuickEntries(sections.Spells, 5);
   sections['Item Spells'] = filterQuickEntries(sections['Item Spells'], 2);
+  sections['Item Actions'] = filterQuickEntries(sections['Item Actions'], 2);
   // Legacy required categories remain: ['Attacks', 'Bonus Actions', 'Reactions', 'Class Features', 'Spells']
-  const order = ['Attacks', 'Bonus Actions', 'Reactions', 'Class Features', 'Item Spells', 'Spells'];
+  const order = ['Recommended', 'Attacks', 'Bonus Actions', 'Reactions', 'Class Features', 'Item Actions', 'Item Spells', 'Spells', 'Passives'];
   const visible = order.filter(key => (sections[key] || []).length);
   if (!visible.length) {
     hub.style.display = 'none';
@@ -44975,11 +45230,16 @@ function renderPlayerActionsHub() {
   hub.style.display = 'flex';
   const economyState = _buildActionEconomyState();
   hub.classList.toggle('collapsed', !!_playerActionsCollapsed);
+  hub.classList.remove('density-compact', 'density-comfortable', 'density-expanded');
+  hub.classList.add(`density-${_playerActionsDensity || 'comfortable'}`);
   hub.innerHTML = `
     <div class="player-actions-header">
       <h4>Actions</h4>
       <div style="display:flex;align-items:center;gap:0.35rem;">
         <div class="hint">Tap to roll/use quickly</div>
+        <div class="player-actions-density" aria-label="Actions panel density">
+          ${['compact', 'comfortable', 'expanded'].map(d => `<button type="button" class="${_playerActionsDensity === d ? 'active' : ''}" onclick="setPlayerActionsDensity('${d}')">${d[0].toUpperCase()}${d.slice(1)}</button>`).join('')}
+        </div>
         <button class="player-actions-toggle" type="button" onclick="togglePlayerActionsHub()">${_playerActionsCollapsed ? 'Expand' : 'Minimize'}</button>
       </div>
     </div>
@@ -44988,17 +45248,22 @@ function renderPlayerActionsHub() {
     <div class="player-actions-sections">
       ${visible.map(sectionName => {
         const entries = sections[sectionName];
-        return `<section class="player-action-section">
-          <div class="player-action-section-header"><span>${escapeHtml(sectionName)}</span><span>${entries.length}</span></div>
+        const defaultOpen = sectionName === 'Recommended' || sectionName === 'Attacks' || (sectionName === 'Bonus Actions' && economyState?.bonusAction?.remaining > 0) || (sectionName === 'Spells' && (sections.Spells || []).length);
+        return `<details class="player-action-section" ${defaultOpen ? 'open' : ''}>
+          <summary class="player-action-section-header"><span>${escapeHtml(sectionName)}</span><span>${entries.length}</span></summary>
           <div class="player-action-list">
             ${entries.map(action => {
               const gate = _evaluateActionEconomyAvailability(action, sectionName, economyState);
-              return `<article class="player-action-card">
+              const used = _isPlayerActionUsedThisTurn(action);
+              const availability = used ? 'Used this turn' : (gate.disabled ? `Unavailable: ${gate.reason || 'Not available'}` : 'Available now');
+              return `<article class="player-action-card ${used ? 'used-this-turn' : ''}">
               <div class="player-action-top">
                 <div class="player-action-name">${escapeHtml(action.name || 'Action')}</div>
-                <div class="player-action-badges">${(action.badges || []).map(b => `<span class="player-action-badge">${escapeHtml(String(b || ''))}</span>`).join('')}</div>
+                <div class="player-action-badges"><span class="player-action-badge">${escapeHtml(_actionEconomyCostLabel(action).replace(/^Costs\\s+/i, '') || 'Action')}</span>${(action.badges || []).map(b => `<span class="player-action-badge">${escapeHtml(String(b || ''))}</span>`).join('')}</div>
               </div>
               ${_buildPlayerActionMetaHtml(action)}
+              ${sectionName === 'Attacks' ? `<div class="player-action-availability">Attacks remaining: ${Math.max(0, Number(economyState?.attacks_within_action_total || 0) - Number(economyState?.attacks_within_action_used || 0))}/${economyState?.attacks_within_action_total || 1}</div>` : ''}
+              <div class="player-action-availability ${gate.disabled || used ? 'blocked' : ''}">${escapeHtml(availability)}</div>
               ${action.desc ? `<div class="player-action-desc">${escapeHtml(action.desc)}</div>` : ''}
               ${gate.disabled && gate.reason ? `<div class="player-action-blocked-reason">Unavailable: ${escapeHtml(gate.reason)}</div>` : ''}
               <div class="player-action-controls">
@@ -45008,9 +45273,16 @@ function renderPlayerActionsHub() {
             </article>`;
             }).join('')}
           </div>
-        </section>`;
+        </details>`;
       }).join('')}
     </div>`;
+}
+
+function setPlayerActionsDensity(density) {
+  const next = ['compact', 'comfortable', 'expanded'].includes(String(density || '').toLowerCase()) ? String(density).toLowerCase() : 'comfortable';
+  _playerActionsDensity = next;
+  try { localStorage.setItem('combat_actions_density', next); } catch (_err) {}
+  renderPlayerActionsHub();
 }
 
 function togglePlayerActionsHub() {
@@ -46539,9 +46811,9 @@ function combatQuickCastSpell(spellId, preferredLevel) {
   if (!spell) { showToast('Spell not found.'); return; }
   const card = spell.card || {};
   const castTime = String(card.casting_time || spell.casting_time || '').toLowerCase();
-  if (castTime.includes('bonus action')) _consumeActionEconomy('bonus_action');
-  else if (castTime.includes('reaction')) _consumeActionEconomy('reaction');
-  else _consumeActionEconomy('action');
+  if (castTime.includes('bonus action')) _consumeActionEconomy('bonus_action', { action_id: spellId });
+  else if (castTime.includes('reaction')) _consumeActionEconomy('reaction', { action_id: spellId });
+  else _consumeActionEconomy('action', { action_id: spellId, normal_spell_cast: true });
 
   const baseLevel = _combatQuickSpellBaseLevel(spell);
   if (baseLevel === null) {
@@ -46851,7 +47123,7 @@ function _executeCombatSpellCast(spell, slotLevel) {
 }
 
 function combatQuickWeaponAttack(attackId, mode = 'base') {
-  _consumeActionEconomy('attack_within_action');
+  _consumeActionEconomy('attack_within_action', { action_id: attackId });
   const cards = _getUnifiedQuickAttackCards();
   const rawId = String(attackId || '').trim();
   const normalizedId = rawId.toLowerCase();
