@@ -17997,93 +17997,159 @@ function drawGrid(W, H) {
 }
 
 /**
+ * normalizeCombatMovementState — Accepts a raw movement state object with either
+ * snake_case or camelCase field names and returns a consistently named object.
+ * All callers should use this so no function references bare remainingFt from an
+ * ambiguous source.
+ */
+function normalizeCombatMovementState(raw) {
+  raw = raw || {};
+  const speedFt    = Number(raw.speedFt    ?? raw.speed_ft    ?? 0);
+  const bonusFt    = Number(raw.bonusFt    ?? raw.bonus_ft    ?? 0);
+  const spentFt    = Number(raw.spentFt    ?? raw.spent_ft    ?? 0);
+  const rawRemaining = raw.remainingFt ?? raw.remaining_ft;
+  const remainingFt = rawRemaining != null
+    ? Math.max(0, Number(rawRemaining))
+    : Math.max(0, speedFt + bonusFt - spentFt);
+  return {
+    speedFt,
+    spentFt,
+    remainingFt,
+    bonusFt,
+    totalBudgetFt: speedFt + bonusFt,
+    dashUsed:        !!(raw.dashUsed        ?? raw.dash_used),
+    difficultTerrain:!!(raw.difficultTerrain ?? raw.difficult_terrain),
+    disengaged:      !!(raw.disengaged),
+    tokenId:  raw.tokenId  ?? raw.token_id  ?? null,
+    lastX:    raw.lastX    ?? raw.last_x    ?? null,
+    lastY:    raw.lastY    ?? raw.last_y    ?? null,
+  };
+}
+
+/**
  * drawCombatMovePath — Draws a dashed line from the token's original position
  * to its current drag position during combat, showing distance traveled and
  * remaining movement. Called inside a world-transform save/restore block.
  */
 function drawCombatMovePath() {
-  const path = _combatMovePath;
-  if (!path) return;
-  // Also show path for pending move confirm
-  const pending = _pendingMoveConfirm;
-  const origX = path ? path.origX : (pending ? pending.origX : null);
-  const origY = path ? path.origY : (pending ? pending.origY : null);
-  const tokenId = path ? path.tokenId : (pending ? pending.tokenId : null);
-  if (origX == null || origY == null || !tokenId) return;
+  try {
+    const path = _combatMovePath;
+    if (!path) return;
+    const pending = _pendingMoveConfirm;
+    const origX = path ? path.origX : (pending ? pending.origX : null);
+    const origY = path ? path.origY : (pending ? pending.origY : null);
+    const tokenId = path ? path.tokenId : (pending ? pending.tokenId : null);
+    if (origX == null || origY == null || !tokenId) return;
 
-  const tok = tokens[tokenId];
-  if (!tok) return;
+    const tok = tokens[tokenId];
+    if (!tok) return;
 
-  const tw = Number(tok.width || PX_PER_GRID);
-  const th = Number(tok.height || PX_PER_GRID);
-  const startCX = origX + tw / 2;
-  const startCY = origY + th / 2;
-  const endX = Number(path.previewX ?? tok.x);
-  const endY = Number(path.previewY ?? tok.y);
-  const endCX = endX + tw / 2;
-  const endCY = endY + th / 2;
+    const tw = Number(tok.width || PX_PER_GRID);
+    const th = Number(tok.height || PX_PER_GRID);
+    const startCX = origX + tw / 2;
+    const startCY = origY + th / 2;
+    const endX = Number(path.previewX ?? tok.x);
+    const endY = Number(path.previewY ?? tok.y);
+    const endCX = endX + tw / 2;
+    const endCY = endY + th / 2;
 
-  const dx = endCX - startCX;
-  const dy = endCY - startCY;
-  if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+    const dx = endCX - startCX;
+    const dy = endCY - startCY;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
 
-  // Draw dashed path line
-  ctx.save();
-  ctx.setLineDash([8 / cam.zoom, 5 / cam.zoom]);
-  ctx.strokeStyle = path?.resolver?.valid === false ? '#ff5c5c' : '#00e5cc';
-  ctx.lineWidth = 2.5 / cam.zoom;
-  ctx.globalAlpha = 0.85;
-  ctx.beginPath();
-  ctx.moveTo(startCX, startCY);
-  ctx.lineTo(endCX, endCY);
-  ctx.stroke();
-  ctx.setLineDash([]);
+    // Normalize movement state so remainingFt is always defined
+    const moveState = normalizeCombatMovementState(
+      _combat?.movement || path.moveState || {}
+    );
+    const remainingFt = moveState.remainingFt;
 
-  // Draw start and end dots
-  [{ x: startCX, y: startCY }, { x: endCX, y: endCY }].forEach(p => {
+    // If movement data hasn't loaded yet, show a fallback label and bail
+    if (!_combat?.movement && path.moveState == null) {
+      ctx.save();
+      const midX = (startCX + endCX) / 2;
+      const midY = (startCY + endCY) / 2;
+      const fs = Math.max(12, 14 / cam.zoom);
+      ctx.font = `600 ${fs}px Cinzel, serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillStyle = 'rgba(18,16,14,0.85)';
+      const loadLabel = 'Movement data loading…';
+      const lw = ctx.measureText(loadLabel).width + 12 / cam.zoom;
+      const lh = fs * 1.3;
+      ctx.beginPath();
+      ctx.roundRect(midX - lw / 2, midY - lh - 2 / cam.zoom, lw, lh, 4 / cam.zoom);
+      ctx.fill();
+      ctx.fillStyle = '#aaa';
+      ctx.fillText(loadLabel, midX, midY - 4 / cam.zoom);
+      ctx.restore();
+      return;
+    }
+
+    // Draw dashed path line
+    ctx.save();
+    ctx.setLineDash([8 / cam.zoom, 5 / cam.zoom]);
+    ctx.strokeStyle = path?.resolver?.valid === false ? '#ff5c5c' : '#00e5cc';
+    ctx.lineWidth = 2.5 / cam.zoom;
+    ctx.globalAlpha = 0.85;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 5 / cam.zoom, 0, Math.PI * 2);
-    ctx.fillStyle = '#00e5cc';
+    ctx.moveTo(startCX, startCY);
+    ctx.lineTo(endCX, endCY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw start and end dots
+    [{ x: startCX, y: startCY }, { x: endCX, y: endCY }].forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 5 / cam.zoom, 0, Math.PI * 2);
+      ctx.fillStyle = '#00e5cc';
+      ctx.fill();
+    });
+
+    // Draw ghost outline at origin
+    ctx.strokeStyle = 'rgba(0, 229, 204, 0.35)';
+    ctx.lineWidth = 1.5 / cam.zoom;
+    ctx.setLineDash([4 / cam.zoom, 4 / cam.zoom]);
+    ctx.beginPath();
+    ctx.arc(startCX, startCY, tw / 2 - 2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Distance label — use resolver.remainingFeet (the locally computed value) for
+    // the "after" display, and remainingFt from normalized state to colour the text.
+    const resolver = path.resolver || _resolveClientCombatMovement(tok, origX, origY, endX, endY);
+    const costFt = Number(resolver.finalCostFeet || 0);
+    const resolverRemaining = Number(resolver.remainingFeet ?? remainingFt ?? 0);
+    const after = Math.max(0, resolverRemaining - costFt);
+    let label = resolver.valid
+      ? `Valid move: ${Math.round(costFt)} ft  •  ${Math.round(resolverRemaining)} → ${Math.round(after)} ft left`
+      : (resolver.reason || `Too far: ${Math.round(costFt)} ft`);
+    if (Number(resolver.costMultiplier || 1) > 1) label += ' • Difficult terrain: cost doubled';
+
+    const midX = (startCX + endCX) / 2;
+    const midY = (startCY + endCY) / 2;
+    const fs = Math.max(12, 14 / cam.zoom);
+    ctx.font = `600 ${fs}px Cinzel, serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    const twM = ctx.measureText(label).width + 12 / cam.zoom;
+    const thM = fs * 1.3;
+    ctx.fillStyle = 'rgba(18,16,14,0.85)';
+    ctx.beginPath();
+    const rx = midX - twM / 2, ry = midY - thM - 2 / cam.zoom;
+    const rr = 4 / cam.zoom;
+    ctx.roundRect(rx, ry, twM, thM, rr);
     ctx.fill();
-  });
-
-  // Draw ghost outline at origin
-  ctx.strokeStyle = 'rgba(0, 229, 204, 0.35)';
-  ctx.lineWidth = 1.5 / cam.zoom;
-  ctx.setLineDash([4 / cam.zoom, 4 / cam.zoom]);
-  ctx.beginPath();
-  ctx.arc(startCX, startCY, tw / 2 - 2, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Distance label
-  const resolver = path.resolver || _resolveClientCombatMovement(tok, origX, origY, endX, endY);
-  const costFt = Number(resolver.finalCostFeet || 0);
-  const after = Math.max(0, Number(resolver.remainingFeet || 0) - costFt);
-  let label = resolver.valid ? `Valid move: ${Math.round(costFt)} ft, ${Math.round(after)} ft left` : (resolver.reason || `Too far: ${Math.round(costFt)} ft`);
-  if (Number(resolver.costMultiplier || 1) > 1) label += ' • Difficult terrain: cost doubled';
-
-  const midX = (startCX + endCX) / 2;
-  const midY = (startCY + endCY) / 2;
-  const fs = Math.max(12, 14 / cam.zoom);
-  ctx.font = `600 ${fs}px Cinzel, serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'bottom';
-  const twM = ctx.measureText(label).width + 12 / cam.zoom;
-  const thM = fs * 1.3;
-  ctx.fillStyle = 'rgba(18,16,14,0.85)';
-  ctx.beginPath();
-  const rx = midX - twM / 2, ry = midY - thM - 2 / cam.zoom;
-  const rr = 4 / cam.zoom;
-  ctx.roundRect(rx, ry, twM, thM, rr);
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(0,229,204,0.5)';
-  ctx.lineWidth = 1 / cam.zoom;
-  ctx.stroke();
-  ctx.fillStyle = (remainingFt != null && costFt > remainingFt + 0.01) ? '#ef4444' : '#00e5cc';
-  ctx.fillText(label, midX, midY - 4 / cam.zoom);
-  ctx.globalAlpha = 1;
-  ctx.restore();
+    ctx.strokeStyle = 'rgba(0,229,204,0.5)';
+    ctx.lineWidth = 1 / cam.zoom;
+    ctx.stroke();
+    // remainingFt is now always declared — use it to colour invalid moves red
+    ctx.fillStyle = (costFt > remainingFt + 0.01) ? '#ef4444' : '#00e5cc';
+    ctx.fillText(label, midX, midY - 4 / cam.zoom);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  } catch (err) {
+    console.error('[drawCombatMovePath] error:', err, { _combatMovePath, _pendingMoveConfirm });
+  }
 }
 
 /**
