@@ -34303,9 +34303,14 @@ function _rollSpellFormula(card, expr, kind = 'damage', opts = {}) {
   const cleaned = _normalizeSpellFormula(expr || '', card);
   const result = _rollDiceExpr(cleaned);
   if (!result) return null;
+  const formulaChunks = typeof _expandSpellFormulaChunks === 'function' ? _expandSpellFormulaChunks(cleaned) : [];
   const primaryMatch = String(cleaned || '').match(/(\d+)d(\d+)/i);
-  const qty = primaryMatch ? Math.max(1, parseInt(primaryMatch[1], 10) || 1) : Math.max(1, result.rolls?.length || 1);
-  const diceType = primaryMatch ? Math.max(2, parseInt(primaryMatch[2], 10) || 20) : 20;
+  const qty = formulaChunks.length
+    ? formulaChunks.reduce((sum, chunk) => sum + (Math.max(1, parseInt(chunk.qty, 10) || 1)), 0)
+    : (primaryMatch ? Math.max(1, parseInt(primaryMatch[1], 10) || 1) : Math.max(1, result.rolls?.length || 1));
+  const diceType = formulaChunks.length
+    ? Math.max(2, parseInt(formulaChunks[0].die, 10) || 20)
+    : (primaryMatch ? Math.max(2, parseInt(primaryMatch[2], 10) || 20) : 20);
   const modifier = Array.isArray(result.rolls)
     ? result.total - result.rolls.reduce((sum, value) => sum + (parseInt(value, 10) || 0), 0)
     : 0;
@@ -34884,9 +34889,14 @@ function _rollNativeActionFormula(card, expr, kind = 'damage', opts = {}) {
   const cleaned = _normalizeAttackFormula(expr || '');
   const result = _rollDiceExpr(cleaned);
   if (!result) return null;
+  const formulaChunks = typeof _expandSpellFormulaChunks === 'function' ? _expandSpellFormulaChunks(cleaned) : [];
   const primaryMatch = String(cleaned || '').match(/(\d+)d(\d+)/i);
-  const qty = primaryMatch ? Math.max(1, parseInt(primaryMatch[1], 10) || 1) : Math.max(1, result.rolls?.length || 1);
-  const diceType = primaryMatch ? Math.max(2, parseInt(primaryMatch[2], 10) || 20) : 20;
+  const qty = formulaChunks.length
+    ? formulaChunks.reduce((sum, chunk) => sum + (Math.max(1, parseInt(chunk.qty, 10) || 1)), 0)
+    : (primaryMatch ? Math.max(1, parseInt(primaryMatch[1], 10) || 1) : Math.max(1, result.rolls?.length || 1));
+  const diceType = formulaChunks.length
+    ? Math.max(2, parseInt(formulaChunks[0].die, 10) || 20)
+    : (primaryMatch ? Math.max(2, parseInt(primaryMatch[2], 10) || 20) : 20);
   const modifier = Array.isArray(result.rolls)
     ? result.total - result.rolls.reduce((sum, value) => sum + (parseInt(value, 10) || 0), 0)
     : 0;
@@ -43835,8 +43845,8 @@ function _getInventoryAttackModeMeta(card, mode = 'base') {
     ? 'versatile'
     : ((wanted === 'thrown' && card?.can_throw) ? 'thrown' : 'base');
   const formula = selectedMode === 'versatile'
-    ? String(card?.versatile_damage_formula || card?.damage_formula || card?.base_damage_formula || card?.damage || '').trim()
-    : String(card?.damage_formula || card?.base_damage_formula || card?.damage || '').trim();
+    ? String(card?.versatile_damage_formula || card?.damage_formula || card?.base_damage_formula || card?.damage_dice || card?.damage || '').trim()
+    : String(card?.damage_formula || card?.base_damage_formula || card?.damage_dice || card?.damage || '').trim();
   const bits = [];
   if (selectedMode === 'versatile') bits.push('two-handed versatile');
   if (selectedMode === 'thrown') bits.push('thrown attack');
@@ -44010,8 +44020,8 @@ function _buildEquippedInventoryAttackCard(item, idx, slot = '') {
   const abilityLabel = isRanged ? 'DEX' : (isFinesse ? (dexMod >= strMod ? 'DEX (finesse)' : 'STR (finesse)') : 'STR');
   const prof = _proficiencyBonusFromCharacterSheet();
   const attackBonusValue = prof + abilityMod;
-  const baseDamage = String(item.damage_dice || item.versatile_damage || '').trim();
-  const versatileDamage = String(item.versatile_damage || '').trim();
+  const baseDamage = String(item.damage_dice || item.damage_formula || item.base_damage_formula || item.damage || item.versatile_damage || '').trim();
+  const versatileDamage = String(item.versatile_damage || item.versatile_damage_formula || '').trim();
   const offHandNoMod = String(slot || '').trim().toLowerCase() === 'off hand' && isLight;
   const damageFormula = _formatInventoryWeaponDamageFormula(baseDamage, abilityMod, !offHandNoMod);
   const versatileDamageFormula = versatileDamage ? _formatInventoryWeaponDamageFormula(versatileDamage, abilityMod, !offHandNoMod) : '';
@@ -46432,7 +46442,11 @@ function combatQuickRollWeaponDamage(attackId, mode = 'base', critical = false) 
   const rawId = String(attackId || '').trim();
   const normalizedId = rawId.toLowerCase();
   const card = (cards || []).find(c => String(c.id || '') === rawId)
-    || (cards || []).find(c => String(c.name || '').trim().toLowerCase() === normalizedId);
+    || (cards || []).find(c => String(c.name || '').trim().toLowerCase() === normalizedId)
+    || (cards || []).find(c => {
+      const slug = String(c.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      return slug && (slug === normalizedId || ('attack-' + slug) === normalizedId);
+    });
   if (!card) { showToast('Attack not found.'); return null; }
   const damageMeta = _getInventoryAttackModeMeta(card, mode);
   if (!damageMeta.formula) { showToast(`${card.name || 'Weapon'} has no damage formula. Equip it from inventory or add damage dice in the item library.`); return null; }
