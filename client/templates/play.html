@@ -46159,11 +46159,23 @@ function _combatQuickNormalizeSpellCard(raw, fallback = {}) {
   const damageType = String(row.damage_type || row.damageType || row.healing_type || fallback.damage_type || fallback.damageType || '').trim();
   const scalingData = (row.scaling_data && typeof row.scaling_data === 'object') ? row.scaling_data : (row.scalingData && typeof row.scalingData === 'object' ? row.scalingData : {});
   const perSlotFormula = String(row.damage_upcast_per_level || row.upcastFormula || row.higherLevelFormula || scalingData.per_slot_formula || scalingData.perSlotFormula || '').trim();
-  const castOptions = (row.cast_options && typeof row.cast_options === 'object') ? row.cast_options : {};
+  const castOptions = { ...(((row.cast_options && typeof row.cast_options === 'object') ? row.cast_options : {})) };
   const baseLevelKey = level !== null ? String(level) : '';
   const baseFormula = damageFormula || healingFormula || String((baseLevelKey ? castOptions[baseLevelKey]?.formula : '') || '').trim();
   if (level !== null && level >= 0 && !castOptions[String(level)] && baseFormula) {
     castOptions[String(level)] = { cast_level: level, formula: baseFormula, effect: row.base_effect_text || row.description || row.effect || fallback.base_effect_text || 'Spell card' };
+  }
+  if (level !== null && level > 0 && baseFormula && perSlotFormula) {
+    for (let castLevel = level + 1; castLevel <= 9; castLevel += 1) {
+      if (!castOptions[String(castLevel)]) {
+        castOptions[String(castLevel)] = {
+          cast_level: castLevel,
+          formula: _combatQuickScaleSpellFormula(baseFormula, perSlotFormula, castLevel - level),
+          effect: row.base_effect_text || row.description || row.effect || fallback.base_effect_text || 'Spell card',
+          note: `Upcast ${castLevel - level} slot level${castLevel - level === 1 ? '' : 's'} above base`,
+        };
+      }
+    }
   }
   return {
     ...row,
@@ -46293,6 +46305,19 @@ function _combatQuickSpellCastLevelLabel(slotLevel) {
   return n <= 0 ? 'Cantrip' : `${ordinals[n] || `${n}th`}-level`;
 }
 
+function _combatQuickScaleSpellFormula(baseFormula, perSlotFormula, extraLevels) {
+  const levels = Math.max(0, parseInt(extraLevels, 10) || 0);
+  const baseText = String(baseFormula || '').trim();
+  const perText = String(perSlotFormula || '').trim();
+  if (!levels || !baseText || !perText) return baseText;
+  const baseMatch = baseText.match(/^(\d+)d(\d+)(.*)$/i);
+  const upMatch = perText.match(/^(\d+)d(\d+)(.*)$/i);
+  if (baseMatch && upMatch && baseMatch[2] === upMatch[2] && (baseMatch[3] || '') === (upMatch[3] || '')) {
+    return `${parseInt(baseMatch[1], 10) + (levels * parseInt(upMatch[1], 10))}d${baseMatch[2]}${baseMatch[3] || ''}`;
+  }
+  return `${baseText} + ${Array(levels).fill(perText).join(' + ')}`;
+}
+
 function _combatQuickFallbackSpellDamage(name, slotLevel) {
   const key = String(name || '').trim().toLowerCase();
   const fallbacks = {
@@ -46322,8 +46347,9 @@ function _getCombatSpellDamageExpression(spell, slotLevel) {
   const baseLevel = _combatQuickSpellBaseLevel(spell);
   const numericSlotLevel = Math.max(0, parseInt(slotLevel, 10) || 0);
   const effectiveSlot = numericSlotLevel > 0 ? numericSlotLevel : (baseLevel || 0);
-  let dmgExpr = card.damage_dice || card.damage || card.damage_formula || card.base_damage_formula
-    || (card.cast_options && card.cast_options[String(effectiveSlot)])?.formula
+  const exactCastOption = card.cast_options && card.cast_options[String(effectiveSlot)];
+  let dmgExpr = exactCastOption?.formula
+    || card.damage_dice || card.damage || card.damage_formula || card.base_damage_formula
     || card.current?.formula || '';
   if (baseLevel === 0 && _charSheet?.level) {
     const charLvl = Number(_charSheet.level || 1);
@@ -46338,15 +46364,14 @@ function _getCombatSpellDamageExpression(spell, slotLevel) {
     }
     if (scaledDice) dmgExpr = scaledDice;
   }
-  if (baseLevel > 0 && effectiveSlot > baseLevel) {
+  if (!exactCastOption && baseLevel > 0 && effectiveSlot > baseLevel) {
     const extraLevels = effectiveSlot - baseLevel;
     const upcastDice = card.damage_upcast_per_level || '';
     if (upcastDice) {
       const upMatch  = upcastDice.match(/^(\d+)d(\d+)/i);
       const baseMatch = String(dmgExpr || '').match(/^(\d+)d(\d+)/i);
       if (upMatch && baseMatch && parseInt(upMatch[2], 10) === parseInt(baseMatch[2], 10)) {
-        const totalDice = parseInt(baseMatch[1], 10) + extraLevels * parseInt(upMatch[1], 10);
-        dmgExpr = `${totalDice}d${baseMatch[2]}` + String(dmgExpr || '').replace(/^\d+d\d+/, '');
+        dmgExpr = _combatQuickScaleSpellFormula(dmgExpr, upcastDice, extraLevels);
       }
     }
   }
