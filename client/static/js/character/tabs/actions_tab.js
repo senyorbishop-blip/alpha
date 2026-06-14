@@ -2660,7 +2660,9 @@
       const kind = _actionKind(action);
       const resourceState = _resourceStateFromAction(action);
       const economy = Array.isArray(action && action.economy) ? action.economy : [action && (action.economy || action.actionType || lane || 'action')];
-      const needsTarget = !!(action && (_firstText(action.range, action.reach, '') || _parseAttackBonusValue(action.attackBonus) != null || _actionDamageText(action)));
+      // Targets are optional for quick combat rolls: attacks/spells can still be
+      // rolled into chat with no selected token, they just do not auto-apply HP.
+      const needsTarget = false;
       const canUse = _canUseAction(action, kind);
       return Object.assign({}, action || {}, {
         quickBarLane: lane || economy[0] || 'action',

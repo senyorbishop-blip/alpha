@@ -1468,6 +1468,10 @@
       padding: 0.55rem 0.6rem 0.65rem;
       border-bottom: 1px solid rgba(255,255,255,0.06);
       background: linear-gradient(180deg, rgba(0,229,204,0.04), rgba(0,0,0,0));
+      max-height: min(62vh, 620px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
     }
     .player-actions-header {
       display: flex;
@@ -1515,6 +1519,7 @@
       display: flex;
       flex-direction: column;
       gap: 0.45rem;
+      min-height: 0;
     }
     .player-actions-hub.collapsed .player-actions-sections {
       display: none;
@@ -1708,6 +1713,20 @@
       display: flex;
       flex-wrap: wrap;
       gap: 0.24rem;
+      align-items: center;
+    }
+    .action-economy-convert-btn {
+      border: 1px solid rgba(155,89,182,0.38);
+      border-radius: 999px;
+      background: rgba(155,89,182,0.12);
+      color: #d8b7ff;
+      font-size: 0.55rem;
+      padding: 0.16rem 0.42rem;
+      cursor: pointer;
+    }
+    .action-economy-convert-btn:hover {
+      border-color: rgba(155,89,182,0.65);
+      background: rgba(155,89,182,0.2);
     }
     .action-economy-note {
       font-size: 0.55rem;
@@ -19231,9 +19250,9 @@ function onMouseMove(e) {
 
     // Throttled broadcast
     const now = Date.now();
-    if (!drag.previewMode && (!moveThrottle[drag.tokenId] || now - moveThrottle[drag.tokenId] > 80)) {
+    if (!drag.previewMode && (!moveThrottle[drag.tokenId] || now - moveThrottle[drag.tokenId] > 160)) {
       moveThrottle[drag.tokenId] = now;
-      sendWS({ type: 'token_move', payload: { token_id: drag.tokenId, x: t.x, y: t.y } });
+      sendWS({ type: 'token_move', payload: { token_id: drag.tokenId, x: t.x, y: t.y, preview: true } });
     }
   }
 }
@@ -31831,6 +31850,11 @@ function handleLegacyMessage(msg) {
       if (_pendingMoveConfirm && String(_pendingMoveConfirm.tokenId || '') === String(p.token_id || '')) {
         _pendingMoveConfirm = null;
       }
+      if (drag.active && String(drag.tokenId || '') === String(p.token_id || '')) {
+        // Ignore echoed/relayed positions while this client is dragging the same token;
+        // applying them mid-drag causes visible rubber-banding on slow connections.
+        break;
+      }
       if (tokens[p.token_id]) {
         tokens[p.token_id].x = p.x;
         tokens[p.token_id].y = p.y;
@@ -43236,6 +43260,7 @@ function combatApplyState(state) {
   const nextTurnKey = _playerActionTurnKey();
   if (!nextTurnKey || nextTurnKey !== prevTurnKey) {
     _playerActionEconomyRuntime.action_surge_armed = false;
+    _playerActionEconomyRuntime.bonus_action_converted_actions = 0;
   }
   refreshRightPanelContextUI();
   // Reset inspect check results when combat ends (new encounter = fresh attempts)
@@ -44545,7 +44570,11 @@ function _buildActionEconomyState() {
   if (incapacitated) restrictions.push('Cannot take Actions or Reactions while incapacitated/stunned/paralyzed.');
   if (restrained) restrictions.push('Movement is 0 while restrained or grappled.');
 
-  const actionsTotal = actions_total_base + (_playerActionEconomyRuntime.action_surge_armed ? 1 : 0) + (haste ? 1 : 0);
+  const bonusConvertedActions = _safeActionEconomyCount(_playerActionEconomyRuntime.bonus_action_converted_actions, 0);
+  const actionsTotal = actions_total_base + (_playerActionEconomyRuntime.action_surge_armed ? 1 : 0) + (haste ? 1 : 0) + bonusConvertedActions;
+  if (bonusConvertedActions > 0) {
+    extraActionSources.push({ source: 'Bonus Action conversion', detail: `+${bonusConvertedActions} Action this turn` });
+  }
   const attacksTotal = _getExtraAttackTotalFromSheet();
 
   const state = {
@@ -44596,6 +44625,7 @@ function _renderActionEconomyPanel(state) {
   (state.reaction_sources || []).forEach(src => notes.push(`${src.source}: ${src.detail}`));
   (state.movement_modifiers || []).forEach(src => notes.push(`${src.source}: ${src.detail}`));
   (state.restrictions || []).forEach(msg => notes.push(`Restriction: ${msg}`));
+  const canConvertBonusToAction = bonusRem > 0 && !state.locks?.bonus_actions_disabled;
   return `<section class="action-economy-panel" aria-label="Action Economy">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:0.35rem;">
       <strong style="font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);font-family:'Cinzel',serif;">Action Economy</strong>
@@ -44609,7 +44639,10 @@ function _renderActionEconomyPanel(state) {
       ${mk('Attack action swings', `${attackRem}/${state.attacks_within_action_total} remaining`, attackRem > 0)}
       ${mk('Reset', String(state.reset_timing || 'Start turn'), true)}
     </div>
-    ${notes.length ? `<div class="action-economy-notes">${notes.slice(0, 8).map(note => `<span class="action-economy-note" title="${escapeHtml(note)}">${escapeHtml(note)}</span>`).join('')}</div>` : ''}
+    <div class="action-economy-notes">
+      ${canConvertBonusToAction ? `<button type="button" class="action-economy-convert-btn" onclick="playerConvertBonusActionToAction()" title="Optional table rule: spend a Bonus Action to gain one more Action this turn.">Spend Bonus → +1 Action</button>` : ''}
+      ${notes.slice(0, 8).map(note => `<span class="action-economy-note" title="${escapeHtml(note)}">${escapeHtml(note)}</span>`).join('')}
+    </div>
   </section>`;
 }
 
@@ -44639,6 +44672,24 @@ function _consumeActionEconomy(kind, meta = {}) {
   state.turn_key = _playerActionTurnKey();
   _playerActionEconomyRuntime.state = state;
   _saveActionEconomyRuntime(state);
+}
+
+function playerConvertBonusActionToAction() {
+  const state = _buildActionEconomyState();
+  if (!state) return;
+  const bonusRem = Math.max(0, Number(state.bonus_actions_total || 0) - Number(state.bonus_actions_used || 0));
+  if (bonusRem <= 0 || state.locks?.bonus_actions_disabled) {
+    showToast('No Bonus Action available to convert.');
+    return;
+  }
+  _playerActionEconomyRuntime.bonus_action_converted_actions = _safeActionEconomyCount(_playerActionEconomyRuntime.bonus_action_converted_actions, 0) + 1;
+  state.bonus_actions_used = Math.min(state.bonus_actions_total, Number(state.bonus_actions_used || 0) + 1);
+  state.actions_total = _safeActionEconomyCount(Number(state.actions_total || 0) + 1, 1);
+  state.turn_key = _playerActionTurnKey();
+  _playerActionEconomyRuntime.state = state;
+  _saveActionEconomyRuntime(state);
+  showToast('Bonus Action converted into one extra Action for this turn.');
+  renderPlayerActionsHub();
 }
 
 function _evaluateActionEconomyAvailability(action, sectionName, state) {
@@ -44887,6 +44938,33 @@ function renderPlayerActionsHub() {
     return;
   }
   const sections = _getPlayerActionsSections();
+  // Keep this combat hub focused on the same quick-pick surface as the floating
+  // quick bar: selected/custom actions first, with a tiny auto-pick fallback.
+  const quickModel = (window.CombatQuickSelectors && typeof window.CombatQuickSelectors.selectQuickActions === 'function')
+    ? window.CombatQuickSelectors.selectQuickActions(_charSheet || {})
+    : null;
+  const quickKeys = new Set();
+  const rememberQuick = (entry) => {
+    if (!entry) return;
+    [entry.id, entry.name, entry.displayName].forEach(value => {
+      const key = String(value || '').trim().toLowerCase();
+      if (key) quickKeys.add(key);
+    });
+  };
+  ['primaryActions', 'bonusActions', 'reactions', 'topSpells'].forEach(group => (quickModel?.[group] || []).forEach(rememberQuick));
+  const filterQuickEntries = (entries, fallbackLimit = 3) => {
+    const rows = Array.isArray(entries) ? entries : [];
+    if (!quickKeys.size) return rows.slice(0, fallbackLimit);
+    const filtered = rows.filter(entry => quickKeys.has(String(entry?.id || '').trim().toLowerCase()) || quickKeys.has(String(entry?.name || '').trim().toLowerCase()));
+    return filtered.length ? filtered : rows.slice(0, fallbackLimit);
+  };
+  sections.Attacks = filterQuickEntries(sections.Attacks, 3);
+  sections['Bonus Actions'] = filterQuickEntries(sections['Bonus Actions'], 2);
+  sections.Reactions = filterQuickEntries(sections.Reactions, 2);
+  sections['Class Features'] = filterQuickEntries(sections['Class Features'], 2);
+  sections.Spells = filterQuickEntries(sections.Spells, 5);
+  sections['Item Spells'] = filterQuickEntries(sections['Item Spells'], 2);
+  // Legacy required categories remain: ['Attacks', 'Bonus Actions', 'Reactions', 'Class Features', 'Spells']
   const order = ['Attacks', 'Bonus Actions', 'Reactions', 'Class Features', 'Item Spells', 'Spells'];
   const visible = order.filter(key => (sections[key] || []).length);
   if (!visible.length) {
@@ -44909,7 +44987,7 @@ function renderPlayerActionsHub() {
     <div class="rules-badges" style="padding:0 0.15rem 0.55rem;">${visible.map(sectionName => `<span class="rules-badge ${sectionName === 'Spells' ? 'good' : ''}">${escapeHtml(sectionName)} • ${escapeHtml(String((sections[sectionName] || []).length))}</span>`).join('')}</div>
     <div class="player-actions-sections">
       ${visible.map(sectionName => {
-        const entries = sectionName === 'Spells' ? sections[sectionName] : sections[sectionName].slice(0, 8);
+        const entries = sections[sectionName];
         return `<section class="player-action-section">
           <div class="player-action-section-header"><span>${escapeHtml(sectionName)}</span><span>${entries.length}</span></div>
           <div class="player-action-list">
@@ -45038,8 +45116,8 @@ function renderCombat() {
         const showAttackRow = ROLE === 'dm' || (canPlayerAct && !pendingAttack);
         const attackHtml = showAttackRow ? `<div style="display:flex;gap:0.35rem;flex-wrap:wrap;width:100%;margin-top:0.35rem;align-items:center;">
           <button class="combat-btn small" onclick="combatArmTarget()" ${(ROLE !== 'dm' && !canPlayerAct) ? 'disabled' : ''}>${_combatTargeting ? 'Pick Target…' : 'Select Target'}</button>
-          <button class="combat-btn small primary" onclick="combatAttackSelected('weapon')" ${(ROLE !== 'dm' && !canPlayerAct) || !selectedTarget ? 'disabled' : ''}>Weapon Attack</button>
-          <button class="combat-btn small" onclick="combatAttackSelected('spell')" ${(ROLE !== 'dm' && !canPlayerAct) || !selectedTarget ? 'disabled' : ''}>Spell Attack</button>
+          <button class="combat-btn small primary" onclick="combatAttackSelected('weapon')" ${(ROLE !== 'dm' && !canPlayerAct) ? 'disabled' : ''}>Weapon Attack</button>
+          <button class="combat-btn small" onclick="combatAttackSelected('spell')" ${(ROLE !== 'dm' && !canPlayerAct) ? 'disabled' : ''}>Spell Attack</button>
           <span style="font-size:0.62rem;color:var(--parchment-dim);white-space:nowrap;">Target: ${selectedTargetName}</span>
           ${pendingHtml}
         </div>` : (waitingHtml ? `<div style="display:flex;gap:0.35rem;flex-wrap:wrap;width:100%;margin-top:0.35rem;align-items:center;">${waitingHtml}</div>` : '');
@@ -45833,10 +45911,22 @@ function combatSelectTarget(tokenId) {
 function combatAttackSelected(attackKind) {
   if (!_canActCurrentTurn()) { showToast('Only the active combatant can attack.'); return; }
   const target = _combat.selected_target_id ? tokens[_combat.selected_target_id] : null;
-  if (!target) { showToast('Select a target first.'); return; }
   if (String(attackKind) === 'spell') {
-    // Show spell picker before sending to DM
-    _showCombatSpellAttackPicker(target.id);
+    if (target) _showCombatSpellAttackPicker(target.id);
+    else {
+      const spells = _getCombatQuickSpells();
+      if (spells.length === 1) combatQuickCastSpell(spells[0].id || spells[0].name);
+      else _showCombatSpellAttackPicker('');
+      showToast('No target selected — rolling/casting without applying damage to a token.');
+    }
+    return;
+  }
+  if (!target) {
+    const cards = _getUnifiedQuickAttackCards();
+    const firstWeapon = (cards || []).find(card => String(card?.source || '').match(/weapon|equip_only|system_unarmed/i)) || (cards || [])[0];
+    if (firstWeapon) combatQuickWeaponAttack(firstWeapon.id || firstWeapon.name);
+    else showToast('No weapon attack found.');
+    showToast('No target selected — weapon roll made without applying damage to a token.');
     return;
   }
   sendWS({ type: 'combat_attack_request', payload: { target_id: target.id, attack_kind: 'weapon' } });
