@@ -121,9 +121,35 @@
     return pool;
   }
 
+  function _extractItemSpellCards(item) {
+    const gs = item && item.granted_spells;
+    if (!Array.isArray(gs) || !gs.length) return [];
+    const cards = [];
+    gs.slice(0, 12).forEach(function (entry) {
+      if (typeof entry === 'string' && entry.trim()) {
+        cards.push({ id: entry.trim().toLowerCase().replace(/\s+/g, '-'), name: entry.trim(), charge_cost: null, cast_level: 0 });
+      } else if (entry && typeof entry === 'object') {
+        const name = String(entry.name || entry.id || '').trim();
+        if (name) cards.push({
+          id: String(entry.id || '').trim() || name.toLowerCase().replace(/\s+/g, '-'),
+          name: name,
+          charge_cost: typeof entry.charge_cost === 'number' ? entry.charge_cost : null,
+          cast_level: Number(entry.cast_level || 0),
+          uses_item_dc: !!entry.uses_item_dc,
+          uses_item_attack_bonus: !!entry.uses_item_attack_bonus,
+          description: String(entry.description || ''),
+        });
+      }
+    });
+    return cards;
+  }
+
   function _extractItemSpellNames(item) {
+    const cards = _extractItemSpellCards(item);
+    if (cards.length) return Array.from(new Set(cards.map(function (c) { return c.name; }))).slice(0, 3);
+
     const explicit = [];
-    [item && item.spell, item && item.spells, item && item.spell_name, item && item.spell_names, item && item.granted_spells].forEach(function (value) {
+    [item && item.spell, item && item.spells, item && item.spell_name, item && item.spell_names].forEach(function (value) {
       if (Array.isArray(value)) explicit.push.apply(explicit, value);
       else if (typeof value === 'string' && value.trim()) explicit.push.apply(explicit, value.split(/[,;\n]+/));
     });
@@ -153,9 +179,16 @@
     }) || null;
   }
 
-  function _renderEquippedActions(item) {
+  function _renderEquippedActions(item, itemIndex) {
     if (!item || !item.equipped) return '';
     const pieces = [];
+
+    const needsAttunement = !!(item.attunement_required || item.requires_attunement || item.attuned === false);
+    const isAttuned = !!(item.attuned);
+    const attunementWarn = needsAttunement && !isAttuned
+      ? '<div class="cs-summary-note" style="color:var(--gold,#c9a227);margin-top:0.2rem;">⚠ Requires attunement — item spells unavailable</div>'
+      : '';
+
     const attackCard = _findAttackCardForItem(item);
     if (attackCard) {
       pieces.push(
@@ -163,14 +196,50 @@
         '<button type="button" class="cs-feature-inspect muted" data-item-action="attack-info" data-action-source="' + _esc(String(attackCard.source || 'equip_only')) + '" data-action-id="' + _esc(String(attackCard.id || '')) + '">Info</button>'
       );
     }
-    _extractItemSpellNames(item).forEach(function (spellName) {
-      pieces.push(
-        '<button type="button" class="cs-feature-inspect" data-item-action="cast-spell" data-spell-name="' + _esc(spellName) + '">Cast ' + _esc(spellName) + '</button>' +
-        '<button type="button" class="cs-feature-inspect muted" data-item-action="spell-info" data-spell-name="' + _esc(spellName) + '">Spell Info</button>'
-      );
-    });
-    if (!pieces.length) return '';
-    return '<div class="cs-combat-chip-row" style="margin-top:0.45rem;flex-wrap:wrap;">' + pieces.join('') + '</div>';
+
+    const charges_current = typeof item.charges_current === 'number' ? item.charges_current : -1;
+    const charges_max = typeof item.charges_max === 'number' ? item.charges_max : 0;
+    const chargeLabel = charges_max > 0 ? _esc(String(Math.max(0, charges_current)) + '/' + String(charges_max) + ' charges') : '';
+
+    const spellCards = _extractItemSpellCards(item);
+    if (spellCards.length && (!needsAttunement || isAttuned)) {
+      spellCards.forEach(function (sc) {
+        const chargeCost = typeof sc.charge_cost === 'number' ? sc.charge_cost : null;
+        const canCast = chargeCost === null || chargeCost === 0 || charges_max === 0 || charges_current < 0 || charges_current >= chargeCost;
+        const costLabel = chargeCost !== null && chargeCost > 0 ? ' (' + String(chargeCost) + ' charge' + (chargeCost !== 1 ? 's' : '') + ')' : '';
+        const itemIdStr = _esc(String(item.id || item.magic_item_id || ''));
+        const spellIdStr = _esc(String(sc.id || ''));
+        const idxStr = _esc(String(itemIndex != null ? itemIndex : -1));
+        const castLevelStr = _esc(String(sc.cast_level || 0));
+        const chargeCostStr = _esc(String(chargeCost != null ? chargeCost : 1));
+        pieces.push(
+          '<button type="button" class="cs-feature-inspect' + (canCast ? '' : ' disabled') + '"' +
+            (canCast ? '' : ' disabled') +
+            ' data-item-action="cast-item-spell"' +
+            ' data-spell-name="' + _esc(sc.name) + '"' +
+            ' data-spell-id="' + spellIdStr + '"' +
+            ' data-item-id="' + itemIdStr + '"' +
+            ' data-item-index="' + idxStr + '"' +
+            ' data-charge-cost="' + chargeCostStr + '"' +
+            ' data-cast-level="' + castLevelStr + '"' +
+            ' title="' + _esc((sc.description || sc.name) + (costLabel ? ' • ' + costLabel.trim() : '')) + '">' +
+            'Cast ' + _esc(sc.name) + _esc(costLabel) +
+          '</button>' +
+          '<button type="button" class="cs-feature-inspect muted" data-item-action="spell-info" data-spell-name="' + _esc(sc.name) + '">Spell Info</button>'
+        );
+      });
+    } else if (spellCards.length === 0) {
+      _extractItemSpellNames(item).forEach(function (spellName) {
+        pieces.push(
+          '<button type="button" class="cs-feature-inspect" data-item-action="cast-spell" data-spell-name="' + _esc(spellName) + '">Cast ' + _esc(spellName) + '</button>' +
+          '<button type="button" class="cs-feature-inspect muted" data-item-action="spell-info" data-spell-name="' + _esc(spellName) + '">Spell Info</button>'
+        );
+      });
+    }
+
+    if (!pieces.length && !attunementWarn) return '';
+    const chargeRow = chargeLabel ? '<div class="cs-summary-note" style="margin-top:0.18rem;">Charges: ' + chargeLabel + '</div>' : '';
+    return attunementWarn + chargeRow + (pieces.length ? '<div class="cs-combat-chip-row" style="margin-top:0.45rem;flex-wrap:wrap;">' + pieces.join('') + '</div>' : '');
   }
 
   function _renderItem(item, itemIndex) {
@@ -193,7 +262,7 @@
           ${equipped ? 'Unequip' : 'Equip'}
         </button>
       </div>
-      ${_renderEquippedActions(item)}
+      ${_renderEquippedActions(item, itemIndex)}
     </div>`;
   }
 
@@ -350,12 +419,37 @@
       const actionId = String(actionBtn.getAttribute('data-action-id') || '');
       const actionSource = String(actionBtn.getAttribute('data-action-source') || 'equip_only');
       const spellName = String(actionBtn.getAttribute('data-spell-name') || '');
+      const spellId = String(actionBtn.getAttribute('data-spell-id') || '');
+      const itemId = String(actionBtn.getAttribute('data-item-id') || '');
+      const itemIndex = parseInt(actionBtn.getAttribute('data-item-index') || '-1', 10);
+      const chargeCost = parseInt(actionBtn.getAttribute('data-charge-cost') || '1', 10);
+      const castLevel = parseInt(actionBtn.getAttribute('data-cast-level') || '0', 10);
+
       if (action === 'attack' && actionId && typeof global.playerUseAction === 'function') {
         global.playerUseAction(actionSource, actionId);
         return;
       }
       if (action === 'attack-info' && actionId && typeof global.playerInspectAction === 'function') {
         global.playerInspectAction(actionSource, actionId);
+        return;
+      }
+      if (action === 'cast-item-spell' && (spellId || spellName)) {
+        const targetId = String((typeof global._selectedTokenId !== 'undefined' ? global._selectedTokenId : '') || '');
+        if (typeof global.sendWS === 'function') {
+          global.sendWS({
+            type: 'inventory_cast_item_spell',
+            payload: {
+              item_index: Math.max(0, itemIndex),
+              item_id: itemId,
+              spell_id: spellId || spellName.toLowerCase().replace(/\s+/g, '-'),
+              target_id: targetId,
+              charge_cost: Math.max(0, chargeCost),
+              cast_level: Math.max(0, castLevel),
+            },
+          });
+        } else if (typeof global.castRulesSpell === 'function') {
+          global.castRulesSpell(spellName);
+        }
         return;
       }
       if (action === 'cast-spell' && spellName && typeof global.castRulesSpell === 'function') {

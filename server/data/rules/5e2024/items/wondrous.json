@@ -1,0 +1,161 @@
+{
+  "category": "wondrous",
+  "item_schema_version": 2,
+  "items": [
+    {
+      "id": "bag-of-holding", "name": "Bag of Holding", "item_schema_version": 2,
+      "category": "wondrous", "subtype": "container", "rarity": "uncommon",
+      "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [{"type": "note", "summary": "Holds 500 lb / 64 cu ft. Only weighs 15 lb regardless of contents."}],
+      "granted_spells": [],
+      "effect": "This bag has an interior space considerably larger than its outside dimensions. Can hold up to 500 lb / 64 cubic feet. Weighs 15 lb regardless."
+    },
+    {
+      "id": "cloak-of-protection", "name": "Cloak of Protection", "item_schema_version": 2,
+      "category": "wondrous", "subtype": "cloak", "rarity": "uncommon",
+      "requires_attunement": true, "equippable": true, "equip_slot": "cloak",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [
+        {"type": "ac_bonus", "value": 1, "summary": "+1 bonus to AC while attuned."},
+        {"type": "save_bonus", "value": 1, "summary": "+1 bonus to saving throws while attuned."}
+      ],
+      "granted_spells": [],
+      "effect": "You gain a +1 bonus to AC and saving throws while you wear this cloak."
+    },
+    {
+      "id": "headband-of-intellect", "name": "Headband of Intellect", "item_schema_version": 2,
+      "category": "wondrous", "subtype": "headwear", "rarity": "uncommon",
+      "requires_attunement": true, "equippable": true, "equip_slot": "head",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [
+        {"type": "ability_set", "ability": "int", "value": 19, "summary": "Your Intelligence score becomes 19 while wearing this."}
+      ],
+      "granted_spells": [],
+      "effect": "Your Intelligence score is 19 while you wear this headband. It has no effect on you if your Intelligence is already 19 or higher."
+    },
+    {
+      "id": "amulet-of-health", "name": "Amulet of Health", "item_schema_version": 2,
+      "category": "wondrous", "subtype": "amulet", "rarity": "rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "neck",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [
+        {"type": "ability_set", "ability": "con", "value": 19, "summary": "Your Constitution score becomes 19 while wearing this."}
+      ],
+      "granted_spells": [],
+      "effect": "Your Constitution score is 19 while you wear this amulet. It has no effect on you if your Constitution is already 19 or higher."
+    },
+    {
+      "id": "gauntlets-of-ogre-power", "name": "Gauntlets of Ogre Power", "item_schema_version": 2,
+      "category": "wondrous", "subtype": "gloves", "rarity": "uncommon",
+      "requires_attunement": true, "equippable": true, "equip_slot": "hands",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [
+        {"type": "ability_set", "ability": "str", "value": 19, "summary": "Your Strength score becomes 19 while wearing these."}
+      ],
+      "granted_spells": [],
+      "effect": "Your Strength score is 19 while you wear these gauntlets. They have no effect on you if your Strength is already 19 or higher."
+    },
+    {
+      "id": "goggles-of-night", "name": "Goggles of Night", "item_schema_version": 2,
+      "category": "wondrous", "subtype": "eyewear", "rarity": "uncommon",
+      "requires_attunement": false, "equippable": true, "equip_slot": "head",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [
+        {"type": "sense_bonus", "sense": "darkvision", "value": 60, "summary": "Gain darkvision 60 ft, or extend existing darkvision by 60 ft."}
+      ],
+      "granted_spells": [],
+      "effect": "While wearing these dark lenses, you have darkvision out to 60 ft. If you already have darkvision, it extends by 60 ft."
+    },
+    {
+      "id": "boots-of-speed", "name": "Boots of Speed", "item_schema_version": 2,
+      "category": "wondrous", "subtype": "boots", "rarity": "rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "feet",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [],
+      "granted_actions": [
+        {"id": "boots-of-speed-activate", "name": "Double Speed", "charge_cost": 0, "activation_type": "bonus_action",
+         "description": "Activate as a bonus action to double your speed until deactivated. While active, opportunity attacks against you have disadvantage."}
+      ],
+      "granted_spells": [],
+      "effect": "While you wear these boots, you can use a bonus action and click the boots' heels together. Your walking speed doubles, and opportunity attacks against you have disadvantage. Deactivate with another bonus action."
+    },
+    {
+      "id": "boots-of-elvenkind", "name": "Boots of Elvenkind", "item_schema_version": 2,
+      "category": "wondrous", "subtype": "boots", "rarity": "uncommon",
+      "requires_attunement": false, "equippable": true, "equip_slot": "feet",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [
+        {"type": "note", "summary": "Your steps make no sound. Advantage on Dexterity (Stealth) checks that rely on moving silently."}
+      ],
+      "granted_spells": [],
+      "effect": "While you wear these boots, your steps make no sound, regardless of surface. You also have advantage on Dexterity (Stealth) checks that rely on moving silently."
+    },
+    {
+      "id": "cloak-of-elvenkind", "name": "Cloak of Elvenkind", "item_schema_version": 2,
+      "category": "wondrous", "subtype": "cloak", "rarity": "uncommon",
+      "requires_attunement": true, "equippable": true, "equip_slot": "cloak",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [
+        {"type": "note", "summary": "Hood makes Perception checks against you have disadvantage. Advantage on Stealth checks while hood is up."}
+      ],
+      "granted_spells": [],
+      "effect": "While wearing this cloak with its hood up, Wisdom (Perception) checks made to see you have disadvantage, and you have advantage on Dexterity (Stealth) checks made to hide."
+    },
+    {
+      "id": "amulet-of-the-planes", "name": "Amulet of the Planes", "item_schema_version": 2,
+      "category": "wondrous", "subtype": "amulet", "rarity": "very_rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "neck",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [],
+      "granted_spells": [
+        {
+          "id": "plane-shift", "name": "Plane Shift",
+          "charge_cost": 0, "cast_level": 7, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "As an action, name a location. DC 15 INT check or end up in a random location on the desired plane."
+        }
+      ],
+      "effect": "While wearing this amulet, you can use an action to name a location. Make a DC 15 Intelligence check to transport yourself and up to 8 willing creatures to the named location. On a failure, you and anyone else transported land in a random location on the intended plane."
+    },
+    {
+      "id": "necklace-of-fireballs", "name": "Necklace of Fireballs", "item_schema_version": 2,
+      "category": "wondrous", "subtype": "necklace", "rarity": "rare",
+      "requires_attunement": false, "equippable": true, "equip_slot": "neck",
+      "charges_max": 9, "charges_current": 9, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 15,
+      "passive_effects": [],
+      "granted_spells": [
+        {
+          "id": "fireball", "name": "Fireball",
+          "charge_cost": 1, "cast_level": 3, "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Detach and throw a bead (reaction to throw). Each bead = fireball. Throw multiple for higher level effect (+1 level per extra bead). DC 15 DEX save."
+        }
+      ],
+      "effect": "Contains 1–9 beads. Detach and throw a bead (reaction or action) to create a fireball (DC 15, 3d6 per bead above the first). Beads destroyed once used — no recharge."
+    },
+    {
+      "id": "pearl-of-power", "name": "Pearl of Power", "item_schema_version": 2,
+      "category": "wondrous", "subtype": "pearl", "rarity": "uncommon",
+      "requires_attunement": true, "equippable": true, "equip_slot": "neck",
+      "charges_max": 1, "charges_current": 1, "recharge_type": "dawn", "recharge_formula": "",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {"id": "pearl-of-power-recover", "name": "Recover Spell Slot", "charge_cost": 1, "activation_type": "action",
+         "description": "Expend the charge to instantly regain one expended spell slot of 3rd level or lower."}
+      ],
+      "effect": "While this pearl is on your person, you can use an action to speak its command word and regain one expended spell slot of 3rd level or lower. Once used, the pearl can't be used again until the next dawn."
+    }
+  ]
+}

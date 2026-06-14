@@ -1,0 +1,102 @@
+{
+  "category": "armor",
+  "item_schema_version": 2,
+  "items": [
+    {
+      "id": "padded-armor", "name": "Padded Armor", "item_schema_version": 2, "category": "armor", "subtype": "light",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
+      "armor_type": "light", "base_ac": 11, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "leather-armor", "name": "Leather Armor", "item_schema_version": 2, "category": "armor", "subtype": "light",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
+      "armor_type": "light", "base_ac": 11, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "studded-leather-armor", "name": "Studded Leather Armor", "item_schema_version": 2, "category": "armor", "subtype": "light",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
+      "armor_type": "light", "base_ac": 12, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "hide-armor", "name": "Hide Armor", "item_schema_version": 2, "category": "armor", "subtype": "medium",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
+      "armor_type": "medium", "base_ac": 12, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "chain-shirt", "name": "Chain Shirt", "item_schema_version": 2, "category": "armor", "subtype": "medium",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
+      "armor_type": "medium", "base_ac": 13, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "scale-mail", "name": "Scale Mail", "item_schema_version": 2, "category": "armor", "subtype": "medium",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
+      "armor_type": "medium", "base_ac": 14, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "breastplate", "name": "Breastplate", "item_schema_version": 2, "category": "armor", "subtype": "medium",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
+      "armor_type": "medium", "base_ac": 14, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "half-plate", "name": "Half Plate", "item_schema_version": 2, "category": "armor", "subtype": "medium",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
+      "armor_type": "medium", "base_ac": 15, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "ring-mail", "name": "Ring Mail", "item_schema_version": 2, "category": "armor", "subtype": "heavy",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
+      "armor_type": "heavy", "base_ac": 14, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "chain-mail", "name": "Chain Mail", "item_schema_version": 2, "category": "armor", "subtype": "heavy",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
+      "armor_type": "heavy", "base_ac": 16, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "splint-armor", "name": "Splint Armor", "item_schema_version": 2, "category": "armor", "subtype": "heavy",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
+      "armor_type": "heavy", "base_ac": 17, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "plate-armor", "name": "Plate Armor", "item_schema_version": 2, "category": "armor", "subtype": "heavy",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
+      "armor_type": "heavy", "base_ac": 18, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "armor-plus-1", "name": "Armor, +1", "item_schema_version": 2, "category": "armor", "subtype": "medium",
+      "rarity": "rare", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
+      "armor_type": "medium", "base_ac": 14, "ac_bonus": 1, "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [{"type": "ac_bonus", "value": 1, "summary": "+1 bonus to AC."}],
+      "granted_spells": []
+    },
+    {
+      "id": "armor-plus-2", "name": "Armor, +2", "item_schema_version": 2, "category": "armor", "subtype": "medium",
+      "rarity": "very_rare", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
+      "armor_type": "medium", "base_ac": 14, "ac_bonus": 2, "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [{"type": "ac_bonus", "value": 2, "summary": "+2 bonus to AC."}],
+      "granted_spells": []
+    },
+    {
+      "id": "armor-plus-3", "name": "Armor, +3", "item_schema_version": 2, "category": "armor", "subtype": "medium",
+      "rarity": "legendary", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
+      "armor_type": "medium", "base_ac": 14, "ac_bonus": 3, "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [{"type": "ac_bonus", "value": 3, "summary": "+3 bonus to AC."}],
+      "granted_spells": []
+    }
+  ]
+}

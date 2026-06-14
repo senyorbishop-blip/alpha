@@ -167,6 +167,7 @@ def normalize_item_record(raw_item: dict | None, *, source_type: str = "inventor
             "subtype": _clean_text(src.get("subtype"), limit=80) or subtype,
             "rarity": rarity,
             "tags": tags,
+            "item_schema_version": _safe_int(src.get("item_schema_version"), 2, minimum=1, maximum=99),
         },
         "display": {
             "icon": _clean_text(src.get("icon"), limit=300),
@@ -200,6 +201,8 @@ def normalize_item_record(raw_item: dict | None, *, source_type: str = "inventor
             "requires_attunement": bool(src.get("attunement_required") or src.get("requires_attunement")),
             "attuned": bool(src.get("attuned")),
             "proficiency_group": _clean_text(src.get("proficiency_group"), limit=40),
+            "item_spell_attack_bonus": _safe_int(src.get("item_spell_attack_bonus"), 0, minimum=-20, maximum=30),
+            "item_spell_save_dc": _safe_int(src.get("item_spell_save_dc"), 0, minimum=0, maximum=40),
         },
         "effects": {
             "passive_effects": _ensure_list(src.get("passive_effects"), cap=16),
@@ -315,6 +318,9 @@ def to_inventory_entry(canonical: dict, *, notes: str = "", source_label: str = 
         "weapon_type": equipment.get("weapon_type") or "",
         "ammo_type": equipment.get("ammo_type") or "",
         "proficiency_group": equipment.get("proficiency_group") or "",
+        "item_spell_attack_bonus": _safe_int(equipment.get("item_spell_attack_bonus"), 0, minimum=-20, maximum=30),
+        "item_spell_save_dc": _safe_int(equipment.get("item_spell_save_dc"), 0, minimum=0, maximum=40),
+        "item_schema_version": _safe_int((canonical.get("identity") or {}).get("item_schema_version"), 2, minimum=1, maximum=99),
         "consumable": bool(usage.get("consumable")),
         "consumed_on_use": bool(usage.get("consumed_on_use")),
         "remove_when_empty": bool(usage.get("remove_when_empty")),

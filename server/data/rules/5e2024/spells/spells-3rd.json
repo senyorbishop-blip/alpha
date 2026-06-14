@@ -756,6 +756,29 @@
       "concentration": false
     },
     {
+      "id": "thunder-step",
+      "displayName": "Thunder Step",
+      "level": 3,
+      "school": "Conjuration",
+      "castingTime": "1 Action",
+      "range": "Self",
+      "components": "V",
+      "duration": "Instantaneous",
+      "classes": [
+        "Sorcerer",
+        "Warlock",
+        "Wizard"
+      ],
+      "description": "You teleport yourself to an unoccupied space you can see within 90 feet. Immediately after you disappear, a thunderous boom sounds, and each creature within 10 feet of the space you left must make a Constitution saving throw, taking 3d10 thunder damage on a failed save, or half as much on a successful one.",
+      "damageType": "thunder",
+      "damageFormula": "3d10",
+      "scalingNote": "1d10 per slot level above 3rd",
+      "attackType": null,
+      "savingThrow": "Constitution",
+      "ritual": false,
+      "concentration": false
+    },
+    {
       "id": "tongues",
       "displayName": "Tongues",
       "level": 3,

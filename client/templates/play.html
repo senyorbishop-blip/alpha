@@ -11459,6 +11459,7 @@ let playerGold = 0;
 let _playerInventoryCurrentAc = null;
 let _playerItemActions = [];
 let _playerItemPassives = [];
+let _playerItemSpellCards = [];
 let _charAcIsEquipmentDerived = false; // mirrors server token.ac_from_equipment
 let playerEncumbranceByUserId = {};
 let viewerProfiles = {};
@@ -40969,6 +40970,7 @@ function applyPlayerInventoryState(payload) {
     playerGold = Math.max(0, Math.round(Number(p.player_gold) || 0));
     _playerItemActions = Array.isArray(p.item_actions) ? p.item_actions.filter(x => x && typeof x === 'object') : [];
     _playerItemPassives = Array.isArray(p.item_passives) ? p.item_passives.filter(x => x && typeof x === 'object') : [];
+    _playerItemSpellCards = Array.isArray(p.item_spell_cards) ? p.item_spell_cards.filter(x => x && typeof x === 'object') : [];
     if (_charSheet && typeof _charSheet === 'object') {
       _charSheet.inventory = playerInventory.map(entry => Object.assign({}, entry));
       _charSheet.inventoryEntries = playerInventory.map(entry => Object.assign({}, entry));
@@ -44091,7 +44093,7 @@ function _extractActionLines(rawText, fallbackKind = 'Class Features') {
 }
 
 function _getPlayerActionsSections() {
-  const sections = { 'Attacks': [], 'Bonus Actions': [], 'Reactions': [], 'Class Features': [], 'Spells': [] };
+  const sections = { 'Attacks': [], 'Bonus Actions': [], 'Reactions': [], 'Class Features': [], 'Spells': [], 'Item Spells': [] };
 
   const attackCards = _getUnifiedQuickAttackCards();
   attackCards.forEach(card => {
@@ -44279,6 +44281,41 @@ function _getPlayerActionsSections() {
       desc: effectLine || 'Passive item effect.',
       resource: 'Passive',
       badges: ['Item Passive'],
+    });
+  });
+
+  (Array.isArray(_playerItemSpellCards) ? _playerItemSpellCards : []).forEach((card, idx) => {
+    const chargesText = Number.isFinite(Number(card.charges_current))
+      ? `Charges ${Number(card.charges_current)}/${Number(card.charges_max || 0)}`
+      : '';
+    const chargeCostText = Number(card.charge_cost || 0) > 0
+      ? `Costs ${Number(card.charge_cost)} charge${Number(card.charge_cost) !== 1 ? 's' : ''}`
+      : 'No charge cost';
+    const dcText = card.uses_item_dc && Number(card.item_spell_save_dc) > 0 ? `DC ${Number(card.item_spell_save_dc)}` : '';
+    const atkText = card.uses_item_attack_bonus && Number(card.item_spell_attack_bonus) !== 0
+      ? (Number(card.item_spell_attack_bonus) >= 0 ? `+${Number(card.item_spell_attack_bonus)}` : String(Number(card.item_spell_attack_bonus)))
+      : '';
+    sections['Item Spells'].push({
+      id: `item_spell_${idx}_${String(card.item_id || '')}_${String(card.spell_id || '')}`,
+      source: 'item_spell',
+      name: String(card.spell_name || card.spell_id || 'Item Spell'),
+      attackBonus: atkText,
+      saveDC: dcText ? Number(card.item_spell_save_dc) : 0,
+      damage: String(card.damage_formula || ''),
+      damageType: String(card.damage_type || ''),
+      range: String(card.range || ''),
+      resource: [chargesText, chargeCostText, dcText, card.disabled ? `Blocked: ${card.disabled_reason || 'Unavailable'}` : ''].filter(Boolean).join(' • '),
+      desc: String(card.description || ''),
+      badges: ['Item Spell', String(card.item_name || 'Item')].filter(Boolean),
+      disabled: !!card.disabled,
+      disabled_reason: String(card.disabled_reason || ''),
+      item_index: Number(card.item_index),
+      item_id: String(card.item_id || ''),
+      item_name: String(card.item_name || ''),
+      spell_id: String(card.spell_id || ''),
+      charge_cost: Number(card.charge_cost || 0),
+      cast_level: Number(card.cast_level || 0),
+      level: Number(card.level || 0),
     });
   });
 
@@ -44685,8 +44722,32 @@ function playerUseAction(source, id) {
     else _consumeActionEconomy('action');
     return;
   }
+  if (src === 'item_spell') {
+    const card = (Array.isArray(_playerItemSpellCards) ? _playerItemSpellCards : []).find(c =>
+      String(c.spell_id || '') === String((typeof id === 'string' ? id : '').replace(/^item_spell_\d+_[^_]*_/, '')) ||
+      `item_spell_${(Array.isArray(_playerItemSpellCards) ? _playerItemSpellCards : []).indexOf(c)}_${String(c.item_id || '')}_${String(c.spell_id || '')}` === String(id || '')
+    ) || null;
+    const spellId = card ? String(card.spell_id || '') : String(id || '').split('_').slice(-1)[0];
+    if (card && card.disabled) {
+      showToast(card.disabled_reason || 'Cannot cast that item spell right now.');
+      return;
+    }
+    sendWS({
+      type: 'inventory_cast_item_spell',
+      payload: {
+        item_index: Number((card || {}).item_index || 0),
+        item_id: String((card || {}).item_id || ''),
+        spell_id: spellId,
+        target_id: String(typeof _selectedTokenId !== 'undefined' ? (_selectedTokenId || '') : ''),
+        charge_cost: Number((card || {}).charge_cost || 1),
+        cast_level: Number((card || {}).cast_level || 0),
+      },
+    });
+    _consumeActionEconomy('action');
+    return;
+  }
   const actionSections = _getPlayerActionsSections();
-  const entries = ['Bonus Actions', 'Reactions', 'Class Features', 'Attacks'].flatMap(key => actionSections[key] || []);
+  const entries = ['Bonus Actions', 'Reactions', 'Class Features', 'Attacks', 'Item Spells'].flatMap(key => actionSections[key] || []);
   const picked = entries.find(entry => String(entry.id) === String(id));
   if (!picked) return;
   if (/action surge/i.test(String(picked.name || ''))) {
@@ -44746,7 +44807,7 @@ function renderPlayerActionsHub() {
     return;
   }
   const sections = _getPlayerActionsSections();
-  const order = ['Attacks', 'Bonus Actions', 'Reactions', 'Class Features', 'Spells'];
+  const order = ['Attacks', 'Bonus Actions', 'Reactions', 'Class Features', 'Item Spells', 'Spells'];
   const visible = order.filter(key => (sections[key] || []).length);
   if (!visible.length) {
     hub.style.display = 'none';
@@ -44784,7 +44845,7 @@ function renderPlayerActionsHub() {
               ${gate.disabled && gate.reason ? `<div class="player-action-blocked-reason">Unavailable: ${escapeHtml(gate.reason)}</div>` : ''}
               <div class="player-action-controls">
                 ${action.source === 'spell' ? `<select id="player-spell-slot-${escapeHtml(String(action.id || '').replace(/[^a-zA-Z0-9_-]/g, '_'))}" class="player-action-slot-select">${(Array.isArray(action.castOptions) ? action.castOptions : [{ value: Number(action.level || 0), label: Number(action.level || 0) === 0 ? 'Cantrip' : 'Cast' }]).map(opt => `<option value="${Number(opt.value || 0)}" ${opt.disabled ? 'disabled' : ''}>${escapeHtml(String(opt.label || 'Cast'))}</option>`).join('')}</select>` : ''}
-                <button class="player-action-use-btn" ${gate.disabled ? 'disabled' : ''} title="${escapeHtml(gate.reason || '')}" onclick="${action.source === 'spell' ? `playerUseSpellAction('${escapeHtml(String(action.id || ''))}', 'player-spell-slot-${escapeHtml(String(action.id || '').replace(/[^a-zA-Z0-9_-]/g, '_'))}')` : `playerUseAction('${escapeHtml(action.source || 'book')}', '${escapeHtml(String(action.id || ''))}')`}">${action.source === 'spell' ? 'Cast / Roll' : (action.source === 'weapon' || action.source === 'equip_only') ? 'Attack / Roll' : action.source === 'native_action' ? 'Resolve / Roll' : action.source === 'item_action' ? 'Use Item' : 'Use Action'}</button>
+                <button class="player-action-use-btn" ${gate.disabled ? 'disabled' : ''} title="${escapeHtml(gate.reason || '')}" onclick="${action.source === 'spell' ? `playerUseSpellAction('${escapeHtml(String(action.id || ''))}', 'player-spell-slot-${escapeHtml(String(action.id || '').replace(/[^a-zA-Z0-9_-]/g, '_'))}')` : `playerUseAction('${escapeHtml(action.source || 'book')}', '${escapeHtml(String(action.id || ''))}')`}">${action.source === 'spell' ? 'Cast / Roll' : (action.source === 'weapon' || action.source === 'equip_only') ? 'Attack / Roll' : action.source === 'native_action' ? 'Resolve / Roll' : action.source === 'item_action' ? 'Use Item' : action.source === 'item_spell' ? 'Cast Spell' : 'Use Action'}</button>
               </div>
             </article>`;
             }).join('')}

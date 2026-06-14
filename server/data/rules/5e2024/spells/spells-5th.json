@@ -496,6 +496,27 @@
       "concentration": false
     },
     {
+      "id": "passwall",
+      "displayName": "Passwall",
+      "level": 5,
+      "school": "Transmutation",
+      "castingTime": "1 Action",
+      "range": "30 feet",
+      "components": "V, S, M",
+      "duration": "1 hour",
+      "classes": [
+        "Wizard"
+      ],
+      "description": "A passage appears at a point of your choice that you can see on a wooden, plaster, or stone surface within range, and lasts for the duration. You choose the opening dimensions: up to 5 feet wide, 8 feet tall, and 20 feet deep.",
+      "damageType": null,
+      "damageFormula": null,
+      "scalingNote": null,
+      "attackType": null,
+      "savingThrow": null,
+      "ritual": false,
+      "concentration": false
+    },
+    {
       "id": "planar-binding",
       "displayName": "Planar Binding",
       "level": 5,

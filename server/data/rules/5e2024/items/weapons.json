@@ -1,0 +1,278 @@
+{
+  "category": "weapons",
+  "item_schema_version": 2,
+  "items": [
+    {
+      "id": "club", "name": "Club", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d4", "damage_type": "bludgeoning",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "dagger", "name": "Dagger", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d4", "damage_type": "piercing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "greatclub", "name": "Greatclub", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d8", "damage_type": "bludgeoning",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "handaxe", "name": "Handaxe", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "slashing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "javelin", "name": "Javelin", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "piercing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "light-hammer", "name": "Light Hammer", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d4", "damage_type": "bludgeoning",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "mace", "name": "Mace", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "quarterstaff", "name": "Quarterstaff", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "sickle", "name": "Sickle", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d4", "damage_type": "slashing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "spear", "name": "Spear", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "piercing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "light-crossbow", "name": "Light Crossbow", "item_schema_version": 2, "category": "weapon", "subtype": "simple_ranged",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_ranged", "damage_dice": "1d8", "damage_type": "piercing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "shortbow", "name": "Shortbow", "item_schema_version": 2, "category": "weapon", "subtype": "simple_ranged",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_ranged", "damage_dice": "1d6", "damage_type": "piercing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "sling", "name": "Sling", "item_schema_version": 2, "category": "weapon", "subtype": "simple_ranged",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_ranged", "damage_dice": "1d4", "damage_type": "bludgeoning",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "battleaxe", "name": "Battleaxe", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "slashing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "flail", "name": "Flail", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "bludgeoning",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "glaive", "name": "Glaive", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d10", "damage_type": "slashing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "greataxe", "name": "Greataxe", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d12", "damage_type": "slashing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "greatsword", "name": "Greatsword", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "2d6", "damage_type": "slashing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "longsword", "name": "Longsword", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "slashing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "maul", "name": "Maul", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "2d6", "damage_type": "bludgeoning",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "morningstar", "name": "Morningstar", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "piercing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "rapier", "name": "Rapier", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "piercing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "scimitar", "name": "Scimitar", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d6", "damage_type": "slashing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "shortsword", "name": "Shortsword", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d6", "damage_type": "piercing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "warhammer", "name": "Warhammer", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "bludgeoning",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "longbow", "name": "Longbow", "item_schema_version": 2, "category": "weapon", "subtype": "martial_ranged",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_ranged", "damage_dice": "1d8", "damage_type": "piercing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "hand-crossbow", "name": "Hand Crossbow", "item_schema_version": 2, "category": "weapon", "subtype": "martial_ranged",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_ranged", "damage_dice": "1d6", "damage_type": "piercing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "heavy-crossbow", "name": "Heavy Crossbow", "item_schema_version": 2, "category": "weapon", "subtype": "martial_ranged",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_ranged", "damage_dice": "1d10", "damage_type": "piercing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "longsword-plus-1", "name": "Longsword, +1", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "uncommon", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "slashing",
+      "attack_bonus": 1, "damage_bonus": 1, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "longsword-plus-2", "name": "Longsword, +2", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "rare", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "slashing",
+      "attack_bonus": 2, "damage_bonus": 2, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "longsword-plus-3", "name": "Longsword, +3", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "very_rare", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "slashing",
+      "attack_bonus": 3, "damage_bonus": 3, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "quarterstaff-plus-1", "name": "Quarterstaff, +1", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
+      "rarity": "uncommon", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
+      "attack_bonus": 1, "damage_bonus": 1, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "quarterstaff-plus-2", "name": "Quarterstaff, +2", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
+      "rarity": "rare", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
+      "attack_bonus": 2, "damage_bonus": 2, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "quarterstaff-plus-3", "name": "Quarterstaff, +3", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
+      "rarity": "very_rare", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
+      "attack_bonus": 3, "damage_bonus": 3, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "flame-tongue", "name": "Flame Tongue", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "rare", "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "slashing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "effect": "While attuned, you can use a bonus action to cause the blade to burst into flames. It sheds bright light in a 40-foot radius. While ablaze, it deals an extra 2d6 fire damage on a hit.",
+      "passive_effects": [
+        {"type": "note", "value": "Deals an extra 2d6 fire damage on a hit when ignited."}
+      ],
+      "granted_spells": []
+    },
+    {
+      "id": "frost-brand", "name": "Frost Brand", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "very_rare", "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "slashing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "effect": "While attuned, you gain resistance to fire damage. Deals an extra 1d6 cold damage on a hit. In freezing temperatures, the blade sheds bright light in a 10-foot radius.",
+      "passive_effects": [
+        {"type": "resistance", "damage_type": "fire", "summary": "Resistance to fire damage while attuned."},
+        {"type": "note", "value": "Deals an extra 1d6 cold damage on a hit."}
+      ],
+      "granted_spells": []
+    },
+    {
+      "id": "sword-of-life-stealing", "name": "Sword of Life Stealing", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "rare", "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "slashing",
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "effect": "While attuned, when you score a critical hit against a creature that is not a construct or undead, you gain 10 temporary hit points.",
+      "passive_effects": [
+        {"type": "note", "value": "On a critical hit gain 10 temporary HP."}
+      ],
+      "granted_spells": []
+    }
+  ]
+}
