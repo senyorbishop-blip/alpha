@@ -152,3 +152,13 @@ def test_quick_spell_and_weapon_damage_have_fallbacks_for_roll_buttons():
     assert "const _cardHasDamage = (card) => !!String(card?.damage_formula || card?.base_damage_formula || card?.damage || '').trim();" in play
     assert "if (!_cardHasDamage(combined[existingIdx]) && _cardHasDamage(card))" in play
     assert "Equip it from inventory or add damage dice in the item library" in play
+
+
+def test_combat_quick_spell_upcast_options_scale_damage_by_slot_level():
+    play = _read('client/templates/play.html')
+    assert 'function _combatQuickScaleSpellFormula(baseFormula, perSlotFormula, extraLevels)' in play
+    assert 'for (let castLevel = level + 1; castLevel <= 9; castLevel += 1)' in play
+    assert 'formula: _combatQuickScaleSpellFormula(baseFormula, perSlotFormula, castLevel - level)' in play
+    assert 'const exactCastOption = card.cast_options && card.cast_options[String(effectiveSlot)];' in play
+    assert 'let dmgExpr = exactCastOption?.formula' in play
+    assert 'if (!exactCastOption && baseLevel > 0 && effectiveSlot > baseLevel)' in play
