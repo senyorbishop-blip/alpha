@@ -82,7 +82,11 @@
     options = options || {};
     const card = obj(spellCard);
     const id = slug(first(card.spellId, card.id, card.name, card.displayName));
-    const merged = Object.assign({}, BUILTIN[id] || {}, card);
+    // Also try: strip "spell-" / "ability-" prefix, then fall back to name alone,
+    // so that cards whose id is "spell-fireball" still match BUILTIN['fireball'].
+    const idStripped = id.replace(/^(?:spell|ability|action)-/, '');
+    const idByName = slug(first(card.name, card.displayName));
+    const merged = Object.assign({}, BUILTIN[id] || BUILTIN[idStripped] || BUILTIN[idByName] || {}, card);
     const warnings = [];
     const debugParts = [];
     const baseLevel = levelOf(card, merged);
