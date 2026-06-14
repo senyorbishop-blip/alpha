@@ -142,14 +142,24 @@ def _movement_mode_for_session(session: Session, requested: str | None = None) -
     return normalize_movement_mode(mode)
 
 
-def _resolve_combat_movement(session: Session, token, move_state: dict, to_x: float, to_y: float, *, path=None, movement_mode: str | None = None) -> dict:
+def _session_grid_size_px(session: Session) -> float:
+    try:
+        settings = getattr(session, "settings", None) or {}
+        v = float((settings.get("grid") or {}).get("size_px") or PX_PER_GRID)
+        return v if v >= 10.0 else PX_PER_GRID
+    except Exception:
+        return PX_PER_GRID
+
+
+def _resolve_combat_movement(session: Session, token, move_state: dict, to_x: float, to_y: float, *, path=None, movement_mode: str | None = None, grid_size_px: float | None = None) -> dict:
+    px = float(grid_size_px) if grid_size_px and float(grid_size_px) >= 10.0 else _session_grid_size_px(session)
     return resolve_movement(
         from_x=float(move_state.get("last_x", getattr(token, "x", 0.0)) or 0.0),
         from_y=float(move_state.get("last_y", getattr(token, "y", 0.0)) or 0.0),
         to_x=float(to_x),
         to_y=float(to_y),
-        token_width=float(getattr(token, "width", PX_PER_GRID) or PX_PER_GRID),
-        token_height=float(getattr(token, "height", PX_PER_GRID) or PX_PER_GRID),
+        token_width=float(getattr(token, "width", px) or px),
+        token_height=float(getattr(token, "height", px) or px),
         path=path,
         movement_mode=_movement_mode_for_session(session, movement_mode),
         speed_feet=float(move_state.get("speed_ft", 0.0) or 0.0),
@@ -157,6 +167,7 @@ def _resolve_combat_movement(session: Session, token, move_state: dict, to_x: fl
         spent_feet=float(move_state.get("spent_ft", 0.0) or 0.0),
         difficult_terrain=bool(move_state.get("difficult_terrain")),
         cost_multiplier=float(move_state.get("cost_multiplier", 1.0) or 1.0),
+        grid_size_px=px,
     )
 
 
@@ -339,7 +350,8 @@ async def _handle_combat_move_plan(payload: dict, session: Session, user: User, 
     move_state = _ensure_combat_movement_state(session)
     to_x = float(payload.get("to_x", payload.get("x", getattr(token, "x", 0.0))) or 0.0)
     to_y = float(payload.get("to_y", payload.get("y", getattr(token, "y", 0.0))) or 0.0)
-    resolved = _resolve_combat_movement(session, token, move_state, to_x, to_y, path=payload.get("path"), movement_mode=payload.get("movement_mode"))
+    client_grid_px = payload.get("grid_size_px")
+    resolved = _resolve_combat_movement(session, token, move_state, to_x, to_y, path=payload.get("path"), movement_mode=payload.get("movement_mode"), grid_size_px=float(client_grid_px) if client_grid_px is not None else None)
     expected = payload.get("expected_cost_ft")
     if expected is not None and abs(float(expected or 0) - float(resolved.get("finalCostFeet") or 0)) > 0.01:
         resolved["valid"] = False

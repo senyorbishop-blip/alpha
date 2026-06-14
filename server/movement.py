@@ -13,16 +13,26 @@ def normalize_movement_mode(mode: str | None) -> str:
     return mode if mode in VALID_MOVEMENT_MODES else "grid_5e_default"
 
 
-def center_to_grid(x: float, y: float, width: float = PX_PER_GRID, height: float = PX_PER_GRID) -> dict:
-    cx = float(x or 0.0) + float(width or PX_PER_GRID) / 2.0
-    cy = float(y or 0.0) + float(height or PX_PER_GRID) / 2.0
-    return {"x": int(round(cx / PX_PER_GRID - 0.5)), "y": int(round(cy / PX_PER_GRID - 0.5))}
+def _safe_px_per_grid(grid_size_px) -> float:
+    try:
+        v = float(grid_size_px)
+        return v if v >= 10.0 else PX_PER_GRID
+    except Exception:
+        return PX_PER_GRID
 
 
-def grid_to_top_left(cell: dict, width: float = PX_PER_GRID, height: float = PX_PER_GRID) -> dict:
+def center_to_grid(x: float, y: float, width: float = PX_PER_GRID, height: float = PX_PER_GRID, *, grid_size_px: float = PX_PER_GRID) -> dict:
+    px = _safe_px_per_grid(grid_size_px)
+    cx = float(x or 0.0) + float(width or px) / 2.0
+    cy = float(y or 0.0) + float(height or px) / 2.0
+    return {"x": int(round(cx / px - 0.5)), "y": int(round(cy / px - 0.5))}
+
+
+def grid_to_top_left(cell: dict, width: float = PX_PER_GRID, height: float = PX_PER_GRID, *, grid_size_px: float = PX_PER_GRID) -> dict:
+    px = _safe_px_per_grid(grid_size_px)
     gx = int((cell or {}).get("x") or 0)
     gy = int((cell or {}).get("y") or 0)
-    return {"x": gx * PX_PER_GRID + (PX_PER_GRID - float(width or PX_PER_GRID)) / 2.0, "y": gy * PX_PER_GRID + (PX_PER_GRID - float(height or PX_PER_GRID)) / 2.0}
+    return {"x": gx * px + (px - float(width or px)) / 2.0, "y": gy * px + (px - float(height or px)) / 2.0}
 
 
 def build_grid_path(from_grid: dict, to_grid: dict) -> list[dict]:
@@ -64,10 +74,12 @@ def movement_squares_for_path(path: list[dict], mode: str = "grid_5e_default") -
 def resolve_movement(*, from_x: float, from_y: float, to_x: float, to_y: float, token_width: float = PX_PER_GRID,
                      token_height: float = PX_PER_GRID, path: list[dict] | None = None, movement_mode: str = "grid_5e_default",
                      speed_feet: float = 30.0, spent_feet: float = 0.0, bonus_feet: float = 0.0,
-                     difficult_terrain: bool = False, cost_multiplier: float | None = None) -> dict:
+                     difficult_terrain: bool = False, cost_multiplier: float | None = None,
+                     grid_size_px: float = PX_PER_GRID) -> dict:
     mode = normalize_movement_mode(movement_mode)
-    from_grid = center_to_grid(from_x, from_y, token_width, token_height)
-    to_grid = center_to_grid(to_x, to_y, token_width, token_height)
+    px = _safe_px_per_grid(grid_size_px)
+    from_grid = center_to_grid(from_x, from_y, token_width, token_height, grid_size_px=px)
+    to_grid = center_to_grid(to_x, to_y, token_width, token_height, grid_size_px=px)
     resolved_path = path if isinstance(path, list) and path else build_grid_path(from_grid, to_grid)
     clean_path = [{"x": int((p or {}).get("x") or 0), "y": int((p or {}).get("y") or 0)} for p in resolved_path]
     squares = movement_squares_for_path(clean_path, mode)
