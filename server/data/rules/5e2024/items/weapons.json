@@ -273,6 +273,71 @@
         {"type": "note", "value": "On a critical hit gain 10 temporary HP."}
       ],
       "granted_spells": []
+    },
+    {
+      "id": "dart", "name": "Dart", "item_schema_version": 2, "category": "weapon", "subtype": "simple_ranged",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_ranged", "damage_dice": "1d4", "damage_type": "piercing",
+      "weapon_properties": ["finesse", "thrown"],
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "halberd", "name": "Halberd", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d10", "damage_type": "slashing",
+      "weapon_properties": ["heavy", "reach", "two_handed"],
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "lance", "name": "Lance", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d12", "damage_type": "piercing",
+      "weapon_properties": ["reach"],
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "pike", "name": "Pike", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d10", "damage_type": "piercing",
+      "weapon_properties": ["heavy", "reach", "two_handed"],
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "trident", "name": "Trident", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d6", "damage_type": "piercing",
+      "versatile_damage": "1d8",
+      "weapon_properties": ["thrown", "versatile"],
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "war-pick", "name": "War Pick", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "piercing",
+      "weapon_properties": [],
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "whip", "name": "Whip", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_melee", "damage_dice": "1d4", "damage_type": "slashing",
+      "weapon_properties": ["finesse", "reach"],
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "blowgun", "name": "Blowgun", "item_schema_version": 2, "category": "weapon", "subtype": "martial_ranged",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "martial_ranged", "damage_dice": "1", "damage_type": "piercing",
+      "weapon_properties": ["ammunition", "loading"],
+      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
     }
   ]
 }
