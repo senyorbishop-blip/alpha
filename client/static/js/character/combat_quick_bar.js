@@ -8,7 +8,7 @@
 
   const STORAGE_KEY = 'combat_quick_bar.v1';
   const SIZE_KEY = 'combat_quick_bar_size.v1';
-  const DEFAULT_STATE = { x: null, y: null, minimized: false, manual: false, combatWasActive: false, customizing: false };
+  const DEFAULT_STATE = { x: null, y: null, minimized: false, manual: false, combatWasActive: false, customizing: false, dismissedForCombatTurn: '', dismissedUntilManualOpen: false };
   let state = Object.assign({}, DEFAULT_STATE);
   let root = null;
   let dragging = null;
@@ -128,7 +128,7 @@
     toggle.type = 'button';
     toggle.className = 'combat-quick-bar-toggle';
     toggle.textContent = '⚔ Quick Bar';
-    toggle.addEventListener('click', function () { toggleManual(); });
+    toggle.addEventListener('click', function (ev) { ev.stopPropagation(); openManual(); });
     document.body.appendChild(toggle);
     root.addEventListener('click', _handleClick);
     root.addEventListener('pointermove', _drag);
@@ -168,7 +168,7 @@
   }
 
   function _startDrag(ev) {
-    if (ev.target.closest('button')) return;
+    if (ev.target.closest('button,[data-qb-minimize],[data-qb-hide]')) return;
     const rect = root.getBoundingClientRect();
     // Once the player interacts with the bar, convert the default bottom anchor
     // to an explicit top/left anchor so native resize:both can grow downward too.
@@ -318,7 +318,9 @@
     const runtime = _runtime();
     const combat = runtime.combat || { active: false };
     const role = _firstText(runtime.role, global.ROLE, '').toLowerCase();
-    const shouldShow = role === 'player' && (!!combat.active || !!state.manual);
+    const turnKey = combat.active ? String((combat.round || 1) + ':' + (combat.turn || 0)) : '';
+    const dismissed = !!(combat.active && state.dismissedUntilManualOpen && state.dismissedForCombatTurn === turnKey);
+    const shouldShow = role === 'player' && !dismissed && (!!combat.active || !!state.manual);
     const toggle = document.getElementById('combat-quick-bar-toggle');
     if (toggle) toggle.hidden = role !== 'player';
     if (!shouldShow) {
@@ -327,7 +329,7 @@
       _saveState();
       return;
     }
-    if (combat.active && !state.combatWasActive) state.minimized = false;
+    if (combat.active && !state.combatWasActive && !state.dismissedUntilManualOpen) state.minimized = false;
     state.combatWasActive = !!combat.active;
     const model = global.CombatQuickSelectors && typeof global.CombatQuickSelectors.selectQuickActions === 'function'
       ? global.CombatQuickSelectors.selectQuickActions(runtime.charSheet || {})
@@ -349,6 +351,7 @@
     ${state.minimized ? '' : `<div class="combat-quick-bar-body">
       <div class="combat-quick-status"><span>Target: ${_esc(targetName)}</span>${model.concentration ? `<span class="combat-quick-resource">Concentration: ${_esc(model.concentration)}</span>` : '<span>Concentration: none</span>'}${model.quickPicks && model.quickPicks.length ? `<span>Custom picks: ${_esc(model.quickPicks.length)}/${_esc(model.quickPickLimit || 5)}</span>` : '<span>Auto picks · customize top 5 any time</span>'}</div>
       ${_customizePanel(model)}
+      ${(!model.primaryActions?.length && !model.topSpells?.length && !model.bonusActions?.length && !model.reactions?.length) ? '<div class="combat-quick-empty">No quick actions are available yet. Loading quick actions… If this remains, open the full sheet and add attacks, spells, or actions.</div>' : ''}
       ${_section('Primary', model.primaryActions, 'action', 'No attacks/actions found on the sheet.')}
       ${_section('Spells', model.topSpells, 'spell', 'No spell clutter for this character.')}
       ${_section('Bonus', model.bonusActions, 'bonus', 'No bonus actions found.')}
@@ -376,9 +379,9 @@
 
   function _handleClick(ev) {
     const min = ev.target.closest('[data-qb-minimize]');
-    if (min) { state.minimized = !state.minimized; _saveState(); render(); return; }
+    if (min) { ev.preventDefault(); ev.stopPropagation(); state.minimized = !state.minimized; state.dismissedUntilManualOpen = false; _saveState(); render(); return; }
     const hide = ev.target.closest('[data-qb-hide]');
-    if (hide) { state.manual = false; state.minimized = true; _saveState(); render(); return; }
+    if (hide) { ev.preventDefault(); ev.stopPropagation(); dismissForTurn(); return; }
     const customize = ev.target.closest('[data-qb-customize]');
     if (customize) { state.customizing = !state.customizing; _saveState(); render(); return; }
     const pin = ev.target.closest('[data-qb-pin]');
@@ -438,14 +441,47 @@
     render();
   }
 
-  function toggleManual() {
-    state.manual = !state.manual;
-    if (state.manual) state.minimized = false;
+  function openManual() {
+    state.manual = true;
+    state.minimized = false;
+    state.dismissedUntilManualOpen = false;
+    state.dismissedForCombatTurn = '';
     _saveState();
     render();
   }
 
+  function dismissForTurn() {
+    const runtime = _runtime();
+    const combat = runtime.combat || {};
+    state.manual = false;
+    state.minimized = false;
+    state.dismissedUntilManualOpen = true;
+    state.dismissedForCombatTurn = combat.active ? String((combat.round || 1) + ':' + (combat.turn || 0)) : 'manual';
+    _saveState();
+    render();
+  }
+
+  function resetQuickBarVisibility() {
+    try { global.localStorage.removeItem(STORAGE_KEY); global.localStorage.removeItem(SIZE_KEY); } catch (_e) {}
+    state = Object.assign({}, DEFAULT_STATE);
+    _saveState();
+    render();
+  }
+
+  function toggleManual() {
+    if (state.dismissedUntilManualOpen || root?.hidden || !state.manual) openManual();
+    else { state.manual = false; _saveState(); render(); }
+  }
+
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape') {
+      const modal = document.getElementById('combat-quick-action-modal');
+      if (modal) { modal.remove(); ev.stopPropagation(); }
+      else if (root && !root.hidden && document.activeElement && root.contains(document.activeElement)) dismissForTurn();
+    }
+  });
+
   _loadState();
-  global.CombatQuickBar = { render: render, toggleManual: toggleManual };
+  global.CombatQuickBar = { render: render, toggleManual: toggleManual, openManual: openManual, dismissForTurn: dismissForTurn, resetQuickBarVisibility: resetQuickBarVisibility };
   document.addEventListener('DOMContentLoaded', render);
 }(window));

@@ -241,7 +241,7 @@
       + (hasSave ? '<button class="cqa-btn save" type="button" data-cqa-spell-save>Show Save DC</button>' : '')
       + '<button class="cqa-btn" type="button" data-cqa-inspect>Open Full Spell</button></div></div>';
     overlay.addEventListener('click', function (ev) {
-      if (ev.target === overlay || ev.target.closest('[data-cqa-close]')) { closeModal(); return; }
+      if (ev.target === overlay || ev.target.closest('[data-cqa-close]')) { ev.preventDefault(); ev.stopPropagation(); closeModal(); return; }
       const castLevel = _selectedCastLevel(spell);
       if (ev.target.closest('[data-cqa-cast]')) { global.combatQuickCastSpell(spell.id || spell.name, castLevel); closeModal(); return; }
       if (ev.target.closest('[data-cqa-spell-attack]')) { global.combatQuickRollSpellAttack(spell.id || spell.name, castLevel); return; }
@@ -282,7 +282,7 @@
       + '<div class="cqa-desc">' + _esc(_firstText(card.notes, card.mastery_text, 'Equipped weapon quick action.')) + '</div>'
       + '<div class="cqa-controls"><button class="cqa-btn" type="button" data-cqa-weapon-attack>Roll Attack</button><button class="cqa-btn damage" type="button" data-cqa-weapon-damage>Roll Damage</button><button class="cqa-btn damage" type="button" data-cqa-weapon-crit>Roll Critical Damage</button></div></div>';
     overlay.addEventListener('click', function (ev) {
-      if (ev.target === overlay || ev.target.closest('[data-cqa-close]')) { closeModal(); return; }
+      if (ev.target === overlay || ev.target.closest('[data-cqa-close]')) { ev.preventDefault(); ev.stopPropagation(); closeModal(); return; }
       const modeSelect = document.getElementById('combat-quick-weapon-mode');
       const mode = modeSelect ? modeSelect.value : 'base';
       if (ev.target.closest('[data-cqa-weapon-attack]')) { global.combatQuickWeaponAttack(card.id || card.name, mode); closeModal(); return; }
