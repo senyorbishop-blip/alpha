@@ -3,341 +3,3084 @@
   "item_schema_version": 2,
   "items": [
     {
-      "id": "club", "name": "Club", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d4", "damage_type": "bludgeoning",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "dagger", "name": "Dagger", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d4", "damage_type": "piercing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "greatclub", "name": "Greatclub", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d8", "damage_type": "bludgeoning",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "handaxe", "name": "Handaxe", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "slashing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "javelin", "name": "Javelin", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "piercing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "light-hammer", "name": "Light Hammer", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d4", "damage_type": "bludgeoning",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "mace", "name": "Mace", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "quarterstaff", "name": "Quarterstaff", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "sickle", "name": "Sickle", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d4", "damage_type": "slashing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "spear", "name": "Spear", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "piercing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "light-crossbow", "name": "Light Crossbow", "item_schema_version": 2, "category": "weapon", "subtype": "simple_ranged",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_ranged", "damage_dice": "1d8", "damage_type": "piercing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "shortbow", "name": "Shortbow", "item_schema_version": 2, "category": "weapon", "subtype": "simple_ranged",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_ranged", "damage_dice": "1d6", "damage_type": "piercing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "sling", "name": "Sling", "item_schema_version": 2, "category": "weapon", "subtype": "simple_ranged",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_ranged", "damage_dice": "1d4", "damage_type": "bludgeoning",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "battleaxe", "name": "Battleaxe", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "slashing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "flail", "name": "Flail", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "bludgeoning",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "glaive", "name": "Glaive", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d10", "damage_type": "slashing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "greataxe", "name": "Greataxe", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d12", "damage_type": "slashing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "greatsword", "name": "Greatsword", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "2d6", "damage_type": "slashing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "longsword", "name": "Longsword", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "slashing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "maul", "name": "Maul", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "2d6", "damage_type": "bludgeoning",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "morningstar", "name": "Morningstar", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "piercing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "rapier", "name": "Rapier", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "piercing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "scimitar", "name": "Scimitar", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d6", "damage_type": "slashing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "shortsword", "name": "Shortsword", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d6", "damage_type": "piercing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "warhammer", "name": "Warhammer", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "bludgeoning",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "longbow", "name": "Longbow", "item_schema_version": 2, "category": "weapon", "subtype": "martial_ranged",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_ranged", "damage_dice": "1d8", "damage_type": "piercing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "hand-crossbow", "name": "Hand Crossbow", "item_schema_version": 2, "category": "weapon", "subtype": "martial_ranged",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_ranged", "damage_dice": "1d6", "damage_type": "piercing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "heavy-crossbow", "name": "Heavy Crossbow", "item_schema_version": 2, "category": "weapon", "subtype": "martial_ranged",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_ranged", "damage_dice": "1d10", "damage_type": "piercing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "longsword-plus-1", "name": "Longsword, +1", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "uncommon", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "slashing",
-      "attack_bonus": 1, "damage_bonus": 1, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "longsword-plus-2", "name": "Longsword, +2", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "rare", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "slashing",
-      "attack_bonus": 2, "damage_bonus": 2, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "longsword-plus-3", "name": "Longsword, +3", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "very_rare", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "slashing",
-      "attack_bonus": 3, "damage_bonus": 3, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "quarterstaff-plus-1", "name": "Quarterstaff, +1", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
-      "rarity": "uncommon", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
-      "attack_bonus": 1, "damage_bonus": 1, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "quarterstaff-plus-2", "name": "Quarterstaff, +2", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
-      "rarity": "rare", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
-      "attack_bonus": 2, "damage_bonus": 2, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "quarterstaff-plus-3", "name": "Quarterstaff, +3", "item_schema_version": 2, "category": "weapon", "subtype": "simple_melee",
-      "rarity": "very_rare", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
-      "attack_bonus": 3, "damage_bonus": 3, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "flame-tongue", "name": "Flame Tongue", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "rare", "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "slashing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "effect": "While attuned, you can use a bonus action to cause the blade to burst into flames. It sheds bright light in a 40-foot radius. While ablaze, it deals an extra 2d6 fire damage on a hit.",
-      "passive_effects": [
-        {"type": "note", "value": "Deals an extra 2d6 fire damage on a hit when ignited."}
+      "id": "club",
+      "name": "Club",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "simple_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d4",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [
+        "light"
       ],
-      "granted_spells": []
-    },
-    {
-      "id": "frost-brand", "name": "Frost Brand", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "very_rare", "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "slashing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "effect": "While attuned, you gain resistance to fire damage. Deals an extra 1d6 cold damage on a hit. In freezing temperatures, the blade sheds bright light in a 10-foot radius.",
-      "passive_effects": [
-        {"type": "resistance", "damage_type": "fire", "summary": "Resistance to fire damage while attuned."},
-        {"type": "note", "value": "Deals an extra 1d6 cold damage on a hit."}
+      "properties": [
+        "light"
       ],
-      "granted_spells": []
+      "weight_lbs": 2,
+      "price_cp": 10,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d4",
+        "damage_type": "bludgeoning",
+        "range": "5 ft"
+      }
     },
     {
-      "id": "sword-of-life-stealing", "name": "Sword of Life Stealing", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "rare", "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "slashing",
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "effect": "While attuned, when you score a critical hit against a creature that is not a construct or undead, you gain 10 temporary hit points.",
-      "passive_effects": [
-        {"type": "note", "value": "On a critical hit gain 10 temporary HP."}
+      "id": "dagger",
+      "name": "Dagger",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "simple_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d4",
+      "damage_type": "piercing",
+      "range": "20/60",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [
+        "finesse",
+        "light",
+        "thrown"
       ],
-      "granted_spells": []
+      "properties": [
+        "finesse",
+        "light",
+        "thrown"
+      ],
+      "weight_lbs": 1,
+      "price_cp": 200,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d4",
+        "damage_type": "piercing",
+        "range": "20/60"
+      }
     },
     {
-      "id": "dart", "name": "Dart", "item_schema_version": 2, "category": "weapon", "subtype": "simple_ranged",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "simple_ranged", "damage_dice": "1d4", "damage_type": "piercing",
-      "weapon_properties": ["finesse", "thrown"],
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
+      "id": "greatclub",
+      "name": "Greatclub",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "simple_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d8",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "two_handed",
+      "weapon_properties": [
+        "two-handed"
+      ],
+      "properties": [
+        "two-handed"
+      ],
+      "weight_lbs": 10,
+      "price_cp": 20,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d8",
+        "damage_type": "bludgeoning",
+        "range": "5 ft"
+      }
     },
     {
-      "id": "halberd", "name": "Halberd", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d10", "damage_type": "slashing",
-      "weapon_properties": ["heavy", "reach", "two_handed"],
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
+      "id": "handaxe",
+      "name": "Handaxe",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "simple_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "slashing",
+      "range": "20/60",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [
+        "light",
+        "thrown"
+      ],
+      "properties": [
+        "light",
+        "thrown"
+      ],
+      "weight_lbs": 2,
+      "price_cp": 500,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d6",
+        "damage_type": "slashing",
+        "range": "20/60"
+      }
     },
     {
-      "id": "lance", "name": "Lance", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d12", "damage_type": "piercing",
-      "weapon_properties": ["reach"],
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
+      "id": "javelin",
+      "name": "Javelin",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "simple_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "piercing",
+      "range": "30/120",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [
+        "thrown"
+      ],
+      "properties": [
+        "thrown"
+      ],
+      "weight_lbs": 2,
+      "price_cp": 50,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d6",
+        "damage_type": "piercing",
+        "range": "30/120"
+      }
     },
     {
-      "id": "pike", "name": "Pike", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d10", "damage_type": "piercing",
-      "weapon_properties": ["heavy", "reach", "two_handed"],
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
+      "id": "light-hammer",
+      "name": "Light Hammer",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "simple_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d4",
+      "damage_type": "bludgeoning",
+      "range": "20/60",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [
+        "light",
+        "thrown"
+      ],
+      "properties": [
+        "light",
+        "thrown"
+      ],
+      "weight_lbs": 2,
+      "price_cp": 200,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d4",
+        "damage_type": "bludgeoning",
+        "range": "20/60"
+      }
     },
     {
-      "id": "trident", "name": "Trident", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d6", "damage_type": "piercing",
-      "versatile_damage": "1d8",
-      "weapon_properties": ["thrown", "versatile"],
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
-    },
-    {
-      "id": "war-pick", "name": "War Pick", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d8", "damage_type": "piercing",
+      "id": "mace",
+      "name": "Mace",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "simple_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "one_handed",
       "weapon_properties": [],
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
+      "properties": [],
+      "weight_lbs": 4,
+      "price_cp": 500,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d6",
+        "damage_type": "bludgeoning",
+        "range": "5 ft"
+      }
     },
     {
-      "id": "whip", "name": "Whip", "item_schema_version": 2, "category": "weapon", "subtype": "martial_melee",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_melee", "damage_dice": "1d4", "damage_type": "slashing",
-      "weapon_properties": ["finesse", "reach"],
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
+      "id": "quarterstaff",
+      "name": "Quarterstaff",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "simple_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "properties": [
+        "versatile"
+      ],
+      "weight_lbs": 4,
+      "price_cp": 20,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d6",
+        "damage_type": "bludgeoning",
+        "range": "5 ft"
+      }
     },
     {
-      "id": "blowgun", "name": "Blowgun", "item_schema_version": 2, "category": "weapon", "subtype": "martial_ranged",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
-      "weapon_type": "martial_ranged", "damage_dice": "1", "damage_type": "piercing",
-      "weapon_properties": ["ammunition", "loading"],
-      "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [], "granted_spells": []
+      "id": "sickle",
+      "name": "Sickle",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "simple_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d4",
+      "damage_type": "slashing",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [
+        "light"
+      ],
+      "properties": [
+        "light"
+      ],
+      "weight_lbs": 2,
+      "price_cp": 100,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d4",
+        "damage_type": "slashing",
+        "range": "5 ft"
+      }
+    },
+    {
+      "id": "spear",
+      "name": "Spear",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "simple_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "piercing",
+      "range": "20/60",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "thrown",
+        "versatile"
+      ],
+      "properties": [
+        "thrown",
+        "versatile"
+      ],
+      "weight_lbs": 3,
+      "price_cp": 100,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d6",
+        "damage_type": "piercing",
+        "range": "20/60"
+      }
+    },
+    {
+      "id": "light-crossbow",
+      "name": "Light Crossbow",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "simple_ranged",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "simple_ranged",
+      "damage_dice": "1d8",
+      "damage_type": "piercing",
+      "range": "80/320",
+      "reach": "5 ft",
+      "handedness": "two_handed",
+      "weapon_properties": [
+        "ammunition",
+        "loading",
+        "two-handed"
+      ],
+      "properties": [
+        "ammunition",
+        "loading",
+        "two-handed"
+      ],
+      "weight_lbs": 5,
+      "price_cp": 2500,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "ranged",
+        "damage_dice": "1d8",
+        "damage_type": "piercing",
+        "range": "80/320"
+      }
+    },
+    {
+      "id": "dart",
+      "name": "Dart",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "simple_ranged",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "simple_ranged",
+      "damage_dice": "1d4",
+      "damage_type": "piercing",
+      "range": "20/60",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [
+        "finesse",
+        "thrown"
+      ],
+      "properties": [
+        "finesse",
+        "thrown"
+      ],
+      "weight_lbs": 0.25,
+      "price_cp": 5,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "ranged",
+        "damage_dice": "1d4",
+        "damage_type": "piercing",
+        "range": "20/60"
+      }
+    },
+    {
+      "id": "shortbow",
+      "name": "Shortbow",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "simple_ranged",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "simple_ranged",
+      "damage_dice": "1d6",
+      "damage_type": "piercing",
+      "range": "80/320",
+      "reach": "5 ft",
+      "handedness": "two_handed",
+      "weapon_properties": [
+        "ammunition",
+        "two-handed"
+      ],
+      "properties": [
+        "ammunition",
+        "two-handed"
+      ],
+      "weight_lbs": 2,
+      "price_cp": 2500,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "ranged",
+        "damage_dice": "1d6",
+        "damage_type": "piercing",
+        "range": "80/320"
+      }
+    },
+    {
+      "id": "sling",
+      "name": "Sling",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "simple_ranged",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "simple_ranged",
+      "damage_dice": "1d4",
+      "damage_type": "bludgeoning",
+      "range": "30/120",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [
+        "ammunition"
+      ],
+      "properties": [
+        "ammunition"
+      ],
+      "weight_lbs": 0,
+      "price_cp": 10,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "ranged",
+        "damage_dice": "1d4",
+        "damage_type": "bludgeoning",
+        "range": "30/120"
+      }
+    },
+    {
+      "id": "battleaxe",
+      "name": "Battleaxe",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "1d8",
+      "damage_type": "slashing",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "properties": [
+        "versatile"
+      ],
+      "weight_lbs": 4,
+      "price_cp": 1000,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d8",
+        "damage_type": "slashing",
+        "range": "5 ft"
+      }
+    },
+    {
+      "id": "flail",
+      "name": "Flail",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "1d8",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [],
+      "properties": [],
+      "weight_lbs": 2,
+      "price_cp": 1000,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d8",
+        "damage_type": "bludgeoning",
+        "range": "5 ft"
+      }
+    },
+    {
+      "id": "glaive",
+      "name": "Glaive",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "1d10",
+      "damage_type": "slashing",
+      "range": "10 ft",
+      "reach": "10 ft",
+      "handedness": "two_handed",
+      "weapon_properties": [
+        "heavy",
+        "reach",
+        "two-handed"
+      ],
+      "properties": [
+        "heavy",
+        "reach",
+        "two-handed"
+      ],
+      "weight_lbs": 6,
+      "price_cp": 2000,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d10",
+        "damage_type": "slashing",
+        "range": "10 ft"
+      }
+    },
+    {
+      "id": "greataxe",
+      "name": "Greataxe",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "1d12",
+      "damage_type": "slashing",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "two_handed",
+      "weapon_properties": [
+        "heavy",
+        "two-handed"
+      ],
+      "properties": [
+        "heavy",
+        "two-handed"
+      ],
+      "weight_lbs": 7,
+      "price_cp": 3000,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d12",
+        "damage_type": "slashing",
+        "range": "5 ft"
+      }
+    },
+    {
+      "id": "greatsword",
+      "name": "Greatsword",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "2d6",
+      "damage_type": "slashing",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "two_handed",
+      "weapon_properties": [
+        "heavy",
+        "two-handed"
+      ],
+      "properties": [
+        "heavy",
+        "two-handed"
+      ],
+      "weight_lbs": 6,
+      "price_cp": 5000,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "2d6",
+        "damage_type": "slashing",
+        "range": "5 ft"
+      }
+    },
+    {
+      "id": "halberd",
+      "name": "Halberd",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "1d10",
+      "damage_type": "slashing",
+      "range": "10 ft",
+      "reach": "10 ft",
+      "handedness": "two_handed",
+      "weapon_properties": [
+        "heavy",
+        "reach",
+        "two-handed"
+      ],
+      "properties": [
+        "heavy",
+        "reach",
+        "two-handed"
+      ],
+      "weight_lbs": 6,
+      "price_cp": 2000,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d10",
+        "damage_type": "slashing",
+        "range": "10 ft"
+      }
+    },
+    {
+      "id": "lance",
+      "name": "Lance",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "1d12",
+      "damage_type": "piercing",
+      "range": "10 ft",
+      "reach": "10 ft",
+      "handedness": "special",
+      "weapon_properties": [
+        "reach",
+        "special"
+      ],
+      "properties": [
+        "reach",
+        "special"
+      ],
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d12",
+        "damage_type": "piercing",
+        "range": "10 ft"
+      }
+    },
+    {
+      "id": "longsword",
+      "name": "Longsword",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "1d8",
+      "damage_type": "slashing",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "properties": [
+        "versatile"
+      ],
+      "weight_lbs": 3,
+      "price_cp": 1500,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d8",
+        "damage_type": "slashing",
+        "range": "5 ft"
+      }
+    },
+    {
+      "id": "maul",
+      "name": "Maul",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "2d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "two_handed",
+      "weapon_properties": [
+        "heavy",
+        "two-handed"
+      ],
+      "properties": [
+        "heavy",
+        "two-handed"
+      ],
+      "weight_lbs": 10,
+      "price_cp": 1000,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "2d6",
+        "damage_type": "bludgeoning",
+        "range": "5 ft"
+      }
+    },
+    {
+      "id": "morningstar",
+      "name": "Morningstar",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "1d8",
+      "damage_type": "piercing",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [],
+      "properties": [],
+      "weight_lbs": 4,
+      "price_cp": 1500,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d8",
+        "damage_type": "piercing",
+        "range": "5 ft"
+      }
+    },
+    {
+      "id": "pike",
+      "name": "Pike",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "1d10",
+      "damage_type": "piercing",
+      "range": "10 ft",
+      "reach": "10 ft",
+      "handedness": "two_handed",
+      "weapon_properties": [
+        "heavy",
+        "reach",
+        "two-handed"
+      ],
+      "properties": [
+        "heavy",
+        "reach",
+        "two-handed"
+      ],
+      "weight_lbs": 18,
+      "price_cp": 500,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d10",
+        "damage_type": "piercing",
+        "range": "10 ft"
+      }
+    },
+    {
+      "id": "rapier",
+      "name": "Rapier",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "1d8",
+      "damage_type": "piercing",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [
+        "finesse"
+      ],
+      "properties": [
+        "finesse"
+      ],
+      "weight_lbs": 2,
+      "price_cp": 2500,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d8",
+        "damage_type": "piercing",
+        "range": "5 ft"
+      }
+    },
+    {
+      "id": "scimitar",
+      "name": "Scimitar",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "1d6",
+      "damage_type": "slashing",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [
+        "finesse",
+        "light"
+      ],
+      "properties": [
+        "finesse",
+        "light"
+      ],
+      "weight_lbs": 3,
+      "price_cp": 2500,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d6",
+        "damage_type": "slashing",
+        "range": "5 ft"
+      }
+    },
+    {
+      "id": "shortsword",
+      "name": "Shortsword",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "1d6",
+      "damage_type": "piercing",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [
+        "finesse",
+        "light"
+      ],
+      "properties": [
+        "finesse",
+        "light"
+      ],
+      "weight_lbs": 2,
+      "price_cp": 1000,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d6",
+        "damage_type": "piercing",
+        "range": "5 ft"
+      }
+    },
+    {
+      "id": "trident",
+      "name": "Trident",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "1d6",
+      "damage_type": "piercing",
+      "range": "20/60",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "thrown",
+        "versatile"
+      ],
+      "properties": [
+        "thrown",
+        "versatile"
+      ],
+      "weight_lbs": 4,
+      "price_cp": 500,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d6",
+        "damage_type": "piercing",
+        "range": "20/60"
+      },
+      "versatile_damage": "1d8"
+    },
+    {
+      "id": "war-pick",
+      "name": "War Pick",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "1d8",
+      "damage_type": "piercing",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [],
+      "properties": [],
+      "weight_lbs": 2,
+      "price_cp": 500,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d8",
+        "damage_type": "piercing",
+        "range": "5 ft"
+      }
+    },
+    {
+      "id": "warhammer",
+      "name": "Warhammer",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "1d8",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "properties": [
+        "versatile"
+      ],
+      "weight_lbs": 2,
+      "price_cp": 1500,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d8",
+        "damage_type": "bludgeoning",
+        "range": "5 ft"
+      }
+    },
+    {
+      "id": "whip",
+      "name": "Whip",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_melee",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_melee",
+      "damage_dice": "1d4",
+      "damage_type": "slashing",
+      "range": "10 ft",
+      "reach": "10 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [
+        "finesse",
+        "reach"
+      ],
+      "properties": [
+        "finesse",
+        "reach"
+      ],
+      "weight_lbs": 3,
+      "price_cp": 200,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "melee",
+        "damage_dice": "1d4",
+        "damage_type": "slashing",
+        "range": "10 ft"
+      }
+    },
+    {
+      "id": "blowgun",
+      "name": "Blowgun",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_ranged",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_ranged",
+      "damage_dice": "1",
+      "damage_type": "piercing",
+      "range": "25/100",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [
+        "ammunition",
+        "loading"
+      ],
+      "properties": [
+        "ammunition",
+        "loading"
+      ],
+      "weight_lbs": 1,
+      "price_cp": 1000,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "ranged",
+        "damage_dice": "1",
+        "damage_type": "piercing",
+        "range": "25/100"
+      }
+    },
+    {
+      "id": "hand-crossbow",
+      "name": "Hand Crossbow",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_ranged",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_ranged",
+      "damage_dice": "1d6",
+      "damage_type": "piercing",
+      "range": "30/120",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [
+        "ammunition",
+        "light",
+        "loading"
+      ],
+      "properties": [
+        "ammunition",
+        "light",
+        "loading"
+      ],
+      "weight_lbs": 3,
+      "price_cp": 7500,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "ranged",
+        "damage_dice": "1d6",
+        "damage_type": "piercing",
+        "range": "30/120"
+      }
+    },
+    {
+      "id": "heavy-crossbow",
+      "name": "Heavy Crossbow",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_ranged",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_ranged",
+      "damage_dice": "1d10",
+      "damage_type": "piercing",
+      "range": "100/400",
+      "reach": "5 ft",
+      "handedness": "two_handed",
+      "weapon_properties": [
+        "ammunition",
+        "heavy",
+        "loading",
+        "two-handed"
+      ],
+      "properties": [
+        "ammunition",
+        "heavy",
+        "loading",
+        "two-handed"
+      ],
+      "weight_lbs": 18,
+      "price_cp": 5000,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "ranged",
+        "damage_dice": "1d10",
+        "damage_type": "piercing",
+        "range": "100/400"
+      }
+    },
+    {
+      "id": "longbow",
+      "name": "Longbow",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_ranged",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_ranged",
+      "damage_dice": "1d8",
+      "damage_type": "piercing",
+      "range": "150/600",
+      "reach": "5 ft",
+      "handedness": "two_handed",
+      "weapon_properties": [
+        "ammunition",
+        "heavy",
+        "two-handed"
+      ],
+      "properties": [
+        "ammunition",
+        "heavy",
+        "two-handed"
+      ],
+      "weight_lbs": 2,
+      "price_cp": 5000,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "ranged",
+        "damage_dice": "1d8",
+        "damage_type": "piercing",
+        "range": "150/600"
+      }
+    },
+    {
+      "id": "net",
+      "name": "Net",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "martial_ranged",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "martial_ranged",
+      "damage_dice": "0",
+      "damage_type": "restrained",
+      "range": "5/15",
+      "reach": "5 ft",
+      "handedness": "one_handed",
+      "weapon_properties": [
+        "special",
+        "thrown"
+      ],
+      "properties": [
+        "special",
+        "thrown"
+      ],
+      "weight_lbs": 3,
+      "price_cp": 100,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "attack_kind": "ranged",
+        "damage_dice": "0",
+        "damage_type": "restrained",
+        "range": "5/15"
+      }
+    },
+    {
+      "id": "weapon-plus1",
+      "name": "Weapon +1",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_template",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "any",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 0,
+      "price_gp": 0,
+      "attack_bonus": 1,
+      "damage_bonus": 1,
+      "magic_bonus": 1,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "weapon-plus2",
+      "name": "Weapon +2",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_template",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "any",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 0,
+      "price_gp": 0,
+      "attack_bonus": 2,
+      "damage_bonus": 2,
+      "magic_bonus": 2,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 2
+      }
+    },
+    {
+      "id": "weapon-plus3",
+      "name": "Weapon +3",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_template",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "any",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 0,
+      "price_gp": 0,
+      "attack_bonus": 3,
+      "damage_bonus": 3,
+      "magic_bonus": 3,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 3
+      }
+    },
+    {
+      "id": "ammunition-plus1",
+      "name": "Ammunition +1",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_template",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "any",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 0,
+      "price_gp": 0,
+      "attack_bonus": 1,
+      "damage_bonus": 1,
+      "magic_bonus": 1,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "ammunition-plus2",
+      "name": "Ammunition +2",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_template",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "any",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 0,
+      "price_gp": 0,
+      "attack_bonus": 2,
+      "damage_bonus": 2,
+      "magic_bonus": 2,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 2
+      }
+    },
+    {
+      "id": "ammunition-plus3",
+      "name": "Ammunition +3",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_template",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "weapon_type": "any",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 0,
+      "price_gp": 0,
+      "attack_bonus": 3,
+      "damage_bonus": 3,
+      "magic_bonus": 3,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 3
+      }
+    },
+    {
+      "id": "arrow-of-slaying",
+      "name": "Arrow of Slaying",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "arrow-of-slaying-action",
+          "name": "Arrow of Slaying",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "dagger-of-venom",
+      "name": "Dagger of Venom",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "dagger-of-venom-action",
+          "name": "Dagger of Venom",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 1,
+      "damage_bonus": 1,
+      "magic_bonus": 1,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "dancing-sword",
+      "name": "Dancing Sword",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "dancing-sword-action",
+          "name": "Dancing Sword",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "defender",
+      "name": "Defender",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "defender-action",
+          "name": "Defender",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 3,
+      "damage_bonus": 3,
+      "magic_bonus": 3,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 3
+      }
+    },
+    {
+      "id": "dragon-slayer",
+      "name": "Dragon Slayer",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "dragon-slayer-action",
+          "name": "Dragon Slayer",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "flame-tongue",
+      "name": "Flame Tongue",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "flame-tongue-action",
+          "name": "Flame Tongue",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "frost-brand",
+      "name": "Frost Brand",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "frost-brand-action",
+          "name": "Frost Brand",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "giant-slayer",
+      "name": "Giant Slayer",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "giant-slayer-action",
+          "name": "Giant Slayer",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "holy-avenger",
+      "name": "Holy Avenger",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "holy-avenger-action",
+          "name": "Holy Avenger",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 3,
+      "damage_bonus": 3,
+      "magic_bonus": 3,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 3
+      }
+    },
+    {
+      "id": "javelin-of-lightning",
+      "name": "Javelin of Lightning",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "javelin-of-lightning-action",
+          "name": "Javelin of Lightning",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "luck-blade",
+      "name": "Luck Blade",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "luck-blade-action",
+          "name": "Luck Blade",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 1,
+      "damage_bonus": 1,
+      "magic_bonus": 1,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 1
+      }
+    },
+    {
+      "id": "mace-of-disruption",
+      "name": "Mace of Disruption",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "mace-of-disruption-action",
+          "name": "Mace of Disruption",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "mace-of-smiting",
+      "name": "Mace of Smiting",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "mace-of-smiting-action",
+          "name": "Mace of Smiting",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "mace-of-terror",
+      "name": "Mace of Terror",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "mace-of-terror-action",
+          "name": "Mace of Terror",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "nine-lives-stealer",
+      "name": "Nine Lives Stealer",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "nine-lives-stealer-action",
+          "name": "Nine Lives Stealer",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "oathbow",
+      "name": "Oathbow",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "oathbow-action",
+          "name": "Oathbow",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "scimitar-of-speed",
+      "name": "Scimitar of Speed",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "scimitar-of-speed-action",
+          "name": "Scimitar of Speed",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "sword-of-life-stealing",
+      "name": "Sword of Life Stealing",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "sword-of-life-stealing-action",
+          "name": "Sword of Life Stealing",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "sword-of-sharpness",
+      "name": "Sword of Sharpness",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "sword-of-sharpness-action",
+          "name": "Sword of Sharpness",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "sword-of-wounding",
+      "name": "Sword of Wounding",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "sword-of-wounding-action",
+          "name": "Sword of Wounding",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "sun-blade",
+      "name": "Sun Blade",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "sun-blade-action",
+          "name": "Sun Blade",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 2,
+      "damage_bonus": 2,
+      "magic_bonus": 2,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 2
+      }
+    },
+    {
+      "id": "vicious-weapon",
+      "name": "Vicious Weapon",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "vicious-weapon-action",
+          "name": "Vicious Weapon",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
+    },
+    {
+      "id": "vorpal-sword",
+      "name": "Vorpal Sword",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "vorpal-sword-action",
+          "name": "Vorpal Sword",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 3,
+      "damage_bonus": 3,
+      "magic_bonus": 3,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 3
+      }
+    },
+    {
+      "id": "weapon-of-warning",
+      "name": "Weapon of Warning",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "weapon-of-warning-action",
+          "name": "Weapon of Warning",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      }
     }
   ]
 }

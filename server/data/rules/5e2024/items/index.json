@@ -1,120 +1,88 @@
 {
   "item_schema_version": 2,
   "rules_version": "5e2024",
-  "description": "Index of all item compendium files for the 5e 2024 rules set. Each entry describes a file containing structured item records.",
+  "description": "Starter item compendium using open-compatible structured metadata and original summaries; not a complete official catalog.",
   "files": [
     {
-      "file": "weapons.json",
-      "category": "weapon",
-      "description": "Simple and martial weapons including SRD base weapons and common magic weapons (+1/+2/+3 variants, Flame Tongue, Frost Brand, Sword of Life Stealing).",
-      "source": "SRD / open-compatible / original summaries",
-      "item_count_approx": 47
+      "file": "adventuring_gear.json",
+      "category": "adventuring_gear",
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 39
     },
     {
       "file": "armor.json",
       "category": "armor",
-      "description": "All SRD armor types (light, medium, heavy) plus generic +1/+2/+3 armor templates.",
-      "source": "SRD / open-compatible / original summaries",
-      "item_count_approx": 15
-    },
-    {
-      "file": "shields.json",
-      "category": "shield",
-      "description": "Standard shield, +1/+2/+3 shields, and Animated Shield.",
-      "source": "SRD / open-compatible / original summaries",
-      "item_count_approx": 5
-    },
-    {
-      "file": "adventuring_gear.json",
-      "category": "consumable / misc",
-      "description": "Common adventuring equipment: torches, rope, backpack, rations, healer's kit, crowbar, and other standard gear.",
-      "source": "SRD / open-compatible / original summaries",
-      "item_count_approx": 18
-    },
-    {
-      "file": "tools.json",
-      "category": "tool",
-      "description": "Artisan tools, thieves' tools, specialty kits (herbalism, poisoner's, disguise, forgery, navigator's), gaming sets, and musical instruments.",
-      "source": "SRD / open-compatible / original summaries",
-      "item_count_approx": 16
-    },
-    {
-      "file": "potions.json",
-      "category": "potion",
-      "description": "Healing potions (healing to supreme), resistance potions, speed, flying, invisibility, giant strength, and clairvoyance.",
-      "source": "SRD / open-compatible / original summaries",
-      "item_count_approx": 10
-    },
-    {
-      "file": "scrolls.json",
-      "category": "scroll",
-      "description": "Spell scrolls from cantrip through 9th level. Each scroll allows casting the stored spell once.",
-      "source": "SRD / open-compatible / original summaries",
-      "item_count_approx": 10
-    },
-    {
-      "file": "wands.json",
-      "category": "wand",
-      "description": "Magic wands with charge-based spell casting: Magic Missiles, Fireballs, Lightning Bolts, Web, Fear, and others.",
-      "source": "SRD / open-compatible / original summaries",
-      "item_count_approx": 7
-    },
-    {
-      "file": "staffs.json",
-      "category": "staff",
-      "description": "Magic staffs with charge-based spell lists: Staff of Fire, Frost, Power, the Magi, and Healing.",
-      "source": "SRD / open-compatible / original summaries",
-      "item_count_approx": 5
-    },
-    {
-      "file": "rods.json",
-      "category": "wondrous (subtype: rod)",
-      "description": "Magical rods: Rod of the Pact Keeper (+1/+2/+3), Rod of Absorption, Rod of Lordly Might, Rod of Rulership.",
-      "source": "SRD / open-compatible / original summaries",
-      "item_count_approx": 6
-    },
-    {
-      "file": "rings.json",
-      "category": "ring",
-      "description": "Magic rings: Protection, Spell Storing, Fire Resistance, Feather Falling, Invisibility, and others.",
-      "source": "SRD / open-compatible / original summaries",
-      "item_count_approx": 8
-    },
-    {
-      "file": "wondrous.json",
-      "category": "wondrous",
-      "description": "Wondrous items: Bag of Holding, Cloak of Protection, Headband of Intellect, Amulet of Health, Gauntlets of Ogre Power, Boots of Speed, Necklace of Fireballs, and others.",
-      "source": "SRD / open-compatible / original summaries",
-      "item_count_approx": 17
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 24
     },
     {
       "file": "homebrew.json",
       "category": "homebrew",
-      "description": "DM-created homebrew items. Currently includes the Thunder Mage Quarterstaff +3 with placeholder spell list for DM review.",
-      "source": "Homebrew / DM-created content",
-      "item_count_approx": 1,
-      "notes": "TODO entries in granted_spells must be verified by the DM before play."
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 12
+    },
+    {
+      "file": "potions.json",
+      "category": "potions",
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 17
+    },
+    {
+      "file": "rings.json",
+      "category": "rings",
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 15
+    },
+    {
+      "file": "rods.json",
+      "category": "rods",
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 9
+    },
+    {
+      "file": "scrolls.json",
+      "category": "scrolls",
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 11
+    },
+    {
+      "file": "shields.json",
+      "category": "shields",
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 9
+    },
+    {
+      "file": "staffs.json",
+      "category": "staffs",
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 13
+    },
+    {
+      "file": "tools.json",
+      "category": "tools",
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 22
+    },
+    {
+      "file": "wands.json",
+      "category": "wands",
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 13
+    },
+    {
+      "file": "weapons.json",
+      "category": "weapons",
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 67
+    },
+    {
+      "file": "wondrous.json",
+      "category": "wondrous",
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 50
     }
   ],
-  "schema_notes": {
-    "granted_spells_format": {
-      "description": "Each granted_spell entry should be a structured object.",
-      "required_fields": ["id", "name", "charge_cost", "cast_level"],
-      "optional_fields": ["uses_item_dc", "uses_item_attack_bonus", "consume_spell_slot", "description"],
-      "example": {
-        "id": "fireball",
-        "name": "Fireball",
-        "charge_cost": 3,
-        "cast_level": 3,
-        "uses_item_dc": true,
-        "uses_item_attack_bonus": false,
-        "consume_spell_slot": false,
-        "description": "Expend 3 charges to cast fireball (save DC 17)."
-      }
-    },
-    "weapon_properties": ["finesse", "heavy", "light", "loading", "reach", "thrown", "two_handed", "versatile", "ammunition"],
-    "armor_subtypes": ["light", "medium", "heavy"],
-    "rarity_values": ["common", "uncommon", "rare", "very_rare", "legendary", "artifact", "varies"],
-    "equip_slots": ["main_hand", "off_hand", "armor", "ring", "cloak", "neck", "head", "hands", "feet", "waist", "trinket"]
-  }
+  "schema_notes": [
+    "Items use original short summaries and structured metadata for safe expansion."
+  ]
 }

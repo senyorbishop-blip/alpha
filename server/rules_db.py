@@ -1351,14 +1351,76 @@ def get_srd_item_count() -> int:
         return 0
 
 
+def _compendium_item_to_srd_row(item: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert a starter compendium item into the lightweight DM picker row shape."""
+    category = str(item.get("category") or "Gear")
+    readable_category = {
+        "adventuring_gear": "Gear",
+        "potion": "Potion",
+        "consumable": "Consumable",
+        "wondrous": "Wondrous Item",
+        "weapon": "Weapon",
+        "armor": "Armor",
+        "shield": "Shield",
+        "scroll": "Scroll",
+        "wand": "Wand",
+        "staff": "Staff",
+        "rod": "Rod",
+        "ring": "Ring",
+        "tool": "Tool",
+        "homebrew": "Homebrew",
+    }.get(category, category.replace("_", " ").title())
+    tags = [category, str(item.get("subtype") or "")]
+    if item.get("requires_attunement"):
+        tags.append("attunement")
+    if item.get("granted_spells"):
+        tags.append("spell-granting")
+    if item.get("consumable"):
+        tags.append("consumable")
+    if category in {"weapon", "armor", "shield", "potion", "consumable"}:
+        tags.append(category)
+    price = item.get("price") or item.get("price_gp") or item.get("price_cp") or ""
+    if isinstance(price, (int, float)) and item.get("price_cp") is not None:
+        price = f"{price} cp"
+    elif isinstance(price, (int, float)) and item.get("price_gp") is not None:
+        price = f"{price} gp"
+    return {
+        "id": item.get("id"),
+        "name": item.get("name"),
+        "category": readable_category,
+        "rarity": str(item.get("rarity") or "Common").replace("_", " ").title(),
+        "weight": float(item.get("weight_lbs") or 0),
+        "default_price": str(price or ""),
+        "default_qty": 1,
+        "description": str(item.get("description_summary") or item.get("effect") or item.get("summary") or "Starter compendium item.")[:2000],
+        "tags": ",".join(t for t in tags if t),
+        "stack_limit": 999 if item.get("quantity_supported") or item.get("consumable") else 1,
+        "requires_attunement": bool(item.get("requires_attunement")),
+        "has_spells": bool(item.get("granted_spells")),
+        "source": "starter_compendium",
+    }
+
+
 def get_all_srd_items() -> List[Dict[str, Any]]:
-    """Return all SRD items ordered by category and name."""
+    """Return all item picker rows, including the built-in starter compendium."""
+    rows: List[Dict[str, Any]] = []
     try:
         with get_conn() as conn:
-            rows = conn.execute("SELECT * FROM srd_items ORDER BY category, name").fetchall()
-        return [dict(r) for r in rows]
+            db_rows = conn.execute("SELECT * FROM srd_items ORDER BY category, name").fetchall()
+        rows.extend(dict(r) for r in db_rows)
     except Exception:
-        return []
+        rows = []
+    seen = {str(r.get("id") or "") for r in rows}
+    try:
+        from server.item_compendium import all_items
+        for item in all_items():
+            item_id = str(item.get("id") or "")
+            if item_id and item_id not in seen:
+                rows.append(_compendium_item_to_srd_row(item))
+                seen.add(item_id)
+    except Exception:
+        pass
+    return sorted(rows, key=lambda r: (str(r.get("category") or ""), str(r.get("name") or "").lower()))
 
 
 def get_srd_items_by_rarity(rarity: str) -> List[Dict[str, Any]]:

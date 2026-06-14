@@ -3,100 +3,924 @@
   "item_schema_version": 2,
   "items": [
     {
-      "id": "padded-armor", "name": "Padded Armor", "item_schema_version": 2, "category": "armor", "subtype": "light",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
-      "armor_type": "light", "base_ac": 11, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+      "id": "padded-armor",
+      "name": "Padded Armor",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "light",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "light",
+      "base_ac": 11,
+      "dex_cap": null,
+      "stealth_disadvantage": true,
+      "strength_requirement": 0,
+      "ac_bonus": 0,
+      "weight_lbs": 8,
+      "price_cp": 500,
+      "ac_calculation": {
+        "base_ac": 11,
+        "dex_cap": null,
+        "bonus": 0,
+        "formula": "base + dex up to cap"
+      }
     },
     {
-      "id": "leather-armor", "name": "Leather Armor", "item_schema_version": 2, "category": "armor", "subtype": "light",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
-      "armor_type": "light", "base_ac": 11, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+      "id": "leather-armor",
+      "name": "Leather Armor",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "light",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "light",
+      "base_ac": 11,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 0,
+      "weight_lbs": 10,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 11,
+        "dex_cap": null,
+        "bonus": 0,
+        "formula": "base + dex up to cap"
+      }
     },
     {
-      "id": "studded-leather-armor", "name": "Studded Leather Armor", "item_schema_version": 2, "category": "armor", "subtype": "light",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
-      "armor_type": "light", "base_ac": 12, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+      "id": "studded-leather-armor",
+      "name": "Studded Leather Armor",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "light",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "light",
+      "base_ac": 12,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 0,
+      "weight_lbs": 13,
+      "price_cp": 4500,
+      "ac_calculation": {
+        "base_ac": 12,
+        "dex_cap": null,
+        "bonus": 0,
+        "formula": "base + dex up to cap"
+      }
     },
     {
-      "id": "hide-armor", "name": "Hide Armor", "item_schema_version": 2, "category": "armor", "subtype": "medium",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
-      "armor_type": "medium", "base_ac": 12, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+      "id": "hide-armor",
+      "name": "Hide Armor",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "medium",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "medium",
+      "base_ac": 12,
+      "dex_cap": 2,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 0,
+      "weight_lbs": 12,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 12,
+        "dex_cap": 2,
+        "bonus": 0,
+        "formula": "base + dex up to cap"
+      }
     },
     {
-      "id": "chain-shirt", "name": "Chain Shirt", "item_schema_version": 2, "category": "armor", "subtype": "medium",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
-      "armor_type": "medium", "base_ac": 13, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+      "id": "chain-shirt",
+      "name": "Chain Shirt",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "medium",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "medium",
+      "base_ac": 13,
+      "dex_cap": 2,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 0,
+      "weight_lbs": 20,
+      "price_cp": 5000,
+      "ac_calculation": {
+        "base_ac": 13,
+        "dex_cap": 2,
+        "bonus": 0,
+        "formula": "base + dex up to cap"
+      }
     },
     {
-      "id": "scale-mail", "name": "Scale Mail", "item_schema_version": 2, "category": "armor", "subtype": "medium",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
-      "armor_type": "medium", "base_ac": 14, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+      "id": "scale-mail",
+      "name": "Scale Mail",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "medium",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "medium",
+      "base_ac": 14,
+      "dex_cap": 2,
+      "stealth_disadvantage": true,
+      "strength_requirement": 0,
+      "ac_bonus": 0,
+      "weight_lbs": 45,
+      "price_cp": 5000,
+      "ac_calculation": {
+        "base_ac": 14,
+        "dex_cap": 2,
+        "bonus": 0,
+        "formula": "base + dex up to cap"
+      }
     },
     {
-      "id": "breastplate", "name": "Breastplate", "item_schema_version": 2, "category": "armor", "subtype": "medium",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
-      "armor_type": "medium", "base_ac": 14, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+      "id": "breastplate",
+      "name": "Breastplate",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "medium",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "medium",
+      "base_ac": 14,
+      "dex_cap": 2,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 0,
+      "weight_lbs": 20,
+      "price_cp": 40000,
+      "ac_calculation": {
+        "base_ac": 14,
+        "dex_cap": 2,
+        "bonus": 0,
+        "formula": "base + dex up to cap"
+      }
     },
     {
-      "id": "half-plate", "name": "Half Plate", "item_schema_version": 2, "category": "armor", "subtype": "medium",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
-      "armor_type": "medium", "base_ac": 15, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+      "id": "half-plate",
+      "name": "Half Plate",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "medium",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "medium",
+      "base_ac": 15,
+      "dex_cap": 2,
+      "stealth_disadvantage": true,
+      "strength_requirement": 0,
+      "ac_bonus": 0,
+      "weight_lbs": 40,
+      "price_cp": 75000,
+      "ac_calculation": {
+        "base_ac": 15,
+        "dex_cap": 2,
+        "bonus": 0,
+        "formula": "base + dex up to cap"
+      }
     },
     {
-      "id": "ring-mail", "name": "Ring Mail", "item_schema_version": 2, "category": "armor", "subtype": "heavy",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
-      "armor_type": "heavy", "base_ac": 14, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+      "id": "ring-mail",
+      "name": "Ring Mail",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "heavy",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "heavy",
+      "base_ac": 14,
+      "dex_cap": 0,
+      "stealth_disadvantage": true,
+      "strength_requirement": 0,
+      "ac_bonus": 0,
+      "weight_lbs": 40,
+      "price_cp": 3000,
+      "ac_calculation": {
+        "base_ac": 14,
+        "dex_cap": 0,
+        "bonus": 0,
+        "formula": "base"
+      }
     },
     {
-      "id": "chain-mail", "name": "Chain Mail", "item_schema_version": 2, "category": "armor", "subtype": "heavy",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
-      "armor_type": "heavy", "base_ac": 16, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+      "id": "chain-mail",
+      "name": "Chain Mail",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "heavy",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "heavy",
+      "base_ac": 16,
+      "dex_cap": 0,
+      "stealth_disadvantage": true,
+      "strength_requirement": 13,
+      "ac_bonus": 0,
+      "weight_lbs": 55,
+      "price_cp": 7500,
+      "ac_calculation": {
+        "base_ac": 16,
+        "dex_cap": 0,
+        "bonus": 0,
+        "formula": "base"
+      }
     },
     {
-      "id": "splint-armor", "name": "Splint Armor", "item_schema_version": 2, "category": "armor", "subtype": "heavy",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
-      "armor_type": "heavy", "base_ac": 17, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+      "id": "splint-armor",
+      "name": "Splint Armor",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "heavy",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "heavy",
+      "base_ac": 17,
+      "dex_cap": 0,
+      "stealth_disadvantage": true,
+      "strength_requirement": 15,
+      "ac_bonus": 0,
+      "weight_lbs": 60,
+      "price_cp": 20000,
+      "ac_calculation": {
+        "base_ac": 17,
+        "dex_cap": 0,
+        "bonus": 0,
+        "formula": "base"
+      }
     },
     {
-      "id": "plate-armor", "name": "Plate Armor", "item_schema_version": 2, "category": "armor", "subtype": "heavy",
-      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
-      "armor_type": "heavy", "base_ac": 18, "ac_bonus": 0, "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 0, "recharge_type": "none", "passive_effects": [], "granted_spells": []
+      "id": "plate-armor",
+      "name": "Plate Armor",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "heavy",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "heavy",
+      "base_ac": 18,
+      "dex_cap": 0,
+      "stealth_disadvantage": true,
+      "strength_requirement": 15,
+      "ac_bonus": 0,
+      "weight_lbs": 65,
+      "price_cp": 150000,
+      "ac_calculation": {
+        "base_ac": 18,
+        "dex_cap": 0,
+        "bonus": 0,
+        "formula": "base"
+      }
     },
     {
-      "id": "armor-plus-1", "name": "Armor, +1", "item_schema_version": 2, "category": "armor", "subtype": "medium",
-      "rarity": "rare", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
-      "armor_type": "medium", "base_ac": 14, "ac_bonus": 1, "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [{"type": "ac_bonus", "value": 1, "summary": "+1 bonus to AC."}],
-      "granted_spells": []
+      "id": "armor-plus1",
+      "name": "Armor +1",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "magic_armor",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "ac_bonus",
+          "value": 1,
+          "summary": "Magic armor bonus or special armor protection."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "any",
+      "base_ac": 10,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 1,
+      "magic_bonus": 1,
+      "weight_lbs": 20,
+      "ac_calculation": {
+        "base_ac": 10,
+        "dex_cap": null,
+        "bonus": 1,
+        "formula": "base armor + magic bonus"
+      }
     },
     {
-      "id": "armor-plus-2", "name": "Armor, +2", "item_schema_version": 2, "category": "armor", "subtype": "medium",
-      "rarity": "very_rare", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
-      "armor_type": "medium", "base_ac": 14, "ac_bonus": 2, "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [{"type": "ac_bonus", "value": 2, "summary": "+2 bonus to AC."}],
-      "granted_spells": []
+      "id": "armor-plus2",
+      "name": "Armor +2",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "magic_armor",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "ac_bonus",
+          "value": 2,
+          "summary": "Magic armor bonus or special armor protection."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "any",
+      "base_ac": 10,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 2,
+      "magic_bonus": 2,
+      "weight_lbs": 20,
+      "ac_calculation": {
+        "base_ac": 10,
+        "dex_cap": null,
+        "bonus": 2,
+        "formula": "base armor + magic bonus"
+      }
     },
     {
-      "id": "armor-plus-3", "name": "Armor, +3", "item_schema_version": 2, "category": "armor", "subtype": "medium",
-      "rarity": "legendary", "requires_attunement": false, "equippable": true, "equip_slot": "armor",
-      "armor_type": "medium", "base_ac": 14, "ac_bonus": 3, "attack_bonus": 0, "damage_bonus": 0,
-      "charges_max": 0, "recharge_type": "none",
-      "passive_effects": [{"type": "ac_bonus", "value": 3, "summary": "+3 bonus to AC."}],
-      "granted_spells": []
+      "id": "armor-plus3",
+      "name": "Armor +3",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "magic_armor",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "ac_bonus",
+          "value": 3,
+          "summary": "Magic armor bonus or special armor protection."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "any",
+      "base_ac": 10,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 3,
+      "magic_bonus": 3,
+      "weight_lbs": 20,
+      "ac_calculation": {
+        "base_ac": 10,
+        "dex_cap": null,
+        "bonus": 3,
+        "formula": "base armor + magic bonus"
+      }
+    },
+    {
+      "id": "adamantine-armor",
+      "name": "Adamantine Armor",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "magic_armor",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "ac_bonus",
+          "value": 0,
+          "summary": "Magic armor bonus or special armor protection."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "any",
+      "base_ac": 10,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 0,
+      "magic_bonus": 0,
+      "weight_lbs": 20,
+      "ac_calculation": {
+        "base_ac": 10,
+        "dex_cap": null,
+        "bonus": 0,
+        "formula": "base armor + magic bonus"
+      }
+    },
+    {
+      "id": "armor-of-resistance",
+      "name": "Armor of Resistance",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "magic_armor",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "ac_bonus",
+          "value": 1,
+          "summary": "Magic armor bonus or special armor protection."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "armor-of-resistance-attuned-effect",
+          "name": "Armor of Resistance Attuned Effect",
+          "action_type": "passive_effect",
+          "charge_cost": 0,
+          "summary": "Apply this item’s attuned passive effect while worn."
+        }
+      ],
+      "source": "starter_compendium",
+      "armor_type": "any",
+      "base_ac": 10,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 1,
+      "magic_bonus": 1,
+      "weight_lbs": 20,
+      "ac_calculation": {
+        "base_ac": 10,
+        "dex_cap": null,
+        "bonus": 1,
+        "formula": "base armor + magic bonus"
+      }
+    },
+    {
+      "id": "armor-of-vulnerability",
+      "name": "Armor of Vulnerability",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "magic_armor",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "ac_bonus",
+          "value": 1,
+          "summary": "Magic armor bonus or special armor protection."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "armor-of-vulnerability-attuned-effect",
+          "name": "Armor of Vulnerability Attuned Effect",
+          "action_type": "passive_effect",
+          "charge_cost": 0,
+          "summary": "Apply this item’s attuned passive effect while worn."
+        }
+      ],
+      "source": "starter_compendium",
+      "armor_type": "any",
+      "base_ac": 10,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 1,
+      "magic_bonus": 1,
+      "weight_lbs": 20,
+      "ac_calculation": {
+        "base_ac": 10,
+        "dex_cap": null,
+        "bonus": 1,
+        "formula": "base armor + magic bonus"
+      }
+    },
+    {
+      "id": "demon-armor",
+      "name": "Demon Armor",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "magic_armor",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "ac_bonus",
+          "value": 1,
+          "summary": "Magic armor bonus or special armor protection."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "demon-armor-attuned-effect",
+          "name": "Demon Armor Attuned Effect",
+          "action_type": "passive_effect",
+          "charge_cost": 0,
+          "summary": "Apply this item’s attuned passive effect while worn."
+        }
+      ],
+      "source": "starter_compendium",
+      "armor_type": "specific",
+      "base_ac": 10,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 1,
+      "magic_bonus": 1,
+      "weight_lbs": 20,
+      "ac_calculation": {
+        "base_ac": 10,
+        "dex_cap": null,
+        "bonus": 1,
+        "formula": "base armor + magic bonus"
+      }
+    },
+    {
+      "id": "dragon-scale-mail",
+      "name": "Dragon Scale Mail",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "magic_armor",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "ac_bonus",
+          "value": 1,
+          "summary": "Magic armor bonus or special armor protection."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "specific",
+      "base_ac": 10,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 1,
+      "magic_bonus": 1,
+      "weight_lbs": 20,
+      "ac_calculation": {
+        "base_ac": 10,
+        "dex_cap": null,
+        "bonus": 1,
+        "formula": "base armor + magic bonus"
+      }
+    },
+    {
+      "id": "elven-chain",
+      "name": "Elven Chain",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "magic_armor",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "ac_bonus",
+          "value": 1,
+          "summary": "Magic armor bonus or special armor protection."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "specific",
+      "base_ac": 10,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 1,
+      "magic_bonus": 1,
+      "weight_lbs": 20,
+      "ac_calculation": {
+        "base_ac": 10,
+        "dex_cap": null,
+        "bonus": 1,
+        "formula": "base armor + magic bonus"
+      }
+    },
+    {
+      "id": "glamoured-studded-leather",
+      "name": "Glamoured Studded Leather",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "magic_armor",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "ac_bonus",
+          "value": 1,
+          "summary": "Magic armor bonus or special armor protection."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "specific",
+      "base_ac": 10,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 1,
+      "magic_bonus": 1,
+      "weight_lbs": 20,
+      "ac_calculation": {
+        "base_ac": 10,
+        "dex_cap": null,
+        "bonus": 1,
+        "formula": "base armor + magic bonus"
+      }
+    },
+    {
+      "id": "mithral-armor",
+      "name": "Mithral Armor",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "magic_armor",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "ac_bonus",
+          "value": 0,
+          "summary": "Magic armor bonus or special armor protection."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "any",
+      "base_ac": 10,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 0,
+      "magic_bonus": 0,
+      "weight_lbs": 20,
+      "ac_calculation": {
+        "base_ac": 10,
+        "dex_cap": null,
+        "bonus": 0,
+        "formula": "base armor + magic bonus"
+      }
+    },
+    {
+      "id": "plate-armor-of-etherealness",
+      "name": "Plate Armor of Etherealness",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "magic_armor",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "ac_bonus",
+          "value": 1,
+          "summary": "Magic armor bonus or special armor protection."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "plate-armor-of-etherealness-attuned-effect",
+          "name": "Plate Armor of Etherealness Attuned Effect",
+          "action_type": "passive_effect",
+          "charge_cost": 0,
+          "summary": "Apply this item’s attuned passive effect while worn."
+        }
+      ],
+      "source": "starter_compendium",
+      "armor_type": "specific",
+      "base_ac": 10,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "ac_bonus": 1,
+      "magic_bonus": 1,
+      "weight_lbs": 20,
+      "ac_calculation": {
+        "base_ac": 10,
+        "dex_cap": null,
+        "bonus": 1,
+        "formula": "base armor + magic bonus"
+      }
     }
   ]
 }

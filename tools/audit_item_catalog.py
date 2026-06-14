@@ -10,7 +10,8 @@ from __future__ import annotations
 import argparse, json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-REQUIRED_FIELDS = ["name", "category"]
+REQUIRED_FIELDS = ["id", "name", "category"]
+SUPPORTED_CATEGORIES = {"weapon", "armor", "shield", "adventuring_gear", "tool", "potion", "consumable", "scroll", "wand", "staff", "rod", "ring", "wondrous", "homebrew", "misc"}
 
 SRD_WEAPONS = [
     "club","dagger","dart","greatclub","handaxe","javelin","light hammer","mace",
@@ -40,6 +41,31 @@ def _load_compendium_items() -> list[dict]:
         return all_items()
     except Exception:
         return []
+
+
+def _load_compendium_items_raw() -> list[dict]:
+    """Load item JSON files without de-duping so duplicate IDs are auditable."""
+    try:
+        from server.item_compendium import _ITEM_FILES, _ITEMS_DIR
+    except Exception:
+        return _load_compendium_items()
+    items: list[dict] = []
+    for fname in _ITEM_FILES:
+        path = os.path.join(_ITEMS_DIR, fname)
+        if not os.path.isfile(path):
+            continue
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            rows = data if isinstance(data, list) else data.get("items", [])
+            for row in rows:
+                if isinstance(row, dict):
+                    copied = dict(row)
+                    copied["__file"] = fname
+                    items.append(copied)
+        except Exception:
+            continue
+    return items
 
 
 def _load_session_items(session_data: dict | None = None) -> list[dict]:
@@ -85,14 +111,24 @@ def audit_item(item: dict) -> dict:
 
     if missing_required:
         issues.append(f"Missing required fields: {', '.join(missing_required)}")
+    if category and category not in SUPPORTED_CATEGORIES:
+        issues.append(f"Unsupported item category: {category}")
+    if category == "weapon" and not item.get("damage_dice"):
+        issues.append("Weapon has no damage metadata")
+    if category in {"armor", "shield"} and not item.get("ac_calculation") and item.get("base_ac") is None and item.get("ac_bonus") is None:
+        issues.append("Armor/shield has no AC metadata")
     if is_equippable and not has_slot:
         issues.append("Equippable but no equip_slot set")
     if charges_max > 0 and not granted_spells and not granted_actions and not item.get("effect"):
         issues.append("Has charges but no granted_spells, granted_actions, or effect text")
+    if category in {"wand", "staff", "rod"} and charges_max > 0 and not granted_spells and not granted_actions:
+        issues.append(f"{category.title()} has charges but no granted_spells or granted_actions")
     if category in {"wand", "staff", "rod"} and charges_max == 0 and recharge_type in {"", "none"} and not granted_spells:
         issues.append(f"{category.title()} has no charges or recharge data and no granted_spells")
-    if bool(item.get("requires_attunement") or item.get("attunement_required")) and not item.get("effect") and not granted_spells and not granted_actions:
-        issues.append("Attunement item has no effect, granted_spells, or granted_actions")
+    if bool(item.get("requires_attunement") or item.get("attunement_required")) and not item.get("attunement"):
+        issues.append("Attunement item has no attunement handling metadata")
+    if bool(item.get("requires_attunement") or item.get("attunement_required")) and not item.get("effect") and not item.get("passive_effects") and not granted_spells and not granted_actions:
+        issues.append("Attunement item has no effect, passive_effects, granted_spells, or granted_actions")
     if PLUS_PATTERN_RE.search(name) and category == "weapon":
         bonus_str = PLUS_PATTERN_RE.search(name).group(0)
         expected = int(bonus_str[1:])
@@ -166,8 +202,10 @@ def main():
     args = parser.parse_args()
 
     compendium_items = _load_compendium_items()
+    raw_compendium_items = _load_compendium_items_raw()
     session_items = _load_session_items()
     all_items = compendium_items or session_items
+    duplicate_scope_items = raw_compendium_items or all_items
     known_spell_ids = _load_known_spell_ids()
 
     if args.category:
@@ -184,7 +222,7 @@ def main():
     equipped_without_slot = [r for r in results if r["is_equippable"] and not r["equip_ok"]]
 
     spell_violations = audit_granted_spells(all_items, known_spell_ids)
-    duplicate_ids = check_duplicate_ids(all_items)
+    duplicate_ids = check_duplicate_ids(duplicate_scope_items)
 
     has_charged_no_action = [
         r for r in results
