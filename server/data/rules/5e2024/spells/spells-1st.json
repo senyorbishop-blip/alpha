@@ -97,13 +97,19 @@
         "Wizard"
       ],
       "description": "Arms of Hadar spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "necrotic",
+      "damageFormula": "2d6",
+      "scalingNote": "Each slot level above 1st adds 1d6 necrotic damage.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "STR",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_formula": "2d6",
+        "per_slot_formula": "1d6"
+      }
     },
     {
       "id": "bane",
@@ -175,13 +181,19 @@
         "Wizard"
       ],
       "description": "Burning Hands spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "fire",
+      "damageFormula": "3d6",
+      "scalingNote": "Each slot level above 1st adds 1d6 fire damage.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "DEX",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_formula": "3d6",
+        "per_slot_formula": "1d6"
+      }
     },
     {
       "id": "catapult",
@@ -201,13 +213,19 @@
         "Wizard"
       ],
       "description": "Catapult spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "bludgeoning",
+      "damageFormula": "3d8",
+      "scalingNote": "Each slot level above 1st adds 1d8 bludgeoning damage.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "DEX",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_formula": "3d8",
+        "per_slot_formula": "1d8"
+      }
     },
     {
       "id": "cause-fear",
@@ -253,13 +271,19 @@
         "Wizard"
       ],
       "description": "Chaos Bolt spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
-      "attackType": null,
+      "damageType": "chaotic",
+      "damageFormula": "2d8 + 1d6",
+      "scalingNote": "Each slot level above 1st adds 1d6 damage.",
+      "attackType": "Ranged Spell Attack",
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_formula": "2d8 + 1d6",
+        "per_slot_formula": "1d6"
+      }
     },
     {
       "id": "charm-person",
@@ -305,13 +329,19 @@
         "Wizard"
       ],
       "description": "Chromatic Orb spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
-      "attackType": null,
+      "damageType": "elemental",
+      "damageFormula": "3d8",
+      "scalingNote": "Each slot level above 1st adds 1d8 damage.",
+      "attackType": "Ranged Spell Attack",
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_formula": "3d8",
+        "per_slot_formula": "1d8"
+      }
     },
     {
       "id": "color-spray",
@@ -437,11 +467,18 @@
       "description": "Cure Wounds spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
       "damageType": null,
       "damageFormula": null,
-      "scalingNote": null,
+      "scalingNote": "Each slot level above 1st adds 1d8 healing.",
       "attackType": null,
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "healingFormula": "1d8 + spellcasting modifier",
+      "scaling_type": "slot_healing",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_formula": "1d8 + spellcasting modifier",
+        "per_slot_formula": "1d8"
+      }
     },
     {
       "id": "detect-evil-and-good",
@@ -565,13 +602,19 @@
         "Wizard"
       ],
       "description": "Dissonant Whispers spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "psychic",
+      "damageFormula": "3d6",
+      "scalingNote": "Each slot level above 1st adds 1d6 psychic damage.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "WIS",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_formula": "3d6",
+        "per_slot_formula": "1d6"
+      }
     },
     {
       "id": "divine-favor",
@@ -617,13 +660,19 @@
         "Wizard"
       ],
       "description": "Earth Tremor spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "bludgeoning",
+      "damageFormula": "1d6",
+      "scalingNote": "Each slot level above 1st adds 1d6 bludgeoning damage.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "DEX",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_formula": "1d6",
+        "per_slot_formula": "1d6"
+      }
     },
     {
       "id": "ensnaring-strike",
@@ -903,13 +952,19 @@
         "Wizard"
       ],
       "description": "Guiding Bolt spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
-      "attackType": null,
+      "damageType": "radiant",
+      "damageFormula": "4d6",
+      "scalingNote": "Each slot level above 1st adds 1d6 radiant damage.",
+      "attackType": "Ranged Spell Attack",
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_formula": "4d6",
+        "per_slot_formula": "1d6"
+      }
     },
     {
       "id": "hail-of-thorns",
@@ -957,11 +1012,18 @@
       "description": "Healing Word spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
       "damageType": null,
       "damageFormula": null,
-      "scalingNote": null,
+      "scalingNote": "Each slot level above 1st adds 1d4 healing.",
       "attackType": null,
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "healingFormula": "1d4 + spellcasting modifier",
+      "scaling_type": "slot_healing",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_formula": "1d4 + spellcasting modifier",
+        "per_slot_formula": "1d4"
+      }
     },
     {
       "id": "hellish-rebuke",
@@ -981,13 +1043,19 @@
         "Wizard"
       ],
       "description": "Hellish Rebuke spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "fire",
+      "damageFormula": "2d10",
+      "scalingNote": "Each slot level above 1st adds 1d10 fire damage.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "DEX",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_formula": "2d10",
+        "per_slot_formula": "1d10"
+      }
     },
     {
       "id": "heroism",
@@ -1085,13 +1153,19 @@
         "Wizard"
       ],
       "description": "Ice Knife spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "cold",
+      "damageFormula": "1d10 + 2d6",
+      "scalingNote": "Each slot level above 1st adds 1d6 cold damage.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "DEX",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_formula": "1d10 + 2d6",
+        "per_slot_formula": "1d6"
+      }
     },
     {
       "id": "identify",
@@ -1163,13 +1237,19 @@
         "Wizard"
       ],
       "description": "Inflict Wounds spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
-      "attackType": null,
+      "damageType": "necrotic",
+      "damageFormula": "3d10",
+      "scalingNote": "Each slot level above 1st adds 1d10 necrotic damage.",
+      "attackType": "Melee Spell Attack",
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_formula": "3d10",
+        "per_slot_formula": "1d10"
+      }
     },
     {
       "id": "jump",
@@ -1267,13 +1347,20 @@
         "Wizard"
       ],
       "description": "Magic Missile spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "force",
+      "damageFormula": "3 × (1d4+1)",
+      "scalingNote": "Each slot level above 1st adds one extra dart.",
       "attackType": null,
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "extra_dart_per_slot",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_darts": 3,
+        "per_slot": 1,
+        "dart_formula": "1d4+1"
+      }
     },
     {
       "id": "protection-from-evil-and-good",
@@ -1345,13 +1432,19 @@
         "Wizard"
       ],
       "description": "Ray of Sickness spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
-      "attackType": null,
+      "damageType": "poison",
+      "damageFormula": "2d8",
+      "scalingNote": "Each slot level above 1st adds 1d8 poison damage.",
+      "attackType": "Ranged Spell Attack",
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_formula": "2d8",
+        "per_slot_formula": "1d8"
+      }
     },
     {
       "id": "sanctuary",
@@ -1657,13 +1750,19 @@
         "Wizard"
       ],
       "description": "Thunderwave spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
+      "damageType": "thunder",
+      "damageFormula": "2d8",
+      "scalingNote": "Each slot level above 1st adds 1d8 thunder damage.",
       "attackType": null,
-      "savingThrow": null,
+      "savingThrow": "CON",
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_formula": "2d8",
+        "per_slot_formula": "1d8"
+      }
     },
     {
       "id": "unseen-servant",
@@ -1709,13 +1808,19 @@
         "Wizard"
       ],
       "description": "Witch Bolt spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
-      "damageType": null,
-      "damageFormula": null,
-      "scalingNote": null,
-      "attackType": null,
+      "damageType": "lightning",
+      "damageFormula": "1d12",
+      "scalingNote": "Each slot level above 1st adds 1d12 lightning damage.",
+      "attackType": "Ranged Spell Attack",
       "savingThrow": null,
       "ritual": false,
-      "concentration": false
+      "concentration": false,
+      "scaling_type": "slot_damage",
+      "scaling_data": {
+        "base_slot": 1,
+        "base_formula": "1d12",
+        "per_slot_formula": "1d12"
+      }
     },
     {
       "id": "wrathful-smite",
