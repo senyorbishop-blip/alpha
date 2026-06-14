@@ -86,7 +86,13 @@
     // so that cards whose id is "spell-fireball" still match BUILTIN['fireball'].
     const idStripped = id.replace(/^(?:spell|ability|action)-/, '');
     const idByName = slug(first(card.name, card.displayName));
-    const merged = Object.assign({}, BUILTIN[id] || BUILTIN[idStripped] || BUILTIN[idByName] || {}, card);
+    const builtin = BUILTIN[id] || BUILTIN[idStripped] || BUILTIN[idByName] || {};
+    const merged = Object.assign({}, builtin, card);
+    // Restore BUILTIN scaling fields when the card sends null/undefined (server may omit them).
+    if (!first(merged.scaling_type, merged.scalingType) && first(builtin.scaling_type)) {
+      merged.scaling_type = builtin.scaling_type;
+      if (!merged.scaling_data && !merged.scalingData && builtin.scaling_data) merged.scaling_data = builtin.scaling_data;
+    }
     const warnings = [];
     const debugParts = [];
     const baseLevel = levelOf(card, merged);
@@ -113,7 +119,7 @@
     return {
       spellId:id, name:first(merged.displayName, merged.name, id || 'Spell'), baseLevel, castLevel,
       school:first(merged.school,''), castingTime:first(merged.castingTime, merged.casting_time,''), range:first(merged.range,''), duration:first(merged.duration,''), concentration:!!(merged.concentration||merged.is_concentration), ritual:!!(merged.ritual||merged.is_ritual),
-      attackType, requiresAttackRoll:!!attackType && /attack|ranged|melee|spell/i.test(attackType), saveAbility, saveDc:first(options.saveDc, options.saveDC, merged.save_dc, merged.saveDC, ''),
+      attackType, requiresAttackRoll:!!attackType && /ranged|melee/i.test(attackType) && !/save/i.test(attackType), saveAbility, saveDc:first(options.saveDc, options.saveDC, merged.save_dc, merged.saveDC, ''),
       damageType: healing ? '' : first(merged.damageType, merged.damage_type,''), healingType: healing ? first(merged.healingType, merged.healing_type,'healing') : '',
       baseFormula, scalingType:scaling.type, scalingData:scaling.data, finalDamageFormula, finalHealingFormula, displayFormula,
       targetType:first(merged.targetType, merged.target, ''), areaData:obj(merged.areaData || merged.area_data), consumesSpellSlot:baseLevel !== 0 && !options.item, consumesItemCharge:!!options.item, itemChargeCost:num(options.itemChargeCost ?? merged.itemChargeCost, options.item ? 1 : 0), source:first(options.source, merged.source, options.item ? 'item' : 'spell'), debugParts, warnings

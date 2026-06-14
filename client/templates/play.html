@@ -46979,7 +46979,7 @@ function combatQuickRollWeaponDamage(attackId, mode = 'base', critical = false) 
       const slug = String(c.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
       return slug && (slug === normalizedId || ('attack-' + slug) === normalizedId);
     });
-  if (!card) { showToast('Attack not found.'); return null; }
+  if (!card) { showToast('Weapon roll handler missing. Attack not found: ' + (rawId || 'unknown')); return null; }
   const damageMeta = _getInventoryAttackModeMeta(card, mode);
   if (!damageMeta.formula) { showToast(`${card.name || 'Weapon'} has no damage formula. Equip it from inventory or add damage dice in the item library.`); return null; }
   const normFormula = typeof _normalizeAttackFormula === 'function' ? _normalizeAttackFormula(damageMeta.formula) : damageMeta.formula;
@@ -47316,7 +47316,6 @@ function _executeCombatSpellCast(spell, slotLevel) {
 }
 
 function combatQuickWeaponAttack(attackId, mode = 'base') {
-  _consumeActionEconomy('attack_within_action', { action_id: attackId });
   const cards = _getUnifiedQuickAttackCards();
   const rawId = String(attackId || '').trim();
   const normalizedId = rawId.toLowerCase();
@@ -47326,12 +47325,14 @@ function combatQuickWeaponAttack(attackId, mode = 'base') {
       const slug = String(c.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
       return slug && (slug === normalizedId || ('attack-' + slug) === normalizedId);
     });
-  if (!card) { showToast('Attack not found.'); return; }
+  if (!card) { showToast('Weapon roll handler missing. Attack not found: ' + (rawId || 'unknown')); return; }
   const spend = _consumeInventoryAttackResources(card, mode);
   if (!spend.ok) {
     showToast((spend.notes || [])[0] || 'Attack cannot be used right now.');
     return;
   }
+  // Consume action economy only after the weapon is verified and resources are available.
+  _consumeActionEconomy('attack_within_action', { action_id: attackId });
   const damageMeta = _getInventoryAttackModeMeta(card, mode);
   const hasDisadvantage = _combatAttackHasEncumbranceDisadvantage();
   const rollA = Math.floor(Math.random() * 20) + 1;
@@ -47434,6 +47435,8 @@ window.combatQuickWeaponAttack = combatQuickWeaponAttack;
 window.combatQuickRollWeaponDamage = combatQuickRollWeaponDamage;
 window.combatQuickCastSpell = combatQuickCastSpell;
 window.combatQuickRollSpellDamage = combatQuickRollSpellDamage;
+// Healing spells use the same roll path as damage — alias for external callers.
+window.combatQuickRollSpellHealing = combatQuickRollSpellDamage;
 window.combatQuickRollSpellAttack = combatQuickRollSpellAttack;
 window.combatQuickShowSpellSave = combatQuickShowSpellSave;
 window.executeCombatQuickBarSpell = executeCombatQuickBarSpell;
@@ -47686,11 +47689,11 @@ function _showCombatResultCard(opts) {
     ${subtitle ? `<div class="crc-subtitle">${escapeHtml(String(subtitle))}</div>` : ''}
     <div class="crc-divider"></div>
     ${rows}${outcomeHtml}${dmgRow}
-    <div class="crc-footer">Click to dismiss · auto-hides in 7s</div>`;
+    <div class="crc-footer">Click to dismiss · auto-hides in 20s</div>`;
   document.body.appendChild(card);
   requestAnimationFrame(() => requestAnimationFrame(() => card.classList.add('crc-visible')));
 
-  window._crcTimer = setTimeout(_hideCombatResultCard, 7000);
+  window._crcTimer = setTimeout(_hideCombatResultCard, 20000);
   card.addEventListener('click', _hideCombatResultCard, { once: true });
 
   // Dismiss on click outside (map click etc.)
