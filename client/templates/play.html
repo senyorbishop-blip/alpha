@@ -34324,7 +34324,7 @@ function _consumeSpellSlotLevel(slotLevel) {
 }
 
 function _rollSpellFormula(card, expr, kind = 'damage', opts = {}) {
-  const cleaned = _normalizeSpellFormula(expr || '', card);
+  const cleaned = window.AppSpellRuntime ? window.AppSpellRuntime.normalizeRollableFormula(_normalizeSpellFormula(expr || '', card)) : _normalizeSpellFormula(expr || '', card);
   const result = _rollDiceExpr(cleaned);
   if (!result) return null;
   const formulaChunks = typeof _expandSpellFormulaChunks === 'function' ? _expandSpellFormulaChunks(cleaned) : [];
@@ -46444,39 +46444,16 @@ function _combatQuickFallbackSpellDamage(name, slotLevel) {
 
 function _getCombatSpellDamageExpression(spell, slotLevel) {
   const card = spell?.card || spell || {};
-  const baseLevel = _combatQuickSpellBaseLevel(spell);
-  const numericSlotLevel = Math.max(0, parseInt(slotLevel, 10) || 0);
-  const effectiveSlot = numericSlotLevel > 0 ? numericSlotLevel : (baseLevel || 0);
-  const exactCastOption = card.cast_options && card.cast_options[String(effectiveSlot)];
-  let dmgExpr = exactCastOption?.formula
-    || card.damage_dice || card.damage || card.damage_formula || card.base_damage_formula
-    || card.current?.formula || '';
-  if (baseLevel === 0 && _charSheet?.level) {
-    const charLvl = Number(_charSheet.level || 1);
-    let scaledDice = null;
-    if (Array.isArray(card.cantrip_scaling) && card.cantrip_scaling.length) {
-      const tier = [...card.cantrip_scaling].reverse().find(s => charLvl >= (s.min_level || 1));
-      if (tier && tier.dice) scaledDice = tier.dice;
-    }
-    if (!scaledDice && card.scaling_type === 'cantrip_level' && Array.isArray(card.scaling_data?.tiers)) {
-      const tier = [...card.scaling_data.tiers].reverse().find(t => charLvl >= (t.level || 1));
-      if (tier && tier.formula) scaledDice = tier.formula;
-    }
-    if (scaledDice) dmgExpr = scaledDice;
+  if (window.AppSpellRuntime && typeof window.AppSpellRuntime.resolveSpellRuntime === 'function') {
+    const runtime = window.AppSpellRuntime.resolveSpellRuntime({ ...(card || {}), id: spell?.id || card?.id, name: spell?.name || card?.name }, {
+      castLevel: slotLevel,
+      characterLevel: _charSheet?.level || _charSheet?.totalLevel || _charSheet?.book?.level || 1,
+      spellcastingModifier: _spellcastingAbilityModForCard(card),
+      saveDc: card.save_dc || _charSheet?.spellSaveDc || '',
+    });
+    return String(runtime.finalHealingFormula || runtime.finalDamageFormula || '').trim();
   }
-  if (!exactCastOption && baseLevel > 0 && effectiveSlot > baseLevel) {
-    const extraLevels = effectiveSlot - baseLevel;
-    const upcastDice = card.damage_upcast_per_level || '';
-    if (upcastDice) {
-      const upMatch  = upcastDice.match(/^(\d+)d(\d+)/i);
-      const baseMatch = String(dmgExpr || '').match(/^(\d+)d(\d+)/i);
-      if (upMatch && baseMatch && parseInt(upMatch[2], 10) === parseInt(baseMatch[2], 10)) {
-        dmgExpr = _combatQuickScaleSpellFormula(dmgExpr, upcastDice, extraLevels);
-      }
-    }
-  }
-  if (!String(dmgExpr || '').trim()) dmgExpr = _combatQuickFallbackSpellDamage(spell?.name || card?.name || spell?.id || card?.id, effectiveSlot);
-  return String(dmgExpr || '').trim();
+  return String(card.current?.formula || card.damage_dice || card.damage || card.damage_formula || card.base_damage_formula || '').trim();
 }
 
 function getCombatSpellDamagePreview(spellId, slotLevel) {
@@ -46765,12 +46742,11 @@ function _executeCombatSpellCast(spell, slotLevel) {
 
   const target = _resolveSpellCastTarget(card);
   const targetName = String(target?.name || '').trim();
-  const attackType = String(card.attack_type || '').toLowerCase();
-  const inferredAttackKind = _spellCardAttackKindForCombat(card, spell);
-  const isAttackRoll = attackType.includes('attack') || inferredAttackKind === 'spell';
-  const saveAbility = String(card.save_ability || card.save || '').toLowerCase().replace(/[^a-z]/g, '');
+  const spellRuntime = window.AppSpellRuntime ? window.AppSpellRuntime.resolveSpellRuntime({ ...(card || {}), id: spell?.id || card?.id, name: spell?.name || card?.name }, { castLevel: effectiveSlot, characterLevel: _charSheet?.level || _charSheet?.totalLevel || 1, spellcastingModifier: _spellcastingAbilityModForCard(card), saveDc: card.save_dc || _charSheet?.spellSaveDc || '' }) : null;
+  const isAttackRoll = !!(spellRuntime ? spellRuntime.requiresAttackRoll : _spellCardAttackKindForCombat(card, spell) === 'spell');
+  const saveAbility = String((spellRuntime && spellRuntime.saveAbility) || card.save_ability || card.save || '').toLowerCase().replace(/[^a-z]/g, '');
   const isSave = !!saveAbility;
-  const isHealing = _spellCardLooksLikeHealing(card);
+  const isHealing = !!(spellRuntime ? spellRuntime.finalHealingFormula : _spellCardLooksLikeHealing(card));
   const isConcentration = _spellCardHasConcentration(card);
   const hasDisadvantage = _combatAttackHasEncumbranceDisadvantage();
   const targetAc = Number(target?.ac);
@@ -48536,6 +48512,7 @@ async function bestiaryMakeVariant() {
 <script src="/static/js/ui/onboarding.js?v=20260327"></script>
 
 <!-- ── Character Sheet Premium Components ── -->
+<script src="/static/js/character/spell_runtime.js"></script>
 <script src="/static/js/character/spells_modal.js"></script>
 <script src="/static/js/character/tabs/actions_tab.js"></script>
 <script src="/static/js/character/tabs/inventory_tab.js"></script>
