@@ -1,0 +1,257 @@
+{
+  "category": "staffs",
+  "item_schema_version": 2,
+  "items": [
+    {
+      "id": "staff-of-fire", "name": "Staff of Fire", "item_schema_version": 2,
+      "category": "staff", "subtype": "staff", "rarity": "very_rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
+      "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 10, "charges_current": 10, "recharge_type": "dawn", "recharge_formula": "1d6+4",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 17,
+      "passive_effects": [
+        {"type": "resistance", "damage_type": "fire", "summary": "Resistance to fire damage while attuned."}
+      ],
+      "granted_spells": [
+        {
+          "id": "burning-hands", "name": "Burning Hands",
+          "charge_cost": 1, "cast_level": 1,
+          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 1 charge to cast burning hands (save DC 17)."
+        },
+        {
+          "id": "fireball", "name": "Fireball",
+          "charge_cost": 3, "cast_level": 3,
+          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 3 charges to cast fireball (save DC 17)."
+        },
+        {
+          "id": "wall-of-fire", "name": "Wall of Fire",
+          "charge_cost": 4, "cast_level": 4,
+          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 4 charges to cast wall of fire (save DC 17)."
+        }
+      ],
+      "effect": "Has 10 charges. Resistance to fire damage while attuned. Can cast burning hands (1 charge), fireball (3 charges), or wall of fire (4 charges), all with save DC 17. Regains 1d6+4 charges at dawn."
+    },
+    {
+      "id": "staff-of-frost", "name": "Staff of Frost", "item_schema_version": 2,
+      "category": "staff", "subtype": "staff", "rarity": "very_rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
+      "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 10, "charges_current": 10, "recharge_type": "dawn", "recharge_formula": "1d6+4",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 17,
+      "passive_effects": [
+        {"type": "resistance", "damage_type": "cold", "summary": "Resistance to cold damage while attuned."}
+      ],
+      "granted_spells": [
+        {
+          "id": "cone-of-cold", "name": "Cone of Cold",
+          "charge_cost": 5, "cast_level": 5,
+          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 5 charges to cast cone of cold (save DC 17)."
+        },
+        {
+          "id": "fog-cloud", "name": "Fog Cloud",
+          "charge_cost": 1, "cast_level": 1,
+          "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 1 charge to cast fog cloud."
+        },
+        {
+          "id": "ice-storm", "name": "Ice Storm",
+          "charge_cost": 4, "cast_level": 4,
+          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 4 charges to cast ice storm (save DC 17)."
+        },
+        {
+          "id": "wall-of-ice", "name": "Wall of Ice",
+          "charge_cost": 4, "cast_level": 4,
+          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 4 charges to cast wall of ice (save DC 17)."
+        }
+      ],
+      "effect": "Has 10 charges. Resistance to cold damage while attuned. Can cast cone of cold (5 charges), fog cloud (1 charge), ice storm (4 charges), or wall of ice (4 charges), most with save DC 17. Regains 1d6+4 charges at dawn."
+    },
+    {
+      "id": "staff-of-power", "name": "Staff of Power", "item_schema_version": 2,
+      "category": "staff", "subtype": "staff", "rarity": "very_rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
+      "attack_bonus": 2, "damage_bonus": 2,
+      "charges_max": 20, "charges_current": 20, "recharge_type": "dawn", "recharge_formula": "2d8+4",
+      "item_spell_attack_bonus": 9, "item_spell_save_dc": 17,
+      "passive_effects": [
+        {"type": "ac_bonus", "value": 2, "summary": "+2 bonus to AC while attuned."},
+        {"type": "save_bonus", "value": 2, "summary": "+2 bonus to saving throws while attuned."}
+      ],
+      "granted_spells": [
+        {
+          "id": "cone-of-cold", "name": "Cone of Cold",
+          "charge_cost": 5, "cast_level": 5,
+          "uses_item_dc": true, "uses_item_attack_bonus": true, "consume_spell_slot": false,
+          "description": "Expend 5 charges to cast cone of cold (save DC 17)."
+        },
+        {
+          "id": "fireball", "name": "Fireball",
+          "charge_cost": 5, "cast_level": 5,
+          "uses_item_dc": true, "uses_item_attack_bonus": true, "consume_spell_slot": false,
+          "description": "Expend 5 charges to cast fireball at 5th level (save DC 17)."
+        },
+        {
+          "id": "globe-of-invulnerability", "name": "Globe of Invulnerability",
+          "charge_cost": 6, "cast_level": 6,
+          "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 6 charges to cast globe of invulnerability."
+        },
+        {
+          "id": "hold-monster", "name": "Hold Monster",
+          "charge_cost": 5, "cast_level": 5,
+          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 5 charges to cast hold monster (save DC 17)."
+        },
+        {
+          "id": "levitate", "name": "Levitate",
+          "charge_cost": 2, "cast_level": 2,
+          "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 2 charges to cast levitate."
+        },
+        {
+          "id": "lightning-bolt", "name": "Lightning Bolt",
+          "charge_cost": 5, "cast_level": 5,
+          "uses_item_dc": true, "uses_item_attack_bonus": true, "consume_spell_slot": false,
+          "description": "Expend 5 charges to cast lightning bolt at 5th level (save DC 17)."
+        },
+        {
+          "id": "magic-missile", "name": "Magic Missile",
+          "charge_cost": 1, "cast_level": 1,
+          "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 1 charge to cast magic missile."
+        },
+        {
+          "id": "ray-of-enfeeblement", "name": "Ray of Enfeeblement",
+          "charge_cost": 1, "cast_level": 2,
+          "uses_item_dc": false, "uses_item_attack_bonus": true, "consume_spell_slot": false,
+          "description": "Expend 1 charge to cast ray of enfeeblement (+9 to hit)."
+        },
+        {
+          "id": "wall-of-force", "name": "Wall of Force",
+          "charge_cost": 5, "cast_level": 5,
+          "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 5 charges to cast wall of force."
+        }
+      ],
+      "effect": "Has 20 charges. +2 to attack and damage rolls. +2 bonus to AC and saving throws. Can cast multiple spells with DC 17 or +9 spell attack. Regains 2d8+4 charges at dawn."
+    },
+    {
+      "id": "staff-of-the-magi", "name": "Staff of the Magi", "item_schema_version": 2,
+      "category": "staff", "subtype": "staff", "rarity": "legendary",
+      "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
+      "attack_bonus": 2, "damage_bonus": 2,
+      "charges_max": 50, "charges_current": 50, "recharge_type": "dawn", "recharge_formula": "4d6+2",
+      "item_spell_attack_bonus": 10, "item_spell_save_dc": 18,
+      "passive_effects": [
+        {"type": "note", "summary": "Absorb spells targeting only you, gaining charges equal to spell level."},
+        {"type": "note", "summary": "+2 bonus to spell attack rolls (included in item_spell_attack_bonus)."}
+      ],
+      "granted_spells": [
+        {
+          "id": "conjure-elemental", "name": "Conjure Elemental",
+          "charge_cost": 7, "cast_level": 5, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 7 charges to cast conjure elemental."
+        },
+        {
+          "id": "dispel-magic", "name": "Dispel Magic",
+          "charge_cost": 3, "cast_level": 3, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 3 charges to cast dispel magic."
+        },
+        {
+          "id": "fireball", "name": "Fireball",
+          "charge_cost": 7, "cast_level": 7, "uses_item_dc": true, "uses_item_attack_bonus": true, "consume_spell_slot": false,
+          "description": "Expend 7 charges to cast fireball at 7th level (save DC 18)."
+        },
+        {
+          "id": "flaming-sphere", "name": "Flaming Sphere",
+          "charge_cost": 2, "cast_level": 2, "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 2 charges to cast flaming sphere (save DC 18)."
+        },
+        {
+          "id": "ice-storm", "name": "Ice Storm",
+          "charge_cost": 4, "cast_level": 4, "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 4 charges to cast ice storm (save DC 18)."
+        },
+        {
+          "id": "invisibility", "name": "Invisibility",
+          "charge_cost": 2, "cast_level": 2, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 2 charges to cast invisibility."
+        },
+        {
+          "id": "knock", "name": "Knock",
+          "charge_cost": 2, "cast_level": 2, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 2 charges to cast knock."
+        },
+        {
+          "id": "lightning-bolt", "name": "Lightning Bolt",
+          "charge_cost": 7, "cast_level": 7, "uses_item_dc": true, "uses_item_attack_bonus": true, "consume_spell_slot": false,
+          "description": "Expend 7 charges to cast lightning bolt at 7th level (save DC 18)."
+        },
+        {
+          "id": "passwall", "name": "Passwall",
+          "charge_cost": 5, "cast_level": 5, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 5 charges to cast passwall."
+        },
+        {
+          "id": "plane-shift", "name": "Plane Shift",
+          "charge_cost": 7, "cast_level": 7, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 7 charges to cast plane shift."
+        },
+        {
+          "id": "telekinesis", "name": "Telekinesis",
+          "charge_cost": 5, "cast_level": 5, "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 5 charges to cast telekinesis (save DC 18)."
+        },
+        {
+          "id": "wall-of-fire", "name": "Wall of Fire",
+          "charge_cost": 4, "cast_level": 4, "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 4 charges to cast wall of fire (save DC 18)."
+        },
+        {
+          "id": "web", "name": "Web",
+          "charge_cost": 2, "cast_level": 2, "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 2 charges to cast web (save DC 18)."
+        }
+      ],
+      "effect": "Has 50 charges. Legendary staff granting +2 to spell attack rolls, save DC 18, and a wide selection of powerful spells. Absorbs spells targeted at you. Regains 4d6+2 charges at dawn."
+    },
+    {
+      "id": "staff-of-healing", "name": "Staff of Healing", "item_schema_version": 2,
+      "category": "staff", "subtype": "staff", "rarity": "rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
+      "weapon_type": "simple_melee", "damage_dice": "1d6", "damage_type": "bludgeoning",
+      "attack_bonus": 0, "damage_bonus": 0,
+      "charges_max": 10, "charges_current": 10, "recharge_type": "dawn", "recharge_formula": "1d6+4",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 14,
+      "passive_effects": [],
+      "granted_spells": [
+        {
+          "id": "cure-wounds", "name": "Cure Wounds",
+          "charge_cost": 1, "cast_level": 1, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 1–4 charges to cast cure wounds at 1st–4th level."
+        },
+        {
+          "id": "lesser-restoration", "name": "Lesser Restoration",
+          "charge_cost": 2, "cast_level": 2, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 2 charges to cast lesser restoration."
+        },
+        {
+          "id": "mass-cure-wounds", "name": "Mass Cure Wounds",
+          "charge_cost": 5, "cast_level": 5, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 5 charges to cast mass cure wounds."
+        }
+      ],
+      "effect": "Has 10 charges. Can cast cure wounds (1–4 charges), lesser restoration (2 charges), or mass cure wounds (5 charges). Regains 1d6+4 charges at dawn."
+    }
+  ]
+}

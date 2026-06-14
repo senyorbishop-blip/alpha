@@ -1350,6 +1350,45 @@ def _normalize_inventory_entry(entry: Any) -> dict | None:
                 cleaned_props.append(txt)
         if cleaned_props:
             out["weapon_properties"] = cleaned_props
+    if "attuned" in entry:
+        out["attuned"] = bool(entry.get("attuned"))
+    if "requires_attunement" in entry:
+        out["requires_attunement"] = bool(entry.get("requires_attunement"))
+    for int_key, minimum, maximum in (
+        ("charges_current", 0, 9999),
+        ("charges_max", 0, 9999),
+        ("attack_bonus", -20, 30),
+        ("damage_bonus", -20, 30),
+        ("item_spell_save_dc", 0, 40),
+        ("item_spell_attack_bonus", -20, 30),
+        ("item_schema_version", 1, 99),
+    ):
+        if entry.get(int_key) is not None and str(entry.get(int_key)).strip() != "":
+            try:
+                out[int_key] = max(minimum, min(maximum, int(entry.get(int_key))))
+            except Exception:
+                pass
+    for text_key, limit in (
+        ("recharge_type", 32),
+        ("recharge_formula", 64),
+        ("healing_formula", 32),
+    ):
+        value = str(entry.get(text_key) or "").strip()[:limit]
+        if value:
+            out[text_key] = value
+    if isinstance(entry.get("granted_spells"), list):
+        cleaned_gs = []
+        for gs in entry["granted_spells"][:12]:
+            if isinstance(gs, dict):
+                cleaned_gs.append({k: v for k, v in gs.items() if k in (
+                    "id", "name", "charge_cost", "cast_level",
+                    "uses_item_dc", "uses_item_attack_bonus",
+                    "consume_spell_slot", "description",
+                )})
+            elif isinstance(gs, str) and gs.strip():
+                cleaned_gs.append(gs.strip()[:120])
+        if cleaned_gs:
+            out["granted_spells"] = cleaned_gs
     return out
 
 

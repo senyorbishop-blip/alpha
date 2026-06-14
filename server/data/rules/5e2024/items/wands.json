@@ -1,0 +1,119 @@
+{
+  "category": "wands",
+  "item_schema_version": 2,
+  "items": [
+    {
+      "id": "wand-of-magic-missiles", "name": "Wand of Magic Missiles", "item_schema_version": 2,
+      "category": "wand", "subtype": "wand", "rarity": "uncommon",
+      "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "charges_max": 7, "charges_current": 7, "recharge_type": "dawn", "recharge_formula": "1d6+1",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [],
+      "granted_spells": [
+        {
+          "id": "magic-missile", "name": "Magic Missile",
+          "charge_cost": 1, "cast_level": 1,
+          "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 1–3 charges to cast magic missile at 1st–3rd level (1 charge per level)."
+        }
+      ],
+      "effect": "Has 7 charges. Expend 1–3 charges to cast magic missile at 1st–3rd level. Regains 1d6+1 charges at dawn."
+    },
+    {
+      "id": "wand-of-fireballs", "name": "Wand of Fireballs", "item_schema_version": 2,
+      "category": "wand", "subtype": "wand", "rarity": "rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
+      "charges_max": 7, "charges_current": 7, "recharge_type": "dawn", "recharge_formula": "1d6+1",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 15,
+      "passive_effects": [],
+      "granted_spells": [
+        {
+          "id": "fireball", "name": "Fireball",
+          "charge_cost": 3, "cast_level": 3,
+          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 3–7 charges to cast fireball at 3rd–7th level (1 charge per level above 3rd)."
+        }
+      ],
+      "effect": "Has 7 charges. You can expend 1 or more of its charges to cast the fireball spell (save DC 15) from it. For 1 charge, you cast the 3rd-level version of the spell. You can increase the spell slot level by one for each additional charge you expend. Regains 1d6+1 charges at dawn."
+    },
+    {
+      "id": "wand-of-lightning-bolts", "name": "Wand of Lightning Bolts", "item_schema_version": 2,
+      "category": "wand", "subtype": "wand", "rarity": "rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
+      "charges_max": 7, "charges_current": 7, "recharge_type": "dawn", "recharge_formula": "1d6+1",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 15,
+      "passive_effects": [],
+      "granted_spells": [
+        {
+          "id": "lightning-bolt", "name": "Lightning Bolt",
+          "charge_cost": 3, "cast_level": 3,
+          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 3–7 charges to cast lightning bolt at 3rd–7th level (1 charge per level above 3rd)."
+        }
+      ],
+      "effect": "Has 7 charges. You can expend 1 or more of its charges to cast the lightning bolt spell (save DC 15) from it. For 1 charge, you cast the 3rd-level version of the spell. You can increase the spell slot level by one for each additional charge you expend. Regains 1d6+1 charges at dawn."
+    },
+    {
+      "id": "wand-of-web", "name": "Wand of Web", "item_schema_version": 2,
+      "category": "wand", "subtype": "wand", "rarity": "uncommon",
+      "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
+      "charges_max": 7, "charges_current": 7, "recharge_type": "dawn", "recharge_formula": "1d6+1",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 13,
+      "passive_effects": [],
+      "granted_spells": [
+        {
+          "id": "web", "name": "Web",
+          "charge_cost": 1, "cast_level": 2,
+          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 1 charge to cast the web spell (save DC 13)."
+        }
+      ],
+      "effect": "Has 7 charges. Expend 1 charge to cast web (save DC 13). Regains 1d6+1 charges at dawn."
+    },
+    {
+      "id": "wand-of-secrets", "name": "Wand of Secrets", "item_schema_version": 2,
+      "category": "wand", "subtype": "wand", "rarity": "uncommon",
+      "requires_attunement": false, "equippable": true, "equip_slot": "main_hand",
+      "charges_max": 3, "charges_current": 3, "recharge_type": "dawn", "recharge_formula": "",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {"id": "detect-secret-doors", "name": "Detect Secret Doors", "charge_cost": 1,
+         "description": "Within 30 ft, the wand pulses if there are secret doors within 30 ft of you."}
+      ],
+      "effect": "Has 3 charges. Expend 1 charge to detect secret doors and traps within 30 ft. Regains all charges at dawn."
+    },
+    {
+      "id": "wand-of-paralysis", "name": "Wand of Paralysis", "item_schema_version": 2,
+      "category": "wand", "subtype": "wand", "rarity": "rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
+      "charges_max": 7, "charges_current": 7, "recharge_type": "dawn", "recharge_formula": "1d6+1",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 15,
+      "passive_effects": [],
+      "granted_spells": [
+        {
+          "id": "hold-person", "name": "Hold Person",
+          "charge_cost": 1, "cast_level": 2,
+          "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Expend 1 charge to paralyze a humanoid (save DC 15)."
+        }
+      ],
+      "effect": "Has 7 charges. Expend 1 charge to paralyze a humanoid you can see within 60 ft (CON save DC 15). Regains 1d6+1 charges at dawn."
+    },
+    {
+      "id": "wand-of-wonder", "name": "Wand of Wonder", "item_schema_version": 2,
+      "category": "wand", "subtype": "wand", "rarity": "rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "main_hand",
+      "charges_max": 7, "charges_current": 7, "recharge_type": "dawn", "recharge_formula": "1d6+1",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 15,
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {"id": "wand-of-wonder-wild", "name": "Wild Effect", "charge_cost": 1,
+         "description": "Expend 1 charge and roll d100 for a random magical effect targeting a creature within 120 ft (DC 15 save)."}
+      ],
+      "effect": "Has 7 charges. Expend 1 charge to choose a target within 120 ft and roll a d100 for a random magical effect. Regains 1d6+1 charges at dawn."
+    }
+  ]
+}

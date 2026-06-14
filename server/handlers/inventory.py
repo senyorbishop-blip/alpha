@@ -152,6 +152,7 @@ _INVENTORY_META_KEYS = (
     "material_type", "recipe_tags", "profession_tags", "item_family", "named_item_flag", "legendary_flag",
     "weight_lbs", "extradimensional", "is_container", "own_weight_lbs", "capacity_lbs", "volume_ft3",
     "is_devouring", "bag_contents",
+    "item_spell_attack_bonus", "item_spell_save_dc", "item_schema_version",
     "equipped", "equip_slot", *_EQUIPMENT_META_KEYS,
 )
 
@@ -215,7 +216,7 @@ def _normalize_item_runtime_fields(entry: dict, out: dict) -> None:
 def _item_is_attuned(item: dict) -> bool:
     if not bool(item.get("attunement_required")):
         return True
-    return bool(item.get("attuned")) or bool(item.get("equipped"))
+    return bool(item.get("attuned"))
 
 
 def _extract_known_healing_formula(name: str, effect: str) -> str:
@@ -763,10 +764,12 @@ async def _send_inventory_state(session: Session, user_id: str):
         inv = get_player_inventory_for_user(session, user_id)
         gold = get_player_gold_for_user(session, user_id)
         item_actions, item_passives = _derive_item_actions_and_passives(inv)
+        item_spell_cards = _build_item_spell_cards(inv)
         payload["player_inventory"] = inv
         payload["player_gold"] = gold
         payload["item_actions"] = item_actions
         payload["item_passives"] = item_passives
+        payload["item_spell_cards"] = item_spell_cards
         payload["current_ac"] = _calculate_ac_for_user(session, user, inv)
         # Build encumbrance payload for this player
         _update_encumbrance_cache(session, user_id)
@@ -1953,6 +1956,213 @@ async def handle_inventory_use_item_action(payload: dict, session: Session, user
         f"{result['item_name']} used."
         if not result.get("healing_total")
         else f"{result['item_name']} used for {result['healing_total']} healing.",
+    )
+    await save_campaign_async(session)
+
+
+def _build_item_spell_cards(items: list[dict]) -> list[dict]:
+    """Build castable item-spell cards for all equipped+attuned items that grant spells.
+
+    These cards are delivered as `item_spell_cards` in the inventory state payload.
+    They are distinct from class-prepared spells and must not consume spell slots.
+    """
+    from server.item_compendium import get_spell_metadata  # local import to avoid circular
+    cards: list[dict] = []
+    for idx, item in enumerate(list(items or [])):
+        if not isinstance(item, dict):
+            continue
+        granted_spells = list(item.get("granted_spells") or [])
+        if not granted_spells:
+            continue
+        if not bool(item.get("equipped")):
+            continue
+        if not _item_is_attuned(item):
+            continue
+
+        item_id = str(item.get("id") or item.get("magic_item_id") or f"item_{idx}")
+        item_name = str(item.get("name") or "Item")
+        charges_current = _safe_int(item.get("charges_current"), -1, minimum=-1, maximum=9999)
+        charges_max = _safe_int(item.get("charges_max"), 0, minimum=0, maximum=9999)
+        item_spell_dc = _safe_int(item.get("item_spell_save_dc"), 0, minimum=0, maximum=40)
+        item_spell_atk = _safe_int(item.get("item_spell_attack_bonus"), 0, minimum=-20, maximum=30)
+
+        for spell_entry in granted_spells:
+            if isinstance(spell_entry, str):
+                spell_entry = {"id": spell_entry.lower().replace(" ", "-"), "name": spell_entry}
+            if not isinstance(spell_entry, dict):
+                continue
+            spell_id = str(spell_entry.get("id") or "").strip()
+            spell_name = str(spell_entry.get("name") or spell_id).strip()
+            if not spell_id and not spell_name:
+                continue
+
+            charge_cost = max(0, _safe_int(spell_entry.get("charge_cost"), 1, minimum=0, maximum=99))
+            cast_level = max(0, _safe_int(spell_entry.get("cast_level"), 0, minimum=0, maximum=9))
+            uses_item_dc = bool(spell_entry.get("uses_item_dc", True))
+            uses_item_atk = bool(spell_entry.get("uses_item_attack_bonus", False))
+            consume_slot = bool(spell_entry.get("consume_spell_slot", False))
+
+            spell_meta = get_spell_metadata(spell_id) or {}
+            resolved_name = str(spell_meta.get("displayName") or spell_name)
+
+            has_charges = charges_current < 0 or charges_current >= charge_cost
+            disabled = not has_charges
+            disabled_reason = f"Not enough charges (need {charge_cost}, have {max(0, charges_current)})." if disabled else ""
+
+            cards.append({
+                "source": "item_spell",
+                "item_index": idx,
+                "item_id": item_id,
+                "item_name": item_name,
+                "spell_id": spell_id,
+                "spell_name": resolved_name or spell_name,
+                "charge_cost": charge_cost,
+                "cast_level": cast_level,
+                "uses_item_dc": uses_item_dc,
+                "uses_item_attack_bonus": uses_item_atk,
+                "consume_spell_slot": consume_slot,
+                "item_spell_save_dc": item_spell_dc if uses_item_dc else 0,
+                "item_spell_attack_bonus": item_spell_atk if uses_item_atk else 0,
+                "charges_current": charges_current if charges_current >= 0 else None,
+                "charges_max": charges_max,
+                "disabled": disabled,
+                "disabled_reason": disabled_reason,
+                "level": cast_level or _safe_int(spell_meta.get("level"), 0, minimum=0, maximum=9),
+                "school": str(spell_meta.get("school") or ""),
+                "range": str(spell_meta.get("range") or ""),
+                "casting_time": str(spell_meta.get("castingTime") or "1 Action"),
+                "duration": str(spell_meta.get("duration") or ""),
+                "components": str(spell_meta.get("components") or ""),
+                "damage_type": str(spell_meta.get("damageType") or ""),
+                "damage_formula": str(spell_meta.get("damageFormula") or ""),
+                "saving_throw": str(spell_meta.get("savingThrow") or ""),
+                "attack_type": str(spell_meta.get("attackType") or ""),
+                "description": str(spell_entry.get("description") or spell_meta.get("description") or ""),
+            })
+    return cards
+
+
+async def handle_inventory_cast_item_spell(payload: dict, session: Session, user: User):
+    """Cast a spell from an equipped magic item, spending the configured charge cost."""
+    if user.role != "player":
+        return await _send_inventory_action_result(session, user.id, "Only players can cast item spells.")
+
+    item_index = _safe_int(payload.get("item_index"), -1, minimum=-1, maximum=9999)
+    item_id = str(payload.get("item_id") or "").strip()
+    spell_id = str(payload.get("spell_id") or "").strip()
+    target_id = str(payload.get("target_id") or "").strip()
+    charge_cost = max(0, _safe_int(payload.get("charge_cost"), 1, minimum=0, maximum=99))
+    cast_level = max(0, _safe_int(payload.get("cast_level"), 0, minimum=0, maximum=9))
+
+    if not spell_id:
+        return await _send_inventory_action_result(session, user.id, "No spell specified.")
+    if item_index < 0:
+        return await _send_inventory_action_result(session, user.id, "No item specified.")
+
+    inventories, owner_key, items = _get_player_inventory_store(session, user)
+    if item_index >= len(items):
+        return await _send_inventory_action_result(session, user.id, "That item is no longer in your inventory.")
+
+    item = dict(items[item_index] or {})
+
+    actual_id = str(item.get("id") or item.get("magic_item_id") or "").strip()
+    if item_id and actual_id and item_id != actual_id:
+        return await _send_inventory_action_result(session, user.id, "Item mismatch — please refresh your inventory.")
+
+    if not bool(item.get("equipped")):
+        return await _send_inventory_action_result(session, user.id, "That item must be equipped to cast its spells.")
+
+    if not _item_is_attuned(item):
+        return await _send_inventory_action_result(
+            session, user.id, f"{item.get('name', 'That item')} requires attunement before casting its spells."
+        )
+
+    granted_spells = list(item.get("granted_spells") or [])
+    spell_entry: dict | None = None
+    for gs in granted_spells:
+        if isinstance(gs, str):
+            if gs.lower().replace(" ", "-") == spell_id.lower():
+                gs = {"id": spell_id, "name": gs}
+            else:
+                continue
+        if isinstance(gs, dict):
+            gs_id = str(gs.get("id") or "").strip()
+            gs_name = str(gs.get("name") or "").lower().replace(" ", "-")
+            if gs_id == spell_id or gs_name == spell_id.lower():
+                spell_entry = gs
+                break
+
+    if spell_entry is None:
+        return await _send_inventory_action_result(
+            session, user.id, f"Spell '{spell_id}' is not granted by {item.get('name', 'that item')}."
+        )
+
+    item_charge_cost = max(0, _safe_int(spell_entry.get("charge_cost"), 1, minimum=0, maximum=99))
+    actual_cost = charge_cost if charge_cost > 0 else item_charge_cost
+    charges_current = _safe_int(item.get("charges_current"), -1, minimum=-1, maximum=9999)
+    charges_max = _safe_int(item.get("charges_max"), 0, minimum=0, maximum=9999)
+
+    if charges_max > 0 and charges_current >= 0 and charges_current < actual_cost:
+        return await _send_inventory_action_result(
+            session, user.id,
+            f"Not enough charges. {item.get('name', 'Item')} has {charges_current}/{charges_max} charges; casting {spell_id} costs {actual_cost}.",
+        )
+
+    from server.item_compendium import get_spell_metadata  # local import
+    spell_meta = get_spell_metadata(spell_id) or {}
+    spell_name = str(spell_entry.get("name") or spell_meta.get("displayName") or spell_id)
+
+    if charges_max > 0 and charges_current >= 0:
+        item["charges_current"] = max(0, charges_current - actual_cost)
+    items[item_index] = item
+    inventories[owner_key] = [entry for entry in (_normalize_player_inventory_entry(x) for x in items) if entry]
+    session.player_inventories = inventories
+
+    uses_item_dc = bool(spell_entry.get("uses_item_dc", True))
+    uses_item_atk = bool(spell_entry.get("uses_item_attack_bonus", False))
+    item_spell_dc = _safe_int(item.get("item_spell_save_dc"), 0, minimum=0, maximum=40)
+    item_spell_atk = _safe_int(item.get("item_spell_attack_bonus"), 0, minimum=-20, maximum=30)
+    resolved_cast_level = cast_level or _safe_int(spell_entry.get("cast_level"), 0, minimum=0, maximum=9)
+
+    result = {
+        "type": "item_spell_cast_result",
+        "item_name": str(item.get("name") or "Item"),
+        "item_id": actual_id or item_id,
+        "item_index": item_index,
+        "spell_id": spell_id,
+        "spell_name": spell_name,
+        "cast_level": resolved_cast_level,
+        "charge_cost": actual_cost,
+        "remaining_charges": item.get("charges_current"),
+        "save_dc": item_spell_dc if uses_item_dc else 0,
+        "attack_bonus": item_spell_atk if uses_item_atk else 0,
+        "target_id": target_id,
+        "damage_formula": str(spell_meta.get("damageFormula") or ""),
+        "damage_type": str(spell_meta.get("damageType") or ""),
+        "range": str(spell_meta.get("range") or ""),
+        "school": str(spell_meta.get("school") or ""),
+        "description": str(spell_entry.get("description") or spell_meta.get("description") or ""),
+    }
+
+    await _broadcast_inventory_state(session)
+    await manager.send_to(session.id, user.id, {"type": "inventory_item_spell_cast", "payload": result})
+
+    level_note = f" (level {resolved_cast_level})" if resolved_cast_level else ""
+    charge_note = f" — {actual_cost} charge{'s' if actual_cost != 1 else ''} spent" if actual_cost > 0 else ""
+    remaining = item.get("charges_current")
+    remaining_note = f", {remaining} remaining" if remaining is not None else ""
+    await manager.broadcast(session.id, {
+        "type": "chat_message",
+        "payload": {
+            "user": user.name,
+            "message": f"✨ **{spell_name}**{level_note} — cast from *{item.get('name', 'an item')}*{charge_note}{remaining_note}.",
+            "channel": "everyone",
+            "msg_type": "system",
+        },
+    })
+    await _send_inventory_action_result(
+        session, user.id,
+        f"Cast {spell_name} from {item.get('name', 'item')}{charge_note}{remaining_note}.",
     )
     await save_campaign_async(session)
 

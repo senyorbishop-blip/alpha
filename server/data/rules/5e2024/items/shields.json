@@ -1,0 +1,41 @@
+{
+  "category": "shields",
+  "item_schema_version": 2,
+  "items": [
+    {
+      "id": "shield", "name": "Shield", "item_schema_version": 2, "category": "shield", "subtype": "shield",
+      "rarity": "common", "requires_attunement": false, "equippable": true, "equip_slot": "off_hand",
+      "ac_bonus": 2, "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [], "granted_spells": []
+    },
+    {
+      "id": "shield-plus-1", "name": "Shield, +1", "item_schema_version": 2, "category": "shield", "subtype": "shield",
+      "rarity": "uncommon", "requires_attunement": false, "equippable": true, "equip_slot": "off_hand",
+      "ac_bonus": 3, "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [{"type": "ac_bonus", "value": 1, "summary": "+1 bonus to AC (total +3 with shield)."}],
+      "granted_spells": []
+    },
+    {
+      "id": "shield-plus-2", "name": "Shield, +2", "item_schema_version": 2, "category": "shield", "subtype": "shield",
+      "rarity": "rare", "requires_attunement": false, "equippable": true, "equip_slot": "off_hand",
+      "ac_bonus": 4, "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [{"type": "ac_bonus", "value": 2, "summary": "+2 bonus to AC (total +4 with shield)."}],
+      "granted_spells": []
+    },
+    {
+      "id": "shield-plus-3", "name": "Shield, +3", "item_schema_version": 2, "category": "shield", "subtype": "shield",
+      "rarity": "very_rare", "requires_attunement": false, "equippable": true, "equip_slot": "off_hand",
+      "ac_bonus": 5, "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "passive_effects": [{"type": "ac_bonus", "value": 3, "summary": "+3 bonus to AC (total +5 with shield)."}],
+      "granted_spells": []
+    },
+    {
+      "id": "animated-shield", "name": "Animated Shield", "item_schema_version": 2, "category": "shield", "subtype": "shield",
+      "rarity": "very_rare", "requires_attunement": true, "equippable": true, "equip_slot": "off_hand",
+      "ac_bonus": 2, "attack_bonus": 0, "damage_bonus": 0, "charges_max": 0, "recharge_type": "none",
+      "effect": "While attuned, as a bonus action you can animate this shield to float alongside you for up to 1 minute, granting its +2 AC bonus while freeing your hand. It returns automatically when you use a bonus action or the effect ends.",
+      "passive_effects": [{"type": "note", "value": "Can animate to float alongside you as a bonus action, freeing your hand."}],
+      "granted_spells": []
+    }
+  ]
+}

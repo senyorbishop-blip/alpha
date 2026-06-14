@@ -1,0 +1,76 @@
+{
+  "category": "scrolls",
+  "item_schema_version": 2,
+  "items": [
+    {
+      "id": "spell-scroll-cantrip", "name": "Spell Scroll (Cantrip)", "item_schema_version": 2, "category": "scroll", "subtype": "spell_scroll",
+      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "passive_effects": [], "granted_spells": [],
+      "effect": "Cast the inscribed cantrip without spending a spell slot. Destroyed when used."
+    },
+    {
+      "id": "spell-scroll-1st", "name": "Spell Scroll (1st Level)", "item_schema_version": 2, "category": "scroll", "subtype": "spell_scroll",
+      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "passive_effects": [], "granted_spells": [],
+      "effect": "Cast the inscribed 1st-level spell without spending a spell slot. Destroyed when used."
+    },
+    {
+      "id": "spell-scroll-2nd", "name": "Spell Scroll (2nd Level)", "item_schema_version": 2, "category": "scroll", "subtype": "spell_scroll",
+      "rarity": "uncommon", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "passive_effects": [], "granted_spells": [],
+      "effect": "Cast the inscribed 2nd-level spell without spending a spell slot. Destroyed when used."
+    },
+    {
+      "id": "spell-scroll-3rd", "name": "Spell Scroll (3rd Level)", "item_schema_version": 2, "category": "scroll", "subtype": "spell_scroll",
+      "rarity": "uncommon", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "passive_effects": [], "granted_spells": [],
+      "effect": "Cast the inscribed 3rd-level spell without spending a spell slot. Destroyed when used."
+    },
+    {
+      "id": "spell-scroll-4th", "name": "Spell Scroll (4th Level)", "item_schema_version": 2, "category": "scroll", "subtype": "spell_scroll",
+      "rarity": "rare", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "passive_effects": [], "granted_spells": [],
+      "effect": "Cast the inscribed 4th-level spell without spending a spell slot. Destroyed when used."
+    },
+    {
+      "id": "spell-scroll-5th", "name": "Spell Scroll (5th Level)", "item_schema_version": 2, "category": "scroll", "subtype": "spell_scroll",
+      "rarity": "rare", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "passive_effects": [], "granted_spells": [],
+      "effect": "Cast the inscribed 5th-level spell without spending a spell slot. Destroyed when used."
+    },
+    {
+      "id": "spell-scroll-6th", "name": "Spell Scroll (6th Level)", "item_schema_version": 2, "category": "scroll", "subtype": "spell_scroll",
+      "rarity": "very_rare", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "passive_effects": [], "granted_spells": [],
+      "effect": "Cast the inscribed 6th-level spell without spending a spell slot. Destroyed when used."
+    },
+    {
+      "id": "spell-scroll-7th", "name": "Spell Scroll (7th Level)", "item_schema_version": 2, "category": "scroll", "subtype": "spell_scroll",
+      "rarity": "very_rare", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "passive_effects": [], "granted_spells": [],
+      "effect": "Cast the inscribed 7th-level spell without spending a spell slot. Destroyed when used."
+    },
+    {
+      "id": "spell-scroll-8th", "name": "Spell Scroll (8th Level)", "item_schema_version": 2, "category": "scroll", "subtype": "spell_scroll",
+      "rarity": "very_rare", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "passive_effects": [], "granted_spells": [],
+      "effect": "Cast the inscribed 8th-level spell without spending a spell slot. Destroyed when used."
+    },
+    {
+      "id": "spell-scroll-9th", "name": "Spell Scroll (9th Level)", "item_schema_version": 2, "category": "scroll", "subtype": "spell_scroll",
+      "rarity": "legendary", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "passive_effects": [], "granted_spells": [],
+      "effect": "Cast the inscribed 9th-level spell without spending a spell slot. Destroyed when used."
+    }
+  ]
+}

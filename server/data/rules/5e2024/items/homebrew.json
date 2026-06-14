@@ -1,0 +1,94 @@
+{
+  "category": "homebrew",
+  "item_schema_version": 2,
+  "items": [
+    {
+      "id": "thunder-mage-quarterstaff-plus-3",
+      "name": "Thunder Mage Quarterstaff, +3",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "simple_melee",
+      "rarity": "legendary",
+      "requires_attunement": true,
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "attack_bonus": 3,
+      "damage_bonus": 3,
+      "charges_max": 10,
+      "charges_current": 10,
+      "recharge_type": "dawn",
+      "recharge_formula": "1d6+4",
+      "item_spell_attack_bonus": 9,
+      "item_spell_save_dc": 17,
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "+3 to attack and damage rolls made with this quarterstaff."
+        },
+        {
+          "type": "resistance",
+          "damage_type": "thunder",
+          "summary": "Resistance to thunder damage while attuned."
+        }
+      ],
+      "granted_spells": [
+        {
+          "id": "thunderwave",
+          "name": "Thunderwave",
+          "charge_cost": 1,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": false,
+          "consume_spell_slot": false,
+          "description": "TODO: Verify spell ID 'thunderwave' matches the spell compendium entry. Expend 1 charge to cast thunderwave (CON save DC 17). 15-ft cube of thunder force."
+        },
+        {
+          "id": "shatter",
+          "name": "Shatter",
+          "charge_cost": 2,
+          "cast_level": 2,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": false,
+          "consume_spell_slot": false,
+          "description": "TODO: Verify spell ID 'shatter' matches the spell compendium entry. Expend 2 charges to cast shatter (CON save DC 17). 10-ft sphere of thunder damage."
+        },
+        {
+          "id": "call-lightning",
+          "name": "Call Lightning",
+          "charge_cost": 3,
+          "cast_level": 3,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": false,
+          "consume_spell_slot": false,
+          "description": "TODO: Verify spell ID 'call-lightning' matches the spell compendium entry. Expend 3 charges to call lightning (DEX save DC 17). Summon storm cloud dealing 3d10 lightning."
+        },
+        {
+          "id": "lightning-bolt",
+          "name": "Lightning Bolt",
+          "charge_cost": 3,
+          "cast_level": 3,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": false,
+          "consume_spell_slot": false,
+          "description": "TODO: Verify spell ID 'lightning-bolt' matches the spell compendium entry. Expend 3 charges to cast lightning bolt (DEX save DC 17). 100-ft line of lightning dealing 8d6."
+        },
+        {
+          "id": "thunder-step",
+          "name": "Thunder Step",
+          "charge_cost": 3,
+          "cast_level": 3,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": false,
+          "consume_spell_slot": false,
+          "description": "TODO: Verify spell ID 'thunder-step' matches the spell compendium entry. Expend 3 charges to cast thunder step (CON save DC 17). Teleport up to 90 ft, deal 3d10 thunder to creatures left behind."
+        }
+      ],
+      "notes": "TODO: The Thunder Mage Quarterstaff spell list is a placeholder. Confirm with the DM or game notes which spells are actually granted, their charge costs, and whether the item uses the wielder's spell attack bonus/save DC instead of the item's stats.",
+      "flavor_text": "A gnarled quarterstaff wrapped in crackling silver wire. When held, faint rumbles of distant thunder echo in the wielder's mind.",
+      "effect": "A +3 quarterstaff for a thunder mage. Has 10 charges. Resistance to thunder damage. Can cast thunderwave (1 charge), shatter (2 charges), call lightning (3 charges), lightning bolt (3 charges), or thunder step (3 charges) — all with save DC 17. Regains 1d6+4 charges at dawn. TODO: Verify full spell list."
+    }
+  ]
+}

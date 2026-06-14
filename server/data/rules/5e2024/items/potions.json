@@ -1,0 +1,86 @@
+{
+  "category": "potions",
+  "item_schema_version": 2,
+  "items": [
+    {
+      "id": "potion-of-healing", "name": "Potion of Healing", "item_schema_version": 2, "category": "potion", "subtype": "healing",
+      "rarity": "common", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "healing_formula": "2d4+2",
+      "passive_effects": [], "granted_spells": [],
+      "effect": "Regain 2d4+2 hit points when you drink this potion."
+    },
+    {
+      "id": "potion-of-greater-healing", "name": "Potion of Greater Healing", "item_schema_version": 2, "category": "potion", "subtype": "healing",
+      "rarity": "uncommon", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "healing_formula": "4d4+4",
+      "passive_effects": [], "granted_spells": [],
+      "effect": "Regain 4d4+4 hit points when you drink this potion."
+    },
+    {
+      "id": "potion-of-superior-healing", "name": "Potion of Superior Healing", "item_schema_version": 2, "category": "potion", "subtype": "healing",
+      "rarity": "rare", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "healing_formula": "8d4+8",
+      "passive_effects": [], "granted_spells": [],
+      "effect": "Regain 8d4+8 hit points when you drink this potion."
+    },
+    {
+      "id": "potion-of-supreme-healing", "name": "Potion of Supreme Healing", "item_schema_version": 2, "category": "potion", "subtype": "healing",
+      "rarity": "very_rare", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "healing_formula": "10d4+20",
+      "passive_effects": [], "granted_spells": [],
+      "effect": "Regain 10d4+20 hit points when you drink this potion."
+    },
+    {
+      "id": "potion-of-fire-resistance", "name": "Potion of Fire Resistance", "item_schema_version": 2, "category": "potion", "subtype": "resistance",
+      "rarity": "uncommon", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "passive_effects": [{"type": "resistance", "damage_type": "fire", "duration": "1 hour", "summary": "Resistance to fire damage for 1 hour."}],
+      "granted_spells": [],
+      "effect": "Gain resistance to fire damage for 1 hour."
+    },
+    {
+      "id": "potion-of-speed", "name": "Potion of Speed", "item_schema_version": 2, "category": "potion", "subtype": "enhancement",
+      "rarity": "very_rare", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "passive_effects": [{"type": "note", "duration": "1 minute", "summary": "Haste effect for 1 minute."}],
+      "granted_spells": [],
+      "effect": "Gain the effects of the haste spell for 1 minute (no concentration required)."
+    },
+    {
+      "id": "potion-of-flying", "name": "Potion of Flying", "item_schema_version": 2, "category": "potion", "subtype": "enhancement",
+      "rarity": "very_rare", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "passive_effects": [{"type": "movement_bonus", "movement_type": "fly", "value": 60, "duration": "1 hour", "summary": "Flying speed 60 ft for 1 hour."}],
+      "granted_spells": [],
+      "effect": "Gain a flying speed of 60 feet for 1 hour."
+    },
+    {
+      "id": "potion-of-invisibility", "name": "Potion of Invisibility", "item_schema_version": 2, "category": "potion", "subtype": "enhancement",
+      "rarity": "very_rare", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "passive_effects": [],
+      "granted_spells": [],
+      "effect": "Become invisible for 1 hour. Ends early if you attack or cast a spell."
+    },
+    {
+      "id": "potion-of-giant-strength-hill", "name": "Potion of Giant Strength (Hill)", "item_schema_version": 2, "category": "potion", "subtype": "enhancement",
+      "rarity": "uncommon", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "passive_effects": [{"type": "ability_set", "ability": "str", "value": 21, "duration": "1 hour", "summary": "STR set to 21 for 1 hour."}],
+      "granted_spells": [],
+      "effect": "Your Strength score becomes 21 for 1 hour."
+    },
+    {
+      "id": "potion-of-clairvoyance", "name": "Potion of Clairvoyance", "item_schema_version": 2, "category": "potion", "subtype": "divination",
+      "rarity": "rare", "requires_attunement": false, "equippable": false, "equip_slot": "",
+      "charges_max": 0, "recharge_type": "none", "consumable": true, "consumed_on_use": true,
+      "passive_effects": [],
+      "granted_spells": [],
+      "effect": "Gain the effect of the clairvoyance spell for 1 hour."
+    }
+  ]
+}

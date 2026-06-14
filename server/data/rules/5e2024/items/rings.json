@@ -1,0 +1,111 @@
+{
+  "category": "rings",
+  "item_schema_version": 2,
+  "items": [
+    {
+      "id": "ring-of-protection", "name": "Ring of Protection", "item_schema_version": 2,
+      "category": "ring", "subtype": "ring", "rarity": "rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "ring",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [
+        {"type": "ac_bonus", "value": 1, "summary": "+1 bonus to AC while attuned."},
+        {"type": "save_bonus", "value": 1, "summary": "+1 bonus to saving throws while attuned."}
+      ],
+      "granted_spells": [],
+      "effect": "You gain a +1 bonus to AC and saving throws while wearing this ring."
+    },
+    {
+      "id": "ring-of-spell-storing", "name": "Ring of Spell Storing", "item_schema_version": 2,
+      "category": "ring", "subtype": "ring", "rarity": "rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "ring",
+      "charges_max": 5, "charges_current": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [
+        {"type": "note", "summary": "Stores up to 5 levels of spells. Cast stored spells using their original spell attack bonus and save DC."}
+      ],
+      "granted_spells": [],
+      "effect": "This ring stores spells cast into it, holding up to 5 spell levels at a time. Any creature can cast a spell of 1st–5th level into the ring; the spell has no effect. When worn, you can cast any spell stored in it."
+    },
+    {
+      "id": "ring-of-fire-resistance", "name": "Ring of Fire Resistance", "item_schema_version": 2,
+      "category": "ring", "subtype": "ring", "rarity": "rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "ring",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [
+        {"type": "resistance", "damage_type": "fire", "summary": "Resistance to fire damage while attuned."}
+      ],
+      "granted_spells": [],
+      "effect": "You have resistance to fire damage while wearing this ring."
+    },
+    {
+      "id": "ring-of-feather-falling", "name": "Ring of Feather Falling", "item_schema_version": 2,
+      "category": "ring", "subtype": "ring", "rarity": "rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "ring",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [
+        {"type": "note", "summary": "Fall at 60 ft per round when you fall. Take no falling damage. Land safely."}
+      ],
+      "granted_spells": [],
+      "effect": "When you fall while wearing this ring, you descend 60 ft per round and take no damage from falling."
+    },
+    {
+      "id": "ring-of-invisibility", "name": "Ring of Invisibility", "item_schema_version": 2,
+      "category": "ring", "subtype": "ring", "rarity": "legendary",
+      "requires_attunement": true, "equippable": true, "equip_slot": "ring",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [],
+      "granted_spells": [
+        {
+          "id": "invisibility", "name": "Invisibility",
+          "charge_cost": 0, "cast_level": 2, "uses_item_dc": false, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Turn invisible as an action. Ends if you attack or cast a spell."
+        }
+      ],
+      "effect": "While wearing this ring, you can turn invisible as an action. Invisibility ends if you attack, deal damage, or cast a spell."
+    },
+    {
+      "id": "ring-of-telekinesis", "name": "Ring of Telekinesis", "item_schema_version": 2,
+      "category": "ring", "subtype": "ring", "rarity": "very_rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "ring",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [],
+      "granted_spells": [
+        {
+          "id": "telekinesis", "name": "Telekinesis",
+          "charge_cost": 0, "cast_level": 5, "uses_item_dc": true, "uses_item_attack_bonus": false, "consume_spell_slot": false,
+          "description": "Cast telekinesis at will (your spellcasting save DC). No charges required."
+        }
+      ],
+      "effect": "While wearing this ring, you can cast the telekinesis spell at will using your spellcasting save DC."
+    },
+    {
+      "id": "ring-of-regeneration", "name": "Ring of Regeneration", "item_schema_version": 2,
+      "category": "ring", "subtype": "ring", "rarity": "very_rare",
+      "requires_attunement": true, "equippable": true, "equip_slot": "ring",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [
+        {"type": "note", "summary": "Regain 1d6 HP every 10 minutes. Regrow lost limbs in 1d6+1 days."}
+      ],
+      "granted_spells": [],
+      "effect": "While wearing this ring, you regain 1d6 hit points every 10 minutes, provided you have at least 1 hit point. Also regrows lost body parts over 1d6+1 days."
+    },
+    {
+      "id": "ring-of-wizardry-i", "name": "Ring of Wizardry, I", "item_schema_version": 2,
+      "category": "ring", "subtype": "ring", "rarity": "uncommon",
+      "requires_attunement": true, "equippable": true, "equip_slot": "ring",
+      "charges_max": 0, "recharge_type": "none",
+      "item_spell_attack_bonus": 0, "item_spell_save_dc": 0,
+      "passive_effects": [
+        {"type": "note", "summary": "Double the number of 1st-level spell slots you have."}
+      ],
+      "granted_spells": [],
+      "effect": "While wearing this ring, you double your total number of 1st-level spell slots."
+    }
+  ]
+}
