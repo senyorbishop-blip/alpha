@@ -97,7 +97,7 @@
       const saved = JSON.parse(global.localStorage.getItem(SIZE_KEY) || 'null');
       if (saved && saved.w && saved.h && root) {
         root.style.width  = Math.max(280, Math.min(global.innerWidth  - 28, saved.w)) + 'px';
-        root.style.height = Math.max(140, Math.min(global.innerHeight * 0.72, saved.h)) + 'px';
+        root.style.height = Math.max(140, Math.min(global.innerHeight * 0.85, saved.h)) + 'px';
       }
     } catch (_e) {}
   }
@@ -152,7 +152,7 @@
       root.style.transform = 'translateX(-50%)';
     }
     if (state.w && Number.isFinite(Number(state.w))) root.style.width = Math.max(280, Math.min(global.innerWidth - 16, Number(state.w))) + 'px';
-    if (state.h && Number.isFinite(Number(state.h))) root.style.maxHeight = Math.max(120, Math.min(global.innerHeight * 0.85, Number(state.h))) + 'px';
+    if (state.h && Number.isFinite(Number(state.h))) root.style.height = Math.max(140, Math.min(global.innerHeight * 0.85, Number(state.h))) + 'px';
   }
 
   var _resizeObserver = null;
@@ -170,6 +170,13 @@
   function _startDrag(ev) {
     if (ev.target.closest('button')) return;
     const rect = root.getBoundingClientRect();
+    // Once the player interacts with the bar, convert the default bottom anchor
+    // to an explicit top/left anchor so native resize:both can grow downward too.
+    if (!Number.isFinite(Number(state.x)) || !Number.isFinite(Number(state.y))) {
+      state.x = rect.left;
+      state.y = rect.top;
+      _applyPosition();
+    }
     dragging = { dx: ev.clientX - rect.left, dy: ev.clientY - rect.top };
     root.setPointerCapture && root.setPointerCapture(ev.pointerId);
   }
