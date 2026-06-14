@@ -65,10 +65,11 @@
     return _safeArray(rows).filter(function (row) { return row && _meaningful(row.value); });
   }
   function _spellLevelNumber(spell) {
-    const raw = spell && (spell.level ?? spell.spellLevel ?? spell.slotLevel ?? 0);
+    const raw = spell && (spell.level ?? spell.spell_level ?? spell.spellLevel ?? spell.slotLevel);
+    if (raw === null || raw === undefined || raw === '') return null;
     if (typeof raw === 'string' && raw.toLowerCase() === 'cantrip') return 0;
     const n = parseInt(raw, 10);
-    return Number.isFinite(n) ? n : 0;
+    return Number.isFinite(n) ? n : null;
   }
   function _abbrevTime(ct) {
     if (!ct) return '—';
@@ -166,7 +167,7 @@
   }
   function _spellRankLabel(spell) {
     const level = _spellLevelNumber(spell);
-    return level === 0 ? 'Cantrip' : 'Level ' + level;
+    return level === null ? 'Unknown spell level' : (level === 0 ? 'Cantrip' : 'Level ' + level);
   }
   function _spellSubtitle(spell) {
     const bits = [];
@@ -347,7 +348,7 @@ function _spellAttackSaveCell(spell, charData) {
   const label = _spellAttackSaveLabel(spell, charData);
   const attackKind = _spellAttackKind(spell);
   const attackBonus = _spellAttackBonusValue(spell, charData);
-  if (attackKind && attackBonus != null && spellId) {
+  if ((global.AppSpellRuntime ? global.AppSpellRuntime.resolveSpellRuntime(spell || {}, { saveDc: charData && charData.spellSaveDc }).requiresAttackRoll : attackKind) && attackBonus != null && spellId) {
     return '<button type="button" class="cs-spell-roll-btn" data-spell-attack="' + _esc(spellId) + '" aria-label="Roll attack for ' + _esc(_spellName(spell)) + '">' + _esc(label) + ' 🎲</button>';
   }
   return _esc(label);
@@ -434,21 +435,16 @@ function _spellAttackSaveCell(spell, charData) {
   }
 
   function _spellRollExpressionForLevel(spell, slotLevel, charData) {
-    let expr = String(_spellRollBaseExpression(spell) || '').trim();
-    if (!expr) return '';
-    const level = _spellLevelNumber(spell);
-    const simple = expr.match(/^(\d+)\s*d\s*(\d+)([+-]\d+)?$/i);
-    if (level === 0 && simple) {
-      const tiers = _characterLevel(charData) >= 17 ? 4 : (_characterLevel(charData) >= 11 ? 3 : (_characterLevel(charData) >= 5 ? 2 : 1));
-      expr = String(tiers) + 'd' + String(simple[2]) + String(simple[3] || '');
-    } else if (level > 0 && simple && Number.isFinite(slotLevel) && slotLevel > level) {
-      const scaling = _spellUpcastScaling(spell);
-      if (scaling && scaling.count > 0 && scaling.sides === parseInt(simple[2], 10)) {
-        const count = parseInt(simple[1], 10) + ((slotLevel - level) * scaling.count);
-        expr = String(count) + 'd' + String(simple[2]) + String(simple[3] || '');
-      }
+    if (global.AppSpellRuntime && typeof global.AppSpellRuntime.resolveSpellRuntime === 'function') {
+      const runtime = global.AppSpellRuntime.resolveSpellRuntime(spell || {}, {
+        castLevel: slotLevel,
+        characterLevel: _characterLevel(charData),
+        spellcastingModifier: (charData && charData.spellcastingModifier),
+        saveDc: charData && (charData.spellSaveDc || charData.spell_save_dc)
+      });
+      return runtime.finalHealingFormula || runtime.finalDamageFormula || '';
     }
-    return expr;
+    return String(_spellRollBaseExpression(spell) || '').trim();
   }
 
   function _pickSpellCastLevel(spell) {
