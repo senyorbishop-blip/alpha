@@ -11847,6 +11847,12 @@ function getCurrentGridSizePx() {
   return _sanitizeGridSizePx(size, GRID_SIZE_DEFAULT_PX);
 }
 
+function getCurrentGridFtPerSquare() {
+  const v = currentMapSettings()?.grid?.ft_per_square;
+  const n = Number(v);
+  return (Number.isFinite(n) && n > 0) ? n : 5; // D&D 5e default: 5 ft per square
+}
+
 function getEditorGridSizePx() {
   return _sanitizeGridSizePx(PX_PER_GRID || getCurrentGridSizePx(), GRID_SIZE_DEFAULT_PX);
 }
@@ -18395,9 +18401,32 @@ function drawToken(t) {
   ctx.shadowColor = t.color;
   ctx.shadowBlur  = 8;
 
+  // ── Target selection ring (dashed amber ring for selected combat target) ──
+  const _isSelectedTarget = _combat.active && String(_combat.selected_target_id || '') !== '' && String(_combat.selected_target_id || '') === String(t.id || '');
+  if (_isSelectedTarget) {
+    ctx.save();
+    ctx.shadowBlur = 0;
+    const _tcx = t.x + t.width / 2, _tcy = t.y + t.height / 2;
+    const _tr = Math.max(t.width, t.height) / 2 + 7 / cam.zoom;
+    ctx.beginPath();
+    ctx.arc(_tcx, _tcy, _tr, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,210,90,0.92)';
+    ctx.lineWidth = 2.5 / cam.zoom;
+    ctx.setLineDash([5 / cam.zoom, 3 / cam.zoom]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
   // ── Active turn ring (strong pulsing gold ring for current combatant) ──
   const _activeCombatant = _combat.active && _combat.combatants[_combat.turn];
   const _isActiveTurn = _activeCombatant && _activeCombatant.token_id === t.id;
+  // ── Next combatant (silver ring) ─────────────────────────────────────────
+  const _combatLen = _combat.active ? _combat.combatants.length : 0;
+  const _nextCombatant = _combatLen > 1 ? _combat.combatants[(_combat.turn + 1) % _combatLen] : null;
+  const _isNextTurn = !_isActiveTurn && _nextCombatant && _nextCombatant.token_id === t.id;
+  // ── Initiative order index for this token ────────────────────────────────
+  const _initiativeIdx = _combat.active ? _combat.combatants.findIndex(c => c.token_id === t.id) : -1;
   if (_isActiveTurn) {
     ctx.save();
     ctx.shadowBlur = 0;
@@ -18429,7 +18458,7 @@ function drawToken(t) {
 
     // Small turn label above the token, but only if the token itself is visible to this client
     if (ROLE === 'dm' || !isHidden) {
-      const label = 'TURN';
+      const label = 'NOW';
       ctx.font = `${Math.max(11, 13 / cam.zoom)}px system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -18451,6 +18480,42 @@ function drawToken(t) {
       ctx.fillText(label, cx, by + boxH / 2);
     }
 
+    ctx.restore();
+  }
+
+  // ── Next-turn ring (silver ring for next combatant) ──────────────────────
+  if (_isNextTurn) {
+    ctx.save();
+    ctx.shadowBlur = 0;
+    const nx = t.x + t.width / 2, ny = t.y + t.height / 2;
+    const nr = (t.width / 2) + 8 / cam.zoom;
+    ctx.beginPath();
+    ctx.arc(nx, ny, nr, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(180,200,220,0.65)';
+    ctx.lineWidth = 2 / cam.zoom;
+    ctx.stroke();
+    // NEXT label above the token
+    if (ROLE === 'dm' || !isHidden) {
+      const label = 'NEXT';
+      ctx.font = `${Math.max(11, 13 / cam.zoom)}px system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const padX = 6 / cam.zoom, padY = 3 / cam.zoom;
+      const textW = ctx.measureText(label).width;
+      const boxW = textW + padX * 2;
+      const boxH = 16 / cam.zoom;
+      const by = sy - (18 / cam.zoom) - boxH;
+      const bx = nx - boxW / 2;
+      ctx.fillStyle = 'rgba(20,28,38,0.92)';
+      ctx.strokeStyle = 'rgba(180,200,220,0.8)';
+      ctx.lineWidth = 1.2 / cam.zoom;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, boxW, boxH, 6 / cam.zoom);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#cce0f5';
+      ctx.fillText(label, nx, by + boxH / 2);
+    }
     ctx.restore();
   }
 
@@ -18683,6 +18748,51 @@ function drawToken(t) {
     ctx.font = `${12 / cam.zoom}px Cinzel, serif`;
     ctx.textAlign = 'center';
     ctx.fillText(t.name, sx + t.width / 2, labelY);
+  }
+
+  // ── Combat initiative order badge + type tag (shown during active combat) ──
+  if (_combat.active && _initiativeIdx >= 0) {
+    const _isPlayerOwned = !!t.owner_id || t.token_type === 'player';
+    const _typeTag = _isPlayerOwned ? 'PC' : 'NPC';
+    const _typeColor = _isPlayerOwned ? '#9ff6ea' : '#ffc0aa';
+    const _orderText = _isActiveTurn ? 'NOW' : _isNextTurn ? 'NEXT' : `#${_initiativeIdx + 1}`;
+    const _orderColor = _isActiveTurn ? '#ffe27a' : _isNextTurn ? '#cce0f5' : 'rgba(245,234,214,0.75)';
+    const _orderBgColor = _isActiveTurn ? 'rgba(60,40,0,0.9)' : _isNextTurn ? 'rgba(20,30,50,0.9)' : 'rgba(16,18,22,0.85)';
+    const _orderBorderColor = _isActiveTurn ? 'rgba(255,215,0,0.8)' : _isNextTurn ? 'rgba(180,200,220,0.7)' : 'rgba(255,255,255,0.2)';
+    const badgeY = labelY + 13 / cam.zoom;
+    const badgeFontPx = Math.max(9, 10 / cam.zoom);
+    ctx.save();
+    ctx.font = `bold ${badgeFontPx}px system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // Order badge (left)
+    const orderW = ctx.measureText(_orderText).width + 8 / cam.zoom;
+    const badgeH = 13 / cam.zoom;
+    const totalW = orderW + 5 / cam.zoom + ctx.measureText(_typeTag).width + 8 / cam.zoom;
+    const startX = sx + t.width / 2 - totalW / 2;
+    // Draw order badge
+    ctx.fillStyle = _orderBgColor;
+    ctx.strokeStyle = _orderBorderColor;
+    ctx.lineWidth = 1 / cam.zoom;
+    ctx.beginPath();
+    ctx.roundRect(startX, badgeY - badgeH / 2, orderW, badgeH, 4 / cam.zoom);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = _orderColor;
+    ctx.fillText(_orderText, startX + orderW / 2, badgeY);
+    // Draw type badge (right)
+    const typeX = startX + orderW + 5 / cam.zoom;
+    const typeW = ctx.measureText(_typeTag).width + 8 / cam.zoom;
+    ctx.fillStyle = 'rgba(16,18,22,0.85)';
+    ctx.strokeStyle = _isPlayerOwned ? 'rgba(0,229,204,0.45)' : 'rgba(255,121,87,0.45)';
+    ctx.lineWidth = 1 / cam.zoom;
+    ctx.beginPath();
+    ctx.roundRect(typeX, badgeY - badgeH / 2, typeW, badgeH, 4 / cam.zoom);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = _typeColor;
+    ctx.fillText(_typeTag, typeX + typeW / 2, badgeY);
+    ctx.restore();
   }
 
   // Encumbrance map icon for player-owned tokens.
@@ -19006,7 +19116,8 @@ function _resolveClientCombatMovement(t, fromX, fromY, toX, toY) {
   const fromGrid = _gridCellForToken(fromX, fromY, t), toGrid = _gridCellForToken(toX, toY, t);
   const path = _buildGridPath(fromGrid, toGrid);
   const squares = _movementSquaresForPath(path, mode);
-  const baseFeet = Math.round(squares * 5 * 100) / 100;
+  const ftPerSq = getCurrentGridFtPerSquare();
+  const baseFeet = Math.round(squares * ftPerSq * 100) / 100;
   const costMultiplier = move.difficult_terrain ? 2 : Math.max(1, Number(move.cost_multiplier || 1));
   const finalCostFeet = Math.round(baseFeet * costMultiplier * 100) / 100;
   const speedFeet = Math.max(0, Number(move.speed_ft || 0) + Number(move.bonus_ft || 0));
@@ -19093,7 +19204,7 @@ function _confirmPendingMoveConfirm() {
   }
   const resolver = pending.resolver || _resolveClientCombatMovement(tok, pending.origX, pending.origY, pending.previewX, pending.previewY);
   if (!resolver.valid) { showToast(resolver.reason || 'Move is not valid.'); return; }
-  sendWS({ type: 'combat_move_commit', payload: { token_id: pending.tokenId, from_x: pending.origX, from_y: pending.origY, to_x: pending.previewX, to_y: pending.previewY, path: resolver.path, expected_cost_ft: resolver.finalCostFeet, movement_mode: resolver.movementMode, grid_size_px: PX_PER_GRID } });
+  sendWS({ type: 'combat_move_commit', payload: { token_id: pending.tokenId, from_x: pending.origX, from_y: pending.origY, to_x: pending.previewX, to_y: pending.previewY, path: resolver.path, expected_cost_ft: resolver.finalCostFeet, movement_mode: resolver.movementMode, grid_size_px: PX_PER_GRID, ft_per_square: getCurrentGridFtPerSquare() } });
   _pendingMoveConfirm = null; _combatMovePlan = null;
   _combatMovePath = null;
 }
@@ -19175,16 +19286,23 @@ function onMouseDown(e) {
       // Clicking own token confirms movement
       _confirmPendingMoveConfirm();
     } else if (tok && !pendingHit) {
-      // Clicking elsewhere on map updates the preview destination (click-to-move)
       const halfW = (tok.width || PX_PER_GRID) / 2;
       const halfH = (tok.height || PX_PER_GRID) / 2;
       const snapped = snapTokenToGrid(w.x - halfW, w.y - halfH, tok);
-      const resolver = _resolveClientCombatMovement(tok, _pendingMoveConfirm.origX, _pendingMoveConfirm.origY, snapped.x, snapped.y);
-      _pendingMoveConfirm.previewX = snapped.x;
-      _pendingMoveConfirm.previewY = snapped.y;
-      _pendingMoveConfirm.resolver = resolver;
-      _combatMovePlan = _pendingMoveConfirm;
-      renderCombat();
+      // Clicking the same destination cell a second time confirms the move
+      const hasPreview = _pendingMoveConfirm.previewX !== _pendingMoveConfirm.origX ||
+                         _pendingMoveConfirm.previewY !== _pendingMoveConfirm.origY;
+      if (hasPreview && snapped.x === _pendingMoveConfirm.previewX && snapped.y === _pendingMoveConfirm.previewY) {
+        _confirmPendingMoveConfirm();
+      } else {
+        // First click on a new destination updates the ghost preview
+        const resolver = _resolveClientCombatMovement(tok, _pendingMoveConfirm.origX, _pendingMoveConfirm.origY, snapped.x, snapped.y);
+        _pendingMoveConfirm.previewX = snapped.x;
+        _pendingMoveConfirm.previewY = snapped.y;
+        _pendingMoveConfirm.resolver = resolver;
+        _combatMovePlan = _pendingMoveConfirm;
+        renderCombat();
+      }
     }
     return;
   }
@@ -19386,6 +19504,13 @@ function onMouseDown(e) {
       propPopupClose();
       return;
     }
+    // Player clicks a visible non-own token during combat → select as combat target
+    if (ROLE === 'player' && _combat.active && hit && !_tokenOwnedByMe(hit) && _isTokenVisibleToPlayer(hit)) {
+      closeTokenEmotePalette();
+      combatSelectTarget(hit.id);
+      propPopupClose();
+      return;
+    }
     const hitProp = findInteractiveEditorProp(w.x, w.y);
     if (hitProp) {
       if (editorPropIsShopKind(String(hitProp.kind || '').toLowerCase())) {
@@ -19450,7 +19575,7 @@ function onMouseMove(e) {
     const dx = w.x - Number(_hazardPlacementDraft.x || 0);
     const dy = w.y - Number(_hazardPlacementDraft.y || 0);
     const radiusPx = Math.max(10, Math.hypot(dx, dy));
-    const radiusFt = Math.max(5, Math.round((radiusPx / 50) * 5 / 5) * 5);
+    const radiusFt = Math.max(5, Math.round((radiusPx / PX_PER_GRID) * getCurrentGridFtPerSquare() / 5) * 5);
     _hazardPlacementDraft.radius_ft = radiusFt;
     _hazardPlacementDraft.color = document.getElementById('haz-color')?.value || '#e67e22';
     _hazardPlacementDraft.icon = document.getElementById('haz-icon')?.value || '';

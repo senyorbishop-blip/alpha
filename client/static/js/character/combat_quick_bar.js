@@ -36,8 +36,22 @@
 
   function _loadState() {
     try {
-      const parsed = JSON.parse(global.localStorage.getItem(STORAGE_KEY) || '{}');
-      state = Object.assign({}, DEFAULT_STATE, parsed || {});
+      const raw = global.localStorage.getItem(STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      const merged = Object.assign({}, DEFAULT_STATE, parsed || {});
+      // Sanitize field types to prevent corrupted localStorage from breaking the bar
+      state = {
+        x: Number.isFinite(Number(merged.x)) ? Number(merged.x) : null,
+        y: Number.isFinite(Number(merged.y)) ? Number(merged.y) : null,
+        w: Number.isFinite(Number(merged.w)) ? Number(merged.w) : undefined,
+        h: Number.isFinite(Number(merged.h)) ? Number(merged.h) : undefined,
+        minimized: !!merged.minimized,
+        manual: !!merged.manual,
+        combatWasActive: !!merged.combatWasActive,
+        customizing: !!merged.customizing,
+        dismissedForCombatTurn: typeof merged.dismissedForCombatTurn === 'string' ? merged.dismissedForCombatTurn : '',
+        dismissedUntilManualOpen: !!merged.dismissedUntilManualOpen,
+      };
     } catch (_err) {
       state = Object.assign({}, DEFAULT_STATE);
     }
@@ -322,7 +336,11 @@
     const dismissed = !!(combat.active && state.dismissedUntilManualOpen && state.dismissedForCombatTurn === turnKey);
     const shouldShow = role === 'player' && !dismissed && (!!combat.active || !!state.manual);
     const toggle = document.getElementById('combat-quick-bar-toggle');
-    if (toggle) toggle.hidden = role !== 'player';
+    // Toggle is visible for known players; when role is unknown don't change it
+    if (toggle && role) toggle.hidden = role !== 'player';
+    // During active combat the toggle must always be visible for players so they
+    // can reopen the bar after closing it — never let dismissed state hide it.
+    if (toggle && role === 'player' && combat.active) toggle.hidden = false;
     if (!shouldShow) {
       root.hidden = true;
       state.combatWasActive = !!combat.active;
@@ -483,5 +501,7 @@
 
   _loadState();
   global.CombatQuickBar = { render: render, toggleManual: toggleManual, openManual: openManual, dismissForTurn: dismissForTurn, resetQuickBarVisibility: resetQuickBarVisibility };
+  // Also available as a top-level shortcut for quick recovery from browser console
+  global.resetQuickBarVisibility = resetQuickBarVisibility;
   document.addEventListener('DOMContentLoaded', render);
 }(window));
