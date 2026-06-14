@@ -1238,9 +1238,11 @@
     #rtab-pane-combat {
       padding: 0;
       flex-direction: column;
-      overflow-y: auto;
-      overflow-x: hidden;
       overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      scrollbar-width: thin;
+      scrollbar-gutter: stable;
       min-height: 0;
     }
     .combat-header {
@@ -1287,13 +1289,9 @@
       display: flex;
       flex-direction: column;
       gap: 0.34rem;
-      overflow-y: auto;
-      overflow-x: hidden;
+      overflow: visible;
       padding: 0.45rem 0.48rem 0.55rem;
       min-height: 0;
-      max-height: 40vh;
-      touch-action: pan-y;
-      overscroll-behavior: contain;
       position: relative;
       z-index: 0;
     }
@@ -1914,9 +1912,14 @@
     #rtab-pane-bestiary.active,
     #rtab-pane-spelllib.active,
     #rtab-pane-log.active,
-    #rtab-pane-memory.active,
-    #rtab-pane-combat.active {
+    #rtab-pane-memory.active {
       overflow: hidden;
+    }
+    /* Combat pane is its own single-scroll container — do not hide overflow. */
+    #rtab-pane-combat.active {
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-bottom: 5rem;
     }
 
     /* ── Combat tab attention glow ─────────────────────────────────────────── */
@@ -6681,10 +6684,7 @@
         grid-template-columns:1fr;
       }
       #rtab-pane-combat {
-        padding-bottom: 0.4rem;
-      }
-      .combat-list {
-        max-height: 42vh;
+        padding-bottom: 5rem;
       }
       .combat-entry {
         grid-template-columns: auto auto minmax(0, 1fr);
@@ -6739,9 +6739,6 @@
       .player-action-section-header {
         padding: 0.48rem 0.54rem;
         font-size: 0.62rem;
-      }
-      .player-action-list {
-        max-height: min(50vh, 360px);
       }
       .player-action-use-btn {
         min-height: 42px;
@@ -46843,7 +46840,7 @@ function combatQuickRollWeaponDamage(attackId, mode = 'base', critical = false) 
   if (!damageMeta.formula) { showToast(`${card.name || 'Weapon'} has no damage formula. Equip it from inventory or add damage dice in the item library.`); return null; }
   const normFormula = typeof _normalizeAttackFormula === 'function' ? _normalizeAttackFormula(damageMeta.formula) : damageMeta.formula;
   const chunks = typeof _expandSpellFormulaChunks === 'function' ? _expandSpellFormulaChunks(normFormula) : [];
-  if (!chunks.length) return null;
+  if (!chunks.length) { showToast(`${card.name || 'Weapon'}: damage formula "${damageMeta.formula}" could not be parsed. Check that it contains dice notation like 1d8+3.`); return null; }
   const rolls = [];
   let total = 0;
   chunks.forEach(chunk => {
@@ -47253,6 +47250,56 @@ function combatQuickWeaponAttack(attackId, mode = 'base') {
   sendWS({ type: 'chat_message', payload: { message: chatMsg, channel: 'everyone' } });
   renderCombat();
 }
+
+// ── Weapon Runtime Resolver ────────────────────────────────────────────────
+function resolveWeaponRuntime(weaponCard, character, options) {
+  options = options || {};
+  const card = (weaponCard && typeof weaponCard === 'object') ? weaponCard : {};
+  character = (character && typeof character === 'object') ? character : (_charSheet || {});
+  const warnings = [];
+  const name = String(card.name || '').trim() || 'Weapon';
+  const weaponId = String(card.id || card.name || '').trim();
+  const attackBonus = String(card.attack_bonus || card.attackBonus || '').trim() || (card.attack_bonus_value != null ? (card.attack_bonus_value >= 0 ? '+' + card.attack_bonus_value : String(card.attack_bonus_value)) : '');
+  const damageFormula = String(card.damage_formula || card.base_damage_formula || card.damage_dice || card.damage || '').trim();
+  const versatileDamageFormula = String(card.versatile_damage_formula || '').trim();
+  const damageType = String(card.damage_type || card.damageType || '').trim();
+  const properties = Array.isArray(card.properties) ? card.properties : [];
+  if (!damageFormula) warnings.push('No damage formula found. Add damage dice to the weapon card or equip from inventory.');
+  const normBase = (typeof _normalizeAttackFormula === 'function') ? _normalizeAttackFormula(damageFormula) : damageFormula;
+  const normVers = versatileDamageFormula ? ((typeof _normalizeAttackFormula === 'function') ? _normalizeAttackFormula(versatileDamageFormula) : versatileDamageFormula) : '';
+  const baseChunks = (typeof _expandSpellFormulaChunks === 'function') ? _expandSpellFormulaChunks(normBase) : [];
+  let criticalDamageFormula = '';
+  if (baseChunks.length) {
+    const critParts = baseChunks.map(ch => `${ch.qty * 2}d${ch.die}${ch.mod ? (ch.mod >= 0 ? '+' + ch.mod : ch.mod) : ''}`);
+    criticalDamageFormula = critParts.join(' + ');
+  }
+  return {
+    weaponId, name, attackBonus, damageFormula: normBase, versatileDamageFormula: normVers,
+    criticalDamageFormula, damageType, properties,
+    costsAttackSwing: card.source !== 'system_unarmed',
+    source: card.source || 'weapon',
+    warnings,
+  };
+}
+window.resolveWeaponRuntime = resolveWeaponRuntime;
+
+// ── Bridge function registry — explicit window assignments so external scripts
+//    (combat_quick_actions.js, combat_quick_bar.js) can safely call these even
+//    if the inline script parse order varies in some browsers.
+window.combatQuickWeaponAttack = combatQuickWeaponAttack;
+window.combatQuickRollWeaponDamage = combatQuickRollWeaponDamage;
+window.combatQuickCastSpell = combatQuickCastSpell;
+window.combatQuickRollSpellDamage = combatQuickRollSpellDamage;
+window.combatQuickRollSpellAttack = combatQuickRollSpellAttack;
+window.combatQuickShowSpellSave = combatQuickShowSpellSave;
+window.executeCombatQuickBarSpell = executeCombatQuickBarSpell;
+window.openCombatQuickBarWeaponAction = openCombatQuickBarWeaponAction;
+window.getCombatSpellDamagePreview = getCombatSpellDamagePreview;
+window._getCombatSpellCastOptions = _getCombatSpellCastOptions;
+window._getUnifiedQuickAttackCards = _getUnifiedQuickAttackCards;
+window._getCombatQuickSpells = _getCombatQuickSpells;
+window.getCombatQuickBarRuntime = getCombatQuickBarRuntime;
+window.getCombatQuickBarSpells = getCombatQuickBarSpells;
 
 function _pulseCombatTarget(tokenId) {
   try {

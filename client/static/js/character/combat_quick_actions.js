@@ -98,8 +98,17 @@
   }
 
   function _spellHasAttack(card) {
-    const text = [card.attack_type, card.attackType, card.base_effect_text, card.description, card.current && card.current.effect].filter(Boolean).join(' ').toLowerCase();
-    return /spell attack|attack roll|ranged spell attack|melee spell attack/.test(text) || /attack/.test(String(card.attack_type || '').toLowerCase());
+    // Check the structured attack_type field first (most reliable source).
+    const attackType = String(card.attack_type || card.attackType || '').toLowerCase().trim();
+    // Any non-empty attack type that contains ranged/melee/attack but not a pure save notation.
+    if (attackType && /ranged|melee|attack/i.test(attackType)) return true;
+    // Use the shared runtime resolver when available for maximum accuracy.
+    if (typeof global.resolveSpellRuntime === 'function') {
+      try { const rt = global.resolveSpellRuntime(card, {}); if (rt.requiresAttackRoll) return true; } catch (_e) {}
+    }
+    // Fall back to description text (only if the description explicitly says "spell attack").
+    const text = [card.base_effect_text, card.description, card.current && card.current.effect].filter(Boolean).join(' ').toLowerCase();
+    return /\b(?:spell attack|attack roll|ranged spell attack|melee spell attack)\b/.test(text);
   }
 
   function _spellDetailsHtml(spell, castLevel) {
@@ -199,7 +208,8 @@
     const selected = preferredLevel !== undefined ? preferredLevel : (options.find(function (opt) { return !opt.disabled; }) || options[0] || {}).value;
     const damagePreview = _spellDamagePreview(spell, selected);
     const hasDamage = !!damagePreview || (baseLevel !== null && baseLevel > 0);
-    const hasAttack = _spellHasAttack(card) || !!_firstText(card.attack_bonus, card.attackBonus);
+    // Only show Roll Attack for spells that actually use an attack roll (not saves).
+    const hasAttack = _spellHasAttack(card);
     const hasSave = !!_spellSaveText(card);
     const fullText = _firstText(card.fullPlayerDetailText, card.description, card.base_effect_text, card.current && card.current.effect, 'No spell details are loaded yet.');
 
@@ -243,10 +253,11 @@
     overlay.addEventListener('click', function (ev) {
       if (ev.target === overlay || ev.target.closest('[data-cqa-close]')) { ev.preventDefault(); ev.stopPropagation(); closeModal(); return; }
       const castLevel = _selectedCastLevel(spell);
-      if (ev.target.closest('[data-cqa-cast]')) { global.combatQuickCastSpell(spell.id || spell.name, castLevel); closeModal(); return; }
-      if (ev.target.closest('[data-cqa-spell-attack]')) { global.combatQuickRollSpellAttack(spell.id || spell.name, castLevel); return; }
-      if (ev.target.closest('[data-cqa-spell-damage]')) { global.combatQuickRollSpellDamage(spell.id || spell.name, castLevel); return; }
-      if (ev.target.closest('[data-cqa-spell-save]')) { global.combatQuickShowSpellSave(spell.id || spell.name, castLevel); return; }
+      const spellKey = spell.id || spell.name;
+      if (ev.target.closest('[data-cqa-cast]')) { safeCastSpell(spellKey, castLevel); closeModal(); return; }
+      if (ev.target.closest('[data-cqa-spell-attack]')) { safeRollSpellAttack(spellKey, castLevel); return; }
+      if (ev.target.closest('[data-cqa-spell-damage]')) { safeRollSpellDamage(spellKey, castLevel); return; }
+      if (ev.target.closest('[data-cqa-spell-save]')) { safeShowSpellSave(spellKey, castLevel); return; }
       if (ev.target.closest('[data-cqa-inspect]') && typeof global.playerInspectSpell === 'function') global.playerInspectSpell(spell.id || spell.name);
     });
     document.body.appendChild(overlay);
@@ -285,14 +296,46 @@
       if (ev.target === overlay || ev.target.closest('[data-cqa-close]')) { ev.preventDefault(); ev.stopPropagation(); closeModal(); return; }
       const modeSelect = document.getElementById('combat-quick-weapon-mode');
       const mode = modeSelect ? modeSelect.value : 'base';
-      if (ev.target.closest('[data-cqa-weapon-attack]')) { global.combatQuickWeaponAttack(card.id || card.name, mode); closeModal(); return; }
-      if (ev.target.closest('[data-cqa-weapon-damage]')) { global.combatQuickRollWeaponDamage(card.id || card.name, mode, false); return; }
-      if (ev.target.closest('[data-cqa-weapon-crit]')) { global.combatQuickRollWeaponDamage(card.id || card.name, mode, true); return; }
+      const weaponKey = card.id || card.name;
+      if (ev.target.closest('[data-cqa-weapon-attack]')) { safeWeaponAttack(weaponKey, mode); closeModal(); return; }
+      if (ev.target.closest('[data-cqa-weapon-damage]')) { safeWeaponDamage(weaponKey, mode, false); return; }
+      if (ev.target.closest('[data-cqa-weapon-crit]')) { safeWeaponDamage(weaponKey, mode, true); return; }
     });
     document.body.appendChild(overlay);
     var panel = overlay.querySelector('.cqa-panel');
     if (panel) { _applySavedPanelSize(panel); _watchPanelResize(panel); }
     return true;
+  }
+
+  // Safety: verify a bridge function is wired before calling it.
+  // Shows a visible toast so silent failures are immediately obvious.
+  function _requireBridge(name) {
+    if (typeof global[name] === 'function') return true;
+    const msg = 'Quick action is not wired: ' + name + ' missing.';
+    if (typeof global.showToast === 'function') global.showToast(msg);
+    else if (global.console) global.console.error('[CombatQuickActions]', msg);
+    return false;
+  }
+
+  // Re-export with safety wrappers so callers always get a toast instead of a
+  // silent no-op when the play.html bridge has not yet loaded.
+  function safeWeaponAttack(cardIdOrName, mode) {
+    if (_requireBridge('combatQuickWeaponAttack')) global.combatQuickWeaponAttack(cardIdOrName, mode);
+  }
+  function safeWeaponDamage(cardIdOrName, mode, critical) {
+    if (_requireBridge('combatQuickRollWeaponDamage')) global.combatQuickRollWeaponDamage(cardIdOrName, mode, critical);
+  }
+  function safeCastSpell(spellIdOrName, castLevel) {
+    if (_requireBridge('combatQuickCastSpell')) global.combatQuickCastSpell(spellIdOrName, castLevel);
+  }
+  function safeRollSpellAttack(spellIdOrName, castLevel) {
+    if (_requireBridge('combatQuickRollSpellAttack')) global.combatQuickRollSpellAttack(spellIdOrName, castLevel);
+  }
+  function safeRollSpellDamage(spellIdOrName, castLevel) {
+    if (_requireBridge('combatQuickRollSpellDamage')) global.combatQuickRollSpellDamage(spellIdOrName, castLevel);
+  }
+  function safeShowSpellSave(spellIdOrName, castLevel) {
+    if (_requireBridge('combatQuickShowSpellSave')) global.combatQuickShowSpellSave(spellIdOrName, castLevel);
   }
 
   global.CombatQuickActions = { openSpellAction, openWeaponAction, refreshSpellModalDamage, closeModal };
