@@ -488,7 +488,7 @@
       "item_schema_version": 2,
       "category": "armor",
       "subtype": "magic_armor",
-      "rarity": "common",
+      "rarity": "rare",
       "requires_attunement": false,
       "attunement": {
         "required": false
@@ -535,7 +535,7 @@
       "item_schema_version": 2,
       "category": "armor",
       "subtype": "magic_armor",
-      "rarity": "common",
+      "rarity": "very_rare",
       "requires_attunement": false,
       "attunement": {
         "required": false
@@ -582,7 +582,7 @@
       "item_schema_version": 2,
       "category": "armor",
       "subtype": "magic_armor",
-      "rarity": "common",
+      "rarity": "legendary",
       "requires_attunement": false,
       "attunement": {
         "required": false
@@ -629,7 +629,7 @@
       "item_schema_version": 2,
       "category": "armor",
       "subtype": "magic_armor",
-      "rarity": "common",
+      "rarity": "uncommon",
       "requires_attunement": false,
       "attunement": {
         "required": false
@@ -640,14 +640,13 @@
       "recharge_type": "none",
       "passive_effects": [
         {
-          "type": "ac_bonus",
-          "value": 0,
-          "summary": "Magic armor bonus or special armor protection."
+          "type": "critical_hit_immunity",
+          "summary": "Any critical hit against you becomes a normal hit."
         }
       ],
       "granted_spells": [],
       "granted_actions": [],
-      "source": "starter_compendium",
+      "source": "srd_compendium",
       "armor_type": "any",
       "base_ac": 10,
       "dex_cap": null,
@@ -667,7 +666,8 @@
         "adamantine_armor"
       ],
       "legacy_ids": [],
-      "dedupe_key": "adamantinearmor"
+      "dedupe_key": "adamantinearmor",
+      "description_summary": "Armor made of adamantine. Critical hits against the wearer become normal hits."
     },
     {
       "id": "armor-of-resistance",
@@ -975,7 +975,7 @@
       "item_schema_version": 2,
       "category": "armor",
       "subtype": "magic_armor",
-      "rarity": "common",
+      "rarity": "uncommon",
       "requires_attunement": false,
       "attunement": {
         "required": false
@@ -986,14 +986,17 @@
       "recharge_type": "none",
       "passive_effects": [
         {
-          "type": "ac_bonus",
-          "value": 0,
-          "summary": "Magic armor bonus or special armor protection."
+          "type": "no_stealth_disadvantage",
+          "summary": "No Disadvantage on Stealth checks while worn."
+        },
+        {
+          "type": "no_strength_requirement",
+          "summary": "No Strength requirement to wear."
         }
       ],
       "granted_spells": [],
       "granted_actions": [],
-      "source": "starter_compendium",
+      "source": "srd_compendium",
       "armor_type": "any",
       "base_ac": 10,
       "dex_cap": null,
@@ -1013,7 +1016,8 @@
         "mithral_armor"
       ],
       "legacy_ids": [],
-      "dedupe_key": "mithralarmor"
+      "dedupe_key": "mithralarmor",
+      "description_summary": "Light mithral alloy armor. Imposes no Stealth disadvantage and has no Strength requirement."
     },
     {
       "id": "plate-armor-of-etherealness",
@@ -1159,7 +1163,9 @@
         "1-shield",
         "1_shield"
       ],
-      "legacy_ids": [],
+      "legacy_ids": [
+        "plus1-shield"
+      ],
       "dedupe_key": "1shield"
     },
     {
@@ -1207,7 +1213,9 @@
         "2-shield",
         "2_shield"
       ],
-      "legacy_ids": [],
+      "legacy_ids": [
+        "plus2-shield"
+      ],
       "dedupe_key": "2shield"
     },
     {
@@ -1255,7 +1263,9 @@
         "3-shield",
         "3_shield"
       ],
-      "legacy_ids": [],
+      "legacy_ids": [
+        "plus3-shield"
+      ],
       "dedupe_key": "3shield"
     },
     {
@@ -1264,7 +1274,7 @@
       "item_schema_version": 2,
       "category": "shield",
       "subtype": "shield",
-      "rarity": "common",
+      "rarity": "uncommon",
       "requires_attunement": false,
       "attunement": {
         "required": false
@@ -1312,7 +1322,7 @@
       "item_schema_version": 2,
       "category": "shield",
       "subtype": "shield",
-      "rarity": "common",
+      "rarity": "rare",
       "requires_attunement": false,
       "attunement": {
         "required": false
@@ -1360,7 +1370,7 @@
       "item_schema_version": 2,
       "category": "shield",
       "subtype": "shield",
-      "rarity": "common",
+      "rarity": "very_rare",
       "requires_attunement": false,
       "attunement": {
         "required": false

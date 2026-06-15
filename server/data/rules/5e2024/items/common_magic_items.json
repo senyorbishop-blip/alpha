@@ -46,7 +46,8 @@
         "potion_of_healing"
       ],
       "legacy_ids": [],
-      "dedupe_key": "potionofhealing"
+      "dedupe_key": "potionofhealing",
+      "description_summary": "Drink: regain 2d4+2 HP. Takes an action to administer to another creature."
     },
     {
       "id": "potion-of-climbing",
@@ -63,7 +64,21 @@
       "equip_slot": "",
       "charges_max": 0,
       "recharge_type": "none",
-      "passive_effects": [],
+      "passive_effects": [
+        {
+          "type": "climb_speed",
+          "duration_hours": 1,
+          "formula": "equals_walk_speed",
+          "summary": "Climb speed equals walking speed for 1 hour."
+        },
+        {
+          "type": "advantage",
+          "skill": "athletics",
+          "condition": "climbing",
+          "duration_hours": 1,
+          "summary": "Advantage on Athletics (climbing) for 1 hour."
+        }
+      ],
       "granted_spells": [],
       "granted_actions": [
         {
@@ -90,7 +105,8 @@
         "potion_of_climbing"
       ],
       "legacy_ids": [],
-      "dedupe_key": "potionofclimbing"
+      "dedupe_key": "potionofclimbing",
+      "description_summary": "Drink: for 1 hour gain climb speed equal to walking speed and advantage on Strength (Athletics) checks."
     },
     {
       "id": "antitoxin",
@@ -107,7 +123,15 @@
       "equip_slot": "",
       "charges_max": 0,
       "recharge_type": "none",
-      "passive_effects": [],
+      "passive_effects": [
+        {
+          "type": "save_advantage",
+          "save_type": "constitution",
+          "condition": "poison",
+          "duration_hours": 1,
+          "summary": "Advantage on Constitution saves vs poison for 1 hour."
+        }
+      ],
       "granted_spells": [],
       "granted_actions": [
         {
@@ -132,7 +156,8 @@
       "slug": "antitoxin",
       "aliases": [],
       "legacy_ids": [],
-      "dedupe_key": "antitoxin"
+      "dedupe_key": "antitoxin",
+      "description_summary": "Drink: advantage on Constitution saves against poison for 1 hour."
     },
     {
       "id": "acid-vial",
@@ -171,7 +196,8 @@
       },
       "damage": {
         "formula": "2d6",
-        "type": "acid/fire/poison"
+        "type": "acid",
+        "splash": "1"
       },
       "resistance": {},
       "slug": "acid-vial",
@@ -179,7 +205,8 @@
         "acid_vial"
       ],
       "legacy_ids": [],
-      "dedupe_key": "acidvial"
+      "dedupe_key": "acidvial",
+      "description_summary": "Throw at creature/object (5 ft range). Hit: 2d6 acid damage. Near miss: 1 acid damage."
     },
     {
       "id": "alchemist-s-fire",
@@ -217,8 +244,9 @@
         "formula": null
       },
       "damage": {
-        "formula": "2d6",
-        "type": "acid/fire/poison"
+        "formula": "1d4",
+        "type": "fire",
+        "duration": "each_turn_until_extinguished"
       },
       "resistance": {},
       "slug": "alchemist-s-fire",
@@ -226,7 +254,8 @@
         "alchemist_s_fire"
       ],
       "legacy_ids": [],
-      "dedupe_key": "alchemistsfire"
+      "dedupe_key": "alchemistsfire",
+      "description_summary": "Throw at creature/object (20 ft). Hit: 1d4 fire each turn until action to extinguish (DC 10 Dex)."
     },
     {
       "id": "basic-poison",
@@ -264,8 +293,8 @@
         "formula": null
       },
       "damage": {
-        "formula": "2d6",
-        "type": "acid/fire/poison"
+        "formula": "1d4",
+        "type": "poison"
       },
       "resistance": {},
       "slug": "basic-poison",
@@ -273,7 +302,13 @@
         "basic_poison"
       ],
       "legacy_ids": [],
-      "dedupe_key": "basicpoison"
+      "dedupe_key": "basicpoison",
+      "description_summary": "Coat a slashing/piercing weapon or 3 pieces of ammunition (1 minute). First creature hit: DC 10 Con save or 1d4 poison and poisoned 1 min.",
+      "save": {
+        "type": "constitution",
+        "dc": 10,
+        "fail": "1d4 poison + poisoned"
+      }
     },
     {
       "id": "spell-scroll-cantrip",
@@ -317,7 +352,8 @@
         "spell_scroll_cantrip"
       ],
       "legacy_ids": [],
-      "dedupe_key": "spellscrollcantrip"
+      "dedupe_key": "spellscrollcantrip",
+      "description_summary": "Contains a cantrip. Any class that can cast cantrips may cast it once, then the scroll is consumed."
     },
     {
       "id": "spell-scroll-1st-level",
@@ -361,7 +397,10 @@
         "spell_scroll_1st_level"
       ],
       "legacy_ids": [],
-      "dedupe_key": "spellscroll1stlevel"
+      "dedupe_key": "spellscroll1stlevel",
+      "description_summary": "Contains a 1st-level spell. Cast once (DC 13, +5 attack), scroll consumed.",
+      "item_spell_save_dc": 13,
+      "item_spell_attack_bonus": 5
     },
     {
       "id": "staff",
@@ -420,6 +459,1503 @@
       "aliases": [],
       "legacy_ids": [],
       "dedupe_key": "staff"
+    },
+    {
+      "id": "clockwork-amulet",
+      "name": "Clockwork Amulet",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "neck",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Once per dawn: forgo attack roll to treat it as 10."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "clockwork-amulet-use",
+          "name": "Clockwork Amulet - Set Roll to 10",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "Declare before rolling an attack: the roll is treated as 10 (no d20 rolled)."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 500,
+      "description_summary": "Once per day, before making an attack roll, you can use the amulet to make the roll result exactly 10.",
+      "slug": "clockwork-amulet",
+      "aliases": [
+        "clockwork_amulet"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "clockworkamulet"
+    },
+    {
+      "id": "cloak-of-billowing",
+      "name": "Cloak of Billowing",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "cloak",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "cloak-of-billowing-billow",
+          "name": "Billow Cloak",
+          "action_type": "item_action",
+          "activation_type": "bonus_action",
+          "charge_cost": 0,
+          "summary": "The cloak billows dramatically until the start of your next turn."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 100,
+      "description_summary": "As a bonus action, cause the cloak to billow dramatically.",
+      "slug": "cloak-of-billowing",
+      "aliases": [
+        "cloak_of_billowing"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "cloakofbillowing"
+    },
+    {
+      "id": "clothes-of-mending",
+      "name": "Clothes of Mending",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "body",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "self_repair",
+          "summary": "Clothing mends itself over 1 hour when not worn."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 3,
+      "price_gp": 100,
+      "description_summary": "Torn or dirty clothing repairs itself and cleans over 1 hour when not being worn.",
+      "slug": "clothes-of-mending",
+      "aliases": [
+        "clothes_of_mending"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "clothesofmending"
+    },
+    {
+      "id": "dark-shard-amulet",
+      "name": "Dark Shard Amulet",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true,
+        "requirement": "warlock"
+      },
+      "equippable": true,
+      "equip_slot": "neck",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "spellcasting_focus",
+          "class_restriction": "warlock",
+          "summary": "Can be used as a warlock spellcasting focus."
+        },
+        {
+          "type": "cantrip_failure_risk",
+          "chance": "d20=1",
+          "summary": "1-in-20 chance cantrip without material component fails."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 500,
+      "description_summary": "Warlock arcane focus. When you cast a warlock cantrip without a material component, roll d20 — on 1 the cantrip fails.",
+      "slug": "dark-shard-amulet",
+      "aliases": [
+        "dark_shard_amulet"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "darkshardamulet"
+    },
+    {
+      "id": "dread-helm",
+      "name": "Dread Helm",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "head",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "cosmetic",
+          "summary": "Wearer's eyes appear to glow red."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 3,
+      "price_gp": 100,
+      "description_summary": "Your eyes appear to glow red while you wear this helm.",
+      "slug": "dread-helm",
+      "aliases": [
+        "dread_helm"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "dreadhelm"
+    },
+    {
+      "id": "ersatz-eye",
+      "name": "Ersatz Eye",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "head",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "darkvision",
+          "range_ft": 60,
+          "summary": "Darkvision 60 ft through the ersatz eye socket."
+        },
+        {
+          "type": "cosmetic",
+          "summary": "Cannot be removed while attuned without your consent."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 0,
+      "price_gp": 500,
+      "description_summary": "Replaces a missing eye. While attuned, you have darkvision out to 60 ft through the artificial eye.",
+      "slug": "ersatz-eye",
+      "aliases": [
+        "ersatz_eye"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "ersatzeye"
+    },
+    {
+      "id": "hat-of-vermin",
+      "name": "Hat of Vermin",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "head",
+      "charges_max": 3,
+      "recharge_type": "dawn",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "hat-of-vermin-summon",
+          "name": "Produce Vermin",
+          "action_type": "item_action",
+          "activation_type": "bonus_action",
+          "charge_cost": 1,
+          "summary": "Produce a bat, frog, or rat. It obeys you and disappears after 1 hour."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 100,
+      "description_summary": "3 charges. Bonus action: produce a bat, frog, or rat. The creature obeys your commands and disappears after 1 hour or when you use another charge.",
+      "slug": "hat-of-vermin",
+      "aliases": [
+        "hat_of_vermin"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "hatofvermin",
+      "recharge_formula": "3"
+    },
+    {
+      "id": "hat-of-wizardry",
+      "name": "Hat of Wizardry",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true,
+        "requirement": "wizard"
+      },
+      "equippable": true,
+      "equip_slot": "head",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "spellcasting_focus",
+          "class_restriction": "wizard",
+          "summary": "Can be used as a wizard spellcasting focus."
+        },
+        {
+          "type": "cantrip_failure_risk",
+          "chance": "d10=1",
+          "summary": "1-in-10 chance a wizard cantrip without material component fails."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 500,
+      "description_summary": "Arcane focus for wizards. When casting a wizard cantrip without a material component, roll d10 — on 1 the cantrip fails and you may cast a different cantrip you know instead.",
+      "slug": "hat-of-wizardry",
+      "aliases": [
+        "hat_of_wizardry"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "hatofwizardry"
+    },
+    {
+      "id": "hewards-handy-spice-pouch",
+      "name": "Heward's Handy Spice Pouch",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 10,
+      "recharge_type": "dawn",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "hewards-handy-spice-pouch-season",
+          "name": "Season Food",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "Season food within reach with any real or imagined spice. Consumes 1 charge."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 500,
+      "description_summary": "10 charges. Action: season food within reach with any spice, consuming 1 charge. Regain 1d6+4 charges at dawn.",
+      "slug": "hewards-handy-spice-pouch",
+      "aliases": [
+        "hewards_handy_spice_pouch"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "hewardshandyspicepouch",
+      "recharge_formula": "1d6+4"
+    },
+    {
+      "id": "horn-of-silent-alarm",
+      "name": "Horn of Silent Alarm",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 4,
+      "recharge_type": "dawn",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "horn-of-silent-alarm-blow",
+          "name": "Blow Silent Horn",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "One creature you choose within 30 ft hears the horn; others do not."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 2,
+      "price_gp": 500,
+      "description_summary": "4 charges. Action: blow to cause one creature you choose within 30 ft to hear the horn (inaudible to others). Regain 1d4 charges at dawn.",
+      "slug": "horn-of-silent-alarm",
+      "aliases": [
+        "horn_of_silent_alarm"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "hornofsilentalarm",
+      "recharge_formula": "1d4"
+    },
+    {
+      "id": "instrument-of-illusions",
+      "name": "Instrument of Illusions",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "illusion_aura",
+          "range_ft": 5,
+          "summary": "Harmless visual illusions within 5 ft while playing the instrument."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 2,
+      "price_gp": 500,
+      "description_summary": "While playing, you can create harmless, soundless illusions within 5 ft of you. The illusions end when you stop playing.",
+      "slug": "instrument-of-illusions",
+      "aliases": [
+        "instrument_of_illusions"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "instrumentofillusions"
+    },
+    {
+      "id": "instrument-of-scribing",
+      "name": "Instrument of Scribing",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 3,
+      "recharge_type": "dawn",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "instrument-of-scribing-write",
+          "name": "Scribe While Playing",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "Write or draw up to 1 page while playing the instrument."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 2,
+      "price_gp": 500,
+      "description_summary": "3 charges. While holding and playing, write or draw up to 1 page of material at a time. Regain 1d3 charges at dawn.",
+      "slug": "instrument-of-scribing",
+      "aliases": [
+        "instrument_of_scribing"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "instrumentofscribing",
+      "recharge_formula": "1d3"
+    },
+    {
+      "id": "moon-touched-sword",
+      "name": "Moon-Touched Sword",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_template",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "light_aura",
+          "range_ft": 20,
+          "light_type": "moonlight",
+          "summary": "Sheds bright moonlight in 20 ft radius, dim light for 20 ft beyond while drawn."
+        },
+        {
+          "type": "magical",
+          "summary": "Counts as a magical weapon for overcoming resistance."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weapon_type": "any_sword",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "weight_lbs": 0,
+      "price_gp": 500,
+      "description_summary": "Any sword type. Sheds bright moonlight in 20 ft while drawn. Counts as magical.",
+      "slug": "moon-touched-sword",
+      "aliases": [
+        "moon_touched_sword"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "moontouchedsword"
+    },
+    {
+      "id": "mystery-key",
+      "name": "Mystery Key",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "lock_pick_chance",
+          "chance_pct": 5,
+          "summary": "5% chance to open a mundane lock; one attempt per lock."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 0,
+      "price_gp": 100,
+      "description_summary": "Has a 5% chance to open any mundane lock, once per lock (check never repeated on same lock).",
+      "slug": "mystery-key",
+      "aliases": [
+        "mystery_key"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "mysterykey"
+    },
+    {
+      "id": "orb-of-direction",
+      "name": "Orb of Direction",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "orb-of-direction-north",
+          "name": "Find North",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 0,
+          "summary": "You know which direction is north."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 100,
+      "description_summary": "Action: face north while holding the orb.",
+      "slug": "orb-of-direction",
+      "aliases": [
+        "orb_of_direction"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "orbofdirection"
+    },
+    {
+      "id": "orb-of-time",
+      "name": "Orb of Time",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "orb-of-time-check",
+          "name": "Check Time of Day",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 0,
+          "summary": "Learn whether it is morning, afternoon, evening, or midnight."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 100,
+      "description_summary": "Action: determine whether it is morning, afternoon, evening, or midnight.",
+      "slug": "orb-of-time",
+      "aliases": [
+        "orb_of_time"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "orboftime"
+    },
+    {
+      "id": "perfume-of-bewitching",
+      "name": "Perfume of Bewitching",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "charm_aura",
+          "duration_hours": 1,
+          "save_type": "wisdom",
+          "save_disadvantage": true,
+          "target": "humanoids",
+          "summary": "Humanoids within scent range have disadvantage on Wis saves vs your effects for 1 hour."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "perfume-of-bewitching-apply",
+          "name": "Apply Perfume",
+          "action_type": "item_action",
+          "activation_type": "bonus_action",
+          "charge_cost": 0,
+          "summary": "Apply perfume. For 1 hour, humanoids smelling it have disadvantage on Wis saves vs your abilities."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 0,
+      "price_gp": 500,
+      "description_summary": "Bonus action: apply to yourself. For 1 hour, humanoids that can smell the perfume have disadvantage on Wisdom saving throws against your spells and abilities.",
+      "slug": "perfume-of-bewitching",
+      "aliases": [
+        "perfume_of_bewitching"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "perfumeofbewitching"
+    },
+    {
+      "id": "pipe-of-smoke-monsters",
+      "name": "Pipe of Smoke Monsters",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "pipe-of-smoke-monsters-exhale",
+          "name": "Exhale Smoke Shape",
+          "action_type": "item_action",
+          "activation_type": "bonus_action",
+          "charge_cost": 0,
+          "summary": "Exhale smoke shaped as a Medium or smaller creature. Lasts until your next turn."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 0,
+      "price_gp": 100,
+      "description_summary": "While smoking, exhale smoke in the shape of creatures (Medium or smaller). The shapes last until the start of your next turn.",
+      "slug": "pipe-of-smoke-monsters",
+      "aliases": [
+        "pipe_of_smoke_monsters"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "pipeofsmokemonsters"
+    },
+    {
+      "id": "pole-of-angling",
+      "name": "Pole of Angling",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "pole-of-angling-extend",
+          "name": "Extend / Collapse Pole",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 0,
+          "summary": "Extend into a 10 ft fishing rod with line, hook, and bait, or collapse to 1 ft."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 5,
+      "price_gp": 100,
+      "description_summary": "Action: extend to a 10 ft fishing rod with line, hook, and bait, or collapse back to a 1 ft pole.",
+      "slug": "pole-of-angling",
+      "aliases": [
+        "pole_of_angling"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "poleofangling"
+    },
+    {
+      "id": "pole-of-collapsing",
+      "name": "Pole of Collapsing",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "pole-of-collapsing-toggle",
+          "name": "Collapse / Extend",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 0,
+          "summary": "Pole extends from 1 ft to up to 10 ft (1 ft increments) or collapses."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 100,
+      "description_summary": "Action: collapse (1 ft, 1 lb) or extend (up to 10 ft) as a wooden pole.",
+      "slug": "pole-of-collapsing",
+      "aliases": [
+        "pole_of_collapsing"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "poleofcollapsing"
+    },
+    {
+      "id": "pot-of-awakening",
+      "name": "Pot of Awakening",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": false,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "transform",
+          "condition": "water daily for 30 days",
+          "result": "Awakened Shrub",
+          "summary": "Shrub planted here becomes an Awakened Shrub after 30 days of daily watering."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 10,
+      "price_gp": 500,
+      "description_summary": "Plant a shrub in the pot and water it daily for 30 days. At the end, the shrub becomes an Awakened Shrub.",
+      "slug": "pot-of-awakening",
+      "aliases": [
+        "pot_of_awakening"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "potofawakening"
+    },
+    {
+      "id": "rope-of-mending",
+      "name": "Rope of Mending",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": false,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "self_repair",
+          "summary": "Severed rope sections rejoin when held together and command word spoken."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 10,
+      "price_gp": 100,
+      "description_summary": "50 ft rope that repairs itself. Severed sections reattach when held together and the command word is spoken.",
+      "slug": "rope-of-mending",
+      "aliases": [
+        "rope_of_mending"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "ropeofmending"
+    },
+    {
+      "id": "ruby-of-the-war-mage",
+      "name": "Ruby of the War Mage",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true,
+        "requirement": "spellcaster"
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "spellcasting_focus",
+          "on_weapon": true,
+          "summary": "Weapon with ruby attached can be used as a spellcasting focus."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 0,
+      "price_gp": 500,
+      "description_summary": "Attach to a weapon. While attuned, you can use the weapon as a spellcasting focus.",
+      "slug": "ruby-of-the-war-mage",
+      "aliases": [
+        "ruby_of_the_war_mage"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "rubyofthewarmage"
+    },
+    {
+      "id": "shield-of-expression",
+      "name": "Shield of Expression",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 2,
+          "summary": "Adds +2 to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "shield-of-expression-face",
+          "name": "Change Shield Face",
+          "action_type": "item_action",
+          "activation_type": "bonus_action",
+          "charge_cost": 0,
+          "summary": "Change the expression on the shield's face to any emotion you choose."
+        }
+      ],
+      "source": "srd_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 2,
+      "magic_bonus": 0,
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 6,
+      "price_gp": 500,
+      "description_summary": "Shield bearing a face motif. Bonus action: change the expression. +2 AC.",
+      "slug": "shield-of-expression",
+      "aliases": [
+        "shield_of_expression"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "shieldofexpression"
+    },
+    {
+      "id": "smoldering-armor",
+      "name": "Smoldering Armor",
+      "item_schema_version": 2,
+      "category": "armor",
+      "subtype": "magic_armor",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "cosmetic",
+          "summary": "Wisps of harmless smoke rise from the armor while worn."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "armor_type": "any",
+      "base_ac": 10,
+      "ac_bonus": 0,
+      "magic_bonus": 0,
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 20,
+      "price_gp": 500,
+      "description_summary": "Any armor type with smoldering aesthetic. Wisps of harmless smoke rise while worn.",
+      "slug": "smoldering-armor",
+      "aliases": [
+        "smoldering_armor"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "smolderingarmor"
+    },
+    {
+      "id": "staff-of-adornment",
+      "name": "Staff of Adornment",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "staff",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "cosmetic",
+          "summary": "Small ornament (flower, butterfly, bird, etc.) perches atop the staff."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 4,
+      "price_gp": 100,
+      "description_summary": "Topped with a small ornamental creature or object. Cosmetic only.",
+      "slug": "staff-of-adornment",
+      "aliases": [
+        "staff_of_adornment"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "staffofadornment"
+    },
+    {
+      "id": "staff-of-birdcalls",
+      "name": "Staff of Birdcalls",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "staff",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 10,
+      "recharge_type": "dawn",
+      "recharge_formula": "1d6+4",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "staff-of-birdcalls-call",
+          "name": "Produce Bird Call",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "Produce any bird call you know. Can be heard up to 300 ft away."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 4,
+      "price_gp": 500,
+      "description_summary": "10 charges. Action: produce a bird call audible up to 300 ft. Regain 1d6+4 charges at dawn.",
+      "slug": "staff-of-birdcalls",
+      "aliases": [
+        "staff_of_birdcalls"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "staffofbirdcalls"
+    },
+    {
+      "id": "staff-of-flowers",
+      "name": "Staff of Flowers",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "staff",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 10,
+      "recharge_type": "dawn",
+      "recharge_formula": "1d6+4",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "staff-of-flowers-bloom",
+          "name": "Bloom Flower",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "Cause a flower to bloom from the staff or a surface you touch. Flower lives 24 hours."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 4,
+      "price_gp": 500,
+      "description_summary": "10 charges. Action: sprout a flower from staff tip or a surface. Regain 1d6+4 charges at dawn.",
+      "slug": "staff-of-flowers",
+      "aliases": [
+        "staff_of_flowers"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "staffofflowers"
+    },
+    {
+      "id": "talking-doll",
+      "name": "Talking Doll",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "stored_phrases",
+          "max_phrases": 6,
+          "summary": "Stores up to 6 spoken phrases, repeatable on command."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 500,
+      "description_summary": "Store up to 6 phrases while attuned. Speak the command word and a phrase number; the doll repeats it in your voice.",
+      "slug": "talking-doll",
+      "aliases": [
+        "talking_doll"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "talkingdoll"
+    },
+    {
+      "id": "tankard-of-sobriety",
+      "name": "Tankard of Sobriety",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "sobriety",
+          "summary": "Beverages drunk from this tankard cause no intoxication or drunkenness."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 100,
+      "description_summary": "Liquids consumed from this tankard taste however you wish but provide no intoxication.",
+      "slug": "tankard-of-sobriety",
+      "aliases": [
+        "tankard_of_sobriety"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "tankardofsobriety"
+    },
+    {
+      "id": "veterans-cane",
+      "name": "Veteran's Cane",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "veterans-cane-transform",
+          "name": "Transform Cane / Quarterstaff",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 0,
+          "summary": "Cane becomes a quarterstaff or returns to cane form."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 3,
+      "price_gp": 100,
+      "description_summary": "Action: transform into a quarterstaff or back into a cane.",
+      "slug": "veterans-cane",
+      "aliases": [
+        "veterans_cane"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "veteranscane"
+    },
+    {
+      "id": "walloping-ammunition",
+      "name": "Walloping Ammunition",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_ammunition",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "on_hit_effect",
+          "save": {
+            "type": "strength",
+            "dc": 10
+          },
+          "fail_effect": "knocked prone",
+          "summary": "On hit, DC 10 Strength save or target knocked prone."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "weapon_type": "any_ammunition",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "consumable": true,
+      "consumed_on_use": true,
+      "weight_lbs": 0,
+      "price_gp": 0,
+      "description_summary": "Magical ammunition. On hit, target must DC 10 Strength save or be knocked prone.",
+      "slug": "walloping-ammunition",
+      "aliases": [
+        "walloping_ammunition"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "wallopingammunition"
+    },
+    {
+      "id": "wand-of-conducting",
+      "name": "Wand of Conducting",
+      "item_schema_version": 2,
+      "category": "wand",
+      "subtype": "wand",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 3,
+      "recharge_type": "dawn",
+      "recharge_formula": "1d3",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "wand-of-conducting-conduct",
+          "name": "Conduct",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "Wave wand to create sounds of an orchestra playing music you conduct. Others nearby hear it."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 0,
+      "description_summary": "3 charges. Action: create orchestral sounds you conduct. Regain 1d3 charges at dawn.",
+      "slug": "wand-of-conducting",
+      "aliases": [
+        "wand_of_conducting"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "wandofconducting"
+    },
+    {
+      "id": "wand-of-pyrotechnics",
+      "name": "Wand of Pyrotechnics",
+      "item_schema_version": 2,
+      "category": "wand",
+      "subtype": "wand",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 7,
+      "recharge_type": "dawn",
+      "recharge_formula": "1d6+1",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "wand-of-pyrotechnics-fire",
+          "name": "Pyrotechnics",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "Harmless burst of colorful sparks and noise in a 15 ft cone. No damage."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 0,
+      "description_summary": "7 charges. Action: harmless fireworks in 15 ft cone. Regain 1d6+1 charges at dawn.",
+      "slug": "wand-of-pyrotechnics",
+      "aliases": [
+        "wand_of_pyrotechnics"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "wandofpyrotechnics"
+    },
+    {
+      "id": "wand-of-scowls",
+      "name": "Wand of Scowls",
+      "item_schema_version": 2,
+      "category": "wand",
+      "subtype": "wand",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 3,
+      "recharge_type": "dawn",
+      "recharge_formula": "1d3",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "wand-of-scowls-scowl",
+          "name": "Force Scowl",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "Target within 30 ft must DC 10 Charisma save or scowl until your next turn."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 0,
+      "description_summary": "3 charges. Action: target within 30 ft DC 10 Cha save or scowl until your next turn. Regain 1d3 charges at dawn.",
+      "slug": "wand-of-scowls",
+      "aliases": [
+        "wand_of_scowls"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "wandofscowls"
+    },
+    {
+      "id": "wand-of-smiles",
+      "name": "Wand of Smiles",
+      "item_schema_version": 2,
+      "category": "wand",
+      "subtype": "wand",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 3,
+      "recharge_type": "dawn",
+      "recharge_formula": "1d3",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "wand-of-smiles-smile",
+          "name": "Force Smile",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "Target within 30 ft must DC 10 Charisma save or smile until your next turn."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 0,
+      "description_summary": "3 charges. Action: target within 30 ft DC 10 Cha save or smile until your next turn. Regain 1d3 charges at dawn.",
+      "slug": "wand-of-smiles",
+      "aliases": [
+        "wand_of_smiles"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "wandofsmiles"
     }
   ]
 }

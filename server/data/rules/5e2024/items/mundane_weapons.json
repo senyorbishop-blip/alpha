@@ -2,7 +2,7 @@
   "item_schema_version": 2,
   "rules_version": "5e2024",
   "category": "mundane_weapons",
-  "description": "Items from mundane_weapons bucket \u2014 open-compatible metadata and original summaries.",
+  "description": "Items from mundane_weapons bucket — open-compatible metadata and original summaries.",
   "items": [
     {
       "id": "club",
@@ -47,9 +47,16 @@
         "range": "5 ft"
       },
       "slug": "club",
-      "aliases": [],
+      "aliases": [
+        "club"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "club"
+      "dedupe_key": "club",
+      "mastery": {
+        "property": "Slow",
+        "description": "On hit, target's speed reduced by 10 ft until start of your next turn."
+      },
+      "description_summary": "Standard simple melee weapon."
     },
     {
       "id": "dagger",
@@ -98,9 +105,16 @@
         "range": "20/60"
       },
       "slug": "dagger",
-      "aliases": [],
+      "aliases": [
+        "dagger"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "dagger"
+      "dedupe_key": "dagger",
+      "mastery": {
+        "property": "Nick",
+        "description": "When using the Light property extra attack, draw a second weapon without bonus action."
+      },
+      "description_summary": "Standard simple melee weapon."
     },
     {
       "id": "greatclub",
@@ -145,9 +159,16 @@
         "range": "5 ft"
       },
       "slug": "greatclub",
-      "aliases": [],
+      "aliases": [
+        "greatclub"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "greatclub"
+      "dedupe_key": "greatclub",
+      "mastery": {
+        "property": "Push",
+        "description": "On hit, push target up to 10 ft directly away if Large or smaller."
+      },
+      "description_summary": "Standard simple melee weapon."
     },
     {
       "id": "handaxe",
@@ -194,9 +215,16 @@
         "range": "20/60"
       },
       "slug": "handaxe",
-      "aliases": [],
+      "aliases": [
+        "handaxe"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "handaxe"
+      "dedupe_key": "handaxe",
+      "mastery": {
+        "property": "Vex",
+        "description": "On hit, your next attack roll against the target before end of your next turn has advantage."
+      },
+      "description_summary": "Standard simple melee weapon."
     },
     {
       "id": "javelin",
@@ -241,9 +269,16 @@
         "range": "30/120"
       },
       "slug": "javelin",
-      "aliases": [],
+      "aliases": [
+        "javelin"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "javelin"
+      "dedupe_key": "javelin",
+      "mastery": {
+        "property": "Slow",
+        "description": "On hit, target's speed reduced by 10 ft until start of your next turn."
+      },
+      "description_summary": "Standard simple melee weapon."
     },
     {
       "id": "light-hammer",
@@ -294,7 +329,12 @@
         "light_hammer"
       ],
       "legacy_ids": [],
-      "dedupe_key": "lighthammer"
+      "dedupe_key": "lighthammer",
+      "mastery": {
+        "property": "Nick",
+        "description": "When using the Light property extra attack, draw a second weapon without bonus action."
+      },
+      "description_summary": "Standard simple melee weapon."
     },
     {
       "id": "mace",
@@ -335,9 +375,16 @@
         "range": "5 ft"
       },
       "slug": "mace",
-      "aliases": [],
+      "aliases": [
+        "mace"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "mace"
+      "dedupe_key": "mace",
+      "mastery": {
+        "property": "Sap",
+        "description": "On hit, target has disadvantage on its next attack roll before your next turn."
+      },
+      "description_summary": "Standard simple melee weapon."
     },
     {
       "id": "quarterstaff",
@@ -382,9 +429,16 @@
         "range": "5 ft"
       },
       "slug": "quarterstaff",
-      "aliases": [],
+      "aliases": [
+        "quarterstaff"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "quarterstaff"
+      "dedupe_key": "quarterstaff",
+      "mastery": {
+        "property": "Topple",
+        "description": "On hit, target must DC 8+prof+ability Strength save or be knocked prone."
+      },
+      "description_summary": "Standard simple melee weapon."
     },
     {
       "id": "sickle",
@@ -429,9 +483,16 @@
         "range": "5 ft"
       },
       "slug": "sickle",
-      "aliases": [],
+      "aliases": [
+        "sickle"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "sickle"
+      "dedupe_key": "sickle",
+      "mastery": {
+        "property": "Nick",
+        "description": "When using the Light property extra attack, draw a second weapon without bonus action."
+      },
+      "description_summary": "Standard simple melee weapon."
     },
     {
       "id": "spear",
@@ -478,9 +539,16 @@
         "range": "20/60"
       },
       "slug": "spear",
-      "aliases": [],
+      "aliases": [
+        "spear"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "spear"
+      "dedupe_key": "spear",
+      "mastery": {
+        "property": "Sap",
+        "description": "On hit, target has disadvantage on its next attack roll before your next turn."
+      },
+      "description_summary": "Standard simple melee weapon."
     },
     {
       "id": "light-crossbow",
@@ -533,7 +601,12 @@
         "light_crossbow"
       ],
       "legacy_ids": [],
-      "dedupe_key": "lightcrossbow"
+      "dedupe_key": "lightcrossbow",
+      "mastery": {
+        "property": "Slow",
+        "description": "On hit, target's speed reduced by 10 ft until start of your next turn."
+      },
+      "description_summary": "Standard simple ranged weapon."
     },
     {
       "id": "dart",
@@ -580,9 +653,16 @@
         "range": "20/60"
       },
       "slug": "dart",
-      "aliases": [],
+      "aliases": [
+        "dart"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "dart"
+      "dedupe_key": "dart",
+      "mastery": {
+        "property": "Vex",
+        "description": "On hit, your next attack roll against the target before end of your next turn has advantage."
+      },
+      "description_summary": "Standard simple ranged weapon."
     },
     {
       "id": "shortbow",
@@ -629,9 +709,16 @@
         "range": "80/320"
       },
       "slug": "shortbow",
-      "aliases": [],
+      "aliases": [
+        "shortbow"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "shortbow"
+      "dedupe_key": "shortbow",
+      "mastery": {
+        "property": "Vex",
+        "description": "On hit, your next attack roll against the target before end of your next turn has advantage."
+      },
+      "description_summary": "Standard simple ranged weapon."
     },
     {
       "id": "sling",
@@ -676,9 +763,16 @@
         "range": "30/120"
       },
       "slug": "sling",
-      "aliases": [],
+      "aliases": [
+        "sling"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "sling"
+      "dedupe_key": "sling",
+      "mastery": {
+        "property": "Slow",
+        "description": "On hit, target's speed reduced by 10 ft until start of your next turn."
+      },
+      "description_summary": "Standard simple ranged weapon."
     },
     {
       "id": "battleaxe",
@@ -723,9 +817,16 @@
         "range": "5 ft"
       },
       "slug": "battleaxe",
-      "aliases": [],
+      "aliases": [
+        "battleaxe"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "battleaxe"
+      "dedupe_key": "battleaxe",
+      "mastery": {
+        "property": "Topple",
+        "description": "On hit, target must DC 8+prof+ability Strength save or be knocked prone."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "flail",
@@ -766,9 +867,16 @@
         "range": "5 ft"
       },
       "slug": "flail",
-      "aliases": [],
+      "aliases": [
+        "flail"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "flail"
+      "dedupe_key": "flail",
+      "mastery": {
+        "property": "Sap",
+        "description": "On hit, target has disadvantage on its next attack roll before your next turn."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "glaive",
@@ -817,9 +925,16 @@
         "range": "10 ft"
       },
       "slug": "glaive",
-      "aliases": [],
+      "aliases": [
+        "glaive"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "glaive"
+      "dedupe_key": "glaive",
+      "mastery": {
+        "property": "Graze",
+        "description": "On miss, deal ability modifier damage (min 1) of the weapon's type."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "greataxe",
@@ -866,9 +981,16 @@
         "range": "5 ft"
       },
       "slug": "greataxe",
-      "aliases": [],
+      "aliases": [
+        "greataxe"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "greataxe"
+      "dedupe_key": "greataxe",
+      "mastery": {
+        "property": "Cleave",
+        "description": "On hit, attack another creature within reach, dealing 1[W] of same type (no ability mod)."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "greatsword",
@@ -915,9 +1037,16 @@
         "range": "5 ft"
       },
       "slug": "greatsword",
-      "aliases": [],
+      "aliases": [
+        "greatsword"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "greatsword"
+      "dedupe_key": "greatsword",
+      "mastery": {
+        "property": "Graze",
+        "description": "On miss, deal ability modifier damage (min 1) of the weapon's type."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "halberd",
@@ -966,9 +1095,16 @@
         "range": "10 ft"
       },
       "slug": "halberd",
-      "aliases": [],
+      "aliases": [
+        "halberd"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "halberd"
+      "dedupe_key": "halberd",
+      "mastery": {
+        "property": "Cleave",
+        "description": "On hit, attack another creature within reach, dealing 1[W] of same type (no ability mod)."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "lance",
@@ -1015,9 +1151,16 @@
         "range": "10 ft"
       },
       "slug": "lance",
-      "aliases": [],
+      "aliases": [
+        "lance"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "lance"
+      "dedupe_key": "lance",
+      "mastery": {
+        "property": "Topple",
+        "description": "On hit, target must DC 8+prof+ability Strength save or be knocked prone."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "longsword",
@@ -1062,9 +1205,16 @@
         "range": "5 ft"
       },
       "slug": "longsword",
-      "aliases": [],
+      "aliases": [
+        "longsword"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "longsword"
+      "dedupe_key": "longsword",
+      "mastery": {
+        "property": "Sap",
+        "description": "On hit, target has disadvantage on its next attack roll before your next turn."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "maul",
@@ -1111,9 +1261,16 @@
         "range": "5 ft"
       },
       "slug": "maul",
-      "aliases": [],
+      "aliases": [
+        "maul"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "maul"
+      "dedupe_key": "maul",
+      "mastery": {
+        "property": "Topple",
+        "description": "On hit, target must DC 8+prof+ability Strength save or be knocked prone."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "morningstar",
@@ -1154,9 +1311,16 @@
         "range": "5 ft"
       },
       "slug": "morningstar",
-      "aliases": [],
+      "aliases": [
+        "morningstar"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "morningstar"
+      "dedupe_key": "morningstar",
+      "mastery": {
+        "property": "Sap",
+        "description": "On hit, target has disadvantage on its next attack roll before your next turn."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "pike",
@@ -1205,9 +1369,16 @@
         "range": "10 ft"
       },
       "slug": "pike",
-      "aliases": [],
+      "aliases": [
+        "pike"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "pike"
+      "dedupe_key": "pike",
+      "mastery": {
+        "property": "Push",
+        "description": "On hit, push target up to 10 ft directly away if Large or smaller."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "rapier",
@@ -1252,9 +1423,16 @@
         "range": "5 ft"
       },
       "slug": "rapier",
-      "aliases": [],
+      "aliases": [
+        "rapier"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "rapier"
+      "dedupe_key": "rapier",
+      "mastery": {
+        "property": "Vex",
+        "description": "On hit, your next attack roll against the target before end of your next turn has advantage."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "scimitar",
@@ -1301,9 +1479,16 @@
         "range": "5 ft"
       },
       "slug": "scimitar",
-      "aliases": [],
+      "aliases": [
+        "scimitar"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "scimitar"
+      "dedupe_key": "scimitar",
+      "mastery": {
+        "property": "Nick",
+        "description": "When using the Light property extra attack, draw a second weapon without bonus action."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "shortsword",
@@ -1350,9 +1535,16 @@
         "range": "5 ft"
       },
       "slug": "shortsword",
-      "aliases": [],
+      "aliases": [
+        "shortsword"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "shortsword"
+      "dedupe_key": "shortsword",
+      "mastery": {
+        "property": "Vex",
+        "description": "On hit, your next attack roll against the target before end of your next turn has advantage."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "trident",
@@ -1400,9 +1592,16 @@
       },
       "versatile_damage": "1d8",
       "slug": "trident",
-      "aliases": [],
+      "aliases": [
+        "trident"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "trident"
+      "dedupe_key": "trident",
+      "mastery": {
+        "property": "Topple",
+        "description": "On hit, target must DC 8+prof+ability Strength save or be knocked prone."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "war-pick",
@@ -1447,7 +1646,12 @@
         "war_pick"
       ],
       "legacy_ids": [],
-      "dedupe_key": "warpick"
+      "dedupe_key": "warpick",
+      "mastery": {
+        "property": "Slow",
+        "description": "On hit, target's speed reduced by 10 ft until start of your next turn."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "warhammer",
@@ -1492,9 +1696,16 @@
         "range": "5 ft"
       },
       "slug": "warhammer",
-      "aliases": [],
+      "aliases": [
+        "warhammer"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "warhammer"
+      "dedupe_key": "warhammer",
+      "mastery": {
+        "property": "Push",
+        "description": "On hit, push target up to 10 ft directly away if Large or smaller."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "whip",
@@ -1541,9 +1752,16 @@
         "range": "10 ft"
       },
       "slug": "whip",
-      "aliases": [],
+      "aliases": [
+        "whip"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "whip"
+      "dedupe_key": "whip",
+      "mastery": {
+        "property": "Slow",
+        "description": "On hit, target's speed reduced by 10 ft until start of your next turn."
+      },
+      "description_summary": "Standard martial melee weapon."
     },
     {
       "id": "blowgun",
@@ -1590,9 +1808,16 @@
         "range": "25/100"
       },
       "slug": "blowgun",
-      "aliases": [],
+      "aliases": [
+        "blowgun"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "blowgun"
+      "dedupe_key": "blowgun",
+      "mastery": {
+        "property": "Vex",
+        "description": "On hit, your next attack roll against the target before end of your next turn has advantage."
+      },
+      "description_summary": "Standard martial ranged weapon."
     },
     {
       "id": "hand-crossbow",
@@ -1645,7 +1870,12 @@
         "hand_crossbow"
       ],
       "legacy_ids": [],
-      "dedupe_key": "handcrossbow"
+      "dedupe_key": "handcrossbow",
+      "mastery": {
+        "property": "Vex",
+        "description": "On hit, your next attack roll against the target before end of your next turn has advantage."
+      },
+      "description_summary": "Standard martial ranged weapon."
     },
     {
       "id": "heavy-crossbow",
@@ -1700,7 +1930,12 @@
         "heavy_crossbow"
       ],
       "legacy_ids": [],
-      "dedupe_key": "heavycrossbow"
+      "dedupe_key": "heavycrossbow",
+      "mastery": {
+        "property": "Push",
+        "description": "On hit, push target up to 10 ft directly away if Large or smaller."
+      },
+      "description_summary": "Standard martial ranged weapon."
     },
     {
       "id": "longbow",
@@ -1749,9 +1984,16 @@
         "range": "150/600"
       },
       "slug": "longbow",
-      "aliases": [],
+      "aliases": [
+        "longbow"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "longbow"
+      "dedupe_key": "longbow",
+      "mastery": {
+        "property": "Slow",
+        "description": "On hit, target's speed reduced by 10 ft until start of your next turn."
+      },
+      "description_summary": "Standard martial ranged weapon."
     },
     {
       "id": "net",
@@ -1798,9 +2040,12 @@
         "range": "5/15"
       },
       "slug": "net",
-      "aliases": [],
+      "aliases": [
+        "net"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "net"
+      "dedupe_key": "net",
+      "description_summary": "Standard martial ranged weapon."
     },
     {
       "id": "weapon-plus1",
@@ -1808,7 +2053,7 @@
       "item_schema_version": 2,
       "category": "weapon",
       "subtype": "magic_template",
-      "rarity": "common",
+      "rarity": "uncommon",
       "requires_attunement": false,
       "attunement": {
         "required": false
@@ -1837,13 +2082,17 @@
         "type": "weapon_attack",
         "bonus": 1
       },
-      "slug": "weapon-1",
+      "slug": "weapon-plus1",
       "aliases": [
         "weapon-1",
+        "weapon_plus1",
         "weapon_1"
       ],
-      "legacy_ids": [],
-      "dedupe_key": "weapon1"
+      "legacy_ids": [
+        "weapon-1"
+      ],
+      "dedupe_key": "weapon1",
+      "description_summary": "Standard magic template weapon."
     },
     {
       "id": "weapon-plus2",
@@ -1851,7 +2100,7 @@
       "item_schema_version": 2,
       "category": "weapon",
       "subtype": "magic_template",
-      "rarity": "common",
+      "rarity": "rare",
       "requires_attunement": false,
       "attunement": {
         "required": false
@@ -1886,7 +2135,8 @@
         "weapon_2"
       ],
       "legacy_ids": [],
-      "dedupe_key": "weapon2"
+      "dedupe_key": "weapon2",
+      "description_summary": "Standard magic template weapon."
     },
     {
       "id": "weapon-plus3",
@@ -1894,7 +2144,7 @@
       "item_schema_version": 2,
       "category": "weapon",
       "subtype": "magic_template",
-      "rarity": "common",
+      "rarity": "very_rare",
       "requires_attunement": false,
       "attunement": {
         "required": false
@@ -1929,7 +2179,8 @@
         "weapon_3"
       ],
       "legacy_ids": [],
-      "dedupe_key": "weapon3"
+      "dedupe_key": "weapon3",
+      "description_summary": "Standard magic template weapon."
     },
     {
       "id": "ammunition-plus1",
@@ -1937,7 +2188,7 @@
       "item_schema_version": 2,
       "category": "weapon",
       "subtype": "magic_template",
-      "rarity": "common",
+      "rarity": "uncommon",
       "requires_attunement": false,
       "attunement": {
         "required": false
@@ -1966,13 +2217,17 @@
         "type": "weapon_attack",
         "bonus": 1
       },
-      "slug": "ammunition-1",
+      "slug": "ammunition-plus1",
       "aliases": [
+        "ammunition_plus1",
         "ammunition-1",
         "ammunition_1"
       ],
-      "legacy_ids": [],
-      "dedupe_key": "ammunition1"
+      "legacy_ids": [
+        "ammunition-1"
+      ],
+      "dedupe_key": "ammunition1",
+      "description_summary": "Standard magic template weapon."
     },
     {
       "id": "ammunition-plus2",
@@ -1980,7 +2235,7 @@
       "item_schema_version": 2,
       "category": "weapon",
       "subtype": "magic_template",
-      "rarity": "common",
+      "rarity": "rare",
       "requires_attunement": false,
       "attunement": {
         "required": false
@@ -2015,7 +2270,8 @@
         "ammunition_2"
       ],
       "legacy_ids": [],
-      "dedupe_key": "ammunition2"
+      "dedupe_key": "ammunition2",
+      "description_summary": "Standard magic template weapon."
     },
     {
       "id": "ammunition-plus3",
@@ -2023,7 +2279,7 @@
       "item_schema_version": 2,
       "category": "weapon",
       "subtype": "magic_template",
-      "rarity": "common",
+      "rarity": "very_rare",
       "requires_attunement": false,
       "attunement": {
         "required": false
@@ -2058,7 +2314,8 @@
         "ammunition_3"
       ],
       "legacy_ids": [],
-      "dedupe_key": "ammunition3"
+      "dedupe_key": "ammunition3",
+      "description_summary": "Standard magic template weapon."
     },
     {
       "id": "arrow-of-slaying",
@@ -2087,7 +2344,7 @@
           "id": "arrow-of-slaying-action",
           "name": "Arrow of Slaying",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2115,7 +2372,8 @@
         "arrow_of_slaying"
       ],
       "legacy_ids": [],
-      "dedupe_key": "arrowofslaying"
+      "dedupe_key": "arrowofslaying",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "dagger-of-venom",
@@ -2144,7 +2402,7 @@
           "id": "dagger-of-venom-action",
           "name": "Dagger of Venom",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2172,7 +2430,8 @@
         "dagger_of_venom"
       ],
       "legacy_ids": [],
-      "dedupe_key": "daggerofvenom"
+      "dedupe_key": "daggerofvenom",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "dancing-sword",
@@ -2201,7 +2460,7 @@
           "id": "dancing-sword-action",
           "name": "Dancing Sword",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2229,7 +2488,8 @@
         "dancing_sword"
       ],
       "legacy_ids": [],
-      "dedupe_key": "dancingsword"
+      "dedupe_key": "dancingsword",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "defender",
@@ -2258,7 +2518,7 @@
           "id": "defender-action",
           "name": "Defender",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2282,9 +2542,12 @@
         "bonus": 3
       },
       "slug": "defender",
-      "aliases": [],
+      "aliases": [
+        "defender"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "defender"
+      "dedupe_key": "defender",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "dragon-slayer",
@@ -2313,7 +2576,7 @@
           "id": "dragon-slayer-action",
           "name": "Dragon Slayer",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2341,7 +2604,8 @@
         "dragon_slayer"
       ],
       "legacy_ids": [],
-      "dedupe_key": "dragonslayer"
+      "dedupe_key": "dragonslayer",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "flame-tongue",
@@ -2370,7 +2634,7 @@
           "id": "flame-tongue-action",
           "name": "Flame Tongue",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2398,7 +2662,8 @@
         "flame_tongue"
       ],
       "legacy_ids": [],
-      "dedupe_key": "flametongue"
+      "dedupe_key": "flametongue",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "frost-brand",
@@ -2427,7 +2692,7 @@
           "id": "frost-brand-action",
           "name": "Frost Brand",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2455,7 +2720,8 @@
         "frost_brand"
       ],
       "legacy_ids": [],
-      "dedupe_key": "frostbrand"
+      "dedupe_key": "frostbrand",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "giant-slayer",
@@ -2484,7 +2750,7 @@
           "id": "giant-slayer-action",
           "name": "Giant Slayer",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2512,7 +2778,8 @@
         "giant_slayer"
       ],
       "legacy_ids": [],
-      "dedupe_key": "giantslayer"
+      "dedupe_key": "giantslayer",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "holy-avenger",
@@ -2541,7 +2808,7 @@
           "id": "holy-avenger-action",
           "name": "Holy Avenger",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2569,7 +2836,8 @@
         "holy_avenger"
       ],
       "legacy_ids": [],
-      "dedupe_key": "holyavenger"
+      "dedupe_key": "holyavenger",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "luck-blade",
@@ -2598,7 +2866,7 @@
           "id": "luck-blade-action",
           "name": "Luck Blade",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2626,7 +2894,8 @@
         "luck_blade"
       ],
       "legacy_ids": [],
-      "dedupe_key": "luckblade"
+      "dedupe_key": "luckblade",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "mace-of-disruption",
@@ -2655,7 +2924,7 @@
           "id": "mace-of-disruption-action",
           "name": "Mace of Disruption",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2683,7 +2952,8 @@
         "mace_of_disruption"
       ],
       "legacy_ids": [],
-      "dedupe_key": "maceofdisruption"
+      "dedupe_key": "maceofdisruption",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "mace-of-smiting",
@@ -2712,7 +2982,7 @@
           "id": "mace-of-smiting-action",
           "name": "Mace of Smiting",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2740,7 +3010,8 @@
         "mace_of_smiting"
       ],
       "legacy_ids": [],
-      "dedupe_key": "maceofsmiting"
+      "dedupe_key": "maceofsmiting",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "mace-of-terror",
@@ -2769,7 +3040,7 @@
           "id": "mace-of-terror-action",
           "name": "Mace of Terror",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2797,7 +3068,8 @@
         "mace_of_terror"
       ],
       "legacy_ids": [],
-      "dedupe_key": "maceofterror"
+      "dedupe_key": "maceofterror",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "nine-lives-stealer",
@@ -2826,7 +3098,7 @@
           "id": "nine-lives-stealer-action",
           "name": "Nine Lives Stealer",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2854,7 +3126,8 @@
         "nine_lives_stealer"
       ],
       "legacy_ids": [],
-      "dedupe_key": "ninelivesstealer"
+      "dedupe_key": "ninelivesstealer",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "oathbow",
@@ -2883,7 +3156,7 @@
           "id": "oathbow-action",
           "name": "Oathbow",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2907,9 +3180,12 @@
         "bonus": 0
       },
       "slug": "oathbow",
-      "aliases": [],
+      "aliases": [
+        "oathbow"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "oathbow"
+      "dedupe_key": "oathbow",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "scimitar-of-speed",
@@ -2938,7 +3214,7 @@
           "id": "scimitar-of-speed-action",
           "name": "Scimitar of Speed",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2966,7 +3242,8 @@
         "scimitar_of_speed"
       ],
       "legacy_ids": [],
-      "dedupe_key": "scimitarofspeed"
+      "dedupe_key": "scimitarofspeed",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "sword-of-life-stealing",
@@ -2995,7 +3272,7 @@
           "id": "sword-of-life-stealing-action",
           "name": "Sword of Life Stealing",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -3023,7 +3300,8 @@
         "sword_of_life_stealing"
       ],
       "legacy_ids": [],
-      "dedupe_key": "swordoflifestealing"
+      "dedupe_key": "swordoflifestealing",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "sword-of-sharpness",
@@ -3052,7 +3330,7 @@
           "id": "sword-of-sharpness-action",
           "name": "Sword of Sharpness",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -3080,7 +3358,8 @@
         "sword_of_sharpness"
       ],
       "legacy_ids": [],
-      "dedupe_key": "swordofsharpness"
+      "dedupe_key": "swordofsharpness",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "sword-of-wounding",
@@ -3109,7 +3388,7 @@
           "id": "sword-of-wounding-action",
           "name": "Sword of Wounding",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -3137,7 +3416,8 @@
         "sword_of_wounding"
       ],
       "legacy_ids": [],
-      "dedupe_key": "swordofwounding"
+      "dedupe_key": "swordofwounding",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "sun-blade",
@@ -3166,7 +3446,7 @@
           "id": "sun-blade-action",
           "name": "Sun Blade",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -3194,7 +3474,8 @@
         "sun_blade"
       ],
       "legacy_ids": [],
-      "dedupe_key": "sunblade"
+      "dedupe_key": "sunblade",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "vicious-weapon",
@@ -3223,7 +3504,7 @@
           "id": "vicious-weapon-action",
           "name": "Vicious Weapon",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -3251,7 +3532,8 @@
         "vicious_weapon"
       ],
       "legacy_ids": [],
-      "dedupe_key": "viciousweapon"
+      "dedupe_key": "viciousweapon",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "vorpal-sword",
@@ -3280,7 +3562,7 @@
           "id": "vorpal-sword-action",
           "name": "Vorpal Sword",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -3308,7 +3590,8 @@
         "vorpal_sword"
       ],
       "legacy_ids": [],
-      "dedupe_key": "vorpalsword"
+      "dedupe_key": "vorpalsword",
+      "description_summary": "Standard magic weapon weapon."
     },
     {
       "id": "weapon-of-warning",
@@ -3337,7 +3620,7 @@
           "id": "weapon-of-warning-action",
           "name": "Weapon of Warning",
           "action_type": "item_action",
-          "summary": "Use this weapon\u2019s special property when its trigger applies."
+          "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -3365,7 +3648,8 @@
         "weapon_of_warning"
       ],
       "legacy_ids": [],
-      "dedupe_key": "weaponofwarning"
+      "dedupe_key": "weaponofwarning",
+      "description_summary": "Standard magic weapon weapon."
     }
   ]
 }

@@ -2,7 +2,7 @@
   "item_schema_version": 2,
   "rules_version": "5e2024",
   "category": "uncommon_magic_items",
-  "description": "Items from uncommon_magic_items bucket \u2014 open-compatible metadata and original summaries.",
+  "description": "Items from uncommon_magic_items bucket — open-compatible metadata and original summaries.",
   "items": [
     {
       "id": "potion-of-greater-healing",
@@ -46,7 +46,8 @@
         "potion_of_greater_healing"
       ],
       "legacy_ids": [],
-      "dedupe_key": "potionofgreaterhealing"
+      "dedupe_key": "potionofgreaterhealing",
+      "description_summary": "Drink: regain 4d4+4 HP."
     },
     {
       "id": "potion-of-resistance",
@@ -63,7 +64,14 @@
       "equip_slot": "",
       "charges_max": 0,
       "recharge_type": "none",
-      "passive_effects": [],
+      "passive_effects": [
+        {
+          "type": "resistance",
+          "damage_type": "varies",
+          "duration_hours": 1,
+          "summary": "Resistance to one damage type for 1 hour (type specified by DM or variant)."
+        }
+      ],
       "granted_spells": [],
       "granted_actions": [
         {
@@ -92,7 +100,8 @@
         "potion_of_resistance"
       ],
       "legacy_ids": [],
-      "dedupe_key": "potionofresistance"
+      "dedupe_key": "potionofresistance",
+      "description_summary": "Drink: for 1 hour gain resistance to one damage type (acid/cold/fire/force/lightning/necrotic/poison/psychic/radiant/thunder)."
     },
     {
       "id": "potion-of-animal-friendship",
@@ -136,7 +145,8 @@
         "potion_of_animal_friendship"
       ],
       "legacy_ids": [],
-      "dedupe_key": "potionofanimalfriendship"
+      "dedupe_key": "potionofanimalfriendship",
+      "description_summary": "Drink: for 1 hour, cast Animal Friendship (DC 13) at will."
     },
     {
       "id": "potion-of-growth",
@@ -180,11 +190,12 @@
         "potion_of_growth"
       ],
       "legacy_ids": [],
-      "dedupe_key": "potionofgrowth"
+      "dedupe_key": "potionofgrowth",
+      "description_summary": "Drink: for 1d4 hours, Enlarge effect (Large size, advantage on Str checks/saves, +1d4 damage)."
     },
     {
       "id": "potion-of-giant-strength",
-      "name": "Potion of Giant Strength",
+      "name": "Potion of Hill Giant Strength",
       "item_schema_version": 2,
       "category": "potion",
       "subtype": "consumable",
@@ -197,7 +208,15 @@
       "equip_slot": "",
       "charges_max": 0,
       "recharge_type": "none",
-      "passive_effects": [],
+      "passive_effects": [
+        {
+          "type": "stat_minimum",
+          "stat": "strength",
+          "minimum": 21,
+          "duration_hours": 1,
+          "summary": "Strength becomes 21 for 1 hour if not already higher."
+        }
+      ],
       "granted_spells": [],
       "granted_actions": [
         {
@@ -221,10 +240,14 @@
       "resistance": {},
       "slug": "potion-of-giant-strength",
       "aliases": [
-        "potion_of_giant_strength"
+        "potion_of_giant_strength",
+        "potion_of_hill_giant_strength"
       ],
-      "legacy_ids": [],
-      "dedupe_key": "potionofgiantstrength"
+      "legacy_ids": [
+        "potion-of-giant-strength"
+      ],
+      "dedupe_key": "potionofgiantstrength",
+      "description_summary": "Drink: for 1 hour, Strength becomes 21 (Hill Giant). No effect if Strength already higher."
     },
     {
       "id": "potion-of-water-breathing",
@@ -241,7 +264,13 @@
       "equip_slot": "",
       "charges_max": 0,
       "recharge_type": "none",
-      "passive_effects": [],
+      "passive_effects": [
+        {
+          "type": "water_breathing",
+          "duration_hours": 1,
+          "summary": "Breathe underwater for 1 hour."
+        }
+      ],
       "granted_spells": [],
       "granted_actions": [
         {
@@ -268,7 +297,8 @@
         "potion_of_water_breathing"
       ],
       "legacy_ids": [],
-      "dedupe_key": "potionofwaterbreathing"
+      "dedupe_key": "potionofwaterbreathing",
+      "description_summary": "Drink: breathe underwater for 1 hour."
     },
     {
       "id": "spell-scroll-2nd-level",
@@ -387,7 +417,7 @@
       "source": "srd_compendium",
       "consumable": true,
       "consumed_on_use": true,
-      "spell_level": null,
+      "spell_level": 0,
       "spell_reference_supported": true,
       "spell_dc_fallback": {
         "save_dc": 13,
@@ -400,7 +430,8 @@
         "scroll_of_protection"
       ],
       "legacy_ids": [],
-      "dedupe_key": "scrollofprotection"
+      "dedupe_key": "scrollofprotection",
+      "description_summary": "Action: read aloud. 5-minute effect: protected from one creature type. Attacks from that type at disadvantage; type can't possess you."
     },
     {
       "id": "wand-of-magic-missiles",
@@ -453,7 +484,8 @@
         "wand_of_magic_missiles"
       ],
       "legacy_ids": [],
-      "dedupe_key": "wandofmagicmissiles"
+      "dedupe_key": "wandofmagicmissiles",
+      "description_summary": "7 charges. Expend 1–3 charges to cast Magic Missile at 1st (1 charge), 2nd (2), or 3rd level (3). Regain 1d6+1 at dawn; 1 in 20 destroyed at 0 charges."
     },
     {
       "id": "wand-of-web",
@@ -683,11 +715,12 @@
       "granted_spells": [],
       "granted_actions": [
         {
-          "id": "immovable-rod-action",
-          "name": "Immovable Rod",
+          "id": "immovable-rod-toggle",
+          "name": "Toggle Immovable Rod",
           "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
+          "activation_type": "action",
+          "charge_cost": 0,
+          "summary": "Press button: rod becomes immovable (fixed in space, up to 8,000 lbs force). Press again to release."
         }
       ],
       "source": "srd_compendium",
@@ -700,7 +733,8 @@
         "immovable_rod"
       ],
       "legacy_ids": [],
-      "dedupe_key": "immovablerod"
+      "dedupe_key": "immovablerod",
+      "description_summary": "Action: press button to fix rod in place (cannot be moved by up to 8,000 lbs of force until pressed again). Holds position in mid-air."
     },
     {
       "id": "rod-of-the-pact-keeper-plus1",
@@ -994,8 +1028,11 @@
       "recharge_type": "dawn",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
+          "type": "container",
+          "internal_lbs": 500,
+          "internal_cubic_ft": 64,
+          "external_weight_lbs": 15,
+          "summary": "Container: holds 500 lbs / 64 cu ft. Always weighs 15 lbs."
         }
       ],
       "granted_spells": [],
@@ -1018,7 +1055,12 @@
         "bag_of_holding"
       ],
       "legacy_ids": [],
-      "dedupe_key": "bagofholding"
+      "dedupe_key": "bagofholding",
+      "description_summary": "Wondrous container. Holds 500 lbs / 64 cubic ft internally. Weighs only 15 lbs.",
+      "container": true,
+      "container_capacity_lbs": 500,
+      "container_capacity_cubic_ft": 64,
+      "weight_lbs": 15
     },
     {
       "id": "boots-of-elvenkind",
@@ -1038,8 +1080,10 @@
       "recharge_type": "dawn",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
+          "type": "advantage",
+          "skill": "stealth",
+          "condition": "movement",
+          "summary": "Advantage on Stealth checks while moving (your movement makes no sound)."
         }
       ],
       "granted_spells": [],
@@ -1062,7 +1106,8 @@
         "boots_of_elvenkind"
       ],
       "legacy_ids": [],
-      "dedupe_key": "bootsofelvenkind"
+      "dedupe_key": "bootsofelvenkind",
+      "description_summary": "Your movement is silent. Advantage on Dexterity (Stealth) checks while moving."
     },
     {
       "id": "boots-of-striding-and-springing",
@@ -1170,8 +1215,18 @@
       "recharge_type": "dawn",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
+          "type": "damage_bonus",
+          "value": 2,
+          "weapon_types": [
+            "longbow",
+            "shortbow"
+          ],
+          "summary": "+2 damage bonus with longbow and shortbow attacks while attuned."
+        },
+        {
+          "type": "proficiency",
+          "weapon": "longbow shortbow",
+          "summary": "Proficiency with longbow and shortbow."
         }
       ],
       "granted_spells": [],
@@ -1194,7 +1249,8 @@
         "bracers_of_archery"
       ],
       "legacy_ids": [],
-      "dedupe_key": "bracersofarchery"
+      "dedupe_key": "bracersofarchery",
+      "description_summary": "Attuned: +2 damage with longbows/shortbows; gain proficiency with longbow and shortbow."
     },
     {
       "id": "brooch-of-shielding",
@@ -1302,8 +1358,15 @@
       "recharge_type": "dawn",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
+          "type": "advantage",
+          "check": "stealth",
+          "summary": "Advantage on Dexterity (Stealth) checks to hide."
+        },
+        {
+          "type": "disadvantage_for_others",
+          "check": "perception",
+          "sense": "sight",
+          "summary": "Disadvantage on Perception checks relying on sight to detect you."
         }
       ],
       "granted_spells": [],
@@ -1326,7 +1389,8 @@
         "cloak_of_elvenkind"
       ],
       "legacy_ids": [],
-      "dedupe_key": "cloakofelvenkind"
+      "dedupe_key": "cloakofelvenkind",
+      "description_summary": "Attuned: advantage on Stealth; others have disadvantage on sight-based Perception vs you."
     },
     {
       "id": "cloak-of-protection",
@@ -1346,8 +1410,14 @@
       "recharge_type": "dawn",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
+          "type": "ac_bonus",
+          "value": 1,
+          "summary": "+1 bonus to AC while attuned."
+        },
+        {
+          "type": "save_bonus",
+          "value": 1,
+          "summary": "+1 bonus to all saving throws while attuned."
         }
       ],
       "granted_spells": [],
@@ -1370,7 +1440,8 @@
         "cloak_of_protection"
       ],
       "legacy_ids": [],
-      "dedupe_key": "cloakofprotection"
+      "dedupe_key": "cloakofprotection",
+      "description_summary": "Attuned (cloak slot): +1 AC and +1 to all saving throws."
     },
     {
       "id": "cloak-of-the-manta-ray",
@@ -1742,8 +1813,14 @@
       "recharge_type": "dawn",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
+          "type": "advantage",
+          "skill": "perception",
+          "sense": "sight",
+          "summary": "Advantage on Wisdom (Perception) checks relying on sight."
+        },
+        {
+          "type": "keen_sight",
+          "summary": "Can see clearly to max range without penalty."
         }
       ],
       "granted_spells": [],
@@ -1766,7 +1843,8 @@
         "eyes_of_the_eagle"
       ],
       "legacy_ids": [],
-      "dedupe_key": "eyesoftheeagle"
+      "dedupe_key": "eyesoftheeagle",
+      "description_summary": "Attuned: advantage on sight-based Perception checks. Keen vision at all distances."
     },
     {
       "id": "gauntlets-of-ogre-power",
@@ -1786,8 +1864,10 @@
       "recharge_type": "dawn",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
+          "type": "stat_minimum",
+          "stat": "strength",
+          "minimum": 19,
+          "summary": "Your Strength score is 19 while attuned (if your score is not already higher)."
         }
       ],
       "granted_spells": [],
@@ -1810,7 +1890,8 @@
         "gauntlets_of_ogre_power"
       ],
       "legacy_ids": [],
-      "dedupe_key": "gauntletsofogrepower"
+      "dedupe_key": "gauntletsofogrepower",
+      "description_summary": "Attuned: your Strength score becomes 19 (if not already higher)."
     },
     {
       "id": "gem-of-brightness",
@@ -1918,8 +1999,18 @@
       "recharge_type": "dawn",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
+          "type": "speed",
+          "mode": "swim",
+          "value": "full_speed",
+          "no_penalty": true,
+          "summary": "Swim speed equal to walking speed, no climbing/swimming penalties."
+        },
+        {
+          "type": "speed",
+          "mode": "climb",
+          "value": "full_speed",
+          "no_penalty": true,
+          "summary": "Climb speed equal to walking speed."
         }
       ],
       "granted_spells": [],
@@ -1942,7 +2033,8 @@
         "gloves_of_swimming_and_climbing"
       ],
       "legacy_ids": [],
-      "dedupe_key": "glovesofswimmingandclimbing"
+      "dedupe_key": "glovesofswimmingandclimbing",
+      "description_summary": "Attuned: swim and climb speed equal to walking speed; no Str checks to climb/swim."
     },
     {
       "id": "goggles-of-night",
@@ -1962,8 +2054,10 @@
       "recharge_type": "dawn",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
+          "type": "darkvision",
+          "range_ft": 60,
+          "upgrade": true,
+          "summary": "60 ft darkvision; if already have darkvision, range increases by 60 ft."
         }
       ],
       "granted_spells": [],
@@ -1986,7 +2080,8 @@
         "goggles_of_night"
       ],
       "legacy_ids": [],
-      "dedupe_key": "gogglesofnight"
+      "dedupe_key": "gogglesofnight",
+      "description_summary": "Darkvision 60 ft while worn (or +60 ft if already have darkvision)."
     },
     {
       "id": "hat-of-disguise",
@@ -2059,8 +2154,10 @@
       "recharge_type": "dawn",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
+          "type": "stat_minimum",
+          "stat": "intelligence",
+          "minimum": 19,
+          "summary": "Your Intelligence score is 19 while attuned (if your score is not already higher)."
         }
       ],
       "granted_spells": [],
@@ -2083,7 +2180,8 @@
         "headband_of_intellect"
       ],
       "legacy_ids": [],
-      "dedupe_key": "headbandofintellect"
+      "dedupe_key": "headbandofintellect",
+      "description_summary": "Attuned: your Intelligence score becomes 19 (if not already higher)."
     },
     {
       "id": "helm-of-comprehending-languages",
@@ -2348,8 +2446,14 @@
       "recharge_type": "dawn",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
+          "type": "immunity",
+          "condition": "disease",
+          "summary": "Immune to disease while wearing this periapt."
+        },
+        {
+          "type": "cure_disease",
+          "on_attune": true,
+          "summary": "Cures existing diseases on attunement."
         }
       ],
       "granted_spells": [],
@@ -2372,7 +2476,8 @@
         "periapt_of_health"
       ],
       "legacy_ids": [],
-      "dedupe_key": "periaptofhealth"
+      "dedupe_key": "periaptofhealth",
+      "description_summary": "Disease immunity while worn. Cures existing diseases."
     },
     {
       "id": "periapt-of-wound-closure",
@@ -2392,8 +2497,13 @@
       "recharge_type": "dawn",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
+          "type": "stabilize_on_death_save_success",
+          "summary": "Stabilize automatically when you succeed on a death saving throw."
+        },
+        {
+          "type": "double_hit_dice",
+          "during": "short_rest",
+          "summary": "Double number of hit dice rolled when spending hit dice during a short rest."
         }
       ],
       "granted_spells": [],
@@ -2416,7 +2526,8 @@
         "periapt_of_wound_closure"
       ],
       "legacy_ids": [],
-      "dedupe_key": "periaptofwoundclosure"
+      "dedupe_key": "periaptofwoundclosure",
+      "description_summary": "Attuned: auto-stabilize on death save success; double hit dice rolled on short rests."
     },
     {
       "id": "robe-of-useful-items",
@@ -2524,8 +2635,13 @@
       "recharge_type": "dawn",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
+          "type": "roll_bonus",
+          "value": 1,
+          "applies_to": [
+            "ability_checks",
+            "saving_throws"
+          ],
+          "summary": "+1 bonus to ability checks and saving throws while attuned."
         }
       ],
       "granted_spells": [],
@@ -2548,7 +2664,885 @@
         "stone_of_good_luck"
       ],
       "legacy_ids": [],
-      "dedupe_key": "stoneofgoodluck"
+      "dedupe_key": "stoneofgoodluck",
+      "description_summary": "Attuned: +1 to all ability checks and saving throws."
+    },
+    {
+      "id": "cap-of-water-breathing",
+      "name": "Cap of Water Breathing",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "uncommon",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "head",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "water_breathing",
+          "summary": "Breathe normally underwater while wearing this cap."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 500,
+      "description_summary": "While worn underwater, you can breathe normally.",
+      "slug": "cap-of-water-breathing",
+      "aliases": [
+        "cap_of_water_breathing"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "capofwaterbreathing"
+    },
+    {
+      "id": "circlet-of-blasting",
+      "name": "Circlet of Blasting",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "uncommon",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "head",
+      "charges_max": 1,
+      "recharge_type": "dawn",
+      "passive_effects": [],
+      "granted_spells": [
+        {
+          "id": "scorching-ray",
+          "name": "Scorching Ray",
+          "charge_cost": 1,
+          "cast_at_level": 2
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "circlet-of-blasting-fire",
+          "name": "Scorching Ray",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "Cast Scorching Ray: 3 rays at +5, 2d6 fire each on hit.",
+          "spell_id": "scorching-ray",
+          "item_spell_attack_bonus": 5
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 1500,
+      "description_summary": "1 charge. Action: cast Scorching Ray (3 rays, +5 spell attack, 2d6 fire each). Regains 1 charge at dawn.",
+      "slug": "circlet-of-blasting",
+      "aliases": [
+        "circlet_of_blasting"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "circletofblasting",
+      "recharge_formula": "1"
+    },
+    {
+      "id": "driftglobe",
+      "name": "Driftglobe",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "uncommon",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [
+        {
+          "id": "light",
+          "name": "Light",
+          "charge_cost": 0
+        },
+        {
+          "id": "dancing-lights",
+          "name": "Dancing Lights",
+          "charge_cost": 0
+        },
+        {
+          "id": "continual-flame",
+          "name": "Continual Flame",
+          "charge_cost": 1
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "driftglobe-light",
+          "name": "Light / Dancing Lights",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 0,
+          "summary": "Cast Light or Dancing Lights from the globe."
+        },
+        {
+          "id": "driftglobe-flame",
+          "name": "Continual Flame (1/day)",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "Cast Continual Flame from the globe once per dawn."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 750,
+      "description_summary": "Action: cast Light or Dancing Lights at will. Once per dawn: cast Continual Flame. Globe hovers and follows within 60 ft.",
+      "slug": "driftglobe",
+      "aliases": [
+        "driftglobe"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "driftglobe"
+    },
+    {
+      "id": "elemental-gem",
+      "name": "Elemental Gem",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "uncommon",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Comes in four variants: red (fire elemental), blue (water), white (air), emerald (earth)."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "elemental-gem-shatter",
+          "name": "Shatter Gem (Summon Elemental)",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 0,
+          "summary": "Shatter to summon the appropriate elemental type. It obeys for 1 hour then departs."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": true,
+      "consumed_on_use": true,
+      "weight_lbs": 0,
+      "price_gp": 960,
+      "description_summary": "One of four colors. Shatter to summon an elemental (fire/water/air/earth) that serves you for 1 hour.",
+      "slug": "elemental-gem",
+      "aliases": [
+        "elemental_gem"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "elementalgem"
+    },
+    {
+      "id": "keoghtoims-ointment",
+      "name": "Keoghtom's Ointment",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "uncommon",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 5,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "keoghtoims-ointment-apply",
+          "name": "Apply Ointment",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "Apply one dose: cures poison, restores 2d8+2 HP, and ends one disease. Item consumed when all doses used."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 0.5,
+      "price_gp": 500,
+      "description_summary": "1d4+1 doses. Action: apply one dose to cure poison, restore 2d8+2 HP, end one disease. Item consumed when all doses are used.",
+      "slug": "keoghtoms-ointment",
+      "aliases": [
+        "keoghtoms_ointment"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "keoghtomsointment",
+      "healing": {
+        "formula": "2d8+2"
+      }
+    },
+    {
+      "id": "lantern-of-revealing",
+      "name": "Lantern of Revealing",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "uncommon",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "reveal_invisible",
+          "range_ft": 30,
+          "light_required": true,
+          "summary": "Invisible creatures and objects in the bright light of this lantern become visible."
+        },
+        {
+          "type": "light_source",
+          "bright_ft": 30,
+          "dim_ft": 30,
+          "summary": "Bright 30 ft, dim 30 ft beyond."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 2,
+      "price_gp": 5000,
+      "description_summary": "While lit, sheds bright light in 30 ft and dim in 30 ft beyond. All invisible creatures/objects in bright light are visible.",
+      "slug": "lantern-of-revealing",
+      "aliases": [
+        "lantern_of_revealing"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "lanternofrevealing"
+    },
+    {
+      "id": "oil-of-slipperiness",
+      "name": "Oil of Slipperiness",
+      "item_schema_version": 2,
+      "category": "potion",
+      "subtype": "potion",
+      "rarity": "uncommon",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "oil-of-slipperiness-apply",
+          "name": "Apply Oil",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 0,
+          "summary": "Pour on floor (10-sq-ft area, 8 hrs) or on a creature (1 hr). Freedom of Movement effect."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": true,
+      "consumed_on_use": true,
+      "weight_lbs": 1,
+      "price_gp": 480,
+      "description_summary": "Pour on a 10-ft square (8 hours) or apply to a creature (1 hour). Effect mimics Freedom of Movement for creature, or extreme friction-loss for surface.",
+      "slug": "oil-of-slipperiness",
+      "aliases": [
+        "oil_of_slipperiness"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "oilofslipperiness"
+    },
+    {
+      "id": "pearl-of-power",
+      "name": "Pearl of Power",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "uncommon",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true,
+        "requirement": "spellcaster"
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "pearl-of-power-recover",
+          "name": "Recover Spell Slot",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 0,
+          "summary": "Recover one expended spell slot of 3rd level or lower. Once per dawn."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 0,
+      "price_gp": 6000,
+      "description_summary": "1/day: action to recover one expended spell slot of 3rd level or lower.",
+      "slug": "pearl-of-power",
+      "aliases": [
+        "pearl_of_power"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "pearlofpower"
+    },
+    {
+      "id": "philter-of-love",
+      "name": "Philter of Love",
+      "item_schema_version": 2,
+      "category": "potion",
+      "subtype": "potion",
+      "rarity": "uncommon",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "philter-of-love-use",
+          "name": "Drink Philter",
+          "action_type": "use_item",
+          "activation_type": "action",
+          "charge_cost": 0,
+          "summary": "Drinker is charmed for 1 hour. Regards first creature seen after drinking as its true love."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": true,
+      "consumed_on_use": true,
+      "weight_lbs": 0.5,
+      "price_gp": 90,
+      "description_summary": "Creature that drinks is charmed for 1 hour, treating the first creature it sees as its true love.",
+      "slug": "philter-of-love",
+      "aliases": [
+        "philter_of_love"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "philteroflove"
+    },
+    {
+      "id": "pipes-of-haunting",
+      "name": "Pipes of Haunting",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "uncommon",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 3,
+      "recharge_type": "dawn",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "pipes-of-haunting-play",
+          "name": "Play Haunting Melody",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "Creatures within 30 ft must DC 13 Wisdom save or be frightened for 1 minute."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 2,
+      "price_gp": 500,
+      "description_summary": "3 charges. Play: creatures within 30 ft must DC 13 Wisdom save or be frightened for 1 minute. Regain 1d3 charges at dawn.",
+      "slug": "pipes-of-haunting",
+      "aliases": [
+        "pipes_of_haunting"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "pipesofhaunting",
+      "recharge_formula": "1d3"
+    },
+    {
+      "id": "pipes-of-the-sewers",
+      "name": "Pipes of the Sewers",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "uncommon",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 3,
+      "recharge_type": "dawn",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "pipes-of-the-sewers-play",
+          "name": "Summon Rat Swarms",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "Summon 1d3 swarms of rats within 30 ft. They obey you while you play."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 2,
+      "price_gp": 500,
+      "description_summary": "3 charges. Play: summon 1d3 swarms of rats within 30 ft. Swarms obey while playing. Regain 1d3 charges at dawn.",
+      "slug": "pipes-of-the-sewers",
+      "aliases": [
+        "pipes_of_the_sewers"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "pipesofthesewers",
+      "recharge_formula": "1d3"
+    },
+    {
+      "id": "potion-of-fire-breath",
+      "name": "Potion of Fire Breath",
+      "item_schema_version": 2,
+      "category": "potion",
+      "subtype": "potion",
+      "rarity": "uncommon",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "potion-of-fire-breath-drink",
+          "name": "Drink Potion",
+          "action_type": "use_item",
+          "activation_type": "action",
+          "charge_cost": 0,
+          "summary": "For 1 hour: up to 3 times, bonus action to breathe fire in 30 ft cone (4d6 fire, DC 13 Dex half)."
+        },
+        {
+          "id": "potion-of-fire-breath-exhale",
+          "name": "Exhale Fire",
+          "action_type": "use_item",
+          "activation_type": "bonus_action",
+          "charge_cost": 0,
+          "summary": "30-ft cone of fire: 4d6 fire damage, DC 13 Dexterity save for half."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": true,
+      "consumed_on_use": true,
+      "weight_lbs": 0.5,
+      "price_gp": 150,
+      "description_summary": "Drink: for 1 hour, can use bonus action up to 3 times to exhale fire in 30-ft cone (4d6 fire, DC 13 Dex save for half).",
+      "slug": "potion-of-fire-breath",
+      "aliases": [
+        "potion_of_fire_breath"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "potionoffirebreath",
+      "damage": {
+        "formula": "4d6",
+        "type": "fire",
+        "save": {
+          "type": "dexterity",
+          "dc": 13,
+          "success": "half"
+        }
+      }
+    },
+    {
+      "id": "rope-of-climbing",
+      "name": "Rope of Climbing",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "uncommon",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": false,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "AC 20, 20 HP, holds up to 3,000 lbs. Animates on command."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "rope-of-climbing-command",
+          "name": "Command Rope",
+          "action_type": "item_action",
+          "activation_type": "bonus_action",
+          "charge_cost": 0,
+          "summary": "Rope climbs, coils, ties, or unties at up to 10 ft/round on your spoken command."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 3,
+      "price_gp": 2000,
+      "description_summary": "60-ft silk rope. Command word: rope animates, climbs or ties/unties itself (10 ft/round). AC 20, 20 HP, holds 3000 lbs.",
+      "slug": "rope-of-climbing",
+      "aliases": [
+        "rope_of_climbing"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "ropeofclimbing"
+    },
+    {
+      "id": "saddle-of-the-cavalier",
+      "name": "Saddle of the Cavalier",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "uncommon",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": false,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "cannot_be_dismounted",
+          "summary": "You cannot be involuntarily dismounted while conscious in this saddle."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 15,
+      "price_gp": 800,
+      "description_summary": "While in this saddle and conscious, you can't be dismounted against your will.",
+      "slug": "saddle-of-the-cavalier",
+      "aliases": [
+        "saddle_of_the_cavalier"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "saddleofthecavalier"
+    },
+    {
+      "id": "sending-stones",
+      "name": "Sending Stones",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "uncommon",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "sending-stones-send",
+          "name": "Send Message",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 0,
+          "summary": "Cast Sending to reach the holder of the paired stone. Once per dawn per stone."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 0,
+      "price_gp": 800,
+      "description_summary": "Matched pair. Each bearer may cast Sending (to the other bearer only) once per dawn.",
+      "slug": "sending-stones",
+      "aliases": [
+        "sending_stones"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "sendingstones"
+    },
+    {
+      "id": "sentinel-shield",
+      "name": "Sentinel Shield",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "uncommon",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 2,
+          "summary": "Adds +2 to AC while equipped."
+        },
+        {
+          "type": "advantage",
+          "skill": "perception",
+          "summary": "Advantage on Wisdom (Perception) checks."
+        },
+        {
+          "type": "advantage",
+          "check": "initiative",
+          "summary": "Advantage on initiative rolls."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "srd_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 2,
+      "magic_bonus": 0,
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 6,
+      "price_gp": 1000,
+      "description_summary": "Shield with a stylized eye. +2 AC, advantage on Perception and initiative.",
+      "slug": "sentinel-shield",
+      "aliases": [
+        "sentinel_shield"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "sentinelshield"
+    },
+    {
+      "id": "wand-of-magic-detection",
+      "name": "Wand of Magic Detection",
+      "item_schema_version": 2,
+      "category": "wand",
+      "subtype": "wand",
+      "rarity": "uncommon",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 3,
+      "recharge_type": "dawn",
+      "passive_effects": [],
+      "granted_spells": [
+        {
+          "id": "detect-magic",
+          "name": "Detect Magic",
+          "charge_cost": 1
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "wand-of-magic-detection-detect",
+          "name": "Detect Magic",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "Cast Detect Magic (concentration, up to 10 minutes)."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 1500,
+      "description_summary": "3 charges. Action: cast Detect Magic. Regain 1d3 charges at dawn.",
+      "slug": "wand-of-magic-detection",
+      "aliases": [
+        "wand_of_magic_detection"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "wandofmagicdetection",
+      "recharge_formula": "1d3"
+    },
+    {
+      "id": "wind-fan",
+      "name": "Wind Fan",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "uncommon",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": false
+      },
+      "equippable": true,
+      "equip_slot": "trinket",
+      "charges_max": 3,
+      "recharge_type": "dawn",
+      "passive_effects": [],
+      "granted_spells": [
+        {
+          "id": "gust-of-wind",
+          "name": "Gust of Wind",
+          "charge_cost": 1
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "wind-fan-gust",
+          "name": "Gust of Wind",
+          "action_type": "item_action",
+          "activation_type": "action",
+          "charge_cost": 1,
+          "summary": "Cast Gust of Wind (60 ft line, concentration 1 min). 20% destruction if overused."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 1,
+      "price_gp": 1500,
+      "description_summary": "3 charges. Action: cast Gust of Wind. On 6+ charges used without recharge, 20% chance fan disappears. Regain 1d3 charges at dawn.",
+      "slug": "wind-fan",
+      "aliases": [
+        "wind_fan"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "windfan",
+      "recharge_formula": "1d3"
+    },
+    {
+      "id": "winged-boots",
+      "name": "Winged Boots",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "uncommon",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "feet",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "fly_speed",
+          "formula": "equals_walk_speed",
+          "summary": "Flying speed equals your walking speed while attuned."
+        },
+        {
+          "type": "note",
+          "summary": "4 hour total flight. Recharges at 2 hours per hour rested. Disappears if flying speed already possessed."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "winged-boots-fly",
+          "name": "Toggle Flight",
+          "action_type": "item_action",
+          "activation_type": "bonus_action",
+          "charge_cost": 0,
+          "summary": "Start or stop flying. Flight speed equals walking speed. Uses flight duration charges."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": false,
+      "consumed_on_use": false,
+      "weight_lbs": 2,
+      "price_gp": 8000,
+      "description_summary": "Attuned: fly speed equals walking speed. 4 hours total flight. Regain 2 hours of flight per hour of rest.",
+      "slug": "winged-boots",
+      "aliases": [
+        "winged_boots"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "wingedboots"
     }
   ]
 }

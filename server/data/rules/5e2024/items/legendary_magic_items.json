@@ -46,7 +46,8 @@
         "spell_scroll_9th_level"
       ],
       "legacy_ids": [],
-      "dedupe_key": "spellscroll9thlevel"
+      "dedupe_key": "spellscroll9thlevel",
+      "description_summary": "Contains a 9th-level spell. Cast once (DC 19, +11 attack). Scroll destroyed after. Non-class members may attempt DC 19 Arcana; on fail nothing happens but scroll is destroyed."
     },
     {
       "id": "rod-of-lordly-might",
@@ -90,7 +91,8 @@
         "rod_of_lordly_might"
       ],
       "legacy_ids": [],
-      "dedupe_key": "rodoflordlymight"
+      "dedupe_key": "rodoflordlymight",
+      "description_summary": "Legendary rod that transforms into six different weapon forms and has other legendary powers."
     },
     {
       "id": "ring-of-invisibility",
@@ -143,7 +145,8 @@
         "ring_of_invisibility"
       ],
       "legacy_ids": [],
-      "dedupe_key": "ringofinvisibility"
+      "dedupe_key": "ringofinvisibility",
+      "description_summary": "Attunement. Action: become invisible until a spell or attack ends the effect or you remove the ring."
     },
     {
       "id": "ring-of-three-wishes",
@@ -196,7 +199,8 @@
         "ring_of_three_wishes"
       ],
       "legacy_ids": [],
-      "dedupe_key": "ringofthreewishes"
+      "dedupe_key": "ringofthreewishes",
+      "description_summary": "3 charges. Action: cast Wish. Ring destroyed when all 3 charges used."
     },
     {
       "id": "robe-of-the-archmagi",
@@ -240,7 +244,8 @@
         "robe_of_the_archmagi"
       ],
       "legacy_ids": [],
-      "dedupe_key": "robeofthearchmagi"
+      "dedupe_key": "robeofthearchmagi",
+      "description_summary": "Attunement (arcane spellcaster). +2 AC, advantage on saves vs spells and magic effects. Spell save DC +2, spell attack +2."
     }
   ]
 }
