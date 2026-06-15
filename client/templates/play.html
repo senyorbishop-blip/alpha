@@ -7539,6 +7539,13 @@
       </select>
       <div id="dice-roll-mode-help" style="font-size:0.61rem;color:var(--parchment-dim);line-height:1.35;">Roll with the 3D tray while keeping the rest of the UI interactive.</div>
     </div>
+    <div class="dice-roll-mode-bar" style="display:flex;flex-direction:column;gap:0.28rem;margin-bottom:0.55rem;">
+      <label for="dice-remote-visual-mode" style="font-size:0.64rem;color:var(--parchment-dim);text-transform:uppercase;letter-spacing:0.08em;">Shared roll visuals:</label>
+      <select id="dice-remote-visual-mode" onchange="onDiceRemoteVisualModeChanged(this.value)" style="width:100%;background:rgba(0,0,0,0.35);color:var(--parchment);border:1px solid var(--border);border-radius:6px;padding:0.36rem 0.42rem;font-size:0.68rem;">
+        <option value="on">Show others' dice</option>
+        <option value="off">Hide others' dice</option>
+      </select>
+    </div>
     <button class="roll-btn" onclick="rollDice()">🎲 Roll</button>
     <div class="dice-results-log-shell">
       <div class="dice-results-log-head">
@@ -18233,7 +18240,7 @@ function drawCombatMovePath() {
       ctx.fillText('Loading…', midX, midY - 4 / cam.zoom);
       ctx.restore();
     } else {
-      const resolverRemaining = Number(resolver?.remainingFeet ?? remainingFt ?? 0);
+      const resolverRemaining = Number(resolver?.remainingFeet ?? remainingFt + 0);
       const afterFt = Math.max(0, resolverRemaining - costFt);
       const costMultiplier = Number(resolver?.costMultiplier || 1);
       let label;
