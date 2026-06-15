@@ -462,7 +462,8 @@
           "charge_cost": 1,
           "cast_level": 1,
           "uses_item_dc": true,
-          "uses_item_attack_bonus": true
+          "uses_item_attack_bonus": true,
+          "spell_id": "magic-missile"
         }
       ],
       "granted_actions": [
@@ -516,7 +517,8 @@
           "charge_cost": 1,
           "cast_level": 1,
           "uses_item_dc": true,
-          "uses_item_attack_bonus": true
+          "uses_item_attack_bonus": true,
+          "spell_id": "web"
         }
       ],
       "granted_actions": [
@@ -756,6 +758,18 @@
         {
           "type": "note",
           "summary": "Starter magic item metadata."
+        },
+        {
+          "type": "spell_save_dc_bonus",
+          "bonus": 1,
+          "requires_attunement": true,
+          "class_scope": "warlock"
+        },
+        {
+          "type": "spell_attack_bonus",
+          "bonus": 1,
+          "requires_attunement": true,
+          "class_scope": "warlock"
         }
       ],
       "granted_spells": [],
@@ -779,7 +793,9 @@
         "rod_of_the_pact_keeper_1"
       ],
       "legacy_ids": [],
-      "dedupe_key": "rodofthepactkeeper1"
+      "dedupe_key": "rodofthepactkeeper1",
+      "spell_save_dc_bonus": 1,
+      "spell_attack_bonus": 1
     },
     {
       "id": "ring-of-jumping",
@@ -810,7 +826,8 @@
           "charge_cost": 1,
           "cast_level": 1,
           "uses_item_dc": true,
-          "uses_item_attack_bonus": true
+          "uses_item_attack_bonus": true,
+          "spell_id": "jump"
         }
       ],
       "granted_actions": [
@@ -2112,7 +2129,8 @@
           "charge_cost": 1,
           "cast_level": 1,
           "uses_item_dc": true,
-          "uses_item_attack_bonus": true
+          "uses_item_attack_bonus": true,
+          "spell_id": "disguise-self"
         }
       ],
       "granted_actions": [
@@ -2212,7 +2230,8 @@
           "charge_cost": 1,
           "cast_level": 1,
           "uses_item_dc": true,
-          "uses_item_attack_bonus": true
+          "uses_item_attack_bonus": true,
+          "spell_id": "comprehend-languages"
         }
       ],
       "granted_actions": [
@@ -2360,7 +2379,8 @@
           "charge_cost": 1,
           "cast_level": 1,
           "uses_item_dc": true,
-          "uses_item_attack_bonus": true
+          "uses_item_attack_bonus": true,
+          "spell_id": "detect-thoughts"
         }
       ],
       "granted_actions": [
@@ -2726,7 +2746,8 @@
           "id": "scorching-ray",
           "name": "Scorching Ray",
           "charge_cost": 1,
-          "cast_at_level": 2
+          "cast_at_level": 2,
+          "spell_id": "scorching-ray"
         }
       ],
       "granted_actions": [
@@ -2776,17 +2797,20 @@
         {
           "id": "light",
           "name": "Light",
-          "charge_cost": 0
+          "charge_cost": 0,
+          "spell_id": "light"
         },
         {
           "id": "dancing-lights",
           "name": "Dancing Lights",
-          "charge_cost": 0
+          "charge_cost": 0,
+          "spell_id": "dancing-lights"
         },
         {
           "id": "continual-flame",
           "name": "Continual Flame",
-          "charge_cost": 1
+          "charge_cost": 1,
+          "spell_id": "continual-flame"
         }
       ],
       "granted_actions": [
@@ -3418,7 +3442,8 @@
         {
           "id": "detect-magic",
           "name": "Detect Magic",
-          "charge_cost": 1
+          "charge_cost": 1,
+          "spell_id": "detect-magic"
         }
       ],
       "granted_actions": [
@@ -3466,7 +3491,8 @@
         {
           "id": "gust-of-wind",
           "name": "Gust of Wind",
-          "charge_cost": 1
+          "charge_cost": 1,
+          "spell_id": "gust-of-wind"
         }
       ],
       "granted_actions": [

@@ -2786,8 +2786,8 @@
       "name": "Holy Avenger",
       "item_schema_version": 2,
       "category": "weapon",
-      "subtype": "magic_weapon",
-      "rarity": "common",
+      "subtype": "sword",
+      "rarity": "legendary",
       "requires_attunement": true,
       "attunement": {
         "required": true
@@ -2800,6 +2800,10 @@
         {
           "type": "note",
           "summary": "Magic weapon starter entry with original short summary."
+        },
+        {
+          "type": "extra_damage",
+          "summary": "2d10 radiant against fiends and undead; protective aura metadata for allies."
         }
       ],
       "granted_spells": [],
@@ -2811,7 +2815,7 @@
           "summary": "Use this weapon’s special property when its trigger applies."
         }
       ],
-      "source": "starter_compendium",
+      "source": "srd_compendium",
       "weapon_type": "magic_weapon",
       "damage_dice": "by base weapon",
       "damage_type": "by base weapon",
@@ -2835,7 +2839,10 @@
       "aliases": [
         "holy_avenger"
       ],
-      "legacy_ids": [],
+      "legacy_ids": [
+        "legendary_holy_avenger",
+        "mi_holy_avenger"
+      ],
       "dedupe_key": "holyavenger",
       "description_summary": "Standard magic weapon weapon."
     },

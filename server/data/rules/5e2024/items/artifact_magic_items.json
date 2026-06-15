@@ -3,5 +3,359 @@
   "rules_version": "5e2024",
   "category": "artifact_magic_items",
   "description": "Items from artifact_magic_items bucket — open-compatible metadata and original summaries.",
-  "items": []
+  "items": [
+    {
+      "id": "axe-of-the-dwarvish-lords",
+      "name": "Axe of the Dwarvish Lords",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "weapon",
+      "rarity": "artifact",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "artifact",
+      "description_summary": "Axe of the Dwarvish Lords: concise open-compatible runtime summary for artifact artifact.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Axe of the Dwarvish Lords.",
+      "unidentified_description": "An unidentified artifact artifact radiating magic.",
+      "slug": "axe-of-the-dwarvish-lords",
+      "aliases": [
+        "axe of the dwarvish lords",
+        "axe_of_the_dwarvish_lords"
+      ],
+      "legacy_ids": [
+        "mi_axe_of_the_dwarvish_lords"
+      ],
+      "dedupe_key": "axeofthedwarvishlords",
+      "random_loot_excluded": true,
+      "dm_warning": true,
+      "artifact_warning": "Artifact item: DM adjudication required; excluded from normal random loot unless explicitly enabled.",
+      "artifact_properties": {
+        "minor_beneficial_slots": 2,
+        "major_beneficial_slots": 1,
+        "minor_detrimental_slots": 1,
+        "major_detrimental_slots": 1
+      },
+      "stub": true,
+      "damage_dice": "1d8",
+      "damage_type": "slashing",
+      "weapon_type": "battleaxe"
+    },
+    {
+      "id": "book-of-exalted-deeds",
+      "name": "Book of Exalted Deeds",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "book",
+      "rarity": "artifact",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "artifact",
+      "description_summary": "Book of Exalted Deeds: concise open-compatible runtime summary for artifact artifact.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Book of Exalted Deeds.",
+      "unidentified_description": "An unidentified artifact artifact radiating magic.",
+      "slug": "book-of-exalted-deeds",
+      "aliases": [
+        "book of exalted deeds",
+        "book_of_exalted_deeds"
+      ],
+      "legacy_ids": [
+        "mi_book_of_exalted_deeds"
+      ],
+      "dedupe_key": "bookofexalteddeeds",
+      "random_loot_excluded": true,
+      "dm_warning": true,
+      "artifact_warning": "Artifact item: DM adjudication required; excluded from normal random loot unless explicitly enabled.",
+      "artifact_properties": {
+        "minor_beneficial_slots": 2,
+        "major_beneficial_slots": 1,
+        "minor_detrimental_slots": 1,
+        "major_detrimental_slots": 1
+      },
+      "stub": true
+    },
+    {
+      "id": "book-of-vile-darkness",
+      "name": "Book of Vile Darkness",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "book",
+      "rarity": "artifact",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "artifact",
+      "description_summary": "Book of Vile Darkness: concise open-compatible runtime summary for artifact artifact.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Book of Vile Darkness.",
+      "unidentified_description": "An unidentified artifact artifact radiating magic.",
+      "slug": "book-of-vile-darkness",
+      "aliases": [
+        "book of vile darkness",
+        "book_of_vile_darkness"
+      ],
+      "legacy_ids": [
+        "mi_book_of_vile_darkness"
+      ],
+      "dedupe_key": "bookofviledarkness",
+      "random_loot_excluded": true,
+      "dm_warning": true,
+      "artifact_warning": "Artifact item: DM adjudication required; excluded from normal random loot unless explicitly enabled.",
+      "artifact_properties": {
+        "minor_beneficial_slots": 2,
+        "major_beneficial_slots": 1,
+        "minor_detrimental_slots": 1,
+        "major_detrimental_slots": 1
+      },
+      "stub": true
+    },
+    {
+      "id": "eye-of-vecna",
+      "name": "Eye of Vecna",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "artifact",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "artifact",
+      "description_summary": "Eye of Vecna: concise open-compatible runtime summary for artifact artifact.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Eye of Vecna.",
+      "unidentified_description": "An unidentified artifact artifact radiating magic.",
+      "slug": "eye-of-vecna",
+      "aliases": [
+        "eye of vecna",
+        "eye_of_vecna"
+      ],
+      "legacy_ids": [
+        "mi_eye_of_vecna"
+      ],
+      "dedupe_key": "eyeofvecna",
+      "random_loot_excluded": true,
+      "dm_warning": true,
+      "artifact_warning": "Artifact item: DM adjudication required; excluded from normal random loot unless explicitly enabled.",
+      "artifact_properties": {
+        "minor_beneficial_slots": 2,
+        "major_beneficial_slots": 1,
+        "minor_detrimental_slots": 1,
+        "major_detrimental_slots": 1
+      },
+      "stub": true
+    },
+    {
+      "id": "hand-of-vecna",
+      "name": "Hand of Vecna",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "wondrous",
+      "rarity": "artifact",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "artifact",
+      "description_summary": "Hand of Vecna: concise open-compatible runtime summary for artifact artifact.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Hand of Vecna.",
+      "unidentified_description": "An unidentified artifact artifact radiating magic.",
+      "slug": "hand-of-vecna",
+      "aliases": [
+        "hand of vecna",
+        "hand_of_vecna"
+      ],
+      "legacy_ids": [
+        "mi_hand_of_vecna"
+      ],
+      "dedupe_key": "handofvecna",
+      "random_loot_excluded": true,
+      "dm_warning": true,
+      "artifact_warning": "Artifact item: DM adjudication required; excluded from normal random loot unless explicitly enabled.",
+      "artifact_properties": {
+        "minor_beneficial_slots": 2,
+        "major_beneficial_slots": 1,
+        "minor_detrimental_slots": 1,
+        "major_detrimental_slots": 1
+      },
+      "stub": true
+    },
+    {
+      "id": "orb-of-dragonkind",
+      "name": "Orb of Dragonkind",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "orb",
+      "rarity": "artifact",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "artifact",
+      "description_summary": "Orb of Dragonkind: concise open-compatible runtime summary for artifact artifact.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Orb of Dragonkind.",
+      "unidentified_description": "An unidentified artifact artifact radiating magic.",
+      "slug": "orb-of-dragonkind",
+      "aliases": [
+        "orb of dragonkind",
+        "orb_of_dragonkind"
+      ],
+      "legacy_ids": [
+        "mi_orb_of_dragonkind"
+      ],
+      "dedupe_key": "orbofdragonkind",
+      "random_loot_excluded": true,
+      "dm_warning": true,
+      "artifact_warning": "Artifact item: DM adjudication required; excluded from normal random loot unless explicitly enabled.",
+      "artifact_properties": {
+        "minor_beneficial_slots": 2,
+        "major_beneficial_slots": 1,
+        "minor_detrimental_slots": 1,
+        "major_detrimental_slots": 1
+      },
+      "stub": true
+    },
+    {
+      "id": "sword-of-kas",
+      "name": "Sword of Kas",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "weapon",
+      "rarity": "artifact",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "artifact",
+      "description_summary": "Sword of Kas: concise open-compatible runtime summary for artifact artifact.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Sword of Kas.",
+      "unidentified_description": "An unidentified artifact artifact radiating magic.",
+      "slug": "sword-of-kas",
+      "aliases": [
+        "sword of kas",
+        "sword_of_kas"
+      ],
+      "legacy_ids": [
+        "mi_sword_of_kas"
+      ],
+      "dedupe_key": "swordofkas",
+      "random_loot_excluded": true,
+      "dm_warning": true,
+      "artifact_warning": "Artifact item: DM adjudication required; excluded from normal random loot unless explicitly enabled.",
+      "artifact_properties": {
+        "minor_beneficial_slots": 2,
+        "major_beneficial_slots": 1,
+        "minor_detrimental_slots": 1,
+        "major_detrimental_slots": 1
+      },
+      "stub": true,
+      "damage_dice": "1d8",
+      "damage_type": "slashing",
+      "weapon_type": "longsword"
+    },
+    {
+      "id": "wand-of-orcus",
+      "name": "Wand of Orcus",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "wand",
+      "rarity": "artifact",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "artifact",
+      "description_summary": "Wand of Orcus: concise open-compatible runtime summary for artifact artifact.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Wand of Orcus.",
+      "unidentified_description": "An unidentified artifact artifact radiating magic.",
+      "slug": "wand-of-orcus",
+      "aliases": [
+        "wand of orcus",
+        "wand_of_orcus"
+      ],
+      "legacy_ids": [
+        "mi_wand_of_orcus"
+      ],
+      "dedupe_key": "wandoforcus",
+      "random_loot_excluded": true,
+      "dm_warning": true,
+      "artifact_warning": "Artifact item: DM adjudication required; excluded from normal random loot unless explicitly enabled.",
+      "artifact_properties": {
+        "minor_beneficial_slots": 2,
+        "major_beneficial_slots": 1,
+        "minor_detrimental_slots": 1,
+        "major_detrimental_slots": 1
+      },
+      "stub": true,
+      "damage_dice": "1d6",
+      "damage_type": "necrotic",
+      "weapon_type": "wand"
+    }
+  ]
 }
