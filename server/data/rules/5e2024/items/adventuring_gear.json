@@ -380,7 +380,7 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry.",
+      "description_summary": "10 uses. Action (1 use): stabilize one creature at 0 HP without a Medicine check.",
       "charges_current": 10,
       "slug": "healer-s-kit",
       "aliases": [
@@ -440,21 +440,37 @@
       "recharge_type": "none",
       "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [],
+      "granted_actions": [
+        {
+          "id": "holy-water-throw",
+          "name": "Throw Holy Water",
+          "action_type": "use_item",
+          "activation_type": "action",
+          "charge_cost": 0,
+          "summary": "Throw at undead or fiend within 5 ft. 2d6 radiant on hit."
+        }
+      ],
       "source": "starter_compendium",
       "weight_lbs": 1,
-      "price_cp": 100,
+      "price_cp": 2500,
       "quantity_supported": true,
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry.",
+      "description_summary": "Flask of holy water. On hit vs undead/fiend deals 2d6 radiant damage (splash action).",
       "slug": "holy-water",
       "aliases": [
         "holy_water"
       ],
       "legacy_ids": [],
-      "dedupe_key": "holywater"
+      "dedupe_key": "holywater",
+      "consumable": true,
+      "consumed_on_use": true,
+      "damage": {
+        "formula": "2d6",
+        "type": "radiant",
+        "target": "undead or fiend"
+      }
     },
     {
       "id": "hunting-trap",
@@ -573,12 +589,12 @@
       "granted_actions": [],
       "source": "starter_compendium",
       "weight_lbs": 1,
-      "price_cp": 100,
+      "price_cp": 500,
       "quantity_supported": true,
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry.",
+      "description_summary": "Burns for 6 hours on 1 pint of oil, shedding bright light 30 ft and dim light 30 ft beyond.",
       "slug": "lantern",
       "aliases": [],
       "legacy_ids": [],
@@ -696,7 +712,16 @@
       "recharge_type": "none",
       "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [],
+      "granted_actions": [
+        {
+          "id": "oil-flask-apply",
+          "name": "Apply Oil Flask",
+          "action_type": "use_item",
+          "activation_type": "action",
+          "charge_cost": 0,
+          "summary": "Pour on surface or splash creature. Lit oil: 5 fire damage/round for 2 rounds."
+        }
+      ],
       "source": "starter_compendium",
       "weight_lbs": 1,
       "price_cp": 100,
@@ -704,13 +729,20 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry.",
+      "description_summary": "Flask of oil. Pour on floor as difficult terrain (10 sq ft) or splash target for fire damage.",
       "slug": "oil-flask",
       "aliases": [
         "oil_flask"
       ],
       "legacy_ids": [],
-      "dedupe_key": "oilflask"
+      "dedupe_key": "oilflask",
+      "consumable": true,
+      "consumed_on_use": true,
+      "damage": {
+        "formula": "5",
+        "type": "fire",
+        "condition": "if target already on fire"
+      }
     },
     {
       "id": "parchment",
@@ -919,13 +951,13 @@
       "granted_spells": [],
       "granted_actions": [],
       "source": "starter_compendium",
-      "weight_lbs": 1,
+      "weight_lbs": 10,
       "price_cp": 100,
       "quantity_supported": true,
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry.",
+      "description_summary": "50 feet of hemp rope. 2 HP, AC 11. Can hold up to 1,200 lbs.",
       "slug": "rope",
       "aliases": [
         "rope"
@@ -1107,7 +1139,16 @@
       "recharge_type": "none",
       "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [],
+      "granted_actions": [
+        {
+          "id": "tinderbox-use",
+          "name": "Use Tinderbox",
+          "action_type": "use_item",
+          "activation_type": "action",
+          "charge_cost": 0,
+          "summary": "Light a torch or small fire. Takes 1 action (or 1 minute outdoors)."
+        }
+      ],
       "source": "starter_compendium",
       "weight_lbs": 1,
       "price_cp": 100,
@@ -1115,7 +1156,7 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry.",
+      "description_summary": "Used to light fires. Full action to light a torch or campfire.",
       "slug": "tinderbox",
       "aliases": [],
       "legacy_ids": [],
@@ -1146,11 +1187,17 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry.",
+      "description_summary": "Burns for 1 hour, shedding bright light 20 ft and dim light 20 ft beyond. Deals 1 fire damage on melee hit.",
       "slug": "torch",
-      "aliases": [],
+      "aliases": [
+        "torch"
+      ],
       "legacy_ids": [],
-      "dedupe_key": "torch"
+      "dedupe_key": "torch",
+      "damage": {
+        "formula": "1",
+        "type": "fire"
+      }
     },
     {
       "id": "vial",

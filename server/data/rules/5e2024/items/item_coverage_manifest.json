@@ -1,13 +1,15 @@
 {
   "schema_version": 1,
   "generated": "2026-06-15",
-  "total_items": 317,
+  "total_items": 371,
   "items": [
     {
       "name": "Club",
       "id": "club",
       "slug": "club",
-      "aliases": [],
+      "aliases": [
+        "club"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -28,7 +30,9 @@
       "name": "Dagger",
       "id": "dagger",
       "slug": "dagger",
-      "aliases": [],
+      "aliases": [
+        "dagger"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -49,7 +53,9 @@
       "name": "Greatclub",
       "id": "greatclub",
       "slug": "greatclub",
-      "aliases": [],
+      "aliases": [
+        "greatclub"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -70,7 +76,9 @@
       "name": "Handaxe",
       "id": "handaxe",
       "slug": "handaxe",
-      "aliases": [],
+      "aliases": [
+        "handaxe"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -91,7 +99,9 @@
       "name": "Javelin",
       "id": "javelin",
       "slug": "javelin",
-      "aliases": [],
+      "aliases": [
+        "javelin"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -135,7 +145,9 @@
       "name": "Mace",
       "id": "mace",
       "slug": "mace",
-      "aliases": [],
+      "aliases": [
+        "mace"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -156,7 +168,9 @@
       "name": "Quarterstaff",
       "id": "quarterstaff",
       "slug": "quarterstaff",
-      "aliases": [],
+      "aliases": [
+        "quarterstaff"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -177,7 +191,9 @@
       "name": "Sickle",
       "id": "sickle",
       "slug": "sickle",
-      "aliases": [],
+      "aliases": [
+        "sickle"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -198,7 +214,9 @@
       "name": "Spear",
       "id": "spear",
       "slug": "spear",
-      "aliases": [],
+      "aliases": [
+        "spear"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -242,7 +260,9 @@
       "name": "Dart",
       "id": "dart",
       "slug": "dart",
-      "aliases": [],
+      "aliases": [
+        "dart"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -263,7 +283,9 @@
       "name": "Shortbow",
       "id": "shortbow",
       "slug": "shortbow",
-      "aliases": [],
+      "aliases": [
+        "shortbow"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -284,7 +306,9 @@
       "name": "Sling",
       "id": "sling",
       "slug": "sling",
-      "aliases": [],
+      "aliases": [
+        "sling"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -305,7 +329,9 @@
       "name": "Battleaxe",
       "id": "battleaxe",
       "slug": "battleaxe",
-      "aliases": [],
+      "aliases": [
+        "battleaxe"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -326,7 +352,9 @@
       "name": "Flail",
       "id": "flail",
       "slug": "flail",
-      "aliases": [],
+      "aliases": [
+        "flail"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -347,7 +375,9 @@
       "name": "Glaive",
       "id": "glaive",
       "slug": "glaive",
-      "aliases": [],
+      "aliases": [
+        "glaive"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -368,7 +398,9 @@
       "name": "Greataxe",
       "id": "greataxe",
       "slug": "greataxe",
-      "aliases": [],
+      "aliases": [
+        "greataxe"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -389,7 +421,9 @@
       "name": "Greatsword",
       "id": "greatsword",
       "slug": "greatsword",
-      "aliases": [],
+      "aliases": [
+        "greatsword"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -410,7 +444,9 @@
       "name": "Halberd",
       "id": "halberd",
       "slug": "halberd",
-      "aliases": [],
+      "aliases": [
+        "halberd"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -431,7 +467,9 @@
       "name": "Lance",
       "id": "lance",
       "slug": "lance",
-      "aliases": [],
+      "aliases": [
+        "lance"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -452,7 +490,9 @@
       "name": "Longsword",
       "id": "longsword",
       "slug": "longsword",
-      "aliases": [],
+      "aliases": [
+        "longsword"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -473,7 +513,9 @@
       "name": "Maul",
       "id": "maul",
       "slug": "maul",
-      "aliases": [],
+      "aliases": [
+        "maul"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -494,7 +536,9 @@
       "name": "Morningstar",
       "id": "morningstar",
       "slug": "morningstar",
-      "aliases": [],
+      "aliases": [
+        "morningstar"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -515,7 +559,9 @@
       "name": "Pike",
       "id": "pike",
       "slug": "pike",
-      "aliases": [],
+      "aliases": [
+        "pike"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -536,7 +582,9 @@
       "name": "Rapier",
       "id": "rapier",
       "slug": "rapier",
-      "aliases": [],
+      "aliases": [
+        "rapier"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -557,7 +605,9 @@
       "name": "Scimitar",
       "id": "scimitar",
       "slug": "scimitar",
-      "aliases": [],
+      "aliases": [
+        "scimitar"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -578,7 +628,9 @@
       "name": "Shortsword",
       "id": "shortsword",
       "slug": "shortsword",
-      "aliases": [],
+      "aliases": [
+        "shortsword"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -599,7 +651,9 @@
       "name": "Trident",
       "id": "trident",
       "slug": "trident",
-      "aliases": [],
+      "aliases": [
+        "trident"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -643,7 +697,9 @@
       "name": "Warhammer",
       "id": "warhammer",
       "slug": "warhammer",
-      "aliases": [],
+      "aliases": [
+        "warhammer"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -664,7 +720,9 @@
       "name": "Whip",
       "id": "whip",
       "slug": "whip",
-      "aliases": [],
+      "aliases": [
+        "whip"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -685,7 +743,9 @@
       "name": "Blowgun",
       "id": "blowgun",
       "slug": "blowgun",
-      "aliases": [],
+      "aliases": [
+        "blowgun"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -752,7 +812,9 @@
       "name": "Longbow",
       "id": "longbow",
       "slug": "longbow",
-      "aliases": [],
+      "aliases": [
+        "longbow"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -773,7 +835,9 @@
       "name": "Net",
       "id": "net",
       "slug": "net",
-      "aliases": [],
+      "aliases": [
+        "net"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -796,9 +860,12 @@
       "slug": "weapon-1",
       "aliases": [
         "weapon-1",
+        "weapon_plus1",
         "weapon_1"
       ],
-      "legacy_ids": [],
+      "legacy_ids": [
+        "weapon-1"
+      ],
       "category": "weapon",
       "rarity": "common",
       "source_file": "mundane_weapons.json",
@@ -867,10 +934,13 @@
       "id": "ammunition-plus1",
       "slug": "ammunition-1",
       "aliases": [
+        "ammunition_plus1",
         "ammunition-1",
         "ammunition_1"
       ],
-      "legacy_ids": [],
+      "legacy_ids": [
+        "ammunition-1"
+      ],
       "category": "weapon",
       "rarity": "common",
       "source_file": "mundane_weapons.json",
@@ -1007,7 +1077,9 @@
       "name": "Defender",
       "id": "defender",
       "slug": "defender",
-      "aliases": [],
+      "aliases": [
+        "defender"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -1144,9 +1216,12 @@
       "id": "javelin-of-lightning",
       "slug": "javelin-of-lightning",
       "aliases": [
+        "javelin-of-lightning",
         "javelin_of_lightning"
       ],
-      "legacy_ids": [],
+      "legacy_ids": [
+        "javelin-of-lightning-wondrous"
+      ],
       "category": "weapon",
       "rarity": "common",
       "source_file": "mundane_weapons.json",
@@ -1281,7 +1356,9 @@
       "name": "Oathbow",
       "id": "oathbow",
       "slug": "oathbow",
-      "aliases": [],
+      "aliases": [
+        "oathbow"
+      ],
       "legacy_ids": [],
       "category": "weapon",
       "rarity": "common",
@@ -2064,7 +2141,9 @@
         "1-shield",
         "1_shield"
       ],
-      "legacy_ids": [],
+      "legacy_ids": [
+        "plus1-shield"
+      ],
       "category": "shield",
       "rarity": "common",
       "source_file": "mundane_armor_shields.json",
@@ -2088,7 +2167,9 @@
         "2-shield",
         "2_shield"
       ],
-      "legacy_ids": [],
+      "legacy_ids": [
+        "plus2-shield"
+      ],
       "category": "shield",
       "rarity": "common",
       "source_file": "mundane_armor_shields.json",
@@ -2112,7 +2193,9 @@
         "3-shield",
         "3_shield"
       ],
-      "legacy_ids": [],
+      "legacy_ids": [
+        "plus3-shield"
+      ],
       "category": "shield",
       "rarity": "common",
       "source_file": "mundane_armor_shields.json",
@@ -2541,7 +2624,7 @@
       "has_charges": false,
       "grants_spells": false,
       "has_passive_effect": false,
-      "has_granted_actions": false,
+      "has_granted_actions": true,
       "implemented_status": "implemented",
       "rules_metadata_status": "complete",
       "runtime_support_status": "passive_only",
@@ -2717,7 +2800,7 @@
       "has_charges": false,
       "grants_spells": false,
       "has_passive_effect": false,
-      "has_granted_actions": false,
+      "has_granted_actions": true,
       "implemented_status": "implemented",
       "rules_metadata_status": "complete",
       "runtime_support_status": "passive_only",
@@ -2996,7 +3079,7 @@
       "has_charges": false,
       "grants_spells": false,
       "has_passive_effect": false,
-      "has_granted_actions": false,
+      "has_granted_actions": true,
       "implemented_status": "implemented",
       "rules_metadata_status": "complete",
       "runtime_support_status": "passive_only",
@@ -3008,7 +3091,9 @@
       "name": "Torch",
       "id": "torch",
       "slug": "torch",
-      "aliases": [],
+      "aliases": [
+        "torch"
+      ],
       "legacy_ids": [],
       "category": "adventuring_gear",
       "rarity": "common",
@@ -4039,7 +4124,7 @@
       "requires_attunement": false,
       "has_charges": false,
       "grants_spells": false,
-      "has_passive_effect": false,
+      "has_passive_effect": true,
       "has_granted_actions": true,
       "implemented_status": "implemented",
       "rules_metadata_status": "complete",
@@ -4060,7 +4145,7 @@
       "requires_attunement": false,
       "has_charges": false,
       "grants_spells": false,
-      "has_passive_effect": false,
+      "has_passive_effect": true,
       "has_granted_actions": true,
       "implemented_status": "implemented",
       "rules_metadata_status": "complete",
@@ -4242,7 +4327,7 @@
       "requires_attunement": false,
       "has_charges": false,
       "grants_spells": false,
-      "has_passive_effect": false,
+      "has_passive_effect": true,
       "has_granted_actions": true,
       "implemented_status": "implemented",
       "rules_metadata_status": "complete",
@@ -4302,16 +4387,19 @@
       "id": "potion-of-giant-strength",
       "slug": "potion-of-giant-strength",
       "aliases": [
-        "potion_of_giant_strength"
+        "potion_of_giant_strength",
+        "potion_of_hill_giant_strength"
       ],
-      "legacy_ids": [],
+      "legacy_ids": [
+        "potion-of-giant-strength"
+      ],
       "category": "potion",
       "rarity": "uncommon",
       "source_file": "uncommon_magic_items.json",
       "requires_attunement": false,
       "has_charges": false,
       "grants_spells": false,
-      "has_passive_effect": false,
+      "has_passive_effect": true,
       "has_granted_actions": true,
       "implemented_status": "implemented",
       "rules_metadata_status": "complete",
@@ -4334,7 +4422,7 @@
       "requires_attunement": false,
       "has_charges": false,
       "grants_spells": false,
-      "has_passive_effect": false,
+      "has_passive_effect": true,
       "has_granted_actions": true,
       "implemented_status": "implemented",
       "rules_metadata_status": "complete",
@@ -7204,6 +7292,1271 @@
       "implemented_status": "stub",
       "rules_metadata_status": "complete",
       "runtime_support_status": "wired",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Clockwork Amulet",
+      "id": "clockwork-amulet",
+      "slug": "clockwork-amulet",
+      "aliases": [
+        "clockwork_amulet"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Cloak of Billowing",
+      "id": "cloak-of-billowing",
+      "slug": "cloak-of-billowing",
+      "aliases": [
+        "cloak_of_billowing"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Clothes of Mending",
+      "id": "clothes-of-mending",
+      "slug": "clothes-of-mending",
+      "aliases": [
+        "clothes_of_mending"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Dark Shard Amulet",
+      "id": "dark-shard-amulet",
+      "slug": "dark-shard-amulet",
+      "aliases": [
+        "dark_shard_amulet"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": true,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Dread Helm",
+      "id": "dread-helm",
+      "slug": "dread-helm",
+      "aliases": [
+        "dread_helm"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Ersatz Eye",
+      "id": "ersatz-eye",
+      "slug": "ersatz-eye",
+      "aliases": [
+        "ersatz_eye"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": true,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Hat of Vermin",
+      "id": "hat-of-vermin",
+      "slug": "hat-of-vermin",
+      "aliases": [
+        "hat_of_vermin"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": true,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Hat of Wizardry",
+      "id": "hat-of-wizardry",
+      "slug": "hat-of-wizardry",
+      "aliases": [
+        "hat_of_wizardry"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": true,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Heward's Handy Spice Pouch",
+      "id": "hewards-handy-spice-pouch",
+      "slug": "hewards-handy-spice-pouch",
+      "aliases": [
+        "hewards_handy_spice_pouch"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": true,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Horn of Silent Alarm",
+      "id": "horn-of-silent-alarm",
+      "slug": "horn-of-silent-alarm",
+      "aliases": [
+        "horn_of_silent_alarm"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": true,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Instrument of Illusions",
+      "id": "instrument-of-illusions",
+      "slug": "instrument-of-illusions",
+      "aliases": [
+        "instrument_of_illusions"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": true,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Instrument of Scribing",
+      "id": "instrument-of-scribing",
+      "slug": "instrument-of-scribing",
+      "aliases": [
+        "instrument_of_scribing"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": true,
+      "has_charges": true,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Moon-Touched Sword",
+      "id": "moon-touched-sword",
+      "slug": "moon-touched-sword",
+      "aliases": [
+        "moon_touched_sword"
+      ],
+      "legacy_ids": [],
+      "category": "weapon",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Mystery Key",
+      "id": "mystery-key",
+      "slug": "mystery-key",
+      "aliases": [
+        "mystery_key"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Orb of Direction",
+      "id": "orb-of-direction",
+      "slug": "orb-of-direction",
+      "aliases": [
+        "orb_of_direction"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Orb of Time",
+      "id": "orb-of-time",
+      "slug": "orb-of-time",
+      "aliases": [
+        "orb_of_time"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Perfume of Bewitching",
+      "id": "perfume-of-bewitching",
+      "slug": "perfume-of-bewitching",
+      "aliases": [
+        "perfume_of_bewitching"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Pipe of Smoke Monsters",
+      "id": "pipe-of-smoke-monsters",
+      "slug": "pipe-of-smoke-monsters",
+      "aliases": [
+        "pipe_of_smoke_monsters"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Pole of Angling",
+      "id": "pole-of-angling",
+      "slug": "pole-of-angling",
+      "aliases": [
+        "pole_of_angling"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Pole of Collapsing",
+      "id": "pole-of-collapsing",
+      "slug": "pole-of-collapsing",
+      "aliases": [
+        "pole_of_collapsing"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Pot of Awakening",
+      "id": "pot-of-awakening",
+      "slug": "pot-of-awakening",
+      "aliases": [
+        "pot_of_awakening"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Rope of Mending",
+      "id": "rope-of-mending",
+      "slug": "rope-of-mending",
+      "aliases": [
+        "rope_of_mending"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Ruby of the War Mage",
+      "id": "ruby-of-the-war-mage",
+      "slug": "ruby-of-the-war-mage",
+      "aliases": [
+        "ruby_of_the_war_mage"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": true,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Shield of Expression",
+      "id": "shield-of-expression",
+      "slug": "shield-of-expression",
+      "aliases": [
+        "shield_of_expression"
+      ],
+      "legacy_ids": [],
+      "category": "shield",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Smoldering Armor",
+      "id": "smoldering-armor",
+      "slug": "smoldering-armor",
+      "aliases": [
+        "smoldering_armor"
+      ],
+      "legacy_ids": [],
+      "category": "armor",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Staff of Adornment",
+      "id": "staff-of-adornment",
+      "slug": "staff-of-adornment",
+      "aliases": [
+        "staff_of_adornment"
+      ],
+      "legacy_ids": [],
+      "category": "staff",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Staff of Birdcalls",
+      "id": "staff-of-birdcalls",
+      "slug": "staff-of-birdcalls",
+      "aliases": [
+        "staff_of_birdcalls"
+      ],
+      "legacy_ids": [],
+      "category": "staff",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": true,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Staff of Flowers",
+      "id": "staff-of-flowers",
+      "slug": "staff-of-flowers",
+      "aliases": [
+        "staff_of_flowers"
+      ],
+      "legacy_ids": [],
+      "category": "staff",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": true,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Talking Doll",
+      "id": "talking-doll",
+      "slug": "talking-doll",
+      "aliases": [
+        "talking_doll"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": true,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Tankard of Sobriety",
+      "id": "tankard-of-sobriety",
+      "slug": "tankard-of-sobriety",
+      "aliases": [
+        "tankard_of_sobriety"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Veteran's Cane",
+      "id": "veterans-cane",
+      "slug": "veterans-cane",
+      "aliases": [
+        "veterans_cane"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Walloping Ammunition",
+      "id": "walloping-ammunition",
+      "slug": "walloping-ammunition",
+      "aliases": [
+        "walloping_ammunition"
+      ],
+      "legacy_ids": [],
+      "category": "weapon",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Wand of Conducting",
+      "id": "wand-of-conducting",
+      "slug": "wand-of-conducting",
+      "aliases": [
+        "wand_of_conducting"
+      ],
+      "legacy_ids": [],
+      "category": "wand",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": true,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Wand of Pyrotechnics",
+      "id": "wand-of-pyrotechnics",
+      "slug": "wand-of-pyrotechnics",
+      "aliases": [
+        "wand_of_pyrotechnics"
+      ],
+      "legacy_ids": [],
+      "category": "wand",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": true,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Wand of Scowls",
+      "id": "wand-of-scowls",
+      "slug": "wand-of-scowls",
+      "aliases": [
+        "wand_of_scowls"
+      ],
+      "legacy_ids": [],
+      "category": "wand",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": true,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Wand of Smiles",
+      "id": "wand-of-smiles",
+      "slug": "wand-of-smiles",
+      "aliases": [
+        "wand_of_smiles"
+      ],
+      "legacy_ids": [],
+      "category": "wand",
+      "rarity": "common",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": true,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Cap of Water Breathing",
+      "id": "cap-of-water-breathing",
+      "slug": "cap-of-water-breathing",
+      "aliases": [
+        "cap_of_water_breathing"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Circlet of Blasting",
+      "id": "circlet-of-blasting",
+      "slug": "circlet-of-blasting",
+      "aliases": [
+        "circlet_of_blasting"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": true,
+      "grants_spells": true,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Driftglobe",
+      "id": "driftglobe",
+      "slug": "driftglobe",
+      "aliases": [
+        "driftglobe"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": true,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Elemental Gem",
+      "id": "elemental-gem",
+      "slug": "elemental-gem",
+      "aliases": [
+        "elemental_gem"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Keoghtom's Ointment",
+      "id": "keoghtoims-ointment",
+      "slug": "keoghtoms-ointment",
+      "aliases": [
+        "keoghtoms_ointment"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": true,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Lantern of Revealing",
+      "id": "lantern-of-revealing",
+      "slug": "lantern-of-revealing",
+      "aliases": [
+        "lantern_of_revealing"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Oil of Slipperiness",
+      "id": "oil-of-slipperiness",
+      "slug": "oil-of-slipperiness",
+      "aliases": [
+        "oil_of_slipperiness"
+      ],
+      "legacy_ids": [],
+      "category": "potion",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Pearl of Power",
+      "id": "pearl-of-power",
+      "slug": "pearl-of-power",
+      "aliases": [
+        "pearl_of_power"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": true,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Philter of Love",
+      "id": "philter-of-love",
+      "slug": "philter-of-love",
+      "aliases": [
+        "philter_of_love"
+      ],
+      "legacy_ids": [],
+      "category": "potion",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Pipes of Haunting",
+      "id": "pipes-of-haunting",
+      "slug": "pipes-of-haunting",
+      "aliases": [
+        "pipes_of_haunting"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": true,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Pipes of the Sewers",
+      "id": "pipes-of-the-sewers",
+      "slug": "pipes-of-the-sewers",
+      "aliases": [
+        "pipes_of_the_sewers"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": true,
+      "has_charges": true,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Potion of Fire Breath",
+      "id": "potion-of-fire-breath",
+      "slug": "potion-of-fire-breath",
+      "aliases": [
+        "potion_of_fire_breath"
+      ],
+      "legacy_ids": [],
+      "category": "potion",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Rope of Climbing",
+      "id": "rope-of-climbing",
+      "slug": "rope-of-climbing",
+      "aliases": [
+        "rope_of_climbing"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Saddle of the Cavalier",
+      "id": "saddle-of-the-cavalier",
+      "slug": "saddle-of-the-cavalier",
+      "aliases": [
+        "saddle_of_the_cavalier"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Sending Stones",
+      "id": "sending-stones",
+      "slug": "sending-stones",
+      "aliases": [
+        "sending_stones"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Sentinel Shield",
+      "id": "sentinel-shield",
+      "slug": "sentinel-shield",
+      "aliases": [
+        "sentinel_shield"
+      ],
+      "legacy_ids": [],
+      "category": "shield",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": false,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Wand of Magic Detection",
+      "id": "wand-of-magic-detection",
+      "slug": "wand-of-magic-detection",
+      "aliases": [
+        "wand_of_magic_detection"
+      ],
+      "legacy_ids": [],
+      "category": "wand",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": true,
+      "grants_spells": true,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Wind Fan",
+      "id": "wind-fan",
+      "slug": "wind-fan",
+      "aliases": [
+        "wind_fan"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": false,
+      "has_charges": true,
+      "grants_spells": true,
+      "has_passive_effect": false,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
+      "dedupe_status": "canonical",
+      "safe_summary_status": "original",
+      "notes": ""
+    },
+    {
+      "name": "Winged Boots",
+      "id": "winged-boots",
+      "slug": "winged-boots",
+      "aliases": [
+        "winged_boots"
+      ],
+      "legacy_ids": [],
+      "category": "wondrous",
+      "rarity": "uncommon",
+      "source_file": "",
+      "requires_attunement": true,
+      "has_charges": false,
+      "grants_spells": false,
+      "has_passive_effect": true,
+      "has_granted_actions": true,
+      "implemented_status": "implemented",
+      "rules_metadata_status": "complete",
+      "runtime_support_status": "active",
       "dedupe_status": "canonical",
       "safe_summary_status": "original",
       "notes": ""
