@@ -5,11 +5,11 @@
   "description": "Items from homebrew bucket — open-compatible metadata and original summaries.",
   "items": [
     {
-      "id": "shadow-prisoner-s-shank",
-      "name": "Shadow Prisoner’s Shank",
+      "id": "athkatla-smuggler-s-coin",
+      "name": "Athkatla Smuggler’s Coin",
       "item_schema_version": 2,
-      "category": "homebrew",
-      "subtype": "homebrew",
+      "category": "wondrous",
+      "subtype": "coin",
       "rarity": "rare",
       "requires_attunement": false,
       "attunement": {
@@ -20,39 +20,29 @@
       "equip_slot": "",
       "charges_max": 0,
       "recharge_type": "none",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "TODO homebrew effect."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "shadow-prisoner-s-shank-use",
-          "name": "Shadow Prisoner’s Shank",
-          "action_type": "item_action",
-          "charge_cost": 0,
-          "summary": "TODO homebrew action."
-        }
-      ],
-      "source": "homebrew",
-      "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
-      "weight_lbs": 1,
-      "price_gp": 0,
-      "slug": "shadow-prisoner-s-shank",
+      "granted_actions": [],
+      "source": "campaign_homebrew",
+      "description_summary": "Athkatla Smuggler’s Coin: concise open-compatible runtime summary for rare wondrous.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Athkatla Smuggler’s Coin.",
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "slug": "athkatla-smuggler-s-coin",
       "aliases": [
-        "shadow_prisoner_s_shank"
+        "athkatla smuggler’s coin",
+        "athkatla_smuggler’s_coin"
       ],
-      "legacy_ids": [],
-      "dedupe_key": "shadowprisonersshank"
+      "legacy_ids": [
+        "mi_athkatla_smuggler_s_coin"
+      ],
+      "dedupe_key": "athkatlasmugglerscoin"
     },
     {
-      "id": "baron-s-signet-ring",
-      "name": "Baron’s Signet Ring",
+      "id": "baron-s-ledger-key",
+      "name": "Baron’s Ledger Key",
       "item_schema_version": 2,
-      "category": "homebrew",
-      "subtype": "homebrew",
+      "category": "wondrous",
+      "subtype": "key",
       "rarity": "rare",
       "requires_attunement": false,
       "attunement": {
@@ -61,6 +51,47 @@
       },
       "equippable": false,
       "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "baron-s-ledger-key-use",
+          "name": "Baron’s Ledger Key",
+          "action_type": "item_action",
+          "charge_cost": 0,
+          "summary": "Use Baron’s Ledger Key runtime action."
+        }
+      ],
+      "source": "campaign_homebrew",
+      "description_summary": "Baron’s Ledger Key: concise open-compatible runtime summary for rare wondrous.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Baron’s Ledger Key.",
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "slug": "baron-s-ledger-key",
+      "aliases": [
+        "baron’s ledger key",
+        "baron’s_ledger_key"
+      ],
+      "legacy_ids": [
+        "mi_baron_s_ledger_key"
+      ],
+      "dedupe_key": "baronsledgerkey"
+    },
+    {
+      "id": "baron-s-signet-ring",
+      "name": "Baron’s Signet Ring",
+      "item_schema_version": 2,
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "rare",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "ring",
       "charges_max": 0,
       "recharge_type": "none",
       "passive_effects": [
@@ -79,66 +110,133 @@
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "homebrew",
-      "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
+      "source": "campaign_homebrew",
+      "description_summary": "Baron’s Signet Ring: concise open-compatible runtime summary for rare ring.",
       "weight_lbs": 1,
       "price_gp": 0,
       "slug": "baron-s-signet-ring",
       "aliases": [
-        "baron_s_signet_ring"
+        "baron_s_signet_ring",
+        "baron’s signet ring",
+        "baron’s_signet_ring"
       ],
-      "legacy_ids": [],
-      "dedupe_key": "baronssignetring"
+      "legacy_ids": [
+        "mi_baron_s_signet_ring"
+      ],
+      "dedupe_key": "baronssignetring",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Baron’s Signet Ring.",
+      "unidentified_description": "An unidentified rare ring radiating magic."
     },
     {
-      "id": "shar-touched-amulet",
-      "name": "Shar-Touched Amulet",
+      "id": "brosst-guard-captain-s-blade",
+      "name": "Brosst Guard Captain’s Blade",
       "item_schema_version": 2,
-      "category": "homebrew",
-      "subtype": "homebrew",
+      "category": "weapon",
+      "subtype": "longsword",
       "rarity": "rare",
       "requires_attunement": true,
       "attunement": {
         "required": true,
         "supported": true
       },
-      "equippable": false,
-      "equip_slot": "",
+      "equippable": true,
+      "equip_slot": "weapon",
       "charges_max": 0,
       "recharge_type": "none",
       "passive_effects": [
         {
           "type": "note",
           "summary": "TODO homebrew effect."
+        },
+        {
+          "type": "attack_bonus",
+          "bonus": 1,
+          "requires_attunement": true
+        },
+        {
+          "type": "damage_bonus",
+          "bonus": 1,
+          "requires_attunement": true
         }
       ],
       "granted_spells": [],
       "granted_actions": [
         {
-          "id": "shar-touched-amulet-use",
-          "name": "Shar-Touched Amulet",
+          "id": "brosst-guard-captain-s-blade-use",
+          "name": "Brosst Guard Captain’s Blade",
           "action_type": "item_action",
           "charge_cost": 0,
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "homebrew",
-      "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
+      "source": "campaign_homebrew",
+      "description_summary": "Brosst Guard Captain’s Blade: concise open-compatible runtime summary for rare weapon.",
       "weight_lbs": 1,
       "price_gp": 0,
-      "slug": "shar-touched-amulet",
+      "slug": "brosst-guard-captain-s-blade",
       "aliases": [
-        "shar_touched_amulet"
+        "brosst_guard_captain_s_blade",
+        "brosst guard captain’s blade",
+        "brosst_guard_captain’s_blade"
       ],
-      "legacy_ids": [],
-      "dedupe_key": "shartouchedamulet"
+      "legacy_ids": [
+        "mi_brosst_guard_captain_s_blade"
+      ],
+      "dedupe_key": "brosstguardcaptainsblade",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Brosst Guard Captain’s Blade.",
+      "unidentified_description": "An unidentified rare weapon radiating magic.",
+      "attack_bonus": 1,
+      "damage_bonus": 1,
+      "damage_dice": "1d8",
+      "damage_type": "slashing",
+      "weapon_type": "longsword"
     },
     {
-      "id": "brosst-guard-captain-s-blade",
-      "name": "Brosst Guard Captain’s Blade",
+      "id": "brosst-guard-shield",
+      "name": "Brosst Guard Shield",
       "item_schema_version": 2,
-      "category": "homebrew",
-      "subtype": "homebrew",
+      "category": "armor",
+      "subtype": "shield",
+      "rarity": "rare",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "armor",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "ac_bonus",
+          "bonus": 1,
+          "requires_attunement": false
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "campaign_homebrew",
+      "description_summary": "Brosst Guard Shield: concise open-compatible runtime summary for rare armor.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Brosst Guard Shield.",
+      "unidentified_description": "An unidentified rare armor radiating magic.",
+      "slug": "brosst-guard-shield",
+      "aliases": [
+        "brosst guard shield",
+        "brosst_guard_shield"
+      ],
+      "legacy_ids": [
+        "mi_brosst_guard_shield"
+      ],
+      "dedupe_key": "brosstguardshield",
+      "ac_bonus": 1
+    },
+    {
+      "id": "bruno-s-lucky-treat",
+      "name": "Bruno’s Lucky Treat",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "consumable",
       "rarity": "rare",
       "requires_attunement": false,
       "attunement": {
@@ -153,35 +251,305 @@
         {
           "type": "note",
           "summary": "TODO homebrew effect."
+        },
+        {
+          "type": "save_bonus",
+          "bonus": 1,
+          "requires_attunement": false
         }
       ],
       "granted_spells": [],
       "granted_actions": [
         {
-          "id": "brosst-guard-captain-s-blade-use",
-          "name": "Brosst Guard Captain’s Blade",
+          "id": "bruno-s-lucky-treat-use",
+          "name": "Bruno’s Lucky Treat",
           "action_type": "item_action",
           "charge_cost": 0,
           "summary": "TODO homebrew action."
+        },
+        {
+          "id": "bruno-s-lucky-treat-use",
+          "name": "Bruno’s Lucky Treat",
+          "action_type": "item_action",
+          "charge_cost": 0,
+          "summary": "Use Bruno’s Lucky Treat runtime action."
         }
       ],
-      "source": "homebrew",
-      "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
+      "source": "campaign_homebrew",
+      "description_summary": "Bruno’s Lucky Treat: concise open-compatible runtime summary for rare wondrous.",
       "weight_lbs": 1,
       "price_gp": 0,
-      "slug": "brosst-guard-captain-s-blade",
+      "slug": "bruno-s-lucky-treat",
       "aliases": [
-        "brosst_guard_captain_s_blade"
+        "bruno_s_lucky_treat",
+        "bruno’s lucky treat",
+        "bruno’s_lucky_treat"
       ],
-      "legacy_ids": [],
-      "dedupe_key": "brosstguardcaptainsblade"
+      "legacy_ids": [
+        "mi_bruno_s_lucky_treat"
+      ],
+      "dedupe_key": "brunosluckytreat",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Bruno’s Lucky Treat.",
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "consumable": true,
+      "consumed_on_use": true,
+      "save_bonus": 1
+    },
+    {
+      "id": "candle-of-shar-s-whisper",
+      "name": "Candle of Shar’s Whisper",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "candle",
+      "rarity": "rare",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 3,
+      "recharge_type": "dawn",
+      "passive_effects": [],
+      "granted_spells": [
+        {
+          "spell_id": "silence",
+          "name": "Silence",
+          "charge_cost": 2,
+          "cast_level": 2,
+          "uses_item_save_dc": false,
+          "id": "silence"
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "candle-of-shar-s-whisper-use",
+          "name": "Candle of Shar’s Whisper",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Use Candle of Shar’s Whisper runtime action."
+        }
+      ],
+      "source": "campaign_homebrew",
+      "description_summary": "Candle of Shar’s Whisper: concise open-compatible runtime summary for rare wondrous.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Candle of Shar’s Whisper.",
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "slug": "candle-of-shar-s-whisper",
+      "aliases": [
+        "candle of shar’s whisper",
+        "candle_of_shar’s_whisper"
+      ],
+      "legacy_ids": [
+        "mi_candle_of_shar_s_whisper"
+      ],
+      "dedupe_key": "candleofsharswhisper",
+      "limited_uses": {
+        "max": 3,
+        "recharge": "dawn"
+      }
+    },
+    {
+      "id": "chaos-wheel-coin",
+      "name": "Chaos Wheel Coin",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "coin",
+      "rarity": "rare",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": true
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 1,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "TODO homebrew effect."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "chaos-wheel-coin-use",
+          "name": "Chaos Wheel Coin",
+          "action_type": "item_action",
+          "charge_cost": 0,
+          "summary": "TODO homebrew action."
+        },
+        {
+          "id": "chaos-wheel-coin-use",
+          "name": "Chaos Wheel Coin",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Use Chaos Wheel Coin runtime action."
+        }
+      ],
+      "source": "campaign_homebrew",
+      "description_summary": "Chaos Wheel Coin: concise open-compatible runtime summary for rare wondrous.",
+      "weight_lbs": 1,
+      "price_gp": 0,
+      "slug": "chaos-wheel-coin",
+      "aliases": [
+        "chaos_wheel_coin",
+        "chaos wheel coin"
+      ],
+      "legacy_ids": [
+        "mi_chaos_wheel_coin"
+      ],
+      "dedupe_key": "chaoswheelcoin",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Chaos Wheel Coin.",
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "limited_uses": {
+        "max": 1,
+        "recharge": "dawn"
+      }
+    },
+    {
+      "id": "cultist-black-candle",
+      "name": "Cultist Black Candle",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "candle",
+      "rarity": "rare",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": true
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 1,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "TODO homebrew effect."
+        }
+      ],
+      "granted_spells": [
+        {
+          "spell_id": "darkness",
+          "name": "Darkness",
+          "charge_cost": 2,
+          "cast_level": 2,
+          "uses_item_save_dc": false,
+          "id": "darkness"
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "cultist-black-candle-use",
+          "name": "Cultist Black Candle",
+          "action_type": "item_action",
+          "charge_cost": 0,
+          "summary": "TODO homebrew action."
+        },
+        {
+          "id": "cultist-black-candle-use",
+          "name": "Cultist Black Candle",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Use Cultist Black Candle runtime action."
+        }
+      ],
+      "source": "campaign_homebrew",
+      "description_summary": "Cultist Black Candle: concise open-compatible runtime summary for rare wondrous.",
+      "weight_lbs": 1,
+      "price_gp": 0,
+      "slug": "cultist-black-candle",
+      "aliases": [
+        "cultist_black_candle",
+        "cultist black candle"
+      ],
+      "legacy_ids": [
+        "mi_cultist_black_candle"
+      ],
+      "dedupe_key": "cultistblackcandle",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Cultist Black Candle.",
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "limited_uses": {
+        "max": 1,
+        "recharge": "dawn"
+      }
+    },
+    {
+      "id": "fireball-viewer-token",
+      "name": "Fireball Viewer Token",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "token",
+      "rarity": "rare",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": true
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 1,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "TODO homebrew effect."
+        }
+      ],
+      "granted_spells": [
+        {
+          "spell_id": "fireball",
+          "name": "Fireball",
+          "charge_cost": 3,
+          "cast_level": 3,
+          "uses_item_save_dc": false,
+          "id": "fireball"
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "fireball-viewer-token-use",
+          "name": "Fireball Viewer Token",
+          "action_type": "item_action",
+          "charge_cost": 0,
+          "summary": "TODO homebrew action."
+        },
+        {
+          "id": "fireball-viewer-token-use",
+          "name": "Fireball Viewer Token",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Use Fireball Viewer Token runtime action."
+        }
+      ],
+      "source": "campaign_homebrew",
+      "description_summary": "Fireball Viewer Token: concise open-compatible runtime summary for rare wondrous.",
+      "weight_lbs": 1,
+      "price_gp": 0,
+      "slug": "fireball-viewer-token",
+      "aliases": [
+        "fireball_viewer_token",
+        "fireball viewer token"
+      ],
+      "legacy_ids": [
+        "mi_fireball_viewer_token"
+      ],
+      "dedupe_key": "fireballviewertoken",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Fireball Viewer Token.",
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "limited_uses": {
+        "max": 1,
+        "recharge": "dawn"
+      }
     },
     {
       "id": "guild-of-seagull-token",
       "name": "Guild of Seagull Token",
       "item_schema_version": 2,
-      "category": "homebrew",
-      "subtype": "homebrew",
+      "category": "wondrous",
+      "subtype": "token",
       "rarity": "rare",
       "requires_attunement": false,
       "attunement": {
@@ -208,23 +576,61 @@
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "homebrew",
-      "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
+      "source": "campaign_homebrew",
+      "description_summary": "Guild of Seagull Token: concise open-compatible runtime summary for rare wondrous.",
       "weight_lbs": 1,
       "price_gp": 0,
       "slug": "guild-of-seagull-token",
       "aliases": [
-        "guild_of_seagull_token"
+        "guild_of_seagull_token",
+        "guild of seagull token"
       ],
-      "legacy_ids": [],
-      "dedupe_key": "guildofseagulltoken"
+      "legacy_ids": [
+        "mi_guild_of_seagull_token"
+      ],
+      "dedupe_key": "guildofseagulltoken",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Guild of Seagull Token.",
+      "unidentified_description": "An unidentified rare wondrous radiating magic."
     },
     {
-      "id": "cultist-black-candle",
-      "name": "Cultist Black Candle",
+      "id": "lost-noble-signet",
+      "name": "Lost Noble Signet",
       "item_schema_version": 2,
-      "category": "homebrew",
-      "subtype": "homebrew",
+      "category": "ring",
+      "subtype": "ring",
+      "rarity": "rare",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "ring",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "campaign_homebrew",
+      "description_summary": "Lost Noble Signet: concise open-compatible runtime summary for rare ring.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Lost Noble Signet.",
+      "unidentified_description": "An unidentified rare ring radiating magic.",
+      "slug": "lost-noble-signet",
+      "aliases": [
+        "lost noble signet",
+        "lost_noble_signet"
+      ],
+      "legacy_ids": [
+        "mi_lost_noble_signet"
+      ],
+      "dedupe_key": "lostnoblesignet"
+    },
+    {
+      "id": "map-fragment-of-brosst",
+      "name": "Map Fragment of Brosst",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "map",
       "rarity": "rare",
       "requires_attunement": false,
       "attunement": {
@@ -235,82 +641,37 @@
       "equip_slot": "",
       "charges_max": 0,
       "recharge_type": "none",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "TODO homebrew effect."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
       "granted_actions": [
         {
-          "id": "cultist-black-candle-use",
-          "name": "Cultist Black Candle",
+          "id": "map-fragment-of-brosst-use",
+          "name": "Map Fragment of Brosst",
           "action_type": "item_action",
           "charge_cost": 0,
-          "summary": "TODO homebrew action."
+          "summary": "Use Map Fragment of Brosst runtime action."
         }
       ],
-      "source": "homebrew",
-      "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
-      "weight_lbs": 1,
-      "price_gp": 0,
-      "slug": "cultist-black-candle",
+      "source": "campaign_homebrew",
+      "description_summary": "Map Fragment of Brosst: concise open-compatible runtime summary for rare wondrous.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Map Fragment of Brosst.",
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "slug": "map-fragment-of-brosst",
       "aliases": [
-        "cultist_black_candle"
+        "map fragment of brosst",
+        "map_fragment_of_brosst"
       ],
-      "legacy_ids": [],
-      "dedupe_key": "cultistblackcandle"
-    },
-    {
-      "id": "seagull-feather-cloak",
-      "name": "Seagull Feather Cloak",
-      "item_schema_version": 2,
-      "category": "homebrew",
-      "subtype": "homebrew",
-      "rarity": "rare",
-      "requires_attunement": false,
-      "attunement": {
-        "required": false,
-        "supported": true
-      },
-      "equippable": false,
-      "equip_slot": "",
-      "charges_max": 0,
-      "recharge_type": "none",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "TODO homebrew effect."
-        }
+      "legacy_ids": [
+        "mi_map_fragment_of_brosst"
       ],
-      "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "seagull-feather-cloak-use",
-          "name": "Seagull Feather Cloak",
-          "action_type": "item_action",
-          "charge_cost": 0,
-          "summary": "TODO homebrew action."
-        }
-      ],
-      "source": "homebrew",
-      "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
-      "weight_lbs": 1,
-      "price_gp": 0,
-      "slug": "seagull-feather-cloak",
-      "aliases": [
-        "seagull_feather_cloak"
-      ],
-      "legacy_ids": [],
-      "dedupe_key": "seagullfeathercloak"
+      "dedupe_key": "mapfragmentofbrosst"
     },
     {
       "id": "prison-break-lockpick-set",
       "name": "Prison Break Lockpick Set",
       "item_schema_version": 2,
-      "category": "homebrew",
-      "subtype": "homebrew",
+      "category": "tool",
+      "subtype": "thieves_tools",
       "rarity": "rare",
       "requires_attunement": false,
       "attunement": {
@@ -337,23 +698,28 @@
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "homebrew",
-      "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
+      "source": "campaign_homebrew",
+      "description_summary": "Prison Break Lockpick Set: concise open-compatible runtime summary for rare tool.",
       "weight_lbs": 1,
       "price_gp": 0,
       "slug": "prison-break-lockpick-set",
       "aliases": [
-        "prison_break_lockpick_set"
+        "prison_break_lockpick_set",
+        "prison break lockpick set"
       ],
-      "legacy_ids": [],
-      "dedupe_key": "prisonbreaklockpickset"
+      "legacy_ids": [
+        "mi_prison_break_lockpick_set"
+      ],
+      "dedupe_key": "prisonbreaklockpickset",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Prison Break Lockpick Set.",
+      "unidentified_description": "An unidentified rare tool radiating magic."
     },
     {
-      "id": "fireball-viewer-token",
-      "name": "Fireball Viewer Token",
+      "id": "prison-warden-s-manacles",
+      "name": "Prison Warden’s Manacles",
       "item_schema_version": 2,
-      "category": "homebrew",
-      "subtype": "homebrew",
+      "category": "wondrous",
+      "subtype": "restraint",
       "rarity": "rare",
       "requires_attunement": false,
       "attunement": {
@@ -364,39 +730,95 @@
       "equip_slot": "",
       "charges_max": 0,
       "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "prison-warden-s-manacles-use",
+          "name": "Prison Warden’s Manacles",
+          "action_type": "item_action",
+          "charge_cost": 0,
+          "summary": "Use Prison Warden’s Manacles runtime action."
+        }
+      ],
+      "source": "campaign_homebrew",
+      "description_summary": "Prison Warden’s Manacles: concise open-compatible runtime summary for rare wondrous.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Prison Warden’s Manacles.",
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "slug": "prison-warden-s-manacles",
+      "aliases": [
+        "prison warden’s manacles",
+        "prison_warden’s_manacles"
+      ],
+      "legacy_ids": [
+        "mi_prison_warden_s_manacles"
+      ],
+      "dedupe_key": "prisonwardensmanacles",
+      "spell_save_dc": 15
+    },
+    {
+      "id": "seagull-feather-cloak",
+      "name": "Seagull Feather Cloak",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "cloak",
+      "rarity": "rare",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "cloak",
+      "charges_max": 0,
+      "recharge_type": "none",
       "passive_effects": [
         {
           "type": "note",
           "summary": "TODO homebrew effect."
+        },
+        {
+          "type": "movement",
+          "mode": "slow_fall"
         }
       ],
       "granted_spells": [],
       "granted_actions": [
         {
-          "id": "fireball-viewer-token-use",
-          "name": "Fireball Viewer Token",
+          "id": "seagull-feather-cloak-use",
+          "name": "Seagull Feather Cloak",
           "action_type": "item_action",
           "charge_cost": 0,
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "homebrew",
-      "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
+      "source": "campaign_homebrew",
+      "description_summary": "Seagull Feather Cloak: concise open-compatible runtime summary for rare wondrous.",
       "weight_lbs": 1,
       "price_gp": 0,
-      "slug": "fireball-viewer-token",
+      "slug": "seagull-feather-cloak",
       "aliases": [
-        "fireball_viewer_token"
+        "seagull_feather_cloak",
+        "seagull feather cloak"
       ],
-      "legacy_ids": [],
-      "dedupe_key": "fireballviewertoken"
+      "legacy_ids": [
+        "mi_seagull_feather_cloak"
+      ],
+      "dedupe_key": "seagullfeathercloak",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Seagull Feather Cloak.",
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "movement_modifiers": [
+        {
+          "type": "slow_fall"
+        }
+      ]
     },
     {
-      "id": "chaos-wheel-coin",
-      "name": "Chaos Wheel Coin",
+      "id": "seagull-guild-banner",
+      "name": "Seagull Guild Banner",
       "item_schema_version": 2,
-      "category": "homebrew",
-      "subtype": "homebrew",
+      "category": "wondrous",
+      "subtype": "banner",
       "rarity": "rare",
       "requires_attunement": false,
       "attunement": {
@@ -407,75 +829,209 @@
       "equip_slot": "",
       "charges_max": 0,
       "recharge_type": "none",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "TODO homebrew effect."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "chaos-wheel-coin-use",
-          "name": "Chaos Wheel Coin",
-          "action_type": "item_action",
-          "charge_cost": 0,
-          "summary": "TODO homebrew action."
-        }
-      ],
-      "source": "homebrew",
-      "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
-      "weight_lbs": 1,
-      "price_gp": 0,
-      "slug": "chaos-wheel-coin",
+      "granted_actions": [],
+      "source": "campaign_homebrew",
+      "description_summary": "Seagull Guild Banner: concise open-compatible runtime summary for rare wondrous.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Seagull Guild Banner.",
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "slug": "seagull-guild-banner",
       "aliases": [
-        "chaos_wheel_coin"
+        "seagull guild banner",
+        "seagull_guild_banner"
       ],
-      "legacy_ids": [],
-      "dedupe_key": "chaoswheelcoin"
+      "legacy_ids": [
+        "mi_seagull_guild_banner"
+      ],
+      "dedupe_key": "seagullguildbanner"
     },
     {
-      "id": "bruno-s-lucky-treat",
-      "name": "Bruno’s Lucky Treat",
+      "id": "shadow-prisoner-s-shank",
+      "name": "Shadow Prisoner’s Shank",
       "item_schema_version": 2,
-      "category": "homebrew",
-      "subtype": "homebrew",
+      "category": "weapon",
+      "subtype": "dagger",
       "rarity": "rare",
       "requires_attunement": false,
       "attunement": {
         "required": false,
         "supported": true
       },
-      "equippable": false,
-      "equip_slot": "",
+      "equippable": true,
+      "equip_slot": "weapon",
       "charges_max": 0,
       "recharge_type": "none",
       "passive_effects": [
         {
           "type": "note",
           "summary": "TODO homebrew effect."
+        },
+        {
+          "type": "attack_bonus",
+          "bonus": 1,
+          "requires_attunement": false
+        },
+        {
+          "type": "extra_damage",
+          "summary": "1d6 necrotic"
         }
       ],
       "granted_spells": [],
       "granted_actions": [
         {
-          "id": "bruno-s-lucky-treat-use",
-          "name": "Bruno’s Lucky Treat",
+          "id": "shadow-prisoner-s-shank-use",
+          "name": "Shadow Prisoner’s Shank",
           "action_type": "item_action",
           "charge_cost": 0,
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "homebrew",
-      "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
+      "source": "campaign_homebrew",
+      "description_summary": "Shadow Prisoner’s Shank: concise open-compatible runtime summary for rare weapon.",
       "weight_lbs": 1,
       "price_gp": 0,
-      "slug": "bruno-s-lucky-treat",
+      "slug": "shadow-prisoner-s-shank",
       "aliases": [
-        "bruno_s_lucky_treat"
+        "shadow_prisoner_s_shank",
+        "shadow prisoner’s shank",
+        "shadow_prisoner’s_shank"
       ],
-      "legacy_ids": [],
-      "dedupe_key": "brunosluckytreat"
+      "legacy_ids": [
+        "mi_shadow_prisoner_s_shank"
+      ],
+      "dedupe_key": "shadowprisonersshank",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Shadow Prisoner’s Shank.",
+      "unidentified_description": "An unidentified rare weapon radiating magic.",
+      "attack_bonus": 1,
+      "damage": {
+        "extra": "1d6 necrotic"
+      },
+      "damage_dice": "1d4",
+      "damage_type": "piercing",
+      "weapon_type": "dagger"
+    },
+    {
+      "id": "shar-cultist-dagger",
+      "name": "Shar Cultist Dagger",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "dagger",
+      "rarity": "rare",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "weapon",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "attack_bonus",
+          "bonus": 1,
+          "requires_attunement": false
+        },
+        {
+          "type": "extra_damage",
+          "summary": "shadow"
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "campaign_homebrew",
+      "description_summary": "Shar Cultist Dagger: concise open-compatible runtime summary for rare weapon.",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Shar Cultist Dagger.",
+      "unidentified_description": "An unidentified rare weapon radiating magic.",
+      "slug": "shar-cultist-dagger",
+      "aliases": [
+        "shar cultist dagger",
+        "shar_cultist_dagger"
+      ],
+      "legacy_ids": [
+        "mi_shar_cultist_dagger"
+      ],
+      "dedupe_key": "sharcultistdagger",
+      "attack_bonus": 1,
+      "damage": {
+        "extra": "shadow"
+      },
+      "damage_dice": "1d4",
+      "damage_type": "piercing",
+      "weapon_type": "dagger"
+    },
+    {
+      "id": "shar-touched-amulet",
+      "name": "Shar-Touched Amulet",
+      "item_schema_version": 2,
+      "category": "wondrous",
+      "subtype": "amulet",
+      "rarity": "rare",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "amulet",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "TODO homebrew effect."
+        },
+        {
+          "type": "resistance",
+          "damage": "necrotic"
+        }
+      ],
+      "granted_spells": [
+        {
+          "spell_id": "darkness",
+          "name": "Darkness",
+          "charge_cost": 2,
+          "cast_level": 2,
+          "uses_item_save_dc": false,
+          "id": "darkness"
+        }
+      ],
+      "granted_actions": [
+        {
+          "id": "shar-touched-amulet-use",
+          "name": "Shar-Touched Amulet",
+          "action_type": "item_action",
+          "charge_cost": 0,
+          "summary": "TODO homebrew action."
+        },
+        {
+          "id": "shar-touched-amulet-use",
+          "name": "Shar-Touched Amulet",
+          "action_type": "item_action",
+          "charge_cost": 0,
+          "summary": "Use Shar-Touched Amulet runtime action."
+        }
+      ],
+      "source": "campaign_homebrew",
+      "description_summary": "Shar-Touched Amulet: concise open-compatible runtime summary for rare wondrous.",
+      "weight_lbs": 1,
+      "price_gp": 0,
+      "slug": "shar-touched-amulet",
+      "aliases": [
+        "shar_touched_amulet",
+        "shar-touched amulet",
+        "shar-touched_amulet"
+      ],
+      "legacy_ids": [
+        "mi_shar_touched_amulet"
+      ],
+      "dedupe_key": "shartouchedamulet",
+      "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Shar-Touched Amulet.",
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "resistances": [
+        "necrotic"
+      ]
     }
   ]
 }

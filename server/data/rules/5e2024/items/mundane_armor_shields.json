@@ -523,10 +523,15 @@
       },
       "slug": "armor-1",
       "aliases": [
+        "+1 Armor",
+        "armor +1",
         "armor-1",
+        "armor-plus1",
         "armor_1"
       ],
-      "legacy_ids": [],
+      "legacy_ids": [
+        "mi_armor_1"
+      ],
       "dedupe_key": "armor1"
     },
     {
