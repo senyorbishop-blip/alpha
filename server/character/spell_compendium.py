@@ -1567,6 +1567,10 @@ def build_character_spell_manifest(document: dict[str, Any]) -> dict[str, Any]:
             'blockedReason': '' if accessible else 'Not unlocked for any current class/level.',
             'highestAvailableSlot': highest_available_slot,
             'selectionMode': selection_mode,
+            'sourceClass': str(primary_source.get('classId') or '') if isinstance(primary_source, dict) else '',
+            'sourceSubclass': str(primary_source.get('subclassId') or '') if isinstance(primary_source, dict) else '',
+            'sourceType': str(primary_source.get('sourceType') or '') if isinstance(primary_source, dict) else '',
+            'sourceClasses': sources,
         }
         cards.append(build_spell_card(spell, character_context=card_context))
     entries = spell_state.get('spellbookEntries') if isinstance(spell_state.get('spellbookEntries'), list) else []
