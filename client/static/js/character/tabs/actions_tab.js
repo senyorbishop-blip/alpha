@@ -450,7 +450,7 @@
         },
         {
           key: 'flexible casting',
-          name: 'Flexible Casting',
+          name: 'Font of Magic: Flexible Casting',
           summary: 'Convert Sorcery Points and spell slots to rebalance endurance vs burst depending on encounter pressure.',
           actionType: 'special',
           resourceName: 'Sorcery Points',
@@ -464,7 +464,7 @@
           summary: 'Spend Sorcery Points to alter casting delivery with your chosen Metamagic options.',
           actionType: 'special',
           resourceName: 'Sorcery Points',
-          resourceSummary: 'Metamagic cost varies by option',
+          resourceSummary: 'Metamagic cost varies by option: Quickened Spell 2 points and bonus action spell interaction; Subtle Spell 1 point; Seeking Spell 2 points; Heightened Spell 3 points.',
           range: 'Spell-dependent',
           tags: ['Sorcerer', 'Spell Shaping'],
         },
@@ -2705,7 +2705,9 @@
     const totalActions = model.totalActions;
 
     container.innerHTML = `
+      <div class="cs-action-filter-row" aria-label="Action filters"><button type="button" class="cs-action-filter-pill active" data-action-filter="all">All</button><button type="button" class="cs-action-filter-pill" data-action-filter="attack">Attack</button><button type="button" class="cs-action-filter-pill" data-action-filter="action">Action</button><button type="button" class="cs-action-filter-pill" data-action-filter="bonus">Bonus Action</button><button type="button" class="cs-action-filter-pill" data-action-filter="reaction">Reaction</button><button type="button" class="cs-action-filter-pill" data-action-filter="other">Other</button><button type="button" class="cs-action-filter-pill" data-action-filter="limited">Limited Use</button></div>
       <div class="cs-combat-hero-grid">
+        ${_renderSummaryCard('Attacks per Action', String((charData && (charData.attacksPerAction || charData.extraAttackCount)) || 1), 'Action economy state during combat', 'gold')}
         ${_renderSummaryCard('Actions Ready', String(totalActions), totalActions ? 'Attacks and action cards available' : 'No action cards loaded yet', totalActions ? 'teal' : '')}
         ${_renderSummaryCard('Resources', String(resources.length), resources.length ? 'Spendable class pools' : 'No tracked class pools loaded yet', resources.length ? 'gold' : '')}
         ${_renderSummaryCard('Target', selectedTarget && selectedTarget.name ? selectedTarget.name : 'No target', selectedTarget ? 'Damage and healing apply to this target.' : 'Select a token on the map to set your target.', selectedTarget ? 'violet' : '')}
@@ -2724,6 +2726,12 @@
       ${_renderSection('Passives', native.passives, { emptyLabel: 'No structured passive actions are loaded yet.' })}
       ${_renderResourceSection(resources)}
     `;
+
+    container.addEventListener('click', function (event) {
+      const chip = event.target.closest('[data-action-filter]');
+      if (!chip) return;
+      Array.from(container.querySelectorAll('.cs-action-filter-pill')).forEach(function (btn) { btn.classList.toggle('active', btn === chip); });
+    });
 
     _bindDetails(container, {
       quickAttacks, itemActions, native, resources, textAttacks, summonActions, beastMasterCompanion,
