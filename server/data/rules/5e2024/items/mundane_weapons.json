@@ -1,6 +1,8 @@
 {
-  "category": "weapons",
   "item_schema_version": 2,
+  "rules_version": "5e2024",
+  "category": "mundane_weapons",
+  "description": "Items from mundane_weapons bucket \u2014 open-compatible metadata and original summaries.",
   "items": [
     {
       "id": "club",
@@ -43,7 +45,11 @@
         "damage_dice": "1d4",
         "damage_type": "bludgeoning",
         "range": "5 ft"
-      }
+      },
+      "slug": "club",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "club"
     },
     {
       "id": "dagger",
@@ -90,7 +96,11 @@
         "damage_dice": "1d4",
         "damage_type": "piercing",
         "range": "20/60"
-      }
+      },
+      "slug": "dagger",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "dagger"
     },
     {
       "id": "greatclub",
@@ -133,7 +143,11 @@
         "damage_dice": "1d8",
         "damage_type": "bludgeoning",
         "range": "5 ft"
-      }
+      },
+      "slug": "greatclub",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "greatclub"
     },
     {
       "id": "handaxe",
@@ -178,7 +192,11 @@
         "damage_dice": "1d6",
         "damage_type": "slashing",
         "range": "20/60"
-      }
+      },
+      "slug": "handaxe",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "handaxe"
     },
     {
       "id": "javelin",
@@ -221,7 +239,11 @@
         "damage_dice": "1d6",
         "damage_type": "piercing",
         "range": "30/120"
-      }
+      },
+      "slug": "javelin",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "javelin"
     },
     {
       "id": "light-hammer",
@@ -266,7 +288,13 @@
         "damage_dice": "1d4",
         "damage_type": "bludgeoning",
         "range": "20/60"
-      }
+      },
+      "slug": "light-hammer",
+      "aliases": [
+        "light_hammer"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "lighthammer"
     },
     {
       "id": "mace",
@@ -305,7 +333,11 @@
         "damage_dice": "1d6",
         "damage_type": "bludgeoning",
         "range": "5 ft"
-      }
+      },
+      "slug": "mace",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "mace"
     },
     {
       "id": "quarterstaff",
@@ -348,7 +380,11 @@
         "damage_dice": "1d6",
         "damage_type": "bludgeoning",
         "range": "5 ft"
-      }
+      },
+      "slug": "quarterstaff",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "quarterstaff"
     },
     {
       "id": "sickle",
@@ -391,7 +427,11 @@
         "damage_dice": "1d4",
         "damage_type": "slashing",
         "range": "5 ft"
-      }
+      },
+      "slug": "sickle",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "sickle"
     },
     {
       "id": "spear",
@@ -436,7 +476,11 @@
         "damage_dice": "1d6",
         "damage_type": "piercing",
         "range": "20/60"
-      }
+      },
+      "slug": "spear",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "spear"
     },
     {
       "id": "light-crossbow",
@@ -483,7 +527,13 @@
         "damage_dice": "1d8",
         "damage_type": "piercing",
         "range": "80/320"
-      }
+      },
+      "slug": "light-crossbow",
+      "aliases": [
+        "light_crossbow"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "lightcrossbow"
     },
     {
       "id": "dart",
@@ -528,7 +578,11 @@
         "damage_dice": "1d4",
         "damage_type": "piercing",
         "range": "20/60"
-      }
+      },
+      "slug": "dart",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "dart"
     },
     {
       "id": "shortbow",
@@ -573,7 +627,11 @@
         "damage_dice": "1d6",
         "damage_type": "piercing",
         "range": "80/320"
-      }
+      },
+      "slug": "shortbow",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "shortbow"
     },
     {
       "id": "sling",
@@ -616,7 +674,11 @@
         "damage_dice": "1d4",
         "damage_type": "bludgeoning",
         "range": "30/120"
-      }
+      },
+      "slug": "sling",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "sling"
     },
     {
       "id": "battleaxe",
@@ -659,7 +721,11 @@
         "damage_dice": "1d8",
         "damage_type": "slashing",
         "range": "5 ft"
-      }
+      },
+      "slug": "battleaxe",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "battleaxe"
     },
     {
       "id": "flail",
@@ -698,7 +764,11 @@
         "damage_dice": "1d8",
         "damage_type": "bludgeoning",
         "range": "5 ft"
-      }
+      },
+      "slug": "flail",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "flail"
     },
     {
       "id": "glaive",
@@ -745,7 +815,11 @@
         "damage_dice": "1d10",
         "damage_type": "slashing",
         "range": "10 ft"
-      }
+      },
+      "slug": "glaive",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "glaive"
     },
     {
       "id": "greataxe",
@@ -790,7 +864,11 @@
         "damage_dice": "1d12",
         "damage_type": "slashing",
         "range": "5 ft"
-      }
+      },
+      "slug": "greataxe",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "greataxe"
     },
     {
       "id": "greatsword",
@@ -835,7 +913,11 @@
         "damage_dice": "2d6",
         "damage_type": "slashing",
         "range": "5 ft"
-      }
+      },
+      "slug": "greatsword",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "greatsword"
     },
     {
       "id": "halberd",
@@ -882,7 +964,11 @@
         "damage_dice": "1d10",
         "damage_type": "slashing",
         "range": "10 ft"
-      }
+      },
+      "slug": "halberd",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "halberd"
     },
     {
       "id": "lance",
@@ -927,7 +1013,11 @@
         "damage_dice": "1d12",
         "damage_type": "piercing",
         "range": "10 ft"
-      }
+      },
+      "slug": "lance",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "lance"
     },
     {
       "id": "longsword",
@@ -970,7 +1060,11 @@
         "damage_dice": "1d8",
         "damage_type": "slashing",
         "range": "5 ft"
-      }
+      },
+      "slug": "longsword",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "longsword"
     },
     {
       "id": "maul",
@@ -1015,7 +1109,11 @@
         "damage_dice": "2d6",
         "damage_type": "bludgeoning",
         "range": "5 ft"
-      }
+      },
+      "slug": "maul",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "maul"
     },
     {
       "id": "morningstar",
@@ -1054,7 +1152,11 @@
         "damage_dice": "1d8",
         "damage_type": "piercing",
         "range": "5 ft"
-      }
+      },
+      "slug": "morningstar",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "morningstar"
     },
     {
       "id": "pike",
@@ -1101,7 +1203,11 @@
         "damage_dice": "1d10",
         "damage_type": "piercing",
         "range": "10 ft"
-      }
+      },
+      "slug": "pike",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "pike"
     },
     {
       "id": "rapier",
@@ -1144,7 +1250,11 @@
         "damage_dice": "1d8",
         "damage_type": "piercing",
         "range": "5 ft"
-      }
+      },
+      "slug": "rapier",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "rapier"
     },
     {
       "id": "scimitar",
@@ -1189,7 +1299,11 @@
         "damage_dice": "1d6",
         "damage_type": "slashing",
         "range": "5 ft"
-      }
+      },
+      "slug": "scimitar",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "scimitar"
     },
     {
       "id": "shortsword",
@@ -1234,7 +1348,11 @@
         "damage_dice": "1d6",
         "damage_type": "piercing",
         "range": "5 ft"
-      }
+      },
+      "slug": "shortsword",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "shortsword"
     },
     {
       "id": "trident",
@@ -1280,7 +1398,11 @@
         "damage_type": "piercing",
         "range": "20/60"
       },
-      "versatile_damage": "1d8"
+      "versatile_damage": "1d8",
+      "slug": "trident",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "trident"
     },
     {
       "id": "war-pick",
@@ -1319,7 +1441,13 @@
         "damage_dice": "1d8",
         "damage_type": "piercing",
         "range": "5 ft"
-      }
+      },
+      "slug": "war-pick",
+      "aliases": [
+        "war_pick"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "warpick"
     },
     {
       "id": "warhammer",
@@ -1362,7 +1490,11 @@
         "damage_dice": "1d8",
         "damage_type": "bludgeoning",
         "range": "5 ft"
-      }
+      },
+      "slug": "warhammer",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "warhammer"
     },
     {
       "id": "whip",
@@ -1407,7 +1539,11 @@
         "damage_dice": "1d4",
         "damage_type": "slashing",
         "range": "10 ft"
-      }
+      },
+      "slug": "whip",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "whip"
     },
     {
       "id": "blowgun",
@@ -1452,7 +1588,11 @@
         "damage_dice": "1",
         "damage_type": "piercing",
         "range": "25/100"
-      }
+      },
+      "slug": "blowgun",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "blowgun"
     },
     {
       "id": "hand-crossbow",
@@ -1499,7 +1639,13 @@
         "damage_dice": "1d6",
         "damage_type": "piercing",
         "range": "30/120"
-      }
+      },
+      "slug": "hand-crossbow",
+      "aliases": [
+        "hand_crossbow"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "handcrossbow"
     },
     {
       "id": "heavy-crossbow",
@@ -1548,7 +1694,13 @@
         "damage_dice": "1d10",
         "damage_type": "piercing",
         "range": "100/400"
-      }
+      },
+      "slug": "heavy-crossbow",
+      "aliases": [
+        "heavy_crossbow"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "heavycrossbow"
     },
     {
       "id": "longbow",
@@ -1595,7 +1747,11 @@
         "damage_dice": "1d8",
         "damage_type": "piercing",
         "range": "150/600"
-      }
+      },
+      "slug": "longbow",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "longbow"
     },
     {
       "id": "net",
@@ -1640,7 +1796,11 @@
         "damage_dice": "0",
         "damage_type": "restrained",
         "range": "5/15"
-      }
+      },
+      "slug": "net",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "net"
     },
     {
       "id": "weapon-plus1",
@@ -1676,7 +1836,14 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 1
-      }
+      },
+      "slug": "weapon-1",
+      "aliases": [
+        "weapon-1",
+        "weapon_1"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "weapon1"
     },
     {
       "id": "weapon-plus2",
@@ -1712,7 +1879,14 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 2
-      }
+      },
+      "slug": "weapon-2",
+      "aliases": [
+        "weapon-2",
+        "weapon_2"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "weapon2"
     },
     {
       "id": "weapon-plus3",
@@ -1748,7 +1922,14 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 3
-      }
+      },
+      "slug": "weapon-3",
+      "aliases": [
+        "weapon-3",
+        "weapon_3"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "weapon3"
     },
     {
       "id": "ammunition-plus1",
@@ -1784,7 +1965,14 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 1
-      }
+      },
+      "slug": "ammunition-1",
+      "aliases": [
+        "ammunition-1",
+        "ammunition_1"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "ammunition1"
     },
     {
       "id": "ammunition-plus2",
@@ -1820,7 +2008,14 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 2
-      }
+      },
+      "slug": "ammunition-2",
+      "aliases": [
+        "ammunition-2",
+        "ammunition_2"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "ammunition2"
     },
     {
       "id": "ammunition-plus3",
@@ -1856,7 +2051,14 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 3
-      }
+      },
+      "slug": "ammunition-3",
+      "aliases": [
+        "ammunition-3",
+        "ammunition_3"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "ammunition3"
     },
     {
       "id": "arrow-of-slaying",
@@ -1885,7 +2087,7 @@
           "id": "arrow-of-slaying-action",
           "name": "Arrow of Slaying",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -1907,7 +2109,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "arrow-of-slaying",
+      "aliases": [
+        "arrow_of_slaying"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "arrowofslaying"
     },
     {
       "id": "dagger-of-venom",
@@ -1936,7 +2144,7 @@
           "id": "dagger-of-venom-action",
           "name": "Dagger of Venom",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -1958,7 +2166,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 1
-      }
+      },
+      "slug": "dagger-of-venom",
+      "aliases": [
+        "dagger_of_venom"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "daggerofvenom"
     },
     {
       "id": "dancing-sword",
@@ -1987,7 +2201,7 @@
           "id": "dancing-sword-action",
           "name": "Dancing Sword",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2009,7 +2223,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "dancing-sword",
+      "aliases": [
+        "dancing_sword"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "dancingsword"
     },
     {
       "id": "defender",
@@ -2038,7 +2258,7 @@
           "id": "defender-action",
           "name": "Defender",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2060,7 +2280,11 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 3
-      }
+      },
+      "slug": "defender",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "defender"
     },
     {
       "id": "dragon-slayer",
@@ -2089,7 +2313,7 @@
           "id": "dragon-slayer-action",
           "name": "Dragon Slayer",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2111,7 +2335,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "dragon-slayer",
+      "aliases": [
+        "dragon_slayer"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "dragonslayer"
     },
     {
       "id": "flame-tongue",
@@ -2140,7 +2370,7 @@
           "id": "flame-tongue-action",
           "name": "Flame Tongue",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2162,7 +2392,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "flame-tongue",
+      "aliases": [
+        "flame_tongue"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "flametongue"
     },
     {
       "id": "frost-brand",
@@ -2191,7 +2427,7 @@
           "id": "frost-brand-action",
           "name": "Frost Brand",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2213,7 +2449,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "frost-brand",
+      "aliases": [
+        "frost_brand"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "frostbrand"
     },
     {
       "id": "giant-slayer",
@@ -2242,7 +2484,7 @@
           "id": "giant-slayer-action",
           "name": "Giant Slayer",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2264,7 +2506,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "giant-slayer",
+      "aliases": [
+        "giant_slayer"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "giantslayer"
     },
     {
       "id": "holy-avenger",
@@ -2293,7 +2541,7 @@
           "id": "holy-avenger-action",
           "name": "Holy Avenger",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2315,58 +2563,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 3
-      }
-    },
-    {
-      "id": "javelin-of-lightning",
-      "name": "Javelin of Lightning",
-      "item_schema_version": 2,
-      "category": "weapon",
-      "subtype": "magic_weapon",
-      "rarity": "common",
-      "requires_attunement": false,
-      "attunement": {
-        "required": false
       },
-      "equippable": true,
-      "equip_slot": "main_hand",
-      "charges_max": 0,
-      "recharge_type": "none",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Magic weapon starter entry with original short summary."
-        }
+      "slug": "holy-avenger",
+      "aliases": [
+        "holy_avenger"
       ],
-      "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "javelin-of-lightning-action",
-          "name": "Javelin of Lightning",
-          "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
-        }
-      ],
-      "source": "starter_compendium",
-      "weapon_type": "magic_weapon",
-      "damage_dice": "by base weapon",
-      "damage_type": "by base weapon",
-      "range": "by base weapon",
-      "reach": "by base weapon",
-      "handedness": "by base weapon",
-      "weapon_properties": [],
-      "weight_lbs": 3,
-      "price_gp": 0,
-      "attack_bonus": 0,
-      "damage_bonus": 0,
-      "magic_bonus": 0,
-      "extra_damage": {
-        "summary": "See item action metadata for conditional extra damage."
-      },
-      "action_card": {
-        "type": "weapon_attack",
-        "bonus": 0
-      }
+      "legacy_ids": [],
+      "dedupe_key": "holyavenger"
     },
     {
       "id": "luck-blade",
@@ -2395,7 +2598,7 @@
           "id": "luck-blade-action",
           "name": "Luck Blade",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2417,7 +2620,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 1
-      }
+      },
+      "slug": "luck-blade",
+      "aliases": [
+        "luck_blade"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "luckblade"
     },
     {
       "id": "mace-of-disruption",
@@ -2446,7 +2655,7 @@
           "id": "mace-of-disruption-action",
           "name": "Mace of Disruption",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2468,7 +2677,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "mace-of-disruption",
+      "aliases": [
+        "mace_of_disruption"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "maceofdisruption"
     },
     {
       "id": "mace-of-smiting",
@@ -2497,7 +2712,7 @@
           "id": "mace-of-smiting-action",
           "name": "Mace of Smiting",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2519,7 +2734,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "mace-of-smiting",
+      "aliases": [
+        "mace_of_smiting"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "maceofsmiting"
     },
     {
       "id": "mace-of-terror",
@@ -2548,7 +2769,7 @@
           "id": "mace-of-terror-action",
           "name": "Mace of Terror",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2570,7 +2791,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "mace-of-terror",
+      "aliases": [
+        "mace_of_terror"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "maceofterror"
     },
     {
       "id": "nine-lives-stealer",
@@ -2599,7 +2826,7 @@
           "id": "nine-lives-stealer-action",
           "name": "Nine Lives Stealer",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2621,7 +2848,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "nine-lives-stealer",
+      "aliases": [
+        "nine_lives_stealer"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "ninelivesstealer"
     },
     {
       "id": "oathbow",
@@ -2650,7 +2883,7 @@
           "id": "oathbow-action",
           "name": "Oathbow",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2672,7 +2905,11 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "oathbow",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "oathbow"
     },
     {
       "id": "scimitar-of-speed",
@@ -2701,7 +2938,7 @@
           "id": "scimitar-of-speed-action",
           "name": "Scimitar of Speed",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2723,7 +2960,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "scimitar-of-speed",
+      "aliases": [
+        "scimitar_of_speed"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "scimitarofspeed"
     },
     {
       "id": "sword-of-life-stealing",
@@ -2752,7 +2995,7 @@
           "id": "sword-of-life-stealing-action",
           "name": "Sword of Life Stealing",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2774,7 +3017,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "sword-of-life-stealing",
+      "aliases": [
+        "sword_of_life_stealing"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "swordoflifestealing"
     },
     {
       "id": "sword-of-sharpness",
@@ -2803,7 +3052,7 @@
           "id": "sword-of-sharpness-action",
           "name": "Sword of Sharpness",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2825,7 +3074,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "sword-of-sharpness",
+      "aliases": [
+        "sword_of_sharpness"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "swordofsharpness"
     },
     {
       "id": "sword-of-wounding",
@@ -2854,7 +3109,7 @@
           "id": "sword-of-wounding-action",
           "name": "Sword of Wounding",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2876,7 +3131,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "sword-of-wounding",
+      "aliases": [
+        "sword_of_wounding"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "swordofwounding"
     },
     {
       "id": "sun-blade",
@@ -2905,7 +3166,7 @@
           "id": "sun-blade-action",
           "name": "Sun Blade",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2927,7 +3188,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 2
-      }
+      },
+      "slug": "sun-blade",
+      "aliases": [
+        "sun_blade"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "sunblade"
     },
     {
       "id": "vicious-weapon",
@@ -2956,7 +3223,7 @@
           "id": "vicious-weapon-action",
           "name": "Vicious Weapon",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -2978,7 +3245,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "vicious-weapon",
+      "aliases": [
+        "vicious_weapon"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "viciousweapon"
     },
     {
       "id": "vorpal-sword",
@@ -3007,7 +3280,7 @@
           "id": "vorpal-sword-action",
           "name": "Vorpal Sword",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -3029,7 +3302,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 3
-      }
+      },
+      "slug": "vorpal-sword",
+      "aliases": [
+        "vorpal_sword"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "vorpalsword"
     },
     {
       "id": "weapon-of-warning",
@@ -3058,7 +3337,7 @@
           "id": "weapon-of-warning-action",
           "name": "Weapon of Warning",
           "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
+          "summary": "Use this weapon\u2019s special property when its trigger applies."
         }
       ],
       "source": "starter_compendium",
@@ -3080,7 +3359,13 @@
       "action_card": {
         "type": "weapon_attack",
         "bonus": 0
-      }
+      },
+      "slug": "weapon-of-warning",
+      "aliases": [
+        "weapon_of_warning"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "weaponofwarning"
     }
   ]
 }

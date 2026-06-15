@@ -1,0 +1,425 @@
+{
+  "item_schema_version": 2,
+  "rules_version": "5e2024",
+  "category": "common_magic_items",
+  "description": "Items from common_magic_items bucket — open-compatible metadata and original summaries.",
+  "items": [
+    {
+      "id": "potion-of-healing",
+      "name": "Potion of Healing",
+      "item_schema_version": 2,
+      "category": "potion",
+      "subtype": "consumable",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "potion-of-healing-use",
+          "name": "Use Potion of Healing",
+          "action_type": "use_item",
+          "charge_cost": 0,
+          "summary": "Consume or apply this item."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": true,
+      "consumed_on_use": true,
+      "action_type": "use_item",
+      "target_type": "self",
+      "duration": "varies",
+      "healing": {
+        "formula": "2d4+2"
+      },
+      "damage": {},
+      "resistance": {},
+      "slug": "potion-of-healing",
+      "aliases": [
+        "potion_of_healing"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "potionofhealing"
+    },
+    {
+      "id": "potion-of-climbing",
+      "name": "Potion of Climbing",
+      "item_schema_version": 2,
+      "category": "potion",
+      "subtype": "consumable",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "potion-of-climbing-use",
+          "name": "Use Potion of Climbing",
+          "action_type": "use_item",
+          "charge_cost": 0,
+          "summary": "Consume or apply this item."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": true,
+      "consumed_on_use": true,
+      "action_type": "use_item",
+      "target_type": "self",
+      "duration": "varies",
+      "healing": {
+        "formula": null
+      },
+      "damage": {},
+      "resistance": {},
+      "slug": "potion-of-climbing",
+      "aliases": [
+        "potion_of_climbing"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "potionofclimbing"
+    },
+    {
+      "id": "antitoxin",
+      "name": "Antitoxin",
+      "item_schema_version": 2,
+      "category": "consumable",
+      "subtype": "consumable",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "antitoxin-use",
+          "name": "Use Antitoxin",
+          "action_type": "use_item",
+          "charge_cost": 0,
+          "summary": "Consume or apply this item."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": true,
+      "consumed_on_use": true,
+      "action_type": "use_item",
+      "target_type": "self",
+      "duration": "varies",
+      "healing": {
+        "formula": null
+      },
+      "damage": {},
+      "resistance": {},
+      "slug": "antitoxin",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "antitoxin"
+    },
+    {
+      "id": "acid-vial",
+      "name": "Acid Vial",
+      "item_schema_version": 2,
+      "category": "consumable",
+      "subtype": "consumable",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "acid-vial-use",
+          "name": "Use Acid Vial",
+          "action_type": "use_item",
+          "charge_cost": 0,
+          "summary": "Consume or apply this item."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": true,
+      "consumed_on_use": true,
+      "action_type": "use_item",
+      "target_type": "creature_or_object",
+      "duration": "varies",
+      "healing": {
+        "formula": null
+      },
+      "damage": {
+        "formula": "2d6",
+        "type": "acid/fire/poison"
+      },
+      "resistance": {},
+      "slug": "acid-vial",
+      "aliases": [
+        "acid_vial"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "acidvial"
+    },
+    {
+      "id": "alchemist-s-fire",
+      "name": "Alchemist’s Fire",
+      "item_schema_version": 2,
+      "category": "consumable",
+      "subtype": "consumable",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "alchemist-s-fire-use",
+          "name": "Use Alchemist’s Fire",
+          "action_type": "use_item",
+          "charge_cost": 0,
+          "summary": "Consume or apply this item."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": true,
+      "consumed_on_use": true,
+      "action_type": "use_item",
+      "target_type": "creature_or_object",
+      "duration": "varies",
+      "healing": {
+        "formula": null
+      },
+      "damage": {
+        "formula": "2d6",
+        "type": "acid/fire/poison"
+      },
+      "resistance": {},
+      "slug": "alchemist-s-fire",
+      "aliases": [
+        "alchemist_s_fire"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "alchemistsfire"
+    },
+    {
+      "id": "basic-poison",
+      "name": "Basic Poison",
+      "item_schema_version": 2,
+      "category": "consumable",
+      "subtype": "consumable",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "basic-poison-use",
+          "name": "Use Basic Poison",
+          "action_type": "use_item",
+          "charge_cost": 0,
+          "summary": "Consume or apply this item."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": true,
+      "consumed_on_use": true,
+      "action_type": "use_item",
+      "target_type": "creature_or_object",
+      "duration": "varies",
+      "healing": {
+        "formula": null
+      },
+      "damage": {
+        "formula": "2d6",
+        "type": "acid/fire/poison"
+      },
+      "resistance": {},
+      "slug": "basic-poison",
+      "aliases": [
+        "basic_poison"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "basicpoison"
+    },
+    {
+      "id": "spell-scroll-cantrip",
+      "name": "Spell Scroll Cantrip",
+      "item_schema_version": 2,
+      "category": "scroll",
+      "subtype": "spell_scroll",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "spell-scroll-cantrip-cast",
+          "name": "Cast from Scroll",
+          "action_type": "cast_scroll",
+          "charge_cost": 0,
+          "summary": "Cast linked spell once, then consume the scroll."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": true,
+      "consumed_on_use": true,
+      "spell_level": 0,
+      "spell_reference_supported": true,
+      "spell_dc_fallback": {
+        "save_dc": 13,
+        "attack_bonus": 5,
+        "uses_caster_when_available": true
+      },
+      "one_use_casting": true,
+      "slug": "spell-scroll-cantrip",
+      "aliases": [
+        "spell_scroll_cantrip"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "spellscrollcantrip"
+    },
+    {
+      "id": "spell-scroll-1st-level",
+      "name": "Spell Scroll 1st Level",
+      "item_schema_version": 2,
+      "category": "scroll",
+      "subtype": "spell_scroll",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": false,
+      "equip_slot": "",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "spell-scroll-1st-level-cast",
+          "name": "Cast from Scroll",
+          "action_type": "cast_scroll",
+          "charge_cost": 0,
+          "summary": "Cast linked spell once, then consume the scroll."
+        }
+      ],
+      "source": "srd_compendium",
+      "consumable": true,
+      "consumed_on_use": true,
+      "spell_level": 1,
+      "spell_reference_supported": true,
+      "spell_dc_fallback": {
+        "save_dc": 13,
+        "attack_bonus": 5,
+        "uses_caster_when_available": true
+      },
+      "one_use_casting": true,
+      "slug": "spell-scroll-1st-level",
+      "aliases": [
+        "spell_scroll_1st_level"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "spellscroll1stlevel"
+    },
+    {
+      "id": "staff",
+      "name": "Staff",
+      "item_schema_version": 2,
+      "category": "staff",
+      "subtype": "staff",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "dawn",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Starter magic item metadata."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "staff-action",
+          "name": "Staff",
+          "action_type": "item_action",
+          "charge_cost": 1,
+          "summary": "Activate this item."
+        }
+      ],
+      "source": "srd_compendium",
+      "charges_current": 0,
+      "recharge_formula": "1d6+1",
+      "item_spell_save_dc": 15,
+      "item_spell_attack_bonus": 7,
+      "weapon_type": "simple_melee",
+      "damage_dice": "1d6",
+      "damage_type": "bludgeoning",
+      "range": "5 ft",
+      "reach": "5 ft",
+      "handedness": "versatile",
+      "weapon_properties": [
+        "versatile"
+      ],
+      "attack_bonus": 0,
+      "damage_bonus": 0,
+      "magic_bonus": 0,
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 0
+      },
+      "slug": "staff",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "staff"
+    }
+  ]
+}

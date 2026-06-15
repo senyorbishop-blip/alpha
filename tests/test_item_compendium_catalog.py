@@ -438,18 +438,314 @@ def test_audit_tool_passes_on_full_catalog():
     import sys
     import importlib
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-    audit = importlib.import_module("tools.audit_item_catalog")
+    audit = importlib.import_module("tools.audit_item_compendium")
 
     from server.item_compendium import all_items, all_spell_ids, clear_cache
     clear_cache()
     items = all_items()
     known_spell_ids = all_spell_ids()
 
-    results = [audit.audit_item(i) for i in items]
+    results = [audit.audit_item(i, known_spell_ids=known_spell_ids) for i in items]
     schema_issues = [r for r in results if r["issues"]]
-    spell_violations = audit.audit_granted_spells(items, known_spell_ids)
     duplicate_ids = audit.check_duplicate_ids(items)
 
     assert not duplicate_ids, f"Duplicate item IDs found: {duplicate_ids}"
-    assert not spell_violations, f"Spell grant violations: {spell_violations}"
     assert not schema_issues, f"Schema issues: {[(r['name'], r['issues']) for r in schema_issues[:5]]}"
+
+
+# ---------------------------------------------------------------------------
+# 14. Alias, legacy_id, and dedupe_key lookup
+# ---------------------------------------------------------------------------
+
+def test_find_item_by_alias():
+    from server.item_compendium import find_item_by_alias, clear_cache
+    clear_cache()
+    # Thunder Mage Quarterstaff has alias "thunder_mage_quarterstaff_3"
+    item = find_item_by_alias("thunder_mage_quarterstaff_3")
+    assert item is not None
+    assert item["id"] == "thunder-mage-quarterstaff-plus-3"
+
+
+def test_find_item_by_legacy_id():
+    from server.item_compendium import find_item_by_legacy_id, clear_cache
+    clear_cache()
+    # Javelin of Lightning's wondrous variant was merged into the weapon
+    item = find_item_by_legacy_id("javelin-of-lightning-wondrous")
+    assert item is not None
+    assert item["id"] == "javelin-of-lightning"
+
+
+def test_find_item_by_dedupe_key():
+    from server.item_compendium import find_item_by_dedupe_key, clear_cache
+    clear_cache()
+    # "ringofprotection" is the normalized dedupe_key for Ring of Protection
+    item = find_item_by_dedupe_key("ringofprotection")
+    assert item is not None
+    assert item["name"] == "Ring of Protection"
+
+
+def test_resolve_item_by_id():
+    from server.item_compendium import resolve_item, clear_cache
+    clear_cache()
+    item = resolve_item("ring-of-protection")
+    assert item is not None
+    assert item["name"] == "Ring of Protection"
+
+
+def test_resolve_item_by_name():
+    from server.item_compendium import resolve_item, clear_cache
+    clear_cache()
+    item = resolve_item("Ring of Protection")
+    assert item is not None
+    assert item["id"] == "ring-of-protection"
+
+
+def test_resolve_item_by_legacy_id():
+    from server.item_compendium import resolve_item, clear_cache
+    clear_cache()
+    item = resolve_item("javelin-of-lightning-wondrous")
+    assert item is not None
+    assert item["id"] == "javelin-of-lightning"
+
+
+# ---------------------------------------------------------------------------
+# 15. filter_items with each criterion
+# ---------------------------------------------------------------------------
+
+def test_filter_items_by_category():
+    from server.item_compendium import filter_items, clear_cache
+    clear_cache()
+    rings = filter_items(category="ring")
+    assert len(rings) >= 1
+    assert all(i.get("category") == "ring" for i in rings)
+
+
+def test_filter_items_by_rarity():
+    from server.item_compendium import filter_items, clear_cache
+    clear_cache()
+    legendary = filter_items(rarity="legendary")
+    assert len(legendary) >= 1
+    assert all(i.get("rarity") == "legendary" for i in legendary)
+
+
+def test_filter_items_requires_attunement():
+    from server.item_compendium import filter_items, clear_cache
+    clear_cache()
+    attuned = filter_items(requires_attunement=True)
+    assert len(attuned) >= 1
+    assert all(
+        bool(i.get("requires_attunement") or i.get("attunement_required"))
+        for i in attuned
+    )
+
+
+def test_filter_items_has_charges():
+    from server.item_compendium import filter_items, clear_cache
+    clear_cache()
+    charged = filter_items(has_charges=True)
+    assert len(charged) >= 1
+    assert all(int(i.get("charges_max") or 0) > 0 for i in charged)
+
+
+def test_filter_items_grants_spells():
+    from server.item_compendium import filter_items, clear_cache
+    clear_cache()
+    spell_items = filter_items(grants_spells=True)
+    assert len(spell_items) >= 1
+    assert all(bool(i.get("granted_spells")) for i in spell_items)
+
+
+def test_filter_items_combat_usable():
+    from server.item_compendium import filter_items, clear_cache
+    clear_cache()
+    combat = filter_items(combat_usable=True)
+    assert len(combat) >= 1
+
+
+def test_filter_items_combined():
+    from server.item_compendium import filter_items, clear_cache
+    clear_cache()
+    results = filter_items(category="wand", rarity="uncommon")
+    assert len(results) >= 1
+    for item in results:
+        assert item.get("category") == "wand"
+        assert item.get("rarity") == "uncommon"
+
+
+# ---------------------------------------------------------------------------
+# 16. catalog_for_dm_picker with filters
+# ---------------------------------------------------------------------------
+
+def test_dm_picker_filter_by_rarity():
+    from server.item_compendium import catalog_for_dm_picker, clear_cache
+    clear_cache()
+    results = catalog_for_dm_picker(rarity="rare")
+    assert all(e["rarity"] == "rare" for e in results)
+    assert len(results) >= 1
+
+
+def test_dm_picker_filter_by_grants_spells():
+    from server.item_compendium import catalog_for_dm_picker, clear_cache
+    clear_cache()
+    results = catalog_for_dm_picker(grants_spells=True)
+    assert all(e["has_spells"] is True for e in results)
+    assert len(results) >= 1
+
+
+def test_dm_picker_search_by_name():
+    from server.item_compendium import catalog_for_dm_picker, clear_cache
+    clear_cache()
+    results = catalog_for_dm_picker(search="staff of fire")
+    assert len(results) >= 1
+    assert any("Staff of Fire" in e["name"] for e in results)
+
+
+def test_dm_picker_search_by_alias():
+    from server.item_compendium import catalog_for_dm_picker, clear_cache
+    clear_cache()
+    results = catalog_for_dm_picker(search="thunder_mage")
+    assert len(results) >= 1
+
+
+def test_dm_picker_entry_has_required_fields():
+    from server.item_compendium import catalog_for_dm_picker, clear_cache
+    clear_cache()
+    entries = catalog_for_dm_picker()
+    required_fields = {"id", "name", "slug", "category", "rarity", "requires_attunement",
+                       "charges_max", "has_spells", "has_passive_effect", "combat_usable", "source"}
+    for entry in entries[:5]:
+        for field in required_fields:
+            assert field in entry, f"Missing field '{field}' in DM picker entry for '{entry.get('name')}'"
+
+
+# ---------------------------------------------------------------------------
+# 17. Rarity file correctness
+# ---------------------------------------------------------------------------
+
+def test_uncommon_magic_items_file_all_uncommon():
+    path = os.path.join(_ITEMS_DIR, "uncommon_magic_items.json")
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    for item in data.get("items", []):
+        rarity = str(item.get("rarity") or "").lower()
+        assert rarity == "uncommon", (
+            f"Item '{item.get('id')}' in uncommon_magic_items.json has rarity='{rarity}'"
+        )
+
+
+def test_rare_magic_items_file_all_rare():
+    path = os.path.join(_ITEMS_DIR, "rare_magic_items.json")
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    for item in data.get("items", []):
+        rarity = str(item.get("rarity") or "").lower()
+        assert rarity == "rare", (
+            f"Item '{item.get('id')}' in rare_magic_items.json has rarity='{rarity}'"
+        )
+
+
+def test_very_rare_magic_items_file_all_very_rare():
+    path = os.path.join(_ITEMS_DIR, "very_rare_magic_items.json")
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    for item in data.get("items", []):
+        rarity = str(item.get("rarity") or "").lower()
+        assert rarity == "very_rare", (
+            f"Item '{item.get('id')}' in very_rare_magic_items.json has rarity='{rarity}'"
+        )
+
+
+def test_legendary_magic_items_file_all_legendary():
+    path = os.path.join(_ITEMS_DIR, "legendary_magic_items.json")
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    for item in data.get("items", []):
+        rarity = str(item.get("rarity") or "").lower()
+        assert rarity == "legendary", (
+            f"Item '{item.get('id')}' in legendary_magic_items.json has rarity='{rarity}'"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 18. Schema normalizes identity fields (aliases, legacy_ids, dedupe_key)
+# ---------------------------------------------------------------------------
+
+def test_schema_normalizes_identity_fields():
+    from server.item_schema import normalize_item_record, to_inventory_entry
+    raw = {
+        "name": "Staff of Fire",
+        "id": "staff-of-fire",
+        "slug": "staff-of-fire",
+        "aliases": ["staff_of_fire", "firestaff"],
+        "legacy_ids": ["staffs-fire-old"],
+        "dedupe_key": "staffoffire",
+        "category": "staff",
+        "rarity": "very_rare",
+    }
+    canonical = normalize_item_record(raw)
+    identity = canonical.get("identity", {})
+    assert identity.get("aliases") == ["staff_of_fire", "firestaff"]
+    assert identity.get("legacy_ids") == ["staffs-fire-old"]
+    assert identity.get("dedupe_key") == "staffoffire"
+
+    entry = to_inventory_entry(canonical)
+    assert entry.get("aliases") == ["staff_of_fire", "firestaff"]
+    assert entry.get("legacy_ids") == ["staffs-fire-old"]
+    assert entry.get("dedupe_key") == "staffoffire"
+
+
+def test_schema_auto_generates_dedupe_key():
+    from server.item_schema import normalize_item_record
+    raw = {"name": "Ring of Protection", "id": "ring-of-protection", "category": "ring"}
+    canonical = normalize_item_record(raw)
+    dk = canonical["identity"]["dedupe_key"]
+    assert dk == "ringofprotection"
+
+
+# ---------------------------------------------------------------------------
+# 19. Item compendium loads and all files load
+# ---------------------------------------------------------------------------
+
+def test_compendium_loads_without_error():
+    from server.item_compendium import all_items, clear_cache
+    clear_cache()
+    items = all_items()
+    assert len(items) >= 300
+
+
+def test_all_item_files_load_and_have_items():
+    from server.item_compendium import _ITEM_FILES
+    for fname in _ITEM_FILES:
+        path = os.path.join(_ITEMS_DIR, fname)
+        assert os.path.isfile(path), f"Missing: {fname}"
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        items = data if isinstance(data, list) else data.get("items", [])
+        assert isinstance(items, list), f"{fname}: not a list"
+
+
+def test_all_slugs_unique_after_dedup():
+    from server.item_compendium import all_items, clear_cache
+    clear_cache()
+    items = all_items()
+    seen = {}
+    for item in items:
+        slug = str(item.get("slug") or "").strip().lower()
+        if slug:
+            assert slug not in seen, f"Duplicate slug: '{slug}'"
+            seen[slug] = item.get("id")
+
+
+def test_duplicate_name_items_merge_into_canonical():
+    from server.item_compendium import compendium_merge_log, clear_cache
+    clear_cache()
+    log = compendium_merge_log()
+    # If any merge happened, it should appear in the log. No duplicates should remain.
+    from server.item_compendium import all_items
+    items = all_items()
+    names = [str(i.get("name") or "").lower() for i in items]
+    seen = {}
+    for n in names:
+        if n:
+            assert n not in seen, f"Duplicate name after dedup: '{n}'"
+            seen[n] = True
