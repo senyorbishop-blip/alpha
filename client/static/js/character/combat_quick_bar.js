@@ -448,8 +448,14 @@
     }
     const action = _findAction(key);
     const actionSource = _firstText(action && action.source, kind);
-    if (action && /^(weapon|equip_only|system_unarmed|attack)$/i.test(actionSource) && typeof global.openCombatQuickBarWeaponAction === 'function') {
-      global.openCombatQuickBarWeaponAction(action);
+    if (action && /^(weapon|equip_only|system_unarmed|attack)$/i.test(actionSource)) {
+      if (typeof global.openCombatQuickBarWeaponAction === 'function') {
+        global.openCombatQuickBarWeaponAction(action);
+      } else {
+        const _missingMsg = '[CombatQuickBar] openCombatQuickBarWeaponAction is missing. No action spent.';
+        if (global.console) global.console.error(_missingMsg);
+        if (typeof global.showToast === 'function') global.showToast('Weapon roll handler is not loaded. No action spent.');
+      }
     } else if (action && typeof global.playerUseAction === 'function') {
       global.playerUseAction(actionSource, _firstText(action.id, action.name));
       global.CombatQuickSelectors && global.CombatQuickSelectors.markUsed(key);
