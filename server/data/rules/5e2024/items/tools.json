@@ -1,6 +1,8 @@
 {
-  "category": "tools",
   "item_schema_version": 2,
+  "rules_version": "5e2024",
+  "category": "tools",
+  "description": "Items from tools bucket — open-compatible metadata and original summaries.",
   "items": [
     {
       "id": "alchemist-s-supplies",
@@ -32,7 +34,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "alchemist-s-supplies",
+      "aliases": [
+        "alchemist_s_supplies"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "alchemistssupplies"
     },
     {
       "id": "brewer-s-supplies",
@@ -64,7 +72,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "brewer-s-supplies",
+      "aliases": [
+        "brewer_s_supplies"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "brewerssupplies"
     },
     {
       "id": "calligrapher-s-supplies",
@@ -96,7 +110,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "calligrapher-s-supplies",
+      "aliases": [
+        "calligrapher_s_supplies"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "calligrapherssupplies"
     },
     {
       "id": "carpenter-s-tools",
@@ -128,7 +148,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "carpenter-s-tools",
+      "aliases": [
+        "carpenter_s_tools"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "carpenterstools"
     },
     {
       "id": "cartographer-s-tools",
@@ -160,7 +186,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "cartographer-s-tools",
+      "aliases": [
+        "cartographer_s_tools"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "cartographerstools"
     },
     {
       "id": "cobbler-s-tools",
@@ -192,7 +224,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "cobbler-s-tools",
+      "aliases": [
+        "cobbler_s_tools"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "cobblerstools"
     },
     {
       "id": "cook-s-utensils",
@@ -224,7 +262,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "cook-s-utensils",
+      "aliases": [
+        "cook_s_utensils"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "cooksutensils"
     },
     {
       "id": "disguise-kit",
@@ -256,7 +300,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "disguise-kit",
+      "aliases": [
+        "disguise_kit"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "disguisekit"
     },
     {
       "id": "forgery-kit",
@@ -288,7 +338,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "forgery-kit",
+      "aliases": [
+        "forgery_kit"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "forgerykit"
     },
     {
       "id": "gaming-set",
@@ -320,7 +376,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "gaming-set",
+      "aliases": [
+        "gaming_set"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "gamingset"
     },
     {
       "id": "herbalism-kit",
@@ -352,7 +414,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "herbalism-kit",
+      "aliases": [
+        "herbalism_kit"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "herbalismkit"
     },
     {
       "id": "jeweler-s-tools",
@@ -384,7 +452,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "jeweler-s-tools",
+      "aliases": [
+        "jeweler_s_tools"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "jewelerstools"
     },
     {
       "id": "leatherworker-s-tools",
@@ -416,7 +490,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "leatherworker-s-tools",
+      "aliases": [
+        "leatherworker_s_tools"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "leatherworkerstools"
     },
     {
       "id": "mason-s-tools",
@@ -448,7 +528,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "mason-s-tools",
+      "aliases": [
+        "mason_s_tools"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "masonstools"
     },
     {
       "id": "navigator-s-tools",
@@ -480,7 +566,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "navigator-s-tools",
+      "aliases": [
+        "navigator_s_tools"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "navigatorstools"
     },
     {
       "id": "painter-s-supplies",
@@ -512,7 +604,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "painter-s-supplies",
+      "aliases": [
+        "painter_s_supplies"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "painterssupplies"
     },
     {
       "id": "poisoner-s-kit",
@@ -544,7 +642,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "poisoner-s-kit",
+      "aliases": [
+        "poisoner_s_kit"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "poisonerskit"
     },
     {
       "id": "smith-s-tools",
@@ -576,7 +680,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "smith-s-tools",
+      "aliases": [
+        "smith_s_tools"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "smithstools"
     },
     {
       "id": "thieves-tools",
@@ -608,7 +718,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "thieves-tools",
+      "aliases": [
+        "thieves_tools"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "thievestools"
     },
     {
       "id": "tinker-s-tools",
@@ -640,7 +756,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "tinker-s-tools",
+      "aliases": [
+        "tinker_s_tools"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "tinkerstools"
     },
     {
       "id": "weaver-s-tools",
@@ -672,7 +794,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "weaver-s-tools",
+      "aliases": [
+        "weaver_s_tools"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "weaverstools"
     },
     {
       "id": "woodcarver-s-tools",
@@ -704,7 +832,13 @@
           "skill": "varies",
           "summary": "Apply proficiency to appropriate checks using this tool."
         }
-      ]
+      ],
+      "slug": "woodcarver-s-tools",
+      "aliases": [
+        "woodcarver_s_tools"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "woodcarverstools"
     },
     {
       "id": "lute",
@@ -740,7 +874,11 @@
           "skill": "performance",
           "summary": "Use with Performance checks."
         }
-      ]
+      ],
+      "slug": "lute",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "lute"
     }
   ]
 }

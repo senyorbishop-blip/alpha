@@ -1,6 +1,8 @@
 {
-  "category": "armor",
   "item_schema_version": 2,
+  "rules_version": "5e2024",
+  "category": "mundane_armor_shields",
+  "description": "Items from mundane_armor_shields bucket — open-compatible metadata and original summaries.",
   "items": [
     {
       "id": "padded-armor",
@@ -34,7 +36,13 @@
         "dex_cap": null,
         "bonus": 0,
         "formula": "base + dex up to cap"
-      }
+      },
+      "slug": "padded-armor",
+      "aliases": [
+        "padded_armor"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "paddedarmor"
     },
     {
       "id": "leather-armor",
@@ -68,7 +76,13 @@
         "dex_cap": null,
         "bonus": 0,
         "formula": "base + dex up to cap"
-      }
+      },
+      "slug": "leather-armor",
+      "aliases": [
+        "leather_armor"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "leatherarmor"
     },
     {
       "id": "studded-leather-armor",
@@ -102,7 +116,13 @@
         "dex_cap": null,
         "bonus": 0,
         "formula": "base + dex up to cap"
-      }
+      },
+      "slug": "studded-leather-armor",
+      "aliases": [
+        "studded_leather_armor"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "studdedleatherarmor"
     },
     {
       "id": "hide-armor",
@@ -136,7 +156,13 @@
         "dex_cap": 2,
         "bonus": 0,
         "formula": "base + dex up to cap"
-      }
+      },
+      "slug": "hide-armor",
+      "aliases": [
+        "hide_armor"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "hidearmor"
     },
     {
       "id": "chain-shirt",
@@ -170,7 +196,13 @@
         "dex_cap": 2,
         "bonus": 0,
         "formula": "base + dex up to cap"
-      }
+      },
+      "slug": "chain-shirt",
+      "aliases": [
+        "chain_shirt"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "chainshirt"
     },
     {
       "id": "scale-mail",
@@ -204,7 +236,13 @@
         "dex_cap": 2,
         "bonus": 0,
         "formula": "base + dex up to cap"
-      }
+      },
+      "slug": "scale-mail",
+      "aliases": [
+        "scale_mail"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "scalemail"
     },
     {
       "id": "breastplate",
@@ -238,7 +276,11 @@
         "dex_cap": 2,
         "bonus": 0,
         "formula": "base + dex up to cap"
-      }
+      },
+      "slug": "breastplate",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "breastplate"
     },
     {
       "id": "half-plate",
@@ -272,7 +314,13 @@
         "dex_cap": 2,
         "bonus": 0,
         "formula": "base + dex up to cap"
-      }
+      },
+      "slug": "half-plate",
+      "aliases": [
+        "half_plate"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "halfplate"
     },
     {
       "id": "ring-mail",
@@ -306,7 +354,13 @@
         "dex_cap": 0,
         "bonus": 0,
         "formula": "base"
-      }
+      },
+      "slug": "ring-mail",
+      "aliases": [
+        "ring_mail"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "ringmail"
     },
     {
       "id": "chain-mail",
@@ -340,7 +394,13 @@
         "dex_cap": 0,
         "bonus": 0,
         "formula": "base"
-      }
+      },
+      "slug": "chain-mail",
+      "aliases": [
+        "chain_mail"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "chainmail"
     },
     {
       "id": "splint-armor",
@@ -374,7 +434,13 @@
         "dex_cap": 0,
         "bonus": 0,
         "formula": "base"
-      }
+      },
+      "slug": "splint-armor",
+      "aliases": [
+        "splint_armor"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "splintarmor"
     },
     {
       "id": "plate-armor",
@@ -408,7 +474,13 @@
         "dex_cap": 0,
         "bonus": 0,
         "formula": "base"
-      }
+      },
+      "slug": "plate-armor",
+      "aliases": [
+        "plate_armor"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "platearmor"
     },
     {
       "id": "armor-plus1",
@@ -448,7 +520,14 @@
         "dex_cap": null,
         "bonus": 1,
         "formula": "base armor + magic bonus"
-      }
+      },
+      "slug": "armor-1",
+      "aliases": [
+        "armor-1",
+        "armor_1"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "armor1"
     },
     {
       "id": "armor-plus2",
@@ -488,7 +567,14 @@
         "dex_cap": null,
         "bonus": 2,
         "formula": "base armor + magic bonus"
-      }
+      },
+      "slug": "armor-2",
+      "aliases": [
+        "armor-2",
+        "armor_2"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "armor2"
     },
     {
       "id": "armor-plus3",
@@ -528,7 +614,14 @@
         "dex_cap": null,
         "bonus": 3,
         "formula": "base armor + magic bonus"
-      }
+      },
+      "slug": "armor-3",
+      "aliases": [
+        "armor-3",
+        "armor_3"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "armor3"
     },
     {
       "id": "adamantine-armor",
@@ -568,7 +661,13 @@
         "dex_cap": null,
         "bonus": 0,
         "formula": "base armor + magic bonus"
-      }
+      },
+      "slug": "adamantine-armor",
+      "aliases": [
+        "adamantine_armor"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "adamantinearmor"
     },
     {
       "id": "armor-of-resistance",
@@ -616,7 +715,13 @@
         "dex_cap": null,
         "bonus": 1,
         "formula": "base armor + magic bonus"
-      }
+      },
+      "slug": "armor-of-resistance",
+      "aliases": [
+        "armor_of_resistance"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "armorofresistance"
     },
     {
       "id": "armor-of-vulnerability",
@@ -664,7 +769,13 @@
         "dex_cap": null,
         "bonus": 1,
         "formula": "base armor + magic bonus"
-      }
+      },
+      "slug": "armor-of-vulnerability",
+      "aliases": [
+        "armor_of_vulnerability"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "armorofvulnerability"
     },
     {
       "id": "demon-armor",
@@ -712,7 +823,13 @@
         "dex_cap": null,
         "bonus": 1,
         "formula": "base armor + magic bonus"
-      }
+      },
+      "slug": "demon-armor",
+      "aliases": [
+        "demon_armor"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "demonarmor"
     },
     {
       "id": "dragon-scale-mail",
@@ -752,7 +869,13 @@
         "dex_cap": null,
         "bonus": 1,
         "formula": "base armor + magic bonus"
-      }
+      },
+      "slug": "dragon-scale-mail",
+      "aliases": [
+        "dragon_scale_mail"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "dragonscalemail"
     },
     {
       "id": "elven-chain",
@@ -792,7 +915,13 @@
         "dex_cap": null,
         "bonus": 1,
         "formula": "base armor + magic bonus"
-      }
+      },
+      "slug": "elven-chain",
+      "aliases": [
+        "elven_chain"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "elvenchain"
     },
     {
       "id": "glamoured-studded-leather",
@@ -832,7 +961,13 @@
         "dex_cap": null,
         "bonus": 1,
         "formula": "base armor + magic bonus"
-      }
+      },
+      "slug": "glamoured-studded-leather",
+      "aliases": [
+        "glamoured_studded_leather"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "glamouredstuddedleather"
     },
     {
       "id": "mithral-armor",
@@ -872,7 +1007,13 @@
         "dex_cap": null,
         "bonus": 0,
         "formula": "base armor + magic bonus"
-      }
+      },
+      "slug": "mithral-armor",
+      "aliases": [
+        "mithral_armor"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "mithralarmor"
     },
     {
       "id": "plate-armor-of-etherealness",
@@ -920,7 +1061,456 @@
         "dex_cap": null,
         "bonus": 1,
         "formula": "base armor + magic bonus"
-      }
+      },
+      "slug": "plate-armor-of-etherealness",
+      "aliases": [
+        "plate_armor_of_etherealness"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "platearmorofetherealness"
+    },
+    {
+      "id": "shield",
+      "name": "Shield",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 2,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 2,
+      "magic_bonus": 0,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 2,
+        "formula": "shield bonus"
+      },
+      "slug": "shield",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "shield"
+    },
+    {
+      "id": "plus1-shield",
+      "name": "+1 Shield",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 3,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 3,
+      "magic_bonus": 1,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 3,
+        "formula": "shield bonus"
+      },
+      "slug": "1-shield",
+      "aliases": [
+        "1-shield",
+        "1_shield"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "1shield"
+    },
+    {
+      "id": "plus2-shield",
+      "name": "+2 Shield",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 4,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 4,
+      "magic_bonus": 2,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 4,
+        "formula": "shield bonus"
+      },
+      "slug": "2-shield",
+      "aliases": [
+        "2-shield",
+        "2_shield"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "2shield"
+    },
+    {
+      "id": "plus3-shield",
+      "name": "+3 Shield",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 5,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 5,
+      "magic_bonus": 3,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 5,
+        "formula": "shield bonus"
+      },
+      "slug": "3-shield",
+      "aliases": [
+        "3-shield",
+        "3_shield"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "3shield"
+    },
+    {
+      "id": "shield-plus1",
+      "name": "Shield +1",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 3,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 3,
+      "magic_bonus": 1,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 3,
+        "formula": "shield bonus"
+      },
+      "slug": "shield-1",
+      "aliases": [
+        "shield-1",
+        "shield_1"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "shield1"
+    },
+    {
+      "id": "shield-plus2",
+      "name": "Shield +2",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 4,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 4,
+      "magic_bonus": 2,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 4,
+        "formula": "shield bonus"
+      },
+      "slug": "shield-2",
+      "aliases": [
+        "shield-2",
+        "shield_2"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "shield2"
+    },
+    {
+      "id": "shield-plus3",
+      "name": "Shield +3",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": false,
+      "attunement": {
+        "required": false
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 5,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 5,
+      "magic_bonus": 3,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 5,
+        "formula": "shield bonus"
+      },
+      "slug": "shield-3",
+      "aliases": [
+        "shield-3",
+        "shield_3"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "shield3"
+    },
+    {
+      "id": "shield-of-missile-attraction",
+      "name": "Shield of Missile Attraction",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 2,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "shield-of-missile-attraction-attuned-effect",
+          "name": "Shield of Missile Attraction Attuned Effect",
+          "action_type": "passive_effect",
+          "charge_cost": 0,
+          "summary": "Apply this item’s attuned passive effect while worn."
+        }
+      ],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 2,
+      "magic_bonus": 0,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 2,
+        "formula": "shield bonus"
+      },
+      "slug": "shield-of-missile-attraction",
+      "aliases": [
+        "shield_of_missile_attraction"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "shieldofmissileattraction"
+    },
+    {
+      "id": "spellguard-shield",
+      "name": "Spellguard Shield",
+      "item_schema_version": 2,
+      "category": "shield",
+      "subtype": "shield",
+      "rarity": "common",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true
+      },
+      "equippable": true,
+      "equip_slot": "off_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "shield_ac_bonus",
+          "value": 2,
+          "summary": "Adds to AC while equipped."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "spellguard-shield-attuned-effect",
+          "name": "Spellguard Shield Attuned Effect",
+          "action_type": "passive_effect",
+          "charge_cost": 0,
+          "summary": "Apply this item’s attuned passive effect while worn."
+        }
+      ],
+      "source": "starter_compendium",
+      "armor_type": "shield",
+      "base_ac": 0,
+      "ac_bonus": 2,
+      "magic_bonus": 0,
+      "dex_cap": null,
+      "stealth_disadvantage": false,
+      "strength_requirement": 0,
+      "weight_lbs": 6,
+      "price_cp": 1000,
+      "ac_calculation": {
+        "base_ac": 0,
+        "dex_cap": null,
+        "bonus": 2,
+        "formula": "shield bonus"
+      },
+      "slug": "spellguard-shield",
+      "aliases": [
+        "spellguard_shield"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "spellguardshield"
     }
   ]
 }

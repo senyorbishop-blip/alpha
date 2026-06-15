@@ -1,60 +1,9 @@
 {
-  "category": "homebrew",
   "item_schema_version": 2,
+  "rules_version": "5e2024",
+  "category": "homebrew",
+  "description": "Items from homebrew bucket — open-compatible metadata and original summaries.",
   "items": [
-    {
-      "id": "thunder-mage-quarterstaff-plus3-homebrew",
-      "name": "Thunder Mage Quarterstaff, +3",
-      "item_schema_version": 2,
-      "category": "weapon",
-      "subtype": "homebrew",
-      "rarity": "rare",
-      "requires_attunement": true,
-      "attunement": {
-        "required": true,
-        "supported": true
-      },
-      "equippable": true,
-      "equip_slot": "main_hand",
-      "charges_max": 0,
-      "recharge_type": "none",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "TODO homebrew effect."
-        }
-      ],
-      "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "thunder-mage-quarterstaff-plus3-homebrew-action",
-          "name": "Thunder Mage Quarterstaff, +3",
-          "action_type": "item_action",
-          "charge_cost": 0,
-          "summary": "TODO homebrew action."
-        }
-      ],
-      "source": "starter_compendium",
-      "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
-      "weight_lbs": 1,
-      "price_gp": 0,
-      "weapon_type": "simple_melee",
-      "damage_dice": "1d6",
-      "damage_type": "bludgeoning",
-      "range": "5 ft",
-      "reach": "5 ft",
-      "handedness": "versatile",
-      "weapon_properties": [
-        "versatile"
-      ],
-      "attack_bonus": 3,
-      "damage_bonus": 3,
-      "magic_bonus": 3,
-      "action_card": {
-        "type": "weapon_attack",
-        "bonus": 3
-      }
-    },
     {
       "id": "shadow-prisoner-s-shank",
       "name": "Shadow Prisoner’s Shank",
@@ -87,10 +36,16 @@
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "starter_compendium",
+      "source": "homebrew",
       "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
       "weight_lbs": 1,
-      "price_gp": 0
+      "price_gp": 0,
+      "slug": "shadow-prisoner-s-shank",
+      "aliases": [
+        "shadow_prisoner_s_shank"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "shadowprisonersshank"
     },
     {
       "id": "baron-s-signet-ring",
@@ -124,10 +79,16 @@
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "starter_compendium",
+      "source": "homebrew",
       "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
       "weight_lbs": 1,
-      "price_gp": 0
+      "price_gp": 0,
+      "slug": "baron-s-signet-ring",
+      "aliases": [
+        "baron_s_signet_ring"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "baronssignetring"
     },
     {
       "id": "shar-touched-amulet",
@@ -161,10 +122,16 @@
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "starter_compendium",
+      "source": "homebrew",
       "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
       "weight_lbs": 1,
-      "price_gp": 0
+      "price_gp": 0,
+      "slug": "shar-touched-amulet",
+      "aliases": [
+        "shar_touched_amulet"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "shartouchedamulet"
     },
     {
       "id": "brosst-guard-captain-s-blade",
@@ -198,10 +165,16 @@
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "starter_compendium",
+      "source": "homebrew",
       "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
       "weight_lbs": 1,
-      "price_gp": 0
+      "price_gp": 0,
+      "slug": "brosst-guard-captain-s-blade",
+      "aliases": [
+        "brosst_guard_captain_s_blade"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "brosstguardcaptainsblade"
     },
     {
       "id": "guild-of-seagull-token",
@@ -235,10 +208,16 @@
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "starter_compendium",
+      "source": "homebrew",
       "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
       "weight_lbs": 1,
-      "price_gp": 0
+      "price_gp": 0,
+      "slug": "guild-of-seagull-token",
+      "aliases": [
+        "guild_of_seagull_token"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "guildofseagulltoken"
     },
     {
       "id": "cultist-black-candle",
@@ -272,10 +251,16 @@
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "starter_compendium",
+      "source": "homebrew",
       "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
       "weight_lbs": 1,
-      "price_gp": 0
+      "price_gp": 0,
+      "slug": "cultist-black-candle",
+      "aliases": [
+        "cultist_black_candle"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "cultistblackcandle"
     },
     {
       "id": "seagull-feather-cloak",
@@ -309,10 +294,16 @@
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "starter_compendium",
+      "source": "homebrew",
       "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
       "weight_lbs": 1,
-      "price_gp": 0
+      "price_gp": 0,
+      "slug": "seagull-feather-cloak",
+      "aliases": [
+        "seagull_feather_cloak"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "seagullfeathercloak"
     },
     {
       "id": "prison-break-lockpick-set",
@@ -346,10 +337,16 @@
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "starter_compendium",
+      "source": "homebrew",
       "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
       "weight_lbs": 1,
-      "price_gp": 0
+      "price_gp": 0,
+      "slug": "prison-break-lockpick-set",
+      "aliases": [
+        "prison_break_lockpick_set"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "prisonbreaklockpickset"
     },
     {
       "id": "fireball-viewer-token",
@@ -383,10 +380,16 @@
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "starter_compendium",
+      "source": "homebrew",
       "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
       "weight_lbs": 1,
-      "price_gp": 0
+      "price_gp": 0,
+      "slug": "fireball-viewer-token",
+      "aliases": [
+        "fireball_viewer_token"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "fireballviewertoken"
     },
     {
       "id": "chaos-wheel-coin",
@@ -420,10 +423,16 @@
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "starter_compendium",
+      "source": "homebrew",
       "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
       "weight_lbs": 1,
-      "price_gp": 0
+      "price_gp": 0,
+      "slug": "chaos-wheel-coin",
+      "aliases": [
+        "chaos_wheel_coin"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "chaoswheelcoin"
     },
     {
       "id": "bruno-s-lucky-treat",
@@ -457,10 +466,16 @@
           "summary": "TODO homebrew action."
         }
       ],
-      "source": "starter_compendium",
+      "source": "homebrew",
       "description_summary": "TODO: Starter homebrew summary; customize for your campaign.",
       "weight_lbs": 1,
-      "price_gp": 0
+      "price_gp": 0,
+      "slug": "bruno-s-lucky-treat",
+      "aliases": [
+        "bruno_s_lucky_treat"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "brunosluckytreat"
     }
   ]
 }

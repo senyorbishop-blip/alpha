@@ -1,6 +1,8 @@
 {
-  "category": "adventuring_gear",
   "item_schema_version": 2,
+  "rules_version": "5e2024",
+  "category": "adventuring_gear",
+  "description": "Items from adventuring_gear bucket — open-compatible metadata and original summaries.",
   "items": [
     {
       "id": "backpack",
@@ -27,7 +29,11 @@
       "stackable": true,
       "container": true,
       "container_capacity_lbs": 30,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "backpack",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "backpack"
     },
     {
       "id": "bedroll",
@@ -54,7 +60,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "bedroll",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "bedroll"
     },
     {
       "id": "blanket",
@@ -81,7 +91,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "blanket",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "blanket"
     },
     {
       "id": "candle",
@@ -108,7 +122,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "candle",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "candle"
     },
     {
       "id": "chain",
@@ -135,7 +153,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "chain",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "chain"
     },
     {
       "id": "chalk",
@@ -162,7 +184,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "chalk",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "chalk"
     },
     {
       "id": "chest",
@@ -189,7 +215,11 @@
       "stackable": true,
       "container": true,
       "container_capacity_lbs": 300,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "chest",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "chest"
     },
     {
       "id": "crowbar",
@@ -216,7 +246,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "crowbar",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "crowbar"
     },
     {
       "id": "flask",
@@ -243,7 +277,11 @@
       "stackable": true,
       "container": true,
       "container_capacity_lbs": 1,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "flask",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "flask"
     },
     {
       "id": "grappling-hook",
@@ -270,7 +308,13 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "grappling-hook",
+      "aliases": [
+        "grappling_hook"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "grapplinghook"
     },
     {
       "id": "hammer",
@@ -297,7 +341,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "hammer",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "hammer"
     },
     {
       "id": "healers-kit",
@@ -333,7 +381,14 @@
       "container": false,
       "container_capacity_lbs": 0,
       "description_summary": "Common adventuring gear starter entry.",
-      "charges_current": 10
+      "charges_current": 10,
+      "slug": "healer-s-kit",
+      "aliases": [
+        "healer-s-kit",
+        "healer_s_kit"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "healerskit"
     },
     {
       "id": "holy-symbol",
@@ -360,7 +415,13 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "holy-symbol",
+      "aliases": [
+        "holy_symbol"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "holysymbol"
     },
     {
       "id": "holy-water",
@@ -387,7 +448,13 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "holy-water",
+      "aliases": [
+        "holy_water"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "holywater"
     },
     {
       "id": "hunting-trap",
@@ -414,7 +481,13 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "hunting-trap",
+      "aliases": [
+        "hunting_trap"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "huntingtrap"
     },
     {
       "id": "ink",
@@ -441,7 +514,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "ink",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "ink"
     },
     {
       "id": "ink-pen",
@@ -468,7 +545,13 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "ink-pen",
+      "aliases": [
+        "ink_pen"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "inkpen"
     },
     {
       "id": "lantern",
@@ -495,7 +578,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "lantern",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "lantern"
     },
     {
       "id": "lock",
@@ -522,7 +609,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "lock",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "lock"
     },
     {
       "id": "manacles",
@@ -549,7 +640,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "manacles",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "manacles"
     },
     {
       "id": "mess-kit",
@@ -576,7 +671,13 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "mess-kit",
+      "aliases": [
+        "mess_kit"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "messkit"
     },
     {
       "id": "oil-flask",
@@ -603,7 +704,13 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "oil-flask",
+      "aliases": [
+        "oil_flask"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "oilflask"
     },
     {
       "id": "parchment",
@@ -630,7 +737,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "parchment",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "parchment"
     },
     {
       "id": "pole",
@@ -657,7 +768,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "pole",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "pole"
     },
     {
       "id": "potion-bottle",
@@ -684,7 +799,13 @@
       "stackable": true,
       "container": true,
       "container_capacity_lbs": 1,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "potion-bottle",
+      "aliases": [
+        "potion_bottle"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "potionbottle"
     },
     {
       "id": "pouch",
@@ -711,7 +832,11 @@
       "stackable": true,
       "container": true,
       "container_capacity_lbs": 6,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "pouch",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "pouch"
     },
     {
       "id": "quiver",
@@ -738,7 +863,11 @@
       "stackable": true,
       "container": true,
       "container_capacity_lbs": 20,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "quiver",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "quiver"
     },
     {
       "id": "rations",
@@ -765,7 +894,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "rations",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "rations"
     },
     {
       "id": "rope-hemp",
@@ -792,7 +925,13 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "rope",
+      "aliases": [
+        "rope"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "rope"
     },
     {
       "id": "sack",
@@ -819,7 +958,11 @@
       "stackable": true,
       "container": true,
       "container_capacity_lbs": 30,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "sack",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "sack"
     },
     {
       "id": "shovel",
@@ -846,7 +989,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "shovel",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "shovel"
     },
     {
       "id": "signal-whistle",
@@ -873,7 +1020,13 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "signal-whistle",
+      "aliases": [
+        "signal_whistle"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "signalwhistle"
     },
     {
       "id": "spellbook",
@@ -900,7 +1053,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "spellbook",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "spellbook"
     },
     {
       "id": "tent",
@@ -927,7 +1084,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "tent",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "tent"
     },
     {
       "id": "tinderbox",
@@ -954,7 +1115,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "tinderbox",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "tinderbox"
     },
     {
       "id": "torch",
@@ -981,7 +1146,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "torch",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "torch"
     },
     {
       "id": "vial",
@@ -1008,7 +1177,11 @@
       "stackable": true,
       "container": true,
       "container_capacity_lbs": 1,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "vial",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "vial"
     },
     {
       "id": "waterskin",
@@ -1035,7 +1208,11 @@
       "stackable": true,
       "container": true,
       "container_capacity_lbs": 4,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "waterskin",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "waterskin"
     },
     {
       "id": "whetstone",
@@ -1062,7 +1239,11 @@
       "stackable": true,
       "container": false,
       "container_capacity_lbs": 0,
-      "description_summary": "Common adventuring gear starter entry."
+      "description_summary": "Common adventuring gear starter entry.",
+      "slug": "whetstone",
+      "aliases": [],
+      "legacy_ids": [],
+      "dedupe_key": "whetstone"
     }
   ]
 }

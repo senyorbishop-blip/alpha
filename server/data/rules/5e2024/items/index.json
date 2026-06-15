@@ -1,88 +1,153 @@
 {
   "item_schema_version": 2,
   "rules_version": "5e2024",
-  "description": "Starter item compendium using open-compatible structured metadata and original summaries; not a complete official catalog.",
+  "description": "Item compendium using open-compatible structured metadata and original summaries. Organized by mundane/rarity split. DM can import additional licensed items privately.",
+  "organization": "rarity_split",
+  "dedup_policy": "id_then_slug_then_dedupe_key_then_alias",
   "files": [
+    {
+      "file": "mundane_weapons.json",
+      "category": "mundane_weapons",
+      "rarity_scope": [
+        "common"
+      ],
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 66
+    },
+    {
+      "file": "mundane_armor_shields.json",
+      "category": "mundane_armor_shields",
+      "rarity_scope": [
+        "common"
+      ],
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 33
+    },
     {
       "file": "adventuring_gear.json",
       "category": "adventuring_gear",
+      "rarity_scope": [
+        "common"
+      ],
       "source": "SRD/open-compatible/original summaries",
       "item_count_approx": 39
     },
     {
-      "file": "armor.json",
-      "category": "armor",
-      "source": "SRD/open-compatible/original summaries",
-      "item_count_approx": 24
-    },
-    {
-      "file": "homebrew.json",
-      "category": "homebrew",
-      "source": "SRD/open-compatible/original summaries",
-      "item_count_approx": 12
-    },
-    {
-      "file": "potions.json",
-      "category": "potions",
-      "source": "SRD/open-compatible/original summaries",
-      "item_count_approx": 17
-    },
-    {
-      "file": "rings.json",
-      "category": "rings",
-      "source": "SRD/open-compatible/original summaries",
-      "item_count_approx": 15
-    },
-    {
-      "file": "rods.json",
-      "category": "rods",
-      "source": "SRD/open-compatible/original summaries",
-      "item_count_approx": 9
-    },
-    {
-      "file": "scrolls.json",
-      "category": "scrolls",
-      "source": "SRD/open-compatible/original summaries",
-      "item_count_approx": 11
-    },
-    {
-      "file": "shields.json",
-      "category": "shields",
-      "source": "SRD/open-compatible/original summaries",
-      "item_count_approx": 9
-    },
-    {
-      "file": "staffs.json",
-      "category": "staffs",
-      "source": "SRD/open-compatible/original summaries",
-      "item_count_approx": 13
-    },
-    {
       "file": "tools.json",
       "category": "tools",
+      "rarity_scope": [
+        "common"
+      ],
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 23
+    },
+    {
+      "file": "trade_goods_materials.json",
+      "category": "trade_goods_materials",
+      "rarity_scope": [
+        "common",
+        "uncommon",
+        "rare"
+      ],
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 10
+    },
+    {
+      "file": "mounts_vehicles.json",
+      "category": "mounts_vehicles",
+      "rarity_scope": [
+        "common"
+      ],
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 6
+    },
+    {
+      "file": "common_magic_items.json",
+      "category": "common_magic_items",
+      "rarity_scope": [
+        "common"
+      ],
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 9
+    },
+    {
+      "file": "uncommon_magic_items.json",
+      "category": "uncommon_magic_items",
+      "rarity_scope": [
+        "uncommon"
+      ],
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 56
+    },
+    {
+      "file": "rare_magic_items.json",
+      "category": "rare_magic_items",
+      "rarity_scope": [
+        "rare"
+      ],
+      "source": "SRD/open-compatible/original summaries",
+      "item_count_approx": 36
+    },
+    {
+      "file": "very_rare_magic_items.json",
+      "category": "very_rare_magic_items",
+      "rarity_scope": [
+        "very_rare"
+      ],
       "source": "SRD/open-compatible/original summaries",
       "item_count_approx": 22
     },
     {
-      "file": "wands.json",
-      "category": "wands",
+      "file": "legendary_magic_items.json",
+      "category": "legendary_magic_items",
+      "rarity_scope": [
+        "legendary"
+      ],
       "source": "SRD/open-compatible/original summaries",
-      "item_count_approx": 13
+      "item_count_approx": 5
     },
     {
-      "file": "weapons.json",
-      "category": "weapons",
-      "source": "SRD/open-compatible/original summaries",
-      "item_count_approx": 67
+      "file": "artifact_magic_items.json",
+      "category": "artifact_magic_items",
+      "rarity_scope": [
+        "artifact"
+      ],
+      "source": "DM-import only \u2014 proprietary content blocked",
+      "item_count_approx": 0
     },
     {
-      "file": "wondrous.json",
-      "category": "wondrous",
-      "source": "SRD/open-compatible/original summaries",
-      "item_count_approx": 50
+      "file": "homebrew_items.json",
+      "category": "homebrew",
+      "rarity_scope": [
+        "common",
+        "uncommon",
+        "rare",
+        "very_rare",
+        "legendary",
+        "artifact"
+      ],
+      "source": "campaign/homebrew",
+      "item_count_approx": 11
     }
   ],
+  "legacy_files": [
+    "weapons.json",
+    "armor.json",
+    "shields.json",
+    "potions.json",
+    "scrolls.json",
+    "wands.json",
+    "staffs.json",
+    "rods.json",
+    "rings.json",
+    "wondrous.json",
+    "homebrew.json"
+  ],
   "schema_notes": [
-    "Items use original short summaries and structured metadata for safe expansion."
+    "Items use original short summaries and structured metadata for safe expansion.",
+    "Each item carries slug, aliases, legacy_ids, dedupe_key for cross-format resolution.",
+    "DM can import DnD Beyond items privately; no proprietary text is included here.",
+    "Dedup order: exact id > slug > dedupe_key (normalized name). First record wins.",
+    "Legacy inventory entries resolve via legacy_ids lookup in the compendium."
   ]
 }
