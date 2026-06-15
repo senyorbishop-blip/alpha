@@ -46,7 +46,7 @@
     },
     {
       id: 'features',
-      label: 'Features',
+      label: 'Features & Traits',
       init: function (container, charData) {
         if (global.FeaturesTab && global.FeaturesTab.initFeaturesTab) {
           global.FeaturesTab.initFeaturesTab(container, charData);
@@ -56,10 +56,24 @@
       },
     },
     {
+      id: 'background',
+      label: 'Background',
+      init: function (container, charData) {
+        container.innerHTML = _renderBackgroundTab(charData || {});
+      },
+    },
+    {
       id: 'notes',
       label: 'Notes',
       init: function (container, charData) {
         container.innerHTML = _renderNotesTab(charData || {});
+      },
+    },
+    {
+      id: 'extras',
+      label: 'Extras',
+      init: function (container, charData) {
+        container.innerHTML = _renderExtrasTab(charData || {});
       },
     },
   ];
@@ -224,6 +238,8 @@ function _renderNotesTab(charData) {
     if (tabId === 'spells') return String(_safeArray(charData.rulesSpellCards).length);
     if (tabId === 'inventory') return String(_safeArray(charData.inventory).length);
     if (tabId === 'features') return String(_safeArray(charData.nativeFeatures).length + _safeArray(charData.features).length + _safeArray(charData.feats).length + _safeArray(charData.traits).length);
+    if (tabId === 'background') return charData && charData.background ? '1' : '';
+    if (tabId === 'extras') return String(_safeArray(charData.extras).length || _safeArray(charData.companions).length || '');
     if (tabId === 'notes') {
       const notes = _collectNotes(charData || {});
       return notes.length ? String(notes.length) : '';
@@ -255,6 +271,70 @@ function _renderNotesTab(charData) {
     }).join('')}</div>`;
   }
 
+
+
+function _abilitySaveValue(charData, key, score) {
+  const saves = charData && typeof charData.savingThrows === 'object' ? charData.savingThrows : {};
+  const row = saves[key] || saves[key.slice(0, 3)] || saves[key.toUpperCase()] || null;
+  if (row && typeof row === 'object') return _firstNonEmpty(row.modifier, row.total, row.value, _formatSigned(_abilityModifier(score) + (row.proficient ? parseInt(charData.profBonus || 0, 10) || 0 : 0)));
+  if (row !== null && row !== undefined && row !== '') return _formatSigned(row);
+  return _formatSigned(_abilityModifier(score));
+}
+
+function _abilitySaveProficient(charData, key) {
+  const saves = charData && typeof charData.savingThrows === 'object' ? charData.savingThrows : {};
+  const row = saves[key] || saves[key.slice(0, 3)] || saves[key.toUpperCase()] || null;
+  if (row && typeof row === 'object') return !!(row.proficient || row.prof || row.isProficient);
+  return /prof/i.test(String(row || ''));
+}
+
+function _renderDdbAbilityStrip(charData) {
+  const scores = charData && typeof charData.abilityScores === 'object' ? charData.abilityScores : {};
+  const keys = [['strength','STR'],['dexterity','DEX'],['constitution','CON'],['intelligence','INT'],['wisdom','WIS'],['charisma','CHA']];
+  return '<section class="cs-ddb-stat-strip" aria-label="Core ability scores">' + keys.map(function (entry) {
+    const score = parseInt(scores[entry[0]], 10) || 10;
+    const mod = _abilityModifier(score);
+    const prof = _abilitySaveProficient(charData, entry[0]);
+    return '<article class="cs-ddb-stat-card" data-ability-card="' + _esc(entry[0]) + '"><div class="cs-ddb-stat-label">' + _esc(entry[1]) + '</div><div class="cs-ddb-stat-score">' + _esc(score) + '</div><div class="cs-ddb-stat-mod">' + _esc(_formatSigned(mod)) + '</div><div class="cs-ddb-save-line"><span class="cs-ddb-save-dot' + (prof ? ' proficient' : '') + '" aria-label="' + (prof ? 'Save proficient' : 'Save not proficient') + '"></span><span>Save ' + _esc(_abilitySaveValue(charData, entry[0], score)) + '</span></div></article>';
+  }).join('') + '</section>';
+}
+
+function _renderCombatSummaryStrip(charData) {
+  const hp = [parseInt(charData.currentHp || 0, 10) || 0, parseInt(charData.maxHp || 0, 10) || 0].join(' / ') + (parseInt(charData.tempHp || 0, 10) ? ' +' + parseInt(charData.tempHp, 10) + ' temp' : '');
+  const defenses = _firstNonEmpty(charData.defenses, _safeArray(charData.resistances).join(', '), _safeArray(charData.damageResistances).join(', '), '—');
+  const conditions = _firstNonEmpty(_safeArray(charData.conditions).join(', '), charData.conditionSummary, 'None');
+  const cards = [
+    ['Proficiency Bonus', _formatSigned(charData.profBonus || charData.proficiencyBonus || 0)], ['Walking Speed', (parseInt(charData.speed || 0, 10) || '—') + (parseInt(charData.speed || 0, 10) ? ' ft' : '')],
+    ['Initiative', _formatSigned(charData.initiative || 0)], ['Armor Class', parseInt(charData.ac || 0, 10) || '—'], ['Hit Points', hp],
+    ['Heroic Inspiration', _firstNonEmpty(charData.heroicInspiration, charData.inspiration, '—')], ['Defenses', defenses], ['Conditions', conditions]
+  ];
+  return '<section class="cs-ddb-combat-strip" aria-label="Combat summary">' + cards.map(function (c) { return '<div class="cs-ddb-combat-card"><span>' + _esc(c[0]) + '</span><strong>' + _esc(c[1]) + '</strong></div>'; }).join('') + '</section>';
+}
+
+function _renderCompactValueRows(title, rows, empty) {
+  return '<section class="cs-ddb-left-section"><h3>' + _esc(title) + '</h3>' + (rows.length ? rows.map(function (r) { return '<div class="cs-ddb-left-row"><span>' + _esc(r.label) + '</span><strong>' + _esc(r.value) + '</strong></div>'; }).join('') : '<div class="cs-empty-state compact"><span>' + _esc(empty || 'Nothing loaded yet.') + '</span></div>') + '</section>';
+}
+
+function _objectRows(obj) {
+  return Object.keys(obj || {}).map(function (key) { const row = obj[key]; return { label: _titleCaseWords(key), value: (row && typeof row === 'object') ? _firstNonEmpty(row.modifier, row.total, row.value, row.bonus, row.proficient ? 'Proficient' : '') : row }; }).filter(function (r) { return r.value !== undefined && r.value !== null && String(r.value).trim(); });
+}
+
+function _renderLeftColumn(charData) {
+  const passives = [{label:'Perception', value: charData.passivePerception || '—'}, {label:'Investigation', value: charData.passiveInvestigation || '—'}, {label:'Insight', value: charData.passiveInsight || '—'}];
+  const equipped = _safeArray(charData.inventory).filter(function (i) { return i && i.equipped; }).slice(0, 6).map(function (i) { return { label: i.name || 'Item', value: _firstNonEmpty(i.damage, i.acBonus, i.type, 'Equipped') }; });
+  const profs = [].concat(_safeArray(charData.proficiencies), _safeArray(charData.languages)).slice(0, 10).map(function (x) { return { label: String(x), value: '✓' }; });
+  const resources = _safeArray(charData.nativeResources).slice(0, 8).map(function (r) { return { label: r.name || 'Resource', value: [r.current ?? r.remaining ?? r.uses ?? '—', r.max ?? r.limit ?? ''].filter(function(v){return v!==''}).join('/') + (_firstNonEmpty(r.recharge, r.reset) ? ' • ' + _firstNonEmpty(r.recharge, r.reset) : '') }; });
+  return '<aside class="cs-ddb-left-column" aria-label="Character quick reference">' + _renderCompactValueRows('Saving Throws', _objectRows(charData.savingThrows), 'No saving throws loaded.') + _renderCompactValueRows('Skills', _objectRows(charData.skills), 'No skills loaded.') + _renderCompactValueRows('Passive Scores', passives, '') + _renderCompactValueRows('Senses', [{label:'Senses', value:_firstNonEmpty(charData.senses, '—')}], '') + _renderCompactValueRows('Armor & Equipped Weapons', equipped, 'No equipped armor or weapons found.') + _renderCompactValueRows('Proficiencies & Languages', profs, 'No proficiencies or languages loaded.') + _renderCompactValueRows('Class Resources', resources, 'No class resources loaded.') + '</aside>';
+}
+
+function _renderBackgroundTab(charData) {
+  return '<div class="cs-notes-layout"><section class="cs-overview-section"><div class="cs-overview-section-title">Background</div><div class="cs-overview-copy">' + _esc(_firstNonEmpty(charData.background, charData.backstory, 'No background details loaded yet.')) + '</div></section></div>';
+}
+
+function _renderExtrasTab(charData) {
+  const rows = [].concat(_safeArray(charData.extras), _safeArray(charData.companions), _safeArray(charData.summons));
+  return '<div class="cs-notes-layout"><section class="cs-overview-section"><div class="cs-overview-section-title">Extras</div>' + _renderListRows(rows, 'No companions, summons, mounts, or extras loaded yet.', function (x) { return { title: x.name || x.displayName || 'Extra', note: _firstNonEmpty(x.summary, x.type, x.kind, '') }; }) + '</section></div>';
+}
 
   function _renderSpeciesSnapshot(charData) {
     const species = _titleCaseWords(charData && (charData.species || charData.race || ''));
@@ -318,7 +398,7 @@ function _renderNotesTab(charData) {
       { label: 'Actions', value: _safeArray(charData.quickAttackCards).length + _nativeActionCount(charData), note: 'clickable cards' },
       { label: 'Spells', value: _safeArray(charData.rulesSpellCards).length, note: 'structured spell cards' },
       { label: 'Resources', value: _safeArray(charData.nativeResources).length, note: 'tracked pools' },
-      { label: 'Features', value: _safeArray(charData.nativeFeatures).length + _safeArray(charData.features).length, note: 'traits and unlocks' },
+      { label: 'Features & Traits', value: _safeArray(charData.nativeFeatures).length + _safeArray(charData.features).length, note: 'traits and unlocks' },
       { label: 'Inventory', value: _safeArray(charData.inventory).length, note: `${equipped} equipped` },
       { label: 'Saves / Skills', value: Object.values(charData.savingThrows || {}).filter(Boolean).length + Object.values(charData.skills || {}).filter(Boolean).length, note: 'available values' },
     ];
@@ -386,6 +466,8 @@ function _renderFlagshipHeader(charData) {
               <span class="cs-hero-pill">Level ${_esc(String(charData.totalLevel || charData.level || 1))}</span>
               ${charData.hitDice ? `<span class="cs-hero-pill">Hit Dice ${_esc(String(charData.hitDice))}</span>` : ''}
               ${charData.inspiration ? `<span class="cs-hero-pill">Inspiration ${_esc(String(charData.inspiration))}</span>` : ''}
+              ${_firstNonEmpty(charData.xp, charData.experience) ? `<span class="cs-hero-pill">XP ${_esc(_firstNonEmpty(charData.xp, charData.experience))}</span>` : ''}
+              ${_firstNonEmpty(charData.campaignName, charData.campaign) ? `<span class="cs-hero-pill">Campaign ${_esc(_firstNonEmpty(charData.campaignName, charData.campaign))}</span>` : ''}
               ${charData.senses ? `<span class="cs-hero-pill">${_esc(String(charData.senses))}</span>` : ''}
             </div>
             <div class="cs-launch-grid">
@@ -394,7 +476,9 @@ function _renderFlagshipHeader(charData) {
               <button class="cs-launch-btn" type="button" data-tab-jump="inventory">Inventory</button>
               <button class="cs-launch-btn" type="button" data-tab-jump="features">Features</button>
               <button class="cs-launch-btn" type="button" data-tab-jump="notes">Notes</button>
-              <button class="cs-launch-btn secondary" type="button" data-jump="levelup">Level Up</button>
+              <button class="cs-launch-btn rest" type="button" data-rest="short">Short Rest</button>
+              <button class="cs-launch-btn rest" type="button" data-rest="long">Long Rest</button>
+              <button class="cs-launch-btn secondary" type="button" data-jump="levelup">Manage/Edit</button>
             </div>
           </div>
         </div>
@@ -406,6 +490,8 @@ function _renderFlagshipHeader(charData) {
       </div>
     </div>
     <div class="cs-summary-grid">${summaryCards}</div>
+    ${_renderDdbAbilityStrip(charData || {})}
+    ${_renderCombatSummaryStrip(charData || {})}
   </div>`;
 }
 
@@ -718,7 +804,14 @@ function _buildSkeleton(wrapper, charData) {
       tabBar.appendChild(btn);
     });
     tabBarWrap.appendChild(tabBar);
-    wrapper.appendChild(tabBarWrap);
+    const body = document.createElement('div');
+    body.className = 'cs-ddb-body';
+    body.innerHTML = _renderLeftColumn(charData || {});
+    const main = document.createElement('main');
+    main.className = 'cs-ddb-main-panel';
+    main.appendChild(tabBarWrap);
+    body.appendChild(main);
+    wrapper.appendChild(body);
 
     const panels = {};
     TABS.forEach(function (tab, i) {
@@ -728,7 +821,7 @@ function _buildSkeleton(wrapper, charData) {
       panel.setAttribute('id', 'csp-panel-' + tab.id);
       panel.setAttribute('aria-labelledby', 'csp-tab-' + tab.id);
       if (i !== 0) panel.setAttribute('hidden', '');
-      wrapper.appendChild(panel);
+      main.appendChild(panel);
       panels[tab.id] = panel;
     });
 
