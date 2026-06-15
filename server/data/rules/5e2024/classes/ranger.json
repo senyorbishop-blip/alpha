@@ -441,7 +441,7 @@
     },
     "ranger-deft-explorer": {
       "summary": "Gain Expertise in one skill, +10 ft Speed (not in Heavy Armor), and you ignore Difficult Terrain.",
-      "description": "You are a master of wilderness travel. You gain the following benefits: Expertise — choose one skill you are proficient with; your proficiency bonus is doubled for ability checks using that skill. Roving Speed — your Speed increases by 10 feet while you are not wearing Heavy Armor. Tireless Traveler — you ignore Difficult Terrain.",
+      "description": "You are a master of wilderness travel. You gain the following benefits: Expertise \u2014 choose one skill you are proficient with; your proficiency bonus is doubled for ability checks using that skill. Roving Speed \u2014 your Speed increases by 10 feet while you are not wearing Heavy Armor. Tireless Traveler \u2014 you ignore Difficult Terrain.",
       "tags": [
         "exploration",
         "utility",
@@ -519,7 +519,7 @@
     },
     "ranger-tireless": {
       "summary": "As a Magic action, gain 1d8 + Wis mod Temporary HP (usable Wis mod times per Long Rest). Short Rests also reduce your Exhaustion level by 1.",
-      "description": "Primal forces sustain you through exhausting hunts. You gain two benefits: Temporary Hit Points — as a Magic action, you can give yourself a number of Temporary Hit Points equal to 1d8 plus your Wisdom modifier. You can use this action a number of times equal to your Wisdom modifier (minimum once), and you regain all expended uses when you finish a Long Rest. Shake it Off — whenever you finish a Short Rest, your Exhaustion level, if any, decreases by 1.",
+      "description": "Primal forces sustain you through exhausting hunts. You gain two benefits: Temporary Hit Points \u2014 as a Magic action, you can give yourself a number of Temporary Hit Points equal to 1d8 plus your Wisdom modifier. You can use this action a number of times equal to your Wisdom modifier (minimum once), and you regain all expended uses when you finish a Long Rest. Shake it Off \u2014 whenever you finish a Short Rest, your Exhaustion level, if any, decreases by 1.",
       "tags": [
         "survival",
         "rest",
@@ -538,8 +538,8 @@
       ]
     },
     "ranger-foe-slayer": {
-      "summary": "Once per turn, add your Wisdom modifier to an attack roll or saving throw d20 roll involving your Hunter's Mark target.",
-      "description": "You become an unparalleled hunter. Once per turn, when the creature marked by your Hunter's Mark makes a saving throw or when you hit that creature with an attack roll, you can add your Wisdom modifier to the d20 roll.",
+      "summary": "Once per turn, add your Wisdom modifier to an attack roll or saving throw d20 roll involving your Hunter's Mark target. This is the hunter payoff: your marked target becomes precise and deadly.",
+      "description": "You become an unparalleled hunter. Once per turn, when the creature marked by your Hunter's Mark makes a saving throw or when you hit that creature with an attack roll, you can add your Wisdom modifier to the d20 roll. This is the hunter payoff: your marked target becomes precise and deadly.",
       "tags": [
         "capstone",
         "combat",
@@ -588,8 +588,8 @@
       "type": "action",
       "resourceName": "Conjure Barrage",
       "trackUses": true,
-      "summary": "Once per Long Rest: throw a weapon or fire a piece of ammunition to create a 60-ft cone of spectral copies; each creature in the cone takes 3d8 damage (Con save for half).",
-      "description": "You use a piece of ammunition or a thrown weapon to create a spray of spectral copies. When you take the Attack action, you can replace one of your attacks with this feature. Each creature of your choice in a 60-foot cone must succeed on a Constitution saving throw against your spell save DC or take 3d8 damage of the same type as the weapon or ammunition used. On a successful save, a creature takes half as much damage. You can use this feature once, and you regain the ability to do so when you finish a Long Rest.",
+      "summary": "Once per Long Rest: throw a weapon or fire a piece of ammunition to create a 60-ft cone of spectral copies; each creature in the cone takes 3d8 damage (Con save for half). Use it as a crowd-hit option against clustered enemies.",
+      "description": "You use a piece of ammunition or a thrown weapon to create a spray of spectral copies. When you take the Attack action, you can replace one of your attacks with this feature. Each creature of your choice in a 60-foot cone must succeed on a Constitution saving throw against your spell save DC or take 3d8 damage of the same type as the weapon or ammunition used. On a successful save, a creature takes half as much damage. You can use this feature once, and you regain the ability to do so when you finish a Long Rest. Use it as a crowd-hit option against clustered enemies.",
       "usage": "1 use",
       "recovery": "Long Rest",
       "tags": [
@@ -715,7 +715,7 @@
       ]
     },
     "ranger-epic-boon": {
-      "summary": "At level 19, instead of a standard ASI you gain an Epic Boon feat — a powerful endgame enhancement that can push an ability score above 20.",
+      "summary": "At level 19, instead of a standard ASI you gain an Epic Boon feat \u2014 a powerful endgame enhancement that can push an ability score above 20.",
       "description": "At 19th level, you gain an Epic Boon feat (see the Epic Boons chapter) or another feat of your choice for which you qualify. This replaces the standard Ability Score Improvement and may increase an ability score above the normal cap of 20.",
       "tags": [
         "epic",

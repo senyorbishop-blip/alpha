@@ -197,7 +197,7 @@
       "9th": 1
     }
   },
-  "classDescription": "A versatile full caster who channels primal magic for healing, control, and transformation — with Wild Shape providing a second combat identity as beast forms or elemental force.",
+  "classDescription": "A versatile full caster who channels primal magic for healing, control, and transformation \u2014 with Wild Shape providing a second combat identity as beast forms or elemental force.",
   "roleIdentity": "Flexible controller-healer with beast transformation utility.",
   "progressionTable": [
     {
@@ -801,7 +801,7 @@
       "resourceName": "Wild Shape",
       "trackUses": true,
       "summary": "Expend a use of Wild Shape to magically transform into a Beast you have seen. CR limit starts at 1/4, scaling up as you level.",
-      "description": "As a Bonus Action, you can expend one use of Wild Shape to magically assume the shape of a Beast you have seen before. Your game statistics are replaced by the statistics of the Beast, but you retain your personality, memories, and the ability to speak. You also retain your Intelligence, Wisdom, and Charisma scores, your proficiency bonus, your Hit Points and Hit Dice, your ability to speak, and your class features (but not your equipment). You can't cast spells while transformed, though you can use features that allow you to transform (such as Wild Shape again). Your beast form lasts for a number of hours equal to half your Druid level, until you are incapacitated or die, or until you revert as a Bonus Action. You have 2 uses of Wild Shape, which you regain when you finish a Short or Long Rest. CR limit: 1/4 at levels 2–3.",
+      "description": "As a Bonus Action, you can expend one use of Wild Shape to magically assume the shape of a Beast you have seen before. Your game statistics are replaced by the statistics of the Beast, but you retain your personality, memories, and the ability to speak. You also retain your Intelligence, Wisdom, and Charisma scores, your proficiency bonus, your Hit Points and Hit Dice, your ability to speak, and your class features (but not your equipment). You can't cast spells while transformed, though you can use features that allow you to transform (such as Wild Shape again). Your beast form lasts for a number of hours equal to half your Druid level, until you are incapacitated or die, or until you revert as a Bonus Action. You have 2 uses of Wild Shape, which you regain when you finish a Short or Long Rest. CR limit: 1/4 at levels 2\u20133.",
       "usage": "Bonus Action. Expend 1 Wild Shape use to transform.",
       "recovery": "Regain all uses on a Short or Long Rest.",
       "effect": "You assume the form of a Beast with a CR at or below your limit. You use the Beast's statistics but retain your mental scores, Hit Points, proficiency bonus, and class features. You can't cast spells. Duration: half your Druid level in hours.",
@@ -858,8 +858,8 @@
       "type": "passive",
       "className": "Druid",
       "sourceKind": "class",
-      "summary": "You no longer age. You can't be aged magically. You can still die of old age if you reach the end of your natural lifespan.",
-      "description": "Starting at 18th level, the primal magic that you wield causes you to age more slowly. For every 10 years that pass, your body ages only 1 year. Additionally, you can't be aged magically. You can still die of old age, however.",
+      "summary": "You no longer age. You can't be aged magically. You can still die of old age if you reach the end of your natural lifespan. This makes the druid feel older, steadier, and mythic: an identity spike rather than a combat button.",
+      "description": "Starting at 18th level, the primal magic that you wield causes you to age more slowly. For every 10 years that pass, your body ages only 1 year. Additionally, you can't be aged magically. You can still die of old age, however. This makes the druid feel older, steadier, and mythic: an identity spike rather than a combat button.",
       "tags": [
         "passive",
         "identity",
@@ -877,7 +877,10 @@
       "sourceKind": "class",
       "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
       "description": "When you reach 4th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
-      "tags": ["asi", "progression"]
+      "tags": [
+        "asi",
+        "progression"
+      ]
     },
     "druid-l4-2": {
       "id": "druid-l4-2",
@@ -890,7 +893,10 @@
       "sourceKind": "class",
       "summary": "Your Wild Shape CR limit increases to 1/2, and you can now assume beast forms with a swim speed.",
       "description": "Starting at 4th level, your Wild Shape form CR limit increases to 1/2, and you can assume beast forms that have a swim speed. Any beast with a challenge rating of 1/2 or lower that has a swim speed is now available as a Wild Shape form.",
-      "tags": ["transformation", "progression"]
+      "tags": [
+        "transformation",
+        "progression"
+      ]
     },
     "druid-l5-1": {
       "id": "druid-l5-1",
@@ -903,7 +909,10 @@
       "sourceKind": "class",
       "summary": "At 5th level, you gain access to 3rd-level spell slots.",
       "description": "Starting at 5th level, you gain access to 3rd-level spell slots. You can now prepare 3rd-level spells from the Druid spell list.\n\nNotable 3rd-level Druid spells include: Call Lightning, Conjure Animals, Daylight, Dispel Magic, Meld into Stone, Plant Growth, Protection from Energy, Sleet Storm, Speak with Plants, Water Breathing, Water Walk, Wind Wall.",
-      "tags": ["spellcasting", "progression"]
+      "tags": [
+        "spellcasting",
+        "progression"
+      ]
     },
     "druid-l6-1": {
       "id": "druid-l6-1",
@@ -916,7 +925,10 @@
       "sourceKind": "class",
       "summary": "At 6th level, your Druid Circle grants its second feature.",
       "description": "At 6th level, your chosen Druid Circle grants you an additional feature. Consult your subclass for the specific benefit.",
-      "tags": ["subclass", "progression"]
+      "tags": [
+        "subclass",
+        "progression"
+      ]
     },
     "druid-l7-1": {
       "id": "druid-l7-1",
@@ -929,7 +941,10 @@
       "sourceKind": "class",
       "summary": "At 7th level, you gain access to 4th-level spell slots.",
       "description": "Starting at 7th level, you gain access to 4th-level spell slots. You can now prepare 4th-level spells from the Druid spell list.\n\nNotable 4th-level Druid spells include: Blight, Confusion, Conjure Minor Elementals, Conjure Woodland Beings, Control Water, Dominate Beast, Freedom of Movement, Giant Insect, Grasping Vine, Hallucinatory Terrain, Ice Storm, Locate Creature, Polymorph, Stone Shape, Stoneskin, Wall of Fire.",
-      "tags": ["spellcasting", "progression"]
+      "tags": [
+        "spellcasting",
+        "progression"
+      ]
     },
     "druid-l8-1": {
       "id": "druid-l8-1",
@@ -942,7 +957,10 @@
       "sourceKind": "class",
       "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
       "description": "When you reach 8th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
-      "tags": ["asi", "progression"]
+      "tags": [
+        "asi",
+        "progression"
+      ]
     },
     "druid-l8-2": {
       "id": "druid-l8-2",
@@ -955,7 +973,10 @@
       "sourceKind": "class",
       "summary": "Your Wild Shape CR limit increases to 1, and you can now assume beast forms with a fly speed.",
       "description": "Starting at 8th level, your Wild Shape form CR limit increases to 1, and you can assume beast forms that have a fly speed. Any beast with a challenge rating of 1 or lower is now available as a Wild Shape form, including flying beasts such as the Giant Eagle.",
-      "tags": ["transformation", "progression"]
+      "tags": [
+        "transformation",
+        "progression"
+      ]
     },
     "druid-l9-1": {
       "id": "druid-l9-1",
@@ -968,7 +989,10 @@
       "sourceKind": "class",
       "summary": "At 9th level, you gain access to 5th-level spell slots.",
       "description": "Starting at 9th level, you gain access to 5th-level spell slots. You can now prepare 5th-level spells from the Druid spell list.\n\nNotable 5th-level Druid spells include: Antilife Shell, Awaken, Commune with Nature, Conjure Elemental, Contagion, Geas, Greater Restoration, Insect Plague, Mass Cure Wounds, Planar Binding, Reincarnate, Scrying, Tree Stride, Wall of Stone.",
-      "tags": ["spellcasting", "progression"]
+      "tags": [
+        "spellcasting",
+        "progression"
+      ]
     },
     "druid-l10-1": {
       "id": "druid-l10-1",
@@ -981,7 +1005,10 @@
       "sourceKind": "class",
       "summary": "At 10th level, your Druid Circle grants its third feature.",
       "description": "At 10th level, your chosen Druid Circle grants you an additional feature. Consult your subclass for the specific benefit.",
-      "tags": ["subclass", "progression"]
+      "tags": [
+        "subclass",
+        "progression"
+      ]
     },
     "druid-l11-1": {
       "id": "druid-l11-1",
@@ -994,7 +1021,10 @@
       "sourceKind": "class",
       "summary": "At 11th level, you gain access to 6th-level spell slots.",
       "description": "Starting at 11th level, you gain access to 6th-level spell slots. You can now prepare 6th-level spells from the Druid spell list.\n\nNotable 6th-level Druid spells include: Conjure Fey, Find the Path, Heal, Heroes' Feast, Move Earth, Sunbeam, Transport via Plants, Wall of Thorns, Wind Walk.",
-      "tags": ["spellcasting", "progression"]
+      "tags": [
+        "spellcasting",
+        "progression"
+      ]
     },
     "druid-l12-1": {
       "id": "druid-l12-1",
@@ -1007,7 +1037,10 @@
       "sourceKind": "class",
       "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
       "description": "When you reach 12th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
-      "tags": ["asi", "progression"]
+      "tags": [
+        "asi",
+        "progression"
+      ]
     },
     "druid-l13-1": {
       "id": "druid-l13-1",
@@ -1020,7 +1053,10 @@
       "sourceKind": "class",
       "summary": "At 13th level, you gain access to 7th-level spell slots.",
       "description": "Starting at 13th level, you gain access to 7th-level spell slots. You can now prepare 7th-level spells from the Druid spell list.\n\nNotable 7th-level Druid spells include: Fire Storm, Mirage Arcane, Plane Shift, Regenerate, Reverse Gravity.",
-      "tags": ["spellcasting", "progression"]
+      "tags": [
+        "spellcasting",
+        "progression"
+      ]
     },
     "druid-l14-1": {
       "id": "druid-l14-1",
@@ -1033,7 +1069,10 @@
       "sourceKind": "class",
       "summary": "At 14th level, your Druid Circle grants its final feature.",
       "description": "At 14th level, your chosen Druid Circle grants you its final feature. Consult your subclass for the specific benefit.",
-      "tags": ["subclass", "progression"]
+      "tags": [
+        "subclass",
+        "progression"
+      ]
     },
     "druid-l15-1": {
       "id": "druid-l15-1",
@@ -1046,7 +1085,10 @@
       "sourceKind": "class",
       "summary": "At 15th level, you gain access to 8th-level spell slots.",
       "description": "Starting at 15th level, you gain access to 8th-level spell slots. You can now prepare 8th-level spells from the Druid spell list.\n\nNotable 8th-level Druid spells include: Animal Shapes, Antipathy/Sympathy, Control Weather, Earthquake, Feeblemind, Sunburst.",
-      "tags": ["spellcasting", "progression"]
+      "tags": [
+        "spellcasting",
+        "progression"
+      ]
     },
     "druid-l16-1": {
       "id": "druid-l16-1",
@@ -1059,7 +1101,10 @@
       "sourceKind": "class",
       "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
       "description": "When you reach 16th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
-      "tags": ["asi", "progression"]
+      "tags": [
+        "asi",
+        "progression"
+      ]
     },
     "druid-l17-1": {
       "id": "druid-l17-1",
@@ -1072,7 +1117,10 @@
       "sourceKind": "class",
       "summary": "At 17th level, you gain access to 9th-level spell slots.",
       "description": "Starting at 17th level, you gain access to 9th-level spell slots. You can now prepare 9th-level spells from the Druid spell list.\n\nNotable 9th-level Druid spells include: Foresight, Shapechange, Storm of Vengeance, True Resurrection.",
-      "tags": ["spellcasting", "progression"]
+      "tags": [
+        "spellcasting",
+        "progression"
+      ]
     },
     "druid-l19-1": {
       "id": "druid-l19-1",
@@ -1084,8 +1132,12 @@
       "className": "Druid",
       "sourceKind": "class",
       "summary": "At 19th level, you gain an Epic Boon feat. The recommended boon for Druids is Boon of Spell Recall.",
-      "description": "At 19th level, you gain a special ability called an Epic Boon — a feat available only to characters of 19th level or higher. Choose one Epic Boon feat.\n\nThe recommended Epic Boon for Druids is the Boon of Spell Recall, which allows you to cast a 1st-level spell without expending a spell slot.",
-      "tags": ["asi", "epic", "progression"]
+      "description": "At 19th level, you gain a special ability called an Epic Boon \u2014 a feat available only to characters of 19th level or higher. Choose one Epic Boon feat.\n\nThe recommended Epic Boon for Druids is the Boon of Spell Recall, which allows you to cast a 1st-level spell without expending a spell slot.",
+      "tags": [
+        "asi",
+        "epic",
+        "progression"
+      ]
     },
     "druid-druidic": {
       "id": "druid-druidic",
@@ -1163,7 +1215,7 @@
       "resourceName": "Wild Shape",
       "trackUses": true,
       "summary": "Expend a use of Wild Shape as a Bonus Action to magically transform into a Beast you have seen. You have 2 uses, regained on a Short or Long Rest.",
-      "description": "As a Bonus Action, you can expend one use of Wild Shape to magically assume the shape of a Beast you have seen before. You remain in beast form for a number of hours equal to half your Druid level (rounded down), until you are incapacitated, die, or revert using a Bonus Action.\n\nWhile transformed:\n- Your game statistics are replaced by the Beast's statistics, but you retain your alignment, personality, and Intelligence, Wisdom, and Charisma scores.\n- You retain your proficiency bonus, skill and saving throw proficiencies, and class features.\n- You can't cast spells, though you can maintain concentration on a spell cast before transforming.\n- You keep your own Hit Points and Hit Dice.\n- Equipment you carry either merges into the form or falls to the ground (your choice).\n\nYou have 2 uses of Wild Shape, which you regain when you finish a Short or Long Rest.\n\nCR Limits by level: CR 1/4 (levels 2–3), CR 1/2 with swim speed (levels 4–7), CR 1 with fly speed (level 8+).",
+      "description": "As a Bonus Action, you can expend one use of Wild Shape to magically assume the shape of a Beast you have seen before. You remain in beast form for a number of hours equal to half your Druid level (rounded down), until you are incapacitated, die, or revert using a Bonus Action.\n\nWhile transformed:\n- Your game statistics are replaced by the Beast's statistics, but you retain your alignment, personality, and Intelligence, Wisdom, and Charisma scores.\n- You retain your proficiency bonus, skill and saving throw proficiencies, and class features.\n- You can't cast spells, though you can maintain concentration on a spell cast before transforming.\n- You keep your own Hit Points and Hit Dice.\n- Equipment you carry either merges into the form or falls to the ground (your choice).\n\nYou have 2 uses of Wild Shape, which you regain when you finish a Short or Long Rest.\n\nCR Limits by level: CR 1/4 (levels 2\u20133), CR 1/2 with swim speed (levels 4\u20137), CR 1 with fly speed (level 8+).",
       "usage": "Bonus Action. Expend 1 Wild Shape use.",
       "recovery": "Regain all uses on a Short or Long Rest.",
       "tags": [
@@ -1287,7 +1339,7 @@
       "className": "Druid",
       "sourceKind": "class",
       "summary": "At 20th level, your Wild Shape uses become unlimited, and you can ignore verbal and somatic components of Druid spells while transformed.",
-      "description": "At 20th level, you can use your Wild Shape an unlimited number of times.\n\nAdditionally, you can ignore the verbal and somatic components of your Druid spells while you are transformed by Wild Shape. You still require material components when applicable.\n\nYou are a force of nature — an archdruid of incomprehensible power, able to shift forms at will while channeling the most devastating primal magic.",
+      "description": "At 20th level, you can use your Wild Shape an unlimited number of times.\n\nAdditionally, you can ignore the verbal and somatic components of your Druid spells while you are transformed by Wild Shape. You still require material components when applicable.\n\nYou are a force of nature \u2014 an archdruid of incomprehensible power, able to shift forms at will while channeling the most devastating primal magic.",
       "tags": [
         "capstone",
         "transformation",
