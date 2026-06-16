@@ -16,7 +16,7 @@ def test_combat_entries_include_order_badges_and_meta_layout():
     assert 'const orderBadge = isCurrent' in src
     assert "<span class=\"ce-order now\">Now</span>" in src
     assert "<span class=\"ce-order next\">Next</span>" in src
-    assert '<div class="ce-meta">${targetStr}${hpStr}${dsStr}${moveStr}</div>' in src
+    assert '<div class="ce-meta">${targetStr}${hpStr}${defeatedStr}${hiddenStr}${ownerStr}${missingStr}${mapStr}${moveStr}</div>' in src
 
 
 def test_tab_and_combat_panes_keep_scroll_containment():
