@@ -37401,8 +37401,10 @@ function _getSheetCombatSnapshot(char = _charSheet) {
   const charCurrentHp = parseInt(char?.currentHp ?? char?.hp?.current, 10);
   const charMaxHp = parseInt(char?.maxHp ?? char?.hp?.max, 10);
   const charTempHp = parseInt(char?.tempHp ?? char?.hp?.temp, 10);
-  const charAc = parseInt(char?.ac, 10);
+  const acRuntime = (char && typeof char.ac === 'object' && char.ac) ? char.ac : {};
+  const charAc = parseInt(acRuntime.value ?? char?.ac, 10);
   const charSpeed = parseInt(char?.speed, 10);
+  const hpRuntime = (char && typeof char.hp === 'object' && char.hp) ? char.hp : {};
   const currentHp = Math.max(0, Number.isFinite(charCurrentHp) ? charCurrentHp : (parseInt(token?.hp, 10) || 0));
   const maxHp = Math.max(0, Number.isFinite(charMaxHp) ? charMaxHp : (parseInt(token?.maxHp, 10) || 0));
   const tempHp = Math.max(0, Number.isFinite(charTempHp) ? charTempHp : (parseInt(token?.tempHp, 10) || 0));
@@ -37430,7 +37432,40 @@ function _getSheetCombatSnapshot(char = _charSheet) {
     isMyTurn,
     conditionList,
     concentration,
+    acRuntime,
+    hpRuntime,
+    acNeedsReview: !!acRuntime.needsReview,
+    hpNeedsReview: !!hpRuntime.needsReview,
   };
+}
+
+function showAcHpAuditPanel(kind) {
+  const snapshot = _getSheetCombatSnapshot(_charSheet);
+  const data = kind === 'hp' ? snapshot.hpRuntime : snapshot.acRuntime;
+  const title = kind === 'hp' ? 'HP Breakdown' : 'AC Breakdown';
+  const rows = [];
+  function push(label, value) { if (value !== undefined && value !== null && value !== '') rows.push(`<div class="sheet-inline-row"><strong>${escapeHtml(label)}</strong><div class="sheet-note">${escapeHtml(typeof value === 'object' ? JSON.stringify(value) : String(value))}</div></div>`); }
+  if (kind === 'ac') {
+    push('Final AC', data.value ?? snapshot.ac);
+    push('Imported PDF value', data.importedValue);
+    push('Alpha calculated value', data.calculatedValue);
+    push('Selected mode', data.selectedMode);
+    push('Base formula', data.breakdown?.baseFormula);
+    push('Armor formula', data.breakdown?.armorFormula);
+    push('Shield formula', data.breakdown?.shieldFormula);
+    push('Warnings', (data.warnings || data.breakdown?.warnings || []).map(w => w.message || w.code).join('; '));
+  } else {
+    push('Current / Max / Temp', `${snapshot.currentHp} / ${snapshot.maxHp} / ${snapshot.tempHp}`);
+    push('Imported PDF max HP', data.importedMax);
+    push('Alpha average HP', data.calculatedAverage);
+    push('Selected mode', data.selectedMode);
+    push('Hit dice', data.hitDice);
+    push('Breakdown', (data.breakdown || []).join(' | '));
+    push('Warnings', (data.warnings || []).map(w => w.message || w.code).join('; '));
+  }
+  const html = `<div class="sheet-inline-section"><div class="sheet-inline-title">${escapeHtml(title)}</div>${rows.join('') || '<div class="sheet-note">No audit data available.</div>'}<div class="sheet-note">Review choices are persisted on the character document as acSelectedMode/acManualOverride or hpSelectedMode/hpManualOverride.</div></div>`;
+  if (typeof showModal === 'function') showModal(title, html);
+  else alert(title + '\n' + rows.map(r => r.replace(/<[^>]+>/g, ' ')).join('\n'));
 }
 
 function requestCharacterBookOverviewRender(source = 'unknown') {

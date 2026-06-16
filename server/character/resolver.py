@@ -366,40 +366,97 @@ def _compute_base_hp(document: dict, level_total: int, runtime_classes: list[dic
 
 
 def _runtime_hp_from_document(document: dict[str, Any], base_hp: dict[str, Any]) -> dict[str, Any]:
-    root_hp = document.get("hp") if isinstance(document.get("hp"), dict) else {}
-    max_hp = _safe_int(
-        document.get("maxHP"),
-        _safe_int(
-            document.get("maxHp"),
-            _safe_int(root_hp.get("max"), _safe_int(base_hp.get("max"), 1, minimum=1), minimum=1),
-            minimum=1,
-        ),
-        minimum=1,
-    )
-    current_hp = _safe_int(
-        document.get("currentHP"),
-        _safe_int(
-            document.get("currentHp"),
-            _safe_int(root_hp.get("current"), max_hp, minimum=0),
-            minimum=0,
-        ),
-        minimum=0,
-    )
-    temp_hp = _safe_int(
-        document.get("tempHP"),
-        _safe_int(
-            document.get("tempHp"),
-            _safe_int(root_hp.get("temp"), 0),
-        ),
-        minimum=0,
-    )
+    resolved = resolveHitPointsRuntime(document, base_hp=base_hp)
     return {
-        "max": max(1, max_hp),
-        "current": max(0, min(max_hp, current_hp)),
-        "temp": max(0, temp_hp),
-        "hitDice": list(base_hp.get("hitDice") or []),
+        "max": resolved["finalMaxHp"],
+        "current": resolved["currentHp"],
+        "temp": resolved["tempHp"],
+        "hitDice": list(resolved.get("hitDice") or []),
+        "runtime": resolved,
+        "needsReview": bool(resolved.get("needsReview")),
+        "selectedMode": resolved.get("hpMode"),
+        "warnings": list(resolved.get("warnings") or []),
     }
 
+
+
+def resolveArmorClassRuntime(characterDocument: dict[str, Any], *, dex_mod: int | None = None, con_mod: int | None = None, wis_mod: int | None = None, primary_class_id: str = "", fallback_ac: int | None = None) -> dict[str, Any]:
+    doc = characterDocument if isinstance(characterDocument, dict) else {}
+    abilities = doc.get("abilities") if isinstance(doc.get("abilities"), dict) else {}
+    scores = abilities.get("scores") if isinstance(abilities.get("scores"), dict) else {}
+    dex = _ability_modifier(scores.get("dex", 10)) if dex_mod is None else dex_mod
+    con = _ability_modifier(scores.get("con", 10)) if con_mod is None else con_mod
+    wis = _ability_modifier(scores.get("wis", 10)) if wis_mod is None else wis_mod
+    classes = doc.get("classes") if isinstance(doc.get("classes"), list) else []
+    class_id = primary_class_id or (str((classes[0] or {}).get("classId") or (classes[0] or {}).get("name") or "").lower() if classes else "")
+    base = max(10, 10 + dex) if fallback_ac is None else fallback_ac
+    if class_id == "barbarian":
+        base = max(base, 10 + dex + con)
+    elif class_id == "monk":
+        base = max(base, 10 + dex + wis)
+    return _resolve_ac_audit(doc, dex_mod=dex, con_mod=con, wis_mod=wis, primary_class_id=class_id, fallback_ac=base)
+
+
+def resolveHitPointsRuntime(characterDocument: dict[str, Any], *, base_hp: dict[str, Any] | None = None) -> dict[str, Any]:
+    doc = characterDocument if isinstance(characterDocument, dict) else {}
+    classes = doc.get("classes") if isinstance(doc.get("classes"), list) else []
+    total_level = _compute_total_level(doc)
+    calculated = base_hp if isinstance(base_hp, dict) else _compute_base_hp(doc, total_level, classes)
+    root_hp = doc.get("hp") if isinstance(doc.get("hp"), dict) else {}
+    imported_max = _safe_int(doc.get("importedMaxHp", doc.get("maxHP", doc.get("maxHp", root_hp.get("max")))), 0, minimum=0)
+    imported_current = _safe_int(doc.get("importedCurrentHp", doc.get("currentHP", doc.get("currentHp", root_hp.get("current", imported_max or calculated.get("max"))))), 0, minimum=0)
+    imported_temp = _safe_int(doc.get("importedTempHp", doc.get("tempHP", doc.get("tempHp", root_hp.get("temp", 0)))), 0, minimum=0)
+    manual = doc.get("hpManualOverride")
+    selected = str(doc.get("hpSelectedMode") or "").strip().lower()
+    status = str(doc.get("hpReviewStatus") or "").strip().lower()
+    avg = _safe_int(calculated.get("max"), 1, minimum=1)
+    rolls = doc.get("hpPerLevelRolls") if isinstance(doc.get("hpPerLevelRolls"), list) else []
+    rolled = None
+    if rolls:
+        abilities = doc.get("abilities") if isinstance(doc.get("abilities"), dict) else {}
+        con_mod = _ability_modifier((abilities.get("scores") or {}).get("con", 10) if isinstance(abilities.get("scores"), dict) else 10)
+        rolled = sum(max(1, _safe_int(r, 1) + con_mod) for r in rolls)
+    if status == "manual_override" or selected == "manual" or manual not in (None, ""):
+        mode, final = "manual", _safe_int(manual, avg, minimum=1)
+    elif selected == "rolled" and rolled:
+        mode, final = "rolled", rolled
+    elif selected == "imported_pdf" and imported_max:
+        mode, final = "imported_pdf", imported_max
+    elif selected == "average":
+        mode, final = "average", avg
+    elif imported_max and imported_max != avg and str(doc.get("sourceMode") or "").lower() in {"pdf", "dndbeyond_pdf"}:
+        mode, final = "imported_pdf", imported_max
+    else:
+        mode, final = "average", avg
+    current = min(final, imported_current if imported_current else final)
+    warnings = []
+    missing = []
+    bonuses = []
+    meta = doc.get("importMeta") if isinstance(doc.get("importMeta"), dict) else {}
+    raw = meta.get("rawSnapshot") if isinstance(meta.get("rawSnapshot"), dict) else {}
+    if raw.get("customModifiers") or doc.get("importedCustomModifiers"):
+        warnings.append(_warning("unknown_custom_dndbeyond_modifier", "Custom D&D Beyond HP modifiers are preserved and need review."))
+    feats = doc.get("feats") if isinstance(doc.get("feats"), list) else []
+    if any("tough" in str((f or {}).get("name") if isinstance(f, dict) else f).lower() for f in feats):
+        bonuses.append({"source": "Tough", "value": total_level * 2, "needsReview": True})
+        warnings.append(_warning("tough_feat_bonus", "Tough feat may add HP; verify whether imported HP includes it."))
+    needs = bool(warnings or (imported_max and imported_max != avg and mode != "manual") or status == "needs_review")
+    level_breakdown = [f"Average HP calculation: {avg}"]
+    if imported_max:
+        level_breakdown.append(f"Imported PDF max HP: {imported_max}")
+    if rolled:
+        level_breakdown.append(f"Rolled HP from per-level rolls: {rolled}")
+    if manual not in (None, ""):
+        level_breakdown.append(f"Manual max HP override: {manual}")
+    return {
+        "finalMaxHp": final, "calculatedAverageHp": avg, "calculatedRolledHp": rolled,
+        "importedMaxHp": imported_max or None, "manualOverrideHp": manual,
+        "currentHp": current, "tempHp": imported_temp, "hitDice": list(calculated.get("hitDice") or doc.get("importedHitDice") or []),
+        "conModifier": _ability_modifier(((doc.get("abilities") or {}).get("scores") or {}).get("con", 10) if isinstance(doc.get("abilities"), dict) and isinstance((doc.get("abilities") or {}).get("scores"), dict) else 10),
+        "classBreakdown": classes, "levelBreakdown": level_breakdown, "breakdown": level_breakdown, "hpMode": mode,
+        "bonuses": bonuses, "warnings": warnings, "missingData": missing, "needsReview": needs,
+        "reconciliation": {"status": "manual_override" if mode == "manual" else ("verified" if not needs else "needs_review"), "importedMaxHp": imported_max or None, "calculatedAverageHp": avg, "selectedMode": mode, "reviewOptions": ["average", "rolled", "imported_pdf", "manual"]},
+    }
 
 def _compute_equipment_ac(document: dict[str, Any], *, dex_mod: int, fallback_ac: int) -> int:
     equipment = document.get("equipment") if isinstance(document.get("equipment"), dict) else {}
@@ -558,24 +615,65 @@ def _resolve_ac_audit(
             warnings.append(_warning("unknown_custom_dndbeyond_modifier", f'Custom imported item/modifier "{name}" needs manual verification.', details={"item": name}))
 
     calculated_value = max(fallback_ac, best_armor_value + shield_bonus)
-    imported_ac = _safe_int(document.get("ac"), 0, minimum=0)
-    final_value = max(imported_ac, calculated_value)
+    imported_ac = _safe_int(document.get("importedAc", document.get("ac")), 0, minimum=0)
+    review_status = str(document.get("acReviewStatus") or "").strip().lower()
+    selected_mode = str(document.get("acSelectedMode") or "").strip().lower()
+    manual_override = document.get("acManualOverride")
+    if review_status == "manual_override" or selected_mode == "manual" or manual_override not in (None, ""):
+        selected_mode = "manual"
+        final_value = _safe_int(manual_override, calculated_value, minimum=1)
+    elif selected_mode == "imported_pdf" and imported_ac:
+        final_value = imported_ac
+    elif selected_mode == "calculated":
+        final_value = calculated_value
+    elif imported_ac and imported_ac != calculated_value and (missing_data or str(document.get("sourceMode") or "").lower() in {"pdf", "dndbeyond_pdf"}):
+        selected_mode = "imported_pdf"
+        final_value = imported_ac
+    else:
+        selected_mode = "calculated"
+        final_value = calculated_value
+    needs_review = bool(warnings or missing_data or (imported_ac and imported_ac != calculated_value))
     if imported_ac and imported_ac != calculated_value:
-        breakdown.append(f"Imported AC: {imported_ac}; Alpha calculation: {calculated_value}; final uses higher value {final_value}.")
+        breakdown.append(f"Imported PDF AC: {imported_ac}; Alpha calculated AC: {calculated_value}; selected mode: {selected_mode}. Review required before trusting either value.")
     else:
         breakdown.append(f"Final AC: {final_value}")
+    reconciliation = {
+        "status": "manual_override" if selected_mode == "manual" else ("verified" if imported_ac in (0, calculated_value) and not needs_review else "needs_review"),
+        "importedAc": imported_ac or None,
+        "calculatedAc": calculated_value,
+        "selectedMode": selected_mode,
+        "possibleReasons": [w.get("code") for w in warnings] + list(missing_data),
+        "reviewOptions": ["calculated", "imported_pdf", "manual", "fix_equipment"],
+    }
 
     return {
+        "finalAc": final_value,
         "value": final_value,
+        "calculatedAc": calculated_value,
         "calculatedValue": calculated_value,
+        "importedAc": imported_ac or None,
         "importedValue": imported_ac or None,
+        "manualOverrideAc": manual_override,
+        "selectedMode": selected_mode,
+        "baseFormula": unarmored_formula,
+        "armorFormula": best_armor_breakdown,
+        "shieldFormula": breakdown[-2] if len(breakdown) >= 2 else "Shield: +0",
+        "classFeatureFormula": unarmored_formula if "Unarmored Defense" in unarmored_formula else "",
+        "itemBonusFormula": ", ".join(f"{b['source']} {_format_signed(_safe_int(b['value'],0))}" for b in active_bonuses if "item" in str(b.get("type"))),
+        "featBonusFormula": "",
+        "speciesBonusFormula": "",
+        "miscBonusFormula": "",
+        "activeArmor": _clone(best_armor) if best_armor else None,
+        "activeShield": _clone(equipped_shield) if equipped_shield else None,
+        "activeBonuses": active_bonuses,
         "breakdown": breakdown,
         "warnings": warnings,
         "missingData": missing_data,
+        "needsReview": needs_review,
+        "reconciliation": reconciliation,
         "equippedArmour": _clone(best_armor) if best_armor else None,
         "equippedArmor": _clone(best_armor) if best_armor else None,
         "equippedShield": _clone(equipped_shield) if equipped_shield else None,
-        "activeBonuses": active_bonuses,
     }
 
 
@@ -625,17 +723,31 @@ def _build_hp_audit(document: dict[str, Any], runtime_classes: list[dict[str, An
         breakdown.append(f"Fallback level 1 hit die: 6 + Con {_format_signed(con_mod)} = {default_first}")
         warnings.append(_warning("missing_class_hit_die", "No class rows were available; assuming d6 fallback HP."))
         missing_data.append("Class levels and hit dice")
-    final_max = _safe_int(runtime_hp.get("max"), calculated, minimum=1)
-    if final_max != calculated:
-        breakdown.append(f"Imported/manual max HP overrides calculated HP: {final_max} (calculated {calculated}).")
+    hp_runtime = runtime_hp.get("runtime") if isinstance(runtime_hp.get("runtime"), dict) else resolveHitPointsRuntime(document)
+    final_max = _safe_int(runtime_hp.get("max"), _safe_int(hp_runtime.get("finalMaxHp"), calculated, minimum=1), minimum=1)
+    imported_max = hp_runtime.get("importedMaxHp")
+    if imported_max and imported_max != calculated:
+        breakdown.append(f"Imported PDF max HP: {imported_max}; Alpha average HP: {calculated}; selected mode: {hp_runtime.get('hpMode')}. Review required before trusting either value.")
     else:
         breakdown.append(f"Final max HP: {final_max}")
     return {
         "value": final_max,
+        "finalMaxHp": final_max,
         "calculatedValue": calculated,
+        "calculatedAverageHp": hp_runtime.get("calculatedAverageHp", calculated),
+        "calculatedRolledHp": hp_runtime.get("calculatedRolledHp"),
+        "importedMaxHp": imported_max,
+        "manualOverrideHp": hp_runtime.get("manualOverrideHp"),
+        "currentHp": hp_runtime.get("currentHp"),
+        "tempHp": hp_runtime.get("tempHp"),
+        "hitDice": hp_runtime.get("hitDice") or [],
+        "hpMode": hp_runtime.get("hpMode"),
+        "bonuses": hp_runtime.get("bonuses") or [],
+        "needsReview": bool(hp_runtime.get("needsReview") or warnings or missing_data),
+        "reconciliation": hp_runtime.get("reconciliation") or {},
         "breakdown": breakdown,
-        "warnings": warnings,
-        "missingData": missing_data,
+        "warnings": warnings + list(hp_runtime.get("warnings") or []),
+        "missingData": missing_data + list(hp_runtime.get("missingData") or []),
     }
 
 
@@ -1574,8 +1686,9 @@ def resolve_character_runtime(document: Any) -> dict:
     elif primary_class_id == "monk":
         armor_class = max(armor_class, 10 + dex_mod + wis_mod)
     imported_ac = _safe_int(normalized.get("ac"), 0, minimum=0)
-    runtime["ac"] = _compute_equipment_ac(normalized, dex_mod=dex_mod, fallback_ac=armor_class)
-    runtime["ac"] = max(imported_ac, runtime["ac"])
+    ac_resolution = resolveArmorClassRuntime(normalized, dex_mod=dex_mod, con_mod=con_mod, wis_mod=wis_mod, primary_class_id=primary_class_id, fallback_ac=armor_class)
+    runtime["ac"] = ac_resolution["finalAc"]
+    runtime["acRuntime"] = ac_resolution
     runtime["speed"]["walk"] = walk_speed
     imported_initiative = _safe_int(normalized.get("initiative"), dex_mod)
 
@@ -1646,8 +1759,27 @@ def resolve_character_runtime(document: Any) -> dict:
         "senses": _clone(runtime.get("senses") or {}),
         "defenses": _clone(runtime.get("defenses") or {}),
         "conditions": list(normalized.get("conditions") or []) if isinstance(normalized.get("conditions"), list) else [],
-        "hp": _clone(runtime.get("hp") or {}),
-        "ac": runtime.get("ac"),
+        "hp": {
+            "current": _safe_int((runtime.get("hp") or {}).get("current"), 0, minimum=0),
+            "max": _safe_int((runtime.get("hp") or {}).get("max"), 1, minimum=1),
+            "temp": _safe_int((runtime.get("hp") or {}).get("temp"), 0, minimum=0),
+            "calculatedAverage": ((runtime.get("hp") or {}).get("runtime") or {}).get("calculatedAverageHp"),
+            "importedMax": ((runtime.get("hp") or {}).get("runtime") or {}).get("importedMaxHp"),
+            "selectedMode": ((runtime.get("hp") or {}).get("runtime") or {}).get("hpMode"),
+            "needsReview": bool(((runtime.get("hp") or {}).get("runtime") or {}).get("needsReview")),
+            "breakdown": ((runtime.get("hp") or {}).get("runtime") or {}).get("levelBreakdown") or ((runtime.get("hp") or {}).get("runtime") or {}).get("breakdown") or [],
+            "warnings": ((runtime.get("hp") or {}).get("runtime") or {}).get("warnings") or [],
+            "hitDice": (runtime.get("hp") or {}).get("hitDice") or [],
+        },
+        "ac": {
+            "value": runtime.get("ac"),
+            "calculatedValue": (runtime.get("acRuntime") or {}).get("calculatedAc"),
+            "importedValue": (runtime.get("acRuntime") or {}).get("importedAc"),
+            "selectedMode": (runtime.get("acRuntime") or {}).get("selectedMode"),
+            "needsReview": bool((runtime.get("acRuntime") or {}).get("needsReview")),
+            "breakdown": runtime.get("acRuntime") or {},
+            "warnings": (runtime.get("acRuntime") or {}).get("warnings") or [],
+        },
         "speed": _clone(runtime.get("speed") or {}),
         "initiative": imported_initiative,
         "proficiencyBonus": proficiency_bonus,

@@ -31,6 +31,7 @@ from server.character.spell_compendium import (
     validate_spell_selection,
 )
 from server.character.progression import LevelupApplyError
+from server.character.resolver import resolve_character_runtime
 from server.character.rules_catalog import get_class_catalog_row, get_species_catalog_row, get_subclass_catalog_row
 from server.character.feature_catalog import build_runtime_feature_payload
 from server.handlers.common import save_campaign_async
@@ -380,7 +381,13 @@ def _character_import_preview_payload(*, source: str, normalized: dict) -> dict:
         "spells": {"exact": [], "alias": [], "partial": [], "missing": []},
         "features": {"exact": [], "alias": [], "partial": [], "missing": []},
     }
-    review = _attach_import_review(document, source=source) if document else build_import_review({}, source_type=_source_type_for_api(source))
+    preview_runtime = None
+    if document:
+        try:
+            preview_runtime = (resolve_character_runtime(document).get("runtime") or {})
+        except Exception:
+            preview_runtime = None
+    review = _attach_import_review(document, source=source, runtime=preview_runtime) if document else build_import_review({}, source_type=_source_type_for_api(source))
     return {
         "ok": True,
         "source": source,

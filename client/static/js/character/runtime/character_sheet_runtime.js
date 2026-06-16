@@ -204,9 +204,10 @@ function _csrNormalizeRuntimeRuntime(runtime, sourceDoc) {
   out.passiveScores = _csrObject(out.passiveScores);
   out.senses = _csrObject(out.senses);
   out.defenses = _csrObject(out.defenses);
-  out.hp = Object.assign({ current: 0, max: 0, temp: 0 }, _csrObject(out.hp));
+  out.hp = Object.assign({ current: 0, max: 0, temp: 0, calculatedAverage: null, importedMax: null, selectedMode: '', needsReview: false, breakdown: [], warnings: [] }, _csrObject(out.hp));
   out.speed = _csrObject(out.speed).walk != null ? _csrObject(out.speed) : { walk: _csrInt(out.speed, _csrInt(doc.speed, 30)) };
-  out.ac = _csrInt(out.ac, _csrInt(doc.ac, 10));
+  const rawAcRuntime = _csrObject(out.ac);
+  out.ac = Object.keys(rawAcRuntime).length ? Object.assign({ value: _csrInt(rawAcRuntime.value ?? rawAcRuntime.finalAc, _csrInt(doc.ac, 10)), calculatedValue: rawAcRuntime.calculatedValue ?? rawAcRuntime.calculatedAc, importedValue: rawAcRuntime.importedValue ?? rawAcRuntime.importedAc, selectedMode: rawAcRuntime.selectedMode || 'calculated', needsReview: !!rawAcRuntime.needsReview, breakdown: rawAcRuntime.breakdown || rawAcRuntime, warnings: rawAcRuntime.warnings || [] }, rawAcRuntime) : { value: _csrInt(out.ac, _csrInt(doc.ac, 10)), calculatedValue: _csrInt(out.ac, _csrInt(doc.ac, 10)), importedValue: null, selectedMode: 'calculated', needsReview: false, breakdown: {}, warnings: [] };
   out.initiative = _csrInt(out.initiative, _csrInt(doc.initiative, 0));
   out.proficiencyBonus = _csrInt(out.proficiencyBonus, _csrInt(doc.profBonus ?? doc.proficiencyBonus, 2));
   out.resources = out.resources.map(function (r) {
@@ -400,8 +401,8 @@ function buildCharacterSheetRuntime(characterDocument) {
     senses: doc.senses || native.senses || {},
     defenses: native.defenses || { resistances: doc.resistances || [], immunities: doc.immunities || [], vulnerabilities: doc.vulnerabilities || [] },
     conditions: doc.conditions || [],
-    hp: Object.assign({ current: _csrInt(doc.currentHP || doc.currentHp, _csrInt(doc.maxHP || doc.maxHp, 0)), max: _csrInt(doc.maxHP || doc.maxHp, 0), temp: _csrInt(doc.tempHP || doc.tempHp, 0) }, _csrObject(native.hp)),
-    ac: _csrInt(native.ac ?? doc.ac, 10), speed: native.speed || { walk: _csrInt(doc.speed, 30) }, initiative: _csrInt(doc.initiative ?? _csrObject(native.combat).initiative, 0), proficiencyBonus: _csrInt(native.proficiencyBonus ?? doc.profBonus ?? doc.proficiencyBonus, Math.ceil(level / 4) + 1),
+    hp: Object.assign({ current: _csrInt(doc.currentHP || doc.currentHp, _csrInt(doc.maxHP || doc.maxHp, 0)), max: _csrInt(doc.maxHP || doc.maxHp, 0), temp: _csrInt(doc.tempHP || doc.tempHp, 0), selectedMode: doc.hpSelectedMode || '', needsReview: false, breakdown: [], warnings: [] }, _csrObject(native.hp)),
+    ac: (native.ac && typeof native.ac === 'object') ? native.ac : { value: _csrInt(native.ac ?? doc.ac, 10), calculatedValue: _csrInt(native.ac ?? doc.ac, 10), importedValue: doc.importedAc || null, selectedMode: doc.acSelectedMode || 'calculated', needsReview: false, breakdown: {}, warnings: [] }, speed: native.speed || { walk: _csrInt(doc.speed, 30) }, initiative: _csrInt(doc.initiative ?? _csrObject(native.combat).initiative, 0), proficiencyBonus: _csrInt(native.proficiencyBonus ?? doc.profBonus ?? doc.proficiencyBonus, Math.ceil(level / 4) + 1),
     resources, actions, bonusActions, reactions, limitedUseActions, attacks, spells, itemSpells,
     features,
     traits: features.filter(f => f.kind === 'trait'),
@@ -548,9 +549,9 @@ function renderCharacterBookOverviewContent() {
       <div class="sheet-hp-hero">
         <div class="sheet-inline-title">Play State</div>
         <div class="hp-bar-wrap"><div class="hp-bar-fill" style="width:${Math.round(hpPct)}%;background:${hpColor};"></div></div>
-        <div class="hp-numbers"><span class="hp-current">${safeCurrentHp}</span><span class="hp-sep">/</span><span class="hp-max">${safeMaxHp}</span><span class="sheet-combat-chip"><strong>Temp ${safeTempHp}</strong></span></div>
+        <button class="hp-numbers" type="button" onclick="showAcHpAuditPanel('hp')"><span class="hp-current">${safeCurrentHp}</span><span class="hp-sep">/</span><span class="hp-max">${safeMaxHp}</span><span class="sheet-combat-chip"><strong>Temp ${safeTempHp}</strong></span>${combatSnapshot.hpNeedsReview ? '<span class="sheet-combat-chip" style="color:#ffcc66;"><strong>HP needs review</strong></span>' : ''}</button>
         <div class="sheet-combat-chip-row">
-          <span class="sheet-combat-chip"><strong>AC ${combatSnapshot.ac}</strong></span>
+          <button class="sheet-combat-chip" type="button" onclick="showAcHpAuditPanel('ac')"><strong>AC ${combatSnapshot.ac}</strong>${combatSnapshot.acNeedsReview ? ' <span style="color:#ffcc66;">AC needs review</span>' : ''}</button>
           <span class="sheet-combat-chip"><strong>SPD ${combatSnapshot.speed || '—'} ft</strong></span>
           <span class="sheet-combat-chip"><strong>Init ${Number.isFinite(combatSnapshot.initiative) ? formatSignedSummaryValue(combatSnapshot.initiative) : '—'}</strong></span>
           ${spellSaveDc ? `<span class="sheet-combat-chip"><strong>DC ${escapeHtml(spellSaveDc)}</strong></span>` : ''}
