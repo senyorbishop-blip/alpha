@@ -20,6 +20,7 @@ from server.character.summon_state import sync_summon_unlocks_from_features
 from server.character.schema import default_runtime
 from server.character.validation import ensure_character_defaults
 from server.rules_content import OPEN_5E_SPELLS as _OPEN_5E_SPELLS
+from server.item_compendium import merge_compendium_metadata
 
 _RESOLVER_VERSION = 1
 
@@ -929,6 +930,167 @@ def _bucket_imported_actions(document: dict[str, Any], context: dict[str, Any] |
             buckets["actions"].append(card)
     return buckets
 
+
+
+
+def _dedupe_named_runtime_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for row in rows or []:
+        if not isinstance(row, dict):
+            continue
+        key = str(row.get("name") or row.get("displayName") or row.get("id") or "").strip().lower()
+        if key and key in seen:
+            continue
+        if key:
+            seen.add(key)
+        out.append(row)
+    return out
+
+def _equipment_inventory(document: dict[str, Any]) -> list[dict[str, Any]]:
+    equipment = document.get("equipment") if isinstance(document.get("equipment"), dict) else {}
+    rows = equipment.get("inventory") if isinstance(equipment.get("inventory"), list) else []
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        enriched = merge_compendium_metadata(row)
+        key = str(enriched.get("id") or enriched.get("magic_item_id") or enriched.get("dedupe_key") or enriched.get("name") or "").strip().lower()
+        if key and key in seen:
+            continue
+        if key:
+            seen.add(key)
+        out.append(enriched)
+    return out
+
+
+def _item_requires_attunement(item: dict[str, Any]) -> bool:
+    att = item.get("attunement") if isinstance(item.get("attunement"), dict) else {}
+    return bool(item.get("requires_attunement") or item.get("attunement_required") or att.get("required"))
+
+
+def _item_is_attuned(item: dict[str, Any]) -> bool:
+    if not _item_requires_attunement(item):
+        return True
+    att = item.get("attunement") if isinstance(item.get("attunement"), dict) else {}
+    return bool(item.get("attuned") or att.get("attuned"))
+
+
+def _item_kind(item: dict[str, Any]) -> str:
+    return str(item.get("equipment_kind") or item.get("item_type") or item.get("kind") or item.get("category") or "").strip().lower().replace("armour", "armor")
+
+
+def _build_item_resource(item: dict[str, Any]) -> dict[str, Any] | None:
+    max_charges = _safe_int(item.get("charges_max"), 0, minimum=0)
+    if max_charges <= 0:
+        usage = item.get("limited_uses") if isinstance(item.get("limited_uses"), dict) else {}
+        max_charges = _safe_int(usage.get("max"), 0, minimum=0)
+    if max_charges <= 0:
+        return None
+    name = _display_item_name(item, "Item")
+    current = _safe_int(item.get("charges_current"), max_charges, minimum=0)
+    recharge = str(item.get("recharge_type") or item.get("recharge") or "dawn").strip() or "dawn"
+    return {
+        "id": f"item_charges_{str(item.get('id') or name).lower().replace(' ', '_').replace('-', '_')}",
+        "name": f"{name} Charges",
+        "current": min(current, max_charges),
+        "max": max_charges,
+        "recovery": recharge,
+        "source": "item",
+        "linkedFeatures": [],
+        "linkedActions": [],
+        "spendable": True,
+        "restReset": "long" if recharge.lower() in {"dawn", "daily", "long rest", "long"} else recharge.lower(),
+    }
+
+
+def _build_item_runtime(normalized: dict[str, Any], *, proficiency_bonus: int, str_mod: int, dex_mod: int) -> dict[str, list[dict[str, Any]]]:
+    inventory = _equipment_inventory(normalized)
+    attacks: list[dict[str, Any]] = []
+    actions: list[dict[str, Any]] = []
+    item_spells: list[dict[str, Any]] = []
+    traits: list[dict[str, Any]] = []
+    resources: list[dict[str, Any]] = []
+    seen_spells: set[str] = set()
+    for item in inventory:
+        if not isinstance(item, dict):
+            continue
+        name = _display_item_name(item, "Item")
+        iid = str(item.get("id") or item.get("magic_item_id") or name).strip().lower().replace(" ", "-")
+        active = bool(item.get("equipped") or item.get("is_equipped") or item.get("equippable") or _item_kind(item) in {"weapon", "staff", "wand", "ring", "armor", "shield"})
+        attuned = _item_is_attuned(item)
+        resource = _build_item_resource(item)
+        if resource:
+            resources.append(resource)
+        kind = _item_kind(item)
+        if active and kind in {"weapon", "staff"}:
+            bonus = _safe_int(item.get("attack_bonus") or item.get("magic_bonus"), 0)
+            dmg_bonus = _safe_int(item.get("damage_bonus") or item.get("magic_bonus"), bonus)
+            damage = str(item.get("damage_dice") or item.get("damage") or "1d6").strip()
+            dtype = str(item.get("damage_type") or "bludgeoning").strip()
+            attacks.append({
+                "id": f"item-attack-{iid}", "name": name, "source": "item", "actionType": "action", "cost": "action",
+                "attackBonus": proficiency_bonus + max(str_mod, dex_mod) + bonus,
+                "damage": {"formula": f"{damage}{('+' + str(dmg_bonus)) if dmg_bonus else ''}", "type": dtype},
+                "effectSummary": str(item.get("description_summary") or item.get("effect") or "Equipped weapon attack."),
+                "linkedItem": iid,
+            })
+        if not attuned:
+            continue
+        for act in item.get("granted_actions") or []:
+            if not isinstance(act, dict):
+                continue
+            cost = _safe_int(act.get("charge_cost"), 0, minimum=0)
+            actions.append({
+                "id": str(act.get("id") or f"item-action-{iid}"), "name": str(act.get("name") or name), "source": "item",
+                "actionType": str(act.get("action_type") or act.get("actionType") or "action"), "cost": "action",
+                "resourceCost": {"resourceId": resource["id"], "amount": cost} if resource and cost else None,
+                "current": resource.get("current") if resource else None, "max": resource.get("max") if resource else None,
+                "recovery": resource.get("recovery") if resource else "", "effectSummary": str(act.get("summary") or item.get("description_summary") or "Item action."),
+                "linkedResources": [resource["id"]] if resource else [], "linkedItem": iid,
+            })
+        for spell in item.get("granted_spells") or []:
+            if not isinstance(spell, dict):
+                continue
+            sid = str(spell.get("id") or spell.get("name") or "").strip().lower()
+            if not sid or sid in seen_spells:
+                continue
+            seen_spells.add(sid)
+            cost = _safe_int(spell.get("charge_cost"), 0, minimum=0)
+            item_spells.append({
+                "id": sid, "spell_id": sid, "name": str(spell.get("name") or sid.replace('-', ' ').title()),
+                "source": "item", "sourceType": "item_spell", "itemName": name, "item_id": iid,
+                "level": _safe_int(spell.get("cast_level") or spell.get("level"), 0, minimum=0), "castLevel": _safe_int(spell.get("cast_level") or spell.get("level"), 0, minimum=0),
+                "consumeSpellSlot": bool(spell.get("consume_spell_slot", False)), "chargeCost": cost,
+                "resourceCost": {"resourceId": resource["id"], "amount": cost} if resource and cost else None,
+                "saveDc": item.get("item_spell_save_dc") if spell.get("uses_item_dc") else None,
+                "spellAttackBonus": item.get("item_spell_attack_bonus") if spell.get("uses_item_attack_bonus") else None,
+                "linkedResources": [resource["id"]] if resource else [], "linkedItem": iid,
+            })
+        for eff in item.get("passive_effects") or []:
+            if isinstance(eff, dict):
+                traits.append({"id": f"item-trait-{iid}-{len(traits)+1}", "name": name, "source": "item", "kind": "item", "summary": str(eff.get("summary") or eff.get("type") or "Item trait"), "needsReview": False, "linkedItem": iid})
+    return {"inventory": inventory, "attacks": attacks, "actions": actions, "itemSpells": item_spells, "itemTraits": traits, "resources": resources}
+
+
+def _canonicalize_runtime_resource(row: dict[str, Any]) -> dict[str, Any]:
+    out = _clone(row)
+    if out.get("id"):
+        out["id"] = str(out.get("id")).replace("-", "_")
+    recovery = str(out.get("recovery") or "long rest").lower()
+    out.setdefault("source", "class")
+    out.setdefault("linkedFeatures", [])
+    out.setdefault("linkedActions", [])
+    out.setdefault("spendable", True)
+    if "short" in recovery:
+        out.setdefault("restReset", "short")
+    elif "long" in recovery or "dawn" in recovery or "daily" in recovery:
+        out.setdefault("restReset", "long")
+    else:
+        out.setdefault("restReset", recovery or "long")
+    return out
+
 def _build_runtime_summon_actions(
     document: dict[str, Any],
     runtime_classes: list[dict[str, Any]],
@@ -1291,8 +1453,9 @@ def resolve_character_runtime(document: Any) -> dict:
         if card
     ]
 
-    runtime["resources"] = merged_resources
-    runtime["actions"] = [item for payload in runtime_feature_sets for item in (payload.get("actions") or [])] + imported_action_buckets["actions"]
+    item_runtime = _build_item_runtime(normalized, proficiency_bonus=proficiency_bonus, str_mod=str_mod, dex_mod=dex_mod)
+    runtime["resources"] = [_canonicalize_runtime_resource(row) for row in (merged_resources + item_runtime["resources"])]
+    runtime["actions"] = [item for payload in runtime_feature_sets for item in (payload.get("actions") or [])] + imported_action_buckets["actions"] + item_runtime["actions"]
     runtime["bonusActions"] = [item for payload in runtime_feature_sets for item in (payload.get("bonusActions") or [])] + imported_action_buckets["bonusActions"]
     runtime["reactions"] = [item for payload in runtime_feature_sets for item in (payload.get("reactions") or [])] + imported_action_buckets["reactions"]
     runtime["passives"] = [item for payload in runtime_feature_sets for item in (payload.get("passives") or [])] + imported_action_buckets["passives"]
@@ -1374,7 +1537,7 @@ def resolve_character_runtime(document: Any) -> dict:
     runtime["originTraits"] = _resolve_runtime_origin_traits(normalized)
     runtime["backgroundFeatures"] = _resolve_runtime_background_features(normalized)
     runtime["featFeatures"] = _resolve_runtime_feat_features(normalized)
-    runtime["nativeFeatures"] = _clone(runtime["classFeatures"] + runtime["originTraits"] + runtime["backgroundFeatures"] + runtime["featFeatures"])
+    runtime["nativeFeatures"] = _dedupe_named_runtime_rows(runtime["classFeatures"] + runtime["originTraits"] + runtime["backgroundFeatures"] + runtime["featFeatures"])
     runtime["summonActions"] = _build_runtime_summon_actions(normalized, runtime_classes)
 
     class_saving_throws = []
@@ -1497,15 +1660,15 @@ def resolve_character_runtime(document: Any) -> dict:
             for row in (runtime.get("actions") or []) + (runtime.get("bonusActions") or []) + (runtime.get("reactions") or [])
             if isinstance(row, dict) and (row.get("resourceName") or row.get("resourceCost") or row.get("trackUses"))
         ],
-        "attacks": _clone(runtime.get("summonActions") or []),
-        "spells": _clone(runtime.get("spellAccess", {}).get("cards") or []),
-        "itemSpells": [],
+        "attacks": _clone((runtime.get("summonActions") or []) + item_runtime["attacks"]),
+        "spells": [card for card in _clone(runtime.get("spellAccess", {}).get("cards") or []) if str(card.get("id") or card.get("name") or "").strip().lower() not in {str(sp.get("id") or sp.get("spell_id") or sp.get("name") or "").strip().lower() for sp in item_runtime["itemSpells"]}],
+        "itemSpells": _clone(item_runtime["itemSpells"]),
         "features": _clone(runtime.get("nativeFeatures") or []),
         "traits": _clone(runtime.get("originTraits") or []),
         "feats": _clone(runtime.get("featFeatures") or []),
         "backgroundFeatures": _clone(runtime.get("backgroundFeatures") or []),
-        "itemTraits": [],
-        "inventory": _clone((normalized.get("equipment") or {}).get("inventory") or []) if isinstance(normalized.get("equipment"), dict) else [],
+        "itemTraits": _clone(item_runtime["itemTraits"]),
+        "inventory": _clone(item_runtime["inventory"]),
         "warnings": _clone(character_audit_result.get("warnings") or []),
         "needsReview": any(bool(row.get("needsReview")) for row in (runtime.get("nativeFeatures") or []) if isinstance(row, dict)),
     }
