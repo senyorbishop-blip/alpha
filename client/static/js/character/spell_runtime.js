@@ -480,11 +480,47 @@
     return options;
   }
 
+
+  /* ── Shared cast resolver payload used by quick actions and spell surfaces ── */
+  function resolveSpellCast(spellCard, characterRuntime, options) {
+    options = options || {};
+    characterRuntime = characterRuntime || {};
+    var rt = resolveSpellRuntime(spellCard, Object.assign({}, options, {
+      castLevel: options.castLevel !== undefined ? options.castLevel : options.slotLevel,
+      slotLevel: options.slotLevel !== undefined ? options.slotLevel : options.castLevel,
+      characterLevel: first(options.characterLevel, characterRuntime.level, characterRuntime.totalLevel, 1),
+      saveDc: first(options.saveDc, options.saveDC, characterRuntime.spellSaveDc, characterRuntime.spell_save_dc, ''),
+      spellAttackBonus: first(options.spellAttackBonus, characterRuntime.spellAttack, characterRuntime.spell_attack, ''),
+    }));
+    var slotLevel = rt.baseLevel === 0 ? 0 : num(options.slotLevel !== undefined ? options.slotLevel : rt.castLevel, rt.castLevel);
+    var formulaUsed = first(rt.finalHealingFormula, rt.finalDamageFormula, rt.displayFormula, '');
+    return {
+      runtime: rt,
+      spellId: rt.spellId,
+      spellName: rt.name,
+      baseLevel: rt.baseLevel,
+      castLevel: rt.castLevel,
+      slotLevel: slotLevel,
+      formulaUsed: formulaUsed,
+      scalingApplied: !!(rt.scalingType && rt.scalingType !== 'none' && rt.castLevel > rt.baseLevel),
+      attackBonus: rt.attackBonus,
+      saveDC: rt.saveDc,
+      damage: rt.finalDamageFormula ? [{ formula: rt.finalDamageFormula, type: rt.damageType || '' }] : [],
+      healing: rt.finalHealingFormula ? [{ formula: rt.finalHealingFormula, type: rt.healingType || 'healing' }] : [],
+      consumedSlotLevel: slotLevel > 0 ? slotLevel : 0,
+      source: first(options.source, rt.source, 'spell'),
+      actionSource: first(options.actionSource, 'spells_tab'),
+      targetId: first(options.targetId, ''),
+    };
+  }
+
   /* ── Exports ─────────────────────────────────────────────────────────────── */
   global.resolveSpellRuntime = resolveSpellRuntime;
+  global.resolveSpellCast = global.resolveSpellCast || resolveSpellCast;
   global.buildSpellCastOptions = buildCastOptions;
   global.AppSpellRuntime = {
     resolveSpellRuntime:      resolveSpellRuntime,
+    resolveSpellCast:         resolveSpellCast,
     buildSpellCastOptions:    buildCastOptions,
     normalizeRollableFormula: normalizeRollable,
     isRollableFormula:        isRollable,

@@ -47599,14 +47599,58 @@ function _spellCardAttackKindForCombat(card, spell) {
   return '';
 }
 
+function resolveSpellCast(spell, characterRuntime, options = {}) {
+  const card = spell?.card || spell || {};
+  const baseLevel = _combatQuickSpellBaseLevel(spell) ?? 0;
+  const requestedCast = options.castLevel ?? options.slotLevel ?? card.default_cast_level ?? baseLevel;
+  const castLevel = baseLevel <= 0 ? 0 : Math.max(baseLevel, Math.min(9, parseInt(requestedCast, 10) || baseLevel));
+  const slotLevel = baseLevel <= 0 ? 0 : Math.max(baseLevel, Math.min(9, parseInt(options.slotLevel ?? castLevel, 10) || castLevel));
+  const runtime = window.AppSpellRuntime && typeof window.AppSpellRuntime.resolveSpellRuntime === 'function'
+    ? window.AppSpellRuntime.resolveSpellRuntime({ ...(card || {}), id: spell?.id || card?.id, name: spell?.name || card?.name }, {
+      castLevel,
+      slotLevel,
+      characterLevel: characterRuntime?.level || characterRuntime?.totalLevel || characterRuntime?.book?.level || 1,
+      spellcastingModifier: _spellcastingAbilityModForCard(card),
+      saveDc: card.save_dc || characterRuntime?.spellSaveDc || '',
+      spellAttackBonus: card.attack_bonus || characterRuntime?.spellAttack || '',
+      source: options.source || 'spell',
+      actionSource: options.actionSource || 'quick_actions',
+      targetId: options.targetId || '',
+    })
+    : null;
+  const formulaUsed = String(runtime?.finalHealingFormula || runtime?.finalDamageFormula || _getCombatSpellDamageExpression(spell, castLevel) || '').trim();
+  const damageParts = runtime?.finalDamageFormula ? [{ formula: runtime.finalDamageFormula, type: runtime.damageType || card.damage_type || '' }] : [];
+  const healingParts = runtime?.finalHealingFormula ? [{ formula: runtime.finalHealingFormula, type: runtime.healingType || card.healing_type || 'healing' }] : [];
+  const rollPayload = {
+    spellId: String(spell?.id || card?.id || '').trim(),
+    spellName: String(spell?.name || card?.name || 'Spell').trim(),
+    baseLevel,
+    castLevel,
+    slotLevel,
+    formulaUsed,
+    scalingApplied: !!(runtime && runtime.scalingType && runtime.scalingType !== 'none' && castLevel > baseLevel),
+    attackBonus: runtime?.attackBonus || card.attack_bonus || characterRuntime?.spellAttack || '',
+    saveDC: runtime?.saveDc || card.save_dc || characterRuntime?.spellSaveDc || '',
+    damage: damageParts,
+    healing: healingParts,
+    parts: healingParts.length ? healingParts : damageParts,
+    consumedSlotLevel: slotLevel > 0 ? slotLevel : 0,
+    source: options.source || 'spell',
+    actionSource: options.actionSource || 'quick_actions',
+    targetId: options.targetId || '',
+  };
+  return { spell, card, runtime, baseLevel, castLevel, slotLevel, formulaUsed, rollPayload };
+}
+window.resolveSpellCast = resolveSpellCast;
+
 function _executeCombatSpellCast(spell, slotLevel) {
   _recordSpellUsage(spell);
-  const baseLevel = _combatQuickSpellBaseLevel(spell) ?? 0;
+  const resolvedCast = resolveSpellCast(spell, _charSheet || {}, { castLevel: slotLevel, slotLevel, source: 'spell', actionSource: 'quick_actions', targetId: _combat?.selected_target_id || '' });
+  const baseLevel = resolvedCast.baseLevel;
   const ordinals = ['','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
-  const numericSlotLevel = Math.max(0, parseInt(slotLevel, 10) || 0);
-  const effectiveSlot = numericSlotLevel > 0 ? numericSlotLevel : baseLevel;
+  const effectiveSlot = resolvedCast.slotLevel;
   const slotText = effectiveSlot > 0 ? ` at ${ordinals[effectiveSlot]||effectiveSlot+'th'} level` : ' (cantrip)';
-  const card = spell.card || {};
+  const card = resolvedCast.card || {};
   const spellId = String(spell?.id || card?.id || '').trim().toLowerCase();
   const spellSummonTemplateId = _spellSummonRuntimeTemplateForSpell(spellId);
 
@@ -47615,6 +47659,7 @@ function _executeCombatSpellCast(spell, slotLevel) {
     showToast(`No level ${effectiveSlot} spell slots remaining.`);
     return null;
   }
+  resolvedCast.rollPayload.consumedSlotLevel = slotSpend.slotLevel || 0;
 
   if (_isSupportedRuntimeSpellSummon(spellId)) {
     if (_spellCardHasConcentration(card)) _startActiveSpellConcentration(spell.name || card.name || 'Concentration Spell');
@@ -47636,7 +47681,7 @@ function _executeCombatSpellCast(spell, slotLevel) {
   }
 
   const exactCastOption = card.cast_options && card.cast_options[String(effectiveSlot)];
-  let dmgExpr = exactCastOption?.formula || _getCombatSpellDamageExpression(spell, effectiveSlot);
+  let dmgExpr = exactCastOption?.formula || resolvedCast.formulaUsed || _getCombatSpellDamageExpression(spell, effectiveSlot);
   if (!exactCastOption && baseLevel > 0 && effectiveSlot > baseLevel) {
     const _scaledExpr = _combatQuickScaleSpellFormula(
       String(card.damage_dice || card.damage || card.damage_formula || card.base_damage_formula || '').trim(),
@@ -47649,7 +47694,7 @@ function _executeCombatSpellCast(spell, slotLevel) {
 
   const target = _resolveSpellCastTarget(card);
   const targetName = String(target?.name || '').trim();
-  const spellRuntime = window.AppSpellRuntime ? window.AppSpellRuntime.resolveSpellRuntime({ ...(card || {}), id: spell?.id || card?.id, name: spell?.name || card?.name }, { castLevel: effectiveSlot, characterLevel: _charSheet?.level || _charSheet?.totalLevel || 1, spellcastingModifier: _spellcastingAbilityModForCard(card), saveDc: card.save_dc || _charSheet?.spellSaveDc || '' }) : null;
+  const spellRuntime = resolvedCast.runtime;
   const isAttackRoll = !!(spellRuntime ? spellRuntime.requiresAttackRoll : _spellCardAttackKindForCombat(card, spell) === 'spell');
   const saveAbility = String((spellRuntime && spellRuntime.saveAbility) || card.save_ability || card.save || '').toLowerCase().replace(/[^a-z]/g, '');
   const isSave = !!saveAbility;
@@ -47748,13 +47793,13 @@ function _executeCombatSpellCast(spell, slotLevel) {
   if (applied.applied && targetName) chatMsg += ` applied to **${targetName}**`;
   else if (!applied.applied && target && applied.reason === 'not_allowed') chatMsg += ' (needs DM/owner confirmation)';
   if (isConcentration) chatMsg += ' • Concentration active';
-  sendWS({ type: 'chat_message', payload: { message: chatMsg, channel: 'everyone' } });
+  sendWS({ type: 'chat_message', payload: { message: chatMsg, channel: 'everyone', roll_payload: resolvedCast.rollPayload } });
 
   if (typeof renderRulesSpellbook === 'function') renderRulesSpellbook();
   if (typeof renderPlayerSpellLibrary === 'function') renderPlayerSpellLibrary();
   if (typeof renderPlayerActionsHub === 'function') renderPlayerActionsHub();
   if (typeof renderCombat === 'function') renderCombat();
-  return { spell: spell.name, slotLevel: effectiveSlot, outcome, total: spellRoll?.total ?? null, applied };
+  return { spell: spell.name, slotLevel: effectiveSlot, castLevel: resolvedCast.castLevel, outcome, total: spellRoll?.total ?? null, applied, rollPayload: resolvedCast.rollPayload };
 }
 
 function combatQuickWeaponAttack(attackId, mode = 'base') {
