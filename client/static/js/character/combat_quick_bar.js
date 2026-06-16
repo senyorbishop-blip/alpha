@@ -12,6 +12,8 @@
   let state = Object.assign({}, DEFAULT_STATE);
   let root = null;
   let dragging = null;
+  let toggleDragging = null;
+  let suppressToggleClick = false;
 
   function _esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) {
@@ -43,6 +45,8 @@
       state = {
         x: Number.isFinite(Number(merged.x)) ? Number(merged.x) : null,
         y: Number.isFinite(Number(merged.y)) ? Number(merged.y) : null,
+        buttonX: Number.isFinite(Number(merged.buttonX)) ? Number(merged.buttonX) : null,
+        buttonY: Number.isFinite(Number(merged.buttonY)) ? Number(merged.buttonY) : null,
         w: Number.isFinite(Number(merged.w)) ? Number(merged.w) : undefined,
         h: Number.isFinite(Number(merged.h)) ? Number(merged.h) : undefined,
         minimized: !!merged.minimized,
@@ -66,7 +70,9 @@
     const style = document.createElement('style');
     style.id = 'combat-quick-bar-styles';
     style.textContent = `
-      .combat-quick-bar-toggle{position:fixed;right:18px;bottom:84px;z-index:1085;border:1px solid rgba(0,229,204,.45);border-radius:999px;background:rgba(13,18,24,.88);color:#dffbf7;padding:.42rem .62rem;font-size:.72rem;box-shadow:0 8px 22px rgba(0,0,0,.35);cursor:pointer;}
+      .combat-quick-bar-toggle{position:fixed;right:18px;bottom:84px;z-index:1085;border:1px solid rgba(0,229,204,.45);border-radius:999px;background:rgba(13,18,24,.88);color:#dffbf7;padding:.42rem .62rem;font-size:.72rem;box-shadow:0 8px 22px rgba(0,0,0,.35);cursor:grab;pointer-events:auto;touch-action:none;user-select:none;}
+      .combat-quick-bar-toggle:focus-visible{outline:2px solid #9ff6ea;outline-offset:3px;}
+      .combat-quick-bar-toggle.is-dragging{cursor:grabbing;}
       .combat-quick-bar{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);z-index:1086;width:min(720px,calc(100vw - 28px));min-width:280px;min-height:140px;max-height:min(72vh,600px);display:flex;flex-direction:column;gap:.48rem;border:1px solid rgba(0,229,204,.32);border-radius:16px;background:linear-gradient(145deg,rgba(13,18,24,.96),rgba(28,20,13,.94));box-shadow:0 18px 44px rgba(0,0,0,.48),inset 0 0 0 1px rgba(255,255,255,.04);color:#f5ead6;font-family:inherit;overflow:hidden;resize:both;box-sizing:border-box;}
       .combat-quick-bar.is-minimized{width:min(360px,calc(100vw - 28px));min-height:unset;resize:none;}
       .combat-quick-bar[hidden],.combat-quick-bar-toggle[hidden]{display:none!important;}
@@ -142,7 +148,15 @@
     toggle.type = 'button';
     toggle.className = 'combat-quick-bar-toggle';
     toggle.textContent = '⚔ Quick Bar';
-    toggle.addEventListener('click', function (ev) { ev.stopPropagation(); openManual(); });
+    toggle.addEventListener('pointerdown', _startToggleDrag);
+    toggle.addEventListener('pointermove', _dragToggle);
+    toggle.addEventListener('pointerup', _stopToggleDrag);
+    toggle.addEventListener('pointercancel', _stopToggleDrag);
+    toggle.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      if (suppressToggleClick) { suppressToggleClick = false; return; }
+      openManual();
+    });
     document.body.appendChild(toggle);
     root.addEventListener('click', _handleClick);
     root.addEventListener('pointermove', _drag);
@@ -152,11 +166,42 @@
     return root;
   }
 
+  function _clampPoint(x, y, w, h) {
+    const width = Math.max(48, Number(w) || 48);
+    const height = Math.max(40, Number(h) || 40);
+    return {
+      x: Math.max(8, Math.min(global.innerWidth - width - 8, Number(x) || 8)),
+      y: Math.max(8, Math.min(global.innerHeight - height - 8, Number(y) || 8)),
+    };
+  }
+
+  function _applyTogglePosition() {
+    const toggle = document.getElementById('combat-quick-bar-toggle');
+    if (!toggle) return;
+    if (Number.isFinite(Number(state.buttonX)) && Number.isFinite(Number(state.buttonY))) {
+      const point = _clampPoint(state.buttonX, state.buttonY, toggle.offsetWidth || 120, toggle.offsetHeight || 36);
+      state.buttonX = point.x;
+      state.buttonY = point.y;
+      toggle.style.left = point.x + 'px';
+      toggle.style.top = point.y + 'px';
+      toggle.style.right = 'auto';
+      toggle.style.bottom = 'auto';
+    } else {
+      toggle.style.left = 'auto';
+      toggle.style.top = 'auto';
+      toggle.style.right = global.innerWidth < 760 ? '12px' : '18px';
+      toggle.style.bottom = global.innerWidth < 760 ? '72px' : '84px';
+    }
+  }
+
   function _applyPosition() {
     if (!root) return;
     if (Number.isFinite(Number(state.x)) && Number.isFinite(Number(state.y))) {
-      root.style.left = Math.max(8, Math.min(global.innerWidth - 80, Number(state.x))) + 'px';
-      root.style.top = Math.max(8, Math.min(global.innerHeight - 48, Number(state.y))) + 'px';
+      const point = _clampPoint(state.x, state.y, root.offsetWidth || 280, root.offsetHeight || 140);
+      state.x = point.x;
+      state.y = point.y;
+      root.style.left = point.x + 'px';
+      root.style.top = Math.max(8, Math.min(global.innerHeight - (root.offsetHeight || 140) - 8, point.y)) + 'px';
       root.style.bottom = 'auto';
       root.style.transform = 'none';
     } else {
@@ -203,6 +248,32 @@
   function _stopDrag() {
     if (!dragging) return;
     dragging = null;
+    _saveState();
+  }
+
+  function _startToggleDrag(ev) {
+    const toggle = document.getElementById('combat-quick-bar-toggle');
+    if (!toggle) return;
+    const rect = toggle.getBoundingClientRect();
+    toggleDragging = { dx: ev.clientX - rect.left, dy: ev.clientY - rect.top, startX: ev.clientX, startY: ev.clientY, moved: false };
+    toggle.classList.add('is-dragging');
+    toggle.setPointerCapture && toggle.setPointerCapture(ev.pointerId);
+  }
+  function _dragToggle(ev) {
+    if (!toggleDragging) return;
+    if (Math.abs(ev.clientX - toggleDragging.startX) > 4 || Math.abs(ev.clientY - toggleDragging.startY) > 4) toggleDragging.moved = true;
+    const toggle = document.getElementById('combat-quick-bar-toggle');
+    const point = _clampPoint(ev.clientX - toggleDragging.dx, ev.clientY - toggleDragging.dy, toggle?.offsetWidth || 120, toggle?.offsetHeight || 36);
+    state.buttonX = point.x;
+    state.buttonY = point.y;
+    _applyTogglePosition();
+  }
+  function _stopToggleDrag() {
+    if (!toggleDragging) return;
+    suppressToggleClick = !!toggleDragging.moved;
+    toggleDragging = null;
+    const toggle = document.getElementById('combat-quick-bar-toggle');
+    if (toggle) toggle.classList.remove('is-dragging');
     _saveState();
   }
 
@@ -334,15 +405,18 @@
     const role = _firstText(runtime.role, global.ROLE, '').toLowerCase();
     const turnKey = combat.active ? String((combat.round || 1) + ':' + (combat.turn || 0)) : '';
     const dismissed = !!(combat.active && state.dismissedUntilManualOpen && state.dismissedForCombatTurn === turnKey);
-    const shouldShow = role === 'player' && !dismissed && (!!combat.active || !!state.manual);
+    const roleCanUseQuickBar = role === 'player' || role === 'dm';
+    const shouldShow = roleCanUseQuickBar && !dismissed && (!!combat.active || !!state.manual);
     const toggle = document.getElementById('combat-quick-bar-toggle');
     // Toggle is visible for known players; when role is unknown don't change it
-    if (toggle && role) toggle.hidden = role !== 'player';
+    if (toggle && role) toggle.hidden = !roleCanUseQuickBar;
     // During active combat the toggle must always be visible for players so they
     // can reopen the bar after closing it — never let dismissed state hide it.
-    if (toggle && role === 'player' && combat.active) toggle.hidden = false;
+    if (toggle && roleCanUseQuickBar && combat.active) toggle.hidden = false;
     if (!shouldShow) {
       root.hidden = true;
+      if (toggle && roleCanUseQuickBar) toggle.hidden = false;
+      _applyTogglePosition();
       state.combatWasActive = !!combat.active;
       _saveState();
       return;
@@ -355,6 +429,7 @@
     const current = _safeArray(combat.combatants)[Math.max(0, Number(combat.turn || 0))] || null;
     const targetName = runtime.selectedTargetId && runtime.tokens ? _firstText(runtime.tokens[runtime.selectedTargetId] && runtime.tokens[runtime.selectedTargetId].name, 'Selected') : 'No target';
     root.hidden = false;
+    if (toggle) toggle.hidden = true;
     root.classList.toggle('is-minimized', !!state.minimized);
     root.innerHTML = `<header class="combat-quick-bar-head">
       <div class="combat-quick-bar-title">⚔ Quick Actions <span class="combat-quick-bar-sub">${combat.active ? `Round ${_esc(combat.round || 1)} · ${_esc(current && current.name || 'Turn')}` : 'Manual'}</span></div>
@@ -381,6 +456,7 @@
       head.addEventListener('pointerdown', _startDrag);
     }
     _applyPosition();
+    _applyTogglePosition();
     _saveState();
   }
 
