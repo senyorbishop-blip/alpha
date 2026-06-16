@@ -190,8 +190,72 @@ function _csrAction(id, name, actionType, opts) {
     featureModifiers: o.featureModifiers || [],
   };
 }
+
+function _csrNormalizeRuntimeRuntime(runtime, sourceDoc) {
+  const rt = _csrObject(runtime);
+  const doc = _csrObject(sourceDoc);
+  const out = Object.assign({}, rt);
+  const arrays = ['resources','attacks','actions','bonusActions','reactions','limitedUseActions','spells','itemSpells','features','traits','feats','backgroundFeatures','itemTraits','inventory','warnings','conditions'];
+  arrays.forEach(function (key) { out[key] = _csrArray(out[key]); });
+  out.identity = _csrObject(out.identity);
+  out.abilities = _csrObject(out.abilities);
+  out.saves = _csrObject(out.saves);
+  out.skills = _csrObject(out.skills);
+  out.passiveScores = _csrObject(out.passiveScores);
+  out.senses = _csrObject(out.senses);
+  out.defenses = _csrObject(out.defenses);
+  out.hp = Object.assign({ current: 0, max: 0, temp: 0 }, _csrObject(out.hp));
+  out.speed = _csrObject(out.speed).walk != null ? _csrObject(out.speed) : { walk: _csrInt(out.speed, _csrInt(doc.speed, 30)) };
+  out.ac = _csrInt(out.ac, _csrInt(doc.ac, 10));
+  out.initiative = _csrInt(out.initiative, _csrInt(doc.initiative, 0));
+  out.proficiencyBonus = _csrInt(out.proficiencyBonus, _csrInt(doc.profBonus ?? doc.proficiencyBonus, 2));
+  out.resources = out.resources.map(function (r) {
+    const row = Object.assign({}, r);
+    row.id = row.id || _csrResourceId(row.name);
+    row.name = row.name || row.id;
+    row.current = _csrInt(row.current, _csrInt(row.max, 0));
+    row.max = _csrInt(row.max, row.current);
+    row.source = row.source || 'runtime';
+    row.linkedFeatures = _csrArray(row.linkedFeatures);
+    row.linkedActions = _csrArray(row.linkedActions);
+    row.spendable = row.spendable !== false;
+    row.restReset = row.restReset || (/short/i.test(row.recovery || '') ? 'short' : 'long');
+    return row;
+  });
+  function normalizeAction(row, fallbackType) {
+    const action = _csrAction(row && row.id, row && (row.name || row.displayName) || 'Action', row && (row.actionType || row.type) || fallbackType, row || {});
+    action.source = row && row.source || action.source;
+    action.attackBonus = row && row.attackBonus;
+    action.damage = row && row.damage;
+    action.saveDc = row && (row.saveDc || row.dc);
+    action.linkedFeature = row && (row.linkedFeature || row.sourceFeature || '');
+    action.linkedItem = row && row.linkedItem;
+    return action;
+  }
+  out.actions = out.actions.map(function (a) { return normalizeAction(a, 'action'); });
+  out.bonusActions = out.bonusActions.map(function (a) { return normalizeAction(a, 'bonus action'); });
+  out.reactions = out.reactions.map(function (a) { return normalizeAction(a, 'reaction'); });
+  out.attacks = out.attacks.map(function (a) { return Object.assign({ id: _csrSlug(a && (a.id || a.name)), source: 'runtime', actionType: 'action' }, a || {}); });
+  out.spells = out.spells.map(function (spell) { return _csrBuildSpell(spell, doc, spell && (spell.source || spell.sourceType) || 'class'); });
+  out.itemSpells = out.itemSpells.map(function (spell) { return Object.assign(_csrBuildSpell(spell, doc, 'item'), { itemName: spell && (spell.itemName || spell.item_name), resourceCost: spell && spell.resourceCost, chargeCost: spell && spell.chargeCost }); });
+  const itemNames = new Set(out.itemSpells.map(function (s) { return String(s.name || s.id || '').toLowerCase(); }));
+  out.spells = out.spells.filter(function (s) { return !itemNames.has(String(s.name || s.id || '').toLowerCase()) || String(s.sourceType || s.source || '').toLowerCase() !== 'item'; });
+  out.limitedUseActions = out.limitedUseActions.length ? out.limitedUseActions : out.actions.concat(out.bonusActions, out.reactions).filter(function (a) { return a.resourceCost || a.current != null || a.max != null; });
+  out.features = out.features.map(function (f) { return Object.assign({ id: _csrSlug(f && (f.id || f.name)), name: f && (f.name || f.displayName) || 'Feature', source: 'runtime', kind: _csrFeatureKind(f || {}), linkedResources: [], linkedActions: [], needsReview: false }, f || {}); });
+  out.traits = out.traits.length ? out.traits : out.features.filter(function (f) { return f.kind === 'trait'; });
+  out.feats = out.feats.length ? out.feats : out.features.filter(function (f) { return f.kind === 'feat'; });
+  out.backgroundFeatures = out.backgroundFeatures.length ? out.backgroundFeatures : out.features.filter(function (f) { return f.kind === 'background'; });
+  out.itemTraits = out.itemTraits.length ? out.itemTraits : out.features.filter(function (f) { return f.kind === 'item'; });
+  out.turnEconomy = { action: out.actions, bonusAction: out.bonusActions, reaction: out.reactions, passiveReminders: out.features.filter(function (f) { return String(f.actionType || f.type || '').toLowerCase() === 'passive'; }) };
+  out.needsReview = !!out.needsReview || out.features.some(function (f) { return !!f.needsReview; });
+  return out;
+}
+
 function buildCharacterSheetRuntime(characterDocument) {
   const doc = _csrObject(characterDocument);
+  if (doc.characterSheetRuntime && typeof doc.characterSheetRuntime === 'object') {
+    return _csrNormalizeRuntimeRuntime(doc.characterSheetRuntime, doc);
+  }
   const native = _csrObject(doc.nativeRuntime || doc.runtime);
   const book = _csrObject(doc.book || doc.charBook);
   const classes = _csrArray(doc.classes);

@@ -326,8 +326,8 @@
     } else {
       const sheet = runtime && runtime.charSheet ? runtime.charSheet : {};
       const sheetRuntime = sheet.characterSheetRuntime || sheet.sheetRuntime || {};
-      spells = _safeArray(sheetRuntime.spells).length
-        ? _safeArray(sheetRuntime.spells)
+      spells = _safeArray(sheetRuntime.spells).length || _safeArray(sheetRuntime.itemSpells).length
+        ? _safeArray(sheetRuntime.spells).concat(_safeArray(sheetRuntime.itemSpells))
         : _safeArray(sheet.rulesSpellCards || sheet.rulesSpellbook || sheet.spellbookEntries);
     }
     return _uniqueByName(spells, spells.length).sort(function (a, b) {
