@@ -70,11 +70,33 @@ function _csrFeatureKind(feature) {
   if (/background/.test(text)) return 'background';
   return 'feature';
 }
+function _csrCanonicalName(value) {
+  return String(value || '').toLowerCase().replace(/^imported\s+/i, '').replace(/\s+/g, ' ').trim();
+}
+function _csrResourceId(value) {
+  const text = String(value || '').toLowerCase();
+  if (/sorcery/.test(text)) return 'sorcery_points';
+  if (/rage/.test(text)) return 'rage_uses';
+  if (/bardic/.test(text)) return 'bardic_inspiration';
+  if (/channel divinity/.test(text)) return 'channel_divinity';
+  if (/wild shape/.test(text)) return 'wild_shape';
+  if (/action surge/.test(text)) return 'action_surge';
+  if (/second wind/.test(text)) return 'second_wind';
+  if (/indomitable/.test(text)) return 'indomitable';
+  if (/(ki|focus|discipline)/.test(text)) return 'discipline_points';
+  if (/lay on hands/.test(text)) return 'lay_on_hands';
+  if (/pact/.test(text)) return 'pact_slots';
+  if (/arcane recovery/.test(text)) return 'arcane_recovery';
+  if (/gadget/.test(text)) return 'gadget_charges';
+  if (/swagger/.test(text)) return 'swagger_dice';
+  if (/tides of chaos/.test(text)) return 'tides_of_chaos';
+  return _csrSlug(value);
+}
 function _csrResource(id, name, current, max, recovery, source) {
   const safeMax = Math.max(0, _csrInt(max, _csrInt(current, 0)));
   const safeCurrent = Math.max(0, Math.min(safeMax || _csrInt(current, 0), _csrInt(current, safeMax)));
   return {
-    id: id || _csrSlug(name),
+    id: id || _csrResourceId(name),
     name,
     current: safeCurrent,
     max: safeMax,
@@ -84,6 +106,8 @@ function _csrResource(id, name, current, max, recovery, source) {
     restReset: /short/i.test(recovery || '') ? 'short' : 'long',
     linkedFeatures: [],
     linkedActions: [],
+    spendBehaviour: 'spend',
+    restResetBehaviour: /short/i.test(recovery || '') ? 'short_rest' : 'long_rest',
   };
 }
 function _csrPushUnique(list, row, keyFn) {
@@ -140,6 +164,8 @@ function _csrBuildSpell(spell, character, source) {
     ritual: !!(spell && spell.ritual || resolved.ritual),
     components: _csrFirst(spell && spell.components, resolved.components, ''),
     source: source || _csrFirst(spell && spell.source, 'class'),
+    sourceType: source || _csrFirst(spell && spell.sourceType, spell && spell.source, 'class'),
+    resolver: 'resolveSpellRuntime',
     preparation: _csrFirst(spell && (spell.preparation || spell.status), level === 0 ? 'known' : 'known'),
     resolverPreview: resolved,
   };
@@ -181,12 +207,44 @@ function buildCharacterSheetRuntime(characterDocument) {
   }
   if (sorcererLevel) ensureResource('sorcery_points', 'Sorcery Points', doc.sorceryPoints ?? sorcererLevel, sorcererLevel, 'long rest', 'sorcerer');
   const features = [];
-  _csrArray(native.classFeatures || doc.nativeClassFeatures || doc.nativeFeatures || doc.features).forEach(function (f) {
+  const allFeatureInputs = []
+    .concat(_csrArray(native.classFeatures), _csrArray(native.subclassFeatures), _csrArray(native.features))
+    .concat(_csrArray(doc.nativeClassFeatures), _csrArray(doc.nativeFeatures), _csrArray(doc.features))
+    .concat(_csrArray(doc.traits), _csrArray(doc.speciesTraits), _csrArray(doc.feats), _csrArray(doc.backgroundFeatures), _csrArray(doc.itemTraits), _csrArray(doc.homebrewFeatures), _csrArray(doc.importedFeatures));
+  allFeatureInputs.forEach(function (f) {
     if (typeof f === 'string') f = { name: f };
     const name = _csrFirst(f.name, f.displayName);
     if (!name) return;
-    const row = Object.assign({ id: _csrSlug(name), name, source: f.source || 'class', kind: _csrFeatureKind(f), modifiers: [], linkedResources: [], linkedActions: [], needsReview: !!f.needsReview }, f);
-    _csrPushUnique(features, row, function (x) { return `${String(x.name || '').toLowerCase()}|${String(x.source || x.kind || '').toLowerCase()}`; });
+    const sourceText = _csrFirst(f.source, f.sourceType, f.className, f.kind, 'class');
+    const linkedResource = _csrFirst(f.linkedResource, f.resourceId, f.resourceName);
+    const linkedResources = _csrArray(f.linkedResources).concat(linkedResource ? [_csrResourceId(linkedResource)] : []);
+    const row = Object.assign({
+      id: _csrSlug(name),
+      name,
+      source: sourceText,
+      kind: _csrFeatureKind(f),
+      level: _csrInt(f.level ?? f.minLevel, 0),
+      actionType: _csrFirst(f.actionType, f.action_type, f.type, 'passive'),
+      usage: _csrFirst(f.usage, f.uses, ''),
+      recovery: _csrFirst(f.recovery, f.reset, ''),
+      currentUses: f.currentUses ?? f.uses_current ?? null,
+      maxUses: f.maxUses ?? f.uses_max ?? null,
+      linkedResources,
+      linkedActions: _csrArray(f.linkedActions),
+      linkedSpell: _csrFirst(f.linkedSpell, ''),
+      shortSummary: _csrFirst(f.shortSummary, f.summary, f.safe_summary, ''),
+      fullDetail: _csrFirst(f.fullDetail, f.description, f.rules_summary, f.text, f.summary, ''),
+      runtimeHooks: _csrArray(f.runtimeHooks || f.runtime_hooks),
+      modifiers: [],
+      needsReview: !!f.needsReview,
+      sourceNotes: [],
+    }, f);
+    const existing = _csrPushUnique(features, row, function (x) { return _csrCanonicalName(x.name); });
+    if (existing && existing !== row) {
+      existing.sourceNotes = _csrArray(existing.sourceNotes).concat([sourceText]).filter(Boolean);
+      existing.needsReview = existing.needsReview && !!f.needsReview;
+      existing.linkedResources = Array.from(new Set(_csrArray(existing.linkedResources).concat(linkedResources)));
+    }
   });
   function ensureFeature(name, source, extra) {
     const key = String(name || '').toLowerCase();
@@ -224,6 +282,19 @@ function buildCharacterSheetRuntime(characterDocument) {
     addAction('Subtle Spell / Metamagic', 'bonus action', { sourceFeature: 'Metamagic', resourceCost: { resourceId: 'sorcery_points', amount: 1 }, linkedResources: ['sorcery_points'], featureModifiers: [{ type: 'component_modification', removes: ['V', 'S'] }] });
     addAction('Heightened Spell / Metamagic', 'bonus action', { sourceFeature: 'Metamagic', resourceCost: { resourceId: 'sorcery_points', amount: 2 }, linkedResources: ['sorcery_points'], featureModifiers: [{ type: 'saving_throw_flow', effect: 'one target has disadvantage on first save' }] });
   }
+  features.forEach(function (feature) {
+    _csrArray(feature.grantsActions || feature.grants_actions).forEach(function (action) {
+      const type = String(action.actionType || action.action_type || feature.actionType || 'action').replace('_', ' ');
+      addAction(action.name || feature.name, /bonus/.test(type) ? 'bonus action' : (/reaction/.test(type) ? 'reaction' : 'action'), {
+        sourceFeature: feature.name,
+        source: feature.source || 'feature',
+        resourceCost: action.resourceCost || null,
+        linkedResources: _csrArray(feature.linkedResources),
+        effectSummary: action.summary || feature.shortSummary || feature.summary || '',
+        recovery: feature.recovery || '',
+      });
+    });
+  });
   const attacks = [];
   _csrArray(doc.attacks || doc.quickAttacks).forEach(a => _csrPushUnique(attacks, Object.assign({ id: _csrSlug(a.name), source: 'attack' }, a), x => String(x.name || x.id || '').toLowerCase()));
   _csrArray(doc.inventory || doc.items || book.inventory).forEach(function (item) {
@@ -236,9 +307,21 @@ function buildCharacterSheetRuntime(characterDocument) {
   const spellInputs = [].concat(_csrArray(native.spells), _csrArray(doc.rulesSpellbook), _csrArray(doc.spells), _csrArray(book.spells));
   const spells = [];
   spellInputs.forEach(function (spell) { _csrPushUnique(spells, _csrBuildSpell(spell, doc, spell.source || 'class'), function (s) { return String(s.name || s.id || '').toLowerCase(); }); });
+  const itemSpells = [];
+  _csrArray(doc.itemSpells || book.itemSpells).forEach(function (spell) {
+    _csrPushUnique(itemSpells, _csrBuildSpell(spell, doc, 'item'), function (s) { return String(s.name || s.id || '').toLowerCase(); });
+  });
+  _csrArray(doc.inventory || doc.items || book.inventory).forEach(function (item) {
+    _csrArray(item && (item.spells || item.grantedSpells)).forEach(function (spell) {
+      const built = _csrBuildSpell(typeof spell === 'string' ? { name: spell } : spell, doc, 'item');
+      built.itemName = _csrFirst(item.name, item.displayName);
+      _csrPushUnique(itemSpells, built, function (s) { return String(s.name || s.id || '').toLowerCase(); });
+    });
+  });
   ['Fire Bolt', 'Scorching Ray', 'Fireball'].forEach(function (name) {
     if (sorcererLevel) _csrPushUnique(spells, _csrBuildSpell({ name, id: _csrSlug(name) }, doc, 'class'), function (s) { return String(s.name || s.id || '').toLowerCase(); });
   });
+  itemSpells.forEach(function (spell) { _csrPushUnique(spells, spell, function (s) { return `${String(s.name || s.id || '').toLowerCase()}|item`; }); });
   const limitedUseActions = actions.concat(bonusActions, reactions).filter(function (a) { return a.resourceCost || a.max != null || a.current != null; });
   resources.forEach(function (r) {
     r.linkedFeatures = features.filter(f => _csrArray(f.linkedResources).includes(r.id) || String(f.resourceName || '').toLowerCase() === String(r.name || '').toLowerCase()).map(f => f.id);
@@ -246,10 +329,25 @@ function buildCharacterSheetRuntime(characterDocument) {
   });
   return {
     identity: { name: _csrFirst(doc.name, book.name, 'Adventurer'), className: classLine, level, species: _csrFirst(doc.species, doc.race, book.species, book.race), background: _csrFirst(doc.background, book.background) },
-    abilities: doc.abilities || doc.abilityScores || {}, saves: doc.saves || doc.savingThrows || {}, skills: doc.skills || {}, senses: doc.senses || {}, defenses: { resistances: doc.resistances || [], immunities: doc.immunities || [] }, conditions: doc.conditions || [],
+    abilities: doc.abilities || doc.abilityScores || native.abilities || {},
+    saves: doc.saves || doc.savingThrows || native.saves || {},
+    skills: doc.skills || native.skills || {},
+    passiveScores: doc.passiveScores || native.passiveScores || { perception: doc.passivePerception || book.passivePerception || null },
+    senses: doc.senses || native.senses || {},
+    defenses: native.defenses || { resistances: doc.resistances || [], immunities: doc.immunities || [], vulnerabilities: doc.vulnerabilities || [] },
+    conditions: doc.conditions || [],
     hp: Object.assign({ current: _csrInt(doc.currentHP || doc.currentHp, _csrInt(doc.maxHP || doc.maxHp, 0)), max: _csrInt(doc.maxHP || doc.maxHp, 0), temp: _csrInt(doc.tempHP || doc.tempHp, 0) }, _csrObject(native.hp)),
     ac: _csrInt(native.ac ?? doc.ac, 10), speed: native.speed || { walk: _csrInt(doc.speed, 30) }, initiative: _csrInt(doc.initiative ?? _csrObject(native.combat).initiative, 0), proficiencyBonus: _csrInt(native.proficiencyBonus ?? doc.profBonus ?? doc.proficiencyBonus, Math.ceil(level / 4) + 1),
-    resources, actions, bonusActions, reactions, limitedUseActions, attacks, spells, features, traits: features.filter(f => f.kind === 'trait'), feats: features.filter(f => f.kind === 'feat'), background: doc.backgroundFeatures || book.background || {}, inventory: doc.inventory || doc.items || book.inventory || [], warnings: [], needsReview: features.some(f => f.needsReview),
+    resources, actions, bonusActions, reactions, limitedUseActions, attacks, spells, itemSpells,
+    features,
+    traits: features.filter(f => f.kind === 'trait'),
+    feats: features.filter(f => f.kind === 'feat'),
+    backgroundFeatures: features.filter(f => f.kind === 'background'),
+    itemTraits: features.filter(f => f.kind === 'item'),
+    background: doc.backgroundFeatures || book.background || {},
+    inventory: doc.inventory || doc.items || book.inventory || [],
+    turnEconomy: { action: actions, bonusAction: bonusActions, reaction: reactions, passiveReminders: features.filter(f => String(f.actionType || '').toLowerCase() === 'passive') },
+    warnings: [], needsReview: features.some(f => f.needsReview),
   };
 }
 function spendCharacterSheetResource(runtime, resourceId, amount) {

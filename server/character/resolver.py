@@ -1464,6 +1464,51 @@ def resolve_character_runtime(document: Any) -> dict:
         primary_class_id=primary_class_id,
     )
     runtime["characterAudit"] = _clone(character_audit_result)
+    runtime["characterSheetRuntime"] = {
+        "identity": {
+            "name": normalized.get("name") or "Adventurer",
+            "level": level_total,
+            "className": runtime.get("classDisplay", {}).get("className") or "",
+            "species": species.get("name") or species.get("id") or "",
+            "background": (normalized.get("background") or {}).get("name") if isinstance(normalized.get("background"), dict) else "",
+        },
+        "abilities": _clone(abilities),
+        "saves": _clone(saving_throws),
+        "skills": _clone(runtime.get("skills") or {}),
+        "passiveScores": {
+            "perception": runtime.get("senses", {}).get("passivePerception"),
+            "insight": runtime.get("senses", {}).get("passiveInsight"),
+            "investigation": runtime.get("senses", {}).get("passiveInvestigation"),
+        },
+        "senses": _clone(runtime.get("senses") or {}),
+        "defenses": _clone(runtime.get("defenses") or {}),
+        "conditions": list(normalized.get("conditions") or []) if isinstance(normalized.get("conditions"), list) else [],
+        "hp": _clone(runtime.get("hp") or {}),
+        "ac": runtime.get("ac"),
+        "speed": _clone(runtime.get("speed") or {}),
+        "initiative": imported_initiative,
+        "proficiencyBonus": proficiency_bonus,
+        "resources": _clone(runtime.get("resources") or []),
+        "actions": _clone(runtime.get("actions") or []),
+        "bonusActions": _clone(runtime.get("bonusActions") or []),
+        "reactions": _clone(runtime.get("reactions") or []),
+        "limitedUseActions": [
+            _clone(row)
+            for row in (runtime.get("actions") or []) + (runtime.get("bonusActions") or []) + (runtime.get("reactions") or [])
+            if isinstance(row, dict) and (row.get("resourceName") or row.get("resourceCost") or row.get("trackUses"))
+        ],
+        "attacks": _clone(runtime.get("summonActions") or []),
+        "spells": _clone(runtime.get("spellAccess", {}).get("cards") or []),
+        "itemSpells": [],
+        "features": _clone(runtime.get("nativeFeatures") or []),
+        "traits": _clone(runtime.get("originTraits") or []),
+        "feats": _clone(runtime.get("featFeatures") or []),
+        "backgroundFeatures": _clone(runtime.get("backgroundFeatures") or []),
+        "itemTraits": [],
+        "inventory": _clone((normalized.get("equipment") or {}).get("inventory") or []) if isinstance(normalized.get("equipment"), dict) else [],
+        "warnings": _clone(character_audit_result.get("warnings") or []),
+        "needsReview": any(bool(row.get("needsReview")) for row in (runtime.get("nativeFeatures") or []) if isinstance(row, dict)),
+    }
 
     audit = normalized.get("audit") if isinstance(normalized.get("audit"), dict) else {}
     audit["resolverVersion"] = _RESOLVER_VERSION
