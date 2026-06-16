@@ -4386,6 +4386,12 @@
       transition: transform 0.25s ease;
     }
     #char-sheet-panel.open { display: flex; }
+    #char-sheet-panel[data-sheet-mode="closed"],
+    #char-sheet-panel.sheet-root-inactive { visibility:hidden; pointer-events:none; }
+    #char-sheet-panel.open[data-sheet-mode="live_play_sheet"],
+    #char-sheet-panel.open[data-sheet-mode="edit_sheet"],
+    #char-sheet-panel.open[data-sheet-mode="import_review"],
+    #char-sheet-panel.open[data-sheet-mode="level_up"] { visibility:visible; pointer-events:auto; }
     .sheet-header {
       padding: 0.8rem 1rem 0.6rem;
       border-bottom: 1px solid var(--border);
@@ -4892,7 +4898,7 @@
       max-width: none;
       background: rgba(3,7,14,0.82);
       backdrop-filter: blur(8px) saturate(0.7);
-      z-index: 10030;
+      z-index: 15600;
       display: none;
       align-items: center;
       justify-content: center;
@@ -4903,6 +4909,12 @@
       transform: none;
     }
     #char-sheet-panel.open { display: flex; }
+    #char-sheet-panel[data-sheet-mode="closed"],
+    #char-sheet-panel.sheet-root-inactive { visibility:hidden; pointer-events:none; }
+    #char-sheet-panel.open[data-sheet-mode="live_play_sheet"],
+    #char-sheet-panel.open[data-sheet-mode="edit_sheet"],
+    #char-sheet-panel.open[data-sheet-mode="import_review"],
+    #char-sheet-panel.open[data-sheet-mode="level_up"] { visibility:visible; pointer-events:auto; }
     .sheet-book-shell {
       position: relative;
       width: min(1200px, calc(100vw - 24px));
@@ -5069,6 +5081,18 @@
       scroll-snap-type: x mandatory;
       scroll-behavior: smooth;
       scrollbar-width: thin;
+    }
+    #char-book-pages .sheet-page[hidden],
+    #char-book-pages .sheet-page.sheet-root-inactive {
+      display:none !important;
+      visibility:hidden !important;
+      pointer-events:none !important;
+    }
+    #cs-premium-mount.sheet-root-inactive,
+    #sheet-body.sheet-root-inactive {
+      display:none !important;
+      visibility:hidden !important;
+      pointer-events:none !important;
     }
     .sheet-page {
       min-width: 100%;
@@ -33383,6 +33407,7 @@ const SPECIES_NAME_ALIASES = {
 };
 
 let _activeCharBookPage = 'premiumsheet';
+let _activeCharacterBookSurfaceMode = 'closed';
 let _charBookSaveState = 'saved';
 
 function setCharacterBookSaveState(state = 'saved') {
@@ -33632,6 +33657,7 @@ function __characterBookRuntimeCreateEnv() {
     setActiveCharBookPage: (page) => { _activeCharBookPage = String(page || 'premiumsheet'); },
     getActiveCharBookPage: () => _activeCharBookPage,
     getPageOrder: () => CHAR_BOOK_PAGE_ORDER,
+    setCharacterSheetMode: (mode) => { _activeCharacterBookSurfaceMode = String(mode || 'closed'); },
     getRole: () => ROLE,
     getSessionId: () => SESSION_ID,
     resolveActiveCharProfileId,
@@ -38139,6 +38165,10 @@ document.addEventListener('keydown', e => {
     return;
   }
   if (e.key === 'Escape') {
+    if (document.getElementById('char-sheet-panel')?.classList.contains('open')) {
+      closeCharacterBook();
+      return;
+    }
     if (ROLE === 'dm' && isEditorOpen() && editorActiveLayer === 'walls' && editorWallTool === 'stamp') {
       cancelEditorWallStampPlacement();
       return;
