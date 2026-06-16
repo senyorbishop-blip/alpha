@@ -110,3 +110,41 @@ def test_builder_service_reads_feats_from_level_asi_choice_map():
     src = Path('server/character/service.py').read_text(encoding='utf-8')
     assert 'asi_choices_by_level = progression.get("asiChoicesByLevel")' in src
     assert 'progression_choice_state.get("asiChoicesByLevel")' in src
+
+
+def test_character_book_uses_single_modal_mode_and_cleanup_contract():
+    src = Path('client/static/js/ui/character_book.js').read_text(encoding='utf-8')
+    assert "VALID_SHEET_MODES = new Set(['closed', 'live_play_sheet', 'edit_sheet', 'import_review', 'level_up'])" in src
+    assert 'function cleanupCharacterSheetSurfaces(env, nextMode = \'closed\')' in src
+    assert "cleanupCharacterSheetSurfaces(env, 'closed');" in src
+    assert 'modeForCharacterBookPage(page)' in src
+    assert "doc.querySelectorAll('#char-sheet-panel.open')" in src
+
+
+def test_live_play_sheet_hides_legacy_roots_and_edit_hides_premium_root():
+    src = Path('client/static/js/ui/character_book.js').read_text(encoding='utf-8')
+    assert "const premiumRoot = doc.getElementById('cs-premium-mount');" in src
+    assert "const oldRoots = [doc.getElementById('sheet-body')].filter(Boolean);" in src
+    assert "setRootInactive(premiumRoot, mode !== 'live_play_sheet');" in src
+    assert "oldRoots.forEach(root => setRootInactive(root, mode !== 'edit_sheet'));" in src
+    assert "pageEl.hidden = !isActive;" in src
+    assert "pageEl.style.display = isActive ? 'flex' : 'none';" in src
+
+
+def test_character_sheet_css_prevents_inactive_roots_bleeding_through():
+    src = _play_html()
+    assert '#char-sheet-panel[data-sheet-mode="closed"]' in src
+    assert '#char-book-pages .sheet-page[hidden]' in src
+    assert '#char-book-pages .sheet-page.sheet-root-inactive' in src
+    assert '#cs-premium-mount.sheet-root-inactive' in src
+    assert '#sheet-body.sheet-root-inactive' in src
+    assert 'pointer-events:none !important;' in src
+    assert 'visibility:hidden !important;' in src
+    assert 'z-index: 15600;' in src
+
+
+def test_escape_closes_active_character_sheet_modal():
+    src = _play_html()
+    assert "if (document.getElementById('char-sheet-panel')?.classList.contains('open'))" in src
+    assert 'closeCharacterBook();' in src
+    assert 'return;' in src

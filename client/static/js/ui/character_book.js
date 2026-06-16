@@ -1,8 +1,67 @@
 (function (global) {
   'use strict';
 
+  const VALID_SHEET_MODES = new Set(['closed', 'live_play_sheet', 'edit_sheet', 'import_review', 'level_up']);
+
+  function normalizeSheetMode(mode) {
+    const value = String(mode || '').trim();
+    return VALID_SHEET_MODES.has(value) ? value : 'closed';
+  }
+
+  function modeForCharacterBookPage(page) {
+    const value = String(page || 'premiumsheet').trim() || 'premiumsheet';
+    if (value === 'premiumsheet') return 'live_play_sheet';
+    if (value === 'import') return 'import_review';
+    if (value === 'levelup') return 'level_up';
+    return 'edit_sheet';
+  }
+
+  function setRootInactive(root, inactive) {
+    if (!root) return;
+    root.setAttribute('aria-hidden', inactive ? 'true' : 'false');
+    if ('inert' in root) root.inert = !!inactive;
+    root.classList.toggle('sheet-root-inactive', !!inactive);
+  }
+
+  function cleanupCharacterSheetSurfaces(env, nextMode = 'closed') {
+    const mode = normalizeSheetMode(nextMode);
+    const doc = env.document;
+    const panel = doc.getElementById('char-sheet-panel');
+    const premiumRoot = doc.getElementById('cs-premium-mount');
+    const oldRoots = [doc.getElementById('sheet-body')].filter(Boolean);
+    const pages = Array.from(doc.querySelectorAll('#char-book-pages .sheet-page'));
+    const activePage = mode === 'live_play_sheet' ? 'premiumsheet'
+      : mode === 'import_review' ? 'import'
+        : mode === 'level_up' ? 'levelup'
+          : mode === 'edit_sheet' ? (env.getActiveCharBookPage && env.getActiveCharBookPage()) || 'identity'
+            : '';
+
+    doc.querySelectorAll('#char-sheet-panel.open').forEach((node, idx) => {
+      if (idx > 0) node.classList.remove('open');
+    });
+    doc.querySelectorAll('.character-sheet-backdrop, .char-sheet-backdrop, .sheet-modal-backdrop').forEach(node => node.remove());
+
+    if (panel) {
+      panel.dataset.sheetMode = mode;
+      panel.classList.toggle('open', mode !== 'closed');
+      panel.classList.toggle('active', mode !== 'closed');
+      setRootInactive(panel, mode === 'closed');
+    }
+
+    pages.forEach(pageEl => {
+      const isActive = mode !== 'closed' && pageEl.dataset.page === activePage;
+      pageEl.classList.toggle('active', isActive);
+      pageEl.hidden = !isActive;
+      pageEl.style.display = isActive ? 'flex' : 'none';
+      setRootInactive(pageEl, !isActive);
+    });
+    setRootInactive(premiumRoot, mode !== 'live_play_sheet');
+    oldRoots.forEach(root => setRootInactive(root, mode !== 'edit_sheet'));
+    if (env.setCharacterSheetMode) env.setCharacterSheetMode(mode);
+  }
+
   function closeCharacterBook(env) {
-    env.document.getElementById('char-sheet-panel')?.classList.remove('open');
+    cleanupCharacterSheetSurfaces(env, 'closed');
   }
 
   function updateCharacterBookModeRibbon(env, page) {
@@ -34,11 +93,13 @@
 
   function goCharacterBookPage(env, page, instant = false) {
     const strip = env.document.getElementById('char-book-pages');
+    page = String(page || 'premiumsheet').trim() || 'premiumsheet';
     const pageEl = strip?.querySelector(`.sheet-page[data-page="${page}"]`);
     if (!strip || !pageEl) return;
     env.setActiveCharBookPage(page);
     pageEl.scrollIntoView({ behavior: instant ? 'auto' : 'smooth', block: 'nearest', inline: 'start' });
     updateCharacterBookTabs(env, page);
+    cleanupCharacterSheetSurfaces(env, modeForCharacterBookPage(page));
   }
 
   function handleCharacterBookScroll(env) {
@@ -54,6 +115,7 @@
   }
 
   function openCharacterBook(env, page = 'premiumsheet') {
+    cleanupCharacterSheetSurfaces(env, 'closed');
     env.initCharacterBook();
     const charSheet = env.getCharSheet();
     if (charSheet && (Object.keys(charSheet.book || {}).length || (charSheet.name && charSheet.name !== 'Unknown Hero') || (charSheet.classes && charSheet.classes.length))) {
@@ -64,7 +126,7 @@
     env.syncCharSheetFromBookData(env.getCharacterBookDataFromUI());
     const panel = env.document.getElementById('char-sheet-panel');
     if (panel && panel.parentElement !== env.document.body) env.document.body.appendChild(panel);
-    if (panel) panel.classList.add('open');
+    cleanupCharacterSheetSurfaces(env, modeForCharacterBookPage(page));
     env.setCharacterBookSaveState('saved');
     goCharacterBookPage(env, page, true);
     try {
@@ -160,6 +222,7 @@
   }
 
   global.AppUICharacterBook = {
+    cleanupCharacterSheetSurfaces,
     closeCharacterBook,
     openCharacterBook,
     goCharacterBookPage,
