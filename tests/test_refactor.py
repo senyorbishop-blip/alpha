@@ -4072,3 +4072,36 @@ def test_combat_coach_can_be_collapsed_by_players():
     assert "function toggleCombatCoachCollapsed()" in content
     assert "combat_coach_collapsed" in content
     assert "coach-collapsed" in content
+
+
+def test_combat_roster_uses_canonical_normalized_renderer():
+    """DM/player combat panels should render from one normalized roster source."""
+    content = open(os.path.join(PROJECT_ROOT, "client/templates/play.html"), encoding="utf-8").read()
+    assert "function _normalizeCombatRoster(combatState = _combat)" in content
+    assert "function _renderCombatRoster(list, roster, isActive)" in content
+    assert "const roster = _normalizeCombatRoster(_combat);" in content
+    assert "_renderCombatRoster(list, roster, isActive);" in content
+    assert "seen.has(rowKey)" in content, "Combat roster should skip duplicate rows."
+
+
+def test_combat_roster_badges_and_visibility_rules_are_explicit():
+    """Current/next badges, owner badges, and hidden-token rules must stay visible and role-aware."""
+    content = open(os.path.join(PROJECT_ROOT, "client/templates/play.html"), encoding="utf-8").read()
+    assert '<span class="ce-order now">Now</span>' in content
+    assert '<span class="ce-order next">Next</span>' in content
+    assert '<span class="ce-order">YOU</span>' in content
+    assert "function _isCombatTokenVisibleToPlayer(token, combatant)" in content
+    assert "if (ROLE === 'dm') return true;" in content
+    assert "token.hidden || token.hidden_from_players || token.visible_to_players === false" in content
+    assert '<span class="ce-hp hidden">Hidden</span>' in content
+
+
+def test_combat_roster_survives_stacked_combat_tools_with_internal_scroll():
+    """Quick attacks, turn controls, and hazard tools should not overlay or clip the roster."""
+    content = open(os.path.join(PROJECT_ROOT, "client/templates/play.html"), encoding="utf-8").read()
+    assert ".combat-list {" in content
+    assert "overflow-y: auto;" in content
+    assert "max-height: clamp(14rem, 42vh, 28rem);" in content
+    assert "isolation: isolate;" in content
+    assert "#hazard-panel" in content
+    assert "#combat-weapon-tray" in content

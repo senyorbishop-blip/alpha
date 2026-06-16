@@ -1310,11 +1310,16 @@
       display: flex;
       flex-direction: column;
       gap: 0.34rem;
-      overflow: visible;
+      overflow-y: auto;
+      overflow-x: hidden;
       padding: 0.45rem 0.48rem 0.55rem;
       min-height: 0;
+      max-height: clamp(14rem, 42vh, 28rem);
       position: relative;
-      z-index: 0;
+      z-index: 2;
+      isolation: isolate;
+      flex: 0 1 auto;
+      background: rgba(5,8,13,0.2);
     }
     #hazard-panel {
       position: relative;
@@ -1354,6 +1359,7 @@
       transition: background var(--dur-instant), border-color var(--dur-instant);
       cursor: default;
       position: relative;
+      min-height: 3.15rem;
     }
     .combat-entry.current {
       background: rgba(0,229,204,0.12);
@@ -1362,12 +1368,41 @@
       box-shadow: inset 0 0 0 1px rgba(0,229,204,0.14);
     }
     .combat-entry.current .ce-name { color: var(--gold); font-weight: 700; }
+    .combat-entry.owned {
+      border-color: rgba(212,175,55,0.32);
+      box-shadow: inset 0 0 0 1px rgba(212,175,55,0.12);
+    }
+    .combat-entry.next {
+      border-color: rgba(212,175,55,0.24);
+      background: rgba(212,175,55,0.045);
+    }
+    .combat-entry.defeated {
+      opacity: 0.72;
+      background: rgba(120,40,40,0.08);
+    }
     .combat-entry:hover { background: rgba(255,255,255,0.03); }
     .ce-init {
       min-width: 30px; text-align: center; font-size: 0.8rem;
       font-weight: bold; color: var(--accent); font-family: monospace;
     }
     .ce-color { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .ce-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(0,0,0,0.26));
+      color: var(--parchment);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .ce-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .ce-main { min-width: 0; display:flex; flex-direction:column; gap:0.2rem; }
     .ce-topline { display:flex; align-items:center; gap:0.34rem; min-width:0; flex-wrap:wrap; }
     .ce-name { min-width:0; font-size: 0.8rem; color: var(--parchment); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1401,6 +1436,9 @@
       padding: 0.08rem 0.34rem;
       background: rgba(0,0,0,0.25);
     }
+    .ce-hp.defeated { border-color:rgba(224,112,112,0.35); color:#f0b0b0; }
+    .ce-hp.hidden { border-color:rgba(155,89,182,0.38); color:#d7b8ff; }
+    .ce-hp.owner { border-color:rgba(212,175,55,0.35); color:#f2d38b; }
     .ce-arrow { font-size: 0.7rem; color: var(--accent); margin-left: 2px; }
     .ce-del { opacity: 0; cursor: pointer; font-size: 0.7rem; color: var(--blood); padding: 0 2px; transition: opacity 0.1s; justify-self:end; }
     .combat-entry:hover .ce-del { opacity: 1; }
@@ -44397,6 +44435,169 @@ function _canUseLoadingWeaponThisTurn(card) {
   return _loadingWeaponTurnLocks.get(String(card.id || '')) !== turnKey;
 }
 
+function _combatRosterTokenAvatarHtml(model) {
+  const image = model.token?.image || model.token?.img || model.token?.src || model.token?.portrait || model.token?.avatar || '';
+  const initial = String(model.name || '?').trim().slice(0, 1) || '?';
+  const bg = model.color || '#667085';
+  if (image) {
+    return `<span class="ce-avatar" style="background:${escapeHtml(bg)};"><img src="${escapeHtml(image)}" alt="" loading="lazy" /></span>`;
+  }
+  return `<span class="ce-avatar" style="background:${escapeHtml(bg)};">${escapeHtml(initial)}</span>`;
+}
+
+function _combatRosterHpLabel(model) {
+  const hp = model.combatant?.hp ?? model.token?.hp ?? model.token?.currentHP ?? model.token?.currentHp;
+  const maxHp = model.combatant?.max_hp ?? model.token?.maxHp ?? model.token?.max_hp ?? model.token?.maxHP;
+  if (!Number.isFinite(Number(hp)) || !Number.isFinite(Number(maxHp)) || Number(maxHp) <= 0) return '';
+  if (ROLE === 'dm' || model.ownedByMe || model.isPlayerOwned) return `${Math.max(0, Number(hp))}/${Math.max(1, Number(maxHp))} HP`;
+  return '';
+}
+
+function _combatRosterOwnerLabel(model) {
+  const ownerId = String(model.ownerId || '').trim();
+  if (!ownerId) return model.isPlayerOwned ? 'Player' : '';
+  if (String(ownerId) === String(USER_ID || '')) return 'You';
+  const owner = users && users[ownerId] ? users[ownerId] : null;
+  return owner?.name ? String(owner.name) : 'Player';
+}
+
+function _isCombatTokenVisibleToPlayer(token, combatant) {
+  if (ROLE === 'dm') return true;
+  if (!token) return true;
+  if (_tokenOwnedByMe(token)) return true;
+  if (token.hidden || token.hidden_from_players || token.visible_to_players === false) return false;
+  return true;
+}
+
+function _normalizeCombatRoster(combatState = _combat) {
+  const combatants = Array.isArray(combatState?.combatants) ? combatState.combatants : [];
+  const turn = Math.max(0, Number(combatState?.turn || 0));
+  const currentTokenId = String(combatants[turn]?.token_id || '');
+  const currentMap = (typeof _currentMapContextKey === 'function') ? _currentMapContextKey() : ((_currentPoi && _currentPoi.id) ? _currentPoi.id : 'world');
+  const seen = new Set();
+  const normalized = [];
+  combatants.forEach((combatant, sourceIndex) => {
+    const tokenId = String(combatant?.token_id || '').trim();
+    const rowKey = tokenId || String(combatant?.id || `manual-${sourceIndex}`);
+    if (seen.has(rowKey)) {
+      if (window.__APP_DEV__ || /localhost|127\.0\.0\.1/.test(String(location?.host || ''))) {
+        console.warn('[CombatRoster] duplicate combatant skipped', { rowKey, combatant });
+      }
+      return;
+    }
+    seen.add(rowKey);
+    const token = tokenId ? (tokens?.[tokenId] || null) : null;
+    if (tokenId && !token && (window.__APP_DEV__ || /localhost|127\.0\.0\.1/.test(String(location?.host || '')))) {
+      console.warn('[CombatRoster] token missing for combatant', { tokenId, combatant });
+    }
+    if (!_isCombatTokenVisibleToPlayer(token, combatant)) return;
+    const hp = combatant?.hp ?? token?.hp ?? token?.currentHP ?? token?.currentHp;
+    const deathSaves = combatant?.death_saves || combatant?.deathSaves || null;
+    const defeated = !!(deathSaves?.dead || deathSaves?.stable || Number(hp) <= 0);
+    const ownedByMe = !!(token ? _tokenOwnedByMe(token) : (combatant?.owner_id && String(combatant.owner_id) === String(USER_ID || '')));
+    normalized.push({
+      combatant,
+      token,
+      sourceIndex,
+      tokenId,
+      rowKey,
+      name: String(token?.name || combatant?.name || (tokenId ? 'Missing token' : 'Manual combatant')),
+      color: String(token?.color || combatant?.color || '#888'),
+      initiative: combatant?.initiative,
+      isCurrent: !!(combatState?.active && sourceIndex === turn),
+      currentTokenId,
+      isPlayerOwned: !!(token?.owner_id || combatant?.owner_id || combatant?.is_player),
+      ownedByMe,
+      ownerId: token?.owner_id || combatant?.owner_id || '',
+      hiddenFromPlayers: !!(token?.hidden || token?.hidden_from_players || token?.visible_to_players === false),
+      defeated,
+      deathSaves,
+      mapContext: String(token?.map_context || combatant?.map_context || currentMap || 'world'),
+      onCurrentMap: !token || String(token?.map_context || 'world') === String(currentMap || 'world'),
+      missingToken: !!(tokenId && !token),
+    });
+  });
+  const currentVisibleIndex = normalized.findIndex(row => row.isCurrent);
+  let nextVisibleIndex = -1;
+  if (normalized.length > 1) {
+    nextVisibleIndex = currentVisibleIndex >= 0
+      ? ((currentVisibleIndex + 1) % normalized.length)
+      : normalized.findIndex(row => row.sourceIndex > turn);
+    if (nextVisibleIndex < 0) nextVisibleIndex = 0;
+  }
+  normalized.forEach((row, visibleIndex) => {
+    row.visibleIndex = visibleIndex;
+    row.isNext = visibleIndex === nextVisibleIndex && !row.isCurrent;
+  });
+  return normalized;
+}
+
+function _renderCombatRoster(list, roster, isActive) {
+  list.innerHTML = '';
+  roster.forEach((model) => {
+    const com = model.combatant || {};
+    const isCurrent = !!model.isCurrent;
+    const isNextUp = !!model.isNext;
+    const canRoll = _canRollInitiative(com, model.sourceIndex) && !com._initiativeRollPending;
+    const entry = document.createElement('div');
+    entry.className = `combat-entry${isCurrent ? ' current' : ''}${isNextUp ? ' next' : ''}${model.ownedByMe ? ' owned' : ''}${model.defeated ? ' defeated' : ''}`;
+    entry.dataset.combatantId = String(com.id || model.rowKey || '');
+    entry.dataset.tokenId = String(model.tokenId || '');
+    if (isCurrent && window.AppUISpotlight) {
+      AppUISpotlight.applyCombatEntryAccent(entry, com, _spotlightEnv());
+    }
+
+    let initCell = '';
+    const hasRolled = com.initiative !== null && com.initiative !== undefined;
+    const initiativeDisplay = _formatInitiativeCellValue(com);
+    if (com._initiativeRollPending) {
+      initCell = `<span class="ce-init" title="Rolling initiative…">…</span>`;
+    } else if (canRoll && !hasRolled) {
+      initCell = `<span class="ce-init ce-roll" onclick="combatRollInitiative('${escapeHtml(String(com.id || ''))}')" title="Roll d20 initiative">🎲</span>`;
+    } else if (canRoll && hasRolled) {
+      initCell = `<span class="ce-init ce-editable" onclick="combatRollInitiative('${escapeHtml(String(com.id || ''))}')" title="Reroll initiative">${initiativeDisplay}</span>`;
+    } else if (ROLE === 'dm') {
+      initCell = `<span class="ce-init ce-editable" onclick="combatEditInit(${model.sourceIndex})" title="Edit initiative">${initiativeDisplay}</span>`;
+    } else {
+      initCell = `<span class="ce-init">${initiativeDisplay}</span>`;
+    }
+
+    const hpLabel = _combatRosterHpLabel(model);
+    const hpStr = hpLabel ? `<span class="ce-hp${model.defeated ? ' defeated' : ''}">${escapeHtml(hpLabel)}</span>` : '';
+    const ownerLabel = _combatRosterOwnerLabel(model);
+    const ownerStr = ownerLabel ? `<span class="ce-hp owner">${escapeHtml(ownerLabel)}</span>` : '';
+    const hiddenStr = (ROLE === 'dm' && model.hiddenFromPlayers) ? `<span class="ce-hp hidden">Hidden</span>` : '';
+    const defeatedStr = model.defeated ? `<span class="ce-hp defeated">${model.deathSaves?.dead ? 'Dead' : 'Defeated'}</span>` : '';
+    const missingStr = model.missingToken ? `<span class="ce-hp defeated">Token missing</span>` : '';
+    const mapStr = !model.onCurrentMap ? `<span class="ce-hp">Other map</span>` : '';
+    const moveState = (isCurrent && _combat?.movement && String(_combat.movement.token_id || '') === String(model.tokenId || '')) ? _combat.movement : null;
+    const speedFt = Number(moveState?.speed_ft ?? 0);
+    const bonusFt = Number(moveState?.bonus_ft ?? 0);
+    const spentFt = Number(moveState?.spent_ft ?? 0);
+    const totalFt = Math.max(0, speedFt + bonusFt);
+    const moveExtras = `${bonusFt > 0 ? ' • Dash' : ''}${moveState?.difficult_terrain ? ' • DT x2' : ''}${moveState?.disengaged ? ' • Disengaged' : ''}`;
+    const moveStr = (moveState && totalFt > 0) ? `<span class="ce-hp" style="border-color:rgba(0,229,204,0.25);color:var(--cyan);">Move ${Math.round(spentFt)}/${Math.round(totalFt)} ft${moveExtras}</span>` : '';
+    const targetStr = model.tokenId && model.tokenId === String(_combat.selected_target_id || '') ? `<span class="ce-hp" style="border-color:rgba(255,210,90,0.45);color:#ffe9a6;">Targeted</span>` : '';
+    const orderBadge = isCurrent ? '<span class="ce-order now">Now</span>' : (isNextUp ? '<span class="ce-order next">Next</span>' : `<span class="ce-order">#${model.visibleIndex + 1}</span>`);
+    const arrow = isCurrent ? '<span class="ce-arrow">◀</span>' : '';
+    const delBtn = ROLE === 'dm' ? `<span class="ce-del" onclick="combatRemove(${model.sourceIndex})">✕</span>` : '';
+    entry.innerHTML = `${initCell}
+      ${_combatRosterTokenAvatarHtml(model)}
+      <div class="ce-main">
+        <div class="ce-topline">
+          <span class="ce-name">${escapeHtml(model.name)}</span>
+          ${orderBadge}
+          ${model.ownedByMe ? '<span class="ce-order">YOU</span>' : ''}
+          ${arrow}
+        </div>
+        <div class="ce-meta">${targetStr}${hpStr}${defeatedStr}${hiddenStr}${ownerStr}${missingStr}${mapStr}${moveStr}</div>
+      </div>
+      ${delBtn}`;
+    if (isCurrent) setTimeout(() => entry.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 50);
+    list.appendChild(entry);
+  });
+}
+
 function _markLoadingWeaponUsedThisTurn(card) {
   if (!card?.is_loading) return;
   const turnKey = _loadingWeaponTurnKey();
@@ -45934,93 +46135,18 @@ function renderCombat() {
     }
   }
 
-  if (!coms.length) {
+  const roster = _normalizeCombatRoster(_combat);
+  if (!roster.length) {
     list.innerHTML = '';
-    if (empty) { empty.style.display = 'block'; list.appendChild(empty); }
+    if (empty) {
+      empty.style.display = 'block';
+      empty.textContent = isActive && coms.length ? 'No visible combatants for your view' : 'No combat active';
+      list.appendChild(empty);
+    }
     return;
   }
   if (empty) empty.style.display = 'none';
-  list.innerHTML = '';
-
-  coms.forEach((com, i) => {
-    const isCurrent = isActive && i === _combat.turn;
-    const isNextUp = isActive && coms.length > 1 && i === ((_combat.turn + 1) % coms.length);
-    const isMyTurn  = isCurrent && _isMyToken(com.token_id);
-    const canRoll   = _canRollInitiative(com, i) && !com._initiativeRollPending;
-
-    const entry = document.createElement('div');
-    entry.className = 'combat-entry' + (isCurrent ? ' current' : '');
-
-    // Spotlight: class-flavored accent on active combatant
-    if (isCurrent && window.AppUISpotlight) {
-      AppUISpotlight.applyCombatEntryAccent(entry, com, _spotlightEnv());
-    }
-
-    // Initiative display / roll button
-    let initCell = '';
-    const hasRolled = com.initiative !== null && com.initiative !== undefined;
-    const initiativeDisplay = _formatInitiativeCellValue(com);
-    if (com._initiativeRollPending) {
-      initCell = `<span class="ce-init" title="Rolling initiative…">…</span>`;
-    } else if (canRoll && !hasRolled) {
-      // Unrolled — show pulsing d20 button
-      initCell = `<span class="ce-init ce-roll" onclick="combatRollInitiative('${com.id}')" title="Roll d20 initiative">🎲</span>`;
-    } else if (canRoll && hasRolled) {
-      // Rolled — show number, still clickable to reroll
-      initCell = `<span class="ce-init ce-editable" onclick="combatRollInitiative('${com.id}')" title="Reroll initiative">${initiativeDisplay}</span>`;
-    } else if (ROLE === 'dm') {
-    if (equipSummary) equipSummary.innerHTML = '';
-      initCell = `<span class="ce-init ce-editable" onclick="combatEditInit(${i})" title="Edit initiative">${initiativeDisplay}</span>`;
-    } else {
-      initCell = `<span class="ce-init">${initiativeDisplay}</span>`;
-    }
-
-    // HP in combat list: DM sees enemy tokens; player sees own token only; viewer never
-    const _isDmToken = !com.owner_id;
-    const comTokenId = String(com.token_id || '');
-    const combatTok = comTokenId ? (tokens[comTokenId] || null) : null;
-    const _showCombatHp = (com.hp !== undefined && com.hp !== null && com.max_hp) && (
-      (ROLE === 'dm'     && _isDmToken) ||
-      (ROLE === 'player' && (combatTok ? _tokenOwnedByMe(combatTok) : String(com.owner_id || '') === String(USER_ID || '')))
-    );
-    const hpStr = _showCombatHp ? `<span class="ce-hp">${com.hp}/${com.max_hp}</span>` : '';
-    const deathSaves = com.death_saves || com.deathSaves || null;
-    const dsStr = deathSaves
-      ? `<span class="ce-hp" style="border-color:rgba(224,112,112,0.28);color:#f0b0b0;">DS ${Math.max(0, Number(deathSaves.successes ?? 0) || 0)}/3 ✓ • ${Math.max(0, Number(deathSaves.fails ?? 0) || 0)}/3 ✗${deathSaves.dead ? ' • Dead' : ''}</span>`
-      : '';
-    const moveState = (isCurrent && _combat?.movement && String(_combat.movement.token_id || '') === String(com.token_id || '')) ? _combat.movement : null;
-    const speedFt = Number(moveState?.speed_ft ?? 0);
-    const bonusFt = Number(moveState?.bonus_ft ?? 0);
-    const spentFt = Number(moveState?.spent_ft ?? 0);
-    const totalFt = Math.max(0, speedFt + bonusFt);
-    const remainingFt = Number(moveState?.remaining_ft ?? Math.max(0, totalFt - spentFt));
-    const moveExtras = `${bonusFt > 0 ? ' • Dash' : ''}${moveState?.difficult_terrain ? ' • DT x2' : ''}${moveState?.disengaged ? ' • Disengaged' : ''}`;
-    const moveStr = (moveState && totalFt > 0)
-      ? `<span class="ce-hp" style="border-color:rgba(0,229,204,0.25);color:var(--cyan);">Move ${Math.round(spentFt)}/${Math.round(totalFt)} ft${moveExtras}</span>`
-      : '';
-    const arrow  = isCurrent ? '<span class="ce-arrow">◀</span>' : '';
-    const delBtn = ROLE === 'dm' ? `<span class="ce-del" onclick="combatRemove(${i})">✕</span>` : '';
-    const isTargeted = comTokenId && comTokenId === String(_combat.selected_target_id || '');
-    const targetStr = isTargeted ? `<span class="ce-hp" style="border-color:rgba(255,210,90,0.45);color:#ffe9a6;">Targeted</span>` : '';
-    const orderBadge = isCurrent
-      ? '<span class="ce-order now">Now</span>'
-      : (isNextUp ? '<span class="ce-order next">Next</span>' : `<span class="ce-order">#${i + 1}</span>`);
-
-    entry.innerHTML = `${initCell}
-      <span class="ce-color" style="background:${com.color||'#888'};box-shadow:0 0 4px ${com.color||'#888'}88;"></span>
-      <div class="ce-main">
-        <div class="ce-topline">
-          <span class="ce-name">${escapeHtml(com.name || '')}</span>
-          ${orderBadge}
-          ${arrow}
-        </div>
-        <div class="ce-meta">${targetStr}${hpStr}${dsStr}${moveStr}</div>
-      </div>
-      ${delBtn}`;
-
-    if (isCurrent) setTimeout(() => entry.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 50);
-    list.appendChild(entry);
-  });
+  _renderCombatRoster(list, roster, isActive);
   renderPartyStatusPanel();
 }
 
