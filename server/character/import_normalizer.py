@@ -1379,6 +1379,14 @@ def normalize_pdf_payload(raw_payload: Any, *, filename: str = "") -> dict[str, 
     race_name = _safe_str(src.get("race") or book.get("race"), "", limit=80)
     background_name = _safe_str(src.get("background") or book.get("background"), "", limit=80)
 
+    imported_ac = _safe_int(_first_present(src, "ac", "armorClass", default=book.get("ac")), 10, minimum=1)
+    imported_max_hp = _safe_int(_first_present(src, "maxHp", "maxHP", default=book.get("maxHp")), 1, minimum=1)
+    imported_current_hp = _safe_int(_first_present(src, "currentHp", "currentHP", default=book.get("currentHp")), imported_max_hp, minimum=0)
+    imported_temp_hp = _safe_int(_first_present(src, "tempHp", "tempHP", default=book.get("tempHp")), 0, minimum=0)
+    imported_hit_dice = _first_present(src, "hitDice", "hit_dice", default=book.get("hitDice")) or []
+    imported_custom_modifiers = _first_present(src, "customModifiers", "customValues", default=book.get("customModifiers")) or []
+    import_needs_review = bool(imported_custom_modifiers)
+
     saving_throws = _normalize_pdf_saving_throws(_first_present(src, "savingThrows", default=book.get("savingThrows")))
     skills = _normalize_pdf_skills(src if src.get("skills") is not None else {**src, "skills": book.get("skills", {})})
     imported_inventory = _normalize_pdf_inventory(src)
@@ -1406,6 +1414,14 @@ def normalize_pdf_payload(raw_payload: Any, *, filename: str = "") -> dict[str, 
         or "",
         limit=3000,
     )
+
+    imported_ac = _safe_int(_first_present(src, "ac", "armorClass", default=book.get("ac")), 10, minimum=1)
+    imported_max_hp = _safe_int(_first_present(src, "maxHp", "maxHP", default=book.get("maxHp")), 1, minimum=1)
+    imported_current_hp = _safe_int(_first_present(src, "currentHp", "currentHP", default=book.get("currentHp")), imported_max_hp, minimum=0)
+    imported_temp_hp = _safe_int(_first_present(src, "tempHp", "tempHP", default=book.get("tempHp")), 0, minimum=0)
+    imported_hit_dice = _first_present(src, "hitDice", "hit_dice", default=book.get("hitDice")) or []
+    imported_custom_modifiers = _first_present(src, "customModifiers", "customValues", default=book.get("customModifiers")) or []
+    import_needs_review = bool(imported_custom_modifiers)
 
     document = {
         "schemaVersion": 1,
@@ -1442,10 +1458,21 @@ def normalize_pdf_payload(raw_payload: Any, *, filename: str = "") -> dict[str, 
             "skills": skills,
         },
         "classes": canonical_classes,
-        "maxHP": _safe_int(_first_present(src, "maxHp", "maxHP", default=book.get("maxHp")), 1, minimum=1),
-        "currentHP": _safe_int(_first_present(src, "currentHp", "currentHP", default=book.get("currentHp")), 1, minimum=0),
-        "tempHP": _safe_int(_first_present(src, "tempHp", "tempHP", default=book.get("tempHp")), 0, minimum=0),
-        "ac": _safe_int(_first_present(src, "ac", "armorClass", default=book.get("ac")), 10, minimum=1),
+        "maxHP": imported_max_hp,
+        "currentHP": imported_current_hp,
+        "tempHP": imported_temp_hp,
+        "ac": imported_ac,
+        "importedAc": imported_ac,
+        "importedMaxHp": imported_max_hp,
+        "importedCurrentHp": imported_current_hp,
+        "importedTempHp": imported_temp_hp,
+        "importedHitDice": imported_hit_dice,
+        "importedEquipment": copy.deepcopy(imported_inventory),
+        "importedCustomModifiers": copy.deepcopy(imported_custom_modifiers),
+        "importedSource": "pdf",
+        "importedAt": time.time(),
+        "importNeedsReview": import_needs_review,
+        "importWarnings": warnings,
         "initiative": _parse_signed_int(_first_present(src, "initiative", default=book.get("initiative")), 0),
         "proficiencyBonus": _safe_int(_first_present(src, "profBonus", "proficiencyBonus", default=book.get("profBonus")), 2, minimum=0),
         "passives": passives,
@@ -1478,6 +1505,15 @@ def normalize_pdf_payload(raw_payload: Any, *, filename: str = "") -> dict[str, 
             "importedActions": imported_actions,
             "importedSpells": spell_entries,
             "importedInventoryCount": len(imported_inventory),
+            "importedAc": imported_ac,
+            "importedMaxHp": imported_max_hp,
+            "importedCurrentHp": imported_current_hp,
+            "importedTempHp": imported_temp_hp,
+            "importedHitDice": imported_hit_dice,
+            "importedEquipment": copy.deepcopy(imported_inventory),
+            "importedCustomModifiers": copy.deepcopy(imported_custom_modifiers),
+            "importNeedsReview": import_needs_review,
+            "importWarnings": warnings,
             "pdfFieldSummary": {
                 "hasSkills": bool(skills),
                 "hasSavingThrows": bool(saving_throws),
