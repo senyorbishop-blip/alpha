@@ -43,6 +43,236 @@ function renderCharSheet() {
   requestCharacterBookOverviewRender('legacy-renderCharSheet-shim');
 }
 
+function _csrArray(value) { return Array.isArray(value) ? value.filter(Boolean) : []; }
+function _csrObject(value) { return value && typeof value === 'object' && !Array.isArray(value) ? value : {}; }
+function _csrInt(value, fallback) { const n = parseInt(value, 10); return Number.isFinite(n) ? n : fallback; }
+function _csrSlug(value) { return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+function _csrName(value) { return String(value || '').replace(/^spell[_-]+/i, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/\b([a-z])/g, function (_, ch) { return ch.toUpperCase(); }); }
+function _csrFirst() {
+  for (let i = 0; i < arguments.length; i += 1) {
+    const value = arguments[i];
+    if (value === undefined || value === null) continue;
+    const text = String(value).trim();
+    if (text) return text;
+  }
+  return '';
+}
+function _csrSpellActionType(castingTime) {
+  const text = String(castingTime || '').toLowerCase();
+  if (text.includes('bonus')) return 'bonus action';
+  if (text.includes('reaction')) return 'reaction';
+  return 'action';
+}
+function _csrFeatureKind(feature) {
+  const text = `${feature && (feature.name || feature.displayName || '')} ${feature && (feature.type || feature.section || '')}`.toLowerCase();
+  if (/feat/.test(text)) return 'feat';
+  if (/species|race|trait/.test(text)) return 'trait';
+  if (/background/.test(text)) return 'background';
+  return 'feature';
+}
+function _csrResource(id, name, current, max, recovery, source) {
+  const safeMax = Math.max(0, _csrInt(max, _csrInt(current, 0)));
+  const safeCurrent = Math.max(0, Math.min(safeMax || _csrInt(current, 0), _csrInt(current, safeMax)));
+  return {
+    id: id || _csrSlug(name),
+    name,
+    current: safeCurrent,
+    max: safeMax,
+    recovery: recovery || 'long rest',
+    source: source || 'class',
+    spendable: true,
+    restReset: /short/i.test(recovery || '') ? 'short' : 'long',
+    linkedFeatures: [],
+    linkedActions: [],
+  };
+}
+function _csrPushUnique(list, row, keyFn) {
+  if (!row) return null;
+  const key = keyFn ? keyFn(row) : String(row.id || row.name || '').toLowerCase();
+  if (!key) return null;
+  const existing = list.find(function (entry) { return (keyFn ? keyFn(entry) : String(entry.id || entry.name || '').toLowerCase()) === key; });
+  if (existing) return existing;
+  list.push(row);
+  return row;
+}
+function _csrBuildSpell(spell, character, source) {
+  const name = _csrName(spell && (spell.name || spell.displayName || spell.id)) || 'Spell';
+  const id = _csrSlug(spell && (spell.id || name)).replace(/^spell-/, '');
+  const rawLevel = spell && (spell.level ?? spell.spell_level ?? spell.spellLevel);
+  let level = rawLevel === undefined || rawLevel === null || rawLevel === '' ? null : _csrInt(rawLevel, 0);
+  const options = {
+    characterLevel: _csrInt(character.totalLevel || character.level, 1),
+    castLevel: Math.max(level == null ? 0 : level, _csrInt(spell && (spell.castLevel || spell.slotLevel), level == null ? 0 : level)),
+    saveDc: _csrFirst(character.spellSaveDc, _csrObject(character.book).spellSaveDc),
+    spellAttackBonus: _csrFirst(character.spellAttack, _csrObject(character.book).spellAttack),
+    abilityScores: character.abilities || character.abilityScores || {},
+  };
+  const resolverCard = Object.assign({}, spell, { id, name });
+  if (level != null) resolverCard.level = level;
+  const resolved = (global.resolveSpellRuntime ? global.resolveSpellRuntime(resolverCard, options) : {});
+  if (level == null) level = _csrInt(resolved.baseLevel, 0);
+  const castingTime = _csrFirst(spell && (spell.castingTime || spell.casting_time), resolved.castingTime, '1 action');
+  const attack = _csrFirst(spell && (spell.attackType || spell.attack_type), resolved.attackType, '');
+  const save = _csrFirst(spell && (spell.savingThrow || spell.saveAbility || spell.save_ability), resolved.savingThrow, resolved.saveAbility, '');
+  const formula = _csrFirst(resolved.finalDamageFormula, resolved.finalHealingFormula, spell && (spell.damageFormula || spell.damage || spell.base_damage_formula || spell.healingFormula), '');
+  const upcastLevels = [];
+  const scalingType = _csrFirst(spell && (spell.scaling_type || spell.scalingType), resolved.scaling_type, resolved.scalingType, '');
+  if (level > 0 && scalingType && scalingType !== 'none') {
+    for (let slot = level; slot <= 9; slot += 1) upcastLevels.push(slot);
+  }
+  return {
+    id,
+    name,
+    level,
+    spellLevel: level,
+    castingTime,
+    actionType: _csrSpellActionType(castingTime),
+    range: _csrFirst(spell && (spell.range || spell.range_text), resolved.range, ''),
+    attackType: attack,
+    saveAbility: save,
+    saveDc: save ? options.saveDc : '',
+    spellAttackBonus: attack ? options.spellAttackBonus : '',
+    damageFormula: formula,
+    healingFormula: _csrFirst(resolved.finalHealingFormula, spell && spell.healingFormula, ''),
+    effectFormula: formula,
+    scaling: { type: scalingType || 'none', upcastLevels, resolver: 'resolveSpellRuntime' },
+    concentration: !!(spell && (spell.concentration || spell.is_concentration) || resolved.concentration),
+    ritual: !!(spell && spell.ritual || resolved.ritual),
+    components: _csrFirst(spell && spell.components, resolved.components, ''),
+    source: source || _csrFirst(spell && spell.source, 'class'),
+    preparation: _csrFirst(spell && (spell.preparation || spell.status), level === 0 ? 'known' : 'known'),
+    resolverPreview: resolved,
+  };
+}
+function _csrAction(id, name, actionType, opts) {
+  const o = _csrObject(opts);
+  return {
+    id: id || _csrSlug(name),
+    name,
+    actionType: actionType || 'action',
+    cost: o.cost || actionType || 'action',
+    resourceCost: o.resourceCost || null,
+    current: o.current ?? null,
+    max: o.max ?? null,
+    recovery: o.recovery || '',
+    roll: o.roll || '',
+    effectSummary: o.effectSummary || o.summary || '',
+    sourceFeature: o.sourceFeature || '',
+    source: o.source || 'feature',
+    disabledReason: o.disabledReason || '',
+    linkedResources: o.linkedResources || [],
+    featureModifiers: o.featureModifiers || [],
+  };
+}
+function buildCharacterSheetRuntime(characterDocument) {
+  const doc = _csrObject(characterDocument);
+  const native = _csrObject(doc.nativeRuntime || doc.runtime);
+  const book = _csrObject(doc.book || doc.charBook);
+  const classes = _csrArray(doc.classes);
+  const classLine = _csrFirst(doc.className, doc.class, book.className, classes.map(function (c) { return c && c.name; }).filter(Boolean).join(' / '));
+  const classKey = classLine.toLowerCase();
+  const level = _csrInt(doc.totalLevel || doc.level || book.level || native.levelTotal, 1);
+  const sorcererLevel = classes.reduce(function (acc, c) { return /sorcerer/i.test(c && c.name || '') ? Math.max(acc, _csrInt(c.level, level)) : acc; }, /sorcerer/i.test(classKey) ? level : 0);
+  const resources = _csrArray(native.resources || doc.nativeResources).map(function (r) {
+    return Object.assign(_csrResource(r.id, r.name, r.current ?? r.uses ?? r.remaining, r.max ?? r.limit, r.recovery || r.recharge || r.reset, r.source), r);
+  });
+  function ensureResource(id, name, current, max, recovery, source) {
+    return _csrPushUnique(resources, _csrResource(id, name, current, max, recovery, source), function (r) { return String(r.id || r.name || '').toLowerCase(); });
+  }
+  if (sorcererLevel) ensureResource('sorcery_points', 'Sorcery Points', doc.sorceryPoints ?? sorcererLevel, sorcererLevel, 'long rest', 'sorcerer');
+  const features = [];
+  _csrArray(native.classFeatures || doc.nativeClassFeatures || doc.nativeFeatures || doc.features).forEach(function (f) {
+    if (typeof f === 'string') f = { name: f };
+    const name = _csrFirst(f.name, f.displayName);
+    if (!name) return;
+    const row = Object.assign({ id: _csrSlug(name), name, source: f.source || 'class', kind: _csrFeatureKind(f), modifiers: [], linkedResources: [], linkedActions: [], needsReview: !!f.needsReview }, f);
+    _csrPushUnique(features, row, function (x) { return `${String(x.name || '').toLowerCase()}|${String(x.source || x.kind || '').toLowerCase()}`; });
+  });
+  function ensureFeature(name, source, extra) {
+    const key = String(name || '').toLowerCase();
+    const existing = features.find(function (x) { return String(x.name || '').toLowerCase() === key; });
+    if (existing) {
+      const patch = extra || {};
+      Object.keys(patch).forEach(function (prop) {
+        if (Array.isArray(patch[prop])) existing[prop] = Array.from(new Set(_csrArray(existing[prop]).concat(patch[prop])));
+        else if (existing[prop] === undefined || existing[prop] === null || existing[prop] === '') existing[prop] = patch[prop];
+      });
+      existing.needsReview = false;
+      return existing;
+    }
+    return _csrPushUnique(features, Object.assign({ id: _csrSlug(name), name, source: source || 'class', kind: 'feature', modifiers: [], linkedResources: [], linkedActions: [], needsReview: false }, extra || {}), function (x) { return String(x.name || '').toLowerCase(); });
+  }
+  if (sorcererLevel) {
+    ensureFeature('Font of Magic', 'Sorcerer', { linkedResources: ['sorcery_points'], summary: 'Convert Sorcery Points and spell slots.' });
+    ensureFeature('Metamagic', 'Sorcerer', { linkedResources: ['sorcery_points'], summary: 'Spend Sorcery Points to modify spell casting.' });
+    if (/wild/i.test(_csrFirst(doc.subclass, book.subclass, classes.map(c => c && c.subclass).join(' ')))) {
+      ensureFeature('Wild Magic Surge', 'Wild Magic', { modifiers: [{ type: 'spell_cast_reminder', spellLevel: 'leveled' }] });
+      ensureFeature('Tides of Chaos', 'Wild Magic', { linkedResources: ['tides_of_chaos'] });
+      ensureResource('tides_of_chaos', 'Tides of Chaos', doc.tidesOfChaosUsed ? 0 : 1, 1, 'long rest or DM surge reset', 'subclass');
+    }
+  }
+  const actions = _csrArray(native.actions || _csrObject(doc.nativeActionCards).actions).map(a => _csrAction(a.id, a.name, a.actionType || 'action', a));
+  const bonusActions = _csrArray(native.bonusActions || _csrObject(doc.nativeActionCards).bonusActions).map(a => _csrAction(a.id, a.name, a.actionType || 'bonus action', a));
+  const reactions = _csrArray(native.reactions || _csrObject(doc.nativeActionCards).reactions).map(a => _csrAction(a.id, a.name, a.actionType || 'reaction', a));
+  function addAction(name, type, opts) {
+    const lane = type === 'bonus action' ? bonusActions : (type === 'reaction' ? reactions : actions);
+    return _csrPushUnique(lane, _csrAction(_csrSlug(name), name, type, opts), function (a) { return String(a.name || '').toLowerCase(); });
+  }
+  if (sorcererLevel) {
+    addAction('Flexible Casting: Create Spell Slot', 'bonus action', { sourceFeature: 'Font of Magic', resourceCost: { resourceId: 'sorcery_points', amount: 2 }, linkedResources: ['sorcery_points'], effectSummary: 'Spend Sorcery Points to create a spell slot.' });
+    addAction('Quickened Spell / Metamagic', 'bonus action', { sourceFeature: 'Metamagic', resourceCost: { resourceId: 'sorcery_points', amount: 2 }, linkedResources: ['sorcery_points'], featureModifiers: [{ type: 'spell_action_economy', from: 'action', to: 'bonus action', eligibility: '1-action spell' }], effectSummary: 'Cast an eligible 1-action spell using your bonus action.' });
+    addAction('Subtle Spell / Metamagic', 'bonus action', { sourceFeature: 'Metamagic', resourceCost: { resourceId: 'sorcery_points', amount: 1 }, linkedResources: ['sorcery_points'], featureModifiers: [{ type: 'component_modification', removes: ['V', 'S'] }] });
+    addAction('Heightened Spell / Metamagic', 'bonus action', { sourceFeature: 'Metamagic', resourceCost: { resourceId: 'sorcery_points', amount: 2 }, linkedResources: ['sorcery_points'], featureModifiers: [{ type: 'saving_throw_flow', effect: 'one target has disadvantage on first save' }] });
+  }
+  const attacks = [];
+  _csrArray(doc.attacks || doc.quickAttacks).forEach(a => _csrPushUnique(attacks, Object.assign({ id: _csrSlug(a.name), source: 'attack' }, a), x => String(x.name || x.id || '').toLowerCase()));
+  _csrArray(doc.inventory || doc.items || book.inventory).forEach(function (item) {
+    const name = _csrFirst(item.name, item.displayName);
+    if (/quarterstaff|weapon|sword|bow|dagger|axe|mace/i.test(`${name} ${item.type || ''}`)) {
+      _csrPushUnique(attacks, { id: _csrSlug(name), name, source: item.source || 'item', actionType: 'action', attackBonus: item.attackBonus || '', damage: item.damage || item.damageFormula || '', item }, x => String(x.name || '').toLowerCase());
+    }
+  });
+  _csrPushUnique(attacks, { id: 'unarmed-strike', name: 'Unarmed Strike', source: 'system', actionType: 'action', damage: '1 + STR mod' }, x => String(x.name || '').toLowerCase());
+  const spellInputs = [].concat(_csrArray(native.spells), _csrArray(doc.rulesSpellbook), _csrArray(doc.spells), _csrArray(book.spells));
+  const spells = [];
+  spellInputs.forEach(function (spell) { _csrPushUnique(spells, _csrBuildSpell(spell, doc, spell.source || 'class'), function (s) { return String(s.name || s.id || '').toLowerCase(); }); });
+  ['Fire Bolt', 'Scorching Ray', 'Fireball'].forEach(function (name) {
+    if (sorcererLevel) _csrPushUnique(spells, _csrBuildSpell({ name, id: _csrSlug(name) }, doc, 'class'), function (s) { return String(s.name || s.id || '').toLowerCase(); });
+  });
+  const limitedUseActions = actions.concat(bonusActions, reactions).filter(function (a) { return a.resourceCost || a.max != null || a.current != null; });
+  resources.forEach(function (r) {
+    r.linkedFeatures = features.filter(f => _csrArray(f.linkedResources).includes(r.id) || String(f.resourceName || '').toLowerCase() === String(r.name || '').toLowerCase()).map(f => f.id);
+    r.linkedActions = actions.concat(bonusActions, reactions).filter(a => _csrArray(a.linkedResources).includes(r.id) || _csrObject(a.resourceCost).resourceId === r.id).map(a => a.id);
+  });
+  return {
+    identity: { name: _csrFirst(doc.name, book.name, 'Adventurer'), className: classLine, level, species: _csrFirst(doc.species, doc.race, book.species, book.race), background: _csrFirst(doc.background, book.background) },
+    abilities: doc.abilities || doc.abilityScores || {}, saves: doc.saves || doc.savingThrows || {}, skills: doc.skills || {}, senses: doc.senses || {}, defenses: { resistances: doc.resistances || [], immunities: doc.immunities || [] }, conditions: doc.conditions || [],
+    hp: Object.assign({ current: _csrInt(doc.currentHP || doc.currentHp, _csrInt(doc.maxHP || doc.maxHp, 0)), max: _csrInt(doc.maxHP || doc.maxHp, 0), temp: _csrInt(doc.tempHP || doc.tempHp, 0) }, _csrObject(native.hp)),
+    ac: _csrInt(native.ac ?? doc.ac, 10), speed: native.speed || { walk: _csrInt(doc.speed, 30) }, initiative: _csrInt(doc.initiative ?? _csrObject(native.combat).initiative, 0), proficiencyBonus: _csrInt(native.proficiencyBonus ?? doc.profBonus ?? doc.proficiencyBonus, Math.ceil(level / 4) + 1),
+    resources, actions, bonusActions, reactions, limitedUseActions, attacks, spells, features, traits: features.filter(f => f.kind === 'trait'), feats: features.filter(f => f.kind === 'feat'), background: doc.backgroundFeatures || book.background || {}, inventory: doc.inventory || doc.items || book.inventory || [], warnings: [], needsReview: features.some(f => f.needsReview),
+  };
+}
+function spendCharacterSheetResource(runtime, resourceId, amount) {
+  const rt = _csrObject(runtime);
+  const id = String(resourceId || '').toLowerCase();
+  const cost = Math.max(0, _csrInt(amount, 1));
+  const row = _csrArray(rt.resources).find(function (r) { return String(r.id || r.name || '').toLowerCase() === id || String(r.name || '').toLowerCase() === id; });
+  if (!row || !row.spendable) return { ok: false, reason: 'resource unavailable', runtime: rt };
+  const current = _csrInt(row.current, 0);
+  if (current < cost) return { ok: false, reason: 'insufficient resource', runtime: rt };
+  row.current = current - cost;
+  return { ok: true, resource: row, runtime: rt };
+}
+function resetCharacterSheetResources(runtime, restType) {
+  const rt = _csrObject(runtime);
+  const type = String(restType || 'long').toLowerCase();
+  _csrArray(rt.resources).forEach(function (row) {
+    const reset = String(row.restReset || row.recovery || '').toLowerCase();
+    if (type === 'long' || reset.includes(type)) row.current = _csrInt(row.max, _csrInt(row.current, 0));
+  });
+  return rt;
+}
+
 function renderCharacterBookOverviewContent() {
   const c = ensureCharSheetRuntimeDefaults(_charSheet);
   if (!c) return;
@@ -292,8 +522,14 @@ function renderCharacterBookOverviewContent() {
 
 
   global.AppCharacterSheetRuntime = {
+    buildCharacterSheetRuntime,
+    spendCharacterSheetResource,
+    resetCharacterSheetResources,
     requestCharacterBookOverviewRender,
     renderCharSheet,
     renderCharacterBookOverviewContent,
   };
+  global.buildCharacterSheetRuntime = buildCharacterSheetRuntime;
+  global.spendCharacterSheetResource = spendCharacterSheetResource;
+  global.resetCharacterSheetResources = resetCharacterSheetResources;
 })(window);

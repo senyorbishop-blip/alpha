@@ -861,6 +861,22 @@ function _buildSkeleton(wrapper, charData) {
 
   function initCharacterSheetPremium(container, charData) {
     if (!container) return;
+    if (global.buildCharacterSheetRuntime && charData && typeof charData === 'object') {
+      const sheetRuntime = global.buildCharacterSheetRuntime(charData);
+      charData.characterSheetRuntime = sheetRuntime;
+      charData.nativeResources = sheetRuntime.resources;
+      charData.nativeActionCards = {
+        actions: sheetRuntime.actions,
+        bonusActions: sheetRuntime.bonusActions,
+        reactions: sheetRuntime.reactions,
+        passives: sheetRuntime.features,
+      };
+      charData.nativeClassFeatures = sheetRuntime.features;
+      charData.nativeFeatures = sheetRuntime.features;
+      charData.rulesSpellbook = sheetRuntime.spells;
+      charData.attacks = sheetRuntime.attacks;
+      charData.inventory = sheetRuntime.inventory;
+    }
     container.classList.add('cs-premium-container');
     container.innerHTML = '';
 
