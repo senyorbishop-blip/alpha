@@ -325,7 +325,10 @@
       spells = global._getCombatQuickSpells() || [];
     } else {
       const sheet = runtime && runtime.charSheet ? runtime.charSheet : {};
-      spells = _safeArray(sheet.rulesSpellCards || sheet.rulesSpellbook || sheet.spellbookEntries);
+      const sheetRuntime = sheet.characterSheetRuntime || sheet.sheetRuntime || {};
+      spells = _safeArray(sheetRuntime.spells).length
+        ? _safeArray(sheetRuntime.spells)
+        : _safeArray(sheet.rulesSpellCards || sheet.rulesSpellbook || sheet.spellbookEntries);
     }
     return _uniqueByName(spells, spells.length).sort(function (a, b) {
       const scoreDelta = _spellQuickScore(b) - _spellQuickScore(a);

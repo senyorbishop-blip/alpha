@@ -1785,6 +1785,11 @@
 
   function _buildCustomClassActionCards(charData) {
     const classKey = _classKey(charData);
+    // The canonical sheet runtime now owns class actions. Keep handcrafted
+    // supplements only for custom classes whose rules are intentionally local.
+    if (charData && charData.characterSheetRuntime && classKey !== 'tinker' && classKey !== 'pirate') {
+      return { actions: [], bonusActions: [], reactions: [] };
+    }
     const config = CUSTOM_CLASS_ACTIONS[classKey];
     if (!config) return { actions: [], bonusActions: [], reactions: [] };
     const lookup = _featureLookup(charData);
