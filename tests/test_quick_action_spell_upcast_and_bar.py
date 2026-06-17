@@ -64,8 +64,8 @@ console.log(JSON.stringify(rows));
         assert rows[level]["slotLevel"] == int(level)
 
 
-def test_quick_bar_button_visibility_drag_persist_and_dm_player_roles():
-    assert 'roleCanUseQuickBar = role === \'player\' || role === \'dm\'' in BAR
+def test_quick_bar_button_visibility_drag_persist_and_player_role():
+    assert "roleCanUseQuickBar = role === 'player'" in BAR
     assert 'if (toggle) toggle.hidden = true;' in BAR
     assert 'if (toggle && roleCanUseQuickBar) toggle.hidden = false;' in BAR
     assert 'buttonX' in BAR and 'buttonY' in BAR

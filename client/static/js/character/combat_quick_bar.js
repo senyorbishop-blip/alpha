@@ -416,7 +416,7 @@
     const role = _firstText(runtime.role, global.ROLE, '').toLowerCase();
     const turnKey = combat.active ? String((combat.round || 1) + ':' + (combat.turn || 0)) : '';
     const dismissed = !!(combat.active && state.dismissedUntilManualOpen && state.dismissedForCombatTurn === turnKey);
-    const roleCanUseQuickBar = role === 'player' || role === 'dm';
+    const roleCanUseQuickBar = role === 'player';
     const shouldShow = roleCanUseQuickBar && !dismissed && (!!combat.active || !!state.manual);
     const toggle = document.getElementById('combat-quick-bar-toggle');
     // Toggle is visible for known players; when role is unknown don't change it
