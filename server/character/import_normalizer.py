@@ -1378,6 +1378,29 @@ def normalize_pdf_payload(raw_payload: Any, *, filename: str = "") -> dict[str, 
     name = _safe_str(src.get("name"), "Unnamed Character", limit=120)
     race_name = _safe_str(src.get("race") or book.get("race"), "", limit=80)
     background_name = _safe_str(src.get("background") or book.get("background"), "", limit=80)
+    imported_portrait_url = _safe_str(
+        _first_present(
+            src,
+            "portraitUrl",
+            "avatarUrl",
+            "imageUrl",
+            "image_url",
+            default=_first_present(book, "portraitUrl", "avatarUrl", "imageUrl", "image_url", default=""),
+        ),
+        "",
+        limit=400,
+    )
+    imported_token_image_url = _safe_str(
+        _first_present(
+            src,
+            "tokenImageUrl",
+            "tokenUrl",
+            "token_url",
+            default=_first_present(book, "tokenImageUrl", "tokenUrl", "token_url", default=imported_portrait_url),
+        ),
+        "",
+        limit=400,
+    )
 
     imported_ac = _safe_int(_first_present(src, "ac", "armorClass", default=book.get("ac")), 10, minimum=1)
     imported_max_hp = _safe_int(_first_present(src, "maxHp", "maxHP", default=book.get("maxHp")), 1, minimum=1)
@@ -1432,6 +1455,8 @@ def normalize_pdf_payload(raw_payload: Any, *, filename: str = "") -> dict[str, 
             "characterId": character_id,
             "name": name,
             "displayName": name,
+            "portraitUrl": imported_portrait_url,
+            "tokenImageUrl": imported_token_image_url,
             "alignment": _safe_str(src.get("alignment") or book.get("alignment"), "", limit=60),
             "personalityTraits": personality_notes,
             "backstory": _strip_html(_first_present(src, "backstory", default=book.get("backstory")), limit=3000),
