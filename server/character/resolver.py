@@ -607,14 +607,20 @@ def _resolve_ac_audit(
     else:
         breakdown.append("Shield: +0")
 
+    item_ac_bonus = 0
     for row in equipped_rows:
         name = _display_item_name(row, "Unknown item")
-        if bool(row.get("attuned")) and ("magic" in str(row.get("category") or row.get("notes") or "").lower()) and not any(key in row for key in ("ac_bonus", "bonus", "attack_bonus")):
+        bonus = _active_item_modifier_value(row, "ac")
+        if bonus and _inventory_kind(row) not in {"armor", "shield"}:
+            item_ac_bonus += bonus
+            active_bonuses.append({"source": name, "type": "item_ac_bonus", "value": bonus})
+            breakdown.append(f"Item AC: {name} = {_format_signed(bonus)}")
+        if bool(row.get("attuned")) and ("magic" in str(row.get("category") or row.get("notes") or "").lower()) and not any(key in row for key in ("ac_bonus", "bonus", "attack_bonus", "modifiers")):
             warnings.append(_warning("unknown_magic_item_bonus", f'Magic item "{name}" may have bonuses Alpha cannot infer yet.', details={"item": name}))
         if row.get("custom") or row.get("isCustom") or str(row.get("source") or "").strip().lower() in {"custom", "d&d beyond custom"}:
             warnings.append(_warning("unknown_custom_dndbeyond_modifier", f'Custom imported item/modifier "{name}" needs manual verification.', details={"item": name}))
 
-    calculated_value = max(fallback_ac, best_armor_value + shield_bonus)
+    calculated_value = max(fallback_ac, best_armor_value + shield_bonus + item_ac_bonus)
     imported_ac = _safe_int(document.get("importedAc", document.get("ac")), 0, minimum=0)
     review_status = str(document.get("acReviewStatus") or "").strip().lower()
     selected_mode = str(document.get("acSelectedMode") or "").strip().lower()
@@ -1093,6 +1099,66 @@ def _item_kind(item: dict[str, Any]) -> str:
     return str(item.get("equipment_kind") or item.get("item_type") or item.get("kind") or item.get("category") or "").strip().lower().replace("armour", "armor")
 
 
+
+
+def _normalize_item_effect_schema(item: dict[str, Any]) -> dict[str, Any]:
+    """Return normalized magic-item runtime effects.
+
+    Schema: modifiers, charges, recharge, grantedSpells, grantedActions,
+    requiresAttunement, requirements. Supports existing snake_case aliases.
+    """
+    if not isinstance(item, dict):
+        return {"modifiers": [], "charges": {}, "recharge": {}, "grantedSpells": [], "grantedActions": [], "requiresAttunement": False, "requirements": {}}
+    effects = item.get("effects") if isinstance(item.get("effects"), dict) else {}
+    raw_mods = item.get("modifiers") or effects.get("modifiers") or item.get("passive_effects") or []
+    if isinstance(raw_mods, dict):
+        raw_mods = [raw_mods]
+    modifiers: list[dict[str, Any]] = []
+    for mod in raw_mods if isinstance(raw_mods, list) else []:
+        if not isinstance(mod, dict):
+            continue
+        mtype = str(mod.get("type") or mod.get("target") or "").strip().lower().replace("-", "_")
+        value = _safe_int(mod.get("value") if mod.get("value") is not None else mod.get("bonus"), 0)
+        if mtype == "ac_bonus": target = "ac"
+        elif mtype in {"weapon_attack_bonus", "weapon_attack"}: target = "weapon_attack"
+        elif mtype in {"weapon_damage_bonus", "weapon_damage"}: target = "weapon_damage"
+        elif mtype in {"spell_attack_bonus", "spell_attack"}: target = "spell_attack"
+        elif mtype in {"spell_save_dc_bonus", "spell_save_dc"}: target = "spell_save_dc"
+        elif mtype in {"ac", "armor_class"}: target = "ac"
+        else: target = mtype
+        if target and value:
+            modifiers.append({"type": target, "value": value, "source": _display_item_name(item, "Item"), "requiresEquipped": mod.get("requiresEquipped", mod.get("requires_equipped", True)), "requiresAttuned": mod.get("requiresAttuned", mod.get("requires_attuned", _item_requires_attunement(item)))})
+    for field, target in (("attack_bonus", "weapon_attack"), ("damage_bonus", "weapon_damage"), ("spell_attack_bonus", "spell_attack"), ("spell_save_dc_bonus", "spell_save_dc")):
+        val = _safe_int(item.get(field), 0)
+        if val:
+            modifiers.append({"type": target, "value": val, "source": _display_item_name(item, "Item"), "requiresEquipped": True, "requiresAttuned": _item_requires_attunement(item)})
+    charges = item.get("charges") if isinstance(item.get("charges"), dict) else {}
+    recharge = item.get("recharge") if isinstance(item.get("recharge"), dict) else {}
+    return {
+        "modifiers": modifiers,
+        "charges": {"current": _safe_int(charges.get("current", item.get("charges_current")), -1), "max": _safe_int(charges.get("max", item.get("charges_max")), 0, minimum=0)},
+        "recharge": {"type": str(recharge.get("type", item.get("recharge_type") or "none")), "formula": str(recharge.get("formula", item.get("recharge_formula") or ""))},
+        "grantedSpells": list(item.get("grantedSpells") or item.get("granted_spells") or effects.get("grantedSpells") or effects.get("granted_spells") or []),
+        "grantedActions": list(item.get("grantedActions") or item.get("granted_actions") or effects.get("grantedActions") or effects.get("granted_actions") or []),
+        "requiresAttunement": _item_requires_attunement(item),
+        "requirements": {"equipped": bool(item.get("equipped") or item.get("is_equipped")), "attuned": _item_is_attuned(item)},
+    }
+
+def _active_item_modifier_value(item: dict[str, Any], target: str) -> int:
+    schema = _normalize_item_effect_schema(item)
+    equipped = bool(item.get("equipped") or item.get("is_equipped"))
+    attuned = _item_is_attuned(item)
+    total = 0
+    for mod in schema.get("modifiers") or []:
+        if str(mod.get("type")) != target:
+            continue
+        if bool(mod.get("requiresEquipped", True)) and not equipped:
+            continue
+        if bool(mod.get("requiresAttuned", False)) and not attuned:
+            continue
+        total += _safe_int(mod.get("value"), 0)
+    return total
+
 def _build_item_resource(item: dict[str, Any]) -> dict[str, Any] | None:
     max_charges = _safe_int(item.get("charges_max"), 0, minimum=0)
     if max_charges <= 0:
@@ -1132,13 +1198,14 @@ def _build_item_runtime(normalized: dict[str, Any], *, proficiency_bonus: int, s
         iid = str(item.get("id") or item.get("magic_item_id") or name).strip().lower().replace(" ", "-")
         active = bool(item.get("equipped") or item.get("is_equipped") or item.get("equippable") or _item_kind(item) in {"weapon", "staff", "wand", "ring", "armor", "shield"})
         attuned = _item_is_attuned(item)
+        effect_schema = _normalize_item_effect_schema(item)
         resource = _build_item_resource(item)
         if resource:
             resources.append(resource)
         kind = _item_kind(item)
-        if active and kind in {"weapon", "staff"}:
-            bonus = _safe_int(item.get("attack_bonus") or item.get("magic_bonus"), 0)
-            dmg_bonus = _safe_int(item.get("damage_bonus") or item.get("magic_bonus"), bonus)
+        if active and kind in {"weapon", "staff"} and attuned:
+            bonus = _active_item_modifier_value(item, "weapon_attack") or _safe_int(item.get("magic_bonus"), 0)
+            dmg_bonus = _active_item_modifier_value(item, "weapon_damage") or _safe_int(item.get("magic_bonus"), bonus)
             damage = str(item.get("damage_dice") or item.get("damage") or "1d6").strip()
             dtype = str(item.get("damage_type") or "bludgeoning").strip()
             attacks.append({
@@ -1150,7 +1217,7 @@ def _build_item_runtime(normalized: dict[str, Any], *, proficiency_bonus: int, s
             })
         if not attuned:
             continue
-        for act in item.get("granted_actions") or []:
+        for act in effect_schema.get("grantedActions") or []:
             if not isinstance(act, dict):
                 continue
             cost = _safe_int(act.get("charge_cost"), 0, minimum=0)
@@ -1162,7 +1229,7 @@ def _build_item_runtime(normalized: dict[str, Any], *, proficiency_bonus: int, s
                 "recovery": resource.get("recovery") if resource else "", "effectSummary": str(act.get("summary") or item.get("description_summary") or "Item action."),
                 "linkedResources": [resource["id"]] if resource else [], "linkedItem": iid,
             })
-        for spell in item.get("granted_spells") or []:
+        for spell in effect_schema.get("grantedSpells") or []:
             if not isinstance(spell, dict):
                 continue
             sid = str(spell.get("id") or spell.get("name") or "").strip().lower()
@@ -1176,11 +1243,12 @@ def _build_item_runtime(normalized: dict[str, Any], *, proficiency_bonus: int, s
                 "level": _safe_int(spell.get("cast_level") or spell.get("level"), 0, minimum=0), "castLevel": _safe_int(spell.get("cast_level") or spell.get("level"), 0, minimum=0),
                 "consumeSpellSlot": bool(spell.get("consume_spell_slot", False)), "chargeCost": cost,
                 "resourceCost": {"resourceId": resource["id"], "amount": cost} if resource and cost else None,
-                "saveDc": item.get("item_spell_save_dc") if spell.get("uses_item_dc") else None,
-                "spellAttackBonus": item.get("item_spell_attack_bonus") if spell.get("uses_item_attack_bonus") else None,
+                "saveDc": (_safe_int(item.get("item_spell_save_dc"), 0) + _active_item_modifier_value(item, "spell_save_dc")) if spell.get("uses_item_dc") else None,
+                "spellAttackBonus": (_safe_int(item.get("item_spell_attack_bonus"), 0) + _active_item_modifier_value(item, "spell_attack")) if spell.get("uses_item_attack_bonus") else None,
+                "attackBonus": (_safe_int(item.get("item_spell_attack_bonus"), 0) + _active_item_modifier_value(item, "spell_attack")) if spell.get("uses_item_attack_bonus") else None,
                 "linkedResources": [resource["id"]] if resource else [], "linkedItem": iid,
             })
-        for eff in item.get("passive_effects") or []:
+        for eff in item.get("passive_effects") or item.get("modifiers") or []:
             if isinstance(eff, dict):
                 traits.append({"id": f"item-trait-{iid}-{len(traits)+1}", "name": name, "source": "item", "kind": "item", "summary": str(eff.get("summary") or eff.get("type") or "Item trait"), "needsReview": False, "linkedItem": iid})
     return {"inventory": inventory, "attacks": attacks, "actions": actions, "itemSpells": item_spells, "itemTraits": traits, "resources": resources}

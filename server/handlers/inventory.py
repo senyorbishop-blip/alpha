@@ -153,6 +153,7 @@ _INVENTORY_META_KEYS = (
     "weight_lbs", "extradimensional", "is_container", "own_weight_lbs", "capacity_lbs", "volume_ft3",
     "is_devouring", "bag_contents",
     "item_spell_attack_bonus", "item_spell_save_dc", "item_schema_version",
+    "modifiers", "charges", "recharge", "grantedSpells", "grantedActions", "requiresAttunement", "requirements",
     "equipped", "equip_slot", *_EQUIPMENT_META_KEYS,
 )
 
@@ -198,7 +199,7 @@ def _normalize_item_runtime_fields(entry: dict, out: dict) -> None:
         if key in entry:
             out[key] = bool(entry.get(key))
 
-    for key in ("passive_effects", "granted_spells"):
+    for key in ("passive_effects", "granted_spells", "modifiers", "grantedSpells", "grantedActions"):
         raw = entry.get(key)
         if isinstance(raw, list):
             cleaned: list[dict] = []

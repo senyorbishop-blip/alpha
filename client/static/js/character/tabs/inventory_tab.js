@@ -122,7 +122,8 @@
   }
 
   function _extractItemSpellCards(item) {
-    const gs = item && item.granted_spells;
+    const effects = item && item.effects && typeof item.effects === 'object' ? item.effects : {};
+    const gs = item && (item.granted_spells || item.grantedSpells || effects.granted_spells || effects.grantedSpells);
     if (!Array.isArray(gs) || !gs.length) return [];
     const cards = [];
     gs.slice(0, 12).forEach(function (entry) {
@@ -137,6 +138,9 @@
           cast_level: Number(entry.cast_level || 0),
           uses_item_dc: !!entry.uses_item_dc,
           uses_item_attack_bonus: !!entry.uses_item_attack_bonus,
+          attack_preview: String(entry.attack_preview || entry.attackPreview || entry.attack_bonus || ''),
+          save_preview: String(entry.save_preview || entry.savePreview || entry.save_dc || ''),
+          damage_preview: String(entry.damage_preview || entry.damagePreview || entry.damage_formula || ''),
           description: String(entry.description || ''),
         });
       }
@@ -207,6 +211,15 @@
         const chargeCost = typeof sc.charge_cost === 'number' ? sc.charge_cost : null;
         const canCast = chargeCost === null || chargeCost === 0 || charges_max === 0 || charges_current < 0 || charges_current >= chargeCost;
         const costLabel = chargeCost !== null && chargeCost > 0 ? ' (' + String(chargeCost) + ' charge' + (chargeCost !== 1 ? 's' : '') + ')' : '';
+        const previewBits = [
+          'Item: ' + String(item.name || 'Item'),
+          chargeCost !== null ? ('Cost: ' + String(chargeCost) + ' charge' + (chargeCost === 1 ? '' : 's')) : '',
+          sc.cast_level ? ('Cast level: ' + String(sc.cast_level)) : '',
+          sc.uses_item_attack_bonus && item.item_spell_attack_bonus ? ('Attack: +' + String(item.item_spell_attack_bonus)) : (sc.attack_preview ? ('Attack: ' + sc.attack_preview) : ''),
+          sc.uses_item_dc && item.item_spell_save_dc ? ('Save DC: ' + String(item.item_spell_save_dc)) : (sc.save_preview ? ('Save: ' + sc.save_preview) : ''),
+          sc.damage_preview ? ('Damage: ' + sc.damage_preview) : '',
+        ].filter(Boolean);
+        const previewLabel = previewBits.join(' • ');
         const itemIdStr = _esc(String(item.id || item.magic_item_id || ''));
         const spellIdStr = _esc(String(sc.id || ''));
         const idxStr = _esc(String(itemIndex != null ? itemIndex : -1));
@@ -222,8 +235,8 @@
             ' data-item-index="' + idxStr + '"' +
             ' data-charge-cost="' + chargeCostStr + '"' +
             ' data-cast-level="' + castLevelStr + '"' +
-            ' title="' + _esc((sc.description || sc.name) + (costLabel ? ' • ' + costLabel.trim() : '')) + '">' +
-            'Cast ' + _esc(sc.name) + _esc(costLabel) +
+            ' title="' + _esc((sc.description || sc.name) + (previewLabel ? ' • ' + previewLabel : '')) + '">' +
+            'Cast ' + _esc(sc.name) + _esc(costLabel) + (previewLabel ? '<span class="cs-summary-note">' + _esc(previewLabel) + '</span>' : '') +
           '</button>' +
           '<button type="button" class="cs-feature-inspect muted" data-item-action="spell-info" data-spell-name="' + _esc(sc.name) + '">Spell Info</button>'
         );
