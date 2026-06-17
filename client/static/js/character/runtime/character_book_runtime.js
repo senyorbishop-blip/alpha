@@ -23,6 +23,10 @@
     callBook('closeCharacterBook');
   }
 
+  function closeAllCharacterSheetSurfaces() {
+    callBook('closeAllCharacterSheetSurfaces');
+  }
+
   function openCharacterBook(page) {
     callBook('openCharacterBook', [(!page || page === 'overview') ? 'premiumsheet' : page]);
   }
@@ -46,6 +50,7 @@
   global.CharacterBookRuntime = {
     registerHooks: setHooks,
     closeCharacterBook: closeCharacterBook,
+    closeAllCharacterSheetSurfaces: closeAllCharacterSheetSurfaces,
     openCharacterBook: openCharacterBook,
     goCharacterBookPage: goCharacterBookPage,
     handleCharacterBookScroll: handleCharacterBookScroll,
@@ -54,6 +59,7 @@
   };
 
   global.closeCharacterBook = closeCharacterBook;
+  global.closeAllCharacterSheetSurfaces = closeAllCharacterSheetSurfaces;
   global.openCharacterBook = openCharacterBook;
   global.goCharacterBookPage = goCharacterBookPage;
   global.handleCharacterBookScroll = handleCharacterBookScroll;

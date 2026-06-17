@@ -115,27 +115,33 @@ def test_builder_service_reads_feats_from_level_asi_choice_map():
 def test_character_book_uses_single_modal_mode_and_cleanup_contract():
     src = Path('client/static/js/ui/character_book.js').read_text(encoding='utf-8')
     assert "VALID_SHEET_MODES = new Set(['closed', 'live_play_sheet', 'edit_sheet', 'import_review', 'level_up'])" in src
-    assert 'function cleanupCharacterSheetSurfaces(env, nextMode = \'closed\')' in src
-    assert "cleanupCharacterSheetSurfaces(env, 'closed');" in src
+    assert 'function closeAllCharacterSheetSurfaces(env, nextMode = \'closed\')' in src
+    assert "closeAllCharacterSheetSurfaces(env, 'closed');" in src
     assert 'modeForCharacterBookPage(page)' in src
-    assert "doc.querySelectorAll('#char-sheet-panel.open')" in src
+    assert 'cleanupCharacterSheetSurfaces: closeAllCharacterSheetSurfaces' in src
+    assert "doc.querySelectorAll('#char-sheet-panel.open, #char-sheet-panel.active')" in src
 
 
 def test_live_play_sheet_hides_legacy_roots_and_edit_hides_premium_root():
     src = Path('client/static/js/ui/character_book.js').read_text(encoding='utf-8')
     assert "const premiumRoot = doc.getElementById('cs-premium-mount');" in src
     assert "const oldRoots = [doc.getElementById('sheet-body')].filter(Boolean);" in src
-    assert "setRootInactive(premiumRoot, mode !== 'live_play_sheet');" in src
-    assert "oldRoots.forEach(root => setRootInactive(root, mode !== 'edit_sheet'));" in src
-    assert "pageEl.hidden = !isActive;" in src
-    assert "pageEl.style.display = isActive ? 'flex' : 'none';" in src
+    assert "setRootInactive(premiumRoot, mode !== 'live_play_sheet', 'block');" in src
+    assert "oldRoots.forEach(root => setRootInactive(root, true));" in src
+    assert "setRootInactive(pageEl, !isActive, 'flex');" in src
+    assert "root.hidden = isInactive;" in src
+    assert "root.style.display = isInactive ? 'none' : activeDisplay;" in src
+    assert "root.style.pointerEvents = isInactive ? 'none' : 'auto';" in src
 
 
 def test_character_sheet_css_prevents_inactive_roots_bleeding_through():
     src = _play_html()
+    assert '#char-sheet-panel[hidden]' in src
     assert '#char-sheet-panel[data-sheet-mode="closed"]' in src
     assert '#char-book-pages .sheet-page[hidden]' in src
     assert '#char-book-pages .sheet-page.sheet-root-inactive' in src
+    assert '#cs-premium-mount[hidden]' in src
+    assert '#sheet-body[hidden]' in src
     assert '#cs-premium-mount.sheet-root-inactive' in src
     assert '#sheet-body.sheet-root-inactive' in src
     assert 'pointer-events:none !important;' in src
@@ -148,3 +154,37 @@ def test_escape_closes_active_character_sheet_modal():
     assert "if (document.getElementById('char-sheet-panel')?.classList.contains('open'))" in src
     assert 'closeCharacterBook();' in src
     assert 'return;' in src
+
+
+def test_character_sheet_surface_cleanup_contract_covers_requested_openings():
+    book = Path('client/static/js/ui/character_book.js').read_text(encoding='utf-8')
+    runtime = Path('client/static/js/character/runtime/character_book_runtime.js').read_text(encoding='utf-8')
+    play = _play_html()
+    assert "function closeAllCharacterSheetSurfaces(env, nextMode = 'closed')" in book
+    assert "doc.querySelectorAll('.character-sheet-backdrop, .char-sheet-backdrop, .sheet-modal-backdrop').forEach(node => node.remove())" in book
+    assert "doc.querySelectorAll('.character-sheet-modal.active')" in book
+    assert "setRootInactive(premiumRoot, mode !== 'live_play_sheet', 'block');" in book
+    assert "oldRoots.forEach(root => setRootInactive(root, true));" in book
+    assert "panel.style.zIndex = mode === 'closed' ? '' : '15600';" in book
+    assert 'global.closeAllCharacterSheetSurfaces = closeAllCharacterSheetSurfaces;' in runtime
+    assert "if (typeof closeAllCharacterSheetSurfaces === 'function') closeAllCharacterSheetSurfaces();" in play
+
+
+def test_inactive_character_sheet_roots_are_hidden_inert_and_noninteractive():
+    src = Path('client/static/js/ui/character_book.js').read_text(encoding='utf-8')
+    assert "root.setAttribute('aria-hidden', isInactive ? 'true' : 'false');" in src
+    assert "if ('inert' in root) root.inert = isInactive;" in src
+    assert 'root.hidden = isInactive;' in src
+    assert "root.classList.remove('active', 'open');" in src
+    assert "root.style.visibility = isInactive ? 'hidden' : 'visible';" in src
+    assert "root.style.pointerEvents = isInactive ? 'none' : 'auto';" in src
+
+
+def test_live_and_edit_modes_do_not_allow_legacy_overview_bleed_or_duplicate_active_roots():
+    src = Path('client/static/js/ui/character_book.js').read_text(encoding='utf-8')
+    assert "mode === 'live_play_sheet' ? 'premiumsheet'" in src
+    assert "mode === 'edit_sheet' ? (env.getActiveCharBookPage && env.getActiveCharBookPage()) || 'identity'" in src
+    assert "setRootInactive(premiumRoot, mode !== 'live_play_sheet', 'block');" in src
+    assert "oldRoots.forEach(root => setRootInactive(root, true));" in src
+    assert "doc.querySelectorAll('#char-sheet-panel.open, #char-sheet-panel.active')" in src
+    assert "if (node !== panel || idx > 0) setRootInactive(node, true);" in src

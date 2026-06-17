@@ -4386,8 +4386,9 @@
       transition: transform 0.25s ease;
     }
     #char-sheet-panel.open { display: flex; }
+    #char-sheet-panel[hidden],
     #char-sheet-panel[data-sheet-mode="closed"],
-    #char-sheet-panel.sheet-root-inactive { visibility:hidden; pointer-events:none; }
+    #char-sheet-panel.sheet-root-inactive { display:none !important; visibility:hidden; pointer-events:none; }
     #char-sheet-panel.open[data-sheet-mode="live_play_sheet"],
     #char-sheet-panel.open[data-sheet-mode="edit_sheet"],
     #char-sheet-panel.open[data-sheet-mode="import_review"],
@@ -4909,8 +4910,9 @@
       transform: none;
     }
     #char-sheet-panel.open { display: flex; }
+    #char-sheet-panel[hidden],
     #char-sheet-panel[data-sheet-mode="closed"],
-    #char-sheet-panel.sheet-root-inactive { visibility:hidden; pointer-events:none; }
+    #char-sheet-panel.sheet-root-inactive { display:none !important; visibility:hidden; pointer-events:none; }
     #char-sheet-panel.open[data-sheet-mode="live_play_sheet"],
     #char-sheet-panel.open[data-sheet-mode="edit_sheet"],
     #char-sheet-panel.open[data-sheet-mode="import_review"],
@@ -5088,6 +5090,8 @@
       visibility:hidden !important;
       pointer-events:none !important;
     }
+    #cs-premium-mount[hidden],
+    #sheet-body[hidden],
     #cs-premium-mount.sheet-root-inactive,
     #sheet-body.sheet-root-inactive {
       display:none !important;
@@ -33822,6 +33826,7 @@ function _initNativeCharacterBuilder() {
 
 function openNativeCharacterBuilder() {
   if (ROLE !== 'player') return;
+  if (typeof closeAllCharacterSheetSurfaces === 'function') closeAllCharacterSheetSurfaces();
   const modal = document.getElementById('char-builder-modal');
   if (!modal) return;
   const shell = _initNativeCharacterBuilder();
@@ -45625,6 +45630,7 @@ function _isPlayerActionUsedThisTurn(action) {
 }
 
 function openFullCombatSheet() {
+  if (typeof closeAllCharacterSheetSurfaces === 'function') closeAllCharacterSheetSurfaces();
   const existing = document.getElementById('full-combat-sheet-modal');
   if (existing) existing.remove();
   const overlay = document.createElement('div');

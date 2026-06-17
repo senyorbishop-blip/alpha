@@ -16,19 +16,27 @@
     return 'edit_sheet';
   }
 
-  function setRootInactive(root, inactive) {
+  function setRootInactive(root, inactive, activeDisplay = '') {
     if (!root) return;
-    root.setAttribute('aria-hidden', inactive ? 'true' : 'false');
-    if ('inert' in root) root.inert = !!inactive;
-    root.classList.toggle('sheet-root-inactive', !!inactive);
+    const isInactive = !!inactive;
+    root.setAttribute('aria-hidden', isInactive ? 'true' : 'false');
+    if ('inert' in root) root.inert = isInactive;
+    root.hidden = isInactive;
+    root.classList.toggle('sheet-root-inactive', isInactive);
+    root.classList.remove('active', 'open');
+    if (!isInactive) root.classList.add('active');
+    root.style.display = isInactive ? 'none' : activeDisplay;
+    root.style.visibility = isInactive ? 'hidden' : 'visible';
+    root.style.pointerEvents = isInactive ? 'none' : 'auto';
   }
 
-  function cleanupCharacterSheetSurfaces(env, nextMode = 'closed') {
+  function closeAllCharacterSheetSurfaces(env, nextMode = 'closed') {
     const mode = normalizeSheetMode(nextMode);
     const doc = env.document;
     const panel = doc.getElementById('char-sheet-panel');
     const premiumRoot = doc.getElementById('cs-premium-mount');
     const oldRoots = [doc.getElementById('sheet-body')].filter(Boolean);
+    const sheetRoots = [premiumRoot].concat(oldRoots).filter(Boolean);
     const pages = Array.from(doc.querySelectorAll('#char-book-pages .sheet-page'));
     const activePage = mode === 'live_play_sheet' ? 'premiumsheet'
       : mode === 'import_review' ? 'import'
@@ -36,32 +44,35 @@
           : mode === 'edit_sheet' ? (env.getActiveCharBookPage && env.getActiveCharBookPage()) || 'identity'
             : '';
 
-    doc.querySelectorAll('#char-sheet-panel.open').forEach((node, idx) => {
-      if (idx > 0) node.classList.remove('open');
+    doc.querySelectorAll('.character-sheet-modal.active').forEach(node => {
+      if (node !== panel) setRootInactive(node, true);
+    });
+    doc.querySelectorAll('#char-sheet-panel.open, #char-sheet-panel.active').forEach((node, idx) => {
+      if (node !== panel || idx > 0) setRootInactive(node, true);
     });
     doc.querySelectorAll('.character-sheet-backdrop, .char-sheet-backdrop, .sheet-modal-backdrop').forEach(node => node.remove());
+    sheetRoots.forEach(root => setRootInactive(root, true));
 
     if (panel) {
       panel.dataset.sheetMode = mode;
+      setRootInactive(panel, mode === 'closed', 'flex');
       panel.classList.toggle('open', mode !== 'closed');
       panel.classList.toggle('active', mode !== 'closed');
-      setRootInactive(panel, mode === 'closed');
+      panel.style.zIndex = mode === 'closed' ? '' : '15600';
     }
 
     pages.forEach(pageEl => {
       const isActive = mode !== 'closed' && pageEl.dataset.page === activePage;
+      setRootInactive(pageEl, !isActive, 'flex');
       pageEl.classList.toggle('active', isActive);
-      pageEl.hidden = !isActive;
-      pageEl.style.display = isActive ? 'flex' : 'none';
-      setRootInactive(pageEl, !isActive);
     });
-    setRootInactive(premiumRoot, mode !== 'live_play_sheet');
-    oldRoots.forEach(root => setRootInactive(root, mode !== 'edit_sheet'));
+    setRootInactive(premiumRoot, mode !== 'live_play_sheet', 'block');
+    oldRoots.forEach(root => setRootInactive(root, true));
     if (env.setCharacterSheetMode) env.setCharacterSheetMode(mode);
   }
 
   function closeCharacterBook(env) {
-    cleanupCharacterSheetSurfaces(env, 'closed');
+    closeAllCharacterSheetSurfaces(env, 'closed');
   }
 
   function updateCharacterBookModeRibbon(env, page) {
@@ -99,7 +110,7 @@
     env.setActiveCharBookPage(page);
     pageEl.scrollIntoView({ behavior: instant ? 'auto' : 'smooth', block: 'nearest', inline: 'start' });
     updateCharacterBookTabs(env, page);
-    cleanupCharacterSheetSurfaces(env, modeForCharacterBookPage(page));
+    closeAllCharacterSheetSurfaces(env, modeForCharacterBookPage(page));
   }
 
   function handleCharacterBookScroll(env) {
@@ -115,7 +126,7 @@
   }
 
   function openCharacterBook(env, page = 'premiumsheet') {
-    cleanupCharacterSheetSurfaces(env, 'closed');
+    closeAllCharacterSheetSurfaces(env, 'closed');
     env.initCharacterBook();
     const charSheet = env.getCharSheet();
     if (charSheet && (Object.keys(charSheet.book || {}).length || (charSheet.name && charSheet.name !== 'Unknown Hero') || (charSheet.classes && charSheet.classes.length))) {
@@ -126,7 +137,7 @@
     env.syncCharSheetFromBookData(env.getCharacterBookDataFromUI());
     const panel = env.document.getElementById('char-sheet-panel');
     if (panel && panel.parentElement !== env.document.body) env.document.body.appendChild(panel);
-    cleanupCharacterSheetSurfaces(env, modeForCharacterBookPage(page));
+    closeAllCharacterSheetSurfaces(env, modeForCharacterBookPage(page));
     env.setCharacterBookSaveState('saved');
     goCharacterBookPage(env, page, true);
     try {
@@ -143,6 +154,7 @@
 
   function openCharacterLevelupPlanner(env) {
     if (env.getRole() !== 'player') return;
+    closeAllCharacterSheetSurfaces(env, 'closed');
     if (!(global.CharacterLevelupModal && typeof global.CharacterLevelupModal.open === 'function')) {
       env.showToast('Level Up Planner is still loading. Try again in a moment.');
       return;
@@ -222,7 +234,8 @@
   }
 
   global.AppUICharacterBook = {
-    cleanupCharacterSheetSurfaces,
+    closeAllCharacterSheetSurfaces,
+    cleanupCharacterSheetSurfaces: closeAllCharacterSheetSurfaces,
     closeCharacterBook,
     openCharacterBook,
     goCharacterBookPage,
