@@ -213,7 +213,7 @@
       ],
       "classMechanics": {
         "cantripsKnown": 4,
-        "spellsKnown": 2,
+        "spellsKnown": 3,
         "sorceryPoints": 2
       },
       "unlockIds": [
@@ -230,7 +230,7 @@
       ],
       "classMechanics": {
         "cantripsKnown": 4,
-        "spellsKnown": 3,
+        "spellsKnown": 4,
         "sorceryPoints": 3
       },
       "unlockIds": [
@@ -248,7 +248,7 @@
       "asiOrFeat": true,
       "classMechanics": {
         "cantripsKnown": 5,
-        "spellsKnown": 4,
+        "spellsKnown": 5,
         "sorceryPoints": 4
       },
       "unlockIds": [
@@ -264,7 +264,7 @@
       ],
       "classMechanics": {
         "cantripsKnown": 5,
-        "spellsKnown": 4,
+        "spellsKnown": 6,
         "sorceryPoints": 5
       },
       "unlockIds": [
@@ -279,7 +279,7 @@
       ],
       "classMechanics": {
         "cantripsKnown": 5,
-        "spellsKnown": 5,
+        "spellsKnown": 7,
         "sorceryPoints": 6
       },
       "unlockIds": [
@@ -293,8 +293,8 @@
         "Sorcery Incarnate"
       ],
       "classMechanics": {
-        "cantripsKnown": 5,
-        "spellsKnown": 6,
+        "cantripsKnown": 6,
+        "spellsKnown": 8,
         "sorceryPoints": 7
       },
       "unlockIds": [
@@ -309,8 +309,8 @@
       ],
       "asiOrFeat": true,
       "classMechanics": {
-        "cantripsKnown": 5,
-        "spellsKnown": 6,
+        "cantripsKnown": 6,
+        "spellsKnown": 9,
         "sorceryPoints": 8
       },
       "unlockIds": [
@@ -324,8 +324,8 @@
         "5th-level Spells"
       ],
       "classMechanics": {
-        "cantripsKnown": 5,
-        "spellsKnown": 7,
+        "cantripsKnown": 6,
+        "spellsKnown": 10,
         "sorceryPoints": 9
       },
       "unlockIds": [
@@ -341,7 +341,7 @@
       ],
       "classMechanics": {
         "cantripsKnown": 6,
-        "spellsKnown": 8,
+        "spellsKnown": 11,
         "sorceryPoints": 10
       },
       "unlockIds": [
@@ -356,8 +356,8 @@
         "6th-level Spells"
       ],
       "classMechanics": {
-        "cantripsKnown": 6,
-        "spellsKnown": 8,
+        "cantripsKnown": 7,
+        "spellsKnown": 12,
         "sorceryPoints": 11
       },
       "unlockIds": [
@@ -372,8 +372,8 @@
       ],
       "asiOrFeat": true,
       "classMechanics": {
-        "cantripsKnown": 6,
-        "spellsKnown": 9,
+        "cantripsKnown": 7,
+        "spellsKnown": 12,
         "sorceryPoints": 12
       },
       "unlockIds": [
@@ -387,8 +387,8 @@
         "7th-level Spells"
       ],
       "classMechanics": {
-        "cantripsKnown": 6,
-        "spellsKnown": 10,
+        "cantripsKnown": 7,
+        "spellsKnown": 13,
         "sorceryPoints": 13
       },
       "unlockIds": [
@@ -402,8 +402,8 @@
         "Subclass Feature"
       ],
       "classMechanics": {
-        "cantripsKnown": 6,
-        "spellsKnown": 10,
+        "cantripsKnown": 7,
+        "spellsKnown": 13,
         "sorceryPoints": 14
       },
       "unlockIds": [
@@ -418,8 +418,8 @@
         "Subclass Feature"
       ],
       "classMechanics": {
-        "cantripsKnown": 6,
-        "spellsKnown": 11,
+        "cantripsKnown": 7,
+        "spellsKnown": 14,
         "sorceryPoints": 15
       },
       "unlockIds": [
@@ -435,8 +435,8 @@
       ],
       "asiOrFeat": true,
       "classMechanics": {
-        "cantripsKnown": 6,
-        "spellsKnown": 12,
+        "cantripsKnown": 7,
+        "spellsKnown": 14,
         "sorceryPoints": 16
       },
       "unlockIds": [
@@ -451,8 +451,8 @@
         "Metamagic (4th option)"
       ],
       "classMechanics": {
-        "cantripsKnown": 6,
-        "spellsKnown": 12,
+        "cantripsKnown": 7,
+        "spellsKnown": 15,
         "sorceryPoints": 17
       },
       "unlockIds": [
@@ -467,8 +467,8 @@
         "Arcane Apotheosis"
       ],
       "classMechanics": {
-        "cantripsKnown": 6,
-        "spellsKnown": 13,
+        "cantripsKnown": 7,
+        "spellsKnown": 15,
         "sorceryPoints": 18
       },
       "unlockIds": [
@@ -483,8 +483,8 @@
       ],
       "asiOrFeat": true,
       "classMechanics": {
-        "cantripsKnown": 6,
-        "spellsKnown": 14,
+        "cantripsKnown": 7,
+        "spellsKnown": 15,
         "sorceryPoints": 19
       },
       "unlockIds": [
@@ -498,7 +498,7 @@
         "Arcane Apotheosis (Improved)"
       ],
       "classMechanics": {
-        "cantripsKnown": 6,
+        "cantripsKnown": 7,
         "spellsKnown": 15,
         "sorceryPoints": 20
       },
