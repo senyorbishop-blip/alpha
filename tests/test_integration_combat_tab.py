@@ -417,3 +417,87 @@ def test_combat_attack_request_broadcasts_pending_attack(monkeypatch):
 
     # Should produce at least one broadcast or sent message
     assert len(broadcasts) > 0 or len(sent) > 0
+
+# ---------------------------------------------------------------------------
+# mid-combat initiative changes
+# ---------------------------------------------------------------------------
+
+def test_combat_add_token_mid_fight_preserves_current_turn_and_rejects_hidden_staged(monkeypatch):
+    from server.handlers import combat as ch
+    from server.session import Token
+    session, dm, player = _make_session_with_combat()
+    broadcasts, sent = _noop_broadcasts(monkeypatch)
+
+    async def _save(_):
+        return True
+
+    monkeypatch.setattr(ch, "save_campaign_async", _save)
+    session.dm_map_context = "world"
+    session.combat["turn"] = 1  # Wolf is current
+    session.tokens["reinforce"] = Token(
+        id="reinforce", name="Goblin", x=300, y=200, width=40, height=40,
+        color="#0f0", shape="circle", owner_id=None, hp=7, max_hp=7,
+        initiative_mod=2, token_type="monster", map_context="world",
+    )
+
+    asyncio.run(ch.handle_combat_add_token({"token_id": "reinforce", "map_context": "world", "initiative": 15}, session, dm))
+
+    assert any(c.get("token_id") == "reinforce" for c in session.combat["combatants"])
+    assert session.combat["combatants"][session.combat["turn"]]["token_id"] == "tok2"
+    assert session.combat["active"] is True
+    assert next(c for c in session.combat["combatants"] if c.get("token_id") == "reinforce").get("hp") == 7
+    assert any(msg["type"] == "combat_state" for _, msg, _ in broadcasts)
+
+    session.tokens["secret"] = Token(
+        id="secret", name="Secret", x=0, y=0, width=40, height=40,
+        color="#000", shape="circle", owner_id=None, hidden=True, map_context="world",
+    )
+    asyncio.run(ch.handle_combat_add_token({"token_id": "secret", "map_context": "world"}, session, dm))
+    assert not any(c.get("token_id") == "secret" for c in session.combat["combatants"])
+
+    session.tokens["staged"] = Token(
+        id="staged", name="Staged", x=0, y=0, width=40, height=40,
+        color="#000", shape="circle", owner_id=None, staged=True, map_context="world",
+    )
+    asyncio.run(ch.handle_combat_add_token({"token_id": "staged", "map_context": "world"}, session, dm))
+    assert not any(c.get("token_id") == "staged" for c in session.combat["combatants"])
+
+
+def test_combat_add_token_requires_current_map_server_side(monkeypatch):
+    from server.handlers import combat as ch
+    from server.session import Token
+    session, dm, player = _make_session_with_combat()
+    broadcasts, sent = _noop_broadcasts(monkeypatch)
+
+    async def _save(_):
+        return True
+
+    monkeypatch.setattr(ch, "save_campaign_async", _save)
+    session.tokens["crypt-monster"] = Token(
+        id="crypt-monster", name="Crypt Ghoul", x=0, y=0, width=40, height=40,
+        color="#777", shape="circle", owner_id=None, token_type="monster", map_context="crypt",
+    )
+
+    asyncio.run(ch.handle_combat_add_token({"token_id": "crypt-monster", "map_context": "world"}, session, dm))
+
+    assert not any(c.get("token_id") == "crypt-monster" for c in session.combat["combatants"])
+    assert any(msg["type"] == "error" and "current map" in msg["payload"]["message"] for _, _, msg in sent)
+
+
+def test_combat_remove_combatant_without_ending_combat(monkeypatch):
+    from server.handlers import combat as ch
+    session, dm, player = _make_session_with_combat()
+    broadcasts, sent = _noop_broadcasts(monkeypatch)
+
+    async def _save(_):
+        return True
+
+    monkeypatch.setattr(ch, "save_campaign_async", _save)
+    session.combat["turn"] = 1
+
+    asyncio.run(ch.handle_combat_remove_combatant({"combatant_id": "c1"}, session, dm))
+
+    assert session.combat["active"] is True
+    assert [c.get("id") for c in session.combat["combatants"]] == ["c2"]
+    assert session.combat["turn"] == 0
+    assert any(msg["type"] == "combat_state" for _, msg, _ in broadcasts)

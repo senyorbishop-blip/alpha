@@ -392,6 +392,115 @@ async def _advance_combat_turn(session: Session):
     return True
 
 
+def _combatant_from_token(session: Session, token, *, initiative=None, roll=None, modifier=None) -> dict:
+    init_mod = _safe_int(modifier, _safe_int(getattr(token, "initiative_mod", 0), 0, minimum=-99, maximum=99), minimum=-99, maximum=99)
+    init_value = None if initiative is None else _safe_int(initiative, 0, minimum=-99, maximum=99)
+    return {
+        "id": f"cmb-{getattr(token, 'id', '')}-{int(_time.time() * 1000)}",
+        "token_id": getattr(token, "id", ""),
+        "name": getattr(token, "name", "Token") or "Token",
+        "color": getattr(token, "color", "#888888") or "#888888",
+        "initiative": init_value,
+        "roll": roll,
+        "modifier": init_mod,
+        "hp": getattr(token, "hp", None),
+        "max_hp": getattr(token, "max_hp", None),
+        "speed": getattr(token, "speed", None),
+        "is_player": bool(getattr(token, "owner_id", None)),
+        "owner_id": getattr(token, "owner_id", None) or None,
+        "map_context": str(getattr(token, "map_context", "world") or "world"),
+    }
+
+
+def _sort_combatants_preserving_turn(combat: dict) -> None:
+    coms = combat.get("combatants") or []
+    old_turn = _safe_int(combat.get("turn"), 0, minimum=0, maximum=max(0, len(coms) - 1))
+    current_id = None
+    if 0 <= old_turn < len(coms):
+        current_id = str((coms[old_turn] or {}).get("id") or "")
+    coms.sort(key=lambda x: (x.get("initiative") if x.get("initiative") is not None else -99), reverse=True)
+    if current_id:
+        for idx, combatant in enumerate(coms):
+            if str((combatant or {}).get("id") or "") == current_id:
+                combat["turn"] = idx
+                break
+
+
+async def handle_combat_add_token(payload: dict, session: Session, user: User):
+    """DM adds one visible current-map token to the active initiative order."""
+    if user.role != "dm":
+        return
+    combat = getattr(session, "combat", None) or {}
+    if not combat.get("active"):
+        await manager.send_to(session.id, user.id, {"type": "error", "payload": {"message": "Combat is not active."}})
+        return
+    token_id = str(payload.get("token_id") or "").strip()
+    token = session.tokens.get(token_id) if token_id else None
+    if token is None:
+        await manager.send_to(session.id, user.id, {"type": "error", "payload": {"message": "Token not found."}})
+        return
+    if bool(getattr(token, "hidden", False)) or bool(getattr(token, "staged", False)):
+        await manager.send_to(session.id, user.id, {"type": "error", "payload": {"message": "Hidden or staged tokens cannot be added to initiative."}})
+        return
+    token_map = str(getattr(token, "map_context", "world") or "world")[:80] or "world"
+    current_map = str(payload.get("map_context") or getattr(session, "dm_map_context", "world") or "world")[:80] or "world"
+    if token_map != current_map:
+        await manager.send_to(session.id, user.id, {"type": "error", "payload": {"message": "Token is not on the current map."}})
+        return
+    coms = combat.get("combatants") if isinstance(combat.get("combatants"), list) else []
+    if any(str((c or {}).get("token_id") or "") == token_id for c in coms):
+        await manager.send_to(session.id, user.id, {"type": "error", "payload": {"message": "Token is already in initiative."}})
+        return
+    combat["combatants"] = coms
+    combat["active"] = True
+    combat.setdefault("turn", 0)
+    combat.setdefault("round", 1)
+    combatant = _combatant_from_token(session, token, initiative=payload.get("initiative"), roll=payload.get("roll"), modifier=payload.get("modifier"))
+    coms.append(combatant)
+    if combatant.get("initiative") is not None:
+        _sort_combatants_preserving_turn(combat)
+    session.combat = combat
+    _ensure_combat_movement_state(session, reset=False)
+    session.add_log(f"{getattr(token, 'name', 'Token')} joined the initiative order.", "combat", user.name)
+    await save_campaign_async(session)
+    await _broadcast_combat(session)
+
+
+async def handle_combat_remove_combatant(payload: dict, session: Session, user: User):
+    """DM removes one combatant without ending combat."""
+    if user.role != "dm":
+        return
+    combat = getattr(session, "combat", None) or {}
+    coms = combat.get("combatants") if isinstance(combat.get("combatants"), list) else []
+    combatant_id = str(payload.get("combatant_id") or "").strip()
+    token_id = str(payload.get("token_id") or "").strip()
+    old_turn = _safe_int(combat.get("turn"), 0, minimum=0, maximum=max(0, len(coms) - 1))
+    current_id = str((coms[old_turn] or {}).get("id") or "") if 0 <= old_turn < len(coms) else ""
+    remove_idx = -1
+    for idx, combatant in enumerate(coms):
+        if combatant_id and str((combatant or {}).get("id") or "") == combatant_id:
+            remove_idx = idx; break
+        if token_id and str((combatant or {}).get("token_id") or "") == token_id:
+            remove_idx = idx; break
+    if remove_idx < 0:
+        return
+    removed = coms.pop(remove_idx)
+    combat["combatants"] = coms
+    if not coms:
+        combat["turn"] = 0
+        combat["movement"] = {}
+    elif str((removed or {}).get("id") or "") == current_id:
+        combat["turn"] = min(remove_idx, len(coms) - 1)
+        _ensure_combat_movement_state(session, reset=True)
+    else:
+        combat["turn"] = max(0, old_turn - 1) if remove_idx < old_turn else min(old_turn, len(coms) - 1)
+        _ensure_combat_movement_state(session, reset=False)
+    session.combat = combat
+    session.add_log(f"{(removed or {}).get('name') or 'Combatant'} left the initiative order.", "combat", user.name)
+    await save_campaign_async(session)
+    await _broadcast_combat(session)
+
+
 async def handle_combat_update(payload: dict, session: Session, user: User):
     """DM sets full combatant list (add/remove/reorder/edit initiative)."""
     if user.role != "dm":
