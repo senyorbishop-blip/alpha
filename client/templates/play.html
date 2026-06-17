@@ -18459,6 +18459,144 @@ function shouldRenderTokenLabelAt(worldX, worldY) {
   return false;
 }
 
+
+function _tokenBadgeReadableFontPx(screenPx, minWorldPx = 7) {
+  const zoom = Math.max(0.25, Number(cam?.zoom) || 1);
+  return Math.max(minWorldPx, screenPx / zoom);
+}
+
+function _tokenBadgeMeasurePill(text, options = {}) {
+  const label = String(text ?? '').trim();
+  const fontWeight = options.weight || '700';
+  const fontPx = options.fontPx || _tokenBadgeReadableFontPx(11);
+  const padX = options.padX ?? Math.max(4 / Math.max(Number(cam?.zoom) || 1, 0.25), 4);
+  const padY = options.padY ?? Math.max(2 / Math.max(Number(cam?.zoom) || 1, 0.25), 2);
+  ctx.save();
+  ctx.font = `${fontWeight} ${fontPx}px ${options.family || 'system-ui, sans-serif'}`;
+  const textW = ctx.measureText(label).width;
+  ctx.restore();
+  return {
+    text: label,
+    font: `${fontWeight} ${fontPx}px ${options.family || 'system-ui, sans-serif'}`,
+    fontPx,
+    width: Math.ceil(textW + padX * 2),
+    height: Math.ceil(fontPx + padY * 2),
+    padX,
+    padY,
+    fill: options.fill || 'rgba(16,18,22,0.88)',
+    stroke: options.stroke || 'rgba(255,255,255,0.24)',
+    color: options.color || '#f5ead6',
+    radius: options.radius ?? Math.max(5 / Math.max(Number(cam?.zoom) || 1, 0.25), 4),
+    priority: options.priority || 0,
+  };
+}
+
+function _tokenBadgeTruncateText(text, maxWidth, font) {
+  const raw = String(text ?? '').trim();
+  if (!raw) return '';
+  ctx.save();
+  ctx.font = font;
+  if (ctx.measureText(raw).width <= maxWidth) { ctx.restore(); return raw; }
+  let out = raw;
+  while (out.length > 3 && ctx.measureText(`${out.slice(0, -1)}…`).width > maxWidth) out = out.slice(0, -1);
+  ctx.restore();
+  return out.length > 3 ? `${out.slice(0, -1)}…` : raw.slice(0, 3);
+}
+
+function layoutTokenBadges(token, renderContext = {}) {
+  const zoom = Math.max(0.25, Number(cam?.zoom) || 1);
+  const gap = Math.max(3 / zoom, 3);
+  const cx = token.x + token.width / 2;
+  const topEdge = token.y;
+  const bottomEdge = token.y + token.height;
+  const canSeeVitals = renderContext.canSeeVitals !== false;
+  const isPlayerOwned = !!token.owner_id || token.token_type === 'player';
+  const rowsAbove = [];
+  const rowsBelow = [];
+
+  if (renderContext.turnLabel) {
+    const isNow = renderContext.turnLabel === 'NOW';
+    rowsAbove.push(_tokenBadgeMeasurePill(renderContext.turnLabel, {
+      fontPx: _tokenBadgeReadableFontPx(12, 8),
+      fill: isNow ? 'rgba(60,40,0,0.94)' : 'rgba(20,30,50,0.94)',
+      stroke: isNow ? 'rgba(255,215,0,0.92)' : 'rgba(180,200,220,0.82)',
+      color: isNow ? '#ffe27a' : '#cce0f5',
+      priority: 100,
+    }));
+  }
+  if (canSeeVitals && token.ac !== undefined && token.ac !== null && `${token.ac}` !== '') {
+    rowsAbove.push(_tokenBadgeMeasurePill(`AC ${token.ac}`, {
+      fontPx: _tokenBadgeReadableFontPx(11, 7),
+      fill: 'rgba(16,20,28,0.92)',
+      stroke: 'rgba(125,211,252,0.62)',
+      color: '#d9f4ff',
+      priority: 80,
+    }));
+  }
+  if (renderContext.showHpText && token.hp !== undefined && token.maxHp) {
+    const tempHp = Math.max(0, parseInt(token.tempHp ?? 0, 10) || 0);
+    const shownCur = Math.max(0, parseInt(token.hp ?? 0, 10) || 0) + tempHp;
+    const shownMax = Math.max(1, parseInt(token.maxHp ?? 0, 10) || 1) + tempHp;
+    rowsAbove.push(_tokenBadgeMeasurePill(`HP ${shownCur}/${shownMax}`, {
+      fontPx: _tokenBadgeReadableFontPx(10, 7),
+      fill: 'rgba(12,24,18,0.92)',
+      stroke: 'rgba(46,204,113,0.55)',
+      color: '#d9ffe6',
+      priority: 60,
+    }));
+  }
+
+  const nameFontPx = _tokenBadgeReadableFontPx(12, 8);
+  const nameMaxW = Math.max(token.width * 2.4, 72 / zoom);
+  const nameFont = `700 ${nameFontPx}px Cinzel, serif`;
+  const safeName = _tokenBadgeTruncateText(token.name || 'Token', nameMaxW, nameFont);
+  rowsBelow.push(_tokenBadgeMeasurePill(safeName, { fontPx: nameFontPx, family: 'Cinzel, serif', fill: 'rgba(8,10,14,0.78)', stroke: 'rgba(255,255,255,0.18)', color: '#ffffff', priority: 50 }));
+  rowsBelow.push(_tokenBadgeMeasurePill(isPlayerOwned ? 'PC' : 'NPC', {
+    fontPx: _tokenBadgeReadableFontPx(10, 7),
+    fill: 'rgba(16,18,22,0.86)',
+    stroke: isPlayerOwned ? 'rgba(0,229,204,0.5)' : 'rgba(255,121,87,0.5)',
+    color: isPlayerOwned ? '#9ff6ea' : '#ffc0aa',
+    priority: 40,
+  }));
+
+  let y = topEdge - Math.max(5 / zoom, 5);
+  for (let i = rowsAbove.length - 1; i >= 0; i -= 1) {
+    const row = rowsAbove[i];
+    row.x = cx - row.width / 2;
+    row.y = y - row.height;
+    y = row.y - gap;
+  }
+  y = bottomEdge + Math.max(6 / zoom, 6);
+  rowsBelow.forEach(row => {
+    row.x = cx - row.width / 2;
+    row.y = y;
+    y = row.y + row.height + gap;
+  });
+  return { above: rowsAbove, below: rowsBelow, all: rowsAbove.concat(rowsBelow), gap };
+}
+
+function drawTokenBadgeRows(layout) {
+  if (!layout || !Array.isArray(layout.all)) return;
+  layout.all.forEach(row => {
+    if (!row || !row.text) return;
+    ctx.save();
+    ctx.shadowBlur = 0;
+    ctx.font = row.font;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = row.fill;
+    ctx.strokeStyle = row.stroke;
+    ctx.lineWidth = Math.max(1 / Math.max(Number(cam?.zoom) || 1, 0.25), 0.75);
+    ctx.beginPath();
+    ctx.roundRect(row.x, row.y, row.width, row.height, row.radius);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = row.color;
+    ctx.fillText(row.text, row.x + row.width / 2, row.y + row.height / 2 + 0.2 / Math.max(Number(cam?.zoom) || 1, 0.25));
+    ctx.restore();
+  });
+}
+
 function drawToken(t) {
   const sx = t.x, sy = t.y;
   const canMove = canMoveToken(t);
@@ -18525,29 +18663,8 @@ function drawToken(t) {
     ctx.lineWidth   = 1.5 / cam.zoom;
     ctx.stroke();
 
-    // Small turn label above the token, but only if the token itself is visible to this client
-    if (ROLE === 'dm' || !isHidden) {
-      const label = 'NOW';
-      ctx.font = `${Math.max(11, 13 / cam.zoom)}px system-ui, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const padX = 6 / cam.zoom, padY = 3 / cam.zoom;
-      const textW = ctx.measureText(label).width;
-      const boxW = textW + padX * 2;
-      const boxH = 16 / cam.zoom;
-      const by = sy - (18 / cam.zoom) - boxH;
-      const bx = cx - boxW / 2;
+    // Turn labels are rendered by layoutTokenBadges() after token art so they stack above AC/HP.
 
-      ctx.fillStyle = 'rgba(20,18,10,0.92)';
-      ctx.strokeStyle = 'rgba(255,215,0,0.95)';
-      ctx.lineWidth = 1.25 / cam.zoom;
-      ctx.beginPath();
-      ctx.roundRect(bx, by, boxW, boxH, 6 / cam.zoom);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#ffe27a';
-      ctx.fillText(label, cx, by + boxH / 2);
-    }
 
     ctx.restore();
   }
@@ -18563,28 +18680,8 @@ function drawToken(t) {
     ctx.strokeStyle = 'rgba(180,200,220,0.65)';
     ctx.lineWidth = 2 / cam.zoom;
     ctx.stroke();
-    // NEXT label above the token
-    if (ROLE === 'dm' || !isHidden) {
-      const label = 'NEXT';
-      ctx.font = `${Math.max(11, 13 / cam.zoom)}px system-ui, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const padX = 6 / cam.zoom, padY = 3 / cam.zoom;
-      const textW = ctx.measureText(label).width;
-      const boxW = textW + padX * 2;
-      const boxH = 16 / cam.zoom;
-      const by = sy - (18 / cam.zoom) - boxH;
-      const bx = nx - boxW / 2;
-      ctx.fillStyle = 'rgba(20,28,38,0.92)';
-      ctx.strokeStyle = 'rgba(180,200,220,0.8)';
-      ctx.lineWidth = 1.2 / cam.zoom;
-      ctx.beginPath();
-      ctx.roundRect(bx, by, boxW, boxH, 6 / cam.zoom);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#cce0f5';
-      ctx.fillText(label, nx, by + boxH / 2);
-    }
+    // NEXT labels are rendered by layoutTokenBadges() after token art so they stack above AC/HP.
+
     ctx.restore();
   }
 
@@ -18696,44 +18793,22 @@ function drawToken(t) {
     }
   }
 
-  const compactTopOffset = showHpBar ? (Math.max(4 / cam.zoom, isOwnToken ? 7 / cam.zoom : 5 / cam.zoom) + 7 / cam.zoom) : 6 / cam.zoom;
-  const compactBadgeH = 14 / cam.zoom;
-  const compactBadgeGap = 3 / cam.zoom;
-
-  const showCompactAc = (ROLE === 'dm' || isOwnToken) && t.ac !== undefined && t.ac !== null && `${t.ac}` !== '';
-  let compactBadgeRow = 0;
-
-  if (showCompactAc) {
-    const badgeText = `AC ${t.ac}`;
-    const fontPx = Math.max(8, 10 / cam.zoom);
-    ctx.save();
-    ctx.font = `bold ${fontPx}px system-ui, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const padX = 5 / cam.zoom;
-    const textW = ctx.measureText(badgeText).width;
-    const boxW = textW + padX * 2;
-    const bx = sx + t.width / 2 - boxW / 2;
-    const by = sy - compactTopOffset - compactBadgeH - (compactBadgeRow * (compactBadgeH + compactBadgeGap));
-    ctx.fillStyle = 'rgba(16,20,28,0.9)';
-    ctx.strokeStyle = 'rgba(125,211,252,0.55)';
-    ctx.lineWidth = 1 / cam.zoom;
-    ctx.beginPath();
-    ctx.roundRect(bx, by, boxW, compactBadgeH, 5 / cam.zoom);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = '#d9f4ff';
-    ctx.fillText(badgeText, sx + t.width / 2, by + compactBadgeH / 2);
-    ctx.restore();
-  }
+  const canSeeVitals = ROLE === 'dm' || isOwnToken;
+  const tokenBadgeLayout = layoutTokenBadges(t, {
+    turnLabel: _isActiveTurn ? 'NOW' : (_isNextTurn ? 'NEXT' : ''),
+    canSeeVitals,
+    showHpText: showHpBar,
+  });
 
   const activeEmote = (window.AppUITokenEmotes && typeof window.AppUITokenEmotes.getRenderState === 'function')
     ? window.AppUITokenEmotes.getRenderState(String(t.id || ''))
     : null;
   if (activeEmote && Number(activeEmote.expiresAt || 0) > Date.now()) {
     const progress = Math.max(0, Math.min(1, Number(activeEmote.progress ?? 0)));
+    const topRows = tokenBadgeLayout.above || [];
+    const topY = topRows.length ? Math.min(...topRows.map(row => row.y)) : (sy - Math.max(6 / cam.zoom, 6));
     const lift = (1 - progress) * (20 / cam.zoom);
-    const bubbleY = sy - compactTopOffset - compactBadgeH - 12 / cam.zoom - lift;
+    const bubbleY = topY - Math.max(22 / cam.zoom, 18) - lift;
     const bubbleX = sx + t.width / 2;
     const labelText = String(activeEmote.label || '');
     ctx.save();
@@ -18768,101 +18843,7 @@ function drawToken(t) {
     ctx.restore();
   }
 
-  const showEmoteActivator = ROLE === 'player' && String(t.owner_id || '') === String(USER_ID || '');
-  if (showEmoteActivator) {
-    const activator = _getTokenEmoteActivatorMetrics(t);
-    if (activator) {
-      ctx.save();
-      ctx.fillStyle = 'rgba(9,12,18,0.92)';
-      ctx.strokeStyle = (_tokenEmotePalette.open && String(_tokenEmotePalette.tokenId || '') === String(t.id || ''))
-        ? 'rgba(0,229,204,0.95)'
-        : 'rgba(0,229,204,0.42)';
-      ctx.lineWidth = 1.2 / cam.zoom;
-      ctx.beginPath();
-      ctx.arc(activator.x, activator.y, activator.r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.font = `${Math.max(9, 11 / cam.zoom)}px system-ui, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText('✦', activator.x, activator.y + 0.25 / cam.zoom);
-      ctx.restore();
-    }
-    if (_tokenEmotePalette.open && String(_tokenEmotePalette.tokenId || '') === String(t.id || '')) {
-      const items = _getTokenEmotePaletteMetrics(t);
-      items.forEach(item => {
-        ctx.save();
-        ctx.fillStyle = 'rgba(9,12,18,0.94)';
-        ctx.strokeStyle = `${item.def?.accent || '#ffffff'}cc`;
-        ctx.lineWidth = 1.1 / cam.zoom;
-        ctx.beginPath();
-        ctx.roundRect(item.x, item.y, item.size, item.size, 6 / cam.zoom);
-        ctx.fill();
-        ctx.stroke();
-        ctx.font = `${Math.max(9, 11 / cam.zoom)}px system-ui, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(String(item.def?.icon || ''), item.x + item.size / 2, item.y + item.size / 2 + 0.2 / cam.zoom);
-        ctx.restore();
-      });
-    }
-  }
-
-  // Name label
-  const labelY = sy + t.height + 14 / cam.zoom;
-  if (shouldRenderTokenLabelAt(sx + t.width / 2, labelY)) {
-    ctx.fillStyle = '#fff';
-    ctx.font = `${12 / cam.zoom}px Cinzel, serif`;
-    ctx.textAlign = 'center';
-    ctx.fillText(t.name, sx + t.width / 2, labelY);
-  }
-
-  // ── Combat initiative order badge + type tag (shown during active combat) ──
-  if (_combat.active && _initiativeIdx >= 0) {
-    const _isPlayerOwned = !!t.owner_id || t.token_type === 'player';
-    const _typeTag = _isPlayerOwned ? 'PC' : 'NPC';
-    const _typeColor = _isPlayerOwned ? '#9ff6ea' : '#ffc0aa';
-    const _orderText = _isActiveTurn ? 'NOW' : _isNextTurn ? 'NEXT' : `#${_initiativeIdx + 1}`;
-    const _orderColor = _isActiveTurn ? '#ffe27a' : _isNextTurn ? '#cce0f5' : 'rgba(245,234,214,0.75)';
-    const _orderBgColor = _isActiveTurn ? 'rgba(60,40,0,0.9)' : _isNextTurn ? 'rgba(20,30,50,0.9)' : 'rgba(16,18,22,0.85)';
-    const _orderBorderColor = _isActiveTurn ? 'rgba(255,215,0,0.8)' : _isNextTurn ? 'rgba(180,200,220,0.7)' : 'rgba(255,255,255,0.2)';
-    const badgeY = labelY + 13 / cam.zoom;
-    const badgeFontPx = Math.max(9, 10 / cam.zoom);
-    ctx.save();
-    ctx.font = `bold ${badgeFontPx}px system-ui, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    // Order badge (left)
-    const orderW = ctx.measureText(_orderText).width + 8 / cam.zoom;
-    const badgeH = 13 / cam.zoom;
-    const totalW = orderW + 5 / cam.zoom + ctx.measureText(_typeTag).width + 8 / cam.zoom;
-    const startX = sx + t.width / 2 - totalW / 2;
-    // Draw order badge
-    ctx.fillStyle = _orderBgColor;
-    ctx.strokeStyle = _orderBorderColor;
-    ctx.lineWidth = 1 / cam.zoom;
-    ctx.beginPath();
-    ctx.roundRect(startX, badgeY - badgeH / 2, orderW, badgeH, 4 / cam.zoom);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = _orderColor;
-    ctx.fillText(_orderText, startX + orderW / 2, badgeY);
-    // Draw type badge (right)
-    const typeX = startX + orderW + 5 / cam.zoom;
-    const typeW = ctx.measureText(_typeTag).width + 8 / cam.zoom;
-    ctx.fillStyle = 'rgba(16,18,22,0.85)';
-    ctx.strokeStyle = _isPlayerOwned ? 'rgba(0,229,204,0.45)' : 'rgba(255,121,87,0.45)';
-    ctx.lineWidth = 1 / cam.zoom;
-    ctx.beginPath();
-    ctx.roundRect(typeX, badgeY - badgeH / 2, typeW, badgeH, 4 / cam.zoom);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = _typeColor;
-    ctx.fillText(_typeTag, typeX + typeW / 2, badgeY);
-    ctx.restore();
-  }
+  drawTokenBadgeRows(tokenBadgeLayout);
 
   // Encumbrance map icon for player-owned tokens.
   // Light: ⚖ amber, Heavy: ⚖ red, Over-capacity: 🚫 red.
@@ -18910,7 +18891,11 @@ function drawToken(t) {
     const spacing = badgeR * 2.4;
     const totalW  = _conds.length * spacing - (spacing - badgeR * 2);
     let bx = sx + t.width / 2 - totalW / 2 + badgeR;
-    const by = sy - badgeR - 4 / cam.zoom;
+    const belowRows = (tokenBadgeLayout && tokenBadgeLayout.below) || [];
+    const stackBottom = belowRows.length
+      ? Math.max(...belowRows.map(row => row.y + row.height))
+      : (sy + t.height);
+    const by = stackBottom + Math.max(badgeR + 5 / cam.zoom, badgeR + 4);
     _conds.forEach(condId => {
       const def = CONDITIONS_MAP[condId];
       if (!def) { bx += spacing; return; }
