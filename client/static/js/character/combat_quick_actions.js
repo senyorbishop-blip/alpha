@@ -58,7 +58,7 @@
   }
 
   function _baseSpellLevel(spell) {
-    const raw = spell && (spell.level ?? spell.spell_level ?? (spell.card && (spell.card.level ?? spell.card.spell_level)));
+    const raw = spell && (spell.baseLevel ?? spell.base_level ?? spell.spell_level ?? (spell.card && (spell.card.level ?? spell.card.spell_level)) ?? spell.level);
     if (raw === null || raw === undefined || raw === '') return null;
     const n = Number(raw);
     return Number.isFinite(n) ? Math.max(0, Math.min(9, Math.floor(n))) : null;

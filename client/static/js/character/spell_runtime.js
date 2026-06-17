@@ -151,8 +151,8 @@
                            scaling_type:'slot_damage', scaling_data:{ base_slot:6, base_formula:'10d6 + 40', per_slot_formula:'3d6' } },
     'sunbeam':           { level:6, savingThrow:'CON', damageFormula:'6d8', damageType:'radiant', concentration:true,
                            scaling_type:'slot_damage', scaling_data:{ base_slot:6, base_formula:'6d8', per_slot_formula:'0' } },
-    'chain-lightning':   { level:6, attackType:'ranged-spell', damageFormula:'10d8', damageType:'lightning',
-                           scaling_type:'slot_damage', scaling_data:{ base_slot:6, base_formula:'10d8', per_slot_formula:'1d8' } },
+    'chain-lightning':   { level:6, savingThrow:'DEX', damageFormula:'10d8', damageType:'lightning',
+                           scaling_type:'extra_target_per_slot', scaling_data:{ base_slot:6, base_formula:'10d8', base_targets:4, per_slot:1 } },
 
     /* ── 7th-level spells ────────────────────────────────────────────────── */
     'delayed-blast-fireball':{ level:7, savingThrow:'DEX', damageFormula:'12d6', damageType:'fire',
@@ -165,6 +165,8 @@
                            scaling_type:'slot_damage', scaling_data:{ base_slot:8, base_formula:'12d6', per_slot_formula:'0' } },
     'incendiary-cloud':  { level:8, savingThrow:'DEX', damageFormula:'10d8', damageType:'fire', concentration:true,
                            scaling_type:'slot_damage', scaling_data:{ base_slot:8, base_formula:'10d8', per_slot_formula:'0' } },
+
+    'power-word-stun':  { level:8 },
 
     /* ── 9th-level spells ────────────────────────────────────────────────── */
     'meteor-swarm':      { level:9, savingThrow:'DEX', damageFormula:'20d6 fire + 20d6 bludgeoning', damageType:'fire',
@@ -481,6 +483,112 @@
   }
 
 
+  function _slotCountsFromRuntime(characterRuntime) {
+    var rt = obj(characterRuntime);
+    var raw = rt.spellSlots || (rt.limits && rt.limits.spellSlots) || (rt.manifest && rt.manifest.limits && rt.manifest.limits.spellSlots) || [];
+    var out = {};
+    if (Array.isArray(raw)) raw.forEach(function (count, idx) { if (idx > 0 && num(count, 0) > 0) out[idx] = num(count, 0); });
+    else Object.keys(obj(raw)).forEach(function (key) { var m = String(key).match(/([1-9])/); var lvl = m ? num(m[1], 0) : 0; var count = num(raw[key], 0); if (lvl > 0 && count > 0) out[lvl] = count; });
+    if (!Object.keys(out).length) {
+      var level = num(first(rt.totalLevel, rt.level, rt.characterLevel), 1);
+      var table = {1:[0,2],2:[0,3],3:[0,4,2],4:[0,4,3],5:[0,4,3,2],6:[0,4,3,3],7:[0,4,3,3,1],8:[0,4,3,3,2],9:[0,4,3,3,3,1],10:[0,4,3,3,3,2],11:[0,4,3,3,3,2,1],13:[0,4,3,3,3,2,1,1],15:[0,4,3,3,3,2,1,1,1],17:[0,4,3,3,3,2,1,1,1,1]};
+      var chosen = 1; Object.keys(table).map(Number).sort(function(a,b){return a-b;}).forEach(function(k){ if(level>=k) chosen=k; });
+      (table[chosen] || []).forEach(function(count, idx){ if(idx>0 && count>0) out[idx]=count; });
+    }
+    return out;
+  }
+
+  function _libraryLookup(spellLibrary) {
+    var map = {};
+    (Array.isArray(spellLibrary) ? spellLibrary : []).forEach(function (row) {
+      if (!row) return;
+      [_slug(row.id), _slug(row.spellId), _slug(row.slug), _slug(row.name), _slug(row.displayName)].forEach(function (key) { if (key && !map[key]) map[key] = row; });
+    });
+    return map;
+  }
+
+  function _knownSpellManifest(knownSpellManifest) {
+    return (Array.isArray(knownSpellManifest) ? knownSpellManifest : []).map(function (row, idx) {
+      row = obj(row);
+      var name = first(row.name, row.displayName, row.id, row.spellId, 'Spell');
+      var spellId = first(row.spellId, row.id, _slug(name));
+      return Object.assign({}, row, {
+        spellId: spellId,
+        id: first(row.id, spellId),
+        name: name,
+        baseLevel: row.baseLevel !== undefined ? row.baseLevel : (row.level !== undefined ? row.level : row.spell_level),
+        source: first(row.source, row.sourceName, row.__source, 'Spellbook'),
+        sourceType: first(row.sourceType, row.source_type, row.usesCharges ? 'item' : (row.limitedUse ? 'limited' : 'class')),
+        sourceVariantId: first(row.sourceVariantId, row.source_variant_id, row.itemId, row.item_id, row.source, ''),
+        usesSpellSlot: row.usesSpellSlot !== undefined ? !!row.usesSpellSlot : !row.usesCharges,
+        usesCharges: !!row.usesCharges,
+        limitedUse: row.limitedUse || null,
+        importedRowIndex: row.importedRowIndex !== undefined ? row.importedRowIndex : idx,
+      });
+    });
+  }
+
+  function buildCastableSpellRows(characterRuntime, knownSpellManifest, spellLibrary) {
+    var rt = obj(characterRuntime);
+    var slotCounts = _slotCountsFromRuntime(rt);
+    var highestSlot = Math.max(0, Math.max.apply(null, Object.keys(slotCounts).map(Number).concat([0])));
+    var lib = _libraryLookup(spellLibrary || rt.spellLibrary || []);
+    var known = _knownSpellManifest(knownSpellManifest);
+    var rows = [], grouped = {}, diagnostics = { missingScalingData: [], noHigherLevelEffect: [], knownWithoutRows: [], rowsDisabledDueToNoResource: [] };
+    known.forEach(function (knownSpell, idx) {
+      var key = _slug(first(knownSpell.spellId, knownSpell.id, knownSpell.name));
+      var libraryCard = lib[key] || lib[key.replace(/^(?:spell|ability|action)-/, '')] || BUILTIN[key] || BUILTIN[_slug(knownSpell.name)] || {};
+      var card = _smartMerge(libraryCard, knownSpell);
+      var baseLevel = num(first(knownSpell.baseLevel, card.baseLevel, card.level, card.spell_level), null);
+      if (baseLevel === null) baseLevel = levelOf(card, _smartMerge(BUILTIN[key] || BUILTIN[_slug(knownSpell.name)] || {}, card));
+      if (baseLevel === null) { diagnostics.knownWithoutRows.push(knownSpell.name); return; }
+      var minLevel = baseLevel <= 0 ? 0 : baseLevel;
+      var maxLevel = baseLevel <= 0 ? 0 : (knownSpell.usesCharges || knownSpell.limitedUse ? Math.max(baseLevel, highestSlot || baseLevel) : Math.max(baseLevel, highestSlot));
+      if (maxLevel < minLevel) maxLevel = minLevel;
+      for (var castLevel = minLevel; castLevel <= maxLevel; castLevel++) {
+        if (castLevel > 9) break;
+        var resolved = resolveSpellRuntime(Object.assign({}, card, { level: baseLevel, spell_level: baseLevel, id: first(knownSpell.spellId, card.id, key), name: knownSpell.name }), Object.assign({}, rt, { castLevel: castLevel, slotLevel: castLevel, item: knownSpell.usesCharges }));
+        var formula = first(resolved.finalHealingFormula, resolved.finalDamageFormula, resolved.displayFormula, '');
+        var noExtra = castLevel > baseLevel && (!resolved.scalingType || resolved.scalingType === 'none' || formula === first(resolved.baseFormula, ''));
+        if (castLevel > baseLevel && (!resolved.scalingType || resolved.scalingType === 'none')) diagnostics.missingScalingData.push(knownSpell.name);
+        if (noExtra) diagnostics.noHigherLevelEffect.push(knownSpell.name + ' L' + castLevel);
+        var castResourceType = knownSpell.usesCharges ? 'charges' : (knownSpell.limitedUse ? 'limited-use' : (baseLevel === 0 ? 'at-will' : 'spell-slot'));
+        var remaining = castResourceType === 'spell-slot' ? num(slotCounts[castLevel], 0) : 1;
+        var disabledReason = remaining <= 0 && castResourceType === 'spell-slot' ? 'No level ' + castLevel + ' spell slot available' : '';
+        var row = Object.assign({}, card, knownSpell, {
+          rowId: [key || _slug(knownSpell.name), knownSpell.sourceType, knownSpell.sourceVariantId || idx, castLevel].join(':'),
+          spellId: first(knownSpell.spellId, card.id, key),
+          id: first(knownSpell.spellId, card.id, key) + '::cast-' + castLevel + '::' + idx,
+          name: knownSpell.name,
+          baseLevel: baseLevel,
+          castLevel: castLevel,
+          slotLevel: castLevel,
+          displaySectionLevel: castLevel,
+          level: castLevel,
+          spell_level: baseLevel,
+          castResourceType: castResourceType,
+          damagePreview: resolved.finalDamageFormula || '',
+          healingPreview: resolved.finalHealingFormula || '',
+          effectPreview: (resolved.scalingType === 'extra_target_per_slot' && castLevel > baseLevel ? (formula + ', +' + String(castLevel - baseLevel) + ' target' + (castLevel - baseLevel === 1 ? '' : 's')) : (formula || (castLevel > baseLevel ? 'No additional higher-level effect' : first(card.effect, card.description, 'Cast spell')))),
+          saveDC: resolved.saveDc,
+          attackBonus: resolved.attackBonus,
+          range: first(resolved.range, card.range, ''),
+          castingTime: first(resolved.castingTime, card.castingTime, card.casting_time, ''),
+          components: first(card.components, ''),
+          duration: first(resolved.duration, card.duration, ''),
+          notes: first(knownSpell.notes, card.notes, ''),
+          isVirtualCastRow: true,
+          disabledReason: disabledReason,
+          card: Object.assign({}, card, { level: baseLevel, spell_level: baseLevel }),
+        });
+        if (disabledReason) diagnostics.rowsDisabledDueToNoResource.push(row.rowId);
+        rows.push(row); if (!grouped[castLevel]) grouped[castLevel] = []; grouped[castLevel].push(row);
+      }
+    });
+    return { rows: rows, grouped: grouped, sections: grouped, knownSpellManifest: known, diagnostics: diagnostics };
+  }
+
+
   /* ── Shared cast resolver payload used by quick actions and spell surfaces ── */
   function resolveSpellCast(spellCard, characterRuntime, options) {
     options = options || {};
@@ -518,10 +626,12 @@
   global.resolveSpellRuntime = resolveSpellRuntime;
   global.resolveSpellCast = global.resolveSpellCast || resolveSpellCast;
   global.buildSpellCastOptions = buildCastOptions;
+  global.buildCastableSpellRows = buildCastableSpellRows;
   global.AppSpellRuntime = {
     resolveSpellRuntime:      resolveSpellRuntime,
     resolveSpellCast:         resolveSpellCast,
     buildSpellCastOptions:    buildCastOptions,
+    buildCastableSpellRows:    buildCastableSpellRows,
     normalizeRollableFormula: normalizeRollable,
     isRollableFormula:        isRollable,
     combineSpellFormula:      combine,
