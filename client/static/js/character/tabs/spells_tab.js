@@ -676,7 +676,7 @@ function _spellAttackSaveCell(spell, charData) {
         const avail = i < (total - usedCount);
         return '<button class="cs-slot-pip ' + (avail ? 'available' : 'used') + '" aria-label="Slot ' + (i + 1) + ' of level ' + lvl + ' ' + (avail ? '(available)' : '(used)') + '" data-slot-level="' + _esc(String(lvl)) + '" data-slot-index="' + _esc(String(i)) + '"></button>';
       }).join('');
-      groups.push('<div class="cs-slot-group"><span class="cs-slot-label">' + _esc(LEVEL_LABELS[lvl] || ('L' + lvl)) + '</span><div class="cs-slot-pips">' + pips + '</div></div>');
+      groups.push('<div class="cs-slot-group"><span class="cs-slot-label">' + _esc(LEVEL_LABELS[lvl + 1] || ('L' + lvl)) + '</span><div class="cs-slot-pips">' + pips + '</div></div>');
     }
     return groups.length ? '<div class="cs-slots-row" aria-label="Spell slots">' + groups.join('') + '</div>' : '';
   }
@@ -711,7 +711,7 @@ function _spellAttackSaveCell(spell, charData) {
     const labels = ['ALL'];
     if (_selectedSpells(Object.assign({}, state, { filter: 'ALL', query: '' })).some(function (spell) { return _spellLevelNumber(spell) === 0; })) labels.push('CANTRIP');
     for (let level = 1; level <= highest; level += 1) {
-      if (LEVEL_LABELS[level]) labels.push(LEVEL_LABELS[level]);
+      if (LEVEL_LABELS[level + 1]) labels.push(LEVEL_LABELS[level + 1]);
     }
     return labels;
   }
@@ -895,7 +895,7 @@ function _spellAttackSaveCell(spell, charData) {
     const levelOrder = Object.keys(byLevel).map(Number).sort(function (a, b) { return a - b; });
     const groups = [];
     levelOrder.forEach(function (lvl) {
-      const label = lvl === 0 ? 'Cantrips' : (LEVEL_LABELS[lvl] || ('Level ' + lvl)) + ' Spells';
+      const label = lvl === 0 ? 'Cantrips' : (LEVEL_LABELS[lvl + 1] || ('Level ' + lvl)) + ' Spells';
       const levelRows = byLevel[lvl].map(function (spell) {
         return _renderSpellRow(spell, includeActions && typeof actionBuilder === 'function' ? actionBuilder(spell) : '', charData || (actionBuilder && actionBuilder.__charData) || null);
       }).join('');
@@ -1190,7 +1190,7 @@ function _spellAttackSaveCell(spell, charData) {
       byLevel[lvl].push(spell);
     });
     return Object.keys(byLevel).map(Number).sort(function (a, b) { return a - b; }).map(function (lvl) {
-      const label = lvl === 0 ? 'Cantrips' : (LEVEL_LABELS[lvl] || ('Level ' + lvl)) + ' Spells';
+      const label = lvl === 0 ? 'Cantrips' : (LEVEL_LABELS[lvl + 1] || ('Level ' + lvl)) + ' Spells';
       const cards = byLevel[lvl].map(function (spell) {
         const spellKey = String(spell && (spell.id || _spellName(spell) || '') || '').trim();
         const summary = _spellQuickRead(spell);
