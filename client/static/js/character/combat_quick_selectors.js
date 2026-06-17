@@ -100,6 +100,156 @@
     return String(kind || 'action') + ':' + _firstText(item && item.id, item && item.name);
   }
 
+  // Names that are section headings / bookkeeping rows leaking out of the
+  // character sheet's feature or spellbook parsers — never real quick actions.
+  function _isHeadingOrBookkeepingName(name) {
+    const clean = String(name || '').replace(/\[[^\]]+\]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (!clean) return true;
+    if (/^(?:cantrip|\d+(?:st|nd|rd|th))-level spells?$/.test(clean)) return true;
+    if (/^\d+(?:st|nd|rd|th)-level spell slots?$/.test(clean)) return true;
+    if (/^cantrips?(?: known)?$/.test(clean)) return true;
+    if (/^spells? known\b/.test(clean)) return true;
+    if (/^spell slots?\b/.test(clean)) return true;
+    if (clean === 'spellcasting') return true;
+    if (clean === 'metamagic') return true;
+    if (clean === 'subclass feature' || clean === 'subclass features') return true;
+    if (clean === 'class feature' || clean === 'class features') return true;
+    if (clean === 'ability score improvement') return true;
+    if (/spellcasting progression/.test(clean)) return true;
+    return false;
+  }
+
+  // Canonical filter: only actions a player can actually click/cast/use belong
+  // in the Quick Actions surface (default lanes or the Customize Top 5 picker).
+  function isPlayableQuickAction(action) {
+    if (!action || typeof action !== 'object') return false;
+    const id = _firstText(action.id, action.name);
+    const name = _firstText(action.name, action.displayName);
+    if (!id || !name) return false;
+    if (_isHeadingOrBookkeepingName(name)) return false;
+
+    const isSpell = action.quickBarType === 'spell' || action.category === 'Spell';
+    if (isSpell) return true;
+
+    const kind = action.quickBarKind;
+    if (kind === 'passive' || kind === 'subclass_gate') return false;
+
+    const source = String(action.source || '').toLowerCase();
+    if (source === 'feature-fallback') return false;
+
+    // attack / save_effect / transformation / use are all backed by a real
+    // activation (roll attack, roll save, transform, spend resource/use item).
+    return kind === 'attack' || kind === 'save_effect' || kind === 'transformation' || kind === 'use';
+  }
+
+  function _categoryFor(item) {
+    if (!item) return 'Utility';
+    if (item.quickBarType === 'spell') return 'Spell';
+    const lane = String(item.quickBarLane || '').toLowerCase();
+    if (lane === 'bonus') return 'Bonus Action';
+    if (lane === 'reaction') return 'Reaction';
+    const source = String(item.source || '').toLowerCase();
+    const kind = item.quickBarKind;
+    if (source === 'weapon' || source === 'equip_only' || source === 'system_unarmed' || kind === 'attack') return 'Attack';
+    if (/item/.test(source)) return 'Item';
+    const resourceState = item.quickBarResourceState;
+    if (resourceState && Number.isFinite(Number(resourceState.max)) && Number(resourceState.max) > 0) return 'Limited Use';
+    if (source === 'native_action' || source === 'custom_druid_action') return 'Class Feature';
+    return 'Utility';
+  }
+
+  function _normalizeActionCandidate(item) {
+    const category = _categoryFor(item);
+    const executableType = item.quickBarKind === 'attack' ? 'roll_attack'
+      : item.quickBarKind === 'save_effect' ? 'roll_save'
+      : item.quickBarKind === 'transformation' ? 'transform'
+      : 'use_action';
+    const economy = Array.isArray(item.quickBarEconomy) ? item.quickBarEconomy[0] : item.quickBarEconomy;
+    return Object.assign({}, item, {
+      category: category,
+      type: category,
+      sourceType: _firstText(item.sourceType, item.source, 'action'),
+      actionType: _firstText(item.actionType, economy, item.quickBarLane, 'action'),
+      cost: _firstText(item.cost, economy, 'action'),
+      resourceCost: _firstText(item.resourceName, item.resourceSummary, '') || null,
+      limitedUse: !!(item.quickBarResourceState && Number.isFinite(Number(item.quickBarResourceState.max)) && Number(item.quickBarResourceState.max) > 0),
+      castLevel: null,
+      spellId: null,
+      itemId: /item/.test(String(item.source || '').toLowerCase()) ? _firstText(item.id, item.name) : null,
+      featureId: _firstText(item.featureId, item.sourceFeatureId, ''),
+      executableType: executableType,
+      preview: _firstText(item.quickBarDamageText, item.quickBarSlotSummary, item.summary, item.description, ''),
+      sortKey: category + '::' + String(_firstText(item.name, '')).toLowerCase(),
+    });
+  }
+
+  function _normalizeSpellCandidate(spell, runtime) {
+    const level = _spellLevel(spell);
+    const sourceType = _firstText(spell.sourceType, spell.source, 'class');
+    return Object.assign({}, spell, {
+      category: 'Spell',
+      type: 'Spell',
+      source: _firstText(spell.source, sourceType),
+      sourceType: sourceType,
+      actionType: 'spell',
+      cost: _firstText(spell.quickBarCastTimeText, '1 action'),
+      resourceCost: _firstText(spell.quickBarSlotSummary, '') || null,
+      limitedUse: !!(level && level > 0),
+      castLevel: level,
+      spellId: _firstText(spell.id, spell.name),
+      itemId: sourceType === 'item' ? _firstText(spell.itemName, spell.id, spell.name) : null,
+      featureId: null,
+      executableType: 'cast_spell',
+      preview: _firstText(spell.quickBarDamageText, spell.quickBarSaveText, spell.quickBarInfoSummary, ''),
+      sortKey: 'Spell::' + String(_firstText(spell.name, '')).toLowerCase(),
+    });
+  }
+
+  // De-duplicate by what the action actually *does*, not just its label, so
+  // e.g. "Scorching Ray" cast at the same slot level merges into one row while
+  // a weapon-charge variant of the same spell name stays distinct.
+  function _executableIdentity(candidate) {
+    const name = String(_firstText(candidate.name, '')).toLowerCase();
+    if (candidate.category === 'Spell') {
+      const mechanism = candidate.sourceType === 'item'
+        ? 'item:' + String(candidate.itemId || candidate.source || '').toLowerCase()
+        : 'slot:' + (candidate.castLevel == null ? 'cantrip' : candidate.castLevel);
+      return 'spell::' + name + '::' + mechanism;
+    }
+    return String(candidate.category) + '::' + name + '::' + String(candidate.sourceType || candidate.source || '').toLowerCase() + '::' + String(candidate.actionType || '').toLowerCase();
+  }
+
+  // Builds the clean, deduplicated candidate list shown in the Customize Top 5
+  // picker. Anything that fails isPlayableQuickAction never reaches the UI.
+  function buildQuickActionCandidates(runtimeOverride) {
+    const runtime = runtimeOverride || _runtime();
+    const sheet = runtime.charSheet || {};
+    const actionModel = global.ActionsTab && typeof global.ActionsTab.buildQuickActionModel === 'function'
+      ? global.ActionsTab.buildQuickActionModel(sheet)
+      : { _allActions: [] };
+    const rawActions = _safeArray(actionModel._allActions);
+    const rawSpells = _spellCandidates(runtime).map(function (spell) { return _decorateSpell(spell, runtime); });
+
+    const normalized = [];
+    rawActions.forEach(function (item) {
+      if (!isPlayableQuickAction(item)) return;
+      normalized.push(_normalizeActionCandidate(item));
+    });
+    rawSpells.forEach(function (spell) {
+      if (!isPlayableQuickAction(spell)) return;
+      normalized.push(_normalizeSpellCandidate(spell, runtime));
+    });
+
+    const byIdentity = new Map();
+    normalized.forEach(function (candidate) {
+      const identity = _executableIdentity(candidate);
+      if (!byIdentity.has(identity)) byIdentity.set(identity, candidate);
+    });
+    return Array.from(byIdentity.values()).sort(function (a, b) {
+      return a.sortKey < b.sortKey ? -1 : a.sortKey > b.sortKey ? 1 : 0;
+    });
+  }
+
   function readQuickPicks(runtime) {
     try {
       const raw = global.localStorage && global.localStorage.getItem(_quickPickStoreKey(runtime || _runtime()));
@@ -125,11 +275,11 @@
     if (!key || /:$/.test(key)) return readQuickPicks(runtime);
     const picks = readQuickPicks(runtime);
     const existing = picks.indexOf(key);
-    if (existing >= 0) picks.splice(existing, 1);
-    else {
-      if (picks.length >= QUICK_PICK_LIMIT) picks.shift();
-      picks.push(key);
-    }
+    if (existing >= 0) { picks.splice(existing, 1); return writeQuickPicks(picks, runtime); }
+    // At the limit: refuse the add instead of silently bumping an existing
+    // pick. The UI disables unpicked rows once 5/5 are selected.
+    if (picks.length >= QUICK_PICK_LIMIT) return picks;
+    picks.push(key);
     return writeQuickPicks(picks, runtime);
   }
 
@@ -330,6 +480,9 @@
         ? _safeArray(sheetRuntime.spells).concat(_safeArray(sheetRuntime.itemSpells))
         : _safeArray(sheet.rulesSpellCards || sheet.rulesSpellbook || sheet.spellbookEntries);
     }
+    // Reject spell-level section headings / non-castable rows before they
+    // ever reach scoring, sorting, or the Customize Top 5 picker.
+    spells = spells.filter(function (spell) { return isPlayableQuickAction(Object.assign({ quickBarType: 'spell' }, spell)); });
     return _uniqueByName(spells, spells.length).sort(function (a, b) {
       const scoreDelta = _spellQuickScore(b) - _spellQuickScore(a);
       if (scoreDelta) return scoreDelta;
@@ -407,22 +560,30 @@
         });
       });
     }
-    const allActions = mark(_uniqueByName(actionModel._allActions || [], (actionModel._allActions || []).length), 'action');
+    const playableRawActions = _safeArray(actionModel._allActions).filter(isPlayableQuickAction);
+    const allActions = mark(_uniqueByName(playableRawActions, playableRawActions.length), 'action');
     const allSpells = mark(_spellCandidates(runtime).map(function (spell) { return _decorateSpell(spell, runtime); }), 'spell');
     const pickedActions = [];
     const pickedSpells = [];
+    const invalidPicks = [];
     if (picks.length) {
       picks.forEach(function (pick) {
         const pool = pick.indexOf('spell:') === 0 ? allSpells : allActions;
         const found = pool.find(function (item) { return item.quickBarPickKey === pick; });
-        if (!found) return;
+        if (!found) { invalidPicks.push(pick); return; }
         if (pick.indexOf('spell:') === 0) pickedSpells.push(found);
         else pickedActions.push(found);
       });
+      if (invalidPicks.length) {
+        if (global.console && typeof global.console.warn === 'function') {
+          global.console.warn('[CombatQuickSelectors] Hiding invalid saved quick action picks:', invalidPicks);
+        }
+        writeQuickPicks(picks.filter(function (pick) { return invalidPicks.indexOf(pick) === -1; }), runtime);
+      }
     }
-    const primary = picks.length ? pickedActions.filter(function (item) { return String(item.quickBarLane || '').toLowerCase() !== 'bonus' && String(item.quickBarLane || '').toLowerCase() !== 'reaction'; }) : mark(_uniqueByName(actionModel.primaryActions, 2), 'action');
-    const bonus = picks.length ? pickedActions.filter(function (item) { return String(item.quickBarLane || '').toLowerCase() === 'bonus'; }) : mark(_uniqueByName(actionModel.bonusActions, 2), 'action');
-    const reactions = picks.length ? pickedActions.filter(function (item) { return String(item.quickBarLane || '').toLowerCase() === 'reaction'; }) : mark(_uniqueByName(actionModel.reactions, 2), 'action');
+    const primary = picks.length ? pickedActions.filter(function (item) { return String(item.quickBarLane || '').toLowerCase() !== 'bonus' && String(item.quickBarLane || '').toLowerCase() !== 'reaction'; }) : mark(_uniqueByName(_safeArray(actionModel.primaryActions).filter(isPlayableQuickAction), 2), 'action');
+    const bonus = picks.length ? pickedActions.filter(function (item) { return String(item.quickBarLane || '').toLowerCase() === 'bonus'; }) : mark(_uniqueByName(_safeArray(actionModel.bonusActions).filter(isPlayableQuickAction), 2), 'action');
+    const reactions = picks.length ? pickedActions.filter(function (item) { return String(item.quickBarLane || '').toLowerCase() === 'reaction'; }) : mark(_uniqueByName(_safeArray(actionModel.reactions).filter(isPlayableQuickAction), 2), 'action');
     return {
       primaryActions: mark(primary, 'action'),
       bonusActions: mark(bonus, 'action'),
@@ -445,6 +606,9 @@
     readQuickPicks: readQuickPicks,
     writeQuickPicks: writeQuickPicks,
     toggleQuickPick: toggleQuickPick,
+    isPlayableQuickAction: isPlayableQuickAction,
+    buildQuickActionCandidates: buildQuickActionCandidates,
     quickPickLimit: QUICK_PICK_LIMIT,
   };
-}(window));
+  if (typeof module !== 'undefined' && module.exports) module.exports = global.CombatQuickSelectors;
+}(typeof window !== 'undefined' ? window : globalThis));

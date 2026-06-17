@@ -103,6 +103,8 @@
       .combat-quick-sheet-btn{border:1px solid rgba(0,229,204,.4);border-radius:999px;background:rgba(0,229,204,.12);color:#dffbf7;padding:.35rem .55rem;font-weight:800;cursor:pointer;}
       .combat-quick-customize{display:grid;gap:.42rem;border:1px solid rgba(0,229,204,.18);border-radius:12px;background:rgba(0,0,0,.18);padding:.52rem;}
       .combat-quick-customize-head{display:flex;justify-content:space-between;gap:.5rem;align-items:center;font-size:.62rem;color:rgba(245,234,214,.72);}
+      .combat-quick-pick-group{display:grid;gap:.3rem;}
+      .combat-quick-pick:disabled{opacity:.4;cursor:not-allowed;}
       .combat-quick-pick-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.3rem;}
       .combat-quick-pick{border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.04);color:#f5ead6;padding:.34rem .42rem;text-align:left;font-size:.62rem;cursor:pointer;}
       .combat-quick-pick.is-picked{border-color:rgba(255,210,90,.58);background:rgba(255,210,90,.12);color:#ffe8a3;}
@@ -372,29 +374,38 @@
     return `<section class="combat-quick-bar-section"><div class="combat-quick-bar-section-title">${_esc(title)}</div><div class="combat-quick-bar-grid">${rows.map(function (item, idx) { return _tile(item, category, idx); }).join('')}</div></section>`;
   }
 
+  const QUICK_CATEGORY_ORDER = ['Attack', 'Spell', 'Bonus Action', 'Reaction', 'Class Feature', 'Item', 'Limited Use', 'Utility'];
+
   function _customizePanel(model) {
     if (!state.customizing) return '';
     const picks = _safeArray(model && model.quickPicks);
     const limit = Number(model && model.quickPickLimit) || 5;
-    const candidates = []
-      .concat(_safeArray(model && model.allActions).map(function (item) { return { kind: 'action', item: item }; }))
-      .concat(_safeArray(model && model.allSpells).map(function (item) { return { kind: 'spell', item: item }; }));
-    const seen = new Set();
-    const rows = candidates.filter(function (entry) {
-      const key = entry.item && entry.item.quickBarPickKey ? entry.item.quickBarPickKey : (entry.kind + ':' + _firstText(entry.item && entry.item.id, entry.item && entry.item.name));
-      if (!key || seen.has(key)) return false;
-      seen.add(key);
-      entry.pickKey = key;
-      return true;
-    }).slice(0, 80);
+    const atLimit = picks.length >= limit;
+    const candidates = global.CombatQuickSelectors && typeof global.CombatQuickSelectors.buildQuickActionCandidates === 'function'
+      ? global.CombatQuickSelectors.buildQuickActionCandidates()
+      : [];
+    const groups = new Map();
+    candidates.forEach(function (item) {
+      const cat = _firstText(item.category, 'Utility');
+      if (!groups.has(cat)) groups.set(cat, []);
+      groups.get(cat).push(item);
+    });
+    const sections = QUICK_CATEGORY_ORDER.filter(function (cat) { return groups.has(cat); }).map(function (cat) {
+      const rows = groups.get(cat);
+      return `<div class="combat-quick-pick-group">
+        <div class="combat-quick-bar-section-title">${_esc(cat)}</div>
+        <div class="combat-quick-pick-list">${rows.map(function (item) {
+          const pickKey = _firstText(item.quickBarPickKey, (item.category === 'Spell' ? 'spell' : 'action') + ':' + _firstText(item.id, item.name));
+          const picked = picks.indexOf(pickKey) >= 0;
+          const disableAdd = !picked && atLimit;
+          const note = [_firstText(item.sourceType, ''), _firstText(item.resourceCost, item.cost, ''), _firstText(item.preview, '')].filter(Boolean).join(' · ') || 'Action';
+          return `<button type="button" class="combat-quick-pick ${picked ? 'is-picked' : ''}" ${disableAdd ? 'disabled' : ''} data-qb-pick-kind="${_esc(item.category === 'Spell' ? 'spell' : 'action')}" data-qb-pick-key="${_esc(pickKey)}">${picked ? '★ ' : '☆ '}${_esc(_firstText(item.name, item.displayName, 'Choice'))}<small>${_esc(note)}</small></button>`;
+        }).join('')}</div>
+      </div>`;
+    }).join('');
     return `<section class="combat-quick-customize">
       <div class="combat-quick-customize-head"><strong>Choose your top ${_esc(limit)}</strong><span>${_esc(picks.length)}/${_esc(limit)} selected · click to swap any time</span></div>
-      <div class="combat-quick-pick-list">${rows.map(function (entry) {
-        const item = entry.item || {};
-        const picked = picks.indexOf(entry.pickKey) >= 0;
-        const note = entry.kind === 'spell' ? _firstText(item.quickBarSlotSummary, item.range, 'Spell') : _firstText(item.quickBarLane, item.desc, item.description, 'Action');
-        return `<button type="button" class="combat-quick-pick ${picked ? 'is-picked' : ''}" data-qb-pick-kind="${_esc(entry.kind)}" data-qb-pick-key="${_esc(entry.pickKey)}">${picked ? '★ ' : '☆ '}${_esc(_firstText(item.name, item.displayName, 'Choice'))}<small>${_esc(note)}</small></button>`;
-      }).join('')}</div>
+      ${sections || '<div class="combat-quick-empty">No playable actions found yet.</div>'}
     </section>`;
   }
 
