@@ -320,19 +320,100 @@
       border-color: rgba(156, 224, 219, 0.28);
       background: rgba(24, 81, 76, 0.34);
     }
-    .roster-helper {
+    .roster-intent {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
       margin-top: -6px;
     }
-    .helper-pill {
+    .intent-card {
       border: 1px solid rgba(229, 198, 151, 0.14);
       border-radius: 18px;
-      padding: 12px 14px;
-      background: rgba(10, 6, 5, 0.42);
+      padding: 13px 14px;
+      background: linear-gradient(180deg, rgba(20, 12, 9, 0.52), rgba(8, 5, 4, 0.46));
       color: rgba(246, 236, 221, 0.88);
       line-height: 1.35;
+    }
+    .intent-card strong {
+      display: block;
+      font-family: 'Cinzel', serif;
+      font-size: 0.74rem;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: var(--gold-strong);
+      margin-bottom: 4px;
+    }
+    .roster-toolbar {
+      display: none;
+      grid-template-columns: minmax(180px, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid rgba(229, 198, 151, 0.13);
+      border-radius: 20px;
+      background: rgba(8, 5, 4, 0.48);
+    }
+    .roster-toolbar.is-visible { display: grid; }
+    .roster-search {
+      width: 100%;
+      border: 1px solid rgba(229, 198, 151, 0.14);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      padding: 12px 15px;
+      font-family: 'Crimson Pro', serif;
+      font-size: 1rem;
+      outline: none;
+    }
+    .roster-search::placeholder { color: rgba(235, 222, 196, 0.56); }
+    .filter-group {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .filter-btn {
+      border: 1px solid rgba(229, 198, 151, 0.15);
+      border-radius: 999px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted);
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .filter-btn.active {
+      border-color: rgba(156, 224, 219, 0.42);
+      color: #dffefa;
+      background: rgba(24, 81, 76, 0.34);
+    }
+    .roster-section {
+      display: grid;
+      gap: 12px;
+    }
+    .roster-section + .roster-section { margin-top: 4px; }
+    .roster-section-title {
+      margin: 4px 2px -2px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(242, 222, 185, 0.82);
+    }
+    .create-import-card {
+      border-radius: 22px;
+      border: 1px dashed rgba(229, 198, 151, 0.18);
+      background: rgba(11, 7, 5, 0.4);
+      padding: 18px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .create-import-card strong {
+      display: block;
+      color: var(--gold-strong);
+      font-family: 'Cinzel', serif;
+      margin-bottom: 5px;
     }
     .character-check {
       width: 34px;
@@ -430,7 +511,9 @@
     @media (max-width: 1120px) {
       .hero, .panel { min-height: auto; }
       .summary-grid { grid-template-columns: 1fr; }
-      .roster-helper { grid-template-columns: 1fr; }
+      .roster-intent { grid-template-columns: 1fr; }
+      .roster-toolbar { grid-template-columns: 1fr; }
+      .filter-group { justify-content: flex-start; }
       .status-stack { min-width: 0; }
       .panel-head { flex-direction: column; }
       .status-pill { text-align: left; }
@@ -456,7 +539,7 @@
         <div>
           <div class="eyebrow">Player Invite · Hero Selection</div>
           <h1>Choose<br>Your Hero</h1>
-          <p id="hero-copy">Sign in, pick a character linked to your account, or build a new one and enter the campaign. Create from scratch or import your D&amp;D Beyond sheet.</p>
+          <p id="hero-copy">Sign in, choose the hero you want to play, or add a new adventurer before entering the campaign.</p>
           <div class="summary-grid">
             <div class="summary-card">
               <strong>Pick or forge</strong>
@@ -493,10 +576,19 @@
 
         <div id="feedback" class="feedback">Loading invite and character data…</div>
 
-        <div class="roster-helper" aria-label="Character roster import guidance">
-          <div class="helper-pill">Create from scratch or import your D&amp;D Beyond sheet.</div>
-          <div class="helper-pill">JSON import gives best results.</div>
-          <div class="helper-pill">PDF import may need review.</div>
+        <div class="roster-intent" aria-label="Hero selection steps">
+          <div class="intent-card"><strong>Choose</strong>Pick the adventurer you want to bring to the table.</div>
+          <div class="intent-card"><strong>Create</strong>Forge a new hero when the campaign calls for someone new.</div>
+          <div class="intent-card"><strong>Enter</strong>Step into play with your selected hero and invite already linked.</div>
+        </div>
+
+        <div id="roster-toolbar" class="roster-toolbar" aria-label="Roster tools">
+          <input id="roster-search" class="roster-search" type="search" autocomplete="off" placeholder="Search heroes by name, class, or owner" aria-label="Search heroes">
+          <div class="filter-group" role="group" aria-label="Filter heroes">
+            <button class="filter-btn active" type="button" data-roster-filter="all">All</button>
+            <button class="filter-btn" type="button" data-roster-filter="yours">Your Heroes</button>
+            <button class="filter-btn" type="button" data-roster-filter="campaign">Campaign</button>
+          </div>
         </div>
 
         <div id="character-list" class="character-list"></div>
@@ -541,6 +633,8 @@
     let joinGateway = null;
     let gatewayState = null;
     let campaignName = 'Campaign';
+    let rosterQuery = '';
+    let rosterFilter = 'all';
 
     const els = {
       campaignName: document.getElementById('campaign-name'),
@@ -558,6 +652,8 @@
       panelCopy: document.getElementById('panel-copy'),
       heroCopy: document.getElementById('hero-copy'),
       footerCopy: document.getElementById('footer-copy'),
+      rosterToolbar: document.getElementById('roster-toolbar'),
+      rosterSearch: document.getElementById('roster-search'),
     };
 
     function setFeedback(message, kind = 'info') {
@@ -852,22 +948,85 @@
       gatewayState.subscribe(renderRosterFromState);
     }
 
+    function getEntrySection(entry) {
+      if (!entry || typeof entry !== 'object') return 'campaign';
+      if (entry.mine || entry.kind === 'library-profile' || String(entry.libraryId || '').trim()) return 'yours';
+      return 'campaign';
+    }
+
+    function entryMatchesRosterQuery(entry) {
+      const query = rosterQuery.trim().toLowerCase();
+      if (!query) return true;
+      const haystack = [
+        entry.name,
+        entry.ownerLabel,
+        entry.classSummary,
+        entry.speciesLabel,
+        entry.sourceBadge,
+        entry.libraryId ? 'library' : 'session',
+      ].map((value) => String(value || '').toLowerCase()).join(' ');
+      return haystack.includes(query);
+    }
+
+    function entryMatchesRosterFilter(entry) {
+      if (rosterFilter === 'yours') return getEntrySection(entry) === 'yours';
+      if (rosterFilter === 'campaign') return getEntrySection(entry) === 'campaign';
+      return true;
+    }
+
+    function syncRosterToolbar(entries) {
+      const shouldShow = entries.length > 5 || rosterQuery || rosterFilter !== 'all';
+      els.rosterToolbar.classList.toggle('is-visible', shouldShow);
+      document.querySelectorAll('[data-roster-filter]').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.rosterFilter === rosterFilter);
+      });
+    }
+
+    function appendRosterSection(title, entries, selectedId) {
+      if (!entries.length) return;
+      const section = document.createElement('section');
+      section.className = 'roster-section';
+      const heading = document.createElement('div');
+      heading.className = 'roster-section-title';
+      heading.textContent = title;
+      section.appendChild(heading);
+      entries.forEach((entry) => {
+        const row = renderCharacterCard(entry);
+        if (entry.id === selectedId) row.classList.add('selected');
+        section.appendChild(row);
+      });
+      els.characterList.appendChild(section);
+    }
+
+    function appendCreateImportSection() {
+      const section = document.createElement('section');
+      section.className = 'roster-section';
+      section.innerHTML = '<div class="roster-section-title">Create / Import</div><div class="create-import-card"><strong>Need a different hero?</strong>Create a new character or import one, then it will appear here ready to select.</div>';
+      els.characterList.appendChild(section);
+    }
+
     function renderRosterFromState() {
       if (!joinGateway || !gatewayState) return;
       const snapshot = gatewayState.getState ? gatewayState.getState() : { characters: [] };
       const entries = Array.isArray(snapshot.characters) ? snapshot.characters : [];
       const selectedId = joinGateway.getSelectedProfileId ? joinGateway.getSelectedProfileId() : '';
       els.enterBtn.disabled = !selectedId;
+      syncRosterToolbar(entries);
       if (!entries.length) {
-        renderEmptyState('No existing hero matched this invite yet. Create a new one or import your build to continue.');
+        renderEmptyState('No existing hero matched this invite yet. Create a new one or import a character to continue.');
         return;
       }
+      const visibleEntries = entries.filter((entry) => entryMatchesRosterFilter(entry) && entryMatchesRosterQuery(entry));
       els.characterList.innerHTML = '';
-      entries.forEach((entry) => {
-        const row = renderCharacterCard(entry);
-        if (entry.id === selectedId) row.classList.add('selected');
-        els.characterList.appendChild(row);
-      });
+      if (!visibleEntries.length) {
+        renderEmptyState('No heroes match those roster filters. Clear search or switch filters to see more characters.');
+        return;
+      }
+      const yourHeroes = visibleEntries.filter((entry) => getEntrySection(entry) === 'yours');
+      const campaignHeroes = visibleEntries.filter((entry) => getEntrySection(entry) === 'campaign');
+      appendRosterSection('Your Heroes', yourHeroes, selectedId);
+      appendRosterSection('Campaign Heroes', campaignHeroes, selectedId);
+      appendCreateImportSection();
     }
 
     async function loadSessionInfo() {
@@ -994,7 +1153,8 @@
           redirectToLogin();
           return;
         }
-        els.accountStatus.textContent = (authUser.username || 'Signed in') + ' · ' + (authUser.role || 'player');
+        const displayName = authUser.character_name || authUser.username || 'your account';
+        els.accountStatus.textContent = 'Signed in as ' + displayName;
         setupJoinGateway();
         await loadSessionInfo();
         rememberInviteRoute(SESSION_ID, INVITE);
@@ -1018,6 +1178,18 @@
     // NOTE: create button click handling is owned by CharacterJoinGateway.
     // Avoid attaching a second listener here, which caused dual create flows
     // (embedded builder + immediate redirect) to race each other.
+
+    els.rosterSearch.addEventListener('input', () => {
+      rosterQuery = els.rosterSearch.value || '';
+      renderRosterFromState();
+    });
+
+    document.querySelectorAll('[data-roster-filter]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        rosterFilter = btn.dataset.rosterFilter || 'all';
+        renderRosterFromState();
+      });
+    });
 
     els.refreshBtn.addEventListener('click', async () => {
       setFeedback('Refreshing roster…');
