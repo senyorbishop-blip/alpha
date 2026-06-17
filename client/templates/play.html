@@ -47362,22 +47362,31 @@ function combatQuickRollSpellDamage(spellId, slotLevel) {
   const spell = typeof spellId === 'object' ? spellId : _findCombatQuickSpellById(spellId);
   if (!spell) { showToast('Spell not found.'); return null; }
   const card = spell.card || {};
-  const expr = _getCombatSpellDamageExpression(spell, slotLevel);
+  const resolvedCast = resolveSpellCast(spell, _charSheet || {}, { castLevel: slotLevel, slotLevel, source: 'spell', actionSource: 'quick_actions', targetId: _combat?.selected_target_id || '' });
+  const expr = resolvedCast.formulaUsed || _getCombatSpellDamageExpression(spell, slotLevel);
   if (!expr || expr === '—') { showToast(`${spell.name || 'Spell'} has no damage roll.`); return null; }
+  if (resolvedCast.consumedSlotLevel > 0) {
+    const slotSpend = _consumeSpellSlotLevel(resolvedCast.consumedSlotLevel);
+    if (!slotSpend.ok) {
+      showToast(`No level ${resolvedCast.consumedSlotLevel} spell slots remaining.`);
+      return null;
+    }
+    resolvedCast.rollPayload.consumedSlotLevel = slotSpend.slotLevel || 0;
+  }
   const isHealing = _spellCardLooksLikeHealing(card);
   const rollKind = isHealing ? 'healing' : 'damage';
-  const result = _rollSpellFormula(card, expr, rollKind, { rollLabel: `${spell.name || 'Spell'} ${_combatQuickSpellCastLevelLabel(slotLevel)} • ${isHealing ? 'Healing' : 'Damage'}` });
+  const result = _rollSpellFormula(card, expr, rollKind, { rollLabel: `${spell.name || 'Spell'} ${_combatQuickSpellCastLevelLabel(resolvedCast.castLevel)} • ${isHealing ? 'Healing' : 'Damage'}` });
   if (!result) return null;
   const damageType = String(card.damage_type || card.healing_type || '').trim();
   _showCombatResultCard({
     title: spell.name || 'Spell',
-    subtitle: _combatQuickSpellCastLevelLabel(slotLevel) + (isHealing ? ' — Healing' : ' — Damage'),
+    subtitle: _combatQuickSpellCastLevelLabel(resolvedCast.castLevel) + (isHealing ? ' — Healing' : ' — Damage'),
     outcome: 'hit',
     damage: result.total,
     damageRolls: result.rolls,
     damageType,
   });
-  sendWS({ type: 'chat_message', payload: { message: `✨ **${_charSheet?.name || NAME || 'Character'}** rolls **${spell.name}** ${_combatQuickSpellCastLevelLabel(slotLevel)} ${isHealing ? 'healing' : 'damage'}: **${result.total}** (${expr})${damageType ? ` ${damageType}` : ''}.`, channel: 'everyone' } });
+  sendWS({ type: 'chat_message', payload: { message: `✨ **${_charSheet?.name || NAME || 'Character'}** rolls **${spell.name}** ${_combatQuickSpellCastLevelLabel(resolvedCast.castLevel)} ${isHealing ? 'healing' : 'damage'}: **${result.total}** (${expr})${damageType ? ` ${damageType}` : ''}.`, channel: 'everyone', roll_payload: resolvedCast.rollPayload } });
   return result;
 }
 
@@ -47639,7 +47648,7 @@ function resolveSpellCast(spell, characterRuntime, options = {}) {
     actionSource: options.actionSource || 'quick_actions',
     targetId: options.targetId || '',
   };
-  return { spell, card, runtime, baseLevel, castLevel, slotLevel, formulaUsed, rollPayload };
+  return { spell, card, runtime, baseLevel, castLevel, slotLevel, formulaUsed, spellId: rollPayload.spellId, spellName: rollPayload.spellName, damageParts, healingParts, scalingApplied: rollPayload.scalingApplied, attackBonus: rollPayload.attackBonus, saveDC: rollPayload.saveDC, consumedSlotLevel: rollPayload.consumedSlotLevel, rollPayload };
 }
 window.resolveSpellCast = resolveSpellCast;
 
