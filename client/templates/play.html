@@ -35909,11 +35909,11 @@ function _recordSpellUsage(spellLike) {
   _charSheet.spellUsageCounts[key] = (parseInt(_charSheet.spellUsageCounts[key], 10) || 0) + 1;
 }
 
-function castRulesSpell(spellId) {
+function castRulesSpell(spellId, options = {}) {
   const cards = (typeof _getStructuredRulesSpellbookCards === 'function') ? _getStructuredRulesSpellbookCards() : (Array.isArray(_charSheet?.rulesSpellbook) ? _charSheet.rulesSpellbook : _rulesSpellbook);
   const card = (cards || []).find(c => String(c.id) === String(spellId) || String(c.name || '').toLowerCase() === String(spellId || '').toLowerCase());
   if (!card) return;
-  const castLevel = parseInt(card.default_cast_level ?? card.current?.cast_level ?? card.spell_level ?? 0, 10) || 0;
+  const castLevel = parseInt(options.castLevel ?? options.slotLevel ?? card.default_cast_level ?? card.current?.cast_level ?? card.spell_level ?? 0, 10) || 0;
   _recordSpellUsage(card);
   _executeCombatSpellCast({
     id: card.id || spellId,
@@ -46928,7 +46928,7 @@ function _showCombatSpellAttackPicker(targetId) {
 function _pickSlotForCombatAttack(spellId, targetId) {
   document.getElementById('_combat-spell-attack-picker')?.remove();
   const spells = _getCombatQuickSpells();
-  const spell = spells.find(s => String(s.id) === String(spellId) || s.name === spellId);
+  const spell = spells.find(s => String(s.id) === String(spellId) || String(s.spellId || '') === String(spellId) || s.name === spellId);
   if (!spell) return;
   const baseLevel = Number(spell.level || 0);
   const availableSlots = [];
@@ -46956,7 +46956,7 @@ function _pickSlotForCombatAttack(spellId, targetId) {
 function _sendCombatSpellAttack(spellId, targetId, slotLevel) {
   document.getElementById('_combat-spell-attack-picker')?.remove();
   const spells = _getCombatQuickSpells();
-  const spell = spells.find(s => String(s.id) === String(spellId) || s.name === spellId);
+  const spell = spells.find(s => String(s.id) === String(spellId) || String(s.spellId || '') === String(spellId) || s.name === spellId);
   const spellName = spell ? spell.name : '';
   const baseLevel = spell ? Number(spell.level || 0) : 0;
   const effectiveSlot = slotLevel !== undefined ? Number(slotLevel) : baseLevel;
@@ -47016,7 +47016,7 @@ function _getCombatQuickSpells() {
     const libraryCard = _combatQuickSpellLibraryCardFromName(card?.name || card?.displayName || card?.id);
     const normalizedCard = _combatQuickNormalizeSpellCard(libraryCard || card, card || {});
     const name = _prettyBookSpellName(String(normalizedCard.displayName || normalizedCard.name || normalizedCard.id || '').trim());
-    if (!name || seen.has(name.toLowerCase())) return;
+    if (!name || seen.has((name + '::rules::' + String(card?.source || card?.sourceType || '')).toLowerCase())) return;
     // For prepared casters: only cantrips + prepared spells are quick-castable
     const resolvedLevel = _combatQuickResolveSpellLevel(normalizedCard, card || {});
     if (_cqaIsPreparedCaster && resolvedLevel !== 0) {
@@ -47026,7 +47026,7 @@ function _getCombatQuickSpells() {
         normalizedCard.prepared || _cqaPreparedIds.has(cardId) || _cqaPreparedIds.has(cardName));
       if (!isPrepared) return; // Skip non-prepared spells for prepared casters
     }
-    seen.add(name.toLowerCase());
+    seen.add((name + '::rules::' + String(card?.source || card?.sourceType || '')).toLowerCase());
     spells.push({
       id: normalizedCard.id || name,
       name: name,
@@ -47044,8 +47044,8 @@ function _getCombatQuickSpells() {
     const libraryCard = _combatQuickSpellLibraryCardFromName(sp?.name || sp?.id);
     const normalizedCard = _combatQuickNormalizeSpellCard(libraryCard || sp, sp || {});
     const name = _prettyBookSpellName(String(normalizedCard.name || normalizedCard.id || '').trim());
-    if (!name || seen.has(name.toLowerCase())) return;
-    seen.add(name.toLowerCase());
+    if (!name || seen.has((name + '::granted::' + String(sp?.source || sp?.sourceType || '')).toLowerCase())) return;
+    seen.add((name + '::granted::' + String(sp?.source || sp?.sourceType || '')).toLowerCase());
     spells.push({
       id: normalizedCard.id || name,
       name: name,
@@ -47077,8 +47077,38 @@ function _getCombatQuickSpells() {
     });
   }
 
-  // Sort: cantrips first, then by level
-  spells.sort((a, b) => ((a.level ?? 99) - (b.level ?? 99)));
+  // Generate D&D-app-style virtual cast rows for Quick Actions from the same resolver used by the Spells tab.
+  if (window.AppSpellRuntime && typeof window.AppSpellRuntime.buildCastableSpellRows === 'function') {
+    const library = Array.isArray(_spellLibrary) ? _spellLibrary : [];
+    const built = window.AppSpellRuntime.buildCastableSpellRows(_charSheet || {}, spells.map((sp, idx) => ({
+      ...((sp && sp.card) || {}),
+      spellId: sp.id || sp.name,
+      id: sp.id || sp.name,
+      name: sp.name,
+      baseLevel: sp.level,
+      source: sp.source || sp.card?.source || 'spell',
+      sourceType: sp.source === 'granted' || sp.card?.usesCharges ? (sp.card?.usesCharges ? 'item' : 'granted') : 'class',
+      sourceVariantId: sp.card?.sourceVariantId || sp.card?.itemId || sp.source || idx,
+      usesSpellSlot: !(sp.card && sp.card.usesCharges),
+      usesCharges: !!(sp.card && sp.card.usesCharges),
+      importedRowIndex: idx,
+    })), library);
+    if (built && Array.isArray(built.rows) && built.rows.length) {
+      spells.length = 0;
+      built.rows.forEach(row => spells.push({
+        ...row,
+        id: row.id || row.rowId,
+        name: row.name,
+        level: row.castLevel,
+        spell_level: row.baseLevel,
+        source: row.sourceType || row.source || 'spell',
+        card: { ...((row.card && typeof row.card === 'object') ? row.card : row), level: row.baseLevel, spell_level: row.baseLevel },
+      }));
+    }
+  }
+
+  // Sort: cantrips first, then by cast/display level
+  spells.sort((a, b) => ((a.castLevel ?? a.level ?? 99) - (b.castLevel ?? b.level ?? 99)));
   return spells;
 }
 
@@ -47349,7 +47379,7 @@ function _findCombatQuickSpellById(spellId) {
 }
 
 function _combatQuickSpellBaseLevel(spell) {
-  const raw = spell?.level ?? spell?.spell_level ?? spell?.card?.level ?? spell?.card?.spell_level;
+  const raw = spell?.baseLevel ?? spell?.base_level ?? spell?.spell_level ?? spell?.card?.level ?? spell?.card?.spell_level ?? spell?.level;
   if (raw === null || raw === undefined || raw === '') return null;
   const n = Number(raw);
   return Number.isFinite(n) ? Math.max(0, Math.min(9, Math.floor(n))) : null;
@@ -47525,7 +47555,7 @@ function combatQuickRollWeaponDamage(attackId, mode = 'base', critical = false) 
 
 function combatQuickCastSpell(spellId, preferredLevel) {
   const spells = _getCombatQuickSpells();
-  const spell = spells.find(s => String(s.id) === String(spellId) || s.name === spellId);
+  const spell = spells.find(s => String(s.id) === String(spellId) || String(s.spellId || '') === String(spellId) || s.name === spellId);
   if (!spell) { showToast('Spell not found.'); return; }
   const card = spell.card || {};
   const castTime = String(card.casting_time || spell.casting_time || '').toLowerCase();
@@ -47596,7 +47626,7 @@ function _showSpellLevelPickerModal(spell, availableSlots) {
 function _combatSpellLevelChosen(spellId, level) {
   document.getElementById('_combat-spell-level-modal')?.remove();
   const spells = _getCombatQuickSpells();
-  const spell = spells.find(s => String(s.id) === String(spellId) || s.name === spellId);
+  const spell = spells.find(s => String(s.id) === String(spellId) || String(s.spellId || '') === String(spellId) || s.name === spellId);
   if (!spell) return;
   _executeCombatSpellCast(spell, level);
 }

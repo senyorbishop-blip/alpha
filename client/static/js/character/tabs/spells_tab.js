@@ -65,7 +65,7 @@
     return _safeArray(rows).filter(function (row) { return row && _meaningful(row.value); });
   }
   function _spellLevelNumber(spell) {
-    const raw = spell && (spell.level ?? spell.spell_level ?? spell.spellLevel ?? spell.slotLevel);
+    const raw = spell && (spell.displaySectionLevel ?? spell.castLevel ?? spell.level ?? spell.spell_level ?? spell.spellLevel ?? spell.slotLevel);
     if (raw === null || raw === undefined || raw === '') return null;
     if (typeof raw === 'string' && raw.toLowerCase() === 'cantrip') return 0;
     const n = parseInt(raw, 10);
@@ -357,16 +357,20 @@ function _spellAttackSaveCell(spell, charData) {
 
   function _spellEffectLabel(spell) {
     const formula = _firstText(
+      spell && spell.damagePreview,
       spell && spell.damageFormula,
       spell && spell.damage_formula,
+      spell && spell.healingPreview,
       spell && spell.healingFormula,
       spell && spell.healing_formula,
+      spell && spell.damagePreview,
       spell && spell.rollConfig && spell.rollConfig.damageFormula,
       spell && spell.roll_config && spell.roll_config.damage_formula,
       ''
     );
     const type = _firstText(spell && spell.damageType, spell && spell.damage_type, '');
     const summary = _firstText(
+      spell && spell.effectPreview,
       spell && spell.effect,
       spell && spell.effect_text,
       spell && spell.base_effect_text,
@@ -394,11 +398,13 @@ function _spellAttackSaveCell(spell, charData) {
 
   function _spellRollBaseExpression(spell) {
     return _firstText(
+      spell && spell.damagePreview,
       spell && spell.rollConfig && spell.rollConfig.damageFormula,
       spell && spell.rollConfig && spell.rollConfig.damage_formula,
       spell && spell.roll_config && spell.roll_config.damage_formula,
       spell && spell.damageFormula,
       spell && spell.damage_formula,
+      spell && spell.healingPreview,
       spell && spell.rollConfig && spell.rollConfig.healingFormula,
       spell && spell.rollConfig && spell.rollConfig.healing_formula,
       spell && spell.roll_config && spell.roll_config.healing_formula,
@@ -412,6 +418,7 @@ function _spellAttackSaveCell(spell, charData) {
     return _firstText(
       spell && spell.healingFormula,
       spell && spell.healing_formula,
+      spell && spell.healingPreview,
       spell && spell.rollConfig && spell.rollConfig.healingFormula,
       spell && spell.rollConfig && spell.rollConfig.healing_formula,
       spell && spell.roll_config && spell.roll_config.healing_formula,
@@ -448,7 +455,8 @@ function _spellAttackSaveCell(spell, charData) {
   }
 
   function _pickSpellCastLevel(spell) {
-    const baseLevel = _spellLevelNumber(spell);
+    const baseLevel = (spell && spell.baseLevel != null) ? parseInt(spell.baseLevel, 10) : _spellLevelNumber(spell);
+    if (spell && spell.isVirtualCastRow && spell.castLevel != null) return parseInt(spell.castLevel, 10);
     const levels = _safeArray(spell && spell.availableCastLevels).map(function (lvl) { return parseInt(lvl, 10); }).filter(function (lvl) { return Number.isFinite(lvl) && lvl >= baseLevel; });
     if (baseLevel <= 0 || levels.length <= 1 || typeof global.prompt !== 'function') return baseLevel;
     const defaultLevel = String(baseLevel);
@@ -1153,11 +1161,12 @@ function _spellAttackSaveCell(spell, charData) {
 
   function _spellCardActionHtml(spell, charData) {
     const spellKey = String(spell && (spell.id || _spellName(spell) || '') || '').trim();
+    const castSpellKey = String(spell && (spell.spellId || (spell.card && spell.card.id) || spell.id || _spellName(spell) || '') || '').trim();
     const actions = [];
-    if (_spellCanCastFromCard(spell)) actions.push('<button type="button" class="cs-feature-inspect" data-spell-cast="' + _esc(spellKey) + '">Cast</button>');
+    if (_spellCanCastFromCard(spell)) actions.push('<button type="button" class="cs-feature-inspect" data-spell-cast="' + _esc(castSpellKey) + '" data-cast-level="' + _esc(String(spell && spell.castLevel != null ? spell.castLevel : (_spellLevelNumber(spell) || 0))) + '"' + (spell && spell.disabledReason ? ' disabled title="' + _esc(spell.disabledReason) + '"' : '') + '>Cast L' + _esc(String(spell && spell.castLevel != null ? spell.castLevel : (_spellLevelNumber(spell) || 0))) + '</button>');
     if (_spellHasAttackRoll(spell, charData)) actions.push('<button type="button" class="cs-feature-inspect" data-spell-attack="' + _esc(spellKey) + '">Attack</button>');
     const rollExpr = _spellRollBaseExpression(spell);
-    if (_looksRollableFormula(rollExpr)) actions.push('<button type="button" class="cs-feature-inspect" data-spell-roll="' + _esc(spellKey) + '">Roll Effect</button>');
+    if (_looksRollableFormula(rollExpr)) actions.push('<button type="button" class="cs-feature-inspect" data-spell-roll="' + _esc(spellKey) + '" data-cast-level="' + _esc(String(spell && spell.castLevel != null ? spell.castLevel : (_spellLevelNumber(spell) || 0))) + '">Roll Effect</button>');
     return actions.join('');
   }
 
@@ -1200,13 +1209,21 @@ function _spellAttackSaveCell(spell, charData) {
     }).join('');
   }
 
+  function _buildCastableRowsForState(state) {
+    const selected = _selectedSpells(Object.assign({}, state, { filter: 'ALL', query: '' }));
+    if (!(global.AppSpellRuntime && typeof global.AppSpellRuntime.buildCastableSpellRows === 'function')) return selected;
+    const library = _mergeSpellArrays(_safeArray(state.librarySpells), _mergeSpellArrays(_safeArray(state.manifest && state.manifest.cards), state.linkedSpells));
+    const built = global.AppSpellRuntime.buildCastableSpellRows(Object.assign({}, state.charData || {}, { manifest: state.manifest || {}, spellLibrary: library }), selected, library);
+    state.castableSpellRows = _safeArray(built && built.rows);
+    state.castableSpellDiagnostics = built && built.diagnostics ? built.diagnostics : {};
+    return state.castableSpellRows;
+  }
+
   function _renderSelectedSection(state) {
-    const selected = _selectedSpells(state);
-    const title = ((state.manifest && state.manifest.limits && state.manifest.limits.preparedLimit != null) ? 'Current Spells' : 'Current Spells');
-    const copy = ((state.manifest && state.manifest.limits && state.manifest.limits.preparedLimit != null)
-      ? 'This is the spell list you actually have ready right now. Click a row for the full rules text, use the Attack / Save column only for true spell attacks, and use the Effect button when a spell has a damage or healing roll.'
-      : 'This is the spell list currently linked to the character. Click a row for the full rules text, and only use the buttons that match what the spell really does.');
-    return '<div class="cs-action-section"><div class="cs-action-section-title">' + _esc(title) + '</div><div class="cs-feature-section-copy">' + _esc(copy) + '</div><div class="cs-spell-manager-table">' + _renderSpellTable(selected, false, null, state.charData) + '</div></div>';
+    const selected = _buildCastableRowsForState(state).filter(function (spell) { return _matchesSpellFilter(spell, state.filter, state.query); });
+    const title = 'Castable Spells';
+    const copy = 'D&D app-style rows are generated from your known/prepared spell manifest. Each row is already set to the slot level shown in its section, including higher-slot damage or effect previews.';
+    return '<div class="cs-action-section"><div class="cs-action-section-title">' + _esc(title) + '</div><div class="cs-feature-section-copy">' + _esc(copy) + '</div><div class="cs-spell-manager-table">' + _renderSpellTable(selected, true, function (spell) { return _spellCardActionHtml(spell, state.charData); }, state.charData) + '</div></div>';
   }
 
   function _renderSpellsTab(container, state) {
@@ -1405,7 +1422,7 @@ function _spellAttackSaveCell(spell, charData) {
         e.stopPropagation();
         const spellKey = String(castBtn.getAttribute('data-spell-cast') || '');
         if (spellKey && typeof global.castRulesSpell === 'function') {
-          global.castRulesSpell(spellKey);
+          global.castRulesSpell(spellKey, { castLevel: parseInt(castBtn.getAttribute('data-cast-level') || '0', 10) || 0, slotLevel: parseInt(castBtn.getAttribute('data-cast-level') || '0', 10) || 0 });
         }
         return;
       }
@@ -1431,8 +1448,9 @@ function _spellAttackSaveCell(spell, charData) {
         e.preventDefault();
         e.stopPropagation();
         const spellId = String(rollBtn.getAttribute('data-spell-roll') || '');
-        const pool = _mergeSpellArrays(_safeArray(state.librarySpells), _mergeSpellArrays(_safeArray(state.manifest && state.manifest.cards), state.linkedSpells));
+        const pool = _mergeSpellArrays(_safeArray(state.castableSpellRows), _mergeSpellArrays(_safeArray(state.librarySpells), _mergeSpellArrays(_safeArray(state.manifest && state.manifest.cards), state.linkedSpells)));
         const spell = pool.find(function (s) { return String(s.id || _spellName(s) || '') === spellId; });
+        if (spell && rollBtn.getAttribute('data-cast-level')) spell.castLevel = parseInt(rollBtn.getAttribute('data-cast-level'), 10) || spell.castLevel;
         const rolled = _rollSpellFromUi(spell, state);
         if (!rolled.ok && rolled.reason !== 'cancelled') {
           state.message = rolled.reason === 'no_formula' ? 'That spell does not have a rollable damage or healing formula yet.' : 'Could not roll that spell right now.';
@@ -1470,7 +1488,7 @@ function _spellAttackSaveCell(spell, charData) {
       const row = e.target.closest('.cs-spell-row, .cs-spell-card-row');
       if (!row) return;
       const id = row.getAttribute('data-spell-id') || '';
-      const pool = _mergeSpellArrays(_safeArray(state.librarySpells), _mergeSpellArrays(_safeArray(state.manifest && state.manifest.cards), state.linkedSpells));
+      const pool = _mergeSpellArrays(_safeArray(state.castableSpellRows), _mergeSpellArrays(_safeArray(state.librarySpells), _mergeSpellArrays(_safeArray(state.manifest && state.manifest.cards), state.linkedSpells)));
       const spell = pool.find(function (s) { return String(s.id || _spellName(s) || '') === id; });
       if (spell) _openSpellDetails(spell, state.charData);
     });
