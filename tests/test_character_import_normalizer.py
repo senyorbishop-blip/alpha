@@ -63,6 +63,23 @@ def test_normalize_pdf_payload_reports_missing_content_warnings():
     assert any(warning.get("code") == "partial_pdf_fields" and warning.get("details", {}).get("field") == "background" for warning in result["warnings"])
 
 
+def test_pdf_import_preserves_image_fields_when_present():
+    result = normalize_pdf_payload(
+        {
+            "name": "Portrait Import",
+            "stats": [10, 10, 10, 10, 10, 10],
+            "classes": [{"name": "Bard", "level": 2}],
+            "portraitUrl": "https://example.com/imported-portrait.png",
+            "tokenImageUrl": "https://example.com/imported-token.png",
+        },
+        filename="portrait.pdf",
+    )
+
+    identity = result["document"]["identity"]
+    assert identity["portraitUrl"].endswith("imported-portrait.png")
+    assert identity["tokenImageUrl"].endswith("imported-token.png")
+
+
 def test_ddb_json_import_preserves_playable_inventory_actions_features_and_spells():
     payload = {
         "data": {

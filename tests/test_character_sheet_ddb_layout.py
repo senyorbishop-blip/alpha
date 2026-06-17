@@ -13,6 +13,48 @@ def test_sheet_header_renders_core_identity_and_rest_controls():
         assert text in SHEET
 
 
+def test_character_sheet_resolves_portraits_from_expected_sources():
+    assert 'function resolveCharacterPortrait(characterRuntime, characterDocument, tokenData)' in SHEET
+    assert 'identity.portraitUrl' in SHEET
+    assert 'runtime.avatarUrl' in SHEET
+    assert "['rawSnapshot', 'decorations', 'avatarUrl']" in SHEET
+    assert 'book.avatarUrl' in SHEET
+    assert 'token.image_url' in SHEET
+    assert "'/static/importer/portraits/class/'" in SHEET
+    assert "source: explicit ? 'explicit'" in SHEET
+    assert 'global.resolveCharacterPortrait = resolveCharacterPortrait' in SHEET
+
+
+def test_character_sheet_header_renders_image_with_initials_fallback_and_single_warning():
+    assert 'class="cs-portrait-img"' in SHEET
+    assert 'data-portrait-url' in SHEET
+    assert 'cs-portrait-initials' in SHEET
+    assert "frame.classList.add('image-failed')" in SHEET
+    assert 'img.dataset.warned' in SHEET
+    assert "console.warn('[character-sheet] Portrait failed to load; showing initials fallback.'" in SHEET
+    assert 'img.removeAttribute(\'src\')' in SHEET
+
+
+def test_tab_labels_render_without_visible_count_badges_and_keep_count_data():
+    assert 'const count = _tabCount(tab.id, charData || {});' in SHEET
+    assert "btn.setAttribute('data-tab-count', count || '');" in SHEET
+    assert '<span class="cs-tab-count">' not in SHEET
+    for label in ['Actions', 'Spells', 'Inventory', 'Features & Traits', 'Background', 'Notes', 'Extras']:
+        assert f'label: \'{label}\'' in SHEET
+    assert '.cs-tab-count {' in CSS
+    assert 'display: none;' in CSS
+
+
+def test_active_tab_and_keyboard_navigation_still_change_tabs():
+    assert "btn.classList.toggle('active', isActive);" in SHEET
+    assert "btn.setAttribute('aria-selected', isActive ? 'true' : 'false');" in SHEET
+    assert "tabBar.setAttribute('role', 'tablist');" in SHEET
+    assert "btn.setAttribute('role', 'tab');" in SHEET
+    assert "if (e.key === 'ArrowRight')" in SHEET
+    assert "if (e.key === 'ArrowLeft')" in SHEET
+    assert 'btns[next].click();' in SHEET
+
+
 def test_stat_cards_render_all_six_abilities_with_save_data():
     for ability in ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma']:
         assert ability in SHEET

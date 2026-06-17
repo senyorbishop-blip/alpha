@@ -104,6 +104,32 @@ def test_export_mapper_provides_safe_defaults_for_legacy_shapes():
     assert char_book["spells"]["slots"] == {}
 
 
+def test_profile_save_payload_preserves_portrait_avatar_and_token_image_fields():
+    from server.character.service import build_profile_upsert_payload
+
+    payload = build_profile_upsert_payload(
+        {
+            "identity": {
+                "characterId": "portrait-hero",
+                "name": "Portrait Hero",
+                "portraitUrl": "https://example.com/avatar.png",
+                "tokenImageUrl": "https://example.com/token.png",
+            },
+            "ruleset": "casual-dnd-5e-compatible",
+            "spellState": {},
+            "classes": [{"name": "Fighter", "level": 1}],
+        },
+        profile_id="portrait-hero",
+    )
+
+    assert payload["nativeCharacter"]["identity"]["portraitUrl"].endswith("avatar.png")
+    assert payload["nativeCharacter"]["identity"]["tokenImageUrl"].endswith("token.png")
+    assert payload["charSheet"]["avatarUrl"].endswith("avatar.png")
+    assert payload["charSheet"]["tokenImageUrl"].endswith("token.png")
+    assert payload["charBook"]["avatarUrl"].endswith("avatar.png")
+    assert payload["charBook"]["tokenImageUrl"].endswith("token.png")
+
+
 def test_export_mapper_uses_runtime_spell_and_resource_placeholders():
     document = {
         "identity": {"name": "Nyx"},

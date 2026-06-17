@@ -139,8 +139,89 @@ function _classLineWithoutLevel(charData) {
   return [baseClass, subclass].filter(Boolean).join(' · ');
 }
 
+function _pickNested(obj, path) {
+  let cur = obj;
+  for (let i = 0; i < path.length; i += 1) {
+    if (!cur || typeof cur !== 'object') return '';
+    cur = cur[path[i]];
+  }
+  return _firstNonEmpty(cur);
+}
+
+function _classOrSpeciesFallbackIcon(characterRuntime, characterDocument, charData) {
+  const cls = _firstNonEmpty(
+    _pickNested(characterRuntime, ['classDisplay', 'classId']),
+    _pickNested(characterRuntime, ['classDisplay', 'className']),
+    _pickNested(characterDocument, ['classes', 0, 'classId']),
+    _pickNested(characterDocument, ['classes', 0, 'name']),
+    charData && charData.className,
+    charData && charData.class
+  ).toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
+  if (cls) return '/static/importer/portraits/class/' + encodeURIComponent(cls) + '.png';
+  const species = _firstNonEmpty(
+    _pickNested(characterDocument, ['species', 'id']),
+    _pickNested(characterDocument, ['species', 'name']),
+    charData && (charData.species || charData.race)
+  ).toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
+  return species ? '/static/importer/portraits/species/' + encodeURIComponent(species) + '.png' : '';
+}
+
+function resolveCharacterPortrait(characterRuntime, characterDocument, tokenData) {
+  const runtime = characterRuntime && typeof characterRuntime === 'object' ? characterRuntime : {};
+  const doc = characterDocument && typeof characterDocument === 'object' ? characterDocument : {};
+  const token = tokenData && typeof tokenData === 'object' ? tokenData : {};
+  const identity = doc.identity && typeof doc.identity === 'object' ? doc.identity : {};
+  const imported = doc.importMeta && typeof doc.importMeta === 'object' ? doc.importMeta : {};
+  const book = runtime.book && typeof runtime.book === 'object' ? runtime.book : {};
+  const sheet = runtime.charSheet && typeof runtime.charSheet === 'object' ? runtime.charSheet : {};
+  const profile = runtime.profile && typeof runtime.profile === 'object' ? runtime.profile : {};
+  const explicit = _firstNonEmpty(
+    identity.portraitUrl,
+    identity.avatarUrl,
+    runtime.portraitUrl,
+    runtime.avatarUrl,
+    sheet.portraitUrl,
+    sheet.avatarUrl
+  );
+  const importedUrl = _firstNonEmpty(
+    imported.portraitUrl,
+    imported.avatarUrl,
+    _pickNested(imported, ['image', 'url']),
+    _pickNested(imported, ['rawSnapshot', 'decorations', 'avatarUrl']),
+    _pickNested(doc, ['decorations', 'avatarUrl'])
+  );
+  const libraryUrl = _firstNonEmpty(
+    book.portraitUrl,
+    book.avatarUrl,
+    profile.portraitUrl,
+    profile.avatarUrl,
+    runtime.libraryPortraitUrl,
+    runtime.savedPortraitUrl
+  );
+  const tokenUrl = _firstNonEmpty(
+    token.image_url,
+    token.imageUrl,
+    token.tokenImageUrl,
+    identity.tokenImageUrl,
+    runtime.tokenImageUrl,
+    sheet.tokenImageUrl,
+    book.tokenImageUrl,
+    profile.tokenImageUrl
+  );
+  const fallback = _classOrSpeciesFallbackIcon(runtime, doc, runtime);
+  const url = _firstNonEmpty(explicit, importedUrl, libraryUrl, tokenUrl, fallback);
+  const name = _firstNonEmpty(identity.displayName, identity.name, runtime.name, sheet.name, book.name, token.name, 'Adventurer');
+  const initials = String(name || 'A').trim().split(/\s+/).map(function (part) { return part.charAt(0); }).join('').slice(0, 2).toUpperCase() || 'A';
+  return {
+    url,
+    source: explicit ? 'explicit' : (importedUrl ? 'imported' : (libraryUrl ? 'library' : (tokenUrl ? 'token' : (fallback ? 'fallback_icon' : 'initials')))),
+    initials,
+    alt: 'Portrait of ' + name,
+  };
+}
+
 function _portraitUrl(charData) {
-  return _firstNonEmpty(charData && charData.avatarUrl, charData && charData.portraitUrl, charData && charData.book && charData.book.avatarUrl);
+  return resolveCharacterPortrait(charData, charData && charData.nativeCharacter, charData && charData.tokenData).url;
 }
 
 
@@ -416,7 +497,12 @@ function _renderFlagshipHeader(charData) {
   const classLine = _classLineWithoutLevel(charData) || 'Adventurer';
   const speciesLine = [_titleCaseWords(charData.species || charData.race || ''), _titleCaseWords(charData.background || ''), _titleCaseWords(charData.alignment || '')]
     .filter(Boolean).join(' • ');
-  const portraitUrl = _portraitUrl(charData);
+  const portrait = resolveCharacterPortrait(
+    charData || {},
+    (charData && (charData.nativeCharacter || charData.characterDocument || charData.document)) || {},
+    (charData && (charData.tokenData || charData.token || charData.linkedToken)) || {}
+  );
+  const portraitUrl = portrait.url;
   const hpValue = `${parseInt(charData.currentHp || 0, 10)}/${parseInt(charData.maxHp || 0, 10)}`;
   const summaryCards = [
     _summaryCard('Armor Class', parseInt(charData.ac || 0, 10) || '—', 'Defense at a glance', 'gold'),
@@ -453,8 +539,8 @@ function _renderFlagshipHeader(charData) {
       <div class="cs-hero-card">
         <div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
           <div style="flex:0 0 auto;">
-            <div style="width:110px;height:110px;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,0.14);background:radial-gradient(circle at 35% 20%,rgba(255,255,255,0.1),rgba(255,255,255,0.02));display:flex;align-items:center;justify-content:center;padding:6px;">
-              ${portraitUrl ? `<img src="${_esc(portraitUrl)}" alt="Portrait of ${_esc(charData.name || 'Adventurer')}" loading="lazy" style="width:100%;height:100%;object-fit:contain;object-position:center center;display:block;image-rendering:auto;">` : `<span style="font-family:'Cinzel',serif;font-size:2rem;color:rgba(255,255,255,0.72);">${_esc(String(charData.name || 'A').slice(0, 1).toUpperCase())}</span>`}
+            <div class="cs-portrait-frame" data-portrait-source="${_esc(portrait.source)}">
+              ${portraitUrl ? `<img class="cs-portrait-img" src="${_esc(portraitUrl)}" alt="${_esc(portrait.alt)}" loading="lazy" data-portrait-url="${_esc(portraitUrl)}"><span class="cs-portrait-initials" aria-hidden="true">${_esc(portrait.initials)}</span>` : `<span class="cs-portrait-initials">${_esc(portrait.initials)}</span>`}
             </div>
           </div>
           <div style="flex:1;min-width:220px;">
@@ -800,7 +886,8 @@ function _buildSkeleton(wrapper, charData) {
       btn.setAttribute('id', 'csp-tab-' + _esc(tab.id));
       btn.setAttribute('data-tab-id', tab.id);
       const count = _tabCount(tab.id, charData || {});
-      btn.innerHTML = `<span class="cs-tab-btn-inner"><span class="cs-tab-label">${_esc(tab.label)}</span>${count ? `<span class="cs-tab-count">${_esc(count)}</span>` : ''}</span>`;
+      btn.setAttribute('data-tab-count', count || '');
+      btn.innerHTML = `<span class="cs-tab-btn-inner"><span class="cs-tab-label">${_esc(tab.label)}</span></span>`;
       tabBar.appendChild(btn);
     });
     tabBarWrap.appendChild(tabBar);
@@ -881,6 +968,20 @@ function _buildSkeleton(wrapper, charData) {
     container.innerHTML = '';
 
     const refs = _buildSkeleton(container, charData || {});
+    container.querySelectorAll('.cs-portrait-img').forEach(function (img) {
+      img.addEventListener('error', function () {
+        const frame = img.closest('.cs-portrait-frame');
+        if (frame) frame.classList.add('image-failed');
+        const url = img.getAttribute('data-portrait-url') || img.currentSrc || img.src || '';
+        if (url && !img.dataset.warned) {
+          img.dataset.warned = '1';
+          if (global.console && typeof global.console.warn === 'function') {
+            global.console.warn('[character-sheet] Portrait failed to load; showing initials fallback.', url);
+          }
+        }
+        img.removeAttribute('src');
+      }, { once: true });
+    });
     const initialised = {};
     _bindDetailDrawer(container);
     _activateTab('actions', refs, charData, initialised);
@@ -939,7 +1040,8 @@ function _buildSkeleton(wrapper, charData) {
     return false;
   }
 
-  global.CSContainer = { initCharacterSheetPremium, openDetailDrawer, closeDetailDrawer, openMapPanelFromSheet };
+  global.CSContainer = { initCharacterSheetPremium, openDetailDrawer, closeDetailDrawer, openMapPanelFromSheet, resolveCharacterPortrait };
+  global.resolveCharacterPortrait = resolveCharacterPortrait;
 
   (function patchCharBookNav() {
     var _orig = global.goCharacterBookPage;
