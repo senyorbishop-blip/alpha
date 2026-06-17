@@ -86,6 +86,17 @@
   }
 
   function _spellDamagePreview(spell, castLevel) {
+    if (typeof global.resolveSpellCast === 'function') {
+      try {
+        const resolved = global.resolveSpellCast(spell, global._charSheet || {}, {
+          castLevel: castLevel,
+          slotLevel: castLevel,
+          source: 'spell',
+          actionSource: 'quick_actions_preview'
+        });
+        if (resolved && resolved.formulaUsed) return resolved.formulaUsed;
+      } catch (_e) {}
+    }
     // Pass the full spell object so preview works even when the ID lookup fails.
     if (typeof global.getCombatSpellDamagePreview === 'function') {
       const result = global.getCombatSpellDamagePreview(spell, castLevel);
