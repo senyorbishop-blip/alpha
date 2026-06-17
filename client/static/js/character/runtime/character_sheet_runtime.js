@@ -57,6 +57,57 @@ function _csrFirst() {
   }
   return '';
 }
+
+function _csrItemRequiresAttunement(item) {
+  const att = _csrObject(item && item.attunement);
+  return !!(item && (item.requiresAttunement || item.requires_attunement || item.attunement_required || att.required));
+}
+function _csrItemIsAttuned(item) {
+  if (!_csrItemRequiresAttunement(item)) return true;
+  const att = _csrObject(item && item.attunement);
+  return !!(item && (item.attuned || att.attuned));
+}
+function _csrNormalizeItemEffects(item) {
+  const effects = _csrObject(item && item.effects);
+  let rawMods = (item && (item.modifiers || item.passive_effects)) || effects.modifiers || [];
+  if (rawMods && !Array.isArray(rawMods) && typeof rawMods === 'object') rawMods = [rawMods];
+  const modifiers = [];
+  _csrArray(rawMods).forEach(function (mod) {
+    if (!mod || typeof mod !== 'object') return;
+    const rawType = String(mod.type || mod.target || '').trim().toLowerCase().replace(/-/g, '_');
+    const value = _csrInt(mod.value != null ? mod.value : mod.bonus, 0);
+    const aliases = { ac_bonus: 'ac', armor_class: 'ac', weapon_attack_bonus: 'weapon_attack', weapon_damage_bonus: 'weapon_damage', spell_attack_bonus: 'spell_attack', spell_save_dc_bonus: 'spell_save_dc' };
+    const type = aliases[rawType] || rawType;
+    if (!type || !value) return;
+    modifiers.push({ type, value, source: _csrFirst(item && item.name, 'Item'), requiresEquipped: mod.requiresEquipped !== undefined ? !!mod.requiresEquipped : (mod.requires_equipped !== undefined ? !!mod.requires_equipped : true), requiresAttuned: mod.requiresAttuned !== undefined ? !!mod.requiresAttuned : (mod.requires_attuned !== undefined ? !!mod.requires_attuned : _csrItemRequiresAttunement(item)) });
+  });
+  [['attack_bonus', 'weapon_attack'], ['damage_bonus', 'weapon_damage'], ['spell_attack_bonus', 'spell_attack'], ['spell_save_dc_bonus', 'spell_save_dc']].forEach(function (pair) {
+    const value = _csrInt(item && item[pair[0]], 0);
+    if (value) modifiers.push({ type: pair[1], value, source: _csrFirst(item && item.name, 'Item'), requiresEquipped: true, requiresAttuned: _csrItemRequiresAttunement(item) });
+  });
+  const charges = _csrObject(item && item.charges);
+  const recharge = _csrObject(item && item.recharge);
+  return {
+    modifiers,
+    charges: { current: _csrInt(charges.current != null ? charges.current : item && item.charges_current, -1), max: _csrInt(charges.max != null ? charges.max : item && item.charges_max, 0) },
+    recharge: { type: _csrFirst(recharge.type, item && item.recharge_type, 'none'), formula: _csrFirst(recharge.formula, item && item.recharge_formula, '') },
+    grantedSpells: _csrArray(item && (item.grantedSpells || item.granted_spells)).concat(_csrArray(effects.grantedSpells || effects.granted_spells)),
+    grantedActions: _csrArray(item && (item.grantedActions || item.granted_actions)).concat(_csrArray(effects.grantedActions || effects.granted_actions)),
+    requiresAttunement: _csrItemRequiresAttunement(item),
+    requirements: { equipped: !!(item && item.equipped), attuned: _csrItemIsAttuned(item) },
+  };
+}
+function _csrActiveItemModifier(item, target) {
+  const schema = _csrNormalizeItemEffects(item);
+  return _csrArray(schema.modifiers).reduce(function (sum, mod) {
+    if (String(mod.type) !== target) return sum;
+    if (mod.requiresEquipped && !(item && item.equipped)) return sum;
+    if (mod.requiresAttuned && !_csrItemIsAttuned(item)) return sum;
+    return sum + _csrInt(mod.value, 0);
+  }, 0);
+}
+function _csrSigned(n) { const v = _csrInt(n, 0); return (v >= 0 ? '+' : '') + String(v); }
+
 function _csrSpellActionType(castingTime) {
   const text = String(castingTime || '').toLowerCase();
   if (text.includes('bonus')) return 'bonus action';
@@ -364,8 +415,11 @@ function buildCharacterSheetRuntime(characterDocument) {
   _csrArray(doc.attacks || doc.quickAttacks).forEach(a => _csrPushUnique(attacks, Object.assign({ id: _csrSlug(a.name), source: 'attack' }, a), x => String(x.name || x.id || '').toLowerCase()));
   _csrArray(doc.inventory || doc.items || book.inventory).forEach(function (item) {
     const name = _csrFirst(item.name, item.displayName);
-    if (/quarterstaff|weapon|sword|bow|dagger|axe|mace/i.test(`${name} ${item.type || ''}`)) {
-      _csrPushUnique(attacks, { id: _csrSlug(name), name, source: item.source || 'item', actionType: 'action', attackBonus: item.attackBonus || '', damage: item.damage || item.damageFormula || '', item }, x => String(x.name || '').toLowerCase());
+    if (/quarterstaff|weapon|sword|bow|dagger|axe|mace/i.test(`${name} ${item.type || item.item_type || item.equipment_kind || ''}`) && _csrItemIsAttuned(item)) {
+      const atkBonus = _csrActiveItemModifier(item, 'weapon_attack');
+      const dmgBonus = _csrActiveItemModifier(item, 'weapon_damage');
+      const damageBase = item.damage || item.damageFormula || item.damage_dice || '';
+      _csrPushUnique(attacks, { id: _csrSlug(name), name, source: item.source || 'item', actionType: 'action', attackBonus: item.attackBonus || item.attack_bonus || (atkBonus ? _csrSigned(atkBonus) : ''), damage: damageBase && dmgBonus ? String(damageBase) + _csrSigned(dmgBonus) : damageBase, item, itemEffects: _csrNormalizeItemEffects(item) }, x => String(x.name || '').toLowerCase());
     }
   });
   _csrPushUnique(attacks, { id: 'unarmed-strike', name: 'Unarmed Strike', source: 'system', actionType: 'action', damage: '1 + STR mod' }, x => String(x.name || '').toLowerCase());
@@ -377,9 +431,20 @@ function buildCharacterSheetRuntime(characterDocument) {
     _csrPushUnique(itemSpells, _csrBuildSpell(spell, doc, 'item'), function (s) { return String(s.name || s.id || '').toLowerCase(); });
   });
   _csrArray(doc.inventory || doc.items || book.inventory).forEach(function (item) {
-    _csrArray(item && (item.spells || item.grantedSpells)).forEach(function (spell) {
-      const built = _csrBuildSpell(typeof spell === 'string' ? { name: spell } : spell, doc, 'item');
+    const itemEffects = _csrNormalizeItemEffects(item);
+    if (!_csrItemIsAttuned(item)) return;
+    _csrArray(item && item.spells).concat(_csrArray(itemEffects.grantedSpells)).forEach(function (spell) {
+      const sourceSpell = typeof spell === 'string' ? { name: spell } : Object.assign({}, spell || {});
+      if (sourceSpell.cast_level != null && sourceSpell.castLevel == null) sourceSpell.castLevel = sourceSpell.cast_level;
+      const built = _csrBuildSpell(sourceSpell, doc, 'item');
       built.itemName = _csrFirst(item.name, item.displayName);
+      built.itemId = _csrFirst(item.id, item.magic_item_id, built.itemName);
+      built.chargeCost = _csrInt(sourceSpell.charge_cost != null ? sourceSpell.charge_cost : sourceSpell.chargeCost, 0);
+      built.castLevel = _csrInt(sourceSpell.castLevel, built.level || 0);
+      built.itemEffects = itemEffects;
+      if (sourceSpell.uses_item_attack_bonus) built.spellAttackBonus = _csrSigned(_csrInt(item.item_spell_attack_bonus, 0) + _csrActiveItemModifier(item, 'spell_attack'));
+      if (sourceSpell.uses_item_dc) built.saveDc = _csrInt(item.item_spell_save_dc, 0) + _csrActiveItemModifier(item, 'spell_save_dc');
+      built.preview = { itemName: built.itemName, chargeCost: built.chargeCost, castLevel: built.castLevel, attack: built.spellAttackBonus || '', saveDc: built.saveDc || '', damage: built.damageFormula || built.effectFormula || '' };
       _csrPushUnique(itemSpells, built, function (s) { return String(s.name || s.id || '').toLowerCase(); });
     });
   });

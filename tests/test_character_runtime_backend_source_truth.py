@@ -85,3 +85,78 @@ def test_item_runtime_separates_item_spells_attacks_charges_and_traits():
     assert all(str(s.get("sourceType") or s.get("source") or "").lower() != "item_spell" for s in rt["spells"])
     assert any(str(r.get("source")) == "item" and "charges" in str(r.get("name") or "").lower() for r in rt["resources"])
     assert any(str(t.get("source")) == "item" for t in rt["itemTraits"])
+
+
+def _item_named(rt, name):
+    return next(row for row in rt["attacks"] if name.lower() in str(row.get("name") or "").lower())
+
+
+def test_magic_item_plus_three_weapon_modifiers_flow_to_runtime_attacks():
+    rt = _runtime(_doc("fighter", inventory=[{
+        "id": "longsword-plus-3",
+        "name": "Longsword +3",
+        "equipment_kind": "weapon",
+        "equipped": True,
+        "damage_dice": "1d8",
+        "damage_type": "slashing",
+        "modifiers": [
+            {"type": "weapon_attack_bonus", "value": 3},
+            {"type": "weapon_damage_bonus", "value": 3},
+        ],
+    }]))
+    attack = _item_named(rt, "Longsword")
+    assert attack["attackBonus"] == 9  # STR +3, proficiency +3 at level 5, item +3
+    assert attack["damage"]["formula"] == "1d8+3"
+
+
+def test_spell_attack_bonus_item_flows_to_item_spell_card_preview():
+    rt = _runtime(_doc("wizard", spells=[], inventory=[{
+        "id": "arcane-focus-of-accuracy",
+        "name": "Arcane Focus of Accuracy",
+        "equipment_kind": "wand",
+        "equipped": True,
+        "requires_attunement": True,
+        "attuned": True,
+        "item_spell_attack_bonus": 7,
+        "modifiers": [{"type": "spell_attack_bonus", "value": 2}],
+        "granted_spells": [{"id": "fire-bolt", "name": "Fire Bolt", "charge_cost": 0, "cast_level": 0, "uses_item_attack_bonus": True}],
+    }]))
+    spell = next(row for row in rt["itemSpells"] if row["id"] == "fire-bolt")
+    assert spell["spellAttackBonus"] == 9
+    assert spell["attackBonus"] == 9
+    assert spell["itemName"] == "Arcane Focus of Accuracy"
+
+
+def test_item_with_three_charges_grants_spell_and_resource_cost():
+    rt = _runtime(_doc("wizard", spells=[], inventory=[{
+        "id": "wand-of-magic-missiles",
+        "name": "Wand of Magic Missiles",
+        "equipment_kind": "wand",
+        "equipped": True,
+        "charges_max": 3,
+        "charges_current": 3,
+        "recharge_type": "dawn",
+        "granted_spells": [{"id": "magic-missile", "name": "Magic Missile", "charge_cost": 1, "cast_level": 1}],
+    }]))
+    resource = next(row for row in rt["resources"] if row["source"] == "item")
+    spell = next(row for row in rt["itemSpells"] if row["id"] == "magic-missile")
+    assert resource["current"] == 3
+    assert resource["max"] == 3
+    assert spell["chargeCost"] == 1
+    assert spell["resourceCost"] == {"resourceId": resource["id"], "amount": 1}
+
+
+def test_unattuned_attunement_item_does_not_apply_bonuses_or_spells():
+    rt = _runtime(_doc("fighter", inventory=[{
+        "id": "attunement-longsword-plus-3",
+        "name": "Attunement Longsword +3",
+        "equipment_kind": "weapon",
+        "equipped": True,
+        "requires_attunement": True,
+        "attuned": False,
+        "damage_dice": "1d8",
+        "modifiers": [{"type": "weapon_attack_bonus", "value": 3}, {"type": "weapon_damage_bonus", "value": 3}],
+        "granted_spells": [{"id": "magic-missile", "name": "Magic Missile", "charge_cost": 1}],
+    }]))
+    assert not any("attunement longsword" in str(row.get("name") or "").lower() for row in rt["attacks"])
+    assert not rt["itemSpells"]
