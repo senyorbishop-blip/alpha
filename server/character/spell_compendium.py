@@ -808,7 +808,7 @@ def _class_mechanics_for_level(class_row: dict[str, Any] | None, level: int) -> 
     return {}
 
 
-def build_spell_limits_for_class(
+def _raw_spell_limits_for_class(
     class_id: str,
     class_level: int,
     abilities: dict[str, Any] | None = None,
@@ -849,6 +849,138 @@ def build_spell_limits_for_class(
         'spellSlots': spell_slots,
         'sourceSubclassId': active_subclass_id if caster_override else '',
     }
+
+
+def resolve_spell_learning_limits(
+    document: dict[str, Any] | None,
+    *,
+    class_id: str,
+    class_level: int,
+    abilities: dict[str, Any] | None = None,
+    subclass_id: str | None = None,
+    rules_version: str | None = None,
+) -> dict[str, Any]:
+    """Single source of truth for a class's known-spell/cantrip caps.
+
+    Falls back to the internal class progression table, but never reports a
+    lower limit than what an imported character document actually contains.
+    Item-granted spells and feat/species-granted spells are counted
+    separately from class-known spells/cantrips so they never inflate (or
+    get blamed for inflating) the class learning limit.
+    """
+    document = document if isinstance(document, dict) else {}
+    table = _raw_spell_limits_for_class(class_id, class_level, abilities, document=document, subclass_id=subclass_id)
+    table_known_limit = table.get('spellsKnown')
+    table_cantrip_limit = table.get('cantripsKnown')
+
+    import_meta = document.get('importMeta') if isinstance(document.get('importMeta'), dict) else {}
+    source_mode = _norm(document.get('sourceMode'))
+    is_imported = bool(import_meta) or source_mode in {'dndbeyond', 'pdf'}
+
+    resolved_rules_version = (
+        _norm(rules_version)
+        or _norm(document.get('rulesVersion'))
+        or _norm(import_meta.get('rulesVersion'))
+        or ('imported' if is_imported else '5e2024')
+    )
+
+    extra_sources = _extract_extra_spell_sources(document)
+    item_ids = {
+        spell_id for spell_id, rows in extra_sources.items()
+        if any(row.get('sourceType') == 'item' for row in rows)
+    }
+    granted_ids = {
+        spell_id for spell_id, rows in extra_sources.items()
+        if spell_id not in item_ids and any(row.get('sourceType') in ('feat', 'species') for row in rows)
+    }
+
+    spell_state = document.get('spellState') if isinstance(document.get('spellState'), dict) else {}
+    known_ids = [str(v or '').strip() for v in (spell_state.get('known') or []) if str(v or '').strip()]
+
+    class_known_count = 0
+    class_cantrip_count = 0
+    granted_spell_count = 0
+    granted_cantrip_count = 0
+    for spell_id in known_ids:
+        if spell_id in item_ids:
+            continue
+        spell = get_spell_by_id(spell_id)
+        level = _safe_int((spell or {}).get('level'), 0)
+        if spell_id in granted_ids:
+            if level <= 0:
+                granted_cantrip_count += 1
+            else:
+                granted_spell_count += 1
+            continue
+        if level <= 0:
+            class_cantrip_count += 1
+        else:
+            class_known_count += 1
+
+    warnings: list[dict[str, Any]] = []
+    known_limit = table_known_limit
+    cantrip_limit = table_cantrip_limit
+    imported_known_count = class_known_count if is_imported else 0
+    imported_cantrip_count = class_cantrip_count if is_imported else 0
+
+    if is_imported and table_known_limit is not None and class_known_count > int(table_known_limit):
+        known_limit = class_known_count
+        warnings.append({
+            'code': 'imported_known_count_preserved',
+            'message': f"Imported character has {class_known_count} spells from source data. Preserved.",
+            'field': 'knownSpellLimit',
+            'tableLimit': int(table_known_limit),
+            'importedCount': class_known_count,
+        })
+    if is_imported and table_cantrip_limit is not None and class_cantrip_count > int(table_cantrip_limit):
+        cantrip_limit = class_cantrip_count
+        warnings.append({
+            'code': 'imported_cantrip_count_preserved',
+            'message': f"Imported character has {class_cantrip_count} cantrips from source data. Preserved.",
+            'field': 'cantripLimit',
+            'tableLimit': int(table_cantrip_limit),
+            'importedCount': class_cantrip_count,
+        })
+
+    return {
+        'classId': class_id,
+        'level': class_level,
+        'rulesVersion': resolved_rules_version,
+        'knownSpellLimit': known_limit,
+        'cantripLimit': cantrip_limit,
+        'preparedSpellLimit': table.get('preparedLimit'),
+        'importedKnownCount': imported_known_count,
+        'importedCantripCount': imported_cantrip_count,
+        'classKnownCount': class_known_count,
+        'classCantripCount': class_cantrip_count,
+        'grantedSpellCount': granted_spell_count,
+        'grantedCantripCount': granted_cantrip_count,
+        'warnings': warnings,
+    }
+
+
+def build_spell_limits_for_class(
+    class_id: str,
+    class_level: int,
+    abilities: dict[str, Any] | None = None,
+    *,
+    document: dict[str, Any] | None = None,
+    subclass_id: str | None = None,
+) -> dict[str, Any]:
+    raw = _raw_spell_limits_for_class(class_id, class_level, abilities, document=document, subclass_id=subclass_id)
+    if not isinstance(document, dict) or not document:
+        return raw
+    resolved = resolve_spell_learning_limits(
+        document,
+        class_id=class_id,
+        class_level=class_level,
+        abilities=abilities,
+        subclass_id=subclass_id,
+    )
+    raw['spellsKnown'] = resolved['knownSpellLimit']
+    raw['cantripsKnown'] = resolved['cantripLimit']
+    raw['spellLearningLimits'] = resolved
+    return raw
 
 
 
@@ -1112,6 +1244,15 @@ def validate_spell_selection(*, class_id: str, class_level: int, abilities: dict
     always_prepared = set(subclass_grants.get('alwaysPrepared') or [])
     always_known = set(subclass_grants.get('alwaysKnown') or []) | set(class_bonus.get('alwaysKnown') or [])
     bonus_access = always_prepared | always_known
+    extra_sources = _extract_extra_spell_sources(document or {})
+    item_ids = {
+        spell_id for spell_id, rows in extra_sources.items()
+        if any(row.get('sourceType') == 'item' for row in rows)
+    }
+    granted_ids = {
+        spell_id for spell_id, rows in extra_sources.items()
+        if spell_id not in item_ids and any(row.get('sourceType') in ('feat', 'species') for row in rows)
+    }
     for spell_id in known_ids:
         spell = get_spell_by_id(spell_id)
         if not spell:
@@ -1120,14 +1261,14 @@ def validate_spell_selection(*, class_id: str, class_level: int, abilities: dict
         unlock = (spell.get('classUnlockLevels') or {}).get(class_id)
         subclass_unlock = _subclass_caster_unlock_for_spell(spell, class_id, class_level, subclass_id)
         has_bonus_access = spell_id in bonus_access or subclass_unlock is not None
-        if unlock is None and not has_bonus_access:
+        if unlock is None and not has_bonus_access and spell_id not in item_ids and spell_id not in granted_ids:
             errors.append(f"{spell.get('name')} is not on the {limits.get('className') or class_id} list.")
             continue
         if unlock is not None and class_level < int(unlock) and subclass_unlock is None:
             errors.append(f"{spell.get('name')} unlocks at level {unlock} for {limits.get('className') or class_id}.")
             continue
         allowed_known.append(spell_id)
-        if spell_id in always_known:
+        if spell_id in always_known or spell_id in item_ids or spell_id in granted_ids:
             continue
         if _safe_int(spell.get('level'), 0) == 0:
             known_cantrips += 1

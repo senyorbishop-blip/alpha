@@ -38,16 +38,19 @@ def test_sorcerer_metamagic_choices_surface_on_unlock_levels_and_persist():
     assert metamagic is not None
     assert len(metamagic.get('choices') or []) >= 10
 
-    cantrip_options = (preview.get('spellChoices') or {}).get('cantripOptions') or []
-    levelled_options = (preview.get('spellChoices') or {}).get('levelledOptions') or []
+    spell_plan = preview.get('spellChoices') or {}
+    cantrip_options = spell_plan.get('cantripOptions') or []
+    levelled_options = spell_plan.get('levelledOptions') or []
+    cantrips_required = spell_plan.get('cantripPicksRequired') or 0
+    levelled_required = spell_plan.get('levelledPicksRequired') or 0
 
     applied = apply_levelup(
         doc,
         choices={
             'featureChoices': {'sorcerer-l3-2': (metamagic.get('choices') or [])[0]['id']},
             'spellChoices': {
-                'cantripAdds': [cantrip_options[0]['id']] if cantrip_options and (preview.get('spellChoices') or {}).get('cantripPicksRequired') else [],
-                'levelledAdds': [levelled_options[0]['id']] if levelled_options and (preview.get('spellChoices') or {}).get('levelledPicksRequired') else [],
+                'cantripAdds': [row['id'] for row in cantrip_options[:cantrips_required]],
+                'levelledAdds': [row['id'] for row in levelled_options[:levelled_required]],
                 'swap': {},
             },
         },

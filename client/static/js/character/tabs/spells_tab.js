@@ -1032,6 +1032,13 @@ function _spellAttackSaveCell(spell, charData) {
     };
   }
 
+  function _importedLimitWarnings(state) {
+    const limits = state && state.manifest && state.manifest.limits && typeof state.manifest.limits === 'object' ? state.manifest.limits : {};
+    const learning = limits.spellLearningLimits && typeof limits.spellLearningLimits === 'object' ? limits.spellLearningLimits : null;
+    const warnings = learning && Array.isArray(learning.warnings) ? learning.warnings : [];
+    return warnings.map(function (w) { return _firstText(w && w.message, ''); }).filter(Boolean);
+  }
+
   function _renderManagerSummary(state) {
     const snap = _limitSnapshot(state);
     const cards = [];
@@ -1039,6 +1046,10 @@ function _spellAttackSaveCell(spell, charData) {
     if (snap.cantripLimit != null) cards.push(_renderSummaryCard('Cantrips', String(snap.cantripCount) + ' / ' + String(snap.cantripLimit), 'At-will spells you currently have.', 'violet'));
     if (snap.mode === 'prepared' && snap.preparedLimit != null) cards.push(_renderSummaryCard('Prepared', String(snap.preparedCount) + ' / ' + String(snap.preparedLimit), 'Leveled spells currently ready to cast.', 'teal'));
     if (snap.mode === 'known' && snap.knownLimit != null) cards.push(_renderSummaryCard('Known', String(snap.knownCount) + ' / ' + String(snap.knownLimit), 'Leveled spells you currently know.', 'gold'));
+    const importWarnings = _importedLimitWarnings(state);
+    importWarnings.forEach(function (message) {
+      cards.push(_renderSummaryCard('Imported', message, 'Source data exceeds the internal class table; your imported count is preserved.', 'gold'));
+    });
     return cards.join('');
   }
 

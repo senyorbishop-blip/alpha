@@ -9,7 +9,7 @@ def test_levelup_preview_includes_required_spell_picks_for_sorcerer_growth():
         'spellState': {
             'known': [
                 'fire-bolt', 'mage-hand', 'message', 'minor-illusion',
-                'magic-missile', 'shield', 'scorching-ray',
+                'magic-missile', 'shield', 'scorching-ray', 'chromatic-orb',
             ],
             'prepared': [],
         },
@@ -36,7 +36,7 @@ def test_apply_levelup_persists_required_spell_picks_for_sorcerer():
         'spellState': {
             'known': [
                 'fire-bolt', 'mage-hand', 'message', 'minor-illusion',
-                'magic-missile', 'shield', 'scorching-ray',
+                'magic-missile', 'shield', 'scorching-ray', 'chromatic-orb',
             ],
             'prepared': [],
         },
@@ -62,14 +62,22 @@ def test_apply_levelup_persists_required_spell_picks_for_sorcerer():
 
 
 def test_levelup_preview_surfaces_optional_spell_swap_when_no_new_pick_is_required():
+    # Levels 17->18 are a plateau in the sorcerer's known-spell/cantrip table
+    # (7 cantrips / 15 spells at both levels) with no ASI/feat choice either,
+    # so a character who already has the full level-17 allotment should see
+    # no required picks at level 18, only the optional spell swap.
     document = {
         'identity': {'name': 'Bishop'},
-        'classes': [{'classId': 'sorcerer', 'level': 4, 'subclassId': 'wild-magic'}],
+        'classes': [{'classId': 'sorcerer', 'level': 17, 'subclassId': 'wild-magic'}],
         'abilities': {'scores': {'cha': 20, 'con': 13}},
         'spellState': {
             'known': [
-                'fire-bolt', 'mage-hand', 'message', 'minor-illusion', 'friends',
-                'magic-missile', 'shield', 'scorching-ray', 'misty-step',
+                'acid-splash', 'blade-ward', 'booming-blade', 'chill-touch',
+                'control-flames', 'create-bonfire', 'dancing-lights',
+                'alarm', 'animal-friendship', 'armor-of-agathys', 'arms-of-hadar',
+                'bane', 'bless', 'burning-hands', 'catapult', 'cause-fear',
+                'chaos-bolt', 'charm-person', 'chromatic-orb', 'color-spray',
+                'command', 'comprehend-languages',
             ],
             'prepared': [],
         },
@@ -77,7 +85,7 @@ def test_levelup_preview_surfaces_optional_spell_swap_when_no_new_pick_is_requir
 
     preview = build_levelup_preview(document)
 
-    assert preview['nextLevel'] == 5
+    assert preview['nextLevel'] == 18
     assert isinstance(preview.get('spellChoices'), dict)
     assert preview['spellChoices']['swapAllowed'] is True
     assert preview['spellChoices']['cantripPicksRequired'] == 0
@@ -115,7 +123,7 @@ def test_apply_levelup_rejects_using_swap_for_newly_added_spell():
         'spellState': {
             'known': [
                 'fire-bolt', 'mage-hand', 'message', 'minor-illusion',
-                'magic-missile', 'shield', 'scorching-ray',
+                'magic-missile', 'shield', 'scorching-ray', 'chromatic-orb',
             ],
             'prepared': [],
         },
@@ -139,23 +147,31 @@ def test_apply_levelup_rejects_using_swap_for_newly_added_spell():
 
 
 def test_levelup_preview_uses_spellbook_entries_as_current_spell_state_when_lists_are_empty():
+    # Levels 17->18 are a plateau in the sorcerer's known-spell/cantrip table
+    # (7 cantrips / 15 spells at both levels), so a character with the full
+    # level-17 allotment has no required picks at level 18.
     document = {
         'identity': {'name': 'Bishop'},
-        'classes': [{'classId': 'sorcerer', 'level': 4, 'subclassId': 'wild-magic'}],
+        'classes': [{'classId': 'sorcerer', 'level': 17, 'subclassId': 'wild-magic'}],
         'abilities': {'scores': {'cha': 20, 'con': 13}},
         'spellState': {
             'known': [],
             'prepared': [],
             'spellbookEntries': [
-                {'name': 'Fire Bolt'}, {'name': 'Mage Hand'}, {'name': 'Message'}, {'name': 'Minor Illusion'}, {'name': 'Friends'},
-                {'name': 'Magic Missile'}, {'name': 'Shield'}, {'name': 'Scorching Ray'}, {'name': 'Misty Step'},
+                {'name': 'Acid Splash'}, {'name': 'Blade Ward'}, {'name': 'Booming Blade'},
+                {'name': 'Chill Touch'}, {'name': 'Control Flames'}, {'name': 'Create Bonfire'},
+                {'name': 'Dancing Lights'},
+                {'name': 'Alarm'}, {'name': 'Animal Friendship'}, {'name': 'Armor of Agathys'},
+                {'name': 'Arms of Hadar'}, {'name': 'Bane'}, {'name': 'Bless'}, {'name': 'Burning Hands'},
+                {'name': 'Catapult'}, {'name': 'Cause Fear'}, {'name': 'Chaos Bolt'}, {'name': 'Charm Person'},
+                {'name': 'Chromatic Orb'}, {'name': 'Color Spray'}, {'name': 'Command'}, {'name': 'Comprehend Languages'},
             ],
         },
     }
 
     preview = build_levelup_preview(document)
 
-    assert preview['nextLevel'] == 5
+    assert preview['nextLevel'] == 18
     assert preview['spellChoices']['cantripPicksRequired'] == 0
     assert preview['spellChoices']['levelledPicksRequired'] == 0
     assert preview['spellChoices']['swapAllowed'] is True
