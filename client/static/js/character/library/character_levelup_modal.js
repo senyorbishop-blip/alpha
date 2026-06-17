@@ -406,6 +406,60 @@
     return '<ul style="margin:6px 0 0 18px;padding:0;display:grid;gap:5px">' + rows.map(function (row) { return '<li>' + escHtml(row) + '</li>'; }).join('') + '</ul>';
   }
 
+
+
+  function featureLabelForRoadmap(item, definitions) {
+    if (typeof item === 'string') {
+      const def = definitions && definitions[item];
+      return String((def && (def.displayName || def.name)) || item || '').trim();
+    }
+    if (item && typeof item === 'object') return String(item.displayName || item.name || item.id || '').trim();
+    return '';
+  }
+
+  function levelupRoadmapRows(preview) {
+    const definitions = (preview && preview.featureDefinitions && typeof preview.featureDefinitions === 'object') ? preview.featureDefinitions : {};
+    const rawRows = Array.isArray(preview && preview.featuresByLevel) ? preview.featuresByLevel
+      : (Array.isArray(preview && preview.classRoadmap) ? preview.classRoadmap
+        : (Array.isArray(preview && preview.progressionTable) ? preview.progressionTable : []));
+    const rows = rawRows.map(function (row) {
+      const level = safeInt(row && (row.level || row.classLevel), 0);
+      const features = Array.isArray(row && row.features) ? row.features
+        : (Array.isArray(row && row.unlocks) ? row.unlocks
+          : (Array.isArray(row && row.featureIds) ? row.featureIds : []));
+      const names = features.map(function (item) { return featureLabelForRoadmap(item, definitions); }).filter(Boolean);
+      return { level: level, names: names };
+    }).filter(function (row) { return row.level > 0; });
+
+    if (!rows.length && Array.isArray(preview && preview.newFeatures) && preview.newFeatures.length) {
+      rows.push({
+        level: safeInt(preview.nextLevel, safeInt(preview.currentLevel, 1) + 1),
+        names: preview.newFeatures.map(function (feature) { return featureLabelForRoadmap(feature, definitions); }).filter(Boolean)
+      });
+    }
+
+    return rows.sort(function (a, b) { return a.level - b.level; });
+  }
+
+  function levelupRoadmapHtml(preview) {
+    const rows = levelupRoadmapRows(preview);
+    if (!rows.length) return '';
+    const currentLevel = safeInt(preview && preview.currentLevel, 1);
+    const nextLevel = safeInt(preview && preview.nextLevel, currentLevel + 1);
+    const visibleRows = rows.filter(function (row) { return row.level >= currentLevel && row.level <= Math.min(20, nextLevel + 4); });
+    return '<section class="lvlup-card">'
+      + '<div class="lvlup-title">Level Roadmap</div>'
+      + '<div style="font-size:.84rem;opacity:.9;margin-bottom:8px">Future unlocks are shown here during level up, not on the in-session Features tab.</div>'
+      + '<div class="lvlup-roadmap-list">' + (visibleRows.length ? visibleRows : rows).map(function (row) {
+        const state = row.level === nextLevel ? ' next' : (row.level <= currentLevel ? ' current' : ' future');
+        return '<div class="lvlup-roadmap-row' + state + '">'
+          + '<div class="lvlup-roadmap-level">Level ' + escHtml(row.level) + '</div>'
+          + '<div class="lvlup-roadmap-features">' + escHtml(row.names.join(' • ') || 'Feature details authored in class data') + '</div>'
+          + '</div>';
+      }).join('') + '</div>'
+      + '</section>';
+  }
+
   const modalState = {
     options: null,
     preview: null,
@@ -660,6 +714,11 @@
       + '#character-levelup-modal .lvlup-stat{border:1px solid rgba(0,229,204,.16);border-radius:8px;padding:8px 10px;background:rgba(0,229,204,.05)}'
       + '#character-levelup-modal .lvlup-stat-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;opacity:.72;margin-bottom:4px}'
       + '#character-levelup-modal .lvlup-stat-value{font-size:.95rem;font-weight:700;color:#defcf8}'
+      + '#character-levelup-modal .lvlup-roadmap-list{display:grid;gap:7px}'
+      + '#character-levelup-modal .lvlup-roadmap-row{display:grid;grid-template-columns:86px 1fr;gap:10px;align-items:start;border:1px solid rgba(0,229,204,.14);border-radius:8px;padding:8px;background:rgba(0,229,204,.04)}'
+      + '#character-levelup-modal .lvlup-roadmap-row.next{border-color:rgba(0,229,204,.55);background:rgba(0,229,204,.11)}'
+      + '#character-levelup-modal .lvlup-roadmap-level{font-family:Share Tech Mono,monospace;color:#9efff2;font-size:.76rem}'
+      + '#character-levelup-modal .lvlup-roadmap-features{font-size:.8rem;line-height:1.4;color:#e6fffb}'
       + '@keyframes lvlupGlow{from{text-shadow:0 0 6px rgba(0,229,204,.45),0 0 14px rgba(0,229,204,.15)}to{text-shadow:0 0 10px rgba(0,229,204,.85),0 0 24px rgba(0,229,204,.32)}}'
       + '</style>'
       + '<div style="width:min(960px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;background:#10140f;border:1px solid rgba(0,229,204,.3);border-radius:10px;padding:16px;color:#e8dcc8;box-shadow:0 18px 54px rgba(0,0,0,.55)">'
@@ -1136,6 +1195,7 @@
       + '<div style="margin-top:4px;font-size:.9rem;opacity:.92">+' + escHtml(hpGained) + ' HP (d' + escHtml(hitDie) + ' average + CON modifier ' + (conPart >= 0 ? '+' : '') + escHtml(conPart) + ')</div>'
       + '</section>'
       + (guide ? '<section class="lvlup-card"><div class="lvlup-title">' + escHtml(guide.title) + '</div><div style="font-size:.84rem;opacity:.9">' + escHtml(guide.summary) + '</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + guide.checks.map(function (item) { return '<span class="lvlup-pill">' + escHtml(item) + '</span>'; }).join('') + '</div></section>' : '')
+      + (isStepAutomatic ? levelupRoadmapHtml(preview) : '')
       + (isStepAutomatic ? '<section class="lvlup-card"><div class="lvlup-title">Automatic Gains — Before / After</div>' + diffRowsHtml(automaticRows) + '</section>' + spellSlotsHtml : '')
       + (isStepChoices
         ? renderSubclassChoiceSection(preview)
@@ -1156,7 +1216,7 @@
           'Any selected level-up choices are persisted into the character profile.'
           ], 'No immediate changes listed.') + '</div>'
           + '  <div class="lvlup-confirm-card"><div class="lvlup-subtitle">Automatic gains</div>' + reviewList(automaticRows.map(function (row) { return row.label + ': ' + row.before + ' → ' + row.after; }), 'No automatic changes.') + '</div>'
-          + '  <div class="lvlup-confirm-card"><div class="lvlup-subtitle">Choices still needed</div>' + reviewList(choiceRequirementRows, 'No choices are required at this level.') + '</div>'
+          + '  <div class="lvlup-confirm-card"><div class="lvlup-subtitle">Choices still tracked</div>' + reviewList(choiceRequirementRows, 'No choices are required at this level.') + '</div>'
           + '  <div class="lvlup-confirm-card"><div class="lvlup-subtitle">Spell plan</div>' + reviewList([
           spellPlan ? ('Mode: ' + String(spellPlan.mode || 'known')) : '',
           spellPlan && safeInt(spellPlan.cantripPicksRequired, 0) > 0 ? ('Cantrips selected: ' + String(modalState.spellCantripAdds.length) + ' / ' + String(safeInt(spellPlan.cantripPicksRequired, 0))) : '',

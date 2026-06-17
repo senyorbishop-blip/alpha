@@ -1,6 +1,6 @@
 /*
  * client/static/js/character/tabs/features_tab.js
- * Features & Traits Tab — D&D Beyond-style class feature codex with level roadmap.
+ * Features & Traits Tab — in-session current feature reference.
  * short rules summary
  *
  * Exposes: window.FeaturesTab
@@ -205,6 +205,8 @@
 
   function _featureTypeKey(feature) {
     if (feature && (feature.kind === 'feat' || feature.sourceType === 'feat')) return 'feats';
+    if (feature && (feature.kind === 'background' || feature.sourceType === 'background')) return 'background';
+    if (feature && (feature.kind === 'item' || feature.kind === 'itemTrait' || feature.sourceType === 'item')) return 'item';
     if (feature && (feature.kind === 'trait' || feature.kind === 'origin' || feature.sourceType === 'species')) return 'traits';
     if (feature && feature.isSubclass) return 'subclass';
     return 'class';
@@ -226,7 +228,7 @@
   }
 
   function _featureSourceLabel(feature) {
-    const source = _firstText(feature.className, feature.source, feature.section, 'Feature');
+    const source = _firstText(feature.source, feature.className, feature.subclassName, feature.section, 'Feature');
     const level = Number(feature.level || 0);
     return level > 0 ? (source + ' • Level ' + level) : source;
   }
@@ -431,8 +433,12 @@
     ].filter(Boolean).join(' ').toLowerCase();
   }
 
+  function _featureDomId(feature, fallback) {
+    return String(_firstText(feature && feature.id, feature && feature.name, fallback || 'feature')).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  }
+
   function _renderFeatureItem(feature, idx, charData) {
-    const id = _firstText(feature.id, feature.name, 'feature-' + idx);
+    const id = _featureDomId(feature, 'feature-' + idx);
     const presented = _featureSummaryPresenter(feature, charData);
     const whenText = _featureWhenItMatters(feature);
 
@@ -441,10 +447,15 @@
         <div class="cs-feature-maincopy">
           <div class="cs-feature-title-row"><span class="cs-feature-name">${_esc(presented.title)}</span></div>
           <div class="cs-feature-inline-meta">${_esc(presented.sourceLine)}</div>
-          <div class="cs-feature-preview"><strong>${_esc(presented.summary)}</strong></div>
+          <div class="cs-feature-card-facts" aria-label="Feature quick facts">
+            <span><strong>Action</strong> ${_esc(_normalizeActionType(feature))}</span>
+            <span><strong>Usage</strong> ${_esc(presented.detail.usage)}</span>
+            <span><strong>Recovery</strong> ${_esc(presented.detail.recovery)}</span>
+          </div>
+          <div class="cs-feature-preview">${_esc(presented.summary)}</div>
           ${presented.reminder ? `<div class="cs-feature-body-summary"><strong>${_esc(presented.reminder)}</strong></div>` : ''}
         </div>
-        <div class="cs-feature-meta">${feature.needsReview ? '<span class="cs-feature-kind-badge">Needs review</span>' : ''}${presented.badges.map((t) => `<span class="cs-feature-kind-badge">${_esc(t)}</span>`).join('')}<span class="cs-feature-chevron" aria-hidden="true">&#9658;</span></div>
+        <div class="cs-feature-meta">${feature.needsReview ? '<span class="cs-feature-kind-badge">Needs review</span>' : ''}${presented.badges.map((t) => `<span class="cs-feature-kind-badge">${_esc(t)}</span>`).join('')}<button type="button" class="cs-feature-inspect" data-feature-inspect="${_esc(id)}">Inspect</button><span class="cs-feature-chevron" aria-hidden="true">&#9658;</span></div>
       </header>
       <div class="cs-feature-body">
         <div class="cs-feature-body-shell">
@@ -484,13 +495,8 @@
       }).join('')}</div></section>`;
   }
 
-  function _renderSpotlight(allByLevel, currentLevel) {
-    const current = allByLevel.find(function (row) { return row.level === currentLevel; });
-    const next = allByLevel.find(function (row) { return row.level > currentLevel; });
-    return `<section class="cs-overview-section"><div class="cs-overview-section-title">Current & Next Unlocks</div><div class="cs-spotlight-grid">
-      <article class="cs-overview-card"><div class="cs-overview-card-title">Current Level ${_esc(String(currentLevel))}</div><div class="cs-overview-card-copy">${_esc((current && current.items.map((f) => f.name).join(', ')) || 'No newly-authored unlocks at this level.')}</div></article>
-      <article class="cs-overview-card"><div class="cs-overview-card-title">Next Unlock${next ? ' (Level ' + _esc(String(next.level)) + ')' : ''}</div><div class="cs-overview-card-copy">${_esc((next && next.items.map((f) => f.name).join(', ')) || 'No future class entries found.')}</div></article>
-    </div></section>`;
+  function _renderCurrentFeaturesNote() {
+    return '<section class="cs-overview-section"><div class="cs-overview-section-title">Current Features Only</div><div class="cs-overview-copy">This in-session sheet shows features you can use now. Next unlocks appear during level up so mid-session rules checks stay focused.</div></section>';
   }
 
   function _renderPlaybook(charData, sections) {
@@ -538,6 +544,8 @@
       classFeatures: _dedupeFeatures(classFeatures).filter((f) => !_isBookkeepingFeature(f)),
       traits: _dedupeFeatures(traits),
       feats: _dedupeFeatures(feats),
+      background: _dedupeFeatures(_safeArray(merged.backgroundFeatures).concat(_safeArray(merged.background && merged.background.features)).map((f) => _coerceFeature(f, { kind: 'background', source: 'Background' })).filter(Boolean)),
+      items: _dedupeFeatures(_safeArray(merged.itemTraits).concat(_safeArray(merged.inventoryTraits)).concat(_safeArray(merged.equipmentTraits)).map((f) => _coerceFeature(f, { kind: 'item', source: 'Item' })).filter(Boolean)),
     };
   }
 
@@ -594,6 +602,17 @@
         return;
       }
 
+      const inspectBtn = event.target.closest('[data-feature-inspect]');
+      if (inspectBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        const targetId = String(inspectBtn.getAttribute('data-feature-inspect') || '');
+        const all = _safeArray(container.__csFeaturesAll);
+        const feature = all.find(function (row) { return _featureDomId(row) === targetId; });
+        if (feature) _openFeatureInspect(feature, container.__csCharData || {});
+        return;
+      }
+
       const header = event.target.closest('.cs-feature-header');
       if (header) {
         const row = header.closest('.cs-feature-item');
@@ -604,16 +623,6 @@
         const opened = Array.from(container.querySelectorAll('.cs-feature-item.open')).map((it) => it.getAttribute('data-feature-id'));
         container.__csFeatureOpenSet = new Set(opened);
         return;
-      }
-
-      const inspectBtn = event.target.closest('[data-feature-inspect]');
-      if (inspectBtn) {
-        event.preventDefault();
-        event.stopPropagation();
-        const targetId = String(inspectBtn.getAttribute('data-feature-inspect') || '');
-        const all = _safeArray(container.__csFeaturesAll);
-        const feature = all.find(function (row) { return String(_firstText(row && row.id, row && row.name)).toLowerCase().replace(/[^a-z0-9]+/g, '-') === targetId; });
-        if (feature) _openFeatureInspect(feature, container.__csCharData || {});
       }
     });
 
@@ -635,16 +644,15 @@
 
   function _render(container, charData, sheetData) {
     const sections = _extractFeatureRows(charData, sheetData);
-    const allByLevel = _extractClassRoadmap(sheetData, charData);
     const level = Number((charData && charData.level) || (sheetData && sheetData.level) || 1);
 
-    const needsReviewCount = sections.classFeatures.concat(sections.traits, sections.feats).filter((f) => f && f.needsReview).length;
-    const overviewCounts = `<section class="cs-overview-section"><div class="cs-overview-section-title">Features at a Glance</div><div class="cs-traits-summary-grid cs-features-redesign-summary"><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Class & Subclass Features</div><div class="cs-traits-summary-value">${_esc(String(sections.classFeatures.length))}</div><div class="cs-traits-summary-note">core and subclass rules</div></div><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Species Traits</div><div class="cs-traits-summary-value">${_esc(String(sections.traits.length))}</div><div class="cs-traits-summary-note">origin and lineage traits</div></div><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Needs Review</div><div class="cs-traits-summary-value">${_esc(String(needsReviewCount))}</div><div class="cs-traits-summary-note">imported fallback cards</div></div><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Character Snapshot</div><div class="cs-traits-summary-value">Level ${_esc(String(level))}</div><div class="cs-traits-summary-note">full class roadmap visible below</div></div></div></section>`;
+    const needsReviewCount = sections.classFeatures.concat(sections.traits, sections.feats, sections.background, sections.items).filter((f) => f && f.needsReview).length;
+    const overviewCounts = `<section class="cs-overview-section"><div class="cs-overview-section-title">Features at a Glance</div><div class="cs-traits-summary-grid cs-features-redesign-summary"><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Class & Subclass Features</div><div class="cs-traits-summary-value">${_esc(String(sections.classFeatures.length))}</div><div class="cs-traits-summary-note">core and subclass rules</div></div><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Species Traits</div><div class="cs-traits-summary-value">${_esc(String(sections.traits.length))}</div><div class="cs-traits-summary-note">origin and lineage traits</div></div><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Needs Review</div><div class="cs-traits-summary-value">${_esc(String(needsReviewCount))}</div><div class="cs-traits-summary-note">imported fallback cards</div></div><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Character Snapshot</div><div class="cs-traits-summary-value">Level ${_esc(String(level))}</div><div class="cs-traits-summary-note">current playable features</div></div></div></section>`;
 
-    container.innerHTML = `<div class="cs-traits-shell cs-traits-shell-readable cs-features-redesign-shell">${_renderFeatureControls()}${overviewCounts}${_renderPlaybook(charData, sections)}${_renderCustomClassGuide(charData)}${_renderSpotlight(allByLevel, level)}${_renderLevelRoadmap(allByLevel, level)}${_renderSection('Class & Subclass Features', sections.classFeatures, 'class', charData, 'All unlocked class and subclass features with detailed player-facing text.')}${_renderSection('Species Traits', sections.traits, 'traits', charData, 'Lineage and species traits affecting passives, actions, and saves.')}${_renderSection('Feats', sections.feats, 'feats', charData, 'Feat choices and exact rule impact.')}<section class="cs-overview-section"><div class="cs-overview-section-title">Background</div><div class="cs-overview-copy">Background features and imported fallback cards appear here when resolver runtime or import data provides them.</div></section><section class="cs-overview-section"><div class="cs-overview-section-title">Items</div><div class="cs-overview-copy">Item traits granted by equipped inventory are linked back to actions, spells, and resources where available.</div></section></div>`;
+    container.innerHTML = `<div class="cs-traits-shell cs-traits-shell-readable cs-features-redesign-shell">${_renderFeatureControls()}${overviewCounts}${_renderPlaybook(charData, sections)}${_renderCustomClassGuide(charData)}${_renderCurrentFeaturesNote()}${_renderSection('Class & Subclass Features', sections.classFeatures, 'class', charData, 'All unlocked class and subclass features with detailed player-facing text.')}${_renderSection('Species Traits', sections.traits, 'traits', charData, 'Lineage and species traits affecting passives, actions, and saves.')}${_renderSection('Feats', sections.feats, 'feats', charData, 'Feat choices and exact rule impact.')}${_renderSection('Background', sections.background, 'background', charData, 'Background features and imported fallback cards that affect play now.')}${_renderSection('Item Traits', sections.items, 'item', charData, 'Traits granted by equipped inventory, magic items, or imported item data.')}</div>`;
 
     container.__csCharData = charData || {};
-    container.__csFeaturesAll = [].concat(sections.classFeatures || [], sections.traits || [], sections.feats || []);
+    container.__csFeaturesAll = [].concat(sections.classFeatures || [], sections.traits || [], sections.feats || [], sections.background || [], sections.items || []);
     container.__csFeatureFilter = container.__csFeatureFilter || 'all';
     container.__csFeatureQuery = container.__csFeatureQuery || '';
     _bindInteractions(container);
