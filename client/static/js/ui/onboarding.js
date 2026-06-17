@@ -35,6 +35,8 @@
         body: 'You hold the fate of this world in your hands. As the DM you control the map, the monsters, the weather, the story — everything your players experience is shaped by you.',
         accent: '#d4a637',
         tip: 'Your role badge at the top-left shows <strong style="color:#d4a637">DM</strong> so everyone knows who runs the table.',
+        targetSelector: '#topbar-role',
+        placement: 'bottom',
       },
       {
         icon: '🗺',
@@ -42,6 +44,9 @@
         body: 'The central canvas is your battle map. Use the <strong>Map Editor</strong> (🧱) on the left rail to paint terrain, place walls, add props, and sculpt points of interest. Enable <strong>Fog of War</strong> (🌫) to hide unexplored areas from players.',
         accent: '#00e5cc',
         tip: 'Scroll to zoom, right-click anywhere on the canvas for token & map options.',
+        targetSelector: '[data-help="dm-map-editor"]',
+        fallbackSelector: '#rail-editor-btn',
+        placement: 'right',
       },
       {
         icon: '🪙',
@@ -49,6 +54,9 @@
         body: 'Drop tokens onto the map with the <strong>Create Token</strong> panel (🪙). Right-click any token to adjust HP, apply conditions, open shops, or begin social scenes. The <strong>Combat Tracker</strong> in the right panel manages initiative automatically.',
         accent: '#e74c3c',
         tip: 'Drag tokens to move them. Hold Shift while clicking to multi-select.',
+        targetSelector: '[data-help="dm-token-tools"]',
+        fallbackSelector: '#rail-token-btn',
+        placement: 'right',
       },
       {
         icon: '🛡',
@@ -56,6 +64,8 @@
         body: 'Share session links from the <strong>Invite</strong> chips in the top bar. There\'s a <strong>Player link</strong> for adventurers and a <strong>Chat / Viewer link</strong> for spectators. Links are copied to clipboard with one click.',
         accent: '#2ecc71',
         tip: 'You can regenerate or copy invite links any time from the top bar during a session.',
+        targetSelector: '#invite-codes',
+        placement: 'bottom',
       },
       {
         icon: '🧙',
@@ -63,6 +73,8 @@
         body: 'The left rail is now grouped by intent: <strong>prep tools</strong> (map/editor), <strong>live control tools</strong> (tokens/fog/combat), and <strong>storytelling tools</strong> (assistant/sound/journal). Use this order to reduce mid-session panel hopping.',
         accent: '#9b59b6',
         tip: 'When unsure mid-session, hit the panel <strong>?</strong> to open targeted help instead of leaving the map.',
+        targetSelector: '#topbar-help-btn',
+        placement: 'bottom',
       },
     ],
     player: [
@@ -72,6 +84,8 @@
         body: 'You\'ve entered the realm! This is your window into the adventure. Your Dungeon Master controls the world — your job is to explore it, fight in it, and shape its story through your character\'s choices.',
         accent: '#00e5cc',
         tip: 'Your role badge at the top-left shows <strong style="color:#00e5cc">PLAYER</strong>.',
+        targetSelector: '#topbar-role',
+        placement: 'bottom',
       },
       {
         icon: '🧝',
@@ -79,6 +93,9 @@
         body: 'Click the <strong>My Character</strong> button (🛡) on the left rail to open your character sheet. Choose your class, set your name, pick a token colour, and place yourself on the map. Your stats, HP and conditions are tracked automatically.',
         accent: '#00e5cc',
         tip: 'Once you place your token, the character flyout closes automatically so you can see the map.',
+        targetSelector: '[data-help="my-character"]',
+        fallbackSelector: '#rail-char-btn',
+        placement: 'right',
       },
       {
         icon: '🎲',
@@ -86,6 +103,9 @@
         body: 'Open the <strong>Dice Vault</strong> (🎲) on the left rail to roll any die — d4 through d100. During combat the DM will call for initiative; your rolls appear in the chat log and the combat tracker on the right.',
         accent: '#e74c3c',
         tip: 'Customise your dice colours and materials in the Dice Style section of the Dice Vault.',
+        targetSelector: '[data-help="dice-quick-actions"]',
+        fallbackSelector: '#rail-dice-btn',
+        placement: 'right',
       },
       {
         icon: '🎒',
@@ -93,6 +113,9 @@
         body: 'Your core loop is simple: <strong>character + dice on the left</strong>, then <strong>inventory/spells/journal on the right</strong>. The DM can send you items, gold, and private handouts at any time.',
         accent: '#d4a637',
         tip: 'If a panel feels noisy, keep Party open for live status, use Journal for quest/canon, and open Inventory/Spells only when needed.',
+        targetSelector: '[data-help="inventory-spells"]',
+        fallbackSelector: '#rtab-inventory',
+        placement: 'left',
       },
       {
         icon: '💬',
@@ -100,6 +123,8 @@
         body: 'Use the <strong>chat bar</strong> at the bottom-right to talk to everyone at the table. You can also use <strong>token emotes</strong> — right-click your token to react with emotions, victory poses, and more that appear as animated bubbles above your character.',
         accent: '#9b59b6',
         tip: 'Press Enter to send a chat message quickly. All rolls are logged in chat automatically.',
+        targetSelector: '#rtab-log',
+        placement: 'left',
       },
     ],
     viewer: [
@@ -109,6 +134,8 @@
         body: 'You\'re watching a live Dungeons & Dragons session. As a spectator you can see the battle map, follow the story in real-time, and enjoy every dice roll, dramatic moment, and plot twist as it unfolds.',
         accent: '#9b59b6',
         tip: 'Your role badge at the top-left shows <strong style="color:#9b59b6">VIEWER</strong>.',
+        targetSelector: '#topbar-role',
+        placement: 'bottom',
       },
       {
         icon: '🗺',
@@ -116,6 +143,9 @@
         body: 'The central canvas shows the current battle map. Tokens represent characters and monsters. HP bars appear when tokens take damage. The <strong>Fog of War</strong> may hide unexplored areas — only the DM and players can see beyond it.',
         accent: '#00e5cc',
         tip: 'Scroll to zoom in and out. The map updates live as the DM and players make changes.',
+        targetSelector: '#map',
+        fallbackSelector: 'canvas',
+        placement: 'center',
       },
       {
         icon: '💬',
@@ -123,6 +153,8 @@
         body: 'Use <strong>chat</strong> to react live. You may also get lightweight viewer interactions, but only when the DM grants them for this scene.',
         accent: '#9b59b6',
         tip: 'If interaction controls are missing, that is expected until the DM grants viewer powers.',
+        targetSelector: '#rtab-log',
+        placement: 'left',
       },
       {
         icon: '⚡',
@@ -130,6 +162,9 @@
         body: 'Granted powers appear in the <strong>Party panel</strong> with charge counts, cooldown timing, and explicit approval state. If a power is pending, the UI keeps it queued until the DM approves or declines.',
         accent: '#d4a637',
         tip: 'If an action is blocked, the UI tells you why (permission, no target, or cooldown) so you can recover quickly.',
+        targetSelector: '[data-help="viewer-powers"]',
+        fallbackSelector: '#rtab-party',
+        placement: 'left',
       },
     ],
   };
@@ -143,6 +178,9 @@
         body: 'Welcome to Tavern Tabletop! Your first step is to open <strong>My Character</strong> on the left rail, fill in your name and class, then place your token on the map.',
         accent: '#00e5cc',
         tip: 'The DM can also place your token for you — just let them know your character\'s name.',
+        targetSelector: '[data-help="my-character"]',
+        fallbackSelector: '#rail-char-btn',
+        placement: 'right',
       },
       {
         icon: '🎲',
@@ -150,6 +188,9 @@
         body: 'All dice rolls happen through the <strong>Dice Vault</strong> (🎲) on the left. Click the die you need, or type a custom roll like <code style="color:#00e5cc">2d6+3</code>. Results appear in the chat log.',
         accent: '#e74c3c',
         tip: 'Your DM may ask for a specific roll (Perception, Athletics, etc.) — just find that die and roll it!',
+        targetSelector: '[data-help="dice-quick-actions"]',
+        fallbackSelector: '#rail-dice-btn',
+        placement: 'right',
       },
       {
         icon: '⚡',
@@ -157,6 +198,9 @@
         body: 'When combat starts, the <strong>Combat</strong> tab on the right will glow. Open it to see the initiative order. On your turn it will say <strong>YOUR TURN</strong>. Move your token, then pick an action — attack, spell, or ability.',
         accent: '#e74c3c',
         tip: 'End your turn with the "End Turn" button in the Combat panel. This passes to the next combatant.',
+        targetSelector: '[data-help="combat-tab"]',
+        fallbackSelector: '#rtab-combat',
+        placement: 'left',
       },
       {
         icon: '🎒',
@@ -164,6 +208,9 @@
         body: 'Your gear lives in the <strong>Inventory</strong> tab on the right. The DM can drop items into your inventory. Equip weapons and armor here. Gold and currency are tracked at the bottom.',
         accent: '#d4a637',
         tip: 'Check the Journal & Quests flyout on the left for active quest objectives and canon notes.',
+        targetSelector: '[data-help="inventory-spells"]',
+        fallbackSelector: '#rtab-inventory',
+        placement: 'left',
       },
     ],
     returning_player: [
@@ -320,6 +367,8 @@
         body: 'You have full control of the session. The left rail groups your tools: <strong>Map/Editor</strong> for terrain, <strong>Tokens/Fog/Combat</strong> for live play, and <strong>Assistant/Sound/Journal</strong> for storytelling.',
         accent: '#d4a637',
         tip: 'Use Live Mode vs Prep Mode (toggle at the top of the left rail) to dim non-relevant tool groups during play.',
+        targetSelector: '#dm-mode-switch',
+        placement: 'right',
       },
       {
         icon: '⚔',
@@ -327,6 +376,9 @@
         body: 'Open the <strong>Combat</strong> tab on the right. Click <strong>Start Combat</strong> to pull all tokens on the current map into initiative. Use <strong>Next</strong> to advance turns. Click individual initiative values to edit them.',
         accent: '#e74c3c',
         tip: 'Right-click any combatant entry to adjust HP, conditions, or remove them from the tracker without ending combat.',
+        targetSelector: '[data-help="combat-tab"]',
+        fallbackSelector: '#rtab-combat',
+        placement: 'left',
       },
       {
         icon: '🌫',
@@ -334,6 +386,9 @@
         body: 'Use the <strong>Fog of War</strong> flyout on the left rail to paint fog, reveal areas, and manage vision. Player tokens with vision enabled automatically reveal the area around them when Fog of War is active.',
         accent: '#00e5cc',
         tip: 'Enable "Reveal on token move" to automatically uncover fog when players move their tokens.',
+        targetSelector: '[data-help="dm-fog"]',
+        fallbackSelector: '#rail-fog-btn',
+        placement: 'right',
       },
       {
         icon: '🧙',
@@ -341,6 +396,8 @@
         body: 'The <strong>AI DM Assistant</strong> helps you generate NPCs, encounter descriptions, loot tables, and story hooks on the fly. It is aware of your current session context and players.',
         accent: '#9b59b6',
         tip: 'Click Assist in the left rail and ask anything — "describe a tense tavern scene" or "generate a CR 5 monster with a weakness to fire".',
+        targetSelector: '#rail-assistant-btn',
+        placement: 'right',
       },
     ],
     viewer_powers_guide: [
@@ -350,6 +407,9 @@
         body: 'As a Spectator, the DM may grant you special powers to interact with the session — reaction emotes, lair actions, environmental effects, or even controlling a minor creature.',
         accent: '#9b59b6',
         tip: 'Granted powers appear in the Party panel with charge counts and cooldown timers.',
+        targetSelector: '[data-help="viewer-powers"]',
+        fallbackSelector: '#rtab-party',
+        placement: 'left',
       },
       {
         icon: '⚡',
@@ -357,6 +417,9 @@
         body: 'When a power is available, its card will be active in the Party panel. Click it to use it. Some powers require DM approval — they enter a pending state until the DM confirms or declines.',
         accent: '#d4a637',
         tip: 'If a power is greyed out, it is either on cooldown, out of charges, or not yet approved. Hover for the reason.',
+        targetSelector: '[data-help="viewer-powers"]',
+        fallbackSelector: '#rtab-party',
+        placement: 'left',
       },
       {
         icon: '💬',
@@ -364,6 +427,8 @@
         body: 'Your chat messages appear in the shared log visible to everyone. Use the Party tab to see which players are connected. Your presence is shown to the DM at all times.',
         accent: '#9b59b6',
         tip: 'Viewer reactions in chat are a great way to engage during dramatic moments.',
+        targetSelector: '#rtab-log',
+        placement: 'left',
       },
     ],
   };
@@ -490,10 +555,13 @@
       '  display:none; position:fixed; inset:0; z-index:20000;',
       '  background:rgba(0,0,0,0.82);',
       '  align-items:center; justify-content:center;',
+      '  pointer-events:none;',
       '  backdrop-filter:blur(3px);',
       '  animation:ob-fade-in 0.3s ease;',
       '}',
       '#ob-overlay.ob-open { display:flex; }',
+      '#ob-overlay.ob-targeted { align-items:flex-start; justify-content:flex-start; }',
+      '#ob-overlay.ob-targeted #ob-modal { position:fixed; width:min(440px, 92vw); }',
 
       /* Modal card */
       '#ob-modal {',
@@ -509,6 +577,8 @@
       '    0 32px 80px rgba(0,0,0,0.9),',
       '    inset 0 1px 0 rgba(255,255,255,0.04);',
       '  overflow:hidden;',
+      '  pointer-events:auto;',
+      '  max-height:min(86vh, 720px);',
       '  animation:ob-slide-up 0.35s cubic-bezier(0.34,1.3,0.64,1);',
       '}',
 
@@ -867,8 +937,9 @@
     _el('ob-tip').innerHTML = data.tip || '';
     _el('ob-tip-box').style.display = data.tip ? 'flex' : 'none';
 
-    // Highlight the relevant UI element for this step
-    _applyStepHighlight(data.highlight || null);
+    // Highlight the relevant UI element for this step. Legacy `highlight` is still
+    // honored as an alias for the newer targetSelector field.
+    _applyStepTarget(data);
 
     // Dots
     _renderDots();
@@ -896,9 +967,6 @@
     _el('ob-progress-fill').style.background = accent;
     _el('ob-progress-fill').style.boxShadow  = '0 0 6px ' + accent;
 
-    // Element highlight
-    _clearHighlight();
-    if (data.highlightSelector) _applyHighlight(data.highlightSelector);
   }
 
   function _renderDots() {
@@ -938,80 +1006,86 @@
     _goTo(_step);
   }
 
+  function _resolveTarget(step) {
+    var selectors = [step && step.targetSelector, step && step.fallbackSelector, step && step.highlightSelector, step && step.highlight]
+      .filter(Boolean);
+    for (var i = 0; i < selectors.length; i++) {
+      try {
+        var el = document.querySelector(selectors[i]);
+        if (!el) continue;
+        var rect = el.getBoundingClientRect();
+        if (rect.width || rect.height) return { el: el, selector: selectors[i] };
+      } catch (_e) {}
+    }
+    return null;
+  }
+
   function _clearHighlight() {
-    document.querySelectorAll('.ob-highlight').forEach(function (el) { el.classList.remove('ob-highlight'); });
-  }
-
-  function _applyHighlight(selector) {
-    try {
-      var el = document.querySelector(selector);
-      if (el) {
-        el.classList.add('ob-highlight');
-        // Remove after animation ends (4 × 1.4s ≈ 6s)
-        setTimeout(function () { el && el.classList.remove('ob-highlight'); }, 6200);
-      }
-    } catch (_e) {}
-  }
-
-  function _closeModal() {
     var overlay = _el('ob-overlay');
-    if (overlay) overlay.classList.remove('ob-open');
-    _helpMode = false;
-    _hubMode  = false;
-    _clearHighlight();
-  }
-
-  // ── UI element highlight ring ─────────────────────────────────────────────
-  function _applyStepHighlight(selector) {
-    _clearHighlight();
-    if (!selector) return;
-    try {
-      var el = document.querySelector(selector);
-      if (!el) return;
-      var rect = el.getBoundingClientRect();
-      if (rect.width === 0 && rect.height === 0) return;
-      var ring = document.createElement('div');
-      ring.id = 'ob-highlight-ring';
-      ring.style.cssText = [
-        'position:fixed',
-        'pointer-events:none',
-        'z-index:19999',
-        'border:2px solid rgba(0,229,204,0.88)',
-        'border-radius:6px',
-        'animation:ob-ring-pulse 1.6s ease-in-out infinite',
-        'transition:all 0.25s',
-        'left:' + (rect.left - 5) + 'px',
-        'top:' + (rect.top - 5) + 'px',
-        'width:' + (rect.width + 10) + 'px',
-        'height:' + (rect.height + 10) + 'px',
-      ].join(';');
-      document.body.appendChild(ring);
-      // Reposition on scroll / resize
-      ring._selector = selector;
-      ring._rafId = 0;
-      function _updateRingPos() {
-        if (!document.getElementById('ob-highlight-ring')) return;
-        try {
-          var target = document.querySelector(ring._selector);
-          if (!target) return;
-          var r = target.getBoundingClientRect();
-          ring.style.left = (r.left - 5) + 'px';
-          ring.style.top  = (r.top  - 5) + 'px';
-          ring.style.width  = (r.width  + 10) + 'px';
-          ring.style.height = (r.height + 10) + 'px';
-        } catch (_e) {}
-        ring._rafId = requestAnimationFrame(_updateRingPos);
-      }
-      ring._rafId = requestAnimationFrame(_updateRingPos);
-    } catch (_err) {}
-  }
-
-  function _clearHighlight() {
+    var modal = _el('ob-modal');
+    if (overlay) overlay.classList.remove('ob-targeted');
+    if (modal) {
+      modal.style.left = '';
+      modal.style.top = '';
+    }
     var ring = document.getElementById('ob-highlight-ring');
     if (ring) {
       if (ring._rafId) cancelAnimationFrame(ring._rafId);
       ring.remove();
     }
+    document.querySelectorAll('.ob-highlight').forEach(function (el) { el.classList.remove('ob-highlight'); });
+    if (_targetClickCleanup) { _targetClickCleanup(); _targetClickCleanup = null; }
+  }
+
+  var _targetClickCleanup = null;
+
+  // ── UI element spotlight ring and card placement ─────────────────────────
+  function _applyStepTarget(step) {
+    _clearHighlight();
+    var resolved = _resolveTarget(step || {});
+    if (!resolved) return; // modal-only fallback
+    var target = resolved.el;
+    try { target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); } catch (_e) {}
+    setTimeout(function () { _positionSpotlight(target, step || {}); }, 180);
+    if (step && step.requireClick) {
+      var onClick = function () {
+        if (_helpMode) return;
+        if (_step < _steps.length - 1) _goTo(_step + 1);
+      };
+      target.addEventListener('click', onClick, { once: true, capture: true });
+      _targetClickCleanup = function () { target.removeEventListener('click', onClick, true); };
+    }
+  }
+
+  function _positionSpotlight(target, step) {
+    if (!_el('ob-overlay') || !_el('ob-modal') || !_el('ob-overlay').classList.contains('ob-open')) return;
+    var rect = target.getBoundingClientRect();
+    if (!(rect.width || rect.height)) return;
+    var accent = (step && step.accent) || ROLE_ACCENT[_role] || '#00e5cc';
+    var ring = document.createElement('div');
+    ring.id = 'ob-highlight-ring';
+    ring.style.cssText = 'position:fixed;pointer-events:none;z-index:20001;border:2px solid '+accent+';border-radius:10px;animation:ob-ring-pulse 1.6s ease-in-out infinite;box-shadow:0 0 0 9999px rgba(0,0,0,0.62);transition:all 0.18s;';
+    document.body.appendChild(ring);
+    _el('ob-overlay').classList.add('ob-targeted');
+    target.classList.add('ob-highlight');
+    var modal = _el('ob-modal');
+    function update() {
+      var r = target.getBoundingClientRect();
+      ring.style.left = (r.left - 8) + 'px'; ring.style.top = (r.top - 8) + 'px';
+      ring.style.width = (r.width + 16) + 'px'; ring.style.height = (r.height + 16) + 'px';
+      var mw = modal.offsetWidth || 440, mh = modal.offsetHeight || 360, gap = 18;
+      var placement = (step && step.placement) || 'auto';
+      var left = r.right + gap, top = r.top;
+      if (placement === 'left' || (placement === 'auto' && left + mw > window.innerWidth - 12)) left = r.left - mw - gap;
+      if (placement === 'top') { left = r.left; top = r.top - mh - gap; }
+      if (placement === 'bottom') { left = r.left; top = r.bottom + gap; }
+      if (placement === 'center') { left = (window.innerWidth - mw) / 2; top = (window.innerHeight - mh) / 2; }
+      left = Math.max(12, Math.min(left, window.innerWidth - mw - 12));
+      top = Math.max(12, Math.min(top, window.innerHeight - mh - 12));
+      modal.style.left = left + 'px'; modal.style.top = top + 'px';
+      ring._rafId = requestAnimationFrame(update);
+    }
+    update();
   }
 
   // ── Colour helpers ────────────────────────────────────────────────────────

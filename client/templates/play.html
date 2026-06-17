@@ -7491,7 +7491,7 @@
     <div id="ws-status-label">Connecting…</div>
   </div>
   <!-- ? Help / Walkthrough button — always visible in topbar -->
-  <button id="topbar-help-btn" title="Help Hub &amp; Walkthrough"
+  <button id="topbar-help-btn" data-help="help-hub" title="Help Hub &amp; Walkthrough"
     onclick="window.AppOnboarding&&AppOnboarding.showHelpHub(typeof ROLE!=='undefined'?ROLE:'viewer')"
     style="background:rgba(0,229,204,0.07);border:1px solid rgba(0,229,204,0.25);border-radius:50%;
            width:22px;height:22px;display:flex;align-items:center;justify-content:center;
@@ -7530,23 +7530,23 @@
   <div class="rail-divider"></div>
 
   <!-- Flyout toggle buttons -->
-  <button class="rail-btn" id="rail-token-btn" onclick="toggleFlyout('flyout-token')" style="display:none;">
+  <button class="rail-btn" id="rail-token-btn" data-help="dm-token-tools" onclick="toggleFlyout('flyout-token')" style="display:none;">
     🪙<span class="rail-tooltip">Create Token</span>
   </button>
-  <button class="rail-btn" id="rail-char-btn" onclick="toggleFlyout('flyout-char')" style="display:none;">
+  <button class="rail-btn" id="rail-char-btn" data-help="my-character" onclick="toggleFlyout('flyout-char')" style="display:none;">
     🛡<span class="rail-tooltip">My Character</span>
   </button>
   <button class="rail-btn" id="rail-char-token-btn" onclick="toggleFlyout('flyout-char-token')" style="display:none;">
     🎭<span class="rail-tooltip">Token</span>
   </button>
-  <button class="rail-btn" id="rail-dice-btn" onclick="toggleFlyout('flyout-dice')">
+  <button class="rail-btn" id="rail-dice-btn" data-help="dice-quick-actions" onclick="toggleFlyout('flyout-dice')">
     🎲<span class="rail-tooltip">Dice Tray</span>
   </button>
   <button class="rail-btn" id="rail-journal-btn" onclick="toggleFlyout('flyout-journal')">
     📚<span class="rail-tooltip">Journal & Handouts</span>
   </button>
 
-  <button class="rail-btn" id="rail-editor-btn" onclick="toggleFlyout('flyout-editor')" style="display:none;">
+  <button class="rail-btn" id="rail-editor-btn" data-help="dm-map-editor" onclick="toggleFlyout('flyout-editor')" style="display:none;">
     🧱<span class="rail-tooltip">Map Editor</span>
   </button>
   <button class="rail-btn" id="rail-map-btn" onclick="toggleFlyout('flyout-map')" style="display:none;">
@@ -7555,7 +7555,7 @@
   <button class="rail-btn" id="rail-perm-btn" onclick="toggleFlyout('flyout-perm')" style="display:none;">
     👁<span class="rail-tooltip">Permissions</span>
   </button>
-  <button class="rail-btn" id="rail-fog-btn" onclick="toggleFlyout('flyout-fog')" style="display:none;">
+  <button class="rail-btn" id="rail-fog-btn" data-help="dm-fog" onclick="toggleFlyout('flyout-fog')" style="display:none;">
     🌫<span class="rail-tooltip">Fog of War</span>
   </button>
   <button class="rail-btn" id="rail-sound-btn" onclick="toggleFlyout('flyout-sound')" style="display:none;">
@@ -7575,7 +7575,7 @@
 <!-- ── FLYOUT PANELS (fixed, overlay canvas) ── -->
 
 <!-- Dice Tray flyout -->
-<div class="flyout" id="flyout-dice">
+<div class="flyout" id="flyout-dice" data-help="dice-vault">
   <div class="sidebar-section">
     <div class="sidebar-label" style="display:flex;align-items:center;gap:4px;">Dice Vault<button class="ob-help-btn" title="Help: Dice" onclick="window.AppOnboarding&&AppOnboarding.showHelp('dice')">?</button></div>
     <div class="dice-grid">
@@ -8011,7 +8011,7 @@
 
 
 <!-- DM Map Editor flyout -->
-<div class="flyout" id="flyout-editor">
+<div class="flyout" id="flyout-editor" data-help="dm-map-editor-panel">
   <!-- New procedural-asset editor panel mounts here -->
   <div id="ep-flyout-host"></div>
 
@@ -8956,7 +8956,7 @@
       <span class="rtab-icon" aria-hidden="true">⚔</span>Party
       <span class="rtab-badge" id="rtab-party-badge"></span>
     </button>
-    <button class="rtab" id="rtab-inventory" role="tab" type="button" aria-controls="rtab-pane-inventory" data-rtab-target="inventory">
+    <button class="rtab" id="rtab-inventory" data-help="inventory-spells" role="tab" type="button" aria-controls="rtab-pane-inventory" data-rtab-target="inventory">
       <span class="rtab-icon" aria-hidden="true">🎒</span>Inventory
       <span class="rtab-badge" id="rtab-inventory-badge"></span>
     </button>
@@ -8968,7 +8968,7 @@
       <span class="rtab-icon" aria-hidden="true">📖</span>Moments
       <span class="rtab-badge" id="rtab-memory-badge"></span>
     </button>
-    <button class="rtab" id="rtab-combat" role="tab" type="button" aria-controls="rtab-pane-combat" data-rtab-target="combat">
+    <button class="rtab" id="rtab-combat" data-help="combat-tab" role="tab" type="button" aria-controls="rtab-pane-combat" data-rtab-target="combat">
       <span class="rtab-icon" aria-hidden="true">⚡</span>Combat
       <span class="rtab-badge" id="rtab-combat-badge"></span>
     </button>
@@ -8990,7 +8990,7 @@
           <span aria-hidden="true">📖</span>Bestiary
           <span class="rtab-badge" id="rtab-bestiary-badge"></span>
         </button>
-        <button class="rtab-dropdown-item" id="rtab-spelllib" type="button" role="menuitem" data-tab="spelllib" data-rtab-target="spelllib">
+        <button class="rtab-dropdown-item" id="rtab-spelllib" data-help="inventory-spells" type="button" role="menuitem" data-tab="spelllib" data-rtab-target="spelllib">
           <span aria-hidden="true">🔮</span>Spells
           <span class="rtab-badge" id="rtab-spelllib-badge"></span>
         </button>
@@ -9062,8 +9062,8 @@
               Show viewer cursors to players
             </label>
           </div>
-          <div id="viewer-power-controls" style="display:none;padding:0.7rem;border:1px solid rgba(201,162,39,0.14);border-radius:10px;background:rgba(255,255,255,0.03);"></div>
-          <div id="viewer-power-self" style="display:none;padding:0.7rem;border:1px solid rgba(93,122,255,0.18);border-radius:10px;background:rgba(93,122,255,0.05);"></div>
+          <div id="viewer-power-controls" data-help="viewer-powers" style="display:none;padding:0.7rem;border:1px solid rgba(201,162,39,0.14);border-radius:10px;background:rgba(255,255,255,0.03);"></div>
+          <div id="viewer-power-self" data-help="viewer-powers" style="display:none;padding:0.7rem;border:1px solid rgba(93,122,255,0.18);border-radius:10px;background:rgba(93,122,255,0.05);"></div>
         <!-- DM Poll Controls -->
           <div id="poll-dm-controls" style="display:none;padding:0.7rem;border:1px solid rgba(0,229,204,0.18);border-radius:10px;background:rgba(0,229,204,0.03);">
             <div class="panel-collapse-toggle" role="button" tabindex="0" data-collapse-target="poll-dm-body" data-collapse-arrow="poll-dm-arrow" data-collapse-display="block" style="padding:0.2rem 0.1rem;"><div class="tab-section-label" style="margin:0;">🗳️ Party Vote</div><span id="poll-dm-arrow" style="font-size:0.62rem;color:var(--parchment-dim);">▼</span></div>
