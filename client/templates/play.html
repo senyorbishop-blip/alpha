@@ -73,6 +73,7 @@
       --ease-ui:     cubic-bezier(0.25, 0.46, 0.45, 0.94);
       --ease-spring: cubic-bezier(0.18, 0.74, 0.18, 1);
       --ease-out:    cubic-bezier(0, 0, 0.4, 1);
+      --z-roll-visuals: 16000;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -2822,12 +2823,25 @@
 
 
     /* ── Dice Overlay (non-blocking tabletop presentation) ── */
+    #roll-visual-portal {
+      position: fixed;
+      inset: 0;
+      z-index: var(--z-roll-visuals);
+      pointer-events: none;
+      isolation: isolate;
+    }
+    #roll-visual-portal > * { pointer-events: auto; }
+    #roll-visual-portal #dice-overlay-bg,
+    #roll-visual-portal #dice-3d-wrap,
+    #roll-visual-portal .dice-roll-banner {
+      pointer-events: none;
+    }
     #dice-overlay-bg {
       display: none;
       position: fixed;
       inset: 0;
       background: transparent;
-      z-index: 10060;
+      z-index: 1;
       opacity: 0;
       transition: opacity 180ms ease;
       pointer-events: none;
@@ -2840,7 +2854,7 @@
       position: fixed;
       inset: 0;
       pointer-events: none;
-      z-index: 10065;
+      z-index: 2;
       opacity: 0;
       transform: scale(0.995) translateY(4px);
       transition: opacity 180ms ease, transform 180ms ease;
@@ -2855,7 +2869,7 @@
       top: clamp(1.2rem, 2.8vh, 2.2rem);
       left: 50%;
       transform: translateX(-50%) translateY(-10px);
-      z-index: 10068;
+      z-index: 3;
       width: min(72vw, 900px);
       pointer-events: none;
       opacity: 0;
@@ -2906,7 +2920,7 @@
       right: clamp(1rem, 1.8vw, 1.5rem);
       bottom: clamp(1rem, 2.2vh, 1.8rem);
       transform: translateY(18px) scale(0.97);
-      z-index: 10072;
+      z-index: 4;
       pointer-events: auto;
       font-family: 'Cinzel', serif;
       color: #f4e8d0;
@@ -3285,7 +3299,7 @@
     #combat-result-card {
       position: fixed; left: 50%; top: 42%;
       transform: translate(-50%, -50%) scale(0.9);
-      z-index: 10005; pointer-events: auto;
+      z-index: 5; pointer-events: auto;
       background: linear-gradient(155deg, #1d1b2e 0%, #14121c 100%);
       border: 1.5px solid rgba(212,175,55,0.55); border-radius: 14px;
       box-shadow: 0 12px 48px rgba(0,0,0,0.82), 0 0 0 1px rgba(212,175,55,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
@@ -9556,16 +9570,19 @@
 </div>
 
 
-<!-- Dice overlay background (dark backdrop + click-to-close) -->
-<div id="dice-overlay-bg"></div>
-<!-- 3-D physics canvas container (Three.js canvas appended to body directly) -->
-<div id="dice-3d-wrap"></div>
-<div class="dice-roll-banner" id="dice-roll-banner">
-  <div class="dice-roll-label" id="dice-roll-label">Rolling dice</div>
-  <div class="dice-roll-breakdown" id="dice-roll-breakdown"></div>
+<!-- Roll visuals portal: dice canvas, roll result card, and roll result popup live above sheet/drawer surfaces. -->
+<div id="roll-visual-portal" aria-live="polite" aria-label="Roll results">
+  <!-- Dice overlay background (transparent click-to-close layer) -->
+  <div id="dice-overlay-bg"></div>
+  <!-- 3-D physics canvas container (Three.js canvas appended here) -->
+  <div id="dice-3d-wrap"></div>
+  <div class="dice-roll-banner" id="dice-roll-banner">
+    <div class="dice-roll-label" id="dice-roll-label">Rolling dice</div>
+    <div class="dice-roll-breakdown" id="dice-roll-breakdown"></div>
+  </div>
+  <!-- Dice result popup — always above character sheet/drawers, below onboarding -->
+  <div class="dice-result-popup" id="dice-result-popup"><div class="dice-result-strip"><div class="dice-result-strip-top"><span>Awaiting result</span></div><div class="dice-result-strip-total">—</div><div class="dice-result-strip-pills"></div></div></div>
 </div>
-<!-- Dice result popup — always on top -->
-<div class="dice-result-popup" id="dice-result-popup"><div class="dice-result-strip"><div class="dice-result-strip-top"><span>Awaiting result</span></div><div class="dice-result-strip-total">—</div><div class="dice-result-strip-pills"></div></div></div>
 
 <!-- Context Menu -->
 <div id="ctx-menu">
@@ -12158,7 +12175,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+function ensureRollVisualPortal() {
+  let portal = document.getElementById('roll-visual-portal');
+  if (!portal) {
+    portal = document.createElement('div');
+    portal.id = 'roll-visual-portal';
+    portal.setAttribute('aria-live', 'polite');
+    portal.setAttribute('aria-label', 'Roll results');
+    document.body.appendChild(portal);
+  }
+  ['dice-overlay-bg', 'dice-3d-wrap', 'dice-roll-banner', 'dice-result-popup', 'combat-result-card'].forEach((id) => {
+    const node = document.getElementById(id);
+    if (node && node.parentElement !== portal) portal.appendChild(node);
+  });
+  return portal;
+}
+window.ensureRollVisualPortal = ensureRollVisualPortal;
+
 function initUI() {
+  ensureRollVisualPortal();
   try {
     const stored = String(localStorage.getItem('combat_player_actions_collapsed') || '').trim();
     if (stored === '0') _playerActionsCollapsed = false;
@@ -23890,6 +23925,7 @@ function _diceWantsVisuals(requestedMode = null) {
 }
 
 function _showImmediateDiceResult(meta = {}) {
+  ensureRollVisualPortal();
   const popup = document.getElementById('dice-result-popup');
   const rolls = Array.isArray(meta.rolls) ? meta.rolls.slice() : [];
   const diceType = Math.max(2, Number(meta.diceType || selectedDice || 20) || 20);
@@ -24343,6 +24379,7 @@ window.clearDiceResultsLog = clearDiceResultsLog;
 
 function _renderDiceResultStrip(meta) {
 
+  ensureRollVisualPortal();
   const popup = document.getElementById('dice-result-popup');
   if (!popup) return;
   const diceType = Number(meta?.diceType || selectedDice || 20);
@@ -24558,6 +24595,7 @@ function _showDiceError(message) {
 }
 
 function showDiceAnimation(diceType, qty, result, rollOpts = null) {
+  ensureRollVisualPortal();
   // ── 3-D only path ──────────────────────────────────────────────
   const dp = window.DicePhysics3D;
 
@@ -24962,6 +25000,7 @@ function _showLegacySyncedLocalDiceResult(opts = {}) {
 }
 
 function closeDiceOverlay() {
+  ensureRollVisualPortal();
   _diceIsDismissing = false;
   _dicePhysicsActive = false;
   clearTimeout(_renderCombatDebounceTmr);
@@ -48261,6 +48300,7 @@ function _rollCombatDamageCustom(targetName) {
  *         damage, damageRolls, damageType, saveDC, saveAbility }
  */
 function _showCombatResultCard(opts) {
+  const portal = ensureRollVisualPortal();
   clearTimeout(window._crcTimer);
   const old = document.getElementById('combat-result-card');
   if (old) { old.classList.remove('crc-visible'); old.remove(); }
@@ -48311,7 +48351,7 @@ function _showCombatResultCard(opts) {
     <div class="crc-divider"></div>
     ${rows}${outcomeHtml}${dmgRow}
     <div class="crc-footer">Click to dismiss · auto-hides in 20s</div>`;
-  document.body.appendChild(card);
+  portal.appendChild(card);
   requestAnimationFrame(() => requestAnimationFrame(() => card.classList.add('crc-visible')));
 
   window._crcTimer = setTimeout(_hideCombatResultCard, 20000);
