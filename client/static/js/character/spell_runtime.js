@@ -117,9 +117,9 @@
                            scaling_type:'slot_healing', scaling_data:{ base_slot:3, base_formula:'1d4 + spellcasting modifier', per_slot_formula:'1d4' } },
     'spirit-guardians':  { level:3, savingThrow:'WIS', damageFormula:'3d8', damageType:'radiant', concentration:true,
                            scaling_type:'slot_damage', scaling_data:{ base_slot:3, base_formula:'3d8', per_slot_formula:'1d8' } },
-    'counterspell':      { level:3, castingTime:'Reaction' },
+    'counterspell':      { level:3, castingTime:'Reaction', scaling_type:'counter', scaling_data:{ base_slot:3 }, higher_level_text:'When cast with a higher slot, the spell automatically interrupts spells of that slot level or lower.' },
     'hypnotic-pattern':  { level:3, savingThrow:'WIS', concentration:true },
-    'dispel-magic':      { level:3 },
+    'dispel-magic':      { level:3, scaling_type:'counter', scaling_data:{ base_slot:3 }, higher_level_text:'When cast with a higher slot, the spell automatically ends spells of that slot level or lower.' },
     'haste':             { level:3, concentration:true },
 
     /* ── 4th-level spells ────────────────────────────────────────────────── */
@@ -127,7 +127,7 @@
                            scaling_type:'slot_damage', scaling_data:{ base_slot:4, base_formula:'8d8', per_slot_formula:'2d8' } },
     'wall-of-fire':      { level:4, savingThrow:'DEX', damageFormula:'5d8',  damageType:'fire', concentration:true,
                            scaling_type:'slot_damage', scaling_data:{ base_slot:4, base_formula:'5d8', per_slot_formula:'1d8' } },
-    'banishment':        { level:4, savingThrow:'CHA', concentration:true },
+    'banishment':        { level:4, savingThrow:'CHA', concentration:true, scaling_type:'extra_target_per_slot', scaling_data:{ base_slot:4, base_targets:1, per_slot:1 }, higher_level_text:'Targets one additional creature per slot above 4th.' },
     'polymorph':         { level:4, savingThrow:'WIS', concentration:true },
     'ice-storm':         { level:4, savingThrow:'DEX', damageFormula:'2d8 + 4d6', damageType:'cold',
                            scaling_type:'slot_damage', scaling_data:{ base_slot:4, base_formula:'2d8 + 4d6', per_slot_formula:'1d8' } },
@@ -299,6 +299,64 @@
     return { type: 'none', data: sd };
   }
 
+
+
+  function _canonicalScalingType(type) {
+    var t = String(type || '').trim();
+    var map = {
+      slot_damage: 'damage', slot_level: 'damage', damage: 'damage', cantrip_level: 'damage',
+      slot_healing: 'healing', healing: 'healing',
+      extra_ray_per_slot: 'extra_ray', extra_dart_per_slot: 'extra_ray', extra_ray: 'extra_ray',
+      extra_target_per_slot: 'extra_target', extra_target: 'extra_target', target: 'extra_target',
+      duration: 'duration', area: 'area', text_only: 'special', special: 'special',
+      counter: 'counter', negation: 'counter', summon: 'summon', none: 'none', cast_options: 'special'
+    };
+    return map[t] || (t ? 'special' : 'none');
+  }
+
+  function _scalingFormulaText(type, data) {
+    data = obj(data);
+    var canonical = _canonicalScalingType(type);
+    if (canonical === 'damage' || canonical === 'healing') {
+      var per = first(data.per_slot_formula, data.perSlotFormula, data.per_slot, data.perSlot, '');
+      return per ? ('+' + per + ' per slot above base') : '';
+    }
+    if (canonical === 'extra_ray') return '+' + String(num(first(data.per_slot, data.perSlot), 1)) + ' ray/attack per slot above base';
+    if (canonical === 'extra_target') return '+' + String(num(first(data.per_slot, data.perSlot), 1)) + ' target per slot above base';
+    if (canonical === 'counter') return 'Automatic counter/negation threshold equals cast slot level';
+    return '';
+  }
+
+  function buildHigherLevelMetadata(spellCard, resolvedScaling, baseLevel, builtin, missing) {
+    var card = obj(spellCard), scaling = resolvedScaling || { type: '', data: {} };
+    var rawType = first(card.scaling_type, card.scalingType, scaling.type, 'none');
+    var data = obj(card.scaling_data || card.scalingData || scaling.data || {});
+    var text = first(card.scalingText, card.higher_level_text, card.scalingNote, card.higherLevel, card.atHigherLevels, card.higher_levels, '');
+    var canonical = _canonicalScalingType(rawType);
+    var starts = num(first(data.base_slot, data.baseSlot, card.scalingStartsAbove), baseLevel || 0);
+    var dice = first(data.per_slot_formula, data.perSlotFormula, card.scalingDice, '');
+    if (missing) canonical = 'special';
+    return {
+      baseLevel: baseLevel,
+      scalingType: canonical,
+      scalingFormula: missing ? 'Scaling data missing' : (_scalingFormulaText(rawType, data) || text || (canonical === 'none' ? 'No additional higher-level effect' : '')),
+      scalingStartsAbove: starts,
+      scalingDice: dice,
+      scalingText: text,
+      manualResolver: null,
+      sourceScalingType: rawType,
+      scalingDataMissing: !!missing
+    };
+  }
+
+  function _hasExplicitScalingMetadata(card) {
+    return !!first(card && card.scaling_type, card && card.scalingType, '') || Object.keys(obj(card && (card.scaling_data || card.scalingData))).length > 0;
+  }
+
+  function _hasHigherLevelText(card) {
+    return !!first(card && card.scalingText, card && card.higher_level_text, card && card.scalingNote, card && card.higherLevel, card && card.atHigherLevels, card && card.higher_levels, '');
+  }
+
   function cantripFormula(data, baseFormula, level) {
     var tiers = Array.isArray(data.tiers) ? data.tiers.slice().sort(function (a, b) { return num(a.level, 1) - num(b.level, 1); }) : [];
     var out = baseFormula;
@@ -401,12 +459,17 @@
       displayFormula = baseFormula;
       var targets = num(scaling.data.base_targets, 1) + delta * num(scaling.data.per_slot, 1);
       if (targets > 1) warnings.push('Targets at this level: ' + targets);
+    } else if (scaling.type === 'counter') {
+      displayFormula = 'Automatically affects spells of level ' + castLevel + ' or lower';
+    } else if (scaling.type === 'duration' || scaling.type === 'area' || scaling.type === 'summon' || scaling.type === 'special' || scaling.type === 'text_only') {
+      displayFormula = first(merged.higher_level_text, merged.scalingNote, merged.higherLevel, merged.description, baseFormula, 'Higher-level effect; see spell text');
     } else {
       displayFormula = baseFormula;
     }
 
     displayFormula = replaceMod(displayFormula, options, warnings);
-    if (healing) finalHealingFormula = displayFormula; else finalDamageFormula = displayFormula;
+    var isNonFormulaEffect = (scaling.type === 'counter' || scaling.type === 'duration' || scaling.type === 'area' || scaling.type === 'summon' || scaling.type === 'special' || scaling.type === 'text_only') && !/\d+d\d+/i.test(displayFormula);
+    if (healing) finalHealingFormula = displayFormula; else finalDamageFormula = isNonFormulaEffect ? '' : displayFormula;
 
     if (displayFormula && /\d+d\d+/i.test(displayFormula) && !isRollable(displayFormula)) {
       warnings.push('Formula is not safely rollable without more metadata.');
@@ -534,11 +597,14 @@
     var highestSlot = Math.max(0, Math.max.apply(null, Object.keys(slotCounts).map(Number).concat([0])));
     var lib = _libraryLookup(spellLibrary || rt.spellLibrary || []);
     var known = _knownSpellManifest(knownSpellManifest);
-    var rows = [], grouped = {}, diagnostics = { missingScalingData: [], noHigherLevelEffect: [], knownWithoutRows: [], rowsDisabledDueToNoResource: [] };
+    var rows = [], grouped = {}, diagnostics = { damageScaling: [], healingScaling: [], targetScaling: [], specialScaling: [], noHigherLevelEffect: [], missingScalingData: [], generatedRowsPerSpell: {}, knownWithoutRows: [], rowsDisabledDueToNoResource: [] };
     known.forEach(function (knownSpell, idx) {
       var key = _slug(first(knownSpell.spellId, knownSpell.id, knownSpell.name));
       var libraryCard = lib[key] || lib[key.replace(/^(?:spell|ability|action)-/, '')] || BUILTIN[key] || BUILTIN[_slug(knownSpell.name)] || {};
       var card = _smartMerge(libraryCard, knownSpell);
+      var builtinForKey = BUILTIN[key] || BUILTIN[_slug(knownSpell.name)] || {};
+      var hasSafeCanonical = !!(builtinForKey && first(builtinForKey.scaling_type, builtinForKey.scalingType, ''));
+      var scalingDataMissing = !hasSafeCanonical && _hasHigherLevelText(card) && !_hasExplicitScalingMetadata(card);
       var baseLevel = num(first(knownSpell.baseLevel, card.baseLevel, card.level, card.spell_level), null);
       if (baseLevel === null) baseLevel = levelOf(card, _smartMerge(BUILTIN[key] || BUILTIN[_slug(knownSpell.name)] || {}, card));
       if (baseLevel === null) { diagnostics.knownWithoutRows.push(knownSpell.name); return; }
@@ -549,8 +615,13 @@
         if (castLevel > 9) break;
         var resolved = resolveSpellRuntime(Object.assign({}, card, { level: baseLevel, spell_level: baseLevel, id: first(knownSpell.spellId, card.id, key), name: knownSpell.name }), Object.assign({}, rt, { castLevel: castLevel, slotLevel: castLevel, item: knownSpell.usesCharges }));
         var formula = first(resolved.finalHealingFormula, resolved.finalDamageFormula, resolved.displayFormula, '');
+        var higherLevelMetadata = buildHigherLevelMetadata(card, { type: resolved.scalingType, data: resolved.scalingData }, baseLevel, builtinForKey, scalingDataMissing);
         var noExtra = castLevel > baseLevel && (!resolved.scalingType || resolved.scalingType === 'none' || formula === first(resolved.baseFormula, ''));
-        if (castLevel > baseLevel && (!resolved.scalingType || resolved.scalingType === 'none')) diagnostics.missingScalingData.push(knownSpell.name);
+        if (scalingDataMissing) diagnostics.missingScalingData.push(knownSpell.name);
+        if (higherLevelMetadata.scalingType === 'damage') diagnostics.damageScaling.push(knownSpell.name);
+        else if (higherLevelMetadata.scalingType === 'healing') diagnostics.healingScaling.push(knownSpell.name);
+        else if (higherLevelMetadata.scalingType === 'extra_target') diagnostics.targetScaling.push(knownSpell.name);
+        else if (higherLevelMetadata.scalingType !== 'none') diagnostics.specialScaling.push(knownSpell.name);
         if (noExtra) diagnostics.noHigherLevelEffect.push(knownSpell.name + ' L' + castLevel);
         var castResourceType = knownSpell.usesCharges ? 'charges' : (knownSpell.limitedUse ? 'limited-use' : (baseLevel === 0 ? 'at-will' : 'spell-slot'));
         var remaining = castResourceType === 'spell-slot' ? num(slotCounts[castLevel], 0) : 1;
@@ -569,7 +640,8 @@
           castResourceType: castResourceType,
           damagePreview: resolved.finalDamageFormula || '',
           healingPreview: resolved.finalHealingFormula || '',
-          effectPreview: (resolved.scalingType === 'extra_target_per_slot' && castLevel > baseLevel ? (formula + ', +' + String(castLevel - baseLevel) + ' target' + (castLevel - baseLevel === 1 ? '' : 's')) : (formula || (castLevel > baseLevel ? 'No additional higher-level effect' : first(card.effect, card.description, 'Cast spell')))),
+          effectPreview: (scalingDataMissing && castLevel > baseLevel ? 'Scaling data missing' : (resolved.scalingType === 'extra_target_per_slot' && castLevel > baseLevel ? (formula + ', +' + String(castLevel - baseLevel) + ' target' + (castLevel - baseLevel === 1 ? '' : 's')) : (formula || (castLevel > baseLevel ? 'No additional higher-level effect' : first(card.effect, card.description, 'Cast spell'))))),
+          higherLevelMetadata: higherLevelMetadata,
           saveDC: resolved.saveDc,
           attackBonus: resolved.attackBonus,
           range: first(resolved.range, card.range, ''),
@@ -582,9 +654,10 @@
           card: Object.assign({}, card, { level: baseLevel, spell_level: baseLevel }),
         });
         if (disabledReason) diagnostics.rowsDisabledDueToNoResource.push(row.rowId);
-        rows.push(row); if (!grouped[castLevel]) grouped[castLevel] = []; grouped[castLevel].push(row);
+        rows.push(row); diagnostics.generatedRowsPerSpell[knownSpell.name] = (diagnostics.generatedRowsPerSpell[knownSpell.name] || 0) + 1; if (!grouped[castLevel]) grouped[castLevel] = []; grouped[castLevel].push(row);
       }
     });
+    ['damageScaling','healingScaling','targetScaling','specialScaling','noHigherLevelEffect','missingScalingData'].forEach(function (key) { diagnostics[key] = Array.from(new Set(diagnostics[key])); });
     return { rows: rows, grouped: grouped, sections: grouped, knownSpellManifest: known, diagnostics: diagnostics };
   }
 
@@ -632,6 +705,7 @@
     resolveSpellCast:         resolveSpellCast,
     buildSpellCastOptions:    buildCastOptions,
     buildCastableSpellRows:    buildCastableSpellRows,
+    buildHigherLevelMetadata: buildHigherLevelMetadata,
     normalizeRollableFormula: normalizeRollable,
     isRollableFormula:        isRollable,
     combineSpellFormula:      combine,
