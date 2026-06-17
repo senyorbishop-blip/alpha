@@ -11640,6 +11640,13 @@ let _activeCharacterSheetMode = 'native';
 let _charProfileAutosaveTimer = null;
 let _charBookSyncTimer = null;
 let _suppressCharProfileReloadUntil = 0;
+let isHydrating = false;
+let isSaving = false;
+let isDirty = false;
+let lastSavedHash = '';
+let currentDraftHash = '';
+let _lastCharProfileSavePayloadHash = '';
+let _lastCharProfileSaveAt = 0;
 let _activeNativeCharacterDocument = null;
 let _activeNativeCharacterRuntime = null;
 let _pendingLoadedCharacterTokenSeed = null;
@@ -33611,11 +33618,12 @@ function wireCharacterBookSync() {
     if (!el || el.dataset.bookSyncWired) return;
     el.dataset.bookSyncWired = '1';
     el.addEventListener('input', () => {
+      if (isHydrating) return;
       if (document.getElementById('char-sheet-panel')?.classList.contains('open')) {
         syncCharSheetFromBookData(getCharacterBookDataFromUI());
         renderSpeciesSummaryCard();
         requestCharacterBookOverviewRender('syncCharacterBookInputs');
-        setCharacterBookSaveState('dirty');
+        markCharProfileDirty('user');
       }
     });
   });
@@ -39835,6 +39843,11 @@ function _syncLoadedProfileToOwnedToken(profile) {
 
 function applyCharProfileRecord(p, opts = {}) {
   if (!p || typeof p !== 'object') return;
+  const wasHydrating = isHydrating;
+  isHydrating = true;
+  clearTimeout(_charProfileAutosaveTimer);
+  clearTimeout(_charBookSyncTimer);
+  try {
   const mappedProfile = (window.CharacterRuntimeMappers && typeof window.CharacterRuntimeMappers.mapProfileToPlay === 'function')
     ? window.CharacterRuntimeMappers.mapProfileToPlay(p, { preferNative: true })
     : p;
@@ -39986,11 +39999,25 @@ function applyCharProfileRecord(p, opts = {}) {
   } catch {}
   setTimeout(() => { try { renderPartyStatusPanel(); } catch {} }, 0);
   if (!opts.silent) showToast(`Loaded profile: ${profile.name}`);
+  markCharProfileClean(collectCurrentCharProfile({ profileId: profile.id, skipSideEffects: true }));
+  } finally {
+    isHydrating = wasHydrating;
+  }
 }
 
 function loadCharProfiles(entries) {
   const prevActive = _activeCharProfileId || document.getElementById('char-profile-select')?.value || '';
   charProfiles = Array.isArray(entries) ? entries.slice() : [];
+  const activeFromServer = charProfiles.find(p => String(p?.id || '') === String(prevActive || _activeCharProfileId || '')) || null;
+  if (activeFromServer) {
+    const serverHash = getCharProfileDraftHash(activeFromServer);
+    if (serverHash && (serverHash === currentDraftHash || serverHash === _lastCharProfileSavePayloadHash)) {
+      lastSavedHash = serverHash;
+      currentDraftHash = serverHash;
+      isDirty = false;
+      setCharacterBookSaveState('saved');
+    }
+  }
   if (ROLE === 'player') {
     const draft = getPersistedCharProfileDraft();
     if (draft && !charProfiles.some(p => String(p.id) === String(draft.id))) {
@@ -40124,17 +40151,59 @@ function createNewCharProfileId() {
   return `profile_${seed || 'character'}_${Date.now().toString(36)}`;
 }
 
+function _stableCharProfileStringify(value) {
+  if (value == null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map((entry) => _stableCharProfileStringify(entry)).join(',')}]`;
+  const keys = Object.keys(value)
+    .filter((key) => !['_localSavedAt', 'updated_at', 'updatedAt', 'created_at', 'createdAt'].includes(key))
+    .sort();
+  return `{${keys.map((key) => `${JSON.stringify(key)}:${_stableCharProfileStringify(value[key])}`).join(',')}}`;
+}
+
+function getCharProfileDraftHash(profile) {
+  if (!profile || typeof profile !== 'object') return '';
+  try {
+    return _stableCharProfileStringify(profile);
+  } catch {
+    return '';
+  }
+}
+
+function markCharProfileDirty(source = 'user') {
+  if (ROLE !== 'player') return false;
+  if (isHydrating || source === 'hydrate' || source === 'render' || source === 'server') return false;
+  currentDraftHash = getCharProfileDraftHash(collectCurrentCharProfile({ skipSideEffects: true }));
+  if (!currentDraftHash || currentDraftHash === lastSavedHash) {
+    isDirty = false;
+    setCharacterBookSaveState('saved');
+    return false;
+  }
+  isDirty = true;
+  setCharacterBookSaveState('dirty');
+  return true;
+}
+
+function markCharProfileClean(profile) {
+  currentDraftHash = getCharProfileDraftHash(profile || collectCurrentCharProfile({ skipSideEffects: true }));
+  lastSavedHash = currentDraftHash;
+  isDirty = false;
+  setCharacterBookSaveState('saved');
+}
+
 function scheduleCharProfileAutosave() {
   if (ROLE !== 'player') return;
+  if (isHydrating || isSaving) return;
   if (!_charSheet && !charProfiles.length && !(document.getElementById('char-name')?.value || '').trim()) return;
+  if (!markCharProfileDirty('user')) return;
   clearTimeout(_charProfileAutosaveTimer);
   _charProfileAutosaveTimer = setTimeout(() => {
-    saveCurrentCharProfile({ silent: true });
+    saveCurrentCharProfile({ silent: true, trigger: 'autosave' });
   }, 450);
 }
 
 function scheduleCharBookQuickPanelSync() {
   if (ROLE !== 'player') return;
+  if (isHydrating) return;
   clearTimeout(_charBookSyncTimer);
   _charBookSyncTimer = setTimeout(() => {
     applyCharacterBookToQuickPanel(false);
@@ -40245,14 +40314,38 @@ function collectCurrentCharProfile(opts = {}) {
 
 function saveCurrentCharProfile(opts = {}) {
   if (ROLE !== 'player') return;
+  if (isHydrating || opts.trigger === 'hydrate' || opts.trigger === 'render' || opts.trigger === 'server') return;
+  if (isSaving) return;
+  const now = Date.now();
+  const profile = collectCurrentCharProfile(opts || {});
+  currentDraftHash = getCharProfileDraftHash(profile);
+  if (!currentDraftHash || currentDraftHash === lastSavedHash) {
+    isDirty = false;
+    setCharacterBookSaveState('saved');
+    return;
+  }
+  if (currentDraftHash === _lastCharProfileSavePayloadHash && (now - _lastCharProfileSaveAt) < 1500) {
+    return;
+  }
+  isSaving = true;
+  _lastCharProfileSavePayloadHash = currentDraftHash;
+  _lastCharProfileSaveAt = now;
   setCharacterBookSaveState('saving');
   _suppressCharProfileReloadUntil = Date.now() + 2200;
-  const profile = collectCurrentCharProfile(opts || {});
-  rememberActiveCharProfile(profile.id);
-  persistCurrentCharProfileDraft(profile);
-  sendWS({ type: 'char_profile_upsert', payload: profile });
-  setTimeout(() => setCharacterBookSaveState('saved'), opts.silent ? 120 : 220);
-  if (!opts.silent) showToast(`Saved profile: ${profile.name}`);
+  try {
+    rememberActiveCharProfile(profile.id);
+    persistCurrentCharProfileDraft(profile);
+    sendWS({ type: 'char_profile_upsert', payload: profile });
+    markCharProfileClean(profile);
+    if (!opts.silent) showToast(`Saved profile: ${profile.name}`);
+  } catch (err) {
+    console.error('Character profile save failed', err);
+    isDirty = true;
+    setCharacterBookSaveState('dirty');
+    if (!opts.silent) showToast('Character profile save failed. Your changes are still unsaved.');
+  } finally {
+    isSaving = false;
+  }
 }
 
 function saveCurrentCharProfileAsNew() {
@@ -48299,6 +48392,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.addEventListener('input', (e) => {
     if (ROLE !== 'player') return;
+    if (isHydrating) return;
     const target = e.target;
     if (!(target instanceof HTMLElement)) return;
     const id = String(target.id || '');

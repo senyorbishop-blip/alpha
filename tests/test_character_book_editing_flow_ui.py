@@ -28,6 +28,41 @@ def test_character_book_save_feedback_badge_and_states_exist():
     assert "badge.textContent = state === 'dirty' ? 'Unsaved changes' : (state === 'saving' ? 'Saving…' : 'Saved');" in src
 
 
+def test_character_profile_autosave_state_machine_guards_save_loops():
+    src = _play_html()
+    assert 'let isHydrating = false;' in src
+    assert 'let isSaving = false;' in src
+    assert 'let isDirty = false;' in src
+    assert "let lastSavedHash = '';" in src
+    assert "let currentDraftHash = '';" in src
+    assert 'function getCharProfileDraftHash(profile)' in src
+    assert "if (isHydrating || isSaving) return;" in src
+    assert "if (!currentDraftHash || currentDraftHash === lastSavedHash)" in src
+    assert "currentDraftHash === _lastCharProfileSavePayloadHash && (now - _lastCharProfileSaveAt) < 1500" in src
+
+
+def test_character_profile_hydration_and_server_sync_do_not_mark_dirty_or_autosave():
+    src = _play_html()
+    assert 'const wasHydrating = isHydrating;' in src
+    assert 'isHydrating = true;' in src
+    assert "clearTimeout(_charProfileAutosaveTimer);" in src
+    assert "clearTimeout(_charBookSyncTimer);" in src
+    assert "markCharProfileClean(collectCurrentCharProfile({ profileId: profile.id, skipSideEffects: true }));" in src
+    assert "if (isHydrating) return;" in src
+    assert "if (activeFromServer)" in src
+    assert "serverHash === currentDraftHash || serverHash === _lastCharProfileSavePayloadHash" in src
+
+
+def test_character_profile_user_input_and_quick_panel_use_single_debounced_save_path():
+    src = _play_html()
+    assert "function markCharProfileDirty(source = 'user')" in src
+    assert "if (isHydrating || source === 'hydrate' || source === 'render' || source === 'server') return false;" in src
+    assert "markCharProfileDirty('user');" in src
+    assert "saveCurrentCharProfile({ silent: true, trigger: 'autosave' });" in src
+    assert "if (id.startsWith('cb-')) scheduleCharBookQuickPanelSync();" in src
+    assert "if (id.startsWith('char-') || id.startsWith('cb-')) scheduleCharProfileAutosave();" in src
+
+
 def test_mobile_edit_layout_avoids_horizontal_scroll_and_uses_larger_tap_targets():
     src = _play_html()
     assert '.sheet-page-scroll { overflow-x: hidden; }' in src
