@@ -9510,6 +9510,10 @@
         <button class="ob-help-btn" title="Combat Help" style="margin-left:0.25rem;" onclick="window.AppOnboarding&&AppOnboarding.showHelpHub(typeof ROLE!=='undefined'?ROLE:'player')">?</button>
       </div>
       <div class="combat-turn-summary" id="combat-turn-summary">No active turn.</div>
+      <label id="combat-auto-suggest-row" style="display:none;align-items:center;gap:0.35rem;font-size:0.62rem;color:var(--parchment-dim);margin-top:0.3rem;">
+        <input type="checkbox" id="combat-auto-suggest-hostiles" onchange="toggleCombatAutoSuggestHostiles(this.checked)" />
+        Auto-suggest visible hostile tokens entering encounter area
+      </label>
     </div>
     <div id="combat-move-row" style="display:none;padding:0.45rem 0.6rem 0.35rem;border-bottom:1px solid rgba(255,255,255,0.05);flex-wrap:wrap;gap:0.35rem;align-items:center;"></div>
     <div id="combat-offturn-row" class="combat-offturn-row"></div>
@@ -9591,6 +9595,7 @@
   <div class="ctx-item" id="ctx-to-staging" onclick="ctxSendToStaging()"><span>⬜</span> Send to Staging</div>
   <div class="ctx-sep"></div>
   <div class="ctx-item" id="ctx-toggle-hidden" onclick="ctxToggleHidden()" style="display:none;color:#e74c3c;"><span>🚫</span> Hide from players</div>
+  <div class="ctx-item" id="ctx-add-initiative" onclick="ctxAddToInitiative()" style="display:none;color:#f1c40f;"><span>⚔</span> Add to Initiative</div>
   <div class="ctx-item" id="ctx-edit-token" onclick="openTokenEditor()" style="display:none;"><span>✏</span> Edit Token</div>
   <div class="ctx-sep" id="ctx-edit-sep" style="display:none;"></div>
   <div class="ctx-item" id="ctx-adjust-hp" onclick="openHpPopup()" style="display:none;"><span>❤</span> Adjust HP</div>
@@ -11873,6 +11878,9 @@ let _inventoryActionFeedback = { kind: '', message: '' };
 let _dmWorkflowMode = (_runtimeStore && _runtimeStore.get)
   ? String(_runtimeStore.get('ui.dmWorkflowMode', 'prep') || 'prep')
   : 'prep';
+let _combatAutoSuggestHostiles = false;
+try { _combatAutoSuggestHostiles = localStorage.getItem('combat_auto_suggest_hostiles') === '1'; } catch (_err) {}
+const _combatSuggestedTokenIds = new Set();
 // Inventory equip summary element cache (declared early to avoid ReferenceError in non-inventory tab flows)
 let equipSummary = null;
 let _unreadLog  = (_runtimeStore && _runtimeStore.get) ? (_runtimeStore.get('ui.unreadLog', 0)) : 0;
@@ -19115,7 +19123,7 @@ function getCanvasPointer(e) {
 }
 
 function hitTestTokens(wx, wy) {
-  const mapCtx = _currentPoi ? (_currentPoi.id || '__local__') : 'world';
+  const mapCtx = _combatCurrentMapContext();
   const list = Object.values(tokens).filter(t => (t.map_context || 'world') === mapCtx);
   const hits = [];
   for (let i = list.length - 1; i >= 0; i--) {
@@ -19885,6 +19893,12 @@ function onRightClick(e) {
         : '<span>🚫</span> Hide from players';
       hideBtn.style.color = hit.hidden ? '#2ecc71' : '#e74c3c';
     }
+    const addInitBtn = document.getElementById('ctx-add-initiative');
+    if (addInitBtn) {
+      const inCombat = !!(_combat?.active && Array.isArray(_combat?.combatants) && _combat.combatants.some(c => String(c?.token_id || '') === String(hit.id || '')));
+      const onMap = String(hit.map_context || 'world') === String(_getCurrentMapContext());
+      addInitBtn.style.display = (ROLE === 'dm' && _combat?.active && !inCombat && !hit.hidden && !hit.staged && onMap) ? 'flex' : 'none';
+    }
     const canAdjHp = ctxToken.maxHp && (ROLE === 'dm' || _tokenOwnedByMe(ctxToken));
     document.getElementById('ctx-adjust-hp').style.display = canAdjHp ? 'flex' : 'none';
     document.getElementById('ctx-hp-sep').style.display    = canAdjHp ? 'block' : 'none';
@@ -19940,7 +19954,7 @@ function onRightClick(e) {
       const configBtn  = document.getElementById('ctx-configure-shop');
       const shopSep    = document.getElementById('ctx-shop-sep');
       // Hide token-specific items
-      ['ctx-to-staging','ctx-toggle-hidden','ctx-edit-token','ctx-edit-sep',
+      ['ctx-to-staging','ctx-toggle-hidden','ctx-add-initiative','ctx-edit-token','ctx-edit-sep',
        'ctx-adjust-hp','ctx-cond-btn','ctx-token-details','ctx-corpse-search','ctx-corpse-harvest','ctx-hp-sep','ctx-delete',
        'ctx-generate-loot','ctx-loot-sep','ctx-npc-speak','ctx-npc-speak-sep',
        'ctx-conversation-begin','ctx-conversation-sep'].forEach(id => {
@@ -19960,7 +19974,7 @@ function onRightClick(e) {
     if (hitProp && ROLE === 'dm' && editorPropIsLootKind(String(hitProp.kind || '').toLowerCase())) {
       _ctxLootProp = hitProp;
       // Hide all token + shop items
-      ['ctx-to-staging','ctx-toggle-hidden','ctx-edit-token','ctx-edit-sep',
+      ['ctx-to-staging','ctx-toggle-hidden','ctx-add-initiative','ctx-edit-token','ctx-edit-sep',
        'ctx-adjust-hp','ctx-cond-btn','ctx-token-details','ctx-hp-sep','ctx-delete',
        'ctx-open-shop','ctx-configure-shop','ctx-shop-sep',
        'ctx-npc-speak','ctx-npc-speak-sep',
@@ -29612,7 +29626,7 @@ async function cartPlacementPinPoi() {
   cartPlacementCancel();
 
   // Create a new POI at the center of the current map
-  const mapCtx = _currentPoi ? (_currentPoi.id || '__local__') : 'world';
+  const mapCtx = _combatCurrentMapContext();
   _pendingMapUrlAfterPoiCreate = mapUrl;
   _pendingMapTitleAfterPoiCreate = mapTitle;
   sendWS({
@@ -44732,7 +44746,7 @@ function _renderCombatRoster(list, roster, isActive) {
     const targetStr = model.tokenId && model.tokenId === String(_combat.selected_target_id || '') ? `<span class="ce-hp" style="border-color:rgba(255,210,90,0.45);color:#ffe9a6;">Targeted</span>` : '';
     const orderBadge = isCurrent ? '<span class="ce-order now">Now</span>' : (isNextUp ? '<span class="ce-order next">Next</span>' : `<span class="ce-order">#${model.visibleIndex + 1}</span>`);
     const arrow = isCurrent ? '<span class="ce-arrow">◀</span>' : '';
-    const delBtn = ROLE === 'dm' ? `<span class="ce-del" onclick="combatRemove(${model.sourceIndex})">✕</span>` : '';
+    const delBtn = ROLE === 'dm' ? `<span class="ce-del" title="Remove from initiative" onclick="combatRemove(${model.sourceIndex})">✕</span>` : '';
     entry.innerHTML = `${initCell}
       ${_combatRosterTokenAvatarHtml(model)}
       <div class="ce-main">
@@ -46125,6 +46139,10 @@ function renderCombat() {
   if (prevBtn)  prevBtn.style.display = (ROLE === 'dm' && isActive) ? '' : 'none';
   if (nextBtn)  nextBtn.style.display = (ROLE === 'dm' && isActive) ? '' : 'none';
   if (endBtn)   endBtn.style.display  = (ROLE === 'dm' && isActive) ? '' : 'none';
+  const suggestRow = document.getElementById('combat-auto-suggest-row');
+  const suggestChk = document.getElementById('combat-auto-suggest-hostiles');
+  if (suggestRow) suggestRow.style.display = (ROLE === 'dm' && isActive) ? 'flex' : 'none';
+  if (suggestChk) suggestChk.checked = !!_combatAutoSuggestHostiles;
   if (moveRow) {
     const turnIndex = Math.max(0, Number(_combat.turn) || 0);
     const current = isActive ? (coms[turnIndex] || null) : null;
@@ -46301,6 +46319,7 @@ function renderCombat() {
   if (empty) empty.style.display = 'none';
   _renderCombatRoster(list, roster, isActive);
   renderPartyStatusPanel();
+  suggestVisibleHostilesForInitiative();
 }
 
 function _isMyToken(tokenId) {
@@ -46386,12 +46405,19 @@ function _resolveCombatantInitiativeModifier(combatant, token = null) {
   return combatantMod !== null ? combatantMod : 0;
 }
 
+function _combatCurrentMapContext() { return _currentPoi ? (_currentPoi.id || '__local__') : 'world'; }
+
+function _combatTokenPayload(token, initiative = null) {
+  const initMod = _resolveCombatantInitiativeModifier(null, token);
+  return { token_id: token?.id || '', map_context: _combatCurrentMapContext(), initiative, modifier: initMod };
+}
+
 function combatStart() {
   if (ROLE !== 'dm') return;
   // Grab all tokens on the current map context only
-  const mapCtx = _currentPoi ? (_currentPoi.id || '__local__') : 'world';
+  const mapCtx = _combatCurrentMapContext();
   const mapTokens = Object.values(tokens).filter(t =>
-    (t.map_context || 'world') === mapCtx && !t.hidden
+    (t.map_context || 'world') === mapCtx && !t.hidden && !t.staged
   );
   if (!mapTokens.length) { showToast('No tokens on this map'); return; }
   const coms = mapTokens.map(t => {
@@ -46524,9 +46550,49 @@ function combatAddManual() {
 }
 
 function combatRemove(idx) {
-  _combat.combatants.splice(idx, 1);
-  if (_combat.turn >= _combat.combatants.length) _combat.turn = Math.max(0, _combat.combatants.length - 1);
-  _pushCombat();
+  if (ROLE !== 'dm') return;
+  const com = _combat.combatants[idx];
+  if (!com) return;
+  sendWS({ type: 'combat_remove_combatant', payload: { combatant_id: com.id || '', token_id: com.token_id || '' } });
+}
+
+function combatAddTokenToInitiative(tokenId, initiative = null) {
+  if (ROLE !== 'dm') return;
+  const tok = tokens[tokenId];
+  if (!tok) { showToast('Token not found.'); return; }
+  if (tok.hidden || tok.staged) { showToast('Hidden or staged tokens cannot be added to initiative.'); return; }
+  if (String(tok.map_context || 'world') !== String(_combatCurrentMapContext())) { showToast('Token is not on the current map.'); return; }
+  sendWS({ type: 'combat_add_token', payload: _combatTokenPayload(tok, initiative) });
+}
+
+function ctxAddToInitiative() {
+  if (!ctxToken) return;
+  combatAddTokenToInitiative(ctxToken.id);
+  ctxClose();
+}
+
+function toggleCombatAutoSuggestHostiles(enabled) {
+  _combatAutoSuggestHostiles = !!enabled;
+  try { localStorage.setItem('combat_auto_suggest_hostiles', _combatAutoSuggestHostiles ? '1' : '0'); } catch (_err) {}
+  if (_combatAutoSuggestHostiles) suggestVisibleHostilesForInitiative();
+}
+
+function _isVisibleHostileTokenForSuggestion(tok) {
+  if (!tok || tok.hidden || tok.staged) return false;
+  if (String(tok.map_context || 'world') !== String(_combatCurrentMapContext())) return false;
+  if ((_combat.combatants || []).some(c => String(c?.token_id || '') === String(tok.id || ''))) return false;
+  const type = String(tok.tokenType || tok.token_type || '').toLowerCase();
+  const faction = String(tok.faction || '').toLowerCase();
+  return type === 'monster' || type === 'npc' || faction === 'hostile' || faction === 'enemy';
+}
+
+function suggestVisibleHostilesForInitiative() {
+  if (ROLE !== 'dm' || !_combatAutoSuggestHostiles || !_combat?.active) return;
+  const candidates = Object.values(tokens || {}).filter(_isVisibleHostileTokenForSuggestion).filter(t => !_combatSuggestedTokenIds.has(String(t.id || '')));
+  if (!candidates.length) return;
+  const tok = candidates[0];
+  _combatSuggestedTokenIds.add(String(tok.id || ''));
+  if (confirm(`${tok.name || 'A hostile token'} is visible on this encounter map. Add to initiative?`)) combatAddTokenToInitiative(tok.id);
 }
 
 function combatEditInit(idx) {
@@ -46546,6 +46612,7 @@ function _sortCombatants() {
 function _pushCombat() {
   sendWS({ type: 'combat_update', payload: { ..._combat, round: _combatRound } });
 }
+
 
 // ── Combat targeting & attack flow ────────────────────────────────────────
 function _canActCurrentTurn() {
@@ -49406,7 +49473,7 @@ async function bestiaryPlaceCreatureAt(worldX, worldY) {
     return true;
   }
 
-  const mapCtx = _currentPoi ? (_currentPoi.id || '__local__') : 'world';
+  const mapCtx = _combatCurrentMapContext();
   const tokenBounds = _bestiaryCreatureTokenBounds(creature);
   const placed = {
     x: worldX - tokenBounds.width / 2,
