@@ -1006,6 +1006,33 @@
     _goTo(_step);
   }
 
+  function _closeModal() {
+    try { _clearHighlight(); } catch (_e) {}
+
+    var overlay = _el('ob-overlay');
+    if (overlay) {
+      overlay.classList.remove('ob-open');
+      overlay.classList.remove('ob-targeted');
+    }
+
+    var modal = _el('ob-modal');
+    if (modal) {
+      modal.style.left = '';
+      modal.style.top = '';
+    }
+
+    var hub = _el('ob-hub');
+    if (hub) hub.style.display = 'none';
+
+    var body = _el('ob-body');
+    if (body) body.style.display = '';
+
+    var footer = _el('ob-footer');
+    if (footer) footer.style.display = '';
+
+    _hubMode = false;
+  }
+
   function _resolveTarget(step) {
     var selectors = [step && step.targetSelector, step && step.fallbackSelector, step && step.highlightSelector, step && step.highlight]
       .filter(Boolean);
