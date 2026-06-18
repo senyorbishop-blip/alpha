@@ -500,7 +500,7 @@ function _spellAttackSaveCell(spell, charData) {
         damageType: kind === 'healing' ? 'healing' : _firstText(spell && spell.damageType, '')
       });
     }
-    if (!opts.localAlreadyShown && global.AppDice && typeof global.AppDice.showLocalResult === 'function') {
+    if (!opts.localAlreadyShown && !opts.visualAlreadyResolved && global.AppDice && typeof global.AppDice.showLocalResult === 'function') {
       const previewMeta = typeof global._dicePreviewMetaFromExpr === 'function' ? global._dicePreviewMetaFromExpr(expr, result) : {};
       global.AppDice.showLocalResult({
         diceType: previewMeta && previewMeta.diceType,
