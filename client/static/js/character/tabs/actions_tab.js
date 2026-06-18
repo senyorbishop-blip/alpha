@@ -931,14 +931,20 @@
       const finesse = /finesse/i.test(propertyText);
       const ranged = /ranged|bow|crossbow|sling|thrown|ammunition/i.test(String(item.kind || '') + ' ' + String(item.name || '') + ' ' + String(item.range || '') + ' ' + propertyText);
       const abilityMod = ranged ? _abilityMod(stats.dex) : (finesse ? Math.max(_abilityMod(stats.str), _abilityMod(stats.dex)) : _abilityMod(stats.str));
-      const attackBonus = profBonus + abilityMod;
+      // Magic weapons add their bonus to both the attack roll and the damage
+      // roll on top of the character's current ability modifier — never reuse
+      // a pre-baked "character damage" string from an importer as the base.
+      const magicBonus = Number.isFinite(Number(item.magic_bonus)) ? Number(item.magic_bonus) : 0;
+      const attackBonus = profBonus + abilityMod + magicBonus;
+      const totalDamageMod = abilityMod + magicBonus;
+      const modText = totalDamageMod !== 0 ? (totalDamageMod > 0 ? '+' + totalDamageMod : String(totalDamageMod)) : '';
       const baseDice = _firstText(item.damage_dice, item.damageDice, item.damage, '');
       const damageType = _firstText(item.damage_type, item.damageType, '');
       const versatile = _firstText(item.versatile_damage, item.versatileDamage, '');
       const rangeLabel = _firstText(item.range, item.reach, '');
       const properties = propertyText.split(/\s*,\s*|\s*;\s*/).map(function (entry) { return String(entry || '').trim(); }).filter(Boolean);
       const damage = baseDice
-        ? (baseDice + (damageType ? (' ' + damageType) : '') + (versatile ? (' (Versatile ' + versatile + (damageType ? (' ' + damageType) : '') + ')') : ''))
+        ? (baseDice + modText + (damageType ? (' ' + damageType) : '') + (versatile ? (' (Versatile ' + versatile + modText + (damageType ? (' ' + damageType) : '') + ')') : ''))
         : _firstText(item.notes, item.note, 'Weapon attack');
       const ammoKind = _firstText(item.ammo_kind, item.ammoKind, '');
       return {
@@ -1689,8 +1695,10 @@
       const activation = String(row.activation_type || 'action').toLowerCase();
       const economy = activation === 'bonus_action' ? 'bonus' : activation === 'reaction' ? 'reaction' : 'action';
       const usageBits = [];
-      if (Number.isFinite(Number(row.charges_current))) usageBits.push(`Charges ${row.charges_current}/${Number(row.charges_max || 0)}`);
-      if (Number.isFinite(Number(row.quantity))) usageBits.push(`Qty ${row.quantity}`);
+      const hasCurrentCharges = row.charges_current !== null && row.charges_current !== undefined && Number.isFinite(Number(row.charges_current));
+      const hasMaxCharges = row.charges_max !== null && row.charges_max !== undefined && Number.isFinite(Number(row.charges_max));
+      if (hasCurrentCharges || hasMaxCharges) usageBits.push(`Charges ${hasCurrentCharges ? Number(row.charges_current) : '?'}/${hasMaxCharges ? Number(row.charges_max) : '?'}`);
+      if (row.quantity !== null && row.quantity !== undefined && Number.isFinite(Number(row.quantity))) usageBits.push(`Qty ${row.quantity}`);
       if (row.disabled && row.disabled_reason) usageBits.push(row.disabled_reason);
       return {
         id: String(row.action_id || `item_action_${index}`),

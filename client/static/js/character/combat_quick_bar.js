@@ -96,7 +96,7 @@
       .combat-quick-meta{font-size:.58rem;color:rgba(245,234,214,.68);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
       .combat-quick-pill-row{display:flex;flex-wrap:wrap;gap:.22rem;margin-top:auto;}
       .combat-quick-pill{font-size:.52rem;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:.08rem .28rem;color:rgba(245,234,214,.72);background:rgba(0,0,0,.18);}
-      .combat-quick-pill.good{border-color:rgba(0,229,204,.32);color:#9ff6ea;}.combat-quick-pill.warn{border-color:rgba(255,210,90,.35);color:#ffe8a3;}.combat-quick-pill.danger{border-color:rgba(231,76,60,.42);color:#ffb4a8;}.combat-quick-pill.accent{border-color:rgba(112,167,255,.38);color:#b8d2ff;}.combat-quick-pill.damage{border-color:rgba(255,121,87,.36);color:#ffc0aa;}
+      .combat-quick-pill.good{border-color:rgba(0,229,204,.32);color:#9ff6ea;}.combat-quick-pill.warn{border-color:rgba(255,210,90,.35);color:#ffe8a3;}.combat-quick-pill.danger{border-color:rgba(231,76,60,.42);color:#ffb4a8;}.combat-quick-pill.accent{border-color:rgba(112,167,255,.38);color:#b8d2ff;}.combat-quick-pill.damage{border-color:rgba(255,121,87,.36);color:#ffc0aa;}.combat-quick-pill.source{border-color:rgba(170,150,255,.35);color:#d6c9ff;}
       .combat-quick-status{display:flex;gap:.35rem;flex-wrap:wrap;align-items:center;font-size:.6rem;color:rgba(245,234,214,.66);}
       .combat-quick-resource-row{display:flex;gap:.3rem;flex-wrap:wrap;}.combat-quick-resource{font-size:.58rem;border:1px solid rgba(255,210,90,.24);border-radius:999px;padding:.14rem .38rem;color:#ffe8a3;background:rgba(96,64,8,.25);}
       .combat-quick-empty{font-size:.63rem;color:rgba(245,234,214,.58);padding:.35rem .1rem;}
@@ -285,6 +285,13 @@
     if (/reaction/.test(lane)) return 'reaction';
     if (/cantrip/.test(lane)) return 'cantrip';
     if (/spell/.test(lane)) return 'spell';
+    if (/^action$/.test(lane) || !lane) {
+      const sourceType = _firstText(action && action.sourceType, action && action.source, '').toLowerCase();
+      if (/weapon/.test(sourceType)) return 'weapon attack';
+      if (/item_spell|item-spell/.test(sourceType)) return 'magic item spell';
+      if (/item_action|item-action|^item$/.test(sourceType)) return 'item action';
+      if (/feature/.test(sourceType)) return 'class feature';
+    }
     return 'action';
   }
 
@@ -319,12 +326,22 @@
     return damage ? (damage + (type && String(damage).toLowerCase().indexOf(String(type).toLowerCase()) === -1 ? ' ' + type : '')) : '';
   }
 
+  function _actionSourceText(action) {
+    return _firstText(
+      action && action.quickBarSourceLabel,
+      action && action.sourceName,
+      action && action.itemName,
+      ''
+    );
+  }
+
   function _actionDetailPills(action) {
     const attackText = _actionAttackText(action);
     const damageText = _actionDamageText(action);
     const saveText = _firstText(action && action.quickBarSaveText, action && action.saveText, '');
     const rangeText = _firstText(action && action.quickBarRangeText, action && action.range, '');
     const castTimeText = _firstText(action && action.quickBarCastTimeText, '');
+    const sourceText = _actionSourceText(action);
     const attackLabel = action && action.quickBarAttackKind === 'spell' ? 'Spell atk ' : 'Atk ';
     const pills = [];
     if (attackText) pills.push('<span class="combat-quick-pill accent">' + attackLabel + _esc(attackText) + '</span>');
@@ -332,6 +349,7 @@
     if (damageText) pills.push('<span class="combat-quick-pill damage">Dmg ' + _esc(damageText) + '</span>');
     if (rangeText) pills.push('<span class="combat-quick-pill">' + _esc(rangeText) + '</span>');
     if (castTimeText && !/^action$/i.test(String(castTimeText))) pills.push('<span class="combat-quick-pill">' + _esc(castTimeText) + '</span>');
+    if (sourceText) pills.push('<span class="combat-quick-pill source">Source: ' + _esc(sourceText) + '</span>');
     return pills.join('');
   }
 
@@ -351,7 +369,9 @@
     const type = action && action.quickBarType === 'spell' ? _typeLabel(action, 'spell') : _typeLabel(action, category);
     const summary = _firstText(action && action.quickBarInfoSummary, action && action.desc, action && action.description, action && action.current && action.current.effect, action && action.quickBarSlotSummary, action && action.resourceSummary, 'Open for details');
     const uses = action && action.quickBarResourceState ? action.quickBarResourceState : null;
-    const usesText = _firstText(action && action.quickBarUsesText, uses && Number.isFinite(Number(uses.remaining)) && Number.isFinite(Number(uses.max)) ? (uses.remaining + '/' + uses.max) : '', action && action.quickBarSlotSummary, '');
+    const usesHasRemaining = uses && uses.remaining !== null && uses.remaining !== undefined && Number.isFinite(Number(uses.remaining));
+    const usesHasMax = uses && uses.max !== null && uses.max !== undefined && Number.isFinite(Number(uses.max));
+    const usesText = _firstText(action && action.quickBarUsesText, (usesHasRemaining && usesHasMax) ? (Number(uses.remaining) + '/' + Number(uses.max)) : '', action && action.quickBarSlotSummary, '');
     const pillTone = disabled ? 'danger' : used ? 'warn' : 'good';
     const titleText = disabled ? (action && action.quickBarDisabledReason || 'Unavailable') : summary;
     return `<button type="button" class="${classes.join(' ')}" data-qb-kind="${_esc(category)}" data-qb-key="${_esc(key)}" data-state="${_esc(stateText)}" title="${_esc(titleText)}">
@@ -455,11 +475,12 @@
     ${state.minimized ? '' : `<div class="combat-quick-bar-body">
       <div class="combat-quick-status"><span>Target: ${_esc(targetName)}</span>${model.concentration ? `<span class="combat-quick-resource">Concentration: ${_esc(model.concentration)}</span>` : '<span>Concentration: none</span>'}${model.quickPicks && model.quickPicks.length ? `<span>Custom picks: ${_esc(model.quickPicks.length)}/${_esc(model.quickPickLimit || 5)}</span>` : '<span>Auto picks · customize top 5 any time</span>'}</div>
       ${_customizePanel(model)}
-      ${(!model.primaryActions?.length && !model.topSpells?.length && !model.bonusActions?.length && !model.reactions?.length) ? '<div class="combat-quick-empty">No quick actions are available yet. Loading quick actions… If this remains, open the full sheet and add attacks, spells, or actions.</div>' : ''}
+      ${(!model.primaryActions?.length && !model.topSpells?.length && !model.bonusActions?.length && !model.reactions?.length && !model.magicItemActions?.length) ? '<div class="combat-quick-empty">No quick actions are available yet. Loading quick actions… If this remains, open the full sheet and add attacks, spells, or actions.</div>' : ''}
       ${_section('Primary', model.primaryActions, 'action', 'No attacks/actions found on the sheet.')}
       ${_section('Spells', model.topSpells, 'spell', 'No spell clutter for this character.')}
       ${_section('Bonus', model.bonusActions, 'bonus', 'No bonus actions found.')}
       ${_section('Reaction', model.reactions, 'reaction', 'No reactions found.')}
+      ${model.magicItemActions && model.magicItemActions.length ? _section('Magic Item Actions', model.magicItemActions, 'magic', 'No equipped magic item actions found.') : ''}
       ${model.resources && model.resources.length ? `<div class="combat-quick-resource-row">${model.resources.map(function (r) { return `<button type="button" class="combat-quick-resource" data-qb-kind="resource" data-qb-key="${_esc(_firstText(r.name))}">${_esc(_firstText(r.name, 'Resource'))}: ${_esc(_firstText(r.quickBarUsesText, r.summary, 'Tracked'))}</button>`; }).join('')}</div>` : ''}
     </div>`}`;
     const head = root.querySelector('.combat-quick-bar-head');
@@ -473,7 +494,7 @@
 
   function _findAction(key) {
     const model = global.CombatQuickSelectors && global.CombatQuickSelectors.selectQuickActions(_runtime().charSheet || {});
-    const all = [].concat(model.primaryActions || [], model.bonusActions || [], model.reactions || [], model.resources || []);
+    const all = [].concat(model.primaryActions || [], model.bonusActions || [], model.reactions || [], model.resources || [], model.magicItemActions || []);
     return all.find(function (item) { return _firstText(item && item.id, item && item.name) === key; }) || null;
   }
 
@@ -546,7 +567,16 @@
         if (typeof global.showToast === 'function') global.showToast('Weapon roll handler is not loaded. No action spent.');
       }
     } else if (action && typeof global.playerUseAction === 'function') {
-      global.playerUseAction(actionSource, _firstText(action.id, action.name));
+      let chargeOverride = null;
+      if (action.quickBarVariableChargeCost) {
+        const min = Number(action.quickBarChargeCostMin) || 1;
+        const max = Number(action.quickBarChargeCostMax) || min;
+        const raw = global.prompt(`Spend how many charges on ${_firstText(action.name, 'this item')}? (${min}-${max})`, String(min));
+        if (raw === null) { render(); return; }
+        const parsed = Math.max(min, Math.min(max, Math.round(Number(raw)) || min));
+        chargeOverride = parsed;
+      }
+      global.playerUseAction(actionSource, _firstText(action.id, action.name), chargeOverride !== null ? { chargeCost: chargeOverride } : undefined);
       global.CombatQuickSelectors && global.CombatQuickSelectors.markUsed(key);
     } else if (action && global.CSContainer && typeof global.CSContainer.openDetailDrawer === 'function') {
       global.CSContainer.openDetailDrawer({ kicker: 'Action', title: action.name || key, subtitle: action.desc || action.description || 'Quick action', sections: [{ title: 'Details', body: action.longText || action.description || action.desc || 'Open the full sheet for details.' }] });
