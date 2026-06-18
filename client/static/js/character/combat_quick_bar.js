@@ -493,10 +493,11 @@
     if (pin) {
       ev.preventDefault();
       ev.stopPropagation();
-      if (global.CombatQuickSelectors && typeof global.CombatQuickSelectors.toggleQuickPick === 'function') {
-        const raw = String(pin.getAttribute('data-qb-pin') || '');
-        const kind = String(pin.getAttribute('data-qb-pin-kind') || (raw.indexOf('spell:') === 0 ? 'spell' : 'action'));
-        global.CombatQuickSelectors.toggleQuickPick(kind, { id: raw.replace(/^(action|spell):/, '') });
+      const raw = String(pin.getAttribute('data-qb-pin') || '');
+      if (global.CombatQuickSelectors && typeof global.CombatQuickSelectors.toggleQuickPickKey === 'function') {
+        global.CombatQuickSelectors.toggleQuickPickKey(raw);
+      } else if (global.CombatQuickSelectors && typeof global.CombatQuickSelectors.toggleQuickPick === 'function') {
+        global.CombatQuickSelectors.toggleQuickPick(raw.indexOf('spell:') === 0 ? 'spell' : 'action', { id: raw.replace(/^(action|spell):/, '') });
       }
       render();
       return;
