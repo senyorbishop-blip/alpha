@@ -228,6 +228,9 @@
       if (!hasVisibleItems) {
         trigger.classList.remove('active-dropdown');
         menu.classList.remove('open');
+        menu.style.left = '';
+        menu.style.top = '';
+        menu.style.maxWidth = '';
         trigger.setAttribute('aria-expanded', 'false');
       } else {
         trigger.classList.toggle('active-dropdown', menu.classList.contains('open'));
@@ -282,7 +285,12 @@
 
   function closeAllDropdowns(env) {
     const doc = getDoc(env);
-    doc.querySelectorAll('.rtab-dropdown-menu').forEach((menu) => menu.classList.remove('open'));
+    doc.querySelectorAll('.rtab-dropdown-menu').forEach((menu) => {
+      menu.classList.remove('open');
+      menu.style.left = '';
+      menu.style.top = '';
+      menu.style.maxWidth = '';
+    });
     doc.querySelectorAll('.rtab-dropdown-btn').forEach((btn) => {
       btn.setAttribute('aria-expanded', 'false');
       btn.classList.remove('active-dropdown');
@@ -299,6 +307,11 @@
       menu.classList.add('open');
       const trigger = menu.parentElement?.querySelector('.rtab-dropdown-btn');
       if (trigger) {
+        const rect = trigger.getBoundingClientRect();
+        const viewportGap = 8;
+        menu.style.left = `${Math.max(viewportGap, Math.min(rect.left, global.innerWidth - 160 - viewportGap))}px`;
+        menu.style.top = `${rect.bottom + 4}px`;
+        menu.style.maxWidth = `min(280px, calc(100vw - ${viewportGap * 2}px))`;
         trigger.setAttribute('aria-expanded', 'true');
         trigger.classList.add('active-dropdown');
       }
