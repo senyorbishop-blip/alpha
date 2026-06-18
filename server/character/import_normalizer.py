@@ -351,6 +351,13 @@ def _normalize_ddb_inventory_row(row: Any) -> dict[str, Any] | None:
         out["attuned"] = bool(row.get("isAttuned"))
     if definition.get("canAttune") is not None or definition.get("requiresAttunement") is not None:
         out["attunement_required"] = bool(definition.get("canAttune") or definition.get("requiresAttunement"))
+    rarity = _safe_str(definition.get("rarity") or definition.get("rarityName"), "", limit=40)
+    if rarity:
+        out["rarity"] = rarity.lower()
+    attunement_desc = _strip_html(definition.get("attunementDescription") or definition.get("attunementRequirement"), limit=300)
+    if attunement_desc:
+        out["attunement_required"] = True
+        out["attunement_requirement"] = attunement_desc
     weight = definition.get("weight")
     if weight is not None and str(weight).strip() != "":
         try:
@@ -362,6 +369,23 @@ def _normalize_ddb_inventory_row(row: Any) -> dict[str, Any] | None:
         out["price"] = _safe_str(price.get("quantity") or price.get("value"), "", limit=40)
     elif price is not None:
         out["price"] = _safe_str(price, "", limit=80)
+
+    parsed_block = _parse_pdf_item_block(name, "\n".join(str(v or "") for v in (definition.get("name"), definition.get("type"), definition.get("rarity"), definition.get("description"), definition.get("snippet")) if v))
+    if parsed_block:
+        for key, value in parsed_block.items():
+            if value not in (None, "", [], {}) and key not in {"name", "id", "source_detail"}:
+                out.setdefault(key, value)
+        # Prefer D&D Beyond definition damage over character action/calculated damage.
+        if parsed_block.get("attack_bonus") and not out.get("attack_bonus"):
+            out["attack_bonus"] = parsed_block.get("attack_bonus")
+        if parsed_block.get("damage_bonus") and not out.get("damage_bonus"):
+            out["damage_bonus"] = parsed_block.get("damage_bonus")
+    limited = definition.get("limitedUse") if isinstance(definition.get("limitedUse"), dict) else row.get("limitedUse") if isinstance(row.get("limitedUse"), dict) else {}
+    max_uses = _safe_int(limited.get("maxUses") or limited.get("max"), 0, minimum=0) if limited else 0
+    if max_uses and not out.get("charges_max"):
+        out["charges_max"] = max_uses
+        out["charges_current"] = _safe_int(limited.get("numberUsed"), 0, minimum=0)
+        out["charges_current"] = max(0, max_uses - out["charges_current"])
 
     if kind == "weapon":
         common = _lookup_common_weapon(name)
@@ -1108,6 +1132,130 @@ def _normalize_pdf_skills(src: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return out
 
 
+
+
+def _clean_import_block_text(value: Any, *, limit: int = 8000) -> str:
+    text = str(value or "").replace("\r", "\n")
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()[:limit]
+
+
+def _parse_pdf_item_block(name: str, raw_block: Any, *, filename: str = "", page: Any = None) -> dict[str, Any]:
+    raw_text = _clean_import_block_text(raw_block)
+    if not raw_text:
+        return {}
+    lower = raw_text.lower()
+    out: dict[str, Any] = {"rawText": raw_text, "raw_text": raw_text}
+    lines = [ln.strip(" •\t") for ln in raw_text.splitlines() if ln.strip(" •\t")]
+
+    # Type / rarity / attunement line: usually "Weapon (quarterstaff), very rare (requires attunement by ...)".
+    for line in lines[:8]:
+        m = re.search(r"\b(weapon|staff|wand|armor|armour|shield|ring|wondrous item|potion|scroll)\b(?:\s*\(([^)]+)\))?\s*,?\s*(common|uncommon|rare|very rare|legendary|artifact)?(?:\s*\((requires attunement[^)]*)\))?", line, re.I)
+        if m:
+            # Avoid treating an item heading like "Wand of Sparks" as the complete
+            # type line; keep scanning for the italic type/rarity/attunement row.
+            if not (m.group(3) or m.group(4) or re.match(rf"^{re.escape(m.group(1))}\b\s*(?:[,()]|$)", line, re.I)):
+                continue
+            kind = m.group(1).lower().replace("armour", "armor")
+            out["kind"] = out["type"] = out["item_type"] = out["equipment_kind"] = "weapon" if kind in {"weapon", "staff"} else kind.replace(" item", "")
+            if m.group(2):
+                out["weapon_type"] = m.group(2).strip().lower()
+                out["proficiency_group"] = out["weapon_type"]
+            if m.group(3):
+                out["rarity"] = m.group(3).lower()
+            if m.group(4):
+                out["attunement_required"] = True
+                out["requires_attunement"] = True
+                out["attunement_requirement"] = m.group(4).strip()
+            break
+    att = re.search(r"requires attunement(?:\s+by\s+([^\n.]+))?", raw_text, re.I)
+    if att:
+        out["attunement_required"] = True
+        out["requires_attunement"] = True
+        out["attunement_requirement"] = att.group(0).strip()
+
+    if re.search(r"\bcan be equipped\b|\bequipped\b", lower):
+        out["equippable"] = True
+    if re.search(r"\bproficient\b|proficiency", lower):
+        out["proficient"] = True
+
+    # Never preserve DDB character-calculated damage like 1d6+4 as base item damage.
+    dmg = re.search(r"(?:damage|hit:?)\s*[:\-]?\s*(\d+d\d+)(?!\s*[+\-])\s*([A-Za-z]+)", raw_text, re.I)
+    if dmg:
+        out["damage_dice"] = out["damage"] = dmg.group(1)
+        out["damage_type"] = dmg.group(2).lower()
+    versatile = re.search(r"versatile(?:\s*\(?\s*(\d+d\d+)\s*\)?)", raw_text, re.I)
+    if versatile:
+        out["versatile_damage"] = versatile.group(1)
+    reach = re.search(r"\breach\s*[:\-]?\s*(\d+\s*ft\.?)", raw_text, re.I)
+    if reach:
+        out["reach"] = reach.group(1).replace(".", "")
+        out["range"] = f"Melee {out['reach']}" if "melee" not in out["reach"].lower() else out["reach"]
+    elif re.search(r"\bmelee\b", lower):
+        out.setdefault("range", "Melee 5 ft")
+    out.setdefault("attack_type", "Melee" if re.search(r"\bmelee\b|quarterstaff|sword|axe|mace|club|dagger", lower) else "")
+
+    bonus = re.search(r"\+(\d+)\s+bonus\s+to\s+attack\s+and\s+damage", raw_text, re.I)
+    if bonus:
+        out["attack_bonus"] = int(bonus.group(1)); out["damage_bonus"] = int(bonus.group(1))
+        out["magic_attack_bonus"] = int(bonus.group(1)); out["magic_damage_bonus"] = int(bonus.group(1))
+    else:
+        for key, field in (("attack", "attack_bonus"), ("damage", "damage_bonus")):
+            m = re.search(rf"\+(\d+)\s+(?:to\s+)?{key}\s+rolls?", raw_text, re.I)
+            if m: out[field] = int(m.group(1)); out[f"magic_{field}"] = int(m.group(1))
+
+    wt = re.search(r"\bweight\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*lb", raw_text, re.I) or re.search(r"\b(\d+(?:\.\d+)?)\s*lb\.\b", raw_text, re.I)
+    if wt:
+        out["weight_lbs"] = float(wt.group(1))
+    props = []
+    prop_match = re.search(r"properties\s*[:\-]?\s*([^\n]+)", raw_text, re.I)
+    if prop_match:
+        props = [p.strip() for p in re.split(r",|;", prop_match.group(1)) if p.strip()]
+    elif versatile:
+        props.append(f"Versatile ({versatile.group(1)})")
+    if re.search(r"\btopple\b", lower) and not any(p.lower() == "topple" for p in props):
+        props.append("Topple")
+    if props:
+        out["properties"] = props; out["weapon_properties"] = props
+
+    charges = re.search(r"(\d+)\s+charges?\s+(?:maximum|max|total)|has\s+(\d+)\s+charges?", raw_text, re.I)
+    if charges:
+        max_charges = int(next(g for g in charges.groups() if g))
+        out["charges_max"] = max_charges; out["charges_current"] = max_charges
+    reset = re.search(r"regains?\s+([^\n.]+charges?[^\n.]*)", raw_text, re.I)
+    if reset:
+        out["recharge_type"] = "daily"; out["recharge_formula"] = reset.group(1).strip()
+
+    actions = []
+    # Generic bullet/action rows with explicit charge cost.
+    for m in re.finditer(r"(?:^|\n)\s*[-•]?\s*([A-Z][A-Za-z' ]{2,60})\s*(?:,\s*(\d)(?:st|nd|rd|th)\s*level)?[^\n]*(?:costs?|charges?)\s*(\d+(?:\s*[-–]\s*\d+)?)", raw_text, re.I):
+        nm = m.group(1).strip()
+        if not any(a["name"].lower() == nm.lower() for a in actions):
+            lvl = int(m.group(2)) if m.group(2) else 0
+            actions.append({"name": nm, "kind": "spell", "spellLevel": lvl, "spell_level": lvl, "chargeCost": m.group(3).replace(" ", ""), "charge_cost": m.group(3).replace(" ", "")})
+    if actions:
+        out["actions"] = out["granted_actions"] = actions
+        out["granted_spells"] = [{"name": a["name"], "level": a.get("spellLevel", 0), "charge_cost": a.get("chargeCost", "")} for a in actions if a.get("kind") == "spell"]
+
+    tags_match = re.search(r"tags?\s*[:\-]?\s*([^\n]+)", raw_text, re.I)
+    if tags_match:
+        out["tags"] = [t.strip() for t in re.split(r",|;|•", tags_match.group(1)) if t.strip()]
+    desc_lines = []
+    skip = re.compile(r"^(weapon|staff|wand|armor|type|rarity|attunement|equipped|proficient|attack type|reach|damage|versatile|magic bonus|weight|properties|charges?|tags?)\b", re.I)
+    for line in lines:
+        if skip.search(line):
+            continue
+        if any(a.get("name", "").lower() in line.lower() for a in actions):
+            continue
+        desc_lines.append(line)
+    description = "\n".join(desc_lines).strip() or raw_text
+    out["description"] = out["effect"] = out["notes"] = description[:3000]
+    if filename or page is not None:
+        out["source_detail"] = {"type": "pdf", "filename": filename, "page": page}
+    return out
+
+
 def _split_pdf_text_lines(value: Any) -> list[str]:
     text = _strip_html(value, limit=5000)
     if not text:
@@ -1169,13 +1317,24 @@ def _normalize_pdf_inventory(src: dict[str, Any]) -> list[dict[str, Any]]:
                 if not name:
                     continue
                 row = _parse_pdf_equipment_line(f"{name} x{_safe_int(item.get('qty'), 1, minimum=1)}") or {}
+                raw_block = item.get("rawText") or item.get("raw_text") or item.get("description") or item.get("notes") or ""
+                if raw_block:
+                    row.update(_parse_pdf_item_block(name, raw_block, filename=_safe_str(src.get("filename"), "", limit=160), page=item.get("page")))
                 row.update({
                     "id": _safe_str(item.get("id"), row.get("id") or f"pdf-item-{idx+1}", limit=80),
                     "name": name,
                     "qty": _safe_int(item.get("qty"), row.get("qty") or 1, minimum=1),
-                    "notes": _safe_str(item.get("notes"), row.get("notes") or "", limit=700),
+                    "notes": _safe_str(row.get("notes") or item.get("notes") or item.get("description"), "", limit=3000),
                     "source": "PDF import",
                 })
+                if item.get("weight") and not row.get("weight_lbs"):
+                    try:
+                        row["weight_lbs"] = float(re.search(r"\d+(?:\.\d+)?", str(item.get("weight"))).group(0))
+                    except Exception:
+                        pass
+                image = item.get("image") or item.get("image_url") or item.get("imageUrl") or item.get("thumbnail")
+                if image:
+                    row["image"] = row["image_url"] = _safe_str(image, "", limit=500)
                 rows.append(row)
             elif isinstance(item, str):
                 parsed = _parse_pdf_equipment_line(item)

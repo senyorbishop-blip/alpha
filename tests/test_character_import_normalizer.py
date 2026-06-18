@@ -705,3 +705,71 @@ def test_imported_barbarian_rage_marks_matched_when_native_exists():
     assert any(row.get("needsReview") is False for row in rage_features)
     assert any(row.get("needsReview") is False for row in rage_actions)
     assert any(row.get("trackUses") for row in rage_actions)
+
+
+def test_pdf_magic_item_block_import_preserves_thunder_staff_rules():
+    raw = """Thunder Mage Quarterstaff, +3
+Weapon (quarterstaff), very rare (requires attunement by a sorcerer or wizard)
+Equipped State: Can be equipped
+Proficient: Yes, if the character is proficient with quarterstaffs
+Attack Type: Melee
+Reach: 5 ft.
+Damage: 1d6 bludgeoning
+Versatile Damage: 1d8 bludgeoning
+Magic Bonus: +3 bonus to attack and damage rolls
+Weight: 4 lb.
+Properties: Versatile (1d8), Topple
+Charges: 10 charges maximum
+- Call Lightning, 3rd level, costs 1-10 charges
+- Chain Lightning, 6th level, costs 1-10 charges
+- Haste, 3rd level, costs 1-10 charges
+- Lightning Bolt, 3rd level, costs 1-10 charges
+- Protection from Energy, 3rd level, costs 1-10 charges
+- Absorb Elements, 1st level, costs 1-10 charges
+This staff once belonged to a guild of sorcerer and wizard who followed the Primordial Elemental Titans. You have a +3 bonus to attack and damage rolls made with this magic weapon.
+Tags: Damage, Combat
+"""
+    result = normalize_pdf_payload({
+        "name": "Storm Wizard",
+        "stats": [10, 10, 10, 16, 12, 10],
+        "classes": [{"name": "Wizard", "level": 9}],
+        "inventoryEntries": [{"name": "Thunder Mage Quarterstaff, +3", "qty": 1, "weight": "4 lb.", "rawText": raw}],
+    }, filename="storm.pdf")
+    item = result["document"]["equipment"]["inventory"][0]
+    assert item["rawText"] == raw.strip()
+    assert item["rarity"] == "very rare"
+    assert item["attunement_required"] is True
+    assert "sorcerer or wizard" in item["attunement_requirement"]
+    assert item["weapon_type"] == "quarterstaff"
+    assert item["weight_lbs"] == 4
+    assert item["attack_type"] == "Melee"
+    assert item["range"] == "Melee 5 ft"
+    assert item["damage_dice"] == "1d6"
+    assert item["versatile_damage"] == "1d8"
+    assert item["damage_type"] == "bludgeoning"
+    assert item["attack_bonus"] == 3
+    assert item["damage_bonus"] == 3
+    assert item["charges_max"] == 10
+    assert item["charges_current"] == 10
+    assert {a["name"] for a in item["actions"]} >= {"Call Lightning", "Chain Lightning", "Haste", "Lightning Bolt", "Protection from Energy", "Absorb Elements"}
+    assert "This staff once belonged" in item["description"]
+    assert item["tags"] == ["Damage", "Combat"]
+
+
+def test_pdf_magic_item_block_parser_is_general_for_multiple_items():
+    entries = [
+        {"name": "Wand of Sparks", "rawText": "Wand of Sparks\nWand, uncommon\nCharges: 7 charges maximum\n- Magic Missile, 1st level, costs 1-3 charges\nTags: Damage"},
+        {"name": "Ring of Warmth", "rawText": "Ring of Warmth\nRing, uncommon (requires attunement)\nDescription: You have resistance to cold damage.\nTags: Utility"},
+        {"name": "Flame Tongue Longsword", "rawText": "Flame Tongue Longsword\nWeapon (longsword), rare (requires attunement)\nDamage: 1d8 slashing\nVersatile (1d10)\nWeight: 3 lb.\nProperties: Versatile (1d10)\nTags: Damage, Combat"},
+        {"name": "Staff of Healing", "rawText": "Staff of Healing\nStaff, rare (requires attunement by a bard, cleric, or druid)\nThis staff has 10 charges.\n- Cure Wounds, 1st level, costs 1-5 charges"},
+        {"name": "Potion of Flying", "rawText": "Potion of Flying\nPotion, very rare\nWhen you drink this potion, you gain a flying speed for 1 hour.\nTags: Movement"},
+    ]
+    result = normalize_pdf_payload({"name": "General", "stats": [10]*6, "inventoryEntries": entries}, filename="items.pdf")
+    inventory = result["document"]["equipment"]["inventory"]
+    assert len(inventory) == 5
+    assert all(item.get("rawText") for item in inventory)
+    assert inventory[0]["charges_max"] == 7
+    assert inventory[1]["attunement_required"] is True
+    assert inventory[2]["damage_dice"] == "1d8"
+    assert inventory[3]["charges_max"] == 10
+    assert inventory[4]["rarity"] == "very rare"
