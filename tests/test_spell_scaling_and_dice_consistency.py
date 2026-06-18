@@ -78,23 +78,24 @@ def test_spells_tab_visual_dice_pipeline_uses_resolved_result_without_fallback_r
 let fallbackRolls = 0;
 let center = null;
 let local = null;
-global._rollDiceExpr = () => { fallbackRolls += 1; return {expression:'9d6', rolls:[1], total:1}; };
+global._rollDiceExpr = () => { fallbackRolls += 1; return {expression:'10d6', rolls:[1], total:1}; };
 global._showCombatResultCard = (payload) => { center = payload; };
 global._dicePreviewMetaFromExpr = () => ({diceType:6, qty:9, modifier:0});
 global.AppDice = {
-  rollExpressionAndResolve: async () => ({expression:'9d6', rolls:[1,2,3,4,5,1,2,3,2], total:23, modifier:0, diceType:6, qty:9}),
+  rollExpressionAndResolve: async (expr) => ({expression:expr, rolls:[1,2,3,4,5,6,1,2,3,4], total:31, modifier:0, diceType:6, qty:10}),
   showLocalResult: (payload) => { local = payload; }
 };
 (async () => {
-  const rolled = await global.SpellsTab.__test.rollSpellFromUi({name:'Fireball', baseLevel:3, spell_level:3, level:3, castLevel:4, isVirtualCastRow:true, damagePreview:'9d6'}, {charData:{level:19}});
-  console.log(JSON.stringify({rolled, fallbackRolls, centerTotal:center && center.damage, centerRolls:center && center.damageRolls, localTotal:local && local.total, localRolls:local && local.rolls}));
+  const rolled = await global.SpellsTab.__test.rollSpellFromUi({name:'Fireball', baseLevel:3, spell_level:3, level:3, castLevel:5, slotLevel:5, isVirtualCastRow:true, damagePreview:'10d6'}, {charData:{level:19}});
+  console.log(JSON.stringify({rolled, fallbackRolls, centerTotal:center && center.damage, centerRolls:center && center.damageRolls, localWasDuplicated:!!local}));
 })();
 ''')
-    assert data['rolled']['total'] == 23
+    assert data['rolled']['total'] == 31
+    assert data['rolled']['expr'] == '10d6'
     assert data['fallbackRolls'] == 0
-    assert data['centerTotal'] == 23
-    assert data['localTotal'] == 23
-    assert data['centerRolls'] == data['localRolls']
+    assert data['centerTotal'] == 31
+    assert data['centerRolls'] == [1,2,3,4,5,6,1,2,3,4]
+    assert data['localWasDuplicated'] is False
 
 
 def test_spells_tab_fallback_dice_pipeline_reuses_single_roll_result_for_both_cards():
