@@ -27,6 +27,97 @@ def node_eval(script: str) -> object:
     return json.loads(out)
 
 
+
+def test_resolve_spell_runtime_virtual_fireball_row_uses_base_level_before_display_level():
+    data = node_eval(r'''
+const row = {name:'Fireball', baseLevel:3, spell_level:3, level:4, castLevel:4, slotLevel:4, isVirtualCastRow:true};
+const r4 = rt.resolveSpellRuntime(row, {castLevel: row.castLevel, slotLevel: row.slotLevel});
+const r5 = rt.resolveSpellRuntime(Object.assign({}, row, {level:5, castLevel:5, slotLevel:5}), {castLevel: 5, slotLevel: 5});
+console.log(JSON.stringify({r4: r4.finalDamageFormula, r5: r5.finalDamageFormula, base4: r4.baseLevel, cast4: r4.castLevel}));
+''')
+    assert data == {'r4': '9d6', 'r5': '10d6', 'base4': 3, 'cast4': 4}
+
+
+def test_build_castable_spell_rows_virtual_rows_keep_level_as_base_level():
+    data = node_eval(r'''
+const character = {level: 19, totalLevel: 19, spellSlots: [0,4,3,3,3,3,2,1,1,1]};
+const known = [{spellId:'fireball', name:'Fireball', baseLevel:3, source:'Wizard', sourceType:'class', usesSpellSlot:true}];
+const built = rt.buildCastableSpellRows(character, known, []);
+const bad = built.rows.filter(r => r.isVirtualCastRow && r.level !== r.baseLevel).map(r => ({level:r.level, baseLevel:r.baseLevel, castLevel:r.castLevel}));
+const row4 = built.rows.find(r => r.name === 'Fireball' && r.castLevel === 4);
+console.log(JSON.stringify({bad, row4: {level: row4.level, baseLevel: row4.baseLevel, castLevel: row4.castLevel, damagePreview: row4.damagePreview}}));
+''')
+    assert data['bad'] == []
+    assert data['row4'] == {'level': 3, 'baseLevel': 3, 'castLevel': 4, 'damagePreview': '9d6'}
+
+
+def spells_tab_eval(script: str) -> object:
+    code = r'''
+const fs = require('fs');
+const vm = require('vm');
+global.window = global;
+global.document = { addEventListener() {}, createElement() { return { className:'', innerHTML:'', appendChild(){}, querySelector(){return null}, querySelectorAll(){return []}, addEventListener(){}, setAttribute(){}, getAttribute(){return ''}, classList:{add(){},remove(){},contains(){return false}} }; }, querySelector(){return null}, querySelectorAll(){return []}, getElementById(){return null} };
+global.AppSpellRuntime = require('./client/static/js/character/spell_runtime.js');
+vm.runInThisContext(fs.readFileSync('./client/static/js/character/tabs/spells_tab.js', 'utf8'));
+''' + script
+    out = subprocess.check_output(["node", "-e", code], cwd=ROOT, text=True, timeout=30)
+    return json.loads(out)
+
+
+def test_spells_tab_spell_roll_expression_for_virtual_fireball_level_4_returns_9d6():
+    data = spells_tab_eval(r'''
+const spell = {name:'Fireball', baseLevel:3, spell_level:3, level:4, castLevel:4, slotLevel:4, isVirtualCastRow:true};
+const expr = global.SpellsTab.__test.spellRollExpressionForLevel(spell, 4, {level: 19});
+console.log(JSON.stringify({expr}));
+''')
+    assert data['expr'] == '9d6'
+
+
+def test_spells_tab_visual_dice_pipeline_uses_resolved_result_without_fallback_roll():
+    data = spells_tab_eval(r'''
+let fallbackRolls = 0;
+let center = null;
+let local = null;
+global._rollDiceExpr = () => { fallbackRolls += 1; return {expression:'9d6', rolls:[1], total:1}; };
+global._showCombatResultCard = (payload) => { center = payload; };
+global._dicePreviewMetaFromExpr = () => ({diceType:6, qty:9, modifier:0});
+global.AppDice = {
+  rollExpressionAndResolve: async () => ({expression:'9d6', rolls:[1,2,3,4,5,1,2,3,2], total:23, modifier:0, diceType:6, qty:9}),
+  showLocalResult: (payload) => { local = payload; }
+};
+(async () => {
+  const rolled = await global.SpellsTab.__test.rollSpellFromUi({name:'Fireball', baseLevel:3, spell_level:3, level:3, castLevel:4, isVirtualCastRow:true, damagePreview:'9d6'}, {charData:{level:19}});
+  console.log(JSON.stringify({rolled, fallbackRolls, centerTotal:center && center.damage, centerRolls:center && center.damageRolls, localTotal:local && local.total, localRolls:local && local.rolls}));
+})();
+''')
+    assert data['rolled']['total'] == 23
+    assert data['fallbackRolls'] == 0
+    assert data['centerTotal'] == 23
+    assert data['localTotal'] == 23
+    assert data['centerRolls'] == data['localRolls']
+
+
+def test_spells_tab_fallback_dice_pipeline_reuses_single_roll_result_for_both_cards():
+    data = spells_tab_eval(r'''
+let fallbackRolls = 0;
+let center = null;
+let local = null;
+global._rollDiceExpr = () => { fallbackRolls += 1; return {expression:'9d6', rolls:[2,2,2,2,2,2,2,2,2], total:18}; };
+global._showCombatResultCard = (payload) => { center = payload; };
+global._dicePreviewMetaFromExpr = () => ({diceType:6, qty:9, modifier:0});
+global.AppDice = { showLocalResult: (payload) => { local = payload; } };
+(async () => {
+  const rolled = await global.SpellsTab.__test.rollSpellFromUi({name:'Fireball', baseLevel:3, spell_level:3, level:3, castLevel:4, isVirtualCastRow:true, damagePreview:'9d6'}, {charData:{level:19}});
+  console.log(JSON.stringify({rolled, fallbackRolls, centerTotal:center && center.damage, centerRolls:center && center.damageRolls, localTotal:local && local.total, localRolls:local && local.rolls}));
+})();
+''')
+    assert data['rolled']['total'] == 18
+    assert data['fallbackRolls'] == 1
+    assert data['centerTotal'] == 18
+    assert data['localTotal'] == 18
+    assert data['centerRolls'] == data['localRolls']
+
+
 # ---------------------------------------------------------------------------
 # A.1 / A.3 — virtual cast rows scale at the section's slot level even when
 # imported library data has scaling_type: 'none'.

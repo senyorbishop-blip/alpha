@@ -194,8 +194,25 @@
     return merged;
   }
 
-  function levelOf(card, merged) {
-    var raw = card.level !== undefined ? card.level : (card.spell_level !== undefined ? card.spell_level : (card.spellLevel !== undefined ? card.spellLevel : (card.slotLevel !== undefined ? card.slotLevel : merged.level)));
+  function levelOf(card, merged, builtin) {
+    card = obj(card);
+    merged = obj(merged);
+    builtin = obj(builtin);
+    var raw = first(
+      card.baseLevel,
+      card.base_level,
+      card.spell_level,
+      card.spellLevel,
+      builtin.level,
+      builtin.spell_level,
+      builtin.spellLevel
+    );
+    if ((raw === null || raw === undefined || raw === '') && card.isVirtualCastRow) {
+      raw = card.level;
+    }
+    if (raw === null || raw === undefined || raw === '') {
+      raw = first(merged.baseLevel, merged.base_level, merged.spell_level, merged.spellLevel, merged.level, card.level, card.slotLevel);
+    }
     if (raw === null || raw === undefined || raw === '') return null;
     if (String(raw).toLowerCase() === 'cantrip') return 0;
     return num(raw, null);
@@ -405,7 +422,7 @@
     var warnings = [];
     var debugParts = [];
 
-    var baseLevel = levelOf(card, merged);
+    var baseLevel = levelOf(card, merged, builtin);
     if (baseLevel === null) warnings.push('Unknown spell level');
 
     /* importedSlotRow: explicit formula for a given cast level (highest priority) */
@@ -531,7 +548,7 @@
     var idN   = _slug(first(card.name, card.displayName));
     var builtin = BUILTIN[id] || BUILTIN[idS] || BUILTIN[idN] || {};
     var merged  = _smartMerge(builtin, card);
-    var baseLevel = levelOf(card, merged);
+    var baseLevel = levelOf(card, merged, builtin);
     if (baseLevel === null || baseLevel === 0) return [];
     var ordinals = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'];
     var options = [];
@@ -637,7 +654,7 @@
           castLevel: castLevel,
           slotLevel: castLevel,
           displaySectionLevel: castLevel,
-          level: castLevel,
+          level: baseLevel,
           spell_level: baseLevel,
           castResourceType: castResourceType,
           damagePreview: resolved.finalDamageFormula || '',
