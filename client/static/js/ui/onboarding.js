@@ -495,6 +495,20 @@
   // ── Role accent colours ───────────────────────────────────────────────────
   var ROLE_ACCENT = { dm: '#d4a637', player: '#00e5cc', viewer: '#9b59b6' };
   var ROLE_LABEL  = { dm: 'Dungeon Master', player: 'Player', viewer: 'Spectator' };
+  var VALID_ROLES = { dm: true, player: true, viewer: true };
+
+  // ── Role / step safety helpers ────────────────────────────────────────────
+  function normalizeRole(role) {
+    return VALID_ROLES[role] ? role : 'viewer';
+  }
+
+  function getFallbackStep(role) {
+    var r = normalizeRole(role);
+    var steps = STEPS[r] || STEPS.viewer;
+    return (steps && steps[0]) || (STEPS.viewer && STEPS.viewer[0]) || {
+      icon: '⚠', title: 'Help', body: '', accent: ROLE_ACCENT.viewer,
+    };
+  }
 
   // ── Internal state ────────────────────────────────────────────────────────
   var _role      = null;
@@ -755,6 +769,8 @@
       '  background:rgba(0,229,204,0.07);',
       '  box-shadow:0 0 6px rgba(0,229,204,0.14);',
       '}',
+      '.ob-hub-card-disabled { opacity:0.4; cursor:not-allowed; }',
+      '.ob-hub-card-disabled:hover { border-color:rgba(0,229,204,0.1); background:rgba(255,255,255,0.025); box-shadow:none; }',
       '.ob-hub-card-icon { font-size:1.2rem; flex-shrink:0; }',
       '.ob-hub-card-label {',
       '  font-size:0.62rem; letter-spacing:0.08em;',
@@ -803,6 +819,11 @@
     var nextBtn  = _el('ob-next-btn');
     var skipBtn  = _el('ob-skip-btn');
 
+    if (!overlay || !closeBtn || !prevBtn || !nextBtn || !skipBtn) {
+      console.warn('[AppOnboarding] _bindEvents: required modal DOM nodes are missing, skipping event binding.');
+      return;
+    }
+
     closeBtn.addEventListener('click', _closeModal);
     skipBtn.addEventListener('click', function () { _markSeen(_role, _userId); _closeModal(); });
     prevBtn.addEventListener('click', function () {
@@ -838,24 +859,38 @@
   // ── Render hub mode ────────────────────────────────────────────────────────
   function _renderHub() {
     _ensureModal();
-    var r = _role || 'viewer';
+    var r = normalizeRole(_role);
     var accent = ROLE_ACCENT[r] || '#00e5cc';
-    var topics = HUB_TOPICS[r] || HUB_TOPICS.viewer;
+    var topics = HUB_TOPICS[r] || HUB_TOPICS.viewer || [];
     var modal = _el('ob-modal');
+    if (!modal) return;
     modal.style.setProperty('--ob-accent', accent);
     modal.style.setProperty('--ob-accent-dim', _dimColor(accent));
     modal.style.setProperty('--ob-accent-glow', _glowColor(accent));
     // Hub mode uses a very dim glow so the modal background stays dark and readable
-    _el('ob-glow').style.background = 'radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.05) 0%, transparent 70%)';
+    var glow = _el('ob-glow');
+    if (glow) glow.style.background = 'radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.05) 0%, transparent 70%)';
 
     // Hide step UI, show hub
-    _el('ob-dots').innerHTML = '';
-    _el('ob-body').style.display = 'none';
-    _el('ob-footer').style.display = 'none';
+    var dots = _el('ob-dots');
+    if (dots) dots.innerHTML = '';
+    var body = _el('ob-body');
+    if (body) body.style.display = 'none';
+    var footer = _el('ob-footer');
+    if (footer) footer.style.display = 'none';
     var hub = _el('ob-hub');
+    if (!hub) return;
     hub.style.display = 'block';
 
     var cards = topics.map(function (topic) {
+      var available = !!(topic.tour || (topic.guide && GUIDE_STEPS[topic.guide]));
+      if (!available) {
+        return '<button class="ob-hub-card ob-hub-card-disabled" data-hub-key="' + topic.key + '" disabled ' +
+          'title="Guide not available yet">' +
+          '<span class="ob-hub-card-icon">' + topic.icon + '</span>' +
+          '<span class="ob-hub-card-label">' + topic.label + '</span>' +
+          '</button>';
+      }
       return '<button class="ob-hub-card" data-hub-key="' + topic.key + '">' +
         '<span class="ob-hub-card-icon">' + topic.icon + '</span>' +
         '<span class="ob-hub-card-label">' + topic.label + '</span>' +
@@ -867,25 +902,32 @@
       '<div class="ob-hub-grid">' + cards + '</div>';
 
     hub.querySelectorAll('.ob-hub-card').forEach(function (card) {
+      if (card.disabled) return; // disabled cards do nothing when clicked
       card.addEventListener('click', function () {
         var key = card.getAttribute('data-hub-key');
         var topic = topics.find(function (t) { return t.key === key; });
         if (!topic) return;
-        if (topic.tour) {
-          _closeModal();
-          setTimeout(function () { showWalkthrough(_role); }, 80);
-        } else if (topic.guide && GUIDE_STEPS[topic.guide]) {
-          _closeModal();
-          setTimeout(function () { _showGuide(topic.guide); }, 80);
+        try {
+          if (topic.tour) {
+            _closeModal();
+            setTimeout(function () { showWalkthrough(_role); }, 80);
+          } else if (topic.guide && GUIDE_STEPS[topic.guide]) {
+            _closeModal();
+            setTimeout(function () { _showGuide(topic.guide); }, 80);
+          }
+        } catch (_e) {
+          console.error('[AppOnboarding] Failed to open hub topic "' + key + '":', _e);
         }
       });
     });
 
     // Badge
     var badge = _el('ob-role-badge');
-    badge.textContent = ROLE_LABEL[r] || r;
-    badge.style.color = accent;
-    badge.style.borderColor = accent;
+    if (badge) {
+      badge.textContent = ROLE_LABEL[r] || r;
+      badge.style.color = accent;
+      badge.style.borderColor = accent;
+    }
   }
 
   // ── Show a named guide (GUIDE_STEPS entry) ────────────────────────────────
@@ -901,12 +943,17 @@
 
   // ── Render a step ─────────────────────────────────────────────────────────
   function _goTo(index) {
+    if (!_steps || !_steps.length) _steps = [getFallbackStep(_role)];
     _step = Math.max(0, Math.min(index, _steps.length - 1));
-    var data = _steps[_step];
-    var accent = data.accent || ROLE_ACCENT[_role] || '#00e5cc';
+    var data = _steps[_step] || getFallbackStep(_role);
+    var accent = (data && data.accent) || ROLE_ACCENT[_role] || '#00e5cc';
 
     // CSS custom prop for accent threading through styles
     var modal = _el('ob-modal');
+    if (!modal || !_el('ob-overlay')) {
+      console.warn('[AppOnboarding] _goTo: modal DOM is missing, aborting render.');
+      return;
+    }
     modal.style.setProperty('--ob-accent', accent);
     modal.style.setProperty('--ob-accent-dim', _dimColor(accent));
     modal.style.setProperty('--ob-accent-glow', _glowColor(accent));
@@ -1037,17 +1084,25 @@
     var selectors = [step && step.targetSelector, step && step.fallbackSelector, step && step.highlightSelector, step && step.highlight]
       .filter(Boolean);
     for (var i = 0; i < selectors.length; i++) {
+      var selector = selectors[i];
+      var el;
       try {
-        var el = document.querySelector(selectors[i]);
-        if (!el) continue;
-        var rect = el.getBoundingClientRect();
-        if (rect.width || rect.height) return { el: el, selector: selectors[i] };
-      } catch (_e) {}
+        el = document.querySelector(selector);
+      } catch (_e) {
+        console.warn('[AppOnboarding] Invalid target selector "' + selector + '":', _e.message);
+        continue;
+      }
+      if (!el || !el.isConnected) continue;
+      var rect;
+      try { rect = el.getBoundingClientRect(); } catch (_e2) { continue; }
+      if (!rect || (!rect.width && !rect.height)) continue;
+      return { el: el, selector: selector };
     }
     return null;
   }
 
   function _clearHighlight() {
+    _spotlightToken++; // invalidate any in-flight spotlight timers
     var overlay = _el('ob-overlay');
     var modal = _el('ob-modal');
     if (overlay) overlay.classList.remove('ob-targeted');
@@ -1065,15 +1120,17 @@
   }
 
   var _targetClickCleanup = null;
+  var _spotlightToken = 0;
 
   // ── UI element spotlight ring and card placement ─────────────────────────
   function _applyStepTarget(step) {
     _clearHighlight();
+    var token = ++_spotlightToken;
     var resolved = _resolveTarget(step || {});
     if (!resolved) return; // modal-only fallback
     var target = resolved.el;
     try { target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); } catch (_e) {}
-    setTimeout(function () { _positionSpotlight(target, step || {}); }, 180);
+    setTimeout(function () { _positionSpotlight(target, step || {}, token); }, 180);
     if (step && step.requireClick) {
       var onClick = function () {
         if (_helpMode) return;
@@ -1084,20 +1141,44 @@
     }
   }
 
-  function _positionSpotlight(target, step) {
-    if (!_el('ob-overlay') || !_el('ob-modal') || !_el('ob-overlay').classList.contains('ob-open')) return;
-    var rect = target.getBoundingClientRect();
-    if (!(rect.width || rect.height)) return;
+  function _positionSpotlight(target, step, token) {
+    function abort() {
+      var ring = document.getElementById('ob-highlight-ring');
+      if (ring) {
+        if (ring._rafId) cancelAnimationFrame(ring._rafId);
+        ring.remove();
+      }
+      document.querySelectorAll('.ob-highlight').forEach(function (el) { el.classList.remove('ob-highlight'); });
+      var ovl = _el('ob-overlay');
+      if (ovl) ovl.classList.remove('ob-targeted');
+      var mdl = _el('ob-modal');
+      if (mdl) { mdl.style.left = ''; mdl.style.top = ''; }
+    }
+
+    if (token !== _spotlightToken) return abort(); // stale step, ignore
+    if (!target || !target.isConnected) return abort();
+    var overlay = _el('ob-overlay');
+    var modal = _el('ob-modal');
+    if (!overlay || !modal || !overlay.classList.contains('ob-open')) return abort();
+
+    var rect;
+    try { rect = target.getBoundingClientRect(); } catch (_e) { return abort(); }
+    if (!rect || (!rect.width && !rect.height)) return abort();
+
     var accent = (step && step.accent) || ROLE_ACCENT[_role] || '#00e5cc';
     var ring = document.createElement('div');
     ring.id = 'ob-highlight-ring';
     ring.style.cssText = 'position:fixed;pointer-events:none;z-index:20001;border:2px solid '+accent+';border-radius:10px;animation:ob-ring-pulse 1.6s ease-in-out infinite;box-shadow:0 0 0 9999px rgba(0,0,0,0.62);transition:all 0.18s;';
     document.body.appendChild(ring);
-    _el('ob-overlay').classList.add('ob-targeted');
+    overlay.classList.add('ob-targeted');
     target.classList.add('ob-highlight');
-    var modal = _el('ob-modal');
+
     function update() {
-      var r = target.getBoundingClientRect();
+      if (token !== _spotlightToken) return abort();
+      if (!target.isConnected || !overlay.isConnected || !ring.isConnected) return abort();
+      if (!overlay.classList.contains('ob-open')) return abort();
+      var r;
+      try { r = target.getBoundingClientRect(); } catch (_e) { return abort(); }
       ring.style.left = (r.left - 8) + 'px'; ring.style.top = (r.top - 8) + 'px';
       ring.style.width = (r.width + 16) + 'px'; ring.style.height = (r.height + 16) + 'px';
       var mw = modal.offsetWidth || 440, mh = modal.offsetHeight || 360, gap = 18;
@@ -1136,7 +1217,7 @@
    * Shows the walkthrough automatically if first visit.
    */
   function init(role, userId) {
-    _role   = role   || 'viewer';
+    _role   = normalizeRole(role);
     _userId = userId || null;
     _steps  = (STEPS[_role] || STEPS.viewer).slice();
 
@@ -1153,8 +1234,7 @@
    * showWalkthrough(role) — force-open the full walkthrough (e.g. from ? button in header).
    */
   function showWalkthrough(role) {
-    _role   = role || _role || 'viewer';
-    _userId = _userId;
+    _role   = normalizeRole(role || _role);
     _steps  = (STEPS[_role] || STEPS.viewer).slice();
     _step     = 0;
     _helpMode = false;
@@ -1166,7 +1246,7 @@
    * topic is a string like 'dice', 'map', 'invites', etc.
    */
   function showHelp(topic) {
-    var r    = _role || 'viewer';
+    var r    = normalizeRole(_role);
     var map  = HELP_TOPICS[r] || {};
     var idx  = (topic in map) ? map[topic] : 0;
     _steps   = (STEPS[r] || STEPS.viewer).slice();
@@ -1179,15 +1259,18 @@
    * showHelpHub(role) — show the Help Hub topic selector.
    */
   function showHelpHub(role) {
-    _role   = role || _role || 'viewer';
+    _role   = normalizeRole(role || _role);
     _hubMode = true;
     _ensureModal();
     var overlay = _el('ob-overlay');
+    if (!overlay) return;
     overlay.classList.add('ob-open');
     var badge = _el('ob-role-badge');
-    badge.textContent = 'Help Hub';
-    badge.style.color = ROLE_ACCENT[_role] || '#00e5cc';
-    badge.style.borderColor = ROLE_ACCENT[_role] || '#00e5cc';
+    if (badge) {
+      badge.textContent = 'Help Hub';
+      badge.style.color = ROLE_ACCENT[_role] || '#00e5cc';
+      badge.style.borderColor = ROLE_ACCENT[_role] || '#00e5cc';
+    }
     _renderHub();
   }
 
@@ -1220,7 +1303,14 @@
    * markSeen(role, userId) — externally mark as seen.
    */
   function markSeen(role, userId) {
-    _markSeen(role || _role, userId || _userId);
+    _markSeen(normalizeRole(role || _role), userId || _userId);
+  }
+
+  function _handleHelpError(e) {
+    console.error('[AppOnboarding] Help failed to open:', e);
+    if (typeof window.showToast === 'function') {
+      try { window.showToast('Help failed to open. Check console.'); } catch (_e) {}
+    }
   }
 
   /**
@@ -1234,8 +1324,13 @@
     btn.setAttribute('aria-label', label || 'Help');
     btn.textContent = '?';
     btn.addEventListener('click', function (e) {
+      e.preventDefault();
       e.stopPropagation();
-      showHelp(topic);
+      try {
+        showHelp(topic);
+      } catch (err) {
+        _handleHelpError(err);
+      }
     });
     return btn;
   }
@@ -1250,8 +1345,13 @@
     btn.setAttribute('aria-label', label || 'Help Hub');
     btn.textContent = '?';
     btn.addEventListener('click', function (e) {
+      e.preventDefault();
       e.stopPropagation();
-      showHelpHub(role || _role);
+      try {
+        showHelpHub(role || _role);
+      } catch (err) {
+        _handleHelpError(err);
+      }
     });
     return btn;
   }
@@ -1269,5 +1369,20 @@
     GUIDE_STEPS:         GUIDE_STEPS,
     HUB_TOPICS:          HUB_TOPICS,
   };
+
+  // Deployment/cache sanity check: if a stale cached copy of this file is served,
+  // critical internal functions like _closeModal may be missing and the Help
+  // system will throw "_closeModal is not defined". Warn loudly so this is
+  // obvious in devtools rather than surfacing as a silent crash.
+  (function _verifyLoaded() {
+    var required = [_closeModal, _openModal, _bindEvents, _resolveTarget, _positionSpotlight];
+    for (var i = 0; i < required.length; i++) {
+      if (typeof required[i] !== 'function') {
+        console.warn('[AppOnboarding] Loaded onboarding.js appears incomplete/stale (missing an internal function). ' +
+          'Hard-refresh or clear the browser cache to pick up the latest client/static/js/ui/onboarding.js.');
+        return;
+      }
+    }
+  })();
 
 })();
