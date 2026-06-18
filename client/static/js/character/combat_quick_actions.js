@@ -75,7 +75,20 @@
   function _spellCastOptions(spell) {
     if (typeof global._getCombatSpellCastOptions === 'function') return _safeArray(global._getCombatSpellCastOptions(spell));
     const level = _baseSpellLevel(spell);
-    return level === 0 ? [{ value: 0, label: 'Cantrip', disabled: false }] : [];
+    if (level === 0) return [{ value: 0, label: 'Cantrip', disabled: false }];
+    if (level === null) return [{ value: '', label: 'Unknown spell level', disabled: true }];
+    const runtime = typeof global.getCombatQuickBarRuntime === 'function' ? (global.getCombatQuickBarRuntime() || {}) : {};
+    const slots = runtime.spellSlots || {};
+    const used = runtime.spellSlotState || {};
+    const ord = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'];
+    const out = [];
+    for (let lvl = level; lvl <= 9; lvl += 1) {
+      const max = Number(slots[lvl] ?? slots[String(lvl)] ?? 0) || 0;
+      const spent = Number(used[lvl] ?? used[String(lvl)] ?? 0) || 0;
+      const remaining = Math.max(0, max - spent);
+      out.push({ value: lvl, label: (ord[lvl] || (lvl + 'th')) + ' (' + remaining + '/' + max + ' slots)', disabled: remaining <= 0 });
+    }
+    return out;
   }
 
   function _selectedCastLevel(spell) {
@@ -168,6 +181,10 @@
     }).join('');
   }
 
+  function _lowestAvailableOption(options) {
+    return (_safeArray(options).find(function (opt) { return !opt.disabled; }) || _safeArray(options)[0] || {}).value;
+  }
+
   function refreshSpellModalDamage() {
     const overlay = document.getElementById('combat-quick-action-modal');
     if (!overlay) return;
@@ -183,6 +200,24 @@
       const baseLevel = _baseSpellLevel(spell);
       dmg.textContent = preview || (baseLevel !== null && baseLevel > 0 ? '— (formula not loaded)' : 'No damage roll');
     }
+    const options = _spellCastOptions(spell);
+    const anyAvailable = options.some(function (opt) { return !opt.disabled; });
+    overlay.querySelectorAll('[data-cqa-cast],[data-cqa-spell-damage]').forEach(function (btn) { btn.disabled = !anyAvailable; });
+    const msg = overlay.querySelector('[data-cqa-slot-warning]');
+    if (msg) msg.textContent = anyAvailable ? '' : 'No spell slots available';
+  }
+
+  function refreshSpellModalSlots() {
+    const overlay = document.getElementById('combat-quick-action-modal');
+    if (!overlay || !_currentModalSpell) return;
+    const select = document.getElementById('combat-quick-spell-level');
+    if (!select) { refreshSpellModalDamage(); return; }
+    const previous = select.value;
+    const options = _spellCastOptions(_currentModalSpell);
+    const previousOpt = options.find(function (opt) { return String(opt.value) === String(previous) && !opt.disabled; });
+    const selected = previousOpt ? previousOpt.value : _lowestAvailableOption(options);
+    select.innerHTML = options.map(function (opt) { return '<option value="' + _esc(opt.value) + '" ' + (String(opt.value) === String(selected) ? 'selected' : '') + ' ' + (opt.disabled ? 'disabled' : '') + '>' + _esc(opt.label || 'Cast') + '</option>'; }).join('');
+    refreshSpellModalDamage();
   }
 
   function closeModal() {
@@ -243,9 +278,10 @@
     }
 
     const options = _spellCastOptions(spell);
-    const selected = preferredLevel !== undefined ? preferredLevel : (options.find(function (opt) { return !opt.disabled; }) || options[0] || {}).value;
+    const selected = preferredLevel !== undefined ? preferredLevel : _lowestAvailableOption(options);
     const damagePreview = _spellDamagePreview(spell, selected);
     const hasDamage = !!damagePreview || (baseLevel !== null && baseLevel > 0);
+    const anySlotAvailable = baseLevel === 0 || options.some(function (opt) { return !opt.disabled; });
     // Only show Roll Attack for spells that actually use an attack roll (not saves).
     const hasAttack = _spellHasAttack(card);
     const hasSave = !!_spellSaveText(card);
@@ -283,9 +319,10 @@
       + (levelScalingHtml ? levelScalingHtml : '')
       + '<div class="cqa-desc">' + _esc(fullText) + '</div>'
       + '<div class="cqa-sub">Damage preview: <strong data-cqa-damage-preview>' + _esc(damagePreview || (hasDamage ? '—' : 'No damage roll')) + '</strong></div>'
-      + '<div class="cqa-controls"><button class="cqa-btn cast" type="button" data-cqa-cast ' + ((options[0] && options[0].disabled) ? 'disabled' : '') + '>Cast</button>'
+      + '<div class="cqa-sub" data-cqa-slot-warning>' + (anySlotAvailable ? '' : 'No spell slots available') + '</div>'
+      + '<div class="cqa-controls"><button class="cqa-btn cast" type="button" data-cqa-cast ' + (!anySlotAvailable ? 'disabled' : '') + '>Cast</button>'
       + (hasAttack ? '<button class="cqa-btn" type="button" data-cqa-spell-attack>Roll Attack</button>' : '')
-      + (hasDamage ? '<button class="cqa-btn damage" type="button" data-cqa-spell-damage>Roll Damage</button>' : '')
+      + (hasDamage ? '<button class="cqa-btn damage" type="button" data-cqa-spell-damage ' + (!anySlotAvailable ? 'disabled' : '') + '>Roll Damage</button>' : '')
       + (hasSave ? '<button class="cqa-btn save" type="button" data-cqa-spell-save>Show Save DC</button>' : '')
       + '<button class="cqa-btn" type="button" data-cqa-inspect>Open Full Spell</button></div></div>';
     overlay.addEventListener('click', function (ev) {
@@ -391,5 +428,11 @@
     if (_requireBridge('combatQuickShowSpellSave')) global.combatQuickShowSpellSave(spellIdOrName, castLevel);
   }
 
-  global.CombatQuickActions = { openSpellAction, openWeaponAction, refreshSpellModalDamage, closeModal };
+  ['character:spell-state-updated', 'character:runtime-updated', 'character:resources-updated', 'character:rest-completed', 'spellSlots:updated'].forEach(function (eventName) {
+    global.addEventListener && global.addEventListener(eventName, function () {
+      refreshSpellModalSlots();
+    });
+  });
+
+  global.CombatQuickActions = { openSpellAction, openWeaponAction, refreshSpellModalDamage, refreshSpellModalSlots, closeModal };
 }(window));

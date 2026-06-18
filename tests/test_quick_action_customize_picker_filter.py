@@ -200,3 +200,71 @@ console.log(JSON.stringify({
     assert rows['warned'] is True
     assert rows['picksAfter'] == ['action:real-attack']
     assert 'Real Attack' in rows['primaryNames']
+
+
+def test_customize_picker_deduplicates_virtual_cast_rows_and_uses_stable_spell_pick_key():
+    rows = _run_node("""
+global.window = global;
+window.ActionsTab = { buildQuickActionModel: () => ({ primaryActions: [], bonusActions: [], reactions: [], resources: [], _allActions: [] }) };
+global._getCombatQuickSpells = function () { return [
+  { id: 'fireball::cast-3', name: 'Fireball', baseSpellId: 'fireball', baseLevel: 3, castLevel: 3, source: 'class' },
+  { id: 'fireball::cast-4', name: 'Fireball', baseSpellId: 'fireball', baseLevel: 3, castLevel: 4, source: 'class' },
+  { id: 'fireball::cast-5', name: 'Fireball', baseSpellId: 'fireball', baseLevel: 3, castLevel: 5, source: 'class' },
+]; };
+global.getCombatQuickBarRuntime = () => ({ charSheet: {}, combat: { active: false }, spellSlots: {3: 2, 4: 1, 5: 1}, spellSlotState: {} });
+const sel = require('./client/static/js/character/combat_quick_selectors.js');
+const candidates = sel.buildQuickActionCandidates();
+console.log(JSON.stringify({ names: candidates.map(c => c.name), keys: candidates.map(c => c.quickBarPickKey), castLevels: candidates.map(c => c.castLevel) }));
+""")
+    assert rows['names'] == ['Fireball']
+    assert rows['keys'] == ['spell:fireball']
+    assert rows['castLevels'] == [None]
+
+
+def test_quick_bar_top_spells_deduplicates_virtual_rows_and_keeps_higher_slot_available():
+    rows = _run_node("""
+global.window = global;
+global.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+window.ActionsTab = { buildQuickActionModel: () => ({ primaryActions: [], bonusActions: [], reactions: [], resources: [], _allActions: [] }) };
+global._getCombatQuickSpells = function () { return [
+  { id: 'scorching-ray::cast-2', name: 'Scorching Ray', baseSpellId: 'scorching-ray', baseLevel: 2, castLevel: 2, source: 'class' },
+  { id: 'scorching-ray::cast-3', name: 'Scorching Ray', baseSpellId: 'scorching-ray', baseLevel: 2, castLevel: 3, source: 'class' },
+  { id: 'scorching-ray::cast-4', name: 'Scorching Ray', baseSpellId: 'scorching-ray', baseLevel: 2, castLevel: 4, source: 'class' },
+  { id: 'scorching-ray::cast-5', name: 'Scorching Ray', baseSpellId: 'scorching-ray', baseLevel: 2, castLevel: 5, source: 'class' },
+]; };
+global.getCombatQuickBarRuntime = () => ({ charSheet: {}, combat: { active: false }, spellSlots: {2: 3, 3: 2}, spellSlotState: {2: 3, 3: 1} });
+const sel = require('./client/static/js/character/combat_quick_selectors.js');
+const model = sel.selectQuickActions({});
+console.log(JSON.stringify(model.topSpells.map(s => ({ name: s.name, key: s.quickBarPickKey, canUse: s.quickBarCanUse, levels: s.availableCastLevels, summary: s.quickBarSlotSummary }))));
+""")
+    assert len(rows) == 1
+    assert rows[0]['name'] == 'Scorching Ray'
+    assert rows[0]['key'] == 'spell:scorching-ray'
+    assert rows[0]['canUse'] is True
+    assert rows[0]['levels'] == [3]
+    assert 'L2 0/3' in rows[0]['summary'] and 'L3 1/2' in rows[0]['summary']
+
+
+def test_quick_spell_no_slots_is_unavailable_and_reports_no_slots():
+    rows = _run_node("""
+global.window = global;
+global._getCombatQuickSpells = () => [];
+global.getCombatQuickBarRuntime = () => ({ spellSlots: {2: 3, 3: 2}, spellSlotState: {2: 3, 3: 2} });
+const sel = require('./client/static/js/character/combat_quick_selectors.js');
+const spell = { id: 'scorching-ray::cast-2', name: 'Scorching Ray', baseSpellId: 'scorching-ray', baseLevel: 2, castLevel: 2, quickBarType: 'spell' };
+const runtime = global.getCombatQuickBarRuntime();
+console.log(JSON.stringify({ available: sel._spellAvailable(spell, runtime), summary: sel._spellSlotSummary(spell, runtime), candidate: sel._canonicalSpellDisplayCandidate(spell, runtime) }));
+""")
+    assert rows['available'] is False
+    assert rows['summary'] == 'No slots'
+    assert rows['candidate']['availableCastLevels'] == []
+
+
+def test_quick_action_sources_include_rest_and_modal_slot_sync_hooks():
+    bar = (ROOT / 'client/static/js/character/combat_quick_bar.js').read_text(encoding='utf-8')
+    actions = (ROOT / 'client/static/js/character/combat_quick_actions.js').read_text(encoding='utf-8')
+    for event in ['character:spell-state-updated', 'character:runtime-updated', 'character:resources-updated', 'character:rest-completed', 'spellSlots:updated']:
+        assert event in bar
+        assert event in actions
+    assert 'global.refreshCombatQuickActions = refreshCombatQuickActions;' in bar
+    assert 'refreshSpellModalSlots' in actions

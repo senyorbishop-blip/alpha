@@ -45935,18 +45935,12 @@ function _getCombatSpellCastOptions(spell) {
   if (baseLevel === 0) return [{ value: 0, label: 'Cantrip', disabled: false }];
   const options = [];
   for (let lvl = baseLevel; lvl <= 9; lvl++) {
+    const max = Number(_charSheet?.spellSlots?.[lvl] ?? _charSheet?.spellSlots?.[String(lvl)] ?? 0) || 0;
     const remaining = getSpellSlotRemaining(lvl);
-    if (remaining > 0) options.push({
-      value: lvl,
-      label: `${ordinals[lvl] || `${lvl}th`} (${remaining} left)`,
-      disabled: false,
-    });
-  }
-  if (!options.length) {
     options.push({
-      value: baseLevel,
-      label: `${ordinals[baseLevel] || `${baseLevel}th`} (no slots)`,
-      disabled: true,
+      value: lvl,
+      label: `${ordinals[lvl] || `${lvl}th`} (${Math.max(0, remaining)}/${max} slots)`,
+      disabled: remaining <= 0,
     });
   }
   return options;
