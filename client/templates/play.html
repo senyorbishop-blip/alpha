@@ -47447,12 +47447,13 @@ function executeCombatQuickBarSpell(spell) {
   return result;
 }
 
-function openCombatQuickBarWeaponAction(actionOrId) {
+function openCombatQuickBarWeaponAction(action) {
   if (window.CombatQuickActions && typeof window.CombatQuickActions.openWeaponAction === 'function') {
-    return window.CombatQuickActions.openWeaponAction(actionOrId);
+    return window.CombatQuickActions.openWeaponAction(action);
   }
   console.error('[openCombatQuickBarWeaponAction] CombatQuickActions modal not available. Cannot open weapon action panel. No action spent.');
-  if (typeof showToast === 'function') showToast('Weapon action UI is not loaded. No action spent.');
+  if (typeof showToast === 'function') showToast('Weapon action modal is not loaded.');
+  return false;
 }
 
 function _parseSpellLevelFromSection(section) {

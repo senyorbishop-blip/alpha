@@ -492,10 +492,36 @@
     _saveState();
   }
 
+  function _actionMatchKeys(action) {
+    return [
+      action && action.id,
+      action && action.itemId,
+      action && action.item_id,
+      action && action.actionId,
+      action && action.action_id,
+      action && action.combatCardId,
+      action && action.name,
+      action && action.displayName,
+    ].filter(function (value) { return value !== null && value !== undefined && String(value).trim(); }).map(String);
+  }
+
+  function _slug(value) {
+    return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
   function _findAction(key) {
     const model = global.CombatQuickSelectors && global.CombatQuickSelectors.selectQuickActions(_runtime().charSheet || {});
     const all = [].concat(model.primaryActions || [], model.bonusActions || [], model.reactions || [], model.resources || [], model.magicItemActions || []);
-    return all.find(function (item) { return _firstText(item && item.id, item && item.name) === key; }) || null;
+    const raw = String(key || '').trim();
+    const rawLower = raw.toLowerCase();
+    const rawSlug = _slug(raw);
+    return all.find(function (item) {
+      const keys = _actionMatchKeys(item);
+      return keys.some(function (candidate) {
+        const text = String(candidate || '').trim();
+        return text === raw || text.toLowerCase() === rawLower || (!!rawSlug && _slug(text) === rawSlug);
+      });
+    }) || null;
   }
 
   function _findSpell(key) {

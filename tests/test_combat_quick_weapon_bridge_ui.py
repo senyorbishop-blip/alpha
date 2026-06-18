@@ -17,8 +17,8 @@ def test_combat_quick_bar_passes_full_action_object_to_weapon_bridge():
 def test_open_combat_quick_bar_weapon_action_bridges_to_combat_quick_actions():
     play = _read('client/templates/play.html')
     actions = _read('client/static/js/character/combat_quick_actions.js')
-    assert 'function openCombatQuickBarWeaponAction(actionOrId)' in play
-    assert 'return window.CombatQuickActions.openWeaponAction(actionOrId);' in play
+    assert 'function openCombatQuickBarWeaponAction(action)' in play
+    assert 'return window.CombatQuickActions.openWeaponAction(action);' in play
     # combat_quick_actions.js also installs its own explicit bridge so the
     # quick bar can reach the modal even if play.html's copy is unavailable.
     assert 'global.openCombatQuickBarWeaponAction = function (action)' in actions
@@ -66,6 +66,9 @@ def test_used_this_turn_weapon_still_opens_modal_with_explanation():
     # is-used must not be conflated with is-disabled in the quick bar tile click guard.
     assert "if (!tile || tile.disabled || tile.classList.contains('is-disabled')) return;" in bar
     assert "classes.push('is-used');" in bar
+    assert "function _actionMatchKeys(action)" in bar
+    assert "action && action.itemId" in bar
+    assert "action && action.actionId" in bar
 
 
 def test_missing_weapon_bridge_shows_toast_and_does_not_spend_action():
