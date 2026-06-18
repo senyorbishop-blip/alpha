@@ -314,3 +314,54 @@ def test_cast_spell_flow_awaits_dice_settle_before_showing_result():
 def test_spell_drawer_combat_rows_prefer_resolved_formula():
     spells_tab = (ROOT / 'client/static/js/character/tabs/spells_tab.js').read_text(encoding='utf-8')
     assert "const resolvedFormula = spell.damagePreview || spell.healingPreview || spell.damageFormula || spell.healingFormula || '—';" in spells_tab
+
+
+def test_fireball_rows_3_through_9_render_expected_scaled_formulae():
+    expected = {3: '8d6', 4: '9d6', 5: '10d6', 6: '11d6', 7: '12d6', 8: '13d6', 9: '14d6'}
+    data = spells_tab_eval(r'''
+const out = {};
+for (const lvl of [3,4,5,6,7,8,9]) {
+  const html = global.SpellsTab.__test.renderSpellRow({id:'fireball', rowId:'fireball::cast-' + lvl, name:'Fireball', baseLevel:3, spell_level:3, level:3, castLevel:lvl, slotLevel:lvl, displaySectionLevel:lvl, isVirtualCastRow:true}, '', {level:19});
+  const m = html.match(/data-roll-expr="([^"]+)"/);
+  out[lvl] = m && m[1];
+}
+console.log(JSON.stringify(out));
+''')
+    assert data == {str(k): v for k, v in expected.items()}
+
+
+def test_quick_actions_modal_passes_spell_object_to_spell_damage_bridge():
+    src = (ROOT / 'client/static/js/character/combat_quick_actions.js').read_text(encoding='utf-8')
+    assert 'safeRollSpellDamage(spell, castLevel)' in src
+    assert 'safeCastSpell(spell, castLevel)' in src
+    assert 'safeRollSpellAttack(spell, castLevel)' in src
+    assert 'const spellKey = spell.id || spell.name;' not in src
+
+
+def test_find_combat_spell_resolves_common_spell_keys_and_modal_object():
+    snippet = PLAY[PLAY.index('function _combatQuickCanonicalSpellKey'):PLAY.index('function _combatQuickSpellBaseLevel')]
+    code = r'''
+global.window = global;
+global._combatQuickSlug = function(value) { return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); };
+global.getCombatQuickBarSpells = function() { return [{rowId:'fire-bolt::cast-0', id:'spell-fire-bolt', spellId:'fire-bolt', name:'Fire Bolt', card:{id:'fire-bolt', name:'Fire Bolt'}}]; };
+global._getCombatQuickSpells = function() { return []; };
+''' + snippet + r'''
+const modalSpell = {id:'fire-bolt', name:'Fire Bolt'};
+const inputs = ['Fire Bolt', 'fire-bolt', 'spell-fire-bolt', 'spell:fire-bolt', 'fire-bolt::cast-0'];
+const resolved = inputs.map(v => !!findCombatSpell(v));
+const objectSame = findCombatSpell(modalSpell) === modalSpell;
+console.log(JSON.stringify({resolved, objectSame}));
+'''
+    out = subprocess.check_output(['node', '-e', code], cwd=ROOT, text=True, timeout=30)
+    data = json.loads(out)
+    assert data['resolved'] == [True, True, True, True, True]
+    assert data['objectSame'] is True
+
+
+def test_quick_actions_spell_not_found_guard_uses_shared_lookup_before_toast():
+    assert 'function findCombatSpell(input)' in PLAY
+    for fn in ['combatQuickRollSpellAttack', 'combatQuickRollSpellDamage', 'combatQuickShowSpellSave', 'combatQuickCastSpell']:
+        start = PLAY.index('function ' + fn)
+        body = PLAY[start:PLAY.index('\n}', start) + 2]
+        assert 'const spell = findCombatSpell(spellId);' in body
+        assert "showToast('Spell not found.')" in body
