@@ -58,6 +58,10 @@
   }
 
   function _baseSpellLevel(spell) {
+    if (global.AppSpellRuntime && typeof global.AppSpellRuntime.getBuiltinSpellBaseLevel === 'function') {
+      const builtinBase = global.AppSpellRuntime.getBuiltinSpellBaseLevel(spell || {});
+      if (builtinBase !== null && builtinBase !== undefined) return builtinBase;
+    }
     const raw = spell && (spell.baseLevel ?? spell.base_level ?? spell.spell_level ?? (spell.card && (spell.card.level ?? spell.card.spell_level)) ?? spell.level);
     if (raw === null || raw === undefined || raw === '') return null;
     const n = Number(raw);

@@ -440,6 +440,73 @@ console.log(JSON.stringify({expr: global.SpellsTab.__test.spellRollExpressionFor
     assert data['expr'] == '12d6'
 
 
+def test_fireball_polluted_imported_manifest_uses_builtin_level_and_scaling_data():
+    data = node_eval(r'''
+const card = {name:'Fireball', id:'fireball', baseLevel:4, level:4, spell_level:4, scaling_type:'damage', scaling_data:{}};
+const out = {};
+for (const lvl of [3,4,5,7,9]) {
+  const r = rt.resolveSpellRuntime(card, {castLevel:lvl, slotLevel:lvl});
+  out[lvl] = {baseLevel:r.baseLevel, formula:r.finalDamageFormula, scalingType:r.scalingType};
+}
+console.log(JSON.stringify(out));
+''')
+    assert data == {
+        '3': {'baseLevel': 3, 'formula': '8d6', 'scalingType': 'slot_damage'},
+        '4': {'baseLevel': 3, 'formula': '9d6', 'scalingType': 'slot_damage'},
+        '5': {'baseLevel': 3, 'formula': '10d6', 'scalingType': 'slot_damage'},
+        '7': {'baseLevel': 3, 'formula': '12d6', 'scalingType': 'slot_damage'},
+        '9': {'baseLevel': 3, 'formula': '14d6', 'scalingType': 'slot_damage'},
+    }
+
+
+def test_polluted_builtin_spell_scaling_data_recovers_for_multiple_spells():
+    data = node_eval(r'''
+const cases = [
+  ['Call Lightning', 'call-lightning::cast-5::0', 5, '5d10'],
+  ['Lightning Bolt', 'spell-lightning-bolt:5', 5, '10d6'],
+];
+const out = {};
+for (const [name, id, lvl, expected] of cases) {
+  const r = rt.resolveSpellRuntime({name, id, level:lvl, baseLevel:lvl, spell_level:lvl, scaling_type:'slot_damage', scaling_data:{}}, {castLevel:lvl, slotLevel:lvl});
+  out[name] = {baseLevel:r.baseLevel, formula:r.finalDamageFormula, expected};
+}
+console.log(JSON.stringify(out));
+''')
+    assert data['Call Lightning'] == {'baseLevel': 3, 'formula': '5d10', 'expected': '5d10'}
+    assert data['Lightning Bolt'] == {'baseLevel': 3, 'formula': '10d6', 'expected': '10d6'}
+
+
+def test_scorching_ray_expected_slots_with_polluted_generic_scaling():
+    data = node_eval(r'''
+const out = {};
+for (const lvl of [2,3,4,5]) {
+  const r = rt.resolveSpellRuntime({name:'Scorching Ray', id:'ability-scorching-ray::cast-' + lvl, baseLevel:5, level:5, spell_level:5, scaling_type:'damage', scaling_data:{}}, {castLevel:lvl, slotLevel:lvl});
+  out[lvl] = {baseLevel:r.baseLevel, formula:r.finalDamageFormula};
+}
+console.log(JSON.stringify(out));
+''')
+    assert data == {
+        '2': {'baseLevel': 2, 'formula': '3 rays × 2d6'},
+        '3': {'baseLevel': 2, 'formula': '4 rays × 2d6'},
+        '4': {'baseLevel': 2, 'formula': '5 rays × 2d6'},
+        '5': {'baseLevel': 2, 'formula': '6 rays × 2d6'},
+    }
+
+
+def test_character_sheet_fireball_polluted_rows_render_expected_scaled_data_exprs():
+    data = spells_tab_eval(r'''
+const out = {};
+for (const lvl of [4,5,7]) {
+  const spell = {name:'Fireball', id:'fireball::cast-' + lvl + '::0', spellId:'fireball', baseLevel:lvl, level:lvl, spell_level:lvl, castLevel:lvl, slotLevel:lvl, displaySectionLevel:lvl, isVirtualCastRow:true, damagePreview:'8d6', scaling_type:'damage', scaling_data:{}};
+  const html = global.SpellsTab.__test.renderSpellRow(spell, '', {level:19});
+  const m = html.match(/data-roll-expr="([^"]+)"/);
+  out[lvl] = m && m[1];
+}
+console.log(JSON.stringify(out));
+''')
+    assert data == {'4': '9d6', '5': '10d6', '7': '12d6'}
+
+
 def test_quick_actions_preview_fireball_level_7_prefers_runtime_over_stale_resolve_spell_cast():
     data = quick_actions_eval(r'''
 global.resolveSpellCast = () => ({ formulaUsed: '8d6' });
