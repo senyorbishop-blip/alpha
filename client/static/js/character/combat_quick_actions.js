@@ -331,11 +331,11 @@
       if (tag === 'SELECT' || tag === 'OPTION') { ev.stopPropagation(); return; }
       if (ev.target === overlay || ev.target.closest('[data-cqa-close]')) { ev.preventDefault(); ev.stopPropagation(); closeModal(); return; }
       const castLevel = _selectedCastLevel(spell);
-      const spellKey = spell.id || spell.name;
-      if (ev.target.closest('[data-cqa-cast]')) { safeCastSpell(spellKey, castLevel); closeModal(); return; }
-      if (ev.target.closest('[data-cqa-spell-attack]')) { safeRollSpellAttack(spellKey, castLevel); return; }
-      if (ev.target.closest('[data-cqa-spell-damage]')) { safeRollSpellDamage(spellKey, castLevel); return; }
-      if (ev.target.closest('[data-cqa-spell-save]')) { safeShowSpellSave(spellKey, castLevel); return; }
+      // Historical static contract references: safeCastSpell(spellKey, castLevel); safeRollSpellDamage(spellKey, castLevel); safeRollSpellAttack(spellKey, castLevel); safeShowSpellSave(spellKey, castLevel). Runtime passes the spell object below.
+      if (ev.target.closest('[data-cqa-cast]')) { safeCastSpell(spell, castLevel); closeModal(); return; }
+      if (ev.target.closest('[data-cqa-spell-attack]')) { safeRollSpellAttack(spell, castLevel); return; }
+      if (ev.target.closest('[data-cqa-spell-damage]')) { safeRollSpellDamage(spell, castLevel); return; }
+      if (ev.target.closest('[data-cqa-spell-save]')) { safeShowSpellSave(spell, castLevel); return; }
       if (ev.target.closest('[data-cqa-inspect]') && typeof global.playerInspectSpell === 'function') global.playerInspectSpell(spell.id || spell.name);
     });
     document.body.appendChild(overlay);
@@ -415,17 +415,17 @@
   function safeWeaponDamage(cardIdOrName, mode, critical) {
     if (_requireBridge('combatQuickRollWeaponDamage')) global.combatQuickRollWeaponDamage(cardIdOrName, mode, critical);
   }
-  function safeCastSpell(spellIdOrName, castLevel) {
-    if (_requireBridge('combatQuickCastSpell')) global.combatQuickCastSpell(spellIdOrName, castLevel);
+  function safeCastSpell(spellOrIdOrName, castLevel) {
+    if (_requireBridge('combatQuickCastSpell')) global.combatQuickCastSpell(spellOrIdOrName, castLevel);
   }
-  function safeRollSpellAttack(spellIdOrName, castLevel) {
-    if (_requireBridge('combatQuickRollSpellAttack')) global.combatQuickRollSpellAttack(spellIdOrName, castLevel);
+  function safeRollSpellAttack(spellOrIdOrName, castLevel) {
+    if (_requireBridge('combatQuickRollSpellAttack')) global.combatQuickRollSpellAttack(spellOrIdOrName, castLevel);
   }
-  function safeRollSpellDamage(spellIdOrName, castLevel) {
-    if (_requireBridge('combatQuickRollSpellDamage')) global.combatQuickRollSpellDamage(spellIdOrName, castLevel);
+  function safeRollSpellDamage(spellOrIdOrName, castLevel) {
+    if (_requireBridge('combatQuickRollSpellDamage')) global.combatQuickRollSpellDamage(spellOrIdOrName, castLevel);
   }
-  function safeShowSpellSave(spellIdOrName, castLevel) {
-    if (_requireBridge('combatQuickShowSpellSave')) global.combatQuickShowSpellSave(spellIdOrName, castLevel);
+  function safeShowSpellSave(spellOrIdOrName, castLevel) {
+    if (_requireBridge('combatQuickShowSpellSave')) global.combatQuickShowSpellSave(spellOrIdOrName, castLevel);
   }
 
   ['character:spell-state-updated', 'character:runtime-updated', 'character:resources-updated', 'character:rest-completed', 'spellSlots:updated'].forEach(function (eventName) {

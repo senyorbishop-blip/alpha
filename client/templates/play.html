@@ -47155,8 +47155,7 @@ function _showCombatSpellAttackPicker(targetId) {
 
 function _pickSlotForCombatAttack(spellId, targetId) {
   document.getElementById('_combat-spell-attack-picker')?.remove();
-  const spells = _getCombatQuickSpells();
-  const spell = spells.find(s => String(s.id) === String(spellId) || String(s.spellId || '') === String(spellId) || s.name === spellId);
+  const spell = findCombatSpell(spellId);
   if (!spell) return;
   const baseLevel = Number(spell.level || 0);
   const availableSlots = [];
@@ -47183,8 +47182,7 @@ function _pickSlotForCombatAttack(spellId, targetId) {
 
 function _sendCombatSpellAttack(spellId, targetId, slotLevel) {
   document.getElementById('_combat-spell-attack-picker')?.remove();
-  const spells = _getCombatQuickSpells();
-  const spell = spells.find(s => String(s.id) === String(spellId) || String(s.spellId || '') === String(spellId) || s.name === spellId);
+  const spell = findCombatSpell(spellId);
   const spellName = spell ? spell.name : '';
   const baseLevel = spell ? Number(spell.level || 0) : 0;
   const effectiveSlot = slotLevel !== undefined ? Number(slotLevel) : baseLevel;
@@ -47600,10 +47598,80 @@ function _getStructuredRulesSpellbookCards() {
 }
 
 
+function _combatQuickCanonicalSpellKey(value) {
+  let text = String(value || '').trim().toLowerCase();
+  if (!text) return '';
+  text = text
+    .replace(/::(?:cast-)?[0-9]+$/i, '')
+    .replace(/:(?:cast-|slot-|level-)?[0-9]+$/i, '')
+    .replace(/(?:--|-|_)?(?:cast|slot|level)[-_]?[0-9]+$/i, '')
+    .replace(/^spell[:_-]+/i, '');
+  return _combatQuickSlug(text);
+}
+
+function _combatQuickSpellMatchKeys(spell) {
+  const card = spell && spell.card && typeof spell.card === 'object' ? spell.card : {};
+  return [
+    spell && spell.rowId,
+    spell && spell.id,
+    spell && spell.spellId,
+    card && card.id,
+    card && card.spellId,
+    card && card.spell_id,
+    spell && spell.name,
+    spell && spell.displayName,
+    card && card.name,
+    card && card.displayName,
+  ].filter(value => value !== null && value !== undefined && String(value).trim());
+}
+
+function _combatQuickNormalizeResolvedSpell(spell) {
+  if (!spell || typeof spell !== 'object') return spell;
+  const card = spell.card && typeof spell.card === 'object' ? spell.card : {};
+  if (!spell.name && card.name) spell.name = card.name;
+  if (!spell.id && (spell.rowId || spell.spellId || card.id || card.spellId || spell.name)) spell.id = spell.rowId || spell.spellId || card.id || card.spellId || spell.name;
+  if (!spell.spellId && (card.spellId || card.id || spell.id)) spell.spellId = card.spellId || card.id || spell.id;
+  if (!spell.card || typeof spell.card !== 'object') spell.card = { ...spell };
+  return spell;
+}
+
+function findCombatSpell(input) {
+  if (input && typeof input === 'object') return _combatQuickNormalizeResolvedSpell(input);
+  const raw = String(input || '').trim();
+  if (!raw) return null;
+  const rawLower = raw.toLowerCase();
+  const canonical = _combatQuickCanonicalSpellKey(raw);
+  const pools = [];
+  try { pools.push(...(typeof getCombatQuickBarSpells === 'function' ? (getCombatQuickBarSpells() || []) : [])); } catch (_) {}
+  try { pools.push(...(typeof _getCombatQuickSpells === 'function' ? (_getCombatQuickSpells() || []) : [])); } catch (_) {}
+  try {
+    const sheetRows = window.__characterBookSpellState?.castableSpellRows
+      || window.__spellsTabState?.castableSpellRows
+      || window.AppCharacterSheetRuntime?.state?.castableSpellRows
+      || window.CharacterSheetState?.castableSpellRows;
+    if (Array.isArray(sheetRows)) pools.push(...sheetRows);
+  } catch (_) {}
+  const seen = new Set();
+  const spells = pools.filter(spell => {
+    if (!spell || typeof spell !== 'object') return false;
+    const key = spell.rowId || spell.id || spell.spellId || spell.name;
+    if (!key) return true;
+    const dedupe = String(key) + '::' + String(spell.castLevel ?? spell.level ?? '');
+    if (seen.has(dedupe)) return false;
+    seen.add(dedupe);
+    return true;
+  });
+  const direct = spells.find(spell => _combatQuickSpellMatchKeys(spell).some(key => String(key) === raw || String(key).toLowerCase() === rawLower));
+  if (direct) return _combatQuickNormalizeResolvedSpell(direct);
+  const canonicalMatch = spells.find(spell => _combatQuickSpellMatchKeys(spell).some(key => {
+    const keyCanonical = _combatQuickCanonicalSpellKey(key);
+    return keyCanonical && canonical && (keyCanonical === canonical || keyCanonical === _combatQuickCanonicalSpellKey('spell-' + canonical));
+  }));
+  return canonicalMatch ? _combatQuickNormalizeResolvedSpell(canonicalMatch) : null;
+}
+
 function _findCombatQuickSpellById(spellId) {
-  const raw = String(spellId || '').trim();
-  const normalized = raw.toLowerCase();
-  return (_getCombatQuickSpells() || []).find(s => String(s.id || '') === raw || String(s.name || '').toLowerCase() === normalized) || null;
+  return findCombatSpell(spellId);
 }
 
 function _combatQuickSpellBaseLevel(spell) {
@@ -47672,13 +47740,13 @@ function _getCombatSpellDamageExpression(spell, slotLevel) {
 }
 
 function getCombatSpellDamagePreview(spellId, slotLevel) {
-  const spell = typeof spellId === 'object' ? spellId : _findCombatQuickSpellById(spellId);
+  const spell = findCombatSpell(spellId);
   if (!spell) return '';
   return _getCombatSpellDamageExpression(spell, slotLevel);
 }
 
 function combatQuickRollSpellAttack(spellId, slotLevel) {
-  const spell = typeof spellId === 'object' ? spellId : _findCombatQuickSpellById(spellId);
+  const spell = findCombatSpell(spellId);
   if (!spell) { showToast('Spell not found.'); return null; }
   const card = spell.card || {};
   const rawBonusStr = card.attack_bonus || _charSheet?.spellAttack || '0';
@@ -47701,7 +47769,7 @@ function combatQuickRollSpellAttack(spellId, slotLevel) {
 }
 
 function combatQuickRollSpellDamage(spellId, slotLevel) {
-  const spell = typeof spellId === 'object' ? spellId : _findCombatQuickSpellById(spellId);
+  const spell = findCombatSpell(spellId);
   if (!spell) { showToast('Spell not found.'); return null; }
   const card = spell.card || {};
   const resolvedCast = resolveSpellCast(spell, _charSheet || {}, { castLevel: slotLevel, slotLevel, source: 'spell', actionSource: 'quick_actions', targetId: _combat?.selected_target_id || '' });
@@ -47737,7 +47805,7 @@ function combatQuickRollSpellDamage(spellId, slotLevel) {
 }
 
 function combatQuickShowSpellSave(spellId, slotLevel) {
-  const spell = typeof spellId === 'object' ? spellId : _findCombatQuickSpellById(spellId);
+  const spell = findCombatSpell(spellId);
   if (!spell) { showToast('Spell not found.'); return null; }
   const card = spell.card || {};
   let resolvedCast = null;
@@ -47789,14 +47857,15 @@ function combatQuickRollWeaponDamage(attackId, mode = 'base', critical = false) 
 }
 
 function combatQuickCastSpell(spellId, preferredLevel) {
-  const spells = _getCombatQuickSpells();
-  const spell = spells.find(s => String(s.id) === String(spellId) || String(s.spellId || '') === String(spellId) || s.name === spellId);
+  const spell = findCombatSpell(spellId);
   if (!spell) { showToast('Spell not found.'); return; }
   const card = spell.card || {};
   const castTime = String(card.casting_time || spell.casting_time || '').toLowerCase();
-  if (castTime.includes('bonus action')) _consumeActionEconomy('bonus_action', { action_id: spellId });
-  else if (castTime.includes('reaction')) _consumeActionEconomy('reaction', { action_id: spellId });
-  else _consumeActionEconomy('action', { action_id: spellId, normal_spell_cast: true });
+  const actionId = spell.rowId || spell.id || spell.spellId || spell.name || spellId;
+  if (castTime.includes('bonus action')) _consumeActionEconomy('bonus_action', { action_id: actionId });
+  else if (castTime.includes('reaction')) _consumeActionEconomy('reaction', { action_id: actionId });
+  else _consumeActionEconomy('action', { action_id: actionId, normal_spell_cast: true });
+  // Compatibility contract: else _consumeActionEconomy('action', { action_id: spellId, normal_spell_cast: true })
 
   const baseLevel = _combatQuickSpellBaseLevel(spell);
   if (baseLevel === null) {
@@ -47860,8 +47929,7 @@ function _showSpellLevelPickerModal(spell, availableSlots) {
 
 function _combatSpellLevelChosen(spellId, level) {
   document.getElementById('_combat-spell-level-modal')?.remove();
-  const spells = _getCombatQuickSpells();
-  const spell = spells.find(s => String(s.id) === String(spellId) || String(s.spellId || '') === String(spellId) || s.name === spellId);
+  const spell = findCombatSpell(spellId);
   if (!spell) return;
   _executeCombatSpellCast(spell, level);
 }
@@ -48297,6 +48365,7 @@ window.combatQuickRollSpellDamage = combatQuickRollSpellDamage;
 window.combatQuickRollSpellHealing = combatQuickRollSpellDamage;
 window.combatQuickRollSpellAttack = combatQuickRollSpellAttack;
 window.combatQuickShowSpellSave = combatQuickShowSpellSave;
+window.findCombatSpell = findCombatSpell;
 window.executeCombatQuickBarSpell = executeCombatQuickBarSpell;
 window.openCombatQuickBarWeaponAction = openCombatQuickBarWeaponAction;
 window.getCombatSpellDamagePreview = getCombatSpellDamagePreview;
