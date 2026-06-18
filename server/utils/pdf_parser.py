@@ -36,6 +36,13 @@ def parse_character_pdf_data(data: bytes) -> dict:
     except Exception as exc:
         raise ValueError(f"Could not read PDF: {exc}") from exc
 
+    page_texts: list[str] = []
+    try:
+        for page in reader.pages:
+            page_texts.append(str(page.extract_text() or ""))
+    except Exception:
+        page_texts = []
+
     fields = reader.get_form_text_fields() or {}
     all_fields: dict[str, str] = {}
 
@@ -287,6 +294,22 @@ def parse_character_pdf_data(data: bytes) -> dict:
     features_text = "\n\n".join(b for b in features_blocks if b)
 
     # ── Equipment ─────────────────────────────────────────────────────────────
+    def _find_item_raw_block(item_name: str) -> tuple[str, int | None]:
+        name_clean = re.escape(str(item_name or "").strip())
+        if not name_clean or not page_texts:
+            return "", None
+        boundary = re.compile(r"(?=\n[A-Z][A-Za-z0-9'’+,: ()/-]{2,90}\n(?:Weapon|Armor|Wondrous item|Staff|Wand|Ring|Potion|Scroll)\b|\n(?:ACTIONS|EQUIPMENT|FEATURES|SPELLS|TREASURE|ATTUNED MAGIC ITEMS)\b)", re.I)
+        for page_index, text in enumerate(page_texts, start=1):
+            m = re.search(name_clean, text, re.I)
+            if not m:
+                continue
+            tail = text[m.start():]
+            end = boundary.search(tail[1:])
+            block = tail[: end.start() + 1] if end else tail[:4000]
+            return re.sub(r"\n{3,}", "\n\n", block).strip(), page_index
+        return "", None
+
+
     equipment: list[dict] = []
     seen_equipment: set = set()
     for idx in range(0, 160):
@@ -299,17 +322,21 @@ def parse_character_pdf_data(data: bytes) -> dict:
         if key_eq in seen_equipment:
             continue
         seen_equipment.add(key_eq)
-        equipment.append({"name": item_name, "qty": max(1, qty), "weight": weight})
+        raw_block, raw_page = _find_item_raw_block(item_name)
+        equipment.append({"name": item_name, "qty": max(1, qty), "weight": weight, "rawText": raw_block, "page": raw_page})
 
     attuned: list[dict] = []
     for idx in range(1, 40):
         item_name = g(f"Attuned Name{idx}")
         if not item_name:
             continue
+        raw_block, raw_page = _find_item_raw_block(item_name)
         attuned.append({
             "name": item_name,
             "qty": max(1, gi(f"Attuned Qty{idx}", default=1)),
             "weight": g(f"Attuned Weight{idx}"),
+            "rawText": raw_block,
+            "page": raw_page,
         })
 
     def format_equipment_line(item: dict) -> str:
@@ -461,6 +488,9 @@ def parse_character_pdf_data(data: bytes) -> dict:
                 "name": item["name"],
                 "qty": item["qty"],
                 "notes": (item.get("weight") or "").strip(),
+                "weight": item.get("weight") or "",
+                "rawText": item.get("rawText") or "",
+                "page": item.get("page"),
                 "price": "",
             }
             for item in equipment
@@ -512,6 +542,7 @@ def parse_character_pdf_data(data: bytes) -> dict:
         "inventoryEntries": book["importedInventoryItems"],
         "currencyBreakdown": currency_map,
         "source": "pdf",
+        "fullText": "\n\n".join(page_texts),
         "_rawFields": dict(all_fields),
         "_spellMeta": {
             "ability": spell_ability,

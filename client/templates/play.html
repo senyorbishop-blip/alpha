@@ -22335,6 +22335,72 @@ function inspectInventoryItem(index) {
   });
 }
 
+
+function getImportedItemTextField(item, keys) {
+  for (const key of keys) {
+    const value = item && item[key];
+    if (value !== undefined && value !== null && String(value).trim()) return String(value).trim();
+  }
+  return '';
+}
+function renderImportedItemDetailRows(item) {
+  const rows = [
+    ['Type', getImportedItemTextField(item, ['type','item_type','equipment_kind','category'])],
+    ['Weapon Type', getImportedItemTextField(item, ['weapon_type','weaponType','proficiency_group'])],
+    ['Rarity', getImportedItemTextField(item, ['rarity'])],
+    ['Attunement', item.attunement_requirement || item.attunementRequirement || (item.attunement_required || item.requiresAttunement ? 'Requires attunement' : '')],
+    ['Attack Type', getImportedItemTextField(item, ['attack_type','attackType'])],
+    ['Reach', getImportedItemTextField(item, ['reach','range'])],
+    ['Damage', getImportedItemTextField(item, ['damage_dice','damageDice','damage'])],
+    ['Versatile', getImportedItemTextField(item, ['versatile_damage','versatileDamageDice'])],
+    ['Damage Type', getImportedItemTextField(item, ['damage_type','damageType'])],
+    ['Weight', item.weight_lbs ? `${item.weight_lbs} lb.` : getImportedItemTextField(item, ['weight'])],
+    ['Properties', Array.isArray(item.properties || item.weapon_properties) ? (item.properties || item.weapon_properties).join(', ') : getImportedItemTextField(item, ['properties','weapon_properties'])],
+    ['Magic Bonus', [item.attack_bonus || item.magicAttackBonus ? `+${Number(item.attack_bonus || item.magicAttackBonus)} attack` : '', item.damage_bonus || item.magicDamageBonus ? `+${Number(item.damage_bonus || item.magicDamageBonus)} damage` : ''].filter(Boolean).join(' / ')],
+  ].filter(([, value]) => String(value || '').trim());
+  if (!rows.length) return '';
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.45rem;font-size:0.66rem;color:var(--parchment-dim);line-height:1.45;">${rows.map(([label, value]) => `<div><strong style="color:var(--gold);">${escapeHtml(label)}:</strong> ${escapeHtml(value)}</div>`).join('')}</div>`;
+}
+function renderImportedItemActions(item) {
+  const actions = Array.isArray(item.actions) ? item.actions : Array.isArray(item.granted_actions) ? item.granted_actions : [];
+  if (!actions.length) return '';
+  return `<div style="padding-top:0.1rem;border-top:1px solid rgba(115,135,165,0.12);display:flex;flex-direction:column;gap:0.4rem;"><div style="font-size:0.66rem;color:var(--parchment-dim);">Item actions / spells</div>${actions.map((action, idx) => {
+    const cost = action.chargeCost || action.charge_cost || action.cost || '';
+    const level = action.spellLevel || action.spell_level || '';
+    return `<button class="mini-btn" type="button" onclick="useInventoryItemActionFromInspect(${idx})" style="justify-content:space-between;margin:0;"><span>${escapeHtml(action.name || 'Item Action')}</span><span>${level ? escapeHtml(`${level}${['th','st','nd','rd'][level] || 'th'} level`) : ''}${cost ? escapeHtml(` · ${cost} charges`) : ''}</span></button>`;
+  }).join('')}</div>`;
+}
+function renderImportedItemCharges(item) {
+  const max = Number(item.charges_max || item?.charges?.max || 0) || 0;
+  if (!max) return '';
+  const current = Math.max(0, Number(item.charges_current ?? item?.charges?.current ?? max) || 0);
+  return `<div style="padding:0.55rem 0.65rem;border:1px solid rgba(0,229,204,0.18);border-radius:9px;background:rgba(0,229,204,0.05);font-size:0.68rem;color:var(--parchment);"><strong style="color:var(--gold);">Charges:</strong> ${current}/${max}${item.recharge_formula ? ` · ${escapeHtml(item.recharge_formula)}` : ''}</div>`;
+}
+function useInventoryItemActionFromInspect(actionIndex) {
+  if (!_lootRevealState || _lootRevealState.mode !== 'inventory') return;
+  const itemIndex = Number(_lootRevealState.inventory_index);
+  if (!Number.isFinite(itemIndex) || itemIndex < 0) return;
+  const item = Array.isArray(playerInventory) ? playerInventory[itemIndex] : null;
+  const actions = Array.isArray(item?.actions) ? item.actions : Array.isArray(item?.granted_actions) ? item.granted_actions : [];
+  const action = actions[actionIndex];
+  let chargeCost = action && (action.chargeCost || action.charge_cost || action.cost);
+  if (String(chargeCost || '').match(/\d+\s*[-–]\s*\d+/)) {
+    const picked = prompt(`Charges to spend for ${action.name || 'this action'} (${chargeCost})`, String(chargeCost).match(/\d+/)?.[0] || '1');
+    if (picked === null) return;
+    chargeCost = Math.max(1, Number(picked) || 1);
+  }
+  sendWS({
+    type: 'inventory_use_item_action',
+    payload: {
+      item_index: itemIndex,
+      action_id: String(action?.id || action?.action_id || action?.name || `item-action-${actionIndex}`),
+      action_index: actionIndex,
+      usage_cost: Math.max(1, Number(chargeCost || action?.usage_cost || 1) || 1),
+      action_name: String(action?.name || ''),
+    },
+  });
+}
+
 function selectLootRevealItem(index) {
   if (!_lootRevealState) return;
   const items = Array.isArray(_lootRevealState.items) ? _lootRevealState.items : [];
@@ -22353,8 +22419,15 @@ function selectLootRevealItem(index) {
     item.category ? `<div><strong style="color:var(--gold);">Category:</strong> ${escapeHtml(item.category)}</div>` : '',
     item.item_type ? `<div><strong style="color:var(--gold);">Type:</strong> ${escapeHtml(item.item_type)}</div>` : '',
     item.source ? `<div><strong style="color:var(--gold);">Source:</strong> ${escapeHtml(item.source)}</div>` : '',
-    item.attunement_required ? `<div><strong style="color:var(--gold);">Attunement:</strong> Required</div>` : '',
+    item.attunement_requirement ? `<div><strong style="color:var(--gold);">Attunement:</strong> ${escapeHtml(item.attunement_requirement)}</div>` : item.attunement_required ? `<div><strong style="color:var(--gold);">Attunement:</strong> Required</div>` : '',
   ].filter(Boolean).join('');
+  const importedStatsMarkup = renderImportedItemDetailRows(item);
+  const importedChargesMarkup = renderImportedItemCharges(item);
+  const importedActionsMarkup = renderImportedItemActions(item);
+  const itemTags = Array.isArray(item.tags) ? item.tags.join(', ') : String(item.tags || '').trim();
+  const itemImage = item.image_url || item.image || item.thumbnail || item.image_path || '';
+  const rawImportedText = String(item.rawText || item.raw_text || '').trim();
+  const descriptionText = String(item.description || item.effect || item.notes || '').trim();
   const inventoryIndex = _lootRevealState.mode === 'inventory'
     ? Number(_lootRevealState.inventory_index)
     : (Array.isArray(playerInventory) ? playerInventory.findIndex(inv => inv === findLootRevealSourceItem(playerInventory, item)) : -1);
@@ -22373,10 +22446,15 @@ function selectLootRevealItem(index) {
       </div>
       ${item.rarity ? `<span style="font-size:0.6rem;font-weight:700;padding:0.18rem 0.42rem;border-radius:999px;background:${(_RARITY_BADGE_COLORS[item.rarity] || '#8da1bf')}22;color:${_RARITY_BADGE_COLORS[item.rarity] || '#8da1bf'};text-transform:uppercase;">${escapeHtml(item.rarity)}</span>` : ''}
     </div>
-    <div style="font-size:0.71rem;color:var(--parchment);line-height:1.55;padding:0.72rem 0.8rem;border-radius:10px;border:1px solid rgba(115,135,165,0.16);background:rgba(255,255,255,0.03);">
-      ${hiddenMagic ? escapeHtml(item.unidentified_description || item.notes || 'A mysterious magical item hums with unreal promise.') : escapeHtml(item.effect || item.notes || 'No additional details recorded yet.')}
+    ${itemImage && !hiddenMagic ? `<img src="${escapeHtml(itemImage)}" alt="${escapeHtml(heading)}" style="width:100%;max-height:180px;object-fit:contain;border-radius:10px;border:1px solid rgba(115,135,165,0.16);background:rgba(255,255,255,0.03);" />` : ''}
+    ${importedChargesMarkup}
+    ${importedActionsMarkup}
+    ${importedStatsMarkup || (detailLines ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.45rem;font-size:0.66rem;color:var(--parchment-dim);line-height:1.45;">${detailLines}</div>` : '')}
+    <div style="font-size:0.71rem;color:var(--parchment);line-height:1.55;padding:0.72rem 0.8rem;border-radius:10px;border:1px solid rgba(115,135,165,0.16);background:rgba(255,255,255,0.03);white-space:pre-wrap;">
+      ${hiddenMagic ? escapeHtml(item.unidentified_description || item.notes || 'A mysterious magical item hums with unreal promise.') : escapeHtml(descriptionText || 'No additional details recorded yet.')}
     </div>
-    ${detailLines ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.45rem;font-size:0.66rem;color:var(--parchment-dim);line-height:1.45;">${detailLines}</div>` : ''}
+    ${itemTags && !hiddenMagic ? `<div style="font-size:0.66rem;color:var(--parchment-dim);"><strong style="color:var(--gold);">Tags:</strong> ${escapeHtml(itemTags)}</div>` : ''}
+    ${(rawImportedText && !hiddenMagic && rawImportedText !== descriptionText) ? `<details style="font-size:0.66rem;color:var(--parchment-dim);"><summary style="cursor:pointer;color:var(--gold);">Raw imported text</summary><pre style="white-space:pre-wrap;max-height:220px;overflow:auto;padding:0.6rem;border-radius:8px;background:rgba(0,0,0,0.24);border:1px solid rgba(115,135,165,0.16);">${escapeHtml(rawImportedText)}</pre></details>` : ''}
     ${(hiddenMagic && inventoryIndex >= 0) ? `<button class="mini-btn" onclick="openIdentifyFromLootReveal()" style="justify-content:center;background:rgba(168,85,247,0.12);border-color:rgba(168,85,247,0.35);color:#d7b5ff;">🔮 Identify Item</button>` : ''}
     ${(isInventoryItem && isEquippableItem) ? `<div style="padding-top:0.1rem;border-top:1px solid rgba(115,135,165,0.12);display:flex;flex-direction:column;gap:0.45rem;">
       <div style="font-size:0.66rem;color:var(--parchment-dim);">Equipment</div>
