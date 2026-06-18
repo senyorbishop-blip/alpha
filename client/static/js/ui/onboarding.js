@@ -570,12 +570,12 @@
       '  background:rgba(0,0,0,0.82);',
       '  align-items:center; justify-content:center;',
       '  pointer-events:none;',
-      '  backdrop-filter:blur(3px);',
+      '  backdrop-filter:none !important;',
       '  animation:ob-fade-in 0.3s ease;',
       '}',
       '#ob-overlay.ob-open { display:flex; }',
-      '#ob-overlay.ob-targeted { align-items:flex-start; justify-content:flex-start; }',
-      '#ob-overlay.ob-targeted #ob-modal { position:fixed; width:min(440px, 92vw); }',
+      '#ob-overlay.ob-targeted { align-items:flex-start; justify-content:flex-start; background:transparent; backdrop-filter:none !important; }',
+      '#ob-overlay.ob-targeted #ob-modal { position:fixed; width:min(440px, 92vw); z-index:20002; }',
 
       /* Modal card */
       '#ob-modal {',
@@ -783,7 +783,7 @@
       '  outline-offset:3px !important;',
       '  border-radius:4px !important;',
       '  animation:ob-hl-pulse 1.4s ease-in-out 4 !important;',
-      '  position:relative; z-index:9994;',
+      '  position:relative; z-index:20002; filter:none !important; backdrop-filter:none !important;',
       '}',
       '@keyframes ob-hl-pulse {',
       '  0%,100%{outline-color:rgba(0,210,185,0.4);}',
@@ -1168,7 +1168,7 @@
     var accent = (step && step.accent) || ROLE_ACCENT[_role] || '#00e5cc';
     var ring = document.createElement('div');
     ring.id = 'ob-highlight-ring';
-    ring.style.cssText = 'position:fixed;pointer-events:none;z-index:20001;border:2px solid '+accent+';border-radius:10px;animation:ob-ring-pulse 1.6s ease-in-out infinite;box-shadow:0 0 0 9999px rgba(0,0,0,0.62);transition:all 0.18s;';
+    ring.style.cssText = 'position:fixed;pointer-events:none;z-index:20001;border:2px solid '+accent+';border-radius:10px;animation:ob-ring-pulse 1.6s ease-in-out infinite;box-shadow:0 0 0 9999px rgba(0,0,0,0.72),0 0 18px '+accent+';transition:all 0.18s;filter:none!important;backdrop-filter:none!important;';
     document.body.appendChild(ring);
     overlay.classList.add('ob-targeted');
     target.classList.add('ob-highlight');

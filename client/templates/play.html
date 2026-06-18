@@ -990,22 +990,29 @@
     #right-tab-bar {
       display: flex;
       align-items: stretch;
-      flex-wrap: wrap;
-      gap: 0;
+      flex-wrap: nowrap;
+      gap: 0.35rem;
+      overflow-x: auto;
+      overflow-y: visible;
+      overscroll-behavior-x: contain;
+      -webkit-overflow-scrolling: touch;
       border-bottom: 2px solid var(--border);
       flex-shrink: 0;
       background: var(--panel2);
       box-shadow: 0 1px 0 rgba(0,229,204,0.06);
       position: relative;
       z-index: 8;
+      padding: 0.22rem 0.35rem 0;
+      max-width: 100%;
+      scrollbar-width: thin;
     }
     /* Tab bar buttons — .rtab and .rtab-dropdown-btn share identical base styles */
     .rtab,
     .rtab-dropdown-btn {
-      flex: 1 1 auto;
-      min-width: 2.6rem;
-      max-width: 4.5rem;
-      padding: 0.38rem 0.08rem 0.28rem;
+      flex: 0 0 auto;
+      min-width: max-content;
+      max-width: 8.25rem;
+      padding: 0.36rem 0.54rem 0.3rem;
       background: transparent;
       border: none;
       border-bottom: 3px solid transparent;
@@ -1022,8 +1029,12 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.1rem;
+      gap: 0.12rem;
       position: relative;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-sizing: border-box;
     }
     .rtab:hover,
     .rtab-dropdown-btn:hover {
@@ -1087,24 +1098,26 @@
     .rtab .rtab-badge.show { display: block; }
     /* Dropdown wrapper (relative container) */
     .rtab-dropdown-wrap {
-      flex: 1 1 auto;
-      min-width: 2.6rem;
-      max-width: 4.5rem;
+      flex: 0 0 auto;
+      min-width: max-content;
+      max-width: 8.25rem;
       display: flex;
       position: relative;
+      overflow: visible;
     }
-    .rtab-dropdown-wrap .rtab-dropdown-btn { flex: 1 1 0; min-width: 0; max-width: none; }
+    .rtab-dropdown-wrap .rtab-dropdown-btn { flex: 0 0 auto; min-width: max-content; max-width: 8.25rem; }
     /* Dropdown popup menu */
     .rtab-dropdown-menu {
       display: none;
-      position: absolute;
-      top: 100%;
-      right: 0;
-      min-width: 140px;
+      position: fixed;
+      top: auto;
+      left: auto;
+      right: auto;
+      min-width: 150px;
       background: var(--panel2);
       border: 1px solid var(--border);
       box-shadow: 0 4px 16px rgba(0,0,0,0.45);
-      z-index: 999;
+      z-index: 80;
       border-radius: 0 0 var(--r-sm) var(--r-sm);
       overflow: hidden;
     }
@@ -6752,7 +6765,7 @@
       #right-tab-bar {
         flex-wrap: nowrap;
         overflow-x: auto;
-        overflow-y: hidden;
+        overflow-y: visible;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: thin;
       }
@@ -18808,50 +18821,19 @@ function drawToken(t) {
     ctx.fillText('💀', sx + t.width/2, sy + t.height/2);
     ctx.restore();
   }
-  // On-map HP bars:
-  //   DM      → sees HP bars for all tokens on the current map, respects hidden_hp flag
-  //   player  → sees HP only for player-owned tokens; NPC/monster HP stays hidden
-  //   viewer  → never
+  // On-map HP is shown only via the compact HP pill; the legacy green HP bar
+  // and duplicate numeric overlay were intentionally removed from the token art.
   const isOwnToken = t.owner_id === USER_ID;
   const isPlayerOwnedToken = !!t.owner_id || t.token_type === 'player';
-  const showHpBar = t.hp !== undefined && t.maxHp && !isDead && !t.hidden_hp && (
+  const showHpPill = t.hp !== undefined && t.maxHp && !isDead && !t.hidden_hp && (
     ROLE === 'dm' || (ROLE === 'player' && isPlayerOwnedToken)
   );
-  if (showHpBar) {
-    const barW = t.width;
-    const barH = Math.max(4 / cam.zoom, isOwnToken ? 7 / cam.zoom : 5 / cam.zoom);
-    const barX = sx;
-    const barY = sy - barH - 4 / cam.zoom;
-    const pct  = Math.max(0, Math.min(1, t.hp / t.maxHp));
-    const hpCol = pct > 0.5 ? '#2ecc71' : pct > 0.25 ? '#e67e22' : '#e74c3c';
-    const showNumbers = ROLE === 'dm' || isOwnToken;
-
-    ctx.fillStyle = 'rgba(8,10,14,0.82)';
-    ctx.fillRect(barX, barY, barW, barH);
-    ctx.fillStyle = hpCol;
-    ctx.fillRect(barX, barY, Math.max(0, barW * pct), barH);
-    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-    ctx.lineWidth   = Math.max(0.75 / cam.zoom, 1 / cam.zoom);
-    ctx.strokeRect(barX, barY, barW, barH);
-
-    if (showNumbers) {
-      const fontPx = Math.max(8, Math.min(11, Math.round((barH * cam.zoom) + 2)));
-      const tempHp = Math.max(0, parseInt(t.tempHp ?? 0, 10) || 0);
-      const shownCur = Math.max(0, parseInt(t.hp ?? 0, 10) || 0) + tempHp;
-      const shownMax = Math.max(0, parseInt(t.maxHp ?? 0, 10) || 0) + tempHp;
-      ctx.fillStyle = '#fff';
-      ctx.font = `bold ${fontPx}px monospace`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(`${shownCur}/${shownMax}`, barX + barW/2, barY + barH/2 + 0.25 / cam.zoom);
-    }
-  }
 
   const canSeeVitals = ROLE === 'dm' || isOwnToken;
   const tokenBadgeLayout = layoutTokenBadges(t, {
     turnLabel: _isActiveTurn ? 'NOW' : (_isNextTurn ? 'NEXT' : ''),
     canSeeVitals,
-    showHpText: showHpBar,
+    showHpText: showHpPill,
   });
 
   const activeEmote = (window.AppUITokenEmotes && typeof window.AppUITokenEmotes.getRenderState === 'function')
