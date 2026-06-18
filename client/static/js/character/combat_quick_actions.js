@@ -49,6 +49,12 @@
   }
 
   function _findWeapon(actionOrId) {
+    // Prefer the shared play.html lookup so weapon resolution (id/itemId/actionId/
+    // name/slug, plus the live unified attack cards) stays in one place.
+    if (typeof global.findCombatWeapon === 'function') {
+      const shared = global.findCombatWeapon(actionOrId);
+      if (shared) return shared;
+    }
     if (actionOrId && typeof actionOrId === 'object' && (actionOrId.damage_formula || actionOrId.attack_bonus || actionOrId.source === 'equip_only')) return actionOrId;
     const raw = typeof actionOrId === 'object' ? _firstText(actionOrId.id, actionOrId.name) : String(actionOrId || '').trim();
     const lower = raw.toLowerCase();
@@ -399,6 +405,10 @@
     if (!card) return false;
     _installStyles();
     closeModal();
+    // "Used this turn" only means the action may be spent — it must never block
+    // opening the modal. The attack button is disabled with a visible reason,
+    // but damage/critical rolls and details remain available.
+    const usedThisTurn = !!((actionOrId && typeof actionOrId === 'object' && actionOrId.quickBarUsedThisTurn) || card.quickBarUsedThisTurn);
     const hasVersatile = !!card.versatile_damage_formula;
     const properties = _safeArray(card.properties).join(', ');
     const rows = [
@@ -419,15 +429,20 @@
       + (hasVersatile ? '<label class="cqa-kicker" for="combat-quick-weapon-mode">Damage Mode</label><select id="combat-quick-weapon-mode" class="cqa-select"><option value="base">One-handed / normal</option><option value="versatile">Two-handed versatile</option></select>' : '')
       + '<div class="cqa-meta">' + rows.map(function (row) { return '<div class="cqa-meta-card"><strong>' + _esc(row[0]) + '</strong><span>' + _esc(row[1]) + '</span></div>'; }).join('') + '</div>'
       + '<div class="cqa-desc">' + _esc(_firstText(card.notes, card.mastery_text, 'Equipped weapon quick action.')) + '</div>'
-      + '<div class="cqa-controls"><button class="cqa-btn" type="button" data-cqa-weapon-attack>Roll Attack</button><button class="cqa-btn damage" type="button" data-cqa-weapon-damage>Roll Damage</button><button class="cqa-btn damage" type="button" data-cqa-weapon-crit>Roll Critical Damage</button></div></div>';
+      + (usedThisTurn ? '<div class="cqa-sub" style="color:#ffe8a3;">Used this turn — attack roll is disabled, but you can still review details or roll damage.</div>' : '')
+      + '<div class="cqa-controls"><button class="cqa-btn" type="button" data-cqa-weapon-attack ' + (usedThisTurn ? 'disabled title="Used this turn"' : '') + '>Roll Attack</button><button class="cqa-btn damage" type="button" data-cqa-weapon-damage>Roll Damage</button><button class="cqa-btn damage" type="button" data-cqa-weapon-crit>Roll Critical Damage</button></div></div>';
     overlay.addEventListener('click', function (ev) {
       if (ev.target === overlay || ev.target.closest('[data-cqa-close]')) { ev.preventDefault(); ev.stopPropagation(); closeModal(); return; }
       const modeSelect = document.getElementById('combat-quick-weapon-mode');
       const mode = modeSelect ? modeSelect.value : 'base';
-      const weaponKey = card.id || card.name;
-      if (ev.target.closest('[data-cqa-weapon-attack]')) { safeWeaponAttack(weaponKey, mode); closeModal(); return; }
-      if (ev.target.closest('[data-cqa-weapon-damage]')) { safeWeaponDamage(weaponKey, mode, false); return; }
-      if (ev.target.closest('[data-cqa-weapon-crit]')) { safeWeaponDamage(weaponKey, mode, true); return; }
+      if (ev.target.closest('[data-cqa-weapon-attack]')) {
+        if (usedThisTurn) return;
+        safeWeaponAttack(card, mode);
+        closeModal();
+        return;
+      }
+      if (ev.target.closest('[data-cqa-weapon-damage]')) { safeWeaponDamage(card, mode, false); return; }
+      if (ev.target.closest('[data-cqa-weapon-crit]')) { safeWeaponDamage(card, mode, true); return; }
     });
     document.body.appendChild(overlay);
     var panel = overlay.querySelector('.cqa-panel');
@@ -446,12 +461,14 @@
   }
 
   // Re-export with safety wrappers so callers always get a toast instead of a
-  // silent no-op when the play.html bridge has not yet loaded.
-  function safeWeaponAttack(cardIdOrName, mode) {
-    if (_requireBridge('combatQuickWeaponAttack')) global.combatQuickWeaponAttack(cardIdOrName, mode);
+  // silent no-op when the play.html bridge has not yet loaded. Accepts a full
+  // weapon/action object, an id, or a name — combatQuickWeaponAttack and
+  // combatQuickRollWeaponDamage resolve whichever was passed via findCombatWeapon.
+  function safeWeaponAttack(cardOrIdOrName, mode) {
+    if (_requireBridge('combatQuickWeaponAttack')) global.combatQuickWeaponAttack(cardOrIdOrName, mode);
   }
-  function safeWeaponDamage(cardIdOrName, mode, critical) {
-    if (_requireBridge('combatQuickRollWeaponDamage')) global.combatQuickRollWeaponDamage(cardIdOrName, mode, critical);
+  function safeWeaponDamage(cardOrIdOrName, mode, critical) {
+    if (_requireBridge('combatQuickRollWeaponDamage')) global.combatQuickRollWeaponDamage(cardOrIdOrName, mode, critical);
   }
   function safeCastSpell(spellOrIdOrName, castLevel) {
     if (_requireBridge('combatQuickCastSpell')) global.combatQuickCastSpell(spellOrIdOrName, castLevel);
@@ -473,4 +490,15 @@
   });
 
   global.CombatQuickActions = { openSpellAction, openWeaponAction, refreshSpellModalDamage, refreshSpellModalSlots, closeModal, __test: { spellDamagePreview: _spellDamagePreview } };
+
+  // Explicit bridge so the quick bar can always reach the weapon modal, even if
+  // play.html's own copy of this bridge has not (re)attached for any reason.
+  // Always passes the full action object through — never just an id/name key.
+  global.openCombatQuickBarWeaponAction = function (action) {
+    if (global.CombatQuickActions && typeof global.CombatQuickActions.openWeaponAction === 'function') {
+      return global.CombatQuickActions.openWeaponAction(action);
+    }
+    if (typeof global.showToast === 'function') global.showToast('Weapon action modal is not loaded.');
+    return false;
+  };
 }(window));

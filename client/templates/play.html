@@ -47454,6 +47454,80 @@ function _combatQuickSlug(value) {
   return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
+// Normalises a weapon-ish object to the canonical snake_case fields the dice/
+// chat pipeline expects, regardless of whether it came from the unified attack
+// cards (already snake_case) or the Quick Actions tab projection (camelCase).
+function _combatQuickNormalizeWeapon(input) {
+  const obj = (input && typeof input === 'object') ? input : {};
+  const attackBonusText = _firstText(obj.attack_bonus, obj.attackBonus, '');
+  const parsedBonus = parseInt(String(attackBonusText).replace(/[^-\d]/g, ''), 10);
+  const attackBonusValue = Number.isFinite(Number(obj.attack_bonus_value))
+    ? Number(obj.attack_bonus_value)
+    : (Number.isFinite(parsedBonus) ? parsedBonus : 0);
+  const id = _firstText(obj.id, obj.itemId, obj.actionId, obj.combatCardId, '') || _combatQuickSlug(obj.name) || 'weapon';
+  return Object.assign({}, obj, {
+    id,
+    name: _firstText(obj.name, obj.displayName, id),
+    source: _firstText(obj.source, 'weapon'),
+    attack_bonus: attackBonusText,
+    attack_bonus_value: attackBonusValue,
+    damage_formula: _firstText(obj.damage_formula, obj.base_damage_formula, obj.damage, obj.damageText, ''),
+    damage_type: _firstText(obj.damage_type, obj.damageType, ''),
+    versatile_damage_formula: _firstText(obj.versatile_damage_formula, obj.versatileDamage, obj.versatile_damage, ''),
+    range: _firstText(obj.range, obj.reach, ''),
+  });
+}
+
+function _combatQuickWeaponMatchKeys(card) {
+  return [card && card.id, card && card.itemId, card && card.actionId, card && card.combatCardId, card && card.name, card && card.displayName]
+    .filter(Boolean)
+    .map(String);
+}
+
+// Shared weapon lookup used by the Quick Actions weapon modal and the
+// combatQuickWeaponAttack/combatQuickRollWeaponDamage dice bridges. Accepts a
+// full action/weapon object (preferred — never just an id/name key), a raw id,
+// or a name, and resolves/enriches it against the live unified attack cards and
+// the current quick action model so equipped/imported items are matched even
+// when their displayed id differs slightly from the underlying item id.
+function findCombatWeapon(input) {
+  const isObject = !!(input && typeof input === 'object');
+  const normalizedInput = isObject ? _combatQuickNormalizeWeapon(input) : null;
+  const raw = isObject ? '' : String(input || '').trim();
+  const rawLower = raw.toLowerCase();
+  const rawSlug = _combatQuickSlug(raw);
+
+  const pools = [];
+  try { pools.push(...(typeof _getUnifiedQuickAttackCards === 'function' ? (_getUnifiedQuickAttackCards() || []) : [])); } catch (_) {}
+  try {
+    const runtime = typeof getCombatQuickBarRuntime === 'function' ? (getCombatQuickBarRuntime() || {}) : {};
+    const model = window.CombatQuickSelectors && typeof window.CombatQuickSelectors.selectQuickActions === 'function'
+      ? window.CombatQuickSelectors.selectQuickActions(runtime.charSheet || {})
+      : null;
+    if (model) pools.push(...(model.primaryActions || []), ...(model.bonusActions || []), ...(model.reactions || []));
+  } catch (_) {}
+
+  function matches(card) {
+    const keys = _combatQuickWeaponMatchKeys(card);
+    const slugs = keys.map(_combatQuickSlug);
+    if (normalizedInput) {
+      const wantedKeys = _combatQuickWeaponMatchKeys(normalizedInput);
+      const wantedSlugs = wantedKeys.map(_combatQuickSlug);
+      return wantedKeys.some(k => keys.includes(k)) || wantedSlugs.some(s => s && slugs.includes(s));
+    }
+    return keys.includes(raw) || keys.map(k => k.toLowerCase()).includes(rawLower) || (!!rawSlug && slugs.includes(rawSlug));
+  }
+
+  const found = (pools || []).find(card => card && typeof card === 'object' && matches(card));
+  if (normalizedInput) {
+    // Prefer fields from the matched live card (authoritative dice math) but
+    // keep anything from the input that the matched card doesn't have.
+    return found ? Object.assign({}, normalizedInput, _combatQuickNormalizeWeapon(found)) : normalizedInput;
+  }
+  return found ? _combatQuickNormalizeWeapon(found) : null;
+}
+window.findCombatWeapon = findCombatWeapon;
+
 function _combatQuickSpellLibraryCardFromName(nameOrId) {
   const key = _combatQuickSlug(nameOrId);
   if (!key) return null;
@@ -47886,17 +47960,13 @@ function combatQuickShowSpellSave(spellId, slotLevel) {
   return { saveDC, saveAbility };
 }
 
-function combatQuickRollWeaponDamage(attackId, mode = 'base', critical = false) {
-  const cards = _getUnifiedQuickAttackCards();
-  const rawId = String(attackId || '').trim();
-  const normalizedId = rawId.toLowerCase();
-  const card = (cards || []).find(c => String(c.id || '') === rawId)
-    || (cards || []).find(c => String(c.name || '').trim().toLowerCase() === normalizedId)
-    || (cards || []).find(c => {
-      const slug = String(c.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-      return slug && (slug === normalizedId || ('attack-' + slug) === normalizedId);
-    });
-  if (!card) { showToast('Weapon roll handler missing. Attack not found: ' + (rawId || 'unknown')); return null; }
+function combatQuickRollWeaponDamage(actionOrId, mode = 'base', critical = false) {
+  const card = findCombatWeapon(actionOrId);
+  if (!card) {
+    const label = (actionOrId && typeof actionOrId === 'object') ? (actionOrId.name || actionOrId.id || 'unknown') : String(actionOrId || 'unknown');
+    showToast('Weapon roll handler missing. Attack not found: ' + label);
+    return null;
+  }
   const damageMeta = _getInventoryAttackModeMeta(card, mode);
   if (!damageMeta.formula) { showToast(`${card.name || 'Weapon'} has no damage formula. Equip it from inventory or add damage dice in the item library.`); return null; }
   const normFormula = typeof _normalizeAttackFormula === 'function' ? _normalizeAttackFormula(damageMeta.formula) : damageMeta.formula;
@@ -48297,17 +48367,13 @@ async function _executeCombatSpellCast(spell, slotLevel) {
   return { spell: spell.name, slotLevel: effectiveSlot, castLevel: resolvedCast.castLevel, outcome, total: spellRoll?.total ?? null, applied, rollPayload: resolvedCast.rollPayload };
 }
 
-function combatQuickWeaponAttack(attackId, mode = 'base') {
-  const cards = _getUnifiedQuickAttackCards();
-  const rawId = String(attackId || '').trim();
-  const normalizedId = rawId.toLowerCase();
-  const card = (cards || []).find(c => String(c.id || '') === rawId)
-    || (cards || []).find(c => String(c.name || '').trim().toLowerCase() === normalizedId)
-    || (cards || []).find(c => {
-      const slug = String(c.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-      return slug && (slug === normalizedId || ('attack-' + slug) === normalizedId);
-    });
-  if (!card) { showToast('Weapon roll handler missing. Attack not found: ' + (rawId || 'unknown')); return; }
+function combatQuickWeaponAttack(actionOrId, mode = 'base') {
+  const card = findCombatWeapon(actionOrId);
+  if (!card) {
+    const label = (actionOrId && typeof actionOrId === 'object') ? (actionOrId.name || actionOrId.id || 'unknown') : String(actionOrId || 'unknown');
+    showToast('Weapon roll handler missing. Attack not found: ' + label);
+    return;
+  }
   const spend = _consumeInventoryAttackResources(card, mode);
   if (!spend.ok) {
     showToast((spend.notes || [])[0] || 'Attack cannot be used right now.');
@@ -48373,7 +48439,7 @@ function combatQuickWeaponAttack(attackId, mode = 'base') {
   }
 
   // Only consume action economy after the roll and result display succeeded.
-  _consumeActionEconomy('attack_within_action', { action_id: attackId });
+  _consumeActionEconomy('attack_within_action', { action_id: card.id || card.name });
 
   // ── Compact chat log (secondary feedback) ────────────────────────────
   const rollDetail = hasDisadvantage ? ` (dis: ${rollA}/${rollB}→${d20})` : '';
