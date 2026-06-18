@@ -195,11 +195,34 @@
   }
 
   function builtinForSpell(card) {
-    card = obj(card);
-    var id = _slug(first(card.spellId, card.id, card.name, card.displayName));
-    var idStripped = id.replace(/^(?:spell|ability|action)-/, '');
-    var idByName = _slug(first(card.name, card.displayName));
-    return BUILTIN[id] || BUILTIN[idStripped] || BUILTIN[idByName] || {};
+    var resolved = canonicalBuiltinForSpell(card);
+    return resolved.builtin || {};
+  }
+
+  function _stripSpellLookupKey(value) {
+    var text = String(value || '').trim();
+    if (!text) return '';
+    text = text
+      .replace(/::cast-\d+(?:::\d+)?$/i, '')
+      .replace(/:\d+$/i, '')
+      .replace(/^(?:spell|ability|action)[-_:]+/i, '');
+    return _slug(text).replace(/^(?:spell|ability|action)-/, '');
+  }
+
+  function canonicalBuiltinForSpell(cardOrKnownSpell) {
+    var card = obj(cardOrKnownSpell);
+    var nested = obj(card.card);
+    var candidates = [
+      card.spellId, card.spell_id,
+      card.id, nested.id,
+      card.name, card.displayName,
+      nested.name, nested.displayName,
+    ];
+    for (var i = 0; i < candidates.length; i += 1) {
+      var key = _stripSpellLookupKey(candidates[i]);
+      if (key && BUILTIN[key]) return { key: key, builtin: BUILTIN[key] };
+    }
+    return { key: '', builtin: null };
   }
 
   function builtinBaseLevel(card) {
@@ -291,6 +314,15 @@
   function inferScaling(merged, baseLevel, baseFormula, healing) {
     var st = first(merged.scaling_type, merged.scalingType, '');
     var sd = obj(merged.scaling_data || merged.scalingData);
+    var builtin = obj(merged.__canonicalBuiltin);
+    var bst = first(builtin.scaling_type, builtin.scalingType, '');
+    var bsd = obj(builtin.scaling_data || builtin.scalingData);
+    var genericSlotTypes = { damage: true, slot_damage: true, slot_level: true, slot: true, healing: true, slot_healing: true };
+    var hasImportedPerSlot = !!first(sd.per_slot_formula, sd.perSlotFormula, sd.per_slot, sd.perSlot, '');
+    var hasBuiltinPerSlot = !!first(bsd.per_slot_formula, bsd.perSlotFormula, bsd.per_slot, bsd.perSlot, bsd.ray_formula, bsd.dart_formula, bsd.base_targets, '');
+    if (bst && bst !== 'none' && hasBuiltinPerSlot && (!st || st === 'none' || (genericSlotTypes[String(st)] && !hasImportedPerSlot))) {
+      return { type: bst, data: bsd };
+    }
     if (st && st !== 'none') return { type: st, data: sd };
 
     /* cast_options: imported / PDF spell rows carry per-level formulae */
@@ -331,28 +363,32 @@
 
 
 
-  function _canonicalScalingType(type) {
+  function canonicalRuntimeScalingType(type) {
     var t = String(type || '').trim();
     var map = {
-      slot_damage: 'damage', slot_level: 'damage', damage: 'damage', cantrip_level: 'damage',
-      slot_healing: 'healing', healing: 'healing',
-      extra_ray_per_slot: 'extra_ray', extra_dart_per_slot: 'extra_ray', extra_ray: 'extra_ray',
-      extra_target_per_slot: 'extra_target', extra_target: 'extra_target', target: 'extra_target',
-      duration: 'duration', area: 'area', text_only: 'special', special: 'special',
-      counter: 'counter', negation: 'counter', summon: 'summon', none: 'none', cast_options: 'special'
+      slot_damage: 'slot_damage', slot_level: 'slot_damage', damage: 'slot_damage', slot: 'slot_damage',
+      slot_healing: 'slot_healing', healing: 'slot_healing',
+      cantrip_level: 'cantrip_level',
+      extra_ray_per_slot: 'extra_ray_per_slot', extra_ray: 'extra_ray_per_slot',
+      extra_dart_per_slot: 'extra_dart_per_slot', extra_dart: 'extra_dart_per_slot',
+      extra_target_per_slot: 'extra_target_per_slot', extra_target: 'extra_target_per_slot', target: 'extra_target_per_slot',
+      duration: 'duration', area: 'area', text_only: 'text_only', special: 'special',
+      counter: 'counter', negation: 'counter', summon: 'summon', none: 'none', cast_options: 'cast_options'
     };
     return map[t] || (t ? 'special' : 'none');
   }
 
+  var _canonicalScalingType = canonicalRuntimeScalingType;
+
   function _scalingFormulaText(type, data) {
     data = obj(data);
     var canonical = _canonicalScalingType(type);
-    if (canonical === 'damage' || canonical === 'healing') {
+    if (canonical === 'slot_damage' || canonical === 'slot_healing') {
       var per = first(data.per_slot_formula, data.perSlotFormula, data.per_slot, data.perSlot, '');
       return per ? ('+' + per + ' per slot above base') : '';
     }
-    if (canonical === 'extra_ray') return '+' + String(num(first(data.per_slot, data.perSlot), 1)) + ' ray/attack per slot above base';
-    if (canonical === 'extra_target') return '+' + String(num(first(data.per_slot, data.perSlot), 1)) + ' target per slot above base';
+    if (canonical === 'extra_ray_per_slot' || canonical === 'extra_dart_per_slot') return '+' + String(num(first(data.per_slot, data.perSlot), 1)) + ' ray/attack per slot above base';
+    if (canonical === 'extra_target_per_slot') return '+' + String(num(first(data.per_slot, data.perSlot), 1)) + ' target per slot above base';
     if (canonical === 'counter') return 'Automatic counter/negation threshold equals cast slot level';
     return '';
   }
@@ -417,10 +453,12 @@
     var id = _slug(first(card.spellId, card.id, card.name, card.displayName));
     var idStripped = id.replace(/^(?:spell|ability|action)-/, '');
     var idByName  = _slug(first(card.name, card.displayName));
-    var builtin   = BUILTIN[id] || BUILTIN[idStripped] || BUILTIN[idByName] || {};
+    var canonical = canonicalBuiltinForSpell(card);
+    var builtin   = canonical.builtin || BUILTIN[id] || BUILTIN[idStripped] || BUILTIN[idByName] || {};
 
     /* Merge: card wins for non-null values; BUILTIN fills null gaps */
     var merged = _smartMerge(builtin, card);
+    if (canonical.builtin) merged.__canonicalBuiltin = canonical.builtin;
 
     /* Restore BUILTIN scaling when card omits it, or when imported data explicitly
        claims 'none' (a common stale/incomplete import sentinel) while a known
@@ -463,6 +501,7 @@
     );
 
     var scaling = inferScaling(merged, baseLevel, baseFormula, healing);
+    var canonicalScaling = canonicalRuntimeScalingType(scaling.type);
     var delta   = Math.max(0, (castLevel || 0) - (num(scaling.data.base_slot, baseLevel || 0) || 0));
 
     var finalDamageFormula = '', finalHealingFormula = '', displayFormula = '';
@@ -470,37 +509,37 @@
     /* importedSlotRow always wins for the formula */
     if (importedFormula) {
       displayFormula = importedFormula;
-    } else if (scaling.type === 'cast_options') {
+    } else if (canonicalScaling === 'cast_options') {
       var opts = scaling.data;
       var clKey = String(castLevel);
       var opt = opts[clKey] || opts[String(baseLevel)];
       displayFormula = opt ? String(opt.formula || opt.damage || opt.damage_formula || '').trim() : baseFormula;
-    } else if (scaling.type === 'cantrip_level') {
+    } else if (canonicalScaling === 'cantrip_level') {
       displayFormula = cantripFormula(scaling.data, baseFormula, num(options.characterLevel !== undefined ? options.characterLevel : options.charLevel, 1));
-    } else if (scaling.type === 'slot_damage' || scaling.type === 'slot_healing') {
-      displayFormula = combine(first(scaling.data.base_formula, baseFormula), first(scaling.data.per_slot_formula, ''), delta);
-    } else if (scaling.type === 'extra_dart_per_slot') {
+    } else if (canonicalScaling === 'slot_damage' || canonicalScaling === 'slot_healing') {
+      displayFormula = combine(first(scaling.data.base_formula, scaling.data.baseFormula, baseFormula), first(scaling.data.per_slot_formula, scaling.data.perSlotFormula, scaling.data.per_slot, scaling.data.perSlot, ''), delta);
+    } else if (canonicalScaling === 'extra_dart_per_slot') {
       var darts = num(scaling.data.base_darts, 3) + delta * num(scaling.data.per_slot, 1);
       displayFormula = darts + ' darts × (' + first(scaling.data.dart_formula, '1d4+1') + ')';
       debugParts.push('darts=' + darts);
-    } else if (scaling.type === 'extra_ray_per_slot') {
+    } else if (canonicalScaling === 'extra_ray_per_slot') {
       var rays = num(scaling.data.base_rays, 3) + delta * num(scaling.data.per_slot, 1);
       displayFormula = rays + ' rays × ' + first(scaling.data.ray_formula, '2d6');
       debugParts.push('rays=' + rays);
-    } else if (scaling.type === 'extra_target_per_slot') {
+    } else if (canonicalScaling === 'extra_target_per_slot') {
       displayFormula = baseFormula;
       var targets = num(scaling.data.base_targets, 1) + delta * num(scaling.data.per_slot, 1);
       if (targets > 1) warnings.push('Targets at this level: ' + targets);
-    } else if (scaling.type === 'counter') {
+    } else if (canonicalScaling === 'counter') {
       displayFormula = 'Automatically affects spells of level ' + castLevel + ' or lower';
-    } else if (scaling.type === 'duration' || scaling.type === 'area' || scaling.type === 'summon' || scaling.type === 'special' || scaling.type === 'text_only') {
+    } else if (canonicalScaling === 'duration' || canonicalScaling === 'area' || canonicalScaling === 'summon' || canonicalScaling === 'special' || canonicalScaling === 'text_only') {
       displayFormula = first(merged.higher_level_text, merged.scalingNote, merged.higherLevel, merged.description, baseFormula, 'Higher-level effect; see spell text');
     } else {
       displayFormula = baseFormula;
     }
 
     displayFormula = replaceMod(displayFormula, options, warnings);
-    var isNonFormulaEffect = (scaling.type === 'counter' || scaling.type === 'duration' || scaling.type === 'area' || scaling.type === 'summon' || scaling.type === 'special' || scaling.type === 'text_only') && !/\d+d\d+/i.test(displayFormula);
+    var isNonFormulaEffect = (canonicalScaling === 'counter' || canonicalScaling === 'duration' || canonicalScaling === 'area' || canonicalScaling === 'summon' || canonicalScaling === 'special' || canonicalScaling === 'text_only') && !/\d+d\d+/i.test(displayFormula);
     if (healing) finalHealingFormula = displayFormula; else finalDamageFormula = isNonFormulaEffect ? '' : displayFormula;
 
     if (displayFormula && /\d+d\d+/i.test(displayFormula) && !isRollable(displayFormula)) {
@@ -535,7 +574,7 @@
       damageType:  healing ? '' : first(merged.damageType, merged.damage_type, ''),
       healingType: healing ? first(merged.healingType, merged.healing_type, 'healing') : '',
       baseFormula:        baseFormula,
-      scalingType:        scaling.type,
+      scalingType:        canonicalScaling,
       scalingData:        scaling.data,
       finalDamageFormula: finalDamageFormula,
       finalHealingFormula: finalHealingFormula,
@@ -557,9 +596,7 @@
     opts = opts || {};
     var card = obj(spellCard);
     var id    = _slug(first(card.spellId, card.id, card.name, card.displayName));
-    var idS   = id.replace(/^(?:spell|ability|action)-/, '');
-    var idN   = _slug(first(card.name, card.displayName));
-    var builtin = BUILTIN[id] || BUILTIN[idS] || BUILTIN[idN] || {};
+    var builtin = builtinForSpell(card);
     var merged  = _smartMerge(builtin, card);
     var baseLevel = levelOf(card, merged, builtin);
     if (baseLevel === null || baseLevel === 0) return [];
@@ -632,9 +669,10 @@
     var rows = [], grouped = {}, diagnostics = { damageScaling: [], healingScaling: [], targetScaling: [], specialScaling: [], noHigherLevelEffect: [], missingScalingData: [], generatedRowsPerSpell: {}, knownWithoutRows: [], rowsDisabledDueToNoResource: [] };
     known.forEach(function (knownSpell, idx) {
       var key = _slug(first(knownSpell.spellId, knownSpell.id, knownSpell.name));
-      var libraryCard = lib[key] || lib[key.replace(/^(?:spell|ability|action)-/, '')] || BUILTIN[key] || BUILTIN[_slug(knownSpell.name)] || {};
+      var canonical = canonicalBuiltinForSpell(knownSpell);
+      var libraryCard = lib[key] || lib[key.replace(/^(?:spell|ability|action)-/, '')] || canonical.builtin || BUILTIN[key] || BUILTIN[_slug(knownSpell.name)] || {};
       var card = _smartMerge(libraryCard, knownSpell);
-      var builtinForKey = BUILTIN[key] || BUILTIN[_slug(knownSpell.name)] || {};
+      var builtinForKey = canonical.builtin || BUILTIN[key] || BUILTIN[_slug(knownSpell.name)] || {};
       var hasSafeCanonical = !!(builtinForKey && first(builtinForKey.scaling_type, builtinForKey.scalingType, ''));
       var scalingDataMissing = !hasSafeCanonical && _hasHigherLevelText(card) && !_hasExplicitScalingMetadata(card);
       var baseLevel = num(first(builtinForKey.level, builtinForKey.spell_level, builtinForKey.spellLevel, knownSpell.baseLevel, card.baseLevel, card.level, card.spell_level), null);
@@ -650,9 +688,9 @@
         var higherLevelMetadata = buildHigherLevelMetadata(card, { type: resolved.scalingType, data: resolved.scalingData }, baseLevel, builtinForKey, scalingDataMissing);
         var noExtra = castLevel > baseLevel && (!resolved.scalingType || resolved.scalingType === 'none' || formula === first(resolved.baseFormula, ''));
         if (scalingDataMissing) diagnostics.missingScalingData.push(knownSpell.name);
-        if (higherLevelMetadata.scalingType === 'damage') diagnostics.damageScaling.push(knownSpell.name);
-        else if (higherLevelMetadata.scalingType === 'healing') diagnostics.healingScaling.push(knownSpell.name);
-        else if (higherLevelMetadata.scalingType === 'extra_target') diagnostics.targetScaling.push(knownSpell.name);
+        if (higherLevelMetadata.scalingType === 'slot_damage' || higherLevelMetadata.scalingType === 'damage') diagnostics.damageScaling.push(knownSpell.name);
+        else if (higherLevelMetadata.scalingType === 'slot_healing' || higherLevelMetadata.scalingType === 'healing') diagnostics.healingScaling.push(knownSpell.name);
+        else if (higherLevelMetadata.scalingType === 'extra_target_per_slot' || higherLevelMetadata.scalingType === 'extra_target') diagnostics.targetScaling.push(knownSpell.name);
         else if (higherLevelMetadata.scalingType !== 'none') diagnostics.specialScaling.push(knownSpell.name);
         if (noExtra) diagnostics.noHigherLevelEffect.push(knownSpell.name + ' L' + castLevel);
         var castResourceType = knownSpell.usesCharges ? 'charges' : (knownSpell.limitedUse ? 'limited-use' : (baseLevel === 0 ? 'at-will' : 'spell-slot'));
@@ -743,6 +781,8 @@
     combineSpellFormula:      combine,
     getBuiltinSpellMeta:      builtinForSpell,
     getBuiltinSpellBaseLevel: builtinBaseLevel,
+    canonicalBuiltinForSpell: canonicalBuiltinForSpell,
+    canonicalRuntimeScalingType: canonicalRuntimeScalingType,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = global.AppSpellRuntime;
 
