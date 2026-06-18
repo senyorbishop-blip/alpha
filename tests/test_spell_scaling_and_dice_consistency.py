@@ -284,7 +284,7 @@ def test_app_dice_has_awaitable_roll_expression_and_resolve_api():
     assert 'const targetResults = _expandDiceVisualResults(result.rolls, diceType);' in PLAY
     # Resolves the promise only from the settle callback (or timeout fallback),
     # never synchronously before the animation completes.
-    assert 'onSettledResult: () => finish(),' in PLAY
+    assert 'onSettledResult: (settled) => finish(settled),' in PLAY
 
 
 def test_rolldiceexpr_fallback_preserved_for_headless_no_visual_mode():
@@ -365,3 +365,70 @@ def test_quick_actions_spell_not_found_guard_uses_shared_lookup_before_toast():
         body = PLAY[start:PLAY.index('\n}', start) + 2]
         assert 'const spell = findCombatSpell(spellId);' in body
         assert "showToast('Spell not found.')" in body
+
+
+def quick_actions_eval(script: str) -> object:
+    code = r'''
+const fs = require('fs');
+const vm = require('vm');
+global.window = global;
+global.document = { addEventListener() {}, getElementById(){return null}, createElement(){return { addEventListener(){}, appendChild(){}, querySelector(){return null}, style:{}, classList:{add(){},remove(){}} };}, body:{appendChild(){}} };
+global.AppSpellRuntime = require('./client/static/js/character/spell_runtime.js');
+global.resolveSpellRuntime = global.AppSpellRuntime.resolveSpellRuntime;
+vm.runInThisContext(fs.readFileSync('./client/static/js/character/combat_quick_actions.js', 'utf8'));
+''' + script
+    out = subprocess.check_output(["node", "-e", code], cwd=ROOT, text=True, timeout=30)
+    return json.loads(out)
+
+
+def test_spells_tab_spell_roll_expression_fireball_requested_levels():
+    data = spells_tab_eval(r'''
+const levels = [3,4,5,7,9];
+const out = {};
+for (const lvl of levels) {
+  out[lvl] = global.SpellsTab.__test.spellRollExpressionForLevel({name:'Fireball', baseLevel:3, spell_level:3, level:3, castLevel:lvl, slotLevel:lvl, isVirtualCastRow:true, damagePreview:'8d6'}, lvl, {level:19});
+}
+console.log(JSON.stringify(out));
+''')
+    assert data == {'3': '8d6', '4': '9d6', '5': '10d6', '7': '12d6', '9': '14d6'}
+
+
+def test_spells_tab_virtual_row_with_stale_preview_fireball_level_7_returns_12d6():
+    data = spells_tab_eval(r'''
+const spell = { name:'Fireball', baseLevel:3, spell_level:3, level:3, castLevel:7, slotLevel:7, displaySectionLevel:7, isVirtualCastRow:true, damagePreview:'8d6' };
+console.log(JSON.stringify({expr: global.SpellsTab.__test.spellRollExpressionForLevel(spell, 7, {level:19})}));
+''')
+    assert data['expr'] == '12d6'
+
+
+def test_quick_actions_preview_fireball_level_7_prefers_runtime_over_stale_resolve_spell_cast():
+    data = quick_actions_eval(r'''
+global.resolveSpellCast = () => ({ formulaUsed: '8d6' });
+const spell = {id:'weird-fireball-id', name:'Fireball', card:{id:'legacy-id', name:'Fireball', level:3, spell_level:3, damage_dice:'8d6'}};
+const expr = global.CombatQuickActions.__test.spellDamagePreview(spell, 7);
+console.log(JSON.stringify({expr}));
+''')
+    assert data['expr'] == '12d6'
+
+
+def test_spell_damage_dice_pipeline_card_uses_resolved_d10_result_and_no_fallbacks():
+    data = spells_tab_eval(r'''
+let center = null;
+let fallbackRolls = 0;
+let showLocalCalls = 0;
+global._showCombatResultCard = (payload) => { center = payload; };
+global._rollDiceExpr = () => { fallbackRolls += 1; return {rolls:[6], total:6}; };
+global.AppDice = {
+  rollExpressionAndResolve: async (expr) => ({ expression: expr, rolls: [5], total: 5, diceType: 10, qty: 1 }),
+  showLocalResult: () => { showLocalCalls += 1; }
+};
+(async () => {
+  const rolled = await global.SpellsTab.__test.rollSpellFromUi({name:'Fire Bolt', baseLevel:0, spell_level:0, level:0, damagePreview:'1d10'}, {charData:{level:1}}, {forcedExpr:'1d10', forcedCastLevel:0});
+  console.log(JSON.stringify({rolled, center, fallbackRolls, showLocalCalls}));
+})();
+''')
+    assert data['rolled']['total'] == 5
+    assert data['center']['damage'] == 5
+    assert data['center']['damageRolls'] == [5]
+    assert data['fallbackRolls'] == 0
+    assert data['showLocalCalls'] == 0

@@ -25045,18 +25045,24 @@ function _rollExpressionAndResolveDice(expr, meta = {}) {
     let resolved = false;
     const seed = _generateDiceSeed();
     const rollId = _generateDiceRollId(source);
-    const finish = () => {
+    const finish = (settled) => {
       if (resolved) return true;
       resolved = true;
-      // targetResults forced the physics dice to land on these exact values,
-      // so the rendered strip/popup and the resolved payload always agree.
-      fillDiceResult(result.rolls, result.total, diceType, qty, modifier, rollLabel, {
-        ...payload(),
+      const rawSettled = settled && (settled.rolls || settled.rawRolls || settled.results);
+      const visualRolls = Array.isArray(rawSettled) && rawSettled.length
+        ? _normalizeDiceVisualRolls(rawSettled.map(entry => (entry && typeof entry === 'object') ? entry.value : entry), diceType)
+        : [];
+      const finalRolls = visualRolls.length === result.rolls.length ? visualRolls.slice() : result.rolls.slice();
+      const finalTotal = finalRolls.reduce((sum, value) => sum + (parseInt(value, 10) || 0), 0) + modifier;
+      const finalPayload = { ...payload(), rolls: finalRolls, total: finalTotal };
+      fillDiceResult(finalRolls, finalTotal, diceType, qty, modifier, rollLabel, {
+        ...finalPayload,
         rollId,
         seed,
         source,
+        finalVisualRolls: finalRolls.slice(),
       });
-      resolve(payload());
+      resolve(finalPayload);
       return true;
     };
 
@@ -25068,7 +25074,8 @@ function _rollExpressionAndResolveDice(expr, meta = {}) {
       mode,
       modifierMeta: modifierMeta || _diceModifierMeta(),
       targetResults,
-      onSettledResult: () => finish(),
+      emergencyHardSnapFallback: true,
+      onSettledResult: (settled) => finish(settled),
     });
 
     setTimeout(() => { if (!resolved) finish(); }, 11000);

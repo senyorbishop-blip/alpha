@@ -455,18 +455,30 @@ function _spellAttackSaveCell(spell, charData) {
     return { count: parseInt(match[1], 10) || 0, sides: parseInt(match[2], 10) || 0 };
   }
 
+  function _spellHasSlotScaling(spell) {
+    const card = (spell && spell.card) || spell || {};
+    const scalingText = _firstText(card.slot_damage, card.slot_healing, card.extra_ray_per_slot, card.damage_upcast_per_level, card.scalingNote, card.higherLevel, card.atHigherLevels, card.higher_levels, '');
+    if (scalingText) return true;
+    const name = String(card.name || spell && spell.name || '').trim().toLowerCase();
+    return ['fireball', 'lightning bolt', 'call lightning', 'scorching ray'].includes(name);
+  }
+
   function _spellRollExpressionForLevel(spell, slotLevel, charData) {
     const castLevel = parseInt(slotLevel, 10) || _spellDisplayCastLevel(spell);
     const baseLevel = _spellBaseLevel(spell);
-    if (spell && spell.isVirtualCastRow) {
-      const preview = _firstText(spell.damagePreview, spell.healingPreview, '');
-      if (preview && Number(spell.castLevel) === castLevel) return preview;
-    }
+    const normalizedBase = Number.isFinite(baseLevel) ? baseLevel : _spellLevelNumber(spell);
+    const preview = _firstText(spell && spell.damagePreview, spell && spell.healingPreview, '');
+    let formula = '';
     if (global.AppSpellRuntime && typeof global.AppSpellRuntime.resolveSpellRuntime === 'function') {
-      const resolverCard = Object.assign({}, spell || {}, {
-        level: Number.isFinite(baseLevel) ? baseLevel : _spellLevelNumber(spell),
-        spell_level: Number.isFinite(baseLevel) ? baseLevel : _spellLevelNumber(spell),
-        baseLevel: Number.isFinite(baseLevel) ? baseLevel : _spellLevelNumber(spell),
+      const card = (spell && spell.card) || spell || {};
+      const resolverCard = Object.assign({}, card, spell || {}, {
+        id: _firstText(spell && spell.id, card && card.id, ''),
+        name: _firstText(spell && spell.name, card && card.name, ''),
+        level: normalizedBase,
+        spell_level: normalizedBase,
+        baseLevel: normalizedBase,
+        castLevel: normalizedBase,
+        slotLevel: normalizedBase,
       });
       const runtime = global.AppSpellRuntime.resolveSpellRuntime(resolverCard, {
         castLevel: castLevel,
@@ -475,11 +487,15 @@ function _spellAttackSaveCell(spell, charData) {
         spellcastingModifier: (charData && charData.spellcastingModifier),
         saveDc: charData && (charData.spellSaveDc || charData.spell_save_dc)
       });
-      const formula = runtime.finalHealingFormula || runtime.finalDamageFormula || '';
+      formula = String(runtime.finalHealingFormula || runtime.finalDamageFormula || '').trim();
       if ((global.__DEV__ || global.DEBUG_SPELLS) && global.console && typeof global.console.debug === 'function') {
         global.console.debug('[SpellsTab] spell roll expression', { spell: _spellName(spell), baseLevel: runtime.baseLevel, castLevel: runtime.castLevel, formula: formula });
       }
-      return formula;
+    }
+    if (formula) return formula;
+    if (preview) {
+      const baseFormula = String(_spellRollBaseExpression(Object.assign({}, spell || {}, { castLevel: normalizedBase, slotLevel: normalizedBase })) || '').trim();
+      if (!(castLevel > normalizedBase && preview === baseFormula && _spellHasSlotScaling(spell))) return preview;
     }
     return String(_spellRollBaseExpression(spell) || '').trim();
   }

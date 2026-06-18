@@ -98,36 +98,70 @@
     return base === null ? '' : base;
   }
 
+  function _spellBaseFormula(spell) {
+    const card = spell && (spell.card || spell) || {};
+    const current = card.current || {};
+    return _firstText(current.base_formula, card.damage_dice, card.damage, card.damage_formula, card.base_damage_formula, card.healing_formula, card.base_healing_formula, '');
+  }
+
+  function _spellHasKnownScaling(spell) {
+    const card = spell && (spell.card || spell) || {};
+    const text = _firstText(card.slot_damage, card.slot_healing, card.extra_ray_per_slot, card.damage_upcast_per_level, card.scalingNote, card.higherLevel, card.atHigherLevels, card.higher_levels, '');
+    if (text) return true;
+    const name = String(card.name || spell && spell.name || '').trim().toLowerCase();
+    return ['fireball', 'lightning bolt', 'call lightning', 'scorching ray'].includes(name);
+  }
+
+  function _sanitizedSpellCard(spell) {
+    const card = spell && (spell.card || spell) || {};
+    const base = _baseSpellLevel(spell);
+    return Object.assign({}, card, spell || {}, {
+      id: _firstText(spell && spell.id, card.id, ''),
+      name: _firstText(spell && spell.name, card.name, ''),
+      level: base,
+      spell_level: base,
+      baseLevel: base,
+      castLevel: base,
+      slotLevel: base,
+    });
+  }
+
+  function _runtimeSpellDamagePreview(spell, castLevel) {
+    const resolver = (global.AppSpellRuntime && typeof global.AppSpellRuntime.resolveSpellRuntime === 'function')
+      ? global.AppSpellRuntime.resolveSpellRuntime
+      : (typeof global.resolveSpellRuntime === 'function' ? global.resolveSpellRuntime : null);
+    if (!resolver) return '';
+    try {
+      const rt = resolver(_sanitizedSpellCard(spell), { castLevel: castLevel, slotLevel: castLevel });
+      return String(rt && (rt.finalHealingFormula || rt.finalDamageFormula) || '').trim();
+    } catch (_e) { return ''; }
+  }
+
   function _spellDamagePreview(spell, castLevel) {
+    const base = _baseSpellLevel(spell);
+    const baseFormula = _spellBaseFormula(spell);
+    const runtimeFormula = _runtimeSpellDamagePreview(spell, castLevel);
+    if (runtimeFormula) return runtimeFormula;
+
+    if (typeof global.getCombatSpellDamagePreview === 'function') {
+      const result = global.getCombatSpellDamagePreview(spell, castLevel);
+      if (result && !(base !== null && Number(castLevel) > base && result === baseFormula && _spellHasKnownScaling(spell))) return result;
+    }
+
     if (typeof global.resolveSpellCast === 'function') {
       try {
-        const resolved = global.resolveSpellCast(spell, global._charSheet || {}, {
+        const resolved = global.resolveSpellCast(_sanitizedSpellCard(spell), global._charSheet || {}, {
           castLevel: castLevel,
           slotLevel: castLevel,
           source: 'spell',
           actionSource: 'quick_actions_preview'
         });
-        if (resolved && resolved.formulaUsed) return resolved.formulaUsed;
+        const formula = String(resolved && resolved.formulaUsed || '').trim();
+        if (formula && !(base !== null && Number(castLevel) > base && formula === baseFormula && _spellHasKnownScaling(spell))) return formula;
       } catch (_e) {}
     }
-    // Pass the full spell object so preview works even when the ID lookup fails.
-    if (typeof global.getCombatSpellDamagePreview === 'function') {
-      const result = global.getCombatSpellDamagePreview(spell, castLevel);
-      if (result) return result;
-    }
-    // Direct fallback via the shared spell runtime resolver.
-    if (typeof global.resolveSpellRuntime === 'function') {
-      try {
-        const card = spell.card || spell || {};
-        const rt = global.resolveSpellRuntime(
-          Object.assign({}, card, { id: spell.id || card.id, name: spell.name || card.name }),
-          { castLevel: castLevel }
-        );
-        const f = rt.finalHealingFormula || rt.finalDamageFormula || '';
-        if (f) return f;
-      } catch (_e) {}
-    }
-    const card = spell.card || spell || {};
+
+    const card = spell && (spell.card || spell) || {};
     const current = card.current || {};
     return _firstText(
       (card.cast_options || {})[String(castLevel)] && (card.cast_options || {})[String(castLevel)].formula,
@@ -434,5 +468,5 @@
     });
   });
 
-  global.CombatQuickActions = { openSpellAction, openWeaponAction, refreshSpellModalDamage, refreshSpellModalSlots, closeModal };
+  global.CombatQuickActions = { openSpellAction, openWeaponAction, refreshSpellModalDamage, refreshSpellModalSlots, closeModal, __test: { spellDamagePreview: _spellDamagePreview } };
 }(window));
