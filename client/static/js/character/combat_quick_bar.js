@@ -593,8 +593,19 @@
   });
 
   _loadState();
-  global.CombatQuickBar = { render: render, toggleManual: toggleManual, openManual: openManual, dismissForTurn: dismissForTurn, resetQuickBarVisibility: resetQuickBarVisibility };
-  // Also available as a top-level shortcut for quick recovery from browser console
+  function refreshCombatQuickActions() {
+    render();
+    if (global.CombatQuickActions && typeof global.CombatQuickActions.refreshSpellModalSlots === 'function') {
+      global.CombatQuickActions.refreshSpellModalSlots();
+    }
+  }
+
+  global.CombatQuickBar = { render: render, toggleManual: toggleManual, openManual: openManual, dismissForTurn: dismissForTurn, resetQuickBarVisibility: resetQuickBarVisibility, refreshCombatQuickActions: refreshCombatQuickActions };
+  // Also available as top-level shortcuts for quick recovery and slot/rest sync.
   global.resetQuickBarVisibility = resetQuickBarVisibility;
+  global.refreshCombatQuickActions = refreshCombatQuickActions;
+  ['character:spell-state-updated', 'character:runtime-updated', 'character:resources-updated', 'character:rest-completed', 'spellSlots:updated'].forEach(function (eventName) {
+    global.addEventListener && global.addEventListener(eventName, refreshCombatQuickActions);
+  });
   document.addEventListener('DOMContentLoaded', render);
 }(window));

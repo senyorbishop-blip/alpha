@@ -96,7 +96,36 @@
     return 'combat_quick_bar.picks.' + sessionId + '.' + userId + '.' + _quickPickCharacterKey(runtime);
   }
 
+  function _slugKey(value) {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/::cast-?\d+::?$/i, '')
+      .replace(/::(?:slot|level|lvl)-?\d+::?$/i, '')
+      .replace(/(?:::|:|-)(?:cast|slot|level|lvl)-?\d+$/i, '')
+      .replace(/(?:::|:)\d+$/i, '')
+      .replace(/\s+\bL[1-9]\b$/i, '')
+      .replace(/\s+\((?:cast|slot|level|lvl)\s*[1-9]\)$/i, '')
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  function _canonicalSpellKey(spell) {
+    const card = spell && spell.card ? spell.card : {};
+    return _slugKey(_firstText(
+      spell && spell.spellId,
+      card && card.id,
+      spell && spell.baseSpellId,
+      spell && spell.base_spell_id,
+      spell && spell.name,
+      spell && spell.displayName
+    ));
+  }
+
   function _candidateKey(kind, item) {
+    if (String(kind || '').toLowerCase() === 'spell' || (item && item.quickBarType === 'spell')) {
+      return 'spell:' + _canonicalSpellKey(item);
+    }
     return String(kind || 'action') + ':' + _firstText(item && item.id, item && item.name);
   }
 
@@ -184,25 +213,7 @@
   }
 
   function _normalizeSpellCandidate(spell, runtime) {
-    const level = _spellLevel(spell);
-    const sourceType = _firstText(spell.sourceType, spell.source, 'class');
-    return Object.assign({}, spell, {
-      category: 'Spell',
-      type: 'Spell',
-      source: _firstText(spell.source, sourceType),
-      sourceType: sourceType,
-      actionType: 'spell',
-      cost: _firstText(spell.quickBarCastTimeText, '1 action'),
-      resourceCost: _firstText(spell.quickBarSlotSummary, '') || null,
-      limitedUse: !!(level && level > 0),
-      castLevel: level,
-      spellId: _firstText(spell.id, spell.name),
-      itemId: sourceType === 'item' ? _firstText(spell.itemName, spell.id, spell.name) : null,
-      featureId: null,
-      executableType: 'cast_spell',
-      preview: _firstText(spell.quickBarDamageText, spell.quickBarSaveText, spell.quickBarInfoSummary, ''),
-      sortKey: 'Spell::' + String(_firstText(spell.name, '')).toLowerCase(),
-    });
+    return _canonicalSpellDisplayCandidate(spell, runtime);
   }
 
   // De-duplicate by what the action actually *does*, not just its label, so
@@ -211,10 +222,10 @@
   function _executableIdentity(candidate) {
     const name = String(_firstText(candidate.name, '')).toLowerCase();
     if (candidate.category === 'Spell') {
-      const mechanism = candidate.sourceType === 'item'
-        ? 'item:' + String(candidate.itemId || candidate.source || '').toLowerCase()
-        : 'slot:' + (candidate.castLevel == null ? 'cantrip' : candidate.castLevel);
-      return 'spell::' + name + '::' + mechanism;
+      const key = _canonicalSpellKey(candidate);
+      if (candidate.sourceType === 'item') return 'spell::' + key + '::item::' + String(candidate.itemId || candidate.sourceItemId || candidate.source || '').toLowerCase();
+      if (candidate.featureId) return 'spell::' + key + '::feature::' + String(candidate.featureId).toLowerCase();
+      return 'spell::' + key + '::slot-spell';
     }
     return String(candidate.category) + '::' + name + '::' + String(candidate.sourceType || candidate.source || '').toLowerCase() + '::' + String(candidate.actionType || '').toLowerCase();
   }
@@ -312,9 +323,14 @@
     return levels.length ? Math.min.apply(null, levels) : null;
   }
 
+  function _baseSpellLevelForQuickAction(spell) {
+    const card = spell && spell.card ? spell.card : {};
+    return _parseSpellLevelText(spell && (spell.baseLevel ?? spell.base_level ?? spell.spell_level), card && (card.level ?? card.spell_level));
+  }
+
   function _spellLevel(spell) {
     const card = spell && spell.card ? spell.card : {};
-    const explicit = _parseSpellLevelText(spell && (spell.level ?? spell.spell_level), card && (card.level ?? card.spell_level));
+    const explicit = _baseSpellLevelForQuickAction(spell);
     const levelText = _firstText(spell && (spell.level_school || spell.levelSchool || spell.section), card && (card.level_school || card.levelSchool || card.section));
     if (explicit !== null) return explicit;
     if (/cantrip/i.test(levelText)) return 0;
@@ -330,27 +346,46 @@
     return level !== null && level > 0;
   }
 
-  function _spellSlotSummary(spell, runtime) {
-    const level = _spellLevel(spell);
-    if (level === null) return 'Unknown spell level';
-    if (level === 0) return 'Cantrip';
+  function _slotRemaining(runtime, level) {
     const slots = runtime && runtime.spellSlots ? runtime.spellSlots : {};
     const used = runtime && runtime.spellSlotState ? runtime.spellSlotState : {};
     const max = Number(slots[level] ?? slots[String(level)] ?? 0) || 0;
     const spent = Number(used[level] ?? used[String(level)] ?? 0) || 0;
-    if (!max) return 'Needs slot';
-    return 'L' + level + ' slots ' + Math.max(0, max - spent) + '/' + max;
+    return { max: max, spent: spent, remaining: Math.max(0, max - spent) };
+  }
+
+  function _availableCastLevels(spell, runtime) {
+    const level = _spellLevel(spell);
+    if (level === null) return [];
+    if (level === 0) return [0];
+    const out = [];
+    for (let lvl = level; lvl <= 9; lvl += 1) {
+      if (_slotRemaining(runtime, lvl).remaining > 0) out.push(lvl);
+    }
+    return out;
+  }
+
+  function _spellSlotSummary(spell, runtime) {
+    const level = _spellLevel(spell);
+    if (level === null) return 'Unknown spell level';
+    if (level === 0) return 'Cantrip';
+    const rows = [];
+    for (let lvl = level; lvl <= 9; lvl += 1) {
+      const slot = _slotRemaining(runtime, lvl);
+      if (slot.max > 0) rows.push('L' + lvl + ' ' + slot.remaining + '/' + slot.max);
+    }
+    if (!rows.length || !rows.some(function (row) { return /\s[1-9]\d*\//.test(row); })) return 'No slots';
+    return rows.slice(0, 4).join(' · ') + (rows.length > 4 ? ' · +' : '');
   }
 
   function _spellAvailable(spell, runtime) {
     const level = _spellLevel(spell);
     if (level === null) return true;
     if (level === 0) return true;
-    const slots = runtime && runtime.spellSlots ? runtime.spellSlots : {};
-    const used = runtime && runtime.spellSlotState ? runtime.spellSlotState : {};
-    const max = Number(slots[level] ?? slots[String(level)] ?? 0) || 0;
-    const spent = Number(used[level] ?? used[String(level)] ?? 0) || 0;
-    return max > 0 && spent < max;
+    for (let lvl = level; lvl <= 9; lvl += 1) {
+      if (_slotRemaining(runtime, lvl).remaining > 0) return true;
+    }
+    return false;
   }
 
   function _formatSignedNumber(value) {
@@ -483,14 +518,52 @@
     // Reject spell-level section headings / non-castable rows before they
     // ever reach scoring, sorting, or the Customize Top 5 picker.
     spells = spells.filter(function (spell) { return isPlayableQuickAction(Object.assign({ quickBarType: 'spell' }, spell)); });
-    return _uniqueByName(spells, spells.length).sort(function (a, b) {
+    const bySpell = new Map();
+    spells.forEach(function (spell) {
+      const candidate = _canonicalSpellDisplayCandidate(spell, runtime);
+      const identity = _executableIdentity(candidate);
+      if (!bySpell.has(identity)) bySpell.set(identity, candidate);
+    });
+    return Array.from(bySpell.values()).sort(function (a, b) {
       const scoreDelta = _spellQuickScore(b) - _spellQuickScore(a);
       if (scoreDelta) return scoreDelta;
       return ((_spellLevel(a) ?? 99) - (_spellLevel(b) ?? 99));
     });
   }
 
+  function _canonicalSpellDisplayCandidate(spell, runtime) {
+    const card = spell && spell.card ? spell.card : spell;
+    const key = _canonicalSpellKey(spell);
+    const level = _spellLevel(spell);
+    const sourceType = _firstText(spell && spell.sourceType, spell && spell.source, 'class');
+    return Object.assign({}, spell, {
+      id: key,
+      spellId: key,
+      name: _firstText(spell && spell.name, spell && spell.displayName, card && card.name, key),
+      baseLevel: level,
+      spell_level: level,
+      castLevel: null,
+      slotLevel: null,
+      availableCastLevels: _availableCastLevels(spell, runtime),
+      category: 'Spell',
+      type: 'Spell',
+      quickBarType: 'spell',
+      quickBarPickKey: 'spell:' + key,
+      actionType: 'spell',
+      cost: _firstText(spell && spell.quickBarCastTimeText, '1 action'),
+      resourceCost: _firstText(spell && spell.quickBarSlotSummary, '') || null,
+      limitedUse: !!(level && level > 0),
+      executableType: 'cast_spell',
+      preview: _firstText(spell && spell.quickBarDamageText, spell && spell.quickBarSaveText, spell && spell.quickBarInfoSummary, ''),
+      sortKey: 'Spell::' + String(_firstText(spell && spell.name, '')).toLowerCase(),
+      sourceType: sourceType,
+      itemId: sourceType === 'item' ? _firstText(spell && spell.itemId, spell && spell.itemName, spell && spell.sourceItemId, spell && spell.id) : null,
+      featureId: _firstText(spell && spell.featureId, spell && spell.sourceFeatureId, ''),
+    });
+  }
+
   function _decorateSpell(spell, runtime) {
+    spell = _canonicalSpellDisplayCandidate(spell, runtime);
     const card = spell && spell.card ? spell.card : spell;
     const level = _spellLevel(spell);
     const needsSlot = _spellNeedsSlot(spell);
@@ -510,7 +583,7 @@
       quickBarSlotSummary: _spellSlotSummary(spell, runtime),
       quickBarNeedsSlot: needsSlot,
       quickBarCanUse: available,
-      quickBarDisabledReason: available ? '' : 'Needs spell slot',
+      quickBarDisabledReason: available ? '' : 'No spell slots available',
       quickBarConcentration: concentration,
       quickBarAttackKind: attackKind,
       quickBarAttackText: attackText,
@@ -608,6 +681,11 @@
     toggleQuickPick: toggleQuickPick,
     isPlayableQuickAction: isPlayableQuickAction,
     buildQuickActionCandidates: buildQuickActionCandidates,
+    _canonicalSpellKey: _canonicalSpellKey,
+    _baseSpellLevelForQuickAction: _baseSpellLevelForQuickAction,
+    _canonicalSpellDisplayCandidate: _canonicalSpellDisplayCandidate,
+    _spellAvailable: _spellAvailable,
+    _spellSlotSummary: _spellSlotSummary,
     quickPickLimit: QUICK_PICK_LIMIT,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = global.CombatQuickSelectors;
