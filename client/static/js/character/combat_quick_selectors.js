@@ -596,8 +596,12 @@
     const saveText = _spellSaveText(spell, runtime);
     const rangeText = _spellRangeText(spell);
     const castTimeText = _spellCastTimeText(spell);
+    const sourceLabel = spell.sourceType === 'item'
+      ? _firstText(spell.itemId, spell.itemName, 'Magic Item')
+      : spell.featureId ? 'Class Feature' : 'Character Spell';
     return Object.assign({}, spell, {
       quickBarType: 'spell',
+      quickBarSourceLabel: sourceLabel,
       quickBarLane: level === 0 ? 'cantrip' : 'spell',
       quickBarLevelUnknown: level === null,
       quickBarPickKey: _candidateKey('spell', spell),
@@ -618,6 +622,95 @@
 
   function _topSpells(runtime, limit) {
     return _spellCandidates(runtime).slice(0, limit || QUICK_PICK_LIMIT).map(function (spell) { return _decorateSpell(spell, runtime); });
+  }
+
+  // Generic mapping of any equipped/attuned magic item's granted actions and
+  // spells (server-built `_playerItemActions` / `_playerItemSpellCards`) into
+  // Quick-Bar-compatible rows. Works for any item — never keyed off a name.
+  function _itemActionRows() {
+    return _safeArray(global._playerItemActions).map(function (itemAction, idx) {
+      const activation = String(itemAction && itemAction.activation_type || 'action').toLowerCase();
+      const lane = activation === 'bonus_action' ? 'bonus' : activation === 'reaction' ? 'reaction' : 'action';
+      const hasCurrentCharges = itemAction && itemAction.charges_current !== null && itemAction.charges_current !== undefined && Number.isFinite(Number(itemAction.charges_current));
+      const hasMaxCharges = itemAction && itemAction.charges_max !== null && itemAction.charges_max !== undefined && Number.isFinite(Number(itemAction.charges_max));
+      const hasQty = itemAction && itemAction.quantity !== null && itemAction.quantity !== undefined && Number.isFinite(Number(itemAction.quantity));
+      const itemName = _firstText(itemAction && itemAction.item_name, 'Magic Item');
+      const id = String((itemAction && itemAction.action_id) || (itemAction && itemAction.item_id) || ('item_action_' + idx));
+      return {
+        id: id,
+        name: _firstText(itemAction && itemAction.action_name, itemAction && itemAction.item_name, 'Item Action'),
+        source: 'item_action',
+        sourceType: 'item_action',
+        sourceName: itemName,
+        itemName: itemName,
+        quickBarSourceLabel: itemName,
+        quickBarType: 'action',
+        quickBarLane: lane,
+        quickBarPickKey: 'action:' + id,
+        quickBarAttackText: itemAction && itemAction.attack_bonus != null ? _formatSignedNumber(itemAction.attack_bonus) : '',
+        quickBarDamageText: _firstText(itemAction && itemAction.damage_formula, ''),
+        quickBarRangeText: _firstText(itemAction && itemAction.range, ''),
+        quickBarResourceState: (hasCurrentCharges || hasMaxCharges) ? { remaining: hasCurrentCharges ? Number(itemAction.charges_current) : null, max: hasMaxCharges ? Number(itemAction.charges_max) : null } : null,
+        quickBarUsesText: (!hasCurrentCharges && !hasMaxCharges && hasQty) ? ('Qty ' + Number(itemAction.quantity)) : '',
+        quickBarCanUse: !(itemAction && itemAction.disabled),
+        quickBarDisabledReason: _firstText(itemAction && itemAction.disabled_reason, ''),
+        quickBarInfoSummary: _firstText(itemAction && itemAction.effect_text, 'Open for details'),
+      };
+    });
+  }
+
+  function _itemSpellRows() {
+    return _safeArray(global._playerItemSpellCards).map(function (card, idx) {
+      const itemName = _firstText(card && card.item_name, 'Magic Item');
+      const id = 'item_spell_' + idx + '_' + String((card && card.item_id) || '') + '_' + String((card && card.spell_id) || '');
+      const hasCurrentCharges = card && card.charges_current !== null && card.charges_current !== undefined && Number.isFinite(Number(card.charges_current));
+      const hasMaxCharges = card && card.charges_max !== null && card.charges_max !== undefined && Number.isFinite(Number(card.charges_max));
+      const chargeCost = Number((card && card.charge_cost) || 0);
+      const variableMin = card && Number.isFinite(Number(card.charge_cost_min)) ? Number(card.charge_cost_min) : null;
+      const variableMax = card && Number.isFinite(Number(card.charge_cost_max)) ? Number(card.charge_cost_max) : null;
+      const isVariableCost = variableMin !== null && variableMax !== null && variableMax > variableMin;
+      const chargeCostText = isVariableCost
+        ? ('Costs ' + variableMin + '-' + variableMax + ' charges')
+        : (chargeCost > 0 ? ('Costs ' + chargeCost + ' charge' + (chargeCost !== 1 ? 's' : '')) : '');
+      const dcText = card && card.uses_item_dc && Number(card.item_spell_save_dc) > 0 ? ('DC ' + Number(card.item_spell_save_dc)) : '';
+      const atkText = card && card.uses_item_attack_bonus && Number(card.item_spell_attack_bonus) !== 0 ? _formatSignedNumber(card.item_spell_attack_bonus) : '';
+      const spellLevel = card && Number.isFinite(Number(card.level)) ? Number(card.level) : null;
+      return {
+        id: id,
+        name: _firstText(card && card.spell_name, card && card.spell_id, 'Item Spell'),
+        source: 'item_spell',
+        sourceType: 'item_spell',
+        sourceName: itemName,
+        itemName: itemName,
+        quickBarSourceLabel: itemName,
+        quickBarType: 'action',
+        quickBarLane: 'action',
+        quickBarPickKey: 'action:' + id,
+        quickBarAttackKind: atkText ? 'spell' : '',
+        quickBarAttackText: atkText,
+        quickBarSaveText: dcText,
+        quickBarDamageText: _firstText(card && card.damage_formula, ''),
+        quickBarRangeText: _firstText(card && card.range, ''),
+        quickBarResourceState: (hasCurrentCharges || hasMaxCharges) ? { remaining: hasCurrentCharges ? Number(card.charges_current) : null, max: hasMaxCharges ? Number(card.charges_max) : null } : null,
+        quickBarUsesText: chargeCostText,
+        quickBarCanUse: !(card && card.disabled),
+        quickBarDisabledReason: _firstText(card && card.disabled_reason, ''),
+        quickBarInfoSummary: _firstText(card && card.description, 'Open for spell details'),
+        quickBarVariableChargeCost: isVariableCost,
+        quickBarChargeCostMin: variableMin,
+        quickBarChargeCostMax: variableMax,
+        spellLevel: spellLevel,
+        itemId: String((card && card.item_id) || ''),
+        itemIndex: Number((card && card.item_index) || 0),
+        spellId: String((card && card.spell_id) || ''),
+        chargeCost: chargeCost,
+        castLevel: Number((card && card.cast_level) || 0),
+      };
+    });
+  }
+
+  function _magicItemActionRows() {
+    return _itemActionRows().concat(_itemSpellRows());
   }
 
   function _resourceRows(model) {
@@ -693,6 +786,7 @@
       bonusActions: mark(bonus, 'action'),
       reactions: mark(reactions, 'action'),
       topSpells: picks.length ? mark(pickedSpells, 'spell') : mark(_topSpells(runtime, QUICK_PICK_LIMIT), 'spell'),
+      magicItemActions: mark(_magicItemActionRows(), 'action'),
       resources: _resourceRows(actionModel),
       concentration: actionModel.concentration || (runtime.charSheet && runtime.charSheet.activeConcentration) || null,
       combat: runtime.combat || { active: false },

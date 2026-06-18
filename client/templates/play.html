@@ -45380,10 +45380,12 @@ function _getPlayerActionsSections() {
   (Array.isArray(_playerItemActions) ? _playerItemActions : []).forEach((itemAction, idx) => {
     const activation = String(itemAction.activation_type || 'action').toLowerCase();
     const sectionName = activation === 'bonus_action' ? 'Bonus Actions' : (activation === 'reaction' ? 'Reactions' : 'Item Actions');
-    const chargesText = Number.isFinite(Number(itemAction.charges_current))
-      ? `Charges ${Number(itemAction.charges_current)}/${Number(itemAction.charges_max || 0)}`
+    const hasCurrentCharges = itemAction.charges_current !== null && itemAction.charges_current !== undefined && Number.isFinite(Number(itemAction.charges_current));
+    const hasMaxCharges = itemAction.charges_max !== null && itemAction.charges_max !== undefined && Number.isFinite(Number(itemAction.charges_max));
+    const chargesText = (hasCurrentCharges || hasMaxCharges)
+      ? `Charges ${hasCurrentCharges ? Number(itemAction.charges_current) : '?'}/${hasMaxCharges ? Number(itemAction.charges_max) : '?'}`
       : '';
-    const qtyText = Number.isFinite(Number(itemAction.quantity)) ? `Qty ${Number(itemAction.quantity)}` : '';
+    const qtyText = (itemAction.quantity !== null && itemAction.quantity !== undefined && Number.isFinite(Number(itemAction.quantity))) ? `Qty ${Number(itemAction.quantity)}` : '';
     sections[sectionName] = sections[sectionName] || [];
     sections[sectionName].push({
       id: String(itemAction.action_id || itemAction.item_id || `item_action_${idx}`),
@@ -45418,8 +45420,10 @@ function _getPlayerActionsSections() {
   });
 
   (Array.isArray(_playerItemSpellCards) ? _playerItemSpellCards : []).forEach((card, idx) => {
-    const chargesText = Number.isFinite(Number(card.charges_current))
-      ? `Charges ${Number(card.charges_current)}/${Number(card.charges_max || 0)}`
+    const hasCurrentCharges = card.charges_current !== null && card.charges_current !== undefined && Number.isFinite(Number(card.charges_current));
+    const hasMaxCharges = card.charges_max !== null && card.charges_max !== undefined && Number.isFinite(Number(card.charges_max));
+    const chargesText = (hasCurrentCharges || hasMaxCharges)
+      ? `Charges ${hasCurrentCharges ? Number(card.charges_current) : '?'}/${hasMaxCharges ? Number(card.charges_max) : '?'}`
       : '';
     const chargeCostText = Number(card.charge_cost || 0) > 0
       ? `Costs ${Number(card.charge_cost)} charge${Number(card.charge_cost) !== 1 ? 's' : ''}`
@@ -46039,8 +46043,9 @@ function _resolveSummonActionEntryById(entryId) {
   };
 }
 
-function playerUseAction(source, id) {
+function playerUseAction(source, id, options) {
   const src = String(source || '').trim();
+  const chargeOverride = options && Number.isFinite(Number(options.chargeCost)) ? Number(options.chargeCost) : null;
   if (src === 'weapon' || src === 'equip_only' || src === 'system_unarmed' || src === 'attack') {
     combatQuickWeaponAttack(id);
     return;
@@ -46115,7 +46120,7 @@ function playerUseAction(source, id) {
         item_id: String((card || {}).item_id || ''),
         spell_id: spellId,
         target_id: String(typeof _selectedTokenId !== 'undefined' ? (_selectedTokenId || '') : ''),
-        charge_cost: Number((card || {}).charge_cost || 1),
+        charge_cost: chargeOverride !== null ? chargeOverride : Number((card || {}).charge_cost || 1),
         cast_level: Number((card || {}).cast_level || 0),
       },
     });
@@ -47406,9 +47411,17 @@ function _getCombatQuickSpells() {
 }
 
 function getCombatQuickBarRuntime() {
+  // Always feed the Quick Bar's action model the same generically-computed
+  // attack cards (prof + ability mod + magic item bonus) used everywhere else
+  // in the app, instead of letting it fall back to a weaker per-item builder
+  // that does not know about magic weapon bonuses.
+  const baseSheet = _charSheet || {};
+  const quickAttackCards = (typeof _getUnifiedQuickAttackCards === 'function')
+    ? _getUnifiedQuickAttackCards()
+    : (Array.isArray(baseSheet.quickAttackCards) ? baseSheet.quickAttackCards : []);
   return {
     combat: _combat || { active: false, turn: 0, combatants: [] },
-    charSheet: _charSheet || {},
+    charSheet: Object.assign({}, baseSheet, { quickAttackCards }),
     role: ROLE,
     userId: USER_ID,
     sessionId: SESSION_ID,
@@ -48440,6 +48453,9 @@ function combatQuickWeaponAttack(actionOrId, mode = 'base') {
 
   // Only consume action economy after the roll and result display succeeded.
   _consumeActionEconomy('attack_within_action', { action_id: card.id || card.name });
+  if (window.CombatQuickSelectors && typeof window.CombatQuickSelectors.markUsed === 'function') {
+    window.CombatQuickSelectors.markUsed(String(card.id || card.name || ''));
+  }
 
   // ── Compact chat log (secondary feedback) ────────────────────────────
   const rollDetail = hasDisadvantage ? ` (dis: ${rollA}/${rollB}→${d20})` : '';

@@ -1998,6 +1998,8 @@ def _build_item_spell_cards(items: list[dict]) -> list[dict]:
                 continue
 
             charge_cost = max(0, _safe_int(spell_entry.get("charge_cost"), 1, minimum=0, maximum=99))
+            charge_cost_min = _safe_int(spell_entry.get("charge_cost_min"), 0, minimum=0, maximum=99) or None
+            charge_cost_max = _safe_int(spell_entry.get("charge_cost_max"), 0, minimum=0, maximum=99) or None
             cast_level = max(0, _safe_int(spell_entry.get("cast_level"), 0, minimum=0, maximum=9))
             uses_item_dc = bool(spell_entry.get("uses_item_dc", True))
             uses_item_atk = bool(spell_entry.get("uses_item_attack_bonus", False))
@@ -2018,6 +2020,8 @@ def _build_item_spell_cards(items: list[dict]) -> list[dict]:
                 "spell_id": spell_id,
                 "spell_name": resolved_name or spell_name,
                 "charge_cost": charge_cost,
+                "charge_cost_min": charge_cost_min,
+                "charge_cost_max": charge_cost_max,
                 "cast_level": cast_level,
                 "uses_item_dc": uses_item_dc,
                 "uses_item_attack_bonus": uses_item_atk,
@@ -2099,7 +2103,11 @@ async def handle_inventory_cast_item_spell(payload: dict, session: Session, user
         )
 
     item_charge_cost = max(0, _safe_int(spell_entry.get("charge_cost"), 1, minimum=0, maximum=99))
+    charge_cost_min = _safe_int(spell_entry.get("charge_cost_min"), 0, minimum=0, maximum=99) or None
+    charge_cost_max = _safe_int(spell_entry.get("charge_cost_max"), 0, minimum=0, maximum=99) or None
     actual_cost = charge_cost if charge_cost > 0 else item_charge_cost
+    if charge_cost_min is not None and charge_cost_max is not None and charge_cost_max > charge_cost_min:
+        actual_cost = max(charge_cost_min, min(charge_cost_max, actual_cost))
     charges_current = _safe_int(item.get("charges_current"), -1, minimum=-1, maximum=9999)
     charges_max = _safe_int(item.get("charges_max"), 0, minimum=0, maximum=9999)
 
