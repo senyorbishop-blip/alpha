@@ -64,6 +64,42 @@ vm.runInThisContext(fs.readFileSync('./client/static/js/character/tabs/spells_ta
     return json.loads(out)
 
 
+
+def test_render_spell_row_fireball_level_7_button_uses_12d6_formula_and_data_expr():
+    data = spells_tab_eval(r"""
+const html = global.SpellsTab.__test.renderSpellRow({id:'fireball', rowId:'fireball::cast-7', name:'Fireball', baseLevel:3, spell_level:3, level:3, castLevel:7, slotLevel:7, isVirtualCastRow:true, damagePreview:'12d6'}, '', {level:19});
+console.log(JSON.stringify({ hasText: html.includes('12d6 🎲'), hasExpr: html.includes('data-roll-expr="12d6"'), hasCast: html.includes('data-cast-level="7"'), hasRow: html.includes('data-row-id="fireball::cast-7"') }));
+""")
+    assert data == {'hasText': True, 'hasExpr': True, 'hasCast': True, 'hasRow': True}
+
+
+def test_roll_spell_from_ui_accepts_forced_7th_level_fireball_expression():
+    data = spells_tab_eval(r"""
+let exprSeen = null;
+global.AppDice = { rollExpressionAndResolve: async (expr) => { exprSeen = expr; return {expression:expr, rolls:Array(12).fill(1), total:12}; } };
+global._showCombatResultCard = () => {};
+(async () => {
+  const rolled = await global.SpellsTab.__test.rollSpellFromUi({name:'Fireball', baseLevel:3, spell_level:3, level:3, castLevel:3, damagePreview:'8d6'}, {charData:{level:19}}, {forcedExpr:'12d6', forcedCastLevel:7});
+  console.log(JSON.stringify({exprSeen, rolled}));
+})();
+""")
+    assert data['exprSeen'] == '12d6'
+    assert data['rolled']['expr'] == '12d6'
+
+
+def test_show_rolled_spell_result_hard_guard_skips_all_local_visual_functions_when_resolved():
+    data = spells_tab_eval(r"""
+let calls = [];
+global._showCombatResultCard = () => calls.push('center');
+global.AppDice = { showLocalResult: () => calls.push('appdice') };
+global._dicePreviewMetaFromExpr = () => ({diceType:6, qty:1});
+global._showLegacySyncedLocalDiceResult = () => calls.push('legacy');
+global.appDiceShowLocalResult = () => calls.push('fallback');
+global.SpellsTab.__test.showRolledSpellResult({name:'Fireball', level:3}, '8d6', {rolls:[1], total:1}, 'damage', 3, {visualAlreadyResolved:true});
+console.log(JSON.stringify({calls}));
+""")
+    assert data['calls'] == ['center']
+
 def test_spells_tab_spell_roll_expression_for_virtual_fireball_level_4_returns_9d6():
     data = spells_tab_eval(r'''
 const spell = {name:'Fireball', baseLevel:3, spell_level:3, level:4, castLevel:4, slotLevel:4, isVirtualCastRow:true};

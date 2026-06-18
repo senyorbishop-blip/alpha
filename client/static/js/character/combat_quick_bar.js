@@ -504,7 +504,8 @@
     const pick = ev.target.closest('[data-qb-pick-key]');
     if (pick) {
       const raw = String(pick.getAttribute('data-qb-pick-key') || '');
-      if (global.CombatQuickSelectors && typeof global.CombatQuickSelectors.toggleQuickPick === 'function') global.CombatQuickSelectors.toggleQuickPick(raw.indexOf('spell:') === 0 ? 'spell' : 'action', { id: raw.replace(/^(action|spell):/, '') });
+      if (global.CombatQuickSelectors && typeof global.CombatQuickSelectors.toggleQuickPickKey === 'function') global.CombatQuickSelectors.toggleQuickPickKey(raw);
+      else if (global.CombatQuickSelectors && typeof global.CombatQuickSelectors.toggleQuickPick === 'function') global.CombatQuickSelectors.toggleQuickPick(raw.indexOf('spell:') === 0 ? 'spell' : 'action', { id: raw.replace(/^(action|spell):/, '') });
       render();
       return;
     }

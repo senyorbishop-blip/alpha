@@ -486,8 +486,8 @@ function _spellAttackSaveCell(spell, charData) {
     return chosen;
   }
 
-  function _showRolledSpellResult(spell, expr, result, kind, slotLevel, opts) {
-    opts = opts || {};
+  function _renderSpellCombatResult(spell, expr, finalResult, kind, slotLevel) {
+    const result = finalResult;
     if (typeof global._showCombatResultCard === 'function') {
       const baseLevel = _spellLevelNumber(spell);
       const slotText = slotLevel > 0 ? ('Level ' + slotLevel) : 'Cantrip';
@@ -500,7 +500,14 @@ function _spellAttackSaveCell(spell, charData) {
         damageType: kind === 'healing' ? 'healing' : _firstText(spell && spell.damageType, '')
       });
     }
-    if (!opts.localAlreadyShown && !opts.visualAlreadyResolved && global.AppDice && typeof global.AppDice.showLocalResult === 'function') {
+
+  }
+
+  function _showRolledSpellResult(spell, expr, result, kind, slotLevel, opts) {
+    opts = opts || {};
+    _renderSpellCombatResult(spell, expr, result, kind, slotLevel);
+    if (opts.visualAlreadyResolved === true) return;
+    if (!opts.localAlreadyShown && global.AppDice && typeof global.AppDice.showLocalResult === 'function') {
       const previewMeta = typeof global._dicePreviewMetaFromExpr === 'function' ? global._dicePreviewMetaFromExpr(expr, result) : {};
       global.AppDice.showLocalResult({
         diceType: previewMeta && previewMeta.diceType,
@@ -510,9 +517,9 @@ function _spellAttackSaveCell(spell, charData) {
         modifier: previewMeta && previewMeta.modifier,
         rollLabel: _spellName(spell) + ' • ' + (kind === 'healing' ? 'Healing Roll' : 'Damage Roll'),
         source: 'character-sheet-spell-roll',
-        visualDisabled: !!opts.visualAlreadyResolved
+        visualDisabled: false
       });
-    } else if (typeof global._dicePreviewMetaFromExpr === 'function' && typeof global._showLegacySyncedLocalDiceResult === 'function') {
+    } else if (!opts.localAlreadyShown && typeof global._dicePreviewMetaFromExpr === 'function' && typeof global._showLegacySyncedLocalDiceResult === 'function') {
       const previewMeta = global._dicePreviewMetaFromExpr(expr, result);
       global._showLegacySyncedLocalDiceResult({
         diceType: previewMeta && previewMeta.diceType,
@@ -523,7 +530,7 @@ function _spellAttackSaveCell(spell, charData) {
         rollLabel: _spellName(spell) + ' • ' + (kind === 'healing' ? 'Healing Roll' : 'Damage Roll'),
         source: 'character-sheet-spell-roll'
       });
-    } else if (typeof global.appDiceShowLocalResult === 'function') {
+    } else if (!opts.localAlreadyShown && typeof global.appDiceShowLocalResult === 'function') {
       global.appDiceShowLocalResult({
         diceType: 20,
         qty: 1,
@@ -609,11 +616,14 @@ function _spellAttackSaveCell(spell, charData) {
     return { ok: true, total: total, outcome: outcome };
   }
 
-  async function _rollSpellFromUi(spell, state) {
+  async function _rollSpellFromUi(spell, state, opts) {
+    opts = opts || {};
     if (!spell) return { ok: false, reason: 'missing_spell' };
-    const slotLevel = _pickSpellCastLevel(spell);
+    const forcedCastLevel = parseInt(opts.forcedCastLevel, 10);
+    const slotLevel = Number.isFinite(forcedCastLevel) && forcedCastLevel >= 0 ? forcedCastLevel : _pickSpellCastLevel(spell);
     if (slotLevel == null) return { ok: false, reason: 'cancelled' };
-    const expr = _spellRollExpressionForLevel(spell, slotLevel, state && state.charData);
+    const forcedExpr = String(opts.forcedExpr || '').trim();
+    const expr = _looksRollableFormula(forcedExpr) ? forcedExpr : _spellRollExpressionForLevel(spell, slotLevel, state && state.charData);
     if (!_looksRollableFormula(expr)) return { ok: false, reason: 'no_formula' };
     let result = null;
     let visualAlreadyResolved = false;
@@ -629,7 +639,11 @@ function _spellAttackSaveCell(spell, charData) {
       return { ok: false, reason: 'no_formula' };
     }
     if (!result) return { ok: false, reason: 'bad_formula' };
-    _showRolledSpellResult(spell, expr, result, _spellRollKind(spell), slotLevel || _spellLevelNumber(spell), { visualAlreadyResolved: visualAlreadyResolved });
+    if (visualAlreadyResolved) {
+      _renderSpellCombatResult(spell, expr, result, _spellRollKind(spell), slotLevel || _spellLevelNumber(spell));
+    } else {
+      _showRolledSpellResult(spell, expr, result, _spellRollKind(spell), slotLevel || _spellLevelNumber(spell), { visualAlreadyResolved: false });
+    }
     return { ok: true, total: result.total, expr: expr };
   }
 
@@ -881,16 +895,21 @@ function _spellAttackSaveCell(spell, charData) {
     return _selectedSpells(Object.assign({}, state, { filter: 'ALL', query: '' })).length;
   }
 
+  function _spellRowCastLevel(spell) {
+    return parseInt(spell && (spell.castLevel ?? spell.slotLevel ?? spell.displaySectionLevel ?? _spellLevelNumber(spell)), 10) || 0;
+  }
+
   function _renderSpellRow(spell, actionsHtml, charData) {
     const isConc = Boolean(spell.concentration || spell.is_concentration);
     const isRitual = Boolean(spell.ritual);
     const effect = _spellEffectLabel(spell);
     const hitDcHtml = _spellAttackSaveCell(spell, charData);
     const range = _spellTableRangeLabel(spell);
-    const rollExpr = _spellRollBaseExpression(spell);
+    const rowCastLevel = _spellRowCastLevel(spell);
+    const rollExpr = _spellRollExpressionForLevel(spell, rowCastLevel, charData);
     const canRoll = _looksRollableFormula(rollExpr);
     const effectHtml = canRoll
-      ? ('<button type="button" class="cs-spell-roll-btn" data-spell-roll="' + _esc(String(spell.id || _spellName(spell) || '')) + '" aria-label="Roll ' + _esc(_spellName(spell)) + '">' + _esc(String(rollExpr)) + ' 🎲</button>' + (String(effect) && String(effect) !== String(rollExpr) ? '<span class="cs-spell-effect-copy">' + _esc(String(effect)) + '</span>' : ''))
+      ? ('<button type="button" class="cs-spell-roll-btn" data-spell-roll="' + _esc(String(spell.id || spell.rowId || _spellName(spell) || '')) + '" data-row-id="' + _esc(String(spell.rowId || '')) + '" data-cast-level="' + _esc(String(rowCastLevel)) + '" data-roll-expr="' + _esc(String(rollExpr)) + '" aria-label="Roll ' + _esc(_spellName(spell)) + '">' + _esc(String(rollExpr)) + ' 🎲</button>' + (String(effect) && String(effect) !== String(rollExpr) ? '<span class="cs-spell-effect-copy">' + _esc(String(effect)) + '</span>' : ''))
       : _esc(String(effect));
 
     // Upcast scaling badge — show when the spell can be cast at higher levels for extra effect
@@ -1209,8 +1228,9 @@ function _spellAttackSaveCell(spell, charData) {
     const actions = [];
     if (_spellCanCastFromCard(spell)) actions.push('<button type="button" class="cs-feature-inspect" data-spell-cast="' + _esc(castSpellKey) + '" data-cast-level="' + _esc(String(spell && spell.castLevel != null ? spell.castLevel : (_spellLevelNumber(spell) || 0))) + '"' + (spell && spell.disabledReason ? ' disabled title="' + _esc(spell.disabledReason) + '"' : '') + '>Cast L' + _esc(String(spell && spell.castLevel != null ? spell.castLevel : (_spellLevelNumber(spell) || 0))) + '</button>');
     if (_spellHasAttackRoll(spell, charData)) actions.push('<button type="button" class="cs-feature-inspect" data-spell-attack="' + _esc(spellKey) + '">Attack</button>');
-    const rollExpr = _spellRollBaseExpression(spell);
-    if (_looksRollableFormula(rollExpr)) actions.push('<button type="button" class="cs-feature-inspect" data-spell-roll="' + _esc(spellKey) + '" data-cast-level="' + _esc(String(spell && spell.castLevel != null ? spell.castLevel : (_spellLevelNumber(spell) || 0))) + '">Roll Effect</button>');
+    const rowCastLevel = _spellRowCastLevel(spell);
+    const rollExpr = _spellRollExpressionForLevel(spell, rowCastLevel, charData);
+    if (_looksRollableFormula(rollExpr)) actions.push('<button type="button" class="cs-feature-inspect" data-spell-roll="' + _esc(spellKey) + '" data-row-id="' + _esc(String(spell && spell.rowId || '')) + '" data-cast-level="' + _esc(String(rowCastLevel)) + '" data-roll-expr="' + _esc(String(rollExpr)) + '">Roll Effect</button>');
     return actions.join('');
   }
 
@@ -1492,10 +1512,16 @@ function _spellAttackSaveCell(spell, charData) {
         e.preventDefault();
         e.stopPropagation();
         const spellId = String(rollBtn.getAttribute('data-spell-roll') || '');
-        const pool = _mergeSpellArrays(_safeArray(state.castableSpellRows), _mergeSpellArrays(_safeArray(state.librarySpells), _mergeSpellArrays(_safeArray(state.manifest && state.manifest.cards), state.linkedSpells)));
-        const spell = pool.find(function (s) { return String(s.id || _spellName(s) || '') === spellId; });
-        if (spell && rollBtn.getAttribute('data-cast-level')) spell.castLevel = parseInt(rollBtn.getAttribute('data-cast-level'), 10) || spell.castLevel;
-        Promise.resolve(_rollSpellFromUi(spell, state)).then(function (rolled) {
+        const rowId = String(rollBtn.getAttribute('data-row-id') || '');
+        const castLevel = parseInt(rollBtn.getAttribute('data-cast-level') || '0', 10) || 0;
+        const forcedExpr = String(rollBtn.getAttribute('data-roll-expr') || '').trim();
+        const castableRows = _safeArray(state.castableSpellRows);
+        const exactRow = rowId ? castableRows.find(function (s) { return String(s.rowId || '') === rowId; }) : null;
+        const castableById = !exactRow ? castableRows.find(function (s) { return String(s.id || _spellName(s) || '') === spellId; }) : null;
+        const pool = _mergeSpellArrays(_safeArray(state.librarySpells), _mergeSpellArrays(_safeArray(state.manifest && state.manifest.cards), state.linkedSpells));
+        const spell = exactRow || castableById || pool.find(function (s) { return String(s.id || _spellName(s) || '') === spellId; });
+        if (spell && castLevel) spell.castLevel = castLevel;
+        Promise.resolve(_rollSpellFromUi(spell, state, { forcedExpr: forcedExpr, forcedCastLevel: castLevel })).then(function (rolled) {
           if (!rolled.ok && rolled.reason !== 'cancelled') {
             state.message = rolled.reason === 'no_formula' ? 'That spell does not have a rollable damage or healing formula yet.' : 'Could not roll that spell right now.';
             state.messageTone = 'warn';
@@ -1595,6 +1621,8 @@ function _spellAttackSaveCell(spell, charData) {
       spellRollExpressionForLevel: _spellRollExpressionForLevel,
       rollSpellFromUi: _rollSpellFromUi,
       showRolledSpellResult: _showRolledSpellResult,
+      renderSpellCombatResult: _renderSpellCombatResult,
+      renderSpellRow: _renderSpellRow,
     }
   };
 }(window));

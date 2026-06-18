@@ -164,7 +164,7 @@ console.log(JSON.stringify({ afterFive, afterSixthAttempt, sixthRejected, afterU
     assert rows['afterUnselect'] == 4
 
 
-def test_invalid_saved_pick_is_hidden_and_warned_not_thrown():
+def test_invalid_saved_pick_is_preserved_and_warned_not_thrown():
     rows = _run_node("""
 global.window = global;
 window.ActionsTab = {
@@ -195,11 +195,13 @@ console.log(JSON.stringify({
   warned,
   picksAfter: sel.readQuickPicks(),
   primaryNames: model.primaryActions.map(a => a.name),
+  disabledNames: model.primaryActions.filter(a => a.quickBarCanUse === false).map(a => a.name),
 }));
 """)
     assert rows['warned'] is True
-    assert rows['picksAfter'] == ['action:real-attack']
+    assert rows['picksAfter'] == ['action:real-attack', 'action:deleted-old-feature']
     assert 'Real Attack' in rows['primaryNames']
+    assert 'deleted old feature' in rows['disabledNames']
 
 
 def test_customize_picker_deduplicates_virtual_cast_rows_and_uses_stable_spell_pick_key():
@@ -268,3 +270,49 @@ def test_quick_action_sources_include_rest_and_modal_slot_sync_hooks():
         assert event in actions
     assert 'global.refreshCombatQuickActions = refreshCombatQuickActions;' in bar
     assert 'refreshSpellModalSlots' in actions
+
+def test_quick_pick_spell_fireball_survives_done_and_appears_in_top_spells():
+    rows = _run_node("""
+global.window = global;
+global.localStorage = (function () { const store = {}; return { getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); }, removeItem: k => { delete store[k]; } }; })();
+window.ActionsTab = { buildQuickActionModel: () => ({ primaryActions: [], bonusActions: [], reactions: [], resources: [], _allActions: [] }) };
+global._getCombatQuickSpells = () => [{ id: 'fireball', name: 'Fireball', level: 3, baseLevel: 3, source: 'class' }];
+global.getCombatQuickBarRuntime = () => ({ charSheet: {}, combat: { active: false }, spellSlots: {3: 1}, spellSlotState: {} });
+const sel = require('./client/static/js/character/combat_quick_selectors.js');
+sel.toggleQuickPickKey('spell:fireball');
+const model = sel.selectQuickActions({});
+console.log(JSON.stringify({ picks: sel.readQuickPicks(), topSpells: model.topSpells.map(s => s.name) }));
+""")
+    assert rows['picks'] == ['spell:fireball']
+    assert rows['topSpells'] == ['Fireball']
+
+
+def test_old_quick_pick_fireball_cast_key_migrates_to_canonical_spell_key():
+    rows = _run_node("""
+global.window = global;
+global.localStorage = (function () { const store = {}; return { getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); }, removeItem: k => { delete store[k]; } }; })();
+window.ActionsTab = { buildQuickActionModel: () => ({ primaryActions: [], bonusActions: [], reactions: [], resources: [], _allActions: [] }) };
+global._getCombatQuickSpells = () => [{ id: 'fireball::cast-5', baseSpellId: 'fireball', name: 'Fireball', level: 3, baseLevel: 3, source: 'class' }];
+global.getCombatQuickBarRuntime = () => ({ charSheet: {}, combat: { active: false }, spellSlots: {3: 1}, spellSlotState: {} });
+const sel = require('./client/static/js/character/combat_quick_selectors.js');
+sel.writeQuickPicks(['spell:fireball::cast-5']);
+const model = sel.selectQuickActions({});
+console.log(JSON.stringify({ picks: sel.readQuickPicks(), topSpells: model.topSpells.map(s => s.quickBarPickKey) }));
+""")
+    assert rows['picks'] == ['spell:fireball']
+    assert rows['topSpells'] == ['spell:fireball']
+
+
+def test_out_of_slot_selected_spell_remains_visible_but_disabled():
+    rows = _run_node("""
+global.window = global;
+global.localStorage = (function () { const store = {}; return { getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); }, removeItem: k => { delete store[k]; } }; })();
+window.ActionsTab = { buildQuickActionModel: () => ({ primaryActions: [], bonusActions: [], reactions: [], resources: [], _allActions: [] }) };
+global._getCombatQuickSpells = () => [{ id: 'fireball', name: 'Fireball', level: 3, baseLevel: 3, source: 'class' }];
+global.getCombatQuickBarRuntime = () => ({ charSheet: {}, combat: { active: false }, spellSlots: {3: 1}, spellSlotState: {3: 1} });
+const sel = require('./client/static/js/character/combat_quick_selectors.js');
+sel.writeQuickPicks(['spell:fireball']);
+const model = sel.selectQuickActions({});
+console.log(JSON.stringify(model.topSpells.map(s => ({ name: s.name, canUse: s.quickBarCanUse, reason: s.quickBarDisabledReason }))));
+""")
+    assert rows == [{'name': 'Fireball', 'canUse': False, 'reason': 'No spell slots available'}]
