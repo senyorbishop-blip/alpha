@@ -65,6 +65,45 @@ vm.runInThisContext(fs.readFileSync('./client/static/js/character/tabs/spells_ta
 
 
 
+
+def test_build_castable_spell_rows_fireball_polluted_levels_use_builtin_base_level():
+    data = node_eval(r'''
+const character = {level: 19, totalLevel: 19, spellSlots: [0,4,3,3,3,3,2,1,1,1]};
+const known = [{spellId:'fireball', name:'Fireball', baseLevel:4, level:4, spell_level:4, source:'Wizard', sourceType:'class', usesSpellSlot:true}];
+const built = rt.buildCastableSpellRows(character, known, []);
+const row4 = built.rows.find(r => r.name === 'Fireball' && r.castLevel === 4);
+const row5 = built.rows.find(r => r.name === 'Fireball' && r.castLevel === 5);
+const row7 = built.rows.find(r => r.name === 'Fireball' && r.castLevel === 7);
+console.log(JSON.stringify({
+  row4: {baseLevel: row4.baseLevel, level: row4.level, spell_level: row4.spell_level, castLevel: row4.castLevel, damagePreview: row4.damagePreview},
+  row5: {baseLevel: row5.baseLevel, level: row5.level, spell_level: row5.spell_level, castLevel: row5.castLevel, damagePreview: row5.damagePreview},
+  row7: {baseLevel: row7.baseLevel, level: row7.level, spell_level: row7.spell_level, castLevel: row7.castLevel, damagePreview: row7.damagePreview}
+}));
+''')
+    assert data['row4'] == {'baseLevel': 3, 'level': 3, 'spell_level': 3, 'castLevel': 4, 'damagePreview': '9d6'}
+    assert data['row5'] == {'baseLevel': 3, 'level': 3, 'spell_level': 3, 'castLevel': 5, 'damagePreview': '10d6'}
+    assert data['row7'] == {'baseLevel': 3, 'level': 3, 'spell_level': 3, 'castLevel': 7, 'damagePreview': '12d6'}
+
+
+def test_spells_tab_polluted_stale_virtual_fireball_row_returns_requested_upcast_formula():
+    data = spells_tab_eval(r'''
+const spell = { name:'Fireball', baseLevel:4, level:4, spell_level:4, castLevel:4, displaySectionLevel:4, isVirtualCastRow:true, damagePreview:'8d6' };
+console.log(JSON.stringify({expr: global.SpellsTab.__test.spellRollExpressionForLevel(spell, 4, {level:19})}));
+''')
+    assert data['expr'] == '9d6'
+
+
+def test_spells_tab_fireball_full_expected_slot_scaling():
+    data = spells_tab_eval(r'''
+const out = {};
+for (const lvl of [3,4,5,6,7,8,9]) {
+  out[lvl] = global.SpellsTab.__test.spellRollExpressionForLevel({name:'Fireball', baseLevel:3, spell_level:3, level:3, castLevel:lvl, slotLevel:lvl, isVirtualCastRow:true, damagePreview:'8d6'}, lvl, {level:19});
+}
+console.log(JSON.stringify(out));
+''')
+    assert data == {'3': '8d6', '4': '9d6', '5': '10d6', '6': '11d6', '7': '12d6', '8': '13d6', '9': '14d6'}
+
+
 def test_render_spell_row_fireball_level_7_button_uses_12d6_formula_and_data_expr():
     data = spells_tab_eval(r"""
 const html = global.SpellsTab.__test.renderSpellRow({id:'fireball', rowId:'fireball::cast-7', name:'Fireball', baseLevel:3, spell_level:3, level:3, castLevel:7, slotLevel:7, isVirtualCastRow:true, damagePreview:'12d6'}, '', {level:19});

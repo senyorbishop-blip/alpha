@@ -194,18 +194,31 @@
     return merged;
   }
 
+  function builtinForSpell(card) {
+    card = obj(card);
+    var id = _slug(first(card.spellId, card.id, card.name, card.displayName));
+    var idStripped = id.replace(/^(?:spell|ability|action)-/, '');
+    var idByName = _slug(first(card.name, card.displayName));
+    return BUILTIN[id] || BUILTIN[idStripped] || BUILTIN[idByName] || {};
+  }
+
+  function builtinBaseLevel(card) {
+    var builtin = builtinForSpell(card);
+    return num(first(builtin.level, builtin.spell_level, builtin.spellLevel), null);
+  }
+
   function levelOf(card, merged, builtin) {
     card = obj(card);
     merged = obj(merged);
     builtin = obj(builtin);
     var raw = first(
+      builtin.level,
+      builtin.spell_level,
+      builtin.spellLevel,
       card.baseLevel,
       card.base_level,
       card.spell_level,
-      card.spellLevel,
-      builtin.level,
-      builtin.spell_level,
-      builtin.spellLevel
+      card.spellLevel
     );
     if ((raw === null || raw === undefined || raw === '') && card.isVirtualCastRow) {
       raw = card.level;
@@ -624,8 +637,8 @@
       var builtinForKey = BUILTIN[key] || BUILTIN[_slug(knownSpell.name)] || {};
       var hasSafeCanonical = !!(builtinForKey && first(builtinForKey.scaling_type, builtinForKey.scalingType, ''));
       var scalingDataMissing = !hasSafeCanonical && _hasHigherLevelText(card) && !_hasExplicitScalingMetadata(card);
-      var baseLevel = num(first(knownSpell.baseLevel, builtinForKey.level, card.baseLevel, card.level, card.spell_level), null);
-      if (baseLevel === null) baseLevel = levelOf(card, _smartMerge(BUILTIN[key] || BUILTIN[_slug(knownSpell.name)] || {}, card));
+      var baseLevel = num(first(builtinForKey.level, builtinForKey.spell_level, builtinForKey.spellLevel, knownSpell.baseLevel, card.baseLevel, card.level, card.spell_level), null);
+      if (baseLevel === null) baseLevel = levelOf(card, _smartMerge(BUILTIN[key] || BUILTIN[_slug(knownSpell.name)] || {}, card), builtinForKey);
       if (baseLevel === null) { diagnostics.knownWithoutRows.push(knownSpell.name); return; }
       var minLevel = baseLevel <= 0 ? 0 : baseLevel;
       var maxLevel = baseLevel <= 0 ? 0 : (knownSpell.usesCharges || knownSpell.limitedUse ? Math.max(baseLevel, highestSlot || baseLevel) : Math.max(baseLevel, highestSlot));
@@ -728,6 +741,8 @@
     normalizeRollableFormula: normalizeRollable,
     isRollableFormula:        isRollable,
     combineSpellFormula:      combine,
+    getBuiltinSpellMeta:      builtinForSpell,
+    getBuiltinSpellBaseLevel: builtinBaseLevel,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = global.AppSpellRuntime;
 

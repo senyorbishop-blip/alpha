@@ -465,7 +465,10 @@ function _spellAttackSaveCell(spell, charData) {
 
   function _spellRollExpressionForLevel(spell, slotLevel, charData) {
     const castLevel = parseInt(slotLevel, 10) || _spellDisplayCastLevel(spell);
-    const baseLevel = _spellBaseLevel(spell);
+    const runtimeBuiltinBase = (global.AppSpellRuntime && typeof global.AppSpellRuntime.getBuiltinSpellBaseLevel === 'function')
+      ? global.AppSpellRuntime.getBuiltinSpellBaseLevel(spell || {})
+      : null;
+    const baseLevel = runtimeBuiltinBase !== null ? runtimeBuiltinBase : _spellBaseLevel(spell);
     const normalizedBase = Number.isFinite(baseLevel) ? baseLevel : _spellLevelNumber(spell);
     const preview = _firstText(spell && spell.damagePreview, spell && spell.healingPreview, '');
     let formula = '';
@@ -477,8 +480,8 @@ function _spellAttackSaveCell(spell, charData) {
         level: normalizedBase,
         spell_level: normalizedBase,
         baseLevel: normalizedBase,
-        castLevel: normalizedBase,
-        slotLevel: normalizedBase,
+        castLevel: castLevel,
+        slotLevel: castLevel,
       });
       const runtime = global.AppSpellRuntime.resolveSpellRuntime(resolverCard, {
         castLevel: castLevel,
