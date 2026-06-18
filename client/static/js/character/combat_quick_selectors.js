@@ -280,6 +280,27 @@
     return next;
   }
 
+  function _canonicalQuickPickKey(pickKey) {
+    const raw = String(pickKey || '').trim();
+    if (!raw) return '';
+    if (raw.indexOf('spell:') === 0) {
+      return 'spell:' + _slugKey(raw.slice(6).replace(/^spell-/, ''));
+    }
+    return raw;
+  }
+
+  function toggleQuickPickKey(pickKey) {
+    const runtime = _runtime();
+    const key = _canonicalQuickPickKey(pickKey);
+    if (!key || /:$/.test(key)) return readQuickPicks(runtime);
+    const picks = readQuickPicks(runtime).map(_canonicalQuickPickKey);
+    const existing = picks.indexOf(key);
+    if (existing >= 0) { picks.splice(existing, 1); return writeQuickPicks(picks, runtime); }
+    if (picks.length >= QUICK_PICK_LIMIT) return picks;
+    picks.push(key);
+    return writeQuickPicks(picks, runtime);
+  }
+
   function toggleQuickPick(kind, item) {
     const runtime = _runtime();
     const key = _candidateKey(kind, item);
@@ -620,7 +641,7 @@
       ? global.ActionsTab.buildQuickActionModel(sheet)
       : { primaryActions: [], bonusActions: [], reactions: [], resources: [], concentration: null, _allActions: [] };
     const usedState = _readUsedThisTurn(runtime);
-    const picks = readQuickPicks(runtime);
+    const picks = readQuickPicks(runtime).map(_canonicalQuickPickKey);
     const pickSet = new Set(picks);
     function mark(items, kind) {
       return _safeArray(items).map(function (item) {
@@ -639,20 +660,30 @@
     const pickedActions = [];
     const pickedSpells = [];
     const invalidPicks = [];
+    function disabledSavedPick(pick) {
+      const label = pick.indexOf('spell:') === 0 ? pick.slice(6).replace(/-/g, ' ') : pick.replace(/^[^:]+:/, '').replace(/-/g, ' ');
+      return { id: pick, name: label || 'Saved quick pick', quickBarPickKey: pick, quickBarPinned: true, quickBarCanUse: false, quickBarDisabledReason: 'Saved pick is not currently available', quickBarType: pick.indexOf('spell:') === 0 ? 'spell' : 'action', category: pick.indexOf('spell:') === 0 ? 'Spell' : 'Utility' };
+    }
     if (picks.length) {
-      picks.forEach(function (pick) {
+      picks.forEach(function (rawPick) {
+        const pick = _canonicalQuickPickKey(rawPick);
         const pool = pick.indexOf('spell:') === 0 ? allSpells : allActions;
-        const found = pool.find(function (item) { return item.quickBarPickKey === pick; });
-        if (!found) { invalidPicks.push(pick); return; }
+        let found = pool.find(function (item) { return item.quickBarPickKey === pick; });
+        if (!found && pick.indexOf('spell:') === 0) {
+          const canonical = _canonicalQuickPickKey(pick);
+          found = pool.find(function (item) { return _canonicalQuickPickKey(item && item.quickBarPickKey) === canonical; });
+        }
+        if (!found) {
+          invalidPicks.push(pick);
+          found = disabledSavedPick(pick);
+        }
         if (pick.indexOf('spell:') === 0) pickedSpells.push(found);
         else pickedActions.push(found);
       });
-      if (invalidPicks.length) {
-        if (global.console && typeof global.console.warn === 'function') {
-          global.console.warn('[CombatQuickSelectors] Hiding invalid saved quick action picks:', invalidPicks);
-        }
-        writeQuickPicks(picks.filter(function (pick) { return invalidPicks.indexOf(pick) === -1; }), runtime);
+      if (invalidPicks.length && global.console && typeof global.console.warn === 'function') {
+        global.console.warn('[CombatQuickSelectors] Saved quick action picks are unavailable but preserved:', invalidPicks);
       }
+      if (picks.some(function (pick, idx) { return pick !== readQuickPicks(runtime)[idx]; })) writeQuickPicks(picks, runtime);
     }
     const primary = picks.length ? pickedActions.filter(function (item) { return String(item.quickBarLane || '').toLowerCase() !== 'bonus' && String(item.quickBarLane || '').toLowerCase() !== 'reaction'; }) : mark(_uniqueByName(_safeArray(actionModel.primaryActions).filter(isPlayableQuickAction), 2), 'action');
     const bonus = picks.length ? pickedActions.filter(function (item) { return String(item.quickBarLane || '').toLowerCase() === 'bonus'; }) : mark(_uniqueByName(_safeArray(actionModel.bonusActions).filter(isPlayableQuickAction), 2), 'action');
@@ -679,9 +710,11 @@
     readQuickPicks: readQuickPicks,
     writeQuickPicks: writeQuickPicks,
     toggleQuickPick: toggleQuickPick,
+    toggleQuickPickKey: toggleQuickPickKey,
     isPlayableQuickAction: isPlayableQuickAction,
     buildQuickActionCandidates: buildQuickActionCandidates,
     _canonicalSpellKey: _canonicalSpellKey,
+    _canonicalQuickPickKey: _canonicalQuickPickKey,
     _baseSpellLevelForQuickAction: _baseSpellLevelForQuickAction,
     _canonicalSpellDisplayCandidate: _canonicalSpellDisplayCandidate,
     _spellAvailable: _spellAvailable,
