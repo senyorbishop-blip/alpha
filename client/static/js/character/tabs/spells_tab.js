@@ -212,11 +212,12 @@
     ]);
   }
   function _spellCombatRows(spell) {
+    const resolvedFormula = spell.damagePreview || spell.healingPreview || spell.damageFormula || spell.healingFormula || '—';
     return _compactRows([
       { label: 'Attack / Save', value: spell.attackType || spell.savingThrow || spell.saveDC || '—' },
-      { label: 'Damage / Healing', value: spell.damageFormula || spell.healingFormula || '—' },
+      { label: 'Damage / Healing', value: resolvedFormula },
       { label: 'Damage Type', value: spell.damageType || '—' },
-      { label: 'What It Does', value: spell.effect || spell.playerFacingEffectSummary || '—' }
+      { label: 'What It Does', value: spell.effectPreview || spell.effect || spell.playerFacingEffectSummary || '—' }
     ]);
   }
   function _spellScalingRows(spell) {

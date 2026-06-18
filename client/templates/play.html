@@ -24018,6 +24018,9 @@ window.AppDice = {
     }
     fillDiceResult(rolls, total, diceType, qty, modifier, rollLabel, meta);
   },
+  rollExpressionAndResolve(expr, meta = {}) {
+    return _rollExpressionAndResolveDice(expr, meta || {});
+  },
 };
 window.onDiceRollModeChanged = onDiceRollModeChanged;
 
@@ -24991,6 +24994,84 @@ function _rollLocalDiceAfterSettle(opts = {}) {
       const currentRolls = _normalizeDiceVisualRolls(_collectCurrentDiceVisualRolls(), diceType);
       finish(currentRolls, { rollId, seed });
     }, 11000);
+  });
+}
+
+/**
+ * Single roll pipeline for arbitrary (possibly compound) dice formulas:
+ * compute the true result once via _rollDiceExpr, then force the 3D dice
+ * visual to land on those exact values (targetResults) so the animation and
+ * the authoritative number can never disagree. Resolves only after the dice
+ * have visually settled (or after a timeout / when visuals are unavailable).
+ */
+function _rollExpressionAndResolveDice(expr, meta = {}) {
+  return new Promise((resolve) => {
+    const result = typeof _rollDiceExpr === 'function' ? _rollDiceExpr(expr) : null;
+    if (!result) { resolve(null); return; }
+
+    const shape = _dicePreviewMetaFromExpr(expr, result);
+    const diceType = shape.diceType;
+    const qty = shape.qty;
+    const modifier = shape.modifier;
+    const rollLabel = String(meta.rollLabel || '').trim();
+    const source = String(meta.source || 'expr-resolve').trim() || 'expr-resolve';
+    const mode = meta.mode || getDiceRollMode();
+    const modifierMeta = (meta && typeof meta.modifierMeta === 'object') ? meta.modifierMeta : null;
+
+    const payload = () => ({
+      rolls: result.rolls,
+      total: result.total,
+      diceType,
+      qty,
+      modifier,
+      rollLabel,
+      expr,
+      modifierMeta: modifierMeta || _diceModifierMeta(),
+    });
+
+    if (!_diceWantsVisuals(mode) || meta.visualDisabled) {
+      _showImmediateDiceResult({ ...payload(), source, mode: 'result-only' });
+      resolve(payload());
+      return;
+    }
+
+    const dp = window.DicePhysics3D;
+    if (!dp || (dp.isContextLost && dp.isContextLost())) {
+      _showImmediateDiceResult({ ...payload(), source, visualDisabled: true });
+      resolve(payload());
+      return;
+    }
+
+    let resolved = false;
+    const seed = _generateDiceSeed();
+    const rollId = _generateDiceRollId(source);
+    const finish = () => {
+      if (resolved) return true;
+      resolved = true;
+      // targetResults forced the physics dice to land on these exact values,
+      // so the rendered strip/popup and the resolved payload always agree.
+      fillDiceResult(result.rolls, result.total, diceType, qty, modifier, rollLabel, {
+        ...payload(),
+        rollId,
+        seed,
+        source,
+      });
+      resolve(payload());
+      return true;
+    };
+
+    const targetResults = _expandDiceVisualResults(result.rolls, diceType);
+    showDiceAnimation(diceType, qty, null, {
+      seed,
+      rollId,
+      source,
+      mode,
+      modifierMeta: modifierMeta || _diceModifierMeta(),
+      targetResults,
+      onSettledResult: () => finish(),
+    });
+
+    setTimeout(() => { if (!resolved) finish(); }, 11000);
   });
 }
 
@@ -47642,27 +47723,34 @@ function combatQuickRollSpellDamage(spellId, slotLevel) {
   }
   const isHealing = _spellCardLooksLikeHealing(card);
   const rollKind = isHealing ? 'healing' : 'damage';
-  const result = _rollSpellFormula(card, expr, rollKind, { rollLabel: `${spell.name || 'Spell'} ${_combatQuickSpellCastLevelLabel(resolvedCast.castLevel)} • ${isHealing ? 'Healing' : 'Damage'}` });
-  if (!result) return null;
   const damageType = String(card.damage_type || card.healing_type || '').trim();
-  _showCombatResultCard({
-    title: spell.name || 'Spell',
-    subtitle: _combatQuickSpellCastLevelLabel(resolvedCast.castLevel) + (isHealing ? ' — Healing' : ' — Damage'),
-    outcome: 'hit',
-    damage: result.total,
-    damageRolls: result.rolls,
-    damageType,
+  return window.AppDice.rollExpressionAndResolve(expr, {
+    rollLabel: `${spell.name || 'Spell'} ${_combatQuickSpellCastLevelLabel(resolvedCast.castLevel)} • ${isHealing ? 'Healing' : 'Damage'}`,
+    source: 'spell-' + rollKind,
+  }).then((result) => {
+    if (!result) return null;
+    _showCombatResultCard({
+      title: spell.name || 'Spell',
+      subtitle: _combatQuickSpellCastLevelLabel(resolvedCast.castLevel) + (isHealing ? ' — Healing' : ' — Damage'),
+      outcome: 'hit',
+      damage: result.total,
+      damageRolls: result.rolls,
+      damageType,
+    });
+    sendWS({ type: 'chat_message', payload: { message: `✨ **${_charSheet?.name || NAME || 'Character'}** rolls **${spell.name}** ${_combatQuickSpellCastLevelLabel(resolvedCast.castLevel)} ${isHealing ? 'healing' : 'damage'}: **${result.total}** (${expr})${damageType ? ` ${damageType}` : ''}.`, channel: 'everyone', roll_payload: resolvedCast.rollPayload } });
+    return result;
   });
-  sendWS({ type: 'chat_message', payload: { message: `✨ **${_charSheet?.name || NAME || 'Character'}** rolls **${spell.name}** ${_combatQuickSpellCastLevelLabel(resolvedCast.castLevel)} ${isHealing ? 'healing' : 'damage'}: **${result.total}** (${expr})${damageType ? ` ${damageType}` : ''}.`, channel: 'everyone', roll_payload: resolvedCast.rollPayload } });
-  return result;
 }
 
 function combatQuickShowSpellSave(spellId, slotLevel) {
   const spell = typeof spellId === 'object' ? spellId : _findCombatQuickSpellById(spellId);
   if (!spell) { showToast('Spell not found.'); return null; }
   const card = spell.card || {};
-  const saveAbility = String(card.save_ability || card.save || '').toUpperCase().replace(/[^A-Z]/g, '');
-  const saveDC = parseInt(String(card.save_dc || _charSheet?.spellSaveDc || '').replace(/[^0-9]/g, ''), 10) || null;
+  let resolvedCast = null;
+  try { resolvedCast = typeof resolveSpellCast === 'function' ? resolveSpellCast(spell, _charSheet || {}, { castLevel: slotLevel, slotLevel, source: 'spell', actionSource: 'quick_actions_save' }) : null; } catch (e) { resolvedCast = null; }
+  const runtime = resolvedCast && resolvedCast.runtime;
+  const saveAbility = String((runtime && runtime.saveAbility) || card.save_ability || card.save || '').toUpperCase().replace(/[^A-Z]/g, '');
+  const saveDC = parseInt(String((runtime && runtime.saveDc) || card.save_dc || _charSheet?.spellSaveDc || '').replace(/[^0-9]/g, ''), 10) || null;
   if (!saveAbility && !saveDC) { showToast(`${spell.name || 'Spell'} has no save metadata.`); return null; }
   sendWS({ type: 'chat_message', payload: { message: `✨ **${_charSheet?.name || NAME || 'Character'}** presents **${spell.name}** ${_combatQuickSpellCastLevelLabel(slotLevel)}: ${saveDC ? `DC **${saveDC}** ` : ''}${saveAbility ? `${saveAbility} save` : 'saving throw'}.`, channel: 'everyone' } });
   showToast(saveDC ? `DC ${saveDC} ${saveAbility} save` : `${saveAbility} save`);
@@ -47919,7 +48007,7 @@ function resolveSpellCast(spell, characterRuntime, options = {}) {
 }
 window.resolveSpellCast = resolveSpellCast;
 
-function _executeCombatSpellCast(spell, slotLevel) {
+async function _executeCombatSpellCast(spell, slotLevel) {
   _recordSpellUsage(spell);
   const resolvedCast = resolveSpellCast(spell, _charSheet || {}, { castLevel: slotLevel, slotLevel, source: 'spell', actionSource: 'quick_actions', targetId: _combat?.selected_target_id || '' });
   const baseLevel = resolvedCast.baseLevel;
@@ -48008,15 +48096,17 @@ function _executeCombatSpellCast(spell, slotLevel) {
   let spellRoll = null;
   if (dmgExpr) {
     const rollKind = isHealing ? 'healing' : 'damage';
-    spellRoll = _rollSpellFormula(card, dmgExpr, rollKind, { rollLabel: `${spell.name || 'Spell'}${slotText} • ${isHealing ? 'Healing' : 'Spell Effect'}` });
-    if (outcome === 'crit' && spellRoll && dmgExpr) {
+    let effectiveExpr = dmgExpr;
+    if (outcome === 'crit') {
       const critMatch = String(dmgExpr || '').match(/^(\d+)d(\d+)/i);
       if (critMatch) {
-        const critExpr = `${parseInt(critMatch[1], 10) * 2}d${critMatch[2]}` + String(dmgExpr).slice(critMatch[0].length);
-        const cr = _rollSpellFormula(card, critExpr, rollKind, { rollLabel: `${spell.name || 'Spell'}${slotText} • Critical ${isHealing ? 'Healing' : 'Damage'}` });
-        if (cr) spellRoll = cr;
+        effectiveExpr = `${parseInt(critMatch[1], 10) * 2}d${critMatch[2]}` + String(dmgExpr).slice(critMatch[0].length);
       }
     }
+    spellRoll = await window.AppDice.rollExpressionAndResolve(effectiveExpr, {
+      rollLabel: `${spell.name || 'Spell'}${slotText} • ${outcome === 'crit' ? `Critical ${isHealing ? 'Healing' : 'Damage'}` : (isHealing ? 'Healing' : 'Spell Effect')}`,
+      source: 'spell-' + rollKind,
+    });
   }
 
   const saveDcRaw = card.save_dc || _charSheet?.spellSaveDc || '';

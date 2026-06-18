@@ -392,12 +392,14 @@
     /* Merge: card wins for non-null values; BUILTIN fills null gaps */
     var merged = _smartMerge(builtin, card);
 
-    /* Restore BUILTIN scaling when card omits it */
-    if (!first(merged.scaling_type, merged.scalingType) && first(builtin.scaling_type)) {
+    /* Restore BUILTIN scaling when card omits it, or when imported data explicitly
+       claims 'none' (a common stale/incomplete import sentinel) while a known
+       built-in spell has real scaling data. */
+    var mergedScalingType = first(merged.scaling_type, merged.scalingType, '');
+    var builtinScalingType = first(builtin.scaling_type, '');
+    if (builtinScalingType && builtinScalingType !== 'none' && (!mergedScalingType || mergedScalingType === 'none')) {
       merged.scaling_type = builtin.scaling_type;
-      if (!merged.scaling_data && !merged.scalingData && builtin.scaling_data) {
-        merged.scaling_data = builtin.scaling_data;
-      }
+      merged.scaling_data = builtin.scaling_data || merged.scaling_data || merged.scalingData;
     }
 
     var warnings = [];
@@ -605,7 +607,7 @@
       var builtinForKey = BUILTIN[key] || BUILTIN[_slug(knownSpell.name)] || {};
       var hasSafeCanonical = !!(builtinForKey && first(builtinForKey.scaling_type, builtinForKey.scalingType, ''));
       var scalingDataMissing = !hasSafeCanonical && _hasHigherLevelText(card) && !_hasExplicitScalingMetadata(card);
-      var baseLevel = num(first(knownSpell.baseLevel, card.baseLevel, card.level, card.spell_level), null);
+      var baseLevel = num(first(knownSpell.baseLevel, builtinForKey.level, card.baseLevel, card.level, card.spell_level), null);
       if (baseLevel === null) baseLevel = levelOf(card, _smartMerge(BUILTIN[key] || BUILTIN[_slug(knownSpell.name)] || {}, card));
       if (baseLevel === null) { diagnostics.knownWithoutRows.push(knownSpell.name); return; }
       var minLevel = baseLevel <= 0 ? 0 : baseLevel;
@@ -613,7 +615,7 @@
       if (maxLevel < minLevel) maxLevel = minLevel;
       for (var castLevel = minLevel; castLevel <= maxLevel; castLevel++) {
         if (castLevel > 9) break;
-        var resolved = resolveSpellRuntime(Object.assign({}, card, { level: baseLevel, spell_level: baseLevel, id: first(knownSpell.spellId, card.id, key), name: knownSpell.name }), Object.assign({}, rt, { castLevel: castLevel, slotLevel: castLevel, item: knownSpell.usesCharges }));
+        var resolved = resolveSpellRuntime(Object.assign({}, card, { level: baseLevel, spell_level: baseLevel, id: first(knownSpell.spellId, card.id, key), name: knownSpell.name }), Object.assign({}, rt, { castLevel: castLevel, slotLevel: castLevel, item: knownSpell.usesCharges, characterLevel: first(rt.characterLevel, rt.totalLevel, rt.level, 1) }));
         var formula = first(resolved.finalHealingFormula, resolved.finalDamageFormula, resolved.displayFormula, '');
         var higherLevelMetadata = buildHigherLevelMetadata(card, { type: resolved.scalingType, data: resolved.scalingData }, baseLevel, builtinForKey, scalingDataMissing);
         var noExtra = castLevel > baseLevel && (!resolved.scalingType || resolved.scalingType === 'none' || formula === first(resolved.baseFormula, ''));
