@@ -9077,7 +9077,7 @@
             </label>
           </div>
           <div id="viewer-power-controls" data-help="viewer-powers" style="display:none;padding:0.7rem;border:1px solid rgba(201,162,39,0.14);border-radius:10px;background:rgba(255,255,255,0.03);"></div>
-          <div id="viewer-power-self" data-help="viewer-powers" style="display:none;padding:0.7rem;border:1px solid rgba(93,122,255,0.18);border-radius:10px;background:rgba(93,122,255,0.05);"></div>
+          <div id="viewer-power-self" data-help="viewer-powers-self" style="display:none;padding:0.7rem;border:1px solid rgba(93,122,255,0.18);border-radius:10px;background:rgba(93,122,255,0.05);"></div>
         <!-- DM Poll Controls -->
           <div id="poll-dm-controls" style="display:none;padding:0.7rem;border:1px solid rgba(0,229,204,0.18);border-radius:10px;background:rgba(0,229,204,0.03);">
             <div class="panel-collapse-toggle" role="button" tabindex="0" data-collapse-target="poll-dm-body" data-collapse-arrow="poll-dm-arrow" data-collapse-display="block" style="padding:0.2rem 0.1rem;"><div class="tab-section-label" style="margin:0;">🗳️ Party Vote</div><span id="poll-dm-arrow" style="font-size:0.62rem;color:var(--parchment-dim);">▼</span></div>
@@ -27999,6 +27999,17 @@ function viewerPowerActionLabel(powerId) {
   return 'Use on Token';
 }
 
+function viewerPowerTargetModeLabel(powerId) {
+  const def = viewerPowerDefs()[powerId] || {};
+  const mode = String(def.target_mode || 'token');
+  if (mode !== 'point') return 'A single token you choose';
+  const shape = viewerPowerAreaShape(powerId);
+  if (shape === 'aura') return 'An aura around a token you choose';
+  if (shape === 'cone') return 'A point on the map (cone from a source token)';
+  if (shape === 'line') return 'A point on the map (line from a source token)';
+  return 'A point on the map';
+}
+
 function viewerPowerCooldownLabel(entry) {
   const until = Number(entry?.cooldown_until || 0);
   const now = Date.now() / 1000;
@@ -28019,8 +28030,23 @@ function _viewerPowerIsPending(powerId) {
   return currentViewerPendingEntries().some(p => p && String(p.power_id || '') === String(powerId || ''));
 }
 
+function _viewerPowerDisabledReason(entry, targetOptions) {
+  if (!entry) return '';
+  if (entry.enabled === false) return 'Disabled by the DM.';
+  if (_viewerPowerOnCooldown(entry)) {
+    const remain = Math.max(1, Math.ceil(Number(entry.cooldown_until) - Date.now() / 1000));
+    return `On cooldown for ${remain}s.`;
+  }
+  if (_viewerPowerIsPending(entry.power_id)) return 'Waiting for the DM to approve or decline this use.';
+  if (!viewerPowerNeedsMapTarget(entry.power_id) && (!targetOptions || !targetOptions.length)) return 'No valid target token is visible on this map yet.';
+  return '';
+}
+
 function _viewerPowerBtnHtml(entry) {
   const powerId = escapeHtml(entry.power_id);
+  if (entry.enabled === false) {
+    return `<button disabled style="flex:1;padding:0.4rem 0.55rem;background:rgba(100,100,100,0.12);border:1px solid rgba(100,100,100,0.25);border-radius:8px;color:var(--parchment-dim);cursor:not-allowed;">🚫 Disabled by DM</button>`;
+  }
   if (_viewerPowerOnCooldown(entry)) {
     const remain = Math.max(1, Math.ceil(Number(entry.cooldown_until) - Date.now() / 1000));
     return `<button disabled style="flex:1;padding:0.4rem 0.55rem;background:rgba(100,100,100,0.12);border:1px solid rgba(100,100,100,0.25);border-radius:8px;color:var(--parchment-dim);cursor:not-allowed;">⏳ ${remain}s cooldown</button>`;
@@ -28158,7 +28184,28 @@ function renderViewerPanel() {
     const targetOptions = visibleTargetTokensForViewerPowers();
     const entries = profile ? Object.values(profile.powers || {}).filter(e => Number(e?.charges || 0) > 0) : [];
     const queuedCount = currentViewerPendingEntries().length;
-    selfBox.innerHTML = `<div class="tab-section-label" style="margin-top:0;">Your Powers</div><div style="font-size:0.66rem;color:var(--parchment-dim);margin-bottom:0.6rem;line-height:1.45;">Only DM-granted interactions appear here. Charges, cooldowns, and approval state update live so you always know what is currently allowed.</div>${_viewerPowerFxSettingsHtml()}${_viewerPowerTargeting ? `<div style="margin-bottom:0.55rem;padding:0.5rem 0.6rem;border-radius:9px;background:rgba(255,163,86,0.1);border:1px solid rgba(255,163,86,0.24);font-size:0.66rem;color:var(--parchment);display:flex;justify-content:space-between;gap:0.5rem;align-items:center;"><span>Targeting ${escapeHtml(viewerPowerName(_viewerPowerTargeting.powerId))}: tap the map${viewerPowerNeedsSourceToken(_viewerPowerTargeting.powerId) ? ' from the chosen token' : ''}.</span><button onclick="cancelViewerPowerTargeting(true)" style="padding:0.28rem 0.46rem;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:7px;color:var(--parchment);cursor:pointer;">Cancel</button></div>` : ''}<label style="display:block;font-size:0.62rem;color:var(--parchment-dim);margin-bottom:0.5rem;">Target / source token<select id="viewer-power-target" style="width:100%;margin-top:0.18rem;background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:6px;color:var(--parchment);padding:0.34rem;">${targetOptions.map(t=>`<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('') || '<option value="">No valid target on this map yet</option>'}</select></label>${queuedCount>0?`<div style="font-size:0.62rem;color:var(--gold-dim);margin-bottom:0.45rem;">⏳ ${queuedCount} power${queuedCount===1?'':'s'} pending DM approval</div>`:''}<div style="display:flex;flex-direction:column;gap:0.42rem;">${entries.length ? entries.map(entry => `<div style="padding:0.55rem 0.62rem;background:rgba(255,255,255,0.04);border:1px solid rgba(93,122,255,0.26);border-radius:9px;color:var(--parchment);"><div style="display:flex;justify-content:space-between;gap:0.45rem;align-items:center;"><span style="font-size:0.74rem;font-weight:700;">${escapeHtml(viewerPowerName(entry.power_id))}</span><span style="font-size:0.64rem;color:var(--gold);white-space:nowrap;">${Number(entry.charges||0)} charge${Number(entry.charges||0)===1?'':'s'}</span></div><div style="font-size:0.62rem;color:var(--parchment-dim);margin-top:0.15rem;">${escapeHtml(viewerPowerDescription(entry.power_id))}${entry.requires_approval ? ' · <em>Needs DM approval.</em>' : ''}</div><div style="font-size:0.6rem;color:var(--gold-dim);margin-top:0.14rem;">${escapeHtml(viewerPowerCooldownLabel(entry))}</div><div style="display:flex;gap:0.4rem;margin-top:0.48rem;">${_viewerPowerBtnHtml(entry)}</div></div>`).join('') : '<div style="font-size:0.68rem;color:var(--parchment-dim);padding:0.5rem 0.2rem;">No active powers. Ask the DM for a grant, then return here to fire it.</div>'}</div><div class="tab-section-label" style="margin-top:0.9rem;">Viewer Power Recap</div><div id="viewer-power-recap-log" style="display:flex;flex-direction:column;gap:0.38rem;"></div>`;
+    const cardsHtml = entries.length ? entries.map(entry => {
+      const pending = _viewerPowerIsPending(entry.power_id);
+      const disabledReason = _viewerPowerDisabledReason(entry, targetOptions);
+      const statusText = pending ? 'Pending DM approval' : (disabledReason ? 'Blocked' : 'Ready to use');
+      const statusColor = pending ? '#ffd3ae' : (disabledReason ? '#ffb4ab' : '#b8f5dc');
+      return `<div style="padding:0.6rem 0.65rem;background:rgba(255,255,255,0.04);border:1px solid ${pending ? 'rgba(255,163,86,0.4)' : (disabledReason ? 'rgba(231,76,60,0.22)' : 'rgba(93,122,255,0.26)')};border-radius:9px;color:var(--parchment);">
+        <div style="display:flex;justify-content:space-between;gap:0.45rem;align-items:center;">
+          <span style="font-size:0.76rem;font-weight:700;">${escapeHtml(viewerPowerName(entry.power_id))}</span>
+          <span style="font-size:0.64rem;color:var(--gold);white-space:nowrap;">${Number(entry.charges||0)} charge${Number(entry.charges||0)===1?'':'s'}</span>
+        </div>
+        <div style="font-size:0.64rem;color:var(--parchment-dim);margin-top:0.22rem;line-height:1.4;">${escapeHtml(viewerPowerDescription(entry.power_id))}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.22rem 0.5rem;margin-top:0.42rem;font-size:0.6rem;color:var(--parchment-dim);">
+          <div><strong style="color:var(--parchment);">Target:</strong> ${escapeHtml(viewerPowerTargetModeLabel(entry.power_id))}</div>
+          <div><strong style="color:var(--parchment);">Cooldown:</strong> ${escapeHtml(viewerPowerCooldownLabel(entry))}</div>
+          <div><strong style="color:var(--parchment);">Approval:</strong> ${entry.requires_approval ? 'Required' : 'Not required'}</div>
+          <div><strong style="color:var(--parchment);">Status:</strong> <span style="color:${statusColor};">${statusText}</span></div>
+        </div>
+        ${disabledReason ? `<div style="margin-top:0.42rem;font-size:0.62rem;color:#ffb47a;">⚠ ${escapeHtml(disabledReason)}</div>` : ''}
+        <div style="display:flex;gap:0.4rem;margin-top:0.5rem;">${_viewerPowerBtnHtml(entry)}</div>
+      </div>`;
+    }).join('') : '<div style="font-size:0.7rem;color:var(--parchment-dim);padding:0.8rem 0.6rem;text-align:center;border:1px dashed rgba(255,255,255,0.14);border-radius:9px;">No powers granted yet. The DM can grant powers during key scenes.</div>';
+    selfBox.innerHTML = `<div class="tab-section-label" style="margin-top:0;">Your Powers</div><div style="font-size:0.66rem;color:var(--parchment-dim);margin-bottom:0.6rem;line-height:1.45;">Only DM-granted interactions appear here. Charges, cooldowns, and approval state update live so you always know what is currently allowed and why anything is disabled.</div>${_viewerPowerFxSettingsHtml()}${_viewerPowerTargeting ? `<div style="margin-bottom:0.55rem;padding:0.5rem 0.6rem;border-radius:9px;background:rgba(255,163,86,0.1);border:1px solid rgba(255,163,86,0.24);font-size:0.66rem;color:var(--parchment);display:flex;justify-content:space-between;gap:0.5rem;align-items:center;"><span>Targeting ${escapeHtml(viewerPowerName(_viewerPowerTargeting.powerId))}: tap the map${viewerPowerNeedsSourceToken(_viewerPowerTargeting.powerId) ? ' from the chosen token' : ''}.</span><button onclick="cancelViewerPowerTargeting(true)" style="padding:0.28rem 0.46rem;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:7px;color:var(--parchment);cursor:pointer;">Cancel</button></div>` : ''}<label style="display:block;font-size:0.62rem;color:var(--parchment-dim);margin-bottom:0.5rem;">Target / source token<select id="viewer-power-target" style="width:100%;margin-top:0.18rem;background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:6px;color:var(--parchment);padding:0.34rem;">${targetOptions.map(t=>`<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('') || '<option value="">No valid target on this map yet</option>'}</select></label>${queuedCount>0?`<div style="font-size:0.62rem;color:var(--gold-dim);margin-bottom:0.45rem;">⏳ ${queuedCount} power${queuedCount===1?'':'s'} pending DM approval</div>`:''}<div style="display:flex;flex-direction:column;gap:0.5rem;">${cardsHtml}</div><div class="tab-section-label" style="margin-top:0.9rem;">Viewer Power Recap</div><div id="viewer-power-recap-log" style="display:flex;flex-direction:column;gap:0.38rem;"></div>`;
     setTimeout(renderViewerPowerRecapLog, 0);
   }
 }
