@@ -64,12 +64,25 @@
   function _compactRows(rows) {
     return _safeArray(rows).filter(function (row) { return row && _meaningful(row.value); });
   }
-  function _spellLevelNumber(spell) {
-    const raw = spell && (spell.displaySectionLevel ?? spell.castLevel ?? spell.level ?? spell.spell_level ?? spell.spellLevel ?? spell.slotLevel);
+  function _parseSpellLevelValue(raw) {
     if (raw === null || raw === undefined || raw === '') return null;
     if (typeof raw === 'string' && raw.toLowerCase() === 'cantrip') return 0;
     const n = parseInt(raw, 10);
     return Number.isFinite(n) ? n : null;
+  }
+
+  function _spellBaseLevel(spell) {
+    const card = spell && spell.card && typeof spell.card === 'object' ? spell.card : {};
+    return _parseSpellLevelValue(spell && (spell.baseLevel ?? spell.base_level ?? spell.spell_level ?? spell.spellLevel ?? card.spell_level ?? card.level ?? spell.level));
+  }
+
+  function _spellDisplayCastLevel(spell) {
+    const display = _parseSpellLevelValue(spell && (spell.castLevel ?? spell.slotLevel ?? spell.displaySectionLevel));
+    return display !== null ? display : (_spellBaseLevel(spell) ?? 0);
+  }
+
+  function _spellLevelNumber(spell) {
+    return _parseSpellLevelValue(spell && (spell.displaySectionLevel ?? spell.castLevel ?? spell.level ?? spell.spell_level ?? spell.spellLevel ?? spell.slotLevel));
   }
   function _abbrevTime(ct) {
     if (!ct) return '—';
@@ -443,10 +456,8 @@ function _spellAttackSaveCell(spell, charData) {
   }
 
   function _spellRollExpressionForLevel(spell, slotLevel, charData) {
-    const castLevel = parseInt(slotLevel, 10) || _spellLevelNumber(spell);
-    const baseLevel = (spell && spell.baseLevel != null)
-      ? parseInt(spell.baseLevel, 10)
-      : ((spell && spell.spell_level != null) ? parseInt(spell.spell_level, 10) : _spellLevelNumber(spell));
+    const castLevel = parseInt(slotLevel, 10) || _spellDisplayCastLevel(spell);
+    const baseLevel = _spellBaseLevel(spell);
     if (spell && spell.isVirtualCastRow) {
       const preview = _firstText(spell.damagePreview, spell.healingPreview, '');
       if (preview && Number(spell.castLevel) === castLevel) return preview;
@@ -503,11 +514,8 @@ function _spellAttackSaveCell(spell, charData) {
 
   }
 
-  function _showRolledSpellResult(spell, expr, result, kind, slotLevel, opts) {
-    opts = opts || {};
-    _renderSpellCombatResult(spell, expr, result, kind, slotLevel);
-    if (opts.visualAlreadyResolved === true) return;
-    if (!opts.localAlreadyShown && global.AppDice && typeof global.AppDice.showLocalResult === 'function') {
+  function _renderFallbackLocalDiceResult(spell, expr, result, kind) {
+    if (global.AppDice && typeof global.AppDice.showLocalResult === 'function') {
       const previewMeta = typeof global._dicePreviewMetaFromExpr === 'function' ? global._dicePreviewMetaFromExpr(expr, result) : {};
       global.AppDice.showLocalResult({
         diceType: previewMeta && previewMeta.diceType,
@@ -517,9 +525,9 @@ function _spellAttackSaveCell(spell, charData) {
         modifier: previewMeta && previewMeta.modifier,
         rollLabel: _spellName(spell) + ' • ' + (kind === 'healing' ? 'Healing Roll' : 'Damage Roll'),
         source: 'character-sheet-spell-roll',
-        visualDisabled: false
+        visualDisabled: true
       });
-    } else if (!opts.localAlreadyShown && typeof global._dicePreviewMetaFromExpr === 'function' && typeof global._showLegacySyncedLocalDiceResult === 'function') {
+    } else if (typeof global._dicePreviewMetaFromExpr === 'function' && typeof global._showLegacySyncedLocalDiceResult === 'function') {
       const previewMeta = global._dicePreviewMetaFromExpr(expr, result);
       global._showLegacySyncedLocalDiceResult({
         diceType: previewMeta && previewMeta.diceType,
@@ -528,9 +536,10 @@ function _spellAttackSaveCell(spell, charData) {
         total: result && Number.isFinite(result.total) ? result.total : 0,
         modifier: previewMeta && previewMeta.modifier,
         rollLabel: _spellName(spell) + ' • ' + (kind === 'healing' ? 'Healing Roll' : 'Damage Roll'),
-        source: 'character-sheet-spell-roll'
+        source: 'character-sheet-spell-roll',
+        visualDisabled: true
       });
-    } else if (!opts.localAlreadyShown && typeof global.appDiceShowLocalResult === 'function') {
+    } else if (typeof global.appDiceShowLocalResult === 'function') {
       global.appDiceShowLocalResult({
         diceType: 20,
         qty: 1,
@@ -538,10 +547,19 @@ function _spellAttackSaveCell(spell, charData) {
         total: result && Number.isFinite(result.total) ? result.total : 0,
         modifier: 0,
         rollLabel: _spellName(spell) + ' • ' + (kind === 'healing' ? 'Healing Roll' : 'Damage Roll'),
-        source: 'character-sheet-spell-roll'
+        source: 'character-sheet-spell-roll',
+        visualDisabled: true
       });
     }
   }
+
+  function _showRolledSpellResult(spell, expr, result, kind, slotLevel, opts) {
+    opts = opts || {};
+    _renderSpellCombatResult(spell, expr, result, kind, slotLevel);
+    if (opts.visualAlreadyResolved === true) return;
+    _renderFallbackLocalDiceResult(spell, expr, result, kind);
+  }
+
 
 
   function _rollSpellAttackFromUi(spell, state) {
@@ -626,24 +644,21 @@ function _spellAttackSaveCell(spell, charData) {
     const expr = _looksRollableFormula(forcedExpr) ? forcedExpr : _spellRollExpressionForLevel(spell, slotLevel, state && state.charData);
     if (!_looksRollableFormula(expr)) return { ok: false, reason: 'no_formula' };
     let result = null;
-    let visualAlreadyResolved = false;
+    const kind = _spellRollKind(spell);
     if (global.AppDice && typeof global.AppDice.rollExpressionAndResolve === 'function') {
       result = await global.AppDice.rollExpressionAndResolve(expr, {
-        rollLabel: _spellName(spell) + ' • ' + (_spellRollKind(spell) === 'healing' ? 'Healing Roll' : 'Damage Roll'),
+        rollLabel: _spellName(spell) + ' • ' + (kind === 'healing' ? 'Healing Roll' : 'Damage Roll'),
         source: 'character-sheet-spell-roll'
       });
-      visualAlreadyResolved = !!result;
-    } else if (typeof global._rollDiceExpr === 'function') {
-      result = global._rollDiceExpr(expr);
-    } else {
-      return { ok: false, reason: 'no_formula' };
+      if (!result) return { ok: false, reason: 'bad_formula' };
+      _renderSpellCombatResult(spell, expr, result, kind, slotLevel || _spellLevelNumber(spell));
+      return { ok: true, total: result.total, expr: expr };
     }
+    if (typeof global._rollDiceExpr !== 'function') return { ok: false, reason: 'no_formula' };
+    result = global._rollDiceExpr(expr);
     if (!result) return { ok: false, reason: 'bad_formula' };
-    if (visualAlreadyResolved) {
-      _renderSpellCombatResult(spell, expr, result, _spellRollKind(spell), slotLevel || _spellLevelNumber(spell));
-    } else {
-      _showRolledSpellResult(spell, expr, result, _spellRollKind(spell), slotLevel || _spellLevelNumber(spell), { visualAlreadyResolved: false });
-    }
+    _renderSpellCombatResult(spell, expr, result, kind, slotLevel || _spellLevelNumber(spell));
+    _renderFallbackLocalDiceResult(spell, expr, result, kind);
     return { ok: true, total: result.total, expr: expr };
   }
 
@@ -896,7 +911,7 @@ function _spellAttackSaveCell(spell, charData) {
   }
 
   function _spellRowCastLevel(spell) {
-    return parseInt(spell && (spell.castLevel ?? spell.slotLevel ?? spell.displaySectionLevel ?? _spellLevelNumber(spell)), 10) || 0;
+    return _spellDisplayCastLevel(spell);
   }
 
   function _renderSpellRow(spell, actionsHtml, charData) {
@@ -1622,6 +1637,9 @@ function _spellAttackSaveCell(spell, charData) {
       rollSpellFromUi: _rollSpellFromUi,
       showRolledSpellResult: _showRolledSpellResult,
       renderSpellCombatResult: _renderSpellCombatResult,
+      renderFallbackLocalDiceResult: _renderFallbackLocalDiceResult,
+      spellBaseLevel: _spellBaseLevel,
+      spellDisplayCastLevel: _spellDisplayCastLevel,
       renderSpellRow: _renderSpellRow,
     }
   };
