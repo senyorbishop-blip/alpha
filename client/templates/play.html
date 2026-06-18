@@ -47452,7 +47452,7 @@ function openCombatQuickBarWeaponAction(action) {
     return window.CombatQuickActions.openWeaponAction(action);
   }
   console.error('[openCombatQuickBarWeaponAction] CombatQuickActions modal not available. Cannot open weapon action panel. No action spent.');
-  if (typeof showToast === 'function') showToast('Weapon action modal is not loaded.');
+  if (typeof showToast === 'function') showToast('Weapon action UI is not loaded. No action spent.');
   return false;
 }
 
@@ -47836,6 +47836,32 @@ function _combatQuickSpellBaseLevel(spell) {
   return Number.isFinite(n) ? Math.max(0, Math.min(9, Math.floor(n))) : null;
 }
 
+
+function _combatQuickIsItemGrantedSpell(spell) {
+  const card = spell && spell.card && typeof spell.card === 'object' ? spell.card : {};
+  const source = String(spell?.sourceType || spell?.source || card.sourceType || card.source || '').toLowerCase();
+  return source === 'item' || source === 'item_spell' || !!(spell?.usesItemCharges || spell?.usesCharges || card.usesItemCharges || card.usesCharges || spell?.sourceItemId || spell?.itemId || card.item_id);
+}
+
+function _combatQuickSpendItemSpellCharges(spell, castLevel) {
+  if (!_combatQuickIsItemGrantedSpell(spell)) return true;
+  const card = spell && spell.card && typeof spell.card === 'object' ? spell.card : {};
+  const chargeCost = Math.max(0, Number(spell?.chargeCost ?? spell?.charge_cost ?? card.charge_cost ?? 0) || 0);
+  if (chargeCost <= 0) return true;
+  const itemIndex = Number(spell?.itemIndex ?? card.item_index ?? -1);
+  const itemId = String(spell?.sourceItemId || spell?.itemId || card.item_id || '').trim();
+  const spellId = String(spell?.spellId || card.spell_id || card.spellId || card.id || spell?.id || spell?.name || '').trim();
+  const remaining = Number(spell?.quickBarResourceState?.remaining ?? card.charges_current);
+  if (Number.isFinite(remaining) && remaining < chargeCost) {
+    showToast(`${spell.name || 'Spell'} needs ${chargeCost} charge${chargeCost === 1 ? '' : 's'}; only ${remaining} remaining.`);
+    return false;
+  }
+  if (typeof sendWS === 'function' && itemIndex >= 0 && spellId) {
+    sendWS({ type: 'inventory_cast_item_spell', payload: { item_index: itemIndex, item_id: itemId, spell_id: spellId, charge_cost: chargeCost, cast_level: Math.max(0, Number(castLevel ?? spell.castLevel ?? card.cast_level ?? 0) || 0), target_id: _combat?.selected_target_id || '' } });
+  }
+  return true;
+}
+
 function _combatQuickSpellCastLevelLabel(slotLevel) {
   const ordinals = ['Cantrip','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
   const n = Number(slotLevel);
@@ -47930,7 +47956,7 @@ function combatQuickRollSpellDamage(spellId, slotLevel) {
   const resolvedCast = resolveSpellCast(spell, _charSheet || {}, { castLevel: slotLevel, slotLevel, source: 'spell', actionSource: 'quick_actions', targetId: _combat?.selected_target_id || '' });
   const expr = resolvedCast.formulaUsed || _getCombatSpellDamageExpression(spell, slotLevel);
   if (!expr || expr === '—') { showToast(`${spell.name || 'Spell'} has no damage roll.`); return null; }
-  if (resolvedCast.consumedSlotLevel > 0) {
+  if (!_combatQuickIsItemGrantedSpell(spell) && resolvedCast.consumedSlotLevel > 0) {
     const slotSpend = _consumeSpellSlotLevel(resolvedCast.consumedSlotLevel);
     if (!slotSpend.ok) {
       showToast(`No level ${resolvedCast.consumedSlotLevel} spell slots remaining.`);
@@ -48012,6 +48038,7 @@ function combatQuickCastSpell(spellId, preferredLevel) {
   if (!spell) { showToast('Spell not found.'); return; }
   const card = spell.card || {};
   const castTime = String(card.casting_time || spell.casting_time || '').toLowerCase();
+  if (_combatQuickIsItemGrantedSpell(spell) && !_combatQuickSpendItemSpellCharges(spell, preferredLevel ?? spell.castLevel ?? spell.level ?? card.level)) return null;
   const actionId = spell.rowId || spell.id || spell.spellId || spell.name || spellId;
   if (castTime.includes('bonus action')) _consumeActionEconomy('bonus_action', { action_id: actionId });
   else if (castTime.includes('reaction')) _consumeActionEconomy('reaction', { action_id: actionId });
@@ -48026,9 +48053,9 @@ function combatQuickCastSpell(spellId, preferredLevel) {
     return null;
   }
 
-  if (baseLevel === 0) {
-    // Cantrip — cast immediately, roll damage if defined
-    _executeCombatSpellCast(spell, 0);
+  if (baseLevel === 0 || _combatQuickIsItemGrantedSpell(spell)) {
+    // Cantrip or item-granted spell — cast at configured item/default level without spending character slots.
+    _executeCombatSpellCast(spell, Math.max(0, Number(preferredLevel ?? spell.castLevel ?? spell.defaultCastLevel ?? baseLevel) || 0));
     return;
   }
 
@@ -48231,12 +48258,17 @@ async function _executeCombatSpellCast(spell, slotLevel) {
   const spellId = String(spell?.id || card?.id || '').trim().toLowerCase();
   const spellSummonTemplateId = _spellSummonRuntimeTemplateForSpell(spellId);
 
-  const slotSpend = _consumeSpellSlotLevel(effectiveSlot);
-  if (!slotSpend.ok) {
-    showToast(`No level ${effectiveSlot} spell slots remaining.`);
-    return null;
+  let slotSpend = { ok: true, slotLevel: 0 };
+  if (!_combatQuickIsItemGrantedSpell(spell)) {
+    slotSpend = _consumeSpellSlotLevel(effectiveSlot);
+    if (!slotSpend.ok) {
+      showToast(`No level ${effectiveSlot} spell slots remaining.`);
+      return null;
+    }
+    resolvedCast.rollPayload.consumedSlotLevel = slotSpend.slotLevel || 0;
+  } else {
+    resolvedCast.rollPayload.consumedSlotLevel = 0;
   }
-  resolvedCast.rollPayload.consumedSlotLevel = slotSpend.slotLevel || 0;
 
   if (_isSupportedRuntimeSpellSummon(spellId)) {
     if (_spellCardHasConcentration(card)) _startActiveSpellConcentration(spell.name || card.name || 'Concentration Spell');

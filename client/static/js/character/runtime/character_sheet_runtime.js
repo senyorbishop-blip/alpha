@@ -91,7 +91,7 @@ function _csrNormalizeItemEffects(item) {
     modifiers,
     charges: { current: _csrInt(charges.current != null ? charges.current : item && item.charges_current, -1), max: _csrInt(charges.max != null ? charges.max : item && item.charges_max, 0) },
     recharge: { type: _csrFirst(recharge.type, item && item.recharge_type, 'none'), formula: _csrFirst(recharge.formula, item && item.recharge_formula, '') },
-    grantedSpells: _csrArray(item && (item.grantedSpells || item.granted_spells)).concat(_csrArray(effects.grantedSpells || effects.granted_spells)),
+    grantedSpells: _csrArray(item && (item.grantedSpells || item.granted_spells || item.itemSpells || item.item_spells || item.spellsGranted || item.spellGrants)).concat(_csrArray(effects.grantedSpells || effects.granted_spells || effects.itemSpells || effects.item_spells || effects.spellsGranted || effects.spellGrants)),
     grantedActions: _csrArray(item && (item.grantedActions || item.granted_actions)).concat(_csrArray(effects.grantedActions || effects.granted_actions)),
     requiresAttunement: _csrItemRequiresAttunement(item),
     requirements: { equipped: !!(item && item.equipped), attuned: _csrItemIsAttuned(item) },
@@ -435,15 +435,31 @@ function buildCharacterSheetRuntime(characterDocument) {
     if (!_csrItemIsAttuned(item)) return;
     _csrArray(item && item.spells).concat(_csrArray(itemEffects.grantedSpells)).forEach(function (spell) {
       const sourceSpell = typeof spell === 'string' ? { name: spell } : Object.assign({}, spell || {});
+      if (sourceSpell.spell_id != null && sourceSpell.spellId == null) sourceSpell.spellId = sourceSpell.spell_id;
+      if (sourceSpell.spellId != null && sourceSpell.id == null) sourceSpell.id = sourceSpell.spellId;
       if (sourceSpell.cast_level != null && sourceSpell.castLevel == null) sourceSpell.castLevel = sourceSpell.cast_level;
+      if (sourceSpell.attackBonusOverride != null && sourceSpell.attack_bonus == null) sourceSpell.attack_bonus = sourceSpell.attackBonusOverride;
+      if (sourceSpell.saveDcOverride != null && sourceSpell.save_dc == null) sourceSpell.save_dc = sourceSpell.saveDcOverride;
       const built = _csrBuildSpell(sourceSpell, doc, 'item');
-      built.itemName = _csrFirst(item.name, item.displayName);
-      built.itemId = _csrFirst(item.id, item.magic_item_id, built.itemName);
+      built.source = 'item';
+      built.sourceType = 'item';
+      built.sourceItemName = _csrFirst(item.name, item.displayName);
+      built.sourceItemId = _csrFirst(item.id, item.magic_item_id, built.sourceItemName);
+      built.itemName = built.sourceItemName;
+      built.itemId = built.sourceItemId;
       built.chargeCost = _csrInt(sourceSpell.charge_cost != null ? sourceSpell.charge_cost : sourceSpell.chargeCost, 0);
+      built.usesItemCharges = sourceSpell.usesItemCharges !== undefined ? !!sourceSpell.usesItemCharges : (sourceSpell.uses_item_charges !== undefined ? !!sourceSpell.uses_item_charges : built.chargeCost > 0);
       built.castLevel = _csrInt(sourceSpell.castLevel, built.level || 0);
+      built.defaultCastLevel = built.castLevel;
+      built.quickBarType = 'spell';
+      built.executableType = 'cast_spell';
+      built.quickBarPickKey = 'spell:item:' + _csrSlug(built.itemId) + ':' + _csrSlug(built.id || built.spellId || built.name);
+      built.disabledReason = '';
+      if (sourceSpell.requiresEquipped !== false && !item.equipped) built.disabledReason = 'Requires equipped.';
+      if ((sourceSpell.requiresAttunement !== false) && _csrItemRequiresAttunement(item) && !_csrItemIsAttuned(item)) built.disabledReason = 'Requires attunement.';
       built.itemEffects = itemEffects;
-      if (sourceSpell.uses_item_attack_bonus) built.spellAttackBonus = _csrSigned(_csrInt(item.item_spell_attack_bonus, 0) + _csrActiveItemModifier(item, 'spell_attack'));
-      if (sourceSpell.uses_item_dc) built.saveDc = _csrInt(item.item_spell_save_dc, 0) + _csrActiveItemModifier(item, 'spell_save_dc');
+      if (sourceSpell.uses_item_attack_bonus || sourceSpell.usesItemAttackBonus || sourceSpell.attackBonusOverride != null) built.spellAttackBonus = _csrSigned(_csrInt(item.item_spell_attack_bonus, 0) + _csrActiveItemModifier(item, 'spell_attack'));
+      if (sourceSpell.uses_item_dc || sourceSpell.usesItemDc || sourceSpell.saveDcOverride != null) built.saveDc = _csrInt(item.item_spell_save_dc, 0) + _csrActiveItemModifier(item, 'spell_save_dc');
       built.preview = { itemName: built.itemName, chargeCost: built.chargeCost, castLevel: built.castLevel, attack: built.spellAttackBonus || '', saveDc: built.saveDc || '', damage: built.damageFormula || built.effectFormula || '' };
       _csrPushUnique(itemSpells, built, function (s) { return String(s.name || s.id || '').toLowerCase(); });
     });
