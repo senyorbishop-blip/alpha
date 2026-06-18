@@ -144,7 +144,7 @@ _INVENTORY_META_KEYS = (
     "consumable", "consumed_on_use", "remove_when_empty", "action_type", "activation_type",
     "usage_cost", "range", "target_type", "save_dc", "attack_bonus", "damage_formula",
     "healing_formula", "effect_text", "grants_action", "passive_effects", "granted_spells",
-    "granted_ability", "image_key",
+    "granted_ability", "image_key", "itemSpells", "item_spells", "spellsGranted", "spellGrants",
     "item_schema", "source_id", "source_type", "slug", "subtype", "stack_limit", "image_url", "image_path",
     "category_icon_key", "subtype_icon_key",
     "scroll_data", "bonuses", "resistances", "immunities", "senses_modifiers", "movement_modifiers",
@@ -199,7 +199,7 @@ def _normalize_item_runtime_fields(entry: dict, out: dict) -> None:
         if key in entry:
             out[key] = bool(entry.get(key))
 
-    for key in ("passive_effects", "granted_spells", "modifiers", "grantedSpells", "grantedActions"):
+    for key in ("passive_effects", "granted_spells", "modifiers", "grantedSpells", "grantedActions", "itemSpells", "item_spells", "spellsGranted", "spellGrants"):
         raw = entry.get(key)
         if isinstance(raw, list):
             cleaned: list[dict] = []
@@ -1972,7 +1972,7 @@ def _build_item_spell_cards(items: list[dict]) -> list[dict]:
     for idx, item in enumerate(list(items or [])):
         if not isinstance(item, dict):
             continue
-        granted_spells = list(item.get("granted_spells") or [])
+        granted_spells = list(item.get("granted_spells") or item.get("grantedSpells") or item.get("itemSpells") or item.get("item_spells") or item.get("spellsGranted") or item.get("spellGrants") or [])
         if not granted_spells:
             continue
         if not bool(item.get("equipped")):
@@ -1992,17 +1992,17 @@ def _build_item_spell_cards(items: list[dict]) -> list[dict]:
                 spell_entry = {"id": spell_entry.lower().replace(" ", "-"), "name": spell_entry}
             if not isinstance(spell_entry, dict):
                 continue
-            spell_id = str(spell_entry.get("id") or "").strip()
+            spell_id = str(spell_entry.get("spellId") or spell_entry.get("spell_id") or spell_entry.get("id") or "").strip()
             spell_name = str(spell_entry.get("name") or spell_id).strip()
             if not spell_id and not spell_name:
                 continue
 
-            charge_cost = max(0, _safe_int(spell_entry.get("charge_cost"), 1, minimum=0, maximum=99))
+            charge_cost = max(0, _safe_int(spell_entry.get("charge_cost", spell_entry.get("chargeCost", 1)), 1, minimum=0, maximum=99))
             charge_cost_min = _safe_int(spell_entry.get("charge_cost_min"), 0, minimum=0, maximum=99) or None
             charge_cost_max = _safe_int(spell_entry.get("charge_cost_max"), 0, minimum=0, maximum=99) or None
-            cast_level = max(0, _safe_int(spell_entry.get("cast_level"), 0, minimum=0, maximum=9))
-            uses_item_dc = bool(spell_entry.get("uses_item_dc", True))
-            uses_item_atk = bool(spell_entry.get("uses_item_attack_bonus", False))
+            cast_level = max(0, _safe_int(spell_entry.get("cast_level", spell_entry.get("castLevel", spell_entry.get("defaultCastLevel", 0))), 0, minimum=0, maximum=9))
+            uses_item_dc = bool(spell_entry.get("uses_item_dc", spell_entry.get("usesItemDc", True)))
+            uses_item_atk = bool(spell_entry.get("uses_item_attack_bonus", spell_entry.get("usesItemAttackBonus", False)))
             consume_slot = bool(spell_entry.get("consume_spell_slot", False))
 
             spell_meta = get_spell_metadata(spell_id) or {}
@@ -2082,7 +2082,7 @@ async def handle_inventory_cast_item_spell(payload: dict, session: Session, user
             session, user.id, f"{item.get('name', 'That item')} requires attunement before casting its spells."
         )
 
-    granted_spells = list(item.get("granted_spells") or [])
+    granted_spells = list(item.get("granted_spells") or item.get("grantedSpells") or item.get("itemSpells") or item.get("item_spells") or item.get("spellsGranted") or item.get("spellGrants") or [])
     spell_entry: dict | None = None
     for gs in granted_spells:
         if isinstance(gs, str):
@@ -2091,7 +2091,7 @@ async def handle_inventory_cast_item_spell(payload: dict, session: Session, user
             else:
                 continue
         if isinstance(gs, dict):
-            gs_id = str(gs.get("id") or "").strip()
+            gs_id = str(gs.get("spellId") or gs.get("spell_id") or gs.get("id") or "").strip()
             gs_name = str(gs.get("name") or "").lower().replace(" ", "-")
             if gs_id == spell_id or gs_name == spell_id.lower():
                 spell_entry = gs
@@ -2102,7 +2102,7 @@ async def handle_inventory_cast_item_spell(payload: dict, session: Session, user
             session, user.id, f"Spell '{spell_id}' is not granted by {item.get('name', 'that item')}."
         )
 
-    item_charge_cost = max(0, _safe_int(spell_entry.get("charge_cost"), 1, minimum=0, maximum=99))
+    item_charge_cost = max(0, _safe_int(spell_entry.get("charge_cost", spell_entry.get("chargeCost", 1)), 1, minimum=0, maximum=99))
     charge_cost_min = _safe_int(spell_entry.get("charge_cost_min"), 0, minimum=0, maximum=99) or None
     charge_cost_max = _safe_int(spell_entry.get("charge_cost_max"), 0, minimum=0, maximum=99) or None
     actual_cost = charge_cost if charge_cost > 0 else item_charge_cost
@@ -2127,11 +2127,11 @@ async def handle_inventory_cast_item_spell(payload: dict, session: Session, user
     inventories[owner_key] = [entry for entry in (_normalize_player_inventory_entry(x) for x in items) if entry]
     session.player_inventories = inventories
 
-    uses_item_dc = bool(spell_entry.get("uses_item_dc", True))
-    uses_item_atk = bool(spell_entry.get("uses_item_attack_bonus", False))
+    uses_item_dc = bool(spell_entry.get("uses_item_dc", spell_entry.get("usesItemDc", True)))
+    uses_item_atk = bool(spell_entry.get("uses_item_attack_bonus", spell_entry.get("usesItemAttackBonus", False)))
     item_spell_dc = _safe_int(item.get("item_spell_save_dc"), 0, minimum=0, maximum=40)
     item_spell_atk = _safe_int(item.get("item_spell_attack_bonus"), 0, minimum=-20, maximum=30)
-    resolved_cast_level = cast_level or _safe_int(spell_entry.get("cast_level"), 0, minimum=0, maximum=9)
+    resolved_cast_level = cast_level or _safe_int(spell_entry.get("cast_level", spell_entry.get("castLevel", spell_entry.get("defaultCastLevel", 0))), 0, minimum=0, maximum=9)
 
     result = {
         "type": "item_spell_cast_result",

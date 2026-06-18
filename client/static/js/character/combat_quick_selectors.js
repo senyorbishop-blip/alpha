@@ -538,6 +538,7 @@
     }
     // Reject spell-level section headings / non-castable rows before they
     // ever reach scoring, sorting, or the Customize Top 5 picker.
+    spells = spells.concat(_itemSpellRows());
     spells = spells.filter(function (spell) { return isPlayableQuickAction(Object.assign({ quickBarType: 'spell' }, spell)); });
     const bySpell = new Map();
     spells.forEach(function (spell) {
@@ -557,6 +558,7 @@
     const key = _canonicalSpellKey(spell);
     const level = _spellLevel(spell);
     const sourceType = _firstText(spell && spell.sourceType, spell && spell.source, 'class');
+    const itemSourceId = _firstText(spell && spell.sourceItemId, spell && spell.itemId, card && card.item_id, spell && spell.sourceVariantId, '');
     return Object.assign({}, spell, {
       id: key,
       spellId: key,
@@ -569,7 +571,7 @@
       category: 'Spell',
       type: 'Spell',
       quickBarType: 'spell',
-      quickBarPickKey: 'spell:' + key,
+      quickBarPickKey: spell && spell.quickBarPickKey ? spell.quickBarPickKey : (sourceType === 'item' ? ('spell:item:' + _slugKey(itemSourceId) + ':' + key) : 'spell:' + key),
       actionType: 'spell',
       cost: _firstText(spell && spell.quickBarCastTimeText, '1 action'),
       resourceCost: _firstText(spell && spell.quickBarSlotSummary, '') || null,
@@ -578,7 +580,7 @@
       preview: _firstText(spell && spell.quickBarDamageText, spell && spell.quickBarSaveText, spell && spell.quickBarInfoSummary, ''),
       sortKey: 'Spell::' + String(_firstText(spell && spell.name, '')).toLowerCase(),
       sourceType: sourceType,
-      itemId: sourceType === 'item' ? _firstText(spell && spell.itemId, spell && spell.itemName, spell && spell.sourceItemId, spell && spell.id) : null,
+      itemId: sourceType === 'item' ? itemSourceId : null,
       featureId: _firstText(spell && spell.featureId, spell && spell.sourceFeatureId, ''),
     });
   }
@@ -597,7 +599,7 @@
     const rangeText = _spellRangeText(spell);
     const castTimeText = _spellCastTimeText(spell);
     const sourceLabel = spell.sourceType === 'item'
-      ? _firstText(spell.itemId, spell.itemName, 'Magic Item')
+      ? ('Source: ' + _firstText(spell.sourceItemName, spell.itemName, spell.sourceName, 'Magic Item'))
       : spell.featureId ? 'Class Feature' : 'Character Spell';
     return Object.assign({}, spell, {
       quickBarType: 'spell',
@@ -678,14 +680,16 @@
       return {
         id: id,
         name: _firstText(card && card.spell_name, card && card.spell_id, 'Item Spell'),
-        source: 'item_spell',
-        sourceType: 'item_spell',
+        source: 'item',
+        sourceType: 'item',
         sourceName: itemName,
+        sourceItemName: itemName,
         itemName: itemName,
-        quickBarSourceLabel: itemName,
-        quickBarType: 'action',
-        quickBarLane: 'action',
-        quickBarPickKey: 'action:' + id,
+        sourceItemId: String((card && card.item_id) || ''),
+        quickBarSourceLabel: 'Source: ' + itemName,
+        quickBarType: 'spell',
+        quickBarLane: 'spell',
+        quickBarPickKey: 'spell:item:' + String((card && card.item_id) || '').toLowerCase().replace(/[^a-z0-9]+/g, '-') + ':' + String((card && card.spell_id) || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         quickBarAttackKind: atkText ? 'spell' : '',
         quickBarAttackText: atkText,
         quickBarSaveText: dcText,
@@ -703,8 +707,13 @@
         itemId: String((card && card.item_id) || ''),
         itemIndex: Number((card && card.item_index) || 0),
         spellId: String((card && card.spell_id) || ''),
+        usesItemCharges: chargeCost > 0,
+        usesCharges: chargeCost > 0,
         chargeCost: chargeCost,
         castLevel: Number((card && card.cast_level) || 0),
+        baseLevel: spellLevel,
+        level: spellLevel,
+        card: Object.assign({}, card || {}, { id: String((card && card.spell_id) || ''), spellId: String((card && card.spell_id) || ''), name: _firstText(card && card.spell_name, card && card.spell_id, 'Item Spell'), level: spellLevel, spell_level: spellLevel, damage_formula: _firstText(card && card.damage_formula, ''), damage: _firstText(card && card.damage_formula, ''), damage_type: _firstText(card && card.damage_type, ''), attack_bonus: atkText, save_dc: card && card.item_spell_save_dc, range: _firstText(card && card.range, ''), casting_time: _firstText(card && card.casting_time, '1 Action') }),
       };
     });
   }
