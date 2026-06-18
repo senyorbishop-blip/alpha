@@ -384,7 +384,7 @@ function _tick(now) {
   if (rollElapsed > MAX_ROLL_DURATION_MS) {
     activeDice.forEach(die => {
       if (!die.settled) {
-        _forceSettleDie(die, { allowHardSnap: false, reason: 'global-timeout' });
+        _forceSettleDie(die, { allowHardSnap: die.forcedValue != null, reason: 'global-timeout' });
         if (_diceDebug) console.warn(`[DiceDebug] ${die.type} GLOBAL-TIMEOUT force-settled`);
       }
     });
@@ -395,7 +395,7 @@ function _tick(now) {
       checkStuckDie(die, now);
       if (isDieSettled(die, now)) {
         if (!validateFaceAlignment(die)) nudgeToFace(die);
-        _forceSettleDie(die, { allowHardSnap: false, reason: 'natural-settle' });
+        _forceSettleDie(die, { allowHardSnap: die.forcedValue != null, reason: 'natural-settle' });
 
         if (_diceDebug) {
           const info = detectTopFace(die);

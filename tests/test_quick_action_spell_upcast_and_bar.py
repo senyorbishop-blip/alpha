@@ -22,7 +22,8 @@ def test_quick_actions_use_shared_resolve_spell_cast_payload_and_selected_slot()
 def test_quick_action_modal_level_picker_updates_preview_and_passes_cast_level():
     assert 'id="combat-quick-spell-level"' in ACTIONS
     assert "actionSource: 'quick_actions_preview'" in ACTIONS
-    assert 'const resolved = global.resolveSpellCast(spell, global._charSheet || {}, {' in ACTIONS
+    assert 'function _runtimeSpellDamagePreview(spell, castLevel)' in ACTIONS
+    assert '_sanitizedSpellCard(spell), { castLevel: castLevel, slotLevel: castLevel }' in ACTIONS
     assert 'refreshSpellModalDamage();' in ACTIONS
     assert 'safeCastSpell(spellKey, castLevel)' in ACTIONS
     assert 'safeRollSpellDamage(spellKey, castLevel)' in ACTIONS
