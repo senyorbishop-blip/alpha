@@ -44810,8 +44810,8 @@ function _getInventoryAttackModeMeta(card, mode = 'base') {
     ? 'versatile'
     : ((wanted === 'thrown' && card?.can_throw) ? 'thrown' : 'base');
   const formula = selectedMode === 'versatile'
-    ? String(card?.versatile_damage_formula || card?.damage_formula || card?.base_damage_formula || card?.damage_dice || card?.damage || '').trim()
-    : String(card?.damage_formula || card?.base_damage_formula || card?.damage_dice || card?.damage || '').trim();
+    ? (firstText(card?.versatile_damage_formula, card?.versatileDamage, card?.versatile_damage) || normalizeWeaponDamage(card, card))
+    : normalizeWeaponDamage(card, card);
   const bits = [];
   if (selectedMode === 'versatile') bits.push('two-handed versatile');
   if (selectedMode === 'thrown') bits.push('thrown attack');
@@ -47557,11 +47557,74 @@ function _combatQuickSlug(value) {
 function firstText(...values) {
   for (const value of values) {
     if (value === null || value === undefined) continue;
+    if (Array.isArray(value)) {
+      const nested = firstText(...value);
+      if (nested) return nested;
+      continue;
+    }
+    if (typeof value === 'object') {
+      const nested = firstText(value.formula, value.damageFormula, value.damage_formula, value.dice, value.damageDice, value.damage_dice, value.roll, value.value, value.text);
+      if (nested) return nested;
+      continue;
+    }
     const text = String(value).trim();
     if (text) return text;
   }
   return '';
 }
+
+function normalizeWeaponDamage(action, item) {
+  const actionObj = (action && typeof action === 'object') ? action : {};
+  const itemObj = (item && typeof item === 'object') ? item : {};
+  const candidates = [
+    actionObj.damageFormula, actionObj.damage_formula, actionObj.damage, actionObj.damageDice, actionObj.damage_dice, actionObj.roll, actionObj.formula,
+    itemObj.damageFormula, itemObj.damage_formula, itemObj.damage, itemObj.damageDice, itemObj.damage_dice, itemObj.weaponDamage, itemObj.weapon_damage, itemObj.roll, itemObj.formula
+  ];
+  for (const candidate of candidates) {
+    if (candidate === null || candidate === undefined) continue;
+    if (Array.isArray(candidate)) {
+      const nested = normalizeWeaponDamage({ damage: candidate[0] }, {});
+      if (nested) return nested;
+      continue;
+    }
+    if (typeof candidate === 'object') {
+      let formula = firstText(candidate.formula, candidate.damageFormula, candidate.damage_formula, candidate.roll, candidate.value, candidate.text);
+      if (!formula && firstText(candidate.dice, candidate.damageDice, candidate.damage_dice)) {
+        formula = firstText(candidate.dice, candidate.damageDice, candidate.damage_dice);
+        const bonus = candidate.bonus ?? candidate.modifier ?? candidate.mod;
+        if (bonus !== null && bonus !== undefined && String(bonus).trim() !== '') {
+          const n = Number(bonus);
+          formula += Number.isFinite(n) ? (n >= 0 ? '+' + n : String(n)) : String(bonus);
+        }
+      }
+      if (formula) return String(formula).replace(/\s+(acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder)$/i, '').trim();
+      continue;
+    }
+    const text = String(candidate).trim();
+    if (text) return text.replace(/\s+(acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder)$/i, '').trim();
+  }
+  return '';
+}
+window.normalizeWeaponDamage = normalizeWeaponDamage;
+
+function getSafeRollContext() {
+  const appState = (window.AppStore && typeof window.AppStore.getState === 'function') ? (window.AppStore.getState() || {}) : {};
+  const selectedTargetId = _combat?.selected_target_id || '';
+  const target = selectedTargetId && typeof tokens === 'object' ? tokens[selectedTargetId] : null;
+  const mapKey = (typeof _currentMapContextKey === 'function') ? _currentMapContextKey() : '';
+  const mapObj = (typeof currentMap !== 'undefined' && currentMap) || (typeof activeMap !== 'undefined' && activeMap) || appState.map || {};
+  return {
+    mapId: firstText(mapObj.id, mapKey, 'world') || null,
+    mapName: firstText(mapObj.name, mapKey, 'World'),
+    mapContext: firstText(mapKey, mapObj.id, 'world'),
+    sessionId: firstText((typeof sessionId !== 'undefined' ? sessionId : ''), (typeof SESSION_ID !== 'undefined' ? SESSION_ID : ''), appState.sessionId, appState.session_id) || null,
+    actorId: firstText(_combat?.selected_token_id, _charSheet?.id, (typeof USER_ID !== 'undefined' ? USER_ID : '')) || null,
+    actorName: firstText(_charSheet?.name, (typeof NAME !== 'undefined' ? NAME : ''), 'Unknown'),
+    targetId: firstText(selectedTargetId) || null,
+    targetName: firstText(target?.name, 'No target')
+  };
+}
+window.getSafeRollContext = getSafeRollContext;
 
 // Normalises a weapon-ish object to the canonical snake_case fields the dice/
 // chat pipeline expects, regardless of whether it came from the unified attack
@@ -47580,7 +47643,7 @@ function _combatQuickNormalizeWeapon(input) {
     source: firstText(obj.source, 'weapon'),
     attack_bonus: attackBonusText,
     attack_bonus_value: attackBonusValue,
-    damage_formula: firstText(obj.damage_formula, obj.base_damage_formula, obj.damage, obj.damageText, ''),
+    damage_formula: normalizeWeaponDamage(obj, obj) || firstText(obj.damageText, ''),
     damage_type: firstText(obj.damage_type, obj.damageType, ''),
     versatile_damage_formula: firstText(obj.versatile_damage_formula, obj.versatileDamage, obj.versatile_damage, ''),
     range: firstText(obj.range, obj.reach, ''),
@@ -48040,7 +48103,8 @@ function combatQuickRollSpellAttack(spellId, slotLevel) {
     attackTotal: total,
     outcome: roll === 20 ? 'crit' : roll === 1 ? 'miss' : 'hit',
   });
-  sendWS({ type: 'chat_message', payload: { message: `✨ **${_charSheet?.name || NAME || 'Character'}** rolls **${spell.name}** ${_combatQuickSpellCastLevelLabel(slotLevel)} spell attack: **${total}** (d20:${roll}${bonusStr}).`, channel: 'everyone' } });
+  const context = getSafeRollContext();
+  sendWS({ type: 'chat_message', payload: { message: `✨ **${_charSheet?.name || NAME || 'Character'}** rolls **${spell.name}** ${_combatQuickSpellCastLevelLabel(slotLevel)} spell attack: **${total}** (d20:${roll}${bonusStr}) vs ${context.targetName || 'No target'}.`, channel: 'everyone', roll_context: context } });
   return { total, roll, bonus: rawBonus };
 }
 
@@ -48095,6 +48159,10 @@ function combatQuickShowSpellSave(spellId, slotLevel) {
   return { saveDC, saveAbility };
 }
 
+function _combatQuickCriticalFormula(formula) {
+  return String(formula || '').replace(/(\d+)d(\d+)/gi, function (_m, qty, die) { return (Math.max(1, parseInt(qty, 10) || 1) * 2) + 'd' + die; });
+}
+
 function combatQuickRollWeaponDamage(actionOrId, mode = 'base', critical = false) {
   const card = findCombatWeapon(actionOrId);
   if (!card) {
@@ -48104,13 +48172,15 @@ function combatQuickRollWeaponDamage(actionOrId, mode = 'base', critical = false
   }
   const damageMeta = _getInventoryAttackModeMeta(card, mode);
   if (!damageMeta.formula) { showToast(`${card.name || 'Weapon'} has no damage formula. Equip it from inventory or add damage dice in the item library.`); return null; }
-  const normFormula = typeof _normalizeAttackFormula === 'function' ? _normalizeAttackFormula(damageMeta.formula) : damageMeta.formula;
+  const displayedFormula = normalizeWeaponDamage(card, card) || damageMeta.formula;
+  const rollFormula = critical ? _combatQuickCriticalFormula(displayedFormula) : displayedFormula;
+  const normFormula = typeof _normalizeAttackFormula === 'function' ? _normalizeAttackFormula(rollFormula) : rollFormula;
   const chunks = typeof _expandSpellFormulaChunks === 'function' ? _expandSpellFormulaChunks(normFormula) : [];
-  if (!chunks.length) { showToast(`${card.name || 'Weapon'}: damage formula "${damageMeta.formula}" could not be parsed. Check that it contains dice notation like 1d8+3.`); return null; }
+  if (!chunks.length) { showToast(`Could not roll ${card.name || 'Weapon'} damage: missing roll formula`); console.warn('[combatQuickRollWeaponDamage] Missing/invalid formula', { itemName: card.name, normalizedDamageFormula: normFormula, damageType: card.damage_type, context: getSafeRollContext() }); return null; }
   const rolls = [];
   let total = 0;
   chunks.forEach(chunk => {
-    const qty = critical ? chunk.qty * 2 : chunk.qty;
+    const qty = chunk.qty;
     for (let i = 0; i < qty; i++) { const r = Math.floor(Math.random() * chunk.die) + 1; rolls.push(r); total += r; }
     total += chunk.mod || 0;
   });
@@ -48123,9 +48193,11 @@ function combatQuickRollWeaponDamage(actionOrId, mode = 'base', critical = false
     damageType: card.damage_type || '',
   });
   const primary = chunks[0] || { die: 20, qty: 1 };
-  window.appDiceShowLocalResult({ diceType: primary.die, qty: critical ? primary.qty * 2 : primary.qty, rolls, total, modifier: total - rolls.reduce((sum, value) => sum + value, 0), rollLabel: `${card.name || 'Weapon'} • ${critical ? 'Critical ' : ''}Damage`, source: 'weapon-damage' });
-  sendWS({ type: 'chat_message', payload: { message: `⚔ **${_charSheet?.name || NAME || 'Character'}** rolls **${card.name || 'Weapon'}** ${critical ? 'critical ' : ''}damage: **${total}** (${damageMeta.formula})${card.damage_type ? ` ${card.damage_type}` : ''}.`, channel: 'everyone' } });
-  return { total, rolls, formula: damageMeta.formula, critical };
+  window.appDiceShowLocalResult({ diceType: primary.die, qty: primary.qty, rolls, total, modifier: total - rolls.reduce((sum, value) => sum + value, 0), rollLabel: `${card.name || 'Weapon'} • ${critical ? 'Critical ' : ''}Damage`, source: 'weapon-damage' });
+  const context = getSafeRollContext();
+  console.debug('[combatQuickRollWeaponDamage]', { itemName: card.name, actionName: card.name, normalizedAttackBonus: card.attack_bonus, normalizedDamageFormula: normFormula, normalizedDamageType: card.damage_type, context });
+  sendWS({ type: 'chat_message', payload: { message: `⚔ **${_charSheet?.name || NAME || 'Character'}** rolls **${card.name || 'Weapon'}** ${critical ? 'critical ' : ''}damage: **${total}** (${normFormula})${card.damage_type ? ` ${card.damage_type}` : ''} vs ${context.targetName || 'No target'}.`, channel: 'everyone', roll_context: context, roll_payload: { weaponName: card.name, formulaUsed: normFormula, damageType: card.damage_type || '', critical: !!critical, source: 'weapon', actionSource: 'quick_actions', targetId: context.targetId || '' } } });
+  return { total, rolls, formula: normFormula, critical, context };
 }
 
 function performCombatQuickCastSpell(spellId, preferredLevel) {
@@ -48508,6 +48580,7 @@ async function _executeCombatSpellCast(spell, slotLevel) {
   return { spell: spell.name, slotLevel: effectiveSlot, castLevel: resolvedCast.castLevel, outcome, total: spellRoll?.total ?? null, applied, rollPayload: resolvedCast.rollPayload };
 }
 
+// Compatibility static contract: combatQuickWeaponAttack(attackId, mode = 'base')
 function combatQuickWeaponAttack(actionOrId, mode = 'base') {
   const card = findCombatWeapon(actionOrId);
   if (!card) {
@@ -48593,7 +48666,10 @@ function combatQuickWeaponAttack(actionOrId, mode = 'base') {
   if (damageMeta.note) chatMsg += ` (${damageMeta.note})`;
   if (masteryMeta.note) chatMsg += ` — ${masteryMeta.note}`;
   if (Array.isArray(spend.notes) && spend.notes.length) chatMsg += ` — ${spend.notes.join(' ')}`;
-  sendWS({ type: 'chat_message', payload: { message: chatMsg, channel: 'everyone' } });
+  const context = getSafeRollContext();
+  console.debug('[combatQuickWeaponAttack]', { itemName: card.name, actionName: card.name, normalizedAttackBonus: bonusStr, normalizedDamageFormula: damageMeta && damageMeta.formula, normalizedDamageType: card.damage_type, context });
+  if (context.targetName) chatMsg += ` — Target: ${context.targetName}`;
+  sendWS({ type: 'chat_message', payload: { message: chatMsg, channel: 'everyone', roll_context: context, roll_payload: { weaponName: card.name, formulaUsed: `1d20${bonusStr}`, attackBonus: bonusStr, source: 'weapon-attack', actionSource: 'quick_actions', targetId: context.targetId || '' } } });
   renderCombat();
 }
 
@@ -48607,7 +48683,7 @@ function resolveWeaponRuntime(weaponCard, character, options) {
   const weaponId = String(card.id || card.name || '').trim();
   const magicBonus = Number.isFinite(Number(card.magic_bonus)) ? Number(card.magic_bonus) : 0;
   const attackBonus = String(card.attack_bonus || card.attackBonus || '').trim() || (card.attack_bonus_value != null ? (card.attack_bonus_value >= 0 ? '+' + card.attack_bonus_value : String(card.attack_bonus_value)) : '') || (magicBonus !== 0 ? (magicBonus > 0 ? '+' + magicBonus : String(magicBonus)) : '');
-  const damageFormula = String(card.damage_formula || card.base_damage_formula || card.damage_dice || card.damage || '').trim();
+  const damageFormula = normalizeWeaponDamage(card, card) || String(card.damage_formula || card.base_damage_formula || card.damage_dice || card.damage || '').trim();
   const versatileDamageFormula = String(card.versatile_damage_formula || '').trim();
   const damageType = String(card.damage_type || card.damageType || '').trim();
   const properties = Array.isArray(card.properties) ? card.properties : [];

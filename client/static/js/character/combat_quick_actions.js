@@ -38,10 +38,25 @@
     for (let i = 0; i < arguments.length; i += 1) {
       const value = arguments[i];
       if (value === null || value === undefined) continue;
+      if (Array.isArray(value)) { const nested = _firstText.apply(null, value); if (nested) return nested; continue; }
+      if (typeof value === 'object') {
+        const nested = _firstText(value.formula, value.damageFormula, value.damage_formula, value.dice, value.damageDice, value.damage_dice, value.roll, value.value, value.text);
+        if (nested) return nested;
+        continue;
+      }
       const text = String(value).trim();
       if (text) return text;
     }
     return '';
+  }
+
+  function normalizeWeaponDamage(action, item) {
+    if (typeof global.normalizeWeaponDamage === 'function') return global.normalizeWeaponDamage(action, item);
+    return _firstText(action && action.damageFormula, action && action.damage_formula, action && action.damage, action && action.damageDice, action && action.damage_dice, action && action.roll, action && action.formula, item && item.damageFormula, item && item.damage_formula, item && item.damage, item && item.damageDice, item && item.damage_dice, item && item.weaponDamage, item && item.roll).replace(/\s+(acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder)$/i, '').trim();
+  }
+
+  function normalizeWeaponDamageType(action, item) {
+    return _firstText(action && action.damageType, action && action.damage_type, action && action.damage && action.damage.type, action && action.damage && action.damage[0] && action.damage[0].type, item && item.damageType, item && item.damage_type, item && item.damage && item.damage.type, item && item.damage && item.damage[0] && item.damage[0].type);
   }
 
   function _safeArray(value) { return Array.isArray(value) ? value : []; }
@@ -72,7 +87,7 @@
       const shared = global.findCombatWeapon(actionOrId);
       if (shared) return shared;
     }
-    if (actionOrId && typeof actionOrId === 'object' && (actionOrId.damage_formula || actionOrId.attack_bonus || actionOrId.source === 'equip_only')) return actionOrId;
+    if (actionOrId && typeof actionOrId === 'object') return actionOrId;
     const raw = typeof actionOrId === 'object' ? _firstText(actionOrId.id, actionOrId.name) : String(actionOrId || '').trim();
     const lower = raw.toLowerCase();
     return _allWeapons().find(function (card) {
@@ -451,12 +466,28 @@
     return out;
   }
 
+  function _magicActionChargeText(action) {
+    return _firstText(action && action.quickBarUsesText, action && action.resourceCost, action && action.chargeCost ? ('Costs ' + action.chargeCost + ' charge' + (Number(action.chargeCost) === 1 ? '' : 's')) : '', action && action.usesText, '');
+  }
+
   function _magicActionsHtml(actions) {
     if (!actions.length) return '';
-    return '<div class="cqa-desc"><strong>Magic item actions</strong><div class="cqa-controls">' + actions.map(function (action, idx) {
+    return '<div class="cqa-desc"><strong>Magic Item Actions</strong><div style="display:grid;gap:.5rem;margin-top:.45rem;">' + actions.map(function (action, idx) {
       const label = _firstText(action.name, action.displayName, 'Item Action');
-      const meta = [_firstText(action.quickBarUsesText, action.resourceCost, ''), _firstText(action.quickBarDamageText, ''), _firstText(action.quickBarSaveText, '')].filter(Boolean).join(' · ');
-      return '<button class="cqa-btn cast" type="button" data-cqa-related-action="' + idx + '">' + _esc(label) + (meta ? '<br><small>' + _esc(meta) + '</small>' : '') + '</button>';
+      const charge = _magicActionChargeText(action);
+      const atk = _firstText(action.quickBarAttackText, action.attack_bonus, action.attackBonus, '');
+      const save = _firstText(action.quickBarSaveText, action.save_dc, action.saveDC, '');
+      const dmg = normalizeWeaponDamage(action, action) || _firstText(action.quickBarDamageText, action.damage_formula, action.damageFormula, '');
+      const dtype = normalizeWeaponDamageType(action, action);
+      const range = _firstText(action.quickBarRangeText, action.range, action.reach, '');
+      const cost = _firstText(action.cost, action.actionCost, action.actionType, action.quickBarLane, 'action');
+      const meta = [charge, atk ? ('Attack ' + atk) : '', save ? ('Save ' + save) : '', dmg ? ('Damage ' + dmg + (dtype ? ' ' + dtype : '')) : '', range ? ('Range ' + range) : '', cost ? ('Cost ' + cost) : ''].filter(Boolean).join(' · ');
+      return '<div class="cqa-meta-card"><strong>' + _esc(label) + '</strong><span>' + _esc(meta || _firstText(action.quickBarInfoSummary, action.description, 'Magic item action')) + '</span><div class="cqa-controls">'
+        + (atk ? '<button class="cqa-btn" type="button" data-cqa-related-action="' + idx + '" data-cqa-related-roll="attack">Roll Attack</button>' : '')
+        + (dmg ? '<button class="cqa-btn damage" type="button" data-cqa-related-action="' + idx + '" data-cqa-related-roll="damage">Roll Damage</button>' : '')
+        + (save ? '<button class="cqa-btn save" type="button" data-cqa-related-action="' + idx + '" data-cqa-related-roll="save">Show Save DC</button>' : '')
+        + (charge ? '<button class="cqa-btn cast" type="button" data-cqa-related-action="' + idx + '" data-cqa-related-roll="use">Use Charge / Cast</button>' : '<button class="cqa-btn cast" type="button" data-cqa-related-action="' + idx + '" data-cqa-related-roll="use">Use / Open</button>')
+        + '</div></div>';
     }).join('') + '</div></div>';
   }
 
@@ -484,20 +515,23 @@
     // opening the modal. The attack button is disabled with a visible reason,
     // but damage/critical rolls and details remain available.
     const usedThisTurn = !!((actionOrId && typeof actionOrId === 'object' && actionOrId.quickBarUsedThisTurn) || card.quickBarUsedThisTurn);
-    const hasVersatile = !!card.versatile_damage_formula;
+    const displayDamageFormula = normalizeWeaponDamage(card, card);
+    const displayDamageType = normalizeWeaponDamageType(card, card);
+    const hasVersatile = !!_firstText(card.versatile_damage_formula, card.versatileDamage, card.versatile_damage);
     const properties = _safeArray(card.properties).join(', ');
     const relatedMagicActions = _relatedMagicActions(card);
     const rows = [
       ['Attack Bonus', _firstText(card.attack_bonus, card.attackBonus, '—')],
-      ['Damage', _firstText(card.damage_formula, card.damage, '—')],
-      ['Damage Type', _firstText(card.damage_type, card.damageType, '—')],
+      ['Damage', displayDamageFormula || '—'],
+      ['Damage Type', displayDamageType || '—'],
       ['Ability / Proficiency', _firstText(card.ability_label, card.ability, '') + (_firstText(card.proficiency_label, card.proficient === false ? 'Not proficient' : 'Proficient') ? (' • ' + _firstText(card.proficiency_label, card.proficient === false ? 'Not proficient' : 'Proficient')) : '')],
       ['Range / Reach', _firstText(card.range, card.reach, '—')],
       ['Action Cost', _firstText(card.cost, card.actionCost, card.economy && _safeArray(card.economy).join(', '), 'Attack action')],
       ['Properties', properties || _safeArray(card.badges).join(', ') || '—'],
       ['Source Item', _firstText(card.source_item_name, card.itemName, card.name, '—')],
       ['Charges', _formatCharges(card)],
-      ['Versatile', card.versatile_damage_formula || '—'],
+      ['Versatile', _firstText(card.versatile_damage_formula, card.versatileDamage, card.versatile_damage, '—')],
+      ['Used This Turn', usedThisTurn ? 'Yes' : 'No'],
     ];
     const overlay = document.createElement('div');
     overlay.id = 'combat-quick-action-modal';
@@ -525,12 +559,12 @@
       }
       if (ev.target.closest('[data-cqa-weapon-attack]')) {
         if (usedThisTurn) return;
-        safeWeaponAttack(card, mode);
-        closeModal();
+        try { safeWeaponAttack(Object.assign({}, card, { damage_formula: displayDamageFormula, damage_type: displayDamageType }), mode); closeModal(); }
+        catch (err) { console.error('[CombatQuickActions] Could not dispatch weapon attack.', { itemName: card.name, actionName: card.name, normalizedAttackBonus: _firstText(card.attack_bonus, card.attackBonus), normalizedDamageFormula: displayDamageFormula, normalizedDamageType: displayDamageType, context: global.getSafeRollContext && global.getSafeRollContext(), error: err }); if (typeof global.showToast === 'function') global.showToast('Could not dispatch weapon roll: missing session context'); }
         return;
       }
-      if (ev.target.closest('[data-cqa-weapon-damage]')) { safeWeaponDamage(card, mode, false); return; }
-      if (ev.target.closest('[data-cqa-weapon-crit]')) { safeWeaponDamage(card, mode, true); return; }
+      if (ev.target.closest('[data-cqa-weapon-damage]')) { try { safeWeaponDamage(Object.assign({}, card, { damage_formula: displayDamageFormula, damage_type: displayDamageType }), mode, false); } catch (err) { console.error('[CombatQuickActions] Could not roll weapon damage.', { itemName: card.name, actionName: card.name, normalizedAttackBonus: _firstText(card.attack_bonus, card.attackBonus), normalizedDamageFormula: displayDamageFormula, normalizedDamageType: displayDamageType, context: global.getSafeRollContext && global.getSafeRollContext(), error: err }); if (typeof global.showToast === 'function') global.showToast('Could not roll ' + (card.name || 'weapon') + ' damage: missing roll formula'); } return; }
+      if (ev.target.closest('[data-cqa-weapon-crit]')) { try { safeWeaponDamage(Object.assign({}, card, { damage_formula: displayDamageFormula, damage_type: displayDamageType }), mode, true); } catch (err) { console.error('[CombatQuickActions] Could not roll critical weapon damage.', { itemName: card.name, actionName: card.name, normalizedAttackBonus: _firstText(card.attack_bonus, card.attackBonus), normalizedDamageFormula: displayDamageFormula, normalizedDamageType: displayDamageType, context: global.getSafeRollContext && global.getSafeRollContext(), error: err }); if (typeof global.showToast === 'function') global.showToast('Could not roll ' + (card.name || 'weapon') + ' critical damage: missing roll formula'); } return; }
     });
     document.body.appendChild(overlay);
     var panel = overlay.querySelector('.cqa-panel');
@@ -577,7 +611,7 @@
     });
   });
 
-  global.CombatQuickActions = { openSpellAction, openWeaponAction, refreshSpellModalDamage, refreshSpellModalSlots, closeModal, __test: { spellDamagePreview: _spellDamagePreview } };
+  global.CombatQuickActions = { openSpellAction, openWeaponAction, refreshSpellModalDamage, refreshSpellModalSlots, closeModal, __test: { spellDamagePreview: _spellDamagePreview, normalizeWeaponDamage: normalizeWeaponDamage } };
 
   // Explicit bridge so the quick bar can always reach the weapon modal, even if
   // play.html's own copy of this bridge has not (re)attached for any reason.
