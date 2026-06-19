@@ -429,8 +429,10 @@ async def _broadcast_combat(session):
     if not connections:
         payload = dict(session.combat or {})
         payload["visibility_revision"] = revision
+        logger.info("[combat initiative sync] revision=%s sent_to=%s", payload.get("revision"), [])
         await manager.broadcast(session.id, {"type": "combat_state", "payload": payload})
         return
+    sent_to = []
     for uid in list(connections.keys()):
         user = (getattr(session, "users", {}) or {}).get(uid)
         payload = dict(session.combat or {})
@@ -439,7 +441,9 @@ async def _broadcast_combat(session):
             payload.pop("fog_suspended_combatants", None)
             payload.pop("hidden_suspended_combatants", None)
         payload["visibility_revision"] = revision
+        sent_to.append(uid)
         await manager.send_to(session.id, uid, {"type": "combat_state", "payload": payload})
+    logger.info("[combat initiative sync] revision=%s sent_to=%s", (session.combat or {}).get("revision"), sent_to)
 
 
 # ---------------------------------------------------------------------------

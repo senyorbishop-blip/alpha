@@ -150,6 +150,14 @@ def test_initiative_roll_refreshes_token_and_party_surfaces_without_reload():
 
 
 
+def test_live_combat_state_route_delegates_to_authoritative_handler():
+    src = PLAY.read_text(encoding="utf-8")
+    assert "case 'combat_state': {" in src
+    assert "handleCombatStateLive(p);" in src
+    assert "function handleCombatStateLive(payload)" in src
+    assert "combatApplyState(payload);" in src
+
+
 def test_actual_incoming_dispatch_combat_state_from_self_roll_applies():
     result = _run(
         "function handleLegacyMessage(msg){ const p = msg.payload || {}; switch(msg.type){ case 'combat_state': combatApplyState(p); break; } }"
@@ -199,7 +207,8 @@ def test_lower_revision_with_changed_initiative_applies_with_warning():
 def test_token_badge_renderer_reads_initiative_from_combatant_state():
     src = PLAY.read_text(encoding="utf-8")
     assert "function getCombatantForToken(tokenId)" in src
-    assert "const combatants = (_combat && Array.isArray(_combat.combatants)) ? _combat.combatants : [];" in src
+    assert "const state = window._combat || window.combatState || _combat || {};" in src
+    assert "const list = Array.isArray(state.combatants) ? state.combatants : [];" in src
     assert "const combatant = getCombatantForToken(token && token.id);" in src
     assert "const initiativeValue = combatant ? combatant.initiative : null;" in src
     assert "`INIT ${initiativeValue}`" in src

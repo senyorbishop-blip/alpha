@@ -18729,8 +18729,9 @@ function layoutTokenBadges(token, renderContext = {}) {
 }
 
 function getCombatantForToken(tokenId) {
-  const combatants = (_combat && Array.isArray(_combat.combatants)) ? _combat.combatants : [];
-  return combatants.find(c => String(c && (c.token_id || c.tokenId || '')) === String(tokenId || ''));
+  const state = window._combat || window.combatState || _combat || {};
+  const list = Array.isArray(state.combatants) ? state.combatants : [];
+  return list.find(c => String(c && (c.token_id || c.tokenId || '')) === String(tokenId || '')) || null;
 }
 
 function drawTokenBadgeRows(layout) {
@@ -32788,14 +32789,7 @@ function handleLegacyMessage(msg) {
         break;
       }
     case 'combat_state': {
-        if (_isStaleVisibilityPayload(p)) break;
-        // Capture previous state for spotlight diff detection
-        const _prevCombatForSpotlight = _combat ? JSON.parse(JSON.stringify(_combat)) : null;
-        combatApplyState(p);
-        // Spotlight: detect finishing blows, clutch death saves
-        if (window.AppUISpotlight && _prevCombatForSpotlight) {
-          AppUISpotlight.onCombatStateChange(p, _prevCombatForSpotlight, _spotlightEnv());
-        }
+        handleCombatStateLive(p);
         break;
       }
     case 'combat_initiative_rolled': {
@@ -44536,6 +44530,21 @@ function removeSpellAt(wx, wy) {
 // Stage 3 ownership: this inline block remains the live client combat path;
 // gameplay/combat.js is a dormant alternate module unless play.html explicitly loads it.
 // ════════════════════════════════════════════════════════════════
+
+
+function handleCombatStateLive(payload) {
+  if (!payload || typeof payload !== 'object') return false;
+  if (_isStaleVisibilityPayload(payload)) return true;
+  // Capture previous state for spotlight diff detection.  combat_state is the
+  // only source of truth for initiative/order, including self-roll updates.
+  const _prevCombatForSpotlight = _combat ? JSON.parse(JSON.stringify(_combat)) : null;
+  combatApplyState(payload);
+  // Spotlight: detect finishing blows, clutch death saves
+  if (window.AppUISpotlight && _prevCombatForSpotlight) {
+    AppUISpotlight.onCombatStateChange(payload, _prevCombatForSpotlight, _spotlightEnv());
+  }
+  return true;
+}
 
 function _combatInitiativeSignature(state) {
   const combatants = Array.isArray(state?.combatants) ? state.combatants : [];
