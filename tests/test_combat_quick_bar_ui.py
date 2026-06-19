@@ -162,3 +162,30 @@ def test_combat_quick_spell_upcast_options_scale_damage_by_slot_level():
     assert 'const exactCastOption = card.cast_options && card.cast_options[String(effectiveSlot)];' in play
     assert 'let dmgExpr = exactCastOption?.formula' in play
     assert 'if (!exactCastOption && baseLevel > 0 && effectiveSlot > baseLevel)' in play
+
+
+def test_quick_weapon_rolls_use_safe_context_and_modal_damage_formula():
+    play = _read('client/templates/play.html')
+    actions = _read('client/static/js/character/combat_quick_actions.js')
+    assert 'function getSafeRollContext()' in play
+    assert 'window.getSafeRollContext = getSafeRollContext;' in play
+    assert 'function normalizeWeaponDamage(action, item)' in play
+    assert 'const displayedFormula = normalizeWeaponDamage(card, card) || damageMeta.formula;' in play
+    assert 'const rollFormula = critical ? _combatQuickCriticalFormula(displayedFormula) : displayedFormula;' in play
+    assert 'roll_context: context' in play
+    assert 'formulaUsed: `1d20${bonusStr}`' in play
+    assert 'vs ${context.targetName || \'No target\'}' in play
+    assert 'displayDamageFormula = normalizeWeaponDamage(card, card)' in actions
+    assert 'safeWeaponDamage(Object.assign({}, card, { damage_formula: displayDamageFormula' in actions
+    assert 'Could not roll \' + (card.name || \'weapon\') + \' damage: missing roll formula' in actions
+
+
+def test_quick_weapon_modal_accepts_staff_like_items_and_magic_actions():
+    actions = _read('client/static/js/character/combat_quick_actions.js')
+    assert "if (actionOrId && typeof actionOrId === 'object') return actionOrId;" in actions
+    assert "['Used This Turn', usedThisTurn ? 'Yes' : 'No']" in actions
+    assert '<strong>Magic Item Actions</strong>' in actions
+    assert 'data-cqa-related-roll="attack"' in actions
+    assert 'data-cqa-related-roll="damage"' in actions
+    assert 'data-cqa-related-roll="save"' in actions
+    assert 'Use Charge / Cast' in actions
