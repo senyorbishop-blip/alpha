@@ -41,6 +41,7 @@ from server.item_schema import (
     normalize_crafted_result_row,
     to_inventory_entry,
 )
+from server.item_compendium import merge_compendium_metadata
 
 
 _LOOT_ROLL_RANGE_FT = 30.0
@@ -390,7 +391,10 @@ def _build_item_runtime_action(item: dict, item_index: int) -> tuple[dict | None
         return None, passive_card
 
     quantity = _safe_int(merged.get("qty"), 1, minimum=1, maximum=9999)
+    charges_max = _safe_int(merged.get("charges_max"), 0, minimum=0, maximum=99)
     charges_current = _safe_int(merged.get("charges_current"), -1, minimum=-1, maximum=99)
+    if charges_max <= 0:
+        charges_current = -1
     usage_cost = max(1, _safe_int(merged.get("usage_cost"), 1, minimum=1, maximum=20))
 
     disabled_reason = ""
@@ -398,7 +402,7 @@ def _build_item_runtime_action(item: dict, item_index: int) -> tuple[dict | None
         disabled_reason = "Requires attunement."
     elif bool(merged.get("consumable")) and quantity <= 0:
         disabled_reason = "No quantity left."
-    elif charges_current >= 0 and charges_current < usage_cost:
+    elif charges_max > 0 and charges_current >= 0 and charges_current < usage_cost:
         disabled_reason = "No charges left."
 
     action_payload = {
@@ -515,6 +519,7 @@ def _looks_like_creature_inventory_entry(entry: dict) -> bool:
 def _normalize_player_inventory_entry(entry: dict) -> dict | None:
     if not isinstance(entry, dict):
         return None
+    entry = merge_compendium_metadata(entry)
     name = str(entry.get("name") or "").strip()[:80]
     if not name:
         return None

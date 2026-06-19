@@ -22428,7 +22428,11 @@ function renderImportedItemDetailRows(item) {
   return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.45rem;font-size:0.66rem;color:var(--parchment-dim);line-height:1.45;">${rows.map(([label, value]) => `<div><strong style="color:var(--gold);">${escapeHtml(label)}:</strong> ${escapeHtml(value)}</div>`).join('')}</div>`;
 }
 function renderImportedItemActions(item) {
-  const actions = Array.isArray(item.actions) ? item.actions : Array.isArray(item.granted_actions) ? item.granted_actions : [];
+  const actions = []
+    .concat(Array.isArray(item.actions) ? item.actions : [])
+    .concat(Array.isArray(item.granted_actions) ? item.granted_actions : [])
+    .concat(Array.isArray(item.magicActions) ? item.magicActions : [])
+    .concat(Array.isArray(item.granted_spells) ? item.granted_spells : []);
   if (!actions.length) return '';
   return `<div style="padding-top:0.1rem;border-top:1px solid rgba(115,135,165,0.12);display:flex;flex-direction:column;gap:0.4rem;"><div style="font-size:0.66rem;color:var(--parchment-dim);">Item actions / spells</div>${actions.map((action, idx) => {
     const cost = action.chargeCost || action.charge_cost || action.cost || '';
@@ -22447,8 +22451,16 @@ function useInventoryItemActionFromInspect(actionIndex) {
   const itemIndex = Number(_lootRevealState.inventory_index);
   if (!Number.isFinite(itemIndex) || itemIndex < 0) return;
   const item = Array.isArray(playerInventory) ? playerInventory[itemIndex] : null;
-  const actions = Array.isArray(item?.actions) ? item.actions : Array.isArray(item?.granted_actions) ? item.granted_actions : [];
+  const actions = []
+    .concat(Array.isArray(item?.actions) ? item.actions : [])
+    .concat(Array.isArray(item?.granted_actions) ? item.granted_actions : [])
+    .concat(Array.isArray(item?.magicActions) ? item.magicActions : [])
+    .concat(Array.isArray(item?.granted_spells) ? item.granted_spells : []);
   const action = actions[actionIndex];
+  if (action && (action.spell_id || action.id || action.name) && (Array.isArray(item?.granted_spells) && item.granted_spells.some(s => String(s?.id || s?.spell_id || s?.name || '').toLowerCase() === String(action.spell_id || action.id || action.name || '').toLowerCase()))) {
+    sendWS({ type: 'inventory_cast_item_spell', payload: { item_index: itemIndex, item_id: String(item.id || item.magic_item_id || ''), spell_id: String(action.spell_id || action.id || action.name || '').toLowerCase().replace(/\s+/g, '-'), charge_cost: Math.max(1, Number(action.charge_cost || action.chargeCost || 1) || 1), cast_level: Math.max(0, Number(action.cast_level || action.spell_level || action.level || 0) || 0), target_id: _combat?.selected_target_id || '' } });
+    return;
+  }
   let chargeCost = action && (action.chargeCost || action.charge_cost || action.cost);
   if (String(chargeCost || '').match(/\d+\s*[-–]\s*\d+/)) {
     const picked = prompt(`Charges to spend for ${action.name || 'this action'} (${chargeCost})`, String(chargeCost).match(/\d+/)?.[0] || '1');
@@ -22482,6 +22494,7 @@ function selectLootRevealItem(index) {
   const heading = hiddenMagic ? '??? (Unidentified)' : item.name;
   const detailLines = [
     item.rarity ? `<div><strong style="color:var(--gold);">Rarity:</strong> ${escapeHtml(item.rarity)}</div>` : '',
+    item.equipped ? `<div><strong style="color:var(--gold);">Equipped:</strong> ${escapeHtml(String(item.equip_slot || 'Main Hand').replace(/_/g, ' '))}</div>` : '',
     item.category ? `<div><strong style="color:var(--gold);">Category:</strong> ${escapeHtml(item.category)}</div>` : '',
     item.item_type ? `<div><strong style="color:var(--gold);">Type:</strong> ${escapeHtml(item.item_type)}</div>` : '',
     item.source ? `<div><strong style="color:var(--gold);">Source:</strong> ${escapeHtml(item.source)}</div>` : '',
@@ -41892,6 +41905,25 @@ function normalizePlayerInventoryEntry(raw) {
   if ('grants_action' in base) out.grants_action = !!base.grants_action;
   if (Array.isArray(base.passive_effects)) out.passive_effects = base.passive_effects.slice(0, 12);
   if (Array.isArray(base.granted_spells)) out.granted_spells = base.granted_spells.slice(0, 12);
+  ['actions','spells','magicActions','granted_actions'].forEach(k => {
+    if (Array.isArray(base[k])) out[k] = base[k].slice(0, 24);
+  });
+  if (base.charges && typeof base.charges === 'object') {
+    const current = parseInt(base.charges.current ?? base.charges_current, 10);
+    const max = parseInt(base.charges.max ?? base.charges_max, 10);
+    if (Number.isFinite(current)) out.charges_current = current;
+    if (Number.isFinite(max)) out.charges_max = max;
+    const recharge = String(base.charges.recharge || base.charges.resetOn || '').trim();
+    if (recharge && !out.recharge_type) out.recharge_type = recharge;
+  }
+  const attReq = String(base.attunementRequirement || base.attunement_requirement || '').trim();
+  if (attReq) {
+    out.attunement_requirement = attReq;
+    out.requires_attunement = true;
+    out.attunement_required = true;
+  }
+  if ('requiresAttunement' in base) out.requires_attunement = !!base.requiresAttunement;
+  if ('requires_attunement' in base) out.requires_attunement = !!base.requires_attunement;
   if (!('identified' in out) && 'is_identified' in out) out.identified = !!out.is_identified;
   // Encumbrance fields
   if (base.weight_lbs != null) out.weight_lbs = Math.max(0, Number(base.weight_lbs) || 0);
@@ -41915,6 +41947,14 @@ function normalizePlayerInventoryEntry(raw) {
   });
   if ('stealth_disadvantage' in raw) out.stealth_disadvantage = !!base.stealth_disadvantage;
   if (Array.isArray(base.weapon_properties)) out.weapon_properties = base.weapon_properties.map(x => String(x || '').trim()).filter(Boolean).slice(0, 12);
+  if (base.weapon && typeof base.weapon === 'object') {
+    out.weapon = Object.assign({}, base.weapon);
+    if (!out.damage_dice && base.weapon.damageFormula) out.damage_dice = String(base.weapon.damageFormula).replace(/\s+(acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder)$/i, '').trim();
+    if (!out.versatile_damage && base.weapon.versatileDamageFormula) out.versatile_damage = String(base.weapon.versatileDamageFormula).replace(/\s+(acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder)$/i, '').trim();
+    if (!out.damage_type && base.weapon.damageType) out.damage_type = String(base.weapon.damageType);
+    if (!out.weapon_properties && Array.isArray(base.weapon.properties)) out.weapon_properties = base.weapon.properties.slice(0, 12);
+  }
+  repairKnownMagicInventoryItem(out);
   if (base.extradimensional || base.is_container || base.capacity_lbs != null || Array.isArray(base.bag_contents)) {
     if (base.extradimensional) out.extradimensional = true;
     if (base.is_container) out.is_container = true;
@@ -41923,6 +41963,49 @@ function normalizePlayerInventoryEntry(raw) {
     if (base.volume_ft3     != null)  out.volume_ft3      = Number(base.volume_ft3)       || 0;
     if (base.is_devouring   != null)  out.is_devouring    = !!base.is_devouring;
     out.bag_contents = Array.isArray(base.bag_contents) ? base.bag_contents.map(i => normalizePlayerInventoryEntry(i)).filter(Boolean) : [];
+  }
+  return out;
+}
+
+function repairKnownMagicInventoryItem(out) {
+  if (!out || String(out.name || '').trim().toLowerCase() !== 'thunder mage quarterstaff, +3') return out;
+  const spells = [
+    ['call-lightning', 'Call Lightning', 3],
+    ['chain-lightning', 'Chain Lightning', 6],
+    ['haste', 'Haste', 3],
+    ['lightning-bolt', 'Lightning Bolt', 3],
+    ['protection-from-energy', 'Protection from Energy', 3],
+    ['absorb-elements', 'Absorb Elements', 1],
+  ];
+  if (!out.id) out.id = 'thunder-mage-quarterstaff-plus-3';
+  if (!out.magic_item_id) out.magic_item_id = 'thunder-mage-quarterstaff-plus-3';
+  if (!out.rarity || String(out.rarity).toLowerCase() === 'common') out.rarity = 'very_rare';
+  if (!out.category) out.category = 'staff';
+  if (!out.item_type || out.item_type === 'thunder_mage_quarterstaff_3') out.item_type = 'quarterstaff';
+  out.equipment_kind = 'weapon';
+  out.attunement_required = true;
+  out.requires_attunement = true;
+  if (!out.attunement_requirement) out.attunement_requirement = 'requires attunement by a sorcerer or wizard';
+  if (out.charges_max == null) out.charges_max = 10;
+  if (out.charges_current == null) out.charges_current = out.charges_max;
+  if (!out.recharge_type) out.recharge_type = 'dawn';
+  if (!out.damage_dice) out.damage_dice = '1d6+4';
+  if (!out.versatile_damage) out.versatile_damage = '1d8+4';
+  if (!out.damage_type) out.damage_type = 'bludgeoning';
+  if (out.attack_bonus == null) out.attack_bonus = 3;
+  if (out.damage_bonus == null) out.damage_bonus = 3;
+  if (!out.reach) out.reach = '5 ft';
+  if (!out.range) out.range = '5 ft';
+  if (out.weight_lbs == null) out.weight_lbs = 4;
+  const props = new Set((Array.isArray(out.weapon_properties) ? out.weapon_properties : []).map(p => String(p || '').trim()).filter(Boolean));
+  props.add('versatile'); props.add('topple');
+  out.weapon_properties = Array.from(props);
+  if (!out.effect && !out.notes) out.effect = 'This staff once belonged to a guild or sorcerer and wizard who followed the Primordial Elemental Titans. You have a +3 bonus to attack and damage rolls made with this magic weapon.';
+  if (!Array.isArray(out.granted_spells) || out.granted_spells.length < spells.length) {
+    out.granted_spells = spells.map(([id, name, level]) => ({ id, spell_id: id, name, charge_cost: 1, charge_cost_min: 1, charge_cost_max: 10, cast_level: level, uses_item_dc: true, uses_item_attack_bonus: false, source: out.name }));
+  }
+  if (!Array.isArray(out.magicActions) || out.magicActions.length < spells.length) {
+    out.magicActions = out.granted_spells.map(s => Object.assign({}, s, { spell_level: s.cast_level, level: s.cast_level }));
   }
   return out;
 }
@@ -45147,7 +45230,7 @@ function _buildEquippedInventoryAttackCard(item, idx, slot = '') {
   const abilityMod = isRanged ? dexMod : (isFinesse ? Math.max(strMod, dexMod) : strMod);
   const abilityLabel = isRanged ? 'DEX' : (isFinesse ? (dexMod >= strMod ? 'DEX (finesse)' : 'STR (finesse)') : 'STR');
   const prof = _proficiencyBonusFromCharacterSheet();
-  const magicBonus = Number.isFinite(Number(item?.magic_bonus)) ? Number(item.magic_bonus) : 0;
+  const magicBonus = Number.isFinite(Number(item?.magic_bonus)) ? Number(item.magic_bonus) : (Number.isFinite(Number(item?.attack_bonus)) ? Number(item.attack_bonus) : 0);
   const attackBonusValue = prof + abilityMod + magicBonus;
   const baseDamage = String(item.damage_dice || item.damage_formula || item.base_damage_formula || item.damage || item.versatile_damage || '').trim();
   const versatileDamage = String(item.versatile_damage || item.versatile_damage_formula || '').trim();
@@ -45188,6 +45271,11 @@ function _buildEquippedInventoryAttackCard(item, idx, slot = '') {
     source_item_name: name,
     charges_current: item.charges_current ?? item.chargesCurrent ?? item.charges?.current ?? item.uses?.current ?? item.uses?.remaining ?? '',
     charges_max: item.charges_max ?? item.chargesMax ?? item.charges?.max ?? item.uses?.max ?? '',
+    rarity: item.rarity || '',
+    attunement_requirement: item.attunement_requirement || item.attunementRequirement || '',
+    requires_attunement: !!(item.requires_attunement || item.requiresAttunement || item.attunement_required),
+    attuned: !!item.attuned,
+    equip_slot: item.equip_slot || slot,
     slot,
     handed,
     badges,

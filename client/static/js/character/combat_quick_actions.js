@@ -582,6 +582,8 @@
     const relatedMagicActions = _relatedMagicActions(card);
     const rows = [
       ['Attack Bonus', weaponContext.attackBonus || '—'],
+      ['Rarity', _firstText(card.rarity, card.source_item && card.source_item.rarity, '—').replace(/_/g, ' ')],
+      ['Equipped', _firstText(card.equip_slot, card.slot, 'Main Hand').replace(/_/g, ' ')],
       ['Damage', displayDamageFormula || '—'],
       ['Damage Type', displayDamageType || '—'],
       ['Ability / Proficiency', _firstText(card.ability_label, card.ability, '') + (_firstText(card.proficiency_label, card.proficient === false ? 'Not proficient' : 'Proficient') ? (' • ' + _firstText(card.proficiency_label, card.proficient === false ? 'Not proficient' : 'Proficient')) : '')],
@@ -590,7 +592,9 @@
       ['Properties', properties || _safeArray(card.badges).join(', ') || '—'],
       ['Source Item', weaponContext.sourceItem || '—'],
       ['Charges', weaponContext.charges],
+      ['Attunement', card.requires_attunement ? (_firstText(card.attunement_requirement, card.source_item && card.source_item.attunement_requirement, 'Requires attunement') + (card.attuned ? ' • Attuned' : ' • Not attuned')) : 'Not required'],
       ['Versatile', weaponContext.versatileDamageFormula || '—'],
+      ['Versatile Critical', weaponContext.versatileDamageFormula ? _criticalFormula(weaponContext.versatileDamageFormula) : '—'],
       ['Used This Turn', usedThisTurn ? 'Yes' : 'No'],
     ];
     const overlay = document.createElement('div');
@@ -604,7 +608,7 @@
       + '<div class="cqa-desc">' + _esc(_firstText(card.notes, card.mastery_text, 'Equipped weapon quick action.')) + '</div>'
       + (usedThisTurn ? '<div class="cqa-sub" style="color:#ffe8a3;">Used this turn — attack roll is disabled, but you can still review details or roll damage.</div>' : '')
       + _magicActionsHtml(relatedMagicActions)
-      + '<div class="cqa-controls"><button class="cqa-btn" type="button" data-cqa-weapon-attack ' + (usedThisTurn ? 'disabled title="Used this turn"' : '') + '>Roll Attack</button><button class="cqa-btn damage" type="button" data-cqa-weapon-damage>Roll Damage</button><button class="cqa-btn damage" type="button" data-cqa-weapon-crit>Roll Critical Damage</button><button class="cqa-btn cast" type="button" data-cqa-mark-used>Use / Mark Used</button><button class="cqa-btn" type="button" data-cqa-close>Close</button></div></div>';
+      + '<div class="cqa-controls"><button class="cqa-btn" type="button" data-cqa-weapon-attack ' + (usedThisTurn ? 'disabled title="Used this turn"' : '') + '>Roll Attack</button><button class="cqa-btn damage" type="button" data-cqa-weapon-damage>Roll Damage</button><button class="cqa-btn damage" type="button" data-cqa-weapon-crit>Roll Critical Damage</button>' + (hasVersatile ? '<button class="cqa-btn damage" type="button" data-cqa-weapon-versatile>Roll Versatile Damage</button><button class="cqa-btn damage" type="button" data-cqa-weapon-versatile-crit>Roll Versatile Critical Damage</button>' : '') + '<button class="cqa-btn cast" type="button" data-cqa-mark-used>Use / Mark Used</button><button class="cqa-btn" type="button" data-cqa-close>Close</button></div></div>';
     overlay.addEventListener('click', function (ev) {
       if (ev.target === overlay || ev.target.closest('[data-cqa-close]')) { ev.preventDefault(); ev.stopPropagation(); closeModal(); return; }
       const modeSelect = document.getElementById('combat-quick-weapon-mode');
@@ -625,6 +629,8 @@
       }
       if (ev.target.closest('[data-cqa-weapon-damage]')) { try { rollQuickWeaponDamage(_ctxForMode(weaponContext, mode)); } catch (err) { console.error('[CombatQuickActions] Could not roll weapon damage.', { itemName: card.name, actionName: card.name, normalizedAttackBonus: _firstText(card.attack_bonus, card.attackBonus), normalizedDamageFormula: displayDamageFormula, normalizedDamageType: displayDamageType, context: global.getSafeRollContext && global.getSafeRollContext(), error: err }); if (typeof global.showToast === 'function') global.showToast('Could not roll ' + (card.name || 'weapon') + ' damage: missing roll formula'); } return; }
       if (ev.target.closest('[data-cqa-weapon-crit]')) { try { rollQuickWeaponCriticalDamage(_ctxForMode(weaponContext, mode)); } catch (err) { console.error('[CombatQuickActions] Could not roll critical weapon damage.', { itemName: card.name, actionName: card.name, normalizedAttackBonus: _firstText(card.attack_bonus, card.attackBonus), normalizedDamageFormula: displayDamageFormula, normalizedDamageType: displayDamageType, context: global.getSafeRollContext && global.getSafeRollContext(), error: err }); if (typeof global.showToast === 'function') global.showToast('Could not roll ' + (card.name || 'weapon') + ' critical damage: missing roll formula'); } return; }
+      if (ev.target.closest('[data-cqa-weapon-versatile]')) { try { rollQuickWeaponDamage(_ctxForMode(weaponContext, 'versatile')); } catch (err) { if (typeof global.showToast === 'function') global.showToast('Could not roll versatile damage.'); } return; }
+      if (ev.target.closest('[data-cqa-weapon-versatile-crit]')) { try { rollQuickWeaponCriticalDamage(_ctxForMode(weaponContext, 'versatile')); } catch (err) { if (typeof global.showToast === 'function') global.showToast('Could not roll versatile critical damage.'); } return; }
     });
     document.body.appendChild(overlay);
     var panel = overlay.querySelector('.cqa-panel');

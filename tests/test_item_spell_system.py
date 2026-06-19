@@ -216,7 +216,7 @@ def test_item_compendium_thunder_mage_staff_entry():
     gs = item["granted_spells"]
     assert len(gs) >= 1
     spell_ids = [g["id"] for g in gs if isinstance(g, dict)]
-    assert "thunderwave" in spell_ids
+    assert {"call-lightning", "chain-lightning", "haste", "lightning-bolt", "protection-from-energy", "absorb-elements"}.issubset(set(spell_ids))
 
 
 # ---------------------------------------------------------------------------

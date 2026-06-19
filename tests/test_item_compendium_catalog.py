@@ -318,9 +318,12 @@ def test_thunder_staff_granted_spells_have_correct_ids():
     assert item is not None
     gs = item.get("granted_spells", [])
     spell_ids = {g["id"] for g in gs if isinstance(g, dict)}
-    assert "thunderwave" in spell_ids
-    assert "shatter" in spell_ids
+    assert "call-lightning" in spell_ids
+    assert "chain-lightning" in spell_ids
+    assert "haste" in spell_ids
     assert "lightning-bolt" in spell_ids
+    assert "protection-from-energy" in spell_ids
+    assert "absorb-elements" in spell_ids
 
 
 # ---------------------------------------------------------------------------
