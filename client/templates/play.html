@@ -11797,6 +11797,9 @@ const _PING_STACK_HARD_CAP = 28;
 
 // Combat state (declared early to avoid TDZ errors in drawToken / canMoveToken)
 let _combat = { active: false, turn: 0, combatants: [], movement: null, selected_target_id: '', pending_attack: null, suspended_combatants: [] };
+window._combat = _combat;
+window.combatState = _combat;
+window.currentCombat = _combat;
 let _combatRound = 1;
 // Monotonic visibility revision (fog/hidden/token-position changes). Payloads
 // carrying an older revision than the last one applied are dropped so a
@@ -32790,7 +32793,7 @@ function handleLegacyMessage(msg) {
       }
     case 'combat_state': {
         handleCombatStateLive(p);
-        break;
+        return true;
       }
     case 'combat_initiative_rolled': {
         applyCombatInitiativeRolled(p);
@@ -44534,6 +44537,8 @@ function removeSpellAt(wx, wy) {
 
 function handleCombatStateLive(payload) {
   if (!payload || typeof payload !== 'object') return false;
+  const _combatantsForLog = Array.isArray(payload.combatants) ? payload.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`).join(',') : '';
+  console.debug(`[combat_state recv] role=${ROLE} user=${USER_ID} revision=${payload.revision ?? 'none'} combatants=${_combatantsForLog}`);
   if (_isStaleVisibilityPayload(payload)) return true;
   // Capture previous state for spotlight diff detection.  combat_state is the
   // only source of truth for initiative/order, including self-roll updates.
@@ -44558,15 +44563,22 @@ function _combatInitiativeSignature(state) {
 }
 
 function combatApplyState(state) {
-  if (!state || typeof state !== 'object') return;
+  if (!state || typeof state !== 'object') return false;
+  let applyReason = 'accepted';
   if (typeof _combatInitiativeResyncTimer !== 'undefined' && _combatInitiativeResyncTimer) { clearTimeout(_combatInitiativeResyncTimer); _combatInitiativeResyncTimer = null; }
   const incomingRevision = Number.isFinite(Number(state.revision)) ? Number(state.revision) : null;
   const localRevision = Number.isFinite(Number(_combat.revision)) ? Number(_combat.revision) : null;
   const incomingSignature = _combatInitiativeSignature(state);
   const localSignature = _combatInitiativeSignature(_combat);
   if (incomingRevision !== null && localRevision !== null && incomingRevision < localRevision && incomingSignature === localSignature) {
-    return;
+    console.debug(`[combatApplyState] applied=false reason=stale revision=${incomingRevision} local=${localRevision}`);
+    return false;
   }
+  if (incomingRevision === null) applyReason = 'missing-incoming-revision';
+  else if (localRevision === null) applyReason = 'missing-local-revision';
+  else if (incomingRevision > localRevision) applyReason = 'newer-revision';
+  else if (incomingRevision === localRevision && incomingSignature !== localSignature) applyReason = 'equal-revision-changed-initiative';
+  else if (incomingRevision < localRevision && incomingSignature !== localSignature) applyReason = 'lower-revision-changed-initiative';
   if (incomingRevision !== null && localRevision !== null && incomingRevision <= localRevision && incomingSignature !== localSignature) {
     console.warn('[combat initiative sync] applying equal/lower revision combat_state because initiative/order changed', { incomingRevision, localRevision });
   }
@@ -44591,8 +44603,13 @@ function combatApplyState(state) {
   window._combat = _combat;
   window.combat = _combat;
   window.combatState = _combat;
+  window.currentCombat = _combat;
   if (typeof partySnapshot === 'object' && partySnapshot) partySnapshot.combat = _combat;
   if (typeof activeContext === 'object' && activeContext) activeContext.combat = _combat;
+  if (typeof initiativeList !== 'undefined' && Array.isArray(initiativeList)) {
+    initiativeList.length = 0;
+    _combat.combatants.forEach(c => initiativeList.push(c));
+  }
   _combatRound = _combat.round;
   const nextTurnKey = _playerActionTurnKey();
   const encounterChanged = !!(state.encounter_id && _playerActionEconomyRuntime.encounter_id && String(state.encounter_id) !== String(_playerActionEconomyRuntime.encounter_id));
@@ -44617,6 +44634,7 @@ function combatApplyState(state) {
     _resetInspectResults();
     _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, bonus_action_converted_actions: 0, usage: {}, encounter_id: _combat.encounter_id || '' };
   }
+  console.debug(`[combatApplyState] applied=true reason=${applyReason}`);
   renderCombat();
   if (_combat.active && (_combat.turn !== prevTurn || !prevActive)) {
     const cur = _combat.combatants[_combat.turn];
@@ -46801,6 +46819,8 @@ function togglePlayerActionsHub() {
 }
 
 function renderCombat() {
+  const _renderCombatantsForLog = Array.isArray(_combat?.combatants) ? _combat.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`).join(',') : '';
+  console.debug(`[renderCombat] combatants=${_renderCombatantsForLog}`);
   // During dice physics, debounce DOM rerenders to avoid jank
   if (_dicePhysicsActive) {
     clearTimeout(_renderCombatDebounceTmr);
