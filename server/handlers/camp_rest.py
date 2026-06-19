@@ -355,3 +355,51 @@ async def handle_camp_rest_spend_hit_die(payload: dict, session: Session, user: 
         "payload": {"heal_amount": actual, "new_hp": token.hp, "max_hp": token.max_hp},
     })
     await save_campaign_async(session)
+
+
+async def handle_character_self_rest(payload: dict, session: Session, user: User):
+    """A player rests their own character from the character sheet.
+
+    Unlike `camp_rest_take_rest` (DM-triggered, party-wide), this lets a
+    player take a short or long rest individually. HP/spell slot/resource
+    state is already applied client-side (mirroring how char_hp_update and
+    token_hp_update work elsewhere); this handler covers the parts that
+    must be authoritative on the server: item charge recharge, and logging
+    the rest to chat/journal so the DM and table see it.
+    """
+    if user.role != "player":
+        return
+
+    rest_type = str(payload.get("rest_type") or "long").strip().lower()
+    if rest_type not in ("short", "long"):
+        rest_type = "long"
+    hit_dice_spent = max(0, int(payload.get("hit_dice_spent") or 0))
+
+    from server.handlers.inventory import refresh_item_charges_for_rest
+    updated_items = refresh_item_charges_for_rest(session, user, rest_type)
+
+    char_name = str(payload.get("character_name") or user.name or "A character").strip()
+    if rest_type == "long":
+        log_msg = f"🌙 {char_name} completed a Long Rest."
+    elif hit_dice_spent > 0:
+        plural = "" if hit_dice_spent == 1 else "s"
+        log_msg = f"☀ {char_name} completed a Short Rest and spent {hit_dice_spent} hit die{plural}."
+    else:
+        log_msg = f"☀ {char_name} completed a Short Rest."
+
+    session.add_log(log_msg, "rest", user.name)
+    await manager.broadcast(session.id, {
+        "type": "chat_message",
+        "payload": {"user": user.name, "message": log_msg, "channel": "everyone", "msg_type": "character_rest"},
+    })
+
+    if updated_items:
+        from server.handlers.inventory import _broadcast_inventory_state
+        await _broadcast_inventory_state(session)
+
+    await manager.send_to(session.id, user.id, {
+        "type": "character_rest_applied",
+        "payload": {"rest_type": rest_type, "message": log_msg, "items": updated_items},
+    })
+
+    await save_campaign_async(session)

@@ -206,6 +206,7 @@ from server.handlers.camp_rest import (
     handle_camp_rest_clear_activity,
     handle_camp_rest_take_rest,
     handle_camp_rest_spend_hit_die,
+    handle_character_self_rest,
 )
 from server.handlers.conversation import (
     handle_conversation_enter,
@@ -420,6 +421,7 @@ async def handle_message(raw: dict, session: Session, user: User):
         "camp_rest_clear_activity":     handle_camp_rest_clear_activity,
         "camp_rest_take_rest":          handle_camp_rest_take_rest,
         "camp_rest_spend_hit_die":      handle_camp_rest_spend_hit_die,
+        "character_rest":               handle_character_self_rest,
         # ── NPC Conversation Mode ──────────────────────────────────────────
         "conversation_enter":           handle_conversation_enter,
         "conversation_exit":            handle_conversation_exit,
