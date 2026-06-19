@@ -27,9 +27,9 @@ def test_open_combat_quick_bar_weapon_action_bridges_to_combat_quick_actions():
 
 def test_open_weapon_action_passes_full_card_object_to_roll_helpers():
     actions = _read('client/static/js/character/combat_quick_actions.js')
-    assert 'safeWeaponAttack(card, mode);' in actions
-    assert 'safeWeaponDamage(card, mode, false);' in actions
-    assert 'safeWeaponDamage(card, mode, true);' in actions
+    assert 'rollQuickWeaponAttack(_ctxForMode(weaponContext, mode));' in actions
+    assert 'rollQuickWeaponDamage(_ctxForMode(weaponContext, mode));' in actions
+    assert 'rollQuickWeaponCriticalDamage(_ctxForMode(weaponContext, mode));' in actions
     # The fragile id/name-only key must be gone.
     assert 'const weaponKey = card.id || card.name;' not in actions
 
@@ -60,7 +60,8 @@ def test_find_combat_weapon_is_a_shared_lookup_supporting_objects_ids_and_names(
 def test_used_this_turn_weapon_still_opens_modal_with_explanation():
     actions = _read('client/static/js/character/combat_quick_actions.js')
     bar = _read('client/static/js/character/combat_quick_bar.js')
-    assert 'const usedThisTurn = !!((actionOrId && typeof actionOrId === \'object\' && actionOrId.quickBarUsedThisTurn) || card.quickBarUsedThisTurn);' in actions
+    assert 'const usedThisTurn = weaponContext.usedThisTurn;' in actions
+    assert 'function normalizeWeaponModalContext(card, actionOrId)' in actions
     assert 'Used this turn — attack roll is disabled' in actions
     assert "(usedThisTurn ? 'disabled title=\"Used this turn\"' : '')" in actions
     # is-used must not be conflated with is-disabled in the quick bar tile click guard.
@@ -76,5 +77,5 @@ def test_missing_weapon_bridge_shows_toast_and_does_not_spend_action():
     assert "function _requireBridge(name) {" in actions
     assert "const msg = 'Quick action is not wired: ' + name + ' missing.';" in actions
     assert "if (typeof global.showToast === 'function') global.showToast(msg);" in actions
-    assert 'function safeWeaponAttack(cardOrIdOrName, mode) {' in actions
-    assert "if (_requireBridge('combatQuickWeaponAttack')) global.combatQuickWeaponAttack(cardOrIdOrName, mode);" in actions
+    assert 'function rollQuickWeaponAttack(ctx) {' in actions
+    assert "if (_requireBridge('rollQuickWeaponAttack')) return global.rollQuickWeaponAttack(ctx);" in actions

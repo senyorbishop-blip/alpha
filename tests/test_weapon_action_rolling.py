@@ -211,7 +211,10 @@ def test_crit_formula_doubles_dice_in_standalone_roll():
     fn_start = play.index('function combatQuickRollWeaponDamage(')
     fn_end = play.index('\nfunction ', fn_start + 100)
     fn_body = play[fn_start:fn_end]
-    assert 'chunk.qty * 2' in fn_body
+    assert '_combatQuickCriticalFormula(displayedFormula)' in fn_body
+    crit_start = play.index('function _combatQuickCriticalFormula(')
+    crit_body = play[crit_start:crit_start + 500]
+    assert '* 2' in crit_body
 
 
 # ── Resolver field completeness test ─────────────────────────────────────────
