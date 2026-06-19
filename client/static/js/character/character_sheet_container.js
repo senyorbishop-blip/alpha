@@ -89,6 +89,14 @@
     return (n >= 0 ? '+' : '') + String(n);
   }
 
+  function _formatHitDicePill(charData) {
+    const state = charData && charData.hitDiceState;
+    if (state && Number.isFinite(state.available) && Number.isFinite(state.total) && state.dieSize) {
+      return `${state.available}/${state.total} d${state.dieSize}`;
+    }
+    return String(charData.hitDice || '');
+  }
+
   function _safeArray(value) {
     if (Array.isArray(value)) return value;
     if (value && typeof value === 'object') {
@@ -550,7 +558,7 @@ function _renderFlagshipHeader(charData) {
             ${speciesLine ? `<div class="cs-hero-submeta">${_esc(speciesLine)}</div>` : ''}
             <div class="cs-hero-pills">
               <span class="cs-hero-pill">Level ${_esc(String(charData.totalLevel || charData.level || 1))}</span>
-              ${charData.hitDice ? `<span class="cs-hero-pill">Hit Dice ${_esc(String(charData.hitDice))}</span>` : ''}
+              ${charData.hitDice ? `<span class="cs-hero-pill">Hit Dice ${_esc(_formatHitDicePill(charData))}</span>` : ''}
               ${charData.inspiration ? `<span class="cs-hero-pill">Inspiration ${_esc(String(charData.inspiration))}</span>` : ''}
               ${_firstNonEmpty(charData.xp, charData.experience) ? `<span class="cs-hero-pill">XP ${_esc(_firstNonEmpty(charData.xp, charData.experience))}</span>` : ''}
               ${_firstNonEmpty(charData.campaignName, charData.campaign) ? `<span class="cs-hero-pill">Campaign ${_esc(_firstNonEmpty(charData.campaignName, charData.campaign))}</span>` : ''}
@@ -1016,6 +1024,15 @@ function _buildSkeleton(wrapper, charData) {
         if (tabId === 'actions') {
           const firstActionRow = container.querySelector('#csp-panel-actions .cs-action-row');
           if (firstActionRow && typeof firstActionRow.focus === 'function') firstActionRow.focus();
+        }
+        return;
+      }
+      const restType = jump.getAttribute('data-rest');
+      if (restType) {
+        if (typeof global.openCharacterRestFlow === 'function') {
+          global.openCharacterRestFlow(restType);
+        } else if (typeof global.showToast === 'function') {
+          global.showToast('Rest system is unavailable right now.');
         }
         return;
       }

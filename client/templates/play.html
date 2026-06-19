@@ -34423,6 +34423,7 @@ function _buildPremiumSheetCharData() {
     passivePerception: sheet.passivePerception ?? bookData.passivePerception ?? 0,
     inspiration: bookData.inspiration || sheet.inspiration || '',
     hitDice: bookData.hitDice || sheet.hitDice || '',
+    hitDiceState: (sheet._hitDiceState && typeof sheet._hitDiceState === 'object') ? { ...sheet._hitDiceState } : null,
     senses: bookData.senses || sheet.senses || '',
     resistances: bookData.resistances || sheet.resistances || '',
     vulnerabilities: bookData.vulnerabilities || sheet.vulnerabilities || '',
@@ -35734,6 +35735,267 @@ function _restoreNativeResourcesForRest(restType) {
     }
   });
   if (touched) _applyNativeActionStateRefresh();
+}
+
+// ─── Character sheet rest system (player self-rest, no DM camp scene needed) ───
+
+function _ensureHitDiceState() {
+  if (!_charSheet) return { total: 0, available: 0, dieSize: 8, spent: 0 };
+  const existing = _charSheet._hitDiceState;
+  if (existing && typeof existing === 'object' && Number.isFinite(existing.total) && existing.total > 0) {
+    return existing;
+  }
+  const raw = String(_charSheet.hitDice || '').trim();
+  const match = raw.match(/(\d+)\s*d\s*(\d+)/i);
+  const level = Math.max(1, parseInt(_charSheet.level ?? _charSheet.totalLevel, 10) || 0);
+  const total = match ? Math.max(1, parseInt(match[1], 10) || 1) : Math.max(1, level);
+  const dieSize = match ? Math.max(2, parseInt(match[2], 10) || 8) : 8;
+  const state = { total, available: total, dieSize, spent: 0 };
+  _charSheet._hitDiceState = state;
+  return state;
+}
+
+function _myOwnRestToken() {
+  const owned = Object.values(tokens || {}).find(t => t && _tokenOwnedByMe(t));
+  if (owned) return owned;
+  return Object.values(_stagingTokens || {}).find(t => t && _tokenOwnedByMe(t)) || null;
+}
+
+function _charSheetRestInCombat() {
+  const token = _myOwnRestToken();
+  if (!token || !_combat || !_combat.active || !Array.isArray(_combat.combatants)) return false;
+  return _combat.combatants.some(c => String(c?.token_id || '') === String(token.id || ''));
+}
+
+// Conditions that mechanically clear themselves once HP is restored above 0.
+// Anything else (curses, diseases, custom DM conditions, etc.) is left alone —
+// a rest must never blindly strip every condition off a character.
+const REST_AUTO_CLEAR_CONDITIONS = ['unconscious'];
+
+function _applyRestConditionClearing(token, newHp) {
+  if (!token || !Array.isArray(token.conditions) || !token.conditions.length) return false;
+  if (newHp <= 0) return false;
+  const before = token.conditions.length;
+  token.conditions = token.conditions.filter(id => !REST_AUTO_CLEAR_CONDITIONS.includes(id));
+  return token.conditions.length !== before;
+}
+
+function openCharacterRestFlow(restType) {
+  if (!_charSheet) {
+    if (typeof showToast === 'function') showToast('No character loaded.');
+    return;
+  }
+  const type = restType === 'short' ? 'short' : 'long';
+  if (_charSheetRestInCombat()) {
+    const ok = confirm('You are currently in combat. Are you sure you want to rest?\n\nThis will not end your turn, but resting mid-combat is unusual outside of a narrative pause.');
+    if (!ok) return;
+  }
+  if (type === 'long') {
+    _openLongRestConfirmModal();
+  } else {
+    _openShortRestModal();
+  }
+}
+
+function _showRestSummary(message) {
+  if (typeof showToast === 'function') showToast(message);
+}
+
+function _openLongRestConfirmModal() {
+  const existing = document.getElementById('csr-long-rest-modal');
+  if (existing) existing.remove();
+  const sheet = _charSheet;
+  const hd = _ensureHitDiceState();
+  const level = Math.max(1, parseInt(sheet.level ?? sheet.totalLevel, 10) || hd.total || 1);
+  const recoverAmount = Math.max(1, Math.floor(level / 2));
+  const willRecover = Math.min(hd.spent, recoverAmount);
+  const maxHp = Math.max(0, parseInt(sheet.maxHp, 10) || 0);
+
+  const modal = document.createElement('div');
+  modal.id = 'csr-long-rest-modal';
+  modal.className = 'cr-modal-wrap';
+  modal.innerHTML = `
+    <div class="cr-modal">
+      <div class="cr-modal-header">🌙 Long Rest</div>
+      <div class="cr-modal-label" style="color:var(--parchment);font-size:0.82rem;line-height:1.55;margin-bottom:0.4rem;">
+        HP will restore to ${maxHp}/${maxHp}, temporary HP clears, spell slots refresh,
+        and class/subclass/species/feat resources that recover on a long rest reset.
+        ${willRecover > 0 ? `You will recover ${willRecover} spent hit die${willRecover === 1 ? '' : 's'}.` : ''}
+      </div>
+      <div class="cr-modal-actions">
+        <button class="cr-modal-cancel" id="csr-long-cancel">Cancel</button>
+        <button class="cr-modal-confirm" id="csr-long-confirm">🌙 Take Long Rest</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#csr-long-cancel').addEventListener('click', () => modal.remove());
+  modal.querySelector('#csr-long-confirm').addEventListener('click', () => { modal.remove(); _applyLongRest(); });
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+}
+
+function _applyLongRest() {
+  const sheet = _charSheet;
+  if (!sheet) return;
+  const maxHp = Math.max(0, parseInt(sheet.maxHp, 10) || 0);
+
+  // HP + temp HP
+  sheet.currentHp = maxHp;
+  sheet.tempHp = 0;
+
+  // Hit dice recovery: floor(level / 2), minimum 1, capped at what's actually spent
+  const hd = _ensureHitDiceState();
+  const level = Math.max(1, parseInt(sheet.level ?? sheet.totalLevel, 10) || hd.total || 1);
+  const recoverAmount = Math.max(1, Math.floor(level / 2));
+  const recovered = Math.min(hd.spent, recoverAmount);
+  hd.spent = Math.max(0, hd.spent - recovered);
+  hd.available = Math.max(0, Math.min(hd.total, hd.total - hd.spent));
+
+  // Spell slots — full refresh on a long rest
+  if (typeof _spellSlotState === 'object' && _spellSlotState) {
+    Object.keys(_spellSlotState).forEach(k => { _spellSlotState[k] = 0; });
+  }
+  sheet._spellSlotState = {};
+
+  // Generic class/subclass/species/feat resources that reset on a long rest
+  // (sorcery points, innate sorcery, etc. — driven by each resource's `recovery` text)
+  _restoreNativeResourcesForRest('long');
+
+  // Sync HP/temp HP to own token, map, and DM/player views; clear death saves
+  // automatically (handled server-side once HP > 0) and mechanically-resolved
+  // conditions only — curses/diseases/custom DM conditions are left untouched.
+  const token = _myOwnRestToken();
+  let conditionsCleared = false;
+  if (token) {
+    conditionsCleared = _applyRestConditionClearing(token, maxHp);
+    _broadcastNativeTokenVitals(token, maxHp, maxHp, 0);
+  }
+
+  if (typeof syncSpellSlotBookSummary === 'function') syncSpellSlotBookSummary();
+  if (typeof scheduleCharProfileAutosave === 'function') scheduleCharProfileAutosave();
+  requestCharacterBookOverviewRender('longRest');
+  if (typeof initPremiumSheetIfNeeded === 'function') initPremiumSheetIfNeeded();
+
+  if (typeof sendWS === 'function') {
+    sendWS({ type: 'character_rest', payload: { rest_type: 'long', character_name: sheet.name || NAME || 'Character' } });
+  }
+
+  _showRestSummary(
+    `🌙 Long Rest Complete — HP restored to ${maxHp}/${maxHp}, spell slots & resources refreshed, ` +
+    `hit dice recovered: ${recovered}${conditionsCleared ? ', conditions cleared' : ''}.`
+  );
+}
+
+function _openShortRestModal() {
+  const sheet = _charSheet;
+  if (!sheet) return;
+  const existing = document.getElementById('csr-short-rest-modal');
+  if (existing) existing.remove();
+
+  const hd = _ensureHitDiceState();
+  const conMod = _abilityModifierFromLabel('CON') || 0;
+  const conModStr = conMod >= 0 ? `+${conMod}` : String(conMod);
+
+  let totalHealed = 0;
+  let diceSpentThisRest = 0;
+
+  const modal = document.createElement('div');
+  modal.id = 'csr-short-rest-modal';
+  modal.className = 'cr-hit-die-modal';
+  document.body.appendChild(modal);
+
+  function render(lastResultText) {
+    const curHp = Math.max(0, parseInt(sheet.currentHp, 10) || 0);
+    const maxHp = Math.max(0, parseInt(sheet.maxHp, 10) || 0);
+    const canSpend = hd.available > 0 && curHp < maxHp;
+    modal.innerHTML = `
+      <div class="cr-hit-die-card">
+        <div class="cr-hit-die-title">☀ Short Rest</div>
+        <div class="cr-hit-die-subtitle">
+          Spend hit dice to recover HP. Each die rolls 1d${hd.dieSize} ${conModStr} CON.
+          <span>HP: ${curHp}/${maxHp} • Hit dice available: ${hd.available}/${hd.total} • Spent this rest: ${diceSpentThisRest}${totalHealed ? ` • Healed: +${totalHealed}` : ''}</span>
+        </div>
+        <div id="csr-sr-result" class="cr-hit-die-result">${lastResultText || (canSpend ? 'Roll a hit die to heal.' : (curHp >= maxHp ? 'HP is already full.' : 'No hit dice remaining.'))}</div>
+        <button id="csr-sr-spend-btn" class="cr-hit-die-btn roll-btn" ${canSpend ? '' : 'disabled'}>🎲 Spend Hit Die (1d${hd.dieSize} ${conModStr})</button>
+        <button id="csr-sr-confirm-btn" class="cr-hit-die-btn apply-btn">✓ Confirm Rest</button>
+        <button id="csr-sr-cancel-btn" class="cr-hit-die-btn cancel-btn">Cancel</button>
+      </div>`;
+    const spendBtn = modal.querySelector('#csr-sr-spend-btn');
+    if (spendBtn) spendBtn.addEventListener('click', onSpend);
+    modal.querySelector('#csr-sr-confirm-btn').addEventListener('click', onConfirm);
+    modal.querySelector('#csr-sr-cancel-btn').addEventListener('click', onCancel);
+  }
+
+  function onSpend() {
+    const curHp = Math.max(0, parseInt(sheet.currentHp, 10) || 0);
+    const maxHp = Math.max(0, parseInt(sheet.maxHp, 10) || 0);
+    if (hd.available <= 0 || curHp >= maxHp) return;
+
+    const roll = Math.floor(Math.random() * hd.dieSize) + 1;
+    const heal = Math.max(1, roll + conMod);
+    const nextHp = Math.min(maxHp, curHp + heal);
+    const actualHeal = nextHp - curHp;
+
+    sheet.currentHp = nextHp;
+    hd.available = Math.max(0, hd.available - 1);
+    hd.spent = Math.min(hd.total, hd.spent + 1);
+    diceSpentThisRest += 1;
+    totalHealed += actualHeal;
+
+    const token = _myOwnRestToken();
+    if (token) {
+      const tempHp = Math.max(0, parseInt(token.tempHp ?? token.temp_hp, 10) || 0);
+      _broadcastNativeTokenVitals(token, nextHp, maxHp, tempHp);
+    }
+
+    if (typeof window.appDiceShowLocalResult === 'function') {
+      window.appDiceShowLocalResult({
+        diceType: hd.dieSize, qty: 1, rolls: [roll], total: heal, modifier: conMod,
+        rollLabel: `${sheet.name || 'Character'} • Hit Die Roll`, source: 'rest-hit-die',
+      });
+    }
+
+    requestCharacterBookOverviewRender('shortRestSpendHitDie');
+    if (typeof initPremiumSheetIfNeeded === 'function') initPremiumSheetIfNeeded();
+    if (typeof scheduleCharProfileAutosave === 'function') scheduleCharProfileAutosave();
+
+    render(`d${hd.dieSize}: ${roll} ${conModStr} = ${heal} HP${actualHeal !== heal ? ` (capped at +${actualHeal})` : ''}`);
+  }
+
+  function onConfirm() {
+    modal.remove();
+    // Short rest does not refill normal spell slots/sorcery points — only
+    // resources whose data explicitly says they recover on a short rest.
+    _restoreNativeResourcesForRest('short');
+    if (typeof scheduleCharProfileAutosave === 'function') scheduleCharProfileAutosave();
+    requestCharacterBookOverviewRender('shortRestComplete');
+    if (typeof initPremiumSheetIfNeeded === 'function') initPremiumSheetIfNeeded();
+
+    if (typeof sendWS === 'function') {
+      sendWS({ type: 'character_rest', payload: {
+        rest_type: 'short', character_name: sheet.name || NAME || 'Character',
+        hit_dice_spent: diceSpentThisRest, healed_amount: totalHealed,
+      }});
+    }
+
+    _showRestSummary(
+      diceSpentThisRest > 0
+        ? `☀ Short Rest Complete — hit dice spent: ${diceSpentThisRest}, HP restored: +${totalHealed}, remaining hit dice: ${hd.available}/${hd.total}.`
+        : `☀ Short Rest Complete — no hit dice spent.`
+    );
+  }
+
+  function onCancel() {
+    // Healing already applied from spent dice can't be undone, so cancelling
+    // with no dice spent simply closes the dialog with no side effects.
+    if (diceSpentThisRest > 0) {
+      onConfirm();
+    } else {
+      modal.remove();
+    }
+  }
+
+  render();
+  modal.addEventListener('click', e => { if (e.target === modal) onCancel(); });
 }
 
 function _rollNativeActionFormula(card, expr, kind = 'damage', opts = {}) {
