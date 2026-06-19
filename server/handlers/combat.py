@@ -231,7 +231,10 @@ async def handle_combat_fog_sync_request(payload: dict, session: Session, user: 
         return
     if user.role == "assistant_dm" and not assistant_dm_has_scope(session, user, "combat.manage_limited"):
         return
-    await run_combat_fog_sync(session, reason=str(payload.get("reason") or "request")[:80], map_context=payload.get("map_context") or payload.get("map_ctx"))
+    payload = payload if isinstance(payload, dict) else {}
+    map_context = payload.get("map_context") or payload.get("map_ctx") or getattr(session, "dm_map_context", None) or "world"
+    reason = str(payload.get("reason") or "request")[:80]
+    await run_combat_fog_sync(session, reason=reason, map_context=map_context)
 
 def _combatant_token_ids(session: Session) -> set[str]:
     combat = getattr(session, "combat", None) or {}

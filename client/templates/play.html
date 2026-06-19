@@ -11806,17 +11806,63 @@ function _combatFogVisibleNpcHash() {
     .map(t => String(t.id || '')).filter(Boolean).sort();
   return ids.join('|');
 }
-window.requestCombatFogSync = function requestCombatFogSync(reason = 'client') {
-  if (!_combat?.active) return;
-  const key = `${currentMapContext()}::${reason}::${_combatFogVisibleNpcHash()}`;
-  if (key === _combatFogSyncLastKey && reason === 'combat_state') return;
-  _combatFogSyncLastKey = key;
-  if (_combatFogSyncTimer) clearTimeout(_combatFogSyncTimer);
-  _combatFogSyncTimer = setTimeout(() => {
-    _combatFogSyncTimer = null;
-    sendWS({ type: 'combat_fog_sync_request', payload: { map_context: currentMapContext(), reason } });
-  }, 180);
+function resolveCurrentMapContextSafe() {
+  try {
+    if (typeof window.getCurrentMapContext === 'function') {
+      return String(window.getCurrentMapContext() || 'world');
+    }
+    if (typeof getCurrentMapContext === 'function') {
+      return String(getCurrentMapContext() || 'world');
+    }
+    if (typeof window.getDmMapContext === 'function') {
+      return String(window.getDmMapContext() || 'world');
+    }
+    if (window.currentPoi && window.currentPoi.id) {
+      return String(window.currentPoi.id || 'world');
+    }
+    if (window.dm_map_context) {
+      return String(window.dm_map_context || 'world');
+    }
+  } catch (err) {
+    console.warn('[combat fog sync] map context resolve failed', err);
+  }
+  return 'world';
+}
+window.resolveCurrentMapContextSafe = resolveCurrentMapContextSafe;
+function _sendCombatFogSyncMessage(reason) {
+  const mapContext = resolveCurrentMapContextSafe();
+  const safeReason = String(reason || 'manual');
+  const sender = (typeof sendMessageOrWs === 'function') ? sendMessageOrWs : sendWS;
+  sender({
+    type: 'combat_fog_sync_request',
+    payload: {
+      map_context: mapContext,
+      reason: safeReason,
+    },
+  });
+}
+window.requestCombatFogSync = function requestCombatFogSync(reason = 'manual') {
+  try {
+    if (!_combat?.active) return;
+    _sendCombatFogSyncMessage(reason);
+  } catch (err) {
+    console.error('[combat fog sync] request failed', err);
+    window.showToast?.('Combat fog sync failed: ' + (err.message || err));
+  }
 };
+function requestCombatFogSyncDebounced(reason = 'manual') {
+  if (!_combat?.active) return;
+  const mapContext = resolveCurrentMapContextSafe();
+  const key = `${mapContext}:${String(reason || '')}:${_combatFogVisibleNpcHash()}`;
+  if (_combatFogSyncTimer) clearTimeout(_combatFogSyncTimer);
+  _combatFogSyncTimer = setTimeout(function() {
+    _combatFogSyncTimer = null;
+    if (key === _combatFogSyncLastKey) return;
+    _combatFogSyncLastKey = key;
+    window.requestCombatFogSync(reason);
+  }, 150);
+}
+window.requestCombatFogSyncDebounced = requestCombatFogSyncDebounced;
 let _combatTargeting = false;
 let _playerActionsCollapsed = false;
 let _playerActionsDensity = 'comfortable';
@@ -20290,6 +20336,7 @@ function dmCompanionToggleHidden() {
   if (!token) return;
   token.hidden = !token.hidden;
   sendWS({ type: 'toggle_hidden', payload: { token_id: token.id, hidden: !!token.hidden } });
+  if (typeof window.requestCombatFogSyncDebounced === 'function') window.requestCombatFogSyncDebounced('token_hidden_changed');
   renderDmCompanionPanel();
 }
 
@@ -26604,6 +26651,7 @@ function ctxToggleHidden() {
   const newHidden = !t.hidden;
   t.hidden = newHidden;
   sendWS({ type: 'toggle_hidden', payload: { token_id: t.id, hidden: newHidden } });
+  if (typeof window.requestCombatFogSyncDebounced === 'function') window.requestCombatFogSyncDebounced('token_hidden_changed');
 }
 
 function ctxClose() {
@@ -32599,7 +32647,7 @@ function handleLegacyMessage(msg) {
         tokens[p.token_id].x = p.x;
         tokens[p.token_id].y = p.y;
         _cacheTokenByContext(tokens[p.token_id]);
-        if (typeof window.requestCombatFogSync === 'function') window.requestCombatFogSync('token_moved');
+        if (typeof window.requestCombatFogSyncDebounced === 'function') window.requestCombatFogSyncDebounced('token_moved');
       } else if (_stagingTokens[p.token_id]) {
         _stagingTokens[p.token_id].x = p.x;
         _stagingTokens[p.token_id].y = p.y;
@@ -32766,6 +32814,7 @@ function handleLegacyMessage(msg) {
       buildStagingArea();
       if (ROLE === 'player' && tok.owner_id === USER_ID) syncMyCharacterFormFromToken();
       renderTokenEmotePanel();
+      if (typeof window.requestCombatFogSyncDebounced === 'function') window.requestCombatFogSyncDebounced('token_hidden_changed');
       break;
     }
     case 'token_sent_to_staging': {
@@ -32786,6 +32835,7 @@ function handleLegacyMessage(msg) {
       delete tokens[p.id];
       delete _stagingTokens[p.id];
       renderTokenEmotePanel();
+      if (typeof window.requestCombatFogSyncDebounced === 'function') window.requestCombatFogSyncDebounced('token_hidden_changed');
       break;
     }
     case 'token_emote': {
@@ -42713,6 +42763,7 @@ function quickPanelToggleTokenHidden() {
   if (!token) return;
   token.hidden = !token.hidden;
   sendWS({ type: 'toggle_hidden', payload: { token_id: token.id, hidden: !!token.hidden } });
+  if (typeof window.requestCombatFogSyncDebounced === 'function') window.requestCombatFogSyncDebounced('token_hidden_changed');
   refreshSelectedQuickPanel();
 }
 
@@ -43700,14 +43751,14 @@ function fogFlushBatch() {
     const hadDirty = state.fogDirtyBatch && state.fogDirtyBatch.size > 0;
     window.AppFog.fogFlushBatch(state, __createFogModuleEnv());
     __applyFogModuleState(state);
-    if (hadDirty && typeof window.requestCombatFogSync === 'function') window.requestCombatFogSync('fog_changed');
+    if (hadDirty && typeof window.requestCombatFogSyncDebounced === 'function') window.requestCombatFogSyncDebounced('fog_changed');
     return;
   }
   if (_fogDirtyBatch.size === 0) return;
   const cells = Array.from(_fogDirtyBatch);
   _fogDirtyBatch.clear();
   sendWS({ type: 'fog_paint', payload: { reveal: fogReveal, cells, map_ctx: fogMapCtx } });
-  if (typeof window.requestCombatFogSync === 'function') window.requestCombatFogSync('fog_changed');
+  if (typeof window.requestCombatFogSyncDebounced === 'function') window.requestCombatFogSyncDebounced('fog_changed');
 }
 
 function fogToggle(enabled) {

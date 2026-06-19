@@ -90,3 +90,19 @@ def test_hidden_npc_in_fog_keeps_multiple_suspension_reasons_until_clear():
     sync_fogged_combatants(s, 'test', 'world')
     assert s.combat['combatants'][0]['token_id'] == 'goblin'
     assert s.combat['combatants'][0]['initiative'] == 18
+
+
+def test_hidden_npc_combatant_moves_to_suspended_and_restores_when_unhidden():
+    s = session_with_fog(True); g = tok('goblin', hidden=False); s.tokens[g.id] = g; s.combat['combatants'] = [combatant(g, 18)]
+    g.hidden = True
+    result = sync_fogged_combatants(s, 'hidden_changed', 'world')
+    assert result['changed'] is True
+    assert s.combat['combatants'] == []
+    assert s.combat['hidden_suspended_combatants'][0]['token_id'] == 'goblin'
+    assert s.combat['hidden_suspended_combatants'][0]['initiative'] == 18
+    g.hidden = False
+    result = sync_fogged_combatants(s, 'hidden_changed', 'world')
+    assert result['changed'] is True
+    assert s.combat['combatants'][0]['token_id'] == 'goblin'
+    assert s.combat['combatants'][0]['initiative'] == 18
+    assert s.combat['suspended_combatants'] == []
