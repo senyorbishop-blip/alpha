@@ -390,6 +390,7 @@ def filter_items(
 _LIVE_STATE_KEYS = frozenset({
     "equipped", "attuned", "qty", "quantity", "charges_current",
     "uses_current", "notes", "source", "price",
+    "consumable", "consumed_on_use", "remove_when_empty", "grants_action",
 })
 
 
@@ -412,11 +413,31 @@ def merge_compendium_metadata(inventory_entry: dict) -> dict:
     if not comp:
         return entry
 
+    def _missing_or_fallback(key: str) -> bool:
+        value = entry.get(key)
+        if value in ("", None, [], {}):
+            return True
+        if key == "rarity" and str(value).strip().lower() in {"common", "starter", "unknown"}:
+            comp_rarity = str(comp.get("rarity") or "").strip().lower()
+            return comp_rarity not in {"", "common", "starter", "unknown"}
+        if key == "source" and "starter" in str(value).strip().lower():
+            return True
+        return False
+
     for key, value in comp.items():
         if key in _LIVE_STATE_KEYS:
             continue
-        if not entry.get(key):
+        if _missing_or_fallback(key):
             entry[key] = value
+
+    # Charges are live state once present, but existing saved/imported stubs
+    # frequently omit them. Fill only when absent so spent charges survive.
+    comp_charges_max = int(comp.get("charges_max") or 0) if str(comp.get("charges_max") or "").isdigit() else 0
+    for key in ("charges_max", "charges_current"):
+        if comp_charges_max > 0 and entry.get(key) in ("", None) and comp.get(key) not in ("", None):
+            entry[key] = comp.get(key)
+    if entry.get("charges_current") in ("", None) and entry.get("charges_max") not in ("", None):
+        entry["charges_current"] = entry.get("charges_max")
     return entry
 
 

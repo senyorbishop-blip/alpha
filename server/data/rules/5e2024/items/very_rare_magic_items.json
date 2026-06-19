@@ -2,7 +2,7 @@
   "item_schema_version": 2,
   "rules_version": "5e2024",
   "category": "very_rare_magic_items",
-  "description": "Items from very_rare_magic_items bucket — open-compatible metadata and original summaries.",
+  "description": "Items from very_rare_magic_items bucket \u2014 open-compatible metadata and original summaries.",
   "items": [
     {
       "id": "amulet-of-the-planes",
@@ -2653,49 +2653,76 @@
       ],
       "granted_spells": [
         {
-          "id": "thunderwave",
-          "name": "Thunderwave",
-          "charge_cost": 1,
-          "cast_level": 1,
-          "uses_item_dc": true,
-          "uses_item_attack_bonus": true,
-          "spell_id": "thunderwave"
-        },
-        {
-          "id": "shatter",
-          "name": "Shatter",
-          "charge_cost": 2,
-          "cast_level": 2,
-          "uses_item_dc": true,
-          "uses_item_attack_bonus": true,
-          "spell_id": "shatter"
-        },
-        {
           "id": "call-lightning",
+          "spell_id": "call-lightning",
           "name": "Call Lightning",
-          "charge_cost": 3,
+          "charge_cost": 1,
+          "charge_cost_min": 1,
+          "charge_cost_max": 10,
           "cast_level": 3,
           "uses_item_dc": true,
-          "uses_item_attack_bonus": true,
-          "spell_id": "call-lightning"
+          "uses_item_attack_bonus": false,
+          "source": "Thunder Mage Quarterstaff, +3"
+        },
+        {
+          "id": "chain-lightning",
+          "spell_id": "chain-lightning",
+          "name": "Chain Lightning",
+          "charge_cost": 1,
+          "charge_cost_min": 1,
+          "charge_cost_max": 10,
+          "cast_level": 6,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": false,
+          "source": "Thunder Mage Quarterstaff, +3"
+        },
+        {
+          "id": "haste",
+          "spell_id": "haste",
+          "name": "Haste",
+          "charge_cost": 1,
+          "charge_cost_min": 1,
+          "charge_cost_max": 10,
+          "cast_level": 3,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": false,
+          "source": "Thunder Mage Quarterstaff, +3"
         },
         {
           "id": "lightning-bolt",
+          "spell_id": "lightning-bolt",
           "name": "Lightning Bolt",
-          "charge_cost": 3,
+          "charge_cost": 1,
+          "charge_cost_min": 1,
+          "charge_cost_max": 10,
           "cast_level": 3,
           "uses_item_dc": true,
-          "uses_item_attack_bonus": true,
-          "spell_id": "lightning-bolt"
+          "uses_item_attack_bonus": false,
+          "source": "Thunder Mage Quarterstaff, +3"
         },
         {
-          "id": "thunder-step",
-          "name": "Thunder Step",
-          "charge_cost": 3,
+          "id": "protection-from-energy",
+          "spell_id": "protection-from-energy",
+          "name": "Protection from Energy",
+          "charge_cost": 1,
+          "charge_cost_min": 1,
+          "charge_cost_max": 10,
           "cast_level": 3,
           "uses_item_dc": true,
-          "uses_item_attack_bonus": true,
-          "spell_id": "thunder-step"
+          "uses_item_attack_bonus": false,
+          "source": "Thunder Mage Quarterstaff, +3"
+        },
+        {
+          "id": "absorb-elements",
+          "spell_id": "absorb-elements",
+          "name": "Absorb Elements",
+          "charge_cost": 1,
+          "charge_cost_min": 1,
+          "charge_cost_max": 10,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": false,
+          "source": "Thunder Mage Quarterstaff, +3"
         }
       ],
       "granted_actions": [
@@ -2707,7 +2734,7 @@
           "summary": "Activate this item."
         }
       ],
-      "source": "srd_compendium",
+      "source": "item_compendium",
       "charges_current": 10,
       "recharge_formula": "1d6+1",
       "item_spell_save_dc": 18,
@@ -2719,7 +2746,8 @@
       "reach": "5 ft",
       "handedness": "versatile",
       "weapon_properties": [
-        "versatile"
+        "versatile",
+        "topple"
       ],
       "attack_bonus": 3,
       "damage_bonus": 3,
@@ -2737,7 +2765,91 @@
         "thunder-mage-quarterstaff-3",
         "thunder_mage_quarterstaff_3"
       ],
-      "dedupe_key": "thundermagequarterstaff3"
+      "dedupe_key": "thundermagequarterstaff3",
+      "description_summary": "This staff once belonged to a guild or sorcerer and wizard who followed the Primordial Elemental Titans. You have a +3 bonus to attack and damage rolls made with this magic weapon.",
+      "effect": "This staff once belonged to a guild or sorcerer and wizard who followed the Primordial Elemental Titans. You have a +3 bonus to attack and damage rolls made with this magic weapon.",
+      "attunement_requirement": "requires attunement by a sorcerer or wizard",
+      "properties": [
+        "Versatile",
+        "Topple"
+      ],
+      "damage_formula": "1d6+4",
+      "versatile_damage_formula": "1d8+4",
+      "weight_lbs": 4,
+      "magicActions": [
+        {
+          "id": "call-lightning",
+          "spell_id": "call-lightning",
+          "name": "Call Lightning",
+          "spell_level": 3,
+          "level": 3,
+          "charge_cost": 1,
+          "charge_cost_min": 1,
+          "charge_cost_max": 10,
+          "source": "Thunder Mage Quarterstaff, +3",
+          "activation": "1 Action"
+        },
+        {
+          "id": "chain-lightning",
+          "spell_id": "chain-lightning",
+          "name": "Chain Lightning",
+          "spell_level": 6,
+          "level": 6,
+          "charge_cost": 1,
+          "charge_cost_min": 1,
+          "charge_cost_max": 10,
+          "source": "Thunder Mage Quarterstaff, +3",
+          "activation": "1 Action"
+        },
+        {
+          "id": "haste",
+          "spell_id": "haste",
+          "name": "Haste",
+          "spell_level": 3,
+          "level": 3,
+          "charge_cost": 1,
+          "charge_cost_min": 1,
+          "charge_cost_max": 10,
+          "source": "Thunder Mage Quarterstaff, +3",
+          "activation": "1 Action"
+        },
+        {
+          "id": "lightning-bolt",
+          "spell_id": "lightning-bolt",
+          "name": "Lightning Bolt",
+          "spell_level": 3,
+          "level": 3,
+          "charge_cost": 1,
+          "charge_cost_min": 1,
+          "charge_cost_max": 10,
+          "source": "Thunder Mage Quarterstaff, +3",
+          "activation": "1 Action"
+        },
+        {
+          "id": "protection-from-energy",
+          "spell_id": "protection-from-energy",
+          "name": "Protection from Energy",
+          "spell_level": 3,
+          "level": 3,
+          "charge_cost": 1,
+          "charge_cost_min": 1,
+          "charge_cost_max": 10,
+          "source": "Thunder Mage Quarterstaff, +3",
+          "activation": "1 Action"
+        },
+        {
+          "id": "absorb-elements",
+          "spell_id": "absorb-elements",
+          "name": "Absorb Elements",
+          "spell_level": 1,
+          "level": 1,
+          "charge_cost": 1,
+          "charge_cost_min": 1,
+          "charge_cost_max": 10,
+          "source": "Thunder Mage Quarterstaff, +3",
+          "activation": "1 Action"
+        }
+      ]
     },
     {
       "id": "tome-of-clear-thought",
