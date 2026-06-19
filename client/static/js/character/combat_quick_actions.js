@@ -11,6 +11,23 @@
   // always find it even when the ID-based lookup fails (e.g. ID format mismatch).
   var _currentModalSpell = null;
 
+
+  var __quickBridgeActive = new Set();
+  function guardBridge(name, fn) {
+    if (__quickBridgeActive.has(name)) {
+      if (global.console && typeof global.console.error === 'function') global.console.error('[QuickActions] Recursive bridge blocked:', name);
+      if (typeof global.showToast === 'function') global.showToast('Quick action loop blocked: ' + name);
+      return false;
+    }
+    __quickBridgeActive.add(name);
+    try {
+      if (global.DEBUG_QUICK_ACTIONS && global.console && typeof global.console.trace === 'function') global.console.trace('[QuickActions bridge]', name);
+      return fn();
+    } finally {
+      __quickBridgeActive.delete(name);
+    }
+  }
+
   function _esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) {
       return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
@@ -494,11 +511,17 @@
   // Explicit bridge so the quick bar can always reach the weapon modal, even if
   // play.html's own copy of this bridge has not (re)attached for any reason.
   // Always passes the full action object through — never just an id/name key.
-  global.openCombatQuickBarWeaponAction = function (action) {
+  function performOpenCombatQuickBarWeaponAction(action) {
     if (global.CombatQuickActions && typeof global.CombatQuickActions.openWeaponAction === 'function') {
       return global.CombatQuickActions.openWeaponAction(action);
     }
     if (typeof global.showToast === 'function') global.showToast('Weapon action modal is not loaded.');
     return false;
+  }
+
+  global.openCombatQuickBarWeaponAction = function openCombatQuickBarWeaponActionBridge(action) {
+    return guardBridge('openCombatQuickBarWeaponAction', function () {
+      return performOpenCombatQuickBarWeaponAction(action);
+    });
   };
 }(window));

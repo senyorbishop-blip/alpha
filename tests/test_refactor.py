@@ -14,6 +14,7 @@ import os
 import importlib
 import inspect
 import asyncio
+import re
 
 # Ensure the project root is on the path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -4105,3 +4106,35 @@ def test_combat_roster_survives_stacked_combat_tools_with_internal_scroll():
     assert "isolation: isolate;" in content
     assert "#hazard-panel" in content
     assert "#combat-weapon-tray" in content
+
+
+
+def test_quick_action_bridges_are_guarded_and_non_recursive():
+    """Quick action public bridges must call distinct implementations behind recursion guards."""
+    play = open(os.path.join(PROJECT_ROOT, "client/templates/play.html"), encoding="utf-8").read()
+    actions = open(os.path.join(PROJECT_ROOT, "client/static/js/character/combat_quick_actions.js"), encoding="utf-8").read()
+    bridge_pairs = {
+        "openCombatQuickBarWeaponAction": "performOpenCombatQuickBarWeaponAction",
+        "combatQuickWeaponAttack": "performCombatQuickWeaponAttack",
+        "combatQuickRollWeaponDamage": "performCombatQuickRollWeaponDamage",
+        "executeCombatQuickBarSpell": "performExecuteCombatQuickBarSpell",
+        "combatQuickCastSpell": "performCombatQuickCastSpell",
+        "combatQuickRollSpellDamage": "performCombatQuickRollSpellDamage",
+    }
+    assert "const __quickBridgeActive = new Set();" in play
+    assert "function guardQuickActionBridge(name, fn)" in play
+    assert "Recursive bridge blocked" in play
+    assert "window.DEBUG_QUICK_ACTIONS" in play
+    for public_name, impl_name in bridge_pairs.items():
+        assert f"function {impl_name}(" in play or f"function {impl_name}(" in actions
+        assert f"guardQuickActionBridge('{public_name}'" in play or f"guardBridge('{public_name}'" in actions
+        assert f"function {public_name}(" not in play, f"{public_name} should remain a public bridge, not the implementation"
+    for public_name in bridge_pairs:
+        assignment_match = re.search(rf"window\.{public_name}\s*=\s*function[\s\S]*?\n}};", play)
+        if assignment_match:
+            body = assignment_match.group(0).replace(f"window.{public_name} =", "")
+            assert f"window.{public_name}(" not in body
+            assert f"{public_name}(" not in body.replace(f"{public_name}Bridge", "")
+    assert "function performOpenCombatQuickBarWeaponAction(action)" in actions
+    assert "global.openCombatQuickBarWeaponAction = function openCombatQuickBarWeaponActionBridge" in actions
+    assert "guardBridge('openCombatQuickBarWeaponAction'" in actions
