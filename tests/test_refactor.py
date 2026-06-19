@@ -4075,6 +4075,17 @@ def test_combat_coach_can_be_collapsed_by_players():
     assert "coach-collapsed" in content
 
 
+
+def test_player_turn_detection_falls_back_to_combatant_owner_id():
+    """Players must see their turn/actions even if token owner lookup is stale or name-based."""
+    content = open(os.path.join(PROJECT_ROOT, "client/templates/play.html"), encoding="utf-8").read()
+    assert "function _combatantOwnedByMe(combatant)" in content
+    assert "combatant.owner_id || combatant.owner" in content
+    assert "return _combatantOwnedByMe(cur) ? cur : null;" in content
+    assert "if (_combatantOwnedByMe(current)) return current;" in content
+    assert "const isMyTurn = !!(isInCombat && current && _combatantOwnedByMe(current));" in content
+
+
 def test_combat_roster_uses_canonical_normalized_renderer():
     """DM/player combat panels should render from one normalized roster source."""
     content = open(os.path.join(PROJECT_ROOT, "client/templates/play.html"), encoding="utf-8").read()
