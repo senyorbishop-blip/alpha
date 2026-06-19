@@ -259,6 +259,7 @@
     const cells = Array.from(state.fogDirtyBatch);
     state.fogDirtyBatch.clear();
     env.sendWS({ type: 'fog_paint', payload: { reveal: state.fogReveal, cells, map_ctx: state.fogMapCtx } });
+    if (typeof window.requestCombatFogSync === 'function') window.requestCombatFogSync('fog_changed');
   }
   function fogToggle(state, env, enabled) {
     const manualAllowed = _manualFogEditingAllowed(env);

@@ -47,6 +47,192 @@ def _has_encumbrance_attack_disadvantage(session: Session, attacker_owner_id: st
     return str(entry.get("state") or "").strip().lower() == ENC_HEAVY
 
 
+
+def _combat_fog_mode(session: Session) -> str:
+    settings = getattr(session, "settings", None) or {}
+    combat_settings = settings.get("combat") if isinstance(settings.get("combat"), dict) else {}
+    mode = combat_settings.get("auto_sync_npcs_with_fog", settings.get("combat_auto_sync_npcs_with_fog", "auto"))
+    mode = str(mode or "auto").strip().lower().replace("_", "-")
+    if mode in {"off", "false", "disabled", "none"}:
+        return "off"
+    if mode in {"suggest", "suggest-only", "suggest_only"}:
+        return "suggest"
+    return "auto"
+
+
+def is_player_owned_token(token) -> bool:
+    return bool(getattr(token, "owner_id", None)) or bool(getattr(token, "is_player", False)) or str(getattr(token, "token_type", "") or "").lower() in {"player", "pc", "character"}
+
+
+def is_npc_or_monster_token(token) -> bool:
+    if token is None or is_player_owned_token(token):
+        return False
+    values = {
+        str(getattr(token, "token_type", "") or "").lower(),
+        str(getattr(token, "creature_type", "") or "").lower(),
+        str(getattr(token, "monster_type", "") or "").lower(),
+        str(getattr(token, "faction", "") or "").lower(),
+    }
+    return bool(values & {"npc", "monster", "hostile", "creature", "enemy", "foe", "beast", "undead", "fiend", "construct"})
+
+
+def _token_map_context(token) -> str:
+    return str(getattr(token, "map_context", "world") or "world")[:80] or "world"
+
+
+def _current_combat_map_context(session: Session, reason: str | None = None) -> str:
+    return str(getattr(session, "dm_map_context", "world") or "world")[:80] or "world"
+
+
+def _token_occupied_fog_indices(session: Session, token, entry: dict) -> set[int]:
+    cols = _safe_int(entry.get("cols"), 64, minimum=1, maximum=512)
+    rows = _safe_int(entry.get("rows"), 64, minimum=1, maximum=512)
+    settings = getattr(session, "map_settings", None) or {}
+    ctx_settings = settings.get(_token_map_context(token)) if isinstance(settings.get(_token_map_context(token)), dict) else {}
+    mw = float(ctx_settings.get("width") or ctx_settings.get("map_width") or 4096)
+    mh = float(ctx_settings.get("height") or ctx_settings.get("map_height") or 4096)
+    x = float(getattr(token, "x", 0) or 0); y = float(getattr(token, "y", 0) or 0)
+    w = max(1.0, float(getattr(token, "width", PX_PER_GRID) or PX_PER_GRID))
+    h = max(1.0, float(getattr(token, "height", PX_PER_GRID) or PX_PER_GRID))
+    pts = [(x, y), (x-w/2, y-h/2), (x+w/2, y-h/2), (x-w/2, y+h/2), (x+w/2, y+h/2)]
+    out=set()
+    for px,py in pts:
+        col = int((px + mw/2) / mw * cols); row = int((py + mh/2) / mh * rows)
+        if 0 <= col < cols and 0 <= row < rows:
+            out.add(row*cols+col)
+    return out
+
+
+def is_token_visible_to_party(session: Session, token, *, ignore_hidden: bool = False, ignore_staged: bool = False) -> bool:
+    if token is None:
+        return False
+    if bool(getattr(token, "hidden", False)) and not ignore_hidden:
+        return False
+    if bool(getattr(token, "staged", False)) and not ignore_staged:
+        return False
+    entry = ((getattr(session, "fog_maps", None) or {}).get(_token_map_context(token)) or {})
+    if not entry.get("enabled", False):
+        return True
+    cells = str(entry.get("cells") or "")
+    if not cells:
+        return False
+    return any(0 <= i < len(cells) and cells[i] == "1" for i in _token_occupied_fog_indices(session, token, entry))
+
+
+def _ensure_suspended_lists(combat: dict) -> list[dict]:
+    shared = combat.get("suspended_combatants")
+    if not isinstance(shared, list):
+        shared = []
+    for key in ("fog_suspended_combatants", "hidden_suspended_combatants"):
+        for item in combat.get(key) or []:
+            if isinstance(item, dict) and not any(str(x.get("token_id") or "") == str(item.get("token_id") or "") for x in shared):
+                shared.append(item)
+        combat[key] = [x for x in shared if key.startswith("fog") and "fog" in (x.get("suspended_reasons") or []) or key.startswith("hidden") and "hidden" in (x.get("suspended_reasons") or [])]
+    combat["suspended_combatants"] = shared
+    return shared
+
+
+def _suspend_reasons(session: Session, token) -> list[str]:
+    reasons=[]
+    if bool(getattr(token, "hidden", False)): reasons.append("hidden")
+    if bool(getattr(token, "staged", False)): reasons.append("staged")
+    if not is_token_visible_to_party(session, token, ignore_hidden=True, ignore_staged=True): reasons.append("fog")
+    return reasons
+
+
+def _merge_suspended(existing: dict | None, combatant: dict, reasons: list[str]) -> dict:
+    merged = dict(existing or {})
+    merged.update({k:v for k,v in dict(combatant or {}).items() if v is not None or k not in merged})
+    merged["suspended_reasons"] = sorted(set((merged.get("suspended_reasons") or []) + list(reasons)))
+    merged["suspended_at"] = _time.time()
+    return merged
+
+
+def _adjust_turn_after_removal(combat: dict, remove_idx: int, removed_id: str, old_turn: int) -> None:
+    coms = combat.get("combatants") or []
+    if not coms:
+        combat["turn"] = 0; combat["movement"] = {}; return
+    if remove_idx == old_turn:
+        combat["turn"] = min(remove_idx, len(coms)-1); combat["movement"] = {}
+    else:
+        combat["turn"] = max(0, old_turn-1) if remove_idx < old_turn else min(old_turn, len(coms)-1)
+
+
+def sync_fogged_combatants(session: Session, reason: str = "sync", map_context: str | None = None) -> dict:
+    combat = getattr(session, "combat", None) or {}
+    if not combat.get("active") or _combat_fog_mode(session) == "off":
+        return {"changed": False, "added": [], "removed": []}
+    map_ctx = str(map_context or _current_combat_map_context(session, reason) or "world")[:80] or "world"
+    coms = combat.get("combatants") if isinstance(combat.get("combatants"), list) else []
+    suspended = _ensure_suspended_lists(combat)
+    suspended_by_token = {str((c or {}).get("token_id") or ""): c for c in suspended if isinstance(c, dict)}
+    active_ids = {str((c or {}).get("token_id") or "") for c in coms}
+    changed=False; added=[]; removed=[]
+    old_turn = _safe_int(combat.get("turn"), 0, minimum=0, maximum=max(0, len(coms)-1))
+    for idx in range(len(coms)-1, -1, -1):
+        c=coms[idx] or {}; tid=str(c.get("token_id") or "")
+        token=session.tokens.get(tid) if tid else None
+        if not token or _token_map_context(token) != map_ctx or not is_npc_or_monster_token(token):
+            continue
+        reasons=_suspend_reasons(session, token)
+        reasons=[r for r in reasons if r in {"fog","hidden","staged"}]
+        if reasons:
+            removed_c=coms.pop(idx); active_ids.discard(tid)
+            suspended_by_token[tid]=_merge_suspended(suspended_by_token.get(tid), removed_c, reasons)
+            removed.append(suspended_by_token[tid]); changed=True
+            _adjust_turn_after_removal(combat, idx, str(removed_c.get("id") or ""), old_turn)
+    # restore suspended whose blockers cleared
+    for tid, saved in list(suspended_by_token.items()):
+        token=session.tokens.get(tid) if tid else None
+        if not token or _token_map_context(token) != map_ctx or not is_npc_or_monster_token(token):
+            continue
+        reasons=_suspend_reasons(session, token)
+        if not reasons and tid not in active_ids:
+            restored=dict(saved); restored.pop("suspended_reasons", None); restored.pop("suspended_at", None)
+            coms.append(restored); active_ids.add(tid); added.append(restored); changed=True
+            suspended_by_token.pop(tid, None)
+        else:
+            saved["suspended_reasons"] = sorted(set(reasons))
+    # auto-add visible NPCs not seen before
+    for token in list((getattr(session, "tokens", {}) or {}).values()):
+        tid=str(getattr(token,"id","") or "")
+        if not tid or tid in active_ids or tid in suspended_by_token or _token_map_context(token) != map_ctx:
+            continue
+        if is_npc_or_monster_token(token) and not bool(getattr(token,"hidden",False)) and not bool(getattr(token,"staged",False)) and is_token_visible_to_party(session, token):
+            c=_combatant_from_token(session, token)
+            coms.append(c); active_ids.add(tid); added.append(c); changed=True
+    combat["combatants"] = coms
+    combat["suspended_combatants"] = list(suspended_by_token.values())
+    combat["fog_suspended_combatants"] = [c for c in combat["suspended_combatants"] if "fog" in (c.get("suspended_reasons") or [])]
+    combat["hidden_suspended_combatants"] = [c for c in combat["suspended_combatants"] if "hidden" in (c.get("suspended_reasons") or [])]
+    if changed:
+        _sort_combatants_preserving_turn(combat)
+        combat["turn"] = _safe_int(combat.get("turn"), 0, minimum=0, maximum=max(0, len(coms)-1))
+        session.combat=combat
+        _ensure_combat_movement_state(session, reset=True)
+        for c in removed:
+            name=c.get("name") or "A creature"; rs=", ".join(c.get("suspended_reasons") or ["fog"])
+            session.add_log(f"{name} was suspended from visible initiative ({rs}).", "combat", "System")
+        for c in added:
+            session.add_log(f"{c.get('name') or 'A creature'} rejoined visible initiative.", "combat", "System")
+    return {"changed": changed, "added": added, "removed": removed}
+
+
+async def run_combat_fog_sync(session: Session, reason: str = "sync", map_context: str | None = None) -> dict:
+    result = sync_fogged_combatants(session, reason=reason, map_context=map_context)
+    if result.get("changed"):
+        await save_campaign_async(session)
+        await _broadcast_combat(session)
+    return result
+
+
+async def handle_combat_fog_sync_request(payload: dict, session: Session, user: User):
+    if user.role not in {"dm", "assistant_dm", "player"}:
+        return
+    if user.role == "assistant_dm" and not assistant_dm_has_scope(session, user, "combat.manage_limited"):
+        return
+    await run_combat_fog_sync(session, reason=str(payload.get("reason") or "request")[:80], map_context=payload.get("map_context") or payload.get("map_ctx"))
+
 def _combatant_token_ids(session: Session) -> set[str]:
     combat = getattr(session, "combat", None) or {}
     combatants = combat.get("combatants") or []
@@ -461,6 +647,7 @@ async def handle_combat_add_token(payload: dict, session: Session, user: User):
         _sort_combatants_preserving_turn(combat)
     session.combat = combat
     _ensure_combat_movement_state(session, reset=False)
+    sync_fogged_combatants(session, reason="manual_add", map_context=current_map)
     session.add_log(f"{getattr(token, 'name', 'Token')} joined the initiative order.", "combat", user.name)
     await save_campaign_async(session)
     await _broadcast_combat(session)
@@ -514,6 +701,7 @@ async def handle_combat_update(payload: dict, session: Session, user: User):
     session.combat["round"] = payload.get("round", session.combat.get("round", 1))
     if session.combat.get("active"):
         _ensure_combat_movement_state(session, reset=True)
+        sync_fogged_combatants(session, reason="combat_update", map_context=payload.get("map_context"))
     else:
         session.combat["movement"] = {}
     await _process_current_start_turn_hazards(session)
