@@ -114,6 +114,30 @@
     return n <= 0 ? 'Cantrip' : (ordinals[n] || (n + 'th')) + '-level';
   }
 
+  // Mirrors play.html's _combatQuickIsItemGrantedSpell so the modal can tell
+  // item-granted spells (cast off item charges) apart from real spell slots.
+  function isItemGrantedSpell(spell) {
+    const card = spell && spell.card && typeof spell.card === 'object' ? spell.card : {};
+    const source = String((spell && (spell.sourceType || spell.source)) || card.sourceType || card.source || '').toLowerCase();
+    return source === 'item' || source === 'item_spell' || !!(
+      (spell && (spell.usesItemCharges || spell.usesCharges || spell.sourceItemId || spell.itemId)) ||
+      card.usesItemCharges || card.usesCharges || card.item_id
+    );
+  }
+
+  function _itemSpellChargeCost(spell) {
+    const card = spell && spell.card && typeof spell.card === 'object' ? spell.card : {};
+    return Math.max(0, Number((spell && (spell.chargeCost ?? spell.charge_cost)) ?? card.charge_cost ?? 0) || 0);
+  }
+
+  function _itemSpellChargesRemaining(spell) {
+    const card = spell && spell.card && typeof spell.card === 'object' ? spell.card : {};
+    const remaining = Number(spell && spell.quickBarResourceState && spell.quickBarResourceState.remaining);
+    if (Number.isFinite(remaining)) return remaining;
+    const cur = Number(card.charges_current);
+    return Number.isFinite(cur) ? cur : null;
+  }
+
   function _spellCastOptions(spell) {
     if (typeof global._getCombatSpellCastOptions === 'function') return _safeArray(global._getCombatSpellCastOptions(spell));
     const level = _baseSpellLevel(spell);
@@ -353,19 +377,28 @@
       global.console.warn('[CombatQuickActions] Spell metadata missing; showing safe fallback.', { spell: spell.name || spell.id, missing: ['level'] });
     }
 
-    const options = _spellCastOptions(spell);
-    const selected = preferredLevel !== undefined ? preferredLevel : _lowestAvailableOption(options);
+    // Item-granted spells (e.g. a staff's Chain Lightning) are cast off item
+    // charges, never spell slots — they must never show a slot picker or
+    // consume/display slot availability.
+    const itemSpell = isItemGrantedSpell(spell);
+    const options = itemSpell ? [] : _spellCastOptions(spell);
+    const selected = preferredLevel !== undefined ? preferredLevel : (itemSpell ? baseLevel : _lowestAvailableOption(options));
     const damagePreview = _spellDamagePreview(spell, selected);
     const hasDamage = !!damagePreview || (baseLevel !== null && baseLevel > 0);
-    const anySlotAvailable = baseLevel === 0 || options.some(function (opt) { return !opt.disabled; });
+    const itemChargeCost = itemSpell ? _itemSpellChargeCost(spell) : 0;
+    const itemChargesRemaining = itemSpell ? _itemSpellChargesRemaining(spell) : null;
+    const anySlotAvailable = itemSpell
+      ? (itemChargeCost <= 0 || itemChargesRemaining === null || itemChargesRemaining >= itemChargeCost)
+      : (baseLevel === 0 || options.some(function (opt) { return !opt.disabled; }));
     // Only show Roll Attack for spells that actually use an attack roll (not saves).
     const hasAttack = _spellHasAttack(card);
     const hasSave = !!_spellSaveText(card);
     const fullText = _firstText(card.fullPlayerDetailText, card.description, card.base_effect_text, card.current && card.current.effect, 'No spell details are loaded yet.');
 
-    // Determine whether to show the level selector:
-    // Show for any non-cantrip spell, or if options include more than one choice.
-    const showLevelPicker = (baseLevel !== 0 && baseLevel !== null) || options.length > 1;
+    // Determine whether to show the level selector: never for item-granted
+    // spells (no slots to pick), otherwise for any non-cantrip spell or when
+    // options include more than one choice.
+    const showLevelPicker = !itemSpell && ((baseLevel !== 0 && baseLevel !== null) || options.length > 1);
 
     // Level label — if it shows 'Cantrip' but we suspect it's leveled, show 'Unknown' instead
     const resolvedLevelLabel = (baseLevel === 0 && (card.school || '').toLowerCase().includes('cantrip')) ? 'Cantrip' : _levelLabel(baseLevel);
@@ -388,14 +421,26 @@
       }).filter(Boolean);
       if (cells.length) levelScalingHtml = '<div class="cqa-levels"><div class="cqa-levels-title">At each slot level</div><div class="cqa-levels-grid">' + cells.join('') + '</div></div>';
     }
+    // Item-granted spells show charges (Source Item, X/Y, cost-to-cast) instead
+    // of a slot picker — they are never cast from spell slots.
+    const itemSourceName = itemSpell ? _firstText(spell.sourceItemName, spell.itemName, card.source_item_name, 'Item') : '';
+    const itemChargeLineParts = [
+      itemSourceName ? 'Source: ' + itemSourceName : '',
+      itemChargesRemaining !== null ? 'Charges ' + itemChargesRemaining + (card.charges_max ? '/' + card.charges_max : '') : '',
+      itemChargeCost > 0 ? ('Costs ' + itemChargeCost + ' charge' + (itemChargeCost === 1 ? '' : 's')) : '',
+    ].filter(Boolean);
+    const itemChargeHtml = itemSpell
+      ? '<div class="cqa-sub" data-cqa-item-charges>' + _esc(itemChargeLineParts.join(' • ') || 'Cast from item charges') + '</div>'
+      : '';
     overlay.innerHTML = '<div class="cqa-panel" role="dialog" aria-modal="true" aria-label="Quick spell action">'
-      + '<div class="cqa-head"><div><div class="cqa-kicker">Quick Spell</div><div class="cqa-title">' + _esc(spell.name || 'Spell') + '</div><div class="cqa-sub">' + _esc([resolvedLevelLabel, schoolLabel].filter(Boolean).join(' • ')) + '</div></div><button class="cqa-close" type="button" data-cqa-close>×</button></div>'
+      + '<div class="cqa-head"><div><div class="cqa-kicker">' + (itemSpell ? 'Item Spell' : 'Quick Spell') + '</div><div class="cqa-title">' + _esc(spell.name || 'Spell') + '</div><div class="cqa-sub">' + _esc([resolvedLevelLabel, schoolLabel].filter(Boolean).join(' • ')) + '</div></div><button class="cqa-close" type="button" data-cqa-close>×</button></div>'
       + (showLevelPicker ? '<label class="cqa-kicker" for="combat-quick-spell-level">Cast Level / Slot</label><select id="combat-quick-spell-level" class="cqa-select">' + options.map(function (opt) { return '<option value="' + _esc(opt.value) + '" ' + (String(opt.value) === String(selected) ? 'selected' : '') + ' ' + (opt.disabled ? 'disabled' : '') + '>' + _esc(opt.label || 'Cast') + '</option>'; }).join('') + '</select>' : '')
-      + '<div class="cqa-meta" data-cqa-spell-details>' + _spellDetailsHtml(spell, selected) + '</div>'
+      + itemChargeHtml
+      + (itemSpell ? '' : '<div class="cqa-meta" data-cqa-spell-details>' + _spellDetailsHtml(spell, selected) + '</div>')
       + (levelScalingHtml ? levelScalingHtml : '')
-      + '<div class="cqa-desc">' + _esc(fullText) + '</div>'
+      + (itemSpell ? '' : '<div class="cqa-desc">' + _esc(fullText) + '</div>')
       + '<div class="cqa-sub">Damage preview: <strong data-cqa-damage-preview>' + _esc(damagePreview || (hasDamage ? '—' : 'No damage roll')) + '</strong></div>'
-      + '<div class="cqa-sub" data-cqa-slot-warning>' + (anySlotAvailable ? '' : 'No spell slots available') + '</div>'
+      + '<div class="cqa-sub" data-cqa-slot-warning>' + (anySlotAvailable ? '' : (itemSpell ? 'Not enough item charges' : 'No spell slots available')) + '</div>'
       + '<div class="cqa-controls"><button class="cqa-btn cast" type="button" data-cqa-cast ' + (!anySlotAvailable ? 'disabled' : '') + '>Cast</button>'
       + (hasAttack ? '<button class="cqa-btn" type="button" data-cqa-spell-attack>Roll Attack</button>' : '')
       + (hasDamage ? '<button class="cqa-btn damage" type="button" data-cqa-spell-damage ' + (!anySlotAvailable ? 'disabled' : '') + '>Roll Damage</button>' : '')
@@ -696,7 +741,7 @@
     return false;
   }
 
-  global.openCombatQuickBarWeaponAction = function (action) {
+  global.openCombatQuickBarWeaponAction = function openCombatQuickBarWeaponActionBridge(action) {
     return guardBridge('openCombatQuickBarWeaponAction', function () {
       return performOpenCombatQuickBarWeaponAction(action);
     });

@@ -720,3 +720,101 @@ def test_string_granted_spell_generates_card():
     assert len(cards) == 1
     assert cards[0]["spell_id"] == "fireball"
     assert cards[0]["spell_name"] == "Fireball"
+
+
+# ---------------------------------------------------------------------------
+# 18. Item charge recovery on rests (short_rest / long_rest / dawn)
+# ---------------------------------------------------------------------------
+
+def test_short_rest_recharges_short_rest_item():
+    staff = _make_thunder_staff(equipped=True, attuned=True, charges=2)
+    staff["recharge_type"] = "short_rest"
+    staff["recharge_formula"] = "1d4+1"
+    session, user = _setup_session_with_player([staff])
+
+    updates = inventory_handlers.refresh_item_charges_for_rest(session, user, "short")
+
+    owner_key = normalize_profile_owner_key(user.name) or user.id
+    item = session.player_inventories[owner_key][0]
+    assert updates
+    assert item["charges_current"] > 2
+    assert item["charges_current"] <= item["charges_max"]
+
+
+def test_long_rest_does_not_recharge_short_rest_item_twice_but_short_rest_does_not_recharge_long_rest_item():
+    # Use an item not present in the compendium so an empty recharge_formula stays
+    # empty (compendium merge backfills empty fields for known item ids).
+    item = {
+        "name": "Rod of the Unknown",
+        "id": "rod-of-the-unknown-test-only",
+        "category": "rod",
+        "item_type": "rod",
+        "charges_max": 10,
+        "charges_current": 2,
+        "recharge_type": "long_rest",
+        "recharge_formula": "",
+        "qty": 1,
+    }
+    session, user = _setup_session_with_player([item])
+
+    updates = inventory_handlers.refresh_item_charges_for_rest(session, user, "short")
+    owner_key = normalize_profile_owner_key(user.name) or user.id
+    stored = session.player_inventories[owner_key][0]
+    assert not updates
+    assert stored["charges_current"] == 2
+
+    updates = inventory_handlers.refresh_item_charges_for_rest(session, user, "long")
+    stored = session.player_inventories[owner_key][0]
+    assert updates
+    assert stored["charges_current"] == stored["charges_max"]
+
+
+def test_dawn_item_does_not_recharge_on_short_rest():
+    staff = _make_thunder_staff(equipped=True, attuned=True, charges=2)
+    assert staff["recharge_type"] == "dawn"
+    session, user = _setup_session_with_player([staff])
+
+    updates = inventory_handlers.refresh_item_charges_for_rest(session, user, "short")
+    owner_key = normalize_profile_owner_key(user.name) or user.id
+    item = session.player_inventories[owner_key][0]
+    assert not updates
+    assert item["charges_current"] == 2
+
+    # Dawn falls back to recharging on long rest since there is no time-of-day system.
+    updates = inventory_handlers.refresh_item_charges_for_rest(session, user, "long")
+    item = session.player_inventories[owner_key][0]
+    assert updates
+    assert item["charges_current"] > 2
+    assert item["charges_current"] <= item["charges_max"]
+
+
+def test_recharge_never_exceeds_charges_max():
+    staff = _make_thunder_staff(equipped=True, attuned=True, charges=9)
+    staff["recharge_type"] = "long_rest"
+    staff["recharge_formula"] = "1d6+4"
+    session, user = _setup_session_with_player([staff])
+
+    updates = inventory_handlers.refresh_item_charges_for_rest(session, user, "long")
+    owner_key = normalize_profile_owner_key(user.name) or user.id
+    item = session.player_inventories[owner_key][0]
+    assert updates
+    assert item["charges_current"] == 10
+
+
+def test_zero_charge_item_recovers_and_becomes_castable():
+    staff = _make_thunder_staff(equipped=True, attuned=True, charges=0)
+    staff["recharge_type"] = "short_rest"
+    # Keep the compendium's "1d6+4" formula (rather than "") since this id is a
+    # known compendium item and empty fields get backfilled from compendium data.
+    session, user = _setup_session_with_player([staff])
+
+    cards = inventory_handlers._build_item_spell_cards([staff])
+    assert all(c["disabled"] for c in cards)
+
+    inventory_handlers.refresh_item_charges_for_rest(session, user, "short")
+    owner_key = normalize_profile_owner_key(user.name) or user.id
+    refreshed_item = session.player_inventories[owner_key][0]
+    assert refreshed_item["charges_current"] > 0
+
+    cards = inventory_handlers._build_item_spell_cards([refreshed_item])
+    assert all(not c["disabled"] for c in cards)

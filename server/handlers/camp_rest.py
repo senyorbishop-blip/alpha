@@ -195,6 +195,7 @@ async def handle_camp_rest_take_rest(payload: dict, session: Session, user: User
 
     healed_tokens = []
     removed_temp_summon_tokens: list[str] = []
+    item_recharge_updates = []
 
     if rest_type == "long":
         # Long rest (5e): all player tokens restored to full HP, temp HP cleared.
@@ -217,7 +218,6 @@ async def handle_camp_rest_take_rest(payload: dict, session: Session, user: User
                 "max_hp": int(max_hp),
             })
 
-        item_recharge_updates = []
         from server.handlers.inventory import refresh_item_charges_for_rest
         for uid, session_user in list((getattr(session, "users", {}) or {}).items()):
             if getattr(session_user, "role", "") != "player":
@@ -236,6 +236,18 @@ async def handle_camp_rest_take_rest(payload: dict, session: Session, user: User
     else:
         # Short rest (5e): no automatic HP recovery — players spend hit dice.
         # Broadcast the event so each client can show the hit dice UI.
+        from server.handlers.inventory import refresh_item_charges_for_rest
+        for uid, session_user in list((getattr(session, "users", {}) or {}).items()):
+            if getattr(session_user, "role", "") != "player":
+                continue
+            updated = refresh_item_charges_for_rest(session, session_user, "short")
+            if updated:
+                item_recharge_updates.append({
+                    "user_id": uid,
+                    "user_name": getattr(session_user, "name", "Player"),
+                    "items": updated,
+                })
+
         log_msg = "☀ Short rest — party may spend hit dice to recover HP."
         rest_label = "Short Rest"
 
@@ -278,13 +290,13 @@ async def handle_camp_rest_take_rest(payload: dict, session: Session, user: User
             "rest_type": rest_type,
             "label": rest_label,
             "healed_tokens": healed_tokens,
-            "item_recharge_updates": item_recharge_updates if rest_type == "long" else [],
+            "item_recharge_updates": item_recharge_updates,
             "message": log_msg,
             "removed_temp_summon_tokens": removed_temp_summon_tokens,
         },
     })
 
-    if rest_type == "long":
+    if rest_type == "long" or item_recharge_updates:
         from server.handlers.inventory import _broadcast_inventory_state
         await _broadcast_inventory_state(session)
 

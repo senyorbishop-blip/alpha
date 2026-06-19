@@ -29,7 +29,9 @@ def test_quick_action_modal_level_picker_updates_preview_and_passes_cast_level()
     assert 'safeRollSpellDamage(spellKey, castLevel)' in ACTIONS
     assert 'safeRollSpellAttack(spellKey, castLevel)' in ACTIONS
     assert 'safeShowSpellSave(spellKey, castLevel)' in ACTIONS
-    assert 'showLevelPicker = (baseLevel !== 0 && baseLevel !== null) || options.length > 1' in ACTIONS
+    # Item-granted spells (cast off item charges) never show a spell-slot
+    # level picker — only real spell-slot spells with a known/leveled base do.
+    assert 'showLevelPicker = !itemSpell && ((baseLevel !== 0 && baseLevel !== null) || options.length > 1)' in ACTIONS
 
 
 def test_quick_action_damage_roll_uses_resolved_cast_level_payload_and_spends_selected_slot():

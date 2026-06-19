@@ -160,7 +160,7 @@ _INVENTORY_META_KEYS = (
 
 
 _ITEM_ACTION_ACTIVATION_TYPES = {"action", "bonus_action", "reaction", "free", "special"}
-_ITEM_RECHARGE_TYPES = {"long_rest", "dawn", "daily", "none"}
+_ITEM_RECHARGE_TYPES = {"short_rest", "long_rest", "dawn", "daily", "custom", "none"}
 
 
 def _normalize_item_runtime_fields(entry: dict, out: dict) -> None:
@@ -1717,6 +1717,21 @@ def _recompute_equipment_effects(session: Session, user: User) -> int:
     return ac_value
 
 
+def _item_charges_current_max(item: dict, fallback_max: int) -> tuple[int, int]:
+    """Read charge state, accepting legacy uses_current/uses_max and nested charges.{current,max}."""
+    nested = item.get("charges") if isinstance(item.get("charges"), dict) else {}
+    raw_max = item.get("charges_max", item.get("uses_max", nested.get("max")))
+    raw_current = item.get("charges_current", item.get("uses_current", nested.get("current")))
+    charges_max = _safe_int(raw_max, fallback_max, minimum=0, maximum=99)
+    charges_current = _safe_int(raw_current, charges_max, minimum=0, maximum=99)
+    return charges_current, charges_max
+
+
+# Recharge types that recover by default on a long rest even without an explicit
+# rest-aware time-of-day system (no in-game clock to trigger "dawn" separately).
+_LONG_REST_FALLBACK_RECHARGE_TYPES = {"dawn", "daily", "custom"}
+
+
 def refresh_item_charges_for_rest(session: Session, user: User, rest_type: str) -> list[dict]:
     inventories, owner_key, items = _get_player_inventory_store(session, user)
     changed: list[dict] = []
@@ -1728,22 +1743,24 @@ def refresh_item_charges_for_rest(session: Session, user: User, rest_type: str) 
         if not action_payload:
             continue
         recharge_type = str(action_payload.get("recharge_type") or "none").strip().lower()
-        if recharge_type not in {"long_rest", "dawn", "daily"}:
+        if recharge_type not in _ITEM_RECHARGE_TYPES or recharge_type == "none":
+            continue
+        if recharge_type == "short_rest" and rest_key != "short":
             continue
         if recharge_type == "long_rest" and rest_key != "long":
             continue
-        if recharge_type in {"dawn", "daily"} and rest_key not in {"long", "dawn"}:
+        if recharge_type in _LONG_REST_FALLBACK_RECHARGE_TYPES and rest_key not in {"long", "dawn"}:
             continue
-        charges_max = _safe_int(item.get("charges_max"), _safe_int(action_payload.get("charges_max"), 0, minimum=0, maximum=99), minimum=0, maximum=99)
+        fallback_max = _safe_int(action_payload.get("charges_max"), 0, minimum=0, maximum=99)
+        current, charges_max = _item_charges_current_max(item, fallback_max)
         if charges_max <= 0:
             continue
         formula = str(action_payload.get("recharge_formula") or "").strip()
         if formula:
             gained = _roll_formula_total(formula)
-            next_charges = min(charges_max, _safe_int(item.get("charges_current"), charges_max, minimum=0, maximum=99) + max(0, gained))
+            next_charges = min(charges_max, current + max(0, gained))
         else:
             next_charges = charges_max
-        current = _safe_int(item.get("charges_current"), charges_max, minimum=0, maximum=99)
         if next_charges == current:
             continue
         item["charges_max"] = charges_max
