@@ -15,7 +15,7 @@ def _combat_apply_state_snippet() -> str:
 
 def _run(state_seq_js: str, *, initial_combat_js: str = "{ active: false, turn: 0, combatants: [] }") -> dict:
     code = f"""
-const calls = {{ renderCombat: 0, refreshRightPanelContextUI: 0, renderPartyStatusPanel: 0, refreshBigScreenDisplayOverlay: 0, drawFrame: 0 }};
+const calls = {{ renderCombat: 0, refreshRightPanelContextUI: 0, renderPartyStatusPanel: 0, refreshBigScreenDisplayOverlay: 0, drawFrame: 0, drawTokens: 0, renderTokens: 0, refreshTokenBadges: 0, refreshCombatBadges: 0, updateActiveContext: 0 }};
 global.document = {{ getElementById: () => null }};
 global.tokens = {{}};
 global.ROLE = 'dm';
@@ -29,6 +29,11 @@ global.refreshRightPanelContextUI = () => {{ calls.refreshRightPanelContextUI++;
 global.renderPartyStatusPanel = () => {{ calls.renderPartyStatusPanel++; }};
 global.refreshBigScreenDisplayOverlay = () => {{ calls.refreshBigScreenDisplayOverlay++; }};
 global.drawFrame = () => {{ calls.drawFrame++; }};
+global.drawTokens = () => {{ calls.drawTokens++; }};
+global.renderTokens = () => {{ calls.renderTokens++; }};
+global.refreshTokenBadges = () => {{ calls.refreshTokenBadges++; }};
+global.refreshCombatBadges = () => {{ calls.refreshCombatBadges++; }};
+global.updateActiveContext = () => {{ calls.updateActiveContext++; }};
 global._updateCombatTabAttention = () => {{}};
 global.window = global;
 let _combat = {initial_combat_js};
@@ -136,6 +141,11 @@ def test_initiative_roll_refreshes_token_and_party_surfaces_without_reload():
     assert result["calls"]["renderPartyStatusPanel"] == 2
     assert result["calls"]["refreshBigScreenDisplayOverlay"] == 2
     assert result["calls"]["drawFrame"] == 2
+    assert result["calls"]["drawTokens"] == 2
+    assert result["calls"]["renderTokens"] == 2
+    assert result["calls"]["refreshTokenBadges"] == 2
+    assert result["calls"]["refreshCombatBadges"] == 2
+    assert result["calls"]["updateActiveContext"] == 2
     assert result["combat"]["combatants"][0]["initiative"] == 14
 
 
@@ -184,3 +194,12 @@ def test_lower_revision_with_changed_initiative_applies_with_warning():
     )
     assert result["calls"]["renderCombat"] == 2
     assert result["combat"]["combatants"][0]["initiative"] == 19
+
+
+def test_token_badge_renderer_reads_initiative_from_combatant_state():
+    src = PLAY.read_text(encoding="utf-8")
+    assert "function getCombatantForToken(tokenId)" in src
+    assert "const combatants = (_combat && Array.isArray(_combat.combatants)) ? _combat.combatants : [];" in src
+    assert "const combatant = getCombatantForToken(token && token.id);" in src
+    assert "const initiativeValue = combatant ? combatant.initiative : null;" in src
+    assert "`INIT ${initiativeValue}`" in src
