@@ -718,8 +718,82 @@
     });
   }
 
-  function _magicItemActionRows() {
-    return _itemActionRows().concat(_itemSpellRows());
+  function _normalizeInlineMagicItemAction(item, itemIndex, raw, actionIndex, kind) {
+    if (!raw || typeof raw !== 'object') return null;
+    const itemName = _firstText(item && item.name, raw.item_name, 'Magic Item');
+    const actionName = _firstText(raw.name, raw.action_name, raw.label, raw.spell_name, raw.effect_name, itemName + ' Action');
+    const actionId = _firstText(raw.id, raw.action_id, raw.spell_id, raw.slug, kind + '_' + itemIndex + '_' + actionIndex);
+    const activation = _firstText(raw.activation, raw.activation_type, raw.actionType, raw.cost, raw.casting_time, 'action').toLowerCase();
+    const lane = /bonus/.test(activation) ? 'bonus' : (/reaction/.test(activation) ? 'reaction' : (/spell/.test(kind) ? 'spell' : 'action'));
+    const current = raw.charges_current ?? raw.chargesCurrent ?? item.charges_current ?? item.chargesCurrent ?? item.charges?.current ?? item.uses?.remaining ?? item.uses?.current;
+    const max = raw.charges_max ?? raw.chargesMax ?? item.charges_max ?? item.chargesMax ?? item.charges?.max ?? item.uses?.max;
+    const hasCurrent = current !== null && current !== undefined && Number.isFinite(Number(current));
+    const hasMax = max !== null && max !== undefined && Number.isFinite(Number(max));
+    const damage = _firstText(raw.damage_formula, raw.damageFormula, raw.damage_dice, raw.damage, raw.formula, '');
+    const saveDc = _firstText(raw.save_dc, raw.saveDC, raw.dc, item.save_dc, item.saveDC, '');
+    const saveAbility = _firstText(raw.save_ability, raw.saveAbility, raw.save, raw.savingThrow, '');
+    const attackBonus = _firstText(raw.attack_bonus, raw.attackBonus, raw.to_hit, '');
+    const isSpellLike = /spell/i.test(kind) || raw.spell_id || raw.spell_name || raw.spellLevel || raw.spell_level;
+    const base = {
+      id: String(actionId),
+      name: actionName,
+      source: isSpellLike ? 'item' : 'item_action',
+      sourceType: isSpellLike ? 'item' : 'item_action',
+      sourceName: itemName,
+      sourceItemName: itemName,
+      itemName: itemName,
+      itemId: _firstText(item.id, item.item_id, String(itemIndex)),
+      sourceItemId: _firstText(item.id, item.item_id, String(itemIndex)),
+      itemIndex: itemIndex,
+      quickBarSourceLabel: 'Source: ' + itemName,
+      quickBarType: isSpellLike ? 'spell' : 'action',
+      quickBarLane: lane,
+      quickBarPickKey: (isSpellLike ? 'spell:item:' : 'action:item:') + String(_firstText(item.id, itemName, itemIndex)).toLowerCase().replace(/[^a-z0-9]+/g, '-') + ':' + String(actionId).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      quickBarAttackText: attackBonus,
+      quickBarSaveText: [saveDc ? ('DC ' + saveDc) : '', saveAbility].filter(Boolean).join(' '),
+      quickBarDamageText: damage,
+      quickBarRangeText: _firstText(raw.range, raw.reach, ''),
+      quickBarResourceState: (hasCurrent || hasMax) ? { remaining: hasCurrent ? Number(current) : null, max: hasMax ? Number(max) : null } : null,
+      quickBarUsesText: _firstText(raw.usesText, raw.uses_text, raw.charge_cost ? ('Costs ' + raw.charge_cost + ' charge' + (Number(raw.charge_cost) === 1 ? '' : 's')) : '', ''),
+      quickBarCanUse: raw.disabled !== true,
+      quickBarDisabledReason: _firstText(raw.disabled_reason, ''),
+      quickBarInfoSummary: _firstText(raw.effect_text, raw.summary, raw.description, raw.effect, 'Open for details'),
+      damage_formula: damage,
+      damage_type: _firstText(raw.damage_type, raw.damageType, ''),
+      save_dc: saveDc,
+      attack_bonus: attackBonus,
+    };
+    if (isSpellLike) {
+      const spellLevel = Number.isFinite(Number(raw.level ?? raw.spell_level ?? raw.spellLevel)) ? Number(raw.level ?? raw.spell_level ?? raw.spellLevel) : null;
+      base.spellLevel = spellLevel;
+      base.level = spellLevel;
+      base.baseLevel = spellLevel;
+      base.spellId = _firstText(raw.spell_id, raw.id, actionId);
+      base.usesCharges = !!raw.charge_cost;
+      base.chargeCost = Number(raw.charge_cost || 0);
+      base.card = Object.assign({}, raw, { id: base.spellId, spellId: base.spellId, name: actionName, level: spellLevel, spell_level: spellLevel, damage_formula: damage, damage: damage, damage_type: base.damage_type, attack_bonus: attackBonus, save_dc: saveDc, range: base.quickBarRangeText, casting_time: _firstText(raw.casting_time, raw.activation, '1 Action') });
+    }
+    return base;
+  }
+
+  function _inlineMagicItemRows(charData) {
+    const rows = [];
+    _safeArray(charData && charData.inventory).forEach(function (item, itemIndex) {
+      if (!item || typeof item !== 'object') return;
+      [
+        ['actions', item.actions], ['chargedActions', item.chargedActions], ['magicActions', item.magicActions], ['effects', item.effects], ['spells', item.spells]
+      ].forEach(function (pair) {
+        _safeArray(pair[1]).forEach(function (raw, actionIndex) {
+          const row = _normalizeInlineMagicItemAction(item, itemIndex, raw, actionIndex, pair[0]);
+          if (row) rows.push(row);
+        });
+      });
+    });
+    return rows;
+  }
+
+  function _magicItemActionRows(charData) {
+    return _itemActionRows().concat(_itemSpellRows()).concat(_inlineMagicItemRows(charData || {}));
   }
 
   function _resourceRows(model) {
@@ -795,7 +869,7 @@
       bonusActions: mark(bonus, 'action'),
       reactions: mark(reactions, 'action'),
       topSpells: picks.length ? mark(pickedSpells, 'spell') : mark(_topSpells(runtime, QUICK_PICK_LIMIT), 'spell'),
-      magicItemActions: mark(_magicItemActionRows(), 'action'),
+      magicItemActions: mark(_magicItemActionRows(sheet), 'action'),
       resources: _resourceRows(actionModel),
       concentration: actionModel.concentration || (runtime.charSheet && runtime.charSheet.activeConcentration) || null,
       combat: runtime.combat || { active: false },

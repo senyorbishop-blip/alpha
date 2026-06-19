@@ -582,30 +582,38 @@
       }
       return;
     }
-    const action = _findAction(key);
-    const actionSource = _firstText(action && action.source, kind);
-    if (action && /^(weapon|equip_only|system_unarmed|attack)$/i.test(actionSource)) {
-      if (typeof global.openCombatQuickBarWeaponAction === 'function') {
-        global.openCombatQuickBarWeaponAction(action);
-      } else {
-        const _missingMsg = '[CombatQuickBar] openCombatQuickBarWeaponAction is missing. No action spent.';
-        if (global.console) global.console.error(_missingMsg);
-        if (typeof global.showToast === 'function') global.showToast('Weapon roll handler is not loaded. No action spent.');
+    try {
+      const action = _findAction(key);
+      const actionName = _firstText(action && action.name, key, 'Quick action');
+      const actionSource = _firstText(action && action.source, kind);
+      if (action && /^(weapon|equip_only|system_unarmed|attack)$/i.test(actionSource)) {
+        if (typeof global.openCombatQuickBarWeaponAction === 'function') {
+          global.openCombatQuickBarWeaponAction(action);
+        } else {
+          const _missingMsg = '[CombatQuickBar] openCombatQuickBarWeaponAction is missing. No action spent.';
+          if (global.console) global.console.error(_missingMsg);
+          if (typeof global.showToast === 'function') global.showToast('Weapon roll handler is not loaded. No action spent.');
+        }
+      } else if (action && typeof global.playerUseAction === 'function') {
+        let chargeOverride = null;
+        if (action.quickBarVariableChargeCost) {
+          const min = Number(action.quickBarChargeCostMin) || 1;
+          const max = Number(action.quickBarChargeCostMax) || min;
+          const raw = global.prompt(`Spend how many charges on ${_firstText(action.name, 'this item')}? (${min}-${max})`, String(min));
+          if (raw === null) { render(); return; }
+          const parsed = Math.max(min, Math.min(max, Math.round(Number(raw)) || min));
+          chargeOverride = parsed;
+        }
+        global.playerUseAction(actionSource, _firstText(action.id, action.name), chargeOverride !== null ? { chargeCost: chargeOverride } : undefined);
+        global.CombatQuickSelectors && global.CombatQuickSelectors.markUsed(key);
+      } else if (action && global.CSContainer && typeof global.CSContainer.openDetailDrawer === 'function') {
+        global.CSContainer.openDetailDrawer({ kicker: 'Action', title: action.name || key, subtitle: action.desc || action.description || 'Quick action', sections: [{ title: 'Details', body: action.longText || action.description || action.desc || 'Open the full sheet for details.' }] });
       }
-    } else if (action && typeof global.playerUseAction === 'function') {
-      let chargeOverride = null;
-      if (action.quickBarVariableChargeCost) {
-        const min = Number(action.quickBarChargeCostMin) || 1;
-        const max = Number(action.quickBarChargeCostMax) || min;
-        const raw = global.prompt(`Spend how many charges on ${_firstText(action.name, 'this item')}? (${min}-${max})`, String(min));
-        if (raw === null) { render(); return; }
-        const parsed = Math.max(min, Math.min(max, Math.round(Number(raw)) || min));
-        chargeOverride = parsed;
+    } catch (err) {
+      if (global.console && typeof global.console.warn === 'function') {
+        global.console.warn('[CombatQuickBar] Quick action card failed; card was not executed.', { name: key, kind: kind, error: err });
       }
-      global.playerUseAction(actionSource, _firstText(action.id, action.name), chargeOverride !== null ? { chargeCost: chargeOverride } : undefined);
-      global.CombatQuickSelectors && global.CombatQuickSelectors.markUsed(key);
-    } else if (action && global.CSContainer && typeof global.CSContainer.openDetailDrawer === 'function') {
-      global.CSContainer.openDetailDrawer({ kicker: 'Action', title: action.name || key, subtitle: action.desc || action.description || 'Quick action', sections: [{ title: 'Details', body: action.longText || action.description || action.desc || 'Open the full sheet for details.' }] });
+      if (typeof global.showToast === 'function') global.showToast('Quick action failed for ' + key + '. Check console for details.');
     }
     render();
   }
