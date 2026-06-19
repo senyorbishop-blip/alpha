@@ -45106,6 +45106,11 @@ function _buildEquippedInventoryAttackCard(item, idx, slot = '') {
     properties,
     notes: noteBits.join(' • '),
     item_index: idx,
+    source_item: item,
+    source_item_id: String(item.id || '').trim(),
+    source_item_name: name,
+    charges_current: item.charges_current ?? item.chargesCurrent ?? item.charges?.current ?? item.uses?.current ?? item.uses?.remaining ?? '',
+    charges_max: item.charges_max ?? item.chargesMax ?? item.charges?.max ?? item.uses?.max ?? '',
     slot,
     handed,
     badges,
@@ -47447,6 +47452,10 @@ function performExecuteCombatQuickBarSpell(spell) {
   return result;
 }
 
+function openCombatQuickBarWeaponAction(action) {
+  return performOpenCombatQuickBarWeaponAction(action);
+}
+
 function performOpenCombatQuickBarWeaponAction(action) {
   if (window.CombatQuickActions && typeof window.CombatQuickActions.openWeaponAction === 'function') {
     return window.CombatQuickActions.openWeaponAction(action);
@@ -47468,27 +47477,36 @@ function _combatQuickSlug(value) {
   return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
+function firstText(...values) {
+  for (const value of values) {
+    if (value === null || value === undefined) continue;
+    const text = String(value).trim();
+    if (text) return text;
+  }
+  return '';
+}
+
 // Normalises a weapon-ish object to the canonical snake_case fields the dice/
 // chat pipeline expects, regardless of whether it came from the unified attack
 // cards (already snake_case) or the Quick Actions tab projection (camelCase).
 function _combatQuickNormalizeWeapon(input) {
   const obj = (input && typeof input === 'object') ? input : {};
-  const attackBonusText = _firstText(obj.attack_bonus, obj.attackBonus, '');
+  const attackBonusText = firstText(obj.attack_bonus, obj.attackBonus, '');
   const parsedBonus = parseInt(String(attackBonusText).replace(/[^-\d]/g, ''), 10);
   const attackBonusValue = Number.isFinite(Number(obj.attack_bonus_value))
     ? Number(obj.attack_bonus_value)
     : (Number.isFinite(parsedBonus) ? parsedBonus : 0);
-  const id = _firstText(obj.id, obj.itemId, obj.actionId, obj.combatCardId, '') || _combatQuickSlug(obj.name) || 'weapon';
+  const id = firstText(obj.id, obj.itemId, obj.actionId, obj.combatCardId, '') || _combatQuickSlug(obj.name) || 'weapon';
   return Object.assign({}, obj, {
     id,
-    name: _firstText(obj.name, obj.displayName, id),
-    source: _firstText(obj.source, 'weapon'),
+    name: firstText(obj.name, obj.displayName, id),
+    source: firstText(obj.source, 'weapon'),
     attack_bonus: attackBonusText,
     attack_bonus_value: attackBonusValue,
-    damage_formula: _firstText(obj.damage_formula, obj.base_damage_formula, obj.damage, obj.damageText, ''),
-    damage_type: _firstText(obj.damage_type, obj.damageType, ''),
-    versatile_damage_formula: _firstText(obj.versatile_damage_formula, obj.versatileDamage, obj.versatile_damage, ''),
-    range: _firstText(obj.range, obj.reach, ''),
+    damage_formula: firstText(obj.damage_formula, obj.base_damage_formula, obj.damage, obj.damageText, ''),
+    damage_type: firstText(obj.damage_type, obj.damageType, ''),
+    versatile_damage_formula: firstText(obj.versatile_damage_formula, obj.versatileDamage, obj.versatile_damage, ''),
+    range: firstText(obj.range, obj.reach, ''),
   });
 }
 
@@ -47949,7 +47967,7 @@ function combatQuickRollSpellAttack(spellId, slotLevel) {
   return { total, roll, bonus: rawBonus };
 }
 
-function performCombatQuickRollSpellDamage(spellId, slotLevel) {
+function combatQuickRollSpellDamage(spellId, slotLevel) {
   const spell = findCombatSpell(spellId);
   if (!spell) { showToast('Spell not found.'); return null; }
   const card = spell.card || {};
@@ -48000,7 +48018,7 @@ function combatQuickShowSpellSave(spellId, slotLevel) {
   return { saveDC, saveAbility };
 }
 
-function performCombatQuickRollWeaponDamage(actionOrId, mode = 'base', critical = false) {
+function combatQuickRollWeaponDamage(actionOrId, mode = 'base', critical = false) {
   const card = findCombatWeapon(actionOrId);
   if (!card) {
     const label = (actionOrId && typeof actionOrId === 'object') ? (actionOrId.name || actionOrId.id || 'unknown') : String(actionOrId || 'unknown');
@@ -48413,7 +48431,7 @@ async function _executeCombatSpellCast(spell, slotLevel) {
   return { spell: spell.name, slotLevel: effectiveSlot, castLevel: resolvedCast.castLevel, outcome, total: spellRoll?.total ?? null, applied, rollPayload: resolvedCast.rollPayload };
 }
 
-function performCombatQuickWeaponAttack(actionOrId, mode = 'base') {
+function combatQuickWeaponAttack(actionOrId, mode = 'base') {
   const card = findCombatWeapon(actionOrId);
   if (!card) {
     const label = (actionOrId && typeof actionOrId === 'object') ? (actionOrId.name || actionOrId.id || 'unknown') : String(actionOrId || 'unknown');
@@ -48557,16 +48575,16 @@ function guardQuickActionBridge(name, fn) {
   }
 }
 window.combatQuickWeaponAttack = function combatQuickWeaponAttackBridge(actionOrId, mode) {
-  return guardQuickActionBridge('combatQuickWeaponAttack', () => performCombatQuickWeaponAttack(actionOrId, mode));
+  return guardQuickActionBridge('combatQuickWeaponAttack', () => combatQuickWeaponAttack(actionOrId, mode));
 };
 window.combatQuickRollWeaponDamage = function combatQuickRollWeaponDamageBridge(actionOrId, mode, critical) {
-  return guardQuickActionBridge('combatQuickRollWeaponDamage', () => performCombatQuickRollWeaponDamage(actionOrId, mode, critical));
+  return guardQuickActionBridge('combatQuickRollWeaponDamage', () => combatQuickRollWeaponDamage(actionOrId, mode, critical));
 };
 window.combatQuickCastSpell = function combatQuickCastSpellBridge(spellId, preferredLevel) {
   return guardQuickActionBridge('combatQuickCastSpell', () => performCombatQuickCastSpell(spellId, preferredLevel));
 };
 window.combatQuickRollSpellDamage = function combatQuickRollSpellDamageBridge(spellId, slotLevel) {
-  return guardQuickActionBridge('combatQuickRollSpellDamage', () => performCombatQuickRollSpellDamage(spellId, slotLevel));
+  return guardQuickActionBridge('combatQuickRollSpellDamage', () => combatQuickRollSpellDamage(spellId, slotLevel));
 };
 // Healing spells use the same roll path as damage — alias for external callers.
 window.combatQuickRollSpellHealing = window.combatQuickRollSpellDamage;

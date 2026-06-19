@@ -417,6 +417,64 @@
     return true;
   }
 
+  function _formatCharges(card) {
+    const cur = _firstText(card && card.charges_current, card && card.chargesCurrent, card && card.charges && card.charges.current, card && card.uses && (card.uses.remaining ?? card.uses.current), '');
+    const max = _firstText(card && card.charges_max, card && card.chargesMax, card && card.charges && card.charges.max, card && card.uses && card.uses.max, '');
+    if (cur && max) return cur + '/' + max;
+    return _firstText(cur, max ? ('Max ' + max) : '', '—');
+  }
+
+  function _sameItemAction(action, card) {
+    const actionItemId = _firstText(action && action.itemId, action && action.sourceItemId, action && action.item_id, action && action.source_item_id, '');
+    const cardItemId = _firstText(card && card.itemId, card && card.sourceItemId, card && card.source_item_id, card && card.id, '');
+    if (actionItemId && cardItemId && String(actionItemId).toLowerCase() === String(cardItemId).toLowerCase()) return true;
+    const actionItemName = _firstText(action && action.itemName, action && action.sourceItemName, action && action.sourceName, action && action.item_name, '');
+    const cardItemName = _firstText(card && card.source_item_name, card && card.itemName, card && card.name, '');
+    return !!(actionItemName && cardItemName && String(actionItemName).toLowerCase() === String(cardItemName).toLowerCase());
+  }
+
+  function _relatedMagicActions(card) {
+    const out = [];
+    try {
+      const model = global.CombatQuickSelectors && typeof global.CombatQuickSelectors.selectQuickActions === 'function'
+        ? global.CombatQuickSelectors.selectQuickActions((global.getCombatQuickBarRuntime && global.getCombatQuickBarRuntime().charSheet) || global._charSheet || {})
+        : null;
+      ['primaryActions', 'bonusActions', 'reactions', 'topSpells', 'magicItemActions'].forEach(function (bucket) {
+        _safeArray(model && model[bucket]).forEach(function (action) {
+          if (!action || /^(weapon|equip_only|system_unarmed|attack)$/i.test(String(action.source || ''))) return;
+          if (_sameItemAction(action, card)) out.push(action);
+        });
+      });
+    } catch (err) {
+      if (global.console && global.console.warn) global.console.warn('[CombatQuickActions] Could not collect related magic item actions.', { item: card && card.name, error: err });
+    }
+    return out;
+  }
+
+  function _magicActionsHtml(actions) {
+    if (!actions.length) return '';
+    return '<div class="cqa-desc"><strong>Magic item actions</strong><div class="cqa-controls">' + actions.map(function (action, idx) {
+      const label = _firstText(action.name, action.displayName, 'Item Action');
+      const meta = [_firstText(action.quickBarUsesText, action.resourceCost, ''), _firstText(action.quickBarDamageText, ''), _firstText(action.quickBarSaveText, '')].filter(Boolean).join(' · ');
+      return '<button class="cqa-btn cast" type="button" data-cqa-related-action="' + idx + '">' + _esc(label) + (meta ? '<br><small>' + _esc(meta) + '</small>' : '') + '</button>';
+    }).join('') + '</div></div>';
+  }
+
+  function _useRelatedMagicAction(action) {
+    if (!action) return;
+    if (String(action.quickBarType || '').toLowerCase() === 'spell' || String(action.sourceType || '').toLowerCase() === 'item') {
+      openSpellAction(action);
+      return;
+    }
+    if (typeof global.playerUseAction === 'function') {
+      global.playerUseAction(_firstText(action.source, 'item_action'), _firstText(action.id, action.name));
+      return;
+    }
+    if (global.CSContainer && typeof global.CSContainer.openDetailDrawer === 'function') {
+      global.CSContainer.openDetailDrawer({ kicker: 'Magic Item Action', title: _firstText(action.name, 'Item Action'), subtitle: _firstText(action.quickBarInfoSummary, action.description, ''), sections: [{ title: 'Details', body: _firstText(action.longText, action.description, action.quickBarInfoSummary, 'No details loaded.') }] });
+    }
+  }
+
   function openWeaponAction(actionOrId) {
     const card = _findWeapon(actionOrId);
     if (!card) return false;
@@ -428,13 +486,17 @@
     const usedThisTurn = !!((actionOrId && typeof actionOrId === 'object' && actionOrId.quickBarUsedThisTurn) || card.quickBarUsedThisTurn);
     const hasVersatile = !!card.versatile_damage_formula;
     const properties = _safeArray(card.properties).join(', ');
+    const relatedMagicActions = _relatedMagicActions(card);
     const rows = [
       ['Attack Bonus', _firstText(card.attack_bonus, card.attackBonus, '—')],
       ['Damage', _firstText(card.damage_formula, card.damage, '—')],
       ['Damage Type', _firstText(card.damage_type, card.damageType, '—')],
       ['Ability / Proficiency', _firstText(card.ability_label, card.ability, '') + (_firstText(card.proficiency_label, card.proficient === false ? 'Not proficient' : 'Proficient') ? (' • ' + _firstText(card.proficiency_label, card.proficient === false ? 'Not proficient' : 'Proficient')) : '')],
       ['Range / Reach', _firstText(card.range, card.reach, '—')],
+      ['Action Cost', _firstText(card.cost, card.actionCost, card.economy && _safeArray(card.economy).join(', '), 'Attack action')],
       ['Properties', properties || _safeArray(card.badges).join(', ') || '—'],
+      ['Source Item', _firstText(card.source_item_name, card.itemName, card.name, '—')],
+      ['Charges', _formatCharges(card)],
       ['Versatile', card.versatile_damage_formula || '—'],
     ];
     const overlay = document.createElement('div');
@@ -447,11 +509,20 @@
       + '<div class="cqa-meta">' + rows.map(function (row) { return '<div class="cqa-meta-card"><strong>' + _esc(row[0]) + '</strong><span>' + _esc(row[1]) + '</span></div>'; }).join('') + '</div>'
       + '<div class="cqa-desc">' + _esc(_firstText(card.notes, card.mastery_text, 'Equipped weapon quick action.')) + '</div>'
       + (usedThisTurn ? '<div class="cqa-sub" style="color:#ffe8a3;">Used this turn — attack roll is disabled, but you can still review details or roll damage.</div>' : '')
-      + '<div class="cqa-controls"><button class="cqa-btn" type="button" data-cqa-weapon-attack ' + (usedThisTurn ? 'disabled title="Used this turn"' : '') + '>Roll Attack</button><button class="cqa-btn damage" type="button" data-cqa-weapon-damage>Roll Damage</button><button class="cqa-btn damage" type="button" data-cqa-weapon-crit>Roll Critical Damage</button></div></div>';
+      + _magicActionsHtml(relatedMagicActions)
+      + '<div class="cqa-controls"><button class="cqa-btn" type="button" data-cqa-weapon-attack ' + (usedThisTurn ? 'disabled title="Used this turn"' : '') + '>Roll Attack</button><button class="cqa-btn damage" type="button" data-cqa-weapon-damage>Roll Damage</button><button class="cqa-btn damage" type="button" data-cqa-weapon-crit>Roll Critical Damage</button><button class="cqa-btn cast" type="button" data-cqa-mark-used>Use / Mark Used</button><button class="cqa-btn" type="button" data-cqa-close>Close</button></div></div>';
     overlay.addEventListener('click', function (ev) {
       if (ev.target === overlay || ev.target.closest('[data-cqa-close]')) { ev.preventDefault(); ev.stopPropagation(); closeModal(); return; }
       const modeSelect = document.getElementById('combat-quick-weapon-mode');
       const mode = modeSelect ? modeSelect.value : 'base';
+      const related = ev.target.closest('[data-cqa-related-action]');
+      if (related) { _useRelatedMagicAction(relatedMagicActions[Number(related.getAttribute('data-cqa-related-action')) || 0]); return; }
+      if (ev.target.closest('[data-cqa-mark-used]')) {
+        if (global.CombatQuickSelectors && typeof global.CombatQuickSelectors.markUsed === 'function') global.CombatQuickSelectors.markUsed(String(card.id || card.name || ''));
+        if (typeof global.showToast === 'function') global.showToast((card.name || 'Weapon') + ' marked used.');
+        closeModal();
+        return;
+      }
       if (ev.target.closest('[data-cqa-weapon-attack]')) {
         if (usedThisTurn) return;
         safeWeaponAttack(card, mode);
@@ -519,7 +590,7 @@
     return false;
   }
 
-  global.openCombatQuickBarWeaponAction = function openCombatQuickBarWeaponActionBridge(action) {
+  global.openCombatQuickBarWeaponAction = function (action) {
     return guardBridge('openCombatQuickBarWeaponAction', function () {
       return performOpenCombatQuickBarWeaponAction(action);
     });
