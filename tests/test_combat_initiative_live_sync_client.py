@@ -15,7 +15,7 @@ def _combat_apply_state_snippet() -> str:
 
 def _run(state_seq_js: str, *, initial_combat_js: str = "{ active: false, turn: 0, combatants: [] }") -> dict:
     code = f"""
-const calls = {{ renderCombat: 0, refreshRightPanelContextUI: 0 }};
+const calls = {{ renderCombat: 0, refreshRightPanelContextUI: 0, renderPartyStatusPanel: 0, refreshBigScreenDisplayOverlay: 0, drawFrame: 0 }};
 global.document = {{ getElementById: () => null }};
 global.tokens = {{}};
 global.ROLE = 'dm';
@@ -26,6 +26,9 @@ global._playerActionEconomyRuntime = {{ action_surge_armed: false, bonus_action_
 global._resetInspectResults = () => {{}};
 global.renderCombat = () => {{ calls.renderCombat++; }};
 global.refreshRightPanelContextUI = () => {{ calls.refreshRightPanelContextUI++; }};
+global.renderPartyStatusPanel = () => {{ calls.renderPartyStatusPanel++; }};
+global.refreshBigScreenDisplayOverlay = () => {{ calls.refreshBigScreenDisplayOverlay++; }};
+global.drawFrame = () => {{ calls.drawFrame++; }};
 global._updateCombatTabAttention = () => {{}};
 let _combat = {initial_combat_js};
 let _combatRound = 1;
@@ -95,3 +98,16 @@ def test_equal_revision_with_different_payload_still_applies():
     )
     assert result["calls"]["renderCombat"] == 2
     assert result["combat"]["combatants"][0]["initiative"] == 21
+
+
+def test_initiative_roll_refreshes_token_and_party_surfaces_without_reload():
+    result = _run(
+        "combatApplyState({ active: true, turn: 0, round: 1, revision: 1, "
+        "combatants: [{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null }] });"
+        "combatApplyState({ active: true, turn: 0, round: 1, revision: 2, "
+        "combatants: [{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 14 }] });"
+    )
+    assert result["calls"]["renderPartyStatusPanel"] == 2
+    assert result["calls"]["refreshBigScreenDisplayOverlay"] == 2
+    assert result["calls"]["drawFrame"] == 2
+    assert result["combat"]["combatants"][0]["initiative"] == 14

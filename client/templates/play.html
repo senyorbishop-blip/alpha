@@ -44566,6 +44566,9 @@ function combatApplyState(state) {
     _playerActionEconomyRuntime.bonus_action_converted_actions = 0;
   }
   refreshRightPanelContextUI();
+  if (typeof renderPartyStatusPanel === 'function') renderPartyStatusPanel();
+  if (typeof refreshBigScreenDisplayOverlay === 'function') refreshBigScreenDisplayOverlay();
+  if (typeof drawFrame === 'function') drawFrame();
   // Reset inspect check results when combat ends (new encounter = fresh attempts)
   if (!_combat.active && prevActive) {
     _resetInspectResults();
