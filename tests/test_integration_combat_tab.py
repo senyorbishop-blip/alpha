@@ -635,3 +635,63 @@ def test_combat_visibility_sweep_is_idempotent_without_duplicates():
 
     assert session.combat["combatants"] == []
     assert [c.get("token_id") for c in session.combat["suspended_combatants"]] == ["mage"]
+
+
+def test_combat_update_assigns_new_encounter_id_for_new_combat(monkeypatch):
+    """Starting a fresh combat stamps a new encounter id so clients reset turn economy."""
+    from server.handlers import combat as ch
+    session, dm, player = _make_session_with_combat()
+    session.combat = {"active": False, "turn": 0, "combatants": [], "round": 1, "movement": {}}
+    broadcasts, sent = _noop_broadcasts(monkeypatch)
+
+    async def _save(_):
+        return True
+
+    monkeypatch.setattr(ch, "save_campaign_async", _save)
+
+    async def _noop_hazards(_session):
+        return None
+
+    import server.handlers.hazards as haz
+    monkeypatch.setattr(haz, "_process_current_start_turn_hazards", _noop_hazards)
+
+    asyncio.run(ch.handle_combat_update({
+        "active": True,
+        "turn": 0,
+        "round": 1,
+        "combatants": [{"id": "c1", "token_id": "tok1", "name": "Alice", "initiative": None, "owner_id": "player1"}],
+    }, session, dm))
+
+    assert session.combat.get("encounter_id")
+    combat_payloads = [msg["payload"] for _, msg, _ in broadcasts if msg["type"] == "combat_state"]
+    assert combat_payloads[-1]["encounter_id"] == session.combat["encounter_id"]
+
+
+def test_combat_roll_initiative_broadcasts_explicit_roll_delta(monkeypatch):
+    """Initiative rolls broadcast both combat_state and a targeted delta for live clients."""
+    from server.handlers import combat as ch
+    session, dm, player = _make_session_with_combat([
+        {"id": "c1", "token_id": "tok1", "name": "Alice", "initiative": None, "is_player": True, "owner_id": "player1", "modifier": 2},
+    ])
+    session.combat["encounter_id"] = "enc-123"
+    broadcasts, sent = _noop_broadcasts(monkeypatch)
+
+    async def _save(_):
+        return True
+
+    monkeypatch.setattr(ch, "save_campaign_async", _save)
+    asyncio.run(ch.handle_combat_roll_initiative({"combatant_id": "c1", "roll": 14}, session, player))
+
+    types = [msg["type"] for _, msg, _ in broadcasts]
+    assert "combat_state" in types
+    assert "combat_initiative_rolled" in types
+    delta = [msg["payload"] for _, msg, _ in broadcasts if msg["type"] == "combat_initiative_rolled"][-1]
+    assert delta == {
+        "combatant_id": "c1",
+        "token_id": "tok1",
+        "initiative": 16,
+        "roll": 14,
+        "modifier": 2,
+        "revision": session.combat.get("revision"),
+        "encounter_id": "enc-123",
+    }

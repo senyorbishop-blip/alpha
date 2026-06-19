@@ -3,6 +3,7 @@ server/handlers/combat.py — Combat state management helpers and handlers.
 """
 import logging
 import time as _time
+import uuid
 from server.session import normalize_profile_owner_key, assistant_dm_has_scope
 from server.quest_progress import apply_objective_event, normalize_quest_payload_shape
 from server.encumbrance import ENC_HEAVY
@@ -677,10 +678,13 @@ async def handle_combat_update(payload: dict, session: Session, user: User):
     # Lazy import to avoid circular dependency: combat -> hazards -> viewer_powers -> combat
     from server.handlers.hazards import _process_current_start_turn_hazards
     was_active = bool((session.combat or {}).get("active"))
+    next_active = bool(payload.get("active", session.combat.get("active", False)))
     session.combat["combatants"] = payload.get("combatants", [])
-    session.combat["active"] = payload.get("active", session.combat.get("active", False))
+    session.combat["active"] = next_active
     session.combat["turn"] = payload.get("turn", session.combat.get("turn", 0))
     session.combat["round"] = payload.get("round", session.combat.get("round", 1))
+    if next_active and (not was_active or not session.combat.get("encounter_id")):
+        session.combat["encounter_id"] = str(payload.get("encounter_id") or uuid.uuid4())
     if session.combat.get("active"):
         _ensure_combat_movement_state(session, reset=True)
         sync_fogged_combatants(session, reason="combat_update", map_context=payload.get("map_context"))
@@ -755,7 +759,7 @@ async def handle_combat_clear(payload: dict, session: Session, user: User):
     # Auto-restore ambient track that was playing before combat started
     sound_state = getattr(session, "sound_state", None) or {}
     pre_combat = sound_state.get("pre_combat_track", "silence")
-    session.combat = {"active": False, "turn": 0, "combatants": [], "movement": {}}
+    session.combat = {"active": False, "turn": 0, "combatants": [], "movement": {}, "encounter_id": str(uuid.uuid4())}
     event = {
         "event_type": "clear_encounter",
         "target_id": str(payload.get("encounter_id") or payload.get("encounter_template_id") or "").strip(),
@@ -1023,6 +1027,18 @@ async def handle_combat_roll_initiative(payload: dict, session: Session, user: U
     await save_campaign_async(session)
 
     await _broadcast_combat(session)
+    await manager.broadcast(session.id, {
+        "type": "combat_initiative_rolled",
+        "payload": {
+            "combatant_id": str(target_combatant.get("id") or ""),
+            "token_id": str(target_combatant.get("token_id") or ""),
+            "initiative": total,
+            "roll": roll,
+            "modifier": modifier,
+            "revision": session.combat.get("revision"),
+            "encounter_id": session.combat.get("encounter_id"),
+        },
+    })
     logger.info(
         "[combat initiative sync] rolled_by=%s target=%s revision=%s sent_to=%s",
         user.id,
