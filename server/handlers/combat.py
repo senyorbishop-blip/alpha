@@ -85,38 +85,69 @@ def _current_combat_map_context(session: Session, reason: str | None = None) -> 
 
 
 def _token_occupied_fog_indices(session: Session, token, entry: dict) -> set[int]:
+    """Return fog-cell indices touched by the token's occupied footprint.
+
+    Fog cells are stored in the same world-coordinate space used by the client
+    fog painter: the map image is drawn from ``(-width/2, -height/2)`` to
+    ``(width/2, height/2)``.  Check centre, corners, and the full bounding box
+    of occupied cells so larger monsters are visible when any covered cell has
+    been revealed to the party.
+    """
     cols = _safe_int(entry.get("cols"), 64, minimum=1, maximum=512)
     rows = _safe_int(entry.get("rows"), 64, minimum=1, maximum=512)
     settings = getattr(session, "map_settings", None) or {}
     ctx_settings = settings.get(_token_map_context(token)) if isinstance(settings.get(_token_map_context(token)), dict) else {}
     mw = float(ctx_settings.get("width") or ctx_settings.get("map_width") or 4096)
     mh = float(ctx_settings.get("height") or ctx_settings.get("map_height") or 4096)
-    x = float(getattr(token, "x", 0) or 0); y = float(getattr(token, "y", 0) or 0)
+    x = float(getattr(token, "x", 0) or 0)
+    y = float(getattr(token, "y", 0) or 0)
     w = max(1.0, float(getattr(token, "width", PX_PER_GRID) or PX_PER_GRID))
     h = max(1.0, float(getattr(token, "height", PX_PER_GRID) or PX_PER_GRID))
-    pts = [(x, y), (x-w/2, y-h/2), (x+w/2, y-h/2), (x-w/2, y+h/2), (x+w/2, y+h/2)]
-    out=set()
-    for px,py in pts:
-        col = int((px + mw/2) / mw * cols); row = int((py + mh/2) / mh * rows)
+
+    def cell_for(px: float, py: float):
+        col = int((px + mw / 2) / mw * cols)
+        row = int((py + mh / 2) / mh * rows)
         if 0 <= col < cols and 0 <= row < rows:
-            out.add(row*cols+col)
-    return out
+            return col, row
+        return None
+
+    points = [
+        (x, y),
+        (x - w / 2, y - h / 2),
+        (x + w / 2, y - h / 2),
+        (x - w / 2, y + h / 2),
+        (x + w / 2, y + h / 2),
+    ]
+    cells = [cell for cell in (cell_for(px, py) for px, py in points) if cell is not None]
+    if not cells:
+        return set()
+    min_col = max(0, min(col for col, _ in cells))
+    max_col = min(cols - 1, max(col for col, _ in cells))
+    min_row = max(0, min(row for _, row in cells))
+    max_row = min(rows - 1, max(row for _, row in cells))
+    return {row * cols + col for row in range(min_row, max_row + 1) for col in range(min_col, max_col + 1)}
 
 
-def is_token_visible_to_party(session: Session, token, *, ignore_hidden: bool = False, ignore_staged: bool = False) -> bool:
+def is_token_visible_to_party(session: Session, token, map_context: str | None = None, *, ignore_hidden: bool = False, ignore_staged: bool = False) -> bool:
     if token is None:
         return False
     if bool(getattr(token, "hidden", False)) and not ignore_hidden:
         return False
     if bool(getattr(token, "staged", False)) and not ignore_staged:
         return False
-    entry = ((getattr(session, "fog_maps", None) or {}).get(_token_map_context(token)) or {})
+    ctx = str(map_context or _token_map_context(token) or "world")[:80] or "world"
+    entry = ((getattr(session, "fog_maps", None) or {}).get(ctx) or {})
     if not entry.get("enabled", False):
         return True
-    cells = str(entry.get("cells") or "")
+    raw_cells = entry.get("cells")
+    cells = raw_cells if isinstance(raw_cells, str) else "".join("1" if int(v or 0) else "0" for v in (raw_cells or []))
     if not cells:
+        # Fail closed only for explicitly enabled fog maps; otherwise visible.
         return False
-    return any(0 <= i < len(cells) and cells[i] == "1" for i in _token_occupied_fog_indices(session, token, entry))
+    occupied = _token_occupied_fog_indices(session, token, entry)
+    if not occupied:
+        return False
+    return any(0 <= i < len(cells) and cells[i] == "1" for i in occupied)
 
 
 def _ensure_suspended_lists(combat: dict) -> list[dict]:
@@ -132,11 +163,11 @@ def _ensure_suspended_lists(combat: dict) -> list[dict]:
     return shared
 
 
-def _suspend_reasons(session: Session, token) -> list[str]:
+def _suspend_reasons(session: Session, token, map_context: str | None = None) -> list[str]:
     reasons=[]
     if bool(getattr(token, "hidden", False)): reasons.append("hidden")
     if bool(getattr(token, "staged", False)): reasons.append("staged")
-    if not is_token_visible_to_party(session, token, ignore_hidden=True, ignore_staged=True): reasons.append("fog")
+    if not is_token_visible_to_party(session, token, map_context, ignore_hidden=True, ignore_staged=True): reasons.append("fog")
     return reasons
 
 
@@ -158,7 +189,7 @@ def _adjust_turn_after_removal(combat: dict, remove_idx: int, removed_id: str, o
         combat["turn"] = max(0, old_turn-1) if remove_idx < old_turn else min(old_turn, len(coms)-1)
 
 
-def sync_fogged_combatants(session: Session, reason: str = "sync", map_context: str | None = None) -> dict:
+def sync_combat_visibility(session: Session, map_context: str | None = None, reason: str = "sync") -> dict:
     combat = getattr(session, "combat", None) or {}
     if not combat.get("active") or _combat_fog_mode(session) == "off":
         return {"changed": False, "added": [], "removed": []}
@@ -174,7 +205,7 @@ def sync_fogged_combatants(session: Session, reason: str = "sync", map_context: 
         token=session.tokens.get(tid) if tid else None
         if not token or _token_map_context(token) != map_ctx or not is_npc_or_monster_token(token):
             continue
-        reasons=_suspend_reasons(session, token)
+        reasons=_suspend_reasons(session, token, map_ctx)
         reasons=[r for r in reasons if r in {"fog","hidden","staged"}]
         if reasons:
             removed_c=coms.pop(idx); active_ids.discard(tid)
@@ -186,7 +217,7 @@ def sync_fogged_combatants(session: Session, reason: str = "sync", map_context: 
         token=session.tokens.get(tid) if tid else None
         if not token or _token_map_context(token) != map_ctx or not is_npc_or_monster_token(token):
             continue
-        reasons=_suspend_reasons(session, token)
+        reasons=_suspend_reasons(session, token, map_ctx)
         if not reasons and tid not in active_ids:
             restored=dict(saved); restored.pop("suspended_reasons", None); restored.pop("suspended_at", None)
             coms.append(restored); active_ids.add(tid); added.append(restored); changed=True
@@ -198,7 +229,7 @@ def sync_fogged_combatants(session: Session, reason: str = "sync", map_context: 
         tid=str(getattr(token,"id","") or "")
         if not tid or tid in active_ids or tid in suspended_by_token or _token_map_context(token) != map_ctx:
             continue
-        if is_npc_or_monster_token(token) and not bool(getattr(token,"hidden",False)) and not bool(getattr(token,"staged",False)) and is_token_visible_to_party(session, token):
+        if is_npc_or_monster_token(token) and not bool(getattr(token,"hidden",False)) and not bool(getattr(token,"staged",False)) and is_token_visible_to_party(session, token, map_ctx):
             c=_combatant_from_token(session, token)
             coms.append(c); active_ids.add(tid); added.append(c); changed=True
     combat["combatants"] = coms
@@ -216,6 +247,10 @@ def sync_fogged_combatants(session: Session, reason: str = "sync", map_context: 
         for c in added:
             session.add_log(f"{c.get('name') or 'A creature'} rejoined visible initiative.", "combat", "System")
     return {"changed": changed, "added": added, "removed": removed}
+
+
+def sync_fogged_combatants(session: Session, reason: str = "sync", map_context: str | None = None) -> dict:
+    return sync_combat_visibility(session, map_context=map_context, reason=reason)
 
 
 async def run_combat_fog_sync(session: Session, reason: str = "sync", map_context: str | None = None) -> dict:

@@ -46594,8 +46594,41 @@ function renderCombat() {
   }
   if (empty) empty.style.display = 'none';
   _renderCombatRoster(list, roster, isActive);
+  _renderSuspendedCombatants(list);
   renderPartyStatusPanel();
   suggestVisibleHostilesForInitiative();
+}
+
+function _formatSuspendedCombatantReasons(row) {
+  const reasons = Array.isArray(row?.suspended_reasons) ? row.suspended_reasons : [];
+  const labels = reasons.map(r => {
+    const key = String(r || '').toLowerCase();
+    if (key === 'fog') return 'Fog';
+    if (key === 'hidden') return 'Hidden';
+    if (key === 'staged') return 'Staged';
+    return key ? key.charAt(0).toUpperCase() + key.slice(1) : '';
+  }).filter(Boolean);
+  return labels.length ? labels.join(' + ') : 'Suspended';
+}
+
+function _renderSuspendedCombatants(list) {
+  if (ROLE !== 'dm') return;
+  const suspended = Array.isArray(_combat?.suspended_combatants) ? _combat.suspended_combatants : [];
+  if (!suspended.length) return;
+  const section = document.createElement('div');
+  section.className = 'combat-entry';
+  section.style.flexDirection = 'column';
+  section.style.alignItems = 'stretch';
+  section.style.gap = '0.32rem';
+  section.style.opacity = '0.88';
+  const rows = suspended.map(row => {
+    const name = escapeHtml(String(row?.name || 'Combatant'));
+    const reasons = escapeHtml(_formatSuspendedCombatantReasons(row));
+    const init = row?.initiative !== null && row?.initiative !== undefined ? ` · Init ${escapeHtml(String(row.initiative))}` : '';
+    return `<div style="display:flex;justify-content:space-between;gap:0.5rem;font-size:0.68rem;color:var(--parchment-dim);"><span>${name}${init}</span><span class="ce-hp hidden">${reasons}</span></div>`;
+  }).join('');
+  section.innerHTML = `<div style="font-size:0.66rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--gold);">Suspended Combatants</div>${rows}`;
+  list.appendChild(section);
 }
 
 function _isMyToken(tokenId) {

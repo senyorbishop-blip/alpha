@@ -301,6 +301,9 @@ def _sync_combatant_token_state(session: Session, token, *, previous_hp: int | N
 async def _broadcast_combat(session):
     connections = manager.get_session_connections(session.id)
     dead_payload = None
+    if not connections:
+        await manager.broadcast(session.id, {"type": "combat_state", "payload": session.combat})
+        return
     for uid in list(connections.keys()):
         user = (getattr(session, "users", {}) or {}).get(uid)
         payload = session.combat

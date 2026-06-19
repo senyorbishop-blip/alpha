@@ -712,6 +712,14 @@ class Session:
 
     def to_state_dict(self) -> dict:
         """Full state snapshot for new joiners."""
+        if isinstance(getattr(self, "combat", None), dict) and self.combat.get("active"):
+            try:
+                from server.handlers.combat import sync_combat_visibility
+                sync_combat_visibility(self, map_context=getattr(self, "dm_map_context", "world"), reason="state_snapshot")
+            except Exception:
+                # State snapshots must remain best-effort; live handlers still run
+                # authoritative combat visibility sync before broadcasting combat.
+                pass
         return {
             "session_id": self.id,
             "tokens": {tid: build_token_runtime_payload(self, t) for tid, t in self.tokens.items()},
