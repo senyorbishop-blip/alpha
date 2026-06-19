@@ -501,3 +501,137 @@ def test_combat_remove_combatant_without_ending_combat(monkeypatch):
     assert [c.get("id") for c in session.combat["combatants"]] == ["c2"]
     assert session.combat["turn"] == 0
     assert any(msg["type"] == "combat_state" for _, msg, _ in broadcasts)
+
+# ---------------------------------------------------------------------------
+# Combat fog visibility sweep
+# ---------------------------------------------------------------------------
+
+def _fog_sweep_session(*, token_hidden=False, token_staged=False, owner_id=None, revealed_indices=None, turn=0):
+    from server.session import Session, User, Token
+    from server.handlers import combat as ch
+    session = Session(id="combat-fog-sweep")
+    session.users["dm1"] = User(id="dm1", name="DM", role="dm")
+    if owner_id:
+        session.users[owner_id] = User(id=owner_id, name="Player", role="player")
+    session.dm_id = "dm1"
+    session.dm_map_context = "world"
+    session.map_settings = {"world": {"width": 400, "height": 400}}
+    cells = ["0"] * 16
+    for idx in revealed_indices or []:
+        cells[idx] = "1"
+    session.fog_maps = {"world": {"enabled": True, "cols": 4, "rows": 4, "cells": "".join(cells)}}
+    token = Token(
+        id="mage", name="Mage", x=-150, y=-150, width=40, height=40,
+        color="#778", shape="circle", owner_id=owner_id, hp=12, max_hp=12,
+        token_type="player" if owner_id else "monster", hidden=token_hidden,
+        staged=token_staged, map_context="world", speed=30,
+    )
+    session.tokens[token.id] = token
+    session.combat = {
+        "active": True,
+        "turn": turn,
+        "round": 1,
+        "combatants": [ch._combatant_from_token(session, token, initiative=14, roll=12, modifier=2)],
+    }
+    return session, token
+
+
+def test_combat_visibility_sweep_suspends_existing_fogged_npc():
+    from server.handlers.combat import sync_combat_visibility
+    session, _ = _fog_sweep_session(revealed_indices=[])
+
+    result = sync_combat_visibility(session, map_context="world", reason="test")
+
+    assert result["changed"] is True
+    assert [c.get("token_id") for c in session.combat["combatants"]] == []
+    assert session.combat["suspended_combatants"][0]["token_id"] == "mage"
+    assert session.combat["suspended_combatants"][0]["initiative"] == 14
+    assert session.combat["suspended_combatants"][0]["suspended_reasons"] == ["fog"]
+
+
+def test_combat_visibility_sweep_keeps_existing_visible_npc():
+    from server.handlers.combat import sync_combat_visibility
+    session, _ = _fog_sweep_session(revealed_indices=[0])
+
+    result = sync_combat_visibility(session, map_context="world", reason="test")
+
+    assert result["changed"] is False
+    assert [c.get("token_id") for c in session.combat["combatants"]] == ["mage"]
+    assert session.combat.get("suspended_combatants", []) == []
+
+
+def test_combat_visibility_sweep_keeps_fogged_player_token():
+    from server.handlers.combat import sync_combat_visibility
+    session, _ = _fog_sweep_session(owner_id="player1", revealed_indices=[])
+
+    sync_combat_visibility(session, map_context="world", reason="test")
+
+    assert [c.get("token_id") for c in session.combat["combatants"]] == ["mage"]
+    assert session.combat.get("suspended_combatants", []) == []
+
+
+def test_combat_visibility_sweep_suspends_hidden_npc_with_reason_hidden():
+    from server.handlers.combat import sync_combat_visibility
+    session, _ = _fog_sweep_session(token_hidden=True, revealed_indices=[0])
+
+    sync_combat_visibility(session, map_context="world", reason="test")
+
+    assert session.combat["combatants"] == []
+    assert session.combat["suspended_combatants"][0]["suspended_reasons"] == ["hidden"]
+
+
+def test_combat_visibility_sweep_requires_hidden_and_fog_to_clear_before_restore():
+    from server.handlers.combat import sync_combat_visibility
+    session, token = _fog_sweep_session(token_hidden=True, revealed_indices=[])
+
+    sync_combat_visibility(session, map_context="world", reason="test")
+    assert set(session.combat["suspended_combatants"][0]["suspended_reasons"]) == {"hidden", "fog"}
+
+    token.hidden = False
+    sync_combat_visibility(session, map_context="world", reason="test")
+    assert session.combat["combatants"] == []
+    assert session.combat["suspended_combatants"][0]["suspended_reasons"] == ["fog"]
+
+    session.fog_maps["world"]["cells"] = "1" + "0" * 15
+    sync_combat_visibility(session, map_context="world", reason="test")
+    assert [c.get("token_id") for c in session.combat["combatants"]] == ["mage"]
+    assert session.combat["combatants"][0]["initiative"] == 14
+    assert session.combat.get("suspended_combatants", []) == []
+
+
+def test_combat_visibility_sweep_runs_on_state_snapshot_for_reload():
+    session, _ = _fog_sweep_session(revealed_indices=[])
+
+    state = session.to_state_dict()
+
+    assert state["combat"]["combatants"] == []
+    assert state["combat"]["suspended_combatants"][0]["token_id"] == "mage"
+
+
+def test_combat_visibility_sweep_advances_current_turn_when_current_is_suspended():
+    from server.session import Token
+    from server.handlers import combat as ch
+    from server.handlers.combat import sync_combat_visibility
+    session, _ = _fog_sweep_session(revealed_indices=[], turn=0)
+    pc = Token(id="pc", name="Hero", x=0, y=0, width=40, height=40, color="#fff", shape="circle", owner_id="player1", token_type="player", map_context="world")
+    session.users["player1"] = session.users.get("player1") or __import__("server.session", fromlist=["User"]).User(id="player1", name="Player", role="player")
+    session.tokens[pc.id] = pc
+    session.combat["combatants"].append(ch._combatant_from_token(session, pc, initiative=10))
+
+    sync_combat_visibility(session, map_context="world", reason="test")
+
+    assert [c.get("token_id") for c in session.combat["combatants"]] == ["pc"]
+    assert session.combat["turn"] == 0
+    assert session.combat["movement"].get("token_id") == "pc"
+
+
+def test_combat_visibility_sweep_is_idempotent_without_duplicates():
+    from server.handlers.combat import sync_combat_visibility
+    session, _ = _fog_sweep_session(revealed_indices=[])
+
+    sync_combat_visibility(session, map_context="world", reason="first")
+    sync_combat_visibility(session, map_context="world", reason="second")
+    sync_combat_visibility(session, map_context="world", reason="third")
+
+    assert session.combat["combatants"] == []
+    assert [c.get("token_id") for c in session.combat["suspended_combatants"]] == ["mage"]
