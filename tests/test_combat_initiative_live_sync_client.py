@@ -43,7 +43,7 @@ let _combatRound = 1;
 console.log(JSON.stringify({{ calls, combat: _combat, sent: (typeof sent !== 'undefined' ? sent : undefined) }}));
 """
     out = subprocess.check_output(["node", "-e", code], cwd=ROOT, text=True, timeout=30)
-    return json.loads(out)
+    return json.loads(out.strip().splitlines()[-1])
 
 
 def _initiative_roll_snippet() -> str:
@@ -68,7 +68,7 @@ function _sortCombatants() {{
 console.log(JSON.stringify({{ calls, combat: _combat, sent: (typeof sent !== 'undefined' ? sent : undefined) }}));
 """
     out = subprocess.check_output(["node", "-e", code], cwd=ROOT, text=True, timeout=30)
-    return json.loads(out)
+    return json.loads(out.strip().splitlines()[-1])
 
 
 def test_higher_revision_applies_and_renders():
@@ -154,6 +154,7 @@ def test_live_combat_state_route_delegates_to_authoritative_handler():
     src = PLAY.read_text(encoding="utf-8")
     assert "case 'combat_state': {" in src
     assert "handleCombatStateLive(p);" in src
+    assert "return true;" in src[src.index("case 'combat_state': {"):src.index("case 'combat_initiative_rolled': {")]
     assert "function handleCombatStateLive(payload)" in src
     assert "combatApplyState(payload);" in src
 
