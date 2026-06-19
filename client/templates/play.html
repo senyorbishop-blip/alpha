@@ -11798,6 +11798,17 @@ const _PING_STACK_HARD_CAP = 28;
 // Combat state (declared early to avoid TDZ errors in drawToken / canMoveToken)
 let _combat = { active: false, turn: 0, combatants: [], movement: null, selected_target_id: '', pending_attack: null, suspended_combatants: [] };
 let _combatRound = 1;
+// Monotonic visibility revision (fog/hidden/token-position changes). Payloads
+// carrying an older revision than the last one applied are dropped so a
+// stale/out-of-order websocket message can't re-show a hidden/fogged NPC.
+let _lastVisibilityRevision = 0;
+function _isStaleVisibilityPayload(payload) {
+  const rev = Number(payload && payload.visibility_revision);
+  if (!Number.isFinite(rev)) return false;
+  if (rev < _lastVisibilityRevision) return true;
+  _lastVisibilityRevision = rev;
+  return false;
+}
 let _combatFogSyncTimer = null;
 let _combatFogSyncLastKey = '';
 function _combatFogVisibleNpcHash() {
@@ -17989,10 +18000,9 @@ function _isTokenVisibleToPlayer(t) {
   const controller = _getVisionController();
   if (controller.mode === 'player' && String(t.owner_id || '') === String(controller.userId || '')) return true;
   if (controller.mode === 'preview' && String(t.id || '') === String(controller.tokenId || '')) return true;
-  const cx = Number(t.x || 0) + Number(t.width || 0) / 2;
-  const cy = Number(t.y || 0) + Number(t.height || 0) / 2;
-  const pad = Math.max(Number(t.width || 0), Number(t.height || 0)) * 0.35;
-  return _isPointVisibleToPlayer(cx, cy, pad);
+  const x = Number(t.x || 0), y = Number(t.y || 0);
+  const w = Number(t.width || 0) || 50, h = Number(t.height || 0) || 50;
+  return _isRectVisibleToPlayer(x, y, w, h, 0);
 }
 
 function _isHazardVisibleToPlayer(zone) {
@@ -31942,6 +31952,7 @@ function handleLegacyMessage(msg) {
 
 
     case 'tokens_sync': {
+      if (_isStaleVisibilityPayload(p)) break;
       applyAuthoritativeTokenSync(p);
       if (p.corpse_states && typeof p.corpse_states === 'object') {
         corpseStates = { ...p.corpse_states };
@@ -32761,6 +32772,7 @@ function handleLegacyMessage(msg) {
         break;
       }
     case 'combat_state': {
+        if (_isStaleVisibilityPayload(p)) break;
         // Capture previous state for spotlight diff detection
         const _prevCombatForSpotlight = _combat ? JSON.parse(JSON.stringify(_combat)) : null;
         combatApplyState(p);

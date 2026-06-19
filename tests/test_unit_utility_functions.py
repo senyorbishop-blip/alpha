@@ -455,43 +455,47 @@ def test_is_dm_token_with_owner():
 def test_can_user_see_token_dm_always_sees():
     """DM should always see every token."""
     from server.handlers.common import _can_user_see_token
-    from server.session import Token, User
+    from server.session import Session, Token, User
+    session = Session(id="s")
     dm = User(id="dm", name="DM", role="dm")
     hidden_token = Token(id="h1", name="A", x=0, y=0, width=40, height=40,
                          color="#fff", shape="circle", owner_id=None)
     hidden_token.hidden = True
-    assert _can_user_see_token(hidden_token, dm) is True
+    assert _can_user_see_token(session, hidden_token, dm) is True
 
 
 def test_can_user_see_token_player_cannot_see_hidden():
     """Players should not see hidden tokens."""
     from server.handlers.common import _can_user_see_token
-    from server.session import Token, User
+    from server.session import Session, Token, User
+    session = Session(id="s")
     player = User(id="p1", name="Alice", role="player")
     hidden_token = Token(id="h2", name="A", x=0, y=0, width=40, height=40,
                          color="#fff", shape="circle", owner_id=None)
     hidden_token.hidden = True
-    assert _can_user_see_token(hidden_token, player) is False
+    assert _can_user_see_token(session, hidden_token, player) is False
 
 
 def test_can_user_see_token_player_sees_visible():
     """Players should see non-hidden tokens."""
     from server.handlers.common import _can_user_see_token
-    from server.session import Token, User
+    from server.session import Session, Token, User
+    session = Session(id="s")
     player = User(id="p2", name="Bob", role="player")
     visible_token = Token(id="v1", name="A", x=0, y=0, width=40, height=40,
                           color="#fff", shape="circle", owner_id=None)
     visible_token.hidden = False
-    assert _can_user_see_token(visible_token, player) is True
+    assert _can_user_see_token(session, visible_token, player) is True
 
 
 def test_can_user_see_token_none_user_returns_false():
     """None user should always return False."""
     from server.handlers.common import _can_user_see_token
-    from server.session import Token
+    from server.session import Session, Token
+    session = Session(id="s")
     token = Token(id="v2", name="A", x=0, y=0, width=40, height=40,
                   color="#fff", shape="circle", owner_id=None)
-    assert _can_user_see_token(token, None) is False
+    assert _can_user_see_token(session, token, None) is False
 
 
 # ---------------------------------------------------------------------------

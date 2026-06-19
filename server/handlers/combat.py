@@ -12,6 +12,11 @@ from server.handlers.common import (
     PX_PER_GRID, FT_PER_GRID,
     _safe_int,
     _broadcast_combat,
+    bump_visibility_revision,
+    is_player_owned_token,
+    is_npc_or_monster_token,
+    _token_map_context,
+    is_token_touching_unrevealed_fog,
 )
 from server.movement import resolve_movement, normalize_movement_mode
 
@@ -60,72 +65,8 @@ def _combat_fog_mode(session: Session) -> str:
     return "auto"
 
 
-def is_player_owned_token(token) -> bool:
-    return bool(getattr(token, "owner_id", None)) or bool(getattr(token, "is_player", False)) or str(getattr(token, "token_type", "") or "").lower() in {"player", "pc", "character"}
-
-
-def is_npc_or_monster_token(token) -> bool:
-    if token is None or is_player_owned_token(token):
-        return False
-    values = {
-        str(getattr(token, "token_type", "") or "").lower(),
-        str(getattr(token, "creature_type", "") or "").lower(),
-        str(getattr(token, "monster_type", "") or "").lower(),
-        str(getattr(token, "faction", "") or "").lower(),
-    }
-    return bool(values & {"npc", "monster", "hostile", "creature", "enemy", "foe", "beast", "undead", "fiend", "construct"})
-
-
-def _token_map_context(token) -> str:
-    return str(getattr(token, "map_context", "world") or "world")[:80] or "world"
-
-
 def _current_combat_map_context(session: Session, reason: str | None = None) -> str:
     return str(getattr(session, "dm_map_context", "world") or "world")[:80] or "world"
-
-
-def _token_occupied_fog_indices(session: Session, token, entry: dict) -> set[int]:
-    """Return fog-cell indices touched by the token's occupied footprint.
-
-    Fog cells are stored in the same world-coordinate space used by the client
-    fog painter: the map image is drawn from ``(-width/2, -height/2)`` to
-    ``(width/2, height/2)``.  Check centre, corners, and the full bounding box
-    of occupied cells so larger monsters are visible when any covered cell has
-    been revealed to the party.
-    """
-    cols = _safe_int(entry.get("cols"), 64, minimum=1, maximum=512)
-    rows = _safe_int(entry.get("rows"), 64, minimum=1, maximum=512)
-    settings = getattr(session, "map_settings", None) or {}
-    ctx_settings = settings.get(_token_map_context(token)) if isinstance(settings.get(_token_map_context(token)), dict) else {}
-    mw = float(ctx_settings.get("width") or ctx_settings.get("map_width") or 4096)
-    mh = float(ctx_settings.get("height") or ctx_settings.get("map_height") or 4096)
-    x = float(getattr(token, "x", 0) or 0)
-    y = float(getattr(token, "y", 0) or 0)
-    w = max(1.0, float(getattr(token, "width", PX_PER_GRID) or PX_PER_GRID))
-    h = max(1.0, float(getattr(token, "height", PX_PER_GRID) or PX_PER_GRID))
-
-    def cell_for(px: float, py: float):
-        col = int((px + mw / 2) / mw * cols)
-        row = int((py + mh / 2) / mh * rows)
-        if 0 <= col < cols and 0 <= row < rows:
-            return col, row
-        return None
-
-    points = [
-        (x, y),
-        (x - w / 2, y - h / 2),
-        (x + w / 2, y - h / 2),
-        (x - w / 2, y + h / 2),
-        (x + w / 2, y + h / 2),
-    ]
-    cells = [cell for cell in (cell_for(px, py) for px, py in points) if cell is not None]
-    if not cells:
-        return set()
-    min_col = max(0, min(col for col, _ in cells))
-    max_col = min(cols - 1, max(col for col, _ in cells))
-    min_row = max(0, min(row for _, row in cells))
-    max_row = min(rows - 1, max(row for _, row in cells))
-    return {row * cols + col for row in range(min_row, max_row + 1) for col in range(min_col, max_col + 1)}
 
 
 def is_token_visible_to_party(session: Session, token, map_context: str | None = None, *, ignore_hidden: bool = False, ignore_staged: bool = False) -> bool:
@@ -135,19 +76,7 @@ def is_token_visible_to_party(session: Session, token, map_context: str | None =
         return False
     if bool(getattr(token, "staged", False)) and not ignore_staged:
         return False
-    ctx = str(map_context or _token_map_context(token) or "world")[:80] or "world"
-    entry = ((getattr(session, "fog_maps", None) or {}).get(ctx) or {})
-    if not entry.get("enabled", False):
-        return True
-    raw_cells = entry.get("cells")
-    cells = raw_cells if isinstance(raw_cells, str) else "".join("1" if int(v or 0) else "0" for v in (raw_cells or []))
-    if not cells:
-        # Fail closed only for explicitly enabled fog maps; otherwise visible.
-        return False
-    occupied = _token_occupied_fog_indices(session, token, entry)
-    if not occupied:
-        return False
-    return any(0 <= i < len(cells) and cells[i] == "1" for i in occupied)
+    return not is_token_touching_unrevealed_fog(session, token, map_context)
 
 
 def _ensure_suspended_lists(combat: dict) -> list[dict]:

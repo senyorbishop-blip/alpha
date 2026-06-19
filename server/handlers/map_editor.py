@@ -1116,6 +1116,10 @@ async def handle_fog_toggle(payload: dict, session: Session, user: User):
             'fog_cells': entry['cells'],
         }
     }, map_ctx)
+    # Fog toggling can immediately change which NPC/monster tokens players
+    # are allowed to see, not just the combat tracker — resync the
+    # authoritative token list so the map render updates on this change.
+    await _broadcast_token_state_sync(session)
     await run_combat_fog_sync(session, reason="fog_toggle", map_context=map_ctx)
     await save_campaign_async(session)
 
@@ -1150,6 +1154,10 @@ async def handle_fog_paint(payload: dict, session: Session, user: User):
             'cells': cells,
         }
     }, map_ctx)
+    # Painting fog can immediately reveal/hide NPC and monster tokens whose
+    # footprint now touches the changed cells — resync the authoritative
+    # token list so the map render updates on this change, not just combat.
+    await _broadcast_token_state_sync(session)
     await run_combat_fog_sync(session, reason="fog_paint", map_context=map_ctx)
     await save_campaign_async(session)
 
