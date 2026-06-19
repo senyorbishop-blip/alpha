@@ -47436,7 +47436,7 @@ function getCombatQuickBarSpells() {
   return _getCombatQuickSpells();
 }
 
-function executeCombatQuickBarSpell(spell) {
+function performExecuteCombatQuickBarSpell(spell) {
   if (!spell) return null;
   if (window.CombatQuickActions && typeof window.CombatQuickActions.openSpellAction === 'function') {
     return window.CombatQuickActions.openSpellAction(spell);
@@ -47447,7 +47447,7 @@ function executeCombatQuickBarSpell(spell) {
   return result;
 }
 
-function openCombatQuickBarWeaponAction(action) {
+function performOpenCombatQuickBarWeaponAction(action) {
   if (window.CombatQuickActions && typeof window.CombatQuickActions.openWeaponAction === 'function') {
     return window.CombatQuickActions.openWeaponAction(action);
   }
@@ -47949,7 +47949,7 @@ function combatQuickRollSpellAttack(spellId, slotLevel) {
   return { total, roll, bonus: rawBonus };
 }
 
-function combatQuickRollSpellDamage(spellId, slotLevel) {
+function performCombatQuickRollSpellDamage(spellId, slotLevel) {
   const spell = findCombatSpell(spellId);
   if (!spell) { showToast('Spell not found.'); return null; }
   const card = spell.card || {};
@@ -48000,7 +48000,7 @@ function combatQuickShowSpellSave(spellId, slotLevel) {
   return { saveDC, saveAbility };
 }
 
-function combatQuickRollWeaponDamage(actionOrId, mode = 'base', critical = false) {
+function performCombatQuickRollWeaponDamage(actionOrId, mode = 'base', critical = false) {
   const card = findCombatWeapon(actionOrId);
   if (!card) {
     const label = (actionOrId && typeof actionOrId === 'object') ? (actionOrId.name || actionOrId.id || 'unknown') : String(actionOrId || 'unknown');
@@ -48033,7 +48033,7 @@ function combatQuickRollWeaponDamage(actionOrId, mode = 'base', critical = false
   return { total, rolls, formula: damageMeta.formula, critical };
 }
 
-function combatQuickCastSpell(spellId, preferredLevel) {
+function performCombatQuickCastSpell(spellId, preferredLevel) {
   const spell = findCombatSpell(spellId);
   if (!spell) { showToast('Spell not found.'); return; }
   const card = spell.card || {};
@@ -48413,7 +48413,7 @@ async function _executeCombatSpellCast(spell, slotLevel) {
   return { spell: spell.name, slotLevel: effectiveSlot, castLevel: resolvedCast.castLevel, outcome, total: spellRoll?.total ?? null, applied, rollPayload: resolvedCast.rollPayload };
 }
 
-function combatQuickWeaponAttack(actionOrId, mode = 'base') {
+function performCombatQuickWeaponAttack(actionOrId, mode = 'base') {
   const card = findCombatWeapon(actionOrId);
   if (!card) {
     const label = (actionOrId && typeof actionOrId === 'object') ? (actionOrId.name || actionOrId.id || 'unknown') : String(actionOrId || 'unknown');
@@ -48536,20 +48536,49 @@ function resolveWeaponRuntime(weaponCard, character, options) {
 }
 window.resolveWeaponRuntime = resolveWeaponRuntime;
 
-// ── Bridge function registry — explicit window assignments so external scripts
-//    (combat_quick_actions.js, combat_quick_bar.js) can safely call these even
-//    if the inline script parse order varies in some browsers.
-window.combatQuickWeaponAttack = combatQuickWeaponAttack;
-window.combatQuickRollWeaponDamage = combatQuickRollWeaponDamage;
-window.combatQuickCastSpell = combatQuickCastSpell;
-window.combatQuickRollSpellDamage = combatQuickRollSpellDamage;
+// ── Bridge function registry — explicit guarded window assignments so external
+//    scripts (combat_quick_actions.js, combat_quick_bar.js) can safely call these
+//    even if the inline script parse order varies in some browsers. Public bridge
+//    names intentionally differ from the implementation names below to avoid
+//    accidental self-recursion when bridge wrappers are rewired.
+const __quickBridgeActive = new Set();
+function guardQuickActionBridge(name, fn) {
+  if (__quickBridgeActive.has(name)) {
+    console.error('[QuickActions] Recursive bridge blocked:', name);
+    if (typeof showToast === 'function') showToast('Quick action loop blocked: ' + name);
+    return false;
+  }
+  __quickBridgeActive.add(name);
+  try {
+    if (window.DEBUG_QUICK_ACTIONS && console && typeof console.trace === 'function') console.trace('[QuickActions bridge]', name);
+    return fn();
+  } finally {
+    __quickBridgeActive.delete(name);
+  }
+}
+window.combatQuickWeaponAttack = function combatQuickWeaponAttackBridge(actionOrId, mode) {
+  return guardQuickActionBridge('combatQuickWeaponAttack', () => performCombatQuickWeaponAttack(actionOrId, mode));
+};
+window.combatQuickRollWeaponDamage = function combatQuickRollWeaponDamageBridge(actionOrId, mode, critical) {
+  return guardQuickActionBridge('combatQuickRollWeaponDamage', () => performCombatQuickRollWeaponDamage(actionOrId, mode, critical));
+};
+window.combatQuickCastSpell = function combatQuickCastSpellBridge(spellId, preferredLevel) {
+  return guardQuickActionBridge('combatQuickCastSpell', () => performCombatQuickCastSpell(spellId, preferredLevel));
+};
+window.combatQuickRollSpellDamage = function combatQuickRollSpellDamageBridge(spellId, slotLevel) {
+  return guardQuickActionBridge('combatQuickRollSpellDamage', () => performCombatQuickRollSpellDamage(spellId, slotLevel));
+};
 // Healing spells use the same roll path as damage — alias for external callers.
-window.combatQuickRollSpellHealing = combatQuickRollSpellDamage;
+window.combatQuickRollSpellHealing = window.combatQuickRollSpellDamage;
 window.combatQuickRollSpellAttack = combatQuickRollSpellAttack;
 window.combatQuickShowSpellSave = combatQuickShowSpellSave;
 window.findCombatSpell = findCombatSpell;
-window.executeCombatQuickBarSpell = executeCombatQuickBarSpell;
-window.openCombatQuickBarWeaponAction = openCombatQuickBarWeaponAction;
+window.executeCombatQuickBarSpell = function executeCombatQuickBarSpellBridge(spell) {
+  return guardQuickActionBridge('executeCombatQuickBarSpell', () => performExecuteCombatQuickBarSpell(spell));
+};
+window.openCombatQuickBarWeaponAction = function openCombatQuickBarWeaponActionBridge(action) {
+  return guardQuickActionBridge('openCombatQuickBarWeaponAction', () => performOpenCombatQuickBarWeaponAction(action));
+};
 window.getCombatSpellDamagePreview = getCombatSpellDamagePreview;
 window._getCombatSpellCastOptions = _getCombatSpellCastOptions;
 window._getUnifiedQuickAttackCards = _getUnifiedQuickAttackCards;
