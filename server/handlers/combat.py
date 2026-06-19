@@ -1,6 +1,7 @@
 """
 server/handlers/combat.py — Combat state management helpers and handlers.
 """
+import logging
 import time as _time
 from server.session import normalize_profile_owner_key, assistant_dm_has_scope
 from server.quest_progress import apply_objective_event, normalize_quest_payload_shape
@@ -19,6 +20,8 @@ from server.handlers.common import (
     is_token_touching_unrevealed_fog,
 )
 from server.movement import resolve_movement, normalize_movement_mode
+
+logger = logging.getLogger(__name__)
 
 
 def _bump_combat_revision(session: Session, reason: str) -> None:
@@ -1020,6 +1023,13 @@ async def handle_combat_roll_initiative(payload: dict, session: Session, user: U
     await save_campaign_async(session)
 
     await _broadcast_combat(session)
+    logger.info(
+        "[combat initiative sync] rolled_by=%s target=%s revision=%s sent_to=%s",
+        user.id,
+        combatant_id or token_id,
+        session.combat.get("revision"),
+        list(manager.get_session_connections(session.id).keys()),
+    )
     log_entry = session.add_log(
         f"🎲 {user.name} initiative: {roll} + {modifier:+d} = {total}",
         "dice", user.name

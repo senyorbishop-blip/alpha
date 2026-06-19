@@ -1,7 +1,20 @@
+import json
+
 import pytest
 
 from server.handlers import combat as combat_handlers
 from server.session import Session, Token, User
+
+
+class _FakeWebSocket:
+    def __init__(self):
+        self.sent = []
+
+    async def accept(self):
+        return None
+
+    async def send_text(self, payload):
+        self.sent.append(json.loads(payload))
 
 
 def _build_session():
@@ -159,3 +172,94 @@ async def test_dm_can_roll_npc_initiative(monkeypatch):
 
     npc = next(c for c in session.combat["combatants"] if c["id"] == "cmb-npc")
     assert npc["initiative"] == 11
+
+
+async def _connect_real_sockets(session, *user_ids):
+    sockets = {}
+    for uid in user_ids:
+        ws = _FakeWebSocket()
+        await combat_handlers.manager.connect(session.id, uid, ws)
+        sockets[uid] = ws
+    return sockets
+
+
+def _combat_state_messages(ws):
+    return [m for m in ws.sent if m.get("type") == "combat_state"]
+
+
+@pytest.mark.anyio
+async def test_dm_npc_roll_reaches_dm_and_player_via_send_to(monkeypatch):
+    session, dm, player = _build_session()
+
+    async def _fake_save(*args, **kwargs):
+        return True
+    monkeypatch.setattr(combat_handlers, "save_campaign_async", _fake_save)
+
+    sockets = await _connect_real_sockets(session, dm.id, player.id)
+    try:
+        await combat_handlers.handle_combat_roll_initiative(
+            {"combatant_id": "cmb-npc", "roll": 11}, session, dm,
+        )
+    finally:
+        combat_handlers.manager.disconnect(session.id, dm.id)
+        combat_handlers.manager.disconnect(session.id, player.id)
+
+    dm_states = _combat_state_messages(sockets[dm.id])
+    player_states = _combat_state_messages(sockets[player.id])
+    assert dm_states, "DM (the roller) must receive the combat_state broadcast without refresh"
+    assert player_states, "Other connected clients must also receive the combat_state broadcast"
+    assert dm_states[-1]["payload"]["revision"] == session.combat["revision"]
+    assert player_states[-1]["payload"]["revision"] == session.combat["revision"]
+
+
+@pytest.mark.anyio
+async def test_player_own_roll_reaches_player_and_dm_via_send_to(monkeypatch):
+    session, dm, player = _build_session()
+
+    async def _fake_save(*args, **kwargs):
+        return True
+    monkeypatch.setattr(combat_handlers, "save_campaign_async", _fake_save)
+
+    sockets = await _connect_real_sockets(session, dm.id, player.id)
+    try:
+        await combat_handlers.handle_combat_roll_initiative(
+            {"combatant_id": "cmb-hero", "roll": 15}, session, player,
+        )
+    finally:
+        combat_handlers.manager.disconnect(session.id, dm.id)
+        combat_handlers.manager.disconnect(session.id, player.id)
+
+    dm_states = _combat_state_messages(sockets[dm.id])
+    player_states = _combat_state_messages(sockets[player.id])
+    assert player_states, "The rolling player must receive the combat_state broadcast without refresh"
+    assert dm_states, "DM must also receive the update"
+    hero = next(c for c in player_states[-1]["payload"]["combatants"] if c["id"] == "cmb-hero")
+    assert hero["initiative"] == 17
+
+
+@pytest.mark.anyio
+async def test_suspended_combatants_filtered_for_player_via_broadcast_combat(monkeypatch):
+    session, dm, player = _build_session()
+    session.combat["suspended_combatants"] = [{"id": "cmb-npc", "name": "Goblin", "suspended_reasons": ["fog"]}]
+    session.combat["fog_suspended_combatants"] = [{"id": "cmb-npc", "name": "Goblin", "suspended_reasons": ["fog"]}]
+    session.combat["hidden_suspended_combatants"] = []
+
+    async def _fake_save(*args, **kwargs):
+        return True
+    monkeypatch.setattr(combat_handlers, "save_campaign_async", _fake_save)
+
+    sockets = await _connect_real_sockets(session, dm.id, player.id)
+    try:
+        await combat_handlers.handle_combat_roll_initiative(
+            {"combatant_id": "cmb-hero", "roll": 15}, session, player,
+        )
+    finally:
+        combat_handlers.manager.disconnect(session.id, dm.id)
+        combat_handlers.manager.disconnect(session.id, player.id)
+
+    dm_payload = _combat_state_messages(sockets[dm.id])[-1]["payload"]
+    player_payload = _combat_state_messages(sockets[player.id])[-1]["payload"]
+    assert "suspended_combatants" in dm_payload
+    assert "suspended_combatants" not in player_payload
+    assert "fog_suspended_combatants" not in player_payload
+    assert "hidden_suspended_combatants" not in player_payload
