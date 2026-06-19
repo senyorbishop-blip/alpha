@@ -48200,6 +48200,70 @@ function combatQuickRollWeaponDamage(actionOrId, mode = 'base', critical = false
   return { total, rolls, formula: normFormula, critical, context };
 }
 
+
+function _rollQuickWeaponFormulaChunks(formula) {
+  const normFormula = typeof _normalizeAttackFormula === 'function' ? _normalizeAttackFormula(formula) : String(formula || '').trim();
+  const chunks = typeof _expandSpellFormulaChunks === 'function' ? _expandSpellFormulaChunks(normFormula) : [];
+  if (!chunks.length) return null;
+  const rolls = [];
+  let total = 0;
+  chunks.forEach(chunk => {
+    const qty = Math.max(1, Number(chunk.qty) || 1);
+    for (let i = 0; i < qty; i++) { const r = Math.floor(Math.random() * Number(chunk.die)) + 1; rolls.push(r); total += r; }
+    total += Number(chunk.mod) || 0;
+  });
+  return { formula: normFormula, chunks, rolls, total };
+}
+
+function postQuickWeaponRollResult(ctx, roll, kind) {
+  const context = (typeof getSafeRollContext === 'function') ? getSafeRollContext() : { targetName: (ctx && ctx.targetName) || 'No target' };
+  const weaponName = String((ctx && (ctx.name || ctx.sourceItem)) || 'Weapon').trim();
+  const actorName = String((ctx && ctx.actorName) || (_charSheet && _charSheet.name) || NAME || 'Character').trim();
+  const damageType = String((ctx && ctx.damageType) || '').trim();
+  if (kind === 'attack') {
+    const bonus = parseInt(String((ctx && ctx.attackBonus) || '+0').replace(/[^\-\d]/g, ''), 10) || 0;
+    const d20 = (roll.rolls && roll.rolls[0]) || Math.max(1, Math.min(20, roll.total - bonus));
+    const bonusStr = bonus >= 0 ? `+${bonus}` : String(bonus);
+    _showCombatResultCard({ title: weaponName, subtitle: 'Attack Roll', attackRoll: d20, attackBonusStr: bonusStr, attackTotal: roll.total, outcome: d20 === 20 ? 'crit' : (d20 === 1 ? 'miss' : 'hit') });
+    if (window.appDiceShowLocalResult) window.appDiceShowLocalResult({ diceType: 20, qty: 1, rolls: [d20], total: roll.total, modifier: bonus, rollLabel: `${weaponName} • Attack`, source: 'weapon-attack' });
+    sendWS({ type: 'chat_message', payload: { message: `⚔️ **${actorName}** rolls **${weaponName}** attack: **${roll.total}** (${roll.formula}) vs ${context.targetName || (ctx && ctx.targetName) || 'No target'}.`, channel: 'everyone', roll_context: context, roll_payload: { weaponName, formulaUsed: roll.formula, attackBonus: bonusStr, source: 'weapon-attack', actionSource: 'quick_weapon_modal', targetId: context.targetId || '' } } });
+    return;
+  }
+  _showCombatResultCard({ title: weaponName, subtitle: kind === 'critical-damage' ? 'Critical Damage' : 'Damage Roll', outcome: kind === 'critical-damage' ? 'crit' : 'hit', damage: roll.total, damageRolls: roll.rolls, damageType });
+  const primary = roll.chunks[0] || { die: 20, qty: 1 };
+  if (window.appDiceShowLocalResult) window.appDiceShowLocalResult({ diceType: primary.die, qty: primary.qty, rolls: roll.rolls, total: roll.total, modifier: roll.total - roll.rolls.reduce((sum, value) => sum + value, 0), rollLabel: `${weaponName} • ${kind === 'critical-damage' ? 'Critical ' : ''}Damage`, source: 'weapon-damage' });
+  sendWS({ type: 'chat_message', payload: { message: `⚔ **${actorName}** rolls **${weaponName}** ${kind === 'critical-damage' ? 'critical ' : ''}damage: **${roll.total}** (${roll.formula})${damageType ? ` ${damageType}` : ''} vs ${context.targetName || (ctx && ctx.targetName) || 'No target'}.`, channel: 'everyone', roll_context: context, roll_payload: { weaponName, formulaUsed: roll.formula, damageType, critical: kind === 'critical-damage', source: 'weapon', actionSource: 'quick_weapon_modal', targetId: context.targetId || '' } } });
+}
+
+function rollQuickWeaponAttack(ctx) {
+  const formula = String((ctx && ctx.attackFormula) || ('1d20' + ((ctx && ctx.attackBonus) || '+0'))).trim();
+  const roll = _rollQuickWeaponFormulaChunks(formula);
+  if (!roll) { showToast(`Could not roll ${(ctx && ctx.name) || 'weapon'} attack: missing formula`); return null; }
+  postQuickWeaponRollResult(ctx || {}, roll, 'attack');
+  return roll;
+}
+
+function rollQuickWeaponDamage(ctx) {
+  const formula = String((ctx && ctx.damageFormula) || '').trim();
+  if (!formula) { showToast(`Could not roll ${(ctx && ctx.name) || 'weapon'} damage: missing formula`); return null; }
+  const roll = _rollQuickWeaponFormulaChunks(formula);
+  if (!roll) { showToast(`Could not roll ${(ctx && ctx.name) || 'weapon'} damage: missing formula`); return null; }
+  postQuickWeaponRollResult(ctx || {}, roll, 'damage');
+  return roll;
+}
+
+function rollQuickWeaponCriticalDamage(ctx) {
+  const formula = String((ctx && ctx.criticalDamageFormula) || _combatQuickCriticalFormula((ctx && ctx.damageFormula) || '')).trim();
+  if (!formula) { showToast(`Could not roll ${(ctx && ctx.name) || 'weapon'} critical damage: missing formula`); return null; }
+  const roll = _rollQuickWeaponFormulaChunks(formula);
+  if (!roll) { showToast(`Could not roll ${(ctx && ctx.name) || 'weapon'} critical damage: missing formula`); return null; }
+  postQuickWeaponRollResult(ctx || {}, roll, 'critical-damage');
+  return roll;
+}
+window.rollQuickWeaponAttack = rollQuickWeaponAttack;
+window.rollQuickWeaponDamage = rollQuickWeaponDamage;
+window.rollQuickWeaponCriticalDamage = rollQuickWeaponCriticalDamage;
+
 function performCombatQuickCastSpell(spellId, preferredLevel) {
   const spell = findCombatSpell(spellId);
   if (!spell) { showToast('Spell not found.'); return; }

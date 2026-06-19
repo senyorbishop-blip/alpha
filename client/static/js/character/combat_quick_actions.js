@@ -506,6 +506,65 @@
     }
   }
 
+
+  function _signedBonus(value) {
+    const n = parseInt(String(value == null ? '' : value).replace(/[^-\d]/g, ''), 10);
+    if (!Number.isFinite(n)) return '+0';
+    return n >= 0 ? ('+' + n) : String(n);
+  }
+
+  function _criticalFormula(formula) {
+    return String(formula || '').replace(/(\d+)d(\d+)/gi, function (_m, qty, die) {
+      return String(Math.max(1, parseInt(qty, 10) || 1) * 2) + 'd' + die;
+    });
+  }
+
+  function normalizeWeaponModalContext(card, actionOrId) {
+    const source = (card && typeof card === 'object') ? card : {};
+    const original = (actionOrId && typeof actionOrId === 'object') ? actionOrId : {};
+    const damageFormula = normalizeWeaponDamage(source, source);
+    const damageType = normalizeWeaponDamageType(source, source);
+    const versatileDamageFormula = _firstText(source.versatile_damage_formula, source.versatileDamage, source.versatile_damage);
+    const attackBonus = _firstText(source.attack_bonus, source.attackBonus, '+0');
+    const charges = _formatCharges(source);
+    const usedThisTurn = !!(original.quickBarUsedThisTurn || source.quickBarUsedThisTurn);
+    const actorName = _firstText(source.actorName, global._charSheet && global._charSheet.name, global.NAME, 'Character');
+    let targetName = 'No target';
+    try {
+      const rollContext = global.getSafeRollContext && global.getSafeRollContext();
+      if (rollContext && rollContext.targetName) targetName = rollContext.targetName;
+    } catch (_) {}
+    return {
+      id: _firstText(source.id, source.itemId, source.actionId, source.name, 'weapon'),
+      name: _firstText(source.name, source.displayName, 'Weapon'),
+      attackBonus: attackBonus,
+      attackFormula: '1d20' + _signedBonus(attackBonus),
+      damageFormula: damageFormula,
+      damageType: damageType,
+      criticalDamageFormula: _criticalFormula(damageFormula),
+      versatileDamageFormula: versatileDamageFormula,
+      range: _firstText(source.range, source.reach, ''),
+      actionCost: _firstText(source.cost, source.actionCost, source.economy && _safeArray(source.economy).join(', '), 'Attack action'),
+      properties: _safeArray(source.properties).length ? _safeArray(source.properties) : _safeArray(source.badges),
+      charges: charges,
+      usedThisTurn: usedThisTurn,
+      sourceItem: _firstText(source.source_item_name, source.itemName, source.name, 'Weapon'),
+      actorName: actorName,
+      targetName: targetName,
+      sourceCard: source
+    };
+  }
+
+  function _ctxForMode(ctx, mode) {
+    if (mode === 'versatile' && ctx.versatileDamageFormula) {
+      const copy = Object.assign({}, ctx);
+      copy.damageFormula = ctx.versatileDamageFormula;
+      copy.criticalDamageFormula = _criticalFormula(copy.damageFormula);
+      return copy;
+    }
+    return ctx;
+  }
+
   function openWeaponAction(actionOrId) {
     const card = _findWeapon(actionOrId);
     if (!card) return false;
@@ -514,23 +573,24 @@
     // "Used this turn" only means the action may be spent — it must never block
     // opening the modal. The attack button is disabled with a visible reason,
     // but damage/critical rolls and details remain available.
-    const usedThisTurn = !!((actionOrId && typeof actionOrId === 'object' && actionOrId.quickBarUsedThisTurn) || card.quickBarUsedThisTurn);
-    const displayDamageFormula = normalizeWeaponDamage(card, card);
-    const displayDamageType = normalizeWeaponDamageType(card, card);
-    const hasVersatile = !!_firstText(card.versatile_damage_formula, card.versatileDamage, card.versatile_damage);
-    const properties = _safeArray(card.properties).join(', ');
+    const weaponContext = normalizeWeaponModalContext(card, actionOrId);
+    const usedThisTurn = weaponContext.usedThisTurn;
+    const displayDamageFormula = weaponContext.damageFormula;
+    const displayDamageType = weaponContext.damageType;
+    const hasVersatile = !!weaponContext.versatileDamageFormula;
+    const properties = weaponContext.properties.join(', ');
     const relatedMagicActions = _relatedMagicActions(card);
     const rows = [
-      ['Attack Bonus', _firstText(card.attack_bonus, card.attackBonus, '—')],
+      ['Attack Bonus', weaponContext.attackBonus || '—'],
       ['Damage', displayDamageFormula || '—'],
       ['Damage Type', displayDamageType || '—'],
       ['Ability / Proficiency', _firstText(card.ability_label, card.ability, '') + (_firstText(card.proficiency_label, card.proficient === false ? 'Not proficient' : 'Proficient') ? (' • ' + _firstText(card.proficiency_label, card.proficient === false ? 'Not proficient' : 'Proficient')) : '')],
-      ['Range / Reach', _firstText(card.range, card.reach, '—')],
-      ['Action Cost', _firstText(card.cost, card.actionCost, card.economy && _safeArray(card.economy).join(', '), 'Attack action')],
+      ['Range / Reach', weaponContext.range || '—'],
+      ['Action Cost', weaponContext.actionCost || 'Attack action'],
       ['Properties', properties || _safeArray(card.badges).join(', ') || '—'],
-      ['Source Item', _firstText(card.source_item_name, card.itemName, card.name, '—')],
-      ['Charges', _formatCharges(card)],
-      ['Versatile', _firstText(card.versatile_damage_formula, card.versatileDamage, card.versatile_damage, '—')],
+      ['Source Item', weaponContext.sourceItem || '—'],
+      ['Charges', weaponContext.charges],
+      ['Versatile', weaponContext.versatileDamageFormula || '—'],
       ['Used This Turn', usedThisTurn ? 'Yes' : 'No'],
     ];
     const overlay = document.createElement('div');
@@ -559,12 +619,12 @@
       }
       if (ev.target.closest('[data-cqa-weapon-attack]')) {
         if (usedThisTurn) return;
-        try { safeWeaponAttack(Object.assign({}, card, { damage_formula: displayDamageFormula, damage_type: displayDamageType }), mode); closeModal(); }
+        try { rollQuickWeaponAttack(_ctxForMode(weaponContext, mode)); closeModal(); }
         catch (err) { console.error('[CombatQuickActions] Could not dispatch weapon attack.', { itemName: card.name, actionName: card.name, normalizedAttackBonus: _firstText(card.attack_bonus, card.attackBonus), normalizedDamageFormula: displayDamageFormula, normalizedDamageType: displayDamageType, context: global.getSafeRollContext && global.getSafeRollContext(), error: err }); if (typeof global.showToast === 'function') global.showToast('Could not dispatch weapon roll: missing session context'); }
         return;
       }
-      if (ev.target.closest('[data-cqa-weapon-damage]')) { try { safeWeaponDamage(Object.assign({}, card, { damage_formula: displayDamageFormula, damage_type: displayDamageType }), mode, false); } catch (err) { console.error('[CombatQuickActions] Could not roll weapon damage.', { itemName: card.name, actionName: card.name, normalizedAttackBonus: _firstText(card.attack_bonus, card.attackBonus), normalizedDamageFormula: displayDamageFormula, normalizedDamageType: displayDamageType, context: global.getSafeRollContext && global.getSafeRollContext(), error: err }); if (typeof global.showToast === 'function') global.showToast('Could not roll ' + (card.name || 'weapon') + ' damage: missing roll formula'); } return; }
-      if (ev.target.closest('[data-cqa-weapon-crit]')) { try { safeWeaponDamage(Object.assign({}, card, { damage_formula: displayDamageFormula, damage_type: displayDamageType }), mode, true); } catch (err) { console.error('[CombatQuickActions] Could not roll critical weapon damage.', { itemName: card.name, actionName: card.name, normalizedAttackBonus: _firstText(card.attack_bonus, card.attackBonus), normalizedDamageFormula: displayDamageFormula, normalizedDamageType: displayDamageType, context: global.getSafeRollContext && global.getSafeRollContext(), error: err }); if (typeof global.showToast === 'function') global.showToast('Could not roll ' + (card.name || 'weapon') + ' critical damage: missing roll formula'); } return; }
+      if (ev.target.closest('[data-cqa-weapon-damage]')) { try { rollQuickWeaponDamage(_ctxForMode(weaponContext, mode)); } catch (err) { console.error('[CombatQuickActions] Could not roll weapon damage.', { itemName: card.name, actionName: card.name, normalizedAttackBonus: _firstText(card.attack_bonus, card.attackBonus), normalizedDamageFormula: displayDamageFormula, normalizedDamageType: displayDamageType, context: global.getSafeRollContext && global.getSafeRollContext(), error: err }); if (typeof global.showToast === 'function') global.showToast('Could not roll ' + (card.name || 'weapon') + ' damage: missing roll formula'); } return; }
+      if (ev.target.closest('[data-cqa-weapon-crit]')) { try { rollQuickWeaponCriticalDamage(_ctxForMode(weaponContext, mode)); } catch (err) { console.error('[CombatQuickActions] Could not roll critical weapon damage.', { itemName: card.name, actionName: card.name, normalizedAttackBonus: _firstText(card.attack_bonus, card.attackBonus), normalizedDamageFormula: displayDamageFormula, normalizedDamageType: displayDamageType, context: global.getSafeRollContext && global.getSafeRollContext(), error: err }); if (typeof global.showToast === 'function') global.showToast('Could not roll ' + (card.name || 'weapon') + ' critical damage: missing roll formula'); } return; }
     });
     document.body.appendChild(overlay);
     var panel = overlay.querySelector('.cqa-panel');
@@ -586,11 +646,17 @@
   // silent no-op when the play.html bridge has not yet loaded. Accepts a full
   // weapon/action object, an id, or a name — combatQuickWeaponAttack and
   // combatQuickRollWeaponDamage resolve whichever was passed via findCombatWeapon.
-  function safeWeaponAttack(cardOrIdOrName, mode) {
-    if (_requireBridge('combatQuickWeaponAttack')) global.combatQuickWeaponAttack(cardOrIdOrName, mode);
+  function rollQuickWeaponAttack(ctx) {
+    if (_requireBridge('rollQuickWeaponAttack')) return global.rollQuickWeaponAttack(ctx);
+    return false;
   }
-  function safeWeaponDamage(cardOrIdOrName, mode, critical) {
-    if (_requireBridge('combatQuickRollWeaponDamage')) global.combatQuickRollWeaponDamage(cardOrIdOrName, mode, critical);
+  function rollQuickWeaponDamage(ctx) {
+    if (_requireBridge('rollQuickWeaponDamage')) return global.rollQuickWeaponDamage(ctx);
+    return false;
+  }
+  function rollQuickWeaponCriticalDamage(ctx) {
+    if (_requireBridge('rollQuickWeaponCriticalDamage')) return global.rollQuickWeaponCriticalDamage(ctx);
+    return false;
   }
   function safeCastSpell(spellOrIdOrName, castLevel) {
     if (_requireBridge('combatQuickCastSpell')) global.combatQuickCastSpell(spellOrIdOrName, castLevel);
@@ -611,7 +677,7 @@
     });
   });
 
-  global.CombatQuickActions = { openSpellAction, openWeaponAction, refreshSpellModalDamage, refreshSpellModalSlots, closeModal, __test: { spellDamagePreview: _spellDamagePreview, normalizeWeaponDamage: normalizeWeaponDamage } };
+  global.CombatQuickActions = { openSpellAction, openWeaponAction, refreshSpellModalDamage, refreshSpellModalSlots, closeModal, __test: { spellDamagePreview: _spellDamagePreview, normalizeWeaponDamage: normalizeWeaponDamage, normalizeWeaponModalContext: normalizeWeaponModalContext } };
 
   // Explicit bridge so the quick bar can always reach the weapon modal, even if
   // play.html's own copy of this bridge has not (re)attached for any reason.

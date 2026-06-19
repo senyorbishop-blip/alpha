@@ -586,7 +586,7 @@
       const action = _findAction(key);
       const actionName = _firstText(action && action.name, key, 'Quick action');
       const actionSource = _firstText(action && action.source, kind);
-      if (action && /^(weapon|equip_only|system_unarmed|attack)$/i.test(actionSource)) {
+      if (action && (/^(weapon|equip_only|system_unarmed|attack)$/i.test(actionSource) || (_firstText(action.attack_bonus, action.attackBonus, action.quickBarAttackText) && _firstText(action.damage_formula, action.damageFormula, action.damage, action.quickBarDamageText)))) {
         if (typeof global.openCombatQuickBarWeaponAction === 'function') {
           global.openCombatQuickBarWeaponAction(action);
         } else {
