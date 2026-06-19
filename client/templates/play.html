@@ -11877,7 +11877,7 @@ window.requestCombatFogSyncDebounced = requestCombatFogSyncDebounced;
 let _combatTargeting = false;
 let _playerActionsCollapsed = false;
 let _playerActionsDensity = 'comfortable';
-let _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, usage: {} };
+let _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, bonus_action_converted_actions: 0, usage: {}, encounter_id: _combat.encounter_id || '' };
 let _markTargeting = null; // null or { markKind: 'hunters_mark'|'hex' }
 let _monsterQuickCreatureCache = {};
 let _monsterQuickPendingAction = null;
@@ -32782,6 +32782,10 @@ function handleLegacyMessage(msg) {
         }
         break;
       }
+    case 'combat_initiative_rolled': {
+        applyCombatInitiativeRolled(p);
+        break;
+      }
     case 'combat_attack_result': {
         // Show attack/spell/miss animation on the target token for all clients.
         _showCombatAttackResult(p);
@@ -44558,12 +44562,17 @@ function combatApplyState(state) {
     selected_target_id: state.selected_target_id || '',
     pending_attack:     state.pending_attack || null,
     revision:           incomingRevision ?? localRevision ?? 0,
+    encounter_id:       state.encounter_id || _combat.encounter_id || '',
   };
   _combatRound = _combat.round;
   const nextTurnKey = _playerActionTurnKey();
-  if (!nextTurnKey || nextTurnKey !== prevTurnKey) {
-    _playerActionEconomyRuntime.action_surge_armed = false;
-    _playerActionEconomyRuntime.bonus_action_converted_actions = 0;
+  const encounterChanged = !!(state.encounter_id && _playerActionEconomyRuntime.encounter_id && String(state.encounter_id) !== String(_playerActionEconomyRuntime.encounter_id));
+  const combatJustStarted = !!(_combat.active && !prevActive);
+  if (encounterChanged || combatJustStarted || !nextTurnKey || nextTurnKey !== prevTurnKey) {
+    _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, bonus_action_converted_actions: 0, usage: {}, encounter_id: _combat.encounter_id || '' };
+    if (typeof _charSheet !== 'undefined' && _charSheet && _charSheet.actionEconomyRuntime) _charSheet.actionEconomyRuntime = null;
+  } else {
+    _playerActionEconomyRuntime.encounter_id = _combat.encounter_id || _playerActionEconomyRuntime.encounter_id || '';
   }
   refreshRightPanelContextUI();
   if (typeof renderPartyStatusPanel === 'function') renderPartyStatusPanel();
@@ -44572,7 +44581,7 @@ function combatApplyState(state) {
   // Reset inspect check results when combat ends (new encounter = fresh attempts)
   if (!_combat.active && prevActive) {
     _resetInspectResults();
-    _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, usage: {} };
+    _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, bonus_action_converted_actions: 0, usage: {}, encounter_id: _combat.encounter_id || '' };
   }
   renderCombat();
   if (_combat.active && (_combat.turn !== prevTurn || !prevActive)) {
@@ -45985,7 +45994,7 @@ function _playerActionTurnKey() {
   if (!current) return '';
   const round = Math.max(1, Number(_combat?.round || _combatRound || 1));
   const turn = Math.max(0, Number(_combat?.turn || 0));
-  return `${SESSION_ID || 'session'}:${round}:${turn}:${String(current.token_id || 'none')}`;
+  return `${SESSION_ID || 'session'}:${_combat?.encounter_id || 'encounter'}:${round}:${turn}:${String(current.token_id || 'none')}`;
 }
 
 function _readPersistedActionEconomyState(turnKey) {
@@ -46038,7 +46047,7 @@ function buildTurnEconomyState(character = _charSheet, combatState = _combat, tu
   const tokenId = String(current?.token_id || _getMyOwnedToken?.()?.id || character?.token_id || character?.id || 'none');
   const round = Math.max(1, Number(combat.round || _combatRound || 1));
   const turn = Math.max(0, Number(combat.turn || 0));
-  const turnKey = `${SESSION_ID || 'session'}:${round}:${turn}:${tokenId}`;
+  const turnKey = `${SESSION_ID || 'session'}:${combat.encounter_id || _combat?.encounter_id || 'encounter'}:${round}:${turn}:${tokenId}`;
   const moveState = (combat.movement && String(combat.movement.token_id || '') === tokenId) ? combat.movement : null;
   const persisted = _readPersistedActionEconomyState(turnKey) || {};
   const myToken = tokens[tokenId] || _getMyOwnedToken?.() || null;
@@ -47131,7 +47140,9 @@ function combatStart() {
       owner_id:   t.owner_id || null,
     };
   });
-  _combat = { active: true, turn: 0, combatants: coms, round: 1 };
+  _combat = { active: true, turn: 0, combatants: coms, round: 1, encounter_id: (window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`) };
+  _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, bonus_action_converted_actions: 0, usage: {}, encounter_id: _combat.encounter_id };
+  if (typeof _charSheet !== 'undefined' && _charSheet && _charSheet.actionEconomyRuntime) _charSheet.actionEconomyRuntime = null;
   refreshRightPanelContextUI();
   _combatRound = 1;
   sendWS({ type: 'combat_update', payload: { ..._combat, round: 1 } });
@@ -47213,6 +47224,24 @@ function combatRollInitiative(combatantId) {
     renderCombat();
     showToast('Initiative roll failed. Please try again.');
   });
+}
+
+function applyCombatInitiativeRolled(payload) {
+  if (!payload || typeof payload !== 'object' || !_combat || !Array.isArray(_combat.combatants)) return;
+  const combatantId = String(payload.combatant_id || '').trim();
+  const tokenId = String(payload.token_id || '').trim();
+  const initiative = parseInt(payload.initiative, 10);
+  if (!Number.isFinite(initiative)) return;
+  const row = _combat.combatants.find(c => (combatantId && String(c.id || '') === combatantId) || (tokenId && String(c.token_id || '') === tokenId));
+  if (!row) return;
+  row.initiative = initiative;
+  row.roll = parseInt(payload.roll, 10) || row.roll;
+  row.modifier = parseInt(payload.modifier, 10) || 0;
+  delete row._initiativeRollPending;
+  if (payload.encounter_id) _combat.encounter_id = payload.encounter_id;
+  if (Number.isFinite(payload.revision)) _combat.revision = Math.max(Number(_combat.revision) || 0, Number(payload.revision));
+  _sortCombatants();
+  renderCombat();
 }
 
 function _formatInitiativeCellValue(combatant) {
