@@ -11796,8 +11796,27 @@ const _PING_STACK_SOFT_CAP = 16;
 const _PING_STACK_HARD_CAP = 28;
 
 // Combat state (declared early to avoid TDZ errors in drawToken / canMoveToken)
-let _combat = { active: false, turn: 0, combatants: [], movement: null, selected_target_id: '', pending_attack: null };
+let _combat = { active: false, turn: 0, combatants: [], movement: null, selected_target_id: '', pending_attack: null, suspended_combatants: [] };
 let _combatRound = 1;
+let _combatFogSyncTimer = null;
+let _combatFogSyncLastKey = '';
+function _combatFogVisibleNpcHash() {
+  const ids = Object.values(tokens || {})
+    .filter(t => t && !t.owner_id && !t.hidden && !t.staged && ['npc','monster','hostile','creature','enemy'].includes(String(t.tokenType || t.token_type || '').toLowerCase()))
+    .map(t => String(t.id || '')).filter(Boolean).sort();
+  return ids.join('|');
+}
+window.requestCombatFogSync = function requestCombatFogSync(reason = 'client') {
+  if (!_combat?.active) return;
+  const key = `${currentMapContext()}::${reason}::${_combatFogVisibleNpcHash()}`;
+  if (key === _combatFogSyncLastKey && reason === 'combat_state') return;
+  _combatFogSyncLastKey = key;
+  if (_combatFogSyncTimer) clearTimeout(_combatFogSyncTimer);
+  _combatFogSyncTimer = setTimeout(() => {
+    _combatFogSyncTimer = null;
+    sendWS({ type: 'combat_fog_sync_request', payload: { map_context: currentMapContext(), reason } });
+  }, 180);
+};
 let _combatTargeting = false;
 let _playerActionsCollapsed = false;
 let _playerActionsDensity = 'comfortable';
@@ -32580,6 +32599,7 @@ function handleLegacyMessage(msg) {
         tokens[p.token_id].x = p.x;
         tokens[p.token_id].y = p.y;
         _cacheTokenByContext(tokens[p.token_id]);
+        if (typeof window.requestCombatFogSync === 'function') window.requestCombatFogSync('token_moved');
       } else if (_stagingTokens[p.token_id]) {
         _stagingTokens[p.token_id].x = p.x;
         _stagingTokens[p.token_id].y = p.y;
@@ -43677,14 +43697,17 @@ function fogPaintAt(wx, wy) {
 function fogFlushBatch() {
   if (window.AppFog && typeof window.AppFog.fogFlushBatch === 'function') {
     const state = __createFogModuleState();
+    const hadDirty = state.fogDirtyBatch && state.fogDirtyBatch.size > 0;
     window.AppFog.fogFlushBatch(state, __createFogModuleEnv());
     __applyFogModuleState(state);
+    if (hadDirty && typeof window.requestCombatFogSync === 'function') window.requestCombatFogSync('fog_changed');
     return;
   }
   if (_fogDirtyBatch.size === 0) return;
   const cells = Array.from(_fogDirtyBatch);
   _fogDirtyBatch.clear();
   sendWS({ type: 'fog_paint', payload: { reveal: fogReveal, cells, map_ctx: fogMapCtx } });
+  if (typeof window.requestCombatFogSync === 'function') window.requestCombatFogSync('fog_changed');
 }
 
 function fogToggle(enabled) {
@@ -44111,6 +44134,9 @@ function combatApplyState(state) {
     active:             !!state.active,
     turn:               state.turn      ?? 0,
     combatants:         mergedCombatants,
+    suspended_combatants: Array.isArray(state.suspended_combatants) ? state.suspended_combatants : [],
+    fog_suspended_combatants: Array.isArray(state.fog_suspended_combatants) ? state.fog_suspended_combatants : [],
+    hidden_suspended_combatants: Array.isArray(state.hidden_suspended_combatants) ? state.hidden_suspended_combatants : [],
     round:              state.round      ?? 1,
     movement:           state.movement   ?? null,
     selected_target_id: state.selected_target_id || '',

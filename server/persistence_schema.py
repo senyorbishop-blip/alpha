@@ -71,10 +71,16 @@ def _clamp_float(value: Any, default: float, minimum: float, maximum: float) -> 
 def normalize_combat_state(raw: Any) -> dict:
     src = _as_dict(raw)
     combatants = _as_list(src.get("combatants"))
+    suspended = _as_list(src.get("suspended_combatants"))
+    fog_suspended = _as_list(src.get("fog_suspended_combatants"))
+    hidden_suspended = _as_list(src.get("hidden_suspended_combatants"))
     return {
         "active": bool(src.get("active", False)),
         "turn": int(src.get("turn", 0) or 0),
         "combatants": combatants,
+        "suspended_combatants": suspended,
+        "fog_suspended_combatants": fog_suspended,
+        "hidden_suspended_combatants": hidden_suspended,
         "round": int(src.get("round", 1) or 1) if src.get("round") is not None else 1,
         "movement": _as_dict(src.get("movement")),
         "selected_target_id": src.get("selected_target_id"),

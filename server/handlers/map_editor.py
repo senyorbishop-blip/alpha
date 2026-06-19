@@ -18,6 +18,7 @@ from server.handlers.common import (
     _broadcast_token_state_sync,
     _refresh_map_documents,
 )
+from server.handlers.combat import run_combat_fog_sync
 
 
 def _get_editor_prop(session: Session, map_ctx: str, prop_id: str):
@@ -1115,6 +1116,7 @@ async def handle_fog_toggle(payload: dict, session: Session, user: User):
             'fog_cells': entry['cells'],
         }
     }, map_ctx)
+    await run_combat_fog_sync(session, reason="fog_toggle", map_context=map_ctx)
     await save_campaign_async(session)
 
 
@@ -1148,6 +1150,7 @@ async def handle_fog_paint(payload: dict, session: Session, user: User):
             'cells': cells,
         }
     }, map_ctx)
+    await run_combat_fog_sync(session, reason="fog_paint", map_context=map_ctx)
     await save_campaign_async(session)
 
 

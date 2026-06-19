@@ -298,11 +298,18 @@ def _sync_combatant_token_state(session: Session, token, *, previous_hp: int | N
     return changed
 
 
-def _broadcast_combat(session):
-    return manager.broadcast(session.id, {
-        "type": "combat_state",
-        "payload": session.combat,
-    })
+async def _broadcast_combat(session):
+    connections = manager.get_session_connections(session.id)
+    dead_payload = None
+    for uid in list(connections.keys()):
+        user = (getattr(session, "users", {}) or {}).get(uid)
+        payload = session.combat
+        if not user or getattr(user, "role", "") != "dm":
+            payload = dict(session.combat or {})
+            payload.pop("suspended_combatants", None)
+            payload.pop("fog_suspended_combatants", None)
+            payload.pop("hidden_suspended_combatants", None)
+        await manager.send_to(session.id, uid, {"type": "combat_state", "payload": payload})
 
 
 # ---------------------------------------------------------------------------

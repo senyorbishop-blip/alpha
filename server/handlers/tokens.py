@@ -26,6 +26,7 @@ from server.handlers.combat import (
     _broadcast_combat_move_state,
     _send_token_move_denied,
     _can_act_current_turn,
+    run_combat_fog_sync,
 )
 from server.handlers.hazards import _process_hazard_triggers_for_token
 from server.handlers.content import handle_discovery_trigger
@@ -471,6 +472,7 @@ async def handle_token_move(payload: dict, session: Session, user: User):
     scene_triggered = await _process_scene_triggers_for_token(session, token, user, old_x=old_x, old_y=old_y)
     if scene_triggered:
         await save_campaign_async(session)
+    await run_combat_fog_sync(session, reason="token_moved", map_context=getattr(token, "map_context", "world"))
     if movement_updated:
         await _broadcast_combat_move_state(session)
 
@@ -557,6 +559,7 @@ async def handle_token_create(payload: dict, session: Session, user: User):
         token,
     )
     await _broadcast_token_state_sync(session)
+    await run_combat_fog_sync(session, reason="token_placed", map_context=getattr(token, "map_context", "world"))
     await save_campaign_async(session)
 
 
@@ -824,6 +827,7 @@ async def handle_token_send_to_staging(payload: dict, session: Session, user: Us
         "payload": {"token": build_token_runtime_payload(session, token)}
     })
     await _broadcast_token_state_sync(session)
+    await run_combat_fog_sync(session, reason="token_staged", map_context=getattr(token, "map_context", "world"))
     await save_campaign_async(session)
 
 
@@ -837,6 +841,7 @@ async def handle_toggle_hidden(payload: dict, session: Session, user: User):
         return
     token.hidden = bool(payload.get('hidden', not token.hidden))
     await _broadcast_token_visibility(session, token, "token_hidden_changed")
+    await run_combat_fog_sync(session, reason="token_hidden_changed", map_context=getattr(token, "map_context", "world"))
     await save_campaign_async(session)
 
 

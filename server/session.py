@@ -1071,6 +1071,12 @@ class Session:
                 for tid, t in self.tokens.items()
                 if (not t.hidden) and (str(getattr(t, "map_context", "world") or "world") in visible_contexts)
             }
+            if isinstance(d.get("combat"), dict):
+                combat_public = dict(d["combat"] or {})
+                combat_public.pop("suspended_combatants", None)
+                combat_public.pop("fog_suspended_combatants", None)
+                combat_public.pop("hidden_suspended_combatants", None)
+                d["combat"] = combat_public
             d["journal_entries"] = [entry for entry in (self.journal_entries or []) if entry.get("shared")]
             d["library_entries"] = []
             d["item_library_entries"] = list(self.item_library_entries or [])
