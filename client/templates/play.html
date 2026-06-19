@@ -12201,6 +12201,11 @@ let _dmMapContext = (_runtimeStore && _runtimeStore.get) ? (_runtimeStore.get('m
 let _mapNavVersion = (_runtimeStore && _runtimeStore.get) ? (_runtimeStore.get('map.navVersion', 0)) : 0;
 let _clientNavIntent = (_runtimeStore && _runtimeStore.get) ? (_runtimeStore.get('map.clientNavIntent', 0)) : 0;
 let _clientRuntimeError = '';
+let isApplyingRemoteState = false;
+let _remoteStateApplyDepth = 0;
+let _remoteStateTypeStack = [];
+let _renderFramePending = false;
+let _mapImageLoadingUrl = null;
 
 function ensureClientRuntimeBanner() {
   let el = document.getElementById('client-runtime-banner');
@@ -12244,6 +12249,24 @@ function safeClientCall(label, fn, fallback = null) {
     reportClientRuntimeError(label, err);
     return fallback;
   }
+}
+function beginRemoteStateApply(type) {
+  _remoteStateApplyDepth += 1;
+  isApplyingRemoteState = _remoteStateApplyDepth > 0;
+  _remoteStateTypeStack.push(String(type || 'unknown'));
+}
+function endRemoteStateApply() {
+  _remoteStateTypeStack.pop();
+  _remoteStateApplyDepth = Math.max(0, _remoteStateApplyDepth - 1);
+  isApplyingRemoteState = _remoteStateApplyDepth > 0;
+}
+function requestRenderFrame(reason) {
+  if (_renderFramePending) return;
+  _renderFramePending = true;
+  requestAnimationFrame(() => {
+    _renderFramePending = false;
+    safeClientCall(reason || 'scheduled render', () => drawFrame());
+  });
 }
 window.addEventListener('error', (ev) => {
   reportClientRuntimeError('Browser error', ev.error || ev.message || 'Unknown error');
@@ -18071,6 +18094,7 @@ function drawLoop(ts) {
 }
 
 function drawFrame() {
+  if (_renderFramePending) _renderFramePending = false;
   const W = canvas.width, H = canvas.height;
   safeClientCall('refreshVisionPreviewUi', () => refreshVisionPreviewUi());
   safeClientCall('refreshBigScreenDisplayOverlay', () => refreshBigScreenDisplayOverlay());
@@ -23782,12 +23806,14 @@ function _buildBlankMapImage(url) {
 }
 
 function loadMapImage(url, force) {
-  if (!force && mapImageUrl === url && mapImage) return;
+  if (mapImageUrl === url && (mapImage || _mapImageLoadingUrl === url) && force !== 'reload') return;
   mapImageUrl = url;
   mapImage = null;
+  _mapImageLoadingUrl = url;
   const loadToken = ++mapImageLoadToken;
   if (String(url || '').startsWith('__blank__:')) {
     _buildBlankMapImage(url);
+    _mapImageLoadingUrl = null;
     updateMapPreviewUI(url);
     return;
   }
@@ -23796,16 +23822,19 @@ function loadMapImage(url, force) {
   img.onload = () => {
     if (loadToken !== mapImageLoadToken || mapImageUrl !== requestedUrl) return;
     mapImage = img;
+    _mapImageLoadingUrl = null;
+    requestRenderFrame('map image loaded');
     console.info('[Map] image loaded', requestedUrl, img.naturalWidth, img.naturalHeight);
     showToast('Map image loaded.');
   };
   img.onerror = () => {
     if (loadToken !== mapImageLoadToken || mapImageUrl !== requestedUrl) return;
     mapImage = null;
+    _mapImageLoadingUrl = null;
     console.error('Map image failed to load:', requestedUrl);
     showToast('Map failed to load: ' + requestedUrl);
   };
-  img.src = requestedUrl + '?t=' + Date.now();
+  img.src = requestedUrl;
   updateMapPreviewUI(requestedUrl);
 }
 
@@ -30865,6 +30894,11 @@ function renderHazardZones() {
 
 function sendWS(msg) {
   if (!(window.AppWS && typeof window.AppWS.send === 'function')) return;
+  if (isApplyingRemoteState) {
+    const type = String(msg?.type || '');
+    console.warn('[WS] Suppressed send while applying remote state', { type, applying: _remoteStateTypeStack.slice() });
+    return false;
+  }
   return window.AppWS.send(msg);
 }
 
@@ -31725,6 +31759,8 @@ function loadSavedDiscoveries(cards) {
 }
 
 function handleLegacyMessage(msg) {
+  beginRemoteStateApply(msg && msg.type);
+  try {
   if (window.AppMessageDispatch && typeof window.AppMessageDispatch.handleLegacyDomainMessage === 'function') {
     if (window.AppMessageDispatch.handleLegacyDomainMessage(msg, __createLegacyMessageShellEnv())) return;
   }
@@ -31933,7 +31969,7 @@ function handleLegacyMessage(msg) {
           Number(ws.wind_speed ?? 0.3)
         );
       }
-      drawFrame();
+      requestRenderFrame('state_sync render');
       applyPlayerInventoryState(p);
       // Apply camp/rest state for reconnecting users
       if (p.camp_rest) {
@@ -33656,6 +33692,9 @@ function handleLegacyMessage(msg) {
       }
       break;
     }
+  }
+  } finally {
+    endRemoteStateApply();
   }
 }
 
@@ -44253,7 +44292,7 @@ function fogApplyState(p) {
   }
   // Load (or reload) fog for current map
   fogLoadMap(ctx);
-  drawFrame();
+  requestRenderFrame('fog state render');
 }
 
 

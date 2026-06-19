@@ -4147,3 +4147,40 @@ def test_quick_action_bridges_are_guarded_and_non_recursive():
     assert "function performOpenCombatQuickBarWeaponAction(action)" in actions
     assert "global.openCombatQuickBarWeaponAction = function openCombatQuickBarWeaponActionBridge" in actions
     assert "guardBridge('openCombatQuickBarWeaponAction'" in actions
+
+
+def test_player_state_sync_has_remote_apply_and_send_suppression_guards():
+    """Incoming websocket state must not echo unchanged state back to the server."""
+    content = open(os.path.join(PROJECT_ROOT, "client/templates/play.html"), encoding="utf-8").read()
+    assert "let isApplyingRemoteState = false;" in content
+    assert "function beginRemoteStateApply(type)" in content
+    assert "function endRemoteStateApply()" in content
+    assert "beginRemoteStateApply(msg && msg.type);" in content
+    assert "endRemoteStateApply();" in content
+    assert "if (isApplyingRemoteState)" in content
+    assert "Suppressed send while applying remote state" in content
+
+
+def test_message_dispatch_has_stack_overflow_diagnostics_and_depth_guard():
+    """Client dispatch should keep a short breadcrumb trail and block recursive floods."""
+    content = open(os.path.join(PROJECT_ROOT, "client/static/js/core/message_dispatch.js"), encoding="utf-8").read()
+    assert "const recentMessageTypes = [];" in content
+    assert "if (recentMessageTypes.length > 30)" in content
+    assert "let dispatchDepth = 0;" in content
+    assert "if (dispatchDepth >= 20)" in content
+    assert "nested dispatch depth exceeded" in content
+    assert "Maximum call stack size exceeded" in content
+    assert "getDispatchDiagnostics" in content
+
+
+def test_player_map_render_and_image_loading_are_coalesced():
+    """Remote sync and map image load should coalesce renders and avoid resetting image src repeatedly."""
+    content = open(os.path.join(PROJECT_ROOT, "client/templates/play.html"), encoding="utf-8").read()
+    assert "let _renderFramePending = false;" in content
+    assert "function requestRenderFrame(reason)" in content
+    assert "requestRenderFrame('state_sync render')" in content
+    assert "requestRenderFrame('fog state render')" in content
+    assert "let _mapImageLoadingUrl = null;" in content
+    assert "mapImageUrl === url && (mapImage || _mapImageLoadingUrl === url)" in content
+    assert "img.src = requestedUrl;" in content
+    assert "requestedUrl + '?t='" not in content
