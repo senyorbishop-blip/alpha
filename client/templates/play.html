@@ -44245,6 +44245,14 @@ function removeSpellAt(wx, wy) {
 
 function combatApplyState(state) {
   if (!state || typeof state !== 'object') return;
+  // Ignore only genuinely stale broadcasts (lower revision than what we already
+  // applied). Missing revision, equal revision, or newer revision always apply —
+  // never require a refresh to see another client's initiative roll.
+  const incomingRevision = Number.isFinite(state.revision) ? state.revision : null;
+  const localRevision = Number.isFinite(_combat.revision) ? _combat.revision : null;
+  if (incomingRevision !== null && localRevision !== null && incomingRevision < localRevision) {
+    return;
+  }
   const prevTurn   = _combat.turn;
   const prevActive = _combat.active;
   const prevTurnKey = _playerActionTurnKey();
@@ -44275,6 +44283,7 @@ function combatApplyState(state) {
     movement:           state.movement   ?? null,
     selected_target_id: state.selected_target_id || '',
     pending_attack:     state.pending_attack || null,
+    revision:           incomingRevision ?? localRevision ?? 0,
   };
   _combatRound = _combat.round;
   const nextTurnKey = _playerActionTurnKey();

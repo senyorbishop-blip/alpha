@@ -16,6 +16,15 @@ from server.handlers.common import (
 from server.movement import resolve_movement, normalize_movement_mode
 
 
+def _bump_combat_revision(session: Session, reason: str) -> None:
+    """Monotonically increment combat.revision so clients can detect stale combat_state payloads."""
+    combat = session.combat or {}
+    combat["revision"] = _safe_int(combat.get("revision"), 0, minimum=0, maximum=2**31) + 1
+    combat["updated_at"] = _time.time()
+    combat["last_update_reason"] = str(reason or "")[:80]
+    session.combat = combat
+
+
 def _can_manage_combat(session: Session, user: User, *, full: bool = False) -> bool:
     if user.role == "dm":
         return True
@@ -256,6 +265,7 @@ def sync_fogged_combatants(session: Session, reason: str = "sync", map_context: 
 async def run_combat_fog_sync(session: Session, reason: str = "sync", map_context: str | None = None) -> dict:
     result = sync_fogged_combatants(session, reason=reason, map_context=map_context)
     if result.get("changed"):
+        _bump_combat_revision(session, reason or "fog_sync")
         await save_campaign_async(session)
         await _broadcast_combat(session)
     return result
@@ -687,6 +697,7 @@ async def handle_combat_add_token(payload: dict, session: Session, user: User):
     _ensure_combat_movement_state(session, reset=False)
     sync_fogged_combatants(session, reason="manual_add", map_context=current_map)
     session.add_log(f"{getattr(token, 'name', 'Token')} joined the initiative order.", "combat", user.name)
+    _bump_combat_revision(session, "add_token")
     await save_campaign_async(session)
     await _broadcast_combat(session)
 
@@ -722,6 +733,7 @@ async def handle_combat_remove_combatant(payload: dict, session: Session, user: 
         _ensure_combat_movement_state(session, reset=False)
     session.combat = combat
     session.add_log(f"{(removed or {}).get('name') or 'Combatant'} left the initiative order.", "combat", user.name)
+    _bump_combat_revision(session, "remove_combatant")
     await save_campaign_async(session)
     await _broadcast_combat(session)
 
@@ -743,6 +755,7 @@ async def handle_combat_update(payload: dict, session: Session, user: User):
     else:
         session.combat["movement"] = {}
     await _process_current_start_turn_hazards(session)
+    _bump_combat_revision(session, "combat_update")
     await save_campaign_async(session)
     await _broadcast_combat(session)
     # Auto-trigger ambient sound on combat start
@@ -778,6 +791,7 @@ async def handle_combat_next(payload: dict, session: Session, user: User):
     if new_round > prev_round:
         await _process_end_round_hazards(session, round_number=prev_round)
     await _process_current_start_turn_hazards(session)
+    _bump_combat_revision(session, "next_turn")
     await save_campaign_async(session)
     await _broadcast_combat(session)
 
@@ -797,6 +811,7 @@ async def handle_combat_prev(payload: dict, session: Session, user: User):
     if new_turn == len(coms) - 1 and prev_turn == 0:
         session.combat["round"] = max(1, prev_round - 1)
     _ensure_combat_movement_state(session, reset=True)
+    _bump_combat_revision(session, "prev_turn")
     await save_campaign_async(session)
     await _broadcast_combat(session)
 
@@ -1072,12 +1087,10 @@ async def handle_combat_roll_initiative(payload: dict, session: Session, user: U
                 session.combat["turn"] = i
                 break
     _ensure_combat_movement_state(session, reset=True)
+    _bump_combat_revision(session, "roll_initiative")
     await save_campaign_async(session)
 
-    await manager.broadcast(session.id, {
-        "type": "combat_state",
-        "payload": session.combat,
-    })
+    await _broadcast_combat(session)
     log_entry = session.add_log(
         f"🎲 {user.name} initiative: {roll} + {modifier:+d} = {total}",
         "dice", user.name
