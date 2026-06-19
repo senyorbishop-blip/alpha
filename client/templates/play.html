@@ -47234,13 +47234,20 @@ function applyCombatInitiativeRolled(payload) {
   if (!Number.isFinite(initiative)) return;
   const row = _combat.combatants.find(c => (combatantId && String(c.id || '') === combatantId) || (tokenId && String(c.token_id || '') === tokenId));
   if (!row) return;
+  const currentBeforeSort = _combat.combatants[Math.max(0, Number(_combat.turn) || 0)] || null;
+  const currentId = currentBeforeSort ? String(currentBeforeSort.id || '') : '';
   row.initiative = initiative;
   row.roll = parseInt(payload.roll, 10) || row.roll;
   row.modifier = parseInt(payload.modifier, 10) || 0;
   delete row._initiativeRollPending;
   if (payload.encounter_id) _combat.encounter_id = payload.encounter_id;
-  if (Number.isFinite(payload.revision)) _combat.revision = Math.max(Number(_combat.revision) || 0, Number(payload.revision));
+  const payloadRevision = Number(payload.revision);
+  if (Number.isFinite(payloadRevision)) _combat.revision = Math.max(Number(_combat.revision) || 0, payloadRevision);
   _sortCombatants();
+  if (currentId) {
+    const nextTurn = _combat.combatants.findIndex(c => String(c.id || '') === currentId);
+    if (nextTurn >= 0) _combat.turn = nextTurn;
+  }
   renderCombat();
 }
 

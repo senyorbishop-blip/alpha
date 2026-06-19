@@ -40,6 +40,29 @@ console.log(JSON.stringify({{ calls, combat: _combat }}));
     return json.loads(out)
 
 
+def _initiative_roll_snippet() -> str:
+    src = PLAY.read_text(encoding="utf-8")
+    start = src.index("function applyCombatInitiativeRolled(payload) {")
+    end = src.index("function _formatInitiativeCellValue(combatant) {", start)
+    return src[start:end]
+
+
+def _run_initiative_event(event_js: str, *, initial_combat_js: str) -> dict:
+    code = f"""
+const calls = {{ renderCombat: 0 }};
+global.renderCombat = () => {{ calls.renderCombat++; }};
+let _combat = {initial_combat_js};
+function _sortCombatants() {{
+  _combat.combatants.sort((a, b) => (b.initiative ?? -99) - (a.initiative ?? -99));
+}}
+{_initiative_roll_snippet()}
+{event_js}
+console.log(JSON.stringify({{ calls, combat: _combat }}));
+"""
+    out = subprocess.check_output(["node", "-e", code], cwd=ROOT, text=True, timeout=30)
+    return json.loads(out)
+
+
 def test_higher_revision_applies_and_renders():
     result = _run(
         "combatApplyState({ active: true, turn: 0, round: 1, revision: 5, "
@@ -111,3 +134,30 @@ def test_initiative_roll_refreshes_token_and_party_surfaces_without_reload():
     assert result["calls"]["refreshBigScreenDisplayOverlay"] == 2
     assert result["calls"]["drawFrame"] == 2
     assert result["combat"]["combatants"][0]["initiative"] == 14
+
+
+def test_initiative_event_preserves_current_turn_after_resort():
+    result = _run_initiative_event(
+        "applyCombatInitiativeRolled({ combatant_id: 'guard', token_id: 't-guard', initiative: 18, roll: 18, modifier: 0, revision: 3 });",
+        initial_combat_js="{ active: true, turn: 0, round: 1, revision: 2, encounter_id: 'enc-1', combatants: ["
+        "{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 11, roll: 11, modifier: 0 },"
+        "{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: null, roll: null, modifier: 0 }"
+        "] }",
+    )
+    assert result["calls"]["renderCombat"] == 1
+    assert [c["id"] for c in result["combat"]["combatants"]] == ["guard", "bishop"]
+    assert result["combat"]["turn"] == 1
+    assert result["combat"]["combatants"][result["combat"]["turn"]]["id"] == "bishop"
+    guard = result["combat"]["combatants"][0]
+    assert guard["initiative"] == 18
+    assert guard["roll"] == 18
+
+
+def test_initiative_event_accepts_numeric_string_revision():
+    result = _run_initiative_event(
+        "applyCombatInitiativeRolled({ combatant_id: 'guard', initiative: 18, roll: 18, modifier: 0, revision: '7' });",
+        initial_combat_js="{ active: true, turn: 0, round: 1, revision: 2, combatants: ["
+        "{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: null, roll: null, modifier: 0 }"
+        "] }",
+    )
+    assert result["combat"]["revision"] == 7
