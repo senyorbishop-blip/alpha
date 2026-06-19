@@ -17,11 +17,15 @@ def test_combat_quick_bar_passes_full_action_object_to_weapon_bridge():
 def test_open_combat_quick_bar_weapon_action_bridges_to_combat_quick_actions():
     play = _read('client/templates/play.html')
     actions = _read('client/static/js/character/combat_quick_actions.js')
-    assert 'function openCombatQuickBarWeaponAction(action)' in play
+    # play.html no longer declares its own bare openCombatQuickBarWeaponAction —
+    # that name is reserved for the public window bridge installed below, and the
+    # implementation lives in performOpenCombatQuickBarWeaponAction instead.
+    assert 'function openCombatQuickBarWeaponAction(action)' not in play
+    assert 'function performOpenCombatQuickBarWeaponAction(action)' in play
     assert 'return window.CombatQuickActions.openWeaponAction(action);' in play
     # combat_quick_actions.js also installs its own explicit bridge so the
     # quick bar can reach the modal even if play.html's copy is unavailable.
-    assert 'global.openCombatQuickBarWeaponAction = function (action)' in actions
+    assert 'global.openCombatQuickBarWeaponAction = function openCombatQuickBarWeaponActionBridge(action)' in actions
     assert 'global.CombatQuickActions.openWeaponAction(action)' in actions
 
 
@@ -36,11 +40,17 @@ def test_open_weapon_action_passes_full_card_object_to_roll_helpers():
 
 def test_combat_quick_weapon_attack_and_damage_accept_full_objects():
     play = _read('client/templates/play.html')
-    assert 'function combatQuickWeaponAttack(actionOrId, mode = \'base\')' in play
-    assert 'function combatQuickRollWeaponDamage(actionOrId, mode = \'base\', critical = false)' in play
+    # The actual implementations are named performCombatQuick* so the public
+    # window.combatQuick* bridges (registered separately) never recurse into
+    # themselves when calling the "real" implementation.
+    assert 'function performCombatQuickWeaponAttack(actionOrId, mode = \'base\')' in play
+    assert 'function performCombatQuickRollWeaponDamage(actionOrId, mode = \'base\', critical = false)' in play
     assert 'const card = findCombatWeapon(actionOrId);' in play
     assert 'bonus = Number(card.attack_bonus_value ?? 0);' in play
     assert "_consumeActionEconomy('attack_within_action', { action_id: card.id || card.name });" in play
+    # The public bridges must call the perform* implementation, not themselves.
+    assert "guardQuickActionBridge('combatQuickWeaponAttack', () => performCombatQuickWeaponAttack(actionOrId, mode))" in play
+    assert "guardQuickActionBridge('combatQuickRollWeaponDamage', () => performCombatQuickRollWeaponDamage(actionOrId, mode, critical))" in play
 
 
 def test_find_combat_weapon_is_a_shared_lookup_supporting_objects_ids_and_names():

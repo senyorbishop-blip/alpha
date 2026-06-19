@@ -33,10 +33,10 @@ def test_missing_weapon_ui_bridge_logs_error():
 
 def test_missing_weapon_ui_bridge_does_not_silently_call_attack():
     """openCombatQuickBarWeaponAction must NOT fall back to combatQuickWeaponAttack (which skips the modal)."""
-    play = _read('client/templates/play.html')
-    fn_start = play.index('function openCombatQuickBarWeaponAction(')
-    fn_end = play.index('\nfunction ', fn_start + 100)
-    fn_body = play[fn_start:fn_end]
+    actions = _read('client/static/js/character/combat_quick_actions.js')
+    fn_start = actions.index('function performOpenCombatQuickBarWeaponAction(')
+    fn_end = actions.index('\n  function ', fn_start + 100) if '\n  function ' in actions[fn_start + 100:] else fn_start + 1000
+    fn_body = actions[fn_start:fn_end]
     # The fallback path must NOT call combatQuickWeaponAttack
     assert 'return combatQuickWeaponAttack(id)' not in fn_body
     assert 'combatQuickWeaponAttack(id)' not in fn_body
@@ -66,7 +66,7 @@ def test_quick_bar_weapon_source_separated_from_playeruseaction_fallback():
 def test_action_economy_spent_after_result_card_not_before():
     """combatQuickWeaponAttack must call _consumeActionEconomy AFTER _showCombatResultCard."""
     play = _read('client/templates/play.html')
-    fn_start = play.index('function combatQuickWeaponAttack(')
+    fn_start = play.index('function performCombatQuickWeaponAttack(')
     fn_body = play[fn_start:fn_start + 6000]
     result_card_pos = fn_body.find('_showCombatResultCard(')
     economy_pos = fn_body.find("_consumeActionEconomy('attack_within_action'")
@@ -79,7 +79,7 @@ def test_action_economy_spent_after_result_card_not_before():
 def test_roll_error_caught_and_action_not_spent():
     """combatQuickWeaponAttack must wrap the roll in try/catch and not spend on failure."""
     play = _read('client/templates/play.html')
-    fn_start = play.index('function combatQuickWeaponAttack(')
+    fn_start = play.index('function performCombatQuickWeaponAttack(')
     fn_body = play[fn_start:fn_start + 6000]
     assert 'try {' in fn_body
     assert 'catch (err)' in fn_body
@@ -89,7 +89,7 @@ def test_roll_error_caught_and_action_not_spent():
 def test_roll_failure_shows_error_toast():
     """combatQuickWeaponAttack catch block must show a toast about the failure."""
     play = _read('client/templates/play.html')
-    fn_start = play.index('function combatQuickWeaponAttack(')
+    fn_start = play.index('function performCombatQuickWeaponAttack(')
     fn_body = play[fn_start:fn_start + 6000]
     assert 'Attack roll failed' in fn_body
 
@@ -115,7 +115,7 @@ def test_combat_result_card_has_click_to_dismiss():
 def test_weapon_damage_roll_shows_combat_result_card():
     """combatQuickRollWeaponDamage must call _showCombatResultCard so result stays 20s."""
     play = _read('client/templates/play.html')
-    fn_start = play.index('function combatQuickRollWeaponDamage(')
+    fn_start = play.index('function performCombatQuickRollWeaponDamage(')
     fn_end = play.index('\nfunction ', fn_start + 100)
     fn_body = play[fn_start:fn_end]
     assert '_showCombatResultCard(' in fn_body
@@ -133,7 +133,7 @@ def test_spell_attack_roll_shows_combat_result_card():
 def test_spell_damage_roll_shows_combat_result_card():
     """combatQuickRollSpellDamage must call _showCombatResultCard so result stays 20s."""
     play = _read('client/templates/play.html')
-    fn_start = play.index('function combatQuickRollSpellDamage(')
+    fn_start = play.index('function performCombatQuickRollSpellDamage(')
     fn_end = play.index('\nfunction ', fn_start + 100)
     fn_body = play[fn_start:fn_end]
     assert '_showCombatResultCard(' in fn_body
@@ -144,7 +144,7 @@ def test_spell_damage_roll_shows_combat_result_card():
 def test_weapon_attack_result_logged_to_chat():
     """combatQuickWeaponAttack must send a chat_message after rolling."""
     play = _read('client/templates/play.html')
-    fn_start = play.index('function combatQuickWeaponAttack(')
+    fn_start = play.index('function performCombatQuickWeaponAttack(')
     fn_body = play[fn_start:fn_start + 6000]
     assert "sendWS({ type: 'chat_message'" in fn_body
 
@@ -152,7 +152,7 @@ def test_weapon_attack_result_logged_to_chat():
 def test_weapon_damage_result_logged_to_chat():
     """combatQuickRollWeaponDamage must send a chat_message after rolling."""
     play = _read('client/templates/play.html')
-    fn_start = play.index('function combatQuickRollWeaponDamage(')
+    fn_start = play.index('function performCombatQuickRollWeaponDamage(')
     fn_end = play.index('\nfunction ', fn_start + 100)
     fn_body = play[fn_start:fn_end]
     assert "sendWS({ type: 'chat_message'" in fn_body
@@ -200,7 +200,7 @@ def test_resolve_weapon_runtime_applies_magic_bonus():
 def test_crit_formula_doubles_weapon_dice():
     """Critical damage must double weapon dice (chunk.qty * 2) with flat modifier added once."""
     play = _read('client/templates/play.html')
-    fn_start = play.index('function combatQuickWeaponAttack(')
+    fn_start = play.index('function performCombatQuickWeaponAttack(')
     fn_body = play[fn_start:fn_start + 6000]
     assert 'chunk.qty * 2' in fn_body
 
@@ -208,7 +208,7 @@ def test_crit_formula_doubles_weapon_dice():
 def test_crit_formula_doubles_dice_in_standalone_roll():
     """combatQuickRollWeaponDamage crit path must also double dice."""
     play = _read('client/templates/play.html')
-    fn_start = play.index('function combatQuickRollWeaponDamage(')
+    fn_start = play.index('function performCombatQuickRollWeaponDamage(')
     fn_end = play.index('\nfunction ', fn_start + 100)
     fn_body = play[fn_start:fn_end]
     assert '_combatQuickCriticalFormula(displayedFormula)' in fn_body

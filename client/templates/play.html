@@ -47671,10 +47671,6 @@ function performExecuteCombatQuickBarSpell(spell) {
   return result;
 }
 
-function openCombatQuickBarWeaponAction(action) {
-  return performOpenCombatQuickBarWeaponAction(action);
-}
-
 function performOpenCombatQuickBarWeaponAction(action) {
   if (window.CombatQuickActions && typeof window.CombatQuickActions.openWeaponAction === 'function') {
     return window.CombatQuickActions.openWeaponAction(action);
@@ -48250,7 +48246,7 @@ function combatQuickRollSpellAttack(spellId, slotLevel) {
   return { total, roll, bonus: rawBonus };
 }
 
-function combatQuickRollSpellDamage(spellId, slotLevel) {
+function performCombatQuickRollSpellDamage(spellId, slotLevel) {
   const spell = findCombatSpell(spellId);
   if (!spell) { showToast('Spell not found.'); return null; }
   const card = spell.card || {};
@@ -48305,7 +48301,7 @@ function _combatQuickCriticalFormula(formula) {
   return String(formula || '').replace(/(\d+)d(\d+)/gi, function (_m, qty, die) { return (Math.max(1, parseInt(qty, 10) || 1) * 2) + 'd' + die; });
 }
 
-function combatQuickRollWeaponDamage(actionOrId, mode = 'base', critical = false) {
+function performCombatQuickRollWeaponDamage(actionOrId, mode = 'base', critical = false) {
   const card = findCombatWeapon(actionOrId);
   if (!card) {
     const label = (actionOrId && typeof actionOrId === 'object') ? (actionOrId.name || actionOrId.id || 'unknown') : String(actionOrId || 'unknown');
@@ -48787,7 +48783,7 @@ async function _executeCombatSpellCast(spell, slotLevel) {
 }
 
 // Compatibility static contract: combatQuickWeaponAttack(attackId, mode = 'base')
-function combatQuickWeaponAttack(actionOrId, mode = 'base') {
+function performCombatQuickWeaponAttack(actionOrId, mode = 'base') {
   const card = findCombatWeapon(actionOrId);
   if (!card) {
     const label = (actionOrId && typeof actionOrId === 'object') ? (actionOrId.name || actionOrId.id || 'unknown') : String(actionOrId || 'unknown');
@@ -48934,16 +48930,16 @@ function guardQuickActionBridge(name, fn) {
   }
 }
 window.combatQuickWeaponAttack = function combatQuickWeaponAttackBridge(actionOrId, mode) {
-  return guardQuickActionBridge('combatQuickWeaponAttack', () => combatQuickWeaponAttack(actionOrId, mode));
+  return guardQuickActionBridge('combatQuickWeaponAttack', () => performCombatQuickWeaponAttack(actionOrId, mode));
 };
 window.combatQuickRollWeaponDamage = function combatQuickRollWeaponDamageBridge(actionOrId, mode, critical) {
-  return guardQuickActionBridge('combatQuickRollWeaponDamage', () => combatQuickRollWeaponDamage(actionOrId, mode, critical));
+  return guardQuickActionBridge('combatQuickRollWeaponDamage', () => performCombatQuickRollWeaponDamage(actionOrId, mode, critical));
 };
 window.combatQuickCastSpell = function combatQuickCastSpellBridge(spellId, preferredLevel) {
   return guardQuickActionBridge('combatQuickCastSpell', () => performCombatQuickCastSpell(spellId, preferredLevel));
 };
 window.combatQuickRollSpellDamage = function combatQuickRollSpellDamageBridge(spellId, slotLevel) {
-  return guardQuickActionBridge('combatQuickRollSpellDamage', () => combatQuickRollSpellDamage(spellId, slotLevel));
+  return guardQuickActionBridge('combatQuickRollSpellDamage', () => performCombatQuickRollSpellDamage(spellId, slotLevel));
 };
 // Healing spells use the same roll path as damage — alias for external callers.
 window.combatQuickRollSpellHealing = window.combatQuickRollSpellDamage;
