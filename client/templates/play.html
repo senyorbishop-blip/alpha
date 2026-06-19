@@ -18666,6 +18666,17 @@ function layoutTokenBadges(token, renderContext = {}) {
       priority: 100,
     }));
   }
+  const combatant = getCombatantForToken(token && token.id);
+  const initiativeValue = combatant ? combatant.initiative : null;
+  if (initiativeValue !== null && initiativeValue !== undefined && String(initiativeValue) !== '') {
+    rowsAbove.push(_tokenBadgeMeasurePill(`INIT ${initiativeValue}`, {
+      fontPx: _tokenBadgeReadableFontPx(10, 7),
+      fill: 'rgba(36,24,8,0.92)',
+      stroke: 'rgba(245,158,11,0.68)',
+      color: '#ffd78a',
+      priority: 90,
+    }));
+  }
   if (canSeeVitals && token.ac !== undefined && token.ac !== null && `${token.ac}` !== '') {
     rowsAbove.push(_tokenBadgeMeasurePill(`AC ${token.ac}`, {
       fontPx: _tokenBadgeReadableFontPx(11, 7),
@@ -18715,6 +18726,11 @@ function layoutTokenBadges(token, renderContext = {}) {
     y = row.y + row.height + gap;
   });
   return { above: rowsAbove, below: rowsBelow, all: rowsAbove.concat(rowsBelow), gap };
+}
+
+function getCombatantForToken(tokenId) {
+  const combatants = (_combat && Array.isArray(_combat.combatants)) ? _combat.combatants : [];
+  return combatants.find(c => String(c && (c.token_id || c.tokenId || '')) === String(tokenId || ''));
 }
 
 function drawTokenBadgeRows(layout) {
@@ -44579,8 +44595,13 @@ function combatApplyState(state) {
     _playerActionEconomyRuntime.encounter_id = _combat.encounter_id || _playerActionEconomyRuntime.encounter_id || '';
   }
   refreshRightPanelContextUI();
+  if (typeof updateActiveContext === 'function') updateActiveContext();
   if (typeof renderPartyStatusPanel === 'function') renderPartyStatusPanel();
   if (typeof refreshBigScreenDisplayOverlay === 'function') refreshBigScreenDisplayOverlay();
+  if (typeof refreshTokenBadges === 'function') refreshTokenBadges();
+  if (typeof refreshCombatBadges === 'function') refreshCombatBadges();
+  if (typeof renderTokens === 'function') renderTokens();
+  if (typeof drawTokens === 'function') drawTokens();
   if (typeof drawFrame === 'function') drawFrame();
   // Reset inspect check results when combat ends (new encounter = fresh attempts)
   if (!_combat.active && prevActive) {
