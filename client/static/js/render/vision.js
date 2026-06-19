@@ -276,10 +276,20 @@
     const controller = getVisionController(env);
     if (controller.mode === 'player' && String(t.owner_id || '') === String(controller.userId || '')) return true;
     if (controller.mode === 'preview' && String(t.id || '') === String(controller.tokenId || '')) return true;
-    const cx = Number(t.x || 0) + Number(t.width || 0) / 2;
-    const cy = Number(t.y || 0) + Number(t.height || 0) / 2;
-    const pad = Math.max(Number(t.width || 0), Number(t.height || 0)) * 0.35;
-    return isPointVisibleToPlayer(env, cx, cy, pad);
+    // Check the token's full footprint (corners + centre), not just its
+    // centre point, so an edge crossing into unseen territory hides the
+    // token immediately — large tokens shouldn't stay visible just because
+    // their centre hasn't crossed the line yet.
+    const x = Number(t.x || 0), y = Number(t.y || 0);
+    const w = Number(t.width || 0) || 50, h = Number(t.height || 0) || 50;
+    const visible = isRectVisibleToPlayer(env, x, y, w, h, 0);
+    if (env && env.DEBUG) {
+      console.debug('[fog visibility]', {
+        tokenName: t.name, tokenId: t.id, tokenX: x, tokenY: y,
+        tokenWidth: w, tokenHeight: h, hidden: !!t.hidden, visibleToPlayer: visible,
+      });
+    }
+    return visible;
   }
   function isHazardVisibleToPlayer(env, zone) {
     if (!isVisionMaskActive(env)) return true;

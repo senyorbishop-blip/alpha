@@ -468,6 +468,11 @@ async def handle_token_move(payload: dict, session: Session, user: User):
         "y": token.y,
         "moved_by": user.name,
     }, token, exclude_user=user.id)
+    # Movement can flip fog/footprint visibility immediately (entering or
+    # leaving unrevealed fog); resync per-user so a player who just lost or
+    # gained sight of this token gets the add/remove on this very move, not
+    # only after a later unrelated change.
+    await _broadcast_token_visibility(session, token, "token_hidden_changed")
     await _process_hazard_triggers_for_token(session, token, trigger='enter', old_x=old_x, old_y=old_y)
     scene_triggered = await _process_scene_triggers_for_token(session, token, user, old_x=old_x, old_y=old_y)
     if scene_triggered:

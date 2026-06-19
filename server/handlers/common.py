@@ -23,16 +23,119 @@ def _is_dm_token(token) -> bool:
     return not getattr(token, "owner_id", None)
 
 
-def _can_user_see_token(token, user) -> bool:
+def is_player_owned_token(token) -> bool:
+    return bool(getattr(token, "owner_id", None)) or bool(getattr(token, "is_player", False)) or str(getattr(token, "token_type", "") or "").lower() in {"player", "pc", "character"}
+
+
+def is_npc_or_monster_token(token) -> bool:
+    if token is None or is_player_owned_token(token):
+        return False
+    values = {
+        str(getattr(token, "token_type", "") or "").lower(),
+        str(getattr(token, "creature_type", "") or "").lower(),
+        str(getattr(token, "monster_type", "") or "").lower(),
+        str(getattr(token, "faction", "") or "").lower(),
+    }
+    return bool(values & {"npc", "monster", "hostile", "creature", "enemy", "foe", "beast", "undead", "fiend", "construct"})
+
+
+def _token_occupied_fog_indices(session: Session, token, entry: dict) -> set[int]:
+    """Return the fog-cell indices touched by the token's full footprint.
+
+    Fog cells live in the same world-coordinate space as the client fog
+    painter: the map image is drawn from ``(-width/2, -height/2)`` to
+    ``(width/2, height/2)``.  We compute the token's pixel bounding box
+    (covering tiny through gargantuan/custom sizes via token.width/height)
+    and return every cell the box overlaps, not just the corners — so a
+    large token's edge touching fog is detected even though its corners
+    might land on the same revealed cell as its centre.
+    """
+    cols = _safe_int(entry.get("cols"), 64, minimum=1, maximum=512)
+    rows = _safe_int(entry.get("rows"), 64, minimum=1, maximum=512)
+    settings = getattr(session, "map_settings", None) or {}
+    ctx_settings = settings.get(_token_map_context(token)) if isinstance(settings.get(_token_map_context(token)), dict) else {}
+    mw = float(ctx_settings.get("width") or ctx_settings.get("map_width") or 4096)
+    mh = float(ctx_settings.get("height") or ctx_settings.get("map_height") or 4096)
+    x = float(getattr(token, "x", 0) or 0)
+    y = float(getattr(token, "y", 0) or 0)
+    w = max(1.0, float(getattr(token, "width", PX_PER_GRID) or PX_PER_GRID))
+    h = max(1.0, float(getattr(token, "height", PX_PER_GRID) or PX_PER_GRID))
+
+    def cell_for(px: float, py: float):
+        col = int((px + mw / 2) / mw * cols)
+        row = int((py + mh / 2) / mh * rows)
+        if 0 <= col < cols and 0 <= row < rows:
+            return col, row
+        return None
+
+    points = [
+        (x + w / 2, y + h / 2),  # centre (token.x/y is the top-left corner)
+        (x, y),
+        (x + w, y),
+        (x, y + h),
+        (x + w, y + h),
+    ]
+    cells = [cell for cell in (cell_for(px, py) for px, py in points) if cell is not None]
+    if not cells:
+        return set()
+    min_col = max(0, min(col for col, _ in cells))
+    max_col = min(cols - 1, max(col for col, _ in cells))
+    min_row = max(0, min(row for _, row in cells))
+    max_row = min(rows - 1, max(row for _, row in cells))
+    return {row * cols + col for row in range(min_row, max_row + 1) for col in range(min_col, max_col + 1)}
+
+
+def is_token_touching_unrevealed_fog(session: Session, token, map_context: str | None = None) -> bool:
+    """True as soon as any part of the token's footprint sits on unrevealed fog.
+
+    This is intentionally the inverse of "fully inside revealed fog" — a
+    token must be hidden the instant any edge of its footprint crosses into
+    unrevealed territory, not only once the whole token (or its centre) is
+    buried in fog.
+    """
+    if token is None:
+        return False
+    ctx = str(map_context or _token_map_context(token) or "world")[:80] or "world"
+    entry = ((getattr(session, "fog_maps", None) or {}).get(ctx) or {})
+    if not entry.get("enabled", False):
+        return False
+    raw_cells = entry.get("cells")
+    cells = raw_cells if isinstance(raw_cells, str) else "".join("1" if int(v or 0) else "0" for v in (raw_cells or []))
+    footprint = _token_occupied_fog_indices(session, token, entry) if cells else set()
+    if not cells or not footprint:
+        touching = True  # fail closed: fog enabled but no usable data/footprint means unrevealed
+    else:
+        touching = any(not (0 <= i < len(cells) and cells[i] == "1") for i in footprint)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug("[fog visibility] %s", {
+            "tokenName": getattr(token, "name", None),
+            "tokenId": getattr(token, "id", None),
+            "tokenX": getattr(token, "x", None),
+            "tokenY": getattr(token, "y", None),
+            "tokenWidth": getattr(token, "width", None),
+            "tokenHeight": getattr(token, "height", None),
+            "mapContext": ctx,
+            "footprintCells": sorted(footprint) if footprint else [],
+            "footprintTouchesUnrevealedFog": touching,
+            "hidden": bool(getattr(token, "hidden", False)),
+        })
+    return touching
+
+
+def _can_user_see_token(session: Session, token, user) -> bool:
     if not user:
         return False
     if user.role == "dm":
         return True
-    return not getattr(token, "hidden", False)
+    if getattr(token, "hidden", False):
+        return False
+    if is_npc_or_monster_token(token) and is_token_touching_unrevealed_fog(session, token):
+        return False
+    return True
 
 
 def _is_token_visible_to_user(session: Session, token, user: User) -> bool:
-    if not _can_user_see_token(token, user):
+    if not _can_user_see_token(session, token, user):
         return False
     role = str(getattr(user, "role", "") or "").strip().lower() or "viewer"
     if role == "dm":
@@ -60,7 +163,7 @@ def _visible_tokens_payload_for_user(session: Session, user: User) -> dict:
         if role == "dm":
             tokens[tid] = build_token_runtime_payload(session, token)
             continue
-        if getattr(token, "hidden", False):
+        if not _can_user_see_token(session, token, user):
             continue
         token_ctx = str(getattr(token, "map_context", "world") or "world")
         if token_ctx not in visible_contexts:
@@ -69,8 +172,22 @@ def _visible_tokens_payload_for_user(session: Session, user: User) -> dict:
     return tokens
 
 
+def bump_visibility_revision(session: Session) -> int:
+    """Increment the session-wide visibility revision counter.
+
+    Call this whenever fog, hidden state, or token position changes in a
+    way that can affect what players are allowed to see, so clients can
+    discard stale tokens_sync/combat_state payloads that raced behind a
+    newer one.
+    """
+    next_rev = int(getattr(session, "visibility_revision", 0) or 0) + 1
+    session.visibility_revision = next_rev
+    return next_rev
+
+
 async def _broadcast_token_state_sync(session: Session):
     """Send an authoritative token snapshot to every connected client."""
+    revision = bump_visibility_revision(session)
     for uid, u in (session.users or {}).items():
         await manager.send_to(session.id, uid, {
             "type": "tokens_sync",
@@ -79,6 +196,7 @@ async def _broadcast_token_state_sync(session: Session):
                 "corpse_states": dict(getattr(session, "corpse_states", {}) or {}),
                 "dm_map_context": str(getattr(session, "dm_map_context", "world") or "world"),
                 "map_nav_version": int(getattr(session, "map_nav_version", 0) or 0),
+                "visibility_revision": revision,
             },
         })
 
@@ -241,12 +359,19 @@ def _sanitize_save_bonuses(raw) -> dict:
 
 
 async def _broadcast_token_visibility(session, token, msg_type: str = "token_hidden_changed"):
-    """Send token visibility/update state per user when a token is edited or hidden/revealed."""
+    """Send token visibility/update state per user when a token is edited, moved, or hidden/revealed.
+
+    Covers both directions of a visibility flip: a user who can now see the
+    token gets the full payload (so it appears even if they never had it,
+    e.g. it just walked out of fog); a user who can no longer see it gets a
+    removal notice (token went hidden, staged, or behind unrevealed fog).
+    """
+    bump_visibility_revision(session)
     token_payload = build_token_runtime_payload(session, token)
     for uid, u in session.users.items():
         if _is_token_visible_to_user(session, token, u):
             await manager.send_to(session.id, uid, {"type": msg_type, "payload": token_payload})
-        elif str(getattr(u, "role", "") or "").strip().lower() != "dm" and token.hidden:
+        elif str(getattr(u, "role", "") or "").strip().lower() != "dm":
             await manager.send_to(session.id, uid, {
                 "type": "token_removed_hidden",
                 "payload": {"id": token.id}
@@ -299,19 +424,21 @@ def _sync_combatant_token_state(session: Session, token, *, previous_hp: int | N
 
 
 async def _broadcast_combat(session):
+    revision = bump_visibility_revision(session)
     connections = manager.get_session_connections(session.id)
-    dead_payload = None
     if not connections:
-        await manager.broadcast(session.id, {"type": "combat_state", "payload": session.combat})
+        payload = dict(session.combat or {})
+        payload["visibility_revision"] = revision
+        await manager.broadcast(session.id, {"type": "combat_state", "payload": payload})
         return
     for uid in list(connections.keys()):
         user = (getattr(session, "users", {}) or {}).get(uid)
-        payload = session.combat
+        payload = dict(session.combat or {})
         if not user or getattr(user, "role", "") != "dm":
-            payload = dict(session.combat or {})
             payload.pop("suspended_combatants", None)
             payload.pop("fog_suspended_combatants", None)
             payload.pop("hidden_suspended_combatants", None)
+        payload["visibility_revision"] = revision
         await manager.send_to(session.id, uid, {"type": "combat_state", "payload": payload})
 
 
