@@ -1248,11 +1248,9 @@ def test_play_html_initiative_waits_for_settled_dice_before_sync():
     assert "function _rollLocalDiceAfterSettle(" in content
     assert "onSettledResult: (settled) => finish" in content
     assert "const handled = settledCallback({" in content
-    assert "latest.initiative = total;" in content
-    assert content.index("_rollLocalDiceAfterSettle({") < content.index("latest.initiative = total;")
-    assert content.index("latest.initiative = total;") < content.index("sendWS({ type: 'combat_roll_initiative'")
+    assert "The local dice result is visual only." in content
+    assert content.index("_rollLocalDiceAfterSettle({") < content.index("sendWS({ type: 'combat_roll_initiative'")
     assert "rolls: [roll]" in content
-    assert "const total = roll + modifier;" in content
     assert "return modText ? `${total} (${rawRoll}${modText})` : `${total} (${rawRoll})`;" in content
 
 def test_play_html_loads_required_external_modules():

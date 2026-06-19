@@ -1053,6 +1053,20 @@ async def handle_combat_roll_initiative(payload: dict, session: Session, user: U
     await manager.broadcast(session.id, {"type": "log_entry", "payload": {"log": log_entry}})
 
 
+async def handle_combat_state_request(payload: dict, session: Session, user: User):
+    """Send the requesting client the current authoritative combat_state."""
+    from server.handlers.common import bump_visibility_revision
+
+    revision = bump_visibility_revision(session)
+    out = dict(getattr(session, "combat", None) or {})
+    if getattr(user, "role", "") != "dm":
+        out.pop("suspended_combatants", None)
+        out.pop("fog_suspended_combatants", None)
+        out.pop("hidden_suspended_combatants", None)
+    out["visibility_revision"] = revision
+    await manager.send_to(session.id, user.id, {"type": "combat_state", "payload": out})
+
+
 # ── Combat attack / spell flow ─────────────────────────────────────────────
 
 

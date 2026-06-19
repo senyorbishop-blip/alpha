@@ -8,7 +8,7 @@ PLAY = ROOT / "client/templates/play.html"
 
 def _combat_apply_state_snippet() -> str:
     src = PLAY.read_text(encoding="utf-8")
-    start = src.index("function combatApplyState(state) {")
+    start = src.index("function _combatInitiativeSignature(state) {")
     end = src.index("// ── Combat tab attention: glow, YOUR TURN, coach, hints ───", start)
     return src[start:end]
 
@@ -30,11 +30,12 @@ global.renderPartyStatusPanel = () => {{ calls.renderPartyStatusPanel++; }};
 global.refreshBigScreenDisplayOverlay = () => {{ calls.refreshBigScreenDisplayOverlay++; }};
 global.drawFrame = () => {{ calls.drawFrame++; }};
 global._updateCombatTabAttention = () => {{}};
+global.window = global;
 let _combat = {initial_combat_js};
 let _combatRound = 1;
 {_combat_apply_state_snippet()}
 {state_seq_js}
-console.log(JSON.stringify({{ calls, combat: _combat }}));
+console.log(JSON.stringify({{ calls, combat: _combat, sent: (typeof sent !== 'undefined' ? sent : undefined) }}));
 """
     out = subprocess.check_output(["node", "-e", code], cwd=ROOT, text=True, timeout=30)
     return json.loads(out)
@@ -42,7 +43,7 @@ console.log(JSON.stringify({{ calls, combat: _combat }}));
 
 def _initiative_roll_snippet() -> str:
     src = PLAY.read_text(encoding="utf-8")
-    start = src.index("function applyCombatInitiativeRolled(payload) {")
+    start = src.index("let _combatInitiativeResyncTimer = null;")
     end = src.index("function _formatInitiativeCellValue(combatant) {", start)
     return src[start:end]
 
@@ -51,13 +52,15 @@ def _run_initiative_event(event_js: str, *, initial_combat_js: str) -> dict:
     code = f"""
 const calls = {{ renderCombat: 0 }};
 global.renderCombat = () => {{ calls.renderCombat++; }};
+global.clearTimeout = () => {{}};
+global.setTimeout = (fn) => {{ fn(); return 1; }};
 let _combat = {initial_combat_js};
 function _sortCombatants() {{
   _combat.combatants.sort((a, b) => (b.initiative ?? -99) - (a.initiative ?? -99));
 }}
 {_initiative_roll_snippet()}
 {event_js}
-console.log(JSON.stringify({{ calls, combat: _combat }}));
+console.log(JSON.stringify({{ calls, combat: _combat, sent: (typeof sent !== 'undefined' ? sent : undefined) }}));
 """
     out = subprocess.check_output(["node", "-e", code], cwd=ROOT, text=True, timeout=30)
     return json.loads(out)
@@ -104,9 +107,9 @@ def test_stale_lower_revision_is_ignored():
         "combatApplyState({ active: true, turn: 0, round: 1, revision: 5, "
         "combatants: [{ id: 'c1', token_id: 't1', name: 'Bishop', initiative: 17 }] });"
         "combatApplyState({ active: true, turn: 0, round: 1, revision: 3, "
-        "combatants: [{ id: 'c1', token_id: 't1', name: 'Bishop', initiative: 1 }] });"
+        "combatants: [{ id: 'c1', token_id: 't1', name: 'Bishop', initiative: 17 }] });"
     )
-    # Second (stale) broadcast must be ignored; renderCombat only called once.
+    # Second lower-revision identical broadcast must be ignored; renderCombat only called once.
     assert result["calls"]["renderCombat"] == 1
     assert result["combat"]["revision"] == 5
     assert result["combat"]["combatants"][0]["initiative"] == 17
@@ -136,28 +139,48 @@ def test_initiative_roll_refreshes_token_and_party_surfaces_without_reload():
     assert result["combat"]["combatants"][0]["initiative"] == 14
 
 
-def test_initiative_event_preserves_current_turn_after_resort():
+
+def test_actual_incoming_dispatch_combat_state_from_self_roll_applies():
+    result = _run(
+        "function handleLegacyMessage(msg){ const p = msg.payload || {}; switch(msg.type){ case 'combat_state': combatApplyState(p); break; } }"
+        "handleLegacyMessage({ type: 'combat_state', source_user_id: 'u1', payload: { active: true, turn: 0, round: 1, revision: 2, "
+        "combatants: [{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 13, roll: 11, modifier: 2 }] } });",
+        initial_combat_js="{ active: true, turn: 0, round: 1, revision: 1, combatants: [{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null }] }",
+    )
+    assert result["calls"]["renderCombat"] == 1
+    assert result["combat"]["combatants"][0]["initiative"] == 13
+
+
+def test_actual_incoming_dispatch_dm_npc_roll_updates_dm_client():
+    result = _run(
+        "function handleLegacyMessage(msg){ const p = msg.payload || {}; switch(msg.type){ case 'combat_state': combatApplyState(p); break; } }"
+        "handleLegacyMessage({ type: 'combat_state', payload: { active: true, turn: 0, round: 1, revision: 2, "
+        "combatants: [{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: 14 }] } });",
+        initial_combat_js="{ active: true, turn: 0, round: 1, revision: 1, combatants: [{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: null }] }",
+    )
+    assert result["combat"]["combatants"][0]["initiative"] == 14
+
+
+def test_initiative_event_is_notification_only_and_requests_resync():
     result = _run_initiative_event(
-        "applyCombatInitiativeRolled({ combatant_id: 'guard', token_id: 't-guard', initiative: 18, roll: 18, modifier: 0, revision: 3 });",
+        "let sent = []; sendWS = (msg) => sent.push(msg); applyCombatInitiativeRolled({ combatant_id: 'guard', token_id: 't-guard', initiative: 18, roll: 18, modifier: 0, revision: 3 });",
         initial_combat_js="{ active: true, turn: 0, round: 1, revision: 2, encounter_id: 'enc-1', combatants: ["
         "{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 11, roll: 11, modifier: 0 },"
         "{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: null, roll: null, modifier: 0 }"
         "] }",
     )
-    assert result["calls"]["renderCombat"] == 1
-    assert [c["id"] for c in result["combat"]["combatants"]] == ["guard", "bishop"]
-    assert result["combat"]["turn"] == 1
-    assert result["combat"]["combatants"][result["combat"]["turn"]]["id"] == "bishop"
-    guard = result["combat"]["combatants"][0]
-    assert guard["initiative"] == 18
-    assert guard["roll"] == 18
+    assert result["calls"]["renderCombat"] == 0
+    assert [c["id"] for c in result["combat"]["combatants"]] == ["bishop", "guard"]
+    assert result["combat"]["combatants"][1]["initiative"] is None
+    assert result["sent"] == [{"type": "combat_state_request", "payload": {}}]
 
 
-def test_initiative_event_accepts_numeric_string_revision():
-    result = _run_initiative_event(
-        "applyCombatInitiativeRolled({ combatant_id: 'guard', initiative: 18, roll: 18, modifier: 0, revision: '7' });",
-        initial_combat_js="{ active: true, turn: 0, round: 1, revision: 2, combatants: ["
-        "{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: null, roll: null, modifier: 0 }"
-        "] }",
+def test_lower_revision_with_changed_initiative_applies_with_warning():
+    result = _run(
+        "combatApplyState({ active: true, turn: 0, round: 1, revision: 5, "
+        "combatants: [{ id: 'c1', token_id: 't1', name: 'Bishop', initiative: 17 }] });"
+        "combatApplyState({ active: true, turn: 0, round: 1, revision: 3, "
+        "combatants: [{ id: 'c1', token_id: 't1', name: 'Bishop', initiative: 19 }] });"
     )
-    assert result["combat"]["revision"] == 7
+    assert result["calls"]["renderCombat"] == 2
+    assert result["combat"]["combatants"][0]["initiative"] == 19

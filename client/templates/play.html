@@ -44521,39 +44521,38 @@ function removeSpellAt(wx, wy) {
 // gameplay/combat.js is a dormant alternate module unless play.html explicitly loads it.
 // ════════════════════════════════════════════════════════════════
 
+function _combatInitiativeSignature(state) {
+  const combatants = Array.isArray(state?.combatants) ? state.combatants : [];
+  return combatants.map(c => [
+    String(c?.id || ''),
+    String(c?.token_id || ''),
+    c?.initiative ?? null,
+    c?.roll ?? null,
+    c?.modifier ?? null,
+  ].join(':')).join('|') + `#turn=${state?.turn ?? 0}`;
+}
+
 function combatApplyState(state) {
   if (!state || typeof state !== 'object') return;
-  // Ignore only genuinely stale broadcasts (lower revision than what we already
-  // applied). Missing revision, equal revision, or newer revision always apply —
-  // never require a refresh to see another client's initiative roll.
-  const incomingRevision = Number.isFinite(state.revision) ? state.revision : null;
-  const localRevision = Number.isFinite(_combat.revision) ? _combat.revision : null;
-  if (incomingRevision !== null && localRevision !== null && incomingRevision < localRevision) {
+  if (typeof _combatInitiativeResyncTimer !== 'undefined' && _combatInitiativeResyncTimer) { clearTimeout(_combatInitiativeResyncTimer); _combatInitiativeResyncTimer = null; }
+  const incomingRevision = Number.isFinite(Number(state.revision)) ? Number(state.revision) : null;
+  const localRevision = Number.isFinite(Number(_combat.revision)) ? Number(_combat.revision) : null;
+  const incomingSignature = _combatInitiativeSignature(state);
+  const localSignature = _combatInitiativeSignature(_combat);
+  if (incomingRevision !== null && localRevision !== null && incomingRevision < localRevision && incomingSignature === localSignature) {
     return;
+  }
+  if (incomingRevision !== null && localRevision !== null && incomingRevision <= localRevision && incomingSignature !== localSignature) {
+    console.warn('[combat initiative sync] applying equal/lower revision combat_state because initiative/order changed', { incomingRevision, localRevision });
   }
   const prevTurn   = _combat.turn;
   const prevActive = _combat.active;
   const prevTurnKey = _playerActionTurnKey();
-  // Preserve locally-rolled initiative values that are still awaiting server confirmation.
-  // When rolling quickly for multiple combatants, an intermediate combat_state broadcast
-  // (from another combatant's roll) may arrive with null for combatants whose rolls are
-  // in-flight.  Overwriting with null causes a visible mismatch between the dice result
-  // overlay and the combat tracker until the server confirms the roll.
-  const _prevById = {};
-  (_combat.combatants || []).forEach(c => { _prevById[c.id] = c; });
-  const mergedCombatants = (state.combatants || []).map(nc => {
-    if ((nc.initiative === null || nc.initiative === undefined) && _prevById[nc.id]) {
-      const prev = _prevById[nc.id];
-      if (prev.initiative !== null && prev.initiative !== undefined) {
-        return Object.assign({}, nc, { initiative: prev.initiative, roll: prev.roll, modifier: prev.modifier });
-      }
-    }
-    return nc;
-  });
+  const authoritativeCombatants = Array.isArray(state.combatants) ? state.combatants.map(c => ({ ...c })) : [];
   _combat = {
     active:             !!state.active,
     turn:               state.turn      ?? 0,
-    combatants:         mergedCombatants,
+    combatants:         authoritativeCombatants,
     suspended_combatants: Array.isArray(state.suspended_combatants) ? state.suspended_combatants : [],
     fog_suspended_combatants: Array.isArray(state.fog_suspended_combatants) ? state.fog_suspended_combatants : [],
     hidden_suspended_combatants: Array.isArray(state.hidden_suspended_combatants) ? state.hidden_suspended_combatants : [],
@@ -44564,6 +44563,11 @@ function combatApplyState(state) {
     revision:           incomingRevision ?? localRevision ?? 0,
     encounter_id:       state.encounter_id || _combat.encounter_id || '',
   };
+  window._combat = _combat;
+  window.combat = _combat;
+  window.combatState = _combat;
+  if (typeof partySnapshot === 'object' && partySnapshot) partySnapshot.combat = _combat;
+  if (typeof activeContext === 'object' && activeContext) activeContext.combat = _combat;
   _combatRound = _combat.round;
   const nextTurnKey = _playerActionTurnKey();
   const encounterChanged = !!(state.encounter_id && _playerActionEconomyRuntime.encounter_id && String(state.encounter_id) !== String(_playerActionEconomyRuntime.encounter_id));
@@ -47207,12 +47211,8 @@ function combatRollInitiative(combatantId) {
     const latest = _combat.combatants.find(c => c.id === combatantId);
     if (!latest) return;
     const roll = parseInt(result?.rolls?.[0], 10) || 0;
-    const total = roll + modifier;
-    latest.roll = roll;
-    latest.modifier = modifier;
-    latest.initiative = total;
-    delete latest._initiativeRollPending;
-    renderCombat();
+    // The local dice result is visual only.  The initiative list updates from
+    // the authoritative combat_state broadcast sent back by the server.
     sendWS({ type: 'combat_roll_initiative', payload: {
       combatant_id: combatantId,
       roll:         roll,
@@ -47226,29 +47226,18 @@ function combatRollInitiative(combatantId) {
   });
 }
 
+let _combatInitiativeResyncTimer = null;
 function applyCombatInitiativeRolled(payload) {
-  if (!payload || typeof payload !== 'object' || !_combat || !Array.isArray(_combat.combatants)) return;
-  const combatantId = String(payload.combatant_id || '').trim();
-  const tokenId = String(payload.token_id || '').trim();
-  const initiative = parseInt(payload.initiative, 10);
-  if (!Number.isFinite(initiative)) return;
-  const row = _combat.combatants.find(c => (combatantId && String(c.id || '') === combatantId) || (tokenId && String(c.token_id || '') === tokenId));
-  if (!row) return;
-  const currentBeforeSort = _combat.combatants[Math.max(0, Number(_combat.turn) || 0)] || null;
-  const currentId = currentBeforeSort ? String(currentBeforeSort.id || '') : '';
-  row.initiative = initiative;
-  row.roll = parseInt(payload.roll, 10) || row.roll;
-  row.modifier = parseInt(payload.modifier, 10) || 0;
-  delete row._initiativeRollPending;
-  if (payload.encounter_id) _combat.encounter_id = payload.encounter_id;
-  const payloadRevision = Number(payload.revision);
-  if (Number.isFinite(payloadRevision)) _combat.revision = Math.max(Number(_combat.revision) || 0, payloadRevision);
-  _sortCombatants();
-  if (currentId) {
-    const nextTurn = _combat.combatants.findIndex(c => String(c.id || '') === currentId);
-    if (nextTurn >= 0) _combat.turn = nextTurn;
-  }
-  renderCombat();
+  // Notification only: initiative list authority is the next combat_state.
+  // If that authoritative state is delayed/missed, request a fresh copy.
+  if (_combatInitiativeResyncTimer) clearTimeout(_combatInitiativeResyncTimer);
+  const expectedRevision = Number(payload && payload.revision);
+  _combatInitiativeResyncTimer = setTimeout(() => {
+    const localRevision = Number(_combat && _combat.revision);
+    if (!Number.isFinite(expectedRevision) || !Number.isFinite(localRevision) || localRevision < expectedRevision) {
+      if (typeof sendWS === 'function') sendWS({ type: 'combat_state_request', payload: {} });
+    }
+  }, 300);
 }
 
 function _formatInitiativeCellValue(combatant) {
