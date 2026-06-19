@@ -44617,12 +44617,24 @@ function _isActiveCombatTab() {
   return sidebar && sidebar.getAttribute('data-active-tab') === 'combat';
 }
 
+function _combatantOwnedByMe(combatant) {
+  if (!combatant) return false;
+  const tokenId = String(combatant.token_id || '').trim();
+  const tok = tokenId && tokens ? tokens[tokenId] : null;
+  if (tok && _tokenOwnedByMe(tok)) return true;
+  const owner = String(combatant.owner_id || combatant.owner || '').trim();
+  if (!owner) return false;
+  const effectiveUserId = getEffectiveUserId();
+  if (owner === effectiveUserId) return true;
+  const ownerKey = _normalizeOwnerKey(owner);
+  if (!ownerKey) return false;
+  return ownerKey === _normalizeOwnerKey(NAME);
+}
+
 function _getMyTurnCombatant() {
   if (!_combat.active || !Array.isArray(_combat.combatants)) return null;
   const cur = _combat.combatants[Math.max(0, Number(_combat.turn) || 0)] || null;
-  if (!cur || !cur.token_id) return null;
-  const tok = tokens && tokens[cur.token_id];
-  return (tok && _tokenOwnedByMe(tok)) ? cur : null;
+  return _combatantOwnedByMe(cur) ? cur : null;
 }
 
 function _updateCombatTabAttention(prevActive) {
@@ -45961,7 +45973,7 @@ function _findMyActiveCombatant() {
   const idx = Math.max(0, Number(_combat.turn) || 0);
   const current = _combat.combatants[idx] || null;
   if (!current) return null;
-  if (_isMyToken(current.token_id)) return current;
+  if (_combatantOwnedByMe(current)) return current;
   return null;
 }
 
@@ -46019,7 +46031,7 @@ function buildTurnEconomyState(character = _charSheet, combatState = _combat, tu
   const combat = combatState || {};
   const current = turnState || _getCombatCurrentCombatant?.() || null;
   const isInCombat = !!(combat.active && Array.isArray(combat.combatants) && combat.combatants.length);
-  const isMyTurn = !!(isInCombat && current && _isMyToken(current.token_id));
+  const isMyTurn = !!(isInCombat && current && _combatantOwnedByMe(current));
   const tokenId = String(current?.token_id || _getMyOwnedToken?.()?.id || character?.token_id || character?.id || 'none');
   const round = Math.max(1, Number(combat.round || _combatRound || 1));
   const turn = Math.max(0, Number(combat.turn || 0));
@@ -46793,7 +46805,7 @@ function renderCombat() {
   if (moveRow) {
     const turnIndex = Math.max(0, Number(_combat.turn) || 0);
     const current = isActive ? (coms[turnIndex] || null) : null;
-    const isMyTurn = !!(current && _isMyToken(current.token_id));
+    const isMyTurn = !!(current && _combatantOwnedByMe(current));
     const deathSaves = current?.death_saves || current?.deathSaves || null;
     const needsDeathSave = !!(current && current.owner_id && Number(current.hp ?? 1) <= 0 && !deathSaves?.dead);
     const moveState = (_combat && _combat.movement && current && String(_combat.movement.token_id || '') === String(current.token_id || '')) ? _combat.movement : null;
@@ -46874,7 +46886,7 @@ function renderCombat() {
 
   if (offturnRow) {
     const current = _getCombatCurrentCombatant();
-    const isMyTurn = !!(current && _isMyToken(current.token_id));
+    const isMyTurn = !!(current && _combatantOwnedByMe(current));
     const shouldShowOffturnTray = !!(ROLE === 'player' && isActive && current && !isMyTurn);
     if (!shouldShowOffturnTray) {
       offturnRow.style.display = 'none';
@@ -46934,7 +46946,7 @@ function renderCombat() {
   if (weaponTray) {
     const attackCards = _getUnifiedQuickAttackCards();
     const current2 = isActive ? (coms[Math.max(0, Number(_combat.turn) || 0)] || null) : null;
-    const isMyTurn2 = !!(current2 && _isMyToken(current2.token_id));
+    const isMyTurn2 = !!(current2 && _combatantOwnedByMe(current2));
     if (ROLE === 'player' && isActive && isMyTurn2 && attackCards.length) {
       weaponTray.style.display = 'flex';
       weaponTray.innerHTML = `
