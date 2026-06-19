@@ -10,21 +10,65 @@
   // - Move low-risk websocket/message shell routing here by
   //   delegating to explicit env callbacks.
 
+  const recentMessageTypes = [];
+  const dispatchChain = [];
+  let dispatchDepth = 0;
+
+  function rememberMessageType(type) {
+    recentMessageTypes.push(String(type || '(missing)'));
+    if (recentMessageTypes.length > 30) recentMessageTypes.splice(0, recentMessageTypes.length - 30);
+  }
+
+  function logDispatchDiagnostics(reason, err) {
+    const payload = {
+      reason,
+      depth: dispatchDepth,
+      chain: dispatchChain.slice(),
+      recentMessageTypes: recentMessageTypes.slice(),
+    };
+    console.error('[AppMessageDispatch] dispatch diagnostics', payload, err || '');
+    return payload;
+  }
+
   function handleIncoming(msg, env) {
     if (!msg || typeof msg !== 'object') return false;
     const runtimeEnv = env || {};
     if (typeof runtimeEnv.handleLegacyMessage !== 'function') return false;
+    const msgType = String(msg.type || '(missing)');
+    rememberMessageType(msgType);
+    if (dispatchDepth >= 20) {
+      const diagnostics = logDispatchDiagnostics('nested dispatch depth exceeded', null);
+      const err = new Error('Nested websocket dispatch depth exceeded 20; refusing recursive message dispatch.');
+      err.dispatchDiagnostics = diagnostics;
+      if (typeof runtimeEnv.reportClientRuntimeError === 'function') runtimeEnv.reportClientRuntimeError('Message dispatch', err);
+      return false;
+    }
+    dispatchDepth += 1;
+    dispatchChain.push(msgType);
     try {
       runtimeEnv.handleLegacyMessage(msg);
       return true;
     } catch (err) {
+      const diagnostics = logDispatchDiagnostics(err && /Maximum call stack size exceeded/i.test(String(err.message || err)) ? 'stack overflow' : 'handler exception', err);
+      try { err.dispatchDiagnostics = diagnostics; } catch (_err) {}
       if (typeof runtimeEnv.reportClientRuntimeError === 'function') {
         runtimeEnv.reportClientRuntimeError('Message dispatch', err);
       } else {
         console.error('[AppMessageDispatch] Message dispatch failed', err);
       }
       return false;
+    } finally {
+      dispatchChain.pop();
+      dispatchDepth = Math.max(0, dispatchDepth - 1);
     }
+  }
+
+  function getDispatchDiagnostics() {
+    return {
+      depth: dispatchDepth,
+      chain: dispatchChain.slice(),
+      recentMessageTypes: recentMessageTypes.slice(),
+    };
   }
 
   function handleLegacyDomainMessage(msg, env) {
@@ -84,5 +128,6 @@
   global.AppMessageDispatch = {
     handleIncoming,
     handleLegacyDomainMessage,
+    getDispatchDiagnostics,
   };
 })(window);
