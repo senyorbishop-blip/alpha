@@ -263,3 +263,29 @@ async def test_suspended_combatants_filtered_for_player_via_broadcast_combat(mon
     assert "suspended_combatants" not in player_payload
     assert "fog_suspended_combatants" not in player_payload
     assert "hidden_suspended_combatants" not in player_payload
+
+@pytest.mark.anyio
+async def test_combat_state_request_replies_to_requesting_user_with_current_state(monkeypatch):
+    session, dm, player = _build_session()
+    sent = []
+
+    async def _fake_send_to(session_id, user_id, message):
+        sent.append((session_id, user_id, message))
+        return True
+
+    monkeypatch.setattr(combat_handlers.manager, "send_to", _fake_send_to)
+
+    await combat_handlers.handle_combat_state_request({}, session, player)
+
+    assert sent
+    session_id, user_id, message = sent[-1]
+    assert session_id == session.id
+    assert user_id == player.id
+    assert message["type"] == "combat_state"
+    payload = message["payload"]
+    assert payload["active"] is True
+    assert payload["round"] == 1
+    assert payload["turn"] == 0
+    assert "combatants" in payload
+    assert payload["combatants"][0]["initiative"] is None
+    assert "visibility_revision" in payload

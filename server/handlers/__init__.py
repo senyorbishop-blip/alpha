@@ -39,6 +39,7 @@ from server.handlers.combat import (
     handle_combat_attack_request,
     handle_combat_attack_override,
     handle_combat_fog_sync_request,
+    handle_combat_state_request,
 )
 from server.handlers.map_editor import (
     handle_editor_layer_save,
@@ -284,6 +285,7 @@ async def handle_message(raw: dict, session: Session, user: User):
         "combat_attack_request": handle_combat_attack_request,
         "combat_attack_override": handle_combat_attack_override,
         "combat_fog_sync_request": handle_combat_fog_sync_request,
+        "combat_state_request": handle_combat_state_request,
         "summon_runtime_request": handle_summon_runtime_request,
         "summon_runtime_dismiss": handle_summon_runtime_dismiss,
         "summon_runtime_admin": handle_summon_runtime_admin,
