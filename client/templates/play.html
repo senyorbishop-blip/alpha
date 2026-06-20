@@ -41286,11 +41286,39 @@ function markCharProfileClean(profile) {
   setCharacterBookSaveState('saved');
 }
 
-function scheduleCharProfileAutosave() {
+function __isCharProfileRenderStackActive() {
+  const depths = window.__depths || {};
+  return ['renderCombat', 'renderPlayerActionsHub', 'CombatQuickBar.render', 'selectQuickActions', 'combatApplyState'].some(name => Number(depths[name] || 0) > 0)
+    || !!window.__combatApplyStateActive;
+}
+
+let __charProfileAutosaveDeferredForRender = false;
+
+function __deferCharProfileAutosaveUntilRenderUnwinds(reason = 'render_stack') {
+  if (__charProfileAutosaveDeferredForRender) return;
+  __charProfileAutosaveDeferredForRender = true;
+  const run = () => {
+    __charProfileAutosaveDeferredForRender = false;
+    if (__isCharProfileRenderStackActive()) {
+      setTimeout(() => __deferCharProfileAutosaveUntilRenderUnwinds(reason), 0);
+      return;
+    }
+    scheduleCharProfileAutosave(reason + ':deferred');
+  };
+  if (typeof queueMicrotask === 'function') queueMicrotask(run);
+  else setTimeout(run, 0);
+}
+
+function scheduleCharProfileAutosave(reason = 'user') {
   if (window.__depths.scheduleCharProfileSave > 0) __logReentry('scheduleCharProfileSave');
-  __enterDepth('scheduleCharProfileSave', {}, 5);
+  __enterDepth('scheduleCharProfileSave', { reason }, 5);
   try {
   if (ROLE !== 'player') return;
+  if (__isCharProfileRenderStackActive()) {
+    console.warn('[char profile] autosave deferred during render/select stack', { reason, depths: Object.assign({}, window.__depths || {}) });
+    __deferCharProfileAutosaveUntilRenderUnwinds(reason);
+    return;
+  }
   if (window.__safeMode?.charProfileDirtySave || __isRemoteStateOrCombatApplying()) { console.warn('[char profile] autosave skipped during remote/combat apply', { remote: isApplyingRemoteState, stateSync: window.__stateSyncApplying, combatApply: window.__combatApplyStateActive }); return; }
   if (isHydrating || isSaving) return;
   if (!_charSheet && !charProfiles.length && !(document.getElementById('char-name')?.value || '').trim()) return;
@@ -47879,10 +47907,15 @@ function applyInitiativeResultToCombatState(result) {
   if (!result || typeof result !== 'object' || !_combat) return false;
   const combatants = Array.isArray(_combat.combatants) ? _combat.combatants : [];
   if (!Array.isArray(_combat.combatants)) _combat.combatants = combatants;
-  const combatantId = String(result.combatant_id || result.id || '').trim();
-  const tokenId = String(result.token_id || '').trim();
-  let idx = combatantId ? combatants.findIndex(c => String(c?.id || '') === combatantId) : -1;
-  if (idx < 0 && tokenId) idx = combatants.findIndex(c => String(c?.token_id || '') === tokenId);
+  const combatantId = String(result.combatant_id || result.combatantId || result.id || result.actor_id || result.actorId || '').trim();
+  const tokenId = String(result.token_id || result.tokenId || result.token || '').trim();
+  const characterId = String(result.character_id || result.characterId || result.sheet_id || result.sheetId || '').trim();
+  const nameKey = String(result.name || result.combatant_name || result.roll_label || '').replace(/\s+initiative\b/i, '').trim().toLowerCase();
+  const matchesId = (c, wanted) => !!wanted && [c?.id, c?.combatant_id, c?.combatantId, c?.token_id, c?.tokenId, c?.character_id, c?.characterId, c?.sheet_id, c?.sheetId, c?.player_id, c?.playerId].some(value => String(value || '') === wanted);
+  let idx = combatantId ? combatants.findIndex(c => matchesId(c, combatantId)) : -1;
+  if (idx < 0 && tokenId) idx = combatants.findIndex(c => matchesId(c, tokenId));
+  if (idx < 0 && characterId) idx = combatants.findIndex(c => matchesId(c, characterId));
+  if (idx < 0 && nameKey) idx = combatants.findIndex(c => String(c?.name || c?.displayName || '').trim().toLowerCase() === nameKey);
   if (idx < 0) return false;
   const combatant = combatants[idx];
   const total = _initiativeResultTotal(result);
@@ -48802,9 +48835,16 @@ function _combatQuickNormalizeWeapon(input) {
 }
 
 function _combatQuickWeaponMatchKeys(card) {
-  return [card && card.id, card && card.itemId, card && card.actionId, card && card.combatCardId, card && card.name, card && card.displayName]
+  const keys = [card && card.id, card && card.itemId, card && card.item_id, card && card.weaponId, card && card.weapon_id, card && card.actionId, card && card.action_id, card && card.combatCardId, card && card.combat_card_id, card && card.slug, card && card.name, card && card.displayName]
     .filter(Boolean)
     .map(String);
+  const expanded = [];
+  keys.forEach(key => {
+    expanded.push(key);
+    const stripped = key.replace(/^attack[-_:]/i, '').replace(/^weapon[-_:]/i, '');
+    if (stripped && stripped !== key) expanded.push(stripped);
+  });
+  return Array.from(new Set(expanded));
 }
 
 // Shared weapon lookup used by the Quick Actions weapon modal and the

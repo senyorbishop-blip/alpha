@@ -570,3 +570,10 @@ console.log(JSON.stringify({{ before, rows, combat: _combat }}));
     assert any("Bishop" in row and "4" in row for row in result["rows"])
     assert result["combat"]["revision"] == 1
     assert result["combat"]["active"] is True
+
+
+def test_initiative_result_matches_common_player_and_token_aliases():
+    src = PLAY.read_text(encoding="utf-8")
+    body = src[src.index("function applyInitiativeResultToCombatState(result)"):src.index("function applyCombatInitiativeRolled")]
+    for token in ["combatantId", "tokenId", "characterId", "matchesId", "player_id", "sheet_id", "roll_label"]:
+        assert token in body

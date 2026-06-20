@@ -339,10 +339,12 @@
     if (env && typeof env.drawFrame === 'function') env.drawFrame();
   }
   function fogApplyUpdate(state, env, p) {
-    const updCtx = _normalizeMapCtx((p && p.map_ctx) || 'world', env);
+    const updCtx = _normalizeMapCtx((p && (p.map_ctx || p.map_context || p.dm_map_context)) || 'world', env);
     const val = p && p.reveal ? 1 : 0;
-    if (!state.fogMaps[updCtx]) state.fogMaps[updCtx] = { enabled: true, cols: 64, rows: 64, cells: new Uint8Array(64 * 64) };
+    if (!state.fogMaps[updCtx]) state.fogMaps[updCtx] = { enabled: true, cols: Number(p && p.fog_cols) || 64, rows: Number(p && p.fog_rows) || 64, cells: new Uint8Array((Number(p && p.fog_cols) || 64) * (Number(p && p.fog_rows) || 64)) };
     const entry = state.fogMaps[updCtx];
+    if (Number(p && p.fog_cols) > 0) entry.cols = Number(p.fog_cols);
+    if (Number(p && p.fog_rows) > 0) entry.rows = Number(p.fog_rows);
     // A sparse paint update is only emitted by the server after that map's
     // manual fog is enabled. If this client missed the prior fog_state (common
     // during map-entry races), promote the local entry to enabled so the newly
