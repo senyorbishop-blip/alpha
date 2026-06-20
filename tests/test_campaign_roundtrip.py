@@ -148,3 +148,30 @@ def test_restore_prefers_legacy_editor_state_when_map_documents_field_is_corrupt
             assert restored.map_documents["world"]["layers"]["terrain"]["cells"] == {"9,9": "lava"}
         finally:
             _cleanup_modules(paths_mod, db_mod)
+
+
+def test_campaign_roundtrip_preserves_dm_player_key():
+    """A returning DM must keep its auth linkage (player_key) across save/restore.
+
+    Without persisting the DM's player_key, authority resolution after a server
+    restart treats the authenticated DM as a stranger/viewer, which denies the
+    websocket handshake and leaves the play page stuck on "Connecting…".
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        paths_mod, db_mod = _reload_db_modules(tmpdir)
+        try:
+            from server.restore import restore_session_from_db
+
+            session = _build_session()
+            session.users["dm1"].player_key = "auth_deadbeefcafe"
+
+            assert db_mod.save_campaign(session) is True
+            loaded = db_mod.load_campaign(session.id)
+            assert loaded is not None
+            assert loaded.get("dm_player_key") == "auth_deadbeefcafe"
+
+            restored, _ = restore_session_from_db(loaded)
+            assert restored.dm_id == "dm1"
+            assert restored.users["dm1"].player_key == "auth_deadbeefcafe"
+        finally:
+            _cleanup_modules(paths_mod, db_mod)

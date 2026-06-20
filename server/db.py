@@ -339,6 +339,7 @@ def init_db():
             "ALTER TABLE user_creature_library ADD COLUMN archived INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE user_creature_library ADD COLUMN seed_key TEXT",
             "ALTER TABLE campaigns ADD COLUMN dm_id TEXT",
+            "ALTER TABLE campaigns ADD COLUMN dm_player_key TEXT",
             "ALTER TABLE shops ADD COLUMN taught_professions_json TEXT NOT NULL DEFAULT '[]'",
             "ALTER TABLE shops ADD COLUMN crafting_enabled INTEGER NOT NULL DEFAULT 1",
             "ALTER TABLE shops ADD COLUMN selling_enabled INTEGER NOT NULL DEFAULT 1",
@@ -411,7 +412,8 @@ def init_db():
             world_state TEXT NOT NULL DEFAULT '{}',
             active_poll TEXT NOT NULL DEFAULT '{}',
             show_viewer_presence INTEGER NOT NULL DEFAULT 0,
-            dm_id TEXT
+            dm_id TEXT,
+            dm_player_key TEXT
         );
 
         CREATE TABLE IF NOT EXISTS tokens (
@@ -701,8 +703,8 @@ def _save_campaign_row(conn, session, serialized_fields: dict, persisted_state: 
     """Upsert the main campaigns row."""
     try:
         conn.execute("""
-            INSERT INTO campaigns (id, name, dm_name, player_invite, viewer_invite, created_at, updated_at, map_image_url, dm_map_context, dm_current_map_url, fog_maps, combat, journal_entries, library_entries, item_library_entries, char_profiles, player_inventories, player_gold, party_loot_log, editor_layers, editor_walls, editor_props, map_settings, editor_paths, editor_labels, editor_markers, editor_lights, map_documents, viewer_profiles, viewer_pending_actions, viewer_power_catalog, hazard_zones, corpse_states, corpse_dm_config, handouts, discovery_cards, private_story_hooks, encounter_templates, quest_templates, session_quests, quest_board_bindings, sound_state, weather_state, world_state, active_poll, show_viewer_presence, dm_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO campaigns (id, name, dm_name, player_invite, viewer_invite, created_at, updated_at, map_image_url, dm_map_context, dm_current_map_url, fog_maps, combat, journal_entries, library_entries, item_library_entries, char_profiles, player_inventories, player_gold, party_loot_log, editor_layers, editor_walls, editor_props, map_settings, editor_paths, editor_labels, editor_markers, editor_lights, map_documents, viewer_profiles, viewer_pending_actions, viewer_power_catalog, hazard_zones, corpse_states, corpse_dm_config, handouts, discovery_cards, private_story_hooks, encounter_templates, quest_templates, session_quests, quest_board_bindings, sound_state, weather_state, world_state, active_poll, show_viewer_presence, dm_id, dm_player_key)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 name=excluded.name,
                 updated_at=excluded.updated_at,
@@ -745,7 +747,8 @@ def _save_campaign_row(conn, session, serialized_fields: dict, persisted_state: 
                 world_state=excluded.world_state,
                 active_poll=excluded.active_poll,
                 show_viewer_presence=excluded.show_viewer_presence,
-                dm_id=excluded.dm_id
+                dm_id=excluded.dm_id,
+                dm_player_key=excluded.dm_player_key
         """, (
             session.id,
             getattr(session, 'name', 'My Campaign'),
@@ -794,6 +797,7 @@ def _save_campaign_row(conn, session, serialized_fields: dict, persisted_state: 
             _json_dumps_compact(persisted_state["active_poll"] or {}),
             int(bool(persisted_state["show_viewer_presence"])),
             getattr(session, 'dm_id', None),
+            _get_dm_player_key(session),
         ))
     except Exception as _ce:
         logger.error("[DB] campaigns INSERT failed: %s", _ce)
@@ -964,6 +968,7 @@ def load_campaign(campaign_id: str) -> Optional[dict]:
                 "dm_map_context": _row_value("dm_map_context", "world") or "world",
                 "dm_current_map_url": _row_value("dm_current_map_url"),
                 "dm_id": _row_value("dm_id") or None,
+                "dm_player_key": _row_value("dm_player_key") or None,
                 "show_viewer_presence": bool(_row_value("show_viewer_presence", 0) or 0),
                 "tokens":  [_sanitize_token_row(dict(t)) for t in tokens],
                 "logs":    [dict(l) for l in logs],
@@ -1003,6 +1008,20 @@ def _get_dm_name(session) -> str:
     if session.dm_id and session.dm_id in session.users:
         return session.users[session.dm_id].name
     return "Dungeon Master"
+
+
+def _get_dm_player_key(session) -> Optional[str]:
+    """Return the DM session user's stored player_key (auth linkage) for persistence.
+
+    The DM is not stored in the players table, so its player_key must be saved on
+    the campaigns row. Without this, a restored session loses the DM↔auth linkage
+    and a returning DM is resolved as a stranger/viewer (WS handshake denied).
+    """
+    dm_id = getattr(session, 'dm_id', None)
+    if dm_id and dm_id in session.users:
+        key = str(getattr(session.users[dm_id], 'player_key', '') or '').strip()
+        return key or None
+    return None
 
 
 _SHOP_TYPE_DEFAULT_PROFESSIONS = {
