@@ -799,8 +799,18 @@ async function _init() {
   // Hook WebSocket for TTS message relay
   _hookWebSocketMessages();
 
-  // DM-only panel setup (voice dropdown + phrase chips)
-  const isDM = document.getElementById('narration-voice-preset') !== null;
+  // DM-only panel setup (voice dropdown + phrase chips). The narration
+  // controls exist in the shared play.html DOM, so element presence is not a
+  // reliable role check. Gate network-heavy TTS metadata calls on ROLE/query
+  // role so player/viewer boot never fetches /api/tts/voices or
+  // /api/tts/warmup-phrases.
+  let role = 'viewer';
+  try {
+    role = String(window.ROLE || new URLSearchParams(window.location.search || '').get('role') || 'viewer').toLowerCase();
+  } catch (_err) {
+    role = String(window.ROLE || 'viewer').toLowerCase();
+  }
+  const isDM = role === 'dm';
   if (isDM) {
     await _populateVoiceDropdown();
     await _renderWarmupPhrases();

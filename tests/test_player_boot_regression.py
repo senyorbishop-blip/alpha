@@ -52,6 +52,55 @@ def test_player_boot_does_not_eagerly_call_dm_only_or_heavy_endpoints():
     assert "this.refreshStatus();" in mount
 
 
+def test_tts_client_metadata_fetches_are_dm_role_gated():
+    tts = (ROOT / "client/static/tts_client.js").read_text(encoding="utf-8")
+    init = tts[tts.index("async function _init()"):tts.index("if (document.readyState === 'loading')", tts.index("async function _init()"))]
+    assert "document.getElementById('narration-voice-preset') !== null" not in init
+    assert "new URLSearchParams(window.location.search || '').get('role')" in init
+    assert "const isDM = role === 'dm';" in init
+    assert "await _populateVoiceDropdown();" in init
+    assert "await _renderWarmupPhrases();" in init
+
+
+def test_player_boot_no_tts_metadata_fetches_under_player_role():
+    script = r"""
+global.window = global;
+window.location = { search: '?role=player' };
+window.ROLE = 'player';
+const calls = [];
+global.fetch = (url) => { calls.push(String(url)); return Promise.resolve({ ok: true, json: async () => ({ grouped: {}, phrases: [] }) }); };
+global.console = { warn: () => {}, error: () => {}, info: () => {}, debug: () => {}, log: console.log };
+global.document = {
+  readyState: 'complete',
+  head: { appendChild: () => {} },
+  body: { appendChild: () => {} },
+  createElement: (tag) => ({
+    tagName: tag, style: {}, className: '', textContent: '', innerHTML: '',
+    appendChild: () => {}, addEventListener: () => {}, remove: () => {},
+    setAttribute: () => {}, querySelector: () => null, querySelectorAll: () => [],
+  }),
+  getElementById: (id) => ({
+    id, style: {}, value: '', textContent: '', innerHTML: '',
+    appendChild: () => {}, addEventListener: () => {}, remove: () => {},
+    querySelector: () => null, querySelectorAll: () => [],
+  }),
+  querySelector: () => null,
+  querySelectorAll: () => [],
+  addEventListener: () => {},
+};
+global.Audio = function () { return { addEventListener: () => {}, play: () => Promise.resolve(), pause: () => {} }; };
+global.CustomEvent = function CustomEvent(type, init) { return { type, detail: init && init.detail }; };
+require('./client/static/tts_client.js');
+Promise.resolve().then(() => Promise.resolve()).then(() => {
+  console.log(JSON.stringify({ calls }));
+});
+"""
+    result = subprocess.check_output(["node", "-e", script], cwd=ROOT, text=True, timeout=30)
+    data = __import__('json').loads(result.strip().splitlines()[-1])
+    assert not any('/api/tts/voices' in call for call in data['calls'])
+    assert not any('/api/tts/warmup-phrases' in call for call in data['calls'])
+
+
 def test_autosave_render_deferral_is_bounded_not_recursive_reschedule():
     play = _play_src()
     guard = play[play.index("function __deferCharProfileAutosaveUntilRenderUnwinds"):play.index("function scheduleCharProfileAutosave")]
