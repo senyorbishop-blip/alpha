@@ -2,8 +2,11 @@
 server/connections.py — WebSocket connection registry and broadcaster
 """
 import json
+import logging
 from typing import Dict, Set, Optional
 from fastapi import WebSocket
+
+logger = logging.getLogger(__name__)
 
 
 class ConnectionManager:
@@ -13,17 +16,28 @@ class ConnectionManager:
     def get_session_connections(self, session_id: str) -> Dict[str, WebSocket]:
         return self._connections.get(session_id, {})
 
-    async def connect(self, session_id: str, user_id: str, websocket: WebSocket):
+    async def connect(self, session_id: str, user_id: str, websocket: WebSocket, role: str | None = None):
         await websocket.accept()
         if session_id not in self._connections:
             self._connections[session_id] = {}
         prior = self._connections[session_id].get(user_id)
         if prior and prior is not websocket:
+            logger.warning(
+                "[ws] replacing socket session_id=%s user_id=%s role=%s old_socket_replaced=true new_socket_connected=false",
+                session_id, user_id, role or "unknown",
+            )
             try:
                 await prior.close(code=1001, reason="Replaced by a newer connection")
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning(
+                    "[ws] old socket close failed during replacement session_id=%s user_id=%s role=%s error=%s",
+                    session_id, user_id, role or "unknown", exc,
+                )
         self._connections[session_id][user_id] = websocket
+        logger.info(
+            "[ws] connected session_id=%s user_id=%s role=%s old_socket_replaced=%s new_socket_connected=true",
+            session_id, user_id, role or "unknown", bool(prior and prior is not websocket),
+        )
 
     def disconnect(self, session_id: str, user_id: str, websocket: Optional[WebSocket] = None) -> bool:
         if session_id in self._connections:
@@ -44,6 +58,7 @@ class ConnectionManager:
                 await ws.send_text(json.dumps(message))
                 return True
             except Exception:
+                logger.warning("[ws] send_to failed session_id=%s user_id=%s message_type=%s", session_id, user_id, message.get("type"))
                 self.disconnect(session_id, user_id)
         return False
 

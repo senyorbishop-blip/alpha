@@ -98,7 +98,9 @@
           // silent drop or heartbeat-driven reconnect. state_sync also carries
           // combat, but this guarantees a redraw even if that race is lost.
           var _combatForResync = global._combat || global.combat || null;
-          if (_combatForResync && _combatForResync.active) {
+          var _combatKnown = !!(_combatForResync && typeof _combatForResync === 'object' && Object.prototype.hasOwnProperty.call(_combatForResync, 'active'));
+          if (!_combatKnown || _combatForResync.active) {
+            console.debug('[WS] requesting authoritative combat_state after open', { known: _combatKnown, active: !!(_combatForResync && _combatForResync.active) });
             if (global.AppWS && typeof global.AppWS.send === 'function') global.AppWS.send({ type: 'combat_state_request', payload: {} });
             else if (typeof global.sendWS === 'function') global.sendWS({ type: 'combat_state_request', payload: {} });
           }

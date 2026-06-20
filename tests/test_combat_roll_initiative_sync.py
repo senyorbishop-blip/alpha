@@ -410,3 +410,50 @@ async def test_mid_combat_initialized_reroll_preserves_locked_active_turn(monkey
 
     assert [c["id"] for c in session.combat["combatants"]] == ["cmb-npc", "cmb-hero"]
     assert session.combat["combatants"][session.combat["turn"]]["id"] == "cmb-npc"
+
+@pytest.mark.anyio
+async def test_broadcast_combat_counts_only_successful_send_to(monkeypatch):
+    session, dm, player = _build_session()
+    calls = []
+
+    async def _fake_send_to(session_id, user_id, message):
+        calls.append((user_id, message))
+        return user_id == dm.id
+
+    monkeypatch.setattr(combat_handlers.manager, "get_session_connections", lambda session_id: {dm.id: object(), player.id: object()})
+    monkeypatch.setattr(combat_handlers.manager, "send_to", _fake_send_to)
+
+    result = await combat_handlers._broadcast_combat(session)
+
+    assert result["sent_to"] == [dm.id]
+    assert result["failed"] == [player.id]
+    assert [uid for uid, _ in calls] == [dm.id, player.id]
+
+
+@pytest.mark.anyio
+async def test_replacing_same_user_socket_closes_old_and_new_receives_combat_state(monkeypatch):
+    session, dm, player = _build_session()
+
+    async def _fake_save(*args, **kwargs):
+        return True
+    monkeypatch.setattr(combat_handlers, "save_campaign_async", _fake_save)
+
+    old_ws = _FakeWebSocket()
+    old_ws.closed = []
+    async def _close(code=1000, reason=""):
+        old_ws.closed.append({"code": code, "reason": reason})
+    old_ws.close = _close
+
+    new_ws = _FakeWebSocket()
+    await combat_handlers.manager.connect(session.id, dm.id, old_ws, role=dm.role)
+    await combat_handlers.manager.connect(session.id, dm.id, new_ws, role=dm.role)
+    await combat_handlers.manager.connect(session.id, player.id, _FakeWebSocket(), role=player.role)
+    try:
+        await combat_handlers.handle_combat_roll_initiative({"combatant_id": "cmb-npc", "roll": 18}, session, dm)
+    finally:
+        combat_handlers.manager.disconnect(session.id, dm.id)
+        combat_handlers.manager.disconnect(session.id, player.id)
+
+    assert old_ws.closed and old_ws.closed[-1]["code"] == 1001
+    assert not _combat_state_messages(old_ws), "replaced stale tab must not receive future combat_state"
+    assert _combat_state_messages(new_ws), "new visible socket must receive combat_state"

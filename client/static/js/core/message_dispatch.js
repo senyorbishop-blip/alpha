@@ -46,6 +46,11 @@
     dispatchDepth += 1;
     dispatchChain.push(msgType);
     try {
+      if (msgType === 'combat_state') {
+        const payload = msg.payload || {};
+        const order = Array.isArray(payload.combatants) ? payload.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : [];
+        console.debug('[AppMessageDispatch] handleIncoming combat_state', { revision: payload.revision, order, turn: payload.turn, active: order[Number(payload.turn || 0)] || null });
+      }
       runtimeEnv.handleLegacyMessage(msg);
       return true;
     } catch (err) {

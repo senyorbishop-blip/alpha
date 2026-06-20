@@ -47356,6 +47356,11 @@ function renderCombat() {
   }
   if (empty) empty.style.display = 'none';
   _renderCombatRoster(list, roster, isActive);
+  try {
+    const finalRows = Array.from(list.querySelectorAll ? list.querySelectorAll('[data-combatant-id]') : (list.children || []))
+      .map(el => `${el.dataset?.combatantId || '?'}:${(el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120)}`);
+    console.debug('[renderCombat] sidebar DOM updated', { rootExists: !!list, rows: finalRows });
+  } catch (_err) {}
   _renderSuspendedCombatants(list);
   renderPartyStatusPanel();
   suggestVisibleHostilesForInitiative();
