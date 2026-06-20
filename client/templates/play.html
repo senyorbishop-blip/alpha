@@ -32340,7 +32340,7 @@ function handleLegacyMessage(msg) {
         handleCombatStateLive(p.combat);
       }
       // Apply ambient sound state for reconnecting players
-      if (p.sound_state && p.sound_state.track && p.sound_state.track !== 'silence') {
+      if (ROLE === 'dm' && p.sound_state && p.sound_state.track && p.sound_state.track !== 'silence') {
         soundSetAmbient(String(p.sound_state.track), Number(p.sound_state.volume ?? 0.7), 800);
       }
       // Apply weather state for reconnecting players
@@ -45117,7 +45117,8 @@ function forceCombatStateUISync() {
   if (typeof refreshCombatBadges === 'function') refreshCombatBadges();
   if (typeof renderTokens === 'function') renderTokens();
   if (typeof drawTokens === 'function') drawTokens();
-  if (typeof drawFrame === 'function') drawFrame();
+  if (typeof requestRenderFrame === 'function') requestRenderFrame('combat_state render');
+  else if (typeof drawFrame === 'function') drawFrame();
 }
 
 function _isAccidentalEmptyCombatState(state) {
@@ -47429,8 +47430,10 @@ function renderCombat() {
   // The player actions hub / quick bar are secondary surfaces. Never let an
   // error in them abort the combat-list repaint below — otherwise the roller's
   // own initiative row would not update until a later forced refresh (Bug 2).
-  safeClientCall('renderPlayerActionsHub', () => renderPlayerActionsHub());
-  safeClientCall('combatQuickBar.render', () => { if (window.CombatQuickBar && typeof window.CombatQuickBar.render === 'function') window.CombatQuickBar.render(); });
+  if (!window.__combatApplyStateActive) {
+    safeClientCall('renderPlayerActionsHub', () => renderPlayerActionsHub());
+    safeClientCall('combatQuickBar.render', () => { if (window.CombatQuickBar && typeof window.CombatQuickBar.render === 'function') window.CombatQuickBar.render(); });
+  }
   if (roundLbl) roundLbl.textContent = isActive ? `Round ${_combat.round ?? _combatRound}` : 'Round —';
   if (turnSummary) {
     if (!isActive || !coms.length) {
@@ -47857,17 +47860,8 @@ function combatRollInitiative(combatantId) {
     const latest = _combat.combatants.find(c => c.id === combatantId);
     if (!latest) return;
     const roll = parseInt(result?.rolls?.[0], 10) || 0;
-    applyInitiativeResultToCombatState({
-      combatant_id: combatantId,
-      token_id: latest.token_id,
-      initiative: roll + modifier,
-      total: roll + modifier,
-      roll,
-      modifier,
-      roll_id: initiativeRollId,
-      encounter_id: _combat?.encounter_id || '',
-      source: 'local-settled-initiative',
-    });
+    delete latest._initiativeRollPending;
+    renderCombat();
     sendWS({ type: 'combat_roll_initiative', payload: {
       combatant_id: combatantId,
       roll:         roll,
@@ -47916,85 +47910,28 @@ function _initiativeResultRoll(result) {
 }
 
 function applyInitiativeResultToCombatState(result) {
-  if (!result || typeof result !== 'object' || !_combat) return false;
-  const combatants = Array.isArray(_combat.combatants) ? _combat.combatants : [];
-  if (!Array.isArray(_combat.combatants)) _combat.combatants = combatants;
-  const combatantId = String(result.combatant_id || result.combatantId || result.id || result.actor_id || result.actorId || '').trim();
-  const tokenId = String(result.token_id || result.tokenId || result.token || '').trim();
-  const characterId = String(result.character_id || result.characterId || result.sheet_id || result.sheetId || '').trim();
-  const nameKey = String(result.name || result.combatant_name || result.roll_label || '').replace(/\s+initiative\b/i, '').trim().toLowerCase();
-  const matchesId = (c, wanted) => !!wanted && [c?.id, c?.combatant_id, c?.combatantId, c?.token_id, c?.tokenId, c?.character_id, c?.characterId, c?.sheet_id, c?.sheetId, c?.player_id, c?.playerId].some(value => String(value || '') === wanted);
-  let idx = combatantId ? combatants.findIndex(c => matchesId(c, combatantId)) : -1;
-  if (idx < 0 && tokenId) idx = combatants.findIndex(c => matchesId(c, tokenId));
-  if (idx < 0 && characterId) idx = combatants.findIndex(c => matchesId(c, characterId));
-  if (idx < 0 && nameKey) idx = combatants.findIndex(c => String(c?.name || c?.displayName || '').trim().toLowerCase() === nameKey);
-  if (idx < 0) return false;
-  const combatant = combatants[idx];
-  const total = _initiativeResultTotal(result);
-  const roll = _initiativeResultRoll(result);
-  const modifier = Number(result.modifier ?? result.init_bonus ?? combatant.modifier ?? 0);
-  if (Number.isFinite(total)) combatant.initiative = total;
-  if (Number.isFinite(roll)) combatant.roll = roll;
-  if (Number.isFinite(modifier)) combatant.modifier = modifier;
-  delete combatant._initiativeRollPending;
-  const incomingRevision = Number(result.revision);
-  if (Number.isFinite(incomingRevision)) _combat.revision = Math.max(Number(_combat.revision) || 0, incomingRevision);
-  if (result.encounter_id) _combat.encounter_id = result.encounter_id;
-  if (Number.isFinite(Number(result.turn))) _combat.turn = Number(result.turn);
-  else {
-    const currentKey = String(combatants[Math.max(0, Number(_combat.turn) || 0)]?.id || combatants[Math.max(0, Number(_combat.turn) || 0)]?.token_id || '');
-    if (typeof _sortCombatants === 'function') _sortCombatants();
-    if (_combat.active && currentKey) {
-      const newTurn = combatants.findIndex(c => String(c?.id || c?.token_id || '') === currentKey);
-      if (newTurn >= 0) _combat.turn = newTurn;
-    } else {
-      _combat.turn = Math.max(0, Math.min(Number(_combat.turn) || 0, Math.max(0, combatants.length - 1)));
-    }
+  // combat_state is the only canonical initiative/combat roster authority.
+  // dice_result/combat_initiative_rolled may display cards/animations, but must
+  // never patch _combat/combatState/currentCombat locally and race the server
+  // broadcast. Ask for fresh state if a revision hint suggests we missed one.
+  const expectedRevision = Number(result && result.revision);
+  const localRevision = Number(_combat && _combat.revision);
+  if (Number.isFinite(expectedRevision) && (!Number.isFinite(localRevision) || localRevision < expectedRevision)) {
+    if (_combatInitiativeResyncTimer) clearTimeout(_combatInitiativeResyncTimer);
+    _combatInitiativeResyncTimer = setTimeout(() => {
+      if (typeof sendWS === 'function') sendWS({ type: 'combat_state_request', payload: {} });
+    }, 100);
   }
-  window._combat = _combat;
-  window.combat = _combat;
-  window.combatState = _combat;
-  window.currentCombat = _combat;
-  if (typeof partySnapshot === 'object' && partySnapshot) partySnapshot.combat = _combat;
-  if (typeof activeContext === 'object' && activeContext) activeContext.combat = _combat;
-  if (typeof initiativeList !== 'undefined' && Array.isArray(initiativeList)) {
-    initiativeList.length = 0;
-    combatants.forEach(c => initiativeList.push(c));
-  }
-  const repaint = () => {
-    if (typeof renderCombat === 'function') renderCombat();
-    if (typeof refreshRightPanelContextUI === 'function') refreshRightPanelContextUI();
-    if (typeof updateActiveContext === 'function') updateActiveContext();
-    if (typeof refreshCombatBadges === 'function') refreshCombatBadges();
-    if (typeof refreshTokenBadges === 'function') refreshTokenBadges();
-  };
-  try {
-    repaint();
-  } catch (err) {
-    console.warn('[combat initiative sync] incremental repaint collided with active render; retrying', err);
-    const retry = () => {
-      try { repaint(); }
-      catch (retryErr) { console.error('[combat initiative sync] deferred repaint failed', retryErr); }
-    };
-    if (typeof queueMicrotask === 'function') queueMicrotask(retry);
-    else setTimeout(retry, 0);
-  }
-  return true;
+  return false;
 }
 
+
 function applyCombatInitiativeRolled(payload) {
+  // Animation/card-only event. The following combat_state broadcast is
+  // authoritative for roster/order/initiative values.
   applyInitiativeResultToCombatState(payload);
-  // combat_state remains authoritative for final order. If that authoritative
-  // state is delayed/missed, request a fresh copy after patching the visible row.
-  if (_combatInitiativeResyncTimer) clearTimeout(_combatInitiativeResyncTimer);
-  const expectedRevision = Number(payload && payload.revision);
-  _combatInitiativeResyncTimer = setTimeout(() => {
-    const localRevision = Number(_combat && _combat.revision);
-    if (!Number.isFinite(expectedRevision) || !Number.isFinite(localRevision) || localRevision < expectedRevision) {
-      if (typeof sendWS === 'function') sendWS({ type: 'combat_state_request', payload: {} });
-    }
-  }, 300);
 }
+
 
 function _formatInitiativeCellValue(combatant) {
   if (!combatant) return '—';
@@ -49412,8 +49349,29 @@ function _combatQuickCriticalFormula(formula) {
   return String(formula || '').replace(/(\d+)d(\d+)/gi, function (_m, qty, die) { return (Math.max(1, parseInt(qty, 10) || 1) * 2) + 'd' + die; });
 }
 
+let __quickWeaponDamageRollActive = false;
+function resolveQuickWeaponAction(actionOrId) {
+  return findCombatWeapon(actionOrId);
+}
+
+function performQuickWeaponDamageRoll(actionOrId, options = {}) {
+  const mode = options && options.mode ? options.mode : 'base';
+  const critical = !!(options && options.critical);
+  if (__quickWeaponDamageRollActive) { console.warn('[quick weapon damage] re-entry ignored'); return false; }
+  __quickWeaponDamageRollActive = true;
+  try {
+    return performCombatQuickRollWeaponDamage(actionOrId, mode, critical);
+  } finally {
+    __quickWeaponDamageRollActive = false;
+    const refresh = () => { if (window.CombatQuickBar && typeof window.CombatQuickBar.refreshCombatQuickActions === 'function') window.CombatQuickBar.refreshCombatQuickActions(); };
+    const deferRefresh = () => (typeof requestAnimationFrame === 'function' ? requestAnimationFrame(refresh) : setTimeout(refresh, 0));
+    if (typeof queueMicrotask === 'function') queueMicrotask(deferRefresh);
+    else setTimeout(refresh, 0);
+  }
+}
+
 function performCombatQuickRollWeaponDamage(actionOrId, mode = 'base', critical = false) {
-  const card = findCombatWeapon(actionOrId);
+  const card = resolveQuickWeaponAction(actionOrId);
   if (!card) {
     const label = (actionOrId && typeof actionOrId === 'object') ? (actionOrId.name || actionOrId.id || 'unknown') : String(actionOrId || 'unknown');
     showToast('Weapon roll handler missing. Attack not found: ' + label);
@@ -49493,25 +49451,18 @@ function rollQuickWeaponAttack(ctx) {
 }
 
 function rollQuickWeaponDamage(ctx) {
-  const formula = String((ctx && ctx.damageFormula) || '').trim();
-  if (!formula) { showToast(`Could not roll ${(ctx && ctx.name) || 'weapon'} damage: missing formula`); return null; }
-  const roll = _rollQuickWeaponFormulaChunks(formula);
-  if (!roll) { showToast(`Could not roll ${(ctx && ctx.name) || 'weapon'} damage: missing formula`); return null; }
-  postQuickWeaponRollResult(ctx || {}, roll, 'damage');
-  return roll;
+  return performQuickWeaponDamageRoll(ctx || {}, { mode: (ctx && ctx.mode) || 'base', critical: false });
 }
 
 function rollQuickWeaponCriticalDamage(ctx) {
-  const formula = String((ctx && ctx.criticalDamageFormula) || _combatQuickCriticalFormula((ctx && ctx.damageFormula) || '')).trim();
-  if (!formula) { showToast(`Could not roll ${(ctx && ctx.name) || 'weapon'} critical damage: missing formula`); return null; }
-  const roll = _rollQuickWeaponFormulaChunks(formula);
-  if (!roll) { showToast(`Could not roll ${(ctx && ctx.name) || 'weapon'} critical damage: missing formula`); return null; }
-  postQuickWeaponRollResult(ctx || {}, roll, 'critical-damage');
-  return roll;
+  return performQuickWeaponDamageRoll(ctx || {}, { mode: (ctx && ctx.mode) || 'base', critical: true });
 }
 window.rollQuickWeaponAttack = rollQuickWeaponAttack;
 window.rollQuickWeaponDamage = rollQuickWeaponDamage;
 window.rollQuickWeaponCriticalDamage = rollQuickWeaponCriticalDamage;
+window.resolveQuickWeaponAction = resolveQuickWeaponAction;
+window.performQuickWeaponDamageRoll = performQuickWeaponDamageRoll;
+window.performCombatQuickRollWeaponDamage = performCombatQuickRollWeaponDamage;
 
 function performCombatQuickCastSpell(spellId, preferredLevel) {
   const spell = findCombatSpell(spellId);
