@@ -365,8 +365,10 @@ def test_quick_weapon_damage_has_single_canonical_pipeline_without_sync_render_o
     body = src[start:end]
     assert "function resolveQuickWeaponAction(actionOrId)" in src[src.index("function resolveQuickWeaponAction"):start]
     assert "__quickWeaponDamageRollActive" in body
-    for forbidden in ["scheduleCharProfileAutosave", "markCharProfileDirty", "syncCharSheetFromBookData", "selectQuickActions", "renderPlayerActionsHub(", "CombatQuickBar.render("]:
+    for forbidden in ["scheduleCharProfileAutosave", "markCharProfileDirty", "syncCharSheetFromBookData", "selectQuickActions", "renderPlayerActionsHub(", "CombatQuickBar.render(", "CombatQuickBar", "refreshCombatQuickActions"]:
         assert forbidden not in body
-    assert "queueMicrotask" in body
-    assert "sendWS({ type: 'chat_message'" in body
+    # Damage rolls are pure runtime: the wrapper must NOT defer a quick-bar
+    # refresh (that historically re-entered the render->autosave recursion).
+    assert "queueMicrotask" not in body
+    assert "performCombatQuickRollWeaponDamage(actionOrId, mode, critical)" in body
     assert "window.performCombatQuickRollWeaponDamage = performCombatQuickRollWeaponDamage" in src

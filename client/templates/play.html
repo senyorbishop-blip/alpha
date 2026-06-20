@@ -41351,8 +41351,28 @@ function markCharProfileClean(profile) {
 
 function __isCharProfileRenderStackActive() {
   const depths = window.__depths || {};
-  return ['renderCombat', 'renderPlayerActionsHub', 'CombatQuickBar.render', 'selectQuickActions', 'combatApplyState'].some(name => Number(depths[name] || 0) > 0)
+  return __charProfileForbiddenAutosaveStack().some(name => Number(depths[name] || 0) > 0)
     || !!window.__combatApplyStateActive;
+}
+
+// Functions that own a render/select pass during which the persistent character
+// profile must never be saved — an autosave here re-renders, which schedules
+// another autosave, recursing until the browser freezes.
+function __charProfileForbiddenAutosaveStack() {
+  return ['renderCombat', 'renderPlayerActionsHub', 'CombatQuickBar.render', 'selectQuickActions', 'combatApplyState'];
+}
+
+// In development, surface a stack trace identifying exactly which forbidden
+// render/select function attempted the autosave so the recursion source is
+// obvious. Production stays quiet (single warn) to avoid console spam.
+function __traceForbiddenCharProfileAutosave(reason) {
+  const depths = window.__depths || {};
+  const active = __charProfileForbiddenAutosaveStack().filter(name => Number(depths[name] || 0) > 0);
+  if (window.__combatApplyStateActive) active.push('combatApplyState(flag)');
+  const isDev = !!(window.DEBUG_QUICK_ACTIONS || window.__DEV__ || (typeof location !== 'undefined' && /^(localhost|127\.0\.0\.1)$/.test(String(location.hostname || ''))));
+  if (isDev && console && typeof console.trace === 'function') {
+    console.trace('[char profile] autosave attempted from forbidden render/select stack', { reason, active });
+  }
 }
 
 let __charProfileAutosaveDeferredForRender = false;
@@ -41389,6 +41409,7 @@ function scheduleCharProfileAutosave(reason = 'user') {
   if (window.__safeMode?.charProfileDirtySave || __isRemoteStateOrCombatApplying()) { console.warn('[char profile] autosave skipped during remote/combat apply', { reason, remote: isApplyingRemoteState, stateSync: window.__stateSyncApplying, combatApply: window.__combatApplyStateActive }); return; }
   if (__isCharProfileRenderStackActive()) {
     console.warn('[char profile] autosave deferred during render/select stack', { reason, depths: Object.assign({}, window.__depths || {}) });
+    __traceForbiddenCharProfileAutosave(reason);
     __deferCharProfileAutosaveUntilRenderUnwinds(reason);
     return;
   }
@@ -41446,6 +41467,69 @@ function _refreshActiveNativeRuntimeHpFromCanonical(maxHpInput, currentHpInput, 
   }
 }
 
+// ── Character profile runtime/transient field stripping ─────────────────────
+// A character profile is the PERSISTENT save document. Combat/UI runtime state
+// must never be written into it — historically that bloated the persisted
+// `char_profiles` field past 4.5 MB (see the DB large_field warning) and slowed
+// every save/sync. These keys are pure runtime caches that are always rebuilt
+// from canonical data on load, so they are safe to drop before persisting.
+const CHAR_PROFILE_RUNTIME_KEYS = Object.freeze([
+  // quick-action computed cards / recomputed action models
+  '_quickActionCards', 'quickActionCards', '_computedActions', '_computedCards',
+  '_allActions', '_unifiedAttackCards', '_combatQuickCache', '_combatQuickRuntime',
+  // rendered HTML blobs
+  'renderedHtml', '_renderedHtml', 'innerHTML', '_html',
+  // dice results / roll caches
+  'diceResults', '_diceResults', 'lastRoll', '_lastRoll', 'lastRollResult',
+  'rollResults', '_rollCache',
+  // spell runtime caches
+  'spellRuntime', '_spellRuntime', '_spellRuntimeCache', 'publicBaseCache',
+  // item / image runtime caches
+  'itemRuntime', '_itemRuntime', '_itemRuntimeCache', '_tokenImageCache',
+  'imageCache', '_customAssetImageCache', '_monsterQuickCreatureCache',
+  // combat runtime
+  'combatRuntime', '_combatRuntime',
+  // UI / transient modal state
+  'uiState', '_uiState', '_panelState', '_scrollState',
+  'modalState', '_modalState', '_pendingModal', '_openModal',
+  // imported rawText duplicates kept only as transient caches
+  '_rawTextCache', 'rawTextDuplicate', '_rawTextDuplicate',
+]);
+const _CHAR_PROFILE_RUNTIME_KEY_SET = new Set(CHAR_PROFILE_RUNTIME_KEYS);
+
+function _stripCharProfileRuntimeFields(value, _seen) {
+  if (!value || typeof value !== 'object') return value;
+  const seen = _seen || new Set();
+  if (seen.has(value)) return value;
+  seen.add(value);
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i += 1) _stripCharProfileRuntimeFields(value[i], seen);
+    return value;
+  }
+  for (const key of Object.keys(value)) {
+    if (_CHAR_PROFILE_RUNTIME_KEY_SET.has(key) || /(?:^_)?rendered[A-Z_]|Html$|_html$/.test(key)) {
+      delete value[key];
+      continue;
+    }
+    _stripCharProfileRuntimeFields(value[key], seen);
+  }
+  return value;
+}
+window._stripCharProfileRuntimeFields = _stripCharProfileRuntimeFields;
+
+// Best-effort byte sizes per top-level profile key — used by the oversized
+// profile diagnostics so a large save points at exactly which field is huge.
+function _charProfileKeySizes(profile) {
+  const sizes = {};
+  if (!profile || typeof profile !== 'object') return sizes;
+  for (const key of Object.keys(profile)) {
+    try { sizes[key] = JSON.stringify(profile[key] ?? null).length; }
+    catch (_e) { sizes[key] = -1; }
+  }
+  return sizes;
+}
+window._charProfileKeySizes = _charProfileKeySizes;
+
 function collectCurrentCharProfile(opts = {}) {
   initCharacterBook();
   seedCharacterBookFromCurrentState();
@@ -41460,7 +41544,7 @@ function collectCurrentCharProfile(opts = {}) {
   const profileMaxHp = parseInt(((charBook?.maxHp ?? document.getElementById('char-hp')?.value) || ''), 10);
   const profileTempHp = parseInt(((charBook?.tempHp ?? document.getElementById('char-temp-hp')?.value) || ''), 10);
   _refreshActiveNativeRuntimeHpFromCanonical(profileMaxHp, profileCurHp, profileTempHp);
-  return {
+  const profile = {
     id: profileId,
     name: (document.getElementById('char-name')?.value || charBook.name || '').trim() || 'Unnamed Character',
     classId: selectedClass?.id || '',
@@ -41511,6 +41595,10 @@ function collectCurrentCharProfile(opts = {}) {
       ? JSON.parse(JSON.stringify(_activeNativeCharacterDocument.importMeta))
       : undefined,
   };
+  // Strip combat/UI runtime caches before this profile is hashed, persisted, or
+  // sent over the websocket. Runtime state is always rebuilt from canonical data
+  // on load, so dropping it keeps char_profiles from growing without bound.
+  return _stripCharProfileRuntimeFields(profile);
 }
 
 function saveCurrentCharProfile(opts = {}) {
@@ -41534,6 +41622,14 @@ function saveCurrentCharProfile(opts = {}) {
   setCharacterBookSaveState('saving');
   _suppressCharProfileReloadUntil = Date.now() + 2200;
   try {
+    // Oversized-profile diagnostics: if the payload is large, log a per-key byte
+    // breakdown (largest first) so the bloated field is named explicitly instead
+    // of just seeing the server's char_profiles large_field warning.
+    if (currentDraftHash.length > 256_000) {
+      const sizes = _charProfileKeySizes(profile);
+      const top = Object.entries(sizes).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      console.warn('[char profile] oversized profile save', { id: profile.id, totalBytes: currentDraftHash.length, topKeys: top.map(([k, v]) => `${k}=${v}`) });
+    }
     rememberActiveCharProfile(profile.id);
     persistCurrentCharProfileDraft(profile);
     sendWS({ type: 'char_profile_upsert', payload: profile });
@@ -49513,13 +49609,17 @@ function performQuickWeaponDamageRoll(actionOrId, options = {}) {
   if (__quickWeaponDamageRollActive) { console.warn('[quick weapon damage] re-entry ignored'); return false; }
   __quickWeaponDamageRollActive = true;
   try {
+    // Damage rolls are PURE runtime actions: resolve the formula from the
+    // already-open weapon card/modal context, roll the dice locally, show the
+    // result, post one lightweight chat/combat-log line, then return. They must
+    // NEVER rebuild the character profile or recompute/rerender the quick-action
+    // surface. Refreshing the quick bar here historically chained the action-hub
+    // render into the quick selector and on into the profile autosave, recursing
+    // until the player's browser froze. There is intentionally no
+    // refresh/render/autosave in this finally block.
     return performCombatQuickRollWeaponDamage(actionOrId, mode, critical);
   } finally {
     __quickWeaponDamageRollActive = false;
-    const refresh = () => { if (window.CombatQuickBar && typeof window.CombatQuickBar.refreshCombatQuickActions === 'function') window.CombatQuickBar.refreshCombatQuickActions(); };
-    const deferRefresh = () => (typeof requestAnimationFrame === 'function' ? requestAnimationFrame(refresh) : setTimeout(refresh, 0));
-    if (typeof queueMicrotask === 'function') queueMicrotask(deferRefresh);
-    else setTimeout(refresh, 0);
   }
 }
 

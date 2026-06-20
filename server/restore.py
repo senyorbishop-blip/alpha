@@ -10,6 +10,7 @@ from server.map_document import build_map_documents_from_session, hydrate_sessio
 from server.persistence_schema import normalize_persisted_campaign_data
 from server.quest_progression import resolve_session_quest_progression
 from server.character.summon_runtime import reconcile_session_active_summons
+from server.character.profile_sanitize import clean_char_profiles_map
 
 
 def _valid_map_contexts(session: Session) -> set[str]:
@@ -89,6 +90,10 @@ def restore_session_from_db(data: dict):
     session.library_entries = data.get("library_entries", []) or []
     session.item_library_entries = data.get("item_library_entries", []) or []
     session.char_profiles = data.get("char_profiles", {}) or {}
+    # Migration: strip runtime caches from previously-persisted profiles so an
+    # already-oversized char_profiles field is shrunk safely on first load,
+    # without deleting any real character data.
+    clean_char_profiles_map(session.char_profiles)
     session.active_char_profiles = data.get("active_char_profiles", {}) or {}
     session.player_inventories = data.get("player_inventories", {}) or {}
     session.player_gold = data.get("player_gold", {}) or {}

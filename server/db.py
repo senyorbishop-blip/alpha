@@ -72,13 +72,43 @@ def _log_campaign_field_issue(action: str, campaign_id: str, field: str, reason:
     print(msg)
 
 
+def _char_profiles_size_breakdown(value: str, limit: int = 8) -> str:
+    """Return a compact "owner/profile=bytes" breakdown of the largest entries in
+    a serialized char_profiles field, so an oversized warning names exactly what
+    is huge instead of only reporting a total byte count."""
+    try:
+        data = json.loads(value)
+    except Exception:
+        return ""
+    sizes: list[tuple[str, int]] = []
+    if isinstance(data, dict):
+        for owner_key, profiles in data.items():
+            entries = profiles if isinstance(profiles, list) else [profiles]
+            for profile in entries:
+                if not isinstance(profile, dict):
+                    continue
+                label = f"{owner_key}/{profile.get('id') or profile.get('name') or '?'}"
+                for key, sub in profile.items():
+                    try:
+                        sizes.append((f"{label}:{key}", len(_json_dumps_compact(sub))))
+                    except Exception:
+                        continue
+    sizes.sort(key=lambda kv: kv[1], reverse=True)
+    return " ".join(f"{name}={size}" for name, size in sizes[:limit])
+
+
 def _warn_large_persisted_field(campaign_id: str, field: str, value: str) -> None:
     if len(value) <= _LARGE_FIELD_WARN_THRESHOLD:
         return
     warn_key = f"{campaign_id}:{field}"
     if warn_key in _large_field_warned:
         return
-    _log_campaign_field_issue("warning", campaign_id, field, "large_field", len(value))
+    detail = len(value)
+    if field == "char_profiles":
+        breakdown = _char_profiles_size_breakdown(value)
+        if breakdown:
+            detail = f"{len(value)} top_keys[{breakdown}]"
+    _log_campaign_field_issue("warning", campaign_id, field, "large_field", detail)
     _large_field_warned.add(warn_key)
 
 
