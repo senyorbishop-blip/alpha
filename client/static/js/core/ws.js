@@ -192,7 +192,7 @@
       if (msg && msg.type === 'combat_state') {
         const payload = msg.payload || {};
         const order = Array.isArray(payload.combatants) ? payload.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : [];
-        console.debug('[WS] onmessage combat_state', { revision: payload.revision, order, turn: payload.turn, active: order[Number(payload.turn || 0)] || null });
+        console.debug(`[WS] received combat_state revision=${payload.revision ?? 'none'} order=${JSON.stringify(order).replace(/\"/g, "'")}`);
       }
       config.onMessage(msg);
     };
