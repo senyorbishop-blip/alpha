@@ -54,6 +54,7 @@ async def test_token_move_allows_legacy_owner_key(monkeypatch):
 
     monkeypatch.setattr(token_handlers.manager, "send_to", _capture)
     monkeypatch.setattr(token_handlers, "_broadcast_token_event", _noop)
+    monkeypatch.setattr(token_handlers, "_broadcast_token_visibility", _noop)
     monkeypatch.setattr(token_handlers, "_process_hazard_triggers_for_token", _noop)
     monkeypatch.setattr(token_handlers, "_broadcast_combat_move_state", _noop)
 

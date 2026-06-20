@@ -71,6 +71,10 @@
     if (spellOrId && typeof spellOrId === 'object') return spellOrId;
     const raw = String(spellOrId || '').trim();
     const lower = raw.toLowerCase();
+    if (typeof global.findCombatSpell === 'function') {
+      const shared = global.findCombatSpell(raw);
+      if (shared) return shared;
+    }
     return _allSpells().find(function (spell) {
       return String(spell && spell.id || '') === raw || String(spell && spell.name || '').toLowerCase() === lower;
     }) || null;

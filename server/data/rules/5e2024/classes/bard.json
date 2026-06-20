@@ -558,7 +558,7 @@
       "name": "Spellcasting",
       "summary": "You gain access to spell slots, a spellcasting ability, and a growing library of magical options.",
       "description": "You use Charisma as your spellcasting ability. Your spell save DC = 8 + proficiency bonus + Charisma modifier. Your spell attack bonus = proficiency bonus + Charisma modifier.\n\nAs a Bard, you know a specific number of spells (not all Bard spells) and can cast them using the Bard spell slot table. You can replace one known spell when you gain a Bard level.\n\nYou can also cast any spell you know as a ritual if it has the ritual tag, without expending a spell slot.",
-      "effect": "Cha-based full caster; know spells (not prepare them); can ritual-cast spells with the ritual tag.",
+      "effect": "",
       "level": 1,
       "section": "Class Features",
       "type": "passive",
@@ -579,7 +579,6 @@
       "trigger": "",
       "usage": "",
       "recovery": "",
-      "effect": "",
       "dice": ""
     },
     "bard-bardic-inspiration-d6": {
@@ -618,7 +617,7 @@
       "name": "Jack of All Trades",
       "summary": "You are broadly competent even outside your best skills.",
       "description": "You can add half your proficiency bonus (rounded down) to any ability check you make that doesn't already include your proficiency bonus.\n\nThis applies to a wide range of checks including initiative rolls, and to ability checks made with skills and tools you don't have proficiency in.",
-      "effect": "Add half proficiency bonus to all non-proficient ability checks, including initiative.",
+      "effect": "",
       "level": 2,
       "section": "Class Features",
       "type": "passive",
@@ -640,7 +639,6 @@
       "trigger": "",
       "usage": "",
       "recovery": "",
-      "effect": "",
       "dice": ""
     },
     "bard-song-of-rest-d6": {
@@ -798,7 +796,7 @@
       "name": "Font of Inspiration",
       "summary": "Your inspiration engine is now much easier to keep online.",
       "description": "You can now regain all your expended uses of Bardic Inspiration when you finish a Short Rest, in addition to a Long Rest.\n\nBefore this feature, Bardic Inspiration only recharged on Long Rests. Font of Inspiration transforms it from a limited daily resource into a reliable per-encounter tool.",
-      "effect": "Bardic Inspiration now recharges on Short Rest or Long Rest.",
+      "effect": "",
       "level": 5,
       "section": "Class Features",
       "type": "passive",
@@ -817,9 +815,8 @@
       "duration": "",
       "save": "",
       "trigger": "",
-      "usage": "",
-      "recovery": "",
-      "effect": "",
+      "usage": "Spend Bardic Inspiration dice freely.",
+      "recovery": "Regain expended Bardic Inspiration on Short or Long Rest.",
       "dice": ""
     },
     "bard-bardic-inspiration-d8": {
@@ -888,9 +885,9 @@
       "name": "Countercharm",
       "summary": "Use performance or force of presence to protect allies against mental disruption.",
       "description": "As an action, you start a countercharm performance — a song, recitation, or motion — that lasts until the start of your next turn. During this time, each friendly creature within 30 feet of you that can hear you has Advantage on saving throws against being Charmed or Frightened.\n\nYou can extend the performance each round by using your Bonus Action on subsequent turns.",
-      "duration": "Until start of your next turn (extendable with Bonus Action)",
-      "range": "30 feet",
-      "effect": "Friendly creatures within 30 ft have Advantage on saves against Charmed and Frightened.",
+      "duration": "",
+      "range": "",
+      "effect": "",
       "level": 6,
       "section": "Actions",
       "type": "action",
@@ -906,13 +903,10 @@
       "sourceKind": "class",
       "className": "Bard",
       "subclassName": "",
-      "range": "",
-      "duration": "",
       "save": "",
       "trigger": "",
       "usage": "",
       "recovery": "",
-      "effect": "",
       "dice": ""
     },
     "bard-magical-secrets": {
@@ -921,7 +915,7 @@
       "name": "Magical Secrets",
       "summary": "You learn powerful off-list magic, widening what your bard can solve.",
       "description": "You have plundered magical knowledge from a wide spectrum of disciplines. Choose two spells from any class’s spell list, including this one. A spell you choose must be of a level you can cast, as shown on the Bard table, or a cantrip.\n\nThe chosen spells count as Bard spells for you and are included in your spells known. You gain additional Magical Secrets at later Bard levels.",
-      "effect": "Learn 2 spells from any class spell list; they count as Bard spells.",
+      "effect": "",
       "level": 7,
       "section": "Class Features",
       "type": "passive",
@@ -942,7 +936,6 @@
       "trigger": "",
       "usage": "",
       "recovery": "",
-      "effect": "",
       "dice": ""
     },
     "bard-ability-score-improvement-2": {
@@ -1041,7 +1034,7 @@
       "name": "Magical Secrets",
       "summary": "You learn powerful off-list magic, widening what your bard can solve.",
       "description": "You have plundered magical knowledge from a wide spectrum of disciplines. Choose two spells from any class’s spell list, including this one. A spell you choose must be of a level you can cast, as shown on the Bard table, or a cantrip.\n\nThe chosen spells count as Bard spells for you and are included in your spells known. You gain additional Magical Secrets at later Bard levels.",
-      "effect": "Learn 2 spells from any class spell list; they count as Bard spells.",
+      "effect": "",
       "level": 10,
       "section": "Class Features",
       "type": "passive",
@@ -1062,7 +1055,6 @@
       "trigger": "",
       "usage": "",
       "recovery": "",
-      "effect": "",
       "dice": ""
     },
     "bard-bardic-inspiration-d10": {
@@ -1129,7 +1121,7 @@
       "name": "Magical Secrets",
       "summary": "You learn powerful off-list magic, widening what your bard can solve.",
       "description": "You have plundered magical knowledge from a wide spectrum of disciplines. Choose two spells from any class’s spell list, including this one. A spell you choose must be of a level you can cast, as shown on the Bard table, or a cantrip.\n\nThe chosen spells count as Bard spells for you and are included in your spells known. You gain additional Magical Secrets at later Bard levels.",
-      "effect": "Learn 2 spells from any class spell list; they count as Bard spells.",
+      "effect": "",
       "level": 11,
       "section": "Class Features",
       "type": "passive",
@@ -1150,7 +1142,6 @@
       "trigger": "",
       "usage": "",
       "recovery": "",
-      "effect": "",
       "dice": ""
     },
     "bard-ability-score-improvement-3": {
@@ -1219,7 +1210,7 @@
       "name": "Magical Secrets",
       "summary": "You learn powerful off-list magic, widening what your bard can solve.",
       "description": "You have plundered magical knowledge from a wide spectrum of disciplines. Choose two spells from any class’s spell list, including this one. A spell you choose must be of a level you can cast, as shown on the Bard table, or a cantrip.\n\nThe chosen spells count as Bard spells for you and are included in your spells known. You gain additional Magical Secrets at later Bard levels.",
-      "effect": "Learn 2 spells from any class spell list; they count as Bard spells.",
+      "effect": "",
       "level": 13,
       "section": "Class Features",
       "type": "passive",
@@ -1240,7 +1231,6 @@
       "trigger": "",
       "usage": "",
       "recovery": "",
-      "effect": "",
       "dice": ""
     },
     "bard-subclass-feature-2": {
@@ -1369,7 +1359,7 @@
       "name": "Magical Secrets",
       "summary": "You learn powerful off-list magic, widening what your bard can solve.",
       "description": "You have plundered magical knowledge from a wide spectrum of disciplines. Choose two spells from any class’s spell list, including this one. A spell you choose must be of a level you can cast, as shown on the Bard table, or a cantrip.\n\nThe chosen spells count as Bard spells for you and are included in your spells known. You gain additional Magical Secrets at later Bard levels.",
-      "effect": "Learn 2 spells from any class spell list; they count as Bard spells.",
+      "effect": "",
       "level": 17,
       "section": "Class Features",
       "type": "passive",
@@ -1390,7 +1380,6 @@
       "trigger": "",
       "usage": "",
       "recovery": "",
-      "effect": "",
       "dice": ""
     },
     "bard-magical-secrets-6": {
@@ -1399,7 +1388,7 @@
       "name": "Magical Secrets",
       "summary": "You learn powerful off-list magic, widening what your bard can solve.",
       "description": "You have plundered magical knowledge from a wide spectrum of disciplines. Choose two spells from any class’s spell list, including this one. A spell you choose must be of a level you can cast, as shown on the Bard table, or a cantrip.\n\nThe chosen spells count as Bard spells for you and are included in your spells known. You gain additional Magical Secrets at later Bard levels.",
-      "effect": "Learn 2 spells from any class spell list; they count as Bard spells.",
+      "effect": "",
       "level": 18,
       "section": "Class Features",
       "type": "passive",
@@ -1420,7 +1409,6 @@
       "trigger": "",
       "usage": "",
       "recovery": "",
-      "effect": "",
       "dice": ""
     },
     "bard-epic-boon": {
@@ -1459,7 +1447,7 @@
       "name": "Superior Inspiration",
       "summary": "Even when running dry, you are less likely to start an important scene empty-handed.",
       "description": "When you roll Initiative and have no uses of Bardic Inspiration remaining, you regain 1 use.\n\nThis ensures you always have at least one Bardic Inspiration die available at the start of a new encounter.",
-      "effect": "Automatically regain 1 Bardic Inspiration use when rolling Initiative if you have none remaining.",
+      "effect": "",
       "level": 20,
       "section": "Class Features",
       "type": "passive",
@@ -1481,7 +1469,6 @@
       "trigger": "",
       "usage": "",
       "recovery": "",
-      "effect": "",
       "dice": ""
     }
   },

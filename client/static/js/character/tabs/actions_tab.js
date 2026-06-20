@@ -1214,7 +1214,12 @@
             { label: 'Command model', value: _firstText(action && action.summonAction && action.summonAction.commandModelSummary, 'Runtime command model pending.') },
           ],
         }] : []),
-        { title: 'What Happens', items: _actionExpectedResults(action) },
+        { title: 'Rules Breakdown', items: _actionRulesBreakdown(action) },
+        { title: 'Connected Systems', items: _actionConnectedSystems(action).map(function (row, idx) { return { label: 'System ' + (idx + 1), value: row }; }) },
+        { title: 'How to Test This', items: _actionTestingGuidance(action).map(function (row, idx) { return { label: 'Check ' + (idx + 1), value: row }; }) },
+        { title: 'Expected Results', items: _actionExpectedResults(action) },
+        { title: 'Automation Coverage', items: _actionAutomationCoverage(action) },
+        { title: 'Common Blockers', items: _actionCommonBlockers(action) },
       ],
     });
     return true;

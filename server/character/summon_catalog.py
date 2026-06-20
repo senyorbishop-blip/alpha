@@ -12,6 +12,7 @@ _ALLOWED_COMMAND_MODELS = {"bonus_action_command", "action_command", "spell_effe
 
 
 def _source_link(*, class_id: str, feature_id: str, subclass_id: str = "", origin: str = "feature", spell_id: str = "") -> dict[str, Any]:
+    # Spell templates are authored with {"summonOrigin": "spell", "temporary": True}.
     block = {
         "sourceClassId": str(class_id or "").strip().lower(),
         "sourceSubclassId": str(subclass_id or "").strip().lower(),

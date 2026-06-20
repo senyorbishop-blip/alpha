@@ -333,7 +333,6 @@ def _compute_base_hp(document: dict, level_total: int, runtime_classes: list[dic
     max_hp = 0
     classes = runtime_classes if isinstance(runtime_classes, list) else []
     if classes:
-        level_index = 0
         for row in classes:
             if not isinstance(row, dict):
                 continue
@@ -343,11 +342,10 @@ def _compute_base_hp(document: dict, level_total: int, runtime_classes: list[dic
             hit_die = _safe_int((class_catalog or {}).get("hitDie"), 8, minimum=1)
             hit_die_average = max(1, (hit_die // 2) + 1)
             class_hp = 0
-            # Level-1 bonus is granted once for the character's first total level.
+            # Each class grants max hit die at its own first level (5e multiclass rule).
             for class_level in range(lvl):
-                gain = (hit_die if level_index == 0 else hit_die_average) + con_mod
+                gain = (hit_die if class_level == 0 else hit_die_average) + con_mod
                 class_hp += max(1, gain)
-                level_index += 1
             max_hp += class_hp
             hit_dice.append({"die": hit_die, "count": lvl, "classId": class_id})
     else:
@@ -1496,10 +1494,14 @@ def resolve_character_runtime(document: Any) -> dict:
     int_mod = _ability_modifier(scores.get("int", 10))
     wis_mod = _ability_modifier(scores.get("wis", 10))
     cha_mod = _ability_modifier(scores.get("cha", 10))
-    runtime["ac"] = _safe_int(
-        normalized.get("ac"),
-        max(10, 10 + dex_mod),
-        minimum=1,
+    runtime["ac"] = _compute_equipment_ac(
+        normalized,
+        dex_mod=dex_mod,
+        fallback_ac=_safe_int(
+            normalized.get("ac"),
+            max(10, 10 + dex_mod),
+            minimum=1,
+        ),
     )
 
     senses = species.get("senses") if isinstance(species.get("senses"), list) else []

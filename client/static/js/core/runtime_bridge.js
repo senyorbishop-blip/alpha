@@ -58,6 +58,8 @@
         if (String(resolved || '').trim()) return resolved;
         if (String(fromStore || '').trim()) return String(fromStore || '').trim();
         if (fromGlobal) return fromGlobal;
+        const fromQuery = readQueryParam(['user_id', 'uid', 'user']);
+        if (String(fromQuery || '').trim()) return fromQuery;
         return readQueryParam(['user_id', 'uid', 'user']);
       },
       getRole: function () {
@@ -65,7 +67,7 @@
         const fromStore = storeGet('user.role', global.ROLE || 'viewer');
         const fromGlobal = String(global.ROLE || '').trim();
         const fromQuery = readQueryParam(['role']);
-        return String(resolvedRole || fromStore || fromGlobal || fromQuery || 'viewer').toLowerCase();
+        return String(resolvedRole || fromQuery || fromGlobal || fromStore || 'viewer').toLowerCase();
       },
       getSocket: function () { return storeGet('socket.instance', global.ws || null); },
       setSocket: function (value) { storeSet('socket.instance', value); global.ws = value; },

@@ -243,6 +243,9 @@ def _normalize_dm_map_context(session: Session, value) -> str:
 
 
 def _resolve_fog_map_context(session: Session, payload: dict) -> str:
+    if "map_ctx" in payload or "mapContext" in payload or "map_context" in payload:
+        explicit = str(payload.get("map_ctx") or payload.get("mapContext") or payload.get("map_context") or "").strip()
+        return explicit[:80]
     return normalize_map_context_from_payload(payload, fallback=getattr(session, "dm_map_context", "world"))
 
 def _fog_state_payload_for_context(session: Session, map_ctx: str) -> dict:
@@ -274,24 +277,9 @@ def _fog_state_payload_for_context(session: Session, map_ctx: str) -> dict:
     }
 
 async def _broadcast_fog_to_visible_users(session: Session, message: dict, map_ctx: str):
-    """Deliver live fog updates to every connected participant.
-
-    Clients still keep fog state keyed by map context and only redraw the active
-    context, but sending the sparse update to every participant avoids stale
-    split-party/subgroup bookkeeping leaving a player permanently out of sync
-    until a full reconnect/state_sync.
-    """
     broadcast = getattr(manager, "broadcast", None)
     if callable(broadcast):
         await broadcast(session.id, message)
-        return
-    users = dict(getattr(session, "users", {}) or {})
-    for uid, participant in users.items():
-        role = str(getattr(participant, "role", "") or "").strip().lower()
-        if role == "dm":
-            await manager.send_to(session.id, uid, message)
-            continue
-        await manager.send_to(session.id, uid, message)
 
 
 def _resolve_local_map_url(session: Session, map_ctx: str, fallback=None) -> str | None:

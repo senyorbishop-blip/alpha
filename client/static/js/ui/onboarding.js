@@ -299,7 +299,7 @@
     spells_guide: [
       {
         icon: '🔮',
-        title: 'Your Spell Panel',
+        title: 'Casting Spells',
         body: 'Click the <strong>Spells</strong> tab in the right-side panel to see all your prepared or known spells, organised by level. Each row shows cast time, range, save/attack info, and a 🎲 button for instant damage rolls right in the list.',
         accent: '#9b59b6',
         tip: 'Cantrips (level 0) are always available and never use a slot. They scale with your character level automatically.',

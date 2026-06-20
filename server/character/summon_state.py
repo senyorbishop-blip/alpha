@@ -58,7 +58,24 @@ def _normalize_list(values: Any) -> list[str]:
     return out
 
 
-def _parse_cleanup_policy(value: Any) -> list[str]:
+def _dedupe_string_list(values: Any) -> list[str]:
+    if not isinstance(values, list):
+        return []
+    out: list[str] = []
+    seen: set[str] = set()
+    for row in values:
+        text = str(row or "").strip()
+        key = text.lower()
+        if not text or key in seen:
+            continue
+        seen.add(key)
+        out.append(text)
+    return out
+
+
+def _parse_cleanup_policy(value: Any) -> Any:
+    if isinstance(value, dict):
+        return copy.deepcopy(value)
     if isinstance(value, list):
         out: list[str] = []
         for row in value:
@@ -97,7 +114,7 @@ def _parse_int(value: Any, *, fallback: int = 0, minimum: int | None = None) -> 
 
 
 def _resolve_legacy_template_id(raw: dict[str, Any], source: dict[str, Any]) -> str:
-    return _safe_lower_str(
+    template_id = _safe_lower_str(
         raw.get("templateId")
         or raw.get("summonTemplateId")
         or raw.get("template")
@@ -106,10 +123,15 @@ def _resolve_legacy_template_id(raw: dict[str, Any], source: dict[str, Any]) -> 
         or raw.get("deploymentTemplateId")
         or raw.get("deployableTemplateId")
         or raw.get("legacyTemplateId")
-        or raw.get("id")
         or source.get("templateId")
         or source.get("summonTemplateId")
     )
+    if template_id:
+        return template_id
+    fallback = _safe_lower_str(raw.get("id"))
+    if fallback and isinstance(get_summon_template(fallback), dict):
+        return fallback
+    return ""
 
 
 def _resolve_legacy_group_id(raw: dict[str, Any], source: dict[str, Any], template_id: str) -> str:
@@ -250,6 +272,21 @@ def _normalize_active_summon_entry(raw: Any) -> tuple[dict[str, Any] | None, dic
         },
         "source": source,
     }
+    if raw.get("isCreature") is not None:
+        normalized["isCreature"] = _parse_bool(raw.get("isCreature"), fallback=entity_kind == "creature")
+    else:
+        normalized["isCreature"] = entity_kind == "creature"
+    if isinstance(raw.get("placementRules"), dict):
+        normalized["placementRules"] = copy.deepcopy(raw.get("placementRules"))
+    elif isinstance((raw.get("actor") or {}).get("placementRules") if isinstance(raw.get("actor"), dict) else None, dict):
+        normalized["placementRules"] = copy.deepcopy((raw.get("actor") or {}).get("placementRules"))
+    if isinstance(raw.get("interactionModel"), dict):
+        normalized["interactionModel"] = copy.deepcopy(raw.get("interactionModel"))
+    elif isinstance((raw.get("actor") or {}).get("interactionModel") if isinstance(raw.get("actor"), dict) else None, dict):
+        normalized["interactionModel"] = copy.deepcopy((raw.get("actor") or {}).get("interactionModel"))
+    action_surface_type = str(raw.get("actionSurfaceType") or "").strip()
+    if action_surface_type:
+        normalized["actionSurfaceType"] = action_surface_type
     if isinstance(raw.get("actor"), dict):
         normalized["actor"] = copy.deepcopy(raw.get("actor"))
     if raw.get("legacyMeta") is not None:
@@ -296,7 +333,7 @@ def normalize_summon_state(raw: Any) -> dict[str, Any]:
     base = default_summon_state()
     src = raw if isinstance(raw, dict) else {}
     migration = src.get("migration") if isinstance(src.get("migration"), dict) else {}
-    prior_upgrades = _normalize_list(migration.get("legacyUpgradesApplied"))
+    prior_upgrades = _dedupe_string_list(migration.get("legacyUpgradesApplied"))
     base["deploySchemaVersion"] = SUMMON_DEPLOY_SCHEMA_VERSION
     base["unlockedTemplates"] = _normalize_list(src.get("unlockedTemplates"))
     base["unlockedGroups"] = _normalize_list(src.get("unlockedGroups"))
@@ -307,7 +344,7 @@ def normalize_summon_state(raw: Any) -> dict[str, Any]:
     base["quarantinedSummons"].extend(quarantined)
     base["rules"] = copy.deepcopy(src.get("rules")) if isinstance(src.get("rules"), dict) else {}
     base["lastUpdatedFromFeatures"] = _normalize_list(src.get("lastUpdatedFromFeatures"))
-    deduped_upgrades = _normalize_list(prior_upgrades + upgrades)
+    deduped_upgrades = _dedupe_string_list(prior_upgrades + upgrades)
     base["migration"] = {
         "normalizerVersion": SUMMON_DEPLOY_SCHEMA_VERSION,
         "legacyUpgradesApplied": deduped_upgrades,
@@ -395,6 +432,8 @@ def _apply_summon_feature_unlock(
             selected_variant = default_template_id
         if selected_variant and selected_variant in state["unlockedTemplates"]:
             selected_variants[variant_group] = selected_variant
+    elif variant_group and default_template_id and default_template_id in state["unlockedTemplates"] and not selected_variants.get(variant_group):
+        selected_variants[variant_group] = default_template_id
     state["selectedVariants"] = selected_variants
 
 

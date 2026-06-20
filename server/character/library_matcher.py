@@ -316,9 +316,11 @@ def match_name(name: str, group: str, *, content_type: str = "") -> dict[str, An
     lower = text.lower()
     key = normalize_match_key(text)
     exact = index["exact_by_lower"].get(group, {}).get(lower)
+    alias = index["aliases"].get(group, {}).get(key)
+    if exact and alias and (alias.row_id != exact.row_id or alias.name != exact.name):
+        return {"status": "alias", "matched_name": alias.name, "matched_id": alias.row_id, "match_type": "alias"}
     if exact:
         return {"status": "exact", "matched_name": exact.name, "matched_id": exact.row_id, "match_type": "exact"}
-    alias = index["aliases"].get(group, {}).get(key)
     if alias:
         return {"status": "alias", "matched_name": alias.name, "matched_id": alias.row_id, "match_type": "alias"}
     normalized = index["by_key"].get(group, {}).get(key)
@@ -330,6 +332,8 @@ def match_name(name: str, group: str, *, content_type: str = "") -> dict[str, An
             if len(key) < 4 and len(candidate_key) < 4:
                 continue
             if key in candidate_key or candidate_key in key:
+                if abs(len(candidate_key) - len(key)) > max(6, min(len(candidate_key), len(key))):
+                    continue
                 candidates.append((abs(len(candidate_key) - len(key)), entry))
         if candidates:
             candidates.sort(key=lambda item: (item[0], item[1].name))

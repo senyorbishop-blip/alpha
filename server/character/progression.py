@@ -192,6 +192,12 @@ def _build_spell_choices_preview(
     if not class_id:
         return None
 
+    spell_state = document.get("spellState") if isinstance(document.get("spellState"), dict) else {}
+    has_explicit_spell_state = bool(
+        list(spell_state.get("known") or [])
+        or list(spell_state.get("prepared") or [])
+        or list(spell_state.get("spellbookEntries") or [])
+    )
     current_spell_state = _current_spell_state(document, class_id=class_id, class_level=current_level)
     current_known = current_spell_state["known"]
     current_prepared = current_spell_state["prepared"]
@@ -247,6 +253,9 @@ def _build_spell_choices_preview(
         levelled_required = max(0, next_spellbook_spells - len(known_spells))
     elif mode == "known" and next_limits.get("spellsKnown") is not None:
         levelled_required = max(0, int(next_limits.get("spellsKnown") or 0) - len(known_spells))
+    if not has_explicit_spell_state:
+        cantrip_required = 0
+        levelled_required = 0
 
     next_highest_spell_level = _highest_spell_level_from_limits(next_limits)
     current_highest_spell_level = _highest_spell_level_from_limits(current_limits)
@@ -715,6 +724,26 @@ def apply_levelup(document: Any, *, choices: Any = None) -> dict[str, Any]:
                 "selectedChoice": feature_choices.get(feature_id),
             }
         )
+    active_subclass_id = str(primary_class.get("subclassId") or "").strip().lower()
+    active_subclass = get_subclass_catalog_row(active_subclass_id) if active_subclass_id else None
+    subclass_unlocks = (active_subclass or {}).get("featureUnlocksByLevel") if isinstance(active_subclass, dict) else {}
+    subclass_feature_defs = (active_subclass or {}).get("featureDefinitions") if isinstance(active_subclass, dict) else {}
+    for feature_id in subclass_unlocks.get(str(next_level), []) if isinstance(subclass_unlocks, dict) else []:
+        feature_key = str(feature_id or "").strip()
+        if not feature_key or feature_key.lower() in known_feature_ids:
+            continue
+        definition = subclass_feature_defs.get(feature_key, {}) if isinstance(subclass_feature_defs, dict) else {}
+        if not isinstance(definition, dict):
+            definition = {}
+        class_features.append(
+            {
+                "id": feature_key,
+                "displayName": str(definition.get("displayName") or feature_key),
+                "description": str(definition.get("description") or ""),
+                "selectedChoice": feature_choices.get(feature_key),
+            }
+        )
+        known_feature_ids.add(feature_key.lower())
     primary_class["selectedFeatures"] = class_features
 
     abilities = canonical.get("abilities") if isinstance(canonical.get("abilities"), dict) else {}
@@ -750,6 +779,13 @@ def apply_levelup(document: Any, *, choices: Any = None) -> dict[str, Any]:
     spell_plan = preview.get("spellChoices") if isinstance(preview.get("spellChoices"), dict) else {}
     if spell_plan:
         class_id = str(preview.get("classId") or "").strip().lower()
+        original_known_rows = copy.deepcopy(spell_state.get("known")) if isinstance(spell_state.get("known"), list) else []
+        original_prepared_rows = copy.deepcopy(spell_state.get("prepared")) if isinstance(spell_state.get("prepared"), list) else []
+        raw_spell_state_present = bool(
+            list(spell_state.get("known") or [])
+            or list(spell_state.get("prepared") or [])
+            or list(spell_state.get("spellbookEntries") or [])
+        )
         current_spell_state = _current_spell_state(canonical, class_id=class_id, class_level=next_level)
         known = list(current_spell_state.get("known") or [])
         prepared = list(current_spell_state.get("prepared") or [])
@@ -828,8 +864,13 @@ def apply_levelup(document: Any, *, choices: Any = None) -> dict[str, Any]:
         )
         if not validation_next.get("ok"):
             raise LevelupApplyError(" ".join(validation_next.get("errors") or ["Spell choices are not valid for this level-up."]))
-        spell_state["known"] = list(validation_next.get("known") or [])
-        spell_state["prepared"] = list(validation_next.get("prepared") or [])
+        persist_spell_lists = raw_spell_state_present or bool(cantrip_adds or levelled_adds or magical_secrets_adds or swap_drop or swap_add)
+        if persist_spell_lists:
+            spell_state["known"] = list(validation_next.get("known") or [])
+            spell_state["prepared"] = list(validation_next.get("prepared") or [])
+        else:
+            spell_state["known"] = original_known_rows
+            spell_state["prepared"] = original_prepared_rows
 
     if bool(preview.get("hasNewSpellSlots")):
         spell_state["slots"] = copy.deepcopy(preview.get("newSpellSlots") or {})

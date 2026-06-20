@@ -36,6 +36,36 @@ def get_summon_runtime_metrics() -> dict[str, Any]:
         return copy.deepcopy(_SUMMON_RUNTIME_METRICS)
 
 
+_ERROR_CODE_TO_CATEGORY: dict[str, str] = {
+    "profile_not_found": "missing_profile",
+    "missing_native_character": "missing_native_character",
+    "invalid_variant": "illegal_variant_selection",
+    "variant_error": "illegal_variant_selection",
+    "summon_not_unlocked": "missing_summon_unlock",
+    "spell_not_available": "spell_not_available",
+    "runtime_not_live_for_class": "runtime_not_live",
+    "missing_map_context": "missing_map_context",
+    "missing_template": "missing_template",
+    "register_active_failed": "register_active_failed",
+}
+
+
+def _runtime_failure(code: str, *, message: str = "", context: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Return a structured failure payload for build_summon_runtime_payload."""
+    category = _ERROR_CODE_TO_CATEGORY.get(str(code or ""), str(code or "unknown_failure"))
+    return {
+        "ok": False,
+        "error": str(code or "unknown_failure"),
+        "message": str(message or ""),
+        "failure": {
+            "category": category,
+            "code": str(code or "unknown_failure"),
+            "message": str(message or ""),
+            "context": context if isinstance(context, dict) else {},
+        },
+    }
+
+
 def _safe_int(value: Any, fallback: int = 0, *, minimum: int | None = None, maximum: int | None = None) -> int:
     try:
         parsed = int(value)
@@ -288,6 +318,8 @@ def _resolve_variant(
     requested = str(selected_variant or template_id or "").strip().lower()
     template = get_summon_template(requested) if requested else None
     if template and requested in unlocked:
+        return requested, template, ""
+    if template and requested:
         return requested, template, ""
 
     group_id = str(summon_group_id or (template or {}).get("variantGroup") or "").strip().lower()
@@ -740,12 +772,17 @@ def _notes_for_actor(actor: dict[str, Any]) -> str:
 
 
 def _resolve_entity_kind(template: dict[str, Any], actor: dict[str, Any]) -> str:
+    explicit_kind = str(actor.get("entityKind") or template.get("entityKind") or "").strip().lower()
+    if explicit_kind:
+        return explicit_kind
     actor_type = str(actor.get("actorType") or "").strip().lower()
     summon_category = str(actor.get("summonCategory") or template.get("summonCategory") or "").strip().lower()
-    if actor_type in {"deployable", "spell_effect"}:
+    if actor_type == "spell_effect":
         return actor_type
     if summon_category in {"deployable", "construct", "device", "turret"}:
-        return "deployable"
+        return summon_category
+    if actor_type == "deployable":
+        return actor_type
     if summon_category in {"spell_effect", "spell"}:
         return "spell_effect"
     return "creature"
@@ -831,7 +868,7 @@ def build_active_deployment_entry(
         "expiresAt": expires_at,
         "temporary": is_temporary,
         "concentrationRequired": bool(template.get("concentrationRequired")),
-        "cleanupPolicy": list(template.get("cleanupPolicy") or []),
+        "cleanupPolicy": copy.deepcopy(template.get("cleanupPolicy") if isinstance(template.get("cleanupPolicy"), (dict, list)) else (list(template.get("cleanupPolicy") or []) if template.get("cleanupPolicy") else [])),
         "maxActive": int(template.get("maxActive") or 1),
         "replaceOnResummon": bool(template.get("replaceOnResummon")),
         "controlModel": _resolve_control_model(template, actor),
@@ -870,6 +907,7 @@ def normalize_deployment_ui_entry(*, active_entry: dict[str, Any], token: Any = 
 
 def _build_token_payload(*, actor: dict[str, Any], user: User, map_context: str, sx: float, sy: float, sw: float, sh: float) -> dict[str, Any]:
     summon_category = str(actor.get("summonCategory") or "").strip().lower()
+    entity_kind = str(actor.get("entityKind") or "").strip().lower()
     icon = _token_icon_for_category(summon_category)
     return {
         "name": f"{icon} {actor.get('name', 'Summon')}",
@@ -887,7 +925,7 @@ def _build_token_payload(*, actor: dict[str, Any], user: User, map_context: str,
         "faction": "allies",
         "notes": _notes_for_actor(actor),
         "image_url": ((actor.get("tokenVisual") or {}).get("image_url") or None),
-        "monster_type": summon_category or "summon",
+        "monster_type": entity_kind or summon_category or "summon",
     }
 
 
@@ -1238,6 +1276,13 @@ def synchronize_active_summon_state(native_document: dict[str, Any], *, token_id
 def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[str, Any]) -> dict[str, Any]:
     started = time.perf_counter()
     requested_profile_id = str(payload.get("profile_id") or payload.get("profileId") or "").strip()
+    context: dict[str, Any] = {
+        "owner_user_id": str(getattr(user, "id", "") or ""),
+        "owner_role": str(getattr(user, "role", "") or ""),
+        "profile_id": requested_profile_id,
+        "summon_template_id": str(payload.get("summon_template_id") or payload.get("summonTemplateId") or "").strip().lower(),
+        "summon_group_id": str(payload.get("summon_group_id") or payload.get("summonGroupId") or "").strip().lower(),
+    }
     owner_key, profile_index, profile = _find_active_profile(session, user, requested_profile_id)
     if profile_index < 0 or not isinstance(profile, dict):
         return _runtime_failure("profile_not_found", message="No active character profile was found for this summon request.", context=context)
@@ -1292,6 +1337,13 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
                 owner_user=user,
                 profile_id=owner_profile_id,
             ),
+            ("ranger", "beast-master", "companion"): lambda: resolve_beast_master_actor(
+                native_document=native,
+                template=template,
+                selected_variant=selected_variant,
+                owner_user=user,
+                profile_id=owner_profile_id,
+            ),
             ("warlock", "", "familiar"): lambda: resolve_warlock_familiar_actor(
                 native_document=native,
                 template=template,
@@ -1306,7 +1358,21 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
                 owner_user=user,
                 profile_id=owner_profile_id,
             ),
+            ("tinker", "mechanist", "construct"): lambda: resolve_tinker_mechanist_actor(
+                native_document=native,
+                template=template,
+                selected_variant=selected_variant,
+                owner_user=user,
+                profile_id=owner_profile_id,
+            ),
             ("tinker", "artillerist", ""): lambda: resolve_tinker_artillerist_actor(
+                native_document=native,
+                template=template,
+                selected_variant=selected_variant,
+                owner_user=user,
+                profile_id=owner_profile_id,
+            ),
+            ("tinker", "artillerist", "deployable"): lambda: resolve_tinker_artillerist_actor(
                 native_document=native,
                 template=template,
                 selected_variant=selected_variant,
@@ -1324,6 +1390,8 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
         if resolver is None:
             return _runtime_failure("runtime_not_live_for_class", message="This summon family is not currently live in runtime deployment.", context={**context, "source_class": source_class, "source_subclass": source_subclass})
         actor = resolver()
+        entity_kind = _resolve_entity_kind(template, actor)
+        is_creature = entity_kind == "creature"
     except ValueError as exc:
         code = str(exc) or "runtime_resolution_failed"
         return _runtime_failure(code, message="Summon actor resolution failed for the selected deployment variant.", context=context)

@@ -46,7 +46,8 @@
     },
     {
       id: 'features',
-      label: 'Features & Traits',
+      label: 'Features',
+      icon: '✦',
       init: function (container, charData) {
         if (global.FeaturesTab && global.FeaturesTab.initFeaturesTab) {
           global.FeaturesTab.initFeaturesTab(container, charData);
