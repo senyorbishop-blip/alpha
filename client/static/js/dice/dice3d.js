@@ -138,8 +138,10 @@ function throwDice(configs, onSettled, opts = {}) {
   const container = document.getElementById('dice-3d-wrap');
   if (!container) { console.warn(`${LOG} #dice-3d-wrap not found`); return false; }
 
-  // Ensure renderer is initialised
+  // Ensure renderer is initialised (the 3D engine is lazy: this only runs the
+  // first time a roll is requested, never during the light player boot).
   if (!diceWorld.isReady) {
+    if (window.AppBoot && typeof window.AppBoot.phase === 'function') window.AppBoot.phase('dice', 'start');
     diceWorld.init(container);
     const _r = diceWorld.renderer;
     if (_r) {
@@ -148,6 +150,7 @@ function throwDice(configs, onSettled, opts = {}) {
       const _cv = _r.domElement;
       console.log(`${LOG} canvas attached to body, zIndex=${_cv.style.zIndex}`);
     }
+    if (window.AppBoot && typeof window.AppBoot.phase === 'function') window.AppBoot.phase('dice', 'end');
   } else {
     // Re-sync size in case container was display:none at init time
     diceWorld._onResize?.();

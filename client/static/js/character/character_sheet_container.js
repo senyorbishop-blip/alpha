@@ -956,6 +956,10 @@ function _buildSkeleton(wrapper, charData) {
 
   function initCharacterSheetPremium(container, charData) {
     if (!container) return;
+    // The full sheet/builder is heavy and only ever built on demand (Open Full
+    // Sheet / Characters), never during the light player boot — phase-timed so
+    // its cost is observable when it does run.
+    if (global.AppBoot && typeof global.AppBoot.phase === 'function') global.AppBoot.phase('character sheet', 'start');
     if (global.buildCharacterSheetRuntime && charData && typeof charData === 'object') {
       const sheetRuntime = global.buildCharacterSheetRuntime(charData);
       charData.characterSheetRuntime = sheetRuntime;
@@ -1041,6 +1045,7 @@ function _buildSkeleton(wrapper, charData) {
         global.goCharacterBookPage(page);
       }
     });
+    if (global.AppBoot && typeof global.AppBoot.phase === 'function') global.AppBoot.phase('character sheet', 'end');
   }
 
   function openMapPanelFromSheet(tabId) {
