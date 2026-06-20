@@ -93,6 +93,15 @@
         if (effectiveRole === 'dm' || effectiveRole === 'player') {
           if (global.AppWS && typeof global.AppWS.send === 'function') global.AppWS.send({ type: 'treasury_get', payload: {} });
           else if (typeof global.sendWS === 'function') global.sendWS({ type: 'treasury_get', payload: {} });
+          // Reconnect recovery: if combat is active, pull the authoritative
+          // combat_state so initiative/order/turn are never left stale after a
+          // silent drop or heartbeat-driven reconnect. state_sync also carries
+          // combat, but this guarantees a redraw even if that race is lost.
+          var _combatForResync = global._combat || global.combat || null;
+          if (_combatForResync && _combatForResync.active) {
+            if (global.AppWS && typeof global.AppWS.send === 'function') global.AppWS.send({ type: 'combat_state_request', payload: {} });
+            else if (typeof global.sendWS === 'function') global.sendWS({ type: 'combat_state_request', payload: {} });
+          }
         }
       },
       onClose: function (_event) {

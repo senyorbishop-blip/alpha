@@ -20,6 +20,17 @@
   };
   let lifecycleHooksInstalled = false;
 
+  function sendPong(socket) {
+    // Heartbeat reply lives at the transport layer so it cannot be starved by a
+    // busy/guarded gameplay dispatcher. Never queue a pong on a closed socket and
+    // never let a send failure bubble up and crash the message pump.
+    try {
+      if (socket && socket.readyState === global.WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: 'pong' }));
+      }
+    } catch (_err) {}
+  }
+
   function closeSocket(socket, code = 1000, reason = 'Client reconnect cleanup') {
     if (!socket) return;
     try {
@@ -159,6 +170,16 @@
       try {
         msg = JSON.parse(event.data);
       } catch (_err) {
+        return;
+      }
+      // Server heartbeat: respond to {"type":"ping"} immediately with a pong on
+      // the same socket, BEFORE any gameplay dispatch. This guarantees the server
+      // sees liveness even while the legacy dispatcher is busy or guarded, which
+      // is what was causing false "Heartbeat timeout" disconnects and the black
+      // flicker/reconnect during active combat. Heartbeat pings must never reach
+      // the gameplay handlers, so we return after replying.
+      if (msg && msg.type === 'ping') {
+        sendPong(socket);
         return;
       }
       config.onMessage(msg);

@@ -746,9 +746,14 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
             # Role-based emit filtering
             msg_type = str(raw.get("type") or "")
 
-            # Handle heartbeat pong — update timestamp and skip dispatch
+            # Heartbeat liveness: any valid frame the client sends proves the
+            # socket is alive, so refresh the last-seen timestamp here rather than
+            # only on pong. This stops active play (chat, combat, movement) from
+            # tripping a false heartbeat timeout when a pong happens to be delayed.
+            _last_pong["t"] = asyncio.get_running_loop().time()
+
+            # Handle heartbeat pong — already counted above; skip gameplay dispatch.
             if msg_type == "pong":
-                _last_pong["t"] = asyncio.get_running_loop().time()
                 continue
 
             user_role = str(getattr(user, "role", "") or "").strip().lower()

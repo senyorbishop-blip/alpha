@@ -33106,6 +33106,12 @@ function handleLegacyMessage(msg) {
       // Fill in the dice animation if it was triggered by THIS user.
       // Use authoritative identity resolution to avoid missing results when USER_ID is stale.
       const effectiveUserId = getEffectiveUserId();
+      // Initiative dedupe: if THIS client already played the local settled dice
+      // for this roll, the authoritative echo would be a duplicate popup — drop it.
+      if (p.roll_id && _initiativeLocalDicePopupRollIds.has(String(p.roll_id))) {
+        _initiativeLocalDicePopupRollIds.delete(String(p.roll_id));
+        break;
+      }
       if (String(p.user_id || '') === String(effectiveUserId || USER_ID || '')) {
         const pendingMeta = _pendingAuthoritativeDiceRolls.get(String(p.roll_id || ''));
         if (pendingMeta) {
@@ -47289,6 +47295,15 @@ function combatRollInitiative(combatantId) {
   com._initiativeRollPending = true;
   renderCombat();
 
+  // Correlate the roller's local settled dice with the authoritative dice_result
+  // the server echoes back, so we show exactly one popup (the local one) and
+  // skip the duplicate server echo for ourselves while still letting it drive the
+  // popup on every OTHER connected client.
+  const initiativeRollId = (typeof _generateDiceRollId === 'function')
+    ? _generateDiceRollId('initiative')
+    : ('initiative-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8));
+  _initiativeLocalDicePopupRollIds.add(initiativeRollId);
+
   _rollLocalDiceAfterSettle({
     diceType: 20,
     qty: 1,
@@ -47301,19 +47316,28 @@ function combatRollInitiative(combatantId) {
     if (!latest) return;
     const roll = parseInt(result?.rolls?.[0], 10) || 0;
     // The local dice result is visual only.  The initiative list updates from
-    // the authoritative combat_state broadcast sent back by the server.
+    // the authoritative combat_state broadcast sent back by the server, and the
+    // shared dice popup is driven by the server's dice_result (deduped here).
     sendWS({ type: 'combat_roll_initiative', payload: {
       combatant_id: combatantId,
       roll:         roll,
       modifier:     modifier,
+      roll_id:      initiativeRollId,
     }});
   }).catch((err) => {
     console.error('[Combat] initiative dice roll failed', err);
+    _initiativeLocalDicePopupRollIds.delete(initiativeRollId);
     delete com._initiativeRollPending;
     renderCombat();
     showToast('Initiative roll failed. Please try again.');
   });
 }
+
+// Roll ids for initiative dice that this client already showed locally. When the
+// authoritative dice_result echoes back for our own roll we skip re-displaying it
+// to avoid a duplicate popup; other clients still render it normally.
+const _initiativeLocalDicePopupRollIds = new Set();
+window._initiativeLocalDicePopupRollIds = _initiativeLocalDicePopupRollIds;
 
 let _combatInitiativeResyncTimer = null;
 function applyCombatInitiativeRolled(payload) {
