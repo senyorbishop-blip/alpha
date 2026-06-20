@@ -636,7 +636,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
         await websocket.close(code=4003, reason="User not found in session")
         return
 
-    await manager.connect(session_id, user_id, websocket)
+    await manager.connect(session_id, user_id, websocket, role=user.role)
     user.connected = True
 
     # Send full state on connect (DM gets POI dm_notes, others don't)

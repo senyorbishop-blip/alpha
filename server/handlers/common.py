@@ -423,27 +423,65 @@ def _sync_combatant_token_state(session: Session, token, *, previous_hp: int | N
     return changed
 
 
+def _combat_state_payload_for_user(session: Session, user: User | None, visibility_revision: int | None = None) -> dict:
+    payload = dict(getattr(session, "combat", None) or {})
+    if not user or getattr(user, "role", "") != "dm":
+        payload.pop("suspended_combatants", None)
+        payload.pop("fog_suspended_combatants", None)
+        payload.pop("hidden_suspended_combatants", None)
+    if visibility_revision is not None:
+        payload["visibility_revision"] = visibility_revision
+    return payload
+
+
+def _combat_payload_debug_summary(payload: dict) -> dict:
+    combatants = payload.get("combatants") if isinstance(payload, dict) else []
+    if not isinstance(combatants, list):
+        combatants = []
+    turn = _safe_int(payload.get("turn"), 0, minimum=0, maximum=max(0, len(combatants) - 1)) if isinstance(payload, dict) else 0
+    current = combatants[turn] if 0 <= turn < len(combatants) else None
+    return {
+        "revision": payload.get("revision") if isinstance(payload, dict) else None,
+        "order": [f"{(c or {}).get('name') or (c or {}).get('id') or (c or {}).get('token_id') or '?'}:{(c or {}).get('initiative', '--')}" for c in combatants],
+        "turn": turn,
+        "current": (current or {}).get("name") if isinstance(current, dict) else None,
+    }
+
+
 async def _broadcast_combat(session):
     revision = bump_visibility_revision(session)
     connections = manager.get_session_connections(session.id)
-    if not connections:
-        payload = dict(session.combat or {})
-        payload["visibility_revision"] = revision
-        logger.info("[combat initiative sync] revision=%s sent_to=%s", payload.get("revision"), [])
-        await manager.broadcast(session.id, {"type": "combat_state", "payload": payload})
-        return
     sent_to = []
+    failed = []
+    attempted = []
     for uid in list(connections.keys()):
         user = (getattr(session, "users", {}) or {}).get(uid)
-        payload = dict(session.combat or {})
-        if not user or getattr(user, "role", "") != "dm":
-            payload.pop("suspended_combatants", None)
-            payload.pop("fog_suspended_combatants", None)
-            payload.pop("hidden_suspended_combatants", None)
+        role = getattr(user, "role", "unknown") if user else "unknown"
+        payload = _combat_state_payload_for_user(session, user, revision)
+        summary = _combat_payload_debug_summary(payload)
+        attempted.append({"user_id": uid, "role": role})
+        ok = await manager.send_to(session.id, uid, {"type": "combat_state", "payload": payload})
+        log_data = {**summary, "session_id": session.id, "user_id": uid, "role": role, "send_to_success": bool(ok)}
+        if ok:
+            sent_to.append(uid)
+            logger.info("[combat initiative sync] delivered %s", log_data)
+        else:
+            failed.append(uid)
+            logger.warning("[combat initiative sync] failed_send %s", log_data)
+    if not connections:
+        payload = dict(getattr(session, "combat", None) or {})
         payload["visibility_revision"] = revision
-        sent_to.append(uid)
-        await manager.send_to(session.id, uid, {"type": "combat_state", "payload": payload})
-    logger.info("[combat initiative sync] revision=%s sent_to=%s", (session.combat or {}).get("revision"), sent_to)
+        summary = _combat_payload_debug_summary(payload)
+        logger.info("[combat initiative sync] no active sockets %s", {**summary, "session_id": session.id, "sent_to": []})
+        await manager.broadcast(session.id, {"type": "combat_state", "payload": payload})
+    logger.info(
+        "[combat initiative sync] broadcast_complete revision=%s attempted=%s sent_to=%s failed=%s",
+        (getattr(session, "combat", None) or {}).get("revision"),
+        attempted,
+        sent_to,
+        failed,
+    )
+    return {"attempted": [entry["user_id"] for entry in attempted], "sent_to": sent_to, "failed": failed, "visibility_revision": revision}
 
 
 # ---------------------------------------------------------------------------

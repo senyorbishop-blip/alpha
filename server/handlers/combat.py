@@ -14,6 +14,7 @@ from server.handlers.common import (
     PX_PER_GRID, FT_PER_GRID,
     _safe_int,
     _broadcast_combat,
+    _combat_state_payload_for_user,
     bump_visibility_revision,
     is_player_owned_token,
     is_npc_or_monster_token,
@@ -1053,7 +1054,16 @@ async def handle_combat_roll_initiative(payload: dict, session: Session, user: U
     _bump_combat_revision(session, "roll_initiative")
     await save_campaign_async(session)
 
-    await _broadcast_combat(session)
+    broadcast_result = await _broadcast_combat(session)
+    if isinstance(broadcast_result, dict) and user.id in set(broadcast_result.get("failed") or []):
+        ack_payload = _combat_state_payload_for_user(session, user, broadcast_result.get("visibility_revision"))
+        ack_ok = await manager.send_to(session.id, user.id, {"type": "combat_state", "payload": ack_payload})
+        logger.warning(
+            "[combat initiative sync] direct roller ack after failed broadcast user_id=%s success=%s revision=%s",
+            user.id,
+            bool(ack_ok),
+            session.combat.get("revision"),
+        )
 
     # Drive the dice popup through the same authoritative dice_result path that
     # every other roll uses, so BOTH the DM and players see the initiative roll
@@ -1111,13 +1121,15 @@ async def handle_combat_state_request(payload: dict, session: Session, user: Use
     from server.handlers.common import bump_visibility_revision
 
     revision = bump_visibility_revision(session)
-    out = dict(getattr(session, "combat", None) or {})
-    if getattr(user, "role", "") != "dm":
-        out.pop("suspended_combatants", None)
-        out.pop("fog_suspended_combatants", None)
-        out.pop("hidden_suspended_combatants", None)
-    out["visibility_revision"] = revision
-    await manager.send_to(session.id, user.id, {"type": "combat_state", "payload": out})
+    out = _combat_state_payload_for_user(session, user, revision)
+    ok = await manager.send_to(session.id, user.id, {"type": "combat_state", "payload": out})
+    logger.info(
+        "[combat initiative sync] state_request user_id=%s role=%s success=%s revision=%s",
+        user.id,
+        getattr(user, "role", "unknown"),
+        bool(ok),
+        out.get("revision"),
+    )
 
 
 # ── Combat attack / spell flow ─────────────────────────────────────────────
