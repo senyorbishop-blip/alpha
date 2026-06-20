@@ -183,7 +183,7 @@ def test_fog_paint_accepts_map_context_alias_and_isolates_world_from_poi(monkeyp
     assert session.fog_maps["world"]["cells"] == "0" * 16
 
 
-def test_fog_broadcast_only_reaches_users_with_map_visibility(monkeypatch):
+def test_fog_broadcast_reaches_all_participants_even_when_visibility_metadata_lags(monkeypatch):
     session = Session(id="fog-sync-4")
     dm = User(id="dm-1", name="DM", role="dm")
     player_world = User(id="pl-world", name="World", role="player")
@@ -222,7 +222,7 @@ def test_fog_broadcast_only_reaches_users_with_map_visibility(monkeypatch):
     recipients = {uid for _, uid, _ in sent}
     assert dm.id in recipients
     assert player_poi.id in recipients
-    assert player_world.id not in recipients
+    assert player_world.id in recipients
 
 
 def test_fog_broadcast_includes_main_party_player_when_split_party_metadata_exists(monkeypatch):
@@ -264,7 +264,7 @@ def test_fog_broadcast_includes_main_party_player_when_split_party_metadata_exis
     recipients = {uid for _, uid, _ in sent}
     assert dm.id in recipients
     assert main_player.id in recipients
-    assert side_player.id not in recipients
+    assert side_player.id in recipients
 
 
 def test_fog_broadcast_includes_player_with_token_presence_when_subgroup_context_is_stale(monkeypatch):

@@ -47916,11 +47916,24 @@ function applyInitiativeResultToCombatState(result) {
     initiativeList.length = 0;
     combatants.forEach(c => initiativeList.push(c));
   }
-  if (typeof renderCombat === 'function') renderCombat();
-  if (typeof refreshRightPanelContextUI === 'function') refreshRightPanelContextUI();
-  if (typeof updateActiveContext === 'function') updateActiveContext();
-  if (typeof refreshCombatBadges === 'function') refreshCombatBadges();
-  if (typeof refreshTokenBadges === 'function') refreshTokenBadges();
+  const repaint = () => {
+    if (typeof renderCombat === 'function') renderCombat();
+    if (typeof refreshRightPanelContextUI === 'function') refreshRightPanelContextUI();
+    if (typeof updateActiveContext === 'function') updateActiveContext();
+    if (typeof refreshCombatBadges === 'function') refreshCombatBadges();
+    if (typeof refreshTokenBadges === 'function') refreshTokenBadges();
+  };
+  try {
+    repaint();
+  } catch (err) {
+    console.warn('[combat initiative sync] incremental repaint collided with active render; retrying', err);
+    const retry = () => {
+      try { repaint(); }
+      catch (retryErr) { console.error('[combat initiative sync] deferred repaint failed', retryErr); }
+    };
+    if (typeof queueMicrotask === 'function') queueMicrotask(retry);
+    else setTimeout(retry, 0);
+  }
   return true;
 }
 
