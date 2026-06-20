@@ -198,3 +198,83 @@ console.log(JSON.stringify({
     assert rows["enabled"] is True
     assert rows["revealed"] == [0, 5, 10]
     assert rows["drawFrameCalls"] == 1
+
+
+def _autosave_guard_snippet() -> str:
+    src = PLAY.read_text(encoding="utf-8")
+    start = src.index("function __isCharProfileRenderStackActive")
+    end = src.index("function scheduleCharBookQuickPanelSync")
+    return src[start:end]
+
+
+def test_schedule_autosave_defers_during_render_selector_trace_without_recursing():
+    rows = _run_node(
+        r"""
+global.window = global;
+window.__depths = { renderPlayerActionsHub: 1, selectQuickActions: 1, scheduleCharProfileSave: 0, markCharProfileDirty: 0 };
+window.__debugTrace = [];
+global.traceEnter = () => {};
+global.__debugSnapshot = (e) => e || {};
+global.console = { error: () => {}, warn: () => {}, info: () => {}, debug: () => {}, log: console.log };
+"""
+        + _depth_guard_snippet()
+        + r"""
+let ROLE = 'player';
+let isApplyingRemoteState = false;
+let isHydrating = false;
+let isSaving = false;
+let _charSheet = { name: 'Bishop' };
+let charProfiles = [];
+let _charProfileAutosaveTimer = null;
+let marked = 0;
+let saved = 0;
+let deferredTimers = 0;
+window.__safeMode = {};
+window.__combatApplyStateActive = false;
+window.__stateSyncApplying = false;
+global.document = { getElementById: () => ({ value: 'Bishop' }) };
+global.setTimeout = (fn, _ms) => { deferredTimers++; return 1; };
+global.clearTimeout = () => {};
+function __isRemoteStateOrCombatApplying() { return false; }
+function markCharProfileDirty(source = 'user') { marked++; renderPlayerActionsHub(); return true; }
+function saveCurrentCharProfile() { saved++; }
+function renderPlayerActionsHub() { window.__depths.renderPlayerActionsHub++; try { selectQuickActions(); } finally { window.__depths.renderPlayerActionsHub--; } }
+function selectQuickActions() { window.__depths.selectQuickActions++; try { return {}; } finally { window.__depths.selectQuickActions--; } }
+"""
+        + _autosave_guard_snippet()
+        + r"""
+scheduleCharProfileAutosave('exact-trace');
+console.log(JSON.stringify({ marked, saved, deferredTimers, depth: window.__depths.scheduleCharProfileSave }));
+"""
+    )
+    assert rows["marked"] == 0
+    assert rows["saved"] == 0
+    assert rows["deferredTimers"] == 0  # first deferral uses queueMicrotask in Node, not recursive save
+    assert rows["depth"] == 0
+
+
+def test_schedule_autosave_has_render_stack_hard_guard():
+    src = PLAY.read_text(encoding="utf-8")
+    assert "function __isCharProfileRenderStackActive()" in src
+    for name in ["renderCombat", "renderPlayerActionsHub", "CombatQuickBar.render", "selectQuickActions", "combatApplyState"]:
+        assert name in src[src.index("function __isCharProfileRenderStackActive()"):src.index("function scheduleCharBookQuickPanelSync")]
+    assert "__deferCharProfileAutosaveUntilRenderUnwinds" in src
+
+
+def test_find_combat_weapon_matches_attack_prefixed_inventory_keys():
+    src = PLAY.read_text(encoding="utf-8")
+    assert "card && card.item_id" in src
+    assert "card && card.weapon_id" in src
+    assert "card && card.action_id" in src
+    assert "card && card.slug" in src
+    assert "replace(/^attack[-_:]/i, '')" in src
+    assert "replace(/^weapon[-_:]/i, '')" in src
+
+
+def test_roll_quick_weapon_damage_does_not_schedule_profile_autosave():
+    src = PLAY.read_text(encoding="utf-8")
+    start = src.index("function rollQuickWeaponDamage(ctx)")
+    end = src.index("function rollQuickWeaponCriticalDamage(ctx)")
+    body = src[start:end]
+    assert "scheduleCharProfileAutosave" not in body
+    assert "markCharProfileDirty" not in body

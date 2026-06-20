@@ -37,3 +37,13 @@ def test_player_weapon_action_execution_accepts_runtime_id_name_and_slug_fallbac
     assert "const rawSlug = _combatQuickSlug(raw);" in src
     assert "keys.map(k => k.toLowerCase()).includes(rawLower)" in src
     assert "slugs.includes(rawSlug)" in src
+
+
+def test_player_actions_hub_and_selector_are_autosave_guarded():
+    src = _read('client/templates/play.html')
+    autosave_guard = src[src.index("function __isCharProfileRenderStackActive"):src.index("function scheduleCharBookQuickPanelSync")]
+    assert "renderPlayerActionsHub" in autosave_guard
+    assert "selectQuickActions" in autosave_guard
+    hub = src[src.index("function renderPlayerActionsHub()"):src.index("function setPlayerActionsDensity")]
+    assert "scheduleCharProfileAutosave" not in hub
+    assert "markCharProfileDirty" not in hub

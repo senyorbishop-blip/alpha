@@ -190,3 +190,9 @@ def test_quick_weapon_modal_accepts_staff_like_items_and_magic_actions():
     assert 'data-cqa-related-roll="damage"' in actions
     assert 'data-cqa-related-roll="save"' in actions
     assert 'Use Charge / Cast' in actions
+
+
+def test_combat_quick_bar_render_is_autosave_guarded():
+    play = _read('client/templates/play.html')
+    guard = play[play.index("function __isCharProfileRenderStackActive"):play.index("function scheduleCharBookQuickPanelSync")]
+    assert "CombatQuickBar.render" in guard
