@@ -304,32 +304,103 @@
     const zoom = Math.max(env.cam.zoom || 1, 0.0001);
     return isPointVisibleToPlayer(env, Number(poi.x || 0), Number(poi.y || 0) - 22 / zoom, 24 / zoom);
   }
+  // Visibility test against pre-built source/blocker arrays. Unlike
+  // isPointVisibleToPlayer() this does NOT rebuild those arrays, so it is safe to
+  // call thousands of times per frame.
+  function _pointVisibleCached(sources, blockers, wx, wy, paddingPx) {
+    for (let s = 0; s < sources.length; s++) {
+      const src = sources[s];
+      const dx = wx - src.x;
+      const dy = wy - src.y;
+      const reach = src.radiusPx + paddingPx;
+      if ((dx * dx) + (dy * dy) > (reach * reach)) continue;
+      let blocked = false;
+      for (let b = 0; b < blockers.length; b++) {
+        const seg = blockers[b];
+        if (segmentsIntersect(src.x, src.y, wx, wy, seg.x1, seg.y1, seg.x2, seg.y2)) { blocked = true; break; }
+      }
+      if (!blocked) return true;
+    }
+    return false;
+  }
+
+  // Offscreen cache for the computed darkness mask. Recomputed only when a cheap
+  // signature changes or the cache ages out, then blitted each frame.
+  const _overlayCache = { canvas: null, ctx: null, sig: '', ts: 0, w: 0, h: 0 };
+  const _OVERLAY_MAX_AGE_MS = 200;
+  // Cap on the number of probe cells per recompute. Iterating in SCREEN space and
+  // deriving the step from this cap keeps the cost bounded regardless of zoom —
+  // the old world-space step=25 loop exploded to hundreds of thousands of cells
+  // (each rebuilding source/blocker arrays) when the player zoomed out, which
+  // froze the main thread and starved the websocket heartbeat.
+  const _OVERLAY_CELL_BUDGET = 9000;
+
+  function _round(n) { return Math.round(Number(n) || 0); }
+
   function drawPlayerVisionOverlay(env, W, H) {
     if (!isVisionMaskActive(env)) return;
+    // Safe mode: skip the vision mask entirely so a frozen player page can load.
+    if (window.AppSafeMode && window.AppSafeMode.disabled('vision-overlay')) return;
     const sources = getCurrentMapVisionSources(env);
     if (!sources.length) return;
-    const topLeft = env.screenToWorld(0, 0);
-    const bottomRight = env.screenToWorld(W, H);
-    const step = 25;
-    const startX = Math.floor(Math.min(topLeft.x, bottomRight.x) / step) * step;
-    const endX = Math.ceil(Math.max(topLeft.x, bottomRight.x) / step) * step;
-    const startY = Math.floor(Math.min(topLeft.y, bottomRight.y) / step) * step;
-    const endY = Math.ceil(Math.max(topLeft.y, bottomRight.y) / step) * step;
+    const blockers = collectCurrentMapVisionBlockers(env);
     const ctx = env.ctx;
     const cam = env.cam;
-    ctx.save();
-    ctx.translate(W / 2, H / 2);
-    ctx.scale(cam.zoom, cam.zoom);
-    ctx.translate(cam.x, cam.y);
     const fogMode = getFogMode(env);
     const overlayAlpha = fogMode === 'hybrid' ? 0.72 : 0.88;
-    ctx.fillStyle = `rgba(0,0,0,${overlayAlpha})`;
-    for (let x = startX; x < endX; x += step) {
-      for (let y = startY; y < endY; y += step) {
-        if (isPointVisibleToPlayer(env, x + (step / 2), y + (step / 2), step * 0.45)) continue;
-        ctx.fillRect(x, y, step, step);
+
+    if (!W || !H) return;
+    // Screen-space step chosen so cell count stays within budget at any zoom.
+    const step = Math.max(8, Math.ceil(Math.sqrt((W * H) / _OVERLAY_CELL_BUDGET)));
+    const worldPad = (step * 0.5) / Math.max(cam.zoom || 1, 0.0001);
+
+    // Cheap signature: anything that changes the mask shape. Camera movement
+    // (pan/zoom) and source/blocker changes force a recompute; otherwise we reuse
+    // the cached bitmap for up to _OVERLAY_MAX_AGE_MS.
+    const sig = [
+      W, H, step,
+      _round(cam.zoom * 1000),
+      _round(cam.x), _round(cam.y),
+      overlayAlpha,
+      sources.map(s => `${_round(s.x)},${_round(s.y)},${_round(s.radiusPx)}`).join(';'),
+      blockers.length,
+    ].join('|');
+
+    const nowTs = (window.performance && window.performance.now) ? window.performance.now() : Date.now();
+    const cacheValid = _overlayCache.canvas
+      && _overlayCache.w === W && _overlayCache.h === H
+      && _overlayCache.sig === sig
+      && (nowTs - _overlayCache.ts) < _OVERLAY_MAX_AGE_MS;
+
+    if (!cacheValid) {
+      if (!_overlayCache.canvas || _overlayCache.w !== W || _overlayCache.h !== H) {
+        _overlayCache.canvas = document.createElement('canvas');
+        _overlayCache.canvas.width = W;
+        _overlayCache.canvas.height = H;
+        _overlayCache.ctx = _overlayCache.canvas.getContext('2d');
+        _overlayCache.w = W;
+        _overlayCache.h = H;
       }
+      const octx = _overlayCache.ctx;
+      octx.clearRect(0, 0, W, H);
+      octx.fillStyle = `rgba(0,0,0,${overlayAlpha})`;
+      // Iterate the visible canvas in fixed screen-space cells, converting each
+      // cell centre to world coordinates for the visibility test.
+      for (let sx = 0; sx < W; sx += step) {
+        for (let sy = 0; sy < H; sy += step) {
+          const world = env.screenToWorld(sx + step / 2, sy + step / 2);
+          if (_pointVisibleCached(sources, blockers, world.x, world.y, worldPad)) continue;
+          octx.fillRect(sx, sy, step, step);
+        }
+      }
+      _overlayCache.sig = sig;
+      _overlayCache.ts = nowTs;
     }
+
+    // Blit the cached mask in screen space (no world transform needed).
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(_overlayCache.canvas, 0, 0);
     ctx.restore();
   }
 

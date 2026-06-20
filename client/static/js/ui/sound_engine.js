@@ -860,6 +860,7 @@ class AudioManager {
    * @returns {Promise<void>}
    */
   async preload(key, url) {
+    if (window.AppSafeMode && window.AppSafeMode.disabled('audio')) return;
     if (this._missingFiles.has(url)) return;
     if (this._bufferCache.has(key)) return;
     if (this._loadPromises.has(key)) return this._loadPromises.get(key);
@@ -896,6 +897,7 @@ class AudioManager {
    * @returns {Promise<void>}
    */
   async playSFX(key) {
+    if (window.AppSafeMode && window.AppSafeMode.disabled('audio')) return;
     // 1. Attempt file-based playback ----------------------------------------
     await this.preload(key, `/static/sounds/${key}.ogg`);
     const buf = this._bufferCache.get(key);
@@ -932,6 +934,7 @@ class AudioManager {
    * @returns {Promise<void>}
    */
   async playAmbient(key, fade_ms = 1500) {
+    if (window.AppSafeMode && window.AppSafeMode.disabled('audio')) return;
     const vol = this._engine._vol.ambient;
     await this._engine.setAmbient(key, vol, fade_ms);
     if (typeof window !== 'undefined' && window.ROLE === 'dm' && typeof sendWS === 'function') {

@@ -177,8 +177,9 @@
       scheduleReconnect();
     };
 
-    socket.onerror = () => {
+    socket.onerror = (event) => {
       if (config.getSocket() !== socket) return;
+      console.warn('[WS] error', event && event.message ? event.message : event);
       socket.close();
     };
     socket.onmessage = (event) => {
