@@ -11155,43 +11155,6 @@ Shortbow — +5 to hit, 1d6+3 piercing"></textarea>
     `gameplay/combat.js`) as runtime authorities unless this page explicitly
     loads them.
 -->
-<script>
-(function () {
-  window.__PLAY_BOOT_ROLE = "{{ play_role|default('viewer') }}";
-  window.__PLAY_BOOT_MANIFEST = "{{ boot_manifest_name|default('viewer') }}";
-  window.__playerBootState = window.__playerBootState || { checkpoint: 'PLAYER_BOOT_HTML_LOADED', scriptsStarted: false, wsOpened: false };
-  window.__playerBootCheckpoint = function (checkpoint) {
-    window.__playerBootState = window.__playerBootState || {};
-    window.__playerBootState.checkpoint = checkpoint;
-    window.__playerBootState.lastAt = Date.now();
-    if (window.__PLAY_BOOT_ROLE === 'player') console.info('[PlayerBoot]', checkpoint);
-    var cp = document.getElementById('player-boot-checkpoint');
-    if (cp) cp.textContent = checkpoint;
-  };
-  window.__showPlayerBootFailure = function (message) {
-    if (window.__PLAY_BOOT_ROLE !== 'player') return;
-    var overlay = document.getElementById('player-boot-failure-overlay');
-    if (!overlay) return;
-    var state = window.__playerBootState || {};
-    overlay.style.display = 'block';
-    var msg = document.getElementById('player-boot-failure-message');
-    if (msg) msg.textContent = message;
-    var cp = document.getElementById('player-boot-checkpoint');
-    if (cp) cp.textContent = state.checkpoint || 'unknown';
-  };
-  window.__playerBootCheckpoint('PLAYER_BOOT_HTML_LOADED');
-  setTimeout(function () {
-    if (window.__PLAY_BOOT_ROLE === 'player' && !(window.__playerBootState || {}).scriptsStarted) {
-      window.__showPlayerBootFailure('Player boot failed before scripts loaded.');
-    }
-  }, 5000);
-  setTimeout(function () {
-    if (window.__PLAY_BOOT_ROLE === 'player' && !(window.__playerBootState || {}).wsOpened) {
-      window.__showPlayerBootFailure('Player boot failed before WebSocket.');
-    }
-  }, 10000);
-})();
-</script>
 {% if play_role == 'player' %}
 <div id="player-boot-failure-overlay" style="display:none;position:fixed;inset:1rem auto auto 1rem;z-index:99999;max-width:min(520px,calc(100vw - 2rem));padding:1rem;border:1px solid rgba(231,76,60,0.8);border-radius:10px;background:rgba(20,8,8,0.96);color:#fff;box-shadow:0 12px 34px rgba(0,0,0,0.55);font:13px/1.45 Inter,system-ui,sans-serif;">
   <strong id="player-boot-failure-message">Player boot failed.</strong>
@@ -11210,24 +11173,7 @@ Shortbow — +5 to hit, 1d6+3 piercing"></textarea>
   window._campRest = CampRest;
 </script>
 {% endif %}
-<script>if (window.__PLAY_BOOT_ROLE === 'player' && window.__playerBootCheckpoint) window.__playerBootCheckpoint('PLAYER_BOOT_CORE_LOADED');</script>
-{% if false %}
-<script src="/static/js/core/diagnostics.js"></script>
-<script src="/static/js/core/csrf.js"></script>
-<script src="/static/js/editor/serialization.js"></script>
-<script src="/static/js/editor/stamp_presets.js"></script>
-<script src="/static/js/editor/terrain_manifest.js"></script>
-<script src="/static/js/assets/dnd_assets.js"></script>
-<script src="/static/js/editor/asset_initializer.js"></script>
-<script src="/static/js/editor/asset_renderer.js"></script>
-<script src="/static/js/editor/terrain_renderer.js"></script>
-<script src="/static/js/editor/placement_controller.js"></script>
-<script src="/static/js/ui/item_image_resolver.js"></script>
-<script src="/static/js/editor/shop_panel.js"></script>
-<script src="/static/js/editor/shop_view.js"></script>
-<script src="/static/js/editor/chest_view.js"></script>
-<script src="/static/js/render/combat_fx.js"></script>
-<script src="/static/js/editor/assets.js"></script>
+{% if play_role in ['dm', 'assistant_dm'] %}
 <script src="/static/js/ui/asset_library.js"></script>
 <script src="/static/js/ui/editor_panel.js"></script>
 <script src="/static/js/character/runtime/mapper_to_play.js"></script>
@@ -11294,7 +11240,41 @@ Shortbow — +5 to hit, 1d6+3 piercing"></textarea>
 <script src="/static/js/character/builder/builder_shell.js"></script>
 {% endif %}
 {% if play_role in ['dm', 'assistant_dm'] %}
+<script src="/static/js/character/spell_runtime.js"></script>
+<script src="/static/js/character/spells_modal.js"></script>
+<script src="/static/js/character/tabs/actions_tab.js"></script>
+<script src="/static/js/character/tabs/inventory_tab.js"></script>
+<script src="/static/js/character/tabs/spells_tab.js"></script>
+<script src="/static/js/character/tabs/features_tab.js"></script>
+<script src="/static/js/character/character_sheet_container.js"></script>
+<script src="/static/js/character/combat_quick_actions.js"></script>
+<script src="/static/js/character/combat_quick_selectors.js"></script>
+<script src="/static/js/character/combat_quick_bar.js"></script>
+<script src="/static/js/character/sticky_notes.js"></script>
 <script>
+window.__PLAY_BOOT_ROLE = "{{ play_role|default('viewer') }}";
+window.__PLAY_BOOT_MANIFEST = "{{ boot_manifest_name|default('viewer') }}";
+window.__playerBootState = window.__playerBootState || { checkpoint: 'PLAYER_BOOT_HTML_LOADED', scriptsStarted: false, wsOpened: false };
+window.__playerBootCheckpoint = function (checkpoint) {
+  window.__playerBootState = window.__playerBootState || {};
+  window.__playerBootState.checkpoint = checkpoint;
+  window.__playerBootState.lastAt = Date.now();
+  if (window.__PLAY_BOOT_ROLE === 'player') console.info('[PlayerBoot]', checkpoint);
+  var cp = document.getElementById('player-boot-checkpoint');
+  if (cp) cp.textContent = checkpoint;
+};
+window.__showPlayerBootFailure = function (message) {
+  if (window.__PLAY_BOOT_ROLE !== 'player') return;
+  var overlay = document.getElementById('player-boot-failure-overlay');
+  if (!overlay) return;
+  var state = window.__playerBootState || {};
+  overlay.style.display = 'block';
+  var msg = document.getElementById('player-boot-failure-message');
+  if (msg) msg.textContent = message;
+  var cp = document.getElementById('player-boot-checkpoint');
+  if (cp) cp.textContent = state.checkpoint || 'unknown';
+};
+window.__playerBootCheckpoint('PLAYER_BOOT_HTML_LOADED');
 // ═══════════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════════
@@ -12027,7 +12007,14 @@ window.requestCombatFogSyncDebounced = requestCombatFogSyncDebounced;
 let _combatTargeting = false;
 let _playerActionsCollapsed = false;
 let _playerActionsDensity = 'comfortable';
-let _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, bonus_action_converted_actions: 0, usage: {}, encounter_id: _combat.encounter_id || '' };
+function _resetPlayerActionEconomyRuntime() {
+  _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, usage: {} };
+  _playerActionEconomyRuntime.bonus_action_converted_actions = 0;
+  _playerActionEconomyRuntime.encounter_id = (_combat && _combat.encounter_id) || '';
+}
+let _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, usage: {} };
+_playerActionEconomyRuntime.bonus_action_converted_actions = 0;
+_playerActionEconomyRuntime.encounter_id = (_combat && _combat.encounter_id) || '';
 let _markTargeting = null; // null or { markKind: 'hunters_mark'|'hex' }
 let _monsterQuickCreatureCache = {};
 let _monsterQuickPendingAction = null;
@@ -19158,7 +19145,7 @@ function drawToken(t) {
   // and duplicate numeric overlay were intentionally removed from the token art.
   const isOwnToken = t.owner_id === USER_ID;
   const isPlayerOwnedToken = !!t.owner_id || t.token_type === 'player';
-  const showHpPill = t.hp !== undefined && t.maxHp && !isDead && !t.hidden_hp && (
+  const showHpBar = t.hp !== undefined && t.maxHp && !isDead && !t.hidden_hp && (
     ROLE === 'dm' || (ROLE === 'player' && isPlayerOwnedToken)
   );
 
@@ -19166,7 +19153,7 @@ function drawToken(t) {
   const tokenBadgeLayout = layoutTokenBadges(t, {
     turnLabel: _isActiveTurn ? 'NOW' : (_isNextTurn ? 'NEXT' : ''),
     canSeeVitals,
-    showHpText: showHpPill,
+    showHpText: showHpBar,
   });
 
   const activeEmote = (window.AppUITokenEmotes && typeof window.AppUITokenEmotes.getRenderState === 'function')
@@ -45394,7 +45381,7 @@ function combatApplyState(state, source) {
   const encounterChanged = !!(state.encounter_id && _playerActionEconomyRuntime.encounter_id && String(state.encounter_id) !== String(_playerActionEconomyRuntime.encounter_id));
   const combatJustStarted = !!(_combat.active && !prevActive);
   if (encounterChanged || combatJustStarted || !nextTurnKey || nextTurnKey !== prevTurnKey) {
-    _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, bonus_action_converted_actions: 0, usage: {}, encounter_id: _combat.encounter_id || '' };
+    _playerActionEconomyRuntime = _makeCleanEconomyRuntime();
     if (typeof _charSheet !== 'undefined' && _charSheet && _charSheet.actionEconomyRuntime) _charSheet.actionEconomyRuntime = null;
   } else {
     _playerActionEconomyRuntime.encounter_id = _combat.encounter_id || _playerActionEconomyRuntime.encounter_id || '';
@@ -45402,7 +45389,7 @@ function combatApplyState(state, source) {
   // Reset inspect check results when combat ends (new encounter = fresh attempts)
   if (!_combat.active && prevActive) {
     _resetInspectResults();
-    _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, bonus_action_converted_actions: 0, usage: {}, encounter_id: _combat.encounter_id || '' };
+    _playerActionEconomyRuntime = _makeCleanEconomyRuntime();
   }
   const afterOrder = Array.isArray(_combat?.combatants) ? _combat.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : [];
   console.debug('[combatApplyState] after', { revision: _combat.revision, order: afterOrder, turn: _combat.turn, reason: applyReason });
@@ -49724,10 +49711,9 @@ function performCombatQuickCastSpell(spellId, preferredLevel) {
   const castTime = String(card.casting_time || spell.casting_time || '').toLowerCase();
   if (_combatQuickIsItemGrantedSpell(spell) && !_combatQuickSpendItemSpellCharges(spell, preferredLevel ?? spell.castLevel ?? spell.level ?? card.level)) return null;
   const actionId = spell.rowId || spell.id || spell.spellId || spell.name || spellId;
-  if (castTime.includes('bonus action')) _consumeActionEconomy('bonus_action', { action_id: actionId });
-  else if (castTime.includes('reaction')) _consumeActionEconomy('reaction', { action_id: actionId });
-  else _consumeActionEconomy('action', { action_id: actionId, normal_spell_cast: true });
-  // Compatibility contract: else _consumeActionEconomy('action', { action_id: spellId, normal_spell_cast: true })
+  if (castTime.includes('bonus action')) _consumeActionEconomy('bonus_action', { action_id: spellId });
+  else if (castTime.includes('reaction')) _consumeActionEconomy('reaction', { action_id: spellId });
+  else _consumeActionEconomy('action', { action_id: spellId, normal_spell_cast: true });
 
   const baseLevel = _combatQuickSpellBaseLevel(spell);
   if (baseLevel === null) {
@@ -50188,9 +50174,10 @@ async function performCombatQuickWeaponAttack(actionOrId, mode = 'base') {
       actionId: attackRoll.actionId,
     });
 
-    _consumeActionEconomy('attack_within_action', { action_id: card.id || card.name });
+    const attackId = card.id || card.name;
+    _consumeActionEconomy('attack_within_action', { action_id: attackId });
     if (window.CombatQuickSelectors && typeof window.CombatQuickSelectors.markUsed === 'function') {
-      window.CombatQuickSelectors.markUsed(String(card.id || card.name || ''));
+      window.CombatQuickSelectors.markUsed(String(attackId || ''));
     }
 
     const hitLabel = attackRoll.d20 === 20 ? '⚡CRITICAL HIT!' : attackRoll.d20 === 1 ? '✕Natural 1 — Miss' : `${attackRoll.d20}${bonusStr} = **${attackRoll.total}**`;
@@ -51874,69 +51861,15 @@ async function bestiaryMakeVariant() {
 
 </script>
 {% else %}
-<script>
-// Minimal player/viewer boot shell: do not embed the full DM/editor runtime.
-const params = new URLSearchParams(location.search);
-const SESSION_ID = params.get('session_id') || '';
-const USER_ID = params.get('user_id') || '';
-const ROLE = (params.get('role') || '{{ play_role|default("viewer") }}').toLowerCase();
-const NAME = params.get('name') || '';
-const RETURNING = params.get('returning') || '';
-let ws = null;
-let wsReconnectTimer = null;
-let _pendingWSMessages = [];
-let _queuedEditorTypes = new Set();
-let tokens = {};
-function getEffectiveUserId(){ return USER_ID; }
-function getEffectiveRole(){ return ROLE; }
-function reportClientRuntimeError(label, err){ console.error('[CLIENT RUNTIME]', label, err); }
-function safeClientCall(label, fn, fallback=null){ try { return fn(); } catch (err) { reportClientRuntimeError(label, err); return fallback; } }
-function showToast(msg){ console.info('[Toast]', msg); }
-function _setWsStatus(status){ console.info('[WS status]', status); }
-async function syncSessionAuthority(){ return null; }
-function initUI(){}
-function initCanvas(){}
-function __bootApplyRoleVisibility(){}
-function _updateSpellTip(){}
-function initJournalPanel(){}
-function initLogsUI(){}
-function renderItemLibraryList(){}
-function renderItemLibraryEditor(){}
-function refreshInventoryTransferTargets(){}
-function refreshCharProfileSelect(){}
-function buildClassGrid(){}
-function buildPlayerColorSwatches(){}
-function toggleFlyout(){}
-function sendChat(){ const input=document.getElementById('chat-input'); const text=(input&&input.value||'').trim(); if(text) sendWS({type:'chat', payload:{text}}); }
-function handleLegacyMessage(msg){
-  if (msg && msg.type === 'state_sync' && window.__PLAY_BOOT_ROLE === 'player' && typeof window.__playerBootCheckpoint === 'function') {
-    window.__playerBootCheckpoint('PLAYER_BOOT_STATE_SYNC_APPLIED');
-  }
-}
-function connectWS(){
-  if (!(window.AppWS && window.AppRuntimeBridge && typeof window.AppRuntimeBridge.createWsConfig === 'function')) return null;
-  window.AppWS.configure(window.AppRuntimeBridge.createWsConfig());
-  _setWsStatus('connecting');
-  ws = window.AppWS.ensureConnected({ reason: 'boot' });
-  return ws;
-}
-function sendWS(msg){ if (window.AppWS && typeof window.AppWS.send === 'function') return window.AppWS.send(msg); }
-document.addEventListener('DOMContentLoaded', () => {
-  if (window.AppBootShell && window.AppRuntimeBridge && typeof window.AppRuntimeBridge.createBootEnv === 'function') {
-    window.AppBootShell.runDOMContentLoaded(window.AppRuntimeBridge.createBootEnv());
-  } else {
-    connectWS();
-  }
-});
-</script>
+<script src="/static/js/core/player_boot_stub.js"></script>
 {% endif %}
 
 {% if load_dice_module %}
 <!-- 3-D Dice Physics System — ES module, loads Three.js via importmap -->
 <script type="module" src="/static/js/dice/dice3d.js?v=20260321"></script>
 {% endif %}
-{% for script in deferred_boot_scripts %}
-<script src="{{ script }}"></script>
+{% for deferred_script in deferred_boot_scripts %}
+<script src="{{ deferred_script }}"></script>
 {% endfor %}
 </body>
 </html>

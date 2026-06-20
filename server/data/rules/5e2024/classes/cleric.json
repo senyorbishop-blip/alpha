@@ -585,7 +585,7 @@
       "type": "action",
       "resourceName": "Channel Divinity",
       "trackUses": true,
-      "save": "Wisdom saving throw (DC = spell save DC)",
+      "save": "Wisdom save",
       "effect": "On a failed save, the Undead is Turned for 1 minute: must flee, can only Dash/Disengage/Dodge, can't take Reactions. Turn ends if the creature takes damage.",
       "tags": [
         "divine",
@@ -609,7 +609,7 @@
     },
     "cleric-divine-domain-subclass": {
       "summary": "Choose your Divine Domain at level 3, gaining domain spells always prepared plus unique Channel Divinity options and features at levels 3, 6, 17.",
-      "description": "At level 3, you choose a Divine Domain that represents your deity's sphere of influence — such as Life, Light, Trickery, War, Knowledge, or Nature. Your choice grants you the following benefits that grow with your level:\n\nDomain Spells: A list of spells that are always prepared for you and don't count against your number of prepared spells. These appear on your sheet automatically.\n\nChannel Divinity Option: A unique Channel Divinity use available only to clerics of your domain (in addition to Divine Spark and Turn Undead).\n\nSubclass Features: Additional class features at levels 3, 6, and 17 that reinforce your domain's combat, support, or utility identity.",
+      "description": "At level 3, you choose a Divine Domain that represents your deity's sphere of influence — such as Life, Light, Trickery, War, Knowledge, or Nature. This choice is your subclass gate: it permanently shifts the identity of your cleric, shaping your prepared spells, Channel Divinity, and subclass features at levels 3, 6, and 17.\n\nDomain Spells: A list of spells that are always prepared for you and don't count against your number of prepared spells. These appear on your sheet automatically.\n\nChannel Divinity Option: A unique Channel Divinity use available only to clerics of your domain (in addition to Divine Spark and Turn Undead).\n\nSubclass Features: Additional class features at levels 3, 6, and 17 that reinforce your domain's combat, support, or utility identity.",
       "tags": [
         "subclass",
         "divine",

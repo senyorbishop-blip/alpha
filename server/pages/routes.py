@@ -79,12 +79,7 @@ def _play_boot_context(request: Request) -> dict:
         "/static/js/character/builder/builder_shell.js",
     ]
     deferred_dm = [
-        "/static/js/ui/onboarding.js?v=20260327", "/static/js/character/spell_runtime.js",
-        "/static/js/character/spells_modal.js", "/static/js/character/tabs/actions_tab.js",
-        "/static/js/character/tabs/inventory_tab.js", "/static/js/character/tabs/spells_tab.js",
-        "/static/js/character/tabs/features_tab.js", "/static/js/character/character_sheet_container.js",
-        "/static/js/character/combat_quick_actions.js", "/static/js/character/combat_quick_selectors.js",
-        "/static/js/character/combat_quick_bar.js", "/static/js/character/sticky_notes.js",
+        "/static/js/ui/onboarding.js?v=20260327",
     ]
     scripts = dm if manifest_role == "dm" else (player if manifest_role == "player" else viewer)
     return {

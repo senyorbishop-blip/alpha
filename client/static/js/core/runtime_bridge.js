@@ -58,7 +58,9 @@
         if (String(resolved || '').trim()) return resolved;
         if (String(fromStore || '').trim()) return String(fromStore || '').trim();
         if (fromGlobal) return fromGlobal;
-        return readQueryParam(['user_id', 'uid', 'user']);
+        const fromQuery = readQueryParam(['user_id', 'uid', 'user']);
+        if (String(fromQuery || '').trim()) return fromQuery;
+        return '';
       },
       getRole: function () {
         const resolvedRole = typeof global.getEffectiveRole === 'function' ? global.getEffectiveRole() : '';

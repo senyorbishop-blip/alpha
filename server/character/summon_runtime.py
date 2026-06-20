@@ -36,6 +36,36 @@ def get_summon_runtime_metrics() -> dict[str, Any]:
         return copy.deepcopy(_SUMMON_RUNTIME_METRICS)
 
 
+_ERROR_CODE_TO_CATEGORY: dict[str, str] = {
+    "profile_not_found": "missing_profile",
+    "missing_native_character": "missing_native_character",
+    "invalid_variant": "illegal_variant_selection",
+    "variant_error": "illegal_variant_selection",
+    "summon_not_unlocked": "missing_summon_unlock",
+    "spell_not_available": "spell_not_available",
+    "runtime_not_live_for_class": "runtime_not_live",
+    "missing_map_context": "missing_map_context",
+    "missing_template": "missing_template",
+    "register_active_failed": "register_active_failed",
+}
+
+
+def _runtime_failure(code: str, *, message: str = "", context: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Return a structured failure payload for build_summon_runtime_payload."""
+    category = _ERROR_CODE_TO_CATEGORY.get(str(code or ""), str(code or "unknown_failure"))
+    return {
+        "ok": False,
+        "error": str(code or "unknown_failure"),
+        "message": str(message or ""),
+        "failure": {
+            "category": category,
+            "code": str(code or "unknown_failure"),
+            "message": str(message or ""),
+            "context": context if isinstance(context, dict) else {},
+        },
+    }
+
+
 def _safe_int(value: Any, fallback: int = 0, *, minimum: int | None = None, maximum: int | None = None) -> int:
     try:
         parsed = int(value)
@@ -1238,6 +1268,13 @@ def synchronize_active_summon_state(native_document: dict[str, Any], *, token_id
 def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[str, Any]) -> dict[str, Any]:
     started = time.perf_counter()
     requested_profile_id = str(payload.get("profile_id") or payload.get("profileId") or "").strip()
+    context: dict[str, Any] = {
+        "owner_user_id": str(getattr(user, "id", "") or ""),
+        "owner_role": str(getattr(user, "role", "") or ""),
+        "profile_id": requested_profile_id,
+        "summon_template_id": str(payload.get("summon_template_id") or payload.get("summonTemplateId") or "").strip().lower(),
+        "summon_group_id": str(payload.get("summon_group_id") or payload.get("summonGroupId") or "").strip().lower(),
+    }
     owner_key, profile_index, profile = _find_active_profile(session, user, requested_profile_id)
     if profile_index < 0 or not isinstance(profile, dict):
         return _runtime_failure("profile_not_found", message="No active character profile was found for this summon request.", context=context)
@@ -1324,6 +1361,8 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
         if resolver is None:
             return _runtime_failure("runtime_not_live_for_class", message="This summon family is not currently live in runtime deployment.", context={**context, "source_class": source_class, "source_subclass": source_subclass})
         actor = resolver()
+        entity_kind = _resolve_entity_kind(template, actor)
+        is_creature = entity_kind == "creature"
     except ValueError as exc:
         code = str(exc) or "runtime_resolution_failed"
         return _runtime_failure(code, message="Summon actor resolution failed for the selected deployment variant.", context=context)

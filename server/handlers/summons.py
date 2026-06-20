@@ -543,7 +543,10 @@ async def handle_summon_runtime_admin(payload: dict, session: Session, user: Use
             await save_campaign_async(session)
         rows = list(_iter_active_summons(session))
     if action in {"list", "refresh"}:
-        data = [entry for (_, _, _, _, entry) in rows]
+        data = [_normalize_diagnostic(entry) for (_, _, _, _, entry) in rows]
+        quarantined = sum(1 for d in data if d.get("status") == "quarantined")
+        metrics = metrics_snapshot(session)
+        metrics["quarantined_count"] = max(int(metrics.get("quarantined_count") or 0), quarantined)
         await manager.send_to(
             session.id,
             user.id,
@@ -553,6 +556,7 @@ async def handle_summon_runtime_admin(payload: dict, session: Session, user: Use
                     "ok": True,
                     "action": "list",
                     "summons": data,
+                    "metrics": metrics,
                     "diagnostics": {
                         "summon_count": len(data),
                         "runtime_metrics": get_summon_runtime_metrics(),
@@ -690,3 +694,81 @@ async def handle_summon_runtime_admin(payload: dict, session: Session, user: Use
             },
         },
     )
+
+
+async def handle_summon_action_use(payload: dict, session: Session, user: User):
+    """Apply a summon action (attack, ability) on behalf of a player-owned companion token."""
+    token_id = str(payload.get("token_id") or "").strip()
+    action_id = str(payload.get("action_id") or "").strip()
+    target_id = str(payload.get("target_id") or "").strip()
+
+    token = (session.tokens or {}).get(token_id)
+    if not token:
+        await manager.send_to(session.id, user.id, {
+            "type": "summon_action_result",
+            "payload": {"ok": False, "error": "token_not_found", "token_id": token_id},
+        })
+        return
+
+    # Find active summon entry for this token
+    active_entry = None
+    for _, _, _, native, entry in _iter_active_summons(session):
+        if str(entry.get("tokenId") or "") == token_id:
+            active_entry = entry
+            break
+
+    if not active_entry:
+        await manager.send_to(session.id, user.id, {
+            "type": "summon_action_result",
+            "payload": {"ok": False, "error": "active_summon_not_found", "token_id": token_id},
+        })
+        return
+
+    actor = active_entry.get("actor") if isinstance(active_entry.get("actor"), dict) else {}
+    actions = list(actor.get("actions") or [])
+    action = next((a for a in actions if str(a.get("id") or "") == action_id), None)
+    if not action:
+        await manager.send_to(session.id, user.id, {
+            "type": "summon_action_result",
+            "payload": {"ok": False, "error": "action_not_found", "action_id": action_id},
+        })
+        return
+
+    # Apply damage to target if applicable
+    damage_info = action.get("damage") if isinstance(action.get("damage"), dict) else {}
+    damage_applied = 0
+    target_token = (session.tokens or {}).get(target_id) if target_id else None
+    if target_token and damage_info.get("formula"):
+        import re as _re
+        formula = str(damage_info.get("formula") or "")
+        # Simple dice parser: NdM+K
+        m = _re.match(r'^(\d*)d(\d+)([+-]\d+)?$', formula.strip())
+        if m:
+            qty = int(m.group(1) or 1)
+            die = int(m.group(2))
+            mod = int(m.group(3) or 0)
+            import random as _random
+            total = sum(_random.randint(1, die) for _ in range(qty)) + mod
+            total = max(0, total)
+        else:
+            total = 0
+        damage_applied = total
+        current_hp = int(getattr(target_token, "hp", 0) or 0)
+        target_token.hp = max(0, current_hp - damage_applied)
+
+    result_payload = {
+        "ok": True,
+        "token_id": token_id,
+        "action_id": action_id,
+        "target_id": target_id,
+        "action_name": str(action.get("displayName") or action.get("name") or action_id),
+        "damage_applied": damage_applied,
+        "target_hp": int(getattr(target_token, "hp", 0) or 0) if target_token else None,
+    }
+
+    await manager.broadcast(session.id, {
+        "type": "summon_action_result",
+        "payload": result_payload,
+    })
+    await _send_char_profiles(session, user.id)
+    await save_campaign_async(session)

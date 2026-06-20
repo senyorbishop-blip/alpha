@@ -274,24 +274,23 @@ def _fog_state_payload_for_context(session: Session, map_ctx: str) -> dict:
     }
 
 async def _broadcast_fog_to_visible_users(session: Session, message: dict, map_ctx: str):
-    """Deliver live fog updates to every connected participant.
+    """Deliver live fog updates to every connected participant via individual send_to calls.
 
+    Sending individually (not via broadcast) ensures per-user delivery tracking
+    and allows tests to verify that the DM sender also receives the update.
     Clients still keep fog state keyed by map context and only redraw the active
     context, but sending the sparse update to every participant avoids stale
     split-party/subgroup bookkeeping leaving a player permanently out of sync
     until a full reconnect/state_sync.
     """
-    broadcast = getattr(manager, "broadcast", None)
-    if callable(broadcast):
-        await broadcast(session.id, message)
-        return
     users = dict(getattr(session, "users", {}) or {})
-    for uid, participant in users.items():
-        role = str(getattr(participant, "role", "") or "").strip().lower()
-        if role == "dm":
+    if users:
+        for uid in users:
             await manager.send_to(session.id, uid, message)
-            continue
-        await manager.send_to(session.id, uid, message)
+    else:
+        broadcast = getattr(manager, "broadcast", None)
+        if callable(broadcast):
+            await broadcast(session.id, message)
 
 
 def _resolve_local_map_url(session: Session, map_ctx: str, fallback=None) -> str | None:
