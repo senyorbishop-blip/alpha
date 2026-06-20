@@ -3,6 +3,7 @@ server/connections.py — WebSocket connection registry and broadcaster
 """
 import json
 import logging
+import uuid
 from typing import Dict, Set, Optional
 from fastapi import WebSocket
 
@@ -12,14 +13,18 @@ logger = logging.getLogger(__name__)
 class ConnectionManager:
     def __init__(self):
         self._connections: Dict[str, Dict[str, WebSocket]] = {}
+        self._connection_ids: Dict[str, Dict[str, str]] = {}
 
     def get_session_connections(self, session_id: str) -> Dict[str, WebSocket]:
         return self._connections.get(session_id, {})
 
-    async def connect(self, session_id: str, user_id: str, websocket: WebSocket, role: str | None = None):
+    async def connect(self, session_id: str, user_id: str, websocket: WebSocket, role: str | None = None, connection_id: str | None = None) -> str:
         await websocket.accept()
         if session_id not in self._connections:
             self._connections[session_id] = {}
+        if session_id not in self._connection_ids:
+            self._connection_ids[session_id] = {}
+        connection_id = connection_id or uuid.uuid4().hex
         prior = self._connections[session_id].get(user_id)
         if prior and prior is not websocket:
             logger.warning(
@@ -34,10 +39,12 @@ class ConnectionManager:
                     session_id, user_id, role or "unknown", exc,
                 )
         self._connections[session_id][user_id] = websocket
+        self._connection_ids[session_id][user_id] = connection_id
         logger.info(
             "[ws] connected session_id=%s user_id=%s role=%s old_socket_replaced=%s new_socket_connected=true",
             session_id, user_id, role or "unknown", bool(prior and prior is not websocket),
         )
+        return connection_id
 
     def disconnect(self, session_id: str, user_id: str, websocket: Optional[WebSocket] = None) -> bool:
         if session_id in self._connections:
@@ -46,6 +53,10 @@ class ConnectionManager:
                 if current is not websocket:
                     return False
             self._connections[session_id].pop(user_id, None)
+            if session_id in self._connection_ids:
+                self._connection_ids[session_id].pop(user_id, None)
+                if not self._connection_ids[session_id]:
+                    del self._connection_ids[session_id]
             if not self._connections[session_id]:
                 del self._connections[session_id]
             return True
@@ -127,6 +138,15 @@ class ConnectionManager:
 
     def is_connected(self, session_id: str, user_id: str) -> bool:
         return user_id in self._connections.get(session_id, {})
+
+    def get_socket(self, session_id: str, user_id: str) -> Optional[WebSocket]:
+        return self._connections.get(session_id, {}).get(user_id)
+
+    def get_connection_id(self, session_id: str, user_id: str) -> Optional[str]:
+        return self._connection_ids.get(session_id, {}).get(user_id)
+
+    def is_current_connection(self, session_id: str, user_id: str, connection_id: str) -> bool:
+        return self.get_connection_id(session_id, user_id) == connection_id
 
     def get_active_session_ids(self) -> list:
         """Return a snapshot of all currently active session IDs."""

@@ -21,11 +21,11 @@ def test_ws_core_logs_version_and_ping_pong_flow():
 
 def test_server_logs_pong_and_updates_last_seen_for_any_frame():
     src = MAIN.read_text(encoding="utf-8")
-    assert "logger.info(\"[WS] sending ping user_id=%s session_id=%s\"" in src
-    assert "logger.info(\"[WS] received frame type=%s user_id=%s last_seen updated\"" in src
-    assert "logger.info(\"[WS] received frame type=pong user_id=%s\"" in src
-    assert "_last_pong[\"t\"] = asyncio.get_running_loop().time()" in src
-    assert src.index("_last_pong[\"t\"] = asyncio.get_running_loop().time()") < src.index("if msg_type == \"pong\":")
+    assert 'logger.info("[WS] sending ping user_id=%s session_id=%s connection_id=%s"' in src
+    assert 'logger.info("[WS] received frame type=%s user_id=%s connection_id=%s last_seen updated"' in src
+    assert 'logger.info("[WS] pong received user_id=%s connection_id=%s"' in src
+    assert '_last_pong["t"] = asyncio.get_running_loop().time()' in src
+    assert src.index('_last_pong["t"] = asyncio.get_running_loop().time()') < src.index('if msg_type == "pong":')
 
 
 def test_play_loads_ws_with_cache_busting_and_no_inline_websocket_bypass():
