@@ -907,6 +907,7 @@ def normalize_deployment_ui_entry(*, active_entry: dict[str, Any], token: Any = 
 
 def _build_token_payload(*, actor: dict[str, Any], user: User, map_context: str, sx: float, sy: float, sw: float, sh: float) -> dict[str, Any]:
     summon_category = str(actor.get("summonCategory") or "").strip().lower()
+    entity_kind = str(actor.get("entityKind") or "").strip().lower()
     icon = _token_icon_for_category(summon_category)
     return {
         "name": f"{icon} {actor.get('name', 'Summon')}",
@@ -924,7 +925,7 @@ def _build_token_payload(*, actor: dict[str, Any], user: User, map_context: str,
         "faction": "allies",
         "notes": _notes_for_actor(actor),
         "image_url": ((actor.get("tokenVisual") or {}).get("image_url") or None),
-        "monster_type": summon_category or "summon",
+        "monster_type": entity_kind or summon_category or "summon",
     }
 
 

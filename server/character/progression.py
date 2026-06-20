@@ -779,6 +779,13 @@ def apply_levelup(document: Any, *, choices: Any = None) -> dict[str, Any]:
     spell_plan = preview.get("spellChoices") if isinstance(preview.get("spellChoices"), dict) else {}
     if spell_plan:
         class_id = str(preview.get("classId") or "").strip().lower()
+        original_known_rows = copy.deepcopy(spell_state.get("known")) if isinstance(spell_state.get("known"), list) else []
+        original_prepared_rows = copy.deepcopy(spell_state.get("prepared")) if isinstance(spell_state.get("prepared"), list) else []
+        raw_spell_state_present = bool(
+            list(spell_state.get("known") or [])
+            or list(spell_state.get("prepared") or [])
+            or list(spell_state.get("spellbookEntries") or [])
+        )
         current_spell_state = _current_spell_state(canonical, class_id=class_id, class_level=next_level)
         known = list(current_spell_state.get("known") or [])
         prepared = list(current_spell_state.get("prepared") or [])
@@ -857,8 +864,13 @@ def apply_levelup(document: Any, *, choices: Any = None) -> dict[str, Any]:
         )
         if not validation_next.get("ok"):
             raise LevelupApplyError(" ".join(validation_next.get("errors") or ["Spell choices are not valid for this level-up."]))
-        spell_state["known"] = list(validation_next.get("known") or [])
-        spell_state["prepared"] = list(validation_next.get("prepared") or [])
+        persist_spell_lists = raw_spell_state_present or bool(cantrip_adds or levelled_adds or magical_secrets_adds or swap_drop or swap_add)
+        if persist_spell_lists:
+            spell_state["known"] = list(validation_next.get("known") or [])
+            spell_state["prepared"] = list(validation_next.get("prepared") or [])
+        else:
+            spell_state["known"] = original_known_rows
+            spell_state["prepared"] = original_prepared_rows
 
     if bool(preview.get("hasNewSpellSlots")):
         spell_state["slots"] = copy.deepcopy(preview.get("newSpellSlots") or {})
