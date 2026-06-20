@@ -429,7 +429,7 @@
     </section>`;
   }
 
-  function render() {
+  function _renderCombatQuickBarUnsafe() {
     _ensureRoot();
     const runtime = _runtime();
     const combat = runtime.combat || { active: false };
@@ -636,6 +636,24 @@
     state.dismissedForCombatTurn = combat.active ? String((combat.round || 1) + ':' + (combat.turn || 0)) : 'manual';
     _saveState();
     render();
+  }
+
+  function render() {
+    if (global.traceEnter) global.traceEnter('CombatQuickBar.render');
+    global.__depths = global.__depths || {};
+    if (global.__depths['CombatQuickBar.render'] > 0 && global.console) global.console.error('[REENTRY] CombatQuickBar.render already running', { debugTrace: global.__debugTrace });
+    global.__depths['CombatQuickBar.render'] = (Number(global.__depths['CombatQuickBar.render']) || 0) + 1;
+    if (global.__depths['CombatQuickBar.render'] > 5) {
+      if (global.console) global.console.error('[REENTRY] CombatQuickBar.render recursion depth exceeded', { debugTrace: global.__debugTrace });
+      global.__depths['CombatQuickBar.render'] = Math.max(0, global.__depths['CombatQuickBar.render'] - 1);
+      throw new Error('CombatQuickBar.render recursion depth exceeded: ' + JSON.stringify((global.__debugTrace || []).slice(-30)));
+    }
+    try {
+      if (global.__safeMode && global.__safeMode.quickActionsAutoRender) return;
+      return _renderCombatQuickBarUnsafe();
+    } finally {
+      global.__depths['CombatQuickBar.render'] = Math.max(0, (Number(global.__depths['CombatQuickBar.render']) || 0) - 1);
+    }
   }
 
   function resetQuickBarVisibility() {
