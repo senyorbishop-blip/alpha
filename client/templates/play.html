@@ -12312,7 +12312,7 @@ window.traceEnter = traceEnter;
 function __activePanelDebug() { try { return { tab: typeof __getActiveRightTabShellState === 'function' ? __getActiveRightTabShellState() : _activeRTab, panel: document.querySelector('#sidebar-right [data-panel].active')?.id || '' }; } catch (_) { return { tab: '', panel: '' }; } }
 function __debugSnapshot(extra = {}) { return Object.assign({ message: extra.message || '', stack: extra.stack || '', filename: extra.filename || '', lineno: extra.lineno || 0, colno: extra.colno || 0, recentMessages: (window.__recentWsMessages || []).slice(-50), recentRenderPhases: (window.__recentRenderPhases || []).slice(-50), recentUiFunctions: (window.__recentUiFunctions || []).slice(-50), debugTrace: (window.__debugTrace || []).slice(-100), role: (typeof ROLE !== 'undefined' ? ROLE : ''), activePanel: __activePanelDebug(), combatRenderActive: !!window.__combatRenderActive, stateSyncApplying: !!window.__stateSyncApplying, combatApplyStateActive: !!window.__combatApplyStateActive, remoteStateApplyDepth: _remoteStateApplyDepth, currentPhase: window.__currentPhase || window.__appRenderPhase || '' }, extra); }
 function __logReentry(name) { console.error(`[REENTRY] ${name} already running`, __debugSnapshot({ functionName: name, debugTrace: (window.__debugTrace || []).slice(-100) })); }
-function __enterDepth(name, details = {}, maxDepth = 5) { traceEnter(name, details); window.__depths[name] = (Number(window.__depths[name]) || 0) + 1; if (window.__depths[name] > maxDepth) { console.error(`[REENTRY] ${name} recursion depth exceeded`, __debugSnapshot({ functionName: name, depth: window.__depths[name] })); throw new Error(`${name} recursion depth exceeded: ${JSON.stringify((window.__debugTrace || []).slice(-30))}`); } }
+function __enterDepth(name, details = {}, maxDepth = 5) { traceEnter(name, details); window.__depths[name] = (Number(window.__depths[name]) || 0) + 1; if (window.__depths[name] > maxDepth) { const depth = window.__depths[name]; /* Self-healing: this throw happens BEFORE the caller's try/finally, so __exitDepth never runs for this frame. Undo our own increment here so a single trip can't leave the counter permanently elevated and wedge the panel for the rest of the session. */ window.__depths[name] = Math.max(0, depth - 1); console.error(`[REENTRY] ${name} recursion depth exceeded`, __debugSnapshot({ functionName: name, depth })); throw new Error(`${name} recursion depth exceeded: ${JSON.stringify((window.__debugTrace || []).slice(-30))}`); } }
 function __exitDepth(name) { window.__depths[name] = Math.max(0, (Number(window.__depths[name]) || 0) - 1); }
 function __enablePlayerUiSafeMode(reason) { window.__safeMode = { quickActionsAutoRender: true, charProfileDirtySave: true, reason: String(reason || 'stack overflow') }; try { if (window.AppSafeMode && typeof window.AppSafeMode.enable === 'function') window.AppSafeMode.enable('quick-actions-autobuild', reason || 'stack overflow'); } catch (_) {} try { const el = ensureClientRuntimeBanner(); el.textContent = 'Player UI safe mode enabled after stack overflow'; el.style.display = 'block'; } catch (_) {} }
 function __isRemoteStateOrCombatApplying() { return !!(isApplyingRemoteState || window.__stateSyncApplying || window.__combatApplyStateActive || (window.__depths && window.__depths.combatApplyState > 0)); }
@@ -41064,6 +41064,10 @@ function applyCharProfileRecord(p, opts = {}) {
   _activeCharacterSheetMode = _resolveCharacterSheetModeFromProfile(profile);
   _activeCharProfileUpdatedAt = _safeProfileTimestamp(profile.updated_at || profile.updatedAt || 0);
   syncCharSheetFromBookData(getCharacterBookDataFromUI(), { lockVitals: true, vitals: canonicalVitals });
+  // One-time canonicalization of any legacy stored quick picks. Done here on
+  // character load (outside the render path) so the render-time selector never
+  // has to write localStorage and trigger an autosave/re-render loop.
+  try { if (window.CombatQuickSelectors && typeof window.CombatQuickSelectors.migrateQuickPicks === 'function') window.CombatQuickSelectors.migrateQuickPicks(); } catch (_) {}
   syncSpellSlotBookSummary();
   refreshPlayerColorSwatches();
   applyPlayerPersonalizationTheme();
@@ -47382,8 +47386,11 @@ function renderCombat() {
   if (pre)      pre.style.display      = (ROLE === 'dm' && !isActive) ? 'flex' : 'none';
   if (controls) controls.style.display = isActive ? 'flex' : 'none';
   if (addRow)   addRow.style.display   = (ROLE === 'dm' && isActive)  ? 'flex' : 'none';
-  renderPlayerActionsHub();
-  if (window.CombatQuickBar && typeof window.CombatQuickBar.render === 'function') window.CombatQuickBar.render();
+  // The player actions hub / quick bar are secondary surfaces. Never let an
+  // error in them abort the combat-list repaint below — otherwise the roller's
+  // own initiative row would not update until a later forced refresh (Bug 2).
+  safeClientCall('renderPlayerActionsHub', () => renderPlayerActionsHub());
+  safeClientCall('combatQuickBar.render', () => { if (window.CombatQuickBar && typeof window.CombatQuickBar.render === 'function') window.CombatQuickBar.render(); });
   if (roundLbl) roundLbl.textContent = isActive ? `Round ${_combat.round ?? _combatRound}` : 'Round —';
   if (turnSummary) {
     if (!isActive || !coms.length) {

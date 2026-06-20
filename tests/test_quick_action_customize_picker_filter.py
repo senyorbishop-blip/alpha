@@ -296,6 +296,10 @@ global._getCombatQuickSpells = () => [{ id: 'fireball::cast-5', baseSpellId: 'fi
 global.getCombatQuickBarRuntime = () => ({ charSheet: {}, combat: { active: false }, spellSlots: {3: 1}, spellSlotState: {} });
 const sel = require('./client/static/js/character/combat_quick_selectors.js');
 sel.writeQuickPicks(['spell:fireball::cast-5']);
+// Canonicalization of stored picks is a one-time migration that runs on
+// character/combat load — NOT inside the render-time selector (which must be
+// side-effect free). The selector still exposes canonical keys in-memory.
+sel.migrateQuickPicks();
 const model = sel.selectQuickActions({});
 console.log(JSON.stringify({ picks: sel.readQuickPicks(), topSpells: model.topSpells.map(s => s.quickBarPickKey) }));
 """)
