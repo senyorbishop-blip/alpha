@@ -637,6 +637,12 @@ function _wsSend(msg) {
 // ---------------------------------------------------------------------------
 
 function _hookWebSocketMessages() {
+  // Safe mode (?safe=1) disables TTS polling so a frozen player page can boot
+  // without the relay probe loop.
+  if (window.AppSafeMode && window.AppSafeMode.disabled('tts-polling')) {
+    console.info(`${TTS_LOG} polling disabled (safe mode)`);
+    return;
+  }
   // The existing app uses a global _ws or registers via a callback.
   // We install a proxy after a short delay to let the app initialise first.
   const INTERVAL_MS = 500;

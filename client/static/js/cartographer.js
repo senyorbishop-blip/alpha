@@ -1,6 +1,25 @@
 (function () {
   'use strict';
 
+  // ── Role / safe-mode gating ────────────────────────────────────────────────
+  // The Map Studio (cartographer) is a DM/library-admin tool. It must NOT run on
+  // a player/viewer boot — in particular it must never fire the eager
+  // POST /api/maps/library/import scan, which was part of what froze player boot.
+  function _urlRole() {
+    try {
+      return String(new URLSearchParams(window.location.search || '').get('role') || 'viewer').toLowerCase();
+    } catch (_err) {
+      return 'viewer';
+    }
+  }
+  function _safeModeDisabled(feature) {
+    return !!(window.AppSafeMode && typeof window.AppSafeMode.disabled === 'function' && window.AppSafeMode.disabled(feature));
+  }
+  // Map Studio runs only for the DM, and never in safe mode.
+  function _mapStudioEnabled() {
+    return _urlRole() === 'dm' && !_safeModeDisabled('map-library-import');
+  }
+
   const DISCOVER_SCOPE_MAP = {
     interior: 'interior',
     battlemap: 'battlemap',
@@ -475,6 +494,12 @@
 
 
     async importMapLibrary(showFeedback = true) {
+      // Defense in depth: never let a non-DM / safe-mode boot trigger the
+      // server-side library import scan.
+      if (!_mapStudioEnabled()) {
+        if (showFeedback) this.showFeedback?.('Map import is available to the DM only.', 'warn');
+        return;
+      }
       try {
         const { response, payload } = await safeJsonFetch('/api/maps/library/import', { method: 'POST' });
         if (!response.ok) throw new Error(payload?.detail || payload?.error || 'Map import failed');
@@ -979,9 +1004,23 @@
   }
 
   window.cartographer = null;
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => { window.cartographer = new CartographerController(); });
-  } else {
+  // The Map Studio only boots for the DM. Players/viewers never instantiate the
+  // controller, so they never run renderShell / the import scan / discover /
+  // library fetches during their (light) boot. The DM can also lazily boot it on
+  // demand via window.bootCartographer() if it was skipped.
+  function _bootCartographer() {
+    if (window.cartographer) return window.cartographer;
+    if (!_mapStudioEnabled()) {
+      console.info('[BOOT] cartographer skipped (map studio is DM-only / disabled in safe mode)');
+      return null;
+    }
     window.cartographer = new CartographerController();
+    return window.cartographer;
+  }
+  window.bootCartographer = _bootCartographer;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _bootCartographer);
+  } else {
+    _bootCartographer();
   }
 })();

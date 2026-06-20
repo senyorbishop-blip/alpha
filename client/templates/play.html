@@ -29623,13 +29623,37 @@ window._playerVolChange = _playerVolChange;
   } catch (_) {}
 })();
 
-/* ── Preload all expected sound files in background (Task 6) ── */
-(function _preloadSounds() {
+/* ── Preload expected sound files OFF the boot critical path ──
+ * Player boot must stay light: we no longer fetch ~14 sound files eagerly during
+ * boot (most 404, and the burst competes with map/token/fog render). Instead we
+ * defer the preload until the browser is idle AND the user has interacted, and
+ * we skip it entirely in safe mode (?safe=1). AudioManager.preload() already
+ * records a 404/decode failure once per URL and never retries it. */
+(function _schedulePreloadSounds() {
   const SFX_KEYS     = ['clash','fireball','door','thunder','heal','trap','gasp','clack1','clack2','clack3'];
   const AMBIENT_KEYS = ['tavern','dungeon','forest','battle'];
-  // Fire-and-forget; AudioManager.preload() silently ignores missing files
-  SFX_KEYS.forEach(k     => audioManager.preload(k, `/static/sounds/${k}.ogg`));
-  AMBIENT_KEYS.forEach(k => audioManager.preload(k, `/static/sounds/ambient_${k}.ogg`));
+  let _done = false;
+  function _runPreload() {
+    if (_done) return;
+    if (window.AppSafeMode && window.AppSafeMode.disabled('audio-preload')) return;
+    _done = true;
+    const _b = window.AppBoot;
+    if (_b && typeof _b.phase === 'function') _b.phase('audio', 'start');
+    // Fire-and-forget; AudioManager.preload() silently ignores missing files
+    // and never retries a URL that already failed.
+    SFX_KEYS.forEach(k     => audioManager.preload(k, `/static/sounds/${k}.ogg`));
+    AMBIENT_KEYS.forEach(k => audioManager.preload(k, `/static/sounds/ambient_${k}.ogg`));
+    if (_b && typeof _b.phase === 'function') _b.phase('audio', 'end');
+  }
+  function _arm() {
+    if (window.requestIdleCallback) window.requestIdleCallback(_runPreload, { timeout: 5000 });
+    else setTimeout(_runPreload, 2000);
+  }
+  // Wait for a real user interaction (which also satisfies autoplay policy)
+  // before warming buffers; fall back to an idle-time warmup either way.
+  ['pointerdown', 'keydown'].forEach((ev) => window.addEventListener(ev, _runPreload, { once: true, passive: true }));
+  if (document.readyState === 'complete') _arm();
+  else window.addEventListener('load', _arm, { once: true });
 })();
 
 /* ── UI click sounds — tactile button feedback (Task 7) ── */
@@ -29899,6 +29923,10 @@ function narrationReceiveSpeak(payload) {
 (function initTtsEngineBadge() {
   const badge = document.getElementById('tts-engine-badge');
   if (!badge) return;
+  // The TTS engine badge is a DM panel. Skip the /api/tts/status fetch on a
+  // player/viewer boot and in safe mode so player startup stays light.
+  if (String(ROLE || '').toLowerCase() !== 'dm') return;
+  if (window.AppSafeMode && window.AppSafeMode.isOn && window.AppSafeMode.isOn()) return;
   fetch('/api/tts/status')
     .then(r => r.ok ? r.json() : null)
     .then(data => {
@@ -29981,6 +30009,12 @@ async function dmNarrationPreview() {
 }
 
 (function _integrationStatusInit() {
+  // Assistant/integration status + AI DM UI are DM-facing. They must not run on a
+  // player/viewer boot (each fired an /api/assistant/status fetch and built DM
+  // panels), and they never run in safe mode. The DM still gets them.
+  const _isDmBoot = String(ROLE || '').toLowerCase() === 'dm';
+  const _safeOff = !!(window.AppSafeMode && window.AppSafeMode.isOn && window.AppSafeMode.isOn());
+  if (!_isDmBoot || _safeOff) return;
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', refreshIntegrationStatus, { once: true });
     document.addEventListener('DOMContentLoaded', _initAiDmUi, { once: true });

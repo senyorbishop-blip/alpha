@@ -27,11 +27,16 @@
   // is a single source of truth.
   const SAFE_DISABLED = new Set([
     'audio',
+    'audio-preload',
     'dice3d',
     'fog-animation',
     'map-effects',
     'vision-overlay',
     'quick-actions-autobuild',
+    'map-library-import',
+    'tts-polling',
+    'character-builder-preload',
+    'prop-library',
   ]);
 
   const AppSafeMode = {
@@ -47,19 +52,42 @@
   // currentPhase is updated synchronously right before heavy work begins, so when
   // the freeze watchdog fires (after the main thread unblocks) it can name the
   // phase that was running when the event loop stalled.
+  // Tracks which `console.time('[BOOT] x')` timers are open so `console.timeEnd`
+  // is never called for a label that was never started (which logs a warning).
+  const _openTimers = new Set();
+  function _timeStart(label) {
+    try {
+      if (_openTimers.has(label)) return;
+      _openTimers.add(label);
+      console.time(label);
+    } catch (_err) {}
+  }
+  function _timeEnd(label) {
+    try {
+      if (!_openTimers.has(label)) return;
+      _openTimers.delete(label);
+      console.timeEnd(label);
+    } catch (_err) {}
+  }
+
   const AppBoot = {
     currentPhase: 'idle',
     startedAt: (global.performance && global.performance.now) ? global.performance.now() : Date.now(),
     _seen: Object.create(null),
 
-    // Logs `[BOOT] <name> <state>` and tracks the active phase.
+    // Logs `[BOOT] <name> <state>`, tracks the active phase, and emits matching
+    // `console.time`/`console.timeEnd` pairs (e.g. `[BOOT] state_sync`,
+    // `[BOOT] map render`, `[BOOT] token render`) so each boot phase is timed.
     phase(name, state) {
       const label = String(name || 'phase');
+      const timerLabel = `[BOOT] ${label}`;
       const st = state ? String(state) : '';
       if (st === 'start') {
         this.currentPhase = label;
-      } else if (st === 'end' && this.currentPhase === label) {
-        this.currentPhase = 'idle';
+        _timeStart(timerLabel);
+      } else if (st === 'end') {
+        if (this.currentPhase === label) this.currentPhase = 'idle';
+        _timeEnd(timerLabel);
       }
       console.info('[BOOT]', st ? `${label} ${st}` : label);
     },
@@ -86,11 +114,15 @@
 
     done() {
       this.currentPhase = 'idle';
+      // Close any still-open phase timers, then the overall total.
+      Array.from(_openTimers).forEach((label) => { if (label !== '[BOOT] total') _timeEnd(label); });
+      _timeEnd('[BOOT] total');
       console.info('[BOOT] done');
     },
   };
   global.AppBoot = AppBoot;
 
+  _timeStart('[BOOT] total');
   console.info('[BOOT] start', VERSION, SAFE ? '(SAFE MODE)' : '');
 
   // ── Freeze watchdog ────────────────────────────────────────────────────────
@@ -100,7 +132,8 @@
   // escalate to an error (naming the active phase) when lag crosses the freeze
   // threshold.
   const TICK_MS = 1000;
-  const FREEZE_THRESHOLD_MS = 2000;
+  // Per spec: a measured event-loop delay over 1000ms is a freeze.
+  const FREEZE_THRESHOLD_MS = 1000;
   let expected = (global.performance && global.performance.now) ? global.performance.now() : Date.now();
 
   function now() {
@@ -113,11 +146,11 @@
     expected = now() + TICK_MS;
     if (lag > FREEZE_THRESHOLD_MS) {
       console.error(
-        `[FREEZE WATCHDOG] lag_ms=${lag} phase=${AppBoot.currentPhase}`,
+        `[FREEZE WATCHDOG] lag_ms=${lag} current_phase=${AppBoot.currentPhase}`,
         { renderPhase: global.__appRenderPhase || 'unknown' }
       );
     } else {
-      console.debug(`[FREEZE WATCHDOG] lag_ms=${lag} phase=${AppBoot.currentPhase}`);
+      console.debug(`[FREEZE WATCHDOG] lag_ms=${lag} current_phase=${AppBoot.currentPhase}`);
     }
   }
 

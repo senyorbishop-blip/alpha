@@ -682,6 +682,9 @@
   });
   document.addEventListener('DOMContentLoaded', function () {
     if (_autoBuildDisabled()) return;
+    const _b = global.AppBoot;
+    if (_b && typeof _b.phase === 'function') _b.phase('quick actions', 'start');
     render();
+    if (_b && typeof _b.phase === 'function') _b.phase('quick actions', 'end');
   });
 }(window));
