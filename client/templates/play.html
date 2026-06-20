@@ -31064,7 +31064,7 @@ function connectWS() {
     }
     window.AppWS.configure(window.AppRuntimeBridge.createWsConfig());
     _setWsStatus('connecting');
-    ws = window.AppWS.connectWS();
+    ws = window.AppWS.ensureConnected({ reason: 'boot' });
     return ws;
   };
   runConnect().catch((err) => {
@@ -51917,7 +51917,7 @@ function connectWS(){
   if (!(window.AppWS && window.AppRuntimeBridge && typeof window.AppRuntimeBridge.createWsConfig === 'function')) return null;
   window.AppWS.configure(window.AppRuntimeBridge.createWsConfig());
   _setWsStatus('connecting');
-  ws = window.AppWS.connectWS();
+  ws = window.AppWS.ensureConnected({ reason: 'boot' });
   return ws;
 }
 function sendWS(msg){ if (window.AppWS && typeof window.AppWS.send === 'function') return window.AppWS.send(msg); }

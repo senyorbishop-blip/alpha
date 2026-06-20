@@ -639,7 +639,7 @@ async def _websocket_heartbeat_loop(
 
 
 @app.websocket("/ws/{session_id}/{user_id}")
-async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str, token: str = None):
+async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str, token: str = None, client_socket_id: str = None, reason: str = None):
     """WebSocket endpoint.
 
     ``token`` is an optional JWT passed as a query parameter
@@ -677,7 +677,15 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
         await websocket.close(code=4003, reason="User not found in session")
         return
 
-    connection_id = await manager.connect(session_id, user_id, websocket, role=user.role)
+    _user_agent = None
+    try:
+        _user_agent = websocket.headers.get("user-agent")
+    except Exception:
+        _user_agent = None
+    connection_id = await manager.connect(
+        session_id, user_id, websocket, role=user.role,
+        client_socket_id=client_socket_id, reason=reason, user_agent=_user_agent,
+    )
     user.connected = True
 
     # Send full state on connect (DM gets POI dm_notes, others don't)
