@@ -48688,6 +48688,52 @@ function combatQuickShowSpellSave(spellId, slotLevel) {
   return { saveDC, saveAbility };
 }
 
+
+function _generateAttackActionId(prefix = 'attack') {
+  const safePrefix = String(prefix || 'attack').replace(/[^a-z0-9_-]/gi, '').toLowerCase() || 'attack';
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return `${safePrefix}-${crypto.randomUUID()}`;
+  return `${safePrefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function _buildFinalAttackRollObject(base = {}, diceResult = {}) {
+  const modifier = Number.isFinite(Number(base.modifier)) ? Number(base.modifier) : (Number.isFinite(Number(base.attackBonus)) ? Number(base.attackBonus) : 0);
+  const landed = Array.isArray(diceResult.rolls) && diceResult.rolls.length ? parseInt(diceResult.rolls[0], 10) : NaN;
+  const d20 = Math.max(1, Math.min(20, Number.isFinite(landed) ? landed : 1));
+  const rollId = String(base.rollId || diceResult.rollId || _generateAttackActionId('attack-roll'));
+  const formula = String(base.formula || `1d20${modifier >= 0 ? '+' : ''}${modifier}`).trim();
+  return {
+    rollId,
+    actionId: String(base.actionId || rollId),
+    actorId: String(base.actorId || ''),
+    targetId: String(base.targetId || ''),
+    itemId: String(base.itemId || ''),
+    formula,
+    d20,
+    rolls: [d20],
+    modifier,
+    total: d20 + modifier,
+    rollType: String(base.rollType || 'attack'),
+    source: String(base.source || 'Attack'),
+    rollLabel: String(base.rollLabel || `${base.source || 'Attack'} • Attack`),
+    diceResult: { ...(diceResult || {}), rolls: [d20], total: d20 + modifier },
+  };
+}
+
+async function _rollFinalD20Attack(base = {}) {
+  const modifier = Number.isFinite(Number(base.modifier)) ? Number(base.modifier) : 0;
+  const rollLabel = String(base.rollLabel || `${base.source || 'Attack'} • Attack`).trim();
+  const rollId = String(base.rollId || _generateAttackActionId('attack-roll'));
+  const diceResult = await _rollLocalDiceAfterSettle({
+    diceType: 20,
+    qty: 1,
+    modifier,
+    rollLabel,
+    source: base.rollSource || 'attack-final-d20',
+    mode: base.mode || getDiceRollMode(),
+  });
+  return _buildFinalAttackRollObject({ ...base, rollId, rollLabel, modifier }, diceResult || {});
+}
+
 function _combatQuickCriticalFormula(formula) {
   return String(formula || '').replace(/(\d+)d(\d+)/gi, function (_m, qty, die) { return (Math.max(1, parseInt(qty, 10) || 1) * 2) + 'd' + die; });
 }
@@ -49174,36 +49220,62 @@ async function _executeCombatSpellCast(spell, slotLevel) {
 }
 
 // Compatibility static contract: combatQuickWeaponAttack(attackId, mode = 'base')
-function performCombatQuickWeaponAttack(actionOrId, mode = 'base') {
+const _pendingCombatQuickWeaponAttacks = new Set();
+async function performCombatQuickWeaponAttack(actionOrId, mode = 'base') {
   const card = findCombatWeapon(actionOrId);
   if (!card) {
     const label = (actionOrId && typeof actionOrId === 'object') ? (actionOrId.name || actionOrId.id || 'unknown') : String(actionOrId || 'unknown');
     showToast('Weapon roll handler missing. Attack not found: ' + label);
-    return;
+    return null;
   }
+  const actionKey = String(card.id || card.name || actionOrId || 'weapon-attack');
+  if (_pendingCombatQuickWeaponAttacks.has(actionKey)) {
+    showToast(`${card.name || 'Weapon'} attack roll is already resolving.`);
+    return null;
+  }
+  _pendingCombatQuickWeaponAttacks.add(actionKey);
+
   const spend = _consumeInventoryAttackResources(card, mode);
   if (!spend.ok) {
+    _pendingCombatQuickWeaponAttacks.delete(actionKey);
     showToast((spend.notes || [])[0] || 'Attack cannot be used right now.');
-    return;
+    return null;
   }
-  // Roll first — action economy is only consumed after a successful roll and result display.
-  let rollA, rollB, d20, bonus, total, bonusStr, crit, miss, outcome, dmgTotal, dmgRolls, damageMeta, hasDisadvantage, target, masteryMeta, subtitleBits;
+
+  let attackRoll, damageMeta, hasDisadvantage, target, masteryMeta, subtitleBits, dmgTotal = null, dmgRolls = null;
   try {
     damageMeta = _getInventoryAttackModeMeta(card, mode);
     hasDisadvantage = _combatAttackHasEncumbranceDisadvantage();
-    rollA = Math.floor(Math.random() * 20) + 1;
-    rollB = hasDisadvantage ? (Math.floor(Math.random() * 20) + 1) : null;
-    d20   = hasDisadvantage ? Math.min(rollA, rollB) : rollA;
-    bonus = Number(card.attack_bonus_value ?? 0);
-    total = d20 + bonus;
-    bonusStr = bonus >= 0 ? `+${bonus}` : String(bonus);
-    crit = d20 === 20;
-    miss = d20 === 1;
-    outcome = crit ? 'crit' : miss ? 'miss' : 'hit';
+    if (hasDisadvantage) showToast('Disadvantage noted. Roll one final d20 result and apply the lower result manually if needed.');
+    target = _combat?.selected_target_id ? tokens[_combat.selected_target_id] : null;
+    const context = getSafeRollContext();
+    const bonus = Number(card.attack_bonus_value ?? 0);
+    const bonusStr = bonus >= 0 ? `+${bonus}` : String(bonus);
+    const actionId = _generateAttackActionId('weapon-attack');
+    attackRoll = await _rollFinalD20Attack({
+      rollId: actionId,
+      actionId,
+      actorId: USER_ID || '',
+      targetId: context.targetId || _combat?.selected_target_id || '',
+      itemId: card.id || card.name || '',
+      formula: `1d20${bonusStr}`,
+      modifier: bonus,
+      rollType: 'attack',
+      source: card.name || 'Weapon',
+      rollLabel: `${card.name || 'Weapon'} • Attack`,
+      rollSource: 'weapon-attack',
+    });
+    if (!attackRoll || attackRoll.actionId !== actionId) return null;
 
-    // Roll damage (for hit / crit)
-    dmgTotal = null; dmgRolls = null;
-    if (!miss && damageMeta.formula) {
+    const d20 = attackRoll.d20;
+    const crit = d20 === 20;
+    const miss = d20 === 1;
+    const targetAc = Number(target?.ac);
+    const outcome = crit ? 'crit' : miss ? 'miss' : (Number.isFinite(targetAc) && targetAc > 0 ? (attackRoll.total >= targetAc ? 'hit' : 'miss') : 'hit');
+    attackRoll.outcome = outcome;
+    attackRoll.natural = d20;
+
+    if (outcome !== 'miss' && damageMeta.formula) {
       const normFormula = typeof _normalizeAttackFormula === 'function' ? _normalizeAttackFormula(damageMeta.formula) : damageMeta.formula;
       const chunks = typeof _expandSpellFormulaChunks === 'function' ? _expandSpellFormulaChunks(normFormula) : [];
       if (chunks.length) {
@@ -49219,51 +49291,48 @@ function performCombatQuickWeaponAttack(actionOrId, mode = 'base') {
       }
     }
 
-    target = _combat?.selected_target_id ? tokens[_combat.selected_target_id] : null;
     masteryMeta = _applyInventoryWeaponMastery(card, target, outcome);
     subtitleBits = [card.damage_type ? card.damage_type + ' damage' : ''];
     if (damageMeta.note) subtitleBits.push(damageMeta.note);
     if (card.mastery_label) subtitleBits.push(card.mastery_label);
 
-    // ── Show unified combat result card ───────────────────────────────────
     _showCombatResultCard({
       title: card.name,
       subtitle: subtitleBits.filter(Boolean).join(' • '),
-      attackRoll: d20,
+      attackRoll: attackRoll.d20,
       attackBonusStr: bonusStr,
-      attackTotal: total,
-      altRoll: rollB,
-      disadvantage: hasDisadvantage,
+      attackTotal: attackRoll.total,
       outcome,
       damage: dmgTotal,
       damageRolls: dmgRolls,
       damageType: card.damage_type || '',
+      rollId: attackRoll.rollId,
+      actionId: attackRoll.actionId,
     });
+
+    _consumeActionEconomy('attack_within_action', { action_id: card.id || card.name });
+    if (window.CombatQuickSelectors && typeof window.CombatQuickSelectors.markUsed === 'function') {
+      window.CombatQuickSelectors.markUsed(String(card.id || card.name || ''));
+    }
+
+    const hitLabel = attackRoll.d20 === 20 ? '⚡CRITICAL HIT!' : attackRoll.d20 === 1 ? '✕Natural 1 — Miss' : `${attackRoll.d20}${bonusStr} = **${attackRoll.total}**`;
+    let chatMsg = `⚔️ **${card.name}** — ${hitLabel}`;
+    if (dmgTotal !== null) chatMsg += ` — Dmg: **${dmgTotal}**${card.damage_type ? ' ' + card.damage_type : ''}`;
+    if (damageMeta.note) chatMsg += ` (${damageMeta.note})`;
+    if (masteryMeta.note) chatMsg += ` — ${masteryMeta.note}`;
+    if (Array.isArray(spend.notes) && spend.notes.length) chatMsg += ` — ${spend.notes.join(' ')}`;
+    if (context.targetName) chatMsg += ` — Target: ${context.targetName}`;
+    console.debug('[combatQuickWeaponAttack]', { itemName: card.name, actionName: card.name, roll: attackRoll, normalizedDamageFormula: damageMeta && damageMeta.formula, normalizedDamageType: card.damage_type, context });
+    sendWS({ type: 'chat_message', payload: { message: chatMsg, channel: 'everyone', roll_context: context, roll_payload: { ...attackRoll, weaponName: card.name, formulaUsed: attackRoll.formula, attackBonus: bonusStr, source: 'weapon-attack', actionSource: 'quick_actions', targetId: context.targetId || '' } } });
+    renderCombat();
+    return { roll: attackRoll, outcome, damage: dmgTotal };
   } catch (err) {
     console.error('[combatQuickWeaponAttack] Roll failed — no action spent:', err);
     showToast('Attack roll failed — no action spent. Check console for details.');
-    return;
+    return null;
+  } finally {
+    _pendingCombatQuickWeaponAttacks.delete(actionKey);
   }
-
-  // Only consume action economy after the roll and result display succeeded.
-  _consumeActionEconomy('attack_within_action', { action_id: card.id || card.name });
-  if (window.CombatQuickSelectors && typeof window.CombatQuickSelectors.markUsed === 'function') {
-    window.CombatQuickSelectors.markUsed(String(card.id || card.name || ''));
-  }
-
-  // ── Compact chat log (secondary feedback) ────────────────────────────
-  const rollDetail = hasDisadvantage ? ` (dis: ${rollA}/${rollB}→${d20})` : '';
-  const hitLabel   = crit ? '⚡CRITICAL HIT!' : miss ? '✕Natural 1 — Miss' : `${d20}${bonusStr} = **${total}**${rollDetail}`;
-  let chatMsg = `⚔️ **${card.name}** — ${hitLabel}`;
-  if (dmgTotal !== null) chatMsg += ` — Dmg: **${dmgTotal}**${card.damage_type ? ' ' + card.damage_type : ''}`;
-  if (damageMeta.note) chatMsg += ` (${damageMeta.note})`;
-  if (masteryMeta.note) chatMsg += ` — ${masteryMeta.note}`;
-  if (Array.isArray(spend.notes) && spend.notes.length) chatMsg += ` — ${spend.notes.join(' ')}`;
-  const context = getSafeRollContext();
-  console.debug('[combatQuickWeaponAttack]', { itemName: card.name, actionName: card.name, normalizedAttackBonus: bonusStr, normalizedDamageFormula: damageMeta && damageMeta.formula, normalizedDamageType: card.damage_type, context });
-  if (context.targetName) chatMsg += ` — Target: ${context.targetName}`;
-  sendWS({ type: 'chat_message', payload: { message: chatMsg, channel: 'everyone', roll_context: context, roll_payload: { weaponName: card.name, formulaUsed: `1d20${bonusStr}`, attackBonus: bonusStr, source: 'weapon-attack', actionSource: 'quick_actions', targetId: context.targetId || '' } } });
-  renderCombat();
 }
 
 // ── Weapon Runtime Resolver ────────────────────────────────────────────────
