@@ -689,12 +689,29 @@ def _safe_fog_json(fog_maps) -> str:
             cells = ''.join(str(int(bool(c))) for c in cells)
         elif not isinstance(cells, str):
             cells = ''
-        # Cap at 64x64=4096 chars
-        safe[ctx] = {
+        cols = int(entry.get('cols', 64) or 64)
+        rows = int(entry.get('rows', 64) or 64)
+        # Persist the full grid so revealed/hidden state survives a restart even
+        # on maps larger than 64×64 (4096 cells). Cap at a generous upper bound
+        # relative to the grid so malformed input can't store unbounded data.
+        max_cells = max(4096, cols * rows)
+        try:
+            revision = int(entry.get('revision', 0) or 0)
+        except Exception:
+            revision = 0
+        try:
+            updated_at = float(entry.get('updated_at', 0.0) or 0.0)
+        except Exception:
+            updated_at = 0.0
+        ctx_key = str(ctx or 'world')[:80] or 'world'
+        safe[ctx_key] = {
             'enabled': bool(entry.get('enabled', False)),
-            'cols': int(entry.get('cols', 64)),
-            'rows': int(entry.get('rows', 64)),
-            'cells': cells[:4096],
+            'cols': cols,
+            'rows': rows,
+            'cells': cells[:max_cells],
+            'revision': revision,
+            'updated_at': updated_at,
+            'map_context': ctx_key,
         }
     return json.dumps(safe)
 

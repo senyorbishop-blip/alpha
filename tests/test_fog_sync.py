@@ -507,6 +507,8 @@ def test_map_grid_resize_rescales_tokens_props_and_syncs(monkeypatch):
 def test_client_fog_update_promotes_alias_context_and_repaints_active_map():
     src = open("client/static/js/render/fog.js", encoding="utf-8").read()
     body = src[src.index("function fogApplyUpdate"):src.index("window.AppFog =")]
-    assert "p.map_ctx || p.map_context || p.dm_map_context" in body
+    # fogApplyUpdate resolves the payload context via the shared alias resolver
+    # (_payloadMapCtx accepts map_ctx/map_context/dm_map_context/current_map/...).
+    assert "_payloadMapCtx(p, env)" in body
     assert "entry.enabled = true" in body
     assert "fogLoadMap(state, env, activeCtx)" in body

@@ -57,7 +57,7 @@ def test_fog_update_applies_payload_by_map_ctx_without_stale_current_poi_assumpt
     fog_src = _read('client/static/js/render/fog.js')
     play_src = _read('client/templates/play.html')
     assert "function fogApplyUpdate(state, env, p) {" in fog_src
-    assert "const updCtx = _normalizeMapCtx((p && (p.map_ctx || p.map_context || p.dm_map_context)) || 'world', env);" in fog_src
+    assert "const updCtx = _normalizeMapCtx(_payloadMapCtx(p, env), env);" in fog_src
     assert "const activeCtx = fogCurrentCtx(env);" in fog_src
     assert "window.AppFog.fogApplyUpdate(state, __createFogModuleEnv(), p);" in play_src
     assert "const activeFogCtx = _getCurrentMapContext();" in play_src

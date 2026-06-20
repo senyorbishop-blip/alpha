@@ -7,7 +7,7 @@ from server.connections import manager
 from server.db import save_campaign_async
 from server.http.auth import auth_display_name, auth_player_key, get_request_user
 from server.http.session_access import get_or_restore_session, resolve_session_authority
-from server.session import create_session, get_session, join_session, normalize_profile_owner_key, set_player_gold_for_user, build_token_runtime_payload
+from server.session import create_session, get_session, join_session, normalize_profile_owner_key, set_player_gold_for_user, build_token_runtime_payload, normalize_fog_maps, normalize_map_context
 
 
 
@@ -243,6 +243,42 @@ def session_invites_response(session_id: str, user_id: str = ""):
         "player_invite": session.player_invite,
         "viewer_invite": session.viewer_invite,
         "session_id": session_id,
+    })
+
+
+def session_fog_debug_response(session_id: str, user_id: str = ""):
+    """DM-only diagnostic summary of persisted fog maps.
+
+    Mirrors the client-side ``window.__debugFog()`` output so a DM can confirm
+    that revealed/hidden state survived a restart and that map-context keys line
+    up between the saved fog maps and the active map.
+    """
+    session = get_or_restore_session(session_id)
+    if not session:
+        return JSONResponse({"error": "Not found"}, status_code=404)
+    uid = str(user_id or "").strip()
+    user = session.users.get(uid) if uid else None
+    if not user or str(getattr(user, "role", "") or "").strip().lower() != "dm":
+        return JSONResponse({"error": "Forbidden"}, status_code=403)
+    fog_maps = normalize_fog_maps(getattr(session, "fog_maps", None) or {})
+    maps_summary = {}
+    for ctx, entry in fog_maps.items():
+        cells = str(entry.get("cells") or "")
+        maps_summary[ctx] = {
+            "map_context": entry.get("map_context", ctx),
+            "enabled": bool(entry.get("enabled", False)),
+            "cols": int(entry.get("cols") or 0),
+            "rows": int(entry.get("rows") or 0),
+            "cells_length": len(cells),
+            "revealed_count": cells.count("1"),
+            "revision": int(entry.get("revision") or 0),
+            "updated_at": float(entry.get("updated_at") or 0.0),
+        }
+    return JSONResponse({
+        "session_id": session_id,
+        "active_map_context": normalize_map_context(getattr(session, "dm_map_context", "world")),
+        "keys": list(maps_summary.keys()),
+        "fog_maps": maps_summary,
     })
 
 
