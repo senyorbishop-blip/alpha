@@ -715,6 +715,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
                     except Exception:
                         pass
                     break
+                logger.info("[WS] sending ping user_id=%s session_id=%s", user_id, session_id)
                 await manager.send_to(session_id, user_id, {"type": "ping"})
         except Exception as _hb_err:
             logger.error("[HEARTBEAT] Task crashed for session %s user %s: %s", session_id, user_id, _hb_err)
@@ -751,9 +752,11 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
             # only on pong. This stops active play (chat, combat, movement) from
             # tripping a false heartbeat timeout when a pong happens to be delayed.
             _last_pong["t"] = asyncio.get_running_loop().time()
+            logger.info("[WS] received frame type=%s user_id=%s last_seen updated", msg_type or "(missing)", user_id)
 
             # Handle heartbeat pong — already counted above; skip gameplay dispatch.
             if msg_type == "pong":
+                logger.info("[WS] received frame type=pong user_id=%s", user_id)
                 continue
 
             user_role = str(getattr(user, "role", "") or "").strip().lower()

@@ -1,6 +1,9 @@
 (function (global) {
   'use strict';
 
+  const CORE_WS_VERSION = 'heartbeat-pong-v3';
+  console.info('[WS] core loaded version', CORE_WS_VERSION);
+
   let config = {
     getSessionId: () => '',
     getUserId: () => '',
@@ -27,8 +30,11 @@
     try {
       if (socket && socket.readyState === global.WebSocket.OPEN) {
         socket.send(JSON.stringify({ type: 'pong' }));
+        console.info('[WS] sent pong');
       }
-    } catch (_err) {}
+    } catch (err) {
+      console.warn('[WS] pong send failed', err);
+    }
   }
 
   function closeSocket(socket, code = 1000, reason = 'Client reconnect cleanup') {
@@ -179,6 +185,7 @@
       // flicker/reconnect during active combat. Heartbeat pings must never reach
       // the gameplay handlers, so we return after replying.
       if (msg && msg.type === 'ping') {
+        console.info('[WS] received ping');
         sendPong(socket);
         return;
       }

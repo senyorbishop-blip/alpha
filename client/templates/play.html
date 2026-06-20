@@ -11201,7 +11201,7 @@ Shortbow — +5 to hit, 1d6+3 piercing"></textarea>
 <script src="/static/js/core/runtime_bridge.js"></script>
 <!-- Runtime ownership boundary: boot_shell is the ordered startup-sequencing owner. -->
 <script src="/static/js/core/boot_shell.js"></script>
-<script src="/static/js/core/ws.js"></script>
+<script src="/static/js/core/ws.js?v=heartbeat-pong-v3"></script>
 <!-- Stage 1 runtime path: AppMessageDispatch is the live first-hop handoff into handleLegacyMessage(); AppMessageHandlers is intentionally not loaded here. -->
 <script src="/static/js/core/message_dispatch.js"></script>
 <!-- Stage 4 ownership: render/boot.js is the live canvas bootstrap owner; play.html keeps drawLoop()/drawFrame() and interaction handlers via compatibility wrappers. -->
@@ -32194,10 +32194,12 @@ function handleLegacyMessage(msg) {
         const activeFogCtx = _getCurrentMapContext();
         setFogMapContext(activeFogCtx);
         fogLoadMap(fogMapCtx);
+        reapplyDmFogPreviewAfterReconnect();
       }, 0);
       // Apply combat state
       if (p.combat !== undefined) {
-        combatApplyState(p.combat);
+        // combatApplyState(p.combat); is intentionally routed through handleCombatStateLive for stale/empty reconnect guards.
+        handleCombatStateLive(p.combat);
       }
       // Apply ambient sound state for reconnecting players
       if (p.sound_state && p.sound_state.track && p.sound_state.track !== 'silence') {
@@ -33481,7 +33483,7 @@ function handleLegacyMessage(msg) {
     }
 
     case 'ping': {
-      sendWS({ type: 'pong' });
+      // Transport heartbeat pongs are handled in core/ws.js before gameplay dispatch.
       break;
     }
 
@@ -44045,6 +44047,25 @@ function fogSaveCurrentMap() {
   if (fogCells) fogMaps[fogMapCtx].cells = fogCells.slice();
 }
 
+const DM_FOG_PREVIEW_STORAGE_KEY = 'tavern.dmFogPreviewDisplay';
+function _readDmFogPreviewPreference() {
+  try { return ROLE === 'dm' && window.localStorage && window.localStorage.getItem(DM_FOG_PREVIEW_STORAGE_KEY) === '1'; } catch (_err) { return false; }
+}
+function _writeDmFogPreviewPreference(enabled) {
+  if (ROLE !== 'dm') return;
+  try { if (window.localStorage) window.localStorage.setItem(DM_FOG_PREVIEW_STORAGE_KEY, enabled ? '1' : '0'); } catch (_err) {}
+}
+function reapplyDmFogPreviewAfterReconnect() {
+  if (ROLE !== 'dm') return;
+  if (fogEnabled) _writeDmFogPreviewPreference(true);
+  if (!_readDmFogPreviewPreference()) return;
+  const activeFogCtx = _getCurrentMapContext();
+  setFogMapContext(activeFogCtx);
+  fogLoadMap(fogMapCtx);
+  invalidateFogCache();
+  requestRenderFrame('dm fog preview reconnect');
+}
+
 function fogLoadMap(ctx) {
   if (window.AppFog && typeof window.AppFog.fogLoadMap === 'function') {
     const state = __createFogModuleState();
@@ -44464,6 +44485,7 @@ function fogToggle(enabled) {
   if (enabled && !isManualFogEditingAllowed()) enabled = false;
   // Optimistically update local state immediately
   fogEnabled = enabled;
+  _writeDmFogPreviewPreference(!!enabled);
   if (!fogMaps[fogMapCtx]) fogMaps[fogMapCtx] = { enabled: false, cols: 64, rows: 64, cells: null };
   fogMaps[fogMapCtx].enabled = enabled;
   if (enabled) {
@@ -44903,8 +44925,21 @@ function forceCombatStateUISync() {
   if (typeof drawFrame === 'function') drawFrame();
 }
 
+function _isAccidentalEmptyCombatState(state) {
+  if (!state || typeof state !== 'object') return false;
+  const incomingRevision = Number.isFinite(Number(state.revision)) ? Number(state.revision) : null;
+  const incomingCombatants = Array.isArray(state.combatants) ? state.combatants : [];
+  const localCombatants = Array.isArray(_combat?.combatants) ? _combat.combatants : [];
+  const explicitClear = state.active === false && (state.reason === 'clear_combat' || state.clear_reason === 'clear_combat' || state.event_type === 'combat_clear');
+  return !explicitClear && incomingRevision === null && incomingCombatants.length === 0 && !!(_combat && _combat.active && localCombatants.length > 0);
+}
+
 function combatApplyState(state) {
   if (!state || typeof state !== 'object') return false;
+  if (_isAccidentalEmptyCombatState(state)) {
+    console.warn('[combatApplyState] ignored empty/no-revision combat_state during reconnect', { incomingRevision: state.revision ?? null, localRevision: _combat?.revision ?? null, localCount: Array.isArray(_combat?.combatants) ? _combat.combatants.length : 0 });
+    return false;
+  }
   let applyReason = 'accepted';
   if (typeof _combatInitiativeResyncTimer !== 'undefined' && _combatInitiativeResyncTimer) { clearTimeout(_combatInitiativeResyncTimer); _combatInitiativeResyncTimer = null; }
   const incomingRevision = Number.isFinite(Number(state.revision)) ? Number(state.revision) : null;
@@ -47587,6 +47622,7 @@ function combatRollInitiative(combatantId) {
   com._initiativeRollPending = true;
   renderCombat();
 
+  // The local dice result is visual only. The server echo remains authoritative for other clients.
   // Correlate the roller's local settled dice with the authoritative dice_result
   // the server echoes back, so we show exactly one popup (the local one) and
   // skip the duplicate server echo for ourselves while still letting it drive the

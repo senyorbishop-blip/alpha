@@ -90,6 +90,13 @@
         storeSet('socket.connected', true);
         storeSet('socket.status', 'connected');
         if (effectiveRole === 'dm' && typeof global._resyncDmMapNav === 'function') global.setTimeout(global._resyncDmMapNav, 0);
+        if (global.AppWS && typeof global.AppWS.send === 'function') {
+          console.debug('[WS] requesting authoritative state_sync after open');
+          global.AppWS.send({ type: 'request_state', payload: { reason: 'reconnect' } });
+        } else if (typeof global.sendWS === 'function') {
+          global.sendWS({ type: 'request_state', payload: { reason: 'reconnect' } });
+        }
+        if (effectiveRole === 'dm' && typeof global.reapplyDmFogPreviewAfterReconnect === 'function') global.setTimeout(global.reapplyDmFogPreviewAfterReconnect, 0);
         if (effectiveRole === 'dm' || effectiveRole === 'player') {
           if (global.AppWS && typeof global.AppWS.send === 'function') global.AppWS.send({ type: 'treasury_get', payload: {} });
           else if (typeof global.sendWS === 'function') global.sendWS({ type: 'treasury_get', payload: {} });

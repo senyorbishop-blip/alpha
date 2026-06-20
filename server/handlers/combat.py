@@ -787,7 +787,7 @@ async def handle_combat_clear(payload: dict, session: Session, user: User):
     # Auto-restore ambient track that was playing before combat started
     sound_state = getattr(session, "sound_state", None) or {}
     pre_combat = sound_state.get("pre_combat_track", "silence")
-    session.combat = {"active": False, "turn": 0, "combatants": [], "movement": {}, "encounter_id": str(uuid.uuid4())}
+    session.combat = {"active": False, "turn": 0, "combatants": [], "movement": {}, "encounter_id": str(uuid.uuid4()), "reason": "clear_combat", "clear_reason": "clear_combat"}
     event = {
         "event_type": "clear_encounter",
         "target_id": str(payload.get("encounter_id") or payload.get("encounter_template_id") or "").strip(),
