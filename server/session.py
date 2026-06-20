@@ -12,6 +12,59 @@ from server.quest_premium_progression import build_premium_progression_snapshot
 
 
 
+
+
+MAP_CONTEXT_ALIAS_KEYS = ("map_ctx", "map_context", "dm_map_context", "current_map", "currentMap", "context", "map")
+
+def normalize_map_context(value=None, *, fallback: str = "world") -> str:
+    """Canonical map-context key for persisted/shared runtime state.
+
+    Boundaries may accept aliases, but storage must use this normalizer:
+    the world map is always ``world`` and local/POI maps retain their runtime ID.
+    """
+    raw = str(value if value is not None else fallback or "world").strip()[:80] or "world"
+    if raw in {"", "default", "main", "world_map"}:
+        return "world"
+    if raw == "__local__":
+        return normalize_map_context(fallback)
+    return "world" if raw == "world" else raw
+
+def normalize_map_context_from_payload(payload: dict | None, *, fallback: str = "world") -> str:
+    data = payload if isinstance(payload, dict) else {}
+    for key in MAP_CONTEXT_ALIAS_KEYS:
+        if key in data and str(data.get(key) or "").strip():
+            return normalize_map_context(data.get(key), fallback=fallback)
+    return normalize_map_context(fallback)
+
+def normalize_fog_maps(fog_maps: dict | None) -> dict:
+    normalized = {}
+    for key, raw in dict(fog_maps or {}).items():
+        ctx = normalize_map_context(key)
+        entry = dict(raw or {}) if isinstance(raw, dict) else {}
+        try:
+            cols = max(1, min(int(entry.get("cols") or 64), 512))
+        except Exception:
+            cols = 64
+        try:
+            rows = max(1, min(int(entry.get("rows") or 64), 512))
+        except Exception:
+            rows = 64
+        total = cols * rows
+        cells = entry.get("cells")
+        if not isinstance(cells, str):
+            cells = "".join("1" if int(v or 0) else "0" for v in (cells or []))
+        cells = (cells[:total]).ljust(total, "0")
+        normalized[ctx] = {
+            "enabled": bool(entry.get("enabled", False)),
+            "cols": cols,
+            "rows": rows,
+            "cells": cells,
+            "revision": int(entry.get("revision") or 0),
+            "map_context": ctx,
+        }
+    return normalized
+
+
 ASSISTANT_DM_SCOPE_KEYS = frozenset({
     "tokens.control_npc",
     "maps.fog",
@@ -32,7 +85,7 @@ def _assistant_dm_store(session: "Session") -> dict:
             continue
         scopes = sorted({str(scope or "").strip() for scope in (raw.get("scopes") or []) if str(scope or "").strip() in ASSISTANT_DM_SCOPE_KEYS})
         token_ids = sorted({str(v or "").strip()[:64] for v in (raw.get("token_ids") or []) if str(v or "").strip()})
-        map_contexts = sorted({str(v or "").strip()[:80] or "world" for v in (raw.get("map_contexts") or []) if str(v or "").strip()})
+        map_contexts = sorted({normalize_map_context(v) for v in (raw.get("map_contexts") or []) if str(v or "").strip()})
         normalized_users[str(uid)] = {
             "enabled": bool(raw.get("enabled", True)),
             "scopes": scopes,
@@ -644,7 +697,7 @@ class Session:
 
     def set_subgroup_map_context(self, subgroup_id: str, map_context: str, *, actor_id: str = "") -> dict:
         subgroup = str(subgroup_id or "main").strip().lower()[:48] or "main"
-        target_map_ctx = str(map_context or "world").strip()[:80] or "world"
+        target_map_ctx = normalize_map_context(map_context)
         store = self._split_party_store()
         subgroup_contexts = dict(store.get("subgroup_contexts") or {})
         subgroup_contexts[subgroup] = {
@@ -662,7 +715,7 @@ class Session:
         subgroup = str(subgroup_id or "main").strip().lower()[:48] or "main"
         subgroup_contexts = dict(self._split_party_store().get("subgroup_contexts") or {})
         entry = subgroup_contexts.get(subgroup) if isinstance(subgroup_contexts.get(subgroup), dict) else {}
-        return str((entry or {}).get("map_context") or "world").strip()[:80] or "world"
+        return normalize_map_context((entry or {}).get("map_context"))
 
     def split_party_state(self) -> dict:
         store = self._split_party_store()
@@ -680,7 +733,7 @@ class Session:
             contexts.add(subgroup_ctx)
         participant = (self.users or {}).get(str(user_id or ""))
         role = str(getattr(participant, "role", "") or "").strip().lower() if participant else ""
-        dm_ctx = str(getattr(self, "dm_map_context", "world") or "world").strip()[:80] or "world"
+        dm_ctx = normalize_map_context(getattr(self, "dm_map_context", "world"))
         split_enabled = bool((self._split_party_store().get("assignments") or {}))
         if role == "viewer":
             contexts.add(dm_ctx)
@@ -736,7 +789,7 @@ class Session:
             "dm_current_map_url": self.dm_current_map_url,
             "map_nav_version": int(self.map_nav_version or 0),
             "dm_nav_intent": int(self.dm_nav_intent or 0),
-            "fog_maps": self.fog_maps,
+            "fog_maps": normalize_fog_maps(self.fog_maps),
             "combat": self.combat,
             "journal_entries": list(self.journal_entries or []),
             "party_memory_log": list(self.party_memory_log or []),
@@ -1075,10 +1128,18 @@ class Session:
         else:
             d.pop("active_char_profiles", None)
             # Players and viewers can see any token that is not hidden by the DM.
+            try:
+                from server.handlers.common import _can_user_see_token
+                user_obj = self.users.get(user_id)
+            except Exception:
+                _can_user_see_token = None
+                user_obj = None
             d["tokens"] = {
                 tid: build_token_runtime_payload(self, t)
                 for tid, t in self.tokens.items()
-                if (not t.hidden) and (str(getattr(t, "map_context", "world") or "world") in visible_contexts)
+                if (not t.hidden)
+                and (normalize_map_context(getattr(t, "map_context", "world")) in visible_contexts)
+                and (not _can_user_see_token or not user_obj or _can_user_see_token(self, t, user_obj))
             }
             if isinstance(d.get("combat"), dict):
                 combat_public = dict(d["combat"] or {})
@@ -1129,7 +1190,7 @@ class Session:
                 if str((zone or {}).get("map_context") or "world") in visible_contexts
             }
             d["scene_trigger_zones"] = {}
-            d["fog_maps"] = {ctx: val for ctx, val in dict(self.fog_maps or {}).items() if str(ctx) in visible_contexts}
+            d["fog_maps"] = {ctx: val for ctx, val in normalize_fog_maps(self.fog_maps).items() if normalize_map_context(ctx) in visible_contexts}
             d["split_party"] = self.split_party_state()
             d["user_subgroup_id"] = self.get_user_subgroup_id(user_id)
             d["subgroup_map_context"] = self.get_subgroup_map_context(d["user_subgroup_id"])

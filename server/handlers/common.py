@@ -7,7 +7,7 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 from server.session import (
-    Session, User, build_token_runtime_payload,
+    Session, User, build_token_runtime_payload, normalize_map_context,
 )
 from server.db import save_campaign_async
 from server.connections import manager
@@ -95,8 +95,14 @@ def is_token_touching_unrevealed_fog(session: Session, token, map_context: str |
     """
     if token is None:
         return False
-    ctx = str(map_context or _token_map_context(token) or "world")[:80] or "world"
-    entry = ((getattr(session, "fog_maps", None) or {}).get(ctx) or {})
+    ctx = normalize_map_context(map_context or _token_map_context(token))
+    fog_maps = getattr(session, "fog_maps", None) or {}
+    entry = (fog_maps.get(ctx) or {})
+    if not entry:
+        for key, candidate in fog_maps.items():
+            if normalize_map_context(key) == ctx:
+                entry = candidate or {}
+                break
     if not entry.get("enabled", False):
         return False
     raw_cells = entry.get("cells")
@@ -141,7 +147,7 @@ def _is_token_visible_to_user(session: Session, token, user: User) -> bool:
     if role == "dm":
         return True
     visible_contexts = session.visible_map_contexts_for_user(getattr(user, "id", ""))
-    token_ctx = str(getattr(token, "map_context", "world") or "world")
+    token_ctx = normalize_map_context(getattr(token, "map_context", "world"))
     return token_ctx in visible_contexts
 
 
@@ -165,7 +171,7 @@ def _visible_tokens_payload_for_user(session: Session, user: User) -> dict:
             continue
         if not _can_user_see_token(session, token, user):
             continue
-        token_ctx = str(getattr(token, "map_context", "world") or "world")
+        token_ctx = normalize_map_context(getattr(token, "map_context", "world"))
         if token_ctx not in visible_contexts:
             continue
         tokens[tid] = build_token_runtime_payload(session, token)

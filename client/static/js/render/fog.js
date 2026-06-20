@@ -10,10 +10,11 @@
   }
   function _payloadMapCtx(p, env) {
     if (!p || typeof p !== 'object') return _resolveAuthoritativeMapContext(env);
-    return p.map_ctx || p.map_context || p.dm_map_context || p.current_map || p.currentMap || _resolveAuthoritativeMapContext(env);
+    return p.map_ctx || p.map_context || p.dm_map_context || p.current_map || p.currentMap || p.context || p.map || _resolveAuthoritativeMapContext(env);
   }
   function _normalizeMapCtx(value, env) {
     const raw = String(value || 'world').trim() || 'world';
+    if (raw === 'default' || raw === 'main' || raw === 'world_map') return 'world';
     if (raw !== '__local__') return raw;
     if (env && typeof env.getDmMapContext === 'function') {
       const dmCtx = String(env.getDmMapContext() || 'world').trim() || 'world';
@@ -124,32 +125,66 @@
     if (hideBtn) hideBtn.classList.toggle('active', !state.fogReveal);
     _syncFogStatus(state, env);
   }
+  function _coerceFogEntry(entry, fallbackCols, fallbackRows) {
+    const cols = Math.max(1, Number(entry && entry.cols) || fallbackCols || 64);
+    const rows = Math.max(1, Number(entry && entry.rows) || fallbackRows || 64);
+    const total = cols * rows;
+    let cells = entry && entry.cells;
+    const arr = new Uint8Array(total);
+    if (cells instanceof Uint8Array) {
+      arr.set(cells.slice(0, total));
+    } else if (cells && typeof cells.length === 'number') {
+      for (let i = 0; i < Math.min(cells.length, total); i++) arr[i] = cells[i] === 1 || cells[i] === '1' ? 1 : 0;
+    }
+    return { enabled: !!(entry && entry.enabled), cols, rows, cells: arr, revision: Number(entry && entry.revision) || 0, map_context: entry && entry.map_context };
+  }
+  function _findFogEntry(state, env, ctx) {
+    const target = _normalizeMapCtx(ctx, env);
+    if (state.fogMaps[target]) return { key: target, entry: state.fogMaps[target], reason: 'exact' };
+    for (const [key, entry] of Object.entries(state.fogMaps || {})) {
+      if (_normalizeMapCtx(key, env) === target || _normalizeMapCtx(entry && entry.map_context, env) === target) {
+        return { key, entry, reason: 'alias' };
+      }
+    }
+    return null;
+  }
+  function _ensureEnabledCells(entry) {
+    if (!entry || !entry.enabled) return entry;
+    const total = (Number(entry.cols) || 64) * (Number(entry.rows) || 64);
+    if (!(entry.cells instanceof Uint8Array) || entry.cells.length !== total) entry.cells = _coerceFogEntry(entry, entry.cols, entry.rows).cells;
+    return entry;
+  }
+
   function fogLoadMap(state, env, ctx) {
-    state.fogMapCtx = _normalizeMapCtx(ctx, env);
-    const entry = state.fogMaps[state.fogMapCtx];
+    const normalizedCtx = _normalizeMapCtx(ctx, env);
+    state.fogMapCtx = normalizedCtx;
+    const found = _findFogEntry(state, env, normalizedCtx);
+    if (found && found.key !== normalizedCtx) {
+      state.fogMaps[normalizedCtx] = found.entry;
+    }
+    const entry = found ? _ensureEnabledCells(_coerceFogEntry(found.entry, state.fogCols, state.fogRows)) : null;
+    state.lastFogNotDrawingReason = '';
     if (entry) {
-      state.fogEnabled = entry.enabled || false;
+      state.fogMaps[normalizedCtx] = entry;
+      state.fogEnabled = !!entry.enabled;
       state.fogCols = entry.cols || 64;
       state.fogRows = entry.rows || 64;
-      if (entry.cells && entry.cells.length) {
-        state.fogCells = entry.cells instanceof Uint8Array ? new Uint8Array(entry.cells) : (() => {
-          const arr = new Uint8Array(state.fogCols * state.fogRows);
-          for (let i = 0; i < Math.min(entry.cells.length, arr.length); i++) arr[i] = entry.cells[i] === 1 || entry.cells[i] === '1' ? 1 : 0;
-          return arr;
-        })();
-      } else {
-        state.fogCells = state.fogEnabled ? new Uint8Array(state.fogCols * state.fogRows) : null;
-      }
+      state.fogCells = state.fogEnabled ? (entry.cells || new Uint8Array(state.fogCols * state.fogRows)) : null;
       if (state.fogCanvas && state.fogEnabled) { state.fogCanvas.width = state.fogCols; state.fogCanvas.height = state.fogRows; }
     } else {
+      const hasAnyFog = Object.keys(state.fogMaps || {}).length > 0;
       state.fogEnabled = false;
-      state.fogCols = 64; state.fogRows = 64;
+      state.fogCols = state.fogCols || 64; state.fogRows = state.fogRows || 64;
       state.fogCells = null;
+      state.lastFogNotDrawingReason = hasAnyFog ? `no fog entry for active context ${normalizedCtx}; known keys: ${Object.keys(state.fogMaps || {}).join(', ')}` : 'no fog state received from server';
     }
+    state.fogImageDirty = true;
     env.invalidateFogCache();
     syncFogUI(state, env, env.handlers);
     if (typeof env.syncShellState === 'function') env.syncShellState(state);
+    if (env && typeof env.requestRenderFrame === 'function') env.requestRenderFrame('fog load map');
   }
+
   function fogInitCells(state, cols, rows, cells) {
     state.fogCols = cols || 64;
     state.fogRows = rows || 64;
@@ -166,7 +201,10 @@
   }
   function drawFogOverlay(state, env, W, H) {
     const bgImage = env.activeBackgroundImage();
-    if (!state.fogCells || !bgImage) return;
+    if (!state.fogEnabled) { state.lastFogNotDrawingReason = 'fog disabled for active context'; return; }
+    if (!state.fogCells) { state.lastFogNotDrawingReason = 'fog enabled but no cells'; return; }
+    if (!bgImage) { state.lastFogNotDrawingReason = 'no active background image'; return; }
+    state.lastFogNotDrawingReason = '';
     _debugFogPlayer('draw overlay enabled active_ctx...', { enabled: state.fogEnabled, active_ctx: state.fogMapCtx, cols: state.fogCols, rows: state.fogRows }, env);
     const mw = bgImage.naturalWidth;
     const mh = bgImage.naturalHeight;
@@ -332,7 +370,7 @@
         const arr = new Uint8Array(total);
         const str = entry.cells || '';
         for (let i = 0; i < Math.min(str.length, total); i++) arr[i] = str[i] === '1' ? 1 : 0;
-        state.fogMaps[ctx] = { enabled: entry.enabled || false, cols: entry.cols || 64, rows: entry.rows || 64, cells: arr };
+        state.fogMaps[_normalizeMapCtx(ctx, env)] = { enabled: !!entry.enabled, cols: entry.cols || 64, rows: entry.rows || 64, cells: arr, revision: Number(entry.revision) || 0, map_context: _normalizeMapCtx(entry.map_context || ctx, env) };
       });
     }
     const stateMapCtx = _payloadMapCtx(p, env);
@@ -342,18 +380,22 @@
       const str = p.fog_cells || '';
       for (let i = 0; i < Math.min(str.length, total); i++) arr[i] = str[i] === '1' ? 1 : 0;
       const mapCtx = _normalizeMapCtx(stateMapCtx, env);
-      state.fogMaps[mapCtx] = { enabled: p.fog_enabled !== undefined ? !!p.fog_enabled : true, cols: p.fog_cols || 64, rows: p.fog_rows || 64, cells: arr };
+      state.fogMaps[mapCtx] = { enabled: p.fog_enabled !== undefined ? !!p.fog_enabled : true, cols: p.fog_cols || 64, rows: p.fog_rows || 64, cells: arr, revision: Number(p.revision) || 0, map_context: mapCtx };
       _debugFogPlayer('fog_state map_ctx enabled cols rows revealed_count', { map_ctx: mapCtx, enabled: state.fogMaps[mapCtx].enabled, cols: state.fogMaps[mapCtx].cols, rows: state.fogMaps[mapCtx].rows, revealed_count: Array.from(arr).filter(Boolean).length }, env);
     }
     const ctx = fogCurrentCtx(env);
-    if ((p.map_ctx !== undefined || p.map_context !== undefined || p.dm_map_context !== undefined || p.current_map !== undefined || p.fog_cells !== undefined) && _normalizeMapCtx(stateMapCtx, env) !== ctx) return;
+    if ((p.map_ctx !== undefined || p.map_context !== undefined || p.dm_map_context !== undefined || p.current_map !== undefined || p.currentMap !== undefined || p.context !== undefined || p.map !== undefined || p.fog_cells !== undefined) && _normalizeMapCtx(stateMapCtx, env) !== ctx) { state.lastFogPayloadMapContext = _normalizeMapCtx(stateMapCtx, env); return; }
     fogLoadMap(state, env, ctx);
-    if (env && typeof env.drawFrame === 'function') env.drawFrame();
+    state.lastFogStateRevision = Number(p && p.revision) || Number(state.lastFogStateRevision) || 0;
+    if (env && typeof env.requestRenderFrame === 'function') env.requestRenderFrame('fog state apply');
+    else if (env && typeof env.drawFrame === 'function') env.drawFrame();
   }
   function fogApplyUpdate(state, env, p) {
     const updCtx = _normalizeMapCtx(_payloadMapCtx(p, env), env);
     const val = p && p.reveal ? 1 : 0;
-    if (!state.fogMaps[updCtx]) state.fogMaps[updCtx] = { enabled: true, cols: Number(p && p.fog_cols) || 64, rows: Number(p && p.fog_rows) || 64, cells: new Uint8Array((Number(p && p.fog_cols) || 64) * (Number(p && p.fog_rows) || 64)) };
+    state.lastFogPayloadMapContext = updCtx;
+    state.lastFogUpdateRevision = Number(p && p.revision) || ((Number(state.lastFogUpdateRevision) || 0) + 1);
+    if (!state.fogMaps[updCtx]) state.fogMaps[updCtx] = { enabled: true, cols: Number(p && p.fog_cols) || 64, rows: Number(p && p.fog_rows) || 64, cells: new Uint8Array((Number(p && p.fog_cols) || 64) * (Number(p && p.fog_rows) || 64)), revision: Number(p && p.revision) || 0, map_context: updCtx };
     const entry = state.fogMaps[updCtx];
     if (Number(p && p.fog_cols) > 0) entry.cols = Number(p.fog_cols);
     if (Number(p && p.fog_rows) > 0) entry.rows = Number(p.fog_rows);
@@ -373,8 +415,15 @@
       fogLoadMap(state, env, activeCtx);
       env.invalidateFogCache();
       _debugFogPlayer('fog_update map_ctx active_ctx applied cells count', { map_ctx: updCtx, active_ctx: activeCtx, applied: true, cells: (p && p.cells ? p.cells.length : 0) }, env);
-      if (env && typeof env.drawFrame === 'function') env.drawFrame();
+      if (env && typeof env.requestRenderFrame === 'function') env.requestRenderFrame('fog update apply');
+      else if (env && typeof env.drawFrame === 'function') env.drawFrame();
     }
   }
-  window.AppFog = { normalizeMapCtx: _normalizeMapCtx, payloadMapCtx: _payloadMapCtx, fogCurrentCtx, fogSaveCurrentMap, syncFogUI, fogLoadMap, fogInitCells, drawFogOverlay, fogWorldToCell, fogPaintAt, fogFlushBatch, fogToggle, setFogMode, fogRevealAll, fogHideAll, fogApplyState, fogApplyUpdate };
+  function debugFog(state, env) {
+    const cells = state.fogCells;
+    let revealed = 0;
+    if (cells) for (let i = 0; i < cells.length; i++) if (cells[i] === 1) revealed++;
+    return { role: env && env.ROLE, activeMapContext: fogCurrentCtx(env), fogMapCtx: state.fogMapCtx, knownFogMapKeys: Object.keys(state.fogMaps || {}), fogEnabled: !!state.fogEnabled, fogCols: state.fogCols, fogRows: state.fogRows, hasFogCells: !!cells, fogCellsLength: cells ? cells.length : 0, revealedCount: revealed, lastFogStateRevision: Number(state.lastFogStateRevision) || 0, lastFogUpdateRevision: Number(state.lastFogUpdateRevision) || 0, lastFogPayloadMapContext: state.lastFogPayloadMapContext || '', notDrawingReason: state.lastFogNotDrawingReason || (!state.fogEnabled ? 'fog disabled for active context' : (!cells ? 'fog enabled but no cells' : '')) };
+  }
+  window.AppFog = { debugFog, normalizeMapCtx: _normalizeMapCtx, payloadMapCtx: _payloadMapCtx, fogCurrentCtx, fogSaveCurrentMap, syncFogUI, fogLoadMap, fogInitCells, drawFogOverlay, fogWorldToCell, fogPaintAt, fogFlushBatch, fogToggle, setFogMode, fogRevealAll, fogHideAll, fogApplyState, fogApplyUpdate };
 })();
