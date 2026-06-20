@@ -44131,6 +44131,10 @@ function __createFogModuleState() {
     fogPaintTimer: _fogPaintTimer,
     fogDirtyBatch: _fogDirtyBatch,
     fogImageDirty: _fogImageDirty,
+    lastFogStateRevision: window.__lastFogStateRevision || 0,
+    lastFogUpdateRevision: window.__lastFogUpdateRevision || 0,
+    lastFogPayloadMapContext: window.__lastFogPayloadMapContext || '',
+    lastFogNotDrawingReason: window.__lastFogNotDrawingReason || '',
   };
 }
 
@@ -44151,6 +44155,10 @@ function __applyFogModuleState(state) {
   _fogPaintTimer = state.fogPaintTimer;
   _fogDirtyBatch = state.fogDirtyBatch;
   _fogImageDirty = state.fogImageDirty;
+  window.__lastFogStateRevision = state.lastFogStateRevision || window.__lastFogStateRevision || 0;
+  window.__lastFogUpdateRevision = state.lastFogUpdateRevision || window.__lastFogUpdateRevision || 0;
+  window.__lastFogPayloadMapContext = state.lastFogPayloadMapContext || window.__lastFogPayloadMapContext || '';
+  window.__lastFogNotDrawingReason = state.lastFogNotDrawingReason || '';
   _syncFogShellState();
 }
 
@@ -44182,8 +44190,36 @@ function __createFogModuleEnv() {
     worldToScreen,
     getFogSystemMode: getFogSystemMode,
     drawFrame,
+    requestRenderFrame,
   };
 }
+
+window.__debugFog = function __debugFog() {
+  const state = __createFogModuleState();
+  const env = __createFogModuleEnv();
+  if (window.AppFog && typeof window.AppFog.debugFog === 'function') {
+    return window.AppFog.debugFog(state, env);
+  }
+  const cells = fogCells;
+  let revealedCount = 0;
+  if (cells) for (let i = 0; i < cells.length; i++) if (cells[i] === 1) revealedCount++;
+  return {
+    role: ROLE,
+    activeMapContext: _getCurrentMapContext(),
+    fogMapCtx,
+    knownFogMapKeys: Object.keys(fogMaps || {}),
+    fogEnabled,
+    fogCols,
+    fogRows,
+    hasFogCells: !!cells,
+    fogCellsLength: cells ? cells.length : 0,
+    revealedCount,
+    lastFogStateRevision: window.__lastFogStateRevision || 0,
+    lastFogUpdateRevision: window.__lastFogUpdateRevision || 0,
+    lastFogPayloadMapContext: window.__lastFogPayloadMapContext || '',
+    notDrawingReason: window.__lastFogNotDrawingReason || (!fogEnabled ? 'fog disabled for active context' : (!cells ? 'fog enabled but no cells' : '')),
+  };
+};
 
 
 function getFogSystemMode() {

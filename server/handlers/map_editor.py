@@ -7,7 +7,7 @@ import secrets
 import time
 
 logger = logging.getLogger(__name__)
-from server.session import normalize_interactable, assistant_dm_has_scope
+from server.session import normalize_interactable, assistant_dm_has_scope, normalize_map_context, normalize_map_context_from_payload, normalize_fog_maps
 from server.quest_progress import apply_objective_event, normalize_quest_payload_shape
 from server.living_world_events import emit_world_event, consume_world_event
 from server.session import filter_editor_props_for_role
@@ -230,7 +230,7 @@ def _get_poi(session: Session, poi_id: str):
 
 
 def _normalize_dm_map_context(session: Session, value) -> str:
-    ctx = str(value or "world").strip()[:80] or "world"
+    ctx = normalize_map_context(value, fallback=getattr(session, "dm_map_context", "world"))
     if ctx == "world":
         return "world"
     pois = dict(getattr(session, "pois", {}) or {})
@@ -243,42 +243,12 @@ def _normalize_dm_map_context(session: Session, value) -> str:
 
 
 def _resolve_fog_map_context(session: Session, payload: dict) -> str:
-    data = payload if isinstance(payload, dict) else {}
-    explicit_ctx = None
-    for key in ("map_ctx", "map_context", "dm_map_context"):
-        if key in data and str(data.get(key) or "").strip():
-            explicit_ctx = str(data.get(key) or "").strip()[:80]
-            break
-    if explicit_ctx:
-        # Compatibility: older clients may send "__local__" while the server
-        # owns the real POI/map-document context in session.dm_map_context.
-        if explicit_ctx == "__local__":
-            dm_ctx = _normalize_dm_map_context(session, getattr(session, "dm_map_context", "world"))
-            if dm_ctx != "world":
-                return dm_ctx
-        normalized_explicit = _normalize_dm_map_context(session, explicit_ctx)
-        if normalized_explicit != "world" or explicit_ctx == "world":
-            return normalized_explicit
-        # Some local/scene map contexts are runtime IDs that may not yet be
-        # present in `pois`/`map_documents` during a transition. If the client
-        # explicit context matches the DM's current map context, prefer that
-        # active context so fog edits do not incorrectly fall back to world.
-        dm_ctx = str(getattr(session, "dm_map_context", "world") or "world").strip()[:80] or "world"
-        if explicit_ctx == dm_ctx and dm_ctx != "world":
-            return dm_ctx
-        # Guardrail: preserve unresolved non-world runtime context IDs
-        # (e.g., newly-created scene-map/map-document IDs) so fog toggle/paint
-        # stays live-synced for players even before POI/map-document indexes
-        # are fully reconciled in-session.
-        if explicit_ctx != "world":
-            return explicit_ctx
-    fallback = getattr(session, "dm_map_context", "world") or "world"
-    return _normalize_dm_map_context(session, fallback)
-
+    return normalize_map_context_from_payload(payload, fallback=getattr(session, "dm_map_context", "world"))
 
 def _fog_state_payload_for_context(session: Session, map_ctx: str) -> dict:
     """Return a compact full fog snapshot for a single map context."""
-    ctx = str(map_ctx or "world").strip()[:80] or "world"
+    ctx = normalize_map_context(map_ctx, fallback=getattr(session, "dm_map_context", "world"))
+    session.fog_maps = normalize_fog_maps(getattr(session, "fog_maps", {}) or {})
     entry = dict((getattr(session, "fog_maps", {}) or {}).get(ctx) or {})
     try:
         cols = int(entry.get("cols") or 64)
@@ -300,6 +270,7 @@ def _fog_state_payload_for_context(session: Session, map_ctx: str) -> dict:
         "fog_cols": cols,
         "fog_rows": rows,
         "fog_cells": cells,
+        "revision": int(entry.get("revision") or 0),
     }
 
 async def _broadcast_fog_to_visible_users(session: Session, message: dict, map_ctx: str):
@@ -1091,11 +1062,14 @@ async def handle_fog_toggle(payload: dict, session: Session, user: User):
         return
     if session.fog_maps is None:
         session.fog_maps = {}
-    entry = session.fog_maps.get(map_ctx, {'enabled': False, 'cols': 64, 'rows': 64, 'cells': ''})
+    session.fog_maps = normalize_fog_maps(session.fog_maps)
+    entry = session.fog_maps.get(map_ctx, {'enabled': False, 'cols': 64, 'rows': 64, 'cells': '', 'revision': 0, 'map_context': map_ctx})
     if 'enabled' in payload:
         entry['enabled'] = bool(payload['enabled'])
     else:
         entry['enabled'] = not entry.get('enabled', False)
+    entry['map_context'] = map_ctx
+    entry['revision'] = int(entry.get('revision') or 0) + 1
     total = entry['cols'] * entry['rows']
     if entry['enabled'] and len(entry.get('cells', '')) != total:
         entry['cells'] = '0' * total
@@ -1108,6 +1082,7 @@ async def handle_fog_toggle(payload: dict, session: Session, user: User):
             'fog_cols': entry['cols'],
             'fog_rows': entry['rows'],
             'fog_cells': entry['cells'],
+                'revision': entry.get('revision', 0),
         }
     }, map_ctx)
     # Fog toggling can immediately change which NPC/monster tokens players
@@ -1128,7 +1103,8 @@ async def handle_fog_paint(payload: dict, session: Session, user: User):
     if session.fog_maps is None:
         session.fog_maps = {}
     if map_ctx not in session.fog_maps:
-        session.fog_maps[map_ctx] = {'enabled': True, 'cols': 64, 'rows': 64, 'cells': '0' * 64 * 64}
+        session.fog_maps[map_ctx] = {'enabled': True, 'cols': 64, 'rows': 64, 'cells': '0' * 64 * 64, 'revision': 0, 'map_context': map_ctx}
+    session.fog_maps = normalize_fog_maps(session.fog_maps)
     entry = session.fog_maps[map_ctx]
     if not entry.get('enabled', False):
         return
@@ -1140,12 +1116,17 @@ async def handle_fog_paint(payload: dict, session: Session, user: User):
         if 0 <= idx < total:
             arr[idx] = '1' if reveal else '0'
     entry['cells'] = ''.join(arr)
+    entry['map_context'] = map_ctx
+    entry['revision'] = int(entry.get('revision') or 0) + 1
     await _broadcast_fog_to_visible_users(session, {
         'type': 'fog_update',
         'payload': {
             'map_ctx': map_ctx,
             'reveal': reveal,
             'cells': cells,
+                'fog_cols': entry.get('cols', 64),
+                'fog_rows': entry.get('rows', 64),
+                'revision': entry.get('revision', 0),
         }
     }, map_ctx)
     # Painting fog can immediately reveal/hide NPC and monster tokens whose
