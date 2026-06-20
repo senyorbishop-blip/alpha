@@ -432,6 +432,8 @@ def _apply_summon_feature_unlock(
             selected_variant = default_template_id
         if selected_variant and selected_variant in state["unlockedTemplates"]:
             selected_variants[variant_group] = selected_variant
+    elif variant_group and default_template_id and default_template_id in state["unlockedTemplates"] and not selected_variants.get(variant_group):
+        selected_variants[variant_group] = default_template_id
     state["selectedVariants"] = selected_variants
 
 
