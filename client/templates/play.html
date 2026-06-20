@@ -25506,13 +25506,37 @@ function _showLegacySyncedLocalDiceResult(opts = {}) {
   const modifier = parseInt(opts?.modifier, 10) || 0;
   const rollLabel = String(opts?.rollLabel || '').trim();
   const source = String(opts?.source || 'legacy-local').trim() || 'legacy-local';
-  const previewMeta = (window.AppDice && typeof window.AppDice.startLocalPreview === 'function')
-    ? window.AppDice.startLocalPreview(diceType, qty, source)
-    : _startLocalDicePreview(diceType, qty, source);
+  const mode = opts?.mode || getDiceRollMode();
+  const modifierMeta = (opts && typeof opts.modifierMeta === 'object') ? opts.modifierMeta : null;
+
+  // Guide the physical dice to land on the already-resolved values so the
+  // animation, the result strip, and the combat result card can never
+  // disagree. Previously this started a plain preview with no targetResults,
+  // so the 3D die rolled to an unrelated random face while the result card
+  // showed the pre-rolled value (a late dp.setResult() cannot fix it because
+  // settled dice are intentionally not hard-snapped). Passing targetResults
+  // into the throw lets the soft target-assist steer the die mid-roll.
+  const dp = window.DicePhysics3D;
+  const canVisualize = _diceWantsVisuals(mode) && !opts?.visualDisabled
+    && dp && (typeof dp.isContextLost !== 'function' || !dp.isContextLost());
+  let previewMeta;
+  if (canVisualize && rolls.length) {
+    previewMeta = { seed: _generateDiceSeed(), rollId: _generateDiceRollId('local'), source, mode };
+    showDiceAnimation(diceType, qty, null, {
+      ...previewMeta,
+      modifierMeta: modifierMeta || _diceModifierMeta(),
+      targetResults: _expandDiceVisualResults(rolls, diceType),
+      emergencyHardSnapFallback: true,
+    });
+  } else {
+    previewMeta = (window.AppDice && typeof window.AppDice.startLocalPreview === 'function')
+      ? window.AppDice.startLocalPreview(diceType, qty, source)
+      : _startLocalDicePreview(diceType, qty, source);
+  }
   fillDiceResult(rolls, total, diceType, qty, modifier, rollLabel, {
     ...previewMeta,
     source,
-    modifierMeta: (opts && typeof opts.modifierMeta === 'object') ? opts.modifierMeta : (previewMeta?.modifierMeta || null),
+    modifierMeta: modifierMeta || (previewMeta?.modifierMeta || null),
   });
   return previewMeta;
 }
