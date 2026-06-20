@@ -772,6 +772,9 @@ def _notes_for_actor(actor: dict[str, Any]) -> str:
 
 
 def _resolve_entity_kind(template: dict[str, Any], actor: dict[str, Any]) -> str:
+    explicit_kind = str(actor.get("entityKind") or template.get("entityKind") or "").strip().lower()
+    if explicit_kind:
+        return explicit_kind
     actor_type = str(actor.get("actorType") or "").strip().lower()
     summon_category = str(actor.get("summonCategory") or template.get("summonCategory") or "").strip().lower()
     if actor_type == "spell_effect":

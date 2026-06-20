@@ -232,12 +232,16 @@
     const isFirstSession = !type && !ownedToken && !activeQuests.length;
     const savedDiscoveries = getSavedDiscoveries(env);
     const privateHooks = getPrivateStoryHooks(env);
+    const recentMoments = Array.isArray(env?.getRecentMomentEvents?.()) ? env.getRecentMomentEvents() : [];
     const savedDiscoveriesMarkup = savedDiscoveries.length
       ? `<div class="player-dashboard-discoveries"><div class="player-dashboard-discoveries-title">Saved discoveries</div>${savedDiscoveries.slice(0, 3).map((d) => `<div class="player-dashboard-discovery-item">${esc(String(d?.title || d || ''))}</div>`).join('')}</div>`
       : '';
     const privateHooksMarkup = privateHooks.length
       ? `<div class="player-dashboard-hooks"><div class="player-dashboard-hooks-title">Private prompts & objectives</div>${privateHooks.slice(0, 2).map((h) => `<div class="player-dashboard-hook-item">${esc(String(h?.text || h || ''))}</div>`).join('')}</div>`
       : '';
+    const momentsMarkup = recentMoments.length
+      ? recentMoments.slice(0, 3).map((moment) => `<div class="player-dashboard-moment" data-moment-type="${esc(String(moment?.momentType || 'world'))}"><strong>${esc(String(moment?.title || 'Moment'))}</strong><span>${esc(String(moment?.summary || 'Something changed in the world.'))}</span></div>`).join('')
+      : '<div class="player-dashboard-moment" data-moment-type="world"><strong>Quiet for now</strong><span>No private timeline beats yet.</span></div>';
 
     mount.innerHTML = `
       <div class="player-dashboard-header">
@@ -246,8 +250,14 @@
       <div class="player-dashboard-summary">${summary}</div>
       <div class="player-dashboard-meta">${meta}</div>
       <div class="player-dashboard-meta">${characterStatus}</div>
+      <div class="player-dashboard-start">
+        <div class="player-dashboard-start-title">Start here</div>
+        <div class="player-dashboard-start-list">Open Party for who is nearby, Map for the current scene, and Chat for table updates.</div>
+        <div class="player-dashboard-start-list">Open <strong>Journal</strong> for quest progress/campaign notes, watch for <strong>Discoveries</strong> as clue cards, and check <strong>Handouts</strong> for DM-issued docs.</div>
+      </div>
       <div class="player-dashboard-actions">
         <button type="button" class="player-dashboard-btn" data-player-dashboard-action="party">Party<span class="btn-kicker">Position & roster</span></button>
+        <button type="button" class="player-dashboard-btn" data-player-dashboard-action="map">Map<span class="btn-kicker">Current scene</span></button>
         <button type="button" class="player-dashboard-btn" data-player-dashboard-action="inventory">Inventory<span class="btn-kicker">Items, bags, gold</span></button>
         <button type="button" class="player-dashboard-btn" data-player-dashboard-action="chat">Chat<span class="btn-kicker">Party comms</span></button>
         <button type="button" class="player-dashboard-btn" data-player-dashboard-action="moments">Moments<span class="btn-kicker">Story timeline</span></button>
@@ -259,11 +269,23 @@
         <button type="button" class="player-dashboard-btn player-dashboard-btn--combat" data-player-dashboard-action="combat-guide">Combat Guide<span class="btn-kicker">Turn flow, movement, actions</span></button>
         <button type="button" class="player-dashboard-btn" data-player-dashboard-action="help">Help Hub<span class="btn-kicker">Tours, guides &amp; tips</span></button>
       </div>
+      <div class="player-dashboard-quest-spotlight">
+        <div class="player-dashboard-quest-title">Active quest focus</div>
+        <div class="player-dashboard-quest-empty">${activeQuests.length ? esc(String(activeQuests[0]?.title || activeQuests[0]?.name || 'Unnamed quest')) : 'No active quests yet.'}</div>
+      </div>
+      <div class="player-dashboard-moments">
+        <div class="player-dashboard-moments-title">Recent moments</div>
+        <div class="player-dashboard-moments-copy"><strong>Moments</strong> for quick timeline beats, and <strong>Handouts</strong> for DM-issued documents.</div>
+        ${momentsMarkup}
+      </div>
       ${savedDiscoveriesMarkup}
       ${privateHooksMarkup}
     `;
     mount.querySelector('[data-player-dashboard-action="party"]')?.addEventListener('click', function () {
       env?.switchRightTab?.('party');
+    });
+    mount.querySelector('[data-player-dashboard-action="map"]')?.addEventListener('click', function () {
+      env?.closeAllFlyouts?.();
     });
     mount.querySelector('[data-player-dashboard-action="chat"]')?.addEventListener('click', function () {
       env?.switchRightTab?.('chat');

@@ -192,16 +192,16 @@ def _build_spell_choices_preview(
     if not class_id:
         return None
 
-    current_spell_state = _current_spell_state(document, class_id=class_id, class_level=current_level)
-    current_known = current_spell_state["known"]
-    current_prepared = current_spell_state["prepared"]
-    current_known_set = set(current_known)
     spell_state = document.get("spellState") if isinstance(document.get("spellState"), dict) else {}
     has_explicit_spell_state = bool(
         list(spell_state.get("known") or [])
         or list(spell_state.get("prepared") or [])
         or list(spell_state.get("spellbookEntries") or [])
     )
+    current_spell_state = _current_spell_state(document, class_id=class_id, class_level=current_level)
+    current_known = current_spell_state["known"]
+    current_prepared = current_spell_state["prepared"]
+    current_known_set = set(current_known)
 
     primary_class = (document.get("classes") or [{}])[0] if isinstance(document.get("classes"), list) and document.get("classes") else {}
     subclass_id = str((primary_class or {}).get("subclassId") or "").strip().lower()
@@ -724,6 +724,26 @@ def apply_levelup(document: Any, *, choices: Any = None) -> dict[str, Any]:
                 "selectedChoice": feature_choices.get(feature_id),
             }
         )
+    active_subclass_id = str(primary_class.get("subclassId") or "").strip().lower()
+    active_subclass = get_subclass_catalog_row(active_subclass_id) if active_subclass_id else None
+    subclass_unlocks = (active_subclass or {}).get("featureUnlocksByLevel") if isinstance(active_subclass, dict) else {}
+    subclass_feature_defs = (active_subclass or {}).get("featureDefinitions") if isinstance(active_subclass, dict) else {}
+    for feature_id in subclass_unlocks.get(str(next_level), []) if isinstance(subclass_unlocks, dict) else []:
+        feature_key = str(feature_id or "").strip()
+        if not feature_key or feature_key.lower() in known_feature_ids:
+            continue
+        definition = subclass_feature_defs.get(feature_key, {}) if isinstance(subclass_feature_defs, dict) else {}
+        if not isinstance(definition, dict):
+            definition = {}
+        class_features.append(
+            {
+                "id": feature_key,
+                "displayName": str(definition.get("displayName") or feature_key),
+                "description": str(definition.get("description") or ""),
+                "selectedChoice": feature_choices.get(feature_key),
+            }
+        )
+        known_feature_ids.add(feature_key.lower())
     primary_class["selectedFeatures"] = class_features
 
     abilities = canonical.get("abilities") if isinstance(canonical.get("abilities"), dict) else {}

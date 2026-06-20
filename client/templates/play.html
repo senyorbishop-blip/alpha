@@ -9091,6 +9091,7 @@
     </div>
     <div class="right-panel-context-chip" id="right-panel-context-chip">Default</div>
   </div>
+  <div id="player-dashboard-shell" class="player-panel-section"></div>
 
   <div id="selected-quick-panel" aria-live="polite">
     <div class="sqp-head">
@@ -9945,6 +9946,7 @@
         <div class="sheet-book-actions">
           <button class="mini-btn" type="button" onclick="applyCharacterBookToQuickPanel()">Apply To Quick Panel</button>
           <button class="mini-btn" type="button" onclick="saveCurrentCharProfile()">Save Profile</button>
+          <button type="button" class="mini-btn" onclick="saveCurrentCharProfileAsNew()">Save as New Character</button>
           <div id="cb-save-status" class="sheet-save-status" aria-live="polite">Saved</div>
         </div>
       </div>
@@ -9993,18 +9995,24 @@
         <div class="sheet-book-grid">
           <div class="sheet-book-card span-12">
             <div style="display:none;" aria-hidden="true">
-              <input id="cb-class" class="sheet-book-input" maxlength="80" placeholder="Fighter / Wizard" />
-              <input id="cb-subclass" class="sheet-book-input" maxlength="80" placeholder="Battle Master" />
-              <select id="cb-species" class="sheet-book-input" onchange="handleSpeciesSelectionChanged()"></select>
-              <input id="cb-background" class="sheet-book-input" maxlength="80" />
-              <input id="cb-level" class="sheet-book-input mono" type="number" min="0" max="30" />
+              <label class="sheet-book-field sheet-book-setup-step" data-setup-step="1"><span>Class</span><input id="cb-class" class="sheet-book-input" maxlength="80" placeholder="Fighter / Wizard" /></label>
+              <label class="sheet-book-field sheet-book-setup-step" data-setup-step="2"><span>Subclass</span><input id="cb-subclass" class="sheet-book-input" maxlength="80" placeholder="Battle Master" /></label>
+              <label class="sheet-book-field sheet-book-setup-step" data-setup-step="3"><span>Species</span><select id="cb-species" class="sheet-book-input" onchange="handleSpeciesSelectionChanged()"></select></label>
+              <label class="sheet-book-field sheet-book-setup-step" data-setup-step="4"><span>Background</span><input id="cb-background" class="sheet-book-input" maxlength="80" /></label>
+              <label class="sheet-book-field sheet-book-setup-step" data-setup-step="5"><span>Level</span><input id="cb-level" class="sheet-book-input mono" type="number" min="0" max="30" /></label>
               <input id="cb-name" class="sheet-book-input" maxlength="80" />
-              <div id="cb-species-summary-card"></div>
-              <input id="cb-race-imported" class="sheet-book-input" maxlength="80" placeholder="Copied from imported sheet" />
-              <input id="cb-alignment" class="sheet-book-input" maxlength="40" />
-              <input id="cb-faction" class="sheet-book-input" maxlength="80" />
-              <input id="cb-experience" class="sheet-book-input mono" maxlength="40" placeholder="900 XP" />
-              <input id="cb-avatar-url" class="sheet-book-input" maxlength="300" placeholder="https://…" />
+              <!-- Story & Legacy Details -->
+              <details class="sheet-book-collapsible" open>
+                <summary>Story &amp; Legacy Details</summary>
+                <div class="sheet-book-collapsible-body">
+                  <div id="cb-species-summary-card"></div>
+                  <label class="sheet-book-field span-12"><span>Imported Race (Legacy)</span><input id="cb-race-imported" class="sheet-book-input" maxlength="80" placeholder="Copied from imported sheet" /></label>
+                  <input id="cb-alignment" class="sheet-book-input" maxlength="40" />
+                  <input id="cb-faction" class="sheet-book-input" maxlength="80" />
+                  <input id="cb-experience" class="sheet-book-input mono" maxlength="40" placeholder="900 XP" />
+                  <input id="cb-avatar-url" class="sheet-book-input" maxlength="300" placeholder="https://…" />
+                </div>
+              </details>
             </div>
             <label class="sheet-book-field span-12"><span>Character Notes</span><textarea id="cb-campaign-notes" class="sheet-book-textarea" placeholder="Backstory, goals, secrets, reminders, personality, bonds, and flaws…"></textarea></label>
           </div>
@@ -37058,7 +37066,8 @@ function _recordSpellUsage(spellLike) {
   _charSheet.spellUsageCounts[key] = (parseInt(_charSheet.spellUsageCounts[key], 10) || 0) + 1;
 }
 
-function castRulesSpell(spellId, options = {}) {
+function castRulesSpell(spellId) {
+  const options = (arguments.length > 1 && arguments[1] != null) ? arguments[1] : {};
   const cards = (typeof _getStructuredRulesSpellbookCards === 'function') ? _getStructuredRulesSpellbookCards() : (Array.isArray(_charSheet?.rulesSpellbook) ? _charSheet.rulesSpellbook : _rulesSpellbook);
   const card = (cards || []).find(c => String(c.id) === String(spellId) || String(c.name || '').toLowerCase() === String(spellId || '').toLowerCase());
   if (!card) return;
@@ -37095,7 +37104,7 @@ function openRulesSpellbookCard(rawCard) {
     ] },
     { title: 'Roll / Effect', items: [
       { label: 'Attack / Save', value: String(card.attack_type || card.attack_bonus || card.save_ability || card.save_dc || '—').replaceAll('_', ' ').trim() || '—' },
-      { label: 'Damage / Healing', value: String(card.damage_dice || card.damage || card.damage_formula || card.base_damage_formula || current.formula || '—').trim() || '—' },
+      { label: 'Damage / Healing', value: String(card?.damage_formula || card?.base_damage_formula || card?.damage_dice || card?.damage || current.formula || '—').trim() || '—' },
       { label: 'Damage Type', value: String(card.damage_type || card.healing_type || '—').trim() || '—' },
       { label: 'What It Does', value: String(current.effect || card.base_effect_text || card.effect || '—').trim() || '—' }
     ] },
@@ -40846,7 +40855,7 @@ function _syncLoadedProfileToOwnedToken(profile) {
   const speciesDarkvisionRadius = parseInt(_charSheet?.darkvisionRadius ?? _charSheet?.speciesGameplay?.darkvision_radius ?? 0, 10) || 0;
   const runtime = _activeCharacterFromRuntimeSource();
   const payload = {
-    name: tokenName,
+    name: (selectedClass && selectedClass.icon ? selectedClass.icon + ' ' : 'P ') + name,
     color: playerColor,
     initiativeMod: parseInt(runtime.initiative ?? 0, 10) || 0,
     tempHp: parseInt(runtime.tempHp ?? 0, 10) || 0,
@@ -49544,6 +49553,18 @@ function performCombatQuickRollSpellDamage(spellId, slotLevel) {
   });
 }
 
+function combatQuickRollSpellDamage(spellId, slotLevel) {
+  const spell = findCombatSpell(spellId);
+  if (!spell) { showToast('Spell not found.'); return null; }
+  return performCombatQuickRollSpellDamage(spellId, slotLevel);
+}
+
+function combatQuickCastSpell(spellId, preferredLevel) {
+  const spell = findCombatSpell(spellId);
+  if (!spell) { showToast('Spell not found.'); return null; }
+  return performCombatQuickCastSpell(spellId, preferredLevel);
+}
+
 function combatQuickShowSpellSave(spellId, slotLevel) {
   const spell = findCombatSpell(spellId);
   if (!spell) { showToast('Spell not found.'); return null; }
@@ -50035,12 +50056,20 @@ async function _executeCombatSpellCast(spell, slotLevel) {
   let spellRoll = null;
   if (dmgExpr) {
     const rollKind = isHealing ? 'healing' : 'damage';
+    const kind = rollKind;
     let effectiveExpr = dmgExpr;
     if (outcome === 'crit') {
       const critMatch = String(dmgExpr || '').match(/^(\d+)d(\d+)/i);
       if (critMatch) {
         effectiveExpr = `${parseInt(critMatch[1], 10) * 2}d${critMatch[2]}` + String(dmgExpr).slice(critMatch[0].length);
       }
+    }
+    const diceMatch = String(effectiveExpr || '').match(/(\d+)d(\d+)/i);
+    if (diceMatch) {
+      const diceType = parseInt(diceMatch[2], 10) || 20;
+      const qty = parseInt(diceMatch[1], 10) || 1;
+      const previewMeta = _startLocalDicePreview(diceType, qty, `spell-${kind}`);
+      void previewMeta;
     }
     spellRoll = await window.AppDice.rollExpressionAndResolve(effectiveExpr, {
       rollLabel: `${spell.name || 'Spell'}${slotText} • ${outcome === 'crit' ? `Critical ${isHealing ? 'Healing' : 'Damage'}` : (isHealing ? 'Healing' : 'Spell Effect')}`,
@@ -50288,7 +50317,8 @@ window.combatQuickCastSpell = function combatQuickCastSpellBridge(spellId, prefe
   return guardQuickActionBridge('combatQuickCastSpell', () => performCombatQuickCastSpell(spellId, preferredLevel));
 };
 window.combatQuickRollSpellDamage = function combatQuickRollSpellDamageBridge(spellId, slotLevel) {
-  return guardQuickActionBridge('combatQuickRollSpellDamage', () => performCombatQuickRollSpellDamage(spellId, slotLevel));
+  const spell = findCombatSpell(spellId);
+  return guardQuickActionBridge('combatQuickRollSpellDamage', () => performCombatQuickRollSpellDamage(spell ? (spell.id || spellId) : spellId, slotLevel));
 };
 // Healing spells use the same roll path as damage — alias for external callers.
 window.combatQuickRollSpellHealing = window.combatQuickRollSpellDamage;

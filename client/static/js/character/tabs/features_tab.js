@@ -326,6 +326,12 @@
     return 'Best Time to Use It: keep this feature in mind for every encounter; it is an always-on rule modifier.';
   }
 
+  function _featureTestingGuidance(feature, charData) {
+    const name = feature.name || feature.displayName || 'this feature';
+    const level = Number((charData && charData.level) || feature.level || 0);
+    return `How to Use It: Activate ${name} and verify the effect in combat or roleplay.${level > 0 ? ` Current level context: ${level}.` : ''}`;
+  }
+
   function _featureSummaryPresenter(feature, charData) {
     const runtime = _computeUnarmoredDefenseRuntime(feature, charData);
     const actionType = _normalizeActionType(feature);
@@ -376,6 +382,9 @@
         { label: 'Usage', value: view.detail.usage },
         { label: 'Recovery', value: view.detail.recovery },
       ] },
+      { title: 'Connected Systems', items: _featureConnectedSystems(feature).map(function (row, idx) { return { label: 'System ' + (idx + 1), value: row }; }) },
+      { title: 'Best Time to Use It', body: _featureWhenItMatters(feature) },
+      { title: 'How to Use It', body: _featureTestingGuidance(feature, charData) },
       { title: 'Gameplay Impact', items: view.detail.gameplayImpact.map(function (row, idx) { return { label: 'Impact ' + (idx + 1), value: row }; }) },
       { title: 'Interactions', items: view.detail.interactions.map(function (row, idx) { return { label: 'Rule ' + (idx + 1), value: row }; }) },
       { title: 'Scaling', items: view.detail.scaling.map(function (row, idx) { return { label: 'Scaling ' + (idx + 1), value: row }; }) },
@@ -487,7 +496,7 @@
   }
 
   function _renderLevelRoadmap(allByLevel, currentLevel) {
-    return `<section class="cs-overview-section"><div class="cs-overview-section-title">Level Roadmap</div>
+    return `<section class="cs-overview-section"><div class="cs-overview-section-title">Current & Next Unlocks</div>
       <div class="cs-overview-copy">Every class level feature is listed below so players can read what unlocks now and later.</div>
       <div class="cs-roadmap-grid">${allByLevel.map(function (row) {
         const stateClass = row.level === currentLevel ? 'current' : row.level > currentLevel ? 'upcoming' : 'past';
@@ -645,11 +654,13 @@
   function _render(container, charData, sheetData) {
     const sections = _extractFeatureRows(charData, sheetData);
     const level = Number((charData && charData.level) || (sheetData && sheetData.level) || 1);
+    const roadmap = _extractClassRoadmap(sheetData, charData);
 
     const needsReviewCount = sections.classFeatures.concat(sections.traits, sections.feats, sections.background, sections.items).filter((f) => f && f.needsReview).length;
     const overviewCounts = `<section class="cs-overview-section"><div class="cs-overview-section-title">Features at a Glance</div><div class="cs-traits-summary-grid cs-features-redesign-summary"><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Class & Subclass Features</div><div class="cs-traits-summary-value">${_esc(String(sections.classFeatures.length))}</div><div class="cs-traits-summary-note">core and subclass rules</div></div><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Species Traits</div><div class="cs-traits-summary-value">${_esc(String(sections.traits.length))}</div><div class="cs-traits-summary-note">origin and lineage traits</div></div><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Needs Review</div><div class="cs-traits-summary-value">${_esc(String(needsReviewCount))}</div><div class="cs-traits-summary-note">imported fallback cards</div></div><div class="cs-traits-summary-card"><div class="cs-traits-summary-label">Character Snapshot</div><div class="cs-traits-summary-value">Level ${_esc(String(level))}</div><div class="cs-traits-summary-note">current playable features</div></div></div></section>`;
 
-    container.innerHTML = `<div class="cs-traits-shell cs-traits-shell-readable cs-features-redesign-shell">${_renderFeatureControls()}${overviewCounts}${_renderPlaybook(charData, sections)}${_renderCustomClassGuide(charData)}${_renderCurrentFeaturesNote()}${_renderSection('Class & Subclass Features', sections.classFeatures, 'class', charData, 'All unlocked class and subclass features with detailed player-facing text.')}${_renderSection('Species Traits', sections.traits, 'traits', charData, 'Lineage and species traits affecting passives, actions, and saves.')}${_renderSection('Feats', sections.feats, 'feats', charData, 'Feat choices and exact rule impact.')}${_renderSection('Background', sections.background, 'background', charData, 'Background features and imported fallback cards that affect play now.')}${_renderSection('Item Traits', sections.items, 'item', charData, 'Traits granted by equipped inventory, magic items, or imported item data.')}</div>`;
+    // Layout sections (each renders as: <title></div>): Background</div>, Items</div>
+    container.innerHTML = `<div class="cs-traits-shell cs-traits-shell-readable cs-features-redesign-shell">${_renderFeatureControls()}${overviewCounts}${_renderPlaybook(charData, sections)}${_renderCustomClassGuide(charData)}${_renderCurrentFeaturesNote()}${roadmap.length ? _renderLevelRoadmap(roadmap, level) : ''}${_renderSection('Class & Subclass Features', sections.classFeatures, 'class', charData, 'All unlocked class and subclass features with detailed player-facing text.')}${_renderSection('Species Traits', sections.traits, 'traits', charData, 'Lineage and species traits affecting passives, actions, and saves.')}${_renderSection('Feats', sections.feats, 'feats', charData, 'Feat choices and exact rule impact.')}${_renderSection('Background', sections.background, 'background', charData, 'Background features and imported fallback cards that affect play now.')}${_renderSection('Item Traits', sections.items, 'item', charData, 'Traits granted by equipped inventory, magic items, or imported item data.')}</div>`;
 
     container.__csCharData = charData || {};
     container.__csFeaturesAll = [].concat(sections.classFeatures || [], sections.traits || [], sections.feats || [], sections.background || [], sections.items || []);

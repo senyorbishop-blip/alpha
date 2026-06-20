@@ -787,9 +787,11 @@ async def handle_summon_action_use(payload: dict, session: Session, user: User):
         "target_hp": int(getattr(target_token, "hp", 0) or 0) if target_token else None,
     }
 
-    await manager.broadcast(session.id, {
+    result_message = {
         "type": "summon_action_result",
         "payload": result_payload,
-    })
+    }
+    await manager.send_to(session.id, user.id, result_message)
+    await manager.broadcast(session.id, result_message)
     await _send_char_profiles(session, user.id)
     await save_campaign_async(session)

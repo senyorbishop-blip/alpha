@@ -58,6 +58,21 @@ def _normalize_list(values: Any) -> list[str]:
     return out
 
 
+def _dedupe_string_list(values: Any) -> list[str]:
+    if not isinstance(values, list):
+        return []
+    out: list[str] = []
+    seen: set[str] = set()
+    for row in values:
+        text = str(row or "").strip()
+        key = text.lower()
+        if not text or key in seen:
+            continue
+        seen.add(key)
+        out.append(text)
+    return out
+
+
 def _parse_cleanup_policy(value: Any) -> Any:
     if isinstance(value, dict):
         return copy.deepcopy(value)
@@ -318,7 +333,7 @@ def normalize_summon_state(raw: Any) -> dict[str, Any]:
     base = default_summon_state()
     src = raw if isinstance(raw, dict) else {}
     migration = src.get("migration") if isinstance(src.get("migration"), dict) else {}
-    prior_upgrades = _normalize_list(migration.get("legacyUpgradesApplied"))
+    prior_upgrades = _dedupe_string_list(migration.get("legacyUpgradesApplied"))
     base["deploySchemaVersion"] = SUMMON_DEPLOY_SCHEMA_VERSION
     base["unlockedTemplates"] = _normalize_list(src.get("unlockedTemplates"))
     base["unlockedGroups"] = _normalize_list(src.get("unlockedGroups"))
@@ -329,7 +344,7 @@ def normalize_summon_state(raw: Any) -> dict[str, Any]:
     base["quarantinedSummons"].extend(quarantined)
     base["rules"] = copy.deepcopy(src.get("rules")) if isinstance(src.get("rules"), dict) else {}
     base["lastUpdatedFromFeatures"] = _normalize_list(src.get("lastUpdatedFromFeatures"))
-    deduped_upgrades = _normalize_list(prior_upgrades + upgrades)
+    deduped_upgrades = _dedupe_string_list(prior_upgrades + upgrades)
     base["migration"] = {
         "normalizerVersion": SUMMON_DEPLOY_SCHEMA_VERSION,
         "legacyUpgradesApplied": deduped_upgrades,
