@@ -5,6 +5,7 @@ import asyncio
 import time
 import secrets
 from server.session import Session, User, normalize_profile_owner_key, set_assistant_dm_permissions, assistant_dm_has_scope, grant_temp_permission, ACTIVE_PROFILE_ID_KEY_LIMIT, set_player_gold_for_user, _inventory_owner_key
+from server.character.profile_sanitize import strip_runtime_fields
 from server.quest_library import (
     build_session_quest_from_template,
     get_quest_template,
@@ -436,6 +437,11 @@ def upsert_char_profile_for_owner(session: Session, owner_key: str, payload: dic
     for key in ("nativeCharacter", "nativeRuntime", "nativeMeta", "sourceMode", "classSummary", "importMeta"):
         if key in payload:
             profile[key] = payload.get(key)
+
+    # Defence in depth: strip combat/UI runtime caches before this profile is
+    # stored. The client already strips them, but a stale or third-party client
+    # must not be able to re-bloat the persisted char_profiles field.
+    strip_runtime_fields(profile)
 
     if existing:
         created = existing.get("created_at", now)
