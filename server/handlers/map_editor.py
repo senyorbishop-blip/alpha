@@ -303,30 +303,24 @@ def _fog_state_payload_for_context(session: Session, map_ctx: str) -> dict:
     }
 
 async def _broadcast_fog_to_visible_users(session: Session, message: dict, map_ctx: str):
-    """Deliver fog updates only to users whose visible map contexts include map_ctx."""
+    """Deliver live fog updates to every connected participant.
+
+    Clients still keep fog state keyed by map context and only redraw the active
+    context, but sending the sparse update to every participant avoids stale
+    split-party/subgroup bookkeeping leaving a player permanently out of sync
+    until a full reconnect/state_sync.
+    """
+    broadcast = getattr(manager, "broadcast", None)
+    if callable(broadcast):
+        await broadcast(session.id, message)
+        return
     users = dict(getattr(session, "users", {}) or {})
     for uid, participant in users.items():
         role = str(getattr(participant, "role", "") or "").strip().lower()
         if role == "dm":
             await manager.send_to(session.id, uid, message)
             continue
-        try:
-            visible = session.visible_map_contexts_for_user(uid)
-        except Exception:
-            visible = {"world"}
-        target_ctx = str(map_ctx or "world")
-        visible_ctx = {str(ctx or "world") for ctx in (visible or {"world"})}
-        # Guardrail: keep live fog sync resilient when split-party subgroup
-        # metadata lags behind the real board state. If a player currently has
-        # token presence on a map, they should receive fog updates for that map
-        # even when subgroup context bookkeeping is stale.
-        has_presence = False
-        try:
-            has_presence = _user_has_map_presence(session, participant, target_ctx)
-        except Exception:
-            has_presence = False
-        if target_ctx in visible_ctx or has_presence:
-            await manager.send_to(session.id, uid, message)
+        await manager.send_to(session.id, uid, message)
 
 
 def _resolve_local_map_url(session: Session, map_ctx: str, fallback=None) -> str | None:

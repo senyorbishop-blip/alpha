@@ -288,6 +288,36 @@ def test_initiative_patch_updates_self_and_other_client_without_source_filter():
         assert result["combat"]["combatants"][0]["initiative"] == 8
         assert result["calls"]["renderCombat"] == 1
 
+
+def test_initiative_repaint_retries_when_active_render_collides():
+    code = f"""
+const calls = {{ renderCombat: 0, refreshRightPanelContextUI: 0, updateActiveContext: 0, refreshCombatBadges: 0, refreshTokenBadges: 0, queued: 0 }};
+global.window = global;
+global.renderCombat = () => {{ calls.renderCombat++; if (calls.renderCombat === 1) throw new Error('render collision'); }};
+global.refreshRightPanelContextUI = () => {{ calls.refreshRightPanelContextUI++; }};
+global.updateActiveContext = () => {{ calls.updateActiveContext++; }};
+global.refreshCombatBadges = () => {{ calls.refreshCombatBadges++; }};
+global.refreshTokenBadges = () => {{ calls.refreshTokenBadges++; }};
+global.queueMicrotask = (fn) => {{ calls.queued++; fn(); }};
+global.clearTimeout = () => {{}};
+global.setTimeout = (fn) => {{ fn(); return 1; }};
+global.console = {{ warn(){{}}, error(){{}}, debug(){{}}, log: (...args) => process.stdout.write(args.join(' ') + '\\n') }};
+{_DIAGNOSTICS_PREAMBLE}
+let _combat = {{ active: true, turn: 0, round: 1, revision: 1, combatants: [{{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null, roll: null, modifier: 0 }}] }};
+function _sortCombatants() {{}}
+{_initiative_roll_snippet()}
+const applied = applyInitiativeResultToCombatState({{ combatant_id: 'bishop', token_id: 't-bishop', initiative: 12, roll: 12, modifier: 0, revision: 2 }});
+console.log(JSON.stringify({{ applied, calls, combat: _combat }}));
+"""
+    out = subprocess.check_output(["node", "-e", code], cwd=ROOT, text=True, timeout=30)
+    result = json.loads(out.strip().splitlines()[-1])
+    assert result["applied"] is True
+    assert result["combat"]["combatants"][0]["initiative"] == 12
+    assert result["calls"]["renderCombat"] == 2
+    assert result["calls"]["queued"] == 1
+    assert result["calls"]["refreshRightPanelContextUI"] == 1
+
+
 def test_lower_revision_with_changed_initiative_applies_with_warning():
     result = _run(
         "combatApplyState({ active: true, turn: 0, round: 1, revision: 5, "
