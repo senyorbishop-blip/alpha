@@ -33350,8 +33350,14 @@ function handleLegacyMessage(msg) {
       // Fill in the dice animation if it was triggered by THIS user.
       // Use authoritative identity resolution to avoid missing results when USER_ID is stale.
       const effectiveUserId = getEffectiveUserId();
+      const isInitiativeResult = _isInitiativeDiceResultPayload(p);
+      if (isInitiativeResult) {
+        applyInitiativeResultToCombatState(p);
+      }
       // Initiative dedupe: if THIS client already played the local settled dice
-      // for this roll, the authoritative echo would be a duplicate popup — drop it.
+      // for this roll, the authoritative echo would be a duplicate popup — but
+      // never skip the combat-row patch above.  The row beside the name must
+      // update even on the rolling client before the next refresh.
       if (p.roll_id && _initiativeLocalDicePopupRollIds.has(String(p.roll_id))) {
         _initiativeLocalDicePopupRollIds.delete(String(p.roll_id));
         break;
@@ -47601,9 +47607,17 @@ function combatRollInitiative(combatantId) {
     const latest = _combat.combatants.find(c => c.id === combatantId);
     if (!latest) return;
     const roll = parseInt(result?.rolls?.[0], 10) || 0;
-    // The local dice result is visual only.  The initiative list updates from
-    // the authoritative combat_state broadcast sent back by the server, and the
-    // shared dice popup is driven by the server's dice_result (deduped here).
+    applyInitiativeResultToCombatState({
+      combatant_id: combatantId,
+      token_id: latest.token_id,
+      initiative: roll + modifier,
+      total: roll + modifier,
+      roll,
+      modifier,
+      roll_id: initiativeRollId,
+      encounter_id: _combat?.encounter_id || '',
+      source: 'local-settled-initiative',
+    });
     sendWS({ type: 'combat_roll_initiative', payload: {
       combatant_id: combatantId,
       roll:         roll,
@@ -47626,9 +47640,84 @@ const _initiativeLocalDicePopupRollIds = new Set();
 window._initiativeLocalDicePopupRollIds = _initiativeLocalDicePopupRollIds;
 
 let _combatInitiativeResyncTimer = null;
+
+function _isInitiativeDiceResultPayload(result) {
+  if (!result || typeof result !== 'object') return false;
+  const label = String(result.roll_label || result.label || result.type || result.roll_type || '').toLowerCase();
+  return /initiative/.test(label) && !!(result.combatant_id || result.token_id);
+}
+
+function _initiativeResultTotal(result) {
+  const total = result?.initiative ?? result?.total;
+  const n = Number(total);
+  if (Number.isFinite(n)) return n;
+  const roll = Number(Array.isArray(result?.rolls) ? result.rolls[0] : result?.roll);
+  const modifier = Number(result?.modifier ?? result?.init_bonus ?? 0);
+  return Number.isFinite(roll) ? roll + (Number.isFinite(modifier) ? modifier : 0) : null;
+}
+
+function _initiativeResultRoll(result) {
+  const roll = Array.isArray(result?.rolls) ? result.rolls[0] : result?.roll;
+  const n = Number(roll);
+  if (Number.isFinite(n)) return n;
+  const total = _initiativeResultTotal(result);
+  const mod = Number(result?.modifier ?? result?.init_bonus ?? 0);
+  return Number.isFinite(total) ? total - (Number.isFinite(mod) ? mod : 0) : null;
+}
+
+function applyInitiativeResultToCombatState(result) {
+  if (!result || typeof result !== 'object' || !_combat) return false;
+  const combatants = Array.isArray(_combat.combatants) ? _combat.combatants : [];
+  if (!Array.isArray(_combat.combatants)) _combat.combatants = combatants;
+  const combatantId = String(result.combatant_id || result.id || '').trim();
+  const tokenId = String(result.token_id || '').trim();
+  let idx = combatantId ? combatants.findIndex(c => String(c?.id || '') === combatantId) : -1;
+  if (idx < 0 && tokenId) idx = combatants.findIndex(c => String(c?.token_id || '') === tokenId);
+  if (idx < 0) return false;
+  const combatant = combatants[idx];
+  const total = _initiativeResultTotal(result);
+  const roll = _initiativeResultRoll(result);
+  const modifier = Number(result.modifier ?? result.init_bonus ?? combatant.modifier ?? 0);
+  if (Number.isFinite(total)) combatant.initiative = total;
+  if (Number.isFinite(roll)) combatant.roll = roll;
+  if (Number.isFinite(modifier)) combatant.modifier = modifier;
+  delete combatant._initiativeRollPending;
+  const incomingRevision = Number(result.revision);
+  if (Number.isFinite(incomingRevision)) _combat.revision = Math.max(Number(_combat.revision) || 0, incomingRevision);
+  if (result.encounter_id) _combat.encounter_id = result.encounter_id;
+  if (Number.isFinite(Number(result.turn))) _combat.turn = Number(result.turn);
+  else {
+    const currentKey = String(combatants[Math.max(0, Number(_combat.turn) || 0)]?.id || combatants[Math.max(0, Number(_combat.turn) || 0)]?.token_id || '');
+    if (typeof _sortCombatants === 'function') _sortCombatants();
+    if (_combat.active && currentKey) {
+      const newTurn = combatants.findIndex(c => String(c?.id || c?.token_id || '') === currentKey);
+      if (newTurn >= 0) _combat.turn = newTurn;
+    } else {
+      _combat.turn = Math.max(0, Math.min(Number(_combat.turn) || 0, Math.max(0, combatants.length - 1)));
+    }
+  }
+  window._combat = _combat;
+  window.combat = _combat;
+  window.combatState = _combat;
+  window.currentCombat = _combat;
+  if (typeof partySnapshot === 'object' && partySnapshot) partySnapshot.combat = _combat;
+  if (typeof activeContext === 'object' && activeContext) activeContext.combat = _combat;
+  if (typeof initiativeList !== 'undefined' && Array.isArray(initiativeList)) {
+    initiativeList.length = 0;
+    combatants.forEach(c => initiativeList.push(c));
+  }
+  if (typeof renderCombat === 'function') renderCombat();
+  if (typeof refreshRightPanelContextUI === 'function') refreshRightPanelContextUI();
+  if (typeof updateActiveContext === 'function') updateActiveContext();
+  if (typeof refreshCombatBadges === 'function') refreshCombatBadges();
+  if (typeof refreshTokenBadges === 'function') refreshTokenBadges();
+  return true;
+}
+
 function applyCombatInitiativeRolled(payload) {
-  // Notification only: initiative list authority is the next combat_state.
-  // If that authoritative state is delayed/missed, request a fresh copy.
+  applyInitiativeResultToCombatState(payload);
+  // combat_state remains authoritative for final order. If that authoritative
+  // state is delayed/missed, request a fresh copy after patching the visible row.
   if (_combatInitiativeResyncTimer) clearTimeout(_combatInitiativeResyncTimer);
   const expectedRevision = Number(payload && payload.revision);
   _combatInitiativeResyncTimer = setTimeout(() => {

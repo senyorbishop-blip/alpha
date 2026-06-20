@@ -55,8 +55,13 @@ def _initiative_roll_snippet() -> str:
 
 def _run_initiative_event(event_js: str, *, initial_combat_js: str) -> dict:
     code = f"""
-const calls = {{ renderCombat: 0 }};
+const calls = {{ renderCombat: 0, refreshRightPanelContextUI: 0, updateActiveContext: 0, refreshCombatBadges: 0, refreshTokenBadges: 0 }};
+global.window = global;
 global.renderCombat = () => {{ calls.renderCombat++; }};
+global.refreshRightPanelContextUI = () => {{ calls.refreshRightPanelContextUI++; }};
+global.updateActiveContext = () => {{ calls.updateActiveContext++; }};
+global.refreshCombatBadges = () => {{ calls.refreshCombatBadges++; }};
+global.refreshTokenBadges = () => {{ calls.refreshTokenBadges++; }};
 global.clearTimeout = () => {{}};
 global.setTimeout = (fn) => {{ fn(); return 1; }};
 let _combat = {initial_combat_js};
@@ -197,7 +202,7 @@ def test_actual_incoming_dispatch_dm_npc_roll_updates_dm_client():
     assert result["combat"]["combatants"][0]["initiative"] == 14
 
 
-def test_initiative_event_is_notification_only_and_requests_resync():
+def test_initiative_event_patches_row_and_requests_resync_if_needed():
     result = _run_initiative_event(
         "let sent = []; sendWS = (msg) => sent.push(msg); applyCombatInitiativeRolled({ combatant_id: 'guard', token_id: 't-guard', initiative: 18, roll: 18, modifier: 0, revision: 3 });",
         initial_combat_js="{ active: true, turn: 0, round: 1, revision: 2, encounter_id: 'enc-1', combatants: ["
@@ -205,11 +210,51 @@ def test_initiative_event_is_notification_only_and_requests_resync():
         "{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: null, roll: null, modifier: 0 }"
         "] }",
     )
-    assert result["calls"]["renderCombat"] == 0
-    assert [c["id"] for c in result["combat"]["combatants"]] == ["bishop", "guard"]
-    assert result["combat"]["combatants"][1]["initiative"] is None
-    assert result["sent"] == [{"type": "combat_state_request", "payload": {}}]
+    assert result["calls"]["renderCombat"] == 1
+    assert result["combat"]["combatants"][0]["id"] == "guard"
+    assert result["combat"]["combatants"][0]["initiative"] == 18
+    assert result["combat"]["combatants"][0]["roll"] == 18
+    assert result["sent"] == []
 
+
+
+def test_dice_result_initiative_patches_bishop_row_immediately():
+    result = _run_initiative_event(
+        "applyInitiativeResultToCombatState({ roll_label: 'Bishop initiative', combatant_id: 'bishop', token_id: 't-bishop', rolls: [8], total: 8, modifier: 0, revision: 2 });",
+        initial_combat_js="{ active: true, turn: 0, round: 1, revision: 1, combatants: ["
+        "{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: null, roll: null, modifier: 0 },"
+        "{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null, roll: null, modifier: 0 }"
+        "] }",
+    )
+    bishop = next(c for c in result["combat"]["combatants"] if c["id"] == "bishop")
+    assert bishop["initiative"] == 8
+    assert bishop["roll"] == 8
+    assert result["calls"]["renderCombat"] == 1
+
+
+def test_combat_initiative_rolled_patches_guard_row_immediately():
+    result = _run_initiative_event(
+        "let sent = []; sendWS = (msg) => sent.push(msg); applyCombatInitiativeRolled({ combatant_id: 'guard', token_id: 't-guard', initiative: 1, roll: 1, modifier: 0, revision: 3 });",
+        initial_combat_js="{ active: true, turn: 0, round: 1, revision: 2, combatants: ["
+        "{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: null, roll: null, modifier: 0 },"
+        "{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null, roll: null, modifier: 0 }"
+        "] }",
+    )
+    guard = next(c for c in result["combat"]["combatants"] if c["id"] == "guard")
+    assert guard["initiative"] == 1
+    assert guard["roll"] == 1
+    assert result["calls"]["renderCombat"] == 1
+
+
+def test_initiative_patch_updates_self_and_other_client_without_source_filter():
+    base = "{ active: true, turn: 0, round: 1, revision: 1, combatants: [{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null, roll: null, modifier: 0 }] }"
+    for source_user_id in ("self", "other"):
+        result = _run_initiative_event(
+            f"global.USER_ID = 'self'; applyInitiativeResultToCombatState({{ source_user_id: '{source_user_id}', roll_label: 'Bishop initiative', combatant_id: 'bishop', token_id: 't-bishop', rolls: [8], total: 8, modifier: 0, revision: 2 }});",
+            initial_combat_js=base,
+        )
+        assert result["combat"]["combatants"][0]["initiative"] == 8
+        assert result["calls"]["renderCombat"] == 1
 
 def test_lower_revision_with_changed_initiative_applies_with_warning():
     result = _run(
