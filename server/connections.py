@@ -10,6 +10,22 @@ from fastapi import WebSocket
 logger = logging.getLogger(__name__)
 
 
+def _socket_is_open(websocket) -> bool:
+    """Best-effort check of whether a WebSocket is still connected.
+
+    Used only for diagnostic logging when an old socket is replaced, so it must
+    never raise. Falls back to ``True`` when the socket's state is unknowable
+    (e.g. test doubles without ``client_state``)."""
+    try:
+        from starlette.websockets import WebSocketState
+        state = getattr(websocket, "client_state", None)
+        if state is None:
+            return True
+        return state == WebSocketState.CONNECTED
+    except Exception:
+        return True
+
+
 class ConnectionManager:
     def __init__(self):
         self._connections: Dict[str, Dict[str, WebSocket]] = {}
@@ -18,18 +34,29 @@ class ConnectionManager:
     def get_session_connections(self, session_id: str) -> Dict[str, WebSocket]:
         return self._connections.get(session_id, {})
 
-    async def connect(self, session_id: str, user_id: str, websocket: WebSocket, role: str | None = None, connection_id: str | None = None) -> str:
+    async def connect(self, session_id: str, user_id: str, websocket: WebSocket, role: str | None = None, connection_id: str | None = None, client_socket_id: str | None = None, reason: str | None = None, user_agent: str | None = None) -> str:
         await websocket.accept()
         if session_id not in self._connections:
             self._connections[session_id] = {}
         if session_id not in self._connection_ids:
             self._connection_ids[session_id] = {}
-        connection_id = connection_id or uuid.uuid4().hex
+        new_connection_id = connection_id or uuid.uuid4().hex
         prior = self._connections[session_id].get(user_id)
-        if prior and prior is not websocket:
+        old_connection_id = self._connection_ids.get(session_id, {}).get(user_id)
+        old_replaced = bool(prior and prior is not websocket)
+        if old_replaced:
+            # Temporary diagnostic logging for the reconnect-storm investigation:
+            # correlate the replaced socket with the client-side client_socket_id,
+            # the connect reason, and the browser so duplicate owners are traceable.
             logger.warning(
-                "[ws] replacing socket session_id=%s user_id=%s role=%s old_socket_replaced=true new_socket_connected=false",
+                "[ws] replacing socket session_id=%s user_id=%s role=%s "
+                "old_connection_id=%s new_connection_id=%s old_socket_open=%s "
+                "client_socket_id=%s reason=%s user_agent=%s "
+                "old_socket_replaced=true new_socket_connected=false",
                 session_id, user_id, role or "unknown",
+                old_connection_id or "unknown", new_connection_id,
+                _socket_is_open(prior),
+                client_socket_id or "unknown", reason or "unknown", user_agent or "unknown",
             )
             try:
                 await prior.close(code=1001, reason="Replaced by a newer connection")
@@ -39,12 +66,14 @@ class ConnectionManager:
                     session_id, user_id, role or "unknown", exc,
                 )
         self._connections[session_id][user_id] = websocket
-        self._connection_ids[session_id][user_id] = connection_id
+        self._connection_ids[session_id][user_id] = new_connection_id
         logger.info(
-            "[ws] connected session_id=%s user_id=%s role=%s old_socket_replaced=%s new_socket_connected=true",
-            session_id, user_id, role or "unknown", bool(prior and prior is not websocket),
+            "[ws] connected session_id=%s user_id=%s role=%s connection_id=%s "
+            "client_socket_id=%s reason=%s old_socket_replaced=%s new_socket_connected=true",
+            session_id, user_id, role or "unknown", new_connection_id,
+            client_socket_id or "unknown", reason or "unknown", old_replaced,
         )
-        return connection_id
+        return new_connection_id
 
     def disconnect(self, session_id: str, user_id: str, websocket: Optional[WebSocket] = None) -> bool:
         if session_id in self._connections:

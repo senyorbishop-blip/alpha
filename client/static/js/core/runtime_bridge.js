@@ -90,30 +90,42 @@
         storeSet('socket.connected', true);
         storeSet('socket.status', 'connected');
         if (effectiveRole === 'dm' && typeof global._resyncDmMapNav === 'function') global.setTimeout(global._resyncDmMapNav, 0);
-        if (global.AppWS && typeof global.AppWS.send === 'function') {
-          console.debug('[WS] requesting authoritative state_sync after open');
-          if (global.__PLAY_BOOT_ROLE === 'player' && typeof global.__playerBootCheckpoint === 'function') global.__playerBootCheckpoint('PLAYER_BOOT_REQUEST_STATE_SENT');
-          global.AppWS.send({ type: 'request_state', payload: { reason: 'reconnect' } });
-        } else if (typeof global.sendWS === 'function') {
-          if (global.__PLAY_BOOT_ROLE === 'player' && typeof global.__playerBootCheckpoint === 'function') global.__playerBootCheckpoint('PLAYER_BOOT_REQUEST_STATE_SENT');
-          global.sendWS({ type: 'request_state', payload: { reason: 'reconnect' } });
+        // Initial authoritative-state requests. These are funnelled through the
+        // single WebSocket owner's requestInitialStateOnce() so they are sent
+        // exactly once per real socket open — never once per boot module and
+        // never repeatedly during a reconnect storm.
+        const sendInitialStateRequests = function () {
+          if (global.AppWS && typeof global.AppWS.send === 'function') {
+            console.debug('[WS] requesting authoritative state_sync after open');
+            if (global.__PLAY_BOOT_ROLE === 'player' && typeof global.__playerBootCheckpoint === 'function') global.__playerBootCheckpoint('PLAYER_BOOT_REQUEST_STATE_SENT');
+            global.AppWS.send({ type: 'request_state', payload: { reason: 'reconnect' } });
+          } else if (typeof global.sendWS === 'function') {
+            if (global.__PLAY_BOOT_ROLE === 'player' && typeof global.__playerBootCheckpoint === 'function') global.__playerBootCheckpoint('PLAYER_BOOT_REQUEST_STATE_SENT');
+            global.sendWS({ type: 'request_state', payload: { reason: 'reconnect' } });
+          }
+          if (effectiveRole === 'dm' || effectiveRole === 'player') {
+            if (global.AppWS && typeof global.AppWS.send === 'function') global.AppWS.send({ type: 'treasury_get', payload: {} });
+            else if (typeof global.sendWS === 'function') global.sendWS({ type: 'treasury_get', payload: {} });
+            // Reconnect recovery: if combat is active (or its state is unknown on a
+            // fresh open), pull the authoritative combat_state so initiative/order/
+            // turn are never left stale after a silent drop or heartbeat-driven
+            // reconnect. state_sync also carries combat, but this guarantees a
+            // redraw even if that race is lost.
+            var _combatForResync = global._combat || global.combat || null;
+            var _combatKnown = !!(_combatForResync && typeof _combatForResync === 'object' && Object.prototype.hasOwnProperty.call(_combatForResync, 'active'));
+            if (!_combatKnown || _combatForResync.active) {
+              console.debug('[WS] requesting authoritative combat_state after open', { known: _combatKnown, active: !!(_combatForResync && _combatForResync.active) });
+              if (global.AppWS && typeof global.AppWS.send === 'function') global.AppWS.send({ type: 'combat_state_request', payload: {} });
+              else if (typeof global.sendWS === 'function') global.sendWS({ type: 'combat_state_request', payload: {} });
+            }
+          }
+        };
+        if (global.AppWS && typeof global.AppWS.requestInitialStateOnce === 'function') {
+          global.AppWS.requestInitialStateOnce(sendInitialStateRequests);
+        } else {
+          sendInitialStateRequests();
         }
         if (effectiveRole === 'dm' && typeof global.reapplyDmFogPreviewAfterReconnect === 'function') global.setTimeout(global.reapplyDmFogPreviewAfterReconnect, 0);
-        if (effectiveRole === 'dm' || effectiveRole === 'player') {
-          if (global.AppWS && typeof global.AppWS.send === 'function') global.AppWS.send({ type: 'treasury_get', payload: {} });
-          else if (typeof global.sendWS === 'function') global.sendWS({ type: 'treasury_get', payload: {} });
-          // Reconnect recovery: if combat is active, pull the authoritative
-          // combat_state so initiative/order/turn are never left stale after a
-          // silent drop or heartbeat-driven reconnect. state_sync also carries
-          // combat, but this guarantees a redraw even if that race is lost.
-          var _combatForResync = global._combat || global.combat || null;
-          var _combatKnown = !!(_combatForResync && typeof _combatForResync === 'object' && Object.prototype.hasOwnProperty.call(_combatForResync, 'active'));
-          if (!_combatKnown || _combatForResync.active) {
-            console.debug('[WS] requesting authoritative combat_state after open', { known: _combatKnown, active: !!(_combatForResync && _combatForResync.active) });
-            if (global.AppWS && typeof global.AppWS.send === 'function') global.AppWS.send({ type: 'combat_state_request', payload: {} });
-            else if (typeof global.sendWS === 'function') global.sendWS({ type: 'combat_state_request', payload: {} });
-          }
-        }
       },
       onClose: function (_event) {
         const status = global.document.getElementById('ws-status');

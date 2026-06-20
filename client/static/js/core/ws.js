@@ -23,6 +23,58 @@
   };
   let lifecycleHooksInstalled = false;
 
+  // ── Single WebSocket owner state ───────────────────────────────────────────
+  // This module is the ONLY place that constructs a WebSocket. All boot modules
+  // (boot_shell, player_shell, render/boot, message_dispatch, play.html) must
+  // funnel through ensureConnected()/connectWS() so there is exactly one live
+  // socket owner per browser tab. The fields below back window.__debugWS().
+  let activeClientSocketId = null;
+  let connectCallCount = 0;
+  let duplicateConnectCount = 0;
+  let reconnectAttempts = 0;
+  let lastConnectReason = '';
+  let lastCloseCode = null;
+  let lastCloseReason = '';
+  let lastRequestStateSentAt = null;
+  const initialStateSentForSockets = new Set();
+  const duplicateConnectStacks = [];
+
+  function newClientSocketId() {
+    const rand = Math.random().toString(16).slice(2, 10);
+    return `cs_${Date.now().toString(16)}_${rand}`;
+  }
+
+  function isDevEnv() {
+    try {
+      const host = String((global.location && global.location.hostname) || '');
+      return host === 'localhost' || host === '127.0.0.1' || /\.local$/.test(host);
+    } catch (_err) {
+      return false;
+    }
+  }
+
+  // Records a connect() call that was short-circuited because a CONNECTING/OPEN
+  // socket already exists. In development we also capture a stack trace so the
+  // module that fired the redundant attempt can be identified.
+  function recordDuplicateConnect(reason) {
+    duplicateConnectCount += 1;
+    if (!isDevEnv()) return;
+    let stack = '';
+    try { stack = (new Error('duplicate connect attempt')).stack || ''; } catch (_err) {}
+    duplicateConnectStacks.push({ reason: String(reason || lastConnectReason || ''), stack, at: Date.now() });
+    if (duplicateConnectStacks.length > 20) duplicateConnectStacks.shift();
+    console.debug('[WS] duplicate connect attempt ignored (socket already live)', { reason: reason || lastConnectReason || '' });
+  }
+
+  // A server close with code 1001 + reason "Replaced by a newer connection"
+  // means a newer socket already owns this user server-side. Reconnecting here
+  // would start a reconnect war (the original storm), so we must NOT reconnect.
+  function wasReplacedByNewerConnection(event) {
+    if (!event) return false;
+    const reason = String(event.reason || '');
+    return event.code === 1001 && /replaced by a newer connection/i.test(reason);
+  }
+
   function sendPong(socket) {
     // Heartbeat reply lives at the transport layer so it cannot be starved by a
     // busy/guarded gameplay dispatcher. Never queue a pong on a closed socket and
@@ -56,9 +108,17 @@
     if (config.getReconnectTimer()) return;
     const timer = global.setTimeout(() => {
       config.setReconnectTimer(null);
+      reconnectAttempts += 1;
+      lastConnectReason = 'reconnect';
       // Reconnect happens in-place by re-opening the socket via AppWS/ws.js.
       // We never reload or navigate the page to recover the connection.
       console.info('[WS] reconnect in-place');
+      // Single-owner guard: never spawn a second socket if one is already
+      // CONNECTING/OPEN (e.g. a manual ensureConnected raced the timer).
+      const existing = config.getSocket();
+      if (existing && (existing.readyState === global.WebSocket.OPEN || existing.readyState === global.WebSocket.CONNECTING)) {
+        return;
+      }
       connectWS();
     }, 3000);
     config.setReconnectTimer(timer);
@@ -125,6 +185,7 @@
   }
 
   function connectWS() {
+    connectCallCount += 1;
     const sessionId = String(config.getSessionId() || '').trim();
     const userId = String(config.getUserId() || '').trim();
     if (!sessionId || !userId) {
@@ -135,18 +196,30 @@
     const proto = global.location.protocol === 'https:' ? 'wss' : 'ws';
     // Attach JWT token as query param when available (Part 5.1)
     const token = (global.sessionStorage && global.sessionStorage.getItem('dnd_token')) || '';
-    const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
     clearReconnectTimer();
     const priorSocket = config.getSocket();
     if (priorSocket) {
       if (priorSocket.readyState === global.WebSocket.OPEN || priorSocket.readyState === global.WebSocket.CONNECTING) {
+        // Single-owner contract: an existing CONNECTING/OPEN socket is reused.
+        recordDuplicateConnect(lastConnectReason);
         return priorSocket;
       }
       closeSocket(priorSocket, 1000, 'Replacing stale socket');
     }
 
+    // Each socket gets a local client_socket_id so the server can correlate
+    // replacements/closes with a specific browser-side socket in its logs.
+    const clientSocketId = newClientSocketId();
+    activeClientSocketId = clientSocketId;
+    const queryParts = [];
+    if (token) queryParts.push(`token=${encodeURIComponent(token)}`);
+    queryParts.push(`client_socket_id=${encodeURIComponent(clientSocketId)}`);
+    if (lastConnectReason) queryParts.push(`reason=${encodeURIComponent(lastConnectReason)}`);
+    const queryString = queryParts.length ? `?${queryParts.join('&')}` : '';
+
     if (global.__PLAY_BOOT_ROLE === 'player' && typeof global.__playerBootCheckpoint === 'function') global.__playerBootCheckpoint('PLAYER_BOOT_WS_CONNECTING');
-    const socket = new global.WebSocket(`${proto}://${global.location.host}/ws/${sessionId}/${userId}${tokenParam}`);
+    const socket = new global.WebSocket(`${proto}://${global.location.host}/ws/${sessionId}/${userId}${queryString}`);
+    try { socket.__clientSocketId = clientSocketId; } catch (_err) {}
     config.setSocket(socket);
 
     socket.onopen = () => {
@@ -154,6 +227,7 @@
         closeSocket(socket, 1000, 'Superseded socket on open');
         return;
       }
+      reconnectAttempts = 0;
       if (global.__PLAY_BOOT_ROLE === 'player') {
         global.__playerBootState = global.__playerBootState || {};
         global.__playerBootState.wsOpened = true;
@@ -166,7 +240,10 @@
 
     socket.onclose = (event) => {
       if (config.getSocket() !== socket) return;
+      lastCloseCode = event && event.code;
+      lastCloseReason = (event && event.reason) || '';
       config.setSocket(null);
+      if (socket.__clientSocketId) initialStateSentForSockets.delete(socket.__clientSocketId);
       // A websocket close never hard-refreshes the page. We log the reason and
       // recover by scheduling an in-place reconnect (except for explicit
       // session-expiry codes, which hand off to onCloseExpired).
@@ -174,10 +251,17 @@
         code: event && event.code,
         reason: (event && event.reason) || '',
         wasClean: !!(event && event.wasClean),
+        clientSocketId: socket.__clientSocketId || null,
       });
       config.onClose(event);
       if (event.code === 4001 || event.code === 4003 || event.code === 4004) {
         config.onCloseExpired(event);
+        return;
+      }
+      // Anti-storm: if the server replaced this socket with a newer connection,
+      // a newer owner already exists — reconnecting would just fight it.
+      if (wasReplacedByNewerConnection(event)) {
+        console.info('[WS] not reconnecting: socket was replaced by a newer connection');
         return;
       }
       scheduleReconnect();
@@ -233,9 +317,64 @@
     }
   }
 
+  // Single entry point every boot module/event should call to obtain a live
+  // socket. Idempotent: if a socket is already CONNECTING or OPEN it is reused
+  // (the existing socket is returned), so visibility/focus/boot-retry/state
+  // refresh can call this freely without ever creating a duplicate socket.
+  function ensureConnected(opts) {
+    const options = opts || {};
+    if (options.reason) lastConnectReason = String(options.reason);
+    const existing = config.getSocket();
+    if (existing && (existing.readyState === global.WebSocket.CONNECTING || existing.readyState === global.WebSocket.OPEN)) {
+      recordDuplicateConnect(lastConnectReason);
+      return existing;
+    }
+    return connectWS();
+  }
+
+  // Sends the initial-state requests exactly once per real socket open. The
+  // guard is keyed on the socket's client_socket_id, so repeated calls (from
+  // multiple boot modules, focus, or a redundant onOpen) only send once, while
+  // a genuine reconnect — which mints a new client_socket_id — sends again.
+  function requestInitialStateOnce(sendFn) {
+    const socket = config.getSocket();
+    if (!socket || socket.readyState !== global.WebSocket.OPEN) return false;
+    const id = socket.__clientSocketId || activeClientSocketId;
+    if (id && initialStateSentForSockets.has(id)) return false;
+    if (id) initialStateSentForSockets.add(id);
+    lastRequestStateSentAt = Date.now();
+    if (typeof sendFn === 'function') {
+      sendFn();
+    }
+    return true;
+  }
+
+  function debugWS() {
+    const socket = config.getSocket();
+    return {
+      role: config.getRole(),
+      sessionId: config.getSessionId(),
+      userId: config.getUserId(),
+      activeSocketId: activeClientSocketId,
+      readyState: socket ? socket.readyState : null,
+      reconnectAttempts,
+      lastConnectReason,
+      lastCloseCode,
+      lastCloseReason,
+      lastRequestStateSentAt,
+      connectCallCount,
+      duplicateConnectCount,
+      duplicateConnectStacks: duplicateConnectStacks.slice(),
+    };
+  }
+  global.__debugWS = debugWS;
+
   global.AppWS = {
     configure,
     connectWS,
+    ensureConnected,
+    requestInitialStateOnce,
+    debugWS,
     buildMessage,
     queueMessage,
     flushPendingMessages,
