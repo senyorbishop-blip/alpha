@@ -105,11 +105,23 @@ def normalize_fog_maps(raw: Any) -> dict:
         # cells) are not silently truncated. Cap at a generous upper bound to
         # prevent unbounded storage from malformed input.
         max_cells = max(4096, cols * rows)
-        normalized[str(ctx or "world")[:80] or "world"] = {
+        try:
+            revision = int(payload.get("revision", 0) or 0)
+        except Exception:
+            revision = 0
+        try:
+            updated_at = float(payload.get("updated_at", 0.0) or 0.0)
+        except Exception:
+            updated_at = 0.0
+        ctx_key = str(ctx or "world")[:80] or "world"
+        normalized[ctx_key] = {
             "enabled": bool(payload.get("enabled", False)),
             "cols": cols,
             "rows": rows,
             "cells": cells[:max_cells],
+            "revision": revision,
+            "updated_at": updated_at,
+            "map_context": ctx_key,
         }
     return normalized
 

@@ -7,6 +7,7 @@ from server.sessions.service import (
     join_session_response,
     lobby_response,
     session_authority_response,
+    session_fog_debug_response,
     session_info_response,
     session_invites_response,
     upload_token_image_response,
@@ -33,6 +34,11 @@ async def api_session_invites(session_id: str, user_id: str = ""):
 @router.get("/api/session/{session_id}/info")
 async def api_session_info(session_id: str):
     return session_info_response(session_id)
+
+
+@router.get("/api/session/{session_id}/debug/fog")
+async def api_session_fog_debug(session_id: str, user_id: str = ""):
+    return session_fog_debug_response(session_id, user_id)
 
 
 @router.get("/api/session/{session_id}/lobby")

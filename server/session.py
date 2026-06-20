@@ -54,12 +54,17 @@ def normalize_fog_maps(fog_maps: dict | None) -> dict:
         if not isinstance(cells, str):
             cells = "".join("1" if int(v or 0) else "0" for v in (cells or []))
         cells = (cells[:total]).ljust(total, "0")
+        try:
+            updated_at = float(entry.get("updated_at") or 0.0)
+        except Exception:
+            updated_at = 0.0
         normalized[ctx] = {
             "enabled": bool(entry.get("enabled", False)),
             "cols": cols,
             "rows": rows,
             "cells": cells,
             "revision": int(entry.get("revision") or 0),
+            "updated_at": updated_at,
             "map_context": ctx,
         }
     return normalized

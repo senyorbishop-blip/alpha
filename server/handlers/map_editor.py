@@ -1070,6 +1070,7 @@ async def handle_fog_toggle(payload: dict, session: Session, user: User):
         entry['enabled'] = not entry.get('enabled', False)
     entry['map_context'] = map_ctx
     entry['revision'] = int(entry.get('revision') or 0) + 1
+    entry['updated_at'] = time.time()
     total = entry['cols'] * entry['rows']
     if entry['enabled'] and len(entry.get('cells', '')) != total:
         entry['cells'] = '0' * total
@@ -1118,6 +1119,7 @@ async def handle_fog_paint(payload: dict, session: Session, user: User):
     entry['cells'] = ''.join(arr)
     entry['map_context'] = map_ctx
     entry['revision'] = int(entry.get('revision') or 0) + 1
+    entry['updated_at'] = time.time()
     await _broadcast_fog_to_visible_users(session, {
         'type': 'fog_update',
         'payload': {
