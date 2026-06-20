@@ -1,7 +1,7 @@
 (function (global) {
   'use strict';
 
-  const CORE_WS_VERSION = 'heartbeat-pong-v3';
+  const CORE_WS_VERSION = 'heartbeat-pong-v4';
   console.info('[WS] core loaded version', CORE_WS_VERSION);
 
   let config = {
@@ -56,6 +56,9 @@
     if (config.getReconnectTimer()) return;
     const timer = global.setTimeout(() => {
       config.setReconnectTimer(null);
+      // Reconnect happens in-place by re-opening the socket via AppWS/ws.js.
+      // We never reload or navigate the page to recover the connection.
+      console.info('[WS] reconnect in-place');
       connectWS();
     }, 3000);
     config.setReconnectTimer(timer);
@@ -158,6 +161,14 @@
     socket.onclose = (event) => {
       if (config.getSocket() !== socket) return;
       config.setSocket(null);
+      // A websocket close never hard-refreshes the page. We log the reason and
+      // recover by scheduling an in-place reconnect (except for explicit
+      // session-expiry codes, which hand off to onCloseExpired).
+      console.info('[WS] close reason', {
+        code: event && event.code,
+        reason: (event && event.reason) || '',
+        wasClean: !!(event && event.wasClean),
+      });
       config.onClose(event);
       if (event.code === 4001 || event.code === 4003 || event.code === 4004) {
         config.onCloseExpired(event);
