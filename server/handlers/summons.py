@@ -739,19 +739,40 @@ async def handle_summon_action_use(payload: dict, session: Session, user: User):
     damage_applied = 0
     target_token = (session.tokens or {}).get(target_id) if target_id else None
     if target_token and damage_info.get("formula"):
+        import random as _random
         import re as _re
-        formula = str(damage_info.get("formula") or "")
-        # Simple dice parser: NdM+K
-        m = _re.match(r'^(\d*)d(\d+)([+-]\d+)?$', formula.strip())
-        if m:
-            qty = int(m.group(1) or 1)
-            die = int(m.group(2))
-            mod = int(m.group(3) or 0)
-            import random as _random
-            total = sum(_random.randint(1, die) for _ in range(qty)) + mod
-            total = max(0, total)
-        else:
-            total = 0
+
+        formula = str(damage_info.get("formula") or "").strip()
+        pb_value = int(
+            actor.get("proficiencyBonus")
+            or actor.get("profBonus")
+            or ((actor.get("stats") or {}).get("proficiencyBonus") if isinstance(actor.get("stats"), dict) else 0)
+            or 0
+        )
+        normalized_formula = _re.sub(r"\bPB\b", str(pb_value), formula, flags=_re.IGNORECASE).replace(" ", "")
+        total = 0
+        sign = 1
+        for token_part in _re.findall(r"[+-]?[^+-]+", normalized_formula):
+            term = token_part.strip()
+            if not term:
+                continue
+            if term[0] == "+":
+                sign = 1
+                term = term[1:]
+            elif term[0] == "-":
+                sign = -1
+                term = term[1:]
+            match = _re.fullmatch(r"(\d*)d(\d+)", term)
+            if match:
+                qty = int(match.group(1) or 1)
+                die = int(match.group(2))
+                total += sign * sum(_random.randint(1, die) for _ in range(max(0, qty)))
+                continue
+            try:
+                total += sign * int(term or 0)
+            except Exception:
+                continue
+        total = max(0, total)
         damage_applied = total
         current_hp = int(getattr(target_token, "hp", 0) or 0)
         target_token.hp = max(0, current_hp - damage_applied)

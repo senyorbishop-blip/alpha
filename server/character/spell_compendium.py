@@ -765,6 +765,18 @@ def get_spell_by_id(spell_id: str) -> dict[str, Any] | None:
     return _clone(found) if found is not None else None
 
 
+def _canonical_spell_id(spell_id: str) -> str:
+    raw_id = str(spell_id or '').strip()
+    if not raw_id:
+        return ''
+    spell = get_spell_by_id(raw_id)
+    if isinstance(spell, dict):
+        canonical_id = str(spell.get('id') or '').strip()
+        if canonical_id:
+            return canonical_id
+    return raw_id
+
+
 def list_spells(*, level: int | None = None, school: str | None = None, cls: str | None = None, search: str | None = None) -> list[dict[str, Any]]:
     rows = get_spell_list()
     if level is not None:
@@ -1039,8 +1051,8 @@ def _infer_spell_ids_from_spellbook_entries(document: dict[str, Any], *, class_i
 
 def get_effective_document_spell_state(document: dict[str, Any], *, class_id: str, class_level: int) -> dict[str, list[str]]:
     spell_state = document.get('spellState') if isinstance(document.get('spellState'), dict) else {}
-    known = [str(v or '').strip() for v in (spell_state.get('known') or []) if str(v or '').strip()]
-    prepared = [str(v or '').strip() for v in (spell_state.get('prepared') or []) if str(v or '').strip()]
+    known = [_canonical_spell_id(str(v or '').strip()) for v in (spell_state.get('known') or []) if str(v or '').strip()]
+    prepared = [_canonical_spell_id(str(v or '').strip()) for v in (spell_state.get('prepared') or []) if str(v or '').strip()]
     grants = get_subclass_spell_grants(document, class_id=class_id, class_level=class_level)
     fallback_known, fallback_prepared = _infer_spell_ids_from_spellbook_entries(document, class_id=class_id, class_level=class_level)
     merged_known = _dedupe_preserve(list(known) + list(fallback_known))
@@ -1658,6 +1670,16 @@ def build_character_spell_manifest(document: dict[str, Any]) -> dict[str, Any]:
     classes = document.get('classes') if isinstance(document.get('classes'), list) else []
     abilities = document.get('abilities') if isinstance(document.get('abilities'), dict) else {}
     spell_state = document.get('spellState') if isinstance(document.get('spellState'), dict) else {}
+    raw_spell_aliases = [
+        str(v or '').strip()
+        for v in list(spell_state.get('known') or []) + list(spell_state.get('prepared') or [])
+        if str(v or '').strip()
+    ]
+    preferred_spell_ids: dict[str, str] = {}
+    for raw_spell_id in raw_spell_aliases:
+        canonical_id = _canonical_spell_id(raw_spell_id)
+        if canonical_id and canonical_id not in preferred_spell_ids:
+            preferred_spell_ids[canonical_id] = raw_spell_id
     context = build_multiclass_spell_context(document)
     source_map = context.get('classSourcesBySpell') if isinstance(context.get('classSourcesBySpell'), dict) else {}
     class_contexts = context.get('classes') if isinstance(context.get('classes'), list) else []
@@ -1713,7 +1735,11 @@ def build_character_spell_manifest(document: dict[str, Any]) -> dict[str, Any]:
             'sourceType': str(primary_source.get('sourceType') or '') if isinstance(primary_source, dict) else '',
             'sourceClasses': sources,
         }
-        cards.append(build_spell_card(spell, character_context=card_context))
+        card = build_spell_card(spell, character_context=card_context)
+        preferred_id = preferred_spell_ids.get(spell_id)
+        if preferred_id:
+            card['id'] = preferred_id
+        cards.append(card)
     entries = spell_state.get('spellbookEntries') if isinstance(spell_state.get('spellbookEntries'), list) else []
     existing_card_ids = {str(card.get('id') or '').strip().lower() for card in cards if isinstance(card, dict)}
     for entry in entries:

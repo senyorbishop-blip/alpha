@@ -441,7 +441,7 @@
     },
     "ranger-deft-explorer": {
       "summary": "Gain Expertise in one skill, +10 ft Speed (not in Heavy Armor), and you ignore Difficult Terrain.",
-      "description": "You are a master of wilderness travel. You gain the following benefits: Expertise \u2014 choose one skill you are proficient with; your proficiency bonus is doubled for ability checks using that skill. Roving Speed \u2014 your Speed increases by 10 feet while you are not wearing Heavy Armor. Tireless Traveler \u2014 you ignore Difficult Terrain.",
+      "description": "You are a master of wilderness travel. You gain the following benefits: Expertise — choose one skill you are proficient with; your proficiency bonus is doubled for ability checks using that skill. Roving Speed — your Speed increases by 10 feet while you are not wearing Heavy Armor. Tireless Traveler — you ignore Difficult Terrain.",
       "tags": [
         "exploration",
         "utility",
@@ -519,7 +519,7 @@
     },
     "ranger-tireless": {
       "summary": "As a Magic action, gain 1d8 + Wis mod Temporary HP (usable Wis mod times per Long Rest). Short Rests also reduce your Exhaustion level by 1.",
-      "description": "Primal forces sustain you through exhausting hunts. You gain two benefits: Temporary Hit Points \u2014 as a Magic action, you can give yourself a number of Temporary Hit Points equal to 1d8 plus your Wisdom modifier. You can use this action a number of times equal to your Wisdom modifier (minimum once), and you regain all expended uses when you finish a Long Rest. Shake it Off \u2014 whenever you finish a Short Rest, your Exhaustion level, if any, decreases by 1.",
+      "description": "Primal forces sustain you through exhausting hunts. You gain two benefits: Temporary Hit Points — as a Magic action, you can give yourself a number of Temporary Hit Points equal to 1d8 plus your Wisdom modifier. You can use this action a number of times equal to your Wisdom modifier (minimum once), and you regain all expended uses when you finish a Long Rest. Shake it Off — whenever you finish a Short Rest, your Exhaustion level, if any, decreases by 1. This makes you self-sufficient in extended wilderness encounters.",
       "tags": [
         "survival",
         "rest",
@@ -715,7 +715,7 @@
       ]
     },
     "ranger-epic-boon": {
-      "summary": "At level 19, instead of a standard ASI you gain an Epic Boon feat \u2014 a powerful endgame enhancement that can push an ability score above 20.",
+      "summary": "At level 19, instead of a standard ASI you gain an Epic Boon feat — a powerful endgame enhancement that can push an ability score above 20.",
       "description": "At 19th level, you gain an Epic Boon feat (see the Epic Boons chapter) or another feat of your choice for which you qualify. This replaces the standard Ability Score Improvement and may increase an ability score above the normal cap of 20.",
       "tags": [
         "epic",

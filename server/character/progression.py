@@ -196,6 +196,12 @@ def _build_spell_choices_preview(
     current_known = current_spell_state["known"]
     current_prepared = current_spell_state["prepared"]
     current_known_set = set(current_known)
+    spell_state = document.get("spellState") if isinstance(document.get("spellState"), dict) else {}
+    has_explicit_spell_state = bool(
+        list(spell_state.get("known") or [])
+        or list(spell_state.get("prepared") or [])
+        or list(spell_state.get("spellbookEntries") or [])
+    )
 
     primary_class = (document.get("classes") or [{}])[0] if isinstance(document.get("classes"), list) and document.get("classes") else {}
     subclass_id = str((primary_class or {}).get("subclassId") or "").strip().lower()
@@ -247,6 +253,9 @@ def _build_spell_choices_preview(
         levelled_required = max(0, next_spellbook_spells - len(known_spells))
     elif mode == "known" and next_limits.get("spellsKnown") is not None:
         levelled_required = max(0, int(next_limits.get("spellsKnown") or 0) - len(known_spells))
+    if not has_explicit_spell_state:
+        cantrip_required = 0
+        levelled_required = 0
 
     next_highest_spell_level = _highest_spell_level_from_limits(next_limits)
     current_highest_spell_level = _highest_spell_level_from_limits(current_limits)

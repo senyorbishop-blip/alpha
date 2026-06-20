@@ -58,7 +58,9 @@ def _normalize_list(values: Any) -> list[str]:
     return out
 
 
-def _parse_cleanup_policy(value: Any) -> list[str]:
+def _parse_cleanup_policy(value: Any) -> Any:
+    if isinstance(value, dict):
+        return copy.deepcopy(value)
     if isinstance(value, list):
         out: list[str] = []
         for row in value:
@@ -97,7 +99,7 @@ def _parse_int(value: Any, *, fallback: int = 0, minimum: int | None = None) -> 
 
 
 def _resolve_legacy_template_id(raw: dict[str, Any], source: dict[str, Any]) -> str:
-    return _safe_lower_str(
+    template_id = _safe_lower_str(
         raw.get("templateId")
         or raw.get("summonTemplateId")
         or raw.get("template")
@@ -106,10 +108,15 @@ def _resolve_legacy_template_id(raw: dict[str, Any], source: dict[str, Any]) -> 
         or raw.get("deploymentTemplateId")
         or raw.get("deployableTemplateId")
         or raw.get("legacyTemplateId")
-        or raw.get("id")
         or source.get("templateId")
         or source.get("summonTemplateId")
     )
+    if template_id:
+        return template_id
+    fallback = _safe_lower_str(raw.get("id"))
+    if fallback and isinstance(get_summon_template(fallback), dict):
+        return fallback
+    return ""
 
 
 def _resolve_legacy_group_id(raw: dict[str, Any], source: dict[str, Any], template_id: str) -> str:
@@ -250,6 +257,21 @@ def _normalize_active_summon_entry(raw: Any) -> tuple[dict[str, Any] | None, dic
         },
         "source": source,
     }
+    if raw.get("isCreature") is not None:
+        normalized["isCreature"] = _parse_bool(raw.get("isCreature"), fallback=entity_kind == "creature")
+    else:
+        normalized["isCreature"] = entity_kind == "creature"
+    if isinstance(raw.get("placementRules"), dict):
+        normalized["placementRules"] = copy.deepcopy(raw.get("placementRules"))
+    elif isinstance((raw.get("actor") or {}).get("placementRules") if isinstance(raw.get("actor"), dict) else None, dict):
+        normalized["placementRules"] = copy.deepcopy((raw.get("actor") or {}).get("placementRules"))
+    if isinstance(raw.get("interactionModel"), dict):
+        normalized["interactionModel"] = copy.deepcopy(raw.get("interactionModel"))
+    elif isinstance((raw.get("actor") or {}).get("interactionModel") if isinstance(raw.get("actor"), dict) else None, dict):
+        normalized["interactionModel"] = copy.deepcopy((raw.get("actor") or {}).get("interactionModel"))
+    action_surface_type = str(raw.get("actionSurfaceType") or "").strip()
+    if action_surface_type:
+        normalized["actionSurfaceType"] = action_surface_type
     if isinstance(raw.get("actor"), dict):
         normalized["actor"] = copy.deepcopy(raw.get("actor"))
     if raw.get("legacyMeta") is not None:

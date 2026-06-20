@@ -403,7 +403,9 @@
         "resource",
         "support",
         "combat"
-      ]
+      ],
+      "usage": "Spend 1 Swagger Die.",
+      "recovery": "Regain all Swagger Dice on Short or Long Rest."
     },
     "pirate-dirty-fighting": {
       "id": "pirate-dirty-fighting",
@@ -583,7 +585,9 @@
       "tags": [
         "resource",
         "progression"
-      ]
+      ],
+      "usage": "Spend 1 Swagger Die.",
+      "recovery": "Regain all Swagger Dice on Short or Long Rest."
     },
     "pirate-no-quarter": {
       "id": "pirate-no-quarter",
@@ -683,7 +687,9 @@
       "tags": [
         "resource",
         "progression"
-      ]
+      ],
+      "usage": "Spend 1 Swagger Die.",
+      "recovery": "Regain all Swagger Dice on Short or Long Rest."
     },
     "pirate-master-of-the-boarding-line": {
       "id": "pirate-master-of-the-boarding-line",
@@ -752,7 +758,9 @@
         "combat",
         "burst",
         "finisher"
-      ]
+      ],
+      "usage": "Spend 1 Swagger Die.",
+      "recovery": "Regain Swagger Dice on Short or Long Rest."
     },
     "pirate-indomitable-swagger": {
       "id": "pirate-indomitable-swagger",

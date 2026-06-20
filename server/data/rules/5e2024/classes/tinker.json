@@ -636,7 +636,9 @@
         "combat",
         "resource",
         "burst"
-      ]
+      ],
+      "usage": "Spend 1 use per activation.",
+      "recovery": "Regain uses on Short or Long Rest."
     },
     "tinker-modular-infusions": {
       "id": "tinker-modular-infusions",
@@ -668,12 +670,13 @@
       "trackUses": true,
       "summary": "When you or a creature within 30 ft is hit by an attack, use your Reaction and expend 1 Gadget Charge to reduce the damage, impose disadvantage on the roll, or blind the attacker.",
       "description": "Starting at 7th level, when you or a creature within 30 feet of you is hit by an attack, you can use your Reaction and expend 1 Gadget Charge to deploy a countermeasure. Choose one of the following effects:\n\n**Ablative Shield.** Reduce the triggering attack's damage by 1d10 + your Intelligence modifier (applied after the hit is confirmed).\n\n**Flash Charge.** The attacker must succeed on a Constitution saving throw (DC = 8 + your proficiency bonus + your Intelligence modifier) or be Blinded until the end of its next turn.\n\n**Intercept.** You impose disadvantage on the triggering attack roll. Resolve this before the attack deals damage; if it misses, no damage is dealt.",
-      "type": "reaction",
       "tags": [
         "reaction",
         "defense",
         "combat"
-      ]
+      ],
+      "usage": "Spend 1 use per reaction.",
+      "recovery": "Regain uses on Short or Long Rest."
     },
     "tinker-improved-rig": {
       "id": "tinker-improved-rig",
@@ -845,7 +848,10 @@
       "sourceKind": "class",
       "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
       "description": "When you reach 8th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
-      "tags": ["asi", "progression"]
+      "tags": [
+        "asi",
+        "progression"
+      ]
     },
     "tinker-ability-score-improvement-12": {
       "id": "tinker-ability-score-improvement-12",
@@ -858,7 +864,10 @@
       "sourceKind": "class",
       "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
       "description": "When you reach 12th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
-      "tags": ["asi", "progression"]
+      "tags": [
+        "asi",
+        "progression"
+      ]
     },
     "tinker-ability-score-improvement-16": {
       "id": "tinker-ability-score-improvement-16",
@@ -871,7 +880,10 @@
       "sourceKind": "class",
       "summary": "Increase one ability score by 2, or two ability scores by 1 each. You can't raise a score above 20 with this feature. You may instead take a Feat.",
       "description": "When you reach 16th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feature.\n\nIf your DM allows the use of feats, you may instead take a feat.",
-      "tags": ["asi", "progression"]
+      "tags": [
+        "asi",
+        "progression"
+      ]
     },
     "tinker-subclass-feature-15": {
       "id": "tinker-subclass-feature-15",
@@ -884,7 +896,10 @@
       "sourceKind": "class",
       "summary": "At 15th level, your Field Specialization grants its final feature.",
       "description": "At 15th level, your chosen Field Specialization grants you its final and most powerful feature. Consult your subclass for the specific benefit.",
-      "tags": ["subclass", "progression"]
+      "tags": [
+        "subclass",
+        "progression"
+      ]
     }
   },
   "levelUnlockIds": {

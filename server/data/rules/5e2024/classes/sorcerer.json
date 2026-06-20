@@ -508,58 +508,6 @@
     }
   ],
   "featureDefinitions": {
-    "metamagicOptions": [
-      {
-        "id": "careful-spell",
-        "name": "Careful Spell",
-        "cost": "1"
-      },
-      {
-        "id": "distant-spell",
-        "name": "Distant Spell",
-        "cost": "1"
-      },
-      {
-        "id": "empowered-spell",
-        "name": "Empowered Spell",
-        "cost": "1"
-      },
-      {
-        "id": "extended-spell",
-        "name": "Extended Spell",
-        "cost": "1"
-      },
-      {
-        "id": "heightened-spell",
-        "name": "Heightened Spell",
-        "cost": "3"
-      },
-      {
-        "id": "quickened-spell",
-        "name": "Quickened Spell",
-        "cost": "2"
-      },
-      {
-        "id": "seeking-spell",
-        "name": "Seeking Spell",
-        "cost": "1"
-      },
-      {
-        "id": "subtle-spell",
-        "name": "Subtle Spell",
-        "cost": "1"
-      },
-      {
-        "id": "transmuted-spell",
-        "name": "Transmuted Spell",
-        "cost": "1"
-      },
-      {
-        "id": "twinned-spell",
-        "name": "Twinned Spell",
-        "cost": "1+ per spell level"
-      }
-    ],
     "sorcerer-l1-1": {
       "name": "Innate Sorcery",
       "displayName": "Innate Sorcery",
@@ -1258,5 +1206,57 @@
     "secondaryReason": "protects your low HP and Concentration on key spells",
     "avoidDump": "Dexterity",
     "avoidDumpReason": "Dexterity improves AC and critical saves against area effects"
-  }
+  },
+  "metamagicOptionsList": [
+    {
+      "id": "careful-spell",
+      "name": "Careful Spell",
+      "cost": "1"
+    },
+    {
+      "id": "distant-spell",
+      "name": "Distant Spell",
+      "cost": "1"
+    },
+    {
+      "id": "empowered-spell",
+      "name": "Empowered Spell",
+      "cost": "1"
+    },
+    {
+      "id": "extended-spell",
+      "name": "Extended Spell",
+      "cost": "1"
+    },
+    {
+      "id": "heightened-spell",
+      "name": "Heightened Spell",
+      "cost": "3"
+    },
+    {
+      "id": "quickened-spell",
+      "name": "Quickened Spell",
+      "cost": "2"
+    },
+    {
+      "id": "seeking-spell",
+      "name": "Seeking Spell",
+      "cost": "1"
+    },
+    {
+      "id": "subtle-spell",
+      "name": "Subtle Spell",
+      "cost": "1"
+    },
+    {
+      "id": "transmuted-spell",
+      "name": "Transmuted Spell",
+      "cost": "1"
+    },
+    {
+      "id": "twinned-spell",
+      "name": "Twinned Spell",
+      "cost": "1+ per spell level"
+    }
+  ]
 }

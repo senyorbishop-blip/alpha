@@ -50199,7 +50199,7 @@ async function performCombatQuickWeaponAttack(actionOrId, mode = 'base') {
     });
 
     const attackId = card.id || card.name;
-    _consumeActionEconomy('attack_within_action', { action_id: attackId });
+    _consumeActionEconomy('attack_within_action', { action_id: card.id || card.name });
     if (window.CombatQuickSelectors && typeof window.CombatQuickSelectors.markUsed === 'function') {
       window.CombatQuickSelectors.markUsed(String(attackId || ''));
     }

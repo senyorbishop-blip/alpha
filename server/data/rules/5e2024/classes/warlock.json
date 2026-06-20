@@ -169,7 +169,7 @@
       "minimumLevel": 9
     }
   ],
-  "classDescription": "A short-rest Pact Magic caster who recovers spell slots every short rest \u2014 supplemented by Eldritch Invocations that permanently expand at-will abilities, and a patron subclass that reshapes the whole spell and feature identity.",
+  "classDescription": "A short-rest Pact Magic caster who recovers spell slots every short rest — supplemented by Eldritch Invocations that permanently expand at-will abilities, and a patron subclass that reshapes the whole spell and feature identity.",
   "roleIdentity": "Short-rest caster with high-impact invocations and at-will tricks.",
   "progressionTable": [
     {
@@ -712,7 +712,10 @@
         "roleplay",
         "identity",
         "pact"
-      ]
+      ],
+      "id": "warlock-contact-patron",
+      "name": "Contact Patron",
+      "displayName": "Contact Patron"
     },
     "warlock-hex-master": {
       "summary": "You can cast Hex without expending a spell slot, and it no longer requires Concentration. Once cast this way, Hex lasts until dispelled or you finish a Long Rest.",
@@ -721,7 +724,10 @@
         "capstone",
         "curse",
         "combat"
-      ]
+      ],
+      "id": "warlock-hex-master",
+      "name": "Hex Master",
+      "displayName": "Hex Master"
     },
     "warlock-eldritch-master": {
       "summary": "As a Magic action, spend 1 minute in earnest entreaty to your patron to regain all expended Pact Magic spell slots. Usable once per Long Rest.",
@@ -923,7 +929,10 @@
           "name": "Lifedrinker",
           "description": "High-level blade boon finisher for weapon attacks."
         }
-      ]
+      ],
+      "id": "warlock-eldritch-invocation-choice-l3",
+      "name": "Eldritch Invocation",
+      "displayName": "Eldritch Invocation"
     },
     "warlock-eldritch-invocation-choice-l5": {
       "summary": "Choose one additional Eldritch Invocation at level 5.",
@@ -959,7 +968,10 @@
           "name": "Lifedrinker",
           "description": "High-level blade boon finisher for weapon attacks."
         }
-      ]
+      ],
+      "id": "warlock-eldritch-invocation-choice-l5",
+      "name": "Eldritch Invocation",
+      "displayName": "Eldritch Invocation"
     },
     "warlock-eldritch-invocation-choice-l7": {
       "summary": "Choose one additional Eldritch Invocation at level 7.",
@@ -995,7 +1007,10 @@
           "name": "Lifedrinker",
           "description": "High-level blade boon finisher for weapon attacks."
         }
-      ]
+      ],
+      "id": "warlock-eldritch-invocation-choice-l7",
+      "name": "Eldritch Invocation",
+      "displayName": "Eldritch Invocation"
     },
     "warlock-eldritch-invocation-choice-l9": {
       "summary": "Choose one additional Eldritch Invocation at level 9.",
@@ -1031,7 +1046,10 @@
           "name": "Lifedrinker",
           "description": "High-level blade boon finisher for weapon attacks."
         }
-      ]
+      ],
+      "id": "warlock-eldritch-invocation-choice-l9",
+      "name": "Eldritch Invocation",
+      "displayName": "Eldritch Invocation"
     },
     "warlock-eldritch-invocation-choice-l11": {
       "summary": "Choose one additional Eldritch Invocation at level 11.",
@@ -1067,7 +1085,10 @@
           "name": "Lifedrinker",
           "description": "High-level blade boon finisher for weapon attacks."
         }
-      ]
+      ],
+      "id": "warlock-eldritch-invocation-choice-l11",
+      "name": "Eldritch Invocation",
+      "displayName": "Eldritch Invocation"
     },
     "warlock-eldritch-invocation-choice-l13": {
       "summary": "Choose one additional Eldritch Invocation at level 13.",
@@ -1103,7 +1124,10 @@
           "name": "Lifedrinker",
           "description": "High-level blade boon finisher for weapon attacks."
         }
-      ]
+      ],
+      "id": "warlock-eldritch-invocation-choice-l13",
+      "name": "Eldritch Invocation",
+      "displayName": "Eldritch Invocation"
     },
     "warlock-eldritch-invocation-choice-l15": {
       "summary": "Choose one additional Eldritch Invocation at level 15.",
@@ -1139,7 +1163,10 @@
           "name": "Lifedrinker",
           "description": "High-level blade boon finisher for weapon attacks."
         }
-      ]
+      ],
+      "id": "warlock-eldritch-invocation-choice-l15",
+      "name": "Eldritch Invocation",
+      "displayName": "Eldritch Invocation"
     },
     "warlock-eldritch-invocation-choice-l17": {
       "summary": "Choose one additional Eldritch Invocation at level 17.",
@@ -1175,7 +1202,10 @@
           "name": "Lifedrinker",
           "description": "High-level blade boon finisher for weapon attacks."
         }
-      ]
+      ],
+      "id": "warlock-eldritch-invocation-choice-l17",
+      "name": "Eldritch Invocation",
+      "displayName": "Eldritch Invocation"
     },
     "warlock-eldritch-invocation-choice-l19": {
       "summary": "Choose one additional Eldritch Invocation at level 19.",
@@ -1211,7 +1241,10 @@
           "name": "Lifedrinker",
           "description": "High-level blade boon finisher for weapon attacks."
         }
-      ]
+      ],
+      "id": "warlock-eldritch-invocation-choice-l19",
+      "name": "Eldritch Invocation",
+      "displayName": "Eldritch Invocation"
     }
   },
   "levelUnlockIds": {

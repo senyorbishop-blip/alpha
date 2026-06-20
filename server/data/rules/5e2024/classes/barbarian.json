@@ -746,8 +746,8 @@
       "duration": "",
       "save": "",
       "trigger": "",
-      "usage": "",
-      "recovery": "",
+      "usage": "Spend 1 Rage charge.",
+      "recovery": "Refreshes when you Rage or finish a Long Rest.",
       "effect": "",
       "dice": ""
     },
@@ -867,8 +867,8 @@
       "duration": "",
       "save": "",
       "trigger": "",
-      "usage": "",
-      "recovery": "",
+      "usage": "Triggered when reduced to 0 HP while raging.",
+      "recovery": "Refreshes on Long Rest or new Rage.",
       "effect": "",
       "dice": ""
     },
@@ -988,8 +988,8 @@
       "duration": "",
       "save": "",
       "trigger": "",
-      "usage": "",
-      "recovery": "",
+      "usage": "Automatic while raging.",
+      "recovery": "Refreshes when Rage ends or on Long Rest.",
       "effect": "",
       "dice": ""
     },
@@ -1080,8 +1080,8 @@
       "duration": "",
       "save": "",
       "trigger": "",
-      "usage": "",
-      "recovery": "",
+      "usage": "Triggered on Strength check below Strength score.",
+      "recovery": "Refreshes on Long Rest.",
       "effect": "",
       "dice": ""
     },

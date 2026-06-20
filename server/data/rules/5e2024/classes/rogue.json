@@ -563,7 +563,7 @@
     },
     "rogue-sneak-attack-l17": {
       "summary": "Your Sneak Attack damage increases to 9d6.",
-      "description": "Your Sneak Attack damage is now 9d6. Once per turn, when you hit with a Finesse or ranged weapon attack and you have Advantage on the roll, or when a non-incapacitated ally is within 5 feet of the target and you don't have Disadvantage, you deal an extra 9d6 damage.",
+      "description": "Your Sneak Attack damage is now 9d6. Once per turn, when you hit with a Finesse or ranged weapon attack and you have Advantage on the roll, or when a non-incapacitated ally is within 5 feet of the target and you don't have Disadvantage, you deal an extra 9d6 damage. Your precision with precision strikes and tactical positioning ensures the damage hits where it counts.",
       "effect": "Once per turn when you hit with a Finesse or ranged weapon and have Advantage (or an adjacent ally with no Disadvantage), add your current Sneak Attack dice.",
       "tags": [
         "combat",

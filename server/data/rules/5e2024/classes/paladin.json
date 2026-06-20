@@ -10,7 +10,7 @@
     "wis",
     "cha"
   ],
-  "subclassLevel": 3,
+  "subclassLevel": 2,
   "subclassDisplayName": "Sacred Oath",
   "armorProficiencies": [
     "light",
@@ -164,7 +164,8 @@
       "proficiencyBonus": 2,
       "features": [
         "Fighting Style",
-        "Channel Divinity (1 use)"
+        "Channel Divinity (1 use)",
+        "Sacred Oath (Subclass)"
       ],
       "classMechanics": {
         "layOnHandsPool": 10,
@@ -175,7 +176,8 @@
       },
       "unlockIds": [
         "paladin-fighting-style",
-        "paladin-channel-divinity-1-use"
+        "paladin-channel-divinity-1-use",
+        "paladin-sacred-oath-subclass"
       ]
     },
     {
@@ -375,7 +377,7 @@
         "channelDivinityUses": 2
       },
       "unlockIds": [
-        "paladin-4th-level-spell-slots"
+        "paladin-4th-tier-spell-slots"
       ]
     },
     {
@@ -640,7 +642,10 @@
         "aura",
         "support",
         "upgrade"
-      ]
+      ],
+      "id": "paladin-aura-expansion",
+      "name": "Aura Expansion",
+      "displayName": "Aura Expansion"
     },
     "paladin-epic-boon": {
       "summary": "Gain an Epic Boon feat — a powerful endgame reward available only at level 19. You also increase one ability score by 1 (up to a maximum of 30) as part of this feat.",
@@ -718,7 +723,7 @@
         "subclass"
       ]
     },
-    "paladin-4th-level-spell-slots": {
+    "paladin-4th-tier-spell-slots": {
       "summary": "At level 13, you gain your first 4th-level spell slots (1 slot, increasing to 2 at level 15). These allow you to cast 4th-level Paladin spells and deal up to 5d8 Radiant damage with Divine Smite.",
       "description": "At level 13, the half-caster progression grants your first 4th-level spell slot (you have 1 slot; you gain a second at level 15). This unlocks:\n\n- 4th-level prepared spells: e.g., Banishment, Death Ward, Find Greater Steed, Freedom of Movement, Staggering Smite.\n- Divine Smite ceiling: A 4th-level slot deals 5d8 Radiant damage (the maximum), or 6d8 against a Fiend or Undead.\n\n4th-level slots are your most powerful smite fuel and highest-impact spell options simultaneously, so managing them carefully during long adventuring days is crucial.",
       "tags": [
@@ -811,7 +816,7 @@
       "paladin-ability-score-improvement"
     ],
     "13": [
-      "paladin-4th-level-spell-slots"
+      "paladin-4th-tier-spell-slots"
     ],
     "14": [
       "paladin-restoring-touch"
@@ -932,7 +937,7 @@
       "level": 13,
       "summary": "4th-level Spell Slots.",
       "unlockIds": [
-        "paladin-4th-level-spell-slots"
+        "paladin-4th-tier-spell-slots"
       ]
     },
     {

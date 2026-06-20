@@ -2723,6 +2723,18 @@
           "uses_item_dc": true,
           "uses_item_attack_bonus": false,
           "source": "Thunder Mage Quarterstaff, +3"
+        },
+        {
+          "id": "thunderwave",
+          "spell_id": "thunderwave",
+          "name": "Thunderwave",
+          "charge_cost": 1,
+          "charge_cost_min": 1,
+          "charge_cost_max": 10,
+          "cast_level": 1,
+          "uses_item_dc": true,
+          "uses_item_attack_bonus": false,
+          "source": "Thunder Mage Quarterstaff, +3"
         }
       ],
       "granted_actions": [

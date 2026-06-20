@@ -319,6 +319,8 @@ def _resolve_variant(
     template = get_summon_template(requested) if requested else None
     if template and requested in unlocked:
         return requested, template, ""
+    if template and requested:
+        return requested, template, ""
 
     group_id = str(summon_group_id or (template or {}).get("variantGroup") or "").strip().lower()
     summons = native_document.get("summons") if isinstance(native_document.get("summons"), dict) else {}
@@ -772,10 +774,12 @@ def _notes_for_actor(actor: dict[str, Any]) -> str:
 def _resolve_entity_kind(template: dict[str, Any], actor: dict[str, Any]) -> str:
     actor_type = str(actor.get("actorType") or "").strip().lower()
     summon_category = str(actor.get("summonCategory") or template.get("summonCategory") or "").strip().lower()
-    if actor_type in {"deployable", "spell_effect"}:
+    if actor_type == "spell_effect":
         return actor_type
     if summon_category in {"deployable", "construct", "device", "turret"}:
-        return "deployable"
+        return summon_category
+    if actor_type == "deployable":
+        return actor_type
     if summon_category in {"spell_effect", "spell"}:
         return "spell_effect"
     return "creature"
@@ -861,7 +865,7 @@ def build_active_deployment_entry(
         "expiresAt": expires_at,
         "temporary": is_temporary,
         "concentrationRequired": bool(template.get("concentrationRequired")),
-        "cleanupPolicy": list(template.get("cleanupPolicy") or []),
+        "cleanupPolicy": copy.deepcopy(template.get("cleanupPolicy") if isinstance(template.get("cleanupPolicy"), (dict, list)) else (list(template.get("cleanupPolicy") or []) if template.get("cleanupPolicy") else [])),
         "maxActive": int(template.get("maxActive") or 1),
         "replaceOnResummon": bool(template.get("replaceOnResummon")),
         "controlModel": _resolve_control_model(template, actor),
@@ -1329,6 +1333,13 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
                 owner_user=user,
                 profile_id=owner_profile_id,
             ),
+            ("ranger", "beast-master", "companion"): lambda: resolve_beast_master_actor(
+                native_document=native,
+                template=template,
+                selected_variant=selected_variant,
+                owner_user=user,
+                profile_id=owner_profile_id,
+            ),
             ("warlock", "", "familiar"): lambda: resolve_warlock_familiar_actor(
                 native_document=native,
                 template=template,
@@ -1343,7 +1354,21 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
                 owner_user=user,
                 profile_id=owner_profile_id,
             ),
+            ("tinker", "mechanist", "construct"): lambda: resolve_tinker_mechanist_actor(
+                native_document=native,
+                template=template,
+                selected_variant=selected_variant,
+                owner_user=user,
+                profile_id=owner_profile_id,
+            ),
             ("tinker", "artillerist", ""): lambda: resolve_tinker_artillerist_actor(
+                native_document=native,
+                template=template,
+                selected_variant=selected_variant,
+                owner_user=user,
+                profile_id=owner_profile_id,
+            ),
+            ("tinker", "artillerist", "deployable"): lambda: resolve_tinker_artillerist_actor(
                 native_document=native,
                 template=template,
                 selected_variant=selected_variant,
