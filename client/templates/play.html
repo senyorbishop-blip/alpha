@@ -11201,7 +11201,7 @@ Shortbow — +5 to hit, 1d6+3 piercing"></textarea>
 <script src="/static/js/core/runtime_bridge.js"></script>
 <!-- Runtime ownership boundary: boot_shell is the ordered startup-sequencing owner. -->
 <script src="/static/js/core/boot_shell.js"></script>
-<script src="/static/js/core/ws.js?v=heartbeat-pong-v3"></script>
+<script src="/static/js/core/ws.js?v=heartbeat-pong-v4"></script>
 <!-- Stage 1 runtime path: AppMessageDispatch is the live first-hop handoff into handleLegacyMessage(); AppMessageHandlers is intentionally not loaded here. -->
 <script src="/static/js/core/message_dispatch.js"></script>
 <!-- Stage 4 ownership: render/boot.js is the live canvas bootstrap owner; play.html keeps drawLoop()/drawFrame() and interaction handlers via compatibility wrappers. -->
@@ -11392,8 +11392,35 @@ function _redirectToResolvedAuthority(reason = '') {
   const currentUserId = String(USER_ID || '').trim();
   const currentRole = String(ROLE || '').trim().toLowerCase();
   if (resolvedUserId === currentUserId && resolvedRole === currentRole) return false;
+
+  // NAV GUARD: authority/role drift must NOT hard-reload /play while we are
+  // already on /play for the same session + user. A location.replace() here
+  // tears down the live websocket and resets the combat tab and fog display.
+  // Identity drift is reconciled in-place over the socket (state_sync /
+  // authority refresh), so the only navigation we still allow is a genuine
+  // session OR user change. We compare against the *URL* params (not the
+  // page-load globals) so a role-only correction never triggers a reload loop.
+  const onPlay = String(window.location.pathname || '') === '/play';
+  const urlParams = new URLSearchParams(String(window.location.search || ''));
+  const urlSessionId = String(urlParams.get('session_id') || SESSION_ID || '').trim();
+  const urlUserId = String(urlParams.get('user_id') || currentUserId || '').trim();
+  const targetSessionId = String(SESSION_ID || '').trim();
+  if (onPlay && urlSessionId === targetSessionId && urlUserId === resolvedUserId) {
+    console.info('[NAV GUARD] blocked duplicate /play reload', {
+      reason,
+      sessionId: targetSessionId,
+      userId: resolvedUserId,
+      urlRole: currentRole,
+      resolvedRole,
+    });
+    // Refresh the on-screen authority/role state without navigating.
+    refreshRoleBadge();
+    console.info('[AUTH] authority refreshed without navigation', { reason, resolvedRole, resolvedUserId });
+    return false;
+  }
+
   const next = new URL(window.location.href);
-  next.searchParams.set('session_id', String(SESSION_ID || '').trim());
+  next.searchParams.set('session_id', targetSessionId);
   next.searchParams.set('user_id', resolvedUserId);
   next.searchParams.set('role', resolvedRole);
   next.searchParams.set('name', String(NAME || '').trim());
