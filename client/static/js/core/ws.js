@@ -145,6 +145,7 @@
       closeSocket(priorSocket, 1000, 'Replacing stale socket');
     }
 
+    if (global.__PLAY_BOOT_ROLE === 'player' && typeof global.__playerBootCheckpoint === 'function') global.__playerBootCheckpoint('PLAYER_BOOT_WS_CONNECTING');
     const socket = new global.WebSocket(`${proto}://${global.location.host}/ws/${sessionId}/${userId}${tokenParam}`);
     config.setSocket(socket);
 
@@ -152,6 +153,11 @@
       if (config.getSocket() !== socket) {
         closeSocket(socket, 1000, 'Superseded socket on open');
         return;
+      }
+      if (global.__PLAY_BOOT_ROLE === 'player') {
+        global.__playerBootState = global.__playerBootState || {};
+        global.__playerBootState.wsOpened = true;
+        if (typeof global.__playerBootCheckpoint === 'function') global.__playerBootCheckpoint('PLAYER_BOOT_WS_OPEN');
       }
       config.onOpen();
       clearReconnectTimer();
@@ -177,8 +183,9 @@
       scheduleReconnect();
     };
 
-    socket.onerror = (event) => {
+    socket.onerror = () => {
       if (config.getSocket() !== socket) return;
+      const event = null;
       console.warn('[WS] error', event && event.message ? event.message : event);
       socket.close();
     };

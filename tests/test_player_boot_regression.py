@@ -161,3 +161,78 @@ Promise.resolve().then(() => {
 '''
     result = subprocess.check_output(["node", "-e", script], cwd=ROOT, text=True, timeout=30)
     assert result.strip().endswith('{"marked":0,"saved":0,"timers":0,"depth":0}')
+
+
+from fastapi import FastAPI
+from fastapi.templating import Jinja2Templates
+from fastapi.testclient import TestClient
+from server.pages.routes import build_router
+
+
+def _rendered_play(role="player", extra=""):
+    app = FastAPI()
+    templates = Jinja2Templates(directory=str(ROOT / "client/templates"))
+    app.include_router(build_router(templates, "", 8000))
+    with TestClient(app) as client:
+        resp = client.get(f"/play?session_id=s1&user_id=u1&role={role}{extra}")
+    assert resp.status_code == 200
+    return resp.text
+
+
+def _script_srcs(html):
+    return re.findall(r'<script[^>]+src="([^"]+)"', html)
+
+
+def test_rendered_player_manifest_excludes_dm_editor_audio_dice_preloads():
+    html = _rendered_play("player")
+    forbidden = [
+        "dm_assistant.js", "cartographer.js", "editor_panel.js", "asset_library.js",
+        "map-library.js", "tts_client.js", "ambient_engine.js", "sfx_engine.js",
+        "dice/physics", "dice/geometries", "dice3d.js", "editor/serialization.js",
+        "editor/terrain_manifest.js", "editor/asset_initializer.js", "editor/asset_renderer.js",
+        "editor/terrain_renderer.js",
+    ]
+    player_scripts = "\n".join(_script_srcs(html))
+    for needle in forbidden:
+        assert needle not in player_scripts
+    assert "/static/js/ui/player_shell.js" in html
+    assert "PLAYER_BOOT_HTML_LOADED" in html
+    assert "Player boot failed before scripts loaded." in html
+
+
+def test_rendered_dm_manifest_keeps_dm_editor_tools():
+    html = _rendered_play("dm")
+    for needle in ["/static/js/editor/serialization.js", "/static/js/ui/editor_panel.js", "/static/js/ui/asset_library.js", "/static/js/ui/dm_assistant.js", "/static/js/cartographer.js"]:
+        assert needle in html
+
+
+def test_rendered_player_response_size_sane_and_no_full_char_profiles_embed():
+    html = _rendered_play("player")
+    assert len(html.encode("utf-8")) < 2_500_000
+    assert "field=char_profiles" not in html
+    assert "4555336" not in html
+
+
+def test_returning_player_uses_player_manifest_not_dm_manifest():
+    html = _rendered_play("player", "&returning=1")
+    assert "/static/js/ui/player_shell.js" in html
+    assert "/static/js/ui/dm_assistant.js" not in html
+    assert "/static/js/editor/serialization.js" not in html
+
+
+def test_player_manifest_first_external_js_is_core_boot_and_no_forbidden_preload_paths():
+    html = _rendered_play("player")
+    scripts = _script_srcs(html)
+    assert scripts[0] == "/static/js/core/diagnostics.js"
+    assert scripts[:7] == [
+        "/static/js/core/diagnostics.js",
+        "/static/js/core/csrf.js",
+        "/static/js/state/store.js",
+        "/static/js/core/runtime_bridge.js",
+        "/static/js/core/boot_shell.js",
+        "/static/js/core/ws.js?v=heartbeat-pong-v4",
+        "/static/js/core/message_dispatch.js",
+    ]
+    forbidden = ["/api/assistant/status", "/api/tts/voices", "/api/tts/warmup-phrases", "/static/assets/audio/manifest.json", "battle_loop_20260328.wav", "clack"]
+    for needle in forbidden:
+        assert needle not in html

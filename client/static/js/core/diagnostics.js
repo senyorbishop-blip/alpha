@@ -1,3 +1,4 @@
+(function(){try{if(window.__PLAY_BOOT_ROLE==='player'){window.__playerBootState=window.__playerBootState||{};window.__playerBootState.scriptsStarted=true;if(window.__playerBootCheckpoint)window.__playerBootCheckpoint('PLAYER_BOOT_FIRST_SCRIPT');}}catch(_e){}})();
 (function (global) {
   'use strict';
 
