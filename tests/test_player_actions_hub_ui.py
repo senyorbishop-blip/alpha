@@ -11,7 +11,7 @@ def test_play_page_contains_player_actions_hub_markup_and_renderer():
     src = _read('client/templates/play.html')
     assert 'id="player-actions-hub"' in src
     assert 'function renderPlayerActionsHub()' in src
-    assert 'function playerUseAction(source, id)' in src
+    assert 'function playerUseAction(source, id, options)' in src
 
 
 def test_player_actions_hub_includes_requested_categories_and_spell_markers():
@@ -28,7 +28,12 @@ def test_player_actions_hub_is_mobile_first():
 
 
 def test_player_weapon_action_execution_accepts_runtime_id_name_and_slug_fallbacks():
+    # The weapon slug-fallback was refactored out of playerUseAction into the
+    # shared findCombatWeapon resolver, which still accepts a raw id, a
+    # case-insensitive name, or a slug.
     src = _read('client/templates/play.html')
-    assert "const normalizedId = rawId.toLowerCase();" in src
-    assert "String(c.name || '').trim().toLowerCase() === normalizedId" in src
-    assert "('attack-' + slug) === normalizedId" in src
+    assert "function findCombatWeapon(input)" in src
+    assert "const rawLower = raw.toLowerCase();" in src
+    assert "const rawSlug = _combatQuickSlug(raw);" in src
+    assert "keys.map(k => k.toLowerCase()).includes(rawLower)" in src
+    assert "slugs.includes(rawSlug)" in src
