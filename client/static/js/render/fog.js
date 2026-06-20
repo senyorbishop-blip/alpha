@@ -4,6 +4,14 @@
   //   and fog overlay rendering through env/state compatibility wrappers
   // - deliberately does NOT own gameplay collections or the broader draw loop,
   //   which still live in play.html during the staged migration
+  function _debugFogPlayer(message, data, env) {
+    const flag = (env && env.DEBUG_PLAYER_FOG) || (typeof window !== 'undefined' && window.DEBUG_PLAYER_FOG);
+    if (flag && typeof console !== 'undefined' && console.debug) console.debug('[fog/player] ' + message, data || {});
+  }
+  function _payloadMapCtx(p, env) {
+    if (!p || typeof p !== 'object') return _resolveAuthoritativeMapContext(env);
+    return p.map_ctx || p.map_context || p.dm_map_context || p.current_map || p.currentMap || _resolveAuthoritativeMapContext(env);
+  }
   function _normalizeMapCtx(value, env) {
     const raw = String(value || 'world').trim() || 'world';
     if (raw !== '__local__') return raw;
@@ -159,6 +167,7 @@
   function drawFogOverlay(state, env, W, H) {
     const bgImage = env.activeBackgroundImage();
     if (!state.fogCells || !bgImage) return;
+    _debugFogPlayer('draw overlay enabled active_ctx...', { enabled: state.fogEnabled, active_ctx: state.fogMapCtx, cols: state.fogCols, rows: state.fogRows }, env);
     const mw = bgImage.naturalWidth;
     const mh = bgImage.naturalHeight;
     const ctx = env.ctx;
@@ -316,6 +325,7 @@
   }
   function fogApplyState(state, env, p) {
     if (p.fog_maps) {
+      _debugFogPlayer('state_sync map_ctx...', { map_ctx: _resolveAuthoritativeMapContext(env), maps: Object.keys(p.fog_maps || {}) }, env);
       state.fogMaps = {};
       Object.entries(p.fog_maps).forEach(([ctx, entry]) => {
         const total = (entry.cols || 64) * (entry.rows || 64);
@@ -325,21 +335,23 @@
         state.fogMaps[ctx] = { enabled: entry.enabled || false, cols: entry.cols || 64, rows: entry.rows || 64, cells: arr };
       });
     }
-    if (p.map_ctx !== undefined) {
+    const stateMapCtx = _payloadMapCtx(p, env);
+    if (p.map_ctx !== undefined || p.map_context !== undefined || p.dm_map_context !== undefined || p.current_map !== undefined || p.fog_cells !== undefined) {
       const total = (p.fog_cols || 64) * (p.fog_rows || 64);
       const arr = new Uint8Array(total);
       const str = p.fog_cells || '';
       for (let i = 0; i < Math.min(str.length, total); i++) arr[i] = str[i] === '1' ? 1 : 0;
-      const mapCtx = _normalizeMapCtx(p.map_ctx, env);
-      state.fogMaps[mapCtx] = { enabled: p.fog_enabled || false, cols: p.fog_cols || 64, rows: p.fog_rows || 64, cells: arr };
+      const mapCtx = _normalizeMapCtx(stateMapCtx, env);
+      state.fogMaps[mapCtx] = { enabled: p.fog_enabled !== undefined ? !!p.fog_enabled : true, cols: p.fog_cols || 64, rows: p.fog_rows || 64, cells: arr };
+      _debugFogPlayer('fog_state map_ctx enabled cols rows revealed_count', { map_ctx: mapCtx, enabled: state.fogMaps[mapCtx].enabled, cols: state.fogMaps[mapCtx].cols, rows: state.fogMaps[mapCtx].rows, revealed_count: Array.from(arr).filter(Boolean).length }, env);
     }
     const ctx = fogCurrentCtx(env);
-    if (p.map_ctx !== undefined && _normalizeMapCtx(p.map_ctx, env) !== ctx) return;
+    if ((p.map_ctx !== undefined || p.map_context !== undefined || p.dm_map_context !== undefined || p.current_map !== undefined || p.fog_cells !== undefined) && _normalizeMapCtx(stateMapCtx, env) !== ctx) return;
     fogLoadMap(state, env, ctx);
     if (env && typeof env.drawFrame === 'function') env.drawFrame();
   }
   function fogApplyUpdate(state, env, p) {
-    const updCtx = _normalizeMapCtx((p && (p.map_ctx || p.map_context || p.dm_map_context)) || 'world', env);
+    const updCtx = _normalizeMapCtx(_payloadMapCtx(p, env), env);
     const val = p && p.reveal ? 1 : 0;
     if (!state.fogMaps[updCtx]) state.fogMaps[updCtx] = { enabled: true, cols: Number(p && p.fog_cols) || 64, rows: Number(p && p.fog_rows) || 64, cells: new Uint8Array((Number(p && p.fog_cols) || 64) * (Number(p && p.fog_rows) || 64)) };
     const entry = state.fogMaps[updCtx];
@@ -360,8 +372,9 @@
     if (updCtx === activeCtx) {
       fogLoadMap(state, env, activeCtx);
       env.invalidateFogCache();
+      _debugFogPlayer('fog_update map_ctx active_ctx applied cells count', { map_ctx: updCtx, active_ctx: activeCtx, applied: true, cells: (p && p.cells ? p.cells.length : 0) }, env);
       if (env && typeof env.drawFrame === 'function') env.drawFrame();
     }
   }
-  window.AppFog = { fogCurrentCtx, fogSaveCurrentMap, syncFogUI, fogLoadMap, fogInitCells, drawFogOverlay, fogWorldToCell, fogPaintAt, fogFlushBatch, fogToggle, setFogMode, fogRevealAll, fogHideAll, fogApplyState, fogApplyUpdate };
+  window.AppFog = { normalizeMapCtx: _normalizeMapCtx, payloadMapCtx: _payloadMapCtx, fogCurrentCtx, fogSaveCurrentMap, syncFogUI, fogLoadMap, fogInitCells, drawFogOverlay, fogWorldToCell, fogPaintAt, fogFlushBatch, fogToggle, setFogMode, fogRevealAll, fogHideAll, fogApplyState, fogApplyUpdate };
 })();

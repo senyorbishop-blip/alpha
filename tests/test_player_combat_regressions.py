@@ -278,3 +278,95 @@ def test_roll_quick_weapon_damage_does_not_schedule_profile_autosave():
     body = src[start:end]
     assert "scheduleCharProfileAutosave" not in body
     assert "markCharProfileDirty" not in body
+
+# ── Emergency stabilization: combat_state owns initiative ───────────────────
+
+def test_initiative_patch_events_do_not_mutate_canonical_combat_source():
+    src = PLAY.read_text(encoding="utf-8")
+    apply_start = src.index("function applyInitiativeResultToCombatState(result)")
+    apply_end = src.index("function applyCombatInitiativeRolled", apply_start)
+    apply_body = src[apply_start:apply_end]
+    assert "combat_state is the only canonical initiative/combat roster authority" in apply_body
+    assert "combatant.initiative" not in apply_body
+    assert "_sortCombatants" not in apply_body
+    assert "window.combatState = _combat" not in apply_body
+    assert "combat_state_request" in apply_body
+
+    rolled_start = src.index("function applyCombatInitiativeRolled(payload)")
+    rolled_end = src.index("function _formatInitiativeCellValue", rolled_start)
+    rolled_body = src[rolled_start:rolled_end]
+    assert "applyInitiativeResultToCombatState(payload);" in rolled_body
+    assert "renderCombat()" not in rolled_body
+    assert "combat_state broadcast is" in rolled_body
+
+
+def test_combat_state_apply_updates_all_canonical_aliases_and_defers_quick_actions():
+    src = PLAY.read_text(encoding="utf-8")
+    apply_start = src.index("function combatApplyState(state)")
+    apply_end = src.index("// ── Combat tab attention", apply_start)
+    body = src[apply_start:apply_end]
+    for alias in ["window._combat = _combat", "window.combat = _combat", "window.combatState = _combat", "window.currentCombat = _combat"]:
+        assert alias in body
+    assert "forceCombatStateUISync();" in body
+
+    render_start = src.index("function renderCombat()")
+    render_end = src.index("// ── Navigation", render_start)
+    render_body = src[render_start:render_end]
+    assert "if (!window.__combatApplyStateActive)" in render_body
+    assert "renderPlayerActionsHub" in render_body
+    assert "CombatQuickBar.render" in render_body
+
+
+# ── Emergency stabilization: late-join sparse fog updates ───────────────────
+
+def test_player_sparse_fog_update_before_fog_state_creates_enabled_map_entry():
+    rows = _run_node(
+        r"""
+global.window = global;
+require('./client/static/js/render/fog.js');
+let drawn = 0;
+let invalidated = 0;
+const state = {
+  fogMaps: {}, fogMapCtx: 'dungeon', fogEnabled: false, fogCols: 64, fogRows: 64,
+  fogCells: null, fogCanvas: { width: 0, height: 0 },
+};
+const env = {
+  ROLE: 'player',
+  getCurrentMapContext: () => 'dungeon',
+  getDmMapContext: () => 'dungeon',
+  canEditFog: () => false,
+  invalidateFogCache: () => { invalidated++; },
+  drawFrame: () => { drawn++; },
+  document: { getElementById: () => null },
+  currentPoi: null,
+  handlers: {},
+};
+window.AppFog.fogApplyUpdate(state, env, { map_context: 'dungeon', reveal: true, fog_cols: 3, fog_rows: 2, cells: [0, 5] });
+console.log(JSON.stringify({
+  enabled: state.fogEnabled,
+  ctx: state.fogMapCtx,
+  cols: state.fogCols,
+  rows: state.fogRows,
+  revealed: Array.from(state.fogCells).map((v, i) => v ? i : -1).filter(i => i >= 0),
+  drawn,
+  invalidated,
+}));
+"""
+    )
+    assert rows == {"enabled": True, "ctx": "dungeon", "cols": 3, "rows": 2, "revealed": [0, 5], "drawn": 1, "invalidated": 2}
+
+
+# ── Emergency stabilization: one quick weapon damage pipeline ───────────────
+
+def test_quick_weapon_damage_has_single_canonical_pipeline_without_sync_render_or_autosave():
+    src = PLAY.read_text(encoding="utf-8")
+    start = src.index("function performQuickWeaponDamageRoll(actionOrId, options = {})")
+    end = src.index("function performCombatQuickCastSpell", start)
+    body = src[start:end]
+    assert "function resolveQuickWeaponAction(actionOrId)" in src[src.index("function resolveQuickWeaponAction"):start]
+    assert "__quickWeaponDamageRollActive" in body
+    for forbidden in ["scheduleCharProfileAutosave", "markCharProfileDirty", "syncCharSheetFromBookData", "selectQuickActions", "renderPlayerActionsHub(", "CombatQuickBar.render("]:
+        assert forbidden not in body
+    assert "queueMicrotask" in body
+    assert "sendWS({ type: 'chat_message'" in body
+    assert "window.performCombatQuickRollWeaponDamage = performCombatQuickRollWeaponDamage" in src
