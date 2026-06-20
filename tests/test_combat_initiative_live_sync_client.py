@@ -315,6 +315,7 @@ global.sendWS = (msg) => calls.sendWS.push(msg);
 global.renderPartyStatusPanel = () => {{}};
 global.suggestVisibleHostilesForInitiative = () => {{}};
 global.setTimeout = (fn) => 0;
+function _canRollInitiative() {{ return false; }}
 function _formatInitiativeCellValue(combatant) {{
   if (!combatant) return '—';
   const total = combatant.initiative;
@@ -417,3 +418,90 @@ _renderSuspendedCombatants(list);
     assert "Bishop" in result["html"] and "8 (8)" in result["html"]
     assert "Mage" not in result["html"]
     assert "Suspended Combatants" not in result["html"]
+
+
+def test_incoming_combat_state_updates_actual_combat_tab_dom_immediately():
+    src = PLAY.read_text(encoding="utf-8")
+    roster_start = src.index("function _combatRosterTokenAvatarHtml(model)")
+    roster_end = src.index("function _markLoadingWeaponUsedThisTurn", roster_start)
+    render_start = src.index("function renderCombat()")
+    render_end = src.index("function _formatSuspendedCombatantReasons", render_start)
+    code = f"""
+class Element {{
+  constructor(id = '', tag = 'div') {{ this.id = id; this.tagName = tag; this.children = []; this.style = {{}}; this.dataset = {{}}; this.className = ''; this.classList = {{ add(){{}}, remove(){{}}, toggle(){{}}, contains(){{ return false; }} }}; this._innerHTML = ''; this.textContent = ''; }}
+  set innerHTML(value) {{ this._innerHTML = String(value || ''); this.children = []; this.textContent = this._innerHTML.replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim(); }}
+  get innerHTML() {{ return this._innerHTML; }}
+  appendChild(child) {{ this.children.push(child); this.textContent = this.children.map(c => c.textContent || c.innerHTML || '').join(' '); return child; }}
+  querySelectorAll(selector) {{ return selector === '[data-combatant-id]' ? this.children.filter(c => c.dataset && c.dataset.combatantId) : []; }}
+  scrollIntoView() {{}}
+}}
+const elements = {{}};
+global.document = {{
+  getElementById: (id) => elements[id] || null,
+  createElement: (tag) => new Element('', tag),
+}};
+elements['combat-list'] = new Element('combat-list');
+elements['combat-empty'] = new Element('combat-empty');
+['combat-controls','combat-move-row','combat-offturn-row','combat-pre','combat-add-row','combat-round-label','combat-turn-summary','combat-prev-btn','combat-next-btn','combat-end-btn','combat-auto-suggest-row','combat-auto-suggest-hostiles','combat-mark-row','combat-spell-tray','combat-weapon-tray'].forEach(id => elements[id] = new Element(id));
+global.window = global;
+global.location = {{ host: 'localhost' }};
+global.console = {{ debug(){{}}, warn(){{}}, error(){{}}, log: (...args) => process.stdout.write(args.join(' ') + '\\n') }};
+global.escapeHtml = (value) => String(value ?? '').replace(/[&<>\"]/g, ch => ({{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}}[ch]));
+global.ROLE = 'dm';
+global.USER_ID = 'dm';
+global.tokens = {{}};
+global.users = {{}};
+global._currentPoi = null;
+global._currentMapContextKey = () => 'world';
+global._tokenOwnedByMe = () => false;
+global._dicePhysicsActive = false;
+global._renderCombatDebounceTmr = null;
+global.renderPlayerActionsHub = () => {{}};
+global._getCombatCurrentCombatant = () => null;
+global._getCombatOffturnFocusToken = () => null;
+global._combatantOwnedByMe = () => false;
+global._getUnifiedQuickAttackCards = () => [];
+global._rulesSpellbook = [];
+global._playerGrantedSpells = [];
+global._markTargeting = null;
+global._combatAutoSuggestHostiles = false;
+global._combatMovePlan = null;
+global._combatTargeting = false;
+global._combatMovementModeLabel = () => 'grid';
+global._renderSuspendedCombatants = () => {{}};
+global._updateCombatTabAttention = () => {{}};
+global.equipSummary = null;
+global.renderPartyStatusPanel = () => {{}};
+global.suggestVisibleHostilesForInitiative = () => {{}};
+global.setTimeout = (fn) => {{ fn(); return 1; }};
+global.clearTimeout = () => {{}};
+let _combat = {{ active: true, turn: 0, round: 1, revision: 0, combatants: [{{ id: 'guard', name: 'Guard', initiative: null }}, {{ id: 'bishop', name: 'Bishop', initiative: null }}] }};
+let _combatRound = 1;
+let _combatInitiativeResyncTimer = null;
+let _playerActionEconomyRuntime = {{}};
+let partySnapshot = {{}};
+let activeContext = {{}};
+function _playerActionTurnKey() {{ return ''; }}
+function _resetInspectResults() {{}}
+function forceCombatStateUISync() {{ renderCombat(); }}
+{_combat_apply_state_snippet()}
+{src[roster_start:roster_end]}
+function _canRollInitiative() {{ return false; }}
+function _formatInitiativeCellValue(combatant) {{ return combatant && combatant.initiative !== null && combatant.initiative !== undefined ? String(combatant.initiative) : '--'; }}
+{src[render_start:render_end]}
+renderCombat();
+const before = elements['combat-list'].textContent;
+combatApplyState({{ revision: 1, turn: 0, combatants: [
+  {{ id: 'guard', name: 'Guard', initiative: 20, roll: 20, modifier: 0 }},
+  {{ id: 'bishop', name: 'Bishop', initiative: 4, roll: 4, modifier: 0 }}
+] }});
+const rows = elements['combat-list'].children.map(row => row.textContent);
+console.log(JSON.stringify({{ before, rows, combat: _combat }}));
+"""
+    out = subprocess.check_output(["node", "-e", code], cwd=ROOT, text=True, timeout=30)
+    result = json.loads(out.strip().splitlines()[-1])
+    assert "Guard" in result["before"] and "--" in result["before"]
+    assert any("Guard" in row and "20" in row for row in result["rows"])
+    assert any("Bishop" in row and "4" in row for row in result["rows"])
+    assert result["combat"]["revision"] == 1
+    assert result["combat"]["active"] is True

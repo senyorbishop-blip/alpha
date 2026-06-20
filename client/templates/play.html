@@ -44878,8 +44878,7 @@ function removeSpellAt(wx, wy) {
 
 function handleCombatStateLive(payload) {
   if (!payload || typeof payload !== 'object') return false;
-  const _combatantsForLog = Array.isArray(payload.combatants) ? payload.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`).join(',') : '';
-  console.debug(`[combat_state recv] role=${ROLE} user=${USER_ID} revision=${payload.revision ?? 'none'} combatants=${_combatantsForLog}`);
+  console.debug(`[handleCombatStateLive] combat_state revision=${payload.revision ?? 'none'} order=${JSON.stringify(Array.isArray(payload.combatants) ? payload.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : []).replace(/\"/g, "'")}`);
   if (_isStaleVisibilityPayload(payload)) return true;
   // Capture previous state for spotlight diff detection.  combat_state is the
   // only source of truth for initiative/order, including self-roll updates.
@@ -44958,12 +44957,14 @@ function combatApplyState(state) {
   if (incomingRevision !== null && localRevision !== null && incomingRevision <= localRevision && incomingSignature !== localSignature) {
     console.warn('[combat initiative sync] applying equal/lower revision combat_state because initiative/order changed', { incomingRevision, localRevision });
   }
+  const beforeOrder = Array.isArray(_combat?.combatants) ? _combat.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : [];
+  console.debug('[combatApplyState] before', { revision: localRevision, order: beforeOrder, turn: _combat?.turn });
   const prevTurn   = _combat.turn;
   const prevActive = _combat.active;
   const prevTurnKey = _playerActionTurnKey();
   const authoritativeCombatants = Array.isArray(state.combatants) ? state.combatants.map(c => ({ ...c })) : [];
   _combat = {
-    active:             !!state.active,
+    active:             state.active === undefined ? (!!_combat.active || authoritativeCombatants.length > 0) : !!state.active,
     turn:               state.turn      ?? 0,
     combatants:         authoritativeCombatants,
     suspended_combatants: Array.isArray(state.suspended_combatants) ? state.suspended_combatants : [],
@@ -45001,6 +45002,8 @@ function combatApplyState(state) {
     _resetInspectResults();
     _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, bonus_action_converted_actions: 0, usage: {}, encounter_id: _combat.encounter_id || '' };
   }
+  const afterOrder = Array.isArray(_combat?.combatants) ? _combat.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : [];
+  console.debug('[combatApplyState] after', { revision: _combat.revision, order: afterOrder, turn: _combat.turn, reason: applyReason });
   console.debug(`[combatApplyState] applied=true reason=${applyReason}`);
   forceCombatStateUISync();
   if (_combat.active && (_combat.turn !== prevTurn || !prevActive)) {
@@ -47413,7 +47416,7 @@ function renderCombat() {
   try {
     const finalRows = Array.from(list.querySelectorAll ? list.querySelectorAll('[data-combatant-id]') : (list.children || []))
       .map(el => `${el.dataset?.combatantId || '?'}:${(el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120)}`);
-    console.debug('[renderCombat] sidebar DOM updated', { rootExists: !!list, rows: finalRows });
+    console.debug('[renderCombat] rows after render', finalRows);
   } catch (_err) {}
   _renderSuspendedCombatants(list);
   renderPartyStatusPanel();
