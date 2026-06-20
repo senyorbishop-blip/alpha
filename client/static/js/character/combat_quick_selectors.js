@@ -280,6 +280,29 @@
     return next;
   }
 
+  // One-time migration of legacy/non-canonical stored quick picks. This is the
+  // ONLY place that may rewrite stored picks outside of explicit user toggles,
+  // and it must be invoked from a non-render path (character/combat load). Each
+  // store key is migrated at most once per session so it never runs during a
+  // render and never re-triggers an autosave loop.
+  const _migratedQuickPickStores = (global.__migratedQuickPickStores instanceof Set)
+    ? global.__migratedQuickPickStores
+    : (global.__migratedQuickPickStores = new Set());
+
+  function migrateQuickPicks(runtime) {
+    const rt = runtime || _runtime();
+    let storeKey = '';
+    try { storeKey = _quickPickStoreKey(rt); } catch (_err) { storeKey = ''; }
+    if (!storeKey || _migratedQuickPickStores.has(storeKey)) return;
+    _migratedQuickPickStores.add(storeKey);
+    const stored = readQuickPicks(rt);
+    const canonical = stored.map(_canonicalQuickPickKey).filter(Boolean);
+    // Idempotent: only write when canonicalization actually changes the list.
+    const changed = canonical.length !== stored.length
+      || canonical.some(function (pick, idx) { return pick !== stored[idx]; });
+    if (changed) writeQuickPicks(canonical, rt);
+  }
+
   function _canonicalQuickPickKey(pickKey) {
     const raw = String(pickKey || '').trim();
     if (!raw) return '';
@@ -870,7 +893,11 @@
       if (invalidPicks.length && global.console && typeof global.console.warn === 'function') {
         global.console.warn('[CombatQuickSelectors] Saved quick action picks are unavailable but preserved:', invalidPicks);
       }
-      if (picks.some(function (pick, idx) { return pick !== readQuickPicks(runtime)[idx]; })) writeQuickPicks(picks, runtime);
+      // NOTE: selectQuickActions is a render-time selector and MUST stay
+      // side-effect free. Canonicalizing the stored picks is handled once by
+      // migrateQuickPicks() on character load, never here. Writing to
+      // localStorage during render schedules a char-profile autosave which
+      // re-renders, producing the renderPlayerActionsHub recursion loop.
     }
     const primary = picks.length ? pickedActions.filter(function (item) { return String(item.quickBarLane || '').toLowerCase() !== 'bonus' && String(item.quickBarLane || '').toLowerCase() !== 'reaction'; }) : mark(_uniqueByName(_safeArray(actionModel.primaryActions).filter(isPlayableQuickAction), 2), 'action');
     const bonus = picks.length ? pickedActions.filter(function (item) { return String(item.quickBarLane || '').toLowerCase() === 'bonus'; }) : mark(_uniqueByName(_safeArray(actionModel.bonusActions).filter(isPlayableQuickAction), 2), 'action');
@@ -897,6 +924,7 @@
     markUsed: markUsed,
     readQuickPicks: readQuickPicks,
     writeQuickPicks: writeQuickPicks,
+    migrateQuickPicks: migrateQuickPicks,
     toggleQuickPick: toggleQuickPick,
     toggleQuickPickKey: toggleQuickPickKey,
     isPlayableQuickAction: isPlayableQuickAction,

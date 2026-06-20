@@ -5,6 +5,36 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PLAY = ROOT / "client/templates/play.html"
 
+# Minimal stand-ins for the diagnostics globals that play.html sets up at boot
+# (window.__depths + the __enterDepth/__exitDepth/__logReentry recursion guards).
+# The extracted snippets reference these, so the node harness must provide them.
+# __enterDepth mirrors the self-healing production guard: it decrements before
+# throwing so a single trip never leaves the depth counter permanently elevated.
+_DIAGNOSTICS_PREAMBLE = """
+window.__depths = window.__depths || {};
+window.__debugTrace = window.__debugTrace || [];
+window.__combatApplyStateActive = false;
+window.__stateSyncApplying = false;
+global.isApplyingRemoteState = false;
+global.traceEnter = function () {};
+global.__debugSnapshot = function (extra) { return extra || {}; };
+global.__logReentry = function () {};
+global.__enterDepth = function (name, details, maxDepth) {
+  const cap = maxDepth || 5;
+  window.__depths[name] = (Number(window.__depths[name]) || 0) + 1;
+  if (window.__depths[name] > cap) {
+    window.__depths[name] = Math.max(0, window.__depths[name] - 1);
+    throw new Error(name + ' recursion depth exceeded');
+  }
+};
+global.__exitDepth = function (name) {
+  window.__depths[name] = Math.max(0, (Number(window.__depths[name]) || 0) - 1);
+};
+global.__isRemoteStateOrCombatApplying = function () {
+  return !!(global.isApplyingRemoteState || window.__stateSyncApplying || window.__combatApplyStateActive);
+};
+"""
+
 
 def _combat_apply_state_snippet() -> str:
     src = PLAY.read_text(encoding="utf-8")
@@ -36,6 +66,7 @@ global.refreshCombatBadges = () => {{ calls.refreshCombatBadges++; }};
 global.updateActiveContext = () => {{ calls.updateActiveContext++; }};
 global._updateCombatTabAttention = () => {{}};
 global.window = global;
+{_DIAGNOSTICS_PREAMBLE}
 let _combat = {initial_combat_js};
 let _combatRound = 1;
 {_combat_apply_state_snippet()}
@@ -64,6 +95,7 @@ global.refreshCombatBadges = () => {{ calls.refreshCombatBadges++; }};
 global.refreshTokenBadges = () => {{ calls.refreshTokenBadges++; }};
 global.clearTimeout = () => {{}};
 global.setTimeout = (fn) => {{ fn(); return 1; }};
+{_DIAGNOSTICS_PREAMBLE}
 let _combat = {initial_combat_js};
 function _sortCombatants() {{
   _combat.combatants.sort((a, b) => (b.initiative ?? -99) - (a.initiative ?? -99));
@@ -297,6 +329,7 @@ class FakeElement {{
 }}
 const calls = {{ sendWS: [] }};
 global.window = global;
+{_DIAGNOSTICS_PREAMBLE}
 global.location = {{ host: 'localhost' }};
 global.document = {{ createElement: (tag) => new FakeElement(tag), getElementById: () => null }};
 global.ROLE = 'dm';
@@ -444,6 +477,8 @@ elements['combat-list'] = new Element('combat-list');
 elements['combat-empty'] = new Element('combat-empty');
 ['combat-controls','combat-move-row','combat-offturn-row','combat-pre','combat-add-row','combat-round-label','combat-turn-summary','combat-prev-btn','combat-next-btn','combat-end-btn','combat-auto-suggest-row','combat-auto-suggest-hostiles','combat-mark-row','combat-spell-tray','combat-weapon-tray'].forEach(id => elements[id] = new Element(id));
 global.window = global;
+{_DIAGNOSTICS_PREAMBLE}
+global.safeClientCall = (label, fn) => {{ try {{ return fn(); }} catch (_err) {{ return null; }} }};
 global.location = {{ host: 'localhost' }};
 global.console = {{ debug(){{}}, warn(){{}}, error(){{}}, log: (...args) => process.stdout.write(args.join(' ') + '\\n') }};
 global.escapeHtml = (value) => String(value ?? '').replace(/[&<>\"]/g, ch => ({{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}}[ch]));
