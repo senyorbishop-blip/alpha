@@ -1,6 +1,8 @@
 (function (global) {
   'use strict';
 
+// Workbench surfaces: Needs Attention, Quick Jump, Quick Access, Details need setup, Open the main sheet view.
+
 const KNOWN_RENDER_CHAR_SHEET_CALLERS = new Set([
   'openMyTokenStats',
   'placeCharacter',

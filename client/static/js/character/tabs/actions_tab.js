@@ -1217,7 +1217,7 @@
         { title: 'Rules Breakdown', items: _actionRulesBreakdown(action) },
         { title: 'Connected Systems', items: _actionConnectedSystems(action).map(function (row, idx) { return { label: 'System ' + (idx + 1), value: row }; }) },
         { title: 'How to Test This', items: _actionTestingGuidance(action).map(function (row, idx) { return { label: 'Check ' + (idx + 1), value: row }; }) },
-        { title: 'What Happens', items: _actionExpectedResults(action) },
+        { title: 'Expected Results', items: _actionExpectedResults(action) },
         { title: 'Automation Coverage', items: _actionAutomationCoverage(action) },
         { title: 'Common Blockers', items: _actionCommonBlockers(action) },
       ],

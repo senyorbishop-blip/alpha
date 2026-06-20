@@ -332,6 +332,8 @@ def match_name(name: str, group: str, *, content_type: str = "") -> dict[str, An
             if len(key) < 4 and len(candidate_key) < 4:
                 continue
             if key in candidate_key or candidate_key in key:
+                if abs(len(candidate_key) - len(key)) > max(4, min(len(candidate_key), len(key)) // 2):
+                    continue
                 candidates.append((abs(len(candidate_key) - len(key)), entry))
         if candidates:
             candidates.sort(key=lambda item: (item[0], item[1].name))

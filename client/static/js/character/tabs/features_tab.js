@@ -332,6 +332,30 @@
     return `How to Use It: Activate ${name} and verify the effect in combat or roleplay.${level > 0 ? ` Current level context: ${level}.` : ''}`;
   }
 
+  function _featureRulesBreakdown(feature) {
+    return [
+      { label: 'Action economy', value: _normalizeActionType(feature) },
+      { label: 'Usage', value: _featureUsageLabel(feature) },
+      { label: 'Recovery', value: _firstText(feature.recovery, 'Varies by rest cadence or table ruling') },
+    ];
+  }
+
+  function _featureAutomationCoverage(feature) {
+    return [
+      { label: 'Inspector depth', value: 'Ready' },
+      { label: 'Resource hook', value: feature.resourceName ? 'Tracked resource detected' : 'Passive / always-on feature' },
+      { label: 'Connected systems', value: _featureConnectedSystems(feature).join(' • ') },
+    ];
+  }
+
+  function _featureCommonBlockers(feature) {
+    const blockers = [];
+    if (feature.needsReview) blockers.push({ label: 'Needs review', value: 'Imported fallback content may need cleanup before live play.' });
+    if (!_firstText(feature.description, feature.summary, feature.effect)) blockers.push({ label: 'Rules text', value: 'Rules text is not yet authored for this entry.' });
+    if (!blockers.length) blockers.push({ label: 'Coverage', value: 'No obvious blockers detected from the current feature data.' });
+    return blockers;
+  }
+
   function _featureSummaryPresenter(feature, charData) {
     const runtime = _computeUnarmoredDefenseRuntime(feature, charData);
     const actionType = _normalizeActionType(feature);
@@ -382,9 +406,12 @@
         { label: 'Usage', value: view.detail.usage },
         { label: 'Recovery', value: view.detail.recovery },
       ] },
+      { title: 'Rules Breakdown', items: _featureRulesBreakdown(feature) },
       { title: 'Connected Systems', items: _featureConnectedSystems(feature).map(function (row, idx) { return { label: 'System ' + (idx + 1), value: row }; }) },
       { title: 'Best Time to Use It', body: _featureWhenItMatters(feature) },
       { title: 'How to Use It', body: _featureTestingGuidance(feature, charData) },
+      { title: 'Automation Coverage', items: _featureAutomationCoverage(feature) },
+      { title: 'Common Blockers', items: _featureCommonBlockers(feature) },
       { title: 'Gameplay Impact', items: view.detail.gameplayImpact.map(function (row, idx) { return { label: 'Impact ' + (idx + 1), value: row }; }) },
       { title: 'Interactions', items: view.detail.interactions.map(function (row, idx) { return { label: 'Rule ' + (idx + 1), value: row }; }) },
       { title: 'Scaling', items: view.detail.scaling.map(function (row, idx) { return { label: 'Scaling ' + (idx + 1), value: row }; }) },
@@ -497,7 +524,7 @@
 
   function _renderLevelRoadmap(allByLevel, currentLevel) {
     return `<section class="cs-overview-section"><div class="cs-overview-section-title">Current & Next Unlocks</div>
-      <div class="cs-overview-copy">Every class level feature is listed below so players can read what unlocks now and later.</div>
+      <div class="cs-overview-copy">Level Roadmap: every class level feature is listed below so players can read what unlocks now and later.</div>
       <div class="cs-roadmap-grid">${allByLevel.map(function (row) {
         const stateClass = row.level === currentLevel ? 'current' : row.level > currentLevel ? 'upcoming' : 'past';
         return `<article class="cs-roadmap-card ${stateClass}" data-roadmap-level="${_esc(String(row.level))}"><div class="cs-roadmap-level">Level ${_esc(String(row.level))}</div><div class="cs-roadmap-count">${_esc(String(row.items.length))} features</div><div class="cs-roadmap-preview">${_esc(row.items.slice(0, 2).map((f) => f.name).join(' • ') || 'Feature details authored in class data')}</div></article>`;

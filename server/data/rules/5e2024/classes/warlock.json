@@ -216,8 +216,7 @@
       "level": 3,
       "proficiencyBonus": 2,
       "features": [
-        "Pact Boon",
-        "Mystic Arcanum (6th)"
+        "Pact Boon"
       ],
       "classMechanics": {
         "cantripsKnown": 2,
@@ -228,7 +227,6 @@
       },
       "unlockIds": [
         "warlock-pact-boon",
-        "warlock-mystic-arcanum-6th",
         "warlock-eldritch-invocation-choice-l3"
       ]
     },
@@ -1345,10 +1343,9 @@
     },
     {
       "level": 3,
-      "summary": "Pact Boon, Mystic Arcanum (6th).",
+      "summary": "Pact Boon.",
       "unlockIds": [
         "warlock-pact-boon",
-        "warlock-mystic-arcanum-6th",
         "warlock-eldritch-invocation-choice-l3"
       ]
     },

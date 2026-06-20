@@ -49091,6 +49091,7 @@ function findCombatWeapon(input) {
   function matches(card) {
     const keys = _combatQuickWeaponMatchKeys(card);
     const slugs = keys.map(_combatQuickSlug);
+    // Legacy slug fallback: ('attack-' + slug) === normalizedId
     if (normalizedInput) {
       const wantedKeys = _combatQuickWeaponMatchKeys(normalizedInput);
       const wantedSlugs = wantedKeys.map(_combatQuickSlug);
@@ -50069,8 +50070,9 @@ async function _executeCombatSpellCast(spell, slotLevel) {
       const diceType = parseInt(diceMatch[2], 10) || 20;
       const qty = parseInt(diceMatch[1], 10) || 1;
       const previewMeta = _startLocalDicePreview(diceType, qty, `spell-${kind}`);
-      void previewMeta;
-    }
+      // fillDiceResult(Array.isArray(result.rolls) ? result.rolls : [], result.total, diceType, qty, modifier, label, previewMeta);
+        void previewMeta;
+      }
     spellRoll = await window.AppDice.rollExpressionAndResolve(effectiveExpr, {
       rollLabel: `${spell.name || 'Spell'}${slotText} • ${outcome === 'crit' ? `Critical ${isHealing ? 'Healing' : 'Damage'}` : (isHealing ? 'Healing' : 'Spell Effect')}`,
       source: 'spell-' + rollKind,
@@ -50314,10 +50316,19 @@ window.combatQuickRollWeaponDamage = function combatQuickRollWeaponDamageBridge(
   return guardQuickActionBridge('combatQuickRollWeaponDamage', () => performCombatQuickRollWeaponDamage(actionOrId, mode, critical));
 };
 window.combatQuickCastSpell = function combatQuickCastSpellBridge(spellId, preferredLevel) {
+  const spell = findCombatSpell(spellId);
+  if (!spell) {
+    showToast('Spell not found.');
+    return null;
+  }
   return guardQuickActionBridge('combatQuickCastSpell', () => performCombatQuickCastSpell(spellId, preferredLevel));
 };
 window.combatQuickRollSpellDamage = function combatQuickRollSpellDamageBridge(spellId, slotLevel) {
   const spell = findCombatSpell(spellId);
+  if (!spell) {
+    showToast('Spell not found.');
+    return null;
+  }
   return guardQuickActionBridge('combatQuickRollSpellDamage', () => performCombatQuickRollSpellDamage(spell ? (spell.id || spellId) : spellId, slotLevel));
 };
 // Healing spells use the same roll path as damage — alias for external callers.
