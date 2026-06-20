@@ -659,7 +659,14 @@
   });
 
   _loadState();
+  function _autoBuildDisabled() {
+    return !!(global.AppSafeMode && global.AppSafeMode.disabled('quick-actions-autobuild'));
+  }
   function refreshCombatQuickActions() {
+    // Safe mode disables automatic quick-action rebuilding (the heavy
+    // selectQuickActions pass), which can be triggered repeatedly by character
+    // state events. Manual opening of the bar still works.
+    if (_autoBuildDisabled()) return;
     render();
     if (global.CombatQuickActions && typeof global.CombatQuickActions.refreshSpellModalSlots === 'function') {
       global.CombatQuickActions.refreshSpellModalSlots();
@@ -673,5 +680,8 @@
   ['character:spell-state-updated', 'character:runtime-updated', 'character:resources-updated', 'character:rest-completed', 'spellSlots:updated'].forEach(function (eventName) {
     global.addEventListener && global.addEventListener(eventName, refreshCombatQuickActions);
   });
-  document.addEventListener('DOMContentLoaded', render);
+  document.addEventListener('DOMContentLoaded', function () {
+    if (_autoBuildDisabled()) return;
+    render();
+  });
 }(window));

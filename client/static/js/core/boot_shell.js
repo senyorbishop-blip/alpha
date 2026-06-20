@@ -110,19 +110,36 @@
     bindOutsideShellClose(env);
   }
 
+  function boot() {
+    return (window.AppBoot && typeof window.AppBoot.phase === 'function') ? window.AppBoot : null;
+  }
+
   async function runDOMContentLoaded(env) {
     // Explicit, ordered startup owner for the live page shell.
     // Resolve server authority before UI/socket boot so stale URL role/user params
     // cannot hijack the initial runtime role gates.
+    const b = boot();
+    if (b) b.phase('start', '');
+    if (b) b.phase('state_sync', 'start');
     const authority = await env.safeClientCall(
       'boot:syncSessionAuthority',
       () => env.syncSessionAuthority('domcontentloaded'),
       null,
     );
+    if (b) b.phase('state_sync', 'end');
     if (authority && authority.redirected) return;
+    if (b) b.phase('initUI', 'start');
     env.safeClientCall('boot:initUI', () => initUI(env));
+    if (b) b.phase('initUI', 'end');
+    if (b) b.phase('initCanvas', 'start');
     env.safeClientCall('boot:initCanvas', () => env.initCanvas());
+    if (b) b.phase('initCanvas', 'end');
+    // The websocket must come up regardless of any heavy UI/canvas init above,
+    // because the server heartbeat (ping/pong) keeps the connection alive.
+    if (b) b.phase('connectWS', 'start');
     env.safeClientCall('boot:connectWS', () => env.connectWS());
+    if (b) b.phase('connectWS', 'end');
+    if (b) b.done();
   }
 
   window.AppBootShell = {

@@ -129,6 +129,12 @@ function _playSettlePulse(mesh) {
  * @param {number[]}  [opts.targetResults]   Server-authoritative values for target-assist
  */
 function throwDice(configs, onSettled, opts = {}) {
+  // Safe mode disables the heavy 3D dice renderer; callers fall back to the
+  // lightweight non-3D result path.
+  if (window.AppSafeMode && window.AppSafeMode.disabled('dice3d')) {
+    console.info(`${LOG} skipped — safe mode (dice3d disabled)`);
+    return false;
+  }
   const container = document.getElementById('dice-3d-wrap');
   if (!container) { console.warn(`${LOG} #dice-3d-wrap not found`); return false; }
 

@@ -11155,6 +11155,7 @@ Shortbow — +5 to hit, 1d6+3 piercing"></textarea>
     `gameplay/combat.js`) as runtime authorities unless this page explicitly
     loads them.
 -->
+<script src="/static/js/core/diagnostics.js"></script>
 <script src="/static/js/core/csrf.js"></script>
 <script src="/static/js/editor/serialization.js"></script>
 <script src="/static/js/editor/stamp_presets.js"></script>
@@ -12376,12 +12377,23 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
   // Legacy fallback path (only when modular shell is unavailable).
+  const _b = (window.AppBoot && typeof window.AppBoot.phase === 'function') ? window.AppBoot : null;
+  if (_b) _b.phase('state_sync', 'start');
   safeClientCall('boot:syncSessionAuthority', () => syncSessionAuthority('domcontentloaded'))
     .then((authority) => {
+      if (_b) _b.phase('state_sync', 'end');
       if (authority && authority.redirected) return;
+      if (_b) _b.phase('initUI', 'start');
       safeClientCall('boot:initUI', () => initUI());
+      if (_b) _b.phase('initUI', 'end');
+      if (_b) _b.phase('initCanvas', 'start');
       safeClientCall('boot:initCanvas', () => initCanvas());
+      if (_b) _b.phase('initCanvas', 'end');
+      // WebSocket connects regardless of heavy UI/canvas init so the heartbeat survives.
+      if (_b) _b.phase('connectWS', 'start');
       safeClientCall('boot:connectWS', () => connectWS());
+      if (_b) _b.phase('connectWS', 'end');
+      if (_b) _b.done();
     });
 });
 
@@ -18181,6 +18193,16 @@ function drawLoop(ts) {
   drawFrame();
 }
 
+// First-frame render phase logging + a cheap per-frame phase marker so the
+// freeze watchdog can name the render section that stalled the main thread.
+let _bootRenderLogged = false;
+function _renderPhase(name) {
+  window.__appRenderPhase = name;
+  if (!_bootRenderLogged && window.AppBoot && typeof window.AppBoot.phase === 'function') {
+    window.AppBoot.phase(name + ' render', 'start');
+    window.AppBoot.phase(name + ' render', 'end');
+  }
+}
 function drawFrame() {
   if (_renderFramePending) _renderFramePending = false;
   const W = canvas.width, H = canvas.height;
@@ -18191,6 +18213,7 @@ function drawFrame() {
   ctx.fillStyle = '#0a0b0f';
   ctx.fillRect(0, 0, W, H);
 
+  _renderPhase('map');
   safeClientCall('draw map image', () => {
     if (mapImage && mapImage.complete && shouldShowWorldReferenceMapImage()) {
       ctx.save();
@@ -18303,6 +18326,7 @@ function drawFrame() {
     if (ruler.active && ruler.phase === 'drawing') drawRuler(ruler.x1, ruler.y1, ruler.mouseX, ruler.mouseY);
   });
   safeClientCall('draw hazard zones', () => drawHazardZones());
+  _renderPhase('token');
   safeClientCall('draw tokens', () => {
     const drawCtx = _getAuthoritativeTokenDrawContext();
     Object.values(tokens).forEach(t => {
@@ -18325,7 +18349,8 @@ function drawFrame() {
   safeClientCall('draw viewer targeting', () => drawViewerPowerTargetingOverlay());
   ctx.restore();
 
-  safeClientCall('draw weather overlay', () => drawWeatherOverlay(W, H));
+  _renderPhase('fog');
+  safeClientCall('draw weather overlay', () => { if (!(window.AppSafeMode && window.AppSafeMode.disabled('map-effects'))) drawWeatherOverlay(W, H); });
   safeClientCall('draw player vision overlay', () => drawPlayerVisionOverlay(W, H));
   safeClientCall('draw fog overlay', () => {
     if (fogEnabled && fogCells) drawFogOverlay(W, H);
@@ -18363,6 +18388,11 @@ function drawFrame() {
   ctx.restore();
   // Atmospheric vignette — darkens canvas edges to frame the scene like a candlelit dungeon.
   safeClientCall('draw atmospheric vignette', () => drawAtmosphericVignette(W, H));
+  window.__appRenderPhase = 'idle';
+  if (!_bootRenderLogged) {
+    _bootRenderLogged = true;
+    if (window.AppBoot && typeof window.AppBoot.phase === 'function') window.AppBoot.phase('first frame', 'end');
+  }
 }
 
 function drawGrid(W, H) {
