@@ -50,12 +50,12 @@ def test_reconnect_requests_state_then_combat_and_reapplies_dm_fog_preview():
 def test_empty_no_revision_combat_state_is_noop_unless_explicit_clear():
     src = PLAY.read_text(encoding="utf-8")
     assert "function _isAccidentalEmptyCombatState(state)" in src
-    helper = src[src.index("function _isAccidentalEmptyCombatState(state)"):src.index("function combatApplyState(state)")]
+    helper = src[src.index("function _isAccidentalEmptyCombatState(state)"):src.index("function combatApplyState(state, source)")]
     assert "incomingRevision === null" in helper
     assert "incomingCombatants.length === 0" in helper
     assert "_combat && _combat.active" in helper
     assert "reason === 'clear_combat'" in helper
-    start = src.index("function combatApplyState(state)")
+    start = src.index("function combatApplyState(state, source)")
     apply = src[start:start + 2500]
     assert "_isAccidentalEmptyCombatState(state)" in apply
     assert "ignored empty/no-revision combat_state during reconnect" in apply

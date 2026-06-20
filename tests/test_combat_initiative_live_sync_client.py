@@ -193,7 +193,8 @@ def test_live_combat_state_route_delegates_to_authoritative_handler():
     assert "handleCombatStateLive(p);" in src
     assert "return true;" in src[src.index("case 'combat_state': {"):src.index("case 'combat_initiative_rolled': {")]
     assert "function handleCombatStateLive(payload)" in src
-    assert "combatApplyState(payload);" in src
+    assert "applyAuthoritativeCombatState(payload, 'combat_state');" in src
+    assert "function applyAuthoritativeCombatState(payload, source)" in src
 
 
 def test_actual_incoming_dispatch_combat_state_from_self_roll_applies():
@@ -234,7 +235,11 @@ def test_actual_incoming_dispatch_dm_npc_roll_updates_dm_client():
     assert result["combat"]["combatants"][0]["initiative"] == 14
 
 
-def test_initiative_event_patches_row_and_requests_resync_if_needed():
+def test_initiative_event_does_not_mutate_roster_and_may_request_resync():
+    # Notification-only event. combat_state is the sole authority for the roster,
+    # so applyCombatInitiativeRolled must NOT patch initiative/roll locally. When
+    # the event hints at a newer revision than we hold, it may ask the server for
+    # the authoritative state, but it never mutates or re-renders the roster.
     result = _run_initiative_event(
         "let sent = []; sendWS = (msg) => sent.push(msg); applyCombatInitiativeRolled({ combatant_id: 'guard', token_id: 't-guard', initiative: 18, roll: 18, modifier: 0, revision: 3 });",
         initial_combat_js="{ active: true, turn: 0, round: 1, revision: 2, encounter_id: 'enc-1', combatants: ["
@@ -242,29 +247,31 @@ def test_initiative_event_patches_row_and_requests_resync_if_needed():
         "{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: null, roll: null, modifier: 0 }"
         "] }",
     )
-    assert result["calls"]["renderCombat"] == 1
-    assert result["combat"]["combatants"][0]["id"] == "guard"
-    assert result["combat"]["combatants"][0]["initiative"] == 18
-    assert result["combat"]["combatants"][0]["roll"] == 18
-    assert result["sent"] == []
+    assert result["calls"]["renderCombat"] == 0
+    guard = next(c for c in result["combat"]["combatants"] if c["id"] == "guard")
+    assert guard["initiative"] is None
+    assert guard["roll"] is None
+    assert any(m.get("type") == "combat_state_request" for m in result["sent"])
 
 
 
-def test_dice_result_initiative_patches_bishop_row_immediately():
+def test_dice_result_initiative_does_not_mutate_roster():
+    # dice_result is animation/log only; applyInitiativeResultToCombatState must
+    # never patch the authoritative combatant rows.
     result = _run_initiative_event(
-        "applyInitiativeResultToCombatState({ roll_label: 'Bishop initiative', combatant_id: 'bishop', token_id: 't-bishop', rolls: [8], total: 8, modifier: 0, revision: 2 });",
+        "let sent = []; sendWS = (msg) => sent.push(msg); applyInitiativeResultToCombatState({ roll_label: 'Bishop initiative', combatant_id: 'bishop', token_id: 't-bishop', rolls: [8], total: 8, modifier: 0, revision: 2 });",
         initial_combat_js="{ active: true, turn: 0, round: 1, revision: 1, combatants: ["
         "{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: null, roll: null, modifier: 0 },"
         "{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null, roll: null, modifier: 0 }"
         "] }",
     )
     bishop = next(c for c in result["combat"]["combatants"] if c["id"] == "bishop")
-    assert bishop["initiative"] == 8
-    assert bishop["roll"] == 8
-    assert result["calls"]["renderCombat"] == 1
+    assert bishop["initiative"] is None
+    assert bishop["roll"] is None
+    assert result["calls"]["renderCombat"] == 0
 
 
-def test_combat_initiative_rolled_patches_guard_row_immediately():
+def test_combat_initiative_rolled_does_not_mutate_roster():
     result = _run_initiative_event(
         "let sent = []; sendWS = (msg) => sent.push(msg); applyCombatInitiativeRolled({ combatant_id: 'guard', token_id: 't-guard', initiative: 1, roll: 1, modifier: 0, revision: 3 });",
         initial_combat_js="{ active: true, turn: 0, round: 1, revision: 2, combatants: ["
@@ -273,27 +280,29 @@ def test_combat_initiative_rolled_patches_guard_row_immediately():
         "] }",
     )
     guard = next(c for c in result["combat"]["combatants"] if c["id"] == "guard")
-    assert guard["initiative"] == 1
-    assert guard["roll"] == 1
-    assert result["calls"]["renderCombat"] == 1
+    assert guard["initiative"] is None
+    assert guard["roll"] is None
+    assert result["calls"]["renderCombat"] == 0
 
 
-def test_initiative_patch_updates_self_and_other_client_without_source_filter():
+def test_initiative_notification_never_mutates_regardless_of_source():
     base = "{ active: true, turn: 0, round: 1, revision: 1, combatants: [{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null, roll: null, modifier: 0 }] }"
     for source_user_id in ("self", "other"):
         result = _run_initiative_event(
-            f"global.USER_ID = 'self'; applyInitiativeResultToCombatState({{ source_user_id: '{source_user_id}', roll_label: 'Bishop initiative', combatant_id: 'bishop', token_id: 't-bishop', rolls: [8], total: 8, modifier: 0, revision: 2 }});",
+            f"let sent = []; sendWS = (msg) => sent.push(msg); global.USER_ID = 'self'; applyInitiativeResultToCombatState({{ source_user_id: '{source_user_id}', roll_label: 'Bishop initiative', combatant_id: 'bishop', token_id: 't-bishop', rolls: [8], total: 8, modifier: 0, revision: 2 }});",
             initial_combat_js=base,
         )
-        assert result["combat"]["combatants"][0]["initiative"] == 8
-        assert result["calls"]["renderCombat"] == 1
+        assert result["combat"]["combatants"][0]["initiative"] is None
+        assert result["calls"]["renderCombat"] == 0
 
 
-def test_initiative_repaint_retries_when_active_render_collides():
+def test_initiative_notification_returns_false_and_never_renders():
+    # The legacy local patcher must report that it applied nothing and must not
+    # render: combat_state is the only path that mutates and renders the roster.
     code = f"""
 const calls = {{ renderCombat: 0, refreshRightPanelContextUI: 0, updateActiveContext: 0, refreshCombatBadges: 0, refreshTokenBadges: 0, queued: 0 }};
 global.window = global;
-global.renderCombat = () => {{ calls.renderCombat++; if (calls.renderCombat === 1) throw new Error('render collision'); }};
+global.renderCombat = () => {{ calls.renderCombat++; }};
 global.refreshRightPanelContextUI = () => {{ calls.refreshRightPanelContextUI++; }};
 global.updateActiveContext = () => {{ calls.updateActiveContext++; }};
 global.refreshCombatBadges = () => {{ calls.refreshCombatBadges++; }};
@@ -301,6 +310,8 @@ global.refreshTokenBadges = () => {{ calls.refreshTokenBadges++; }};
 global.queueMicrotask = (fn) => {{ calls.queued++; fn(); }};
 global.clearTimeout = () => {{}};
 global.setTimeout = (fn) => {{ fn(); return 1; }};
+let sent = [];
+global.sendWS = (msg) => sent.push(msg);
 global.console = {{ warn(){{}}, error(){{}}, debug(){{}}, log: (...args) => process.stdout.write(args.join(' ') + '\\n') }};
 {_DIAGNOSTICS_PREAMBLE}
 let _combat = {{ active: true, turn: 0, round: 1, revision: 1, combatants: [{{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null, roll: null, modifier: 0 }}] }};
@@ -311,11 +322,9 @@ console.log(JSON.stringify({{ applied, calls, combat: _combat }}));
 """
     out = subprocess.check_output(["node", "-e", code], cwd=ROOT, text=True, timeout=30)
     result = json.loads(out.strip().splitlines()[-1])
-    assert result["applied"] is True
-    assert result["combat"]["combatants"][0]["initiative"] == 12
-    assert result["calls"]["renderCombat"] == 2
-    assert result["calls"]["queued"] == 1
-    assert result["calls"]["refreshRightPanelContextUI"] == 1
+    assert result["applied"] is False
+    assert result["combat"]["combatants"][0]["initiative"] is None
+    assert result["calls"]["renderCombat"] == 0
 
 
 def test_lower_revision_with_changed_initiative_applies_with_warning():
@@ -572,8 +581,34 @@ console.log(JSON.stringify({{ before, rows, combat: _combat }}));
     assert result["combat"]["active"] is True
 
 
-def test_initiative_result_matches_common_player_and_token_aliases():
+def test_initiative_notification_patchers_do_not_mutate_roster_source():
+    # Source-of-truth guardrail: the legacy notification patchers must not locally
+    # assign initiative/roll/order or re-sort the roster. Only the authoritative
+    # combat_state apply path (combatApplyState) mutates the roster.
     src = PLAY.read_text(encoding="utf-8")
     body = src[src.index("function applyInitiativeResultToCombatState(result)"):src.index("function applyCombatInitiativeRolled")]
-    for token in ["combatantId", "tokenId", "characterId", "matchesId", "player_id", "sheet_id", "roll_label"]:
-        assert token in body
+    assert ".initiative =" not in body
+    assert ".roll =" not in body
+    assert "_sortCombatants(" not in body
+    assert "return false;" in body
+    rolled = src[src.index("function applyCombatInitiativeRolled"):src.index("function _formatInitiativeCellValue")]
+    assert ".initiative =" not in rolled
+    assert ".roll =" not in rolled
+    assert "_sortCombatants(" not in rolled
+
+
+def test_authoritative_apply_exists_and_sets_aliases_and_debug():
+    src = PLAY.read_text(encoding="utf-8")
+    assert "function applyAuthoritativeCombatState(payload, source)" in src
+    assert "window.applyAuthoritativeCombatState = applyAuthoritativeCombatState;" in src
+    assert "window.__debugCombat = function ()" in src
+    # The single apply implementation must set the three runtime aliases.
+    apply_body = src[src.index("function combatApplyState(state, source)"):src.index("// ── Authoritative combat_state entry")]
+    assert "window._combat = _combat;" in apply_body
+    assert "window.combatState = _combat;" in apply_body
+    assert "window.currentCombat = _combat;" in apply_body
+    # applyAuthoritativeCombatState must not call the autosave / quick-action paths.
+    auth_body = src[src.index("function applyAuthoritativeCombatState(payload, source)"):src.index("window.__debugCombat = function ()")]
+    for forbidden in ("selectQuickActions", "renderPlayerActionsHub", "markCharProfileDirty", "scheduleCharProfileAutosave", "collectCurrentCharProfile"):
+        assert forbidden not in auth_body
+

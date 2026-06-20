@@ -3602,7 +3602,7 @@ def test_play_html_uses_inline_combat_not_app_gameplay_combat():
     assert 'Stage 3 ownership: this inline block remains the live client combat path' in src, (
         'play.html should document that inline combat remains the live path'
     )
-    assert 'function combatApplyState(state)' in src, (
+    assert 'function combatApplyState(state, source)' in src, (
         'play.html must continue to own inline combatApplyState during Stage 3'
     )
     assert '/static/js/gameplay/combat.js' not in src, (

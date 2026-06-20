@@ -302,7 +302,7 @@ def test_initiative_patch_events_do_not_mutate_canonical_combat_source():
 
 def test_combat_state_apply_updates_all_canonical_aliases_and_defers_quick_actions():
     src = PLAY.read_text(encoding="utf-8")
-    apply_start = src.index("function combatApplyState(state)")
+    apply_start = src.index("function combatApplyState(state, source)")
     apply_end = src.index("// ── Combat tab attention", apply_start)
     body = src[apply_start:apply_end]
     for alias in ["window._combat = _combat", "window.combat = _combat", "window.combatState = _combat", "window.currentCombat = _combat"]:
