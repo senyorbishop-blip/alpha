@@ -92,8 +92,10 @@
         if (effectiveRole === 'dm' && typeof global._resyncDmMapNav === 'function') global.setTimeout(global._resyncDmMapNav, 0);
         if (global.AppWS && typeof global.AppWS.send === 'function') {
           console.debug('[WS] requesting authoritative state_sync after open');
+          if (global.__PLAY_BOOT_ROLE === 'player' && typeof global.__playerBootCheckpoint === 'function') global.__playerBootCheckpoint('PLAYER_BOOT_REQUEST_STATE_SENT');
           global.AppWS.send({ type: 'request_state', payload: { reason: 'reconnect' } });
         } else if (typeof global.sendWS === 'function') {
+          if (global.__PLAY_BOOT_ROLE === 'player' && typeof global.__playerBootCheckpoint === 'function') global.__playerBootCheckpoint('PLAYER_BOOT_REQUEST_STATE_SENT');
           global.sendWS({ type: 'request_state', payload: { reason: 'reconnect' } });
         }
         if (effectiveRole === 'dm' && typeof global.reapplyDmFogPreviewAfterReconnect === 'function') global.setTimeout(global.reapplyDmFogPreviewAfterReconnect, 0);
