@@ -45175,7 +45175,7 @@ function handleCombatStateLive(payload) {
   // Capture previous state for spotlight diff detection.  combat_state is the
   // only source of truth for initiative/order, including self-roll updates.
   const _prevCombatForSpotlight = _combat ? JSON.parse(JSON.stringify(_combat)) : null;
-  combatApplyState(payload);
+  applyAuthoritativeCombatState(payload, 'combat_state');
   // Spotlight: detect finishing blows, clutch death saves
   if (window.AppUISpotlight && _prevCombatForSpotlight) {
     AppUISpotlight.onCombatStateChange(payload, _prevCombatForSpotlight, _spotlightEnv());
@@ -45226,14 +45226,21 @@ function _isAccidentalEmptyCombatState(state) {
   return !explicitClear && incomingRevision === null && incomingCombatants.length === 0 && !!(_combat && _combat.active && localCombatants.length > 0);
 }
 
-function combatApplyState(state) {
+function combatApplyState(state, source) {
+  const _applySource = source || 'combat_state';
   if (window.__depths.combatApplyState > 0) __logReentry('combatApplyState');
   __enterDepth('combatApplyState', { revision: state?.revision }, 5);
   window.__combatApplyStateActive = true;
   try {
-  if (!state || typeof state !== 'object') return false;
+  if (!state || typeof state !== 'object') {
+    _combatDebug.lastIgnoredSource = _applySource;
+    _combatDebug.lastIgnoredReason = 'invalid-state';
+    return false;
+  }
   if (_isAccidentalEmptyCombatState(state)) {
     console.warn('[combatApplyState] ignored empty/no-revision combat_state during reconnect', { incomingRevision: state.revision ?? null, localRevision: _combat?.revision ?? null, localCount: Array.isArray(_combat?.combatants) ? _combat.combatants.length : 0 });
+    _combatDebug.lastIgnoredSource = _applySource;
+    _combatDebug.lastIgnoredReason = 'accidental-empty';
     return false;
   }
   let applyReason = 'accepted';
@@ -45244,6 +45251,8 @@ function combatApplyState(state) {
   const localSignature = _combatInitiativeSignature(_combat);
   if (incomingRevision !== null && localRevision !== null && incomingRevision < localRevision && incomingSignature === localSignature) {
     console.debug(`[combatApplyState] applied=false reason=stale revision=${incomingRevision} local=${localRevision}`);
+    _combatDebug.lastIgnoredSource = _applySource;
+    _combatDebug.lastIgnoredReason = `stale-revision incoming=${incomingRevision} local=${localRevision}`;
     return false;
   }
   if (incomingRevision === null) applyReason = 'missing-incoming-revision';
@@ -45302,6 +45311,8 @@ function combatApplyState(state) {
   const afterOrder = Array.isArray(_combat?.combatants) ? _combat.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : [];
   console.debug('[combatApplyState] after', { revision: _combat.revision, order: afterOrder, turn: _combat.turn, reason: applyReason });
   console.debug(`[combatApplyState] applied=true reason=${applyReason}`);
+  _combatDebug.lastAppliedSource = _applySource;
+  _combatDebug.lastRenderTime = (typeof Date !== 'undefined' && Date.now) ? Date.now() : null;
   forceCombatStateUISync();
   if (_combat.active && (_combat.turn !== prevTurn || !prevActive)) {
     const cur = _combat.combatants[_combat.turn];
@@ -45341,6 +45352,52 @@ function combatApplyState(state) {
   // Update combat tab attention (glow, YOUR TURN badge, coach, hints)
   _updateCombatTabAttention(prevActive);  } finally { window.__combatApplyStateActive = false; __exitDepth('combatApplyState'); }
 }
+
+// ── Authoritative combat_state entry + diagnostics ────────────────────────
+// combat_state is the ONLY authoritative source for combatants, initiative
+// values, order, active turn, NOW/NEXT marker, and the current combatant.
+// combat_initiative_rolled and dice_result are notification/animation only and
+// must never permanently mutate the roster/order/turn. Any code that needs to
+// apply an authoritative roster change must route through this single function.
+var _combatDebug = (typeof _combatDebug !== 'undefined' && _combatDebug) ? _combatDebug : {
+  lastAppliedSource: null,
+  lastIgnoredSource: null,
+  lastIgnoredReason: null,
+  lastRenderTime: null,
+};
+
+function applyAuthoritativeCombatState(payload, source) {
+  const src = source || 'combat_state';
+  if (!payload || typeof payload !== 'object') {
+    _combatDebug.lastIgnoredSource = src;
+    _combatDebug.lastIgnoredReason = 'invalid-payload';
+    return false;
+  }
+  // Accept either a bare combat state or an envelope carrying { combat: {...} }.
+  const state = (payload.combat && typeof payload.combat === 'object') ? payload.combat : payload;
+  return combatApplyState(state, src);
+}
+
+window.applyAuthoritativeCombatState = applyAuthoritativeCombatState;
+
+window.__debugCombat = function () {
+  const c = (typeof _combat === 'object' && _combat) ? _combat : {};
+  const combatants = Array.isArray(c.combatants) ? c.combatants : [];
+  const order = combatants.map(x => `${x?.name || x?.id || x?.token_id || '?'}:${x?.initiative ?? '--'}`);
+  const turn = Number.isFinite(Number(c.turn)) ? Number(c.turn) : 0;
+  const current = combatants[turn] || null;
+  return {
+    revision: c.revision ?? null,
+    order,
+    turn,
+    currentCombatant: current ? (current.name || current.id || current.token_id || null) : null,
+    lastAppliedSource: _combatDebug.lastAppliedSource,
+    lastIgnoredSource: _combatDebug.lastIgnoredSource,
+    lastIgnoredReason: _combatDebug.lastIgnoredReason,
+    lastRenderTime: _combatDebug.lastRenderTime,
+    role: (typeof ROLE !== 'undefined') ? ROLE : null,
+  };
+};
 
 // ── Combat tab attention: glow, YOUR TURN, coach, hints ───────────────────
 function _isActiveCombatTab() {
