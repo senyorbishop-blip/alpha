@@ -56,5 +56,5 @@ def test_last_seen_not_updated_on_undecodable_frame():
 def test_heartbeat_timeout_still_present():
     # We are making the heartbeat more tolerant, not removing it.
     src = MAIN.read_text(encoding="utf-8")
-    assert re.search(r"PONG_TIMEOUT\s*=\s*60", src)
-    assert 'await manager.send_to(session_id, user_id, {"type": "ping"})' in src
+    assert re.search(r"pong_timeout: float = 60", src)
+    assert 'await connection_manager.send_to(session_id, user_id, {"type": "ping"})' in src

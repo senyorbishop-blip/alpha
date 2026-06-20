@@ -597,6 +597,47 @@ async def api_cartographer_generate_interior(request: Request):
         return JSONResponse({"error": "Interior generation failed", "detail": str(exc)}, status_code=500)
 
 
+async def _websocket_heartbeat_loop(
+    *,
+    websocket: WebSocket,
+    session_id: str,
+    user_id: str,
+    connection_id: str,
+    last_pong: dict,
+    ping_interval: float = 30,
+    pong_timeout: float = 60,
+    connection_manager=manager,
+):
+    """Send heartbeat pings only while this task owns the current socket."""
+    logger.info("[WS] heartbeat start user_id=%s connection_id=%s", user_id, connection_id)
+    try:
+        while True:
+            await asyncio.sleep(ping_interval)
+            if not connection_manager.is_current_connection(session_id, user_id, connection_id):
+                logger.info("[WS] heartbeat stale exit user_id=%s connection_id=%s", user_id, connection_id)
+                return
+            if asyncio.get_running_loop().time() - last_pong["t"] > pong_timeout:
+                if connection_manager.is_current_connection(session_id, user_id, connection_id):
+                    logger.warning(
+                        "[WS] timeout closing current socket user_id=%s connection_id=%s",
+                        user_id,
+                        connection_id,
+                    )
+                    try:
+                        await websocket.close(code=1001, reason="Heartbeat timeout")
+                    except Exception:
+                        pass
+                else:
+                    logger.info("[WS] heartbeat stale exit user_id=%s connection_id=%s", user_id, connection_id)
+                return
+            logger.info("[WS] sending ping user_id=%s session_id=%s connection_id=%s", user_id, session_id, connection_id)
+            await connection_manager.send_to(session_id, user_id, {"type": "ping"})
+    except asyncio.CancelledError:
+        raise
+    except Exception as _hb_err:
+        logger.error("[HEARTBEAT] Task crashed for session %s user %s: %s", session_id, user_id, _hb_err)
+
+
 @app.websocket("/ws/{session_id}/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str, token: str = None):
     """WebSocket endpoint.
@@ -636,7 +677,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
         await websocket.close(code=4003, reason="User not found in session")
         return
 
-    await manager.connect(session_id, user_id, websocket, role=user.role)
+    connection_id = await manager.connect(session_id, user_id, websocket, role=user.role)
     user.connected = True
 
     # Send full state on connect (DM gets POI dm_notes, others don't)
@@ -694,33 +735,20 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
         except Exception as _task_err:
             logger.error("[AUTOSAVE] Task crashed for session %s user %s: %s", session_id, user_id, _task_err)
 
+    autosave_handle = None
     if user.role == 'dm':
-        asyncio.create_task(autosave_task())
+        autosave_handle = asyncio.create_task(autosave_task())
 
     # Heartbeat: detect silent disconnections (AFK / network drop)
     _last_pong = {"t": asyncio.get_running_loop().time()}
 
-    async def heartbeat_task():
-        PING_INTERVAL = 30  # seconds between pings
-        PONG_TIMEOUT = 60   # seconds without pong before closing
-        try:
-            while manager.is_connected(session_id, user_id):
-                await asyncio.sleep(PING_INTERVAL)
-                if not manager.is_connected(session_id, user_id):
-                    break
-                if asyncio.get_running_loop().time() - _last_pong["t"] > PONG_TIMEOUT:
-                    logger.warning("[WS] Heartbeat timeout for %s in %s, closing", user_id, session_id)
-                    try:
-                        await websocket.close(code=1001, reason="Heartbeat timeout")
-                    except Exception:
-                        pass
-                    break
-                logger.info("[WS] sending ping user_id=%s session_id=%s", user_id, session_id)
-                await manager.send_to(session_id, user_id, {"type": "ping"})
-        except Exception as _hb_err:
-            logger.error("[HEARTBEAT] Task crashed for session %s user %s: %s", session_id, user_id, _hb_err)
-
-    asyncio.create_task(heartbeat_task())
+    heartbeat_handle = asyncio.create_task(_websocket_heartbeat_loop(
+        websocket=websocket,
+        session_id=session_id,
+        user_id=user_id,
+        connection_id=connection_id,
+        last_pong=_last_pong,
+    ))
 
     # Role-based message type allow-lists (Part 5.2)
     _VIEWER_ALLOWED = frozenset({"ping", "pong", "viewer_power_use", "viewer_cursor_update", "viewer_emote", "poll_vote"})
@@ -752,11 +780,11 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
             # only on pong. This stops active play (chat, combat, movement) from
             # tripping a false heartbeat timeout when a pong happens to be delayed.
             _last_pong["t"] = asyncio.get_running_loop().time()
-            logger.info("[WS] received frame type=%s user_id=%s last_seen updated", msg_type or "(missing)", user_id)
+            logger.info("[WS] received frame type=%s user_id=%s connection_id=%s last_seen updated", msg_type or "(missing)", user_id, connection_id)
 
             # Handle heartbeat pong — already counted above; skip gameplay dispatch.
             if msg_type == "pong":
-                logger.info("[WS] received frame type=pong user_id=%s", user_id)
+                logger.info("[WS] pong received user_id=%s connection_id=%s", user_id, connection_id)
                 continue
 
             user_role = str(getattr(user, "role", "") or "").strip().lower()
@@ -790,22 +818,26 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
 
     except WebSocketDisconnect:
         removed_current = manager.disconnect(session_id, user_id, websocket)
-        if not removed_current:
-            return
-        user.connected = False
-        # Auto-save when DM disconnects
-        if user.role == 'dm':
-            await save_campaign_async(session)
-        leave_log = session.add_log(f"{user.name} ({user.role}) disconnected.", "system")
-        await manager.broadcast(session_id, {
-            "type": "user_left",
-            "payload": {
-                "user_id": user_id,
-                "user_name": user.name,
-                "role": user.role,
-                "log": leave_log,
-            }
-        })
+        if removed_current:
+            user.connected = False
+            # Auto-save when DM disconnects
+            if user.role == 'dm':
+                await save_campaign_async(session)
+            leave_log = session.add_log(f"{user.name} ({user.role}) disconnected.", "system")
+            await manager.broadcast(session_id, {
+                "type": "user_left",
+                "payload": {
+                    "user_id": user_id,
+                    "user_name": user.name,
+                    "role": user.role,
+                    "log": leave_log,
+                }
+            })
+    finally:
+        heartbeat_handle.cancel()
+        if autosave_handle is not None:
+            autosave_handle.cancel()
+        await asyncio.gather(heartbeat_handle, *( [autosave_handle] if autosave_handle is not None else [] ), return_exceptions=True)
 
 @app.post("/api/generate_loot")
 async def api_generate_loot(request: Request):
