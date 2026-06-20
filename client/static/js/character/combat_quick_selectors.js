@@ -811,6 +811,17 @@
   }
 
   function selectQuickActions(charData) {
+    if (global.traceEnter) global.traceEnter('selectQuickActions');
+    global.__depths = global.__depths || {};
+    global.__depths.selectQuickActions = (Number(global.__depths.selectQuickActions) || 0) + 1;
+    if (global.__depths.selectQuickActions > 5) {
+      if (global.console) global.console.error('[REENTRY] selectQuickActions recursion depth exceeded', { debugTrace: global.__debugTrace });
+      global.__depths.selectQuickActions = Math.max(0, global.__depths.selectQuickActions - 1);
+      throw new Error('selectQuickActions recursion depth exceeded: ' + JSON.stringify((global.__debugTrace || []).slice(-30)));
+    }
+    try {
+    if (global.__safeMode && global.__safeMode.quickActionsAutoRender) return { primaryActions: [], bonusActions: [], reactions: [], resources: [], topSpells: [] };
+    if (global.__stateSyncApplying || global.__combatApplyStateActive) return { primaryActions: [], bonusActions: [], reactions: [], resources: [], topSpells: [] };
     const runtime = _runtime();
     const sheet = charData || runtime.charSheet || {};
     const actionModel = global.ActionsTab && typeof global.ActionsTab.buildQuickActionModel === 'function'
@@ -879,8 +890,8 @@
       quickPicks: picks,
       quickPickLimit: QUICK_PICK_LIMIT,
     };
+    } finally { global.__depths.selectQuickActions = Math.max(0, (Number(global.__depths.selectQuickActions) || 0) - 1); }
   }
-
   global.CombatQuickSelectors = {
     selectQuickActions: selectQuickActions,
     markUsed: markUsed,

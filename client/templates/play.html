@@ -12295,6 +12295,28 @@ let _remoteStateTypeStack = [];
 let _renderFramePending = false;
 let _mapImageLoadingUrl = null;
 
+// Debug breadcrumbs for player freeze / stack-overflow diagnosis.
+window.__debugTrace = Array.isArray(window.__debugTrace) ? window.__debugTrace : [];
+window.__recentWsMessages = Array.isArray(window.__recentWsMessages) ? window.__recentWsMessages : [];
+window.__recentRenderPhases = Array.isArray(window.__recentRenderPhases) ? window.__recentRenderPhases : [];
+window.__recentUiFunctions = Array.isArray(window.__recentUiFunctions) ? window.__recentUiFunctions : [];
+window.__depths = window.__depths || {};
+window.__currentPhase = window.__currentPhase || '';
+window.__combatRenderActive = false;
+window.__combatApplyStateActive = false;
+window.__stateSyncApplying = false;
+window.__safeMode = window.__safeMode || { quickActionsAutoRender: false, charProfileDirtySave: false, reason: '' };
+function __ringPush(buffer, value, limit) { if (Array.isArray(buffer)) { buffer.push(value); while (buffer.length > (limit || 50)) buffer.shift(); } }
+function traceEnter(name, details = {}) { const entry = { t: (performance && performance.now ? performance.now() : Date.now()), name: String(name || 'unknown'), details: details || {} }; window.__debugTrace.push(entry); if (window.__debugTrace.length > 100) window.__debugTrace.shift(); __ringPush(window.__recentUiFunctions, entry, 50); return entry; }
+window.traceEnter = traceEnter;
+function __activePanelDebug() { try { return { tab: typeof __getActiveRightTabShellState === 'function' ? __getActiveRightTabShellState() : _activeRTab, panel: document.querySelector('#sidebar-right [data-panel].active')?.id || '' }; } catch (_) { return { tab: '', panel: '' }; } }
+function __debugSnapshot(extra = {}) { return Object.assign({ message: extra.message || '', stack: extra.stack || '', filename: extra.filename || '', lineno: extra.lineno || 0, colno: extra.colno || 0, recentMessages: (window.__recentWsMessages || []).slice(-50), recentRenderPhases: (window.__recentRenderPhases || []).slice(-50), recentUiFunctions: (window.__recentUiFunctions || []).slice(-50), debugTrace: (window.__debugTrace || []).slice(-100), role: (typeof ROLE !== 'undefined' ? ROLE : ''), activePanel: __activePanelDebug(), combatRenderActive: !!window.__combatRenderActive, stateSyncApplying: !!window.__stateSyncApplying, combatApplyStateActive: !!window.__combatApplyStateActive, remoteStateApplyDepth: _remoteStateApplyDepth, currentPhase: window.__currentPhase || window.__appRenderPhase || '' }, extra); }
+function __logReentry(name) { console.error(`[REENTRY] ${name} already running`, __debugSnapshot({ functionName: name, debugTrace: (window.__debugTrace || []).slice(-100) })); }
+function __enterDepth(name, details = {}, maxDepth = 5) { traceEnter(name, details); window.__depths[name] = (Number(window.__depths[name]) || 0) + 1; if (window.__depths[name] > maxDepth) { console.error(`[REENTRY] ${name} recursion depth exceeded`, __debugSnapshot({ functionName: name, depth: window.__depths[name] })); throw new Error(`${name} recursion depth exceeded: ${JSON.stringify((window.__debugTrace || []).slice(-30))}`); } }
+function __exitDepth(name) { window.__depths[name] = Math.max(0, (Number(window.__depths[name]) || 0) - 1); }
+function __enablePlayerUiSafeMode(reason) { window.__safeMode = { quickActionsAutoRender: true, charProfileDirtySave: true, reason: String(reason || 'stack overflow') }; try { if (window.AppSafeMode && typeof window.AppSafeMode.enable === 'function') window.AppSafeMode.enable('quick-actions-autobuild', reason || 'stack overflow'); } catch (_) {} try { const el = ensureClientRuntimeBanner(); el.textContent = 'Player UI safe mode enabled after stack overflow'; el.style.display = 'block'; } catch (_) {} }
+function __isRemoteStateOrCombatApplying() { return !!(isApplyingRemoteState || window.__stateSyncApplying || window.__combatApplyStateActive || (window.__depths && window.__depths.combatApplyState > 0)); }
+
 function ensureClientRuntimeBanner() {
   let el = document.getElementById('client-runtime-banner');
   if (el) return el;
@@ -12357,11 +12379,21 @@ function requestRenderFrame(reason) {
   });
 }
 window.addEventListener('error', (ev) => {
-  reportClientRuntimeError('Browser error', ev.error || ev.message || 'Unknown error');
+  const message = ev.message || ev.error?.message || 'Unknown error';
+  console.error('[WINDOW ERROR TRACE]', __debugSnapshot({ message, stack: ev.error?.stack || '', filename: ev.filename || '', lineno: ev.lineno || 0, colno: ev.colno || 0 }));
+  if (String(message).includes('Maximum call stack size exceeded')) {
+    console.error('[STACK OVERFLOW TRACE]', { stack: ev.error?.stack, debugTrace: window.__debugTrace, recentMessages: window.__recentWsMessages, currentPhase: window.__currentPhase });
+    __enablePlayerUiSafeMode('Maximum call stack size exceeded');
+  }
+  reportClientRuntimeError('Browser error', ev.error || message);
   if (typeof showToast === 'function') showToast('⚠ Something went wrong — refresh and try again.');
 });
 window.addEventListener('unhandledrejection', (ev) => {
-  reportClientRuntimeError('Promise rejection', ev.reason || 'Unhandled promise rejection');
+  const reason = ev.reason || 'Unhandled promise rejection';
+  const message = reason?.message || String(reason);
+  console.error('[UNHANDLED REJECTION TRACE]', __debugSnapshot({ message, stack: reason?.stack || '' }));
+  if (String(message).includes('Maximum call stack size exceeded')) __enablePlayerUiSafeMode('Maximum call stack size exceeded');
+  reportClientRuntimeError('Promise rejection', reason);
   if (typeof showToast === 'function') showToast('⚠ Something went wrong — refresh and try again.');
 });
 
@@ -18189,6 +18221,7 @@ function drawPlayerVisionOverlay(W, H) {
 // ═══════════════════════════════════════════════════════════════════
 let _lastFrame = 0;
 function drawLoop(ts) {
+  traceEnter('drawLoop', { ts });
   requestAnimationFrame(drawLoop);
   drawFrame();
 }
@@ -18198,12 +18231,16 @@ function drawLoop(ts) {
 let _bootRenderLogged = false;
 function _renderPhase(name) {
   window.__appRenderPhase = name;
+  window.__currentPhase = name;
+  __ringPush(window.__recentRenderPhases, { t: performance.now(), name }, 50);
+  traceEnter('render phase', { name });
   if (!_bootRenderLogged && window.AppBoot && typeof window.AppBoot.phase === 'function') {
     window.AppBoot.phase(name + ' render', 'start');
     window.AppBoot.phase(name + ' render', 'end');
   }
 }
 function drawFrame() {
+  traceEnter('drawFrame');
   if (_renderFramePending) _renderFramePending = false;
   const W = canvas.width, H = canvas.height;
   safeClientCall('refreshVisionPreviewUi', () => refreshVisionPreviewUi());
@@ -28329,6 +28366,7 @@ function _partyStatusFallbackVitalsForUser(user, token = null) {
 }
 
 function renderPartyStatusPanel() {
+  traceEnter('renderPartyStatusPanel');
   const host = document.getElementById('party-status-panel');
   if (!host) return;
   if (ROLE !== 'player') {
@@ -28684,6 +28722,7 @@ function cancelViewerPowerTargeting(showMsg = false) {
 }
 
 function renderViewerPanel() {
+  traceEnter('renderViewerPanel');
   const dmBox = document.getElementById('viewer-power-controls');
   const selfBox = document.getElementById('viewer-power-self');
   if (!dmBox || !selfBox) return;
@@ -32094,6 +32133,8 @@ function loadSavedDiscoveries(cards) {
 }
 
 function handleLegacyMessage(msg) {
+  __ringPush(window.__recentWsMessages, { t: performance.now(), type: String(msg?.type || ''), applyingDepth: _remoteStateApplyDepth }, 50);
+  traceEnter(String(msg?.type || '') === 'state_sync' ? 'state_sync handler' : 'ws handler', { type: msg?.type });
   beginRemoteStateApply(msg && msg.type);
   try {
   if (window.AppMessageDispatch && typeof window.AppMessageDispatch.handleLegacyDomainMessage === 'function') {
@@ -32103,6 +32144,9 @@ function handleLegacyMessage(msg) {
   switch (msg.type) {
 
     case 'state_sync': {
+      traceEnter('state_sync handler', { phase: 'start' });
+      window.__stateSyncApplying = true;
+      try {
       syncSessionAuthority('state_sync');
       // Full state load
       Object.keys(tokens).forEach(k => delete tokens[k]);
@@ -32325,6 +32369,7 @@ function handleLegacyMessage(msg) {
       if (ROLE === 'player') {
         syncMyCharacterFormFromToken(true);
       }
+      } finally { window.__stateSyncApplying = false; traceEnter('state_sync handler', { phase: 'end' }); }
 
       // Welcome back message for returning players
       if (RETURNING && ROLE === 'player') {
@@ -41191,12 +41236,15 @@ function createNewCharProfileId() {
 }
 
 function _stableCharProfileStringify(value) {
+  __enterDepth('stableCharProfileStringify', { kind: Array.isArray(value) ? 'array' : typeof value }, 80);
+  try {
   if (value == null || typeof value !== 'object') return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map((entry) => _stableCharProfileStringify(entry)).join(',')}]`;
   const keys = Object.keys(value)
     .filter((key) => !['_localSavedAt', 'updated_at', 'updatedAt', 'created_at', 'createdAt'].includes(key))
     .sort();
   return `{${keys.map((key) => `${JSON.stringify(key)}:${_stableCharProfileStringify(value[key])}`).join(',')}}`;
+  } finally { __exitDepth('stableCharProfileStringify'); }
 }
 
 function getCharProfileDraftHash(profile) {
@@ -41209,7 +41257,11 @@ function getCharProfileDraftHash(profile) {
 }
 
 function markCharProfileDirty(source = 'user') {
+  if (window.__depths.markCharProfileDirty > 0) __logReentry('markCharProfileDirty');
+  __enterDepth('markCharProfileDirty', { source }, 5);
+  try {
   if (ROLE !== 'player') return false;
+  if (window.__safeMode?.charProfileDirtySave || __isRemoteStateOrCombatApplying()) { console.warn('[char profile] dirty mark skipped during remote/combat apply', { source, remote: isApplyingRemoteState, stateSync: window.__stateSyncApplying, combatApply: window.__combatApplyStateActive }); return false; }
   if (isHydrating || source === 'hydrate' || source === 'render' || source === 'server') return false;
   currentDraftHash = getCharProfileDraftHash(collectCurrentCharProfile({ skipSideEffects: true }));
   if (!currentDraftHash || currentDraftHash === lastSavedHash) {
@@ -41220,6 +41272,7 @@ function markCharProfileDirty(source = 'user') {
   isDirty = true;
   setCharacterBookSaveState('dirty');
   return true;
+  } finally { __exitDepth('markCharProfileDirty'); }
 }
 
 function markCharProfileClean(profile) {
@@ -41230,7 +41283,11 @@ function markCharProfileClean(profile) {
 }
 
 function scheduleCharProfileAutosave() {
+  if (window.__depths.scheduleCharProfileSave > 0) __logReentry('scheduleCharProfileSave');
+  __enterDepth('scheduleCharProfileSave', {}, 5);
+  try {
   if (ROLE !== 'player') return;
+  if (window.__safeMode?.charProfileDirtySave || __isRemoteStateOrCombatApplying()) { console.warn('[char profile] autosave skipped during remote/combat apply', { remote: isApplyingRemoteState, stateSync: window.__stateSyncApplying, combatApply: window.__combatApplyStateActive }); return; }
   if (isHydrating || isSaving) return;
   if (!_charSheet && !charProfiles.length && !(document.getElementById('char-name')?.value || '').trim()) return;
   if (!markCharProfileDirty('user')) return;
@@ -41238,6 +41295,7 @@ function scheduleCharProfileAutosave() {
   _charProfileAutosaveTimer = setTimeout(() => {
     saveCurrentCharProfile({ silent: true, trigger: 'autosave' });
   }, 450);
+  } finally { __exitDepth('scheduleCharProfileSave'); }
 }
 
 function scheduleCharBookQuickPanelSync() {
@@ -43005,6 +43063,7 @@ function setInventoryLayoutMode(mode) {
 }
 
 function renderInventoryPanel() {
+  traceEnter('renderInventoryPanel');
   const list = document.getElementById('inventory-list');
   const empty = document.getElementById('inventory-empty');
   const subtitle = document.getElementById('inventory-subtitle');
@@ -43755,9 +43814,10 @@ function __syncRightTabRegistry() {
 }
 
 function refreshRightPanelContextUI() {
-  refreshSelectedQuickPanel();
-  renderDmCompanionPanel();
-  __syncRightTabRegistry();
+  if (window.__depths.refreshRightPanelContextUI > 0) __logReentry('refreshRightPanelContextUI');
+  __enterDepth('refreshRightPanelContextUI', {}, 5);
+  try { refreshSelectedQuickPanel(); renderDmCompanionPanel(); __syncRightTabRegistry(); }
+  finally { __exitDepth('refreshRightPanelContextUI'); }
 }
 
 function __createTabsEnv() {
@@ -44968,6 +45028,7 @@ function removeSpellAt(wx, wy) {
 
 
 function handleCombatStateLive(payload) {
+  traceEnter('handleCombatStateLive', { revision: payload?.revision });
   if (!payload || typeof payload !== 'object') return false;
   console.debug(`[handleCombatStateLive] combat_state revision=${payload.revision ?? 'none'} order=${JSON.stringify(Array.isArray(payload.combatants) ? payload.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : []).replace(/\"/g, "'")}`);
   if (_isStaleVisibilityPayload(payload)) return true;
@@ -45025,6 +45086,10 @@ function _isAccidentalEmptyCombatState(state) {
 }
 
 function combatApplyState(state) {
+  if (window.__depths.combatApplyState > 0) __logReentry('combatApplyState');
+  __enterDepth('combatApplyState', { revision: state?.revision }, 5);
+  window.__combatApplyStateActive = true;
+  try {
   if (!state || typeof state !== 'object') return false;
   if (_isAccidentalEmptyCombatState(state)) {
     console.warn('[combatApplyState] ignored empty/no-revision combat_state during reconnect', { incomingRevision: state.revision ?? null, localRevision: _combat?.revision ?? null, localCount: Array.isArray(_combat?.combatants) ? _combat.combatants.length : 0 });
@@ -45133,7 +45198,7 @@ function combatApplyState(state) {
     if (canvasWrap) canvasWrap.classList.remove('active-turn');
   }
   // Update combat tab attention (glow, YOUR TURN badge, coach, hints)
-  _updateCombatTabAttention(prevActive);
+  _updateCombatTabAttention(prevActive);  } finally { window.__combatApplyStateActive = false; __exitDepth('combatApplyState'); }
 }
 
 // ── Combat tab attention: glow, YOUR TURN, coach, hints ───────────────────
@@ -45874,6 +45939,7 @@ function _normalizeCombatRoster(combatState = _combat) {
 }
 
 function _renderCombatRoster(list, roster, isActive) {
+  traceEnter('_renderCombatRoster', { count: Array.isArray(roster) ? roster.length : 0, isActive: !!isActive });
   list.innerHTML = '';
   roster.forEach((model) => {
     const com = model.combatant || {};
@@ -47170,6 +47236,9 @@ function playerInspectSpell(id) {
 }
 
 function renderPlayerActionsHub() {
+  if (window.__depths.renderPlayerActionsHub > 0) __logReentry('renderPlayerActionsHub');
+  __enterDepth('renderPlayerActionsHub', {}, 5);
+  try {
   const hub = document.getElementById('player-actions-hub');
   if (!hub) return;
   if (ROLE !== 'player' || !_combat?.active || !Array.isArray(_combat?.combatants) || !_combat.combatants.length) {
@@ -47261,7 +47330,7 @@ function renderPlayerActionsHub() {
           </div>
         </details>`;
       }).join('')}
-    </div>`;
+    </div>`;  } finally { __exitDepth('renderPlayerActionsHub'); }
 }
 
 function setPlayerActionsDensity(density) {
@@ -47280,6 +47349,10 @@ function togglePlayerActionsHub() {
 }
 
 function renderCombat() {
+  if (window.__depths.renderCombat > 0) __logReentry('renderCombat');
+  __enterDepth('renderCombat', { active: _combat?.active, revision: _combat?.revision }, 5);
+  window.__combatRenderActive = true;
+  try {
   const _renderCombatantsForLog = Array.isArray(_combat?.combatants) ? _combat.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`).join(',') : '';
   console.debug(`[renderCombat] combatants=${_renderCombatantsForLog}`);
   // During dice physics, debounce DOM rerenders to avoid jank
@@ -47511,7 +47584,7 @@ function renderCombat() {
   } catch (_err) {}
   _renderSuspendedCombatants(list);
   renderPartyStatusPanel();
-  suggestVisibleHostilesForInitiative();
+  suggestVisibleHostilesForInitiative();  } finally { window.__combatRenderActive = false; __exitDepth('renderCombat'); }
 }
 
 function _formatSuspendedCombatantReasons(row) {
