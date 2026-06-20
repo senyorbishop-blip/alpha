@@ -135,6 +135,11 @@ def restore_session_from_db(data: dict):
     # Restore DM slot — use persisted dm_id so returning DMs reconnect correctly
     dm_id = data.get("dm_id") or secrets.token_hex(8)
     dm = User(id=dm_id, name=data["dm_name"], role="dm", connected=False)
+    # Preserve the DM↔auth linkage so a returning DM is not resolved as a stranger
+    # after a restart/restore (which would deny the websocket handshake).
+    dm_player_key = data.get("dm_player_key")
+    if dm_player_key:
+        dm.player_key = dm_player_key
     session.users[dm_id] = dm
     session.dm_id = dm_id
 
