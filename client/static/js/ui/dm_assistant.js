@@ -107,7 +107,9 @@
 
     mount() {
       this.host = document.getElementById('dm-assistant-host');
-      if (!this.host) return;
+      const role = String(window.ROLE || new URLSearchParams(window.location.search || '').get('role') || this.state.role || 'viewer').toLowerCase();
+      this.state.role = role;
+      if (!this.host || role !== 'dm') return;
       this.render();
       this.bind();
       this.refreshStatus();
