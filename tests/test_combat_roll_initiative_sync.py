@@ -265,6 +265,88 @@ async def test_suspended_combatants_filtered_for_player_via_broadcast_combat(mon
     assert "hidden_suspended_combatants" not in player_payload
 
 @pytest.mark.anyio
+async def test_roll_initiative_emits_dice_result_popup(monkeypatch):
+    """Initiative must drive the shared dice_result popup path so the roll shows
+    consistently for the DM and every player, with the correct roll/modifier/total."""
+    session, dm, player = _build_session()
+    broadcasts = []
+
+    async def _fake_broadcast_combat(session):
+        return None
+
+    async def _fake_manager_broadcast(*args, **kwargs):
+        # broadcast(session_id, message[, exclude_user])
+        broadcasts.append(args[1] if len(args) > 1 else kwargs.get("message"))
+
+    async def _fake_send_to(*args, **kwargs):
+        return None
+
+    async def _fake_save(*args, **kwargs):
+        return True
+
+    monkeypatch.setattr(combat_handlers, "_broadcast_combat", _fake_broadcast_combat)
+    monkeypatch.setattr(combat_handlers.manager, "broadcast", _fake_manager_broadcast)
+    monkeypatch.setattr(combat_handlers.manager, "send_to", _fake_send_to)
+    monkeypatch.setattr(combat_handlers, "save_campaign_async", _fake_save)
+
+    await combat_handlers.handle_combat_roll_initiative(
+        {"combatant_id": "cmb-hero", "roll": 15, "modifier": 2, "roll_id": "rid-init-1"},
+        session,
+        player,
+    )
+
+    dice = [m for m in broadcasts if m and m.get("type") == "dice_result"]
+    assert dice, "initiative roll must broadcast a dice_result popup event"
+    p = dice[-1]["payload"]
+    assert p["user_id"] == player.id
+    assert p["user_name"] == player.name
+    assert p["dice_type"] == 20
+    assert p["quantity"] == 1
+    assert p["rolls"] == [15]
+    assert p["modifier"] == 2
+    assert p["total"] == 17, "d20 roll + modifier must equal total"
+    assert p["roll_label"] == "Hero initiative"
+    assert p["combatant_id"] == "cmb-hero"
+    assert p["token_id"] == "hero"
+    assert p["roll_id"] == "rid-init-1"
+    assert p["revision"] == session.combat["revision"]
+
+
+@pytest.mark.anyio
+async def test_roll_initiative_authoritative_value_matches_dice_result(monkeypatch):
+    """The combat list initiative value must equal the dice_result total."""
+    session, dm, player = _build_session()
+    broadcasts = []
+
+    async def _fake_broadcast_combat(session):
+        return None
+
+    async def _fake_manager_broadcast(*args, **kwargs):
+        broadcasts.append(args[1] if len(args) > 1 else kwargs.get("message"))
+
+    async def _fake_send_to(*args, **kwargs):
+        return None
+
+    async def _fake_save(*args, **kwargs):
+        return True
+
+    monkeypatch.setattr(combat_handlers, "_broadcast_combat", _fake_broadcast_combat)
+    monkeypatch.setattr(combat_handlers.manager, "broadcast", _fake_manager_broadcast)
+    monkeypatch.setattr(combat_handlers.manager, "send_to", _fake_send_to)
+    monkeypatch.setattr(combat_handlers, "save_campaign_async", _fake_save)
+
+    await combat_handlers.handle_combat_roll_initiative(
+        {"combatant_id": "cmb-npc", "roll": 9, "modifier": 0, "roll_id": "rid-npc"},
+        session,
+        dm,
+    )
+
+    npc = next(c for c in session.combat["combatants"] if c["id"] == "cmb-npc")
+    dice = [m for m in broadcasts if m and m.get("type") == "dice_result"][-1]["payload"]
+    assert npc["initiative"] == dice["total"] == 9
+
+
+@pytest.mark.anyio
 async def test_combat_state_request_replies_to_requesting_user_with_current_state(monkeypatch):
     session, dm, player = _build_session()
     sent = []

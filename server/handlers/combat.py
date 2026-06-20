@@ -975,6 +975,7 @@ async def handle_combat_roll_initiative(payload: dict, session: Session, user: U
     """
     combatant_id = str(payload.get("combatant_id") or "").strip()
     token_id = str(payload.get("token_id") or "").strip()
+    roll_id = str(payload.get("roll_id") or "").strip()
     roll = _safe_int(payload.get("roll"), 0, minimum=1, maximum=20)
 
     coms = session.combat.get("combatants", [])
@@ -1027,6 +1028,32 @@ async def handle_combat_roll_initiative(payload: dict, session: Session, user: U
     await save_campaign_async(session)
 
     await _broadcast_combat(session)
+
+    # Drive the dice popup through the same authoritative dice_result path that
+    # every other roll uses, so BOTH the DM and players see the initiative roll
+    # land consistently (previously only the roller saw a local-only popup). The
+    # combatant_id/roll_id let the roller dedupe their own already-shown local
+    # animation instead of double-popping.
+    initiative_name = str(target_combatant.get("name") or "Combatant")
+    await manager.broadcast(session.id, {
+        "type": "dice_result",
+        "payload": {
+            "user_id": user.id,
+            "user_name": user.name,
+            "dice_type": 20,
+            "quantity": 1,
+            "rolls": [roll],
+            "total": total,
+            "modifier": modifier,
+            "roll_label": f"{initiative_name} initiative",
+            "combatant_id": str(target_combatant.get("id") or ""),
+            "token_id": str(target_combatant.get("token_id") or ""),
+            "encounter_id": session.combat.get("encounter_id"),
+            "revision": session.combat.get("revision"),
+            "roll_id": roll_id,
+        },
+    })
+
     await manager.broadcast(session.id, {
         "type": "combat_initiative_rolled",
         "payload": {
