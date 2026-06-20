@@ -173,10 +173,11 @@ def test_quick_weapon_rolls_use_safe_context_and_modal_damage_formula():
     assert 'const displayedFormula = normalizeWeaponDamage(card, card) || damageMeta.formula;' in play
     assert 'const rollFormula = critical ? _combatQuickCriticalFormula(displayedFormula) : displayedFormula;' in play
     assert 'roll_context: context' in play
-    assert 'formulaUsed: `1d20${bonusStr}`' in play
+    assert 'formulaUsed: roll.formula' in play
     assert 'vs ${context.targetName || \'No target\'}' in play
-    assert 'displayDamageFormula = normalizeWeaponDamage(card, card)' in actions
-    assert 'safeWeaponDamage(Object.assign({}, card, { damage_formula: displayDamageFormula' in actions
+    assert 'const damageFormula = normalizeWeaponDamage(source, source);' in actions
+    assert 'const displayDamageFormula = weaponContext.damageFormula;' in actions
+    assert 'rollQuickWeaponDamage(_ctxForMode(weaponContext, mode))' in actions
     assert 'Could not roll \' + (card.name || \'weapon\') + \' damage: missing roll formula' in actions
 
 
