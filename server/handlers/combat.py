@@ -551,6 +551,8 @@ async def _advance_combat_turn(session: Session):
     next_turn = (prev_turn + 1) % len(coms)
     session.combat["active"] = True
     session.combat["turn"] = next_turn
+    session.combat["turn_locked"] = True
+    session.combat["turn_started"] = True
     if next_turn == 0 and prev_turn != 0:
         session.combat["round"] = session.combat.get("round", 1) + 1
     elif "round" not in session.combat:
@@ -579,11 +581,30 @@ def _combatant_from_token(session: Session, token, *, initiative=None, roll=None
     }
 
 
-def _sort_combatants_preserving_turn(combat: dict) -> None:
+def _visible_combatants_missing_initiative(combat: dict) -> list[dict]:
+    coms = combat.get("combatants") if isinstance(combat.get("combatants"), list) else []
+    return [c for c in coms if isinstance(c, dict) and c.get("initiative") is None]
+
+
+def _combat_initiative_setup_phase(combat: dict) -> bool:
+    """True while an active encounter is collecting initial initiative rolls.
+
+    During setup the first row is only a placeholder, not an intentional active
+    turn.  Once a DM/player advances or ends a turn we set ``turn_locked`` and
+    preserve that active combatant for later mid-round initiative edits.
+    """
+    if not combat.get("active"):
+        return False
+    if combat.get("turn_locked") or combat.get("turn_started"):
+        return False
+    return bool(_visible_combatants_missing_initiative(combat))
+
+
+def _sort_combatants_preserving_turn(combat: dict, *, preserve_turn: bool = True) -> None:
     coms = combat.get("combatants") or []
     old_turn = _safe_int(combat.get("turn"), 0, minimum=0, maximum=max(0, len(coms) - 1))
     current_id = None
-    if 0 <= old_turn < len(coms):
+    if preserve_turn and 0 <= old_turn < len(coms):
         current_id = str((coms[old_turn] or {}).get("id") or "")
     coms.sort(key=lambda x: (x.get("initiative") if x.get("initiative") is not None else -99), reverse=True)
     if current_id:
@@ -591,6 +612,10 @@ def _sort_combatants_preserving_turn(combat: dict) -> None:
             if str((combatant or {}).get("id") or "") == current_id:
                 combat["turn"] = idx
                 break
+        else:
+            combat["turn"] = min(old_turn, max(0, len(coms) - 1))
+    else:
+        combat["turn"] = 0 if coms else 0
 
 
 async def handle_combat_add_token(payload: dict, session: Session, user: User):
@@ -744,6 +769,8 @@ async def handle_combat_prev(payload: dict, session: Session, user: User):
     new_turn = (prev_turn - 1) % len(coms)
     session.combat["active"] = True
     session.combat["turn"] = new_turn
+    session.combat["turn_locked"] = True
+    session.combat["turn_started"] = True
     if new_turn == len(coms) - 1 and prev_turn == 0:
         session.combat["round"] = max(1, prev_round - 1)
     _ensure_combat_movement_state(session, reset=True)
@@ -1012,17 +1039,16 @@ async def handle_combat_roll_initiative(payload: dict, session: Session, user: U
     target_combatant["roll"] = roll
     target_combatant["modifier"] = modifier
 
-    current_id = None
-    old_turn = session.combat.get("turn", 0)
-    if 0 <= old_turn < len(coms):
-        current_id = coms[old_turn].get("id")
-    coms.sort(key=lambda x: (x.get("initiative") if x.get("initiative") is not None else -99), reverse=True)
+    # If this encounter is still collecting initial initiative, the old turn
+    # index is not authoritative. Sort immediately and put the active pointer on
+    # the highest rolled combatant (index 0 after sorting). Only preserve the
+    # active combatant once the DM has explicitly advanced/locked the turn.
+    setup_phase = _combat_initiative_setup_phase(session.combat)
+    preserve_turn = bool(session.combat.get("turn_locked") or session.combat.get("turn_started")) and not setup_phase
+    _sort_combatants_preserving_turn(session.combat, preserve_turn=preserve_turn)
     session.combat["combatants"] = coms
-    if current_id:
-        for i, c in enumerate(coms):
-            if c.get("id") == current_id:
-                session.combat["turn"] = i
-                break
+    if setup_phase or not preserve_turn:
+        session.combat["turn"] = 0 if coms else 0
     _ensure_combat_movement_state(session, reset=True)
     _bump_combat_revision(session, "roll_initiative")
     await save_campaign_async(session)

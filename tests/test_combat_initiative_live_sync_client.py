@@ -213,3 +213,91 @@ def test_token_badge_renderer_reads_initiative_from_combatant_state():
     assert "const combatant = getCombatantForToken(token && token.id);" in src
     assert "const initiativeValue = combatant ? combatant.initiative : null;" in src
     assert "`INIT ${initiativeValue}`" in src
+
+
+def _combat_dom_render_snippet() -> str:
+    src = PLAY.read_text(encoding="utf-8")
+    start = src.index("function _combatRosterOwnerLabel(model) {")
+    end = src.index("function _markLoadingWeaponUsedThisTurn(card) {", start)
+    return src[start:end]
+
+
+def _run_dom_render(state_js: str) -> dict:
+    code = f"""
+class FakeElement {{
+  constructor(tag='div') {{ this.tagName = tag; this.children = []; this.dataset = {{}}; this.style = {{}}; this.className = ''; this._html = ''; }}
+  appendChild(child) {{ this.children.push(child); return child; }}
+  set innerHTML(value) {{ this._html = String(value || ''); this.children = []; }}
+  get innerHTML() {{ return this._html + this.children.map(c => c.innerHTML || c._html || '').join(''); }}
+  scrollIntoView() {{}}
+}}
+const calls = {{ sendWS: [] }};
+global.window = global;
+global.location = {{ host: 'localhost' }};
+global.document = {{ createElement: (tag) => new FakeElement(tag), getElementById: () => null }};
+global.ROLE = 'dm';
+global.USER_ID = 'dm1';
+global.users = {{}};
+global.tokens = {{}};
+global._currentPoi = null;
+global._currentMapContextKey = () => 'world';
+global._tokenOwnedByMe = () => false;
+global.escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, ch => ({{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}}[ch]));
+global._combatRosterHpLabel = () => '';
+global._combatRosterTokenAvatarHtml = () => '';
+global._canRollInitiative = () => false;
+global._combat = {{ active: false, turn: 0, combatants: [] }};
+global.sendWS = (msg) => calls.sendWS.push(msg);
+global._renderSuspendedCombatants = () => {{}};
+global.renderPartyStatusPanel = () => {{}};
+global.suggestVisibleHostilesForInitiative = () => {{}};
+global.setTimeout = (fn) => 0;
+function _formatInitiativeCellValue(combatant) {{
+  if (!combatant) return '—';
+  const total = combatant.initiative;
+  if (total === null || total === undefined) return '—';
+  const rawRoll = parseInt(combatant.roll, 10);
+  const mod = parseInt(combatant.modifier, 10) || 0;
+  if (!Number.isFinite(rawRoll)) return `${{total}}`;
+  const modText = mod === 0 ? '' : (mod > 0 ? `+${{mod}}` : `${{mod}}`);
+  return modText ? `${{total}} (${{rawRoll}}${{modText}})` : `${{total}} (${{rawRoll}})`;
+}}
+{_combat_dom_render_snippet()}
+{state_js}
+console.log(JSON.stringify({{ html: list.innerHTML, order: list.children.map(c => c.dataset.combatantId), classes: list.children.map(c => c.className), calls }}));
+"""
+    out = subprocess.check_output(["node", "-e", code], cwd=ROOT, text=True, timeout=30)
+    return json.loads(out.strip().splitlines()[-1])
+
+
+def test_sidebar_dom_renders_authoritative_order_initiative_and_now_label():
+    result = _run_dom_render("""
+const list = new FakeElement('div');
+_combat = { active: true, turn: 0, round: 1, combatants: [
+  { id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 14, roll: 14, modifier: 0 },
+  { id: 'guard', token_id: 't-guard', name: 'Guard', initiative: 6, roll: 6, modifier: 0 },
+  { id: 'mage', token_id: 't-mage', name: 'Mage', initiative: null, roll: null, modifier: 0 },
+] };
+const roster = _normalizeCombatRoster(_combat);
+_renderCombatRoster(list, roster, true);
+""")
+    assert result["order"] == ["bishop", "guard", "mage"]
+    assert "Bishop" in result["html"] and "14 (14)" in result["html"]
+    assert "Guard" in result["html"] and "6 (6)" in result["html"]
+    assert result["classes"][0].startswith("combat-entry current")
+    assert "ce-order now\">Now" in result["html"]
+
+
+def test_sidebar_dom_does_not_keep_guard_now_after_setup_sort():
+    result = _run_dom_render("""
+const list = new FakeElement('div');
+_combat = { active: true, turn: 0, round: 1, combatants: [
+  { id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 14, roll: 14, modifier: 0 },
+  { id: 'guard', token_id: 't-guard', name: 'Guard', initiative: 6, roll: 6, modifier: 0 },
+] };
+const roster = _normalizeCombatRoster(_combat);
+_renderCombatRoster(list, roster, true);
+""")
+    assert result["order"] == ["bishop", "guard"]
+    assert "combat-entry current" in result["classes"][0]
+    assert "combat-entry current" not in result["classes"][1]
