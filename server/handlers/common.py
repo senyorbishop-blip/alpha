@@ -426,6 +426,19 @@ def _sync_combatant_token_state(session: Session, token, *, previous_hp: int | N
 def _combat_state_payload_for_user(session: Session, user: User | None, visibility_revision: int | None = None) -> dict:
     payload = dict(getattr(session, "combat", None) or {})
     if not user or getattr(user, "role", "") != "dm":
+        visible_combatants = []
+        for combatant in payload.get("combatants") or []:
+            if not isinstance(combatant, dict):
+                continue
+            token_id = str(combatant.get("token_id") or "")
+            token = (getattr(session, "tokens", {}) or {}).get(token_id) if token_id else None
+            if token is not None and is_npc_or_monster_token(token):
+                map_context = str(combatant.get("map_context") or _token_map_context(token) or getattr(session, "dm_map_context", "world") or "world")
+                if bool(getattr(token, "hidden", False)) or bool(getattr(token, "staged", False)) or is_token_touching_unrevealed_fog(session, token, map_context):
+                    continue
+            visible_combatants.append(combatant)
+        payload["combatants"] = visible_combatants
+        payload["turn"] = _safe_int(payload.get("turn"), 0, minimum=0, maximum=max(0, len(visible_combatants) - 1))
         payload.pop("suspended_combatants", None)
         payload.pop("fog_suspended_combatants", None)
         payload.pop("hidden_suspended_combatants", None)

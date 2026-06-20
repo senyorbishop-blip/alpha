@@ -170,6 +170,23 @@ def test_actual_incoming_dispatch_combat_state_from_self_roll_applies():
     assert result["combat"]["combatants"][0]["initiative"] == 13
 
 
+def test_websocket_combat_state_dispatch_forces_right_sidebar_and_active_context():
+    result = _run(
+        "function handleCombatStateLive(payload) { combatApplyState(payload); return true; }"
+        "function handleLegacyMessage(msg){ const p = msg.payload || {}; switch(msg.type){ case 'combat_state': handleCombatStateLive(p); return true; } }"
+        "handleLegacyMessage({ type: 'combat_state', payload: { active: true, turn: 0, round: 1, revision: 5, "
+        "combatants: [{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: 20, roll: 20, modifier: 0 },"
+        "{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 8, roll: 8, modifier: 0 }],"
+        "suspended_combatants: [{ id: 'mage', token_id: 't-mage', name: 'Mage', initiative: 12, suspended_reasons: ['fog'] }] } });",
+        initial_combat_js="{ active: true, turn: 0, round: 1, revision: 4, combatants: [{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null }] }",
+    )
+    assert result["calls"]["renderCombat"] == 1
+    assert result["calls"]["refreshRightPanelContextUI"] == 1
+    assert result["calls"]["updateActiveContext"] == 1
+    assert [c["initiative"] for c in result["combat"]["combatants"]] == [20, 8]
+    assert result["combat"]["suspended_combatants"][0]["token_id"] == "t-mage"
+
+
 def test_actual_incoming_dispatch_dm_npc_roll_updates_dm_client():
     result = _run(
         "function handleLegacyMessage(msg){ const p = msg.payload || {}; switch(msg.type){ case 'combat_state': combatApplyState(p); break; } }"
@@ -217,9 +234,11 @@ def test_token_badge_renderer_reads_initiative_from_combatant_state():
 
 def _combat_dom_render_snippet() -> str:
     src = PLAY.read_text(encoding="utf-8")
-    start = src.index("function _combatRosterOwnerLabel(model) {")
+    start = src.index("function _combatRosterHpLabel(model) {")
+    suspended_start = src.index("function _formatSuspendedCombatantReasons(row) {")
+    suspended_end = src.index("function _isMyToken(tokenId) {", suspended_start)
     end = src.index("function _markLoadingWeaponUsedThisTurn(card) {", start)
-    return src[start:end]
+    return src[start:end] + src[suspended_start:suspended_end]
 
 
 def _run_dom_render(state_js: str) -> dict:
@@ -248,7 +267,6 @@ global._combatRosterTokenAvatarHtml = () => '';
 global._canRollInitiative = () => false;
 global._combat = {{ active: false, turn: 0, combatants: [] }};
 global.sendWS = (msg) => calls.sendWS.push(msg);
-global._renderSuspendedCombatants = () => {{}};
 global.renderPartyStatusPanel = () => {{}};
 global.suggestVisibleHostilesForInitiative = () => {{}};
 global.setTimeout = (fn) => 0;
@@ -301,3 +319,56 @@ _renderCombatRoster(list, roster, true);
     assert result["order"] == ["bishop", "guard"]
     assert "combat-entry current" in result["classes"][0]
     assert "combat-entry current" not in result["classes"][1]
+
+
+def test_right_sidebar_dom_stale_initiative_recovers_without_refresh():
+    result = _run_dom_render("""
+const list = new FakeElement('div');
+_combat = { active: true, turn: 0, round: 1, combatants: [
+  { id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null, roll: null, modifier: 0 },
+] };
+_renderCombatRoster(list, _normalizeCombatRoster(_combat), true);
+_combat = { active: true, turn: 0, round: 1, combatants: [
+  { id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 8, roll: 8, modifier: 0 },
+] };
+_renderCombatRoster(list, _normalizeCombatRoster(_combat), true);
+""")
+    assert "Bishop" in result["html"]
+    assert "8 (8)" in result["html"]
+    assert "🎲" not in result["html"]
+
+
+def test_dm_right_sidebar_dom_shows_suspended_fog_combatants():
+    result = _run_dom_render("""
+const list = new FakeElement('div');
+_combat = { active: true, turn: 0, round: 1, combatants: [
+  { id: 'guard', token_id: 't-guard', name: 'Guard', initiative: 20, roll: 20, modifier: 0 },
+  { id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 8, roll: 8, modifier: 0 },
+], suspended_combatants: [
+  { id: 'mage', token_id: 't-mage', name: 'Mage', initiative: 12, suspended_reasons: ['fog'] },
+] };
+_renderCombatRoster(list, _normalizeCombatRoster(_combat), true);
+_renderSuspendedCombatants(list);
+""")
+    assert "Guard" in result["html"] and "20 (20)" in result["html"]
+    assert "Bishop" in result["html"] and "8 (8)" in result["html"]
+    assert "Suspended Combatants" in result["html"]
+    assert "Mage · Init 12" in result["html"]
+    assert "Fog" in result["html"]
+
+
+def test_player_right_sidebar_dom_hides_suspended_metadata_from_payload():
+    result = _run_dom_render("""
+ROLE = 'player';
+const list = new FakeElement('div');
+_combat = { active: true, turn: 0, round: 1, combatants: [
+  { id: 'guard', token_id: 't-guard', name: 'Guard', initiative: 20, roll: 20, modifier: 0 },
+  { id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 8, roll: 8, modifier: 0 },
+] };
+_renderCombatRoster(list, _normalizeCombatRoster(_combat), true);
+_renderSuspendedCombatants(list);
+""")
+    assert "Guard" in result["html"] and "20 (20)" in result["html"]
+    assert "Bishop" in result["html"] and "8 (8)" in result["html"]
+    assert "Mage" not in result["html"]
+    assert "Suspended Combatants" not in result["html"]
