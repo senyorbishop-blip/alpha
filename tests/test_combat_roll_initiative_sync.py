@@ -116,9 +116,11 @@ async def test_roll_initiative_increments_combat_revision(monkeypatch):
 @pytest.mark.anyio
 async def test_roll_initiative_sort_preserves_active_combatant(monkeypatch):
     session, dm, player = _build_session()
+    session.combat["turn_locked"] = True
+    session.combat["turn_started"] = True
     _patch_io(monkeypatch, [], [])
 
-    # Hero is currently active (turn 0). Goblin rolls higher initiative and
+    # Hero is currently active (turn 0) in an already-started round. Goblin rolls higher initiative and
     # should move ahead in order, but turn index should still point at Hero.
     await combat_handlers.handle_combat_roll_initiative(
         {"combatant_id": "cmb-npc", "roll": 20}, dm and session, dm,
@@ -371,3 +373,40 @@ async def test_combat_state_request_replies_to_requesting_user_with_current_stat
     assert "combatants" in payload
     assert payload["combatants"][0]["initiative"] is None
     assert "visibility_revision" in payload
+
+@pytest.mark.anyio
+async def test_initial_setup_roll_sorts_and_sets_highest_turn(monkeypatch):
+    session, dm, player = _build_session()
+    session.tokens["mage"] = Token(id="mage", name="Mage", x=0, y=0, width=1, height=1, color="#fff", shape="circle", owner_id=None, token_type="npc")
+    session.combat["combatants"] = [
+        {"id": "cmb-guard", "token_id": "npc", "name": "Guard", "owner_id": None, "initiative": None, "roll": None, "modifier": 0},
+        {"id": "cmb-bishop", "token_id": "hero", "name": "Bishop", "owner_id": player.id, "initiative": None, "roll": None, "modifier": 0},
+        {"id": "cmb-mage", "token_id": "mage", "name": "Mage", "owner_id": None, "initiative": None, "roll": None, "modifier": 0},
+    ]
+    broadcasts = []
+    _patch_io(monkeypatch, broadcasts, [])
+
+    await combat_handlers.handle_combat_roll_initiative({"combatant_id": "cmb-guard", "roll": 6}, session, dm)
+    await combat_handlers.handle_combat_roll_initiative({"combatant_id": "cmb-bishop", "roll": 14}, session, dm)
+
+    assert [c["id"] for c in session.combat["combatants"]][:2] == ["cmb-bishop", "cmb-guard"]
+    assert session.combat["turn"] == 0
+    assert session.combat["combatants"][session.combat["turn"]]["id"] == "cmb-bishop"
+    assert broadcasts[-1]["combatants"][0]["initiative"] == 14
+    assert broadcasts[-1]["turn"] == 0
+
+
+@pytest.mark.anyio
+async def test_mid_combat_initialized_reroll_preserves_locked_active_turn(monkeypatch):
+    session, dm, player = _build_session()
+    session.combat.update({"turn": 1, "turn_locked": True, "turn_started": True})
+    session.combat["combatants"] = [
+        {"id": "cmb-hero", "token_id": "hero", "name": "Hero", "owner_id": player.id, "initiative": 12, "roll": 10, "modifier": 2},
+        {"id": "cmb-npc", "token_id": "npc", "name": "Goblin", "owner_id": None, "initiative": 8, "roll": 8, "modifier": 0},
+    ]
+    _patch_io(monkeypatch, [], [])
+
+    await combat_handlers.handle_combat_roll_initiative({"combatant_id": "cmb-hero", "roll": 1, "modifier": 0}, session, dm)
+
+    assert [c["id"] for c in session.combat["combatants"]] == ["cmb-npc", "cmb-hero"]
+    assert session.combat["combatants"][session.combat["turn"]]["id"] == "cmb-npc"
