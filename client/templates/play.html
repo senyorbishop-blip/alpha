@@ -7473,6 +7473,57 @@
     }
 
 
+
+    /* DM/player token hover stat cards: quick-access details without permanent map labels. */
+    #token-hover-card {
+      position: fixed;
+      z-index: 9988;
+      min-width: 190px;
+      max-width: min(285px, calc(100vw - 24px));
+      pointer-events: none;
+      display: none;
+      padding: 0.62rem 0.68rem;
+      border: 1px solid rgba(201,162,39,0.48);
+      border-radius: 10px;
+      background: linear-gradient(180deg, rgba(16,18,24,0.97), rgba(7,9,13,0.95));
+      box-shadow: 0 14px 34px rgba(0,0,0,0.72), inset 0 0 0 1px rgba(255,255,255,0.035);
+      color: var(--parchment);
+      font-size: 0.68rem;
+      line-height: 1.35;
+      backdrop-filter: blur(6px);
+    }
+    #token-hover-card.open { display: block; }
+    .token-hover-card-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.82rem;
+      color: var(--gold);
+      letter-spacing: 0.05em;
+      margin-bottom: 0.42rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .token-hover-card-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.32rem;
+      margin-bottom: 0.42rem;
+    }
+    .token-hover-stat {
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 7px;
+      padding: 0.24rem 0.28rem;
+      background: rgba(255,255,255,0.035);
+      text-align: center;
+    }
+    .token-hover-stat span { display:block;color:var(--gold-dim);font-size:0.52rem;text-transform:uppercase;letter-spacing:0.08em; }
+    .token-hover-stat strong { display:block;color:var(--parchment);font-size:0.74rem; }
+    .token-hover-line { margin-top: 0.22rem; color: var(--parchment-dim); }
+    .token-hover-line strong { color: var(--gold-dim); font-weight: 600; }
+    .token-hover-chip-row { display:flex;gap:0.26rem;flex-wrap:wrap;margin-top:0.28rem; }
+    .token-hover-chip { border:1px solid rgba(0,229,204,0.24);background:rgba(0,229,204,0.07);border-radius:999px;padding:0.12rem 0.34rem;color:#bdf7ef;font-size:0.58rem; }
+    .token-hover-chip.warn { border-color:rgba(231,76,60,0.38);background:rgba(231,76,60,0.10);color:#ffb3a8; }
+
   </style>
   <!-- session-theme.css loads AFTER the inline styles so its rules correctly
        layer on top of the base stylesheet without needing !important.        -->
@@ -7768,6 +7819,11 @@
         <input type="checkbox" id="new-token-hidden" style="accent-color:#e74c3c;" /> 🚫 Hidden from players
       </label>
       <button class="create-btn" onclick="createToken()">+ Place Token</button>
+
+      <label id="dm-token-hover-setting" style="display:flex;align-items:flex-start;gap:0.42rem;font-size:0.64rem;color:var(--parchment-dim);cursor:pointer;margin-top:0.45rem;padding:0.42rem 0.48rem;background:rgba(201,162,39,0.06);border:1px solid rgba(201,162,39,0.18);border-radius:6px;line-height:1.35;">
+        <input type="checkbox" id="dm-token-hover-toggle" style="accent-color:var(--gold);margin-top:0.08rem;" onchange="toggleCompactTokenHoverStats(this.checked)" />
+        <span><strong style="display:block;color:var(--gold);font-family:'Cinzel',serif;font-size:0.62rem;letter-spacing:0.05em;">Show compact token stats on hover</strong>DM-only quick card with HP, AC, passive perception, senses, and conditions. Keeps token labels uncluttered.</span>
+      </label>
     </div>
     <div class="sidebar-section" style="border-top:1px solid var(--border);padding-top:0.6rem;margin-top:0.4rem;">
       <div class="sidebar-label" style="font-size:0.55rem;">Spell Markers</div>
@@ -9601,6 +9657,9 @@
   <div class="dice-result-popup" id="dice-result-popup"><div class="dice-result-strip"><div class="dice-result-strip-top"><span>Awaiting result</span></div><div class="dice-result-strip-total">—</div><div class="dice-result-strip-pills"></div></div></div>
 </div>
 
+
+<div id="token-hover-card" role="status" aria-live="polite"></div>
+
 <!-- Context Menu -->
 <div id="ctx-menu">
   <div class="ctx-item" onclick="ctxMoveToken()"><span>↖</span> Move Here</div>
@@ -9712,6 +9771,7 @@
       <span><span style="color:var(--gold-dim);">AC</span> <strong id="te-summary-ac">—</strong></span>
       <span><span style="color:var(--gold-dim);">Init</span> <strong id="te-summary-init">+0</strong></span>
       <span><span style="color:var(--gold-dim);">Speed</span> <strong id="te-summary-speed">—</strong></span>
+      <span><span style="color:var(--gold-dim);">PP</span> <strong id="te-summary-passive">—</strong></span>
     </div>
     <div id="te-condition-strip" style="display:none;justify-content:center;gap:0.3rem;flex-wrap:wrap;margin-top:0.42rem;"></div>
     <button type="button" onclick="openTokenEditorConditions()" style="width:100%;margin-top:0.45rem;padding:0.34rem;background:rgba(93,122,255,0.12);border:1px solid rgba(93,122,255,0.35);border-radius:4px;color:#c7d2ff;font-size:0.66rem;cursor:pointer;font-family:'Cinzel',serif;letter-spacing:0.06em;">⚡ Manage Conditions</button>
@@ -17660,6 +17720,7 @@ function __createLegacyRenderBootEnv() {
 
 function initCanvas() {
   const renderEnv = __createLegacyRenderBootEnv();
+  syncCompactTokenHoverStatsSetting();
   if (window.AppRenderBoot && typeof window.AppRenderBoot.initCanvas === 'function') {
     window.AppRenderBoot.initCanvas(renderEnv);
     // Touch events for pinch-to-zoom (not handled by AppRenderBoot)
@@ -19223,6 +19284,161 @@ function getCanvasPointer(e) {
   };
 }
 
+
+const TOKEN_HOVER_STATS_SETTING_KEY = 'dm.showCompactTokenStatsOnHover';
+let _showCompactTokenStatsOnHover = (() => {
+  try { return localStorage.getItem(TOKEN_HOVER_STATS_SETTING_KEY) !== 'false'; } catch (_) { return true; }
+})();
+let _tokenHoverCardState = { tokenId: '', clientX: 0, clientY: 0 };
+
+function toggleCompactTokenHoverStats(enabled) {
+  _showCompactTokenStatsOnHover = !!enabled;
+  try { localStorage.setItem(TOKEN_HOVER_STATS_SETTING_KEY, _showCompactTokenStatsOnHover ? 'true' : 'false'); } catch (_) {}
+  const el = document.getElementById('dm-token-hover-toggle');
+  if (el) el.checked = _showCompactTokenStatsOnHover;
+  if (!_showCompactTokenStatsOnHover) hideTokenHoverCard();
+}
+
+function syncCompactTokenHoverStatsSetting() {
+  const row = document.getElementById('dm-token-hover-setting');
+  if (row) row.style.display = ROLE === 'dm' ? 'flex' : 'none';
+  const el = document.getElementById('dm-token-hover-toggle');
+  if (el) el.checked = _showCompactTokenStatsOnHover;
+}
+
+function _tokenHoverCanShowStats(token) {
+  if (!token) return false;
+  if (ROLE === 'dm') return _showCompactTokenStatsOnHover;
+  return ROLE === 'player' && _tokenOwnedByMe(token);
+}
+
+function _tokenHoverInt(...values) {
+  for (const value of values) {
+    const n = parseInt(value, 10);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+function _tokenHoverSkillValue(source, key, label) {
+  const skill = source?.skills?.[key] ?? source?.skills?.[label] ?? source?.book?.skills?.[key] ?? source?.book?.skills?.[label];
+  if (skill !== undefined && skill !== null && String(skill).trim() !== '') return _tokenHoverInt(String(skill).replace(/[^+\-0-9]/g, ''));
+  return null;
+}
+
+function _tokenHoverPassiveFromSheet(key, abilityKey, label) {
+  const directKeys = key === 'perception'
+    ? ['passivePerception', 'passive_perception']
+    : [`passive${label}`, `passive_${key}`];
+  for (const dk of directKeys) {
+    const direct = _tokenHoverInt(_charSheet?.[dk], _charSheet?.book?.[dk], _charSheet?.charBook?.[dk]);
+    if (direct !== null) return direct;
+  }
+  const skillMod = _tokenHoverSkillValue(_charSheet, key, label);
+  if (skillMod !== null) return 10 + skillMod;
+  const abilityMod = (typeof _abilityModFromCharacterSheet === 'function') ? _abilityModFromCharacterSheet(abilityKey) : 0;
+  return 10 + (parseInt(abilityMod, 10) || 0);
+}
+
+function _tokenHoverPassive(token, key, abilityKey, label) {
+  const pascal = `passive${label}`;
+  const snake = `passive_${key}`;
+  const direct = _tokenHoverInt(token?.[pascal], token?.[snake], token?.passives?.[key], token?.senses?.[pascal], token?.senses?.[snake]);
+  if (direct !== null) return direct;
+  if (ROLE === 'player' && _tokenOwnedByMe(token)) return _tokenHoverPassiveFromSheet(key, abilityKey, label);
+  return null;
+}
+
+function _tokenHoverSenses(token) {
+  const out = [];
+  if (token?.hasDarkvision || Number(token?.darkvisionRadius || 0) > 0) out.push(`Darkvision ${parseInt(token.darkvisionRadius || 60, 10) || 60} ft`);
+  const raw = token?.senses ?? token?.senseText ?? token?.sense_text ?? '';
+  if (typeof raw === 'string' && raw.trim()) out.push(raw.trim());
+  if (raw && typeof raw === 'object') {
+    ['darkvision','blindsight','tremorsense','truesight'].forEach(k => {
+      const v = raw[k];
+      if (v && !out.some(x => x.toLowerCase().includes(k))) out.push(`${k.replace(/^./, c => c.toUpperCase())} ${v} ft`);
+    });
+  }
+  return [...new Set(out)].slice(0, 4);
+}
+
+function _tokenHoverConditionNames(token) {
+  return (Array.isArray(token?.conditions) ? token.conditions : []).map(id => {
+    const def = CONDITIONS_MAP && CONDITIONS_MAP[id];
+    return def?.name || String(id || '').replace(/[_-]+/g, ' ');
+  }).filter(Boolean);
+}
+
+function _buildTokenHoverCardHtml(token) {
+  const canSeeDmStats = ROLE === 'dm' || _tokenOwnedByMe(token);
+  const hpCur = canSeeDmStats && !token.hidden_hp ? _tokenHoverInt(token.hp, token.maxHp) : null;
+  const hpMax = canSeeDmStats && !token.hidden_hp ? _tokenHoverInt(token.maxHp) : null;
+  const pp = canSeeDmStats ? _tokenHoverPassive(token, 'perception', 'wis', 'Perception') : null;
+  const pi = canSeeDmStats ? _tokenHoverPassive(token, 'investigation', 'int', 'Investigation') : null;
+  const pins = canSeeDmStats ? _tokenHoverPassive(token, 'insight', 'wis', 'Insight') : null;
+  const ac = canSeeDmStats ? _tokenHoverInt(token.ac) : null;
+  const speed = canSeeDmStats ? _tokenHoverInt(token.speed) : null;
+  const senses = canSeeDmStats ? _tokenHoverSenses(token) : [];
+  const conds = _tokenHoverConditionNames(token);
+  const hidden = !!token.hidden;
+  const visLabel = hidden ? 'Hidden from players' : (ROLE === 'dm' ? 'Visible to players' : 'Visible');
+  const hpText = token.hidden_hp && ROLE !== 'dm' ? 'Hidden' : `${hpCur ?? '—'}/${hpMax ?? '—'}`;
+  const stat = (label, value) => `<div class="token-hover-stat"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value ?? '—')}</strong></div>`;
+  const chips = [];
+  conds.forEach(c => chips.push(`<span class="token-hover-chip">${escapeHtml(c)}</span>`));
+  if (ROLE === 'dm') chips.push(`<span class="token-hover-chip ${hidden ? 'warn' : ''}">${escapeHtml(visLabel)}</span>`);
+  return `
+    <div class="token-hover-card-title">${escapeHtml(token.name || 'Token')}</div>
+    <div class="token-hover-card-grid">
+      ${stat('HP', hpText)}${stat('AC', ac)}${stat('PP', pp)}${stat('Speed', speed ? `${speed} ft` : '—')}
+    </div>
+    ${pi !== null || pins !== null ? `<div class="token-hover-line"><strong>Other passives:</strong> ${pi !== null ? `Investigation ${escapeHtml(pi)}` : ''}${pi !== null && pins !== null ? ' · ' : ''}${pins !== null ? `Insight ${escapeHtml(pins)}` : ''}</div>` : ''}
+    ${senses.length ? `<div class="token-hover-line"><strong>Senses:</strong> ${escapeHtml(senses.join(' · '))}</div>` : ''}
+    ${chips.length ? `<div class="token-hover-chip-row">${chips.join('')}</div>` : '<div class="token-hover-line"><strong>Conditions:</strong> None</div>'}
+  `;
+}
+
+function positionTokenHoverCard(clientX, clientY) {
+  const card = document.getElementById('token-hover-card');
+  if (!card) return;
+  const offset = 16;
+  const rect = card.getBoundingClientRect();
+  let left = clientX + offset;
+  let top = clientY + offset;
+  if (left + rect.width > window.innerWidth - 8) left = clientX - rect.width - offset;
+  if (top + rect.height > window.innerHeight - 8) top = clientY - rect.height - offset;
+  card.style.left = `${Math.max(8, left)}px`;
+  card.style.top = `${Math.max(8, top)}px`;
+}
+
+function showTokenHoverCard(token, clientX, clientY) {
+  const card = document.getElementById('token-hover-card');
+  if (!card || !_tokenHoverCanShowStats(token)) { hideTokenHoverCard(); return; }
+  const tokenId = String(token.id || '');
+  if (_tokenHoverCardState.tokenId !== tokenId) {
+    card.innerHTML = _buildTokenHoverCardHtml(token);
+    _tokenHoverCardState.tokenId = tokenId;
+  }
+  _tokenHoverCardState.clientX = clientX;
+  _tokenHoverCardState.clientY = clientY;
+  card.classList.add('open');
+  positionTokenHoverCard(clientX, clientY);
+}
+
+function hideTokenHoverCard() {
+  const card = document.getElementById('token-hover-card');
+  if (card) card.classList.remove('open');
+  _tokenHoverCardState.tokenId = '';
+}
+
+function updateTokenHoverCardFromPointer(e, worldPoint) {
+  if (drag.active || pan.active || isEditorOpen() || currentTool !== 'select') { hideTokenHoverCard(); return; }
+  const hit = hitTestTokens(worldPoint.x, worldPoint.y);
+  if (hit && _tokenHoverCanShowStats(hit)) showTokenHoverCard(hit, e.clientX, e.clientY);
+  else hideTokenHoverCard();
+}
+
 function hitTestTokens(wx, wy) {
   const mapCtx = _combatCurrentMapContext();
   const list = Object.values(tokens).filter(t => (t.map_context || 'world') === mapCtx);
@@ -19419,6 +19635,7 @@ function _confirmPendingMoveConfirm() {
 }
 
 function onMouseDown(e) {
+  hideTokenHoverCard();
   if (e.button === 1) { // Middle click = pan
     pan.active = true;
     pan.lastX = e.clientX; pan.lastY = e.clientY;
@@ -19755,6 +19972,7 @@ function onMouseMove(e) {
       sendWS({ type: 'viewer_cursor_update', payload: { x: _mw.x, y: _mw.y, map_context: _mapCtx } });
     }
   }
+  updateTokenHoverCardFromPointer(e, _mw);
   if (fogPainting) { fogPaintAt(_mw.x, _mw.y); return; }
   if (_fogShapeDraft) { _fogShapeDraft.x2 = _mw.x; _fogShapeDraft.y2 = _mw.y; return; }
   if (editorPainting && isEditorOpen()) { applyEditorBrush(_mw.x, _mw.y); return; }
@@ -26345,6 +26563,7 @@ function refreshTokenEditorSummary() {
   const ac = document.getElementById('te-ac')?.value || t.ac || '—';
   const init = document.getElementById('te-initmod')?.value ?? t.initiativeMod ?? 0;
   const speed = document.getElementById('te-speed')?.value || t.speed || '—';
+  const passive = document.getElementById('te-passive')?.value || t.passivePerception || '—';
   const hpSummary = buildHpSummaryValues(curHp, maxHp, tempHp);
   const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
   set('te-summary-name', name);
@@ -26354,6 +26573,7 @@ function refreshTokenEditorSummary() {
   set('te-summary-ac', `${ac}`);
   set('te-summary-init', formatSignedSummaryValue(init));
   set('te-summary-speed', `${speed}`);
+  set('te-summary-passive', `${passive}`);
   refreshConditionSummaries();
 }
 
@@ -34011,6 +34231,7 @@ function initCharacterBook() {
   wireCharacterBookSync();
   updateCharacterBookDerivedValues();
   renderSpeciesSummaryCard();
+  syncCharacterBookPassivePerceptionDerived();
   renderRulesAttackbook();
 }
 
@@ -34746,6 +34967,28 @@ function buildCharacterBookSeedData() {
   return seed;
 }
 
+
+function deriveCharacterBookPassivePerception() {
+  const wisScore = parseInt(document.getElementById('cb-wis')?.value || '10', 10);
+  const wisMod = mod(Number.isNaN(wisScore) ? 10 : wisScore);
+  const rawSkill = String(document.getElementById('cb-skill-perception')?.value || '').trim();
+  const skillMod = rawSkill ? parseInt(rawSkill.replace(/[^+\-0-9]/g, ''), 10) : NaN;
+  return 10 + (Number.isFinite(skillMod) ? skillMod : wisMod);
+}
+
+function syncCharacterBookPassivePerceptionDerived() {
+  const passiveEl = document.getElementById('cb-passive');
+  if (!passiveEl) return;
+  const derived = deriveCharacterBookPassivePerception();
+  const current = parseInt(passiveEl.value || '', 10);
+  const previousAuto = parseInt(passiveEl.dataset.autoDerivedValue || '', 10);
+  const shouldAutoUpdate = String(passiveEl.value || '').trim() === '' || (!Number.isNaN(previousAuto) && current === previousAuto);
+  if (shouldAutoUpdate && Number.isFinite(derived)) {
+    passiveEl.value = String(derived);
+    passiveEl.dataset.autoDerivedValue = String(derived);
+  }
+}
+
 function updateCharacterBookDerivedValues() {
   const levelEl = document.getElementById('cb-level');
   const profEl = document.getElementById('cb-proficiency-bonus');
@@ -34784,6 +35027,7 @@ function updateCharacterBookDerivedValues() {
     const host = document.getElementById(`cb-${shortKey}-mod`);
     if (host) host.textContent = `${m >= 0 ? '+' : ''}${m}`;
   });
+  syncCharacterBookPassivePerceptionDerived();
   renderRulesAttackbook();
 }
 
