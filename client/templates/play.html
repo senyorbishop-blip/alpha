@@ -29674,6 +29674,7 @@ window._playerVolChange = _playerVolChange;
   let _done = false;
   function _runPreload() {
     if (_done) return;
+    if (String(ROLE || '').toLowerCase() !== 'dm') return;
     if (window.AppSafeMode && window.AppSafeMode.disabled('audio-preload')) return;
     _done = true;
     const _b = window.AppBoot;
@@ -29689,7 +29690,9 @@ window._playerVolChange = _playerVolChange;
     else setTimeout(_runPreload, 2000);
   }
   // Wait for a real user interaction (which also satisfies autoplay policy)
-  // before warming buffers; fall back to an idle-time warmup either way.
+  // before warming buffers; players/viewers skip eager preload entirely so
+  // missing optional sound files cannot spam or slow their boot.
+  if (String(ROLE || '').toLowerCase() !== 'dm') return;
   ['pointerdown', 'keydown'].forEach((ev) => window.addEventListener(ev, _runPreload, { once: true, passive: true }));
   if (document.readyState === 'complete') _arm();
   else window.addEventListener('load', _arm, { once: true });
@@ -41297,12 +41300,20 @@ let __charProfileAutosaveDeferredForRender = false;
 function __deferCharProfileAutosaveUntilRenderUnwinds(reason = 'render_stack') {
   if (__charProfileAutosaveDeferredForRender) return;
   __charProfileAutosaveDeferredForRender = true;
+  const startedAt = Date.now();
+  let attempts = 0;
   const run = () => {
-    __charProfileAutosaveDeferredForRender = false;
+    attempts += 1;
     if (__isCharProfileRenderStackActive()) {
-      setTimeout(() => __deferCharProfileAutosaveUntilRenderUnwinds(reason), 0);
+      if (attempts < 12 && Date.now() - startedAt < 1000) {
+        setTimeout(run, 16);
+      } else {
+        console.warn('[char profile] autosave defer abandoned while render stack stayed active', { reason, attempts, depths: Object.assign({}, window.__depths || {}) });
+        __charProfileAutosaveDeferredForRender = false;
+      }
       return;
     }
+    __charProfileAutosaveDeferredForRender = false;
     scheduleCharProfileAutosave(reason + ':deferred');
   };
   if (typeof queueMicrotask === 'function') queueMicrotask(run);
@@ -41310,16 +41321,17 @@ function __deferCharProfileAutosaveUntilRenderUnwinds(reason = 'render_stack') {
 }
 
 function scheduleCharProfileAutosave(reason = 'user') {
+  window.__depths = window.__depths || {};
   if (window.__depths.scheduleCharProfileSave > 0) __logReentry('scheduleCharProfileSave');
   __enterDepth('scheduleCharProfileSave', { reason }, 5);
   try {
   if (ROLE !== 'player') return;
+  if (window.__safeMode?.charProfileDirtySave || __isRemoteStateOrCombatApplying()) { console.warn('[char profile] autosave skipped during remote/combat apply', { reason, remote: isApplyingRemoteState, stateSync: window.__stateSyncApplying, combatApply: window.__combatApplyStateActive }); return; }
   if (__isCharProfileRenderStackActive()) {
     console.warn('[char profile] autosave deferred during render/select stack', { reason, depths: Object.assign({}, window.__depths || {}) });
     __deferCharProfileAutosaveUntilRenderUnwinds(reason);
     return;
   }
-  if (window.__safeMode?.charProfileDirtySave || __isRemoteStateOrCombatApplying()) { console.warn('[char profile] autosave skipped during remote/combat apply', { remote: isApplyingRemoteState, stateSync: window.__stateSyncApplying, combatApply: window.__combatApplyStateActive }); return; }
   if (isHydrating || isSaving) return;
   if (!_charSheet && !charProfiles.length && !(document.getElementById('char-name')?.value || '').trim()) return;
   if (!markCharProfileDirty('user')) return;
