@@ -61,7 +61,7 @@
       "level": 2,
       "proficiencyBonus": 2,
       "features": [
-        "Monk's Focus (Focus Points)",
+        "Monk's Focus (Discipline Points)",
         "Flurry of Blows",
         "Patient Defense",
         "Step of the Wind"
@@ -1275,10 +1275,10 @@
     },
     "monk-monk-s-focus-focus-points": {
       "id": "monk-monk-s-focus-focus-points",
-      "displayName": "Monk's Focus (Focus Points)",
-      "name": "Monk's Focus (Focus Points)",
+      "displayName": "Monk's Focus (Discipline Points)",
+      "name": "Monk's Focus (Discipline Points)",
       "summary": "Your focus pool fuels the monk\u2019s best mobility, defense, and burst techniques.",
-      "description": "You gain Focus Points, the core resource that powers your monk techniques. Your maximum Focus Points equals your Monk level.\n\nSpend Focus on Flurry of Blows, Patient Defense, Step of the Wind, Stunning Strike, and subclass techniques.",
+      "description": "You gain Focus Points (also called Discipline Points), the core resource that powers your monk techniques. Your maximum Focus Points equals your Monk level.\n\nSpend Focus on Flurry of Blows, Patient Defense, Step of the Wind, Stunning Strike, and subclass techniques.",
       "level": 2,
       "section": "Class Features",
       "type": "passive",

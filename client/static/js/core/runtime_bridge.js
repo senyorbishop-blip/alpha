@@ -60,14 +60,14 @@
         if (fromGlobal) return fromGlobal;
         const fromQuery = readQueryParam(['user_id', 'uid', 'user']);
         if (String(fromQuery || '').trim()) return fromQuery;
-        return '';
+        return readQueryParam(['user_id', 'uid', 'user']);
       },
       getRole: function () {
         const resolvedRole = typeof global.getEffectiveRole === 'function' ? global.getEffectiveRole() : '';
         const fromStore = storeGet('user.role', global.ROLE || 'viewer');
         const fromGlobal = String(global.ROLE || '').trim();
         const fromQuery = readQueryParam(['role']);
-        return String(resolvedRole || fromStore || fromGlobal || fromQuery || 'viewer').toLowerCase();
+        return String(resolvedRole || fromQuery || fromGlobal || fromStore || 'viewer').toLowerCase();
       },
       getSocket: function () { return storeGet('socket.instance', global.ws || null); },
       setSocket: function (value) { storeSet('socket.instance', value); global.ws = value; },

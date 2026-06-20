@@ -11162,6 +11162,8 @@ Shortbow — +5 to hit, 1d6+3 piercing"></textarea>
   <div>session_id={{ session_id|e }}</div>
   <div>user_id={{ user_id|e }}</div>
   <div>last checkpoint=<span id="player-boot-checkpoint">PLAYER_BOOT_HTML_LOADED</span></div>
+  <span id="player-boot-scripts-timeout-msg" style="display:none">Player boot failed before scripts loaded.</span>
+  <span id="player-boot-ws-timeout-msg" style="display:none">Player boot failed before WebSocket.</span>
 </div>
 {% endif %}
 {% for script in boot_scripts %}
@@ -11174,6 +11176,24 @@ Shortbow — +5 to hit, 1d6+3 piercing"></textarea>
 </script>
 {% endif %}
 {% if play_role in ['dm', 'assistant_dm'] %}
+<!-- Stage 4 ownership: editor/serialization.js is the authoritative map document serializer. -->
+<!-- editor/runtime.js and editor/state.js are dormant env-injected modules; do not load them. -->
+<script src="/static/js/core/diagnostics.js"></script>
+<script src="/static/js/core/csrf.js"></script>
+<script src="/static/js/editor/serialization.js"></script>
+<script src="/static/js/editor/stamp_presets.js"></script>
+<script src="/static/js/editor/terrain_manifest.js"></script>
+<script src="/static/js/assets/dnd_assets.js"></script>
+<script src="/static/js/editor/asset_initializer.js"></script>
+<script src="/static/js/editor/asset_renderer.js"></script>
+<script src="/static/js/editor/terrain_renderer.js"></script>
+<script src="/static/js/editor/placement_controller.js"></script>
+<script src="/static/js/ui/item_image_resolver.js"></script>
+<script src="/static/js/editor/shop_panel.js"></script>
+<script src="/static/js/editor/shop_view.js"></script>
+<script src="/static/js/editor/chest_view.js"></script>
+<script src="/static/js/render/combat_fx.js"></script>
+<script src="/static/js/editor/assets.js"></script>
 <script src="/static/js/ui/asset_library.js"></script>
 <script src="/static/js/ui/editor_panel.js"></script>
 <script src="/static/js/character/runtime/mapper_to_play.js"></script>
@@ -45381,7 +45401,9 @@ function combatApplyState(state, source) {
   const encounterChanged = !!(state.encounter_id && _playerActionEconomyRuntime.encounter_id && String(state.encounter_id) !== String(_playerActionEconomyRuntime.encounter_id));
   const combatJustStarted = !!(_combat.active && !prevActive);
   if (encounterChanged || combatJustStarted || !nextTurnKey || nextTurnKey !== prevTurnKey) {
-    _playerActionEconomyRuntime = _makeCleanEconomyRuntime();
+    _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, usage: {} };
+    _playerActionEconomyRuntime.bonus_action_converted_actions = 0;
+    _playerActionEconomyRuntime.encounter_id = _combat.encounter_id || '';
     if (typeof _charSheet !== 'undefined' && _charSheet && _charSheet.actionEconomyRuntime) _charSheet.actionEconomyRuntime = null;
   } else {
     _playerActionEconomyRuntime.encounter_id = _combat.encounter_id || _playerActionEconomyRuntime.encounter_id || '';
@@ -45389,7 +45411,9 @@ function combatApplyState(state, source) {
   // Reset inspect check results when combat ends (new encounter = fresh attempts)
   if (!_combat.active && prevActive) {
     _resetInspectResults();
-    _playerActionEconomyRuntime = _makeCleanEconomyRuntime();
+    _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, usage: {} };
+    _playerActionEconomyRuntime.bonus_action_converted_actions = 0;
+    _playerActionEconomyRuntime.encounter_id = _combat.encounter_id || '';
   }
   const afterOrder = Array.isArray(_combat?.combatants) ? _combat.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : [];
   console.debug('[combatApplyState] after', { revision: _combat.revision, order: afterOrder, turn: _combat.turn, reason: applyReason });

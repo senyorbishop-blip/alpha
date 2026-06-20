@@ -608,7 +608,7 @@
     },
     "paladin-aura-of-protection": {
       "summary": "While conscious, you and friendly creatures within 10 feet of you add your Charisma modifier (minimum +1) to all saving throws. Expands to 30 feet at level 18.",
-      "description": "Starting at level 6, while you are conscious, you and each friendly creature within 10 feet of you gains a bonus to all saving throws equal to your Charisma modifier (minimum +1).\n\nThis aura is always active — it requires no action, concentration, or resource expenditure. Multiple paladins' auras do not stack. The range increases to 30 feet when you reach level 18 (Aura Expansion).",
+      "description": "Starting at level 6, while you are conscious, you and each friendly creature within 10 feet of you gains a bonus to all saving throws equal to your Charisma modifier (minimum +1). Your position on the battlefield determines who benefits — creatures must stay within the aura's radius to gain the bonus.\n\nThis aura is always active — it requires no action, concentration, or resource expenditure. Multiple paladins' auras do not stack. The range increases to 30 feet when you reach level 18 (Aura Expansion).",
       "tags": [
         "aura",
         "defense",

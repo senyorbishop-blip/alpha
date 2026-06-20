@@ -1247,15 +1247,15 @@
     },
     "druid-circle-subclass": {
       "id": "druid-circle-subclass",
-      "displayName": "Druid Circle",
-      "name": "Druid Circle",
+      "displayName": "Druid Circle (Subclass)",
+      "name": "Druid Circle (Subclass)",
       "level": 3,
       "section": "Subclass",
       "type": "subclass",
       "className": "Druid",
       "sourceKind": "class",
       "summary": "At 3rd level, choose a Druid Circle subclass. Your circle grants features at levels 3, 6, 10, and 14.",
-      "description": "At 3rd level, you choose to identify with a circle of druids. Your choice grants you features at 3rd level and again at 6th, 10th, and 14th level.\n\nAvailable circles include:\n\n**Circle of the Land.** You gain bonus prepared spells based on a chosen terrain type (Arctic, Coast, Desert, Forest, Grassland, Mountain, Swamp, or Underdark). You also gain Natural Recovery, allowing you to regain expended spell slots totaling up to half your Druid level (rounded up) when you finish a Short Rest.\n\n**Circle of the Moon.** You can use Wild Shape as a Bonus Action to assume powerful combat beast forms, with CR limits equal to your Druid level divided by 3 (rounded down, minimum 1).\n\n**Circle of the Sea.** You channel the power of the ocean, gaining water-themed spells and the ability to create warding winds and stormy auras.\n\n**Circle of Stars.** You draw power from star maps and constellations, gaining abilities related to divination, healing, and radiant energy.",
+      "description": "At 3rd level, you choose to identify with a circle of druids — this is your subclass gate as a shapechanger and nature guardian. Your choice grants you features at 3rd level and again at 6th, 10th, and 14th level.\n\nAvailable circles include:\n\n**Circle of the Land.** You gain bonus prepared spells based on a chosen terrain type (Arctic, Coast, Desert, Forest, Grassland, Mountain, Swamp, or Underdark). You also gain Natural Recovery, allowing you to regain expended spell slots totaling up to half your Druid level (rounded up) when you finish a Short Rest.\n\n**Circle of the Moon.** You can use Wild Shape as a Bonus Action to assume powerful combat beast forms, with CR limits equal to your Druid level divided by 3 (rounded down, minimum 1).\n\n**Circle of the Sea.** You channel the power of the ocean, gaining water-themed spells and the ability to create warding winds and stormy auras.\n\n**Circle of the Stars.** You draw power from star maps and constellations, gaining abilities related to divination, healing, and radiant energy.",
       "tags": [
         "subclass",
         "identity",

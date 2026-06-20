@@ -621,10 +621,10 @@
       "recovery": "Sorcery Points refresh on a Long Rest."
     },
     "sorcerer-l3-1": {
-      "name": "Sorcerous Origin",
-      "displayName": "Sorcerous Origin",
+      "name": "Sorcerous Origin (Subclass)",
+      "displayName": "Sorcerous Origin (Subclass)",
       "summary": "Choose your Sorcerous Origin subclass at 3rd level. This defines the source of your innate magic and grants subclass features at levels 3, 6, 14, and 18.",
-      "description": "At 3rd level, you choose a Sorcerous Origin, which describes the source of your innate magical power. Your choice grants you features at 3rd level and again at 6th, 14th, and 18th level.\n\nAvailable Sorcerous Origins include Draconic Sorcery, Wild Magic Sorcery, Clockwork Sorcery, and Aberrant Mind Sorcery, among others.",
+      "description": "At 3rd level, you choose a Sorcerous Origin, which describes the source of your innate magical power — wild magic surges, draconic bloodline, or other arcane inheritance. Your choice grants you features at 3rd level and again at 6th, 14th, and 18th level.\n\nAvailable Sorcerous Origins include Draconic Sorcery, Wild Magic Sorcery, Clockwork Sorcery, and Aberrant Mind Sorcery, among others.",
       "tags": [
         "subclass",
         "identity",

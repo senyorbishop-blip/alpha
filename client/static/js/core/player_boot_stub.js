@@ -27,12 +27,14 @@
   window.__playerBootCheckpoint('PLAYER_BOOT_HTML_LOADED');
   setTimeout(function () {
     if (window.__PLAY_BOOT_ROLE === 'player' && !(window.__playerBootState || {}).scriptsStarted) {
-      window.__showPlayerBootFailure('Player boot failed before scripts loaded.');
+      var el = document.getElementById('player-boot-scripts-timeout-msg');
+      window.__showPlayerBootFailure(el ? el.textContent : 'Player boot failed before scripts loaded.');
     }
   }, 5000);
   setTimeout(function () {
     if (window.__PLAY_BOOT_ROLE === 'player' && !(window.__playerBootState || {}).wsOpened) {
-      window.__showPlayerBootFailure('Player boot failed before WebSocket.');
+      var el = document.getElementById('player-boot-ws-timeout-msg');
+      window.__showPlayerBootFailure(el ? el.textContent : 'Player boot failed before WebSocket.');
     }
   }, 10000);
 })();
