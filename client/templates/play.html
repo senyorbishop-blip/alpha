@@ -18190,7 +18190,16 @@ function drawPlayerVisionOverlay(W, H) {
 let _lastFrame = 0;
 function drawLoop(ts) {
   requestAnimationFrame(drawLoop);
-  drawFrame();
+  // Contain any render-time throw (including a stack overflow) so it cannot escape
+  // to window.onerror and so the animation loop keeps running instead of freezing.
+  try {
+    drawFrame();
+  } catch (err) {
+    if (!drawLoop._reported) {
+      drawLoop._reported = true;
+      console.error('[drawLoop] frame render failed; loop continues', err);
+    }
+  }
 }
 
 // First-frame render phase logging + a cheap per-frame phase marker so the
@@ -41190,13 +41199,29 @@ function createNewCharProfileId() {
   return `profile_${seed || 'character'}_${Date.now().toString(36)}`;
 }
 
-function _stableCharProfileStringify(value) {
+function _stableCharProfileStringify(value, _seen, _depth) {
   if (value == null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map((entry) => _stableCharProfileStringify(entry)).join(',')}]`;
-  const keys = Object.keys(value)
-    .filter((key) => !['_localSavedAt', 'updated_at', 'updatedAt', 'created_at', 'createdAt'].includes(key))
-    .sort();
-  return `{${keys.map((key) => `${JSON.stringify(key)}:${_stableCharProfileStringify(value[key])}`).join(',')}}`;
+  // Cycle + depth guards: the character profile can transitively reference runtime
+  // objects (characterSheetRuntime, nativeResources, …) that hold back-references.
+  // Without these guards a circular reference recurses to the stack limit and
+  // throws "Maximum call stack size exceeded", freezing the player page on every
+  // dirty-check. Visited objects collapse to "null"; over-deep nesting is clipped.
+  const seen = _seen || new WeakSet();
+  const depth = _depth || 0;
+  if (seen.has(value)) return 'null';
+  if (depth > 200) return 'null';
+  seen.add(value);
+  let out;
+  if (Array.isArray(value)) {
+    out = `[${value.map((entry) => _stableCharProfileStringify(entry, seen, depth + 1)).join(',')}]`;
+  } else {
+    const keys = Object.keys(value)
+      .filter((key) => !['_localSavedAt', 'updated_at', 'updatedAt', 'created_at', 'createdAt'].includes(key))
+      .sort();
+    out = `{${keys.map((key) => `${JSON.stringify(key)}:${_stableCharProfileStringify(value[key], seen, depth + 1)}`).join(',')}}`;
+  }
+  seen.delete(value);
+  return out;
 }
 
 function getCharProfileDraftHash(profile) {
@@ -47279,7 +47304,19 @@ function togglePlayerActionsHub() {
   renderPlayerActionsHub();
 }
 
+let _renderCombatInFlight = false;
 function renderCombat() {
+  // Re-entrancy guard: renderCombat fans out to many UI surfaces (player actions
+  // hub, quick bar, party panel, coach). If any of those synchronously triggers
+  // another renderCombat, the page recurses until "Maximum call stack size
+  // exceeded" and freezes. A nested call is always redundant — the in-flight
+  // render already reflects the latest _combat — so we skip it.
+  if (_renderCombatInFlight) {
+    console.warn('[REENTRY GUARD] renderCombat re-entered during render; skipping nested call');
+    return;
+  }
+  _renderCombatInFlight = true;
+  try {
   const _renderCombatantsForLog = Array.isArray(_combat?.combatants) ? _combat.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`).join(',') : '';
   console.debug(`[renderCombat] combatants=${_renderCombatantsForLog}`);
   // During dice physics, debounce DOM rerenders to avoid jank
@@ -47512,6 +47549,9 @@ function renderCombat() {
   _renderSuspendedCombatants(list);
   renderPartyStatusPanel();
   suggestVisibleHostilesForInitiative();
+  } finally {
+    _renderCombatInFlight = false;
+  }
 }
 
 function _formatSuspendedCombatantReasons(row) {
