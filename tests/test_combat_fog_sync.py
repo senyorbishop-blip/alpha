@@ -1,5 +1,6 @@
-from server.session import Session, Token
+from server.session import Session, Token, User
 from server.handlers.combat import sync_fogged_combatants, is_token_visible_to_party
+from server.handlers.common import _combat_state_payload_for_user
 
 
 def tok(id, typ='monster', owner=None, x=0, y=0, hidden=False, staged=False):
@@ -106,3 +107,38 @@ def test_hidden_npc_combatant_moves_to_suspended_and_restores_when_unhidden():
     assert s.combat['combatants'][0]['token_id'] == 'goblin'
     assert s.combat['combatants'][0]['initiative'] == 18
     assert s.combat['suspended_combatants'] == []
+
+
+def test_dm_payload_keeps_suspended_fogged_combatant_metadata():
+    s = session_with_fog(False); mage = tok('mage'); s.tokens[mage.id] = mage; s.combat['combatants'] = [combatant(mage, 12)]
+    sync_fogged_combatants(s, 'test', 'world')
+    payload = _combat_state_payload_for_user(s, User(id='dm1', name='DM', role='dm'), 7)
+    assert payload['combatants'] == []
+    assert payload['suspended_combatants'][0]['token_id'] == 'mage'
+    assert payload['suspended_combatants'][0]['initiative'] == 12
+    assert payload['suspended_combatants'][0]['suspended_reasons'] == ['fog']
+    assert payload['visibility_revision'] == 7
+
+
+def test_player_payload_strips_fogged_combatant_and_suspended_metadata():
+    s = session_with_fog(False); mage = tok('mage'); s.tokens[mage.id] = mage; s.combat['combatants'] = [combatant(mage, 12)]
+    sync_fogged_combatants(s, 'test', 'world')
+    payload = _combat_state_payload_for_user(s, User(id='p1', name='Player', role='player'), 8)
+    assert payload['combatants'] == []
+    assert 'suspended_combatants' not in payload
+    assert 'fog_suspended_combatants' not in payload
+    assert 'hidden_suspended_combatants' not in payload
+    assert payload['visibility_revision'] == 8
+
+
+def test_fogged_npc_reappears_in_player_payload_after_reveal_without_refresh():
+    s = session_with_fog(False); mage = tok('mage'); s.tokens[mage.id] = mage; s.combat['combatants'] = [combatant(mage, 12)]
+    sync_fogged_combatants(s, 'test', 'world')
+    hidden_payload = _combat_state_payload_for_user(s, User(id='p1', name='Player', role='player'), 8)
+    assert hidden_payload['combatants'] == []
+    s.fog_maps['world']['cells'] = '0' * 10 + '1' + '0' * 5
+    sync_fogged_combatants(s, 'test', 'world')
+    visible_payload = _combat_state_payload_for_user(s, User(id='p1', name='Player', role='player'), 9)
+    assert [c['token_id'] for c in visible_payload['combatants']] == ['mage']
+    assert visible_payload['combatants'][0]['initiative'] == 12
+    assert 'suspended_combatants' not in visible_payload

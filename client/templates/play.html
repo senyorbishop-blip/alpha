@@ -44866,13 +44866,35 @@ function handleCombatStateLive(payload) {
 
 function _combatInitiativeSignature(state) {
   const combatants = Array.isArray(state?.combatants) ? state.combatants : [];
+  const suspended = Array.isArray(state?.suspended_combatants) ? state.suspended_combatants : [];
   return combatants.map(c => [
     String(c?.id || ''),
     String(c?.token_id || ''),
     c?.initiative ?? null,
     c?.roll ?? null,
     c?.modifier ?? null,
-  ].join(':')).join('|') + `#turn=${state?.turn ?? 0}`;
+  ].join(':')).join('|') + suspended.map(c => [
+    String(c?.id || ''),
+    String(c?.token_id || ''),
+    c?.initiative ?? null,
+    (Array.isArray(c?.suspended_reasons) ? c.suspended_reasons : []).join('+'),
+  ].join(':')).join('|') + `#active=${state?.active ? 1 : 0}#turn=${state?.turn ?? 0}#round=${state?.round ?? 1}`;
+}
+
+function forceCombatStateUISync() {
+  // combat_state is authoritative for every combat render surface. Rebuild all
+  // surfaces unconditionally, even if the combat tab is hidden or the current
+  // panel context is "moments"; hidden sidebar DOM must be fresh when opened.
+  if (typeof renderCombat === 'function') renderCombat();
+  if (typeof refreshRightPanelContextUI === 'function') refreshRightPanelContextUI();
+  if (typeof updateActiveContext === 'function') updateActiveContext();
+  if (typeof renderPartyStatusPanel === 'function') renderPartyStatusPanel();
+  if (typeof refreshBigScreenDisplayOverlay === 'function') refreshBigScreenDisplayOverlay();
+  if (typeof refreshTokenBadges === 'function') refreshTokenBadges();
+  if (typeof refreshCombatBadges === 'function') refreshCombatBadges();
+  if (typeof renderTokens === 'function') renderTokens();
+  if (typeof drawTokens === 'function') drawTokens();
+  if (typeof drawFrame === 'function') drawFrame();
 }
 
 function combatApplyState(state) {
@@ -44933,22 +44955,13 @@ function combatApplyState(state) {
   } else {
     _playerActionEconomyRuntime.encounter_id = _combat.encounter_id || _playerActionEconomyRuntime.encounter_id || '';
   }
-  refreshRightPanelContextUI();
-  if (typeof updateActiveContext === 'function') updateActiveContext();
-  if (typeof renderPartyStatusPanel === 'function') renderPartyStatusPanel();
-  if (typeof refreshBigScreenDisplayOverlay === 'function') refreshBigScreenDisplayOverlay();
-  if (typeof refreshTokenBadges === 'function') refreshTokenBadges();
-  if (typeof refreshCombatBadges === 'function') refreshCombatBadges();
-  if (typeof renderTokens === 'function') renderTokens();
-  if (typeof drawTokens === 'function') drawTokens();
-  if (typeof drawFrame === 'function') drawFrame();
   // Reset inspect check results when combat ends (new encounter = fresh attempts)
   if (!_combat.active && prevActive) {
     _resetInspectResults();
     _playerActionEconomyRuntime = { turn_key: '', state: null, action_surge_armed: false, bonus_action_converted_actions: 0, usage: {}, encounter_id: _combat.encounter_id || '' };
   }
   console.debug(`[combatApplyState] applied=true reason=${applyReason}`);
-  renderCombat();
+  forceCombatStateUISync();
   if (_combat.active && (_combat.turn !== prevTurn || !prevActive)) {
     const cur = _combat.combatants[_combat.turn];
     if (cur) {
