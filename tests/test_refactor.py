@@ -4184,3 +4184,24 @@ def test_player_map_render_and_image_loading_are_coalesced():
     assert "mapImageUrl === url && (mapImage || _mapImageLoadingUrl === url)" in content
     assert "img.src = requestedUrl;" in content
     assert "requestedUrl + '?t='" not in content
+
+
+def test_combat_quick_weapon_attack_waits_for_final_dice_result():
+    """Quick weapon attacks should resolve from the settled dice result, not a pre-roll."""
+    content = open(os.path.join(PROJECT_ROOT, "client/templates/play.html"), encoding="utf-8").read()
+    assert "async function _rollFinalD20Attack(base = {})" in content
+    assert "await _rollLocalDiceAfterSettle" in content
+    assert "function _buildFinalAttackRollObject(base = {}, diceResult = {})" in content
+    assert "const _pendingCombatQuickWeaponAttacks = new Set();" in content
+    assert "attackRoll.d20" in content
+    assert "roll_payload: { ...attackRoll" in content
+    match = re.search(r"async function performCombatQuickWeaponAttack\([\s\S]*?\n}\n\n// ── Weapon Runtime Resolver", content)
+    assert match, "performCombatQuickWeaponAttack implementation not found"
+    body = match.group(0)
+    assert "await _rollFinalD20Attack" in body
+    assert "_showCombatResultCard" in body
+    assert body.index("await _rollFinalD20Attack") < body.index("_showCombatResultCard")
+    prefix = body[:body.index("await _rollFinalD20Attack")]
+    assert "Math.random() * 20" not in prefix
+    assert "rollA" not in body
+    assert "rollB" not in body
