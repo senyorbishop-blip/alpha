@@ -98,17 +98,20 @@ async def test_fog_paint_enforces_map_scope(monkeypatch):
 
     updates = []
 
-    async def _broadcast(_sid, msg, **_kwargs):
+    # Live fog updates are delivered per-user via manager.send_to (see
+    # test_fog_sync.py for the authoritative delivery contract), so capture that
+    # path rather than the obsolete blanket broadcast.
+    async def _send_to(_sid, _uid, msg):
         updates.append(msg)
 
     async def _save(_session):
         return True
 
-    monkeypatch.setattr(map_editor_handlers.manager, "broadcast", _broadcast)
+    monkeypatch.setattr(map_editor_handlers.manager, "send_to", _send_to)
     monkeypatch.setattr(map_editor_handlers, "save_campaign_async", _save)
 
     await map_editor_handlers.handle_fog_paint({"map_ctx": "world", "cells": [1, 2], "reveal": True}, session, assistant)
-    assert updates and updates[-1]["type"] == "fog_update"
+    assert any(m["type"] == "fog_update" for m in updates)
 
     updates.clear()
     await map_editor_handlers.handle_fog_paint({"map_ctx": "other", "cells": [1], "reveal": True}, session, assistant)

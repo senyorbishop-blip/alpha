@@ -1295,25 +1295,31 @@ def test_play_html_no_dm_activity_css_removed_comment():
 
 
 def test_play_html_has_single_inline_script_block():
-    """play.html must have exactly one large inline <script> block (not counting importmap)."""
+    """play.html must keep the game runtime in exactly ONE large inline <script>.
+
+    A single tiny pre-boot shim is allowed: it sets __PLAY_BOOT_ROLE /
+    __playerBootState before diagnostics.js runs (the first external runtime
+    script), which is required so diagnostics.js doesn't raise a false
+    "player boot failed" overlay — see
+    test_player_boot_role_is_defined_before_diagnostics_marks_scripts_started.
+    That shim cannot be merged into the main block because the main block must
+    load AFTER all external scripts. Everything else (the actual game logic)
+    must stay in the one main runtime block — do not split it across blocks.
+    """
     import re
     content = _play_html_content()
-    # Parse all <script ...> opening tags (case-insensitive), then keep only those
-    # that are plain inline scripts: no src= attribute, no type="module", no type="importmap".
-    all_script_tags = re.findall(r'<script[^>]*>', content, re.IGNORECASE)
-    all_script_tags_lower = [tag.lower() for tag in all_script_tags]
-    inline_scripts = [
-        tag for tag in all_script_tags_lower
-        if 'src=' not in tag
-        and 'type="module"' not in tag
-        and "type='module'" not in tag
-        and 'type="importmap"' not in tag
-        and "type='importmap'" not in tag
-    ]
-    # There should be exactly 1 (the main inline script block)
-    assert len(inline_scripts) == 1, (
-        f"Expected exactly 1 inline <script> block in play.html, found {len(inline_scripts)}. "
-        "Avoid splitting logic into multiple inline script blocks."
+    # Bodies of plain inline scripts only (exact `<script>` tag — excludes
+    # src=, type="module", and type="importmap" variants).
+    bodies = re.findall(r'<script>(.*?)</script>', content, re.IGNORECASE | re.DOTALL)
+    large_blocks = [b for b in bodies if len(b) > 2000]
+    small_blocks = [b for b in bodies if len(b) <= 2000]
+    assert len(large_blocks) == 1, (
+        f"Expected exactly 1 large inline <script> block in play.html, found {len(large_blocks)}. "
+        "Avoid splitting runtime logic into multiple inline script blocks."
+    )
+    assert len(small_blocks) <= 1, (
+        f"Expected at most 1 tiny pre-boot shim inline <script>, found {len(small_blocks)}. "
+        "Only the boot-role shim may live outside the main runtime block."
     )
 
 

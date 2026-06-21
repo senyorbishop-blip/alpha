@@ -11313,8 +11313,10 @@ window.__playerBootState = window.__playerBootState || { checkpoint: 'PLAYER_BOO
 <script src="/static/js/character/combat_quick_bar.js"></script>
 <script src="/static/js/character/sticky_notes.js"></script>
 <script>
-window.__PLAY_BOOT_ROLE = "{{ play_role|default('viewer') }}";
-window.__PLAY_BOOT_MANIFEST = "{{ boot_manifest_name|default('viewer') }}";
+// __PLAY_BOOT_ROLE / __PLAY_BOOT_MANIFEST / __playerBootState are already set by
+// the pre-boot shim above (it must run before diagnostics.js). Do not re-declare
+// them here — this block only adds the checkpoint/failure helpers and emits the
+// first checkpoint now that the runtime block has started.
 window.__playerBootState = window.__playerBootState || { checkpoint: 'PLAYER_BOOT_HTML_LOADED', scriptsStarted: false, wsOpened: false };
 window.__playerBootCheckpoint = function (checkpoint) {
   window.__playerBootState = window.__playerBootState || {};
@@ -49596,17 +49598,14 @@ function performCombatQuickRollSpellDamage(spellId, slotLevel) {
   });
 }
 
-function combatQuickRollSpellDamage(spellId, slotLevel) {
-  const spell = findCombatSpell(spellId);
-  if (!spell) { showToast('Spell not found.'); return null; }
-  return performCombatQuickRollSpellDamage(spellId, slotLevel);
-}
-
-function combatQuickCastSpell(spellId, preferredLevel) {
-  const spell = findCombatSpell(spellId);
-  if (!spell) { showToast('Spell not found.'); return null; }
-  return performCombatQuickCastSpell(spellId, preferredLevel);
-}
+// NOTE: `combatQuickCastSpell` and `combatQuickRollSpellDamage` are intentionally
+// NOT declared as plain functions here. Their only public entry points are the
+// recursion-guarded bridges defined later (window.combatQuickCastSpell /
+// window.combatQuickRollSpellDamage -> guardQuickActionBridge -> perform*). A
+// previous change re-added plain wrapper declarations with the same names on top
+// of those bridges, which defeated the recursion guard that prevents the combat
+// quick-action freeze loop. Keep the single guarded path; call perform* directly
+// for the unguarded implementation.
 
 function combatQuickShowSpellSave(spellId, slotLevel) {
   const spell = findCombatSpell(spellId);
