@@ -183,19 +183,28 @@ def _script_srcs(html):
     return re.findall(r'<script[^>]+src="([^"]+)"', html)
 
 
-def test_rendered_player_manifest_excludes_dm_editor_audio_dice_preloads():
+def test_rendered_player_loads_full_live_runtime():
+    """All interactive roles share the single live play.html runtime.
+
+    Regression guard for the player live-sync outage: a previous build gated the
+    whole runtime to DM/assistant_dm and gave players a stubbed boot shell
+    (player_boot_stub.js) with no-op initUI/initCanvas/_setWsStatus, leaving them
+    with no map, tabs, tokens, character sheet, or quick actions.
+    """
     html = _rendered_play("player")
-    forbidden = [
-        "dm_assistant.js", "cartographer.js", "editor_panel.js", "asset_library.js",
-        "map-library.js", "tts_client.js", "ambient_engine.js", "sfx_engine.js",
-        "dice/physics", "dice/geometries", "dice3d.js", "editor/serialization.js",
-        "editor/terrain_manifest.js", "editor/asset_initializer.js", "editor/asset_renderer.js",
-        "editor/terrain_renderer.js",
-    ]
     player_scripts = "\n".join(_script_srcs(html))
-    for needle in forbidden:
-        assert needle not in player_scripts
-    assert "/static/js/ui/player_shell.js" in html
+    required = [
+        "/static/js/editor/serialization.js",
+        "/static/js/character/combat_quick_actions.js",
+        "/static/js/character/character_sheet_container.js",
+        "/static/js/render/boot.js",
+        "/static/js/ui/tabs.js",
+        "/static/js/ui/player_shell.js",
+    ]
+    for needle in required:
+        assert needle in player_scripts, needle
+    # The no-op player/viewer boot stub must no longer be loaded.
+    assert "/static/js/core/player_boot_stub.js" not in player_scripts
     assert "PLAYER_BOOT_HTML_LOADED" in html
     assert "Player boot failed before scripts loaded." in html
 
@@ -208,32 +217,40 @@ def test_rendered_dm_manifest_keeps_dm_editor_tools():
 
 def test_rendered_player_response_size_sane_and_no_full_char_profiles_embed():
     html = _rendered_play("player")
-    assert len(html.encode("utf-8")) < 2_500_000
+    # Players now load the full live runtime (same as the DM), so the page is the
+    # large single-runtime document rather than a stripped shell.
+    assert len(html.encode("utf-8")) < 3_000_000
     assert "field=char_profiles" not in html
     assert "4555336" not in html
 
 
-def test_returning_player_uses_player_manifest_not_dm_manifest():
+def test_returning_player_uses_full_live_runtime():
     html = _rendered_play("player", "&returning=1")
+    # Returning players use the same single live runtime (not a stubbed shell).
     assert "/static/js/ui/player_shell.js" in html
-    assert "/static/js/ui/dm_assistant.js" not in html
-    assert "/static/js/editor/serialization.js" not in html
+    assert "/static/js/editor/serialization.js" in html
+    assert "/static/js/character/combat_quick_actions.js" in html
+    assert "/static/js/core/player_boot_stub.js" not in html
 
 
-def test_player_manifest_first_external_js_is_core_boot_and_no_forbidden_preload_paths():
+def test_player_runtime_first_external_js_is_core_boot():
     html = _rendered_play("player")
     scripts = _script_srcs(html)
+    # The core boot modules load first, before the rest of the live runtime.
     assert scripts[0] == "/static/js/core/diagnostics.js"
-    assert scripts[:7] == [
-        "/static/js/core/diagnostics.js",
-        "/static/js/core/csrf.js",
+    assert scripts[1] == "/static/js/core/csrf.js"
+    for core in [
         "/static/js/state/store.js",
         "/static/js/core/runtime_bridge.js",
         "/static/js/core/boot_shell.js",
         "/static/js/core/ws.js?v=heartbeat-pong-v4",
         "/static/js/core/message_dispatch.js",
-    ]
-    forbidden = ["/api/assistant/status", "/api/tts/voices", "/api/tts/warmup-phrases", "/static/assets/audio/manifest.json", "battle_loop_20260328.wav", "clack"]
+    ]:
+        assert core in scripts, core
+    # These heavy metadata/audio assets must never be eagerly fetched at boot.
+    # (DM-only API calls such as /api/assistant/status are role-gated at runtime;
+    # see test_player_boot_does_not_eagerly_call_dm_only_or_heavy_endpoints.)
+    forbidden = ["/api/tts/voices", "/api/tts/warmup-phrases", "/static/assets/audio/manifest.json", "battle_loop_20260328.wav"]
     for needle in forbidden:
         assert needle not in html
 

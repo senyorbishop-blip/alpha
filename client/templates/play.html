@@ -11175,13 +11175,12 @@ Shortbow — +5 to hit, 1d6+3 piercing"></textarea>
 </div>
 {% endif %}
 <script>
-// Define the boot role and shared boot-state BEFORE the boot scripts load.
-// diagnostics.js (the first boot script) marks __playerBootState.scriptsStarted
-// only when __PLAY_BOOT_ROLE === 'player'. The full player boot scaffolding lives
-// in player_boot_stub.js, which loads at the end of the page, so without this the
-// role is undefined when diagnostics.js runs and scriptsStarted is never set —
-// causing a false "Player boot failed before scripts loaded." overlay even after
-// a successful boot.
+// Define the boot role and shared boot-state BEFORE the runtime scripts load.
+// diagnostics.js (the first runtime script) marks __playerBootState.scriptsStarted
+// only when __PLAY_BOOT_ROLE === 'player'. All interactive roles share the single
+// live play.html runtime loaded below, so this must run first; otherwise the role
+// is undefined when diagnostics.js runs and scriptsStarted is never set — causing a
+// false "Player boot failed before scripts loaded." overlay even after a successful boot.
 window.__PLAY_BOOT_ROLE = "{{ play_role|default('viewer') }}";
 window.__PLAY_BOOT_MANIFEST = "{{ boot_manifest_name|default('viewer') }}";
 window.__playerBootState = window.__playerBootState || { checkpoint: 'PLAYER_BOOT_HTML_LOADED', scriptsStarted: false, wsOpened: false };
@@ -11195,7 +11194,11 @@ window.__playerBootState = window.__playerBootState || { checkpoint: 'PLAYER_BOO
   window._campRest = CampRest;
 </script>
 {% endif %}
-{% if play_role in ['dm', 'assistant_dm'] %}
+{% if play_role in ['dm', 'assistant_dm', 'player', 'viewer'] %}
+<!-- All interactive roles share the single live play.html runtime. DM-only tools
+     (editor, map studio, narration authoring, DM assistant) self-gate on ROLE at
+     runtime, so loading them for players/viewers is inert but keeps one live
+     implementation of the play page instead of a separate, stubbed player shell. -->
 <!-- Stage 4 ownership: editor/serialization.js is the authoritative map document serializer. -->
 <!-- editor/runtime.js and editor/state.js are dormant env-injected modules; do not load them. -->
 <script src="/static/js/core/diagnostics.js"></script>
@@ -11279,7 +11282,7 @@ window.__playerBootState = window.__playerBootState || { checkpoint: 'PLAYER_BOO
 <script src="/static/js/character/builder/steps/step_review.js"></script>
 <script src="/static/js/character/builder/builder_shell.js"></script>
 {% endif %}
-{% if play_role in ['dm', 'assistant_dm'] %}
+{% if play_role in ['dm', 'assistant_dm', 'player', 'viewer'] %}
 <script src="/static/js/character/spell_runtime.js"></script>
 <script src="/static/js/character/spells_modal.js"></script>
 <script src="/static/js/character/tabs/actions_tab.js"></script>
@@ -51937,8 +51940,6 @@ async function bestiaryMakeVariant() {
 }
 
 </script>
-{% else %}
-<script src="/static/js/core/player_boot_stub.js"></script>
 {% endif %}
 
 {% if load_dice_module %}
