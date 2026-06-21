@@ -244,8 +244,18 @@ def _normalize_dm_map_context(session: Session, value) -> str:
 
 def _resolve_fog_map_context(session: Session, payload: dict) -> str:
     if "map_ctx" in payload or "mapContext" in payload or "map_context" in payload:
-        explicit = str(payload.get("map_ctx") or payload.get("mapContext") or payload.get("map_context") or "").strip()
-        return explicit[:80]
+        explicit = str(payload.get("map_ctx") or payload.get("mapContext") or payload.get("map_context") or "").strip()[:80]
+        # Compatibility: older/local clients may send "__local__" while the
+        # server owns the real POI/scene context in session.dm_map_context.
+        # Resolve the alias to the DM's active map context instead of storing a
+        # literal "__local__" key (which would silently drop fog edits).
+        if explicit == "__local__":
+            dm_ctx = _normalize_dm_map_context(session, getattr(session, "dm_map_context", "world"))
+            if dm_ctx != "world":
+                return dm_ctx
+            return str(getattr(session, "dm_map_context", "world") or "world").strip()[:80] or "world"
+        if explicit:
+            return explicit
     return normalize_map_context_from_payload(payload, fallback=getattr(session, "dm_map_context", "world"))
 
 def _fog_state_payload_for_context(session: Session, map_ctx: str) -> dict:
@@ -277,9 +287,23 @@ def _fog_state_payload_for_context(session: Session, map_ctx: str) -> dict:
     }
 
 async def _broadcast_fog_to_visible_users(session: Session, message: dict, map_ctx: str):
-    broadcast = getattr(manager, "broadcast", None)
-    if callable(broadcast):
-        await broadcast(session.id, message)
+    """Deliver live fog updates to every connected participant via individual send_to calls.
+
+    Sending individually (not via a single broadcast) ensures per-user delivery
+    tracking and that the DM sender also receives the update for multi-tab sync.
+    Clients keep fog state keyed by map context and only redraw the active
+    context, so sending the sparse update to every participant is cheap and
+    avoids stale split-party/subgroup bookkeeping leaving a player permanently
+    out of sync until a full reconnect/state_sync.
+    """
+    users = dict(getattr(session, "users", {}) or {})
+    if users:
+        for uid in users:
+            await manager.send_to(session.id, uid, message)
+    else:
+        broadcast = getattr(manager, "broadcast", None)
+        if callable(broadcast):
+            await broadcast(session.id, message)
 
 
 def _resolve_local_map_url(session: Session, map_ctx: str, fallback=None) -> str | None:
