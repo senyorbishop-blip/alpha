@@ -11174,6 +11174,18 @@ Shortbow — +5 to hit, 1d6+3 piercing"></textarea>
   <span id="player-boot-ws-timeout-msg" style="display:none">Player boot failed before WebSocket.</span>
 </div>
 {% endif %}
+<script>
+// Define the boot role and shared boot-state BEFORE the boot scripts load.
+// diagnostics.js (the first boot script) marks __playerBootState.scriptsStarted
+// only when __PLAY_BOOT_ROLE === 'player'. The full player boot scaffolding lives
+// in player_boot_stub.js, which loads at the end of the page, so without this the
+// role is undefined when diagnostics.js runs and scriptsStarted is never set —
+// causing a false "Player boot failed before scripts loaded." overlay even after
+// a successful boot.
+window.__PLAY_BOOT_ROLE = "{{ play_role|default('viewer') }}";
+window.__PLAY_BOOT_MANIFEST = "{{ boot_manifest_name|default('viewer') }}";
+window.__playerBootState = window.__playerBootState || { checkpoint: 'PLAYER_BOOT_HTML_LOADED', scriptsStarted: false, wsOpened: false };
+</script>
 {% for script in boot_scripts %}
 <script src="{{ script }}"></script>
 {% endfor %}
