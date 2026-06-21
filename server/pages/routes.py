@@ -16,44 +16,23 @@ def _play_boot_context(request: Request) -> dict:
     if role not in {"dm", "player", "viewer", "assistant_dm"}:
         role = "viewer"
     manifest_role = "dm" if role in {"dm", "assistant_dm"} else role
-    core = [
-        "/static/js/core/diagnostics.js",
-        "/static/js/core/csrf.js",
-        "/static/js/state/store.js",
-        "/static/js/core/runtime_bridge.js",
-        "/static/js/core/boot_shell.js",
-        "/static/js/core/ws.js?v=heartbeat-pong-v4",
-        "/static/js/core/message_dispatch.js",
-    ]
-    player = core + [
-        "/static/js/render/boot.js",
-        "/static/js/render/fog.js",
-        "/static/js/render/vision.js",
-        "/static/js/ui/player_shell.js",
-        "/static/js/ui/tabs.js",
-        "/static/js/ui/chat.js",
-        "/static/js/ui/chat_log.js",
-    ]
-    viewer = core + [
-        "/static/js/render/boot.js",
-        "/static/js/render/fog.js",
-        "/static/js/render/vision.js",
-        "/static/js/ui/tabs.js",
-        "/static/js/ui/chat.js",
-        "/static/js/ui/chat_log.js",
-    ]
-    dm = []
-    deferred_dm = [
+    # All interactive roles (DM, assistant DM, player, viewer) share the single
+    # live play.html runtime. The full runtime (and its core boot scripts) is
+    # loaded by the role-gated block inside play.html itself, so boot_scripts is
+    # intentionally empty here to avoid double-loading the core modules. Earlier
+    # builds shipped a separate "minimal" player/viewer boot shell that stubbed
+    # out initUI/initCanvas/_setWsStatus and left players with no map, tabs,
+    # tokens, character sheet, or quick actions — see player live-sync regression.
+    deferred = [
         "/static/js/ui/onboarding.js?v=20260327",
     ]
-    scripts = dm if manifest_role == "dm" else (player if manifest_role == "player" else viewer)
     return {
         "play_role": role,
         "boot_manifest_name": manifest_role,
-        "boot_scripts": scripts,
-        "deferred_boot_scripts": deferred_dm if manifest_role == "dm" else [],
-        "include_camp_rest": manifest_role == "dm",
-        "load_dice_module": manifest_role == "dm",
+        "boot_scripts": [],
+        "deferred_boot_scripts": deferred,
+        "include_camp_rest": True,
+        "load_dice_module": True,
         "session_id": str(request.query_params.get("session_id") or ""),
         "user_id": str(request.query_params.get("user_id") or ""),
     }
