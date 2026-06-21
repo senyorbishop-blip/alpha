@@ -236,3 +236,31 @@ def test_player_manifest_first_external_js_is_core_boot_and_no_forbidden_preload
     forbidden = ["/api/assistant/status", "/api/tts/voices", "/api/tts/warmup-phrases", "/static/assets/audio/manifest.json", "battle_loop_20260328.wav", "clack"]
     for needle in forbidden:
         assert needle not in html
+
+
+def test_player_boot_role_is_defined_before_diagnostics_marks_scripts_started():
+    """Regression: __PLAY_BOOT_ROLE must be set before diagnostics.js runs so it can
+    mark __playerBootState.scriptsStarted; otherwise the player sees a false
+    'Player boot failed before scripts loaded.' overlay after a successful boot."""
+    html = _rendered_play("player")
+    role_assign = 'window.__PLAY_BOOT_ROLE = "player";'
+    assert role_assign in html
+    diagnostics_tag = '<script src="/static/js/core/diagnostics.js">'
+    assert diagnostics_tag in html
+    assert html.index(role_assign) < html.index(diagnostics_tag)
+
+
+def test_diagnostics_first_iife_marks_scripts_started_when_role_preset():
+    """diagnostics.js's first IIFE must set scriptsStarted=true when the player role
+    is already on window before it runs (the live boot ordering)."""
+    diagnostics = (ROOT / "client/static/js/core/diagnostics.js").read_text(encoding="utf-8")
+    first_iife = diagnostics[: diagnostics.index("(function (global)")]
+    script = r"""
+global.window = global;
+window.__PLAY_BOOT_ROLE = 'player';
+""" + first_iife + r"""
+console.log(JSON.stringify({ started: !!(window.__playerBootState && window.__playerBootState.scriptsStarted) }));
+"""
+    result = subprocess.check_output(["node", "-e", script], cwd=ROOT, text=True, timeout=30)
+    data = __import__('json').loads(result.strip().splitlines()[-1])
+    assert data["started"] is True
