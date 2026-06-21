@@ -297,12 +297,23 @@ async def _broadcast_fog_to_visible_users(session: Session, message: dict, map_c
     out of sync until a full reconnect/state_sync.
     """
     users = dict(getattr(session, "users", {}) or {})
+    msg_type = message.get("type") if isinstance(message, dict) else None
     if users:
+        delivered, failed = [], []
         for uid in users:
-            await manager.send_to(session.id, uid, message)
+            try:
+                await manager.send_to(session.id, uid, message)
+                delivered.append(uid)
+            except Exception:
+                failed.append(uid)
+        logger.info(
+            "[FOG] broadcast type=%s map_ctx=%s delivered=%s failed=%s",
+            msg_type, map_ctx, delivered, failed,
+        )
     else:
         broadcast = getattr(manager, "broadcast", None)
         if callable(broadcast):
+            logger.info("[FOG] broadcast type=%s map_ctx=%s via fallback manager.broadcast (no users)", msg_type, map_ctx)
             await broadcast(session.id, message)
 
 
