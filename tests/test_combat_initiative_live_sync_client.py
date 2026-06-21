@@ -144,6 +144,62 @@ def test_dm_npc_initiative_roll_updates_player_panel_without_refresh():
     assert result["calls"]["renderCombat"] == 2
 
 
+def test_combat_state_repaint_defers_when_render_collides_then_retries():
+    # If a combat_state lands while renderCombat is already on the stack (a
+    # render collision), the authoritative UI resync must NOT re-enter
+    # renderCombat synchronously — it must defer to a microtask and retry once
+    # the active render unwinds. This is what prevents the right-sidebar
+    # initiative from going stale until a manual refresh. The local state is
+    # still updated immediately; only the repaint is deferred.
+    code = f"""
+const calls = {{ renderCombat: 0, refreshRightPanelContextUI: 0, renderPartyStatusPanel: 0, refreshBigScreenDisplayOverlay: 0, drawFrame: 0, drawTokens: 0, renderTokens: 0, refreshTokenBadges: 0, refreshCombatBadges: 0, updateActiveContext: 0 }};
+const microtasks = [];
+global.queueMicrotask = (fn) => {{ microtasks.push(fn); }};
+global.document = {{ getElementById: () => null }};
+global.tokens = {{}};
+global.ROLE = 'dm';
+global.equipSummary = null;
+global._tokenOwnedByMe = () => false;
+global._playerActionTurnKey = () => '';
+global._playerActionEconomyRuntime = {{ action_surge_armed: false, bonus_action_converted_actions: 0 }};
+global._resetInspectResults = () => {{}};
+global.renderCombat = () => {{ calls.renderCombat++; }};
+global.refreshRightPanelContextUI = () => {{ calls.refreshRightPanelContextUI++; }};
+global.renderPartyStatusPanel = () => {{ calls.renderPartyStatusPanel++; }};
+global.refreshBigScreenDisplayOverlay = () => {{ calls.refreshBigScreenDisplayOverlay++; }};
+global.drawFrame = () => {{ calls.drawFrame++; }};
+global.drawTokens = () => {{ calls.drawTokens++; }};
+global.renderTokens = () => {{ calls.renderTokens++; }};
+global.refreshTokenBadges = () => {{ calls.refreshTokenBadges++; }};
+global.refreshCombatBadges = () => {{ calls.refreshCombatBadges++; }};
+global.updateActiveContext = () => {{ calls.updateActiveContext++; }};
+global._updateCombatTabAttention = () => {{}};
+global.window = global;
+{_DIAGNOSTICS_PREAMBLE}
+let _combat = {{ active: false, turn: 0, combatants: [] }};
+let _combatRound = 1;
+{_combat_apply_state_snippet()}
+// Simulate the collision: a render is in progress when combat_state arrives.
+window.__combatRenderActive = true;
+combatApplyState({{ active: true, turn: 0, round: 1, revision: 2, combatants: [{{ id: 'c1', token_id: 't1', name: 'Bishop', initiative: 17 }}] }});
+const duringCollision = {{ renderCombat: calls.renderCombat, microtasks: microtasks.length, revision: _combat.revision }};
+// The active render unwinds; drain deferred retries.
+window.__combatRenderActive = false;
+while (microtasks.length) {{ microtasks.shift()(); }}
+console.log(JSON.stringify({{ duringCollision, calls, combat: _combat }}));
+"""
+    out = subprocess.check_output(["node", "-e", code], cwd=ROOT, text=True, timeout=30)
+    result = json.loads(out.strip().splitlines()[-1])
+    # State applied immediately even though repaint was deferred.
+    assert result["duringCollision"]["revision"] == 2
+    # No synchronous re-entrant renderCombat during the collision; it was queued.
+    assert result["duringCollision"]["renderCombat"] == 0
+    assert result["duringCollision"]["microtasks"] == 1
+    # After the active render unwinds, the deferred retry repaints exactly once.
+    assert result["calls"]["renderCombat"] == 1
+    assert result["combat"]["combatants"][0]["initiative"] == 17
+
+
 def test_stale_lower_revision_is_ignored():
     result = _run(
         "combatApplyState({ active: true, turn: 0, round: 1, revision: 5, "

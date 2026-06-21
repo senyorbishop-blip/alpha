@@ -45356,7 +45356,23 @@ function _combatInitiativeSignature(state) {
   ].join(':')).join('|') + `#active=${state?.active ? 1 : 0}#turn=${state?.turn ?? 0}#round=${state?.round ?? 1}`;
 }
 
+let _combatStateUISyncDeferred = false;
 function forceCombatStateUISync() {
+  // Retry-on-collision: if a combat render is already on the stack (a
+  // combat_state landed while renderCombat was mid-flight), do not re-enter
+  // renderCombat synchronously and fight the active render — that race is what
+  // left the right-sidebar initiative stale until a manual refresh. Defer the
+  // whole resync to a microtask so the in-progress render unwinds first, then
+  // the initiative/sidebar/badge surfaces repaint off the fresh authoritative
+  // state. A single-flight flag collapses repeated collisions into one retry so
+  // a burst of combat_state packets cannot queue a microtask storm. Falls
+  // through to the synchronous path when queueMicrotask is unavailable.
+  if (window.__combatRenderActive && typeof queueMicrotask === 'function') {
+    if (_combatStateUISyncDeferred) return;
+    _combatStateUISyncDeferred = true;
+    queueMicrotask(() => { _combatStateUISyncDeferred = false; forceCombatStateUISync(); });
+    return;
+  }
   // combat_state is authoritative for every combat render surface. Rebuild all
   // surfaces unconditionally, even if the combat tab is hidden or the current
   // panel context is "moments"; hidden sidebar DOM must be fresh when opened.
