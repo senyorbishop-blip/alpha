@@ -173,6 +173,22 @@
     };
   }
 
+  var DASHBOARD_COLLAPSE_KEY = 'player_dashboard_collapsed';
+
+  function isDashboardCollapsed() {
+    try {
+      // Default to collapsed: the shortcuts panel is opt-in, so it does not
+      // take over the player sidebar unless the player explicitly opens it.
+      return window.localStorage.getItem(DASHBOARD_COLLAPSE_KEY) !== '0';
+    } catch (_err) {
+      return true;
+    }
+  }
+
+  function setDashboardCollapsed(collapsed) {
+    try { window.localStorage.setItem(DASHBOARD_COLLAPSE_KEY, collapsed ? '1' : '0'); } catch (_err) {}
+  }
+
   function renderDashboard(env) {
     const doc = env?.document;
     const mount = doc && doc.getElementById('player-dashboard-shell');
@@ -243,10 +259,15 @@
       ? recentMoments.slice(0, 3).map((moment) => `<div class="player-dashboard-moment" data-moment-type="${esc(String(moment?.momentType || 'world'))}"><strong>${esc(String(moment?.title || 'Moment'))}</strong><span>${esc(String(moment?.summary || 'Something changed in the world.'))}</span></div>`).join('')
       : '<div class="player-dashboard-moment" data-moment-type="world"><strong>Quiet for now</strong><span>No private timeline beats yet.</span></div>';
 
+    const collapsed = isDashboardCollapsed();
+    mount.classList.toggle('collapsed', collapsed);
+    const headerTitle = isFirstSession ? 'Welcome, adventurer' : 'Session shortcuts';
     mount.innerHTML = `
       <div class="player-dashboard-header">
-        <div class="player-dashboard-title">${isFirstSession ? 'Welcome, adventurer' : 'Session shortcuts'}</div>
+        <div class="player-dashboard-title">${headerTitle}</div>
+        <button type="button" class="player-dashboard-toggle" data-player-dashboard-toggle aria-expanded="${collapsed ? 'false' : 'true'}" title="${collapsed ? 'Show session shortcuts' : 'Hide session shortcuts'}">${collapsed ? 'Show' : 'Hide'}</button>
       </div>
+      <div class="player-dashboard-body">
       <div class="player-dashboard-summary">${summary}</div>
       <div class="player-dashboard-meta">${meta}</div>
       <div class="player-dashboard-meta">${characterStatus}</div>
@@ -280,7 +301,13 @@
       </div>
       ${savedDiscoveriesMarkup}
       ${privateHooksMarkup}
+      </div>
     `;
+    mount.querySelector('[data-player-dashboard-toggle]')?.addEventListener('click', function () {
+      const nowCollapsed = !mount.classList.contains('collapsed');
+      setDashboardCollapsed(nowCollapsed);
+      renderDashboard(env);
+    });
     mount.querySelector('[data-player-dashboard-action="party"]')?.addEventListener('click', function () {
       env?.switchRightTab?.('party');
     });
