@@ -728,7 +728,25 @@
       box-shadow: inset 0 -1px 0 rgba(255,255,255,0.03);
     }
     #player-dashboard-shell.active { display: flex; }
-    .player-dashboard-header { display:flex; flex-direction:column; gap:0.12rem; }
+    .player-dashboard-header { display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:0.4rem; }
+    .player-dashboard-toggle {
+      flex:0 0 auto;
+      font-family:'Cinzel',serif;
+      font-size:0.56rem;
+      letter-spacing:0.12em;
+      text-transform:uppercase;
+      color:var(--gold-dim);
+      background:rgba(0,0,0,0.18);
+      border:1px solid rgba(0,229,204,0.3);
+      border-radius:999px;
+      padding:0.2rem 0.55rem;
+      cursor:pointer;
+      transition:color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .player-dashboard-toggle:hover { color:var(--player-color); border-color:rgba(0,229,204,0.55); background:rgba(0,229,204,0.1); }
+    .player-dashboard-body { display:flex; flex-direction:column; gap:0.4rem; }
+    #player-dashboard-shell.collapsed { gap:0; }
+    #player-dashboard-shell.collapsed .player-dashboard-body { display:none; }
     .player-dashboard-eyebrow {
       font-family:'Cinzel',serif;
       font-size:0.52rem;
@@ -11974,12 +11992,21 @@ let _combatRound = 1;
 // Monotonic visibility revision (fog/hidden/token-position changes). Payloads
 // carrying an older revision than the last one applied are dropped so a
 // stale/out-of-order websocket message can't re-show a hidden/fogged NPC.
-let _lastVisibilityRevision = 0;
-function _isStaleVisibilityPayload(payload) {
+// `tokens_sync` and `combat_state` both ride the SAME server-side
+// `visibility_revision` counter, but they are independent message streams that
+// interleave on the wire. Tracking them against ONE shared client counter let a
+// payload from one stream advance the gate past the other stream's revision,
+// which then wrongly discarded the other stream's next (perfectly fresh) payload
+// as "stale" — leaving the combat queue or fog-derived token visibility stale
+// until a manual refresh re-fetched full state. Track the last applied revision
+// PER STREAM so each stream only guards against its own out-of-order payloads.
+const _lastVisibilityRevisionByStream = Object.create(null);
+function _isStaleVisibilityPayload(payload, stream = 'tokens') {
   const rev = Number(payload && payload.visibility_revision);
   if (!Number.isFinite(rev)) return false;
-  if (rev < _lastVisibilityRevision) return true;
-  _lastVisibilityRevision = rev;
+  const last = Number(_lastVisibilityRevisionByStream[stream] || 0);
+  if (rev < last) return true;
+  _lastVisibilityRevisionByStream[stream] = rev;
   return false;
 }
 let _combatFogSyncTimer = null;
@@ -45298,7 +45325,7 @@ function handleCombatStateLive(payload) {
   traceEnter('handleCombatStateLive', { revision: payload?.revision });
   if (!payload || typeof payload !== 'object') return false;
   console.debug(`[handleCombatStateLive] combat_state revision=${payload.revision ?? 'none'} order=${JSON.stringify(Array.isArray(payload.combatants) ? payload.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : []).replace(/\"/g, "'")}`);
-  if (_isStaleVisibilityPayload(payload)) return true;
+  if (_isStaleVisibilityPayload(payload, 'combat')) return true;
   // Capture previous state for spotlight diff detection.  combat_state is the
   // only source of truth for initiative/order, including self-roll updates.
   const _prevCombatForSpotlight = _combat ? JSON.parse(JSON.stringify(_combat)) : null;
