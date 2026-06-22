@@ -1191,12 +1191,19 @@ async def handle_combat_attack_request(payload: dict, session: Session, user: Us
     Stores a ``pending_attack`` on the combat dict and broadcasts so the DM
     sees the Succeed / Fail prompt. Prevents duplicate submissions.
     """
+    client_action_id = payload.get("client_action_id")
+
+    async def _denied(reason: str, *, status: str = "denied"):
+        await _send_action_ack(session, user, action="combat_attack_request",
+                                client_action_id=client_action_id, status=status, reason=reason)
+
     allowed, message = _can_act_current_turn(session, user)
     if not allowed:
         if message:
             await manager.send_to(session.id, user.id, {
                 "type": "error", "payload": {"message": message}
             })
+        await _denied("Not your turn")
         return
 
     # Prevent duplicate submission while one is already pending.
@@ -1205,6 +1212,7 @@ async def handle_combat_attack_request(payload: dict, session: Session, user: Us
             "type": "error",
             "payload": {"message": "An attack is already waiting for DM resolution."}
         })
+        await _denied("Action denied")
         return
 
     target_id = str(payload.get("target_id") or "").strip()
@@ -1213,6 +1221,7 @@ async def handle_combat_attack_request(payload: dict, session: Session, user: Us
         await manager.send_to(session.id, user.id, {
             "type": "error", "payload": {"message": "No valid target selected."}
         })
+        await _denied("Invalid target")
         return
 
     attack_kind = str(payload.get("attack_kind") or "weapon").strip().lower()
@@ -1254,6 +1263,11 @@ async def handle_combat_attack_request(payload: dict, session: Session, user: Us
     )
     await _broadcast_combat(session)
     await manager.broadcast(session.id, {"type": "log_entry", "payload": {"log": log_entry}})
+    await _send_action_ack(
+        session, user, action="combat_attack_request", client_action_id=client_action_id,
+        status="confirmed", target_id=target_id,
+        combat_revision=_safe_int((session.combat or {}).get("revision"), 0, minimum=0, maximum=2**31),
+    )
 
 
 async def handle_combat_attack_override(payload: dict, session: Session, user: User):

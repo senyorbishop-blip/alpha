@@ -35,6 +35,7 @@ from server.handlers.common import (
     PX_PER_GRID,
     _broadcast_token_state_sync,
     bump_inventory_revision,
+    _send_action_ack,
 )
 from server.item_schema import (
     normalize_item_record,
@@ -1910,19 +1911,30 @@ def _roll_formula_total(formula: str) -> int:
 
 
 async def handle_inventory_use_item_action(payload: dict, session: Session, user: User):
+    client_action_id = payload.get("client_action_id")
+
+    async def _denied(reason: str, *, status: str = "denied"):
+        await _send_action_ack(session, user, action="inventory_use_item_action",
+                                client_action_id=client_action_id, status=status, reason=reason)
+
     if user.role != "player":
+        await _denied("Action denied", status="failed")
         return await _send_inventory_action_result(session, user.id, "Only players can use inventory item actions.")
     item_index = _safe_int(payload.get("item_index"), -1, minimum=-1, maximum=9999)
     if item_index < 0:
+        await _denied("Item not found", status="failed")
         return await _send_inventory_action_result(session, user.id, "Choose an item action first.")
     inventories, owner_key, items = _get_player_inventory_store(session, user)
     if item_index >= len(items):
+        await _denied("Item not found", status="failed")
         return await _send_inventory_action_result(session, user.id, "That item is no longer in your inventory.")
     item = dict(items[item_index] or {})
     action_payload, _passive = _build_item_runtime_action(item, item_index)
     if not action_payload:
+        await _denied("Action denied")
         return await _send_inventory_action_result(session, user.id, "That item does not grant an active action.")
     if bool(action_payload.get("disabled")):
+        await _denied("Action denied")
         return await _send_inventory_action_result(
             session,
             user.id,
@@ -1932,6 +1944,7 @@ async def handle_inventory_use_item_action(payload: dict, session: Session, user
     if action_payload.get("charges_current") is not None:
         charges_current = _safe_int(item.get("charges_current"), _safe_int(action_payload.get("charges_current"), 0, minimum=0, maximum=99), minimum=0, maximum=99)
         if charges_current < usage_cost:
+            await _denied("Not enough charges")
             return await _send_inventory_action_result(session, user.id, "Not enough charges.")
         item["charges_current"] = charges_current - usage_cost
         if item.get("charges_max") is None and action_payload.get("charges_max") is not None:
@@ -1968,6 +1981,11 @@ async def handle_inventory_use_item_action(payload: dict, session: Session, user
     if result["healing_formula"]:
         result["healing_total"] = _roll_formula_total(result["healing_formula"])
     await _broadcast_inventory_state(session)
+    await _send_action_ack(
+        session, user, action="inventory_use_item_action", client_action_id=client_action_id,
+        status="confirmed", item_id=result["item_id"],
+        inventory_revision=int(getattr(session, "inventory_revision", 0) or 0),
+    )
     await manager.send_to(session.id, user.id, {"type": "inventory_item_used", "payload": result})
     await manager.broadcast(session.id, {
         "type": "chat_message",
@@ -2076,7 +2094,14 @@ def _build_item_spell_cards(items: list[dict]) -> list[dict]:
 
 async def handle_inventory_cast_item_spell(payload: dict, session: Session, user: User):
     """Cast a spell from an equipped magic item, spending the configured charge cost."""
+    client_action_id = payload.get("client_action_id")
+
+    async def _denied(reason: str, *, status: str = "denied"):
+        await _send_action_ack(session, user, action="inventory_cast_item_spell",
+                                client_action_id=client_action_id, status=status, reason=reason)
+
     if user.role != "player":
+        await _denied("Action denied", status="failed")
         return await _send_inventory_action_result(session, user.id, "Only players can cast item spells.")
 
     item_index = _safe_int(payload.get("item_index"), -1, minimum=-1, maximum=9999)
@@ -2087,24 +2112,30 @@ async def handle_inventory_cast_item_spell(payload: dict, session: Session, user
     cast_level = max(0, _safe_int(payload.get("cast_level"), 0, minimum=0, maximum=9))
 
     if not spell_id:
+        await _denied("Spell not available", status="failed")
         return await _send_inventory_action_result(session, user.id, "No spell specified.")
     if item_index < 0:
+        await _denied("Item not found", status="failed")
         return await _send_inventory_action_result(session, user.id, "No item specified.")
 
     inventories, owner_key, items = _get_player_inventory_store(session, user)
     if item_index >= len(items):
+        await _denied("Item not found", status="failed")
         return await _send_inventory_action_result(session, user.id, "That item is no longer in your inventory.")
 
     item = dict(items[item_index] or {})
 
     actual_id = str(item.get("id") or item.get("magic_item_id") or "").strip()
     if item_id and actual_id and item_id != actual_id:
+        await _denied("Item not found", status="failed")
         return await _send_inventory_action_result(session, user.id, "Item mismatch — please refresh your inventory.")
 
     if not bool(item.get("equipped")):
+        await _denied("Item not equipped")
         return await _send_inventory_action_result(session, user.id, "That item must be equipped to cast its spells.")
 
     if not _item_is_attuned(item):
+        await _denied("Item not equipped")
         return await _send_inventory_action_result(
             session, user.id, f"{item.get('name', 'That item')} requires attunement before casting its spells."
         )
@@ -2125,6 +2156,7 @@ async def handle_inventory_cast_item_spell(payload: dict, session: Session, user
                 break
 
     if spell_entry is None:
+        await _denied("Spell not available")
         return await _send_inventory_action_result(
             session, user.id, f"Spell '{spell_id}' is not granted by {item.get('name', 'that item')}."
         )
@@ -2139,6 +2171,7 @@ async def handle_inventory_cast_item_spell(payload: dict, session: Session, user
     charges_max = _safe_int(item.get("charges_max"), 0, minimum=0, maximum=9999)
 
     if charges_max > 0 and charges_current >= 0 and charges_current < actual_cost:
+        await _denied("Not enough charges")
         return await _send_inventory_action_result(
             session, user.id,
             f"Not enough charges. {item.get('name', 'Item')} has {charges_current}/{charges_max} charges; casting {spell_id} costs {actual_cost}.",
@@ -2181,6 +2214,11 @@ async def handle_inventory_cast_item_spell(payload: dict, session: Session, user
     }
 
     await _broadcast_inventory_state(session)
+    await _send_action_ack(
+        session, user, action="inventory_cast_item_spell", client_action_id=client_action_id,
+        status="confirmed", item_id=result["item_id"], spell_key=spell_id,
+        inventory_revision=int(getattr(session, "inventory_revision", 0) or 0),
+    )
     await manager.send_to(session.id, user.id, {"type": "inventory_item_spell_cast", "payload": result})
 
     level_note = f" (level {resolved_cast_level})" if resolved_cast_level else ""
