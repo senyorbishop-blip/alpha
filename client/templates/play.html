@@ -11359,7 +11359,7 @@ if (_runtimeStore && typeof _runtimeStore.init === 'function') {
   _runtimeStore.init({
     session: { id: SESSION_ID, returning: RETURNING },
     user: { id: USER_ID, name: NAME, role: ROLE },
-    socket: { instance: null, reconnectTimer: null, pendingMessages: [], connected: false, status: 'idle' },
+    socket: { pendingMessages: [], connected: false, status: 'idle' },
     map: { dmContext: 'world', navVersion: 0, clientNavIntent: 0 },
     ui: { currentTool: 'select', selectedDice: 20, activeRightTab: 'party', unreadLog: 0 },
     fog: { enabled: false, preview: false, reveal: true, brushSize: 3, mapContext: 'world' },
@@ -12600,8 +12600,8 @@ if (typeof window !== 'undefined') {
 }
 
 // WebSocket
+// WebSocket lifecycle state is owned exclusively by AppWS (client/static/js/core/ws.js).
 let ws = null;
-let wsReconnectTimer = (_runtimeStore && _runtimeStore.get) ? (_runtimeStore.get('socket.reconnectTimer', null)) : null;
 let _pendingWSMessages = (_runtimeStore && _runtimeStore.get) ? (_runtimeStore.get('socket.pendingMessages', [])) : [];
 const _queuedEditorTypes = new Set(['editor_layer_save','editor_walls_save','editor_props_save']);
 
@@ -31334,8 +31334,7 @@ function connectWS() {
     }
     window.AppWS.configure(window.AppRuntimeBridge.createWsConfig());
     _setWsStatus('connecting');
-    ws = window.AppWS.ensureConnected({ reason: 'boot' });
-    return ws;
+    return window.AppWS.ensureConnected({ reason: 'boot' });
   };
   runConnect().catch((err) => {
     console.warn('[WS] connect bootstrap failed', err);
@@ -32480,7 +32479,7 @@ function handleLegacyMessage(msg) {
       traceEnter('state_sync handler', { phase: 'start' });
       window.__stateSyncApplying = true;
       try {
-      syncSessionAuthority('state_sync');
+      // Routine state_sync must not re-run authority redirect logic; identity is resolved at boot/ws_preconnect.
       // Full state load
       Object.keys(tokens).forEach(k => delete tokens[k]);
       Object.keys(users).forEach(k => delete users[k]);
