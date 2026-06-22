@@ -139,6 +139,26 @@ async def test_broadcast_combat_state_payload_includes_revision(patched):
 
 
 @pytest.mark.anyio
+async def test_move_commit_advances_combat_revision_when_persisted(patched):
+    s, u, t = _make_session_with_active_combatant()
+    before = s.combat.get("revision")
+    await combat_handlers.handle_combat_move_commit(
+        {"token_id": "t1", "to_x": 30, "to_y": 0, "expected_cost_ft": 5}, s, u
+    )
+    assert s.combat.get("revision") == before + 1
+
+
+@pytest.mark.anyio
+async def test_clear_combat_advances_combat_revision(patched):
+    s, u, t = _make_session_with_active_combatant()
+    dm = User(id="dm1", name="DM", role="dm")
+    s.users[dm.id] = dm
+    before = s.combat.get("revision")
+    await combat_handlers.handle_combat_clear({}, s, dm)
+    assert s.combat.get("revision") == before + 1
+
+
+@pytest.mark.anyio
 async def test_repeated_mutations_produce_monotonically_increasing_revisions(patched):
     s, u, t = _make_session_with_active_combatant()
     dm = User(id="dm1", name="DM", role="dm")

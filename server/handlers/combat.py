@@ -537,6 +537,7 @@ async def _handle_combat_move_plan(payload: dict, session: Session, user: User, 
     move_state["last_x"], move_state["last_y"] = to_x, to_y
     move_state["last_resolver"] = resolved
     session.combat["movement"] = move_state
+    _bump_combat_revision(session, "move_commit")
     await manager.broadcast(session.id, {"type": "token_moved", "payload": {"token_id": token_id, "x": token.x, "y": token.y, "moved_by": user.name}})
     await manager.broadcast(session.id, {"type": "combat_move_state", "payload": move_state})
     session.add_log(f"{user.name} moved {getattr(token, 'name', 'token')} {resolved.get('finalCostFeet', 0):g} ft ({resolved.get('movementMode')}).", "combat")
@@ -788,6 +789,7 @@ async def handle_combat_clear(payload: dict, session: Session, user: User):
     sound_state = getattr(session, "sound_state", None) or {}
     pre_combat = sound_state.get("pre_combat_track", "silence")
     session.combat = {"active": False, "turn": 0, "combatants": [], "movement": {}, "encounter_id": str(uuid.uuid4()), "reason": "clear_combat", "clear_reason": "clear_combat"}
+    _bump_combat_revision(session, "clear_combat")
     event = {
         "event_type": "clear_encounter",
         "target_id": str(payload.get("encounter_id") or payload.get("encounter_template_id") or "").strip(),
