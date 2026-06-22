@@ -12011,6 +12011,21 @@ function _isStaleVisibilityPayload(payload, stream = 'tokens') {
   _lastVisibilityRevisionByStream[stream] = rev;
   return false;
 }
+// Same per-stream stale-packet gate as _isStaleVisibilityPayload, but keyed off
+// `inventory_revision` (a separate monotonic counter from `visibility_revision`)
+// so a reordered/delayed `player_inventory_sync` (e.g. across a brief
+// disconnect/reconnect with queued-message flush) can't snap equipped/charge
+// state back to stale data. A payload without `inventory_revision` is treated
+// as not-stale for backward compatibility.
+function _isStaleInventoryPayload(payload) {
+  const rev = Number(payload && payload.inventory_revision);
+  if (!Number.isFinite(rev)) return false;
+  const stream = 'inventory';
+  const last = Number(_lastVisibilityRevisionByStream[stream] || 0);
+  if (rev < last) return true;
+  _lastVisibilityRevisionByStream[stream] = rev;
+  return false;
+}
 let _combatFogSyncTimer = null;
 let _combatFogSyncLastKey = '';
 function _combatFogVisibleNpcHash() {
@@ -32865,6 +32880,7 @@ function handleLegacyMessage(msg) {
     }
 
     case 'player_inventory_sync': {
+      if (_isStaleInventoryPayload(p)) break;
       applyPlayerInventoryState(p);
       break;
     }

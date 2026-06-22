@@ -34,6 +34,7 @@ from server.handlers.common import (
     _token_center,
     PX_PER_GRID,
     _broadcast_token_state_sync,
+    bump_inventory_revision,
 )
 from server.item_schema import (
     normalize_item_record,
@@ -719,6 +720,9 @@ def _inventory_target_user(session: Session, user: User, target_user_id_raw) -> 
 
 
 async def _broadcast_inventory_state(session: Session):
+    # Bumped once per call (not per-recipient) — every call site here represents
+    # one real inventory-affecting mutation, never a read-only query or preview.
+    bump_inventory_revision(session)
     for uid in list((getattr(session, "users", {}) or {}).keys()):
         await _send_inventory_state(session, uid)
     await _broadcast_token_state_sync(session)
@@ -745,6 +749,7 @@ async def _send_inventory_state(session: Session, user_id: str):
         "party_loot_log": list(getattr(session, "party_loot_log", []) or [])[-120:],
         "party_stash": get_party_stash_inventory(session),
         "encumbrance_settings": dict(getattr(session, "encumbrance_settings", {}) or {}),
+        "inventory_revision": int(getattr(session, "inventory_revision", 0) or 0),
     }
     if user.role == "dm":
         dm_buckets = build_player_inventory_payload_for_dm(session)
