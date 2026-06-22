@@ -99,7 +99,7 @@ class ConnectionManager:
                 return True
             except Exception:
                 logger.warning("[ws] send_to failed session_id=%s user_id=%s message_type=%s", session_id, user_id, message.get("type"))
-                self.disconnect(session_id, user_id)
+                self.disconnect(session_id, user_id, ws)
         return False
 
     async def broadcast(self, session_id: str, message: dict, exclude_user: Optional[str] = None):
@@ -112,9 +112,9 @@ class ConnectionManager:
             try:
                 await ws.send_text(payload)
             except Exception:
-                dead.append(uid)
-        for uid in dead:
-            self.disconnect(session_id, uid)
+                dead.append((uid, ws))
+        for uid, ws in dead:
+            self.disconnect(session_id, uid, ws)
 
     async def broadcast_to_role(self, session_id: str, message: dict, roles: Set[str], session_obj):
         connections = dict(self._connections.get(session_id, {}))
@@ -126,9 +126,9 @@ class ConnectionManager:
                 try:
                     await ws.send_text(payload)
                 except Exception:
-                    dead.append(uid)
-        for uid in dead:
-            self.disconnect(session_id, uid)
+                    dead.append((uid, ws))
+        for uid, ws in dead:
+            self.disconnect(session_id, uid, ws)
 
     async def broadcast_filtered(self, session_id: str, message: dict,
                                  hide_hidden_tokens: bool = False, dm_id: str = None,
@@ -161,9 +161,9 @@ class ConnectionManager:
                     # visible to players (unless hidden=True, handled above).
                 await ws.send_text(dm_payload)
             except Exception:
-                dead.append(uid)
-        for uid in dead:
-            self.disconnect(session_id, uid)
+                dead.append((uid, ws))
+        for uid, ws in dead:
+            self.disconnect(session_id, uid, ws)
 
     def is_connected(self, session_id: str, user_id: str) -> bool:
         return user_id in self._connections.get(session_id, {})
