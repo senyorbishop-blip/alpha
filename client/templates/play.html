@@ -36467,7 +36467,7 @@ function _applyLongRest() {
   if (typeof initPremiumSheetIfNeeded === 'function') initPremiumSheetIfNeeded();
 
   if (typeof sendWS === 'function') {
-    sendWS({ type: 'character_rest', payload: { rest_type: 'long', character_name: sheet.name || NAME || 'Character' } });
+    sendWS({ type: 'character_rest', payload: { rest_type: 'long', character_name: sheet.name || NAME || 'Character', token_id: token?.id || '' } });
   }
 
   _showRestSummary(
@@ -36564,7 +36564,7 @@ function _openShortRestModal() {
     if (typeof sendWS === 'function') {
       sendWS({ type: 'character_rest', payload: {
         rest_type: 'short', character_name: sheet.name || NAME || 'Character',
-        hit_dice_spent: diceSpentThisRest, healed_amount: totalHealed,
+        hit_dice_spent: diceSpentThisRest, healed_amount: totalHealed, token_id: _myOwnRestToken()?.id || '',
       }});
     }
 

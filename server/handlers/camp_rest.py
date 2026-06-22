@@ -357,41 +357,129 @@ async def handle_camp_rest_spend_hit_die(payload: dict, session: Session, user: 
     await save_campaign_async(session)
 
 
-async def handle_character_self_rest(payload: dict, session: Session, user: User):
-    """A player rests their own character from the character sheet.
+def _owned_player_token_for_rest(payload: dict, session: Session, user: User):
+    """Resolve the token a player is allowed to rest."""
+    requested = str(payload.get("token_id") or "").strip()
+    if requested:
+        token = (getattr(session, "tokens", {}) or {}).get(requested)
+        if token is not None and str(getattr(token, "owner_id", "") or "") == str(user.id):
+            return requested, token
+        return None, None
+    for tid, token in list((getattr(session, "tokens", {}) or {}).items()):
+        if str(getattr(token, "owner_id", "") or "") == str(user.id):
+            return tid, token
+    return None, None
 
-    Unlike `camp_rest_take_rest` (DM-triggered, party-wide), this lets a
-    player take a short or long rest individually. HP/spell slot/resource
-    state is already applied client-side (mirroring how char_hp_update and
-    token_hp_update work elsewhere); this handler covers the parts that
-    must be authoritative on the server: item charge recharge, and logging
-    the rest to chat/journal so the DM and table see it.
-    """
+
+def _safe_rest_heal_amount(payload: dict) -> int:
+    raw = payload.get("heal_amount", payload.get("healed_amount", 0))
+    try:
+        amount = int(raw or 0)
+    except (TypeError, ValueError):
+        return 0
+    if amount <= 0:
+        return 0
+    # Character-sheet hit-dice healing is client-rolled today; keep the server
+    # authoritative by clamping to a sane per-rest amount and to the token's
+    # missing HP before applying it.
+    return min(amount, 500)
+
+
+def _apply_rest_heal_without_overflow(token, amount: int) -> int:
+    if token is None or getattr(token, "hp", None) is None:
+        return 0
+    try:
+        current = int(getattr(token, "hp") or 0)
+        max_hp = int(getattr(token, "max_hp") or 0)
+    except (TypeError, ValueError):
+        return 0
+    if max_hp <= 0:
+        return 0
+    actual = min(max(0, int(amount or 0)), max(0, max_hp - current))
+    token.hp = current + actual
+    return actual
+
+
+async def _prune_rest_summons(session: Session, rest_type: str) -> list[str]:
+    removed_temp_summon_tokens: list[str] = []
+    profiles = dict(getattr(session, "char_profiles", {}) or {})
+    for owner_key, rows in list(profiles.items()):
+        if not isinstance(rows, list):
+            continue
+        bucket = list(rows)
+        changed = False
+        for idx, row in enumerate(bucket):
+            if not isinstance(row, dict):
+                continue
+            native = row.get("nativeCharacter") if isinstance(row.get("nativeCharacter"), dict) else {}
+            removed = prune_expired_temporary_summons(native, rest_type=rest_type)
+            if not removed:
+                continue
+            changed = True
+            row["nativeCharacter"] = native
+            bucket[idx] = row
+            for entry in removed:
+                tok_id = str(entry.get("tokenId") or "").strip()
+                if tok_id and tok_id in (session.tokens or {}):
+                    session.tokens.pop(tok_id, None)
+                    removed_temp_summon_tokens.append(tok_id)
+                    await manager.broadcast(session.id, {"type": "token_deleted", "payload": {"token_id": tok_id}})
+        if changed:
+            profiles[owner_key] = bucket
+    session.char_profiles = profiles
+    return removed_temp_summon_tokens
+
+
+async def handle_character_self_rest(payload: dict, session: Session, user: User):
+    """Server-authoritative player rest for one owned character token."""
     if user.role != "player":
         return
 
     rest_type = str(payload.get("rest_type") or "long").strip().lower()
     if rest_type not in ("short", "long"):
-        rest_type = "long"
-    hit_dice_spent = max(0, int(payload.get("hit_dice_spent") or 0))
+        return
+
+    token_id, token = _owned_player_token_for_rest(payload, session, user)
+    if token is None:
+        await manager.send_to(session.id, user.id, {
+            "type": "notification",
+            "payload": {"message": "Could not find one of your tokens to rest.", "kind": "warning"},
+        })
+        return
 
     from server.handlers.inventory import refresh_item_charges_for_rest
     updated_items = refresh_item_charges_for_rest(session, user, rest_type)
 
-    char_name = str(payload.get("character_name") or user.name or "A character").strip()
+    healed_amount = 0
+    removed_temp_summon_tokens: list[str] = []
+    if rest_type == "long":
+        old_hp = int(getattr(token, "hp") or 0)
+        max_hp = getattr(token, "max_hp", None)
+        if max_hp is not None:
+            token.hp = int(max_hp)
+            healed_amount = max(0, int(token.hp or 0) - old_hp)
+        token.temp_hp = 0
+        _sync_combatant_token_state(session, token, previous_hp=old_hp)
+        removed_temp_summon_tokens = await _prune_rest_summons(session, rest_type)
+        await _broadcast_token_state_sync(session)
+    else:
+        heal_amount = _safe_rest_heal_amount(payload)
+        if heal_amount > 0:
+            old_hp = int(getattr(token, "hp") or 0)
+            healed_amount = _apply_rest_heal_without_overflow(token, heal_amount)
+            if healed_amount > 0:
+                _sync_combatant_token_state(session, token, previous_hp=old_hp)
+                await _broadcast_token_state_sync(session)
+
+    char_name = str(payload.get("character_name") or getattr(token, "name", "") or user.name or "A character").strip()
     if rest_type == "long":
         log_msg = f"🌙 {char_name} completed a Long Rest."
-    elif hit_dice_spent > 0:
-        plural = "" if hit_dice_spent == 1 else "s"
-        log_msg = f"☀ {char_name} completed a Short Rest and spent {hit_dice_spent} hit die{plural}."
+    elif healed_amount > 0:
+        log_msg = f"☀ {char_name} completed a Short Rest and recovered {healed_amount} HP."
     else:
         log_msg = f"☀ {char_name} completed a Short Rest."
 
     session.add_log(log_msg, "rest", user.name)
-    await manager.broadcast(session.id, {
-        "type": "chat_message",
-        "payload": {"user": user.name, "message": log_msg, "channel": "everyone", "msg_type": "character_rest"},
-    })
 
     if updated_items:
         from server.handlers.inventory import _broadcast_inventory_state
@@ -399,7 +487,22 @@ async def handle_character_self_rest(payload: dict, session: Session, user: User
 
     await manager.send_to(session.id, user.id, {
         "type": "character_rest_applied",
-        "payload": {"rest_type": rest_type, "message": log_msg, "items": updated_items},
+        "payload": {
+            "rest_type": rest_type,
+            "token_id": token_id,
+            "hp": getattr(token, "hp", None),
+            "max_hp": getattr(token, "max_hp", None),
+            "temp_hp": getattr(token, "temp_hp", 0),
+            "healed_amount": healed_amount,
+            "items": updated_items,
+            "message": log_msg,
+            "removed_temp_summon_tokens": removed_temp_summon_tokens,
+        },
+    })
+
+    await manager.broadcast(session.id, {
+        "type": "chat_message",
+        "payload": {"user": user.name, "message": log_msg, "channel": "everyone", "msg_type": "character_rest"},
     })
 
     await save_campaign_async(session)
