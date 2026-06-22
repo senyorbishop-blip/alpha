@@ -44,6 +44,17 @@ def test_quick_action_bridges_have_exactly_one_public_assignment():
         assert f"guardQuickActionBridge('{name}'" in PLAY_SRC, f"{name} bridge must route through guardQuickActionBridge"
 
 
+def test_combat_quick_actions_has_no_duplicate_public_bridge_assignments():
+    actions_src = (ROOT / "client/static/js/character/combat_quick_actions.js").read_text(encoding="utf-8")
+    public_assignments = re.findall(r"global\.openCombatQuickBarWeaponAction\s*=", actions_src)
+    assert len(public_assignments) == 1
+    assert "global.rollQuickWeaponAttack =" not in actions_src
+    assert "global.rollQuickWeaponDamage =" not in actions_src
+    assert "global.combatQuickRollSpellDamage =" not in actions_src
+    assert "global.combatQuickRollSpellAttack =" not in actions_src
+    assert "global.combatQuickShowSpellSave =" not in actions_src
+
+
 # ── G2: per-stream visibility gate, no re-introduced bare scalar gate ───────
 
 def test_visibility_gate_is_per_stream_not_a_shared_scalar():

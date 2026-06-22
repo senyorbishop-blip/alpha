@@ -540,19 +540,53 @@
     }).join('') + '</div></div>';
   }
 
-  function _useRelatedMagicAction(action) {
-    if (!action) return;
-    if (String(action.quickBarType || '').toLowerCase() === 'spell' || String(action.sourceType || '').toLowerCase() === 'item') {
+  function _isRelatedSpellAction(action) {
+    const quickType = String(action && action.quickBarType || '').toLowerCase();
+    const sourceType = String(action && action.sourceType || '').toLowerCase();
+    const source = String(action && action.source || '').toLowerCase();
+    return quickType === 'spell' || sourceType === 'item' || sourceType === 'item_spell' || source === 'item_spell' || !!(action && action.spellId);
+  }
+
+  function _showRelatedMagicSave(action) {
+    const label = _firstText(action && action.name, action && action.displayName, 'Item Action');
+    const saveText = _firstText(action && action.quickBarSaveText, [action && action.save_dc ? ('DC ' + action.save_dc) : '', action && (action.save_ability || action.saveAbility || action.save)].filter(Boolean).join(' '), action && action.saveDC ? ('DC ' + action.saveDC) : '', 'saving throw');
+    if (typeof global.showToast === 'function') global.showToast(label + ': ' + saveText);
+    if (typeof global.sendWS === 'function') {
+      const actor = _firstText(global._charSheet && global._charSheet.name, global.NAME, 'Character');
+      global.sendWS({ type: 'chat_message', payload: { message: '✨ **' + actor + '** presents **' + label + '**: ' + saveText + '.', channel: 'everyone' } });
+    }
+    return true;
+  }
+
+  function _useRelatedMagicAction(action, rollKind) {
+    if (!action) return false;
+    const kind = String(rollKind || 'use').toLowerCase();
+    const isSpellAction = _isRelatedSpellAction(action);
+    if (kind === 'attack') {
+      if (isSpellAction) return safeRollSpellAttack(action, _selectedCastLevel(action));
+      return rollQuickWeaponAttack(normalizeWeaponModalContext(action, action));
+    }
+    if (kind === 'damage') {
+      if (isSpellAction) return safeRollSpellDamage(action, _selectedCastLevel(action));
+      return rollQuickWeaponDamage(normalizeWeaponModalContext(action, action));
+    }
+    if (kind === 'save') {
+      if (isSpellAction) return safeShowSpellSave(action, _selectedCastLevel(action));
+      return _showRelatedMagicSave(action);
+    }
+    if (isSpellAction) {
       openSpellAction(action);
-      return;
+      return true;
     }
     if (typeof global.playerUseAction === 'function') {
       global.playerUseAction(_firstText(action.source, 'item_action'), _firstText(action.id, action.name));
-      return;
+      return true;
     }
     if (global.CSContainer && typeof global.CSContainer.openDetailDrawer === 'function') {
       global.CSContainer.openDetailDrawer({ kicker: 'Magic Item Action', title: _firstText(action.name, 'Item Action'), subtitle: _firstText(action.quickBarInfoSummary, action.description, ''), sections: [{ title: 'Details', body: _firstText(action.longText, action.description, action.quickBarInfoSummary, 'No details loaded.') }] });
+      return true;
     }
+    return false;
   }
 
 
@@ -663,7 +697,7 @@
       const modeSelect = document.getElementById('combat-quick-weapon-mode');
       const mode = modeSelect ? modeSelect.value : 'base';
       const related = ev.target.closest('[data-cqa-related-action]');
-      if (related) { _useRelatedMagicAction(relatedMagicActions[Number(related.getAttribute('data-cqa-related-action')) || 0]); return; }
+      if (related) { _useRelatedMagicAction(relatedMagicActions[Number(related.getAttribute('data-cqa-related-action')) || 0], related.getAttribute('data-cqa-related-roll') || 'use'); return; }
       if (ev.target.closest('[data-cqa-mark-used]')) {
         if (global.CombatQuickSelectors && typeof global.CombatQuickSelectors.markUsed === 'function') global.CombatQuickSelectors.markUsed(String(card.id || card.name || ''));
         if (typeof global.showToast === 'function') global.showToast((card.name || 'Weapon') + ' marked used.');
@@ -732,7 +766,7 @@
     });
   });
 
-  global.CombatQuickActions = { openSpellAction, openWeaponAction, refreshSpellModalDamage, refreshSpellModalSlots, closeModal, __test: { spellDamagePreview: _spellDamagePreview, normalizeWeaponDamage: normalizeWeaponDamage, normalizeWeaponModalContext: normalizeWeaponModalContext } };
+  global.CombatQuickActions = { openSpellAction, openWeaponAction, refreshSpellModalDamage, refreshSpellModalSlots, closeModal, __test: { spellDamagePreview: _spellDamagePreview, normalizeWeaponDamage: normalizeWeaponDamage, normalizeWeaponModalContext: normalizeWeaponModalContext, useRelatedMagicAction: _useRelatedMagicAction } };
 
   // Explicit bridge so the quick bar can always reach the weapon modal, even if
   // play.html's own copy of this bridge has not (re)attached for any reason.
