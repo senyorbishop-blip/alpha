@@ -314,7 +314,7 @@ async def handle_camp_rest_take_rest(payload: dict, session: Session, user: User
 
 
 async def handle_camp_rest_spend_hit_die(payload: dict, session: Session, user: User):
-    """Player spends a hit die during a short rest — applies healing to their token."""
+    """Player spends a hit die during a short rest — applies healing to an owned token."""
     cr = _safe_camp_rest(session)
     if not cr.get("active"):
         return
@@ -323,13 +323,32 @@ async def handle_camp_rest_spend_hit_die(payload: dict, session: Session, user: 
     if heal_amount <= 0:
         return
 
-    # Find the player's token
+    requested_token_id = str(payload.get("token_id") or "").strip()
     token = None
-    for tid, tok in list(session.tokens.items()):
-        owner = getattr(tok, "owner_id", None)
-        if owner and str(owner) == str(user.id):
-            token = tok
-            break
+
+    if requested_token_id:
+        token = (getattr(session, "tokens", {}) or {}).get(requested_token_id)
+        if token is None:
+            await manager.send_to(session.id, user.id, {
+                "type": "notification",
+                "payload": {"message": "Could not find that token to apply hit die healing.", "kind": "warning"},
+            })
+            return
+        owner = getattr(token, "owner_id", None)
+        if not owner or str(owner) != str(user.id):
+            await manager.send_to(session.id, user.id, {
+                "type": "notification",
+                "payload": {"message": "You can only spend hit dice for one of your own tokens.", "kind": "warning"},
+            })
+            return
+    else:
+        # Legacy fallback: if the client does not specify a token, keep healing
+        # the first token owned by this player to preserve existing clients.
+        for tid, tok in list((getattr(session, "tokens", {}) or {}).items()):
+            owner = getattr(tok, "owner_id", None)
+            if owner and str(owner) == str(user.id):
+                token = tok
+                break
 
     if token is None:
         await manager.send_to(session.id, user.id, {
