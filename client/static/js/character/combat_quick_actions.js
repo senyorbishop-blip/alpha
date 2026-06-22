@@ -142,6 +142,16 @@
     return Number.isFinite(cur) ? cur : null;
   }
 
+  function _itemSpellChargeAvailability(spell) {
+    const cost = _itemSpellChargeCost(spell);
+    const remaining = _itemSpellChargesRemaining(spell);
+    return {
+      cost: cost,
+      remaining: remaining,
+      available: cost <= 0 || remaining === null || remaining >= cost,
+    };
+  }
+
   function _spellCastOptions(spell) {
     if (typeof global._getCombatSpellCastOptions === 'function') return _safeArray(global._getCombatSpellCastOptions(spell));
     const level = _baseSpellLevel(spell);
@@ -304,16 +314,24 @@
       const baseLevel = _baseSpellLevel(spell);
       dmg.textContent = preview || (baseLevel !== null && baseLevel > 0 ? '— (formula not loaded)' : 'No damage roll');
     }
-    const options = _spellCastOptions(spell);
-    const anyAvailable = options.some(function (opt) { return !opt.disabled; });
+    const itemSpell = isItemGrantedSpell(spell);
+    const itemAvailability = itemSpell ? _itemSpellChargeAvailability(spell) : null;
+    const options = itemSpell ? [] : _spellCastOptions(spell);
+    const anyAvailable = itemSpell
+      ? itemAvailability.available
+      : options.some(function (opt) { return !opt.disabled; });
     overlay.querySelectorAll('[data-cqa-cast],[data-cqa-spell-damage]').forEach(function (btn) { btn.disabled = !anyAvailable; });
     const msg = overlay.querySelector('[data-cqa-slot-warning]');
-    if (msg) msg.textContent = anyAvailable ? '' : 'No spell slots available';
+    if (msg) msg.textContent = anyAvailable ? '' : (itemSpell ? 'Not enough item charges' : 'No spell slots available');
   }
 
   function refreshSpellModalSlots() {
     const overlay = document.getElementById('combat-quick-action-modal');
     if (!overlay || !_currentModalSpell) return;
+    if (isItemGrantedSpell(_currentModalSpell)) {
+      refreshSpellModalDamage();
+      return;
+    }
     const select = document.getElementById('combat-quick-spell-level');
     if (!select) { refreshSpellModalDamage(); return; }
     const previous = select.value;
