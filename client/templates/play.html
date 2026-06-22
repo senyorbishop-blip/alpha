@@ -12469,8 +12469,75 @@ function getRulerDisplay(dx, dy) {
   return `${base} • ${squareText} • +${Math.round(diff)} ft over`;
 }
 
-// Throttle for token move messages
-const moveThrottle = {}; // tokenId -> lastSendTime
+// ── Token-move send throttling/coalescing during drag ──────────────────────
+// onMouseMove fires far faster than the server needs token_move updates.
+// Remote clients already smooth movement via interpolation (see
+// queueTokenInterpolation above), so we don't need every intermediate tick —
+// only a steady drip of fresh positions plus a guaranteed final send. These
+// helpers coalesce same-token updates into the latest x/y and send at a
+// fixed interval; the local token's x/y is mutated by the caller immediately
+// (never delayed), only the outbound websocket send is throttled.
+const TOKEN_MOVE_THROTTLE_MS = 80;
+const _pendingTokenMoves = Object.create(null); // tokenId -> { payload, timer }
+
+function sendTokenMoveImmediately(payload) {
+  if (typeof sendWS === 'function') sendWS({ type: 'token_move', payload });
+}
+
+function scheduleTokenMoveSend(tokenId, payload, options) {
+  const id = String(tokenId || '');
+  if (!id) return;
+  try {
+    if (typeof setTimeout !== 'function') {
+      sendTokenMoveImmediately(payload);
+      return;
+    }
+    const existing = _pendingTokenMoves[id];
+    if (existing) {
+      existing.payload = payload; // coalesce: keep only the latest x/y
+      return;
+    }
+    const intervalMs = Math.max(1, Number(options && options.intervalMs) || TOKEN_MOVE_THROTTLE_MS);
+    _pendingTokenMoves[id] = {
+      payload,
+      timer: setTimeout(() => flushPendingTokenMove(id), intervalMs),
+    };
+  } catch (err) {
+    // Throttling helper failed — fall back to the pre-throttle behavior
+    // of sending the move directly rather than dropping it.
+    sendTokenMoveImmediately(payload);
+  }
+}
+
+function flushPendingTokenMove(tokenId, overridePayload) {
+  const id = String(tokenId || '');
+  const pending = _pendingTokenMoves[id];
+  if (pending && pending.timer) clearTimeout(pending.timer);
+  delete _pendingTokenMoves[id];
+  const payload = overridePayload || (pending && pending.payload);
+  if (payload) sendTokenMoveImmediately(payload);
+}
+
+function flushAllPendingTokenMoves() {
+  Object.keys(_pendingTokenMoves).forEach((id) => flushPendingTokenMove(id));
+}
+
+function clearPendingTokenMove(tokenId) {
+  const id = String(tokenId || '');
+  const pending = _pendingTokenMoves[id];
+  if (!pending) return;
+  if (pending.timer) clearTimeout(pending.timer);
+  delete _pendingTokenMoves[id];
+}
+
+function clearAllPendingTokenMoves() {
+  Object.keys(_pendingTokenMoves).forEach(clearPendingTokenMove);
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => { try { flushAllPendingTokenMoves(); } catch (err) {} });
+  window.addEventListener('beforeunload', () => { try { flushAllPendingTokenMoves(); } catch (err) {} });
+}
 
 // WebSocket
 let ws = null;
@@ -20348,11 +20415,10 @@ function onMouseMove(e) {
       _combatMovePath = { origX: drag.origX, origY: drag.origY, previewX: finalSnapped.x, previewY: finalSnapped.y, tokenId: drag.tokenId, resolver, tokenW: t.width || PX_PER_GRID, tokenH: t.height || PX_PER_GRID };
     }
 
-    // Throttled broadcast
-    const now = Date.now();
-    if (!drag.previewMode && (!moveThrottle[drag.tokenId] || now - moveThrottle[drag.tokenId] > 160)) {
-      moveThrottle[drag.tokenId] = now;
-      sendWS({ type: 'token_move', payload: { token_id: drag.tokenId, x: t.x, y: t.y, preview: true } });
+    // Throttled/coalesced broadcast — local t.x/t.y above is already updated
+    // instantly; only the outbound send is rate-limited.
+    if (!drag.previewMode) {
+      scheduleTokenMoveSend(drag.tokenId, { token_id: drag.tokenId, x: t.x, y: t.y, preview: true });
     }
   }
 }
@@ -20440,7 +20506,9 @@ function onMouseUp(e) {
         showToast(_pendingMoveConfirm?.resolver?.valid ? 'Planning move — choose Confirm Move or Cancel Move.' : (_pendingMoveConfirm?.resolver?.reason || 'Invalid movement preview.'));
       }
     } else if (t) {
-      sendWS({ type: 'token_move', payload: { token_id: drag.tokenId, x: t.x, y: t.y } });
+      // Drag end always flushes immediately with the final position —
+      // never delayed by the in-drag throttle above.
+      flushPendingTokenMove(drag.tokenId, { token_id: drag.tokenId, x: t.x, y: t.y });
     }
     drag.active = false;
     drag.tokenId = null;
@@ -24003,6 +24071,7 @@ function placeStagingTokenAtClientPoint(tokenId, clientX, clientY) {
 }
 
 function clearRenderedSceneState() {
+  clearAllPendingTokenMoves();
   Object.keys(tokens).forEach(k => delete tokens[k]);
   mapImage = null;
   mapImageUrl = null;
@@ -24019,7 +24088,7 @@ document.addEventListener('mouseup', e => {
   }
   if (drag.active && !_draggingFromStaging) {
     const t = tokens[drag.tokenId];
-    if (t) sendWS({ type: 'token_move', payload: { token_id: drag.tokenId, x: t.x, y: t.y } });
+    if (t) flushPendingTokenMove(drag.tokenId, { token_id: drag.tokenId, x: t.x, y: t.y });
     drag.active = false; drag.tokenId = null;
   }
   if (!_draggingFromStaging) return;
@@ -27848,6 +27917,7 @@ function ctxSendToStaging() {
   t.staged = true;
   _stagingTokens[tokenId] = t;
   delete tokens[tokenId];
+  clearPendingTokenMove(tokenId);
   buildStagingArea();
   document.getElementById('token-staging').classList.add('visible');
   sendWS({ type: 'token_send_to_staging', payload: { token_id: tokenId } });
@@ -33594,6 +33664,7 @@ function handleLegacyMessage(msg) {
       break;
     }
     case 'token_deleted': {
+      clearPendingTokenMove(p.token_id);
       _removeTokenFromAllMapCaches(p.token_id);
       delete tokens[p.token_id];
       delete _stagingTokens[p.token_id];
