@@ -12534,6 +12534,26 @@ function clearAllPendingTokenMoves() {
   Object.keys(_pendingTokenMoves).forEach(clearPendingTokenMove);
 }
 
+// ── Tiny server-ack support for token_move ─────────────────────────────────
+// The drag handler stamps a client_action_id onto each throttled token_move
+// send so the server can reply with a sender-only action_ack
+// (confirmed/denied/failed). This never gates local dragging or remote
+// interpolation, and the authoritative token_moved/tokens_sync broadcasts
+// remain the source of truth whether or not an ack ever arrives.
+const _pendingTokenMoveAcks = Object.create(null); // tokenId -> client_action_id
+
+function _genClientActionId() {
+  return `tm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function _clearPendingTokenMoveAck(clientActionId) {
+  const id = String(clientActionId || '');
+  if (!id) return;
+  for (const tokenId of Object.keys(_pendingTokenMoveAcks)) {
+    if (_pendingTokenMoveAcks[tokenId] === id) delete _pendingTokenMoveAcks[tokenId];
+  }
+}
+
 if (typeof window !== 'undefined') {
   window.addEventListener('pagehide', () => { try { flushAllPendingTokenMoves(); } catch (err) {} });
   window.addEventListener('beforeunload', () => { try { flushAllPendingTokenMoves(); } catch (err) {} });
@@ -20418,7 +20438,9 @@ function onMouseMove(e) {
     // Throttled/coalesced broadcast — local t.x/t.y above is already updated
     // instantly; only the outbound send is rate-limited.
     if (!drag.previewMode) {
-      scheduleTokenMoveSend(drag.tokenId, { token_id: drag.tokenId, x: t.x, y: t.y, preview: true });
+      const _moveActionId = _genClientActionId();
+      _pendingTokenMoveAcks[drag.tokenId] = _moveActionId;
+      scheduleTokenMoveSend(drag.tokenId, { token_id: drag.tokenId, x: t.x, y: t.y, preview: true, client_action_id: _moveActionId });
     }
   }
 }
@@ -33436,6 +33458,19 @@ function handleLegacyMessage(msg) {
         renderCombat();
       }
       if (p.message) showToast(p.message);
+      break;
+    }
+
+    case 'action_ack': {
+      // Sender-only confirmation/denial of a server-authoritative action.
+      // Never the source of truth — token_moved/tokens_sync already applied
+      // (or will apply) the real state regardless of this message.
+      if (p && p.action === 'token_move') {
+        _clearPendingTokenMoveAck(p.client_action_id);
+        if ((p.status === 'denied' || p.status === 'failed') && p.reason) {
+          showToast(p.reason);
+        }
+      }
       break;
     }
 

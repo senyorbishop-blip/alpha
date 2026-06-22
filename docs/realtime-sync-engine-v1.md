@@ -441,3 +441,148 @@ counters, no new client logic, just calling an existing function from a few
 more places — and it closes the gap identified in §3/§5 where those specific
 combat sub-actions mutate shared state without giving clients any revision
 signal that they're now behind.
+
+---
+
+## Tiny patch implemented (follow-up PR): action_ack for token_move
+
+**Chosen mutation stream: `token_move` only** (per the task's explicit
+instruction to start with one stream, not every system).
+
+### What changed
+
+- `server/handlers/common.py`: added `_send_action_ack(session, user, *,
+  action, client_action_id, status, **extra)`, a tiny shared helper that
+  no-ops if `client_action_id` is falsy/empty (the backward-compatibility
+  gate) and otherwise sends a sender-only `{"type": "action_ack", "payload":
+  {"action", "client_action_id", "status", ...extra}}` message via
+  `manager.send_to`. Generic by design so the same helper can back other
+  mutation streams later without new infrastructure.
+- `server/handlers/tokens.py` (`handle_token_move`): reads
+  `payload.get("client_action_id")` once at the top. Calls `_send_action_ack`
+  with `status="failed"` for the two validation-failure exits (token not
+  found; caller lacks permission to move the token), and with
+  `status="confirmed"` (including `token_id` and the same `visibility_revision`
+  the `token_moved` broadcast carries) right after the authoritative
+  broadcast on a successful move. Passes `client_action_id` through to
+  `_send_token_move_denied` and `_enforce_player_combat_movement` for the
+  two ways a move can be denied (terrain blocker; combat turn/budget).
+- `server/handlers/combat.py`: `_send_token_move_denied` and
+  `_enforce_player_combat_movement` both gained an optional
+  `client_action_id=None` keyword-only parameter. When set,
+  `_send_token_move_denied` additionally sends a `status="denied"` ack with
+  the same human-readable message already used for `token_move_denied`, as
+  the ack's `reason`. Other existing callers of these two functions
+  (`_handle_combat_move_plan`, the dash/disengage/etc. handlers) don't pass
+  `client_action_id`, so they're unaffected and emit no ack — this patch only
+  changes behavior for the `token_move` message type.
+- `client/templates/play.html`: the drag-throttle send site (the
+  `scheduleTokenMoveSend(...)` call inside `onMouseMove`) now stamps a fresh
+  `client_action_id` (via new `_genClientActionId()`) onto each outbound
+  `token_move` payload and records it in a tiny `_pendingTokenMoveAcks`
+  map (`tokenId -> client_action_id`). A new `case 'action_ack':` in the
+  inbound switch clears that pending entry (via `_clearPendingTokenMoveAck`)
+  and, for `denied`/`failed` with a `reason`, shows a toast — purely
+  informational, never blocking. `sendTokenMoveImmediately` /
+  `scheduleTokenMoveSend` themselves were deliberately left untouched so the
+  existing throttle/coalescing tests (which assert exact outbound payload
+  shape) keep passing unmodified.
+
+### Ack payload shape
+
+Confirmed:
+```json
+{"type": "action_ack", "payload": {
+  "action": "token_move", "client_action_id": "...",
+  "status": "confirmed", "token_id": "...", "visibility_revision": 7
+}}
+```
+Denied / failed:
+```json
+{"type": "action_ack", "payload": {
+  "action": "token_move", "client_action_id": "...",
+  "status": "denied", "reason": "Movement blocked by wall."
+}}
+```
+
+### Backward compatibility
+
+`_send_action_ack` is a pure no-op whenever `client_action_id` is missing or
+empty — older clients that never send it never receive an `action_ack`, and
+the rest of `handle_token_move` (validation, broadcast, revision bump) is
+byte-for-byte unchanged for that case. Covered by
+`test_token_move_without_client_action_id_still_works`.
+
+### No leak to other clients
+
+`client_action_id` is read out of the inbound payload and used only to build
+the sender-only ack sent via `manager.send_to(session.id, user.id, ...)`. The
+`token_moved` broadcast payload passed to `_broadcast_token_event` never
+includes it (and that broadcast already excludes the mover via
+`exclude_user=user.id`, so the mover gets the ack instead of an echoed
+broadcast). Covered by
+`test_client_action_id_not_leaked_in_token_moved_broadcast`.
+
+### action_ack is not the source of truth
+
+`action_ack` is sent in addition to, never instead of, the authoritative
+`token_moved` broadcast (success path) or `token_move_denied` message
+(denial path) — neither of those was changed in shape or timing. Covered by
+`test_action_ack_does_not_replace_authoritative_token_moved_broadcast`.
+
+### Files changed
+
+- `server/handlers/common.py`
+- `server/handlers/tokens.py`
+- `server/handlers/combat.py`
+- `client/templates/play.html`
+- `tests/test_token_move_action_ack.py` (new)
+
+### Tests run
+
+```
+python -m pytest tests/test_token_move_action_ack.py -v --tb=short
+→ 8 passed
+
+python -m pytest tests/test_token_move_send_throttle.py tests/test_token_movement_interpolation.py tests/test_token_move_revision_guard.py -v --tb=short
+→ 30 passed
+
+python -m pytest tests/test_player_boot_regression.py tests/test_runtime_invariants_guard.py -v --tb=short
+→ 21 passed
+
+python -m pytest -k "token or fog or visibility or ws" -v --tb=short
+→ 411 passed
+```
+
+All passed; no regressions found.
+
+### Remaining ack/sync risks
+
+- Only `token_move` has acks. Every other server-authoritative mutation
+  (combat sub-actions, inventory, fog paint, HP updates) still gives the
+  sender no explicit confirm/deny signal beyond whatever broadcast or
+  `error` message it already sent — this was intentional scope (start
+  tiny), not an oversight, per §6 of this doc's priority ordering.
+- `_handle_combat_move_plan` (the `combat_move_preview`/`combat_move_commit`
+  pair, a *different* message type from `token_move`) still has no ack
+  support. It already has its own preview/commit reconciliation contract
+  (see §2 "already good"), so it's a reasonable second candidate once
+  `token_move`'s ack pattern has proven itself, but it was deliberately not
+  touched here.
+- The client's `_pendingTokenMoveAcks` map is advisory/UX-only (clears a
+  toast-suppression entry); it has no timeout, so if an `action_ack` is ever
+  dropped (e.g. a reconnect mid-flight) the stale entry just sits there
+  inertly until the next move on that token overwrites it. This is
+  acceptable because nothing reads "is there a pending ack" to gate any
+  behavior — it only gates whether a toast fires, never local dragging or
+  remote interpolation, per the task's explicit constraint.
+
+### Next tiny patch (recommended, not implemented here)
+
+Apply the same `_send_action_ack` helper to the combat move preview/commit
+pair (`handle_combat_move_preview` / `handle_combat_move_commit` in
+`server/handlers/combat.py`), since that handler already does
+server-side-recompute-and-reject (the `expected_cost_ft` check) and is the
+next-highest-value place for a sender to get an explicit
+confirmed/denied/failed signal, reusing the exact same generic helper added
+in this patch.

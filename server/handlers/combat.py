@@ -20,6 +20,7 @@ from server.handlers.common import (
     is_npc_or_monster_token,
     _token_map_context,
     is_token_touching_unrevealed_fog,
+    _send_action_ack,
 )
 from server.movement import resolve_movement, normalize_movement_mode
 
@@ -440,21 +441,24 @@ async def _broadcast_combat_move_state(session: Session):
     })
 
 
-async def _send_token_move_denied(session: Session, user: User, token, message: str):
+async def _send_token_move_denied(session: Session, user: User, token, message: str, *, client_action_id=None):
     move_state = _ensure_combat_movement_state(session)
+    safe_message = str(message or "Movement blocked.")
     await manager.send_to(session.id, user.id, {
         "type": "token_move_denied",
         "payload": {
             "token_id": getattr(token, "id", None),
             "x": getattr(token, "x", None),
             "y": getattr(token, "y", None),
-            "message": str(message or "Movement blocked."),
+            "message": safe_message,
             "movement": move_state,
         }
     })
+    await _send_action_ack(session, user, action="token_move", client_action_id=client_action_id,
+                            status="denied", reason=safe_message)
 
 
-async def _enforce_player_combat_movement(session: Session, user: User, token, new_x: float, new_y: float) -> bool:
+async def _enforce_player_combat_movement(session: Session, user: User, token, new_x: float, new_y: float, *, client_action_id=None) -> bool:
     if user.role == "dm":
         return True
     combat = getattr(session, "combat", None) or {}
@@ -467,7 +471,7 @@ async def _enforce_player_combat_movement(session: Session, user: User, token, n
     current = _get_current_combatant(session)
     current_token_id = str((current or {}).get("token_id") or "").strip()
     if not current_token_id or current_token_id != token_id:
-        await _send_token_move_denied(session, user, token, "It is not your turn to move that token.")
+        await _send_token_move_denied(session, user, token, "It is not your turn to move that token.", client_action_id=client_action_id)
         return False
     move_state = _ensure_combat_movement_state(session)
     total_budget_ft = _movement_total_budget_ft(move_state)
@@ -481,7 +485,7 @@ async def _enforce_player_combat_movement(session: Session, user: User, token, n
     remaining_ft = max(0.0, round(total_budget_ft - spent_ft, 2))
     if not resolved.get("valid", False):
         remaining_text = int(round(remaining_ft)) if abs(remaining_ft - round(remaining_ft)) < 0.05 else round(remaining_ft, 1)
-        await _send_token_move_denied(session, user, token, f"Movement limit reached — {remaining_text} ft remaining this turn.")
+        await _send_token_move_denied(session, user, token, f"Movement limit reached — {remaining_text} ft remaining this turn.", client_action_id=client_action_id)
         return False
     move_state["spent_ft"] = round(spent_ft + move_cost_ft, 2)
     move_state["remaining_ft"] = max(0.0, round(total_budget_ft - move_state["spent_ft"], 2))
