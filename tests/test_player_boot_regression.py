@@ -12,20 +12,40 @@ def _play_src() -> str:
 
 
 def test_player_page_loaded_scripts_have_no_top_level_syntax_errors():
-    """Boot smoke: every classic script loaded by play.html must parse cleanly."""
+    """Boot smoke: every script loaded by play.html must parse cleanly."""
     src = _play_src()
-    scripts = re.findall(r'<script[^>]+src="([^"]+)"', src)
+    script_tags = re.findall(r'<script\b([^>]*)>', src, re.I)
     checked = []
-    for url in scripts:
+    module_checked = []
+    for attrs in script_tags:
+        src_match = re.search(r'\bsrc=["\']([^"\']+)["\']', attrs, re.I)
+        if not src_match:
+            continue
+        url = src_match.group(1)
         static_url = url.split("?", 1)[0]
         if not static_url.startswith("/static/") or not static_url.endswith(".js"):
             continue
         path = ROOT / "client/static" / static_url[len("/static/"):]
         assert path.exists(), f"play.html references missing script {static_url}"
-        subprocess.run(["node", "--check", str(path)], cwd=ROOT, check=True, text=True, capture_output=True, timeout=30)
+
+        type_match = re.search(r'\btype=["\']([^"\']+)["\']', attrs, re.I)
+        script_type = (type_match.group(1).strip().lower() if type_match else "")
+        if script_type == "module":
+            # package.json declares "type": "commonjs", so `node --check file.js`
+            # parses .js files as CommonJS. Browser module scripts need an .mjs
+            # temporary copy so top-level `import`/`export` syntax is checked in
+            # module mode without changing the runtime file or package type.
+            with tempfile.NamedTemporaryFile("w", suffix=".mjs", encoding="utf-8", delete=False) as handle:
+                handle.write(path.read_text(encoding="utf-8"))
+                temp_module_path = handle.name
+            subprocess.run(["node", "--check", temp_module_path], cwd=ROOT, check=True, text=True, capture_output=True, timeout=30)
+            module_checked.append(static_url)
+        else:
+            subprocess.run(["node", "--check", str(path)], cwd=ROOT, check=True, text=True, capture_output=True, timeout=30)
         checked.append(static_url)
     assert "/static/js/render/fog.js" in checked
     assert "/static/js/ui/dm_assistant.js" in checked
+    assert "/static/js/dice/dice3d.js" in module_checked
 
     inline_scripts = re.findall(r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>', src, re.S)
     main_inline = max(inline_scripts, key=len)
