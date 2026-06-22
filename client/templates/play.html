@@ -32401,6 +32401,18 @@ function handleLegacyMessage(msg) {
       const syncNavVersion = Number(p.map_nav_version || 0);
       const serverNavIntent = Number(p.dm_nav_intent || 0);
       if (syncNavVersion > _mapNavVersion) _mapNavVersion = syncNavVersion;
+      // Baseline the per-stream visibility-revision gate from this authoritative
+      // snapshot so a tokens_sync/combat_state packet queued from BEFORE the
+      // reconnect (sent pre-disconnect, flushed after) can't win against the
+      // fresh state_sync and re-show a since-hidden/fogged token.
+      const syncVisibilityRevision = Number(p.visibility_revision || 0);
+      if (syncVisibilityRevision > 0) {
+        ['tokens', 'combat'].forEach((stream) => {
+          if (syncVisibilityRevision > Number(_lastVisibilityRevisionByStream[stream] || 0)) {
+            _lastVisibilityRevisionByStream[stream] = syncVisibilityRevision;
+          }
+        });
+      }
       __syncMapShellState();
 
       const shouldTrustServerNav = !(ROLE === 'dm' && _clientNavIntent > 0 && serverNavIntent > 0 && serverNavIntent < _clientNavIntent);
