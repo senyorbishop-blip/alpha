@@ -12554,6 +12554,30 @@ function _clearPendingTokenMoveAck(clientActionId) {
   }
 }
 
+// ── Tiny server-ack support for quick-action mutations ─────────────────────
+// Weapon attack / spell cast requests and magic-item charge spends stamp a
+// client_action_id so the server can reply with a sender-only action_ack
+// (confirmed/denied/failed). This never blocks the UI or delays dice — it
+// only clears a lightweight pending marker and surfaces a toast on denial.
+// The authoritative combat_state / inventory_state broadcasts (and their own
+// inventory_item_used / inventory_item_spell_cast confirmations) remain the
+// source of truth regardless of whether an ack arrives.
+const _pendingQuickActionAcks = Object.create(null); // client_action_id -> true
+
+function _genQuickActionId() {
+  return `qa_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function _trackPendingQuickAction(id) {
+  if (id) _pendingQuickActionAcks[id] = true;
+  return id;
+}
+
+function _clearPendingQuickAction(clientActionId) {
+  const id = String(clientActionId || '');
+  if (id) delete _pendingQuickActionAcks[id];
+}
+
 if (typeof window !== 'undefined') {
   window.addEventListener('pagehide', () => { try { flushAllPendingTokenMoves(); } catch (err) {} });
   window.addEventListener('beforeunload', () => { try { flushAllPendingTokenMoves(); } catch (err) {} });
@@ -23112,7 +23136,7 @@ function useInventoryItemActionFromInspect(actionIndex) {
     .concat(Array.isArray(item?.granted_spells) ? item.granted_spells : []);
   const action = actions[actionIndex];
   if (action && (action.spell_id || action.id || action.name) && (Array.isArray(item?.granted_spells) && item.granted_spells.some(s => String(s?.id || s?.spell_id || s?.name || '').toLowerCase() === String(action.spell_id || action.id || action.name || '').toLowerCase()))) {
-    sendWS({ type: 'inventory_cast_item_spell', payload: { item_index: itemIndex, item_id: String(item.id || item.magic_item_id || ''), spell_id: String(action.spell_id || action.id || action.name || '').toLowerCase().replace(/\s+/g, '-'), charge_cost: Math.max(1, Number(action.charge_cost || action.chargeCost || 1) || 1), cast_level: Math.max(0, Number(action.cast_level || action.spell_level || action.level || 0) || 0), target_id: _combat?.selected_target_id || '' } });
+    sendWS({ type: 'inventory_cast_item_spell', payload: { item_index: itemIndex, item_id: String(item.id || item.magic_item_id || ''), spell_id: String(action.spell_id || action.id || action.name || '').toLowerCase().replace(/\s+/g, '-'), charge_cost: Math.max(1, Number(action.charge_cost || action.chargeCost || 1) || 1), cast_level: Math.max(0, Number(action.cast_level || action.spell_level || action.level || 0) || 0), target_id: _combat?.selected_target_id || '', client_action_id: _trackPendingQuickAction(_genQuickActionId()) } });
     return;
   }
   let chargeCost = action && (action.chargeCost || action.charge_cost || action.cost);
@@ -23129,6 +23153,7 @@ function useInventoryItemActionFromInspect(actionIndex) {
       action_index: actionIndex,
       usage_cost: Math.max(1, Number(chargeCost || action?.usage_cost || 1) || 1),
       action_name: String(action?.name || ''),
+      client_action_id: _trackPendingQuickAction(_genQuickActionId()),
     },
   });
 }
@@ -33467,6 +33492,11 @@ function handleLegacyMessage(msg) {
       // (or will apply) the real state regardless of this message.
       if (p && p.action === 'token_move') {
         _clearPendingTokenMoveAck(p.client_action_id);
+        if ((p.status === 'denied' || p.status === 'failed') && p.reason) {
+          showToast(p.reason);
+        }
+      } else if (p && (p.action === 'combat_attack_request' || p.action === 'inventory_use_item_action' || p.action === 'inventory_cast_item_spell')) {
+        _clearPendingQuickAction(p.client_action_id);
         if ((p.status === 'denied' || p.status === 'failed') && p.reason) {
           showToast(p.reason);
         }
@@ -47737,6 +47767,7 @@ function playerUseAction(source, id, options) {
         item_index: Number(action.item_index || 0),
         action_id: String(action.action_id || ''),
         usage_cost: Math.max(1, Number(action.usage_cost || 1)),
+        client_action_id: _trackPendingQuickAction(_genQuickActionId()),
       },
     });
     const activation = String(action.activation_type || '').toLowerCase();
@@ -47764,6 +47795,7 @@ function playerUseAction(source, id, options) {
         target_id: String(typeof _selectedTokenId !== 'undefined' ? (_selectedTokenId || '') : ''),
         charge_cost: chargeOverride !== null ? chargeOverride : Number((card || {}).charge_cost || 1),
         cast_level: Number((card || {}).cast_level || 0),
+        client_action_id: _trackPendingQuickAction(_genQuickActionId()),
       },
     });
     _consumeActionEconomy('action', { action_id: id });
@@ -48946,7 +48978,7 @@ function combatAttackSelected(attackKind) {
     showToast('No target selected — weapon roll made without applying damage to a token.');
     return;
   }
-  sendWS({ type: 'combat_attack_request', payload: { target_id: target.id, attack_kind: 'weapon' } });
+  sendWS({ type: 'combat_attack_request', payload: { target_id: target.id, attack_kind: 'weapon', client_action_id: _trackPendingQuickAction(_genQuickActionId()) } });
   showToast(_combatAttackHasEncumbranceDisadvantage()
     ? 'Weapon attack sent with disadvantage (Heavily Encumbered) — waiting for DM.'
     : 'Weapon attack sent — waiting for DM.');
@@ -48958,7 +48990,7 @@ function _showCombatSpellAttackPicker(targetId) {
   const spells = _getCombatQuickSpells();
   if (!spells.length) {
     // No spells found — send generic spell attack
-    sendWS({ type: 'combat_attack_request', payload: { target_id: targetId, attack_kind: 'spell' } });
+    sendWS({ type: 'combat_attack_request', payload: { target_id: targetId, attack_kind: 'spell', client_action_id: _trackPendingQuickAction(_genQuickActionId()) } });
     showToast('Spell attack sent — waiting for DM.');
     return;
   }
@@ -49030,7 +49062,7 @@ function _sendCombatSpellAttack(spellId, targetId, slotLevel) {
   }
   const ordinals = ['','1st','2nd','3rd','4th','5th','6th','7th','8th','9th'];
   const slotLabel = effectiveSlot > 0 ? ` at ${ordinals[effectiveSlot]||effectiveSlot+'th'} level` : '';
-  sendWS({ type: 'combat_attack_request', payload: { target_id: targetId, attack_kind: 'spell', spell_name: spellName, spell_id: spellId, slot_level: effectiveSlot } });
+  sendWS({ type: 'combat_attack_request', payload: { target_id: targetId, attack_kind: 'spell', spell_name: spellName, spell_id: spellId, slot_level: effectiveSlot, client_action_id: _trackPendingQuickAction(_genQuickActionId()) } });
   showToast(_combatAttackHasEncumbranceDisadvantage()
     ? `${spellName || 'Spell'}${slotLabel} attack sent with disadvantage (Heavily Encumbered) — waiting for DM.`
     : `${spellName || 'Spell'}${slotLabel} attack sent — waiting for DM.`);
@@ -49698,7 +49730,7 @@ function _combatQuickSpendItemSpellCharges(spell, castLevel, options) {
     return false;
   }
   if (typeof sendWS === 'function' && itemIndex >= 0 && spellId) {
-    sendWS({ type: 'inventory_cast_item_spell', payload: { item_index: itemIndex, item_id: itemId, spell_id: spellId, charge_cost: chargeCost, cast_level: Math.max(0, Number(castLevel ?? spell.castLevel ?? card.cast_level ?? 0) || 0), target_id: _combat?.selected_target_id || '' } });
+    sendWS({ type: 'inventory_cast_item_spell', payload: { item_index: itemIndex, item_id: itemId, spell_id: spellId, charge_cost: chargeCost, cast_level: Math.max(0, Number(castLevel ?? spell.castLevel ?? card.cast_level ?? 0) || 0), target_id: _combat?.selected_target_id || '', client_action_id: _trackPendingQuickAction(_genQuickActionId()) } });
   }
   return true;
 }
