@@ -14,6 +14,7 @@ Regression coverage for the spell-scaling and dice-result-consistency fixes:
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from pathlib import Path
 
@@ -371,10 +372,18 @@ console.log(JSON.stringify(out));
 
 def test_quick_actions_modal_passes_spell_object_to_spell_damage_bridge():
     src = (ROOT / 'client/static/js/character/combat_quick_actions.js').read_text(encoding='utf-8')
-    assert 'safeRollSpellDamage(spell, castLevel)' in src
-    assert 'safeCastSpell(spell, castLevel)' in src
-    assert 'safeRollSpellAttack(spell, castLevel)' in src
-    assert 'const spellKey = spell.id || spell.name;' not in src
+    executable_src = re.sub(r'//.*', '', src)
+    assert 'safeRollSpellDamage(spell, castLevel)' in executable_src
+    assert re.search(r'safeCastSpell\s*\(\s*spell\s*,\s*castLevel\s*(?:,|\))', executable_src)
+    assert 'safeRollSpellAttack(spell, castLevel)' in executable_src
+    for invalid_call in (
+        'safeCastSpell(spellKey',
+        'safeCastSpell(spell.key',
+        'safeCastSpell(String(',
+        'safeCastSpell(name',
+    ):
+        assert invalid_call not in executable_src
+    assert 'const spellKey = spell.id || spell.name;' not in executable_src
 
 
 def test_find_combat_spell_resolves_common_spell_keys_and_modal_object():
