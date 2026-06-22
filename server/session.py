@@ -794,6 +794,7 @@ class Session:
             "dm_map_context": self.dm_map_context,
             "dm_current_map_url": self.dm_current_map_url,
             "map_nav_version": int(self.map_nav_version or 0),
+            "visibility_revision": int(self.visibility_revision or 0),
             "dm_nav_intent": int(self.dm_nav_intent or 0),
             "fog_maps": normalize_fog_maps(self.fog_maps),
             "combat": self.combat,
