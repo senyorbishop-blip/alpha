@@ -1,6 +1,8 @@
 """
 server/handlers/__init__.py — Message dispatch and re-exports.
 """
+import logging
+
 from server.session import Session, User
 from server.handlers.common import manager
 
@@ -226,6 +228,9 @@ from server.handlers.summons import (
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 async def handle_message(raw: dict, session: Session, user: User):
     """Route incoming WS messages to appropriate handler."""
     msg_type = raw.get("type", "")
@@ -440,6 +445,15 @@ async def handle_message(raw: dict, session: Session, user: User):
         payload['_msg_type'] = msg_type
         await handler(payload, session, user)
     else:
+        logger.warning(
+            "Unknown WebSocket message type received",
+            extra={
+                "msg_type": msg_type,
+                "session_id": getattr(session, "id", None),
+                "user_id": getattr(user, "id", None),
+                "user_role": getattr(user, "role", None),
+            },
+        )
         await manager.send_to(session.id, user.id, {
             "type": "error",
             "payload": {"message": "Something went wrong. Please refresh and try again."}
