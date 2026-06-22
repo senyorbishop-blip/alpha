@@ -46,7 +46,6 @@ var ROLE = ((_pbParams.get('role') || 'viewer')).toLowerCase();
 var NAME = _pbParams.get('name') || '';
 var RETURNING = _pbParams.get('returning') || '';
 var ws = null;
-var wsReconnectTimer = null;
 var _pendingWSMessages = [];
 var _queuedEditorTypes = new Set();
 var tokens = {};
@@ -80,8 +79,7 @@ function connectWS(){
   if (!(window.AppWS && window.AppRuntimeBridge && typeof window.AppRuntimeBridge.createWsConfig === 'function')) return null;
   window.AppWS.configure(window.AppRuntimeBridge.createWsConfig());
   _setWsStatus('connecting');
-  ws = window.AppWS.ensureConnected({ reason: 'boot' });
-  return ws;
+  return window.AppWS.ensureConnected({ reason: 'boot' });
 }
 function sendWS(msg){ if (window.AppWS && typeof window.AppWS.send === 'function') return window.AppWS.send(msg); }
 document.addEventListener('DOMContentLoaded', function () {

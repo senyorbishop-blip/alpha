@@ -364,14 +364,23 @@
   function fogApplyState(state, env, p) {
     if (p.fog_maps) {
       _debugFogPlayer('state_sync map_ctx...', { map_ctx: _resolveAuthoritativeMapContext(env), maps: Object.keys(p.fog_maps || {}) }, env);
-      state.fogMaps = {};
+      const nextFogMaps = { ...(state.fogMaps || {}) };
       Object.entries(p.fog_maps).forEach(([ctx, entry]) => {
+        const mapCtx = _normalizeMapCtx(ctx, env);
+        const incomingRevision = Number(entry && entry.revision) || 0;
+        const localEntry = nextFogMaps[mapCtx] || null;
+        const localRevision = Number(localEntry && localEntry.revision) || 0;
+        if (localEntry && incomingRevision < localRevision) {
+          _debugFogPlayer('fog_state ignored stale fog_map revision', { map_ctx: mapCtx, incoming_revision: incomingRevision, local_revision: localRevision }, env);
+          return;
+        }
         const total = (entry.cols || 64) * (entry.rows || 64);
         const arr = new Uint8Array(total);
         const str = entry.cells || '';
         for (let i = 0; i < Math.min(str.length, total); i++) arr[i] = str[i] === '1' ? 1 : 0;
-        state.fogMaps[_normalizeMapCtx(ctx, env)] = { enabled: !!entry.enabled, cols: entry.cols || 64, rows: entry.rows || 64, cells: arr, revision: Number(entry.revision) || 0, map_context: _normalizeMapCtx(entry.map_context || ctx, env) };
+        nextFogMaps[mapCtx] = { enabled: !!entry.enabled, cols: entry.cols || 64, rows: entry.rows || 64, cells: arr, revision: incomingRevision, map_context: _normalizeMapCtx(entry.map_context || ctx, env) };
       });
+      state.fogMaps = nextFogMaps;
     }
     const stateMapCtx = _payloadMapCtx(p, env);
     if (p.map_ctx !== undefined || p.map_context !== undefined || p.dm_map_context !== undefined || p.current_map !== undefined || p.fog_cells !== undefined) {
@@ -394,9 +403,16 @@
     const updCtx = _normalizeMapCtx(_payloadMapCtx(p, env), env);
     const val = p && p.reveal ? 1 : 0;
     state.lastFogPayloadMapContext = updCtx;
-    state.lastFogUpdateRevision = Number(p && p.revision) || ((Number(state.lastFogUpdateRevision) || 0) + 1);
-    if (!state.fogMaps[updCtx]) state.fogMaps[updCtx] = { enabled: true, cols: Number(p && p.fog_cols) || 64, rows: Number(p && p.fog_rows) || 64, cells: new Uint8Array((Number(p && p.fog_cols) || 64) * (Number(p && p.fog_rows) || 64)), revision: Number(p && p.revision) || 0, map_context: updCtx };
+    const incomingRevision = Number(p && p.revision) || 0;
+    const localRevision = Number(state.fogMaps && state.fogMaps[updCtx] && state.fogMaps[updCtx].revision) || 0;
+    if (state.fogMaps && state.fogMaps[updCtx] && incomingRevision < localRevision) {
+      _debugFogPlayer('fog_update ignored stale revision', { map_ctx: updCtx, incoming_revision: incomingRevision, local_revision: localRevision }, env);
+      return;
+    }
+    state.lastFogUpdateRevision = incomingRevision || ((Number(state.lastFogUpdateRevision) || 0) + 1);
+    if (!state.fogMaps[updCtx]) state.fogMaps[updCtx] = { enabled: true, cols: Number(p && p.fog_cols) || 64, rows: Number(p && p.fog_rows) || 64, cells: new Uint8Array((Number(p && p.fog_cols) || 64) * (Number(p && p.fog_rows) || 64)), revision: incomingRevision, map_context: updCtx };
     const entry = state.fogMaps[updCtx];
+    entry.revision = Math.max(Number(entry.revision) || 0, incomingRevision);
     if (Number(p && p.fog_cols) > 0) entry.cols = Number(p.fog_cols);
     if (Number(p && p.fog_rows) > 0) entry.rows = Number(p.fog_rows);
     // A sparse paint update is only emitted by the server after that map's
