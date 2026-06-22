@@ -829,6 +829,7 @@ async def handle_combat_dash(payload: dict, session: Session, user: User):
     move_state["dash_used"] = True
     move_state["remaining_ft"] = max(0.0, round(_movement_total_budget_ft(move_state) - float(move_state.get("spent_ft", 0.0) or 0.0), 2))
     session.combat["movement"] = move_state
+    _bump_combat_revision(session, "dash")
     await save_campaign_async(session)
     await _broadcast_combat(session)
 
@@ -847,6 +848,7 @@ async def handle_combat_toggle_difficult_terrain(payload: dict, session: Session
     move_state["cost_multiplier"] = 2.0 if move_state["difficult_terrain"] else 1.0
     move_state["remaining_ft"] = max(0.0, round(_movement_total_budget_ft(move_state) - float(move_state.get("spent_ft", 0.0) or 0.0), 2))
     session.combat["movement"] = move_state
+    _bump_combat_revision(session, "difficult_terrain")
     await save_campaign_async(session)
     await _broadcast_combat(session)
 
@@ -862,6 +864,7 @@ async def handle_combat_reset_movement(payload: dict, session: Session, user: Us
     move_state["last_x"] = float(getattr(token, "x", 0.0) or 0.0) if token is not None else None
     move_state["last_y"] = float(getattr(token, "y", 0.0) or 0.0) if token is not None else None
     session.combat["movement"] = move_state
+    _bump_combat_revision(session, "reset_movement")
     await save_campaign_async(session)
     await _broadcast_combat(session)
 
@@ -878,6 +881,7 @@ async def handle_combat_toggle_disengage(payload: dict, session: Session, user: 
         enabled = not bool(move_state.get("disengaged"))
     move_state["disengaged"] = bool(enabled)
     session.combat["movement"] = move_state
+    _bump_combat_revision(session, "disengage")
     await save_campaign_async(session)
     await _broadcast_combat(session)
 
@@ -897,6 +901,7 @@ async def handle_combat_end_turn(payload: dict, session: Session, user: User):
     advanced = await _advance_combat_turn(session)
     if not advanced:
         return
+    _bump_combat_revision(session, "end_turn")
     await save_campaign_async(session)
     await _broadcast_combat(session)
 
@@ -991,6 +996,7 @@ async def handle_combat_death_save(payload: dict, session: Session, user: User):
         from server.handlers.content import add_auto_party_memory, _broadcast_party_memory_state
         add_auto_party_memory(session, f"{token.name} survived on 1 HP.")
         await _broadcast_party_memory_state(session)
+    _bump_combat_revision(session, "death_save")
     await save_campaign_async(session)
     await _broadcast_combat(session)
 
@@ -1169,6 +1175,7 @@ async def handle_combat_select_target(payload: dict, session: Session, user: Use
         })
         return
     session.combat["selected_target_id"] = target_id
+    _bump_combat_revision(session, "select_target")
     await _broadcast_combat(session)
 
 
