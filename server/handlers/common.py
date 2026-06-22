@@ -191,6 +191,20 @@ def bump_visibility_revision(session: Session) -> int:
     return next_rev
 
 
+def bump_inventory_revision(session: Session) -> int:
+    """Increment the session-wide inventory revision counter.
+
+    Call this exactly once per real server-authoritative inventory/item
+    mutation (add/remove/equip/unequip/transfer/stash/charge spend/rest
+    recharge/etc.) so clients can discard a stale `player_inventory_sync`
+    payload that raced behind a newer one (e.g. across a brief
+    disconnect/reconnect with queued-message flush).
+    """
+    next_rev = int(getattr(session, "inventory_revision", 0) or 0) + 1
+    session.inventory_revision = next_rev
+    return next_rev
+
+
 async def _broadcast_token_state_sync(session: Session):
     """Send an authoritative token snapshot to every connected client."""
     revision = bump_visibility_revision(session)

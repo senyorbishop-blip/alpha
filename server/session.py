@@ -555,6 +555,7 @@ class Session:
     fog_maps: dict = None  # keyed by map_ctx
     combat: dict = None  # {active: bool, turn: int, combatants: [{id,name,initiative,token_id,hp,max_hp}]} ('world' or poi_id) → {enabled, cols, rows, cells}
     visibility_revision: int = 0  # monotonic counter bumped on any fog/hidden/token-position change; clients drop stale payloads behind it
+    inventory_revision: int = 0  # monotonic counter bumped on any server-authoritative inventory/item/charge mutation; clients drop stale player_inventory_sync payloads behind it
     journal_entries: list = field(default_factory=list)
     # library_entries: preserved for campaign backward-compatibility only.
     # The legacy in-session creature library has been removed; all creatures
