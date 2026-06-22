@@ -13,6 +13,7 @@ from server.handlers.common import (
     _sync_combatant_token_state,
     _broadcast_combat,
     _sanitize_save_bonuses,
+    bump_visibility_revision,
 )
 from server.session import normalize_profile_owner_key
 from server.handlers.conditions import (
@@ -462,11 +463,17 @@ async def handle_token_move(payload: dict, session: Session, user: User):
     token.x = new_x
     token.y = new_y
 
+    # Stamp the same visibility/position revision counter that tokens_sync uses,
+    # so out-of-order token_moved deliveries (the highest-frequency message in the
+    # system) can be dropped client-side instead of rubber-banding a token back
+    # to a stale position.
+    move_revision = bump_visibility_revision(session)
     await _broadcast_token_event(manager, session, "token_moved", {
         "token_id": token_id,
         "x": token.x,
         "y": token.y,
         "moved_by": user.name,
+        "visibility_revision": move_revision,
     }, token, exclude_user=user.id)
     # Movement can flip fog/footprint visibility immediately (entering or
     # leaving unrevealed fog); resync per-user so a player who just lost or

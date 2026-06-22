@@ -33217,6 +33217,10 @@ function handleLegacyMessage(msg) {
     }
 
     case 'token_moved': {
+      // Drop an out-of-order move that raced behind a newer tokens_sync/
+      // token_moved on the same visibility_revision counter, so a delayed
+      // packet can't snap a token back to a stale position.
+      if (_isStaleVisibilityPayload(p)) break;
       if (_pendingMoveConfirm && String(_pendingMoveConfirm.tokenId || '') === String(p.token_id || '')) {
         _pendingMoveConfirm = null;
       }
