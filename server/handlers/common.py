@@ -18,6 +18,22 @@ PX_PER_GRID = 50.0
 FT_PER_GRID = 5.0
 
 
+async def _send_action_ack(session: Session, user: User, *, action: str, client_action_id, status: str, **extra):
+    """Send a sender-only acknowledgement for a server-authoritative action.
+
+    No-ops if the client didn't send a client_action_id, so older clients
+    that never opt in to acks see no behavior change. This is never the
+    source of truth — the authoritative broadcast (e.g. token_moved) is
+    sent separately, regardless of whether an ack is also sent.
+    """
+    cid = str(client_action_id or "").strip()
+    if not cid:
+        return
+    payload = {"action": action, "client_action_id": cid, "status": status}
+    payload.update(extra)
+    await manager.send_to(session.id, user.id, {"type": "action_ack", "payload": payload})
+
+
 def _is_dm_token(token) -> bool:
     """True if token was created by DM (no owner)."""
     return not getattr(token, "owner_id", None)

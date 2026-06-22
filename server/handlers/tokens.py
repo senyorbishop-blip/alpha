@@ -14,6 +14,7 @@ from server.handlers.common import (
     _broadcast_combat,
     _sanitize_save_bonuses,
     bump_visibility_revision,
+    _send_action_ack,
 )
 from server.session import normalize_profile_owner_key
 from server.handlers.conditions import (
@@ -422,8 +423,11 @@ async def _deny_player_single_token_limit(session: Session, user: User, *, token
 
 async def handle_token_move(payload: dict, session: Session, user: User):
     token_id = payload.get("token_id")
+    client_action_id = payload.get("client_action_id")
     token = session.tokens.get(token_id)
     if not token:
+        await _send_action_ack(session, user, action="token_move", client_action_id=client_action_id,
+                                status="failed", reason="Token not found.")
         return
 
     assistant_token_control = _assistant_can_control_token(session, user, token)
@@ -432,6 +436,8 @@ async def handle_token_move(payload: dict, session: Session, user: User):
             "type": "error",
             "payload": {"message": "You don't have permission to move this token."}
         })
+        await _send_action_ack(session, user, action="token_move", client_action_id=client_action_id,
+                                status="failed", reason="You don't have permission to move this token.")
         return
 
     try:
@@ -453,9 +459,10 @@ async def handle_token_move(payload: dict, session: Session, user: User):
         except Exception:
             blocker = None
         if blocker:
-            await _send_token_move_denied(session, user, token, f"Movement blocked by {str(getattr(blocker, 'source', 'terrain')).replace('_', ' ')}.")
+            await _send_token_move_denied(session, user, token, f"Movement blocked by {str(getattr(blocker, 'source', 'terrain')).replace('_', ' ')}.",
+                                           client_action_id=client_action_id)
             return
-        allowed = await _enforce_player_combat_movement(session, user, token, new_x, new_y)
+        allowed = await _enforce_player_combat_movement(session, user, token, new_x, new_y, client_action_id=client_action_id)
         if not allowed:
             return
         movement_updated = bool((getattr(session, "combat", None) or {}).get("movement"))
@@ -475,6 +482,8 @@ async def handle_token_move(payload: dict, session: Session, user: User):
         "moved_by": user.name,
         "visibility_revision": move_revision,
     }, token, exclude_user=user.id)
+    await _send_action_ack(session, user, action="token_move", client_action_id=client_action_id,
+                            status="confirmed", token_id=token_id, visibility_revision=move_revision)
     # Movement can flip fog/footprint visibility immediately (entering or
     # leaving unrevealed fog); resync per-user so a player who just lost or
     # gained sight of this token gets the add/remove on this very move, not
