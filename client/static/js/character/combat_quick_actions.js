@@ -142,13 +142,50 @@
     return Number.isFinite(cur) ? cur : null;
   }
 
+  function _itemSpellVariableChargeBounds(spell) {
+    const card = spell && spell.card && typeof spell.card === 'object' ? spell.card : {};
+    const rawMin = (spell && (spell.quickBarChargeCostMin ?? spell.chargeCostMin ?? spell.charge_cost_min)) ?? card.charge_cost_min;
+    const rawMax = (spell && (spell.quickBarChargeCostMax ?? spell.chargeCostMax ?? spell.charge_cost_max)) ?? card.charge_cost_max;
+    const hasFlag = !!(spell && spell.quickBarVariableChargeCost) || !!card.quickBarVariableChargeCost;
+    const minNum = Number(rawMin);
+    const maxNum = Number(rawMax);
+    if (!hasFlag && (!Number.isFinite(minNum) || !Number.isFinite(maxNum))) return null;
+    const fixed = _itemSpellChargeCost(spell);
+    const min = Math.max(1, Math.floor(Number.isFinite(minNum) ? minNum : (fixed > 0 ? fixed : 1)));
+    const max = Math.max(min, Math.floor(Number.isFinite(maxNum) ? maxNum : min));
+    return { min: min, max: max };
+  }
+
+  function _itemSpellChargeOptions(spell) {
+    const bounds = _itemSpellVariableChargeBounds(spell);
+    if (!bounds) return [];
+    const remaining = _itemSpellChargesRemaining(spell);
+    const cappedMax = remaining === null ? bounds.max : Math.min(bounds.max, Math.max(0, Math.floor(Number(remaining) || 0)));
+    const out = [];
+    for (let cost = bounds.min; cost <= cappedMax; cost += 1) out.push(cost);
+    return out;
+  }
+
+  function _selectedItemChargeCost(spell) {
+    const select = document.getElementById('combat-quick-charge-cost');
+    if (select && select.value !== '') return Math.max(1, Math.floor(Number(select.value) || 1));
+    const opts = _itemSpellChargeOptions(spell);
+    if (opts.length) return opts[0];
+    return _itemSpellChargeCost(spell);
+  }
+
   function _itemSpellChargeAvailability(spell) {
-    const cost = _itemSpellChargeCost(spell);
+    const variableOptions = _itemSpellChargeOptions(spell);
+    const variable = !!_itemSpellVariableChargeBounds(spell);
+    const cost = variable ? (variableOptions[0] || _selectedItemChargeCost(spell)) : _itemSpellChargeCost(spell);
     const remaining = _itemSpellChargesRemaining(spell);
     return {
       cost: cost,
       remaining: remaining,
-      available: cost <= 0 || remaining === null || remaining >= cost,
+      variable: variable,
+      options: variableOptions,
+      selectedCost: variable ? _selectedItemChargeCost(spell) : cost,
+      available: variable ? variableOptions.length > 0 : (cost <= 0 || remaining === null || remaining >= cost),
     };
   }
 
@@ -316,6 +353,8 @@
     }
     const itemSpell = isItemGrantedSpell(spell);
     const itemAvailability = itemSpell ? _itemSpellChargeAvailability(spell) : null;
+    const chargeSummary = overlay.querySelector('[data-cqa-selected-charge-cost]');
+    if (chargeSummary && itemAvailability) chargeSummary.textContent = itemAvailability.variable ? String(itemAvailability.selectedCost) : (itemAvailability.cost > 0 ? String(itemAvailability.cost) : '—');
     const options = itemSpell ? [] : _spellCastOptions(spell);
     const anyAvailable = itemSpell
       ? itemAvailability.available
@@ -409,8 +448,11 @@
     const hasDamage = !!damagePreview || (baseLevel !== null && baseLevel > 0);
     const itemChargeCost = itemSpell ? _itemSpellChargeCost(spell) : 0;
     const itemChargesRemaining = itemSpell ? _itemSpellChargesRemaining(spell) : null;
+    const itemChargeAvailability = itemSpell ? _itemSpellChargeAvailability(spell) : null;
+    const itemChargeOptions = itemChargeAvailability ? itemChargeAvailability.options : [];
+    const selectedChargeCost = itemChargeAvailability ? itemChargeAvailability.selectedCost : itemChargeCost;
     const anySlotAvailable = itemSpell
-      ? (itemChargeCost <= 0 || itemChargesRemaining === null || itemChargesRemaining >= itemChargeCost)
+      ? itemChargeAvailability.available
       : (baseLevel === 0 || options.some(function (opt) { return !opt.disabled; }));
     // Only show Roll Attack for spells that actually use an attack roll (not saves).
     const hasAttack = _spellHasAttack(card);
@@ -449,14 +491,18 @@
     const itemChargeLineParts = [
       itemSourceName ? 'Source: ' + itemSourceName : '',
       itemChargesRemaining !== null ? 'Charges ' + itemChargesRemaining + (card.charges_max ? '/' + card.charges_max : '') : '',
-      itemChargeCost > 0 ? ('Costs ' + itemChargeCost + ' charge' + (itemChargeCost === 1 ? '' : 's')) : '',
+      itemChargeAvailability && itemChargeAvailability.variable ? ('Selected cost: ' + (itemChargeOptions.length ? selectedChargeCost : '—')) : (itemChargeCost > 0 ? ('Costs ' + itemChargeCost + ' charge' + (itemChargeCost === 1 ? '' : 's')) : ''),
     ].filter(Boolean);
+    const itemChargePickerHtml = itemSpell && itemChargeAvailability && itemChargeAvailability.variable
+      ? '<label class="cqa-kicker" for="combat-quick-charge-cost">Charge Cost</label><select id="combat-quick-charge-cost" class="cqa-select" data-cqa-charge-cost>' + itemChargeOptions.map(function (cost) { return '<option value="' + _esc(cost) + '" ' + (String(cost) === String(selectedChargeCost) ? 'selected' : '') + '>' + _esc(cost + ' charge' + (cost === 1 ? '' : 's')) + '</option>'; }).join('') + '</select>'
+      : '';
     const itemChargeHtml = itemSpell
-      ? '<div class="cqa-sub" data-cqa-item-charges>' + _esc(itemChargeLineParts.join(' • ') || 'Cast from item charges') + '</div>'
+      ? '<div class="cqa-sub" data-cqa-item-charges>' + _esc(itemChargeLineParts.join(' • ') || 'Cast from item charges') + '</div>' + (itemSpell && itemChargeAvailability && itemChargeAvailability.variable ? '<div class="cqa-sub">Selected charge cost: <strong data-cqa-selected-charge-cost>' + _esc(itemChargeOptions.length ? selectedChargeCost : '—') + '</strong></div>' : '')
       : '';
     overlay.innerHTML = '<div class="cqa-panel" role="dialog" aria-modal="true" aria-label="Quick spell action">'
       + '<div class="cqa-head"><div><div class="cqa-kicker">' + (itemSpell ? 'Item Spell' : 'Quick Spell') + '</div><div class="cqa-title">' + _esc(spell.name || 'Spell') + '</div><div class="cqa-sub">' + _esc([resolvedLevelLabel, schoolLabel].filter(Boolean).join(' • ')) + '</div></div><button class="cqa-close" type="button" data-cqa-close>×</button></div>'
       + (showLevelPicker ? '<label class="cqa-kicker" for="combat-quick-spell-level">Cast Level / Slot</label><select id="combat-quick-spell-level" class="cqa-select">' + options.map(function (opt) { return '<option value="' + _esc(opt.value) + '" ' + (String(opt.value) === String(selected) ? 'selected' : '') + ' ' + (opt.disabled ? 'disabled' : '') + '>' + _esc(opt.label || 'Cast') + '</option>'; }).join('') + '</select>' : '')
+      + itemChargePickerHtml
       + itemChargeHtml
       + (itemSpell ? '' : '<div class="cqa-meta" data-cqa-spell-details>' + _spellDetailsHtml(spell, selected) + '</div>')
       + (levelScalingHtml ? levelScalingHtml : '')
@@ -474,8 +520,10 @@
       if (tag === 'SELECT' || tag === 'OPTION') { ev.stopPropagation(); return; }
       if (ev.target === overlay || ev.target.closest('[data-cqa-close]')) { ev.preventDefault(); ev.stopPropagation(); closeModal(); return; }
       const castLevel = _selectedCastLevel(spell);
+      const chargeAvailability = itemSpell ? _itemSpellChargeAvailability(spell) : null;
+      const chargeCost = chargeAvailability && chargeAvailability.variable ? _selectedItemChargeCost(spell) : null;
       // Historical static contract references: safeCastSpell(spellKey, castLevel); safeRollSpellDamage(spellKey, castLevel); safeRollSpellAttack(spellKey, castLevel); safeShowSpellSave(spellKey, castLevel). Runtime passes the spell object below.
-      if (ev.target.closest('[data-cqa-cast]')) { safeCastSpell(spell, castLevel); closeModal(); return; }
+      if (ev.target.closest('[data-cqa-cast]')) { safeCastSpell(spell, castLevel, chargeCost !== null ? { chargeCost: chargeCost } : undefined); closeModal(); return; }
       if (ev.target.closest('[data-cqa-spell-attack]')) { safeRollSpellAttack(spell, castLevel); return; }
       if (ev.target.closest('[data-cqa-spell-damage]')) { safeRollSpellDamage(spell, castLevel); return; }
       if (ev.target.closest('[data-cqa-spell-save]')) { safeShowSpellSave(spell, castLevel); return; }
@@ -485,6 +533,11 @@
     // Wire the level select via a proper event listener (not onchange attribute)
     // so it cannot be clobbered by HTML serialisation and stopPropagation works.
     var levelSelect = document.getElementById('combat-quick-spell-level');
+    var chargeSelect = document.getElementById('combat-quick-charge-cost');
+    if (chargeSelect) {
+      chargeSelect.addEventListener('change', function (ev) { ev.stopPropagation(); refreshSpellModalDamage(); });
+      chargeSelect.addEventListener('click', function (ev) { ev.stopPropagation(); });
+    }
     if (levelSelect) {
       levelSelect.addEventListener('change', function (ev) {
         ev.stopPropagation();
@@ -765,8 +818,8 @@
     if (_requireBridge('rollQuickWeaponCriticalDamage')) return global.rollQuickWeaponCriticalDamage(ctx);
     return false;
   }
-  function safeCastSpell(spellOrIdOrName, castLevel) {
-    if (_requireBridge('combatQuickCastSpell')) global.combatQuickCastSpell(spellOrIdOrName, castLevel);
+  function safeCastSpell(spellOrIdOrName, castLevel, options) {
+    if (_requireBridge('combatQuickCastSpell')) global.combatQuickCastSpell(spellOrIdOrName, castLevel, options);
   }
   function safeRollSpellAttack(spellOrIdOrName, castLevel) {
     if (_requireBridge('combatQuickRollSpellAttack')) global.combatQuickRollSpellAttack(spellOrIdOrName, castLevel);

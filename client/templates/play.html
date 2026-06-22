@@ -49462,10 +49462,11 @@ function _combatQuickIsItemGrantedSpell(spell) {
   return source === 'item' || source === 'item_spell' || !!(spell?.usesItemCharges || spell?.usesCharges || card.usesItemCharges || card.usesCharges || spell?.sourceItemId || spell?.itemId || card.item_id);
 }
 
-function _combatQuickSpendItemSpellCharges(spell, castLevel) {
+function _combatQuickSpendItemSpellCharges(spell, castLevel, options) {
   if (!_combatQuickIsItemGrantedSpell(spell)) return true;
   const card = spell && spell.card && typeof spell.card === 'object' ? spell.card : {};
-  const chargeCost = Math.max(0, Number(spell?.chargeCost ?? spell?.charge_cost ?? card.charge_cost ?? 0) || 0);
+  const chargeOverride = options && Number.isFinite(Number(options.chargeCost)) ? Number(options.chargeCost) : null;
+  const chargeCost = Math.max(0, Math.floor(Number(chargeOverride ?? spell?.chargeCost ?? spell?.charge_cost ?? card.charge_cost ?? 0) || 0));
   if (chargeCost <= 0) return true;
   const itemIndex = Number(spell?.itemIndex ?? card.item_index ?? -1);
   const itemId = String(spell?.sourceItemId || spell?.itemId || card.item_id || '').trim();
@@ -49798,12 +49799,12 @@ window.resolveQuickWeaponAction = resolveQuickWeaponAction;
 window.performQuickWeaponDamageRoll = performQuickWeaponDamageRoll;
 window.performCombatQuickRollWeaponDamage = performCombatQuickRollWeaponDamage;
 
-function performCombatQuickCastSpell(spellId, preferredLevel) {
+function performCombatQuickCastSpell(spellId, preferredLevel, options) {
   const spell = findCombatSpell(spellId);
   if (!spell) { showToast('Spell not found.'); return; }
   const card = spell.card || {};
   const castTime = String(card.casting_time || spell.casting_time || '').toLowerCase();
-  if (_combatQuickIsItemGrantedSpell(spell) && !_combatQuickSpendItemSpellCharges(spell, preferredLevel ?? spell.castLevel ?? spell.level ?? card.level)) return null;
+  if (_combatQuickIsItemGrantedSpell(spell) && !_combatQuickSpendItemSpellCharges(spell, preferredLevel ?? spell.castLevel ?? spell.level ?? card.level, options)) return null;
   const actionId = spell.rowId || spell.id || spell.spellId || spell.name || spellId;
   if (castTime.includes('bonus action')) _consumeActionEconomy('bonus_action', { action_id: spellId });
   else if (castTime.includes('reaction')) _consumeActionEconomy('reaction', { action_id: spellId });
@@ -50363,13 +50364,13 @@ window.combatQuickWeaponAttack = function combatQuickWeaponAttackBridge(actionOr
 window.combatQuickRollWeaponDamage = function combatQuickRollWeaponDamageBridge(actionOrId, mode, critical) {
   return guardQuickActionBridge('combatQuickRollWeaponDamage', () => performCombatQuickRollWeaponDamage(actionOrId, mode, critical));
 };
-window.combatQuickCastSpell = function combatQuickCastSpellBridge(spellId, preferredLevel) {
+window.combatQuickCastSpell = function combatQuickCastSpellBridge(spellId, preferredLevel, options) {
   const spell = findCombatSpell(spellId);
   if (!spell) {
     showToast('Spell not found.');
     return null;
   }
-  return guardQuickActionBridge('combatQuickCastSpell', () => performCombatQuickCastSpell(spellId, preferredLevel));
+  return guardQuickActionBridge('combatQuickCastSpell', () => performCombatQuickCastSpell(spellId, preferredLevel, options));
 };
 window.combatQuickRollSpellDamage = function combatQuickRollSpellDamageBridge(spellId, slotLevel) {
   const spell = findCombatSpell(spellId);
