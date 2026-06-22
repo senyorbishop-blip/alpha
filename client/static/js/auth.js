@@ -8,6 +8,8 @@
   'use strict';
 
   var _currentUser = null;
+  var _nativeFetch = global.__casualNativeFetch || (global.fetch ? global.fetch.bind(global) : null);
+  if (_nativeFetch && !global.__casualNativeFetch) global.__casualNativeFetch = _nativeFetch;
 
   /** Read the CSRF token cookie set by the server on GET responses. */
   function _getCsrfToken() {
@@ -19,6 +21,47 @@
   function _csrfHeaders(extra) {
     var token = _getCsrfToken();
     return token ? Object.assign({ 'X-CSRF-Token': token }, extra || {}) : (extra || {});
+  }
+
+  function _sameOriginApiRequest(input) {
+    try {
+      var rawUrl = typeof input === 'string' ? input : (input && input.url) || '';
+      if (!rawUrl) return false;
+      var url = new URL(rawUrl, global.location && global.location.href ? global.location.href : undefined);
+      return url.origin === global.location.origin && url.pathname.indexOf('/api/') === 0;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function _authHeadersForFetch(input, init) {
+    var sourceHeaders = (init && init.headers) || (input && input.headers) || {};
+    var headers = new Headers(sourceHeaders);
+    var token = getToken();
+    if (token && !headers.has('Authorization')) {
+      headers.set('Authorization', 'Bearer ' + token);
+    }
+    return headers;
+  }
+
+  function apiFetch(input, init) {
+    if (!_nativeFetch) return Promise.reject(new Error('fetch is unavailable'));
+    if (!_sameOriginApiRequest(input)) return _nativeFetch(input, init);
+    var nextInit = Object.assign({}, init || {});
+    nextInit.headers = _authHeadersForFetch(input, init || {});
+    if (!nextInit.credentials) nextInit.credentials = 'same-origin';
+    return _nativeFetch(input, nextInit);
+  }
+
+  // Keep HTTP API auth in lockstep with the WebSocket auth path. The WS client
+  // already sends sessionStorage.dnd_token as a query parameter; normal fetch()
+  // calls used by character sheets/spells were cookie-only, which can fail after
+  // reconnect/restart and produce 401s while the socket still works.
+  if (_nativeFetch && !global.__casualAuthFetchPatched) {
+    global.__casualAuthFetchPatched = true;
+    global.fetch = function casualAuthFetch(input, init) {
+      return apiFetch(input, init);
+    };
   }
 
   /**
@@ -56,6 +99,7 @@
     var data = await res.json();
     if (res.ok || res.status === 201) {
       _currentUser = data.user || null;
+      if (data.token || data.access_token || data.jwt) setToken(data.token || data.access_token || data.jwt);
     }
     return { ok: res.ok || res.status === 201, ...data };
   }
@@ -74,7 +118,10 @@
       body: JSON.stringify({ username_or_email: identifier, password: password }),
     });
     var data = await res.json();
-    if (res.ok) { _currentUser = data.user || null; }
+    if (res.ok) {
+      _currentUser = data.user || null;
+      if (data.token || data.access_token || data.jwt) setToken(data.token || data.access_token || data.jwt);
+    }
     return { ok: res.ok, ...data };
   }
 
@@ -84,6 +131,7 @@
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin', headers: _csrfHeaders() });
     _currentUser = null;
+    if (global.sessionStorage) global.sessionStorage.removeItem('dnd_token');
   }
 
   /**
@@ -117,7 +165,7 @@
   }
 
   /**
-   * Store the token returned by login/register for WS use.
+   * Store the token returned by login/register for WS and fetch() API use.
    */
   function setToken(token) {
     if (global.sessionStorage && token) {
@@ -134,6 +182,7 @@
     getCurrentUser: getCurrentUser,
     getToken: getToken,
     setToken: setToken,
+    apiFetch: apiFetch,
   };
 
 }(typeof window !== 'undefined' ? window : this));
