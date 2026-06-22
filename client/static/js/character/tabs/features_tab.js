@@ -702,6 +702,8 @@
     if (!charId) return cb(null, null);
     const params = new URLSearchParams();
     if (charData.sessionId) params.set('session_id', charData.sessionId);
+    const userId = global && global.USER_ID;
+    if (userId) params.set('user_id', userId);
 
     fetch('/api/character/' + encodeURIComponent(charId) + '/sheet' + (params.toString() ? '?' + params.toString() : ''))
       .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
