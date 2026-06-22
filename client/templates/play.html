@@ -12011,6 +12011,71 @@ function _isStaleVisibilityPayload(payload, stream = 'tokens') {
   _lastVisibilityRevisionByStream[stream] = rev;
   return false;
 }
+
+// Remote token movement interpolation — purely a display-layer smoothing
+// for OTHER clients' token_moved updates. The server-approved x/y from the
+// payload is always the eventual value written onto the token; this only
+// glides the rendered position toward it over a short window instead of
+// snapping every tick, so remote movement doesn't look choppy. Server
+// authority and the stale-revision guard above are untouched.
+const _TOKEN_INTERP_DURATION_MS = 140;
+const _TOKEN_INTERP_SNAP_DISTANCE = 600; // world px; teleports/large jumps snap instead of animating
+const _tokenInterpolations = Object.create(null);
+
+function shouldSnapTokenMovement(oldToken, newPayload) {
+  if (!oldToken || !newPayload) return true;
+  if (oldToken.hidden || oldToken.staged) return true;
+  if (newPayload.map_context && oldToken.map_context && String(newPayload.map_context) !== String(oldToken.map_context)) return true;
+  const fromX = Number(oldToken.x), fromY = Number(oldToken.y);
+  const toX = Number(newPayload.x), toY = Number(newPayload.y);
+  if (![fromX, fromY, toX, toY].every(Number.isFinite)) return true;
+  const dx = toX - fromX, dy = toY - fromY;
+  return Math.sqrt(dx * dx + dy * dy) > _TOKEN_INTERP_SNAP_DISTANCE;
+}
+
+function queueTokenInterpolation(tokenId, from, to, options) {
+  const id = String(tokenId || '');
+  if (!id) return false;
+  if (typeof requestAnimationFrame !== 'function' || !_renderLoopStarted) return false;
+  const opts = options || {};
+  const duration = Math.max(1, Number(opts.duration) || _TOKEN_INTERP_DURATION_MS);
+  const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  const existing = _tokenInterpolations[id];
+  const startX = existing ? Number(existing.curX) : Number(from && from.x);
+  const startY = existing ? Number(existing.curY) : Number(from && from.y);
+  if (!Number.isFinite(startX) || !Number.isFinite(startY)) return false;
+  _tokenInterpolations[id] = {
+    fromX: startX, fromY: startY,
+    toX: Number(to && to.x), toY: Number(to && to.y),
+    curX: startX, curY: startY,
+    startedAt: now,
+    duration,
+  };
+  return true;
+}
+
+function applyTokenInterpolationFrame(now) {
+  const ids = Object.keys(_tokenInterpolations);
+  if (!ids.length) return;
+  const ts = Number.isFinite(now) ? now : ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now());
+  for (const id of ids) {
+    const anim = _tokenInterpolations[id];
+    const target = tokens[id] || _stagingTokens[id];
+    if (!target) { delete _tokenInterpolations[id]; continue; }
+    const t = Math.min(1, (ts - anim.startedAt) / anim.duration);
+    const curX = anim.fromX + (anim.toX - anim.fromX) * t;
+    const curY = anim.fromY + (anim.toY - anim.fromY) * t;
+    anim.curX = curX; anim.curY = curY;
+    target.x = curX;
+    target.y = curY;
+    if (t >= 1) {
+      target.x = anim.toX;
+      target.y = anim.toY;
+      delete _tokenInterpolations[id];
+    }
+    _cacheTokenByContext(target);
+  }
+}
 // Same per-stream stale-packet gate as _isStaleVisibilityPayload, but keyed off
 // `inventory_revision` (a separate monotonic counter from `visibility_revision`)
 // so a reordered/delayed `player_inventory_sync` (e.g. across a brief
@@ -18356,6 +18421,7 @@ let _lastFrame = 0;
 function drawLoop(ts) {
   traceEnter('drawLoop', { ts });
   requestAnimationFrame(drawLoop);
+  safeClientCall('apply token interpolation', () => applyTokenInterpolationFrame(ts));
   drawFrame();
 }
 
@@ -33257,14 +33323,31 @@ function handleLegacyMessage(msg) {
         // applying them mid-drag causes visible rubber-banding on slow connections.
         break;
       }
-      if (tokens[p.token_id]) {
-        tokens[p.token_id].x = p.x;
-        tokens[p.token_id].y = p.y;
-        _cacheTokenByContext(tokens[p.token_id]);
-      } else if (_stagingTokens[p.token_id]) {
-        _stagingTokens[p.token_id].x = p.x;
-        _stagingTokens[p.token_id].y = p.y;
-        _cacheTokenByContext(_stagingTokens[p.token_id]);
+      const _moveTarget = tokens[p.token_id] || _stagingTokens[p.token_id];
+      if (_moveTarget) {
+        if (shouldSnapTokenMovement(_moveTarget, p)) {
+          delete _tokenInterpolations[String(p.token_id || '')];
+          _moveTarget.x = p.x;
+          _moveTarget.y = p.y;
+          _cacheTokenByContext(_moveTarget);
+        } else {
+          let queued = false;
+          try {
+            queued = queueTokenInterpolation(
+              p.token_id,
+              { x: _moveTarget.x, y: _moveTarget.y },
+              { x: p.x, y: p.y }
+            );
+          } catch (_err) {
+            queued = false;
+          }
+          if (!queued) {
+            // No render loop / rAF available (or interpolation failed) — fall back to a direct snap.
+            _moveTarget.x = p.x;
+            _moveTarget.y = p.y;
+            _cacheTokenByContext(_moveTarget);
+          }
+        }
       }
       break;
     }
