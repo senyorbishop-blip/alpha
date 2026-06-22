@@ -37,7 +37,7 @@ from server.character.feature_catalog import build_runtime_feature_payload
 from server.handlers.common import save_campaign_async
 from server.handlers.content import upsert_char_profile_for_owner
 from server.http.auth import auth_display_name, auth_player_key, get_request_user
-from server.http.session_access import get_or_restore_session
+from server.http.session_access import get_or_restore_session, resolve_session_authority
 from server.integrations.service import fetch_ddb_character_response, parse_character_pdf_response
 from server.session import normalize_profile_owner_key
 
@@ -305,31 +305,101 @@ def _find_profile_in_owner_buckets(session, owner_keys: list[str], profile_id: s
     return None
 
 
-def resolve_owned_profile_or_403(session, auth_user: dict, profile_id: str, allow_dm: bool = True) -> dict:
+def _session_member_owner_candidates(session_user, session_user_id: str) -> list[str]:
+    """Return profile owner bucket keys for a session-membership principal (no JWT account)."""
+    candidates: list[str] = []
+
+    def add(value: str) -> None:
+        value = str(value or "").strip()
+        if value and value not in candidates:
+            candidates.append(value)
+
+    add(normalize_profile_owner_key(getattr(session_user, "name", "")))
+    add(session_user_id)
+    return candidates
+
+
+def resolve_owned_profile_or_403(
+    session,
+    auth_user: dict,
+    profile_id: str,
+    allow_dm: bool = True,
+    *,
+    session_user=None,
+    session_user_id: str = "",
+    is_session_dm: bool = False,
+) -> dict:
     """Resolve a character profile without letting players enumerate others' profiles.
 
     Normal players may only resolve profiles in their own owner-key bucket(s).
     DM/admin users may resolve any profile in the session when allow_dm is true.
+
+    When there is no JWT-authenticated `auth_user` (e.g. an invite-link guest
+    with a session-membership identity only), `session_user`/`session_user_id`/
+    `is_session_dm` describe that session-membership principal instead, resolved
+    via resolve_session_authority so HTTP read access matches what the socket
+    and session-authority checks already grant that guest.
     """
-    if not isinstance(auth_user, dict) or not auth_user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
     target_profile_id = str(profile_id or "").strip()
     if not target_profile_id:
         raise HTTPException(status_code=404, detail="Character not found")
 
-    owner_candidates = _profile_owner_candidates(auth_user)
-    owned_profile = _find_profile_in_owner_buckets(session, owner_candidates, target_profile_id)
-    if isinstance(owned_profile, dict):
-        return owned_profile
+    if isinstance(auth_user, dict) and auth_user:
+        owner_candidates = _profile_owner_candidates(auth_user)
+        owned_profile = _find_profile_in_owner_buckets(session, owner_candidates, target_profile_id)
+        if isinstance(owned_profile, dict):
+            return owned_profile
 
-    session_wide_profile = _find_profile_by_id(session, target_profile_id)
-    if not isinstance(session_wide_profile, dict):
-        raise HTTPException(status_code=404, detail="Character not found")
+        session_wide_profile = _find_profile_by_id(session, target_profile_id)
+        if not isinstance(session_wide_profile, dict):
+            raise HTTPException(status_code=404, detail="Character not found")
 
-    if allow_dm and _auth_user_is_session_dm_or_admin(session, auth_user):
-        return session_wide_profile
+        if allow_dm and _auth_user_is_session_dm_or_admin(session, auth_user):
+            return session_wide_profile
 
-    raise HTTPException(status_code=403, detail="Not authorized for this character")
+        raise HTTPException(status_code=403, detail="Not authorized for this character")
+
+    if session_user is not None or session_user_id:
+        owner_candidates = _session_member_owner_candidates(session_user, session_user_id)
+        owned_profile = _find_profile_in_owner_buckets(session, owner_candidates, target_profile_id)
+        if isinstance(owned_profile, dict):
+            return owned_profile
+
+        session_wide_profile = _find_profile_by_id(session, target_profile_id)
+        if not isinstance(session_wide_profile, dict):
+            raise HTTPException(status_code=404, detail="Character not found")
+
+        if allow_dm and is_session_dm:
+            return session_wide_profile
+
+        raise HTTPException(status_code=403, detail="Not authorized for this character")
+
+    raise HTTPException(status_code=401, detail="Not authenticated")
+
+
+def _resolve_request_principal(request: Request, session, user_id: str = ""):
+    """Resolve the requesting principal for character/spell read endpoints.
+
+    Prefers a JWT-authenticated account (unchanged behavior). When absent,
+    falls back to the session-membership identity used by the websocket and
+    `resolve_session_authority` (e.g. an invite-link guest with no account),
+    so a session member who passes the socket/authority checks is not
+    rejected by HTTP reads with a 401. Returns
+    (auth_user, session_user, session_user_id, is_session_dm).
+    """
+    auth_user = get_request_user(request)
+    if auth_user:
+        return auth_user, None, "", False
+
+    fallback_user_id = str(user_id or request.query_params.get("user_id") or "").strip()
+    if not fallback_user_id:
+        return None, None, "", False
+
+    authority = resolve_session_authority(request, session, fallback_user_id=fallback_user_id)
+    session_user_id = str(authority.get("resolved_session_user_id") or "").strip()
+    session_user = session.users.get(session_user_id) if session_user_id else None
+    is_session_dm = bool(authority.get("is_session_dm"))
+    return None, session_user, session_user_id, is_session_dm
 
 
 async def _persist_imported_document(*, session_id: str, auth_user: dict, document: dict, profile_id: str = "", source: str = "unknown") -> dict:
@@ -1742,13 +1812,14 @@ async def get_spell_library(
 
     manifest = None
     if profile_id and session_id:
-        auth_user = get_request_user(request)
-        if not auth_user:
-            raise HTTPException(status_code=401, detail="Not authenticated")
         session = get_or_restore_session(str(session_id).strip().upper())
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
-        profile = resolve_owned_profile_or_403(session, auth_user, profile_id)
+        auth_user, session_user, session_user_id, is_session_dm = _resolve_request_principal(request, session)
+        profile = resolve_owned_profile_or_403(
+            session, auth_user, profile_id,
+            session_user=session_user, session_user_id=session_user_id, is_session_dm=is_session_dm,
+        )
         native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
         if native:
             manifest = build_character_spell_manifest(native)
@@ -1797,13 +1868,14 @@ async def get_spell_detail(spell_id: str, request: Request, profile_id: str | No
     card = {}
     manifest = None
     if profile_id and session_id:
-        auth_user = get_request_user(request)
-        if not auth_user:
-            raise HTTPException(status_code=401, detail="Not authenticated")
         session = get_or_restore_session(str(session_id).strip().upper())
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
-        profile = resolve_owned_profile_or_403(session, auth_user, profile_id)
+        auth_user, session_user, session_user_id, is_session_dm = _resolve_request_principal(request, session)
+        profile = resolve_owned_profile_or_403(
+            session, auth_user, profile_id,
+            session_user=session_user, session_user_id=session_user_id, is_session_dm=is_session_dm,
+        )
         native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
         if native:
             manifest = build_character_spell_manifest(native)
@@ -1848,9 +1920,11 @@ async def get_character_sheet(
 
     profile: dict = {}
     if session:
-        found = _find_profile_by_id(session, profile_id)
-        if isinstance(found, dict):
-            profile = found
+        auth_user, session_user, session_user_id, is_session_dm = _resolve_request_principal(request, session)
+        profile = resolve_owned_profile_or_403(
+            session, auth_user, profile_id,
+            session_user=session_user, session_user_id=session_user_id, is_session_dm=is_session_dm,
+        )
 
     native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
     runtime = profile.get("nativeRuntime") if isinstance(profile.get("nativeRuntime"), dict) else {}
@@ -1926,8 +2000,11 @@ async def get_character_spells_manifest(
 
     profile: dict = {}
     if session:
-        auth_user = get_request_user(request)
-        profile = resolve_owned_profile_or_403(session, auth_user, profile_id)
+        auth_user, session_user, session_user_id, is_session_dm = _resolve_request_principal(request, session)
+        profile = resolve_owned_profile_or_403(
+            session, auth_user, profile_id,
+            session_user=session_user, session_user_id=session_user_id, is_session_dm=is_session_dm,
+        )
 
     native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
     if native:
@@ -1972,8 +2049,11 @@ async def get_character_spells_known(
 
     profile: dict = {}
     if session:
-        auth_user = get_request_user(request)
-        profile = resolve_owned_profile_or_403(session, auth_user, profile_id)
+        auth_user, session_user, session_user_id, is_session_dm = _resolve_request_principal(request, session)
+        profile = resolve_owned_profile_or_403(
+            session, auth_user, profile_id,
+            session_user=session_user, session_user_id=session_user_id, is_session_dm=is_session_dm,
+        )
 
     native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
     if native:

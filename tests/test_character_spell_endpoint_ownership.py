@@ -231,3 +231,62 @@ def test_invalid_prepared_spells_do_not_mutate_native_spell_state(monkeypatch):
     assert res.status_code == 400
     assert native["spellState"]["prepared"] == ["fireball"]
     assert calls == {"save": 0, "sync": 0}
+
+
+def test_session_member_guest_with_no_jwt_can_get_spells_for_owned_profile(monkeypatch):
+    """A session-membership guest (no JWT account) who passes the socket/authority
+    checks should not be rejected by HTTP reads with a 401 — the session-member
+    fallback in resolve_owned_profile_or_403 should grant access to their own profile."""
+    session = _session()
+    auth_holder = {"user": None}
+    _install_common_spell_mocks(monkeypatch, session, auth_holder)
+
+    with TestClient(main.app, raise_server_exceptions=False) as client:
+        res = client.get(
+            "/api/spells?profile_id=profile-a&session_id=s1&user_id=player-a",
+        )
+
+    assert res.status_code == 200
+    assert res.json()["manifest"]["known"] == ["mage-hand"]
+
+
+def test_session_member_guest_with_no_jwt_cannot_get_another_members_profile(monkeypatch):
+    """The session-membership fallback must still enforce ownership: a guest
+    cannot read another member's profile just by changing profile_id."""
+    session = _session()
+    auth_holder = {"user": None}
+    _install_common_spell_mocks(monkeypatch, session, auth_holder)
+
+    with TestClient(main.app, raise_server_exceptions=False) as client:
+        res = client.get(
+            "/api/spells?profile_id=profile-b&session_id=s1&user_id=player-a",
+        )
+
+    assert res.status_code == 403
+
+
+def test_session_member_guest_without_session_id_keeps_public_library_behavior(monkeypatch):
+    """Bare /api/spells (no session_id/profile_id) must keep working without auth."""
+    session = _session()
+    auth_holder = {"user": None}
+    _install_common_spell_mocks(monkeypatch, session, auth_holder)
+
+    with TestClient(main.app, raise_server_exceptions=False) as client:
+        res = client.get("/api/spells")
+
+    assert res.status_code == 200
+
+
+def test_session_dm_guest_with_no_jwt_can_hydrate_player_profile(monkeypatch):
+    """A session-membership DM (no JWT account) keeps session-wide read access."""
+    session = _session()
+    auth_holder = {"user": None}
+    _install_common_spell_mocks(monkeypatch, session, auth_holder)
+
+    with TestClient(main.app, raise_server_exceptions=False) as client:
+        res = client.get(
+            "/api/character/profile-b/spells?session_id=s1&user_id=dm-1",
+        )
+
+    assert res.status_code == 200
+    assert res.json()["known"] == ["fireball"]

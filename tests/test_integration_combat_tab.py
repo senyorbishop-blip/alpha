@@ -608,6 +608,59 @@ def test_combat_visibility_sweep_runs_on_state_snapshot_for_reload():
     assert state["combat"]["suspended_combatants"][0]["token_id"] == "mage"
 
 
+def test_state_snapshot_visibility_sweep_does_not_mutate_shared_combat_state():
+    """A snapshot build (e.g. a DM reload) must not write the visibility sweep's
+    result back into the shared session.combat: the sweep result above is only
+    reflected in the returned snapshot dict, not in session.combat itself, so a
+    reload with a stale/mismatched dm_map_context can never suspend/drop real
+    combatants or flip combat.active for other clients."""
+    session, _ = _fog_sweep_session(revealed_indices=[])
+    original_combatants = list(session.combat["combatants"])
+
+    state = session.to_state_dict()
+
+    # The returned snapshot reflects the fog sweep (mage is fogged/suspended)...
+    assert state["combat"]["combatants"] == []
+    # ...but the shared, authoritative session.combat is untouched.
+    assert session.combat["combatants"] == original_combatants
+    assert session.combat["active"] is True
+    assert "suspended_combatants" not in session.combat
+
+    # Calling it again (simulating a second reload) must be stable and never
+    # leave a stray empty log or stuck mutation behind.
+    state_again = session.to_state_dict()
+    assert state_again["combat"]["combatants"] == []
+    assert session.combat["combatants"] == original_combatants
+    assert session.combat["active"] is True
+
+
+def test_state_snapshot_does_not_drop_combatants_for_dm_with_mismatched_map_context():
+    """Regression: a DM reloading with a transient/mismatched dm_map_context
+    must not flip the shared combat.active to False or drop real combatants
+    out of session.combat, even though sync_combat_visibility runs for the
+    snapshot's own per-recipient view."""
+    from server.session import Token
+
+    session, _ = _fog_sweep_session(revealed_indices=[0], owner_id="player1")
+    pc = Token(
+        id="pc", name="Hero", x=0, y=0, width=40, height=40, color="#fff",
+        shape="circle", owner_id="player1", token_type="player", map_context="dungeon-1",
+    )
+    session.tokens[pc.id] = pc
+    from server.handlers import combat as ch
+    session.combat["combatants"].append(ch._combatant_from_token(session, pc, initiative=10))
+    original_combatants = list(session.combat["combatants"])
+
+    # Simulate a DM reload whose panel/map context defaults to "world" while
+    # the player's token (and the real combat) is on a different local map.
+    session.dm_map_context = "world"
+
+    session.to_state_dict()
+
+    assert session.combat["active"] is True
+    assert session.combat["combatants"] == original_combatants
+
+
 def test_combat_visibility_sweep_advances_current_turn_when_current_is_suspended():
     from server.session import Token
     from server.handlers import combat as ch

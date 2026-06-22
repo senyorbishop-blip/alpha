@@ -1,9 +1,11 @@
 """
 server/auth/jwt_utils.py — JWT creation and verification helpers.
 """
+import logging
 import os
 import secrets
 import time
+from pathlib import Path
 
 try:
     import jwt  # PyJWT
@@ -14,30 +16,97 @@ except BaseException as _jwt_import_err:  # noqa: BLE001 — pyo3 panics surface
         f"Original error: {_jwt_import_err}"
     ) from _jwt_import_err
 
-# Secret key — loaded from env or config, fallback generated on startup.
-# Set DND_JWT_SECRET in the environment or config.txt for a stable key.
-_JWT_SECRET: str = os.environ.get("DND_JWT_SECRET", "").strip()
-if not _JWT_SECRET:
-    # Try reading from the repo-level config.txt
+_logger = logging.getLogger(__name__)
+
+# Resolve the repo root from this file's location (server/auth/jwt_utils.py)
+# rather than the process cwd, so config.txt is found regardless of how/where
+# the server was launched from.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_CONFIG_PATH = _REPO_ROOT / "config.txt"
+# Dev-only: persists an auto-generated secret so it survives restarts instead
+# of silently invalidating every issued cookie/token each time.
+_DEV_SECRET_FILE = _REPO_ROOT / ".dnd_jwt_secret.local"
+
+
+def _read_config_value(path: Path, key: str) -> str:
     try:
-        _cfg_path = os.path.join(os.path.dirname(__file__), "..", "..", "config.txt")
-        with open(_cfg_path) as _f:
-            for _line in _f:
-                _line = _line.strip()
-                if _line.startswith("DND_JWT_SECRET="):
-                    _JWT_SECRET = _line.split("=", 1)[1].strip()
-                    break
+        with path.open() as handle:
+            for line in handle:
+                line = line.strip()
+                if line.startswith(f"{key}="):
+                    return line.split("=", 1)[1].strip()
     except FileNotFoundError:
         pass
+    return ""
 
-if not _JWT_SECRET:
-    _JWT_SECRET = secrets.token_hex(32)
-    print(
-        "\n[WARNING] DND_JWT_SECRET is not set — a temporary key has been generated for this session.\n"
-        "          All existing login sessions will be invalidated on the next restart.\n"
-        "          To make it permanent, add this line to your config.txt or .env file:\n"
-        f"          DND_JWT_SECRET={_JWT_SECRET}\n"
+
+def _resolve_app_env() -> str:
+    env = os.environ.get("APP_ENV", "").strip().lower()
+    if not env:
+        env = _read_config_value(_CONFIG_PATH, "APP_ENV").strip().lower()
+    return env if env in {"development", "production"} else "development"
+
+
+def _persist_dev_secret(secret: str) -> None:
+    try:
+        _DEV_SECRET_FILE.write_text(secret + "\n", encoding="utf-8")
+    except OSError:
+        pass
+
+
+def _load_jwt_secret() -> str:
+    """Load the JWT signing secret, preferring stable sources over randomness.
+
+    Order: DND_JWT_SECRET env var -> config.txt -> (non-development: fail
+    fast) -> (development: reuse a previously persisted auto-generated
+    secret, or generate+persist a new one). A silently-random secret would
+    invalidate every issued cookie/token on the next restart, so production
+    deployments must set DND_JWT_SECRET explicitly.
+    """
+    secret = os.environ.get("DND_JWT_SECRET", "").strip()
+    if secret:
+        return secret
+
+    secret = _read_config_value(_CONFIG_PATH, "DND_JWT_SECRET").strip()
+    if secret:
+        return secret
+
+    app_env = _resolve_app_env()
+    if app_env != "development":
+        raise RuntimeError(
+            "DND_JWT_SECRET is not set. Refusing to start in a non-development "
+            "environment (APP_ENV="
+            f"{app_env}) with an auto-generated secret, since that would "
+            "silently invalidate every issued session on the next restart. "
+            "Set DND_JWT_SECRET in the environment or config.txt."
+        )
+
+    try:
+        existing = _DEV_SECRET_FILE.read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        existing = ""
+    if existing:
+        _logger.warning(
+            "DND_JWT_SECRET is not set — reusing the development secret persisted "
+            "at %s. Set DND_JWT_SECRET in config.txt before deploying.",
+            _DEV_SECRET_FILE,
+        )
+        return existing
+
+    generated = secrets.token_hex(32)
+    _persist_dev_secret(generated)
+    _logger.warning(
+        "DND_JWT_SECRET is not set — generated a new development-only secret and "
+        "persisted it to %s so it survives restarts. Set DND_JWT_SECRET in "
+        "config.txt before deploying.",
+        _DEV_SECRET_FILE,
     )
+    return generated
+
+
+# Secret key — loaded from env or config.txt; auto-generated only in
+# development, where it is persisted so restarts reuse the same secret.
+_JWT_SECRET: str = _load_jwt_secret()
 
 _ALGORITHM = "HS256"
 _TOKEN_TTL = 60 * 60 * 24 * 7  # 7 days

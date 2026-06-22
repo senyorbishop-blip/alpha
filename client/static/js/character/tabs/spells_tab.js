@@ -684,7 +684,8 @@ function _spellAttackSaveCell(spell, charData) {
   function _profileContext(charData) {
     return {
       profileId: _firstText(charData && (charData.profileId || charData.profile_id || charData.id), ''),
-      sessionId: _firstText(charData && (charData.sessionId || charData.session_id), '')
+      sessionId: _firstText(charData && (charData.sessionId || charData.session_id), ''),
+      userId: _firstText(global && global.USER_ID, '')
     };
   }
 
@@ -695,6 +696,7 @@ function _spellAttackSaveCell(spell, charData) {
     const params = new URLSearchParams();
     if (ctx.profileId) params.set('profile_id', ctx.profileId);
     if (ctx.sessionId) params.set('session_id', ctx.sessionId);
+    if (ctx.userId) params.set('user_id', ctx.userId);
     return fetch('/api/spells/' + encodeURIComponent(spellId) + (params.toString() ? ('?' + params.toString()) : ''), { credentials: 'same-origin' })
       .then(function (res) { return res.ok ? res.json() : Promise.reject(res.status); })
       .then(function (json) { return (json && json.spell) ? json.spell : spell; })
@@ -1019,10 +1021,11 @@ function _spellAttackSaveCell(spell, charData) {
     function load(url) {
       return fetch(url, { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); });
     }
-    const baseUrl = '/api/character/' + encodeURIComponent(ctx.profileId) + '/spells?session_id=' + encodeURIComponent(ctx.sessionId);
+    const userIdQuery = ctx.userId ? ('&user_id=' + encodeURIComponent(ctx.userId)) : '';
+    const baseUrl = '/api/character/' + encodeURIComponent(ctx.profileId) + '/spells?session_id=' + encodeURIComponent(ctx.sessionId) + userIdQuery;
     load(baseUrl)
       .catch(function () {
-        return load('/api/character/' + encodeURIComponent(ctx.profileId) + '/spells/known?session_id=' + encodeURIComponent(ctx.sessionId));
+        return load('/api/character/' + encodeURIComponent(ctx.profileId) + '/spells/known?session_id=' + encodeURIComponent(ctx.sessionId) + userIdQuery);
       })
       .then(function (data) {
         const hasKnown = !!(data && Object.prototype.hasOwnProperty.call(data, 'known'));
@@ -1055,6 +1058,7 @@ function _spellAttackSaveCell(spell, charData) {
     const ctx = _profileContext(state.charData || {});
     if (ctx.profileId) params.set('profile_id', ctx.profileId);
     if (ctx.sessionId) params.set('session_id', ctx.sessionId);
+    if (ctx.userId) params.set('user_id', ctx.userId);
     fetch('/api/spells?' + params.toString(), { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
       .then(function (data) {
