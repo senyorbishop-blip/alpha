@@ -517,3 +517,138 @@ def test_client_fog_update_promotes_alias_context_and_repaints_active_map():
     assert "_payloadMapCtx(p, env)" in body
     assert "entry.enabled = true" in body
     assert "fogLoadMap(state, env, activeCtx)" in body
+
+
+def _run_fog_apply_state_driver(driver_js: str) -> dict:
+    """Load fog.js in node, run a driver against window.AppFog, return JSON state."""
+    import json
+    import subprocess
+
+    code = f"""
+const fs = require('fs');
+global.window = {{}};
+global.document = {{ getElementById: () => null }};
+global.console = console;
+const moduleSrc = fs.readFileSync('client/static/js/render/fog.js', 'utf-8');
+eval(moduleSrc);
+const AppFog = global.window.AppFog;
+
+function makeEnv() {{
+  return {{
+    ROLE: 'dm',
+    document: {{ getElementById: () => null }},
+    handlers: {{ onFogCheckboxChange: () => {{}} }},
+    getCurrentMapContext: () => 'world',
+    getDmMapContext: () => 'world',
+    getFogSystemMode: () => 'manual',
+    canEditFog: () => true,
+    invalidateFogCache: () => {{}},
+    syncShellState: () => {{}},
+    requestRenderFrame: () => {{}},
+    drawFrame: () => {{}},
+  }};
+}}
+function makeState() {{
+  return {{ fogMaps: {{}}, fogMapCtx: 'world', fogCols: 64, fogRows: 64, fogCells: null, fogDirtyBatch: new Set() }};
+}}
+{driver_js}
+"""
+    out = subprocess.check_output(["node", "-e", code], cwd=ROOT_FOG, text=True, timeout=30)
+    return json.loads(out)
+
+
+from pathlib import Path as _PathFog
+ROOT_FOG = _PathFog(__file__).resolve().parents[1]
+
+
+def test_state_sync_does_not_clobber_restored_fog_reveals():
+    """A state_sync snapshot carries fog via `fog_maps` plus a `dm_map_context`
+    for navigation, but no top-level `fog_cells`. Applying it must keep the
+    restored per-context reveals intact (the rejoin/restart regression) and load
+    them into the active render buffer — not wipe them to an all-fogged grid."""
+    driver = """
+const state = makeState();
+const env = makeEnv();
+// world fog restored with cell 0 revealed at revision 31, exactly like the
+// authoritative snapshot the server sends on connect.
+const stateSyncPayload = {
+  dm_map_context: 'world',
+  fog_maps: {
+    world: { enabled: true, cols: 4, rows: 4, cells: '1000000000000000', revision: 31, map_context: 'world' }
+  }
+};
+AppFog.fogApplyState(state, env, stateSyncPayload);
+const world = state.fogMaps.world;
+console.log(JSON.stringify({
+  worldRevision: world.revision,
+  worldRevealed: Array.from(world.cells).filter(Boolean).length,
+  worldCell0: world.cells[0],
+  fogEnabled: state.fogEnabled,
+  activeRevealed: state.fogCells ? Array.from(state.fogCells).filter(Boolean).length : 0,
+  activeCell0: state.fogCells ? state.fogCells[0] : null,
+}));
+"""
+    result = _run_fog_apply_state_driver(driver)
+    assert result["worldRevision"] == 31, "restored revision must survive state_sync"
+    assert result["worldRevealed"] == 1, "restored reveal must not be clobbered"
+    assert result["worldCell0"] == 1
+    assert result["fogEnabled"] is True
+    assert result["activeRevealed"] == 1, "active render buffer must show the restored reveal"
+    assert result["activeCell0"] == 1
+
+
+def test_fog_state_for_other_context_does_not_switch_active_render():
+    """A targeted fog_state for a non-active context updates the cache only and
+    must not pull that context's cells into the active render buffer."""
+    driver = """
+const state = makeState();
+const env = makeEnv();
+// First restore world (active context) with a reveal via state_sync.
+AppFog.fogApplyState(state, env, {
+  dm_map_context: 'world',
+  fog_maps: { world: { enabled: true, cols: 4, rows: 4, cells: '1000000000000000', revision: 5, map_context: 'world' } }
+});
+// Then a targeted fog_state for a different context (poi-crypt) arrives.
+AppFog.fogApplyState(state, env, {
+  map_ctx: 'poi-crypt',
+  fog_enabled: true, fog_cols: 4, fog_rows: 4, fog_cells: '1111000000000000', revision: 2
+});
+console.log(JSON.stringify({
+  cryptCached: !!state.fogMaps['poi-crypt'],
+  cryptRevealed: state.fogMaps['poi-crypt'] ? Array.from(state.fogMaps['poi-crypt'].cells).filter(Boolean).length : 0,
+  activeCtx: state.fogMapCtx,
+  activeRevealed: state.fogCells ? Array.from(state.fogCells).filter(Boolean).length : 0,
+}));
+"""
+    result = _run_fog_apply_state_driver(driver)
+    assert result["cryptCached"] is True, "off-context fog_state must still be cached"
+    assert result["cryptRevealed"] == 4
+    assert result["activeCtx"] == "world", "active rendered context must stay on world"
+    assert result["activeRevealed"] == 1, "active buffer must still show world's reveal, not crypt's"
+
+
+def test_stale_top_level_fog_state_does_not_overwrite_newer_reveals():
+    """A lower-revision fog_state for the active context must not overwrite a
+    newer locally-known revision."""
+    driver = """
+const state = makeState();
+const env = makeEnv();
+// Local world fog at revision 10 with two reveals.
+AppFog.fogApplyState(state, env, {
+  dm_map_context: 'world',
+  fog_maps: { world: { enabled: true, cols: 4, rows: 4, cells: '1100000000000000', revision: 10, map_context: 'world' } }
+});
+// A stale fog_state (revision 3, fully fogged) races in for world.
+AppFog.fogApplyState(state, env, {
+  map_ctx: 'world', fog_enabled: true, fog_cols: 4, fog_rows: 4, fog_cells: '0000000000000000', revision: 3
+});
+console.log(JSON.stringify({
+  worldRevision: state.fogMaps.world.revision,
+  worldRevealed: Array.from(state.fogMaps.world.cells).filter(Boolean).length,
+  activeRevealed: state.fogCells ? Array.from(state.fogCells).filter(Boolean).length : 0,
+}));
+"""
+    result = _run_fog_apply_state_driver(driver)
+    assert result["worldRevision"] == 10, "stale fog_state must not lower the revision"
+    assert result["worldRevealed"] == 2, "stale fog_state must not wipe newer reveals"
+    assert result["activeRevealed"] == 2

@@ -383,18 +383,43 @@
       state.fogMaps = nextFogMaps;
     }
     const stateMapCtx = _payloadMapCtx(p, env);
-    if (p.map_ctx !== undefined || p.map_context !== undefined || p.dm_map_context !== undefined || p.current_map !== undefined || p.fog_cells !== undefined) {
-      const total = (p.fog_cols || 64) * (p.fog_rows || 64);
-      const arr = new Uint8Array(total);
-      const str = p.fog_cells || '';
-      for (let i = 0; i < Math.min(str.length, total); i++) arr[i] = str[i] === '1' ? 1 : 0;
-      const mapCtx = _normalizeMapCtx(stateMapCtx, env);
-      state.fogMaps[mapCtx] = { enabled: p.fog_enabled !== undefined ? !!p.fog_enabled : true, cols: p.fog_cols || 64, rows: p.fog_rows || 64, cells: arr, revision: Number(p.revision) || 0, map_context: mapCtx };
-      _debugFogPlayer('fog_state map_ctx enabled cols rows revealed_count', { map_ctx: mapCtx, enabled: state.fogMaps[mapCtx].enabled, cols: state.fogMaps[mapCtx].cols, rows: state.fogMaps[mapCtx].rows, revealed_count: Array.from(arr).filter(Boolean).length }, env);
-    }
+    // Only a real fog_state message carries top-level fog cell data. A plain
+    // state_sync snapshot (the authoritative fog the server sends on connect)
+    // delivers fog through `fog_maps` (merged above) yet still carries
+    // `dm_map_context` purely for navigation. That nav context must NOT be
+    // treated as an empty top-level fog grid to write back: doing so clobbered
+    // the just-restored per-context reveals with an all-fogged revision-0 entry,
+    // which is exactly why fog looked wiped after a rejoin/restart. Gate strictly
+    // on the presence of real cell data, and still apply the per-context
+    // monotonic revision guard so a stale fog_state can never overwrite newer
+    // reveals.
+    const hasTopLevelFogState = p.fog_cells !== undefined;
     const ctx = fogCurrentCtx(env);
-    if ((p.map_ctx !== undefined || p.map_context !== undefined || p.dm_map_context !== undefined || p.current_map !== undefined || p.currentMap !== undefined || p.context !== undefined || p.map !== undefined || p.fog_cells !== undefined) && _normalizeMapCtx(stateMapCtx, env) !== ctx) { state.lastFogPayloadMapContext = _normalizeMapCtx(stateMapCtx, env); return; }
+    if (hasTopLevelFogState) {
+      const mapCtx = _normalizeMapCtx(stateMapCtx, env);
+      const incomingRevision = Number(p.revision) || 0;
+      const localEntry = state.fogMaps && state.fogMaps[mapCtx];
+      const localRevision = Number(localEntry && localEntry.revision) || 0;
+      if (localEntry && incomingRevision < localRevision) {
+        _debugFogPlayer('fog_state ignored stale top-level revision', { map_ctx: mapCtx, incoming_revision: incomingRevision, local_revision: localRevision }, env);
+      } else {
+        const total = (p.fog_cols || 64) * (p.fog_rows || 64);
+        const arr = new Uint8Array(total);
+        const str = p.fog_cells || '';
+        for (let i = 0; i < Math.min(str.length, total); i++) arr[i] = str[i] === '1' ? 1 : 0;
+        state.fogMaps[mapCtx] = { enabled: p.fog_enabled !== undefined ? !!p.fog_enabled : true, cols: p.fog_cols || 64, rows: p.fog_rows || 64, cells: arr, revision: incomingRevision, map_context: mapCtx };
+        _debugFogPlayer('fog_state map_ctx enabled cols rows revealed_count', { map_ctx: mapCtx, enabled: state.fogMaps[mapCtx].enabled, cols: state.fogMaps[mapCtx].cols, rows: state.fogMaps[mapCtx].rows, revealed_count: Array.from(arr).filter(Boolean).length }, env);
+      }
+      // A targeted fog_state for a context other than the one currently rendered
+      // updates the cache only; it must not switch the active rendered context.
+      if (mapCtx !== ctx) { state.lastFogPayloadMapContext = mapCtx; return; }
+    }
+    // Initial authoritative fog (state_sync on connect) and any fog_state for the
+    // active context land here. Load the active context out of fogMaps and force
+    // a repaint so the canvas reflects the restored reveals instead of staying on
+    // the default all-fogged grid — for both dm and player.
     fogLoadMap(state, env, ctx);
+    state.fogImageDirty = true;
     state.lastFogStateRevision = Number(p && p.revision) || Number(state.lastFogStateRevision) || 0;
     if (env && typeof env.requestRenderFrame === 'function') env.requestRenderFrame('fog state apply');
     else if (env && typeof env.drawFrame === 'function') env.drawFrame();
