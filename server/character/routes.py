@@ -39,7 +39,7 @@ from server.handlers.content import upsert_char_profile_for_owner
 from server.http.auth import auth_display_name, auth_player_key, get_request_user
 from server.http.session_access import get_or_restore_session, resolve_session_authority
 from server.integrations.service import fetch_ddb_character_response, parse_character_pdf_response
-from server.session import normalize_profile_owner_key
+from server.session import normalize_profile_owner_key, resolve_owner_identity
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -307,7 +307,15 @@ def _find_profile_in_owner_buckets(session, owner_keys: list[str], profile_id: s
 
 
 def _session_member_owner_candidates(session_user, session_user_id: str) -> list[str]:
-    """Return profile owner bucket keys for a session-membership principal (no JWT account)."""
+    """Return profile owner bucket keys for a session-membership principal (no JWT account).
+
+    Built from the canonical :func:`resolve_owner_identity` so the keys match
+    exactly what combat ownership checks and the authority layer use — the
+    normalized display-name bucket, the session-user id, AND the resolved
+    player_key (``auth_<id>``). The player_key was previously omitted here,
+    so a session-link player whose profile bucket is keyed by player_key could
+    be wrongly rejected for their own profile.
+    """
     candidates: list[str] = []
 
     def add(value: str) -> None:
@@ -315,7 +323,11 @@ def _session_member_owner_candidates(session_user, session_user_id: str) -> list
         if value and value not in candidates:
             candidates.append(value)
 
+    # Display-name bucket first (the common profile-bucket key), then the
+    # remaining canonical identity keys (id + player_key).
     add(normalize_profile_owner_key(getattr(session_user, "name", "")))
+    for key in resolve_owner_identity(None, session_user):
+        add(key)
     add(session_user_id)
     return candidates
 
