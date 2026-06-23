@@ -42,6 +42,7 @@ from server.integrations.service import fetch_ddb_character_response, parse_char
 from server.session import normalize_profile_owner_key
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 _KNOWN_RULES_MODES = {"casual", "classic", "custom"}
 
@@ -319,6 +320,72 @@ def _session_member_owner_candidates(session_user, session_user_id: str) -> list
     return candidates
 
 
+def _auth_user_session_ids(auth_user: dict) -> list[str]:
+    """Return the session-user id(s) a JWT-authenticated account maps to.
+
+    A logged-in account is keyed in ``session.users``/``active_char_profiles``
+    by ``auth_<id>`` (see ``auth_player_key``). Some legacy sessions may also
+    key directly by the raw account id, so both are checked.
+    """
+    auth_user_id = str((auth_user or {}).get("id") or "").strip()
+    if not auth_user_id:
+        return []
+    candidates = [auth_user_id]
+    auth_key = auth_player_key(auth_user_id)
+    if auth_key not in candidates:
+        candidates.append(auth_key)
+    return candidates
+
+
+def _session_active_profile_matches(session, auth_user: dict, target_profile_id: str) -> bool:
+    """Safe fallback #1: this session restored an active-profile selection for this user.
+
+    After a reconnect/server restart, ``session.active_char_profiles`` is restored
+    from persisted state and may legitimately point this authenticated user's
+    session-user id at ``target_profile_id`` even though the JWT-derived owner-key
+    bucket lookup misses (e.g. display name normalization changed). This does not
+    let an arbitrary user claim a profile_id by guessing it — it only matches when
+    the SERVER already recorded that this specific session user has that profile
+    active.
+    """
+    active_map = dict(getattr(session, "active_char_profiles", {}) or {})
+    if not active_map:
+        return False
+    target = str(target_profile_id or "").strip()
+    for session_user_id in _auth_user_session_ids(auth_user):
+        if str(active_map.get(session_user_id) or "").strip() == target:
+            return True
+    return False
+
+
+def _token_linked_profile_matches(session, auth_user: dict, target_profile_id: str) -> bool:
+    """Safe fallback #2: a token owned by this session user is linked to the profile.
+
+    Mirrors ``resolve_token_character_profile``'s ownership notion: a token's
+    ``owner_id`` must be this user's session-user id, and the token's
+    profile/library/character ref must match ``target_profile_id``.
+    """
+    target = str(target_profile_id or "").strip()
+    if not target:
+        return False
+    session_ids = set(_auth_user_session_ids(auth_user))
+    if not session_ids:
+        return False
+    for token in (getattr(session, "tokens", {}) or {}).values():
+        owner_id = str(getattr(token, "owner_id", "") or "").strip()
+        if owner_id not in session_ids:
+            continue
+        refs = {
+            str(getattr(token, "profile_id", "") or "").strip(),
+            str(getattr(token, "library_id", "") or "").strip(),
+            str(getattr(token, "character_id", "") or "").strip(),
+        }
+        refs.discard("")
+        if target in refs:
+            return True
+    return False
+
+
 def resolve_owned_profile_or_403(
     session,
     auth_user: dict,
@@ -357,6 +424,25 @@ def resolve_owned_profile_or_403(
         if allow_dm and _auth_user_is_session_dm_or_admin(session, auth_user):
             return session_wide_profile
 
+        # Reconnect-safe fallbacks: the owner-key bucket lookup above is the normal
+        # path, but a restored session can legitimately know this user's active
+        # profile or token linkage even when the bucket lookup misses. Neither
+        # fallback lets a user reach a profile_id they merely guessed — both
+        # require the SERVER's own session state to already associate this
+        # specific authenticated user with target_profile_id.
+        if _session_active_profile_matches(session, auth_user, target_profile_id):
+            logger.info(
+                "[live_state] spell_profile_access_fallback session_id=%s profile_id=%s via=active_session_profile",
+                str(getattr(session, "id", "") or ""), target_profile_id,
+            )
+            return session_wide_profile
+        if _token_linked_profile_matches(session, auth_user, target_profile_id):
+            logger.info(
+                "[live_state] spell_profile_access_fallback session_id=%s profile_id=%s via=token_linked_profile",
+                str(getattr(session, "id", "") or ""), target_profile_id,
+            )
+            return session_wide_profile
+
         raise HTTPException(status_code=403, detail="Not authorized for this character")
 
     if session_user is not None or session_user_id:
@@ -371,6 +457,30 @@ def resolve_owned_profile_or_403(
 
         if allow_dm and is_session_dm:
             return session_wide_profile
+
+        active_map = dict(getattr(session, "active_char_profiles", {}) or {})
+        if session_user_id and str(active_map.get(session_user_id) or "").strip() == target_profile_id:
+            logger.info(
+                "[live_state] spell_profile_access_fallback session_id=%s profile_id=%s via=active_session_profile",
+                str(getattr(session, "id", "") or ""), target_profile_id,
+            )
+            return session_wide_profile
+        if session_user_id:
+            for token in (getattr(session, "tokens", {}) or {}).values():
+                if str(getattr(token, "owner_id", "") or "").strip() != session_user_id:
+                    continue
+                refs = {
+                    str(getattr(token, "profile_id", "") or "").strip(),
+                    str(getattr(token, "library_id", "") or "").strip(),
+                    str(getattr(token, "character_id", "") or "").strip(),
+                }
+                refs.discard("")
+                if target_profile_id in refs:
+                    logger.info(
+                        "[live_state] spell_profile_access_fallback session_id=%s profile_id=%s via=token_linked_profile",
+                        str(getattr(session, "id", "") or ""), target_profile_id,
+                    )
+                    return session_wide_profile
 
         raise HTTPException(status_code=403, detail="Not authorized for this character")
 
@@ -1814,12 +1924,21 @@ async def get_spell_library(
     if profile_id and session_id:
         session = get_or_restore_session(str(session_id).strip().upper())
         if not session:
+            logger.info("[live_state] spell_manifest_request session_id=%s profile_id=%s result=404_session", session_id, profile_id)
             raise HTTPException(status_code=404, detail="Session not found")
         auth_user, session_user, session_user_id, is_session_dm = _resolve_request_principal(request, session)
-        profile = resolve_owned_profile_or_403(
-            session, auth_user, profile_id,
-            session_user=session_user, session_user_id=session_user_id, is_session_dm=is_session_dm,
-        )
+        try:
+            profile = resolve_owned_profile_or_403(
+                session, auth_user, profile_id,
+                session_user=session_user, session_user_id=session_user_id, is_session_dm=is_session_dm,
+            )
+        except HTTPException as exc:
+            logger.info(
+                "[live_state] spell_manifest_request session_id=%s profile_id=%s result=%s authenticated=%s",
+                session_id, profile_id, exc.status_code, bool(auth_user) or bool(session_user),
+            )
+            raise
+        logger.info("[live_state] spell_manifest_request session_id=%s profile_id=%s result=200", session_id, profile_id)
         native = profile.get("nativeCharacter") if isinstance(profile.get("nativeCharacter"), dict) else {}
         if native:
             manifest = build_character_spell_manifest(native)

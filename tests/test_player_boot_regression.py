@@ -256,9 +256,14 @@ def test_returning_player_uses_full_live_runtime():
 def test_player_runtime_first_external_js_is_core_boot():
     html = _rendered_play("player")
     scripts = _script_srcs(html)
-    # The core boot modules load first, before the rest of the live runtime.
-    assert scripts[0] == "/static/js/core/diagnostics.js"
-    assert scripts[1] == "/static/js/core/csrf.js"
+    # auth.js patches window.fetch to attach the bearer token to same-origin
+    # /api/ calls; it must load before every other runtime script (spells_tab.js,
+    # character routes, etc.) or those calls fall back to cookie-only auth and
+    # 401 after reconnect. The core boot modules load right after it, before
+    # the rest of the live runtime.
+    assert scripts[0] == "/static/js/auth.js"
+    assert scripts[1] == "/static/js/core/diagnostics.js"
+    assert scripts[2] == "/static/js/core/csrf.js"
     for core in [
         "/static/js/state/store.js",
         "/static/js/core/runtime_bridge.js",
