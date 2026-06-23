@@ -134,7 +134,14 @@ Current shape:
       "revision": 0,
       "visibility_revision": 0,
       "enabled": false,
-      "summary": {}
+      "source": "reconnect|authoritative_snapshot",
+      "summary": { "cols": 0, "rows": 0 },
+      "explored": { "revealed_cells": 0, "total_cells": 0 },
+      "currently_visible": null,
+      "unseen": null,
+      "visibility_source": "manual_fog",
+      "wall_revision": 0,
+      "door_revision": 0
     },
     "debug": {
       "created_at": "2026-06-23T00:00:00Z",
@@ -161,7 +168,8 @@ Current shape:
   reconnecting user when available.
 - `inventory.revision` is the existing session `inventory_revision`.
 - `fog.map_context`, `fog.revision`, `fog.visibility_revision`, `fog.enabled`,
-  and fog dimensions summarize the role-visible fog entry for the active map.
+  `fog.source`, and fog dimensions summarize the role-visible fog entry for
+  the active map (never a different map's fog — see PR 6, section 10).
 
 ### Placeholder/future fields
 
@@ -214,7 +222,7 @@ other payload details.
 3. **PR 3 combat revision hardening:** tighten combat revision application/ignore rules and tests.
 4. **PR 4 token/map revision hardening (done):** added per-token/map-context revision checks — see section 9.
 5. **PR 5 active profile + Quick Actions hardening:** add active profile/runtime/Quick Actions hydration revisions.
-6. **PR 6 fog visibility revision hardening:** formalize fog revision handling and server/client visibility coupling.
+6. **PR 6 fog visibility revision hardening (done):** formalized fog revision handling and server/client visibility coupling — see section 10.
 7. **PR 7 wall/door LOS:** introduce authoritative wall/door LOS inputs after the revision contract exists.
 8. **PR 8 hidden NPC enforcement tests:** expand tests proving hidden/fog-hidden NPC details never leak.
 9. **PR 9 e2e/manual QA coverage:** add browser/manual automation coverage for reconnect and multiplayer drift.
@@ -325,3 +333,150 @@ other payload details.
 - This PR does not implement fog/wall/door LOS revision coupling (future PR
   per section 8, item 6/7) — manual fog behavior and revisions are
   unchanged.
+
+## 10. PR 6 — Fog visibility revision hardening
+
+This PR formalizes the manual fog revision/source contract and consolidates
+client fog application behind one entry point. It does **not** add wall/door
+LOS, does not rebuild the map renderer, and does not change manual fog tools
+(paint/reveal/hide/toggle) themselves — those are unchanged and remain
+DM-only.
+
+### Fog revision model
+
+- Each map context's fog entry in `session.fog_maps[ctx]` keeps its own
+  monotonic `revision`, bumped by exactly 1 on every toggle (`handle_fog_toggle`)
+  or paint (`handle_fog_paint`) for that context only. Other contexts'
+  revisions/cells are untouched (see "World/local separation" below).
+- Every fog payload (`fog_state`, `fog_update`, the `local_map_enter` /
+  `local_map_exit` fog snapshot, and the `authoritative_snapshot` fog block)
+  now also carries `visibility_revision` (the session-wide counter) and
+  `map_mode` (`"world"` or `"local"`) alongside the per-context `revision`, so
+  a client can tell at a glance whether a fog change is expected to also
+  affect token/combat visibility.
+- A new `source` field is stamped on every fog payload, using the enum
+  `state_sync | authoritative_snapshot | fog_state | fog_update |
+  local_map_enter | local_map_exit | reconnect`. The reconnect snapshot
+  (`source="ws_connect"` passed into `to_authoritative_snapshot_for_role`)
+  reports `fog.source = "reconnect"`; any other snapshot source (e.g.
+  `request_state`, `"manual"`) reports `"authoritative_snapshot"`.
+- `session.visibility_revision` is bumped whenever a fog change can affect
+  token/combat visibility. This was already wired before this PR:
+  `handle_fog_toggle`/`handle_fog_paint` call `_broadcast_token_state_sync`,
+  which calls `bump_visibility_revision(session)` internally — this PR makes
+  the before/after value visible in `[live_state]` debug logs and exposes the
+  current value on every fog payload.
+
+### Snapshot fog block (`authoritative_snapshot.payload.fog`)
+
+In addition to the pre-existing `map_context`, `revision`,
+`visibility_revision`, `enabled`, and `summary.{cols,rows}` fields, the fog
+block now reports:
+
+- `source` — `"reconnect"` or `"authoritative_snapshot"` (see above).
+- `explored.revealed_cells` / `explored.total_cells` — a manual-fog reveal
+  count/summary, safe to send to any role (counts only, never raw cell data).
+- `currently_visible` / `unseen` — explicit `null` placeholders. The app only
+  implements explored/revealed manual fog today; these fields exist so
+  clients have a stable place to read wall/door LOS-derived visibility once
+  PR 7 lands, without mistaking an absent field for "nothing is visible."
+- `visibility_source: "manual_fog"` — names which visibility model produced
+  this block (the only model that exists right now).
+- `wall_revision` / `door_revision` — `0` placeholders for PR 7.
+
+The fog block is always resolved from the snapshot's own map context (the
+viewing user's current world/local context), so it can never report a
+different map's fog as "current" — this was already true before this PR
+(`fog_entry = fog_maps.get(map_ctx) or fog_maps.get("world")`) and is covered
+by `test_authoritative_snapshot_fog_block_matches_current_map_context_not_other_map`.
+
+Note: the snapshot's fog block carries no cell data (`fog_cells`) — it is a
+compact summary only. Full fog cell data still arrives via the legacy
+`state_sync` (`fog_maps`) sent immediately before the snapshot on connect, or
+via `fog_state`/`fog_update`/`local_map_enter`/`local_map_exit` afterward.
+`debug.legacy_state_sync_also_sent: true` on the snapshot signals this.
+
+### World/local fog separation
+
+`session.fog_maps` is, and remains, a dict keyed by normalized map context —
+each context's `enabled`/`cols`/`rows`/`cells`/`revision` lives independently.
+This PR adds a regression test
+(`test_fog_toggle_bumps_only_target_context_revision`) proving that toggling
+the local map's fog does not touch the world map's revision or cells, and
+vice versa. Non-DM `to_state_dict_for_role` snapshots already filter
+`fog_maps` down to `visible_map_contexts_for_user(user_id)`, so a player never
+receives another subgroup's local fog at all.
+
+### Client: single fog apply path
+
+`window.AppFog.applyAuthoritativeFogState(state, env, payload, source)`
+(`client/static/js/render/fog.js`) is now the one entry point for every fog
+payload shape:
+
+- Full state (`fog_maps` dict, or a single-context `fog_cells` string) is
+  delegated to the existing `fogApplyState`.
+- Sparse updates (`cells` array + `reveal`) are delegated to the existing
+  `fogApplyUpdate`.
+- Compact summary-only payloads (the `authoritative_snapshot` fog block, which
+  has no cell data) only advance per-context revision/visibility_revision
+  bookkeeping in `state.fogRevisionByContext[ctx]` — they never touch
+  `fogMaps`/render state.
+
+All payloads route through a per-context revision guard before being applied:
+a fog or snapshot payload whose `revision` is lower than the last one recorded
+for that map context is logged and ignored (`fog ignored stale ... revision`);
+same-revision payloads are idempotent; missing/zero revision is treated as a
+legacy payload and applied without the stale check (with a debug warning).
+This guard is keyed per map context, so a stale local-map fog payload cannot
+roll back a newer world-map fog state, and vice versa.
+
+`client/templates/play.html` exposes a thin global wrapper,
+`applyAuthoritativeFogState(p, source)`, used by every call site: the
+`state_sync`, `fog_state`, `fog_update`, `local_map_enter`, and
+`local_map_exit` message handlers, and (new in this PR)
+`handleAuthoritativeSnapshot()`, which previously parsed the snapshot's fog
+block only for a debug log and never applied it.
+
+Debug logs (gated by `window.__LIVE_DEBUG__`/`liveDebugLog`) for every fog
+apply/ignore decision include: `source`, incoming/local fog `revision`,
+incoming/local `visibility_revision`, `map_ctx`, and whether the payload was
+applied or ignored and why (`stale_snapshot_revision`, `bookkeeping_only`,
+`sparse_update`, `full_state`, or `legacy_fallback`).
+
+### Hidden/fog-hidden token safety
+
+Unchanged by this PR, and covered by existing tests
+(`test_hidden_npc_excluded_from_player_reconnect_snapshot`,
+`test_npc_touching_unrevealed_fog_excluded_from_player_reconnect_snapshot`,
+PR 4's `_suppressedHiddenTokenIds` stale-event guard): hidden/fog-hidden NPCs
+are excluded from non-DM snapshots and stay excluded across stale token
+events. This PR adds
+`test_fog_toggle_hiding_npc_bumps_visibility_revision`, proving a fog paint
+that hides a previously-visible NPC bumps `session.visibility_revision` so
+the token/combat resync this triggers (`_broadcast_token_state_sync` +
+`run_combat_fog_sync`, both already called from `handle_fog_toggle`/
+`handle_fog_paint`) is provably wired end-to-end, not just structurally
+present.
+
+### Tests added
+
+- `tests/test_fog_visibility_revision_hardening.py` — fog payload `source`/
+  `visibility_revision`/`map_mode` fields, world/local revision isolation,
+  snapshot fog-block map-context correctness, snapshot `source` derivation,
+  LOS placeholder shape, and the visibility_revision-bump-on-hide check.
+- Updated `tests/test_fog_sync.py`, `tests/test_fog_ui_sticky.py`, and
+  `tests/test_ws_reconnect_regression.py` literal-string regression checks to
+  match the new `applyAuthoritativeFogState(...)` call sites (the underlying
+  behavior they guard — stale-entry promotion, map-context-keyed apply,
+  fog-before-combat ordering — is unchanged; only the function name calling
+  into it changed).
+
+### Remaining risks / out of scope
+
+- No wall/door LOS, no `currently_visible`/`unseen` computation — those stay
+  `null` placeholders for PR 7.
+- The client revision guard is bookkeeping-only for snapshot-sourced payloads;
+  it cannot detect a stale snapshot whose `revision` matches the local one but
+  whose `enabled` flag disagrees (extremely unlikely in practice, since both
+  values are bumped together server-side, but worth knowing if PR 7 adds a
+  second visibility source that could disagree with manual fog independently).

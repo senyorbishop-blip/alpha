@@ -435,9 +435,14 @@ def test_client_fog_update_promotes_stale_entry_to_enabled():
     module_src = open("client/static/js/render/fog.js", encoding="utf-8").read()
     play_src = open("client/templates/play.html", encoding="utf-8").read()
 
+    # PR 6: fog_update/local_map_enter/local_map_exit are unified behind the
+    # single applyAuthoritativeFogState() entry point, which still delegates
+    # sparse updates to fogApplyUpdate() in fog.js (the stale-entry promotion
+    # logic itself).
     assert "entry.enabled = true;" in module_src
-    assert "entry.enabled = true;" in play_src
-    assert "if (p.map_ctx !== undefined) fogApplyState(p);" in play_src
+    assert "function applyAuthoritativeFogState(" in play_src
+    assert "applyAuthoritativeFogState(p, 'fog_update')" in play_src
+    assert "if (p.map_ctx !== undefined) applyAuthoritativeFogState(p, 'local_map_enter');" in play_src
 
 
 def test_map_grid_resize_rescales_tokens_props_and_syncs(monkeypatch):

@@ -12081,6 +12081,13 @@ function handleAuthoritativeSnapshot(payload) {
       inventory: inventoryBlock,
     }, 'authoritative_snapshot');
   }
+  if (valid && fogBlock.map_context !== undefined) {
+    // The snapshot's fog block carries no cell data (it's a compact summary),
+    // so this only advances per-context revision bookkeeping. Full cell data
+    // still arrives via the legacy state_sync fog_maps sent just before this
+    // snapshot (see debug.legacy_state_sync_also_sent on the server side).
+    applyAuthoritativeFogState(fogBlock, 'authoritative_snapshot');
+  }
   return valid;
 }
 window.handleAuthoritativeSnapshot = handleAuthoritativeSnapshot;
@@ -32951,9 +32958,9 @@ function handleLegacyMessage(msg) {
         setTimeout(() => showToast(`${crossScenePlayerTokenCount} token${crossScenePlayerTokenCount>1?'s':''} in staging from other maps`), 800);
       }
 
-      // Apply fog state (per-map — fogApplyState reads fog_maps)
+      // Apply fog state (per-map — applyAuthoritativeFogState reads fog_maps)
       if (p.fog_maps !== undefined) {
-        fogApplyState(p);
+        applyAuthoritativeFogState(p, 'state_sync');
       }
       // Re-apply current-map fog after nav/state settle so partial reveals render
       // without requiring a manual browser refresh on reconnect.
@@ -34006,42 +34013,14 @@ function handleLegacyMessage(msg) {
     }
     case 'fog_state': {
       liveDebugLog('fog_state applied', buildClientLiveStateSummary('fog_state', p));
-      fogApplyState(p);
+      applyAuthoritativeFogState(p, 'fog_state');
       drawFrame();
       break;
     }
     case 'fog_update': {
       liveDebugLog('fog_update applied', buildClientLiveStateSummary('fog_update', p, { cells: Array.isArray(p.cells) ? p.cells.length : 0 }));
-      if (window.AppFog && typeof window.AppFog.fogApplyUpdate === 'function') {
-        const state = __createFogModuleState();
-        window.AppFog.fogApplyUpdate(state, __createFogModuleEnv(), p);
-        __applyFogModuleState(state);
-        drawFrame();
-      } else {
-        const updCtx = p.map_ctx || 'world';
-        const val = p.reveal ? 1 : 0;
-        if (!fogMaps[updCtx]) {
-          fogMaps[updCtx] = { enabled: true, cols: 64, rows: 64, cells: new Uint8Array(64*64) };
-        }
-        const entry = fogMaps[updCtx];
-        // Sparse fog updates imply server-side manual fog is enabled; promote
-        // stale/disabled local entries so players do not need a refresh after
-        // missing an earlier fog_state during navigation.
-        entry.enabled = true;
-        if (!entry.cells || !(entry.cells instanceof Uint8Array)) {
-          entry.cells = new Uint8Array((entry.cols||64) * (entry.rows||64));
-        }
-        (p.cells || []).forEach(idx => {
-          if (idx >= 0 && idx < entry.cells.length) entry.cells[idx] = val;
-        });
-        const activeFogCtx = _getCurrentMapContext();
-        if (updCtx === activeFogCtx) {
-          setFogMapContext(activeFogCtx);
-          fogLoadMap(fogMapCtx);
-          invalidateFogCache();
-          drawFrame();
-        }
-      }
+      applyAuthoritativeFogState(p, 'fog_update');
+      drawFrame();
       break;
     }
     case 'token_deleted': {
@@ -34130,7 +34109,7 @@ function handleLegacyMessage(msg) {
       if (!applyAuthoritativeMapContext({ ...p, map_mode: 'local' }, 'local_map_enter')) break;
       if (p.dm_map_context) _dmMapContext = p.dm_map_context;
       __syncMapShellState();
-      if (p.map_ctx !== undefined) fogApplyState(p);
+      if (p.map_ctx !== undefined) applyAuthoritativeFogState(p, 'local_map_enter');
       handleLocalMapEnter(p);
       if (p.token_state_revision !== undefined || p.tokens !== undefined) {
         applyAuthoritativeTokenSnapshot({ tokens: p.tokens || {}, token_state_revision: p.token_state_revision }, 'local_map_enter');
@@ -34147,7 +34126,7 @@ function handleLegacyMessage(msg) {
       if (!applyAuthoritativeMapContext({ ...p, map_mode: 'world' }, 'local_map_exit')) break;
       if (p.dm_map_context !== undefined) _dmMapContext = p.dm_map_context;
       __syncMapShellState();
-      if (p.map_ctx !== undefined) fogApplyState(p);
+      if (p.map_ctx !== undefined) applyAuthoritativeFogState(p, 'local_map_exit');
       handleLocalMapExit(p);
       if (p.token_state_revision !== undefined || p.tokens !== undefined) {
         applyAuthoritativeTokenSnapshot({ tokens: p.tokens || {}, token_state_revision: p.token_state_revision }, 'local_map_exit');
@@ -44858,6 +44837,7 @@ function __createFogModuleState() {
     lastFogUpdateRevision: window.__lastFogUpdateRevision || 0,
     lastFogPayloadMapContext: window.__lastFogPayloadMapContext || '',
     lastFogNotDrawingReason: window.__lastFogNotDrawingReason || '',
+    fogRevisionByContext: window.__fogRevisionByContext || {},
   };
 }
 
@@ -44882,6 +44862,7 @@ function __applyFogModuleState(state) {
   window.__lastFogUpdateRevision = state.lastFogUpdateRevision || window.__lastFogUpdateRevision || 0;
   window.__lastFogPayloadMapContext = state.lastFogPayloadMapContext || window.__lastFogPayloadMapContext || '';
   window.__lastFogNotDrawingReason = state.lastFogNotDrawingReason || '';
+  window.__fogRevisionByContext = state.fogRevisionByContext || window.__fogRevisionByContext || {};
   _syncFogShellState();
 }
 
@@ -45606,6 +45587,24 @@ function fogApplyState(p) {
   // Load (or reload) fog for current map
   fogLoadMap(ctx);
   requestRenderFrame('fog state render');
+}
+
+// Single fog apply path for every payload shape: legacy state_sync fog block,
+// authoritative_snapshot v2's compact fog summary, full fog_state, sparse
+// fog_update, and local_map_enter/local_map_exit fog snapshots. Routes
+// through window.AppFog.applyAuthoritativeFogState (the per-map-context
+// revision/visibility_revision guard lives there) so every call site gets
+// identical stale/duplicate handling instead of reimplementing the checks.
+function applyAuthoritativeFogState(p, source) {
+  if (window.AppFog && typeof window.AppFog.applyAuthoritativeFogState === 'function') {
+    const state = __createFogModuleState();
+    const result = window.AppFog.applyAuthoritativeFogState(state, __createFogModuleEnv(), p || {}, source);
+    __applyFogModuleState(state);
+    return result;
+  }
+  // No module loaded — fall back to the legacy apply path so fog never silently no-ops.
+  fogApplyState(p || {});
+  return { applied: true, reason: 'legacy_fallback' };
 }
 
 

@@ -59,7 +59,11 @@ def test_fog_update_applies_payload_by_map_ctx_without_stale_current_poi_assumpt
     assert "function fogApplyUpdate(state, env, p) {" in fog_src
     assert "const updCtx = _normalizeMapCtx(_payloadMapCtx(p, env), env);" in fog_src
     assert "const activeCtx = fogCurrentCtx(env);" in fog_src
-    assert "window.AppFog.fogApplyUpdate(state, __createFogModuleEnv(), p);" in play_src
+    # PR 6: fog_update is now routed through the single applyAuthoritativeFogState()
+    # entry point, which delegates to window.AppFog.applyAuthoritativeFogState ->
+    # fogApplyUpdate internally (see fog.js) instead of play.html calling
+    # fogApplyUpdate directly.
+    assert "applyAuthoritativeFogState(p, 'fog_update');" in play_src
     assert "const activeFogCtx = _getCurrentMapContext();" in play_src
 
 
