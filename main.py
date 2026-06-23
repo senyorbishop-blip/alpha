@@ -698,6 +698,11 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
         "type": "state_sync",
         "payload": state
     })
+    await manager.send_to(
+        session_id,
+        user_id,
+        session.to_authoritative_snapshot_for_role(user.role, user_id, source="ws_connect"),
+    )
 
     # Send item library sync with SRD items included
     try:

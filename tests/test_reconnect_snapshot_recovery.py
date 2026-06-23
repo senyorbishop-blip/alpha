@@ -26,6 +26,10 @@ ROOT = Path(__file__).resolve().parents[1]
 PLAY = ROOT / "client/templates/play.html"
 
 
+def _first_message(sent, message_type):
+    return next(message for _sid, _uid, message in sent if message.get("type") == message_type)
+
+
 def _fog_entry(*, enabled=True, cols=4, rows=4, revealed_cells=()):
     total = cols * rows
     cells = ["0"] * total
@@ -95,10 +99,11 @@ async def test_player_request_state_filters_tokens_by_visibility(monkeypatch):
     monkeypatch.setattr(content_handlers.manager, "send_to", _capture_send_to)
     await content_handlers.handle_request_state({}, session, player)
 
-    assert len(sent) == 1
+    assert len(sent) == 2
     _, uid, msg = sent[0]
     assert uid == player.id
     assert msg["type"] == "state_sync"
+    assert sent[1][2]["type"] == "authoritative_snapshot"
     token_ids = set(msg["payload"]["tokens"].keys())
     assert "tok-pc" in token_ids
     assert "tok-visible-npc" in token_ids
@@ -115,7 +120,7 @@ async def test_hidden_npc_excluded_from_player_reconnect_snapshot(monkeypatch):
     monkeypatch.setattr(content_handlers.manager, "send_to", _capture_send_to)
     await content_handlers.handle_request_state({}, session, player)
 
-    payload = sent[0][2]["payload"]
+    payload = _first_message(sent, "state_sync")["payload"]
     assert "tok-hidden-npc" not in payload["tokens"]
 
 
@@ -131,7 +136,7 @@ async def test_npc_touching_unrevealed_fog_excluded_from_player_reconnect_snapsh
     monkeypatch.setattr(content_handlers.manager, "send_to", _capture_send_to)
     await content_handlers.handle_request_state({}, session, player)
 
-    payload = sent[0][2]["payload"]
+    payload = _first_message(sent, "state_sync")["payload"]
     assert fog_npc.id not in payload["tokens"]
 
 
@@ -147,7 +152,7 @@ async def test_dm_request_state_receives_full_token_state(monkeypatch):
     monkeypatch.setattr(content_handlers.manager, "send_to", _capture_send_to)
     await content_handlers.handle_request_state({}, session, dm)
 
-    payload = sent[0][2]["payload"]
+    payload = _first_message(sent, "state_sync")["payload"]
     token_ids = set(payload["tokens"].keys())
     assert "tok-hidden-npc" in token_ids
     assert fog_npc.id in token_ids
@@ -165,7 +170,7 @@ async def test_player_reconnect_receives_current_fog_state(monkeypatch):
     monkeypatch.setattr(content_handlers.manager, "send_to", _capture_send_to)
     await content_handlers.handle_request_state({}, session, player)
 
-    payload = sent[0][2]["payload"]
+    payload = _first_message(sent, "state_sync")["payload"]
     assert "world" in payload["fog_maps"]
     assert payload["fog_maps"]["world"]["cells"] == session.fog_maps["world"]["cells"]
 
@@ -181,7 +186,7 @@ async def test_viewer_receives_viewer_safe_state_only(monkeypatch):
     monkeypatch.setattr(content_handlers.manager, "send_to", _capture_send_to)
     await content_handlers.handle_request_state({}, session, viewer)
 
-    payload = sent[0][2]["payload"]
+    payload = _first_message(sent, "state_sync")["payload"]
     # Viewers never get DM-only fields.
     assert "dm_notes" not in payload
     assert payload.get("player_inventory") == []
@@ -202,7 +207,7 @@ async def test_state_sync_snapshot_includes_revision_counters(monkeypatch):
     monkeypatch.setattr(content_handlers.manager, "send_to", _capture_send_to)
     await content_handlers.handle_request_state({}, session, dm)
 
-    payload = sent[0][2]["payload"]
+    payload = _first_message(sent, "state_sync")["payload"]
     assert payload["visibility_revision"] == 7
     assert payload["map_nav_version"] == 3
 
@@ -243,8 +248,8 @@ async def test_request_state_recovery_is_per_user_not_broadcast(monkeypatch):
     await content_handlers.handle_request_state({}, session, player)
 
     assert not broadcast_calls
-    assert len(sent) == 1
-    assert sent[0][1] == player.id
+    assert len(sent) == 2
+    assert all(row[1] == player.id for row in sent)
 
 
 @pytest.mark.anyio
@@ -268,6 +273,68 @@ def test_play_html_state_sync_baselines_visibility_revision_gate():
     assert "syncVisibilityRevision" in handler
     assert "p.visibility_revision" in handler
     assert "_lastVisibilityRevisionByStream[stream] = syncVisibilityRevision" in handler
+
+
+def test_authoritative_snapshot_dm_shape_includes_revisions_and_summaries():
+    session, dm, _player, _viewer = _build_session()
+    session.visibility_revision = 8
+    session.inventory_revision = 5
+    session.map_nav_version = 3
+    session.fog_maps["world"]["revision"] = 4
+    session.combat = {"active": True, "revision": 6, "turn": 0, "combatants": []}
+
+    msg = session.to_authoritative_snapshot_for_role(dm.role, dm.id, source="manual")
+    payload = msg["payload"]
+
+    assert msg["type"] == "authoritative_snapshot"
+    assert payload["session"]["authority"]["is_dm"] is True
+    assert payload["tokens"]["count"] == len(session.tokens)
+    assert payload["tokens"]["visibility_revision"] == 8
+    assert payload["combat"]["active"] is True
+    assert payload["combat"]["revision"] == 6
+    assert payload["inventory"]["revision"] == 5
+    assert payload["map"]["map_nav_version"] == 3
+    assert payload["fog"]["revision"] == 4
+
+
+def test_authoritative_snapshot_player_excludes_hidden_payload_details():
+    session, _dm, player, _viewer = _build_session()
+    session.visibility_revision = 2
+    msg = session.to_authoritative_snapshot_for_role(player.role, player.id, source="manual")
+    payload = msg["payload"]
+
+    assert payload["session"]["resolved_role"] == "player"
+    assert payload["session"]["authority"]["can_see_hidden"] is False
+    assert "tok-hidden-npc" not in payload["tokens"]["items"]
+    assert payload["tokens"]["filter_summary"]["hidden_filtered"] >= 1
+    assert "Secret Boss" not in str(payload)
+
+
+def test_authoritative_snapshot_viewer_obeys_viewer_filtering_and_empty_state():
+    session, _dm, _player, viewer = _build_session()
+    session.combat = None
+    session.fog_maps = {}
+    session.player_inventories = {}
+
+    msg = session.to_authoritative_snapshot_for_role(viewer.role, viewer.id, source="manual")
+    payload = msg["payload"]
+
+    assert payload["session"]["resolved_role"] == "viewer"
+    assert payload["session"]["authority"]["is_viewer"] is True
+    assert payload["combat"]["active"] is False
+    assert payload["combat"]["revision"] == 0
+    assert payload["fog"]["revision"] == 0
+    assert payload["inventory"]["revision"] == 0
+    assert payload["character"]["active_profile_id"] == ""
+    assert "tok-hidden-npc" not in payload["tokens"]["items"]
+
+
+def test_play_html_authoritative_snapshot_handler_stores_debug_snapshot():
+    src = PLAY.read_text(encoding="utf-8")
+    assert "function handleAuthoritativeSnapshot(payload)" in src
+    assert "window.__lastAuthoritativeSnapshot = p" in src
+    assert "case 'authoritative_snapshot':" in src
+    assert "authoritative_snapshot received" in src
 
 
 def test_play_html_baseline_only_advances_never_regresses():

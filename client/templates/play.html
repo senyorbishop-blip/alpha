@@ -12019,6 +12019,43 @@ function buildClientLiveStateSummary(messageType, payload, extra) {
   }, extra || {});
 }
 window.buildClientLiveStateSummary = buildClientLiveStateSummary;
+function handleAuthoritativeSnapshot(payload) {
+  const p = payload && typeof payload === 'object' ? payload : {};
+  const sessionBlock = p.session && typeof p.session === 'object' ? p.session : {};
+  const mapBlock = p.map && typeof p.map === 'object' ? p.map : {};
+  const tokensBlock = p.tokens && typeof p.tokens === 'object' ? p.tokens : {};
+  const combatBlock = p.combat && typeof p.combat === 'object' ? p.combat : {};
+  const inventoryBlock = p.inventory && typeof p.inventory === 'object' ? p.inventory : {};
+  const characterBlock = p.character && typeof p.character === 'object' ? p.character : {};
+  const fogBlock = p.fog && typeof p.fog === 'object' ? p.fog : {};
+  const debugBlock = p.debug && typeof p.debug === 'object' ? p.debug : {};
+  const valid = Number.isFinite(Number(p.snapshot_revision || 0)) && !!sessionBlock.id && !!sessionBlock.resolved_role;
+  window.__lastAuthoritativeSnapshot = p;
+  window.__lastAuthoritativeSnapshotValid = valid;
+  liveDebugLog('authoritative_snapshot received', {
+    valid,
+    source: String(debugBlock.source || ''),
+    session_id: String(sessionBlock.id || ''),
+    resolved_role: String(sessionBlock.resolved_role || ''),
+    map_context: String(mapBlock.context || ''),
+    token_count: Number(tokensBlock.count || 0),
+    combat_active: !!combatBlock.active,
+    combat_revision: Number(combatBlock.revision || 0),
+    visibility_revision: Number(tokensBlock.visibility_revision || fogBlock.visibility_revision || 0),
+    inventory_revision: Number(inventoryBlock.revision || 0),
+    active_profile_id: String(characterBlock.active_profile_id || ''),
+    fog_revision: Number(fogBlock.revision || 0),
+    matches_legacy: {
+      role: String(sessionBlock.resolved_role || '').toLowerCase() === String(window._serverResolvedRole || window.ROLE || ROLE || '').toLowerCase(),
+      map_context: !mapBlock.context || String(mapBlock.context) === String(typeof _getCurrentMapContext === 'function' ? _getCurrentMapContext() : ''),
+      token_count: Number(tokensBlock.count || 0) === Object.keys(window.tokens || tokens || {}).length,
+      combat_revision: Number(combatBlock.revision || 0) === Number((window._combat || window.combat || {}).revision || 0),
+      active_profile_id: !characterBlock.active_profile_id || String(characterBlock.active_profile_id) === String((typeof resolveActiveCharProfileId === 'function' && resolveActiveCharProfileId()) || window._activeCharProfileId || ''),
+    },
+  });
+  return valid;
+}
+window.handleAuthoritativeSnapshot = handleAuthoritativeSnapshot;
 
 // Combat state (declared early to avoid TDZ errors in drawToken / canMoveToken)
 let _combat = { active: false, turn: 0, combatants: [], movement: null, selected_target_id: '', pending_attack: null, suspended_combatants: [] };
@@ -32508,6 +32545,11 @@ function handleLegacyMessage(msg) {
   }
   const p = msg.payload || {};
   switch (msg.type) {
+
+    case 'authoritative_snapshot': {
+      handleAuthoritativeSnapshot(p);
+      break;
+    }
 
     case 'state_sync': {
       if (window.__PLAY_BOOT_ROLE === 'player' && typeof window.__playerBootCheckpoint === 'function') window.__playerBootCheckpoint('PLAYER_BOOT_STATE_SYNC_APPLIED');
