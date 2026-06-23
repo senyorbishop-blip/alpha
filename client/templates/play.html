@@ -12053,6 +12053,10 @@ function handleAuthoritativeSnapshot(payload) {
       active_profile_id: !characterBlock.active_profile_id || String(characterBlock.active_profile_id) === String((typeof resolveActiveCharProfileId === 'function' && resolveActiveCharProfileId()) || window._activeCharProfileId || ''),
     },
   });
+  if (combatBlock && typeof combatBlock === 'object') {
+    const authoritativeCombat = (combatBlock.state && typeof combatBlock.state === 'object') ? combatBlock.state : combatBlock;
+    applyAuthoritativeCombatState(authoritativeCombat, 'authoritative_snapshot');
+  }
   return valid;
 }
 window.handleAuthoritativeSnapshot = handleAuthoritativeSnapshot;
@@ -45751,21 +45755,31 @@ function combatApplyState(state, source) {
   if (typeof _combatInitiativeResyncTimer !== 'undefined' && _combatInitiativeResyncTimer) { clearTimeout(_combatInitiativeResyncTimer); _combatInitiativeResyncTimer = null; }
   const incomingRevision = Number.isFinite(Number(state.revision)) ? Number(state.revision) : null;
   const localRevision = Number.isFinite(Number(_combat.revision)) ? Number(_combat.revision) : null;
+  const incomingActive = state.active === undefined ? null : !!state.active;
+  const incomingVisibilityRevision = Number.isFinite(Number(state.visibility_revision)) ? Number(state.visibility_revision) : null;
   const incomingSignature = _combatInitiativeSignature(state);
   const localSignature = _combatInitiativeSignature(_combat);
-  if (incomingRevision !== null && localRevision !== null && incomingRevision < localRevision && incomingSignature === localSignature) {
+  if (incomingRevision === null) {
+    console.warn('[combatApplyState] legacy combat payload missing revision', { source: _applySource, active: incomingActive, currentRevision: localRevision });
+  }
+  if (incomingRevision !== null && localRevision !== null && incomingRevision < localRevision) {
     console.debug(`[combatApplyState] applied=false reason=stale revision=${incomingRevision} local=${localRevision}`);
     _combatDebug.lastIgnoredSource = _applySource;
     _combatDebug.lastIgnoredReason = `stale-revision incoming=${incomingRevision} local=${localRevision}`;
+    return false;
+  }
+  if (incomingRevision !== null && localRevision !== null && incomingRevision === localRevision && incomingActive === false && _combat.active && incomingSignature !== localSignature) {
+    console.warn('[combatApplyState] ignored same-revision inactive/default combat over active state', { source: _applySource, revision: incomingRevision });
+    _combatDebug.lastIgnoredSource = _applySource;
+    _combatDebug.lastIgnoredReason = `same-revision-inactive-over-active revision=${incomingRevision}`;
     return false;
   }
   if (incomingRevision === null) applyReason = 'missing-incoming-revision';
   else if (localRevision === null) applyReason = 'missing-local-revision';
   else if (incomingRevision > localRevision) applyReason = 'newer-revision';
   else if (incomingRevision === localRevision && incomingSignature !== localSignature) applyReason = 'equal-revision-changed-initiative';
-  else if (incomingRevision < localRevision && incomingSignature !== localSignature) applyReason = 'lower-revision-changed-initiative';
-  if (incomingRevision !== null && localRevision !== null && incomingRevision <= localRevision && incomingSignature !== localSignature) {
-    console.warn('[combat initiative sync] applying equal/lower revision combat_state because initiative/order changed', { incomingRevision, localRevision });
+  if (incomingRevision !== null && localRevision !== null && incomingRevision === localRevision && incomingSignature !== localSignature) {
+    console.warn('[combat initiative sync] applying equal revision combat_state because initiative/order changed', { incomingRevision, localRevision });
   }
   const beforeOrder = Array.isArray(_combat?.combatants) ? _combat.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : [];
   console.debug('[combatApplyState] before', { revision: localRevision, order: beforeOrder, turn: _combat?.turn });
@@ -45820,6 +45834,10 @@ function combatApplyState(state, source) {
   console.debug('[combatApplyState] after', { revision: _combat.revision, order: afterOrder, turn: _combat.turn, reason: applyReason });
   console.debug(`[combatApplyState] applied=true reason=${applyReason}`);
   _combatDebug.lastAppliedSource = _applySource;
+  _combatDebug.lastAppliedRevision = _combat.revision;
+  _combatDebug.lastAppliedActive = !!_combat.active;
+  _combatDebug.lastVisibilityRevision = incomingVisibilityRevision;
+  if (_combat.active && incomingRevision !== null) _combatDebug.sawAuthoritativeActiveRevision = true;
   _combatDebug.lastRenderTime = (typeof Date !== 'undefined' && Date.now) ? Date.now() : null;
   forceCombatStateUISync();
   if (_combat.active && (_combat.turn !== prevTurn || !prevActive)) {
@@ -45872,6 +45890,11 @@ var _combatDebug = (typeof _combatDebug !== 'undefined' && _combatDebug) ? _comb
   lastIgnoredSource: null,
   lastIgnoredReason: null,
   lastRenderTime: null,
+  lastAppliedRevision: null,
+  lastAppliedActive: false,
+  lastVisibilityRevision: null,
+  sawAuthoritativeActiveRevision: false,
+  blockedStartFallback: false,
 };
 
 function applyAuthoritativeCombatState(payload, source) {
@@ -45903,6 +45926,11 @@ window.__debugCombat = function () {
     lastIgnoredSource: _combatDebug.lastIgnoredSource,
     lastIgnoredReason: _combatDebug.lastIgnoredReason,
     lastRenderTime: _combatDebug.lastRenderTime,
+    lastAppliedActive: _combatDebug.lastAppliedActive,
+    lastAppliedRevision: _combatDebug.lastAppliedRevision,
+    lastVisibilityRevision: _combatDebug.lastVisibilityRevision,
+    sawAuthoritativeActiveRevision: _combatDebug.sawAuthoritativeActiveRevision,
+    blockedStartFallback: _combatDebug.blockedStartFallback,
     role: (typeof ROLE !== 'undefined') ? ROLE : null,
   };
 };
@@ -48084,7 +48112,23 @@ function renderCombat() {
   if (!list) return;
 
   const coms    = _combat.combatants || [];
-  const isActive = _combat.active;
+  let isActive = !!_combat.active;
+  const authoritativeActiveKnown = !!(_combatDebug && _combatDebug.sawAuthoritativeActiveRevision && _combatDebug.lastAppliedActive);
+  if (!isActive && authoritativeActiveKnown) {
+    console.warn('[combat render] blocked START COMBAT fallback while authoritative active combat is known', {
+      revision: _combatDebug.lastAppliedRevision,
+      source: _combatDebug.lastAppliedSource,
+      role: (typeof ROLE !== 'undefined') ? ROLE : null,
+    });
+    liveDebugLog('combat render blocked start fallback', {
+      revision: _combatDebug.lastAppliedRevision,
+      source: _combatDebug.lastAppliedSource,
+      role: (typeof ROLE !== 'undefined') ? ROLE : null,
+    });
+    _combatDebug.blockedStartFallback = true;
+    isActive = true;
+    _combat.active = true;
+  }
 
   // Show/hide DM sections
   if (pre)      pre.style.display      = (ROLE === 'dm' && !isActive) ? 'flex' : 'none';
