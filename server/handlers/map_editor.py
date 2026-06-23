@@ -17,6 +17,7 @@ from server.handlers.common import (
     normalize_map_settings,
     _broadcast_token_state_sync,
     _refresh_map_documents,
+    build_live_state_debug_summary,
 )
 from server.handlers.combat import run_combat_fog_sync
 
@@ -1098,16 +1099,18 @@ async def handle_fog_toggle(payload: dict, session: Session, user: User):
     if entry['enabled'] and len(entry.get('cells', '')) != total:
         entry['cells'] = '0' * total
     session.fog_maps[map_ctx] = entry
+    fog_payload = {
+        'map_ctx': map_ctx,
+        'fog_enabled': entry['enabled'],
+        'fog_cols': entry['cols'],
+        'fog_rows': entry['rows'],
+        'fog_cells': entry['cells'],
+        'revision': entry.get('revision', 0),
+    }
+    logger.info("[live_state] fog_state map_ctx=%s revision=%s summary=%s", map_ctx, entry.get('revision', 0), build_live_state_debug_summary(session, getattr(user, 'id', ''), getattr(user, 'role', 'unknown'), {'dm_map_context': map_ctx, 'fog_maps': {map_ctx: entry}}))
     await _broadcast_fog_to_visible_users(session, {
         'type': 'fog_state',
-        'payload': {
-            'map_ctx': map_ctx,
-            'fog_enabled': entry['enabled'],
-            'fog_cols': entry['cols'],
-            'fog_rows': entry['rows'],
-            'fog_cells': entry['cells'],
-                'revision': entry.get('revision', 0),
-        }
+        'payload': fog_payload
     }, map_ctx)
     # Fog toggling can immediately change which NPC/monster tokens players
     # are allowed to see, not just the combat tracker — resync the
@@ -1143,16 +1146,18 @@ async def handle_fog_paint(payload: dict, session: Session, user: User):
     entry['map_context'] = map_ctx
     entry['revision'] = int(entry.get('revision') or 0) + 1
     entry['updated_at'] = time.time()
+    fog_payload = {
+        'map_ctx': map_ctx,
+        'reveal': reveal,
+        'cells': cells,
+        'fog_cols': entry.get('cols', 64),
+        'fog_rows': entry.get('rows', 64),
+        'revision': entry.get('revision', 0),
+    }
+    logger.info("[live_state] fog_update map_ctx=%s revision=%s cells=%s summary=%s", map_ctx, entry.get('revision', 0), len(cells or []), build_live_state_debug_summary(session, getattr(user, 'id', ''), getattr(user, 'role', 'unknown'), {'dm_map_context': map_ctx, 'fog_maps': {map_ctx: entry}}))
     await _broadcast_fog_to_visible_users(session, {
         'type': 'fog_update',
-        'payload': {
-            'map_ctx': map_ctx,
-            'reveal': reveal,
-            'cells': cells,
-                'fog_cols': entry.get('cols', 64),
-                'fog_rows': entry.get('rows', 64),
-                'revision': entry.get('revision', 0),
-        }
+        'payload': fog_payload
     }, map_ctx)
     # Painting fog can immediately reveal/hide NPC and monster tokens whose
     # footprint now touches the changed cells — resync the authoritative

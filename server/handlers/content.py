@@ -4,6 +4,9 @@ server/handlers/content.py — Journal, library, character profiles, chat, and s
 import asyncio
 import time
 import secrets
+import logging
+
+logger = logging.getLogger(__name__)
 from server.session import Session, User, normalize_profile_owner_key, set_assistant_dm_permissions, assistant_dm_has_scope, grant_temp_permission, ACTIVE_PROFILE_ID_KEY_LIMIT, set_player_gold_for_user, _inventory_owner_key
 from server.character.profile_sanitize import strip_runtime_fields
 from server.quest_library import (
@@ -38,6 +41,7 @@ from server.handlers.common import (
     save_campaign_async,
     _safe_int,
     _broadcast_token_state_sync,
+    build_live_state_debug_summary,
 )
 from server.handlers.inventory import (
     _update_encumbrance_cache,
@@ -596,6 +600,7 @@ async def handle_char_profile_select(payload: dict, session: Session, user: User
     else:
         active_map.pop(user.id, None)
     session.active_char_profiles = active_map
+    logger.info("[live_state] active_profile_update %s", build_live_state_debug_summary(session, user.id, user.role, {"active_profile_id": profile_id}))
     if selected_profile:
         _hydrate_active_profile_inventory_state(session, user, selected_profile)
     _update_encumbrance_cache(session, user.id)
@@ -926,6 +931,7 @@ async def handle_chat_message(payload: dict, session: Session, user: User):
 async def handle_request_state(payload: dict, session: Session, user: User):
     """Send full state snapshot to requesting user."""
     state = session.to_state_dict_for_role(user.role, user.id)
+    logger.info("[live_state] request_state reason=%s summary=%s", (payload or {}).get("reason"), build_live_state_debug_summary(session, user.id, user.role, state))
     await manager.send_to(session.id, user.id, {
         "type": "state_sync",
         "payload": state

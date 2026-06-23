@@ -98,6 +98,7 @@
         // never repeatedly during a reconnect storm.
         const sendInitialStateRequests = function () {
           if (global.AppWS && typeof global.AppWS.send === 'function') {
+            if (global.liveDebugLog) global.liveDebugLog('websocket open/request_state', { role: effectiveRole, reason: 'reconnect' });
             console.debug('[WS] requesting authoritative state_sync after open');
             if (global.__PLAY_BOOT_ROLE === 'player' && typeof global.__playerBootCheckpoint === 'function') global.__playerBootCheckpoint('PLAYER_BOOT_REQUEST_STATE_SENT');
             global.AppWS.send({ type: 'request_state', payload: { reason: 'reconnect' } });
@@ -116,6 +117,7 @@
             var _combatForResync = global._combat || global.combat || null;
             var _combatKnown = !!(_combatForResync && typeof _combatForResync === 'object' && Object.prototype.hasOwnProperty.call(_combatForResync, 'active'));
             if (!_combatKnown || _combatForResync.active) {
+              if (global.liveDebugLog) global.liveDebugLog('websocket open/combat_state_request', { role: effectiveRole, known: _combatKnown, active: !!(_combatForResync && _combatForResync.active) });
               console.debug('[WS] requesting authoritative combat_state after open', { known: _combatKnown, active: !!(_combatForResync && _combatForResync.active) });
               if (global.AppWS && typeof global.AppWS.send === 'function') global.AppWS.send({ type: 'combat_state_request', payload: {} });
               else if (typeof global.sendWS === 'function') global.sendWS({ type: 'combat_state_request', payload: {} });
@@ -130,6 +132,7 @@
         if (effectiveRole === 'dm' && typeof global.reapplyDmFogPreviewAfterReconnect === 'function') global.setTimeout(global.reapplyDmFogPreviewAfterReconnect, 0);
       },
       onClose: function (_event) {
+        if (global.liveDebugLog) global.liveDebugLog('websocket close/reconnect pending', { role: effectiveRole, code: _event && _event.code, reason: _event && _event.reason });
         const status = global.document.getElementById('ws-status');
         if (status) status.classList.remove('connected');
         if (typeof global._setWsStatus === 'function') global._setWsStatus('reconnecting');

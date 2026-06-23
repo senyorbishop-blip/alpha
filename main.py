@@ -31,6 +31,7 @@ from server.db import init_db, save_campaign_async, load_campaign, create_creatu
 from server.paths import DATA_DIR, DB_PATH, MAPS_DIR, BACKUPS_DIR, ensure_data_dirs, migrate_legacy_data, create_startup_backup
 from server.connections import manager
 from server.handlers import handle_message
+from server.handlers.common import build_live_state_debug_summary
 from server.auth.models import init_auth_db, merge_legacy_users_from_db
 from server.auth.dependencies import install_auth_runtime
 from server.auth.routes import router as auth_router
@@ -661,6 +662,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
             await websocket.close(code=4001, reason="Token identity does not match user_id")
             return
 
+    logger.info("[live_state] websocket_connect session_id=%s user_id=%s client_socket_id=%s reason=%s", session_id, user_id, client_socket_id, reason)
     session = get_session(session_id)
     # Auto-restore from DB if not in memory
     if not session:
@@ -668,6 +670,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
         db_data = await loop.run_in_executor(None, load_campaign, session_id)
         if db_data:
             session, _ = restore_session(db_data)
+            logger.info("[live_state] session_restore session_id=%s user_id=%s restored=%s", session_id, user_id, bool(session))
     if not session:
         await websocket.close(code=4004, reason="Session not found")
         return
@@ -690,6 +693,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
 
     # Send full state on connect (DM gets POI dm_notes, others don't)
     state = session.to_state_dict_for_role(user.role, user_id)
+    logger.info("[live_state] initial_state_sync %s", build_live_state_debug_summary(session, user_id, user.role, state))
     await manager.send_to(session_id, user_id, {
         "type": "state_sync",
         "payload": state
