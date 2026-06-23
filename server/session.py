@@ -817,6 +817,7 @@ class Session:
             "token_state_revision": int(self.token_state_revision or 0),
             "dm_nav_intent": int(self.dm_nav_intent or 0),
             "fog_maps": normalize_fog_maps(self.fog_maps),
+            "fog_source": "state_sync",
             "combat": combat_for_snapshot,
             "journal_entries": list(self.journal_entries or []),
             "party_memory_log": list(self.party_memory_log or []),
@@ -1223,6 +1224,7 @@ class Session:
             }
             d["scene_trigger_zones"] = {}
             d["fog_maps"] = {ctx: val for ctx, val in normalize_fog_maps(self.fog_maps).items() if normalize_map_context(ctx) in visible_contexts}
+            d["fog_source"] = "state_sync"
             d["split_party"] = self.split_party_state()
             d["user_subgroup_id"] = self.get_user_subgroup_id(user_id)
             d["subgroup_map_context"] = self.get_subgroup_map_context(d["user_subgroup_id"])
@@ -1509,10 +1511,28 @@ class Session:
                 "revision": int((fog_entry or {}).get("revision") or 0) if isinstance(fog_entry, dict) else 0,
                 "visibility_revision": int(state.get("visibility_revision") or 0),
                 "enabled": bool((fog_entry or {}).get("enabled")) if isinstance(fog_entry, dict) else False,
+                # PR 6: snapshot fog source mirrors the overall reconnect/manual-
+                # refresh distinction so clients can attribute a stale-fog debug
+                # log to "reconnect" specifically rather than a generic refresh.
+                "source": "reconnect" if str(source or "") == "ws_connect" else "authoritative_snapshot",
                 "summary": {
                     "cols": int((fog_entry or {}).get("cols") or 0) if isinstance(fog_entry, dict) else 0,
                     "rows": int((fog_entry or {}).get("rows") or 0) if isinstance(fog_entry, dict) else 0,
                 },
+                # Explored/revealed fog is the only model the app currently
+                # implements (manual DM paint). currently_visible/unseen are
+                # placeholders for the wall/door LOS work landing in PR 7 — they
+                # stay null until that visibility source exists so clients don't
+                # mistake an empty placeholder for "nothing is visible".
+                "explored": {
+                    "revealed_cells": str((fog_entry or {}).get("cells") or "").count("1") if isinstance(fog_entry, dict) else 0,
+                    "total_cells": (int((fog_entry or {}).get("cols") or 0) * int((fog_entry or {}).get("rows") or 0)) if isinstance(fog_entry, dict) else 0,
+                },
+                "currently_visible": None,
+                "unseen": None,
+                "visibility_source": "manual_fog",
+                "wall_revision": 0,
+                "door_revision": 0,
             },
             "debug": {
                 "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),

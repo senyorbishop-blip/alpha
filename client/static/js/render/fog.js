@@ -435,11 +435,67 @@
       else if (env && typeof env.drawFrame === 'function') env.drawFrame();
     }
   }
+  function _fogDebugLog(label, data, env) {
+    if (typeof window !== 'undefined' && typeof window.liveDebugLog === 'function') window.liveDebugLog(label, data);
+    _debugFogPlayer(label, data, env);
+  }
+  // Single entry point for every fog payload shape this app sends: the legacy
+  // state_sync fog block, the authoritative_snapshot v2 compact fog summary
+  // (no cell data — bookkeeping only), full fog_state, sparse fog_update, and
+  // local_map_enter/local_map_exit fog snapshots. Centralizing here means every
+  // caller gets the same per-context revision/visibility_revision guard and the
+  // same debug log shape instead of each call site reimplementing the checks.
+  function applyAuthoritativeFogState(state, env, payload, source) {
+    const p = payload && typeof payload === 'object' ? payload : {};
+    const src = String(source || p.source || 'unknown');
+    const mapCtx = _normalizeMapCtx(_payloadMapCtx(p, env), env);
+    if (!state.fogRevisionByContext) state.fogRevisionByContext = {};
+    const tracked = state.fogRevisionByContext[mapCtx] || { fogRevision: 0, visibilityRevision: 0 };
+    const incomingFogRevision = Number(p.revision) || 0;
+    const incomingVisibilityRevision = Number(p.visibility_revision) || 0;
+
+    const hasFullCells = typeof p.fog_cells === 'string' || !!p.fog_maps;
+    const hasSparseUpdate = Array.isArray(p.cells) && p.reveal !== undefined && !hasFullCells;
+
+    if (!hasFullCells && !hasSparseUpdate) {
+      // Compact snapshot-only fog block (authoritative_snapshot path): no cell
+      // data to apply, just advance the per-context revision bookkeeping so a
+      // later stale fog_state/fog_update can be correctly judged as stale.
+      if (incomingFogRevision && incomingFogRevision < tracked.fogRevision) {
+        _fogDebugLog('fog ignored stale snapshot revision', { source: src, map_ctx: mapCtx, incoming_revision: incomingFogRevision, local_revision: tracked.fogRevision }, env);
+        return { applied: false, reason: 'stale_snapshot_revision' };
+      }
+      tracked.fogRevision = Math.max(tracked.fogRevision, incomingFogRevision);
+      tracked.visibilityRevision = Math.max(tracked.visibilityRevision, incomingVisibilityRevision);
+      state.fogRevisionByContext[mapCtx] = tracked;
+      _fogDebugLog('fog snapshot bookkeeping applied', { source: src, map_ctx: mapCtx, fog_revision: tracked.fogRevision, visibility_revision: tracked.visibilityRevision, enabled: !!p.enabled }, env);
+      return { applied: true, reason: 'bookkeeping_only' };
+    }
+
+    if (hasSparseUpdate) {
+      if (!incomingFogRevision && !incomingVisibilityRevision) {
+        _fogDebugLog('fog_update missing revision info; applying as legacy fallback', { source: src, map_ctx: mapCtx }, env);
+      }
+      fogApplyUpdate(state, env, p);
+      tracked.fogRevision = Math.max(tracked.fogRevision, incomingFogRevision);
+      tracked.visibilityRevision = Math.max(tracked.visibilityRevision, incomingVisibilityRevision);
+      state.fogRevisionByContext[mapCtx] = tracked;
+      _fogDebugLog('fog_update applied via authoritative path', { source: src, map_ctx: mapCtx, fog_revision: tracked.fogRevision, visibility_revision: tracked.visibilityRevision }, env);
+      return { applied: true, reason: 'sparse_update' };
+    }
+
+    fogApplyState(state, env, p);
+    tracked.fogRevision = Math.max(tracked.fogRevision, incomingFogRevision);
+    tracked.visibilityRevision = Math.max(tracked.visibilityRevision, incomingVisibilityRevision);
+    state.fogRevisionByContext[mapCtx] = tracked;
+    _fogDebugLog('fog_state applied via authoritative path', { source: src, map_ctx: mapCtx, fog_revision: tracked.fogRevision, visibility_revision: tracked.visibilityRevision, enabled: !!p.fog_enabled }, env);
+    return { applied: true, reason: 'full_state' };
+  }
   function debugFog(state, env) {
     const cells = state.fogCells;
     let revealed = 0;
     if (cells) for (let i = 0; i < cells.length; i++) if (cells[i] === 1) revealed++;
     return { role: env && env.ROLE, activeMapContext: fogCurrentCtx(env), fogMapCtx: state.fogMapCtx, knownFogMapKeys: Object.keys(state.fogMaps || {}), fogEnabled: !!state.fogEnabled, fogCols: state.fogCols, fogRows: state.fogRows, hasFogCells: !!cells, fogCellsLength: cells ? cells.length : 0, revealedCount: revealed, lastFogStateRevision: Number(state.lastFogStateRevision) || 0, lastFogUpdateRevision: Number(state.lastFogUpdateRevision) || 0, lastFogPayloadMapContext: state.lastFogPayloadMapContext || '', notDrawingReason: state.lastFogNotDrawingReason || (!state.fogEnabled ? 'fog disabled for active context' : (!cells ? 'fog enabled but no cells' : '')) };
   }
-  window.AppFog = { debugFog, normalizeMapCtx: _normalizeMapCtx, payloadMapCtx: _payloadMapCtx, fogCurrentCtx, fogSaveCurrentMap, syncFogUI, fogLoadMap, fogInitCells, drawFogOverlay, fogWorldToCell, fogPaintAt, fogFlushBatch, fogToggle, setFogMode, fogRevealAll, fogHideAll, fogApplyState, fogApplyUpdate };
+  window.AppFog = { debugFog, normalizeMapCtx: _normalizeMapCtx, payloadMapCtx: _payloadMapCtx, fogCurrentCtx, fogSaveCurrentMap, syncFogUI, fogLoadMap, fogInitCells, drawFogOverlay, fogWorldToCell, fogPaintAt, fogFlushBatch, fogToggle, setFogMode, fogRevealAll, fogHideAll, fogApplyState, fogApplyUpdate, applyAuthoritativeFogState };
 })();

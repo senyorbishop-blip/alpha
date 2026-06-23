@@ -259,7 +259,7 @@ def _resolve_fog_map_context(session: Session, payload: dict) -> str:
             return explicit
     return normalize_map_context_from_payload(payload, fallback=getattr(session, "dm_map_context", "world"))
 
-def _fog_state_payload_for_context(session: Session, map_ctx: str) -> dict:
+def _fog_state_payload_for_context(session: Session, map_ctx: str, source: str = "fog_state") -> dict:
     """Return a compact full fog snapshot for a single map context."""
     ctx = normalize_map_context(map_ctx, fallback=getattr(session, "dm_map_context", "world"))
     session.fog_maps = normalize_fog_maps(getattr(session, "fog_maps", {}) or {})
@@ -285,6 +285,9 @@ def _fog_state_payload_for_context(session: Session, map_ctx: str) -> dict:
         "fog_rows": rows,
         "fog_cells": cells,
         "revision": int(entry.get("revision") or 0),
+        "visibility_revision": int(getattr(session, "visibility_revision", 0) or 0),
+        "map_mode": "world" if ctx == "world" else "local",
+        "source": str(source or "fog_state"),
     }
 
 async def _broadcast_fog_to_visible_users(session: Session, message: dict, map_ctx: str):
@@ -1099,6 +1102,7 @@ async def handle_fog_toggle(payload: dict, session: Session, user: User):
     if entry['enabled'] and len(entry.get('cells', '')) != total:
         entry['cells'] = '0' * total
     session.fog_maps[map_ctx] = entry
+    visibility_revision_before = int(getattr(session, "visibility_revision", 0) or 0)
     fog_payload = {
         'map_ctx': map_ctx,
         'fog_enabled': entry['enabled'],
@@ -1106,6 +1110,9 @@ async def handle_fog_toggle(payload: dict, session: Session, user: User):
         'fog_rows': entry['rows'],
         'fog_cells': entry['cells'],
         'revision': entry.get('revision', 0),
+        'visibility_revision': visibility_revision_before,
+        'map_mode': "world" if map_ctx == "world" else "local",
+        'source': 'fog_state',
     }
     logger.info("[live_state] fog_state map_ctx=%s revision=%s summary=%s", map_ctx, entry.get('revision', 0), build_live_state_debug_summary(session, getattr(user, 'id', ''), getattr(user, 'role', 'unknown'), {'dm_map_context': map_ctx, 'fog_maps': {map_ctx: entry}}))
     await _broadcast_fog_to_visible_users(session, {
@@ -1117,6 +1124,10 @@ async def handle_fog_toggle(payload: dict, session: Session, user: User):
     # authoritative token list so the map render updates on this change.
     await _broadcast_token_state_sync(session)
     await run_combat_fog_sync(session, reason="fog_toggle", map_context=map_ctx)
+    logger.info(
+        "[live_state] fog_state revision_applied map_ctx=%s visibility_revision_before=%s visibility_revision_after=%s combat_resync_triggered=True",
+        map_ctx, visibility_revision_before, int(getattr(session, "visibility_revision", 0) or 0),
+    )
     await save_campaign_async(session)
 
 
@@ -1146,6 +1157,7 @@ async def handle_fog_paint(payload: dict, session: Session, user: User):
     entry['map_context'] = map_ctx
     entry['revision'] = int(entry.get('revision') or 0) + 1
     entry['updated_at'] = time.time()
+    visibility_revision_before = int(getattr(session, "visibility_revision", 0) or 0)
     fog_payload = {
         'map_ctx': map_ctx,
         'reveal': reveal,
@@ -1153,6 +1165,9 @@ async def handle_fog_paint(payload: dict, session: Session, user: User):
         'fog_cols': entry.get('cols', 64),
         'fog_rows': entry.get('rows', 64),
         'revision': entry.get('revision', 0),
+        'visibility_revision': visibility_revision_before,
+        'map_mode': "world" if map_ctx == "world" else "local",
+        'source': 'fog_update',
     }
     logger.info("[live_state] fog_update map_ctx=%s revision=%s cells=%s summary=%s", map_ctx, entry.get('revision', 0), len(cells or []), build_live_state_debug_summary(session, getattr(user, 'id', ''), getattr(user, 'role', 'unknown'), {'dm_map_context': map_ctx, 'fog_maps': {map_ctx: entry}}))
     await _broadcast_fog_to_visible_users(session, {
@@ -1164,6 +1179,10 @@ async def handle_fog_paint(payload: dict, session: Session, user: User):
     # token list so the map render updates on this change, not just combat.
     await _broadcast_token_state_sync(session)
     await run_combat_fog_sync(session, reason="fog_paint", map_context=map_ctx)
+    logger.info(
+        "[live_state] fog_update revision_applied map_ctx=%s visibility_revision_before=%s visibility_revision_after=%s combat_resync_triggered=True",
+        map_ctx, visibility_revision_before, int(getattr(session, "visibility_revision", 0) or 0),
+    )
     await save_campaign_async(session)
 
 
@@ -1369,9 +1388,9 @@ async def handle_local_map_nav(payload: dict, session: Session, user: User):
         # same navigation message. Players may not have had this POI/local-map
         # context in their previous visible state yet, so relying on a later
         # refresh leaves them seeing an unfogged map until reconnect.
-        nav_payload.update(_fog_state_payload_for_context(session, nav_payload["dm_map_context"]))
-
         msg_type = "local_map_enter" if is_enter else "local_map_exit"
+        nav_payload.update(_fog_state_payload_for_context(session, nav_payload["dm_map_context"], source=msg_type))
+
         msg = {"type": msg_type, "payload": nav_payload}
 
         try:
