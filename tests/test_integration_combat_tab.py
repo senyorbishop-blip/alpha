@@ -606,6 +606,7 @@ def test_state_snapshot_does_not_run_fog_sweep_or_suspend_combatants():
     must never spuriously move an NPC into the suspended list based on the
     requester's transient dm_map_context."""
     session, _ = _fog_sweep_session(revealed_indices=[])
+    original_combatants = list(session.combat["combatants"])
 
     state = session.to_state_dict()
 
