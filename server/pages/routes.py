@@ -1,5 +1,10 @@
+from urllib.parse import urlencode
+
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+
+from server.http.auth import get_request_user
+from server.http.session_access import get_or_restore_session, resolve_session_authority
 
 
 def _default_post_auth_target(role: str) -> str:
@@ -38,6 +43,58 @@ def _play_boot_context(request: Request) -> dict:
     }
 
 
+def _reconnect_redirect_for_member(request: Request, ctx: dict):
+    """Self-bootstrap a returning, already-authenticated session member on /play.
+
+    When an authenticated player/viewer/DM reloads /play but the URL's user_id/role is
+    missing or stale (e.g. after a server restart restored their session under a
+    different in-memory slot, or the address bar carries a partial link), resolve their
+    real session identity from the auth cookie and redirect to /play with the correct
+    user_id/role. This lets the live runtime connect the WebSocket directly instead of
+    bouncing the member through /join -> character picker -> POST /api/session/join.
+
+    Returns a RedirectResponse when a correction is needed, otherwise None (render /play
+    as-is so the client connects the WebSocket).
+    """
+    session_id = str(ctx.get("session_id") or "").strip().upper()
+    if not session_id:
+        return None
+    # Only returning members carry a valid auth cookie; strangers fall through to the
+    # normal (unchanged) join flow.
+    if not get_request_user(request):
+        return None
+    session = get_or_restore_session(session_id)
+    if not session:
+        return None
+
+    url_user_id = str(ctx.get("user_id") or "").strip()
+    authority = resolve_session_authority(request, session, fallback_user_id=url_user_id)
+    resolved_user_id = str(authority.get("resolved_session_user_id") or "").strip()
+    # Only redirect when the request resolves to an actual participant in this session.
+    if not resolved_user_id or authority.get("matched_via") in (None, "none"):
+        return None
+
+    resolved_role = (
+        "dm" if authority.get("is_session_dm")
+        else (authority.get("participant_role") or str(ctx.get("play_role") or "") or "player")
+    )
+    url_role = str(ctx.get("play_role") or "").strip().lower()
+    # Identity already matches — render directly so the client connects the WebSocket
+    # without an extra navigation. This also guarantees no redirect loop.
+    if resolved_user_id == url_user_id and resolved_role == url_role:
+        return None
+
+    member = session.users.get(resolved_user_id)
+    params = dict(request.query_params)
+    params["session_id"] = session_id
+    params["user_id"] = resolved_user_id
+    params["role"] = resolved_role
+    if not str(params.get("name") or "").strip() and member is not None:
+        params["name"] = getattr(member, "name", "") or ""
+    params["returning"] = "1"
+    return RedirectResponse("/play?" + urlencode(params), status_code=302)
+
+
 def build_router(templates, public_domain: str, port: int) -> APIRouter:
     router = APIRouter()
 
@@ -60,6 +117,9 @@ def build_router(templates, public_domain: str, port: int) -> APIRouter:
     async def play_page(request: Request):
         ctx = {"request": request}
         ctx.update(_play_boot_context(request))
+        redirect = _reconnect_redirect_for_member(request, ctx)
+        if redirect is not None:
+            return redirect
         return templates.TemplateResponse("play.html", ctx)
 
     @router.get("/campaigns", response_class=HTMLResponse)
