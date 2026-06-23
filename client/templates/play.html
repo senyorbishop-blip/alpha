@@ -45904,9 +45904,17 @@ function removeSpellAt(wx, wy) {
 function handleCombatStateLive(payload) {
   traceEnter('handleCombatStateLive', { revision: payload?.revision });
   if (!payload || typeof payload !== 'object') return false;
-  const _combatStateStale = _isStaleVisibilityPayload(payload, 'combat');
-  liveDebugLog('combat_state ' + (_combatStateStale ? 'ignored' : 'applied'), buildClientLiveStateSummary('combat_state', payload, { ignored: _combatStateStale }));
-  if (_combatStateStale) return true;
+  // Do NOT gate combat_state on the shared visibility_revision counter.
+  // combat_state and tokens_sync ride the SAME server-side visibility_revision,
+  // so a burst of token_move frames advances that counter and would make a
+  // later, perfectly valid combat_state look "stale" — dropping the initiative
+  // update and never reaching forceCombatStateUISync(), so the tracker only
+  // refreshed after a manual reload. combat_state staleness is judged ONLY by
+  // its own combat `revision` field inside combatApplyState (stale-revision +
+  // equal-revision-changed-initiative logic), which applies any payload whose
+  // combat revision >= local revision OR whose initiative/order/active/turn
+  // changed, and always runs forceCombatStateUISync() on apply.
+  liveDebugLog('combat_state applied', buildClientLiveStateSummary('combat_state', payload, { ignored: false }));
   console.debug(`[handleCombatStateLive] combat_state revision=${payload.revision ?? 'none'} order=${JSON.stringify(Array.isArray(payload.combatants) ? payload.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : []).replace(/\"/g, "'")}`);
   // Capture previous state for spotlight diff detection.  combat_state is the
   // only source of truth for initiative/order, including self-roll updates.
