@@ -153,6 +153,14 @@ def _can_user_see_token(session: Session, token, user) -> bool:
         return False
     if is_npc_or_monster_token(token) and is_token_touching_unrevealed_fog(session, token):
         return False
+    if is_npc_or_monster_token(token):
+        # PR 7: an NPC/monster outside every player token's wall/door line of
+        # sight must not be leaked to players even if it isn't fog-hidden
+        # (e.g. fog disabled on this map, or the cell itself is explored but
+        # a closed door now stands between the party and the creature).
+        from server.visibility import token_blocked_by_los
+        if token_blocked_by_los(session, token):
+            return False
     return True
 
 
@@ -302,6 +310,28 @@ def _stamp_token_revision(session: Session, token) -> int:
             token.revision = next_rev
         except Exception:
             pass
+    return next_rev
+
+
+def bump_wall_revision(session: Session) -> int:
+    """Increment the session-wide wall revision counter.
+
+    Call this on every wall create/update/delete (PR 7) so clients can drop
+    stale wall payloads and so the visibility engine knows wall/door
+    geometry it cached against is no longer current.
+    """
+    next_rev = int(getattr(session, "wall_revision", 0) or 0) + 1
+    session.wall_revision = next_rev
+    return next_rev
+
+
+def bump_door_revision(session: Session) -> int:
+    """Increment the session-wide door revision counter.
+
+    Call this on every door create/update/toggle/lock/delete (PR 7).
+    """
+    next_rev = int(getattr(session, "door_revision", 0) or 0) + 1
+    session.door_revision = next_rev
     return next_rev
 
 
@@ -585,7 +615,10 @@ def _combat_state_payload_for_user(session: Session, user: User | None, visibili
             token = (getattr(session, "tokens", {}) or {}).get(token_id) if token_id else None
             if token is not None and is_npc_or_monster_token(token):
                 map_context = str(combatant.get("map_context") or _token_map_context(token) or getattr(session, "dm_map_context", "world") or "world")
-                if bool(getattr(token, "hidden", False)) or bool(getattr(token, "staged", False)) or is_token_touching_unrevealed_fog(session, token, map_context):
+                from server.visibility import token_blocked_by_los
+                if (bool(getattr(token, "hidden", False)) or bool(getattr(token, "staged", False))
+                        or is_token_touching_unrevealed_fog(session, token, map_context)
+                        or token_blocked_by_los(session, token, map_context)):
                     continue
             visible_combatants.append(combatant)
         payload["combatants"] = visible_combatants

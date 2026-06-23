@@ -556,8 +556,10 @@ class Session:
     dm_nav_intent: int = 0  # latest DM client-side nav intent; stale queued enter/exit messages are ignored
     fog_maps: dict = None  # keyed by map_ctx
     combat: dict = None  # {active: bool, turn: int, combatants: [{id,name,initiative,token_id,hp,max_hp}]} ('world' or poi_id) → {enabled, cols, rows, cells}
-    visibility_revision: int = 0  # monotonic counter bumped on any fog/hidden/token-position change; clients drop stale payloads behind it
+    visibility_revision: int = 0  # monotonic counter bumped on any fog/hidden/token-position/wall/door change; clients drop stale payloads behind it
     token_state_revision: int = 0  # monotonic counter bumped on every authoritative token mutation (create/move/delete/hide/hp/edit/staged/ownership); independent of visibility filtering
+    wall_revision: int = 0  # monotonic counter bumped on every wall create/update/delete (PR 7)
+    door_revision: int = 0  # monotonic counter bumped on every door create/update/toggle/lock/delete (PR 7)
     inventory_revision: int = 0  # monotonic counter bumped on any server-authoritative inventory/item/charge mutation; clients drop stale player_inventory_sync payloads behind it
     journal_entries: list = field(default_factory=list)
     # library_entries: preserved for campaign backward-compatibility only.
@@ -1358,6 +1360,18 @@ class Session:
         map_ctx = normalize_map_context(state.get("dm_map_context") or getattr(self, "dm_map_context", "world"))
         fog_maps = state.get("fog_maps") if isinstance(state.get("fog_maps"), dict) else {}
         fog_entry = fog_maps.get(map_ctx) or fog_maps.get("world") or {}
+        try:
+            from server.handlers.map_editor import filter_door_summary_for_role
+            door_summary = filter_door_summary_for_role(self, map_ctx, resolved_role)
+        except Exception:
+            door_summary = []
+        try:
+            from server.visibility import compute_visible_cell_indices
+            fog_cols = int((fog_entry or {}).get("cols") or 0)
+            fog_rows = int((fog_entry or {}).get("rows") or 0)
+            visible_cell_count = len(compute_visible_cell_indices(self, map_ctx, fog_cols, fog_rows)) if fog_cols and fog_rows else 0
+        except Exception:
+            visible_cell_count = 0
         combat_state = state.get("combat") if isinstance(state.get("combat"), dict) else {}
         try:
             from server.handlers.common import _combat_state_payload_for_user
@@ -1482,8 +1496,9 @@ class Session:
                 "token_state_revision": int(state.get("token_state_revision") or getattr(self, "token_state_revision", 0) or 0),
                 "visibility_revision": int(state.get("visibility_revision") or 0),
                 "map_document_revision": 0,
-                "wall_revision": 0,
-                "door_revision": 0,
+                "wall_revision": int(getattr(self, "wall_revision", 0) or 0),
+                "door_revision": int(getattr(self, "door_revision", 0) or 0),
+                "doors": door_summary,
             },
             "tokens": {
                 "revision": int(state.get("visibility_revision") or 0),
@@ -1519,20 +1534,22 @@ class Session:
                     "cols": int((fog_entry or {}).get("cols") or 0) if isinstance(fog_entry, dict) else 0,
                     "rows": int((fog_entry or {}).get("rows") or 0) if isinstance(fog_entry, dict) else 0,
                 },
-                # Explored/revealed fog is the only model the app currently
-                # implements (manual DM paint). currently_visible/unseen are
-                # placeholders for the wall/door LOS work landing in PR 7 — they
-                # stay null until that visibility source exists so clients don't
-                # mistake an empty placeholder for "nothing is visible".
+                # Explored/revealed fog is manual DM paint plus any cells the
+                # PR 7 wall/door LOS engine has auto-revealed for a player
+                # token's vision (see server/visibility.py). currently_visible
+                # is a same-tick LOS recompute summary (never a raw cell list,
+                # to avoid bloating the snapshot on large maps); unseen stays
+                # null — total-minus-visible is derivable client-side and an
+                # explicit "definitely hidden" set isn't part of this model.
                 "explored": {
                     "revealed_cells": str((fog_entry or {}).get("cells") or "").count("1") if isinstance(fog_entry, dict) else 0,
                     "total_cells": (int((fog_entry or {}).get("cols") or 0) * int((fog_entry or {}).get("rows") or 0)) if isinstance(fog_entry, dict) else 0,
                 },
-                "currently_visible": None,
+                "currently_visible": {"cell_count": visible_cell_count},
                 "unseen": None,
-                "visibility_source": "manual_fog",
-                "wall_revision": 0,
-                "door_revision": 0,
+                "visibility_source": "manual_fog_plus_wall_door_los",
+                "wall_revision": int(getattr(self, "wall_revision", 0) or 0),
+                "door_revision": int(getattr(self, "door_revision", 0) or 0),
             },
             "debug": {
                 "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -1955,10 +1972,20 @@ def filter_editor_props_for_role(editor_props: dict, role: str) -> dict:
             hidden = bool(item.get("hidden")) if kind in _can_be_hidden else False
             if role != "dm" and hidden:
                 continue
+            # PR 7: a secret/hidden door's existence and position must not
+            # leak to non-DM roles until the DM marks it "revealed". The LOS
+            # engine (server/visibility.py) still uses the real geometry from
+            # session.editor_props directly, so a secret closed door keeps
+            # blocking sight even though players are never told it's there.
+            if role != "dm" and kind == "door" and bool(item.get("secret")) and not bool(item.get("revealed")):
+                continue
             item_copy = dict(item)
             # Normalize hidden=False for prop kinds that shouldn't be hidden (fix legacy data)
             if kind not in _can_be_hidden:
                 item_copy["hidden"] = False
+            if role != "dm" and kind == "door":
+                item_copy.pop("secret", None)
+                item_copy.pop("revealed", None)
             item_copy["interactable"] = build_editor_prop_interaction_model(item_copy, role)
             safe_items.append(item_copy)
         filtered[str(ctx)] = safe_items
