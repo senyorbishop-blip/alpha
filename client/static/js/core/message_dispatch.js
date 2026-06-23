@@ -36,6 +36,7 @@
     if (typeof runtimeEnv.handleLegacyMessage !== 'function') return false;
     const msgType = String(msg.type || '(missing)');
     rememberMessageType(msgType);
+    if (global.liveDebugLog) global.liveDebugLog('message received', { message_type: msgType });
     if (dispatchDepth >= 20) {
       const diagnostics = logDispatchDiagnostics('nested dispatch depth exceeded', null);
       const err = new Error('Nested websocket dispatch depth exceeded 20; refusing recursive message dispatch.');

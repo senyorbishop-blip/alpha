@@ -11985,6 +11985,41 @@ const _PING_PULSE_TTL_MS = 980;
 const _PING_STACK_SOFT_CAP = 16;
 const _PING_STACK_HARD_CAP = 28;
 
+
+window.__LIVE_DEBUG__ = window.__LIVE_DEBUG__ === true;
+function liveDebugLog(label, payload) {
+  try {
+    if (!window.__LIVE_DEBUG__) return false;
+    console.debug('[live_state]', label, payload || {});
+    return true;
+  } catch (_err) {
+    return false;
+  }
+}
+window.liveDebugLog = liveDebugLog;
+function buildClientLiveStateSummary(messageType, payload, extra) {
+  const p = payload && typeof payload === 'object' ? payload : {};
+  const combatPayload = p.combat && typeof p.combat === 'object' ? p.combat : (window._combat || window.combat || {});
+  const mapCtx = String(p.dm_map_context || (typeof _getCurrentMapContext === 'function' ? _getCurrentMapContext() : (window.fogMapCtx || 'world')) || 'world');
+  const fogMapsPayload = p.fog_maps && typeof p.fog_maps === 'object' ? p.fog_maps : null;
+  const fogEntry = fogMapsPayload ? (fogMapsPayload[mapCtx] || fogMapsPayload.world || {}) : {};
+  return Object.assign({
+    message_type: String(messageType || ''),
+    role: String(window._serverResolvedRole || window.ROLE || ROLE || 'viewer').toLowerCase(),
+    map_context: mapCtx,
+    map_mode: mapCtx === 'world' ? 'world' : (mapCtx ? 'local' : 'unknown'),
+    token_count: p.tokens && typeof p.tokens === 'object' ? Object.keys(p.tokens).length : Object.keys(window.tokens || tokens || {}).length,
+    combat_active: !!(combatPayload && combatPayload.active),
+    combat_revision: Number(combatPayload && combatPayload.revision) || 0,
+    visibility_revision: Number(p.visibility_revision) || 0,
+    inventory_revision: Number(p.inventory_revision) || 0,
+    active_profile_id: String((typeof resolveActiveCharProfileId === 'function' && resolveActiveCharProfileId()) || window._activeCharProfileId || ''),
+    fog_context: String(p.map_ctx || (fogEntry && fogEntry.map_context) || mapCtx),
+    fog_revision: Number(p.revision || (fogEntry && fogEntry.revision)) || 0,
+  }, extra || {});
+}
+window.buildClientLiveStateSummary = buildClientLiveStateSummary;
+
 // Combat state (declared early to avoid TDZ errors in drawToken / canMoveToken)
 let _combat = { active: false, turn: 0, combatants: [], movement: null, selected_target_id: '', pending_attack: null, suspended_combatants: [] };
 window._combat = _combat;
@@ -32695,6 +32730,7 @@ function handleLegacyMessage(msg) {
         );
       }
       requestRenderFrame('state_sync render');
+      liveDebugLog('state_sync applied', buildClientLiveStateSummary('state_sync', p, { hidden_tokens_filtered: Number(p.hidden_tokens_filtered) || undefined, fog_hidden_tokens_filtered: Number(p.fog_hidden_tokens_filtered) || undefined }));
       applyPlayerInventoryState(p);
       // Apply camp/rest state for reconnecting users
       if (p.camp_rest) {
@@ -32734,7 +32770,9 @@ function handleLegacyMessage(msg) {
 
 
     case 'tokens_sync': {
-      if (_isStaleVisibilityPayload(p)) break;
+      const _tokensSyncStale = _isStaleVisibilityPayload(p);
+      liveDebugLog('tokens_sync ' + (_tokensSyncStale ? 'ignored' : 'applied'), buildClientLiveStateSummary('tokens_sync', p, { ignored: _tokensSyncStale }));
+      if (_tokensSyncStale) break;
       applyAuthoritativeTokenSync(p);
       if (p.corpse_states && typeof p.corpse_states === 'object') {
         corpseStates = { ...p.corpse_states };
@@ -33089,7 +33127,9 @@ function handleLegacyMessage(msg) {
     }
 
     case 'player_inventory_sync': {
-      if (_isStaleInventoryPayload(p)) break;
+      const _inventoryStale = _isStaleInventoryPayload(p);
+      liveDebugLog('player_inventory_sync ' + (_inventoryStale ? 'ignored' : 'applied'), buildClientLiveStateSummary('player_inventory_sync', p, { ignored: _inventoryStale }));
+      if (_inventoryStale) break;
       applyPlayerInventoryState(p);
       break;
     }
@@ -33695,11 +33735,13 @@ function handleLegacyMessage(msg) {
       break;
     }
     case 'fog_state': {
+      liveDebugLog('fog_state applied', buildClientLiveStateSummary('fog_state', p));
       fogApplyState(p);
       drawFrame();
       break;
     }
     case 'fog_update': {
+      liveDebugLog('fog_update applied', buildClientLiveStateSummary('fog_update', p, { cells: Array.isArray(p.cells) ? p.cells.length : 0 }));
       if (window.AppFog && typeof window.AppFog.fogApplyUpdate === 'function') {
         const state = __createFogModuleState();
         window.AppFog.fogApplyUpdate(state, __createFogModuleEnv(), p);
@@ -45572,8 +45614,10 @@ function removeSpellAt(wx, wy) {
 function handleCombatStateLive(payload) {
   traceEnter('handleCombatStateLive', { revision: payload?.revision });
   if (!payload || typeof payload !== 'object') return false;
+  const _combatStateStale = _isStaleVisibilityPayload(payload, 'combat');
+  liveDebugLog('combat_state ' + (_combatStateStale ? 'ignored' : 'applied'), buildClientLiveStateSummary('combat_state', payload, { ignored: _combatStateStale }));
+  if (_combatStateStale) return true;
   console.debug(`[handleCombatStateLive] combat_state revision=${payload.revision ?? 'none'} order=${JSON.stringify(Array.isArray(payload.combatants) ? payload.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : []).replace(/\"/g, "'")}`);
-  if (_isStaleVisibilityPayload(payload, 'combat')) return true;
   // Capture previous state for spotlight diff detection.  combat_state is the
   // only source of truth for initiative/order, including self-roll updates.
   const _prevCombatForSpotlight = _combat ? JSON.parse(JSON.stringify(_combat)) : null;

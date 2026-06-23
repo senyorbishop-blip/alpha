@@ -5,6 +5,9 @@ import time
 import secrets
 import random
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 from server.encumbrance import (
     auto_tag_extradimensional,
     build_encumbrance_payload,
@@ -36,6 +39,7 @@ from server.handlers.common import (
     _broadcast_token_state_sync,
     bump_inventory_revision,
     _send_action_ack,
+    build_live_state_debug_summary,
 )
 from server.item_schema import (
     normalize_item_record,
@@ -792,6 +796,7 @@ async def _send_inventory_state(session: Session, user_id: str):
         payload["player_inventory"] = []
         payload["player_gold"] = 0
         payload["party_loot_log"] = []
+    logger.info("[live_state] player_inventory_sync %s", build_live_state_debug_summary(session, user_id, user.role, payload))
     await manager.send_to(session.id, user_id, {"type": "player_inventory_sync", "payload": payload})
 
 

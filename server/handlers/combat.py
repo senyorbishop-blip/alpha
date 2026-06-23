@@ -21,6 +21,7 @@ from server.handlers.common import (
     _token_map_context,
     is_token_touching_unrevealed_fog,
     _send_action_ack,
+    build_live_state_debug_summary,
 )
 from server.movement import resolve_movement, normalize_movement_mode
 
@@ -1142,6 +1143,7 @@ async def handle_combat_state_request(payload: dict, session: Session, user: Use
         bool(ok),
         out.get("revision"),
     )
+    logger.info("[live_state] combat_state_request %s", build_live_state_debug_summary(session, user.id, user.role, {"combat": out, "visibility_revision": out.get("visibility_revision")}))
 
 
 # ── Combat attack / spell flow ─────────────────────────────────────────────

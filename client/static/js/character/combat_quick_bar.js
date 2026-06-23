@@ -457,6 +457,8 @@
     const model = global.CombatQuickSelectors && typeof global.CombatQuickSelectors.selectQuickActions === 'function'
       ? global.CombatQuickSelectors.selectQuickActions(runtime.charSheet || {})
       : { primaryActions: [], bonusActions: [], reactions: [], topSpells: [], resources: [], concentration: null };
+    const actionCount = [].concat(model.primaryActions || [], model.bonusActions || [], model.reactions || [], model.topSpells || [], model.magicItemActions || []).length;
+    if (global.liveDebugLog) global.liveDebugLog('quick_actions hydration', { action_count: actionCount, missing_reason: actionCount ? '' : (!global.CombatQuickSelectors ? 'selector_unavailable' : (!runtime.charSheet ? 'missing_char_sheet' : 'no_actions_derived')), combat_active: !!combat.active });
     const current = _safeArray(combat.combatants)[Math.max(0, Number(combat.turn || 0))] || null;
     const targetName = runtime.selectedTargetId && runtime.tokens ? _firstText(runtime.tokens[runtime.selectedTargetId] && runtime.tokens[runtime.selectedTargetId].name, 'Selected') : 'No target';
     root.hidden = false;

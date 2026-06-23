@@ -194,6 +194,61 @@ def _visible_tokens_payload_for_user(session: Session, user: User) -> dict:
     return tokens
 
 
+def build_live_state_debug_summary(session: Session, user_id: str, role: str | None, state_payload: dict | None = None) -> dict:
+    """Build a safe, structured reconnect/state diagnostic summary.
+
+    The summary intentionally includes only counts, ids, revisions, and booleans.
+    It never returns hidden token payloads or token names, so it is safe to emit
+    for player/viewer reconnect diagnostics.
+    """
+    payload = state_payload if isinstance(state_payload, dict) else {}
+    resolved_role = str(role or "").strip().lower() or "viewer"
+    user = (getattr(session, "users", {}) or {}).get(user_id)
+    if user is not None:
+        resolved_role = str(getattr(user, "role", resolved_role) or resolved_role).strip().lower() or resolved_role
+
+    sent_tokens = payload.get("tokens") if isinstance(payload.get("tokens"), dict) else {}
+    all_tokens = getattr(session, "tokens", {}) or {}
+    hidden_filtered = 0
+    fog_filtered = 0
+    if resolved_role != "dm":
+        visible_ids = {str(tid) for tid in sent_tokens.keys()}
+        for tid, token in all_tokens.items():
+            tid_s = str(tid)
+            if tid_s in visible_ids:
+                continue
+            if bool(getattr(token, "hidden", False)):
+                hidden_filtered += 1
+                continue
+            if is_npc_or_monster_token(token) and is_token_touching_unrevealed_fog(session, token):
+                fog_filtered += 1
+
+    combat = payload.get("combat") if isinstance(payload.get("combat"), dict) else (getattr(session, "combat", {}) or {})
+    map_ctx = str(payload.get("dm_map_context") or getattr(session, "dm_map_context", "world") or "world")
+    fog_maps = payload.get("fog_maps") if isinstance(payload.get("fog_maps"), dict) else (getattr(session, "fog_maps", {}) or {})
+    fog_entry = fog_maps.get(map_ctx) or fog_maps.get("world") or {}
+    active_profiles = getattr(session, "active_char_profiles", {}) or {}
+    return {
+        "session_id": str(getattr(session, "id", "") or ""),
+        "user_id": str(user_id or ""),
+        "role": str(role or resolved_role or "viewer"),
+        "resolved_role": resolved_role,
+        "map_context": map_ctx,
+        "map_mode": "world" if map_ctx == "world" else ("local" if map_ctx else "unknown"),
+        "map_nav_version": _safe_int(payload.get("map_nav_version", getattr(session, "map_nav_version", 0)), 0, minimum=0),
+        "token_count_sent": len(sent_tokens),
+        "hidden_tokens_filtered": hidden_filtered,
+        "fog_hidden_tokens_filtered": fog_filtered,
+        "combat_active": bool(combat.get("active")) if isinstance(combat, dict) else False,
+        "combat_revision": _safe_int((combat or {}).get("revision"), 0, minimum=0) if isinstance(combat, dict) else 0,
+        "visibility_revision": _safe_int(payload.get("visibility_revision", getattr(session, "visibility_revision", 0)), 0, minimum=0),
+        "inventory_revision": _safe_int(payload.get("inventory_revision", getattr(session, "inventory_revision", 0)), 0, minimum=0),
+        "active_profile_id": str(active_profiles.get(user_id) or payload.get("active_profile_id") or ""),
+        "fog_context": str((fog_entry or {}).get("map_context") or map_ctx or "world"),
+        "fog_revision": _safe_int((fog_entry or {}).get("revision"), 0, minimum=0) if isinstance(fog_entry, dict) else 0,
+    }
+
+
 def bump_visibility_revision(session: Session) -> int:
     """Increment the session-wide visibility revision counter.
 
@@ -225,15 +280,17 @@ async def _broadcast_token_state_sync(session: Session):
     """Send an authoritative token snapshot to every connected client."""
     revision = bump_visibility_revision(session)
     for uid, u in (session.users or {}).items():
+        payload = {
+            "tokens": _visible_tokens_payload_for_user(session, u),
+            "corpse_states": dict(getattr(session, "corpse_states", {}) or {}),
+            "dm_map_context": str(getattr(session, "dm_map_context", "world") or "world"),
+            "map_nav_version": int(getattr(session, "map_nav_version", 0) or 0),
+            "visibility_revision": revision,
+        }
+        logger.info("[live_state] tokens_sync %s", build_live_state_debug_summary(session, uid, getattr(u, "role", "unknown"), payload))
         await manager.send_to(session.id, uid, {
             "type": "tokens_sync",
-            "payload": {
-                "tokens": _visible_tokens_payload_for_user(session, u),
-                "corpse_states": dict(getattr(session, "corpse_states", {}) or {}),
-                "dm_map_context": str(getattr(session, "dm_map_context", "world") or "world"),
-                "map_nav_version": int(getattr(session, "map_nav_version", 0) or 0),
-                "visibility_revision": revision,
-            },
+            "payload": payload,
         })
 
 
