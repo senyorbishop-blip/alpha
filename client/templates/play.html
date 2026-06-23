@@ -25267,6 +25267,7 @@ let _diceIsDismissing = false; // guard: blocks new rolls during overlay dismiss
 let _diceResultShownAt = 0;   // timestamp (ms) when the result popup last appeared
 let _dicePhysicsActive = false; // true while 3D dice are physically simulating
 let _renderCombatDebounceTmr = null; // debounce handle for renderCombat during dice
+let _combatRenderRetryQueued = false; // single-shot retry when combat-list DOM is not yet mounted
 const _pendingAuthoritativeDiceRolls = new Map();
 const _pendingLocalDiceResults = new Map();
 const DICE_ROLL_MODE_STORAGE_KEY = 'dnd_dice_roll_mode';
@@ -48352,7 +48353,20 @@ function renderCombat() {
   const prevBtn  = document.getElementById('combat-prev-btn');
   const nextBtn  = document.getElementById('combat-next-btn');
   const endBtn   = document.getElementById('combat-end-btn');
-  if (!list) return;
+  if (!list) {
+    // The combat-list node may not be mounted yet (right panel built on a
+    // different context/tab, sidebar not yet constructed, etc.). A combat_state
+    // for an active encounter must NOT be silently dropped here, or the roller's
+    // tracker stays stale ("…") until some unrelated render fires. Schedule one
+    // guarded deferred retry that only re-renders once the node actually exists,
+    // so this can never spin when combat-list is legitimately absent.
+    const haveCombatToShow = !!(_combat && (_combat.active || (Array.isArray(_combat.combatants) && _combat.combatants.length)));
+    if (haveCombatToShow && !_combatRenderRetryQueued) {
+      _combatRenderRetryQueued = true;
+      setTimeout(() => { _combatRenderRetryQueued = false; if (document.getElementById('combat-list')) renderCombat(); }, 120);
+    }
+    return;
+  }
 
   const coms    = _combat.combatants || [];
   let isActive = !!_combat.active;
@@ -48810,6 +48824,13 @@ function combatRollInitiative(combatantId) {
     const latest = _combat.combatants.find(c => c.id === combatantId);
     if (!latest) return;
     const roll = parseInt(result?.rolls?.[0], 10) || 0;
+    // Optimistic local update: show the rolled initiative on the roller's own
+    // tracker immediately instead of flicking the cell back to 🎲/— while the
+    // authoritative combat_state round-trips. The local revision is left
+    // untouched, so the server echo (a newer revision) still wins and replaces
+    // this value via combatApplyState's revision guard.
+    latest.initiative = roll + modifier;
+    latest.roll = roll;
     delete latest._initiativeRollPending;
     renderCombat();
     sendWS({ type: 'combat_roll_initiative', payload: {

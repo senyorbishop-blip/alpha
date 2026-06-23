@@ -128,6 +128,12 @@
   function combatEndTurn(env) { env.sendWS({ type: 'combat_end_turn', payload: {} }); }
   function combatRollDeathSave(env) { env.sendWS({ type: 'combat_death_save', payload: {} }); }
   function combatRollInitiative(env, combatantId) {
+    // Canonical initiative path lives in play.html (optimistic local update +
+    // settled-dice popup + a single authoritative server commit). When the page
+    // exposes that global, delegate to it so a roll is never double-sent or sent
+    // through this dormant module's stale immediate-send path.
+    const canonical = (typeof globalThis !== 'undefined') ? globalThis.combatRollInitiative : null;
+    if (typeof canonical === 'function' && canonical !== combatRollInitiative) { canonical(combatantId); return; }
     const combat = env.getCombat(); const com = combat.combatants.find(c => c.id === combatantId); if (!com) return; let modifier = parseInt(com.modifier) || 0; const combatTok = com.token_id ? env.tokens[com.token_id] : null; if (combatTok && combatTok.initiativeMod !== undefined) { modifier = parseInt(combatTok.initiativeMod) || 0; com.modifier = modifier; } else if (com.token_id && env.tokens[com.token_id]?.owner_id === env.USER_ID && env._charSheet?.initiative !== undefined) { modifier = parseInt(env._charSheet.initiative) || 0; com.modifier = modifier; } else if (com.token_id && env.tokens[com.token_id]?.owner_id === env.USER_ID) { modifier = _resolveCombatModifier(env, 'initiative'); com.modifier = modifier; }
     const roll = Math.floor(Math.random() * 20) + 1; const total = roll + modifier; com.initiative = total; const presentLocalInitiative = (globalThis.AppDice && typeof globalThis.AppDice.showLocalResult === 'function') ? globalThis.AppDice.showLocalResult.bind(globalThis.AppDice) : (typeof globalThis.appDiceShowLocalResult === 'function' ? globalThis.appDiceShowLocalResult : (typeof env.appDiceShowLocalResult === 'function' ? env.appDiceShowLocalResult : null)); if (presentLocalInitiative) presentLocalInitiative({ diceType: 20, qty: 1, rolls: [roll], total, modifier, rollLabel: 'Initiative', source: 'combat-initiative-module' }); env.renderCombat(); env.sendWS({ type: 'combat_roll_initiative', payload: { combatant_id: combatantId, roll, modifier } });
   }
