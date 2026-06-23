@@ -20193,7 +20193,7 @@ function getCombatMoveRestrictionForToken(t) {
   const current = combatants[turnIndex] || null;
   if (!current || String(current.token_id || '') !== tokenId) {
     const helpLink = _moveDeniedHelpLink ? _moveDeniedHelpLink() : '';
-    return { allowed: false, message: 'It is not your turn to move that token.' + helpLink, helpKey: 'movement' };
+    return { allowed: false, message: 'Not your turn to move that token.' + helpLink, helpKey: 'movement' };
   }
   const move = _combat?.movement || null;
   if (move && String(move.token_id || '') === tokenId) {
@@ -20212,7 +20212,23 @@ function getCombatMoveRestrictionForToken(t) {
 }
 
 function _needsCombatMoveConfirm(t) {
-  return !!(t && ROLE === 'player' && _combat?.active && _tokenOwnedByMe(t));
+  if (!(t && ROLE === 'player' && _combat?.active && _tokenOwnedByMe(t))) return false;
+  // Only tokens actually in the initiative order use the plan/confirm flow.
+  // A token that isn't a combatant has no turn or movement budget, so forcing
+  // it through planning would strand it on a dead overlay (and make it borrow
+  // the active combatant's budget). Such tokens move via the normal path.
+  const combatants = Array.isArray(_combat.combatants) ? _combat.combatants : [];
+  return combatants.some(c => String(c?.token_id || '') === String(t.id || ''));
+}
+
+// True when the given token is the combatant whose turn it currently is in a
+// started combat. Used to keep live token_move streaming out of combat (its
+// movement must go through plan/confirm → combat_move_commit instead).
+function _isActiveCombatantToken(tokenId) {
+  if (!_combat?.active || !Array.isArray(_combat.combatants)) return false;
+  const turnIndex = Math.max(0, Number(_combat.turn) || 0);
+  const current = _combat.combatants[turnIndex];
+  return !!(current && String(current.token_id || '') === String(tokenId || ''));
 }
 
 // ── Combat movement distance helpers ─────────────────────────────────────
@@ -20337,11 +20353,23 @@ function _confirmPendingMoveConfirm() {
   const tok = tokens[pending.tokenId];
   if (!tok) {
     _pendingMoveConfirm = null;
+    _combatMovePlan = null;
     _combatMovePath = null;
     return;
   }
   const resolver = pending.resolver || _resolveClientCombatMovement(tok, pending.origX, pending.origY, pending.previewX, pending.previewY);
-  if (!resolver.valid) { showToast(resolver.reason || 'Move is not valid.'); return; }
+  if (!resolver.valid) {
+    // Movement is no longer valid (turn advanced, budget spent, or path too
+    // far). Keep the plan on screen and editable, refresh the resolver + panel
+    // so the reason and the Confirm/Cancel controls stay visible, and surface
+    // why — but never leave the player stranded: Cancel (button / right-click /
+    // Esc) always fully clears state via _cancelPendingMoveConfirm.
+    pending.resolver = resolver;
+    _combatMovePlan = pending;
+    showToast((resolver.reason || 'Move is not valid.') + ' Adjust your path or Cancel.');
+    renderCombat();
+    return;
+  }
   sendWS({ type: 'combat_move_commit', payload: { token_id: pending.tokenId, from_x: pending.origX, from_y: pending.origY, to_x: pending.previewX, to_y: pending.previewY, path: resolver.path, expected_cost_ft: resolver.finalCostFeet, movement_mode: resolver.movementMode, grid_size_px: PX_PER_GRID, ft_per_square: getCurrentGridFtPerSquare() } });
   _pendingMoveConfirm = null; _combatMovePlan = null;
   _combatMovePath = null;
@@ -20770,7 +20798,13 @@ function onMouseMove(e) {
 
     // Throttled/coalesced broadcast — local t.x/t.y above is already updated
     // instantly; only the outbound send is rate-limited.
-    if (!drag.previewMode) {
+    // In started combat, the active combatant's movement MUST go through the
+    // plan/confirm (combat_move_commit) flow — never the live token_move
+    // stream. Gating here prevents a flood of token_move frames (and the
+    // plan↔stream conflict that froze the planning overlay) if a free drag
+    // ever runs while a combat move is pending or this is the moving token's
+    // turn. Non-combat drags stream normally.
+    if (!drag.previewMode && !_pendingMoveConfirm && !_isActiveCombatantToken(drag.tokenId)) {
       const _moveActionId = registerPendingAction(createClientActionId('tm'), { action: 'token_move', tokenId: drag.tokenId });
       scheduleTokenMoveSend(drag.tokenId, { token_id: drag.tokenId, x: t.x, y: t.y, preview: true, client_action_id: _moveActionId });
     }
@@ -46092,6 +46126,15 @@ function combatApplyState(state, source) {
   if (_combat.active && incomingRevision !== null) _combatDebug.sawAuthoritativeActiveRevision = true;
   _combatDebug.lastRenderTime = (typeof Date !== 'undefined' && Date.now) ? Date.now() : null;
   forceCombatStateUISync();
+  // Void any in-progress combat move plan that is no longer this token's turn
+  // (turn advanced, combat ended, or the roster changed). Otherwise the
+  // planning overlay keeps drawing while its Confirm/Cancel controls have left
+  // the panel — a stuck overlay the player can't dismiss.
+  if (_pendingMoveConfirm && (!_combat.active || !_isActiveCombatantToken(_pendingMoveConfirm.tokenId))) {
+    _pendingMoveConfirm = null;
+    _combatMovePlan = null;
+    _combatMovePath = null;
+  }
   if (_combat.active && (_combat.turn !== prevTurn || !prevActive)) {
     const cur = _combat.combatants[_combat.turn];
     if (cur) {
