@@ -936,6 +936,11 @@ async def handle_request_state(payload: dict, session: Session, user: User):
         "type": "state_sync",
         "payload": state
     })
+    await manager.send_to(
+        session.id,
+        user.id,
+        session.to_authoritative_snapshot_for_role(user.role, user.id, source="request_state"),
+    )
 
 
 async def _broadcast_session_quests(session: Session):

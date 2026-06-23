@@ -1313,6 +1313,124 @@ class Session:
             d["active_poll"] = None
         return d
 
+    def to_authoritative_snapshot_for_role(self, role: str, user_id: str = None, source: str = "ws_connect") -> dict:
+        """Build the reconnect snapshot v2 envelope for a single participant.
+
+        The payload is intentionally composed from ``to_state_dict_for_role`` so
+        PR 2 inherits the existing state_sync visibility/security rules while
+        exposing a smaller, documented reconnect contract.
+        """
+        resolved_role = str(role or "viewer").strip().lower() or "viewer"
+        if resolved_role not in {"dm", "assistant_dm", "player", "viewer"}:
+            resolved_role = "viewer"
+        state = self.to_state_dict_for_role(resolved_role, user_id)
+        tokens_payload = state.get("tokens") if isinstance(state.get("tokens"), dict) else {}
+        all_tokens = getattr(self, "tokens", {}) or {}
+        hidden_filtered = 0
+        fog_hidden_filtered = 0
+        if resolved_role != "dm":
+            visible_ids = {str(tid) for tid in tokens_payload.keys()}
+            try:
+                from server.handlers.common import is_npc_or_monster_token, is_token_touching_unrevealed_fog
+            except Exception:
+                is_npc_or_monster_token = None
+                is_token_touching_unrevealed_fog = None
+            for tid, token in all_tokens.items():
+                if str(tid) in visible_ids:
+                    continue
+                if bool(getattr(token, "hidden", False)):
+                    hidden_filtered += 1
+                elif is_npc_or_monster_token and is_token_touching_unrevealed_fog and is_npc_or_monster_token(token) and is_token_touching_unrevealed_fog(self, token):
+                    fog_hidden_filtered += 1
+
+        map_ctx = normalize_map_context(state.get("dm_map_context") or getattr(self, "dm_map_context", "world"))
+        fog_maps = state.get("fog_maps") if isinstance(state.get("fog_maps"), dict) else {}
+        fog_entry = fog_maps.get(map_ctx) or fog_maps.get("world") or {}
+        combat_state = state.get("combat") if isinstance(state.get("combat"), dict) else {}
+        active_profile_id = str(state.get("active_char_profile_id") or (self.active_char_profiles or {}).get(user_id or "") or "")
+        inventory_items = state.get("player_inventory") if isinstance(state.get("player_inventory"), list) else []
+        if resolved_role == "dm":
+            inv_count = sum(len((row or {}).get("items") or []) if isinstance(row, dict) else 0 for row in state.get("player_inventories") or [])
+        else:
+            inv_count = len(inventory_items)
+
+        authority_role = "dm" if resolved_role == "dm" else ("player" if resolved_role == "player" else "viewer")
+        payload = {
+            "snapshot_revision": 0,
+            "session": {
+                "id": str(self.id or ""),
+                "resolved_role": resolved_role,
+                "user_id": str(user_id or ""),
+                "authority": {
+                    "role": authority_role,
+                    "is_dm": resolved_role == "dm",
+                    "is_player": resolved_role == "player",
+                    "is_viewer": resolved_role == "viewer",
+                    "matched_via": "server_session_user",
+                    "can_control_tokens": resolved_role in {"dm", "player", "assistant_dm"},
+                    "can_see_hidden": resolved_role == "dm",
+                },
+            },
+            "map": {
+                "context": map_ctx,
+                "mode": "world" if map_ctx == "world" else ("local" if map_ctx else "unknown"),
+                "current_map_id": "" if map_ctx == "world" else map_ctx,
+                "current_map_url": state.get("dm_current_map_url") or state.get("map_image_url") or "",
+                "map_nav_version": int(state.get("map_nav_version") or 0),
+                "dm_nav_intent": int(state.get("dm_nav_intent") or 0),
+                "map_document_revision": 0,
+                "wall_revision": 0,
+                "door_revision": 0,
+            },
+            "tokens": {
+                "revision": int(state.get("visibility_revision") or 0),
+                "visibility_revision": int(state.get("visibility_revision") or 0),
+                "items": tokens_payload,
+                "count": len(tokens_payload),
+                "filter_summary": {
+                    "hidden_filtered": hidden_filtered,
+                    "fog_hidden_filtered": fog_hidden_filtered,
+                },
+            },
+            "combat": {
+                "active": bool(combat_state.get("active")) if isinstance(combat_state, dict) else False,
+                "revision": int((combat_state or {}).get("revision") or 0) if isinstance(combat_state, dict) else 0,
+                "state": combat_state,
+            },
+            "character": {
+                "active_profile_id": active_profile_id,
+                "runtime_revision": 0,
+                "hydration_status": "ok" if active_profile_id else "missing",
+                "summary": {"profile_count": len(state.get("char_profiles") or []) if isinstance(state.get("char_profiles"), list) else 0},
+            },
+            "spells": {
+                "manifest_revision": 0,
+                "hydration_status": "unknown",
+                "summary": {},
+            },
+            "inventory": {
+                "revision": int(getattr(self, "inventory_revision", 0) or 0),
+                "hydration_status": "ok" if (resolved_role == "dm" or inventory_items or active_profile_id) else "missing",
+                "summary": {"item_count": inv_count},
+            },
+            "fog": {
+                "map_context": str((fog_entry or {}).get("map_context") or map_ctx),
+                "revision": int((fog_entry or {}).get("revision") or 0) if isinstance(fog_entry, dict) else 0,
+                "visibility_revision": int(state.get("visibility_revision") or 0),
+                "enabled": bool((fog_entry or {}).get("enabled")) if isinstance(fog_entry, dict) else False,
+                "summary": {
+                    "cols": int((fog_entry or {}).get("cols") or 0) if isinstance(fog_entry, dict) else 0,
+                    "rows": int((fog_entry or {}).get("rows") or 0) if isinstance(fog_entry, dict) else 0,
+                },
+            },
+            "debug": {
+                "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "source": str(source or "manual"),
+                "legacy_state_sync_also_sent": True,
+            },
+        }
+        return {"type": "authoritative_snapshot", "payload": payload}
+
 
 def normalize_profile_owner_key(name: str) -> str:
     return " ".join(str(name or "").strip().lower().split())
