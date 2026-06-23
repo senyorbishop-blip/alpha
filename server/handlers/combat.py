@@ -22,6 +22,7 @@ from server.handlers.common import (
     is_token_touching_unrevealed_fog,
     _send_action_ack,
     build_live_state_debug_summary,
+    _broadcast_token_event,
 )
 from server.movement import resolve_movement, normalize_movement_mode
 
@@ -444,10 +445,19 @@ def _can_manage_current_turn_movement(session: Session, user: User) -> tuple[boo
 
 async def _broadcast_combat_move_state(session: Session):
     move_state = _ensure_combat_movement_state(session)
-    await manager.broadcast(session.id, {
-        "type": "combat_move_state",
-        "payload": move_state,
-    })
+    # combat_move_state carries the active combatant's token_id/x/y; if that
+    # combatant is a hidden/fog-hidden/wall-hidden NPC (DM moving it on its own
+    # turn) it must not be broadcast to users who can't see that token.
+    from server.handlers.common import _is_token_visible_to_user
+    token_id = str((move_state or {}).get("token_id") or "").strip()
+    token = session.tokens.get(token_id) if token_id else None
+    for uid, u in (session.users or {}).items():
+        if token is not None and not _is_token_visible_to_user(session, token, u):
+            continue
+        await manager.send_to(session.id, uid, {
+            "type": "combat_move_state",
+            "payload": move_state,
+        })
 
 
 async def _send_token_move_denied(session: Session, user: User, token, message: str, *, client_action_id=None):
@@ -551,8 +561,12 @@ async def _handle_combat_move_plan(payload: dict, session: Session, user: User, 
     move_state["last_resolver"] = resolved
     session.combat["movement"] = move_state
     _bump_combat_revision(session, "move_commit")
-    await manager.broadcast(session.id, {"type": "token_moved", "payload": {"token_id": token_id, "x": token.x, "y": token.y, "moved_by": user.name}})
-    await manager.broadcast(session.id, {"type": "combat_move_state", "payload": move_state})
+    # The combatant whose turn this is can be a hidden/fog-hidden/wall-hidden
+    # NPC the DM is moving on its turn — never broadcast position unconditionally.
+    await _broadcast_token_event(manager, session, "token_moved", {
+        "token_id": token_id, "x": token.x, "y": token.y, "moved_by": user.name,
+    }, token)
+    await _broadcast_combat_move_state(session)
     session.add_log(f"{user.name} moved {getattr(token, 'name', 'token')} {resolved.get('finalCostFeet', 0):g} ft ({resolved.get('movementMode')}).", "combat")
     await save_campaign_async(session)
 
