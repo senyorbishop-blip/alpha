@@ -19104,6 +19104,7 @@ function normalizeCombatMovementState(raw) {
  * to its current drag position during combat, showing distance traveled and
  * remaining movement. Called inside a world-transform save/restore block.
  */
+let _drawCombatMovePathErrCount = 0;
 function drawCombatMovePath() {
   try {
     // Support both active drag preview (_combatMovePath) and pending-confirm state
@@ -19275,8 +19276,21 @@ function drawCombatMovePath() {
       ctx.fillText(label, midX, midY - 4 / cam.zoom);
       ctx.restore();
     }
+    // Reached the end without throwing — the overlay rendered fine, so reset
+    // the consecutive-failure counter.
+    _drawCombatMovePathErrCount = 0;
   } catch (err) {
     console.error('[drawCombatMovePath] error:', err, { _combatMovePath, _pendingMoveConfirm });
+    // A persistent throw here would re-fire every animation frame, leaving the
+    // planning overlay unrenderable and the player wedged in "PLANNING MOVE"
+    // with no way to dismiss it. After a few consecutive failures, tear down
+    // the plan/overlay so the UI can never get permanently stuck.
+    _drawCombatMovePathErrCount += 1;
+    if (_drawCombatMovePathErrCount >= 3) {
+      _drawCombatMovePathErrCount = 0;
+      if (typeof _clearCombatMovePlan === 'function') _clearCombatMovePlan();
+      try { showToast('Movement preview failed — plan cleared. Try the move again.'); } catch (_) {}
+    }
   }
 }
 
@@ -20340,9 +20354,7 @@ function _cancelPendingMoveConfirm(showMessage = true) {
     tok.y = Number.isFinite(Number(pending.origY)) ? Number(pending.origY) : tok.y;
     _cacheTokenByContext(tok);
   }
-  _pendingMoveConfirm = null;
-  _combatMovePlan = null;
-  _combatMovePath = null;
+  _clearCombatMovePlan();
   renderCombat();
   if (showMessage) showToast('Movement cancelled.');
 }
@@ -20352,9 +20364,7 @@ function _confirmPendingMoveConfirm() {
   const pending = _pendingMoveConfirm;
   const tok = tokens[pending.tokenId];
   if (!tok) {
-    _pendingMoveConfirm = null;
-    _combatMovePlan = null;
-    _combatMovePath = null;
+    _clearCombatMovePlan();
     return;
   }
   const resolver = pending.resolver || _resolveClientCombatMovement(tok, pending.origX, pending.origY, pending.previewX, pending.previewY);
@@ -20371,8 +20381,10 @@ function _confirmPendingMoveConfirm() {
     return;
   }
   sendWS({ type: 'combat_move_commit', payload: { token_id: pending.tokenId, from_x: pending.origX, from_y: pending.origY, to_x: pending.previewX, to_y: pending.previewY, path: resolver.path, expected_cost_ft: resolver.finalCostFeet, movement_mode: resolver.movementMode, grid_size_px: PX_PER_GRID, ft_per_square: getCurrentGridFtPerSquare() } });
-  _pendingMoveConfirm = null; _combatMovePlan = null;
-  _combatMovePath = null;
+  // Commit sent — do not block waiting for anything. The authoritative
+  // token_moved + combat_move_state broadcast updates the position; clear the
+  // local plan/overlay now so it can't linger on "PLANNING MOVE".
+  _clearCombatMovePlan();
 }
 
 function onMouseDown(e) {
@@ -20696,6 +20708,73 @@ function onMouseDown(e) {
   }
 }
 
+// ── Combat plan recompute coalescing during drag ───────────────────────────
+// onMouseMove can fire many times per animation frame while a player plans a
+// combat move; running the clamp + movement resolver (grid path build + cost
+// solve) on every pixel is wasted synchronous work, and a throw mid-solve would
+// wedge the drag with the planning overlay half-applied. Coalesce the whole
+// recompute to one per frame and guard it so neither the cost is paid per-pixel
+// nor a throw can leave the drag stuck. _flushCombatPlanRecompute is also called
+// synchronously on mouse-up so the final plan is committed to _pendingMoveConfirm
+// before the Confirm/Cancel panel reads it.
+let _combatPlanRecomputePending = null; // latest {origX,origY,targetX,targetY,tokenId} or null
+let _combatPlanRecomputeRaf = 0;
+function _flushCombatPlanRecompute() {
+  if (_combatPlanRecomputeRaf && typeof cancelAnimationFrame === 'function') {
+    cancelAnimationFrame(_combatPlanRecomputeRaf);
+  }
+  _combatPlanRecomputeRaf = 0;
+  const req = _combatPlanRecomputePending;
+  _combatPlanRecomputePending = null;
+  if (!req) return;
+  try {
+    const tok = tokens[req.tokenId];
+    if (!tok) return;
+    // Token stays at its origin (the ghost/path shows the destination), so
+    // clamp + resolve the destination here rather than per-pixel in onMouseMove.
+    const clamped = _clampCombatDragPosition(tok, req.targetX, req.targetY, req.origX, req.origY);
+    const finalSnapped = snapTokenToGrid(clamped.x, clamped.y, tok);
+    const resolver = _resolveClientCombatMovement(tok, req.origX, req.origY, finalSnapped.x, finalSnapped.y);
+    const plan = { origX: req.origX, origY: req.origY, previewX: finalSnapped.x, previewY: finalSnapped.y, tokenId: req.tokenId, resolver };
+    _combatMovePlan = _pendingMoveConfirm = plan;
+    _combatMovePath = { ...plan, tokenW: tok.width || PX_PER_GRID, tokenH: tok.height || PX_PER_GRID };
+  } catch (err) {
+    // A throw here must not wedge the drag — log and leave the previous overlay
+    // state intact; the next frame's recompute (or mouse-up) recovers.
+    console.error('[combatPlanRecompute] error:', err, req);
+  }
+}
+function _scheduleCombatPlanRecompute(req) {
+  _combatPlanRecomputePending = req;
+  if (_combatPlanRecomputeRaf) return;
+  if (typeof requestAnimationFrame === 'function') {
+    _combatPlanRecomputeRaf = requestAnimationFrame(_flushCombatPlanRecompute);
+  } else {
+    _flushCombatPlanRecompute();
+  }
+}
+
+// Single source of truth for tearing down a combat move plan/overlay so it can
+// never get stuck on "PLANNING MOVE". Clears the pending-confirm state, the
+// plan, the drawn path, AND any coalesced recompute still queued for the next
+// frame. Used on commit, cancel, error, and on authoritative token_moved.
+function _clearCombatMovePlan() {
+  _pendingMoveConfirm = null;
+  _combatMovePlan = null;
+  _combatMovePath = null;
+  _combatPlanRecomputePending = null;
+}
+function _combatMovePlanMatchesToken(tokenId) {
+  const id = String(tokenId || '');
+  if (!id) return false;
+  return (
+    (_pendingMoveConfirm && String(_pendingMoveConfirm.tokenId || '') === id) ||
+    (_combatMovePlan && String(_combatMovePlan.tokenId || '') === id) ||
+    (_combatMovePath && String(_combatMovePath.tokenId || '') === id) ||
+    (_combatPlanRecomputePending && String(_combatPlanRecomputePending.tokenId || '') === id)
+  );
+}
+
 function onMouseMove(e) {
   // Compute world coords once per event
   const _pt = getCanvasPointer(e);
@@ -20780,33 +20859,32 @@ function onMouseMove(e) {
     if (!t) return;
     const snapped = snapTokenToGrid(drag.origX + dx, drag.origY + dy, t);
 
-    // Clamp to remaining combat movement budget
-    const clamped = (drag.previewMode)
-      ? _clampCombatDragPosition(t, snapped.x, snapped.y, drag.origX, drag.origY)
-      : { x: snapped.x, y: snapped.y, clamped: false };
-    const finalSnapped = snapTokenToGrid(clamped.x, clamped.y, t);
-    t.x = finalSnapped.x;
-    t.y = finalSnapped.y;
-
-    // Update combat movement path for visualization
     if (drag.previewMode) {
-      const resolver = _resolveClientCombatMovement(t, drag.origX, drag.origY, finalSnapped.x, finalSnapped.y);
+      // Combat move planning: the token itself stays at its origin (the ghost
+      // and path show the destination), so reset its local position immediately
+      // and coalesce the heavier clamp + resolver recompute to one per animation
+      // frame. A fast drag firing many mousemoves per frame must never run the
+      // path/cost solve every pixel, and a throw in that solve must not wedge
+      // the drag — both are handled by _scheduleCombatPlanRecompute/_flush.
       t.x = drag.origX; t.y = drag.origY;
-      _combatMovePlan = _pendingMoveConfirm = { origX: drag.origX, origY: drag.origY, previewX: finalSnapped.x, previewY: finalSnapped.y, tokenId: drag.tokenId, resolver };
-      _combatMovePath = { origX: drag.origX, origY: drag.origY, previewX: finalSnapped.x, previewY: finalSnapped.y, tokenId: drag.tokenId, resolver, tokenW: t.width || PX_PER_GRID, tokenH: t.height || PX_PER_GRID };
-    }
+      _scheduleCombatPlanRecompute({ origX: drag.origX, origY: drag.origY, targetX: snapped.x, targetY: snapped.y, tokenId: drag.tokenId });
+    } else {
+      const finalSnapped = snapTokenToGrid(snapped.x, snapped.y, t);
+      t.x = finalSnapped.x;
+      t.y = finalSnapped.y;
 
-    // Throttled/coalesced broadcast — local t.x/t.y above is already updated
-    // instantly; only the outbound send is rate-limited.
-    // In started combat, the active combatant's movement MUST go through the
-    // plan/confirm (combat_move_commit) flow — never the live token_move
-    // stream. Gating here prevents a flood of token_move frames (and the
-    // plan↔stream conflict that froze the planning overlay) if a free drag
-    // ever runs while a combat move is pending or this is the moving token's
-    // turn. Non-combat drags stream normally.
-    if (!drag.previewMode && !_pendingMoveConfirm && !_isActiveCombatantToken(drag.tokenId)) {
-      const _moveActionId = registerPendingAction(createClientActionId('tm'), { action: 'token_move', tokenId: drag.tokenId });
-      scheduleTokenMoveSend(drag.tokenId, { token_id: drag.tokenId, x: t.x, y: t.y, preview: true, client_action_id: _moveActionId });
+      // Throttled/coalesced broadcast — local t.x/t.y above is already updated
+      // instantly; only the outbound send is rate-limited.
+      // In started combat, the active combatant's movement MUST go through the
+      // plan/confirm (combat_move_commit) flow — never the live token_move
+      // stream. Gating here prevents a flood of token_move frames (and the
+      // plan↔stream conflict that froze the planning overlay) if a free drag
+      // ever runs while a combat move is pending or this is the moving token's
+      // turn. Non-combat drags stream normally.
+      if (!_pendingMoveConfirm && !_isActiveCombatantToken(drag.tokenId)) {
+        const _moveActionId = registerPendingAction(createClientActionId('tm'), { action: 'token_move', tokenId: drag.tokenId });
+        scheduleTokenMoveSend(drag.tokenId, { token_id: drag.tokenId, x: t.x, y: t.y, preview: true, client_action_id: _moveActionId });
+      }
     }
   }
 }
@@ -20887,6 +20965,10 @@ function onMouseUp(e) {
   if (drag.active && drag.tokenId) {
     const t = tokens[drag.tokenId];
     if (drag.previewMode) {
+      // Run any coalesced recompute now so _pendingMoveConfirm reflects the
+      // final drag position before the Confirm/Cancel panel and toast read it
+      // (a quick drag may end in the same frame, before the rAF flush fires).
+      _flushCombatPlanRecompute();
       if (t) {
         // Player combat movement now commits on mouse-up. The old extra
         // click-to-confirm step left the token in an unsent local preview,
@@ -33800,9 +33882,12 @@ function handleLegacyMessage(msg) {
       // token_moved on the same visibility_revision counter, so a delayed
       // packet can't snap a token back to a stale position.
       if (_isStaleVisibilityPayload(p)) break;
-      if (_pendingMoveConfirm && String(_pendingMoveConfirm.tokenId || '') === String(p.token_id || '')) {
-        _pendingMoveConfirm = null;
-      }
+      // An authoritative position for the planned token supersedes any local
+      // plan/overlay — clear ALL planning state (not just _pendingMoveConfirm),
+      // plus any recompute still queued for the next frame, so the "PLANNING
+      // MOVE" overlay can never get stuck after the token has authoritatively
+      // moved (on either the player's or the DM's view).
+      if (_combatMovePlanMatchesToken(p.token_id)) _clearCombatMovePlan();
       if (drag.active && String(drag.tokenId || '') === String(p.token_id || '')) {
         // Ignore echoed/relayed positions while this client is dragging the same token;
         // applying them mid-drag causes visible rubber-banding on slow connections.
@@ -33840,9 +33925,9 @@ function handleLegacyMessage(msg) {
     }
 
     case 'token_move_denied': {
-      if (_pendingMoveConfirm && String(_pendingMoveConfirm.tokenId || '') === String(p.token_id || '')) {
-        _pendingMoveConfirm = null;
-      }
+      // Denial is an error path — tear down the whole plan/overlay (not just
+      // _pendingMoveConfirm) so it can't get stuck on "PLANNING MOVE".
+      if (_combatMovePlanMatchesToken(p.token_id)) _clearCombatMovePlan();
       if (p.token_id && tokens[p.token_id]) {
         if (Number.isFinite(Number(p.x))) tokens[p.token_id].x = Number(p.x);
         if (Number.isFinite(Number(p.y))) tokens[p.token_id].y = Number(p.y);
@@ -33850,7 +33935,9 @@ function handleLegacyMessage(msg) {
       }
       if (p.movement) {
         _combat.movement = p.movement;
-        renderCombat();
+        // Use the guarded resync (not a bare renderCombat) so a denial landing
+        // mid-render can't re-enter renderCombat synchronously.
+        forceCombatStateUISync();
       }
       if (p.message) showToast(p.message);
       break;
@@ -33866,8 +33953,15 @@ function handleLegacyMessage(msg) {
 
     case 'combat_move_state': {
       _combat.movement = p && typeof p === 'object' ? p : null;
-      _pendingMoveConfirm = null; _combatMovePlan = null; _combatMovePath = null;
-      renderCombat();
+      // Authoritative movement budget — drop any in-flight local plan/overlay
+      // (including a recompute still queued for the next animation frame) so it
+      // can't re-draw "PLANNING MOVE" over the committed state.
+      _clearCombatMovePlan();
+      // Route the repaint through forceCombatStateUISync, whose
+      // __combatRenderActive microtask guard prevents a combat_move_state that
+      // arrives mid-render from synchronously re-entering renderCombat and
+      // deadlocking the render.
+      forceCombatStateUISync();
       break;
     }
     case 'combat_move_preview_result': {
@@ -46131,9 +46225,7 @@ function combatApplyState(state, source) {
   // planning overlay keeps drawing while its Confirm/Cancel controls have left
   // the panel — a stuck overlay the player can't dismiss.
   if (_pendingMoveConfirm && (!_combat.active || !_isActiveCombatantToken(_pendingMoveConfirm.tokenId))) {
-    _pendingMoveConfirm = null;
-    _combatMovePlan = null;
-    _combatMovePath = null;
+    _clearCombatMovePlan();
   }
   if (_combat.active && (_combat.turn !== prevTurn || !prevActive)) {
     const cur = _combat.combatants[_combat.turn];
