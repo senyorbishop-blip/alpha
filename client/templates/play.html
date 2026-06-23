@@ -12057,6 +12057,19 @@ function handleAuthoritativeSnapshot(payload) {
     const authoritativeCombat = (combatBlock.state && typeof combatBlock.state === 'object') ? combatBlock.state : combatBlock;
     applyAuthoritativeCombatState(authoritativeCombat, 'authoritative_snapshot');
   }
+  if (valid && tokensBlock.items && typeof tokensBlock.items === 'object') {
+    applyAuthoritativeTokenSnapshot({
+      tokens: tokensBlock.items,
+      token_state_revision: tokensBlock.token_state_revision,
+    }, 'authoritative_snapshot');
+  }
+  if (valid && mapBlock.context !== undefined) {
+    applyAuthoritativeMapContext({
+      dm_map_context: mapBlock.current_map_id || (mapBlock.mode === 'world' ? 'world' : mapBlock.context),
+      nav_version: mapBlock.map_nav_version,
+      map_mode: mapBlock.mode,
+    }, 'authoritative_snapshot');
+  }
   return valid;
 }
 window.handleAuthoritativeSnapshot = handleAuthoritativeSnapshot;
@@ -12167,6 +12180,134 @@ function _isStaleInventoryPayload(payload) {
   _lastVisibilityRevisionByStream[stream] = rev;
   return false;
 }
+
+// Token-state revision guard — mirrors _isStaleVisibilityPayload, but keyed
+// off `token_state_revision` (bumped on every token mutation: move, create,
+// delete, hide/unhide, hp/ac/status update, map-context change — not just
+// visibility-affecting ones) so a single-token event that raced behind a
+// newer token snapshot/event can be dropped instead of rubber-banding or
+// resurrecting stale token state.
+let _lastTokenStateRevision = 0;
+function _isStaleTokenStateEvent(payload) {
+  const rev = Number(payload && payload.token_state_revision);
+  if (!Number.isFinite(rev)) return false;
+  if (rev < _lastTokenStateRevision) return true;
+  _lastTokenStateRevision = rev;
+  return false;
+}
+
+// Tokens the server has told us are hidden/fog-hidden/removed via a newer
+// snapshot or visibility event. A stale single-token event for one of these
+// ids (e.g. a queued token_moved that was in flight when the token went
+// hidden) must never resurrect it on this client — this guard catches that
+// even when the stale event's own revision check is inconclusive (e.g. a
+// legacy payload shape with no token_state_revision at all).
+const _suppressedHiddenTokenIds = new Set();
+function _markTokenSuppressed(tokenId) { if (tokenId) _suppressedHiddenTokenIds.add(String(tokenId)); }
+function _clearTokenSuppressed(tokenId) { if (tokenId) _suppressedHiddenTokenIds.delete(String(tokenId)); }
+function _isTokenSuppressed(tokenId) { return _suppressedHiddenTokenIds.has(String(tokenId || '')); }
+
+// Tracks the map context/mode this client currently believes is
+// authoritative, purely for debug-log clarity (the actual stale-payload
+// rejection for map nav reuses the existing `_shouldIgnoreStaleNav` /
+// `_acceptNavVersion` gate keyed on `map_nav_version`).
+let _lastAppliedMapContext = 'world';
+let _lastAppliedMapMode = 'world';
+
+// liveDebugLog is declared earlier in this script (and thus always in scope
+// in the browser), but this guard keeps these helpers safely callable from
+// non-browser harnesses (e.g. node-based unit tests on extracted snippets)
+// where liveDebugLog isn't defined at all.
+function _tokenMapDebugLog(label, data) {
+  if (typeof liveDebugLog === 'function') liveDebugLog(label, data);
+}
+
+// One entry point for every map-context-bearing message (state_sync,
+// authoritative_snapshot, local_map_enter/exit, reconnect responses) so a
+// stale/delayed local-map payload can never overwrite a newer world-map
+// payload (or vice versa) just because it happened to arrive later.
+function applyAuthoritativeMapContext(payload, source) {
+  const p = payload && typeof payload === 'object' ? payload : {};
+  const stale = _shouldIgnoreStaleNav(p);
+  if (!stale) {
+    _acceptNavVersion(p);
+    if (p.dm_map_context !== undefined) {
+      _lastAppliedMapContext = String(p.dm_map_context || 'world');
+      _lastAppliedMapMode = _lastAppliedMapContext === 'world' ? 'world' : 'local';
+    }
+  }
+  _tokenMapDebugLog('map_context ' + (stale ? 'ignored' : 'applied'), {
+    source: String(source || ''),
+    nav_version: _getNavVersion(p),
+    tracked_nav_version: _mapNavVersion,
+    map_context: String(p.dm_map_context || ''),
+    map_mode: String(p.map_mode || (p.dm_map_context === 'world' ? 'world' : '')),
+    applied: !stale,
+  });
+  return !stale;
+}
+if (typeof window !== 'undefined') window.applyAuthoritativeMapContext = applyAuthoritativeMapContext;
+
+// One entry point for every full token snapshot (legacy state_sync,
+// authoritative_snapshot, tokens_sync, local-map enter/exit token payloads,
+// reconnect responses). Drops the snapshot if it carries an older
+// `token_state_revision` than the last one this client applied, and tracks
+// which currently-hidden token ids the snapshot is aware of so a later
+// stale single-token event can't resurrect one of them.
+function applyAuthoritativeTokenSnapshot(payload, source) {
+  const p = payload && typeof payload === 'object' ? payload : {};
+  const rev = Number(p.token_state_revision);
+  if (Number.isFinite(rev) && rev < _lastTokenStateRevision) {
+    _tokenMapDebugLog('token_snapshot ignored', { source: String(source || ''), token_state_revision: rev, tracked_token_state_revision: _lastTokenStateRevision });
+    return false;
+  }
+  if (Number.isFinite(rev)) _lastTokenStateRevision = rev;
+  applyAuthoritativeTokenSync(p);
+  _suppressedHiddenTokenIds.clear();
+  const tokenPayload = p.tokens && typeof p.tokens === 'object' ? p.tokens : {};
+  Object.keys(tokenPayload).forEach(id => {
+    const t = tokenPayload[id];
+    if (t && t.hidden) _markTokenSuppressed(id);
+  });
+  _tokenMapDebugLog('token_snapshot applied', {
+    source: String(source || ''),
+    token_state_revision: Number.isFinite(rev) ? rev : undefined,
+    token_count: Object.keys(tokenPayload).length,
+  });
+  return true;
+}
+if (typeof window !== 'undefined') window.applyAuthoritativeTokenSnapshot = applyAuthoritativeTokenSnapshot;
+
+// One entry point for every single-token event (token_moved/created/updated/
+// removed/hidden_changed/removed_hidden). Runs the stale-revision + hidden-
+// suppression guards first, then invokes `applyFn` (the message's existing
+// state-mutation logic) only if the event should actually be applied.
+function applyAuthoritativeTokenEvent(eventType, payload, applyFn, source) {
+  const p = payload && typeof payload === 'object' ? payload : {};
+  const tokenId = String(p.token_id || p.id || (p.token && p.token.id) || '');
+  const isHiddenStateEvent = eventType === 'token_hidden_changed' || eventType === 'token_removed_hidden';
+  if (tokenId && !isHiddenStateEvent && _isTokenSuppressed(tokenId)) {
+    _tokenMapDebugLog('token_event ignored (suppressed-hidden)', { source: String(source || ''), event: eventType, token_id: tokenId });
+    return false;
+  }
+  if (_isStaleTokenStateEvent(p)) {
+    _tokenMapDebugLog('token_event ignored (stale revision)', { source: String(source || ''), event: eventType, token_id: tokenId, token_state_revision: Number(p.token_state_revision) });
+    return false;
+  }
+  if (eventType === 'token_hidden_changed') {
+    const tok = p.token || p;
+    if (tok && tok.hidden) _markTokenSuppressed(tok.id || tokenId);
+    else _clearTokenSuppressed((tok && tok.id) || tokenId);
+  } else if (eventType === 'token_removed_hidden') {
+    _markTokenSuppressed(tokenId);
+  } else if (eventType === 'token_created' || eventType === 'token_placed') {
+    _clearTokenSuppressed(tokenId);
+  }
+  applyFn();
+  _tokenMapDebugLog('token_event applied', { source: String(source || ''), event: eventType, token_id: tokenId, token_state_revision: Number(p.token_state_revision) || undefined });
+  return true;
+}
+if (typeof window !== 'undefined') window.applyAuthoritativeTokenEvent = applyAuthoritativeTokenEvent;
 let _combatFogSyncTimer = null;
 let _combatFogSyncLastKey = '';
 function _combatFogVisibleNpcHash() {
@@ -32739,7 +32880,12 @@ function handleLegacyMessage(msg) {
 
       // Rebuild the live/staging token split after map navigation settles so the
       // board reflects the map the client is actually viewing, not a stale pre-nav guess.
-      applyAuthoritativeTokenSync({ tokens: p.tokens || {} });
+      // state_sync is a full reconnect snapshot — always authoritative regardless of
+      // token_state_revision ordering, but we still route it through the shared apply
+      // path so revision/suppression tracking starts from a known-correct baseline.
+      _lastTokenStateRevision = Math.max(_lastTokenStateRevision, Number(p.token_state_revision) || 0);
+      applyAuthoritativeTokenSnapshot({ tokens: p.tokens || {}, token_state_revision: _lastTokenStateRevision }, 'state_sync');
+      applyAuthoritativeMapContext({ dm_map_context: dmCtx, nav_version: Number(p.map_nav_version) || 0, map_mode: onLocal ? 'local' : 'world' }, 'state_sync');
       if (ROLE === 'dm' && crossScenePlayerTokenCount > 0) {
         setTimeout(() => showToast(`${crossScenePlayerTokenCount} token${crossScenePlayerTokenCount>1?'s':''} in staging from other maps`), 800);
       }
@@ -32817,9 +32963,10 @@ function handleLegacyMessage(msg) {
 
     case 'tokens_sync': {
       const _tokensSyncStale = _isStaleVisibilityPayload(p);
-      liveDebugLog('tokens_sync ' + (_tokensSyncStale ? 'ignored' : 'applied'), buildClientLiveStateSummary('tokens_sync', p, { ignored: _tokensSyncStale }));
+      liveDebugLog('tokens_sync ' + (_tokensSyncStale ? 'ignored' : 'applied'), buildClientLiveStateSummary('tokens_sync', p, { ignored: _tokensSyncStale, token_state_revision: Number(p.token_state_revision) || 0 }));
       if (_tokensSyncStale) break;
-      applyAuthoritativeTokenSync(p);
+      applyAuthoritativeTokenSnapshot(p, 'tokens_sync');
+      if (p.dm_map_context !== undefined) applyAuthoritativeMapContext(p, 'tokens_sync');
       if (p.corpse_states && typeof p.corpse_states === 'object') {
         corpseStates = { ...p.corpse_states };
       }
@@ -33465,65 +33612,69 @@ function handleLegacyMessage(msg) {
     }
 
     case 'token_created': {
-      const newTok = p.token;
-      _cacheTokenByContext(newTok);
-      const myCtx  = _currentPoi ? (_currentPoi.id || '__local__') : 'world';
-      const tokCtx = newTok.map_context || 'world';
+      applyAuthoritativeTokenEvent('token_created', p, () => {
+        const newTok = p.token;
+        _cacheTokenByContext(newTok);
+        const myCtx  = _currentPoi ? (_currentPoi.id || '__local__') : 'world';
+        const tokCtx = newTok.map_context || 'world';
 
-      // Remove stale staging entry for same owner (prevents duplicate staging icons)
-      Object.keys(_stagingTokens).forEach(k => {
-        if (_stagingTokens[k].owner_id && _stagingTokens[k].owner_id === newTok.owner_id)
-          delete _stagingTokens[k];
-      });
+        // Remove stale staging entry for same owner (prevents duplicate staging icons)
+        Object.keys(_stagingTokens).forEach(k => {
+          if (_stagingTokens[k].owner_id && _stagingTokens[k].owner_id === newTok.owner_id)
+            delete _stagingTokens[k];
+        });
 
-      if (newTok.staged) {
-        _stagingTokens[newTok.id] = newTok;
-      } else if (tokCtx === myCtx) {
-        // Token was placed on the same map we're currently viewing → show on map
-        if (newTok.maxHp && newTok.hp === undefined) newTok.hp = newTok.maxHp;
-        tokens[newTok.id] = newTok;
-      } else if (newTok.owner_id) {
-        // Player tokens from other maps return in staging
-        _stagingTokens[newTok.id] = newTok;
-      }
+        if (newTok.staged) {
+          _stagingTokens[newTok.id] = newTok;
+        } else if (tokCtx === myCtx) {
+          // Token was placed on the same map we're currently viewing → show on map
+          if (newTok.maxHp && newTok.hp === undefined) newTok.hp = newTok.maxHp;
+          tokens[newTok.id] = newTok;
+        } else if (newTok.owner_id) {
+          // Player tokens from other maps return in staging
+          _stagingTokens[newTok.id] = newTok;
+        }
 
-      buildStagingArea();
-      if (_pendingTokenImageCreate && p.client_nonce && p.client_nonce === _pendingTokenImageCreate.clientNonce) {
-        const pending = _pendingTokenImageCreate;
-        _pendingTokenImageCreate = null;
-        uploadTokenImageFile(newTok.id, pending.file).then(() => showToast('Token image uploaded.')).catch(err => showToast(err.message || 'Token image upload failed.'));
-      }
-      if (ROLE === 'player' && newTok.owner_id === USER_ID) syncMyCharacterFormFromToken();
-      if (p.log) addLogEntry(p.log);
-      updatePermSelects();
-      renderTokenEmotePanel();
+        buildStagingArea();
+        if (_pendingTokenImageCreate && p.client_nonce && p.client_nonce === _pendingTokenImageCreate.clientNonce) {
+          const pending = _pendingTokenImageCreate;
+          _pendingTokenImageCreate = null;
+          uploadTokenImageFile(newTok.id, pending.file).then(() => showToast('Token image uploaded.')).catch(err => showToast(err.message || 'Token image upload failed.'));
+        }
+        if (ROLE === 'player' && newTok.owner_id === USER_ID) syncMyCharacterFormFromToken();
+        if (p.log) addLogEntry(p.log);
+        updatePermSelects();
+        renderTokenEmotePanel();
+      }, 'ws');
       break;
     }
 
     case 'token_placed': {
-      // Token dragged from staging onto the map — move it out of staging on all clients.
-      _removeTokenFromAllMapCaches(p.token_id);
-      // Use the full token payload when available so clients can recover even if they
-      // never cached the staged token locally.
-      const myCtxP = _currentPoi ? (_currentPoi.id || '__local__') : 'world';
-      const placedTok = p.token || _stagingTokens[p.token_id] || tokens[p.token_id];
-      if (placedTok) {
-        placedTok.x = p.x;
-        placedTok.y = p.y;
-        placedTok.map_context = p.map_context || placedTok.map_context || 'world';
-        placedTok.staged = false;
-        delete _stagingTokens[p.token_id];
-        if ((placedTok.map_context || 'world') === myCtxP) {
-          tokens[p.token_id] = placedTok;
-        } else if (placedTok.owner_id) {
-          _stagingTokens[p.token_id] = placedTok;
-          delete tokens[p.token_id];
+      applyAuthoritativeTokenEvent('token_placed', p, () => {
+        // Token dragged from staging onto the map — move it out of staging on all clients.
+        _removeTokenFromAllMapCaches(p.token_id);
+        // Use the full token payload when available so clients can recover even if they
+        // never cached the staged token locally.
+        const myCtxP = _currentPoi ? (_currentPoi.id || '__local__') : 'world';
+        const placedTok = p.token || _stagingTokens[p.token_id] || tokens[p.token_id];
+        if (placedTok) {
+          placedTok.x = p.x;
+          placedTok.y = p.y;
+          placedTok.map_context = p.map_context || placedTok.map_context || 'world';
+          placedTok.staged = false;
+          delete _stagingTokens[p.token_id];
+          if ((placedTok.map_context || 'world') === myCtxP) {
+            tokens[p.token_id] = placedTok;
+          } else if (placedTok.owner_id) {
+            _stagingTokens[p.token_id] = placedTok;
+            delete tokens[p.token_id];
+          }
+          _cacheTokenByContext(placedTok);
+          buildStagingArea();
+          if (ROLE === 'player' && placedTok.owner_id === USER_ID) syncMyCharacterFormFromToken(true);
         }
-        _cacheTokenByContext(placedTok);
-        buildStagingArea();
-        if (ROLE === 'player' && placedTok.owner_id === USER_ID) syncMyCharacterFormFromToken(true);
-      }
-      renderTokenEmotePanel();
+        renderTokenEmotePanel();
+      }, 'ws');
       break;
     }
 
@@ -33540,32 +33691,34 @@ function handleLegacyMessage(msg) {
         // applying them mid-drag causes visible rubber-banding on slow connections.
         break;
       }
-      const _moveTarget = tokens[p.token_id] || _stagingTokens[p.token_id];
-      if (_moveTarget) {
-        if (shouldSnapTokenMovement(_moveTarget, p)) {
-          delete _tokenInterpolations[String(p.token_id || '')];
-          _moveTarget.x = p.x;
-          _moveTarget.y = p.y;
-          _cacheTokenByContext(_moveTarget);
-        } else {
-          let queued = false;
-          try {
-            queued = queueTokenInterpolation(
-              p.token_id,
-              { x: _moveTarget.x, y: _moveTarget.y },
-              { x: p.x, y: p.y }
-            );
-          } catch (_err) {
-            queued = false;
-          }
-          if (!queued) {
-            // No render loop / rAF available (or interpolation failed) — fall back to a direct snap.
+      applyAuthoritativeTokenEvent('token_moved', p, () => {
+        const _moveTarget = tokens[p.token_id] || _stagingTokens[p.token_id];
+        if (_moveTarget) {
+          if (shouldSnapTokenMovement(_moveTarget, p)) {
+            delete _tokenInterpolations[String(p.token_id || '')];
             _moveTarget.x = p.x;
             _moveTarget.y = p.y;
             _cacheTokenByContext(_moveTarget);
+          } else {
+            let queued = false;
+            try {
+              queued = queueTokenInterpolation(
+                p.token_id,
+                { x: _moveTarget.x, y: _moveTarget.y },
+                { x: p.x, y: p.y }
+              );
+            } catch (_err) {
+              queued = false;
+            }
+            if (!queued) {
+              // No render loop / rAF available (or interpolation failed) — fall back to a direct snap.
+              _moveTarget.x = p.x;
+              _moveTarget.y = p.y;
+              _cacheTokenByContext(_moveTarget);
+            }
           }
         }
-      }
+      }, 'ws');
       break;
     }
 
@@ -33608,25 +33761,27 @@ function handleLegacyMessage(msg) {
     }
 
     case 'token_hp_updated': {
-      const updTok = tokens[p.token_id] || _stagingTokens[p.token_id];
-      if (updTok) {
-        const prevHp = Number(updTok.hp);
-        updTok.hp = p.hp; updTok.maxHp = p.maxHp;
-        _cacheTokenByContext(updTok);
-        if (_hpPopupTokenId === p.token_id) updateHpPopupDisplay(updTok);
-        if (ROLE === 'player' && updTok.owner_id === USER_ID) syncMyCharacterFormFromToken();
-        if (ROLE === 'player' && updTok.owner_id === USER_ID) {
-          const nextHp = Number(p.hp);
-          if (Number.isFinite(prevHp) && Number.isFinite(nextHp) && prevHp <= 0 && nextHp > 0) {
-            showToast(`🛟 You're back up at ${Math.round(nextHp)} HP.`);
+      applyAuthoritativeTokenEvent('token_hp_updated', p, () => {
+        const updTok = tokens[p.token_id] || _stagingTokens[p.token_id];
+        if (updTok) {
+          const prevHp = Number(updTok.hp);
+          updTok.hp = p.hp; updTok.maxHp = p.maxHp;
+          _cacheTokenByContext(updTok);
+          if (_hpPopupTokenId === p.token_id) updateHpPopupDisplay(updTok);
+          if (ROLE === 'player' && updTok.owner_id === USER_ID) syncMyCharacterFormFromToken();
+          if (ROLE === 'player' && updTok.owner_id === USER_ID) {
+            const nextHp = Number(p.hp);
+            if (Number.isFinite(prevHp) && Number.isFinite(nextHp) && prevHp <= 0 && nextHp > 0) {
+              showToast(`🛟 You're back up at ${Math.round(nextHp)} HP.`);
+            }
           }
         }
-      }
-      if (p.corpse_state && p.token_id) {
-        corpseStates[String(p.token_id)] = p.corpse_state;
-      }
-      if (p.log) addLogEntry({ ...p.log, type: 'system' });
-      renderPartyStatusPanel();
+        if (p.corpse_state && p.token_id) {
+          corpseStates[String(p.token_id)] = p.corpse_state;
+        }
+        if (p.log) addLogEntry({ ...p.log, type: 'system' });
+        renderPartyStatusPanel();
+      }, 'ws');
       break;
     }
     case 'token_edited': {
@@ -33641,13 +33796,15 @@ function handleLegacyMessage(msg) {
     case 'token_updated': {
       const updData = p.token || p;
       if (!updData || !updData.id) break;
-      const updTok = tokens[updData.id] || _stagingTokens[updData.id];
-      if (updTok) {
-        Object.assign(updTok, updData);
-        _cacheTokenByContext(updTok);
-        if (ROLE === 'player' && updTok.owner_id === USER_ID) syncMyCharacterFormFromToken();
-      }
-      renderPartyStatusPanel();
+      applyAuthoritativeTokenEvent('token_updated', { ...p, token_id: updData.id }, () => {
+        const updTok = tokens[updData.id] || _stagingTokens[updData.id];
+        if (updTok) {
+          Object.assign(updTok, updData);
+          _cacheTokenByContext(updTok);
+          if (ROLE === 'player' && updTok.owner_id === USER_ID) syncMyCharacterFormFromToken();
+        }
+        renderPartyStatusPanel();
+      }, 'ws');
       break;
     }
     case 'token_condition_changed': {
@@ -33708,51 +33865,57 @@ function handleLegacyMessage(msg) {
     case 'token_hidden_changed': {
       const tok = p.token || p;
       if (!tok || !tok.id) break;
-      _removeTokenFromAllMapCaches(tok.id);
-      if (tok.hidden && ROLE !== 'dm') {
-        delete tokens[tok.id];
-        delete _stagingTokens[tok.id];
-        break;
-      }
-      const myCtx = _currentPoi ? (_currentPoi.id || '__local__') : 'world';
-      const tokCtx = tok.map_context || 'world';
-      if (tok.staged) {
-        if (!_stagingTokens[tok.id]) _stagingTokens[tok.id] = tok;
-        else Object.assign(_stagingTokens[tok.id], tok);
-        delete tokens[tok.id];
-      } else if (tokCtx === myCtx) {
-        if (!tokens[tok.id]) tokens[tok.id] = tok;
-        else Object.assign(tokens[tok.id], tok);
-        delete _stagingTokens[tok.id];
-      } else {
-        if (!_stagingTokens[tok.id]) _stagingTokens[tok.id] = tok;
-        else Object.assign(_stagingTokens[tok.id], tok);
-        delete tokens[tok.id];
-      }
-      if (!(tok.hidden && ROLE !== 'dm')) _cacheTokenByContext(tok);
-      buildStagingArea();
-      if (ROLE === 'player' && tok.owner_id === USER_ID) syncMyCharacterFormFromToken();
-      renderTokenEmotePanel();
+      applyAuthoritativeTokenEvent('token_hidden_changed', { ...p, token_id: tok.id }, () => {
+        _removeTokenFromAllMapCaches(tok.id);
+        if (tok.hidden && ROLE !== 'dm') {
+          delete tokens[tok.id];
+          delete _stagingTokens[tok.id];
+          return;
+        }
+        const myCtx = _currentPoi ? (_currentPoi.id || '__local__') : 'world';
+        const tokCtx = tok.map_context || 'world';
+        if (tok.staged) {
+          if (!_stagingTokens[tok.id]) _stagingTokens[tok.id] = tok;
+          else Object.assign(_stagingTokens[tok.id], tok);
+          delete tokens[tok.id];
+        } else if (tokCtx === myCtx) {
+          if (!tokens[tok.id]) tokens[tok.id] = tok;
+          else Object.assign(tokens[tok.id], tok);
+          delete _stagingTokens[tok.id];
+        } else {
+          if (!_stagingTokens[tok.id]) _stagingTokens[tok.id] = tok;
+          else Object.assign(_stagingTokens[tok.id], tok);
+          delete tokens[tok.id];
+        }
+        _cacheTokenByContext(tok);
+        buildStagingArea();
+        if (ROLE === 'player' && tok.owner_id === USER_ID) syncMyCharacterFormFromToken();
+        renderTokenEmotePanel();
+      }, 'ws');
       break;
     }
     case 'token_sent_to_staging': {
       const tok = p.token || p;
       if (!tok || !tok.id) break;
-      _removeTokenFromAllMapCaches(tok.id);
-      delete tokens[tok.id];
-      _stagingTokens[tok.id] = tok;
-      _cacheTokenByContext(tok);
-      buildStagingArea();
-      if (ROLE === 'player' && tok.owner_id === USER_ID) syncMyCharacterFormFromToken();
-      renderTokenEmotePanel();
+      applyAuthoritativeTokenEvent('token_sent_to_staging', { ...p, token_id: tok.id }, () => {
+        _removeTokenFromAllMapCaches(tok.id);
+        delete tokens[tok.id];
+        _stagingTokens[tok.id] = tok;
+        _cacheTokenByContext(tok);
+        buildStagingArea();
+        if (ROLE === 'player' && tok.owner_id === USER_ID) syncMyCharacterFormFromToken();
+        renderTokenEmotePanel();
+      }, 'ws');
       break;
     }
     case 'token_removed_hidden': {
       // Non-DM: server says this token is now hidden, remove it
-      _removeTokenFromAllMapCaches(p.id);
-      delete tokens[p.id];
-      delete _stagingTokens[p.id];
-      renderTokenEmotePanel();
+      applyAuthoritativeTokenEvent('token_removed_hidden', p, () => {
+        _removeTokenFromAllMapCaches(p.id);
+        delete tokens[p.id];
+        delete _stagingTokens[p.id];
+        renderTokenEmotePanel();
+      }, 'ws');
       break;
     }
     case 'token_emote': {
@@ -33821,13 +33984,15 @@ function handleLegacyMessage(msg) {
       break;
     }
     case 'token_deleted': {
-      clearPendingTokenMove(p.token_id);
-      _removeTokenFromAllMapCaches(p.token_id);
-      delete tokens[p.token_id];
-      delete _stagingTokens[p.token_id];
-      if (p.log) addLogEntry(p.log);
-      updatePermSelects();
-      renderPartyStatusPanel();
+      applyAuthoritativeTokenEvent('token_deleted', p, () => {
+        clearPendingTokenMove(p.token_id);
+        _removeTokenFromAllMapCaches(p.token_id);
+        delete tokens[p.token_id];
+        delete _stagingTokens[p.token_id];
+        if (p.log) addLogEntry(p.log);
+        updatePermSelects();
+        renderPartyStatusPanel();
+      }, 'ws');
       break;
     }
 
@@ -33901,12 +34066,14 @@ function handleLegacyMessage(msg) {
     }
 
     case 'local_map_enter': {
-      if (_shouldIgnoreStaleNav(p)) break;
-      _acceptNavVersion(p);
+      if (!applyAuthoritativeMapContext({ ...p, map_mode: 'local' }, 'local_map_enter')) break;
       if (p.dm_map_context) _dmMapContext = p.dm_map_context;
       __syncMapShellState();
       if (p.map_ctx !== undefined) fogApplyState(p);
       handleLocalMapEnter(p);
+      if (p.token_state_revision !== undefined || p.tokens !== undefined) {
+        applyAuthoritativeTokenSnapshot({ tokens: p.tokens || {}, token_state_revision: p.token_state_revision }, 'local_map_enter');
+      }
       break;
     }
     case 'bring_all_to_map': {
@@ -33916,12 +34083,14 @@ function handleLegacyMessage(msg) {
       break;
     }
     case 'local_map_exit': {
-      if (_shouldIgnoreStaleNav(p)) break;
-      _acceptNavVersion(p);
+      if (!applyAuthoritativeMapContext({ ...p, map_mode: 'world' }, 'local_map_exit')) break;
       if (p.dm_map_context !== undefined) _dmMapContext = p.dm_map_context;
       __syncMapShellState();
       if (p.map_ctx !== undefined) fogApplyState(p);
       handleLocalMapExit(p);
+      if (p.token_state_revision !== undefined || p.tokens !== undefined) {
+        applyAuthoritativeTokenSnapshot({ tokens: p.tokens || {}, token_state_revision: p.token_state_revision }, 'local_map_exit');
+      }
       // Safety fallback: ensure fog is loaded for the returned-to map context.
       setFogMapContext(_dmMapContext || 'world');
       fogLoadMap(fogMapCtx);
