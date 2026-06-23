@@ -18,6 +18,9 @@ from server.handlers.common import (
     _broadcast_token_state_sync,
     _refresh_map_documents,
     build_live_state_debug_summary,
+    bump_wall_revision,
+    bump_door_revision,
+    bump_visibility_revision,
 )
 from server.handlers.combat import run_combat_fog_sync
 
@@ -68,14 +71,24 @@ async def _broadcast_editor_state(session: Session):
 
 
 async def _broadcast_editor_walls_state(session: Session):
-    payload = {"walls": dict(getattr(session, "editor_walls", {}) or {})}
+    payload = {
+        "walls": dict(getattr(session, "editor_walls", {}) or {}),
+        "wall_revision": int(getattr(session, "wall_revision", 0) or 0),
+        "visibility_revision": int(getattr(session, "visibility_revision", 0) or 0),
+    }
     await manager.broadcast(session.id, {"type": "editor_walls_sync", "payload": payload})
 
 
 async def _broadcast_editor_props_state(session: Session):
     props_all = dict(getattr(session, "editor_props", {}) or {})
+    door_revision = int(getattr(session, "door_revision", 0) or 0)
+    visibility_revision = int(getattr(session, "visibility_revision", 0) or 0)
     for uid, u in session.users.items():
-        payload = {"props": filter_editor_props_for_role(props_all, getattr(u, "role", "viewer"))}
+        payload = {
+            "props": filter_editor_props_for_role(props_all, getattr(u, "role", "viewer")),
+            "door_revision": door_revision,
+            "visibility_revision": visibility_revision,
+        }
         await manager.send_to(session.id, uid, {"type": "editor_props_sync", "payload": payload})
 
 
@@ -319,6 +332,73 @@ async def _broadcast_fog_to_visible_users(session: Session, message: dict, map_c
         if callable(broadcast):
             logger.info("[FOG] broadcast type=%s map_ctx=%s via fallback manager.broadcast (no users)", msg_type, map_ctx)
             await broadcast(session.id, message)
+
+
+async def _apply_los_fog_reveal_and_broadcast(session: Session, map_ctx: str, *, reason: str = "los_reveal") -> bool:
+    """Auto-reveal fog cells inside current player wall/door LOS for a map.
+
+    Only ever adds cells to the existing manual-paint bitstring (see
+    server/visibility.py::apply_los_fog_reveal) so this never competes with
+    or undoes the DM's manual fog tools — it just keeps explored fog in sync
+    with where a player token can actually see once walls/doors are involved.
+    """
+    from server.visibility import apply_los_fog_reveal
+    session.fog_maps = normalize_fog_maps(getattr(session, "fog_maps", {}) or {})
+    entry = (session.fog_maps or {}).get(map_ctx)
+    if not isinstance(entry, dict) or not entry.get("enabled", False):
+        return False
+    changed = apply_los_fog_reveal(session, map_ctx)
+    if not changed:
+        return False
+    entry["map_context"] = map_ctx
+    entry["revision"] = int(entry.get("revision") or 0) + 1
+    entry["updated_at"] = time.time()
+    fog_payload = {
+        "map_ctx": map_ctx,
+        "fog_enabled": entry.get("enabled", False),
+        "fog_cols": entry.get("cols", 64),
+        "fog_rows": entry.get("rows", 64),
+        "fog_cells": entry.get("cells", ""),
+        "revision": entry.get("revision", 0),
+        "visibility_revision": int(getattr(session, "visibility_revision", 0) or 0),
+        "map_mode": "world" if map_ctx == "world" else "local",
+        "source": "fog_state",
+    }
+    logger.info("[live_state] fog_state(los_reveal) map_ctx=%s revision=%s reason=%s", map_ctx, entry.get("revision", 0), reason)
+    await _broadcast_fog_to_visible_users(session, {"type": "fog_state", "payload": fog_payload}, map_ctx)
+    return True
+
+
+def filter_door_summary_for_role(session: Session, map_ctx: str, role: str) -> list[dict]:
+    """Compact, role-safe door summary for the authoritative snapshot's map block.
+
+    Mirrors the secret-door filtering in server/session.py::filter_editor_props_for_role
+    (a secret/undiscovered door is omitted entirely for non-DM roles) but only
+    returns the small set of fields a reconnecting client needs to render door
+    state immediately, instead of the full prop payload.
+    """
+    items = list((getattr(session, "editor_props", {}) or {}).get(map_ctx) or [])
+    role = str(role or "viewer").strip().lower() or "viewer"
+    out = []
+    for item in items:
+        if not isinstance(item, dict) or str(item.get("kind") or "").strip().lower() != "door":
+            continue
+        if role != "dm" and bool(item.get("secret")) and not bool(item.get("revealed")):
+            continue
+        row = {
+            "id": str(item.get("id") or ""),
+            "x": item.get("x"),
+            "y": item.get("y"),
+            "facing": str(item.get("facing") or "h"),
+            "state": str(item.get("state") or "closed"),
+            "locked": bool(item.get("locked", False)),
+            "blocks_vision": bool(item.get("blocks_vision", True)),
+        }
+        if role == "dm":
+            row["secret"] = bool(item.get("secret", False))
+            row["revealed"] = bool(item.get("revealed", False))
+        out.append(row)
+    return out
 
 
 def _resolve_local_map_url(session: Session, map_ctx: str, fallback=None) -> str | None:
@@ -687,7 +767,12 @@ async def handle_editor_walls_save(payload: dict, session: Session, user: User):
     walls_all[map_ctx] = _merge_wall_segments(clean)
     session.editor_walls = walls_all
     _refresh_map_documents(session, map_ctx)
+    bump_wall_revision(session)
+    bump_visibility_revision(session)
     await _broadcast_editor_walls_state(session)
+    await _apply_los_fog_reveal_and_broadcast(session, map_ctx, reason="wall_save")
+    await _broadcast_token_state_sync(session)
+    await run_combat_fog_sync(session, reason="wall_save", map_context=map_ctx)
     await save_campaign_async(session)
 
 
@@ -699,7 +784,12 @@ async def handle_editor_walls_clear(payload: dict, session: Session, user: User)
     walls_all[map_ctx] = []
     session.editor_walls = walls_all
     _refresh_map_documents(session, map_ctx)
+    bump_wall_revision(session)
+    bump_visibility_revision(session)
     await _broadcast_editor_walls_state(session)
+    await _apply_los_fog_reveal_and_broadcast(session, map_ctx, reason="wall_clear")
+    await _broadcast_token_state_sync(session)
+    await run_combat_fog_sync(session, reason="wall_clear", map_context=map_ctx)
     await save_campaign_async(session)
 
 
@@ -818,6 +908,8 @@ async def handle_editor_props_save(payload: dict, session: Session, user: User):
             clean_item["locked"] = bool(item.get("locked", False)) if kind == "door" else False
             clean_item["blocks_movement"] = bool(item.get("blocks_movement", True)) if kind == "door" else False
             clean_item["blocks_vision"] = bool(item.get("blocks_vision", True)) if kind == "door" else False
+            clean_item["secret"] = bool(item.get("secret", False)) if kind == "door" else False
+            clean_item["revealed"] = bool(item.get("revealed", False)) if kind == "door" else False
         if kind == "custom_asset":
             clean_item.update(_sanitize_prop_asset_fields(item))
         interactable = normalize_interactable(item.get("interactable"))
@@ -825,10 +917,19 @@ async def handle_editor_props_save(payload: dict, session: Session, user: User):
             clean_item["interactable"] = interactable
         clean.append(clean_item)
     props_all = dict(getattr(session, "editor_props", {}) or {})
+    had_doors = any(str(i.get("kind") or "") == "door" for i in (props_all.get(map_ctx) or []))
+    has_doors = any(str(i.get("kind") or "") == "door" for i in clean)
     props_all[map_ctx] = clean
     session.editor_props = props_all
     _refresh_map_documents(session, map_ctx)
+    if had_doors or has_doors:
+        bump_door_revision(session)
+        bump_visibility_revision(session)
     await _broadcast_editor_props_state(session)
+    if had_doors or has_doors:
+        await _apply_los_fog_reveal_and_broadcast(session, map_ctx, reason="props_save")
+        await _broadcast_token_state_sync(session)
+        await run_combat_fog_sync(session, reason="props_save", map_context=map_ctx)
     await save_campaign_async(session)
 
 
@@ -837,10 +938,18 @@ async def handle_editor_props_clear(payload: dict, session: Session, user: User)
         return
     map_ctx = str(payload.get("map_context") or "world")[:80]
     props_all = dict(getattr(session, "editor_props", {}) or {})
+    had_doors = any(str(i.get("kind") or "") == "door" for i in (props_all.get(map_ctx) or []))
     props_all[map_ctx] = []
     session.editor_props = props_all
     _refresh_map_documents(session, map_ctx)
+    if had_doors:
+        bump_door_revision(session)
+        bump_visibility_revision(session)
     await _broadcast_editor_props_state(session)
+    if had_doors:
+        await _apply_los_fog_reveal_and_broadcast(session, map_ctx, reason="props_clear")
+        await _broadcast_token_state_sync(session)
+        await run_combat_fog_sync(session, reason="props_clear", map_context=map_ctx)
     await save_campaign_async(session)
 
 
@@ -1050,7 +1159,12 @@ async def handle_door_toggle(payload: dict, session: Session, user: User):
     props_all[map_ctx] = items
     session.editor_props = props_all
     _refresh_map_documents(session, map_ctx)
+    bump_door_revision(session)
+    bump_visibility_revision(session)
     await _broadcast_editor_props_state(session)
+    await _apply_los_fog_reveal_and_broadcast(session, map_ctx, reason="door_toggle")
+    await _broadcast_token_state_sync(session)
+    await run_combat_fog_sync(session, reason="door_toggle", map_context=map_ctx)
     await save_campaign_async(session)
 
 
@@ -1078,7 +1192,12 @@ async def handle_door_lock_set(payload: dict, session: Session, user: User):
     props_all[map_ctx] = items
     session.editor_props = props_all
     _refresh_map_documents(session, map_ctx)
+    bump_door_revision(session)
+    bump_visibility_revision(session)
     await _broadcast_editor_props_state(session)
+    await _apply_los_fog_reveal_and_broadcast(session, map_ctx, reason="door_lock_set")
+    await _broadcast_token_state_sync(session)
+    await run_combat_fog_sync(session, reason="door_lock_set", map_context=map_ctx)
     await save_campaign_async(session)
 
 

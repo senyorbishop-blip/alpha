@@ -496,6 +496,10 @@ async def handle_token_move(payload: dict, session: Session, user: User):
     scene_triggered = await _process_scene_triggers_for_token(session, token, user, old_x=old_x, old_y=old_y)
     if scene_triggered:
         await save_campaign_async(session)
+    # A moving player vision source can newly reveal fog cells via LOS; this is
+    # purely additive on top of manual fog paint (see apply_los_fog_reveal).
+    from server.handlers.map_editor import _apply_los_fog_reveal_and_broadcast
+    await _apply_los_fog_reveal_and_broadcast(session, str(getattr(token, "map_context", "world") or "world"), reason="token_moved")
     await run_combat_fog_sync(session, reason="token_moved", map_context=getattr(token, "map_context", "world"))
     if movement_updated:
         await _broadcast_combat_move_state(session)

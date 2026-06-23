@@ -34,12 +34,11 @@ This document describes the current live gameplay state contract for reconnect/s
 
 These are known gaps and should be introduced in later hardening PRs, not in this foundation PR:
 
-- **Wall/door revision:** wall and door topology does not yet have a dedicated authoritative revision for LOS/fog calculations.
 - **Active profile/runtime revision:** active profile selection and hydrated character runtime do not yet share a dedicated revision.
 - **Spell manifest revision:** spell/action source manifests do not yet expose a shared monotonic revision.
 - **Quick Actions hydration revision:** Quick Actions derivation does not yet have a server/client hydration revision or explicit readiness contract.
 
-(Per-token revision and map-context revision were the PR 4 gaps; see section 9 below — they are now implemented.)
+(Per-token revision and map-context revision were the PR 4 gaps; see section 9 below — they are now implemented. Wall/door revision was the PR 7 gap; see section 11 below — it is now implemented.)
 
 ## 5. Reconnect flow today
 
@@ -170,12 +169,15 @@ Current shape:
 - `fog.map_context`, `fog.revision`, `fog.visibility_revision`, `fog.enabled`,
   `fog.source`, and fog dimensions summarize the role-visible fog entry for
   the active map (never a different map's fog — see PR 6, section 10).
+- `map.wall_revision`, `map.door_revision`, `map.doors` (role-safe door
+  summary), and `fog.currently_visible.cell_count` /
+  `fog.visibility_source` are now live — see PR 7, section 11.
 
 ### Placeholder/future fields
 
 - `snapshot_revision` is `0` until this envelope itself has a version bump.
-- `map.map_document_revision`, `map.wall_revision`, and `map.door_revision` are
-  placeholders for future map document and LOS hardening.
+- `map.map_document_revision` is a placeholder for future map document
+  hardening.
 - `character.runtime_revision`, `spells.manifest_revision`, and detailed
   hydration summaries are placeholders until character/spell/Quick Actions
   hydration gets a shared revision contract.
@@ -223,7 +225,7 @@ other payload details.
 4. **PR 4 token/map revision hardening (done):** added per-token/map-context revision checks — see section 9.
 5. **PR 5 active profile + Quick Actions hardening:** add active profile/runtime/Quick Actions hydration revisions.
 6. **PR 6 fog visibility revision hardening (done):** formalized fog revision handling and server/client visibility coupling — see section 10.
-7. **PR 7 wall/door LOS:** introduce authoritative wall/door LOS inputs after the revision contract exists.
+7. **PR 7 wall/door vision blocking hardening (done):** server-authoritative wall/door LOS engine, `wall_revision`/`door_revision`, secret-door filtering, LOS fog reveal, and token/combat visibility gating — see section 11.
 8. **PR 8 hidden NPC enforcement tests:** expand tests proving hidden/fog-hidden NPC details never leak.
 9. **PR 9 e2e/manual QA coverage:** add browser/manual automation coverage for reconnect and multiplayer drift.
 
@@ -376,13 +378,13 @@ block now reports:
 - `source` — `"reconnect"` or `"authoritative_snapshot"` (see above).
 - `explored.revealed_cells` / `explored.total_cells` — a manual-fog reveal
   count/summary, safe to send to any role (counts only, never raw cell data).
-- `currently_visible` / `unseen` — explicit `null` placeholders. The app only
-  implements explored/revealed manual fog today; these fields exist so
-  clients have a stable place to read wall/door LOS-derived visibility once
-  PR 7 lands, without mistaking an absent field for "nothing is visible."
-- `visibility_source: "manual_fog"` — names which visibility model produced
-  this block (the only model that exists right now).
-- `wall_revision` / `door_revision` — `0` placeholders for PR 7.
+- `currently_visible.cell_count` — count of fog cells currently inside LOS of
+  a player vision source (PR 7, section 11); `unseen` remains an explicit
+  `null` placeholder (no client use case yet).
+- `visibility_source: "manual_fog_plus_wall_door_los"` — names the visibility
+  model that produced this block, now that wall/door LOS gating exists
+  alongside manual fog paint (PR 7).
+- `wall_revision` / `door_revision` — live session counters (PR 7, section 11).
 
 The fog block is always resolved from the snapshot's own map context (the
 viewing user's current world/local context), so it can never report a
@@ -473,10 +475,187 @@ present.
 
 ### Remaining risks / out of scope
 
-- No wall/door LOS, no `currently_visible`/`unseen` computation — those stay
-  `null` placeholders for PR 7.
+- Wall/door LOS and `currently_visible` computation landed in PR 7 (see
+  section 11); this section's history is kept as-is for context.
 - The client revision guard is bookkeeping-only for snapshot-sourced payloads;
   it cannot detect a stale snapshot whose `revision` matches the local one but
   whose `enabled` flag disagrees (extremely unlikely in practice, since both
-  values are bumped together server-side, but worth knowing if PR 7 adds a
+  values are bumped together server-side, but worth knowing if a future PR adds a
   second visibility source that could disagree with manual fog independently).
+
+## 11. PR 7 — Wall and door vision blocking hardening
+
+### Server LOS engine (`server/visibility.py`)
+
+A new module, not a rewrite of any renderer, is the single source of truth
+for "what can a token see" once walls/doors are involved:
+
+- `vision_blockers(session, map_ctx)` reuses `server/map_logic.py`'s existing
+  `collect_map_blockers()` (already merges walls + door props into one
+  `Blocker` list with movement-blocking already resolved), filtered to
+  `.blocks_vision`. Movement-blocking logic is untouched and not duplicated.
+- `has_los(x1, y1, x2, y2, blockers)` is a straight segment-intersection test
+  against every vision-blocking segment — the same algorithm
+  `client/static/js/render/vision.js` already uses for its preview, so
+  DM/player preview and server truth agree whenever nothing is stale.
+- A closed door (secret or not) blocks LOS exactly like a wall; an open door
+  is transparent. This falls out of `door_blocker()` already returning `None`
+  for open doors — no new branch was needed.
+- `player_vision_sources(session, map_ctx)` collects player-owned,
+  non-hidden, non-staged tokens with a positive usable vision radius (same
+  `max(vision_radius, bright_radius, darkvision_radius if has_darkvision)`
+  formula the client vision preview already uses) as `{x, y, radius_px,
+  token_id}`.
+- `token_blocked_by_los(session, token, map_context=None)` **fails open**: it
+  returns `False` ("not blocked") whenever there is no vision-blocking
+  geometry on the map or no player vision source positioned on it, so any
+  campaign/map without walls/doors or without vision-enabled tokens behaves
+  exactly as it did before this PR.
+- `compute_visible_cell_indices(session, map_ctx, cols, rows)` /
+  `apply_los_fog_reveal(session, map_ctx)` drive fog reveal (below).
+
+### Wall blocking
+
+Unchanged data model — `session.editor_walls[ctx]` segments, already
+normalized by `normalize_wall()`. Saving/clearing walls now also bumps
+`wall_revision` and `visibility_revision`, triggers a token resync, an LOS
+fog reveal pass, and a combat visibility resync (`handle_editor_walls_save`/
+`handle_editor_walls_clear` in `server/handlers/map_editor.py`).
+
+### Door blocking
+
+Door props (`kind == "door"`) already carried `state`/`locked`/
+`blocks_vision`; `door_blocker()` already excluded open doors from the
+blocker list. `handle_door_toggle` and `handle_door_lock_set` now bump
+`door_revision` + `visibility_revision` and trigger the same
+resync/fog-reveal/combat-resync chain as wall edits. `handle_editor_props_save`
+/`handle_editor_props_clear` bump the same revisions whenever the affected
+map context has (or had) any door prop.
+
+### Secret/hidden doors
+
+Two new door fields, `secret` and `revealed` (DM-only, persisted alongside
+the existing door prop fields), gate door *metadata* visibility:
+
+- `server/session.py::filter_editor_props_for_role()` — the existing single
+  choke point for prop payload filtering (already used per-user by
+  `_broadcast_editor_props_state`) — drops a door entirely from non-DM
+  payloads while `secret` is true and `revealed` is false, and always strips
+  the `secret`/`revealed` fields themselves from non-DM payloads (even once
+  revealed, players see geometry/state, never the secret/revealed bookkeeping).
+- `server/handlers/map_editor.py::filter_door_summary_for_role()` is the
+  equivalent choke point for the new `map.doors` snapshot summary.
+- The LOS engine itself always reads raw, unfiltered `session.editor_props`,
+  so an undiscovered secret door still functionally blocks sight server-side
+  — players are never told it exists, but it behaves like a wall to them.
+
+### Revision model
+
+- `Session.wall_revision` / `Session.door_revision` (new `int` fields,
+  default `0`) — monotonic counters bumped by
+  `server/handlers/common.py::bump_wall_revision()` /
+  `bump_door_revision()` on every wall/door create/update/toggle/lock/delete.
+- `Session.visibility_revision` (pre-existing, from PR 6) is also bumped on
+  every wall/door mutation, since wall/door state can change what's visible.
+- Every wall/door mutation handler now also calls `_broadcast_token_state_sync`
+  and `run_combat_fog_sync` so a wall/door change resyncs which tokens and
+  combatants are visible in the same turn it lands, not just on the next
+  unrelated update.
+
+### Snapshot v2 additions (`authoritative_snapshot`)
+
+- `map.wall_revision`, `map.door_revision` — live counters (previously `0`
+  placeholders from PR 6).
+- `map.doors` — role-safe door summary (`id`, `x`, `y`, `facing`, `state`,
+  `locked`, `blocks_vision`, plus `secret`/`revealed` for DM only) via
+  `filter_door_summary_for_role()`.
+- `fog.currently_visible.cell_count` — count of fog cells currently inside
+  LOS of a player vision source, via `compute_visible_cell_indices()`.
+- `fog.visibility_source` — `"manual_fog_plus_wall_door_los"`, replacing the
+  PR 6 placeholder string `"manual_fog"`.
+
+### Fog reveal via LOS
+
+`apply_los_fog_reveal(session, map_ctx)` is purely additive on top of the
+existing manual-paint fog bitstring (`fog_maps[ctx]["cells"]`): it only ever
+flips a cell from `"0"` to `"1"` inside LOS of a player vision source, never
+the reverse, so it never competes with or overwrites the DM's manual fog
+tools. `server/handlers/map_editor.py::_apply_los_fog_reveal_and_broadcast()`
+wraps this with the existing fog revision bump + `fog_state` broadcast path
+(`_broadcast_fog_to_visible_users`), and is called from:
+
+- `handle_token_move` (`server/handlers/tokens.py`) — a moving player vision
+  source can newly reveal cells.
+- Every wall/door mutation handler — walls/doors changing can also change
+  what's in LOS of an already-stationary vision source.
+
+### Token and combat visibility through LOS
+
+- `server/handlers/common.py::_can_user_see_token()` now also excludes an
+  NPC/monster token blocked by LOS from a non-DM viewer's token payload
+  (alongside the pre-existing `hidden`/fog-hidden checks).
+- `server/handlers/common.py::_combat_state_payload_for_user()` applies the
+  same LOS check when filtering the per-user combat payload.
+- `server/handlers/combat.py::is_token_visible_to_party()` and
+  `_suspend_reasons()` both gain a `"los"` reason, parallel to the existing
+  `"fog"`/`"hidden"`/`"staged"` reasons. `sync_combat_visibility()`'s
+  suspend/restore loop now also suspends/restores on `"los"` (previously
+  only `{"fog", "hidden", "staged"}` were filtered into the active suspend
+  set). LOS-suspended combatants land in the generic `suspended_combatants`
+  list (no dedicated `los_suspended_combatants` bucket was added — not
+  required by the spec, and `fog_suspended_combatants`/
+  `hidden_suspended_combatants` remain the only dedicated buckets).
+
+### Client tracking
+
+- `client/templates/play.html`: `editor_walls_sync` / `editor_props_sync`
+  handlers now track `window._wallRevision` / `window._doorRevision` /
+  `window._visibilityRevision` (monotonic, never regresses) and log via
+  `liveDebugLog`/`window.__LIVE_DEBUG__`. `buildClientLiveStateSummary()`
+  gained `wall_revision`/`door_revision` fields so every debug log that uses
+  it reports them consistently. `handleAuthoritativeSnapshot()` also seeds
+  `window._wallRevision`/`window._doorRevision` from `map.wall_revision`/
+  `map.door_revision` on reconnect.
+- Door/wall state changes don't need an explicit "force redraw" call: the
+  existing `requestAnimationFrame` render loop reads `_editorWallsAll`/
+  `_editorPropsAll` every frame, so updating that data is sufficient for the
+  map/vision-preview canvas to reflect the new state on the next frame.
+- Fog cell data and its revision/visibility_revision guard were already
+  fully centralized in `window.AppFog.applyAuthoritativeFogState` (PR 6); PR 7
+  reuses that path unchanged for LOS-driven fog reveal broadcasts — no
+  competing fog apply path was introduced.
+
+### Tests added
+
+`tests/test_wall_door_vision_blocking.py` — wall LOS blocking/non-blocking,
+closed/open door LOS, secret-door LOS blocking + payload exclusion (and
+exclusion of the `secret`/`revealed` metadata itself even once revealed),
+fails-open behavior with no blockers/sources, player-vision-source
+hidden/staged exclusion, LOS fog reveal additive/non-regressing/wall-blocked
+behavior, fog-disabled no-op, combat suspend/restore on wall LOS, and
+wall/door mutation handlers bumping `wall_revision`/`door_revision`/
+`visibility_revision` and producing the correct snapshot v2 fields (including
+secret-door exclusion from a player-role snapshot).
+
+`tests/test_fog_visibility_revision_hardening.py`'s PR 6 placeholder test
+(`test_authoritative_snapshot_fog_block_has_los_placeholders`) was updated/
+renamed (`test_authoritative_snapshot_fog_block_has_wall_door_los_fields`) to
+assert the now-implemented `currently_visible`/`visibility_source` values
+instead of the old `null`/`"manual_fog"` placeholders.
+
+### Remaining risks / out of scope
+
+- `compute_visible_cell_indices()` is a per-source bounding-box + per-cell LOS
+  raycast — correct but O(sources × cells-in-radius), not spatially indexed.
+  Acceptable for v1 per the task's explicit "correctness over perfect
+  performance" guidance; worth revisiting if maps grow very large or fog
+  grids get much finer-grained.
+- LOS-suspended combatants share the generic `suspended_combatants` bucket
+  with no dedicated UI list (see "Token and combat visibility" above) — if a
+  future UI wants to visually distinguish "suspended by wall" from
+  "suspended by fog", it will need a new bucket, not just a new reason string.
+- Manual QA (DM/player two-client wall/door placement, secret door
+  reveal/discovery, fog reveal-through-LOS, hidden NPC behind closed door,
+  combat suspend/restore) has not been run in this sandboxed environment —
+  the server-side test suite above is the verification path actually
+  exercised here.

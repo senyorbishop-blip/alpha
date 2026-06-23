@@ -189,7 +189,8 @@ def test_authoritative_snapshot_fog_source_is_authoritative_snapshot_for_manual_
     assert msg["payload"]["fog"]["source"] == "authoritative_snapshot"
 
 
-def test_authoritative_snapshot_fog_block_has_los_placeholders():
+def test_authoritative_snapshot_fog_block_has_wall_door_los_fields():
+    """PR 7 fills in the wall/door LOS fields that PR 6 left as placeholders."""
     session = Session(id="hardening-9")
     dm = User(id="dm-1", name="DM", role="dm")
     session.users[dm.id] = dm
@@ -198,9 +199,9 @@ def test_authoritative_snapshot_fog_block_has_los_placeholders():
     msg = session.to_authoritative_snapshot_for_role(dm.role, dm.id, source="ws_connect")
     fog = msg["payload"]["fog"]
 
-    assert fog["currently_visible"] is None
+    assert fog["currently_visible"] == {"cell_count": 0}
     assert fog["unseen"] is None
-    assert fog["visibility_source"] == "manual_fog"
+    assert fog["visibility_source"] == "manual_fog_plus_wall_door_los"
     assert fog["wall_revision"] == 0
     assert fog["door_revision"] == 0
 

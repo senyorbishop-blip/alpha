@@ -12016,6 +12016,8 @@ function buildClientLiveStateSummary(messageType, payload, extra) {
     combat_active: !!(combatPayload && combatPayload.active),
     combat_revision: Number(combatPayload && combatPayload.revision) || 0,
     visibility_revision: Number(p.visibility_revision) || 0,
+    wall_revision: Number(p.wall_revision) || 0,
+    door_revision: Number(p.door_revision) || 0,
     inventory_revision: Number(p.inventory_revision) || 0,
     active_profile_id: String((typeof resolveActiveCharProfileId === 'function' && resolveActiveCharProfileId()) || window._activeCharProfileId || ''),
     fog_context: String(p.map_ctx || (fogEntry && fogEntry.map_context) || mapCtx),
@@ -12073,6 +12075,11 @@ function handleAuthoritativeSnapshot(payload) {
       nav_version: mapBlock.map_nav_version,
       map_mode: mapBlock.mode,
     }, 'authoritative_snapshot');
+  }
+  if (valid && (mapBlock.wall_revision !== undefined || mapBlock.door_revision !== undefined)) {
+    window._wallRevision = Math.max(Number(window._wallRevision) || 0, Number(mapBlock.wall_revision) || 0);
+    window._doorRevision = Math.max(Number(window._doorRevision) || 0, Number(mapBlock.door_revision) || 0);
+    liveDebugLog('authoritative_snapshot wall/door revision bookkeeping', { wall_revision: window._wallRevision, door_revision: window._doorRevision });
   }
   if (valid && (characterBlock.hydration_status !== undefined || spellsBlock.hydration_status !== undefined || inventoryBlock.hydration_status !== undefined)) {
     applyAuthoritativeCharacterState({
@@ -33402,12 +33409,18 @@ function handleLegacyMessage(msg) {
     }
 
     case 'editor_walls_sync': {
+      window._wallRevision = Math.max(Number(window._wallRevision) || 0, Number(p.wall_revision) || 0);
+      window._visibilityRevision = Math.max(Number(window._visibilityRevision) || 0, Number(p.visibility_revision) || 0);
+      liveDebugLog('editor_walls_sync applied', buildClientLiveStateSummary('editor_walls_sync', p, { wall_revision: window._wallRevision }));
       _editorWallsAll = preserveDirtyEditorContextInSync('walls', p.walls || {});
       if (shouldReloadEditorLayerFromSync('walls')) ensureEditorWallsLoaded(true);
       break;
     }
 
     case 'editor_props_sync': {
+      window._doorRevision = Math.max(Number(window._doorRevision) || 0, Number(p.door_revision) || 0);
+      window._visibilityRevision = Math.max(Number(window._visibilityRevision) || 0, Number(p.visibility_revision) || 0);
+      liveDebugLog('editor_props_sync applied', buildClientLiveStateSummary('editor_props_sync', p, { door_revision: window._doorRevision }));
       _editorPropsAll = preserveDirtyEditorContextInSync('props', p.props || {});
       if (shouldReloadEditorLayerFromSync('props')) ensureEditorPropsLoaded(true);
       if (_openPropPopupId) {

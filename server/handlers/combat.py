@@ -92,7 +92,10 @@ def is_token_visible_to_party(session: Session, token, map_context: str | None =
         return False
     if bool(getattr(token, "staged", False)) and not ignore_staged:
         return False
-    return not is_token_touching_unrevealed_fog(session, token, map_context)
+    if is_token_touching_unrevealed_fog(session, token, map_context):
+        return False
+    from server.visibility import token_blocked_by_los
+    return not token_blocked_by_los(session, token, map_context)
 
 
 def _ensure_suspended_lists(combat: dict) -> list[dict]:
@@ -112,7 +115,12 @@ def _suspend_reasons(session: Session, token, map_context: str | None = None) ->
     reasons=[]
     if bool(getattr(token, "hidden", False)): reasons.append("hidden")
     if bool(getattr(token, "staged", False)): reasons.append("staged")
-    if not is_token_visible_to_party(session, token, map_context, ignore_hidden=True, ignore_staged=True): reasons.append("fog")
+    if is_token_touching_unrevealed_fog(session, token, map_context):
+        reasons.append("fog")
+    else:
+        from server.visibility import token_blocked_by_los
+        if token_blocked_by_los(session, token, map_context):
+            reasons.append("los")
     return reasons
 
 
@@ -151,7 +159,7 @@ def sync_combat_visibility(session: Session, map_context: str | None = None, rea
         if not token or _token_map_context(token) != map_ctx or not is_npc_or_monster_token(token):
             continue
         reasons=_suspend_reasons(session, token, map_ctx)
-        reasons=[r for r in reasons if r in {"fog","hidden","staged"}]
+        reasons=[r for r in reasons if r in {"fog","hidden","staged","los"}]
         if reasons:
             removed_c=coms.pop(idx); active_ids.discard(tid)
             suspended_by_token[tid]=_merge_suspended(suspended_by_token.get(tid), removed_c, reasons)
