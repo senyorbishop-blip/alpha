@@ -147,6 +147,14 @@ def sync_combat_visibility(session: Session, map_context: str | None = None, rea
     combat = getattr(session, "combat", None) or {}
     if not combat.get("active") or _combat_fog_mode(session) == "off":
         return {"changed": False, "added": [], "removed": []}
+    # A read-only state snapshot (DM reconnect / new joiner) must never recompute
+    # fog/LOS-driven suspension. Doing so lets the requester's transient
+    # dm_map_context suspend NPC combatants in the snapshot view, so the
+    # authoritative roster appears to "lose" members merely because the reader's
+    # fog/context differs. Suspension is owned exclusively by the live
+    # combat/fog/token handlers, never by a snapshot build.
+    if str(reason or "") == "state_snapshot":
+        return {"changed": False, "added": [], "removed": []}
     map_ctx = str(map_context or _current_combat_map_context(session, reason) or "world")[:80] or "world"
     coms = combat.get("combatants") if isinstance(combat.get("combatants"), list) else []
     suspended = _ensure_suspended_lists(combat)

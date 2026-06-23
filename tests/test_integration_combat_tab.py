@@ -599,29 +599,35 @@ def test_combat_visibility_sweep_requires_hidden_and_fog_to_clear_before_restore
     assert session.combat.get("suspended_combatants", []) == []
 
 
-def test_combat_visibility_sweep_runs_on_state_snapshot_for_reload():
-    session, _ = _fog_sweep_session(revealed_indices=[])
-
-    state = session.to_state_dict()
-
-    assert state["combat"]["combatants"] == []
-    assert state["combat"]["suspended_combatants"][0]["token_id"] == "mage"
-
-
-def test_state_snapshot_visibility_sweep_does_not_mutate_shared_combat_state():
-    """A snapshot build (e.g. a DM reload) must not write the visibility sweep's
-    result back into the shared session.combat: the sweep result above is only
-    reflected in the returned snapshot dict, not in session.combat itself, so a
-    reload with a stale/mismatched dm_map_context can never suspend/drop real
-    combatants or flip combat.active for other clients."""
+def test_state_snapshot_does_not_suspend_fogged_combatant_on_reload():
+    """A read-only state snapshot must NOT recompute fog/LOS suspension: a DM
+    reload/reconnect whose transient dm_map_context fogs an NPC must still see
+    that NPC in the authoritative roster, not spuriously moved to Suspended."""
     session, _ = _fog_sweep_session(revealed_indices=[])
     original_combatants = list(session.combat["combatants"])
 
     state = session.to_state_dict()
 
-    # The returned snapshot reflects the fog sweep (mage is fogged/suspended)...
-    assert state["combat"]["combatants"] == []
-    # ...but the shared, authoritative session.combat is untouched.
+    assert [c.get("token_id") for c in state["combat"]["combatants"]] == ["mage"]
+    assert state["combat"].get("suspended_combatants", []) == []
+    assert state["combat"]["combatants"] == original_combatants
+
+
+def test_state_snapshot_visibility_sweep_does_not_mutate_shared_combat_state():
+    """A snapshot build (e.g. a DM reload) is read-only: it must neither
+    recompute fog-driven suspension for its own view nor write anything back
+    into the shared session.combat. A reload with a stale/mismatched
+    dm_map_context can therefore never suspend/drop real combatants or flip
+    combat.active for any client."""
+    session, _ = _fog_sweep_session(revealed_indices=[])
+    original_combatants = list(session.combat["combatants"])
+
+    state = session.to_state_dict()
+
+    # The snapshot mirrors the authoritative roster (mage is NOT suspended)...
+    assert state["combat"]["combatants"] == original_combatants
+    assert state["combat"].get("suspended_combatants", []) == []
+    # ...and the shared, authoritative session.combat is untouched.
     assert session.combat["combatants"] == original_combatants
     assert session.combat["active"] is True
     assert "suspended_combatants" not in session.combat
@@ -629,7 +635,7 @@ def test_state_snapshot_visibility_sweep_does_not_mutate_shared_combat_state():
     # Calling it again (simulating a second reload) must be stable and never
     # leave a stray empty log or stuck mutation behind.
     state_again = session.to_state_dict()
-    assert state_again["combat"]["combatants"] == []
+    assert state_again["combat"]["combatants"] == original_combatants
     assert session.combat["combatants"] == original_combatants
     assert session.combat["active"] is True
 

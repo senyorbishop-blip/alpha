@@ -777,29 +777,15 @@ class Session:
 
     def to_state_dict(self) -> dict:
         """Full state snapshot for new joiners."""
+        # A full state snapshot is read-only: it must never recompute
+        # fog/LOS-driven combat suspension. A snapshot build (e.g. a DM
+        # reconnecting) can run with a transient/stale dm_map_context, and
+        # re-deriving suspension from that one reader's context would make the
+        # authoritative roster appear to drop members for every client. Live
+        # combat/fog/token handlers are the sole writers of combat visibility,
+        # so the snapshot simply mirrors the authoritative roster.
+        # (sync_combat_visibility also hard-skips reason="state_snapshot".)
         combat_for_snapshot = self.combat
-        if isinstance(getattr(self, "combat", None), dict) and self.combat.get("active"):
-            # Compute fog/visibility-adjusted combat for this snapshot without
-            # mutating the shared authoritative session.combat: a snapshot build
-            # (e.g. a DM reconnecting) can run with a transient/stale
-            # dm_map_context, and writing the sync's result back would
-            # suspend/restore real combatants for every other client based on
-            # that one reader's context. Live combat/fog/token handlers remain
-            # the only writers of authoritative combat visibility.
-            import copy
-            original_combat = self.combat
-            original_log = self.log
-            try:
-                from server.handlers.combat import sync_combat_visibility
-                self.combat = copy.deepcopy(original_combat)
-                self.log = []
-                sync_combat_visibility(self, map_context=getattr(self, "dm_map_context", "world"), reason="state_snapshot")
-                combat_for_snapshot = self.combat
-            except Exception:
-                combat_for_snapshot = original_combat
-            finally:
-                self.combat = original_combat
-                self.log = original_log
         return {
             "session_id": self.id,
             "tokens": {tid: build_token_runtime_payload(self, t) for tid, t in self.tokens.items()},
