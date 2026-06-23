@@ -1164,11 +1164,16 @@ class Session:
                 and (not _can_user_see_token or not user_obj or _can_user_see_token(self, t, user_obj))
             }
             if isinstance(d.get("combat"), dict):
-                combat_public = dict(d["combat"] or {})
-                combat_public.pop("suspended_combatants", None)
-                combat_public.pop("fog_suspended_combatants", None)
-                combat_public.pop("hidden_suspended_combatants", None)
-                d["combat"] = combat_public
+                try:
+                    from server.handlers.common import _combat_state_payload_for_user
+                    d["combat"] = _combat_state_payload_for_user(self, user_obj, int(getattr(self, "visibility_revision", 0) or 0))
+                    d["combat"].pop("_filter_summary", None)
+                except Exception:
+                    combat_public = dict(d["combat"] or {})
+                    combat_public.pop("suspended_combatants", None)
+                    combat_public.pop("fog_suspended_combatants", None)
+                    combat_public.pop("hidden_suspended_combatants", None)
+                    d["combat"] = combat_public
             d["journal_entries"] = [entry for entry in (self.journal_entries or []) if entry.get("shared")]
             d["library_entries"] = []
             d["item_library_entries"] = list(self.item_library_entries or [])
@@ -1347,6 +1352,13 @@ class Session:
         fog_maps = state.get("fog_maps") if isinstance(state.get("fog_maps"), dict) else {}
         fog_entry = fog_maps.get(map_ctx) or fog_maps.get("world") or {}
         combat_state = state.get("combat") if isinstance(state.get("combat"), dict) else {}
+        try:
+            from server.handlers.common import _combat_state_payload_for_user
+            user_obj = (getattr(self, "users", {}) or {}).get(user_id)
+            combat_state = _combat_state_payload_for_user(self, user_obj, int(state.get("visibility_revision") or getattr(self, "visibility_revision", 0) or 0))
+            combat_state.pop("_filter_summary", None)
+        except Exception:
+            pass
         active_profile_id = str(state.get("active_char_profile_id") or (self.active_char_profiles or {}).get(user_id or "") or "")
         inventory_items = state.get("player_inventory") if isinstance(state.get("player_inventory"), list) else []
         if resolved_role == "dm":
@@ -1395,6 +1407,8 @@ class Session:
             "combat": {
                 "active": bool(combat_state.get("active")) if isinstance(combat_state, dict) else False,
                 "revision": int((combat_state or {}).get("revision") or 0) if isinstance(combat_state, dict) else 0,
+                "updated_at": float((combat_state or {}).get("updated_at") or 0.0) if isinstance(combat_state, dict) else 0.0,
+                "visibility_revision": int((combat_state or {}).get("visibility_revision") or state.get("visibility_revision") or 0) if isinstance(combat_state, dict) else int(state.get("visibility_revision") or 0),
                 "state": combat_state,
             },
             "character": {

@@ -793,7 +793,8 @@ async def handle_combat_clear(payload: dict, session: Session, user: User):
     # Auto-restore ambient track that was playing before combat started
     sound_state = getattr(session, "sound_state", None) or {}
     pre_combat = sound_state.get("pre_combat_track", "silence")
-    session.combat = {"active": False, "turn": 0, "combatants": [], "movement": {}, "encounter_id": str(uuid.uuid4()), "reason": "clear_combat", "clear_reason": "clear_combat"}
+    previous_revision = _safe_int((getattr(session, "combat", {}) or {}).get("revision"), 0, minimum=0, maximum=2**31)
+    session.combat = {"active": False, "turn": 0, "combatants": [], "movement": {}, "encounter_id": str(uuid.uuid4()), "reason": "clear_combat", "clear_reason": "clear_combat", "revision": previous_revision}
     _bump_combat_revision(session, "clear_combat")
     event = {
         "event_type": "clear_encounter",
@@ -1135,13 +1136,19 @@ async def handle_combat_state_request(payload: dict, session: Session, user: Use
 
     revision = bump_visibility_revision(session)
     out = _combat_state_payload_for_user(session, user, revision)
+    filter_summary = out.pop("_filter_summary", {})
     ok = await manager.send_to(session.id, user.id, {"type": "combat_state", "payload": out})
     logger.info(
-        "[combat initiative sync] state_request user_id=%s role=%s success=%s revision=%s",
+        "[combat initiative sync] state_request user_id=%s role=%s success=%s revision=%s active=%s sent=%s filtered=%s visibility_revision=%s source=%s",
         user.id,
         getattr(user, "role", "unknown"),
         bool(ok),
         out.get("revision"),
+        bool(out.get("active")),
+        filter_summary.get("sent_count", len(out.get("combatants") or [])),
+        filter_summary.get("filtered_count", 0),
+        out.get("visibility_revision"),
+        "combat_state_request",
     )
     logger.info("[live_state] combat_state_request %s", build_live_state_debug_summary(session, user.id, user.role, {"combat": out, "visibility_revision": out.get("visibility_revision")}))
 

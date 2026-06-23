@@ -518,7 +518,9 @@ def _sync_combatant_token_state(session: Session, token, *, previous_hp: int | N
 
 def _combat_state_payload_for_user(session: Session, user: User | None, visibility_revision: int | None = None) -> dict:
     payload = dict(getattr(session, "combat", None) or {})
-    if not user or getattr(user, "role", "") != "dm":
+    original_count = len(payload.get("combatants") or []) if isinstance(payload.get("combatants"), list) else 0
+    role = str(getattr(user, "role", "") or "viewer").strip().lower() or "viewer"
+    if role != "dm":
         visible_combatants = []
         for combatant in payload.get("combatants") or []:
             if not isinstance(combatant, dict):
@@ -535,8 +537,18 @@ def _combat_state_payload_for_user(session: Session, user: User | None, visibili
         payload.pop("suspended_combatants", None)
         payload.pop("fog_suspended_combatants", None)
         payload.pop("hidden_suspended_combatants", None)
+    payload["active"] = bool(payload.get("active", False))
+    payload["revision"] = _safe_int(payload.get("revision"), 0, minimum=0, maximum=2**31)
+    payload["updated_at"] = float(payload.get("updated_at") or 0.0)
     if visibility_revision is not None:
-        payload["visibility_revision"] = visibility_revision
+        payload["visibility_revision"] = _safe_int(visibility_revision, 0, minimum=0)
+    else:
+        payload["visibility_revision"] = _safe_int(getattr(session, "visibility_revision", 0), 0, minimum=0)
+    payload["_filter_summary"] = {
+        "source_count": original_count,
+        "sent_count": len(payload.get("combatants") or []) if isinstance(payload.get("combatants"), list) else 0,
+        "filtered_count": max(0, original_count - (len(payload.get("combatants") or []) if isinstance(payload.get("combatants"), list) else 0)),
+    }
     return payload
 
 
@@ -564,10 +576,22 @@ async def _broadcast_combat(session):
         user = (getattr(session, "users", {}) or {}).get(uid)
         role = getattr(user, "role", "unknown") if user else "unknown"
         payload = _combat_state_payload_for_user(session, user, revision)
+        filter_summary = payload.pop("_filter_summary", {})
         summary = _combat_payload_debug_summary(payload)
         attempted.append({"user_id": uid, "role": role})
         ok = await manager.send_to(session.id, uid, {"type": "combat_state", "payload": payload})
-        log_data = {**summary, "session_id": session.id, "user_id": uid, "role": role, "send_to_success": bool(ok)}
+        log_data = {
+            **summary,
+            "source": "combat_update",
+            "session_id": session.id,
+            "user_id": uid,
+            "role": role,
+            "active": bool(payload.get("active")),
+            "combatant_count_sent": filter_summary.get("sent_count", len(payload.get("combatants") or [])),
+            "combatant_count_filtered": filter_summary.get("filtered_count", 0),
+            "visibility_revision": payload.get("visibility_revision"),
+            "send_to_success": bool(ok),
+        }
         if ok:
             sent_to.append(uid)
             logger.info("[combat initiative sync] delivered %s", log_data)

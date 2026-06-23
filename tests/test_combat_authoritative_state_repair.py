@@ -252,3 +252,39 @@ def test_aliases_and_envelope_and_current_combatant():
 def test_debug_combat_reports_last_ignored_for_invalid_payload():
     result = _run("applyAuthoritativeCombatState(null, 'combat_state');")
     assert result["debug"]["lastIgnoredReason"] == "invalid-payload"
+
+
+def test_stale_inactive_default_cannot_overwrite_active_combat():
+    result = _run(
+        "applyAuthoritativeCombatState({ active: true, turn: 0, round: 1, revision: 5, "
+        "combatants: [{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 12 }] }, 'authoritative_snapshot');"
+        "applyAuthoritativeCombatState({ active: false, turn: 0, round: 1, revision: 4, combatants: [] }, 'state_sync');"
+    )
+    assert result["combat"]["active"] is True
+    assert result["combat"]["revision"] == 5
+    assert [c["name"] for c in result["combat"]["combatants"]] == ["Bishop"]
+    assert result["calls"]["renderCombat"] == 1
+    assert "stale-revision" in (result["debug"]["lastIgnoredReason"] or "")
+
+
+def test_newer_inactive_revision_can_clear_combat():
+    result = _run(
+        "applyAuthoritativeCombatState({ active: true, turn: 0, round: 1, revision: 5, "
+        "combatants: [{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 12 }] }, 'combat_state');"
+        "applyAuthoritativeCombatState({ active: false, turn: 0, round: 1, revision: 6, combatants: [], reason: 'clear_combat' }, 'clear_combat');"
+    )
+    assert result["combat"]["active"] is False
+    assert result["combat"]["revision"] == 6
+    assert result["combat"]["combatants"] == []
+    assert result["calls"]["renderCombat"] == 2
+
+
+def test_missing_revision_logs_warning_but_remains_backward_compatible():
+    result = _run(
+        "applyAuthoritativeCombatState({ active: true, turn: 0, round: 1, "
+        "combatants: [{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 12 }] }, 'legacy_state_sync');"
+    )
+    assert result["combat"]["active"] is True
+    assert result["combat"]["revision"] == 0
+    assert result["calls"]["warns"] >= 1
+    assert result["debug"]["lastAppliedSource"] == "legacy_state_sync"
