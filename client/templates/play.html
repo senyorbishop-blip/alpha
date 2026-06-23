@@ -11219,6 +11219,10 @@ window.__playerBootState = window.__playerBootState || { checkpoint: 'PLAYER_BOO
      implementation of the play page instead of a separate, stubbed player shell. -->
 <!-- Stage 4 ownership: editor/serialization.js is the authoritative map document serializer. -->
 <!-- editor/runtime.js and editor/state.js are dormant env-injected modules; do not load them. -->
+<!-- auth.js patches window.fetch to attach the bearer token to same-origin /api/ calls.
+     It must load before any script below makes /api/ requests (spells_tab.js, character
+     routes, etc.) or those calls fall back to cookie-only auth and 401 after reconnect. -->
+<script src="/static/js/auth.js"></script>
 <script src="/static/js/core/diagnostics.js"></script>
 <script src="/static/js/core/csrf.js"></script>
 <script src="/static/js/editor/serialization.js"></script>
@@ -12070,6 +12074,13 @@ function handleAuthoritativeSnapshot(payload) {
       map_mode: mapBlock.mode,
     }, 'authoritative_snapshot');
   }
+  if (valid && (characterBlock.hydration_status !== undefined || spellsBlock.hydration_status !== undefined || inventoryBlock.hydration_status !== undefined)) {
+    applyAuthoritativeCharacterState({
+      character: characterBlock,
+      spells: spellsBlock,
+      inventory: inventoryBlock,
+    }, 'authoritative_snapshot');
+  }
   return valid;
 }
 window.handleAuthoritativeSnapshot = handleAuthoritativeSnapshot;
@@ -12247,6 +12258,56 @@ function applyAuthoritativeMapContext(payload, source) {
   return !stale;
 }
 if (typeof window !== 'undefined') window.applyAuthoritativeMapContext = applyAuthoritativeMapContext;
+
+// PR 5: single apply path for the character/spells/inventory blocks of the
+// authoritative_snapshot. This does NOT replace the legacy char_profiles_sync/
+// state_sync hydration of _charSheet/charProfiles (still the source of truth
+// for full character data) — it tracks the server's hydration_status per
+// subsystem and re-broadcasts the existing refresh events so Quick Actions/
+// spell UI re-check themselves once reconnect hydration settles, instead of
+// staying blank from whatever stale state they rendered mid-reconnect.
+let _lastCharacterRuntimeRevision = 0;
+let _characterHydration = { character: 'unknown', spells: 'unknown', inventory: 'unknown', active_profile_id: '' };
+if (typeof window !== 'undefined') window.__characterHydration = _characterHydration;
+function applyAuthoritativeCharacterState(payload, source) {
+  const p = payload && typeof payload === 'object' ? payload : {};
+  const characterBlock = p.character && typeof p.character === 'object' ? p.character : {};
+  const spellsBlock = p.spells && typeof p.spells === 'object' ? p.spells : {};
+  const inventoryBlock = p.inventory && typeof p.inventory === 'object' ? p.inventory : {};
+  const rev = Number(characterBlock.runtime_revision);
+  if (Number.isFinite(rev) && rev < _lastCharacterRuntimeRevision) {
+    _tokenMapDebugLog('character_state ignored', { source: String(source || ''), runtime_revision: rev, tracked_runtime_revision: _lastCharacterRuntimeRevision });
+    return false;
+  }
+  if (Number.isFinite(rev)) _lastCharacterRuntimeRevision = rev;
+  _characterHydration = {
+    character: String(characterBlock.hydration_status || 'unknown'),
+    spells: String(spellsBlock.hydration_status || 'unknown'),
+    inventory: String(inventoryBlock.hydration_status || 'unknown'),
+    active_profile_id: String(characterBlock.active_profile_id || ''),
+  };
+  if (typeof window !== 'undefined') window.__characterHydration = _characterHydration;
+  _tokenMapDebugLog('character_state applied', {
+    source: String(source || ''),
+    active_profile_id: _characterHydration.active_profile_id,
+    character_hydration: _characterHydration.character,
+    spells_hydration: _characterHydration.spells,
+    inventory_hydration: _characterHydration.inventory,
+  });
+  ['character', 'spells', 'inventory'].forEach(key => {
+    const status = _characterHydration[key];
+    if (status && status !== 'ok' && status !== 'unknown' && typeof console !== 'undefined') {
+      console.warn('[QuickActions] hydration failed', { subsystem: key, status, active_profile_id: _characterHydration.active_profile_id, source: String(source || '') });
+    }
+  });
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    ['character:runtime-updated', 'character:spell-state-updated', 'character:inventory-updated', 'character:quick-actions-refresh'].forEach(eventName => {
+      window.dispatchEvent(new CustomEvent(eventName, { detail: { source: String(source || ''), hydration: _characterHydration } }));
+    });
+  }
+  return true;
+}
+if (typeof window !== 'undefined') window.applyAuthoritativeCharacterState = applyAuthoritativeCharacterState;
 
 // One entry point for every full token snapshot (legacy state_sync,
 // authoritative_snapshot, tokens_sync, local-map enter/exit token payloads,

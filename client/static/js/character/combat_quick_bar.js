@@ -458,7 +458,17 @@
       ? global.CombatQuickSelectors.selectQuickActions(runtime.charSheet || {})
       : { primaryActions: [], bonusActions: [], reactions: [], topSpells: [], resources: [], concentration: null };
     const actionCount = [].concat(model.primaryActions || [], model.bonusActions || [], model.reactions || [], model.topSpells || [], model.magicItemActions || []).length;
-    if (global.liveDebugLog) global.liveDebugLog('quick_actions hydration', { action_count: actionCount, missing_reason: actionCount ? '' : (!global.CombatQuickSelectors ? 'selector_unavailable' : (!runtime.charSheet ? 'missing_char_sheet' : 'no_actions_derived')), combat_active: !!combat.active });
+    // PR 5: when nothing was derived, prefer the server-reported reconnect
+    // hydration_status (auth_error/profile_forbidden/missing_profile/
+    // missing_runtime) over the generic local guesses below — that's the
+    // actual root cause when Quick Actions go blank right after reconnect.
+    const serverHydration = (global.__characterHydration && typeof global.__characterHydration === 'object') ? global.__characterHydration : null;
+    const serverMissingReason = serverHydration && ['character', 'spells', 'inventory'].map(function (key) { return serverHydration[key]; }).find(function (status) { return status && status !== 'ok' && status !== 'unknown'; });
+    const missingReason = actionCount ? '' : (serverMissingReason || (!global.CombatQuickSelectors ? 'selector_unavailable' : (!runtime.charSheet ? 'missing_char_sheet' : 'no_actions_derived')));
+    if (global.liveDebugLog) global.liveDebugLog('quick_actions hydration', { action_count: actionCount, missing_reason: missingReason, combat_active: !!combat.active });
+    if (!actionCount && missingReason && global.console && typeof global.console.warn === 'function') {
+      global.console.warn('[QuickActions] hydration failed', { reason: missingReason, active_profile_id: serverHydration && serverHydration.active_profile_id || '' });
+    }
     const current = _safeArray(combat.combatants)[Math.max(0, Number(combat.turn || 0))] || null;
     const targetName = runtime.selectedTargetId && runtime.tokens ? _firstText(runtime.tokens[runtime.selectedTargetId] && runtime.tokens[runtime.selectedTargetId].name, 'Selected') : 'No target';
     root.hidden = false;
@@ -697,7 +707,7 @@
   // Also available as top-level shortcuts for quick recovery and slot/rest sync.
   global.resetQuickBarVisibility = resetQuickBarVisibility;
   global.refreshCombatQuickActions = refreshCombatQuickActions;
-  ['character:spell-state-updated', 'character:runtime-updated', 'character:resources-updated', 'character:rest-completed', 'spellSlots:updated'].forEach(function (eventName) {
+  ['character:spell-state-updated', 'character:runtime-updated', 'character:resources-updated', 'character:rest-completed', 'character:inventory-updated', 'character:quick-actions-refresh', 'spellSlots:updated'].forEach(function (eventName) {
     global.addEventListener && global.addEventListener(eventName, refreshCombatQuickActions);
   });
   document.addEventListener('DOMContentLoaded', function () {

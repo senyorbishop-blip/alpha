@@ -1372,6 +1372,87 @@ class Session:
             inv_count = len(inventory_items)
 
         authority_role = "dm" if resolved_role == "dm" else ("player" if resolved_role == "player" else "viewer")
+
+        # PR 5: active-profile/inventory/spell reconnect hardening. character_block/
+        # spells_block both key off the SAME active-profile lookup so a player who
+        # loses their active profile sees both report missing_profile/missing_runtime
+        # instead of Quick Actions silently going blank with no diagnosis.
+        active_profile = None
+        if resolved_role in {"player", "dm", "assistant_dm"} and active_profile_id and user_id:
+            active_profile = _find_active_profile_for_user(self, user_id)
+        profile_summary = _profile_runtime_summary(active_profile) if active_profile else {}
+        if resolved_role not in {"player", "dm", "assistant_dm"}:
+            character_hydration = "unknown"
+        elif not active_profile_id:
+            character_hydration = "missing_profile"
+        elif not active_profile:
+            character_hydration = "missing_runtime"
+        else:
+            character_hydration = "ok"
+
+        native_for_spells = (active_profile or {}).get("nativeCharacter") if isinstance((active_profile or {}).get("nativeCharacter"), dict) else {}
+        spell_state_for_snapshot = native_for_spells.get("spellState") if isinstance(native_for_spells.get("spellState"), dict) else {}
+        spells_block = {
+            "manifest_revision": 0,
+            "hydration_status": character_hydration,
+            "summary": {
+                "known_count": len(spell_state_for_snapshot.get("known") or []) if isinstance(spell_state_for_snapshot, dict) else 0,
+                "prepared_count": len(spell_state_for_snapshot.get("prepared") or []) if isinstance(spell_state_for_snapshot, dict) else 0,
+            },
+        }
+
+        character_block = {
+            "active_profile_id": active_profile_id,
+            "active_profile_owner": str(user_id or "") if active_profile_id else "",
+            "runtime_revision": 0,
+            "hydration_status": character_hydration,
+            "summary": {
+                "profile_count": len(state.get("char_profiles") or []) if isinstance(state.get("char_profiles"), list) else 0,
+                "name": profile_summary.get("name", ""),
+                "class_summary": profile_summary.get("classSummary", ""),
+                "species_name": profile_summary.get("species_name", ""),
+                "level": profile_summary.get("level"),
+                "hp": profile_summary.get("hp"),
+                "max_hp": profile_summary.get("maxHp"),
+                "temp_hp": profile_summary.get("tempHp"),
+                "ac": profile_summary.get("ac"),
+                "speed": profile_summary.get("speed"),
+            } if profile_summary else {"profile_count": len(state.get("char_profiles") or []) if isinstance(state.get("char_profiles"), list) else 0},
+        }
+
+        inventory_summary = {"item_count": inv_count}
+        inventory_hydration = "ok" if (resolved_role == "dm" or inventory_items or active_profile_id) else "missing_profile"
+        if resolved_role == "player" and user_id and isinstance(inventory_items, list):
+            try:
+                from server.handlers.inventory import _derive_item_actions_and_passives, _build_item_spell_cards
+                equipped = [it for it in inventory_items if isinstance(it, dict) and bool(it.get("equipped"))]
+                item_actions, _item_passives = _derive_item_actions_and_passives(inventory_items)
+                item_spell_cards = _build_item_spell_cards(inventory_items)
+                inventory_summary = {
+                    "item_count": inv_count,
+                    "equipped_count": len(equipped),
+                    "equipped_items": [
+                        {
+                            "id": str(it.get("id") or ""),
+                            "name": str(it.get("name") or ""),
+                            "rarity": str(it.get("rarity") or ""),
+                            "charges_current": it.get("charges_current"),
+                            "charges_max": it.get("charges_max"),
+                        }
+                        for it in equipped[:20]
+                    ],
+                    "item_action_count": len(item_actions),
+                    "item_spell_card_count": len(item_spell_cards),
+                }
+                inventory_hydration = "ok" if active_profile_id else "missing_profile"
+            except Exception:
+                inventory_hydration = "unknown"
+        inventory_block = {
+            "revision": int(getattr(self, "inventory_revision", 0) or 0),
+            "hydration_status": inventory_hydration,
+            "summary": inventory_summary,
+        }
+
         payload = {
             "snapshot_revision": 0,
             "session": {
@@ -1420,22 +1501,9 @@ class Session:
                 "visibility_revision": int((combat_state or {}).get("visibility_revision") or state.get("visibility_revision") or 0) if isinstance(combat_state, dict) else int(state.get("visibility_revision") or 0),
                 "state": combat_state,
             },
-            "character": {
-                "active_profile_id": active_profile_id,
-                "runtime_revision": 0,
-                "hydration_status": "ok" if active_profile_id else "missing",
-                "summary": {"profile_count": len(state.get("char_profiles") or []) if isinstance(state.get("char_profiles"), list) else 0},
-            },
-            "spells": {
-                "manifest_revision": 0,
-                "hydration_status": "unknown",
-                "summary": {},
-            },
-            "inventory": {
-                "revision": int(getattr(self, "inventory_revision", 0) or 0),
-                "hydration_status": "ok" if (resolved_role == "dm" or inventory_items or active_profile_id) else "missing",
-                "summary": {"item_count": inv_count},
-            },
+            "character": character_block,
+            "spells": spells_block,
+            "inventory": inventory_block,
             "fog": {
                 "map_context": str((fog_entry or {}).get("map_context") or map_ctx),
                 "revision": int((fog_entry or {}).get("revision") or 0) if isinstance(fog_entry, dict) else 0,
@@ -1465,6 +1533,32 @@ ACTIVE_PROFILE_ID_KEY_LIMIT = 80
 def _user_bucket_key(user) -> str:
     key = normalize_profile_owner_key(getattr(user, "name", ""))
     return key or str(getattr(user, "id", "") or "")
+
+
+def _find_active_profile_for_user(session, user_id: str) -> dict | None:
+    """Resolve the saved profile record this user's active_char_profiles entry points at.
+
+    Used by the reconnect snapshot to report a runtime summary (class/level/HP/AC/etc.)
+    without re-deriving the full character sheet, and to distinguish "no active
+    profile selected" from "active profile selected but its row is missing".
+    """
+    user = (getattr(session, "users", {}) or {}).get(user_id)
+    if not user:
+        return None
+    active_id = str((getattr(session, "active_char_profiles", {}) or {}).get(user_id) or "").strip()
+    if not active_id:
+        return None
+    owner_key = _user_bucket_key(user)
+    profiles = dict(getattr(session, "char_profiles", {}) or {})
+    mine = profiles.get(owner_key)
+    if not isinstance(mine, list):
+        mine = profiles.get(user_id)
+    if not isinstance(mine, list):
+        return None
+    for entry in mine:
+        if isinstance(entry, dict) and str(entry.get("id") or "").strip() == active_id:
+            return entry
+    return None
 
 
 def _inventory_owner_key(session, user) -> str:

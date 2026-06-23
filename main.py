@@ -671,6 +671,12 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
         if db_data:
             session, _ = restore_session(db_data)
             logger.info("[live_state] session_restore session_id=%s user_id=%s restored=%s", session_id, user_id, bool(session))
+            if session:
+                restored_active_id = str((getattr(session, "active_char_profiles", {}) or {}).get(user_id) or "")
+                logger.info(
+                    "[live_state] active_profile_restored session_id=%s user_id=%s active_profile_id=%s",
+                    session_id, user_id, restored_active_id or "(none)",
+                )
     if not session:
         await websocket.close(code=4004, reason="Session not found")
         return
@@ -698,11 +704,20 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
         "type": "state_sync",
         "payload": state
     })
-    await manager.send_to(
-        session_id,
-        user_id,
-        session.to_authoritative_snapshot_for_role(user.role, user_id, source="ws_connect"),
+    snapshot_v2 = session.to_authoritative_snapshot_for_role(user.role, user_id, source="ws_connect")
+    snapshot_payload = snapshot_v2.get("payload") if isinstance(snapshot_v2.get("payload"), dict) else {}
+    character_block = snapshot_payload.get("character") if isinstance(snapshot_payload.get("character"), dict) else {}
+    inventory_block = snapshot_payload.get("inventory") if isinstance(snapshot_payload.get("inventory"), dict) else {}
+    spells_block = snapshot_payload.get("spells") if isinstance(snapshot_payload.get("spells"), dict) else {}
+    logger.info(
+        "[live_state] snapshot_character_block session_id=%s user_id=%s active_profile_id=%s character_hydration=%s inventory_hydration=%s spells_hydration=%s",
+        session_id, user_id,
+        character_block.get("active_profile_id") or "",
+        character_block.get("hydration_status") or "unknown",
+        inventory_block.get("hydration_status") or "unknown",
+        spells_block.get("hydration_status") or "unknown",
     )
+    await manager.send_to(session_id, user_id, snapshot_v2)
 
     # Send item library sync with SRD items included
     try:
