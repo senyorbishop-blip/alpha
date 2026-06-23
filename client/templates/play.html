@@ -12033,6 +12033,7 @@ function handleAuthoritativeSnapshot(payload) {
   const combatBlock = p.combat && typeof p.combat === 'object' ? p.combat : {};
   const inventoryBlock = p.inventory && typeof p.inventory === 'object' ? p.inventory : {};
   const characterBlock = p.character && typeof p.character === 'object' ? p.character : {};
+  const spellsBlock = p.spells && typeof p.spells === 'object' ? p.spells : {};
   const fogBlock = p.fog && typeof p.fog === 'object' ? p.fog : {};
   const debugBlock = p.debug && typeof p.debug === 'object' ? p.debug : {};
   const valid = Number.isFinite(Number(p.snapshot_revision || 0)) && !!sessionBlock.id && !!sessionBlock.resolved_role;
