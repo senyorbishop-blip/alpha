@@ -1874,9 +1874,14 @@ def _spawn_test_context():
     class _Manager:
         def __init__(self):
             self.messages = []
+            self.sent = []
 
-        async def broadcast(self, session_id, payload):
+        async def broadcast(self, session_id, payload, exclude_user=None):
             self.messages.append((session_id, payload))
+
+        async def send_to(self, session_id, user_id, payload):
+            self.sent.append((session_id, user_id, payload))
+            return True
 
     manager = _Manager()
 
@@ -1930,7 +1935,7 @@ def test_spawn_custom_monster_owned_by_dm():
         assert body["token"]["tokenType"] == "monster"
         assert body["token"]["x"] == 100
         assert body["token"]["y"] == 200
-        assert manager.messages[-1][1]["payload"]["creature_id"] == creature["id"]
+        assert manager.sent[-1][2]["payload"]["creature_id"] == creature["id"]
     finally:
         os.unlink(db_path)
 
@@ -1964,7 +1969,7 @@ def test_spawn_library_creature_uses_active_map_grid_size():
         body = json.loads(response.body)
         assert body["token"]["width"] == 144
         assert body["token"]["height"] == 144
-        assert manager.messages[-1][1]["payload"]["token"]["width"] == 144
+        assert manager.sent[-1][2]["payload"]["token"]["width"] == 144
     finally:
         os.unlink(db_path)
 
@@ -2054,7 +2059,7 @@ def test_spawn_srd_creature_allowed_for_dm():
         assert response.status_code == 200
         body = json.loads(response.body)
         assert body["creature"]["source"] == "srd"
-        assert manager.messages[-1][1]["payload"]["source"] == "srd"
+        assert manager.sent[-1][2]["payload"]["source"] == "srd"
     finally:
         os.unlink(db_path)
 

@@ -864,17 +864,10 @@ async def handle_token_send_to_staging(payload: dict, session: Session, user: Us
         return
 
     token.staged = True
-    token_rev = _stamp_token_revision(session, token)
-    await manager.broadcast(session.id, {
-        "type": "token_sent_to_staging",
-        "payload": {
-            "token": build_token_runtime_payload(session, token),
-            "token_id": token.id,
-            "map_context": normalize_map_context(getattr(token, "map_context", "world")),
-            "token_state_revision": token_rev,
-            "visibility_revision": int(getattr(session, "visibility_revision", 0) or 0),
-        }
-    })
+    # A staged token (e.g. a hidden ambush NPC the DM is pulling off the map,
+    # or another player's token) must only reach clients who can still see
+    # it (DM, or the owning player) — never an unconditional broadcast.
+    await _broadcast_token_visibility(session, token, "token_sent_to_staging")
     await _broadcast_token_state_sync(session)
     await run_combat_fog_sync(session, reason="token_staged", map_context=getattr(token, "map_context", "world"))
     await save_campaign_async(session)

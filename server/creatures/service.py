@@ -124,8 +124,9 @@ async def spawn_creature_from_library_entry(
         )
         return None
 
-    from server.session import create_token
+    from server.session import create_token, build_token_runtime_payload
     from server.connections import manager
+    from server.handlers.common import _broadcast_token_event
 
     active_grid_size_px = _map_grid_size_px(session, map_ctx, grid_size_px)
     token_px = _creature_token_px(creature, active_grid_size_px)
@@ -159,16 +160,16 @@ async def spawn_creature_from_library_entry(
             "use_count": int(creature.get("use_count", 0) or 0) + 1,
         })
     log_entry = session.add_log(f"{getattr(session_user, 'name', 'DM')} spawned '{creature['name']}' from bestiary.", "system")
-    await manager.broadcast(session.id, {
-        "type": "token_created",
-        "payload": {
-            "token": token.to_dict(),
-            "log": log_entry,
-            "from_bestiary": True,
-            "creature_id": str(creature_id),
-            "source": resolved_source,
-        },
-    })
+    # Only deliver the full token payload to clients who can actually see this
+    # token (hidden/staged/fog/wall-LOS rules) — never broadcast unconditionally,
+    # since a spawned creature can be a hidden ambush monster.
+    await _broadcast_token_event(manager, session, "token_created", {
+        "token": build_token_runtime_payload(session, token),
+        "log": log_entry,
+        "from_bestiary": True,
+        "creature_id": str(creature_id),
+        "source": resolved_source,
+    }, token)
     return token
 
 

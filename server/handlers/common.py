@@ -151,6 +151,15 @@ def _can_user_see_token(session: Session, token, user) -> bool:
         return True
     if getattr(token, "hidden", False):
         return False
+    if getattr(token, "staged", False):
+        # A staged token (waiting-to-be-placed tray, or an auto-staged extra
+        # owned token) is off the map entirely until the DM/owner places it
+        # again. It must never be leaked to non-DM users regardless of
+        # fog/LOS — except to the player who owns it, who still needs to see
+        # it in their own staging tray to place it back.
+        owner_id = str(getattr(token, "owner_id", "") or "")
+        if not owner_id or owner_id != str(getattr(user, "id", "") or ""):
+            return False
     if is_npc_or_monster_token(token) and is_token_touching_unrevealed_fog(session, token):
         return False
     if is_npc_or_monster_token(token):

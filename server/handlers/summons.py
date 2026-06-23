@@ -24,10 +24,10 @@ from server.character.summon_diagnostics import (
     metrics_snapshot,
     record_failure_metric,
 )
-from server.handlers.common import Session, User, manager, save_campaign_async, _broadcast_token_state_sync
+from server.handlers.common import Session, User, manager, save_campaign_async, _broadcast_token_state_sync, _broadcast_token_event
 from server.character.summon_state import normalize_summon_state
 from server.handlers.content import _send_char_profiles, _char_profile_bucket_key
-from server.session import create_token
+from server.session import create_token, build_token_runtime_payload
 
 logger = logging.getLogger(__name__)
 
@@ -366,16 +366,13 @@ async def handle_summon_runtime_request(payload: dict, session: Session, user: U
         await manager.send_to(session.id, user.id, {"type": "summon_runtime_result", "payload": {"ok": False, "error": "register_active_failed", "failure": failure}})
         return
 
-    await manager.broadcast(
-        session.id,
-        {
-            "type": "token_created",
-            "payload": {
-                "token": token.to_dict(),
-                "log": session.add_log(f"{user.name} summoned {actor.get('name', 'Primal Beast')}", "system"),
-            },
-        },
-    )
+    # Filtered (not unconditional) broadcast: a summon token is normally
+    # player-owned and visible, but it can still be staged for another map,
+    # so only deliver it to users who can currently see it.
+    await _broadcast_token_event(manager, session, "token_created", {
+        "token": build_token_runtime_payload(session, token),
+        "log": session.add_log(f"{user.name} summoned {actor.get('name', 'Primal Beast')}", "system"),
+    }, token)
     if removed_token_ids:
         for token_id in removed_token_ids:
             await manager.broadcast(session.id, {"type": "token_deleted", "payload": {"token_id": token_id}})
