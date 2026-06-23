@@ -25,19 +25,21 @@ This document describes the current live gameplay state contract for reconnect/s
 
 - **`combat.revision`:** monotonic combat payload revision used by clients to detect stale combat state.
 - **`visibility_revision`:** monotonic visibility/token/fog-related revision used by token and combat streams to guard against stale visibility snapshots.
+- **`token_state_revision`:** monotonic session-wide token mutation revision (PR 4). Bumped on every authoritative token mutation — create, move, delete, hide/unhide, hp/ac/status update, ownership/profile-link change, staged/map-context change — and stamped onto `token.revision` for the specific token that changed. Tracked separately from `visibility_revision` so a non-visibility token edit (e.g. HP) does not also have to inflate the visibility counter; both are included on every token payload so clients can use whichever guard fits the event.
 - **`inventory_revision`:** monotonic inventory/item revision used by clients to ignore stale `player_inventory_sync` payloads.
-- **`map_nav_version`:** monotonic map navigation version used to avoid stale world/local map navigation winning during reconnect.
+- **`map_nav_version`:** monotonic map navigation version used to avoid stale world/local map navigation winning during reconnect. Also exposed as `map_context_revision` (PR 4) — the same counter, aliased for clarity in map-context-focused payloads rather than introducing a second independent counter.
 - **Fog map `revision`:** per-map manual fog revision included in `fog_maps`, `fog_state`, and `fog_update` payloads.
 
 ## 4. Missing revisions
 
 These are known gaps and should be introduced in later hardening PRs, not in this foundation PR:
 
-- **Per-token revision:** token snapshots do not yet carry per-token monotonic revisions.
 - **Wall/door revision:** wall and door topology does not yet have a dedicated authoritative revision for LOS/fog calculations.
 - **Active profile/runtime revision:** active profile selection and hydrated character runtime do not yet share a dedicated revision.
 - **Spell manifest revision:** spell/action source manifests do not yet expose a shared monotonic revision.
 - **Quick Actions hydration revision:** Quick Actions derivation does not yet have a server/client hydration revision or explicit readiness contract.
+
+(Per-token revision and map-context revision were the PR 4 gaps; see section 9 below — they are now implemented.)
 
 ## 5. Reconnect flow today
 
@@ -91,13 +93,17 @@ Current shape:
       "current_map_id": "",
       "current_map_url": "",
       "map_nav_version": 0,
+      "map_context_revision": 0,
       "dm_nav_intent": 0,
+      "token_state_revision": 0,
+      "visibility_revision": 0,
       "map_document_revision": 0,
       "wall_revision": 0,
       "door_revision": 0
     },
     "tokens": {
       "revision": 0,
+      "token_state_revision": 0,
       "visibility_revision": 0,
       "items": {},
       "count": 0,
@@ -206,9 +212,116 @@ other payload details.
 1. **PR 1 debug/contract:** add safe structured diagnostics and this state contract document.
 2. **PR 2 reconnect snapshot v2:** introduce an explicit reconnect snapshot shape with complete stream summaries.
 3. **PR 3 combat revision hardening:** tighten combat revision application/ignore rules and tests.
-4. **PR 4 token/map revision hardening:** add per-token/map-context revision checks.
+4. **PR 4 token/map revision hardening (done):** added per-token/map-context revision checks — see section 9.
 5. **PR 5 active profile + Quick Actions hardening:** add active profile/runtime/Quick Actions hydration revisions.
 6. **PR 6 fog visibility revision hardening:** formalize fog revision handling and server/client visibility coupling.
 7. **PR 7 wall/door LOS:** introduce authoritative wall/door LOS inputs after the revision contract exists.
 8. **PR 8 hidden NPC enforcement tests:** expand tests proving hidden/fog-hidden NPC details never leak.
 9. **PR 9 e2e/manual QA coverage:** add browser/manual automation coverage for reconnect and multiplayer drift.
+
+## 9. PR 4 — Token and map revision hardening
+
+### Token revision model
+
+- `Session.token_state_revision` (int) is a session-wide monotonic counter,
+  separate from `visibility_revision`. It is bumped exactly once per
+  authoritative token mutation via `bump_token_state_revision(session)` /
+  `_stamp_token_revision(session, token)` in `server/handlers/common.py`.
+- `_stamp_token_revision` also stamps the new revision onto `token.revision`
+  (added to the `Token` dataclass and `Token.to_dict()` in `server/session.py`),
+  so every token payload that includes the full token dict carries a per-token
+  revision in addition to the session-wide counter.
+- Every token mutation path bumps it: `_broadcast_token_event` (covers
+  `token_moved`, `token_created`, `token_hp_updated`, `token_updated`,
+  `token_condition_changed`) and `_broadcast_token_visibility` (covers
+  `token_hidden_changed` / `token_removed_hidden`) both call
+  `_stamp_token_revision` centrally. `handle_token_delete`,
+  `handle_token_placed`, and `handle_token_send_to_staging` in
+  `server/handlers/tokens.py` call it directly because they broadcast through
+  `manager.broadcast(...)` instead of the shared helpers.
+- `token_state_revision` (plus `visibility_revision`, `token_id`, and
+  `map_context`) is included on: `tokens_sync`, `token_moved`, `token_created`,
+  `token_updated`, `token_hp_updated`, `token_hidden_changed`,
+  `token_removed_hidden`, `token_placed`, `token_sent_to_staging`,
+  `token_deleted`, the `state_sync` top level, and the `authoritative_snapshot`
+  `tokens` block.
+- Strict server-side hidden/fog/map-context filtering in
+  `_is_token_visible_to_user` / `_visible_tokens_payload_for_user` is
+  unchanged by this PR — token revision tracking is additive, not a new
+  filtering mechanism.
+
+### Map revision model
+
+- `map_nav_version` remains the single authoritative map navigation counter.
+  `map_context_revision` is the same value, exposed as an alias in the
+  `authoritative_snapshot` `map` block and in `local_map_nav` payloads, rather
+  than introducing a second independent counter that would need to be kept in
+  sync with the first.
+- `session.to_state_dict()` and `to_authoritative_snapshot_for_role(...)` both
+  now include `map_mode` (`"world"` or `"local"`), `token_state_revision`, and
+  `visibility_revision` alongside the existing `map_nav_version` /
+  `dm_nav_intent` fields.
+- `handle_local_map_nav` (`server/handlers/map_editor.py`) now also calls
+  `_broadcast_token_state_sync(session)` after applying a map-context change,
+  so non-DM clients' visible token set is proactively refreshed when the DM
+  changes map context, instead of waiting for an unrelated later token event
+  to trigger a resync.
+
+### Client apply/ignore rules
+
+- `applyAuthoritativeTokenSnapshot(payload, source)` (client/templates/play.html)
+  is the single entry point for full token snapshots (`tokens_sync`, the
+  `state_sync` token block, the `authoritative_snapshot` `tokens.items` block,
+  and local map enter/exit token payloads if present). It drops the snapshot
+  if `token_state_revision` is older than the last one applied, otherwise
+  delegates to the existing `applyAuthoritativeTokenSync` projection logic and
+  rebuilds the hidden-token suppression set from the snapshot's contents.
+- `applyAuthoritativeTokenEvent(eventType, payload, applyFn, source)` is the
+  single entry point for single-token events (`token_moved`, `token_created`,
+  `token_placed`, `token_updated`, `token_hp_updated`, `token_hidden_changed`,
+  `token_sent_to_staging`, `token_removed_hidden`, `token_deleted`). It checks
+  the hidden-suppression guard and the `token_state_revision` stale-guard
+  before invoking the event's existing apply logic via `applyFn`.
+- `applyAuthoritativeMapContext(payload, source)` is the single entry point for
+  map-context-bearing messages (`local_map_enter`, `local_map_exit`,
+  `state_sync`, `authoritative_snapshot`). It reuses the existing
+  `_shouldIgnoreStaleNav` / `_acceptNavVersion` gate keyed on `nav_version`, so
+  a stale/delayed local-map payload cannot overwrite a newer world-map payload
+  (or vice versa) just because it arrived later on the wire.
+- `token_moved` additionally keeps the pre-existing `visibility_revision`
+  stream guard (`_isStaleVisibilityPayload`) for its very high message
+  frequency, in addition to the new `token_state_revision` guard.
+
+### Hidden token stale-event protection
+
+- `_suppressedHiddenTokenIds` (client) tracks ids the client currently
+  believes are hidden/removed. It is populated whenever a token snapshot
+  includes a hidden token, or a `token_hidden_changed` / `token_removed_hidden`
+  event removes one, and cleared when a `token_hidden_changed` event reports
+  `hidden: false`, a `token_created`/`token_placed` event reintroduces the id,
+  or a newer full snapshot is applied (which rebuilds the set from scratch).
+- `applyAuthoritativeTokenEvent` checks this set before applying any event
+  type other than `token_hidden_changed`/`token_removed_hidden` themselves, so
+  a stale, out-of-order `token_moved` (or any other single-token event) that
+  was in flight when the token went hidden cannot resurrect it client-side —
+  even if that stale event's own `token_state_revision` check is inconclusive
+  (e.g. an older client message shape with no revision at all).
+
+### Current limitations
+
+- Staged-token filtering (excluding off-map/staged tokens from non-DM
+  `tokens` payloads) is unchanged in this PR. The existing client-side
+  staging tray (`_stagingTokens`) depends on staged/cross-map-context tokens
+  still being delivered to their owning player, and changing that
+  server-side filtering risks breaking the staging UX. This is a deliberate
+  scope decision, not an oversight.
+- `local_map_enter` / `local_map_exit` payloads do not embed a full token
+  block today; the token resync for a map-context change is delivered via
+  the separate `tokens_sync` message the server now sends right after the
+  nav broadcast (see "Map revision model" above). `applyAuthoritativeTokenSnapshot`
+  on the nav payload itself is wired in defensively for forward compatibility,
+  but is a no-op until/unless `tokens`/`token_state_revision` fields are added
+  to those payloads directly.
+- This PR does not implement fog/wall/door LOS revision coupling (future PR
+  per section 8, item 6/7) — manual fog behavior and revisions are
+  unchanged.

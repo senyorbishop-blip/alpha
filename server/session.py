@@ -442,6 +442,7 @@ class Token:
     profile_id: str = ""
     library_id: str = ""
     character_id: str = ""
+    revision: int = 0  # per-token monotonic stamp, set to session.token_state_revision on every authoritative mutation
 
     def to_dict(self) -> dict:
         d = {
@@ -499,6 +500,7 @@ class Token:
         if self.character_id:
             d["characterId"] = str(self.character_id)
             d["character_id"] = str(self.character_id)
+        d["revision"] = int(self.revision or 0)
         return d
 
     def can_move(self, user_id: str, role: str) -> bool:
@@ -555,6 +557,7 @@ class Session:
     fog_maps: dict = None  # keyed by map_ctx
     combat: dict = None  # {active: bool, turn: int, combatants: [{id,name,initiative,token_id,hp,max_hp}]} ('world' or poi_id) → {enabled, cols, rows, cells}
     visibility_revision: int = 0  # monotonic counter bumped on any fog/hidden/token-position change; clients drop stale payloads behind it
+    token_state_revision: int = 0  # monotonic counter bumped on every authoritative token mutation (create/move/delete/hide/hp/edit/staged/ownership); independent of visibility filtering
     inventory_revision: int = 0  # monotonic counter bumped on any server-authoritative inventory/item/charge mutation; clients drop stale player_inventory_sync payloads behind it
     journal_entries: list = field(default_factory=list)
     # library_entries: preserved for campaign backward-compatibility only.
@@ -809,7 +812,9 @@ class Session:
             "dm_map_context": self.dm_map_context,
             "dm_current_map_url": self.dm_current_map_url,
             "map_nav_version": int(self.map_nav_version or 0),
+            "map_mode": "world" if normalize_map_context(self.dm_map_context) == "world" else "local",
             "visibility_revision": int(self.visibility_revision or 0),
+            "token_state_revision": int(self.token_state_revision or 0),
             "dm_nav_intent": int(self.dm_nav_intent or 0),
             "fog_maps": normalize_fog_maps(self.fog_maps),
             "combat": combat_for_snapshot,
@@ -1389,13 +1394,17 @@ class Session:
                 "current_map_id": "" if map_ctx == "world" else map_ctx,
                 "current_map_url": state.get("dm_current_map_url") or state.get("map_image_url") or "",
                 "map_nav_version": int(state.get("map_nav_version") or 0),
+                "map_context_revision": int(state.get("map_nav_version") or 0),
                 "dm_nav_intent": int(state.get("dm_nav_intent") or 0),
+                "token_state_revision": int(state.get("token_state_revision") or getattr(self, "token_state_revision", 0) or 0),
+                "visibility_revision": int(state.get("visibility_revision") or 0),
                 "map_document_revision": 0,
                 "wall_revision": 0,
                 "door_revision": 0,
             },
             "tokens": {
                 "revision": int(state.get("visibility_revision") or 0),
+                "token_state_revision": int(state.get("token_state_revision") or getattr(self, "token_state_revision", 0) or 0),
                 "visibility_revision": int(state.get("visibility_revision") or 0),
                 "items": tokens_payload,
                 "count": len(tokens_payload),

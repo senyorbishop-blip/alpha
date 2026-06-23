@@ -71,7 +71,7 @@ def test_explicit_combat_clear_payload_marks_reason():
 def test_state_sync_applies_ordered_fog_tokens_combat_and_dm_preview_persistence():
     src = PLAY.read_text(encoding="utf-8")
     sync_block = src[src.index("case 'state_sync': {"):src.index("requestRenderFrame('state_sync render')")]
-    assert "applyAuthoritativeTokenSync({ tokens: p.tokens || {} });" in sync_block
+    assert "applyAuthoritativeTokenSnapshot({ tokens: p.tokens || {}, token_state_revision: _lastTokenStateRevision }, 'state_sync');" in sync_block
     assert "fogApplyState(p);" in sync_block
     assert "handleCombatStateLive(p.combat);" in sync_block
     assert sync_block.index("fogApplyState(p);") < sync_block.index("handleCombatStateLive(p.combat);")

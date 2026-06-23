@@ -1359,7 +1359,12 @@ async def handle_local_map_nav(payload: dict, session: Session, user: User):
         nav_payload["dm_map_context"] = str(getattr(session, "dm_map_context", "world") or "world")
         nav_payload["dm_current_map_url"] = getattr(session, "dm_current_map_url", None)
         nav_payload["nav_version"] = int(getattr(session, "map_nav_version", 0) or 0)
+        nav_payload["map_nav_version"] = int(getattr(session, "map_nav_version", 0) or 0)
+        nav_payload["map_context_revision"] = int(getattr(session, "map_nav_version", 0) or 0)
         nav_payload["client_nav_intent"] = int(getattr(session, "dm_nav_intent", 0) or 0)
+        nav_payload["map_mode"] = "world" if not is_enter else "local"
+        nav_payload["token_state_revision"] = int(getattr(session, "token_state_revision", 0) or 0)
+        nav_payload["visibility_revision"] = int(getattr(session, "visibility_revision", 0) or 0)
         # Include the authoritative fog snapshot for the destination map in the
         # same navigation message. Players may not have had this POI/local-map
         # context in their previous visible state yet, so relying on a later
@@ -1378,6 +1383,15 @@ async def handle_local_map_nav(payload: dict, session: Session, user: User):
             await manager.send_to(session.id, user.id, msg)
         except Exception as echo_err:
             logger.error("[WS] local_map_nav echo error: %s; payload=%r", echo_err, payload)
+
+        # Map-context changes alter which tokens are visible to non-DM users
+        # (split-party/local-map filtering). Resync the token snapshot here so
+        # players don't keep seeing the previous context's tokens until some
+        # unrelated later token change happens to trigger a resync.
+        try:
+            await _broadcast_token_state_sync(session)
+        except Exception as token_sync_err:
+            logger.error("[WS] local_map_nav token resync error: %s; payload=%r", token_sync_err, payload)
 
         if not payload.get("resync"):
             try:

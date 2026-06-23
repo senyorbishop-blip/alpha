@@ -14,9 +14,11 @@ from server.handlers.common import (
     _broadcast_combat,
     _sanitize_save_bonuses,
     bump_visibility_revision,
+    bump_token_state_revision,
+    _stamp_token_revision,
     _send_action_ack,
 )
-from server.session import normalize_profile_owner_key
+from server.session import normalize_profile_owner_key, normalize_map_context
 from server.handlers.conditions import (
     _prune_token_condition_timers,
     _set_token_condition,
@@ -475,7 +477,7 @@ async def handle_token_move(payload: dict, session: Session, user: User):
     # system) can be dropped client-side instead of rubber-banding a token back
     # to a stale position.
     move_revision = bump_visibility_revision(session)
-    await _broadcast_token_event(manager, session, "token_moved", {
+    token_state_revision = await _broadcast_token_event(manager, session, "token_moved", {
         "token_id": token_id,
         "x": token.x,
         "y": token.y,
@@ -483,7 +485,8 @@ async def handle_token_move(payload: dict, session: Session, user: User):
         "visibility_revision": move_revision,
     }, token, exclude_user=user.id)
     await _send_action_ack(session, user, action="token_move", client_action_id=client_action_id,
-                            status="confirmed", token_id=token_id, visibility_revision=move_revision)
+                            status="confirmed", token_id=token_id, visibility_revision=move_revision,
+                            token_state_revision=token_state_revision)
     # Movement can flip fog/footprint visibility immediately (entering or
     # leaving unrevealed fog); resync per-user so a player who just lost or
     # gained sight of this token gets the add/remove on this very move, not
@@ -592,6 +595,8 @@ async def handle_token_delete(payload: dict, session: Session, user: User):
     owner_user_delete = bool(user.role == "player" and _owner_matches_user(getattr(token, "owner_id", ""), user))
     if user.role != "dm" and not owner_user_delete:
         return
+    deleted_map_context = normalize_map_context(getattr(token, "map_context", "world"))
+    token_rev = _stamp_token_revision(session, token)
     session.tokens.pop(token_id, None)
     profiles = dict(getattr(session, "char_profiles", {}) or {})
     summon_sync_changed = False
@@ -617,15 +622,22 @@ async def handle_token_delete(payload: dict, session: Session, user: User):
     session.corpse_states = corpse_states
     if token:
         log_entry = session.add_log(f"{user.name} removed token '{token.name}'.", "system")
+        deleted_payload = {
+            "token_id": token_id,
+            "map_context": deleted_map_context,
+            "token_state_revision": token_rev,
+            "visibility_revision": int(getattr(session, "visibility_revision", 0) or 0),
+            "log": log_entry,
+        }
         if token.owner_id:
             await manager.broadcast(session.id, {
                 "type": "token_deleted",
-                "payload": {"token_id": token_id, "log": log_entry}
+                "payload": deleted_payload
             })
         else:
             await manager.broadcast_to_role(session.id, {
                 "type": "token_deleted",
-                "payload": {"token_id": token_id, "log": log_entry}
+                "payload": deleted_payload
             }, {"dm"}, session)
         await _broadcast_token_state_sync(session)
         await save_campaign_async(session)
@@ -823,10 +835,15 @@ async def handle_token_placed(payload: dict, session: Session, user: User):
     token.y = payload.get("y", token.y)
     token.map_context = payload.get("map_context", token.map_context)
     token.staged = False
+    token_rev = _stamp_token_revision(session, token)
 
     placed_payload = {
         **payload,
         "token": build_token_runtime_payload(session, token),
+        "token_id": token.id,
+        "map_context": normalize_map_context(getattr(token, "map_context", "world")),
+        "token_state_revision": token_rev,
+        "visibility_revision": int(getattr(session, "visibility_revision", 0) or 0),
     }
     await manager.broadcast(session.id, {"type": "token_placed", "payload": placed_payload})
     await _broadcast_token_state_sync(session)
@@ -843,9 +860,16 @@ async def handle_token_send_to_staging(payload: dict, session: Session, user: Us
         return
 
     token.staged = True
+    token_rev = _stamp_token_revision(session, token)
     await manager.broadcast(session.id, {
         "type": "token_sent_to_staging",
-        "payload": {"token": build_token_runtime_payload(session, token)}
+        "payload": {
+            "token": build_token_runtime_payload(session, token),
+            "token_id": token.id,
+            "map_context": normalize_map_context(getattr(token, "map_context", "world")),
+            "token_state_revision": token_rev,
+            "visibility_revision": int(getattr(session, "visibility_revision", 0) or 0),
+        }
     })
     await _broadcast_token_state_sync(session)
     await run_combat_fog_sync(session, reason="token_staged", map_context=getattr(token, "map_context", "world"))

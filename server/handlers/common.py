@@ -168,13 +168,28 @@ def _is_token_visible_to_user(session: Session, token, user: User) -> bool:
 
 
 async def _broadcast_token_event(manager, session, msg_type: str, payload: dict, token,
-                                  exclude_user: str = None):
-    """Broadcast a token event to everyone who can currently see the token."""
+                                  exclude_user: str = None) -> int:
+    """Broadcast a token event to everyone who can currently see the token.
+
+    Stamps an authoritative `token_state_revision` bump onto the token and the
+    outgoing payload (alongside the current `visibility_revision` and the
+    token's map context) so every client-visible token mutation message
+    carries enough revision data for clients to drop stale/out-of-order
+    events. Returns the new token_state_revision.
+    """
+    token_rev = _stamp_token_revision(session, token)
+    enriched = dict(payload or {})
+    if token is not None:
+        enriched.setdefault("token_id", getattr(token, "id", None))
+        enriched.setdefault("map_context", normalize_map_context(getattr(token, "map_context", "world")))
+    enriched["token_state_revision"] = token_rev
+    enriched["visibility_revision"] = int(getattr(session, "visibility_revision", 0) or 0)
     for uid, u in session.users.items():
         if uid == exclude_user:
             continue
         if _is_token_visible_to_user(session, token, u):
-            await manager.send_to(session.id, uid, {"type": msg_type, "payload": payload})
+            await manager.send_to(session.id, uid, {"type": msg_type, "payload": enriched})
+    return token_rev
 
 
 def _visible_tokens_payload_for_user(session: Session, user: User) -> dict:
@@ -242,6 +257,7 @@ def build_live_state_debug_summary(session: Session, user_id: str, role: str | N
         "combat_active": bool(combat.get("active")) if isinstance(combat, dict) else False,
         "combat_revision": _safe_int((combat or {}).get("revision"), 0, minimum=0) if isinstance(combat, dict) else 0,
         "visibility_revision": _safe_int(payload.get("visibility_revision", getattr(session, "visibility_revision", 0)), 0, minimum=0),
+        "token_state_revision": _safe_int(payload.get("token_state_revision", getattr(session, "token_state_revision", 0)), 0, minimum=0),
         "inventory_revision": _safe_int(payload.get("inventory_revision", getattr(session, "inventory_revision", 0)), 0, minimum=0),
         "active_profile_id": str(active_profiles.get(user_id) or payload.get("active_profile_id") or ""),
         "fog_context": str((fog_entry or {}).get("map_context") or map_ctx or "world"),
@@ -262,6 +278,33 @@ def bump_visibility_revision(session: Session) -> int:
     return next_rev
 
 
+def bump_token_state_revision(session: Session) -> int:
+    """Increment the session-wide token state revision counter.
+
+    Call this exactly once per authoritative token mutation (create, move,
+    delete, hide/unhide, hp/ac/status update, ownership/profile-link change,
+    staged/map-context change) so clients can discard a stale single-token
+    event or token snapshot that raced behind a newer one. This is tracked
+    separately from `visibility_revision` (which guards visibility/fog
+    filtering specifically) so a non-visibility token edit (e.g. HP) does not
+    also have to inflate the visibility counter.
+    """
+    next_rev = int(getattr(session, "token_state_revision", 0) or 0) + 1
+    session.token_state_revision = next_rev
+    return next_rev
+
+
+def _stamp_token_revision(session: Session, token) -> int:
+    """Bump `token_state_revision` and stamp it onto `token.revision`."""
+    next_rev = bump_token_state_revision(session)
+    if token is not None:
+        try:
+            token.revision = next_rev
+        except Exception:
+            pass
+    return next_rev
+
+
 def bump_inventory_revision(session: Session) -> int:
     """Increment the session-wide inventory revision counter.
 
@@ -279,13 +322,16 @@ def bump_inventory_revision(session: Session) -> int:
 async def _broadcast_token_state_sync(session: Session):
     """Send an authoritative token snapshot to every connected client."""
     revision = bump_visibility_revision(session)
+    map_ctx = normalize_map_context(getattr(session, "dm_map_context", "world"))
     for uid, u in (session.users or {}).items():
         payload = {
             "tokens": _visible_tokens_payload_for_user(session, u),
             "corpse_states": dict(getattr(session, "corpse_states", {}) or {}),
             "dm_map_context": str(getattr(session, "dm_map_context", "world") or "world"),
+            "map_mode": "world" if map_ctx == "world" else "local",
             "map_nav_version": int(getattr(session, "map_nav_version", 0) or 0),
             "visibility_revision": revision,
+            "token_state_revision": int(getattr(session, "token_state_revision", 0) or 0),
         }
         logger.info("[live_state] tokens_sync %s", build_live_state_debug_summary(session, uid, getattr(u, "role", "unknown"), payload))
         await manager.send_to(session.id, uid, {
@@ -459,15 +505,25 @@ async def _broadcast_token_visibility(session, token, msg_type: str = "token_hid
     e.g. it just walked out of fog); a user who can no longer see it gets a
     removal notice (token went hidden, staged, or behind unrevealed fog).
     """
-    bump_visibility_revision(session)
+    visibility_rev = bump_visibility_revision(session)
+    token_rev = _stamp_token_revision(session, token)
     token_payload = build_token_runtime_payload(session, token)
+    token_payload["token_state_revision"] = token_rev
+    token_payload["visibility_revision"] = visibility_rev
+    removed_payload = {
+        "id": token.id,
+        "token_id": token.id,
+        "map_context": normalize_map_context(getattr(token, "map_context", "world")),
+        "token_state_revision": token_rev,
+        "visibility_revision": visibility_rev,
+    }
     for uid, u in session.users.items():
         if _is_token_visible_to_user(session, token, u):
             await manager.send_to(session.id, uid, {"type": msg_type, "payload": token_payload})
         elif str(getattr(u, "role", "") or "").strip().lower() != "dm":
             await manager.send_to(session.id, uid, {
                 "type": "token_removed_hidden",
-                "payload": {"id": token.id}
+                "payload": removed_payload
             })
 
 
