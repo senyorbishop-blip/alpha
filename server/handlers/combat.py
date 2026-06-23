@@ -147,6 +147,15 @@ def sync_combat_visibility(session: Session, map_context: str | None = None, rea
     combat = getattr(session, "combat", None) or {}
     if not combat.get("active") or _combat_fog_mode(session) == "off":
         return {"changed": False, "added": [], "removed": []}
+    # A read-only state snapshot (DM reconnect, new joiner, authoritative
+    # snapshot rebuild) must never mutate the shared combat roster. It runs with
+    # the requester's transient ``dm_map_context`` and writing the suspend/
+    # restore/auto-add result back would drop or re-add real combatants for
+    # every client based on that one reader's fog/context. Per-user visibility
+    # is already applied separately by ``_combat_state_payload_for_user`` at
+    # send time, so the snapshot can safely carry the authoritative roster.
+    if str(reason or "") == "state_snapshot":
+        return {"changed": False, "added": [], "removed": []}
     map_ctx = str(map_context or _current_combat_map_context(session, reason) or "world")[:80] or "world"
     coms = combat.get("combatants") if isinstance(combat.get("combatants"), list) else []
     suspended = _ensure_suspended_lists(combat)
@@ -159,7 +168,10 @@ def sync_combat_visibility(session: Session, map_context: str | None = None, rea
         token=session.tokens.get(tid) if tid else None
         if not token or _token_map_context(token) != map_ctx or not is_npc_or_monster_token(token):
             continue
-        reasons=_suspend_reasons(session, token, map_ctx)
+        # Always judge fog/LOS against the token's OWN map context, never the
+        # requester's transient panel context, so a combatant is only suspended
+        # when it genuinely sits in unrevealed fog on its own map.
+        reasons=_suspend_reasons(session, token, _token_map_context(token))
         reasons=[r for r in reasons if r in {"fog","hidden","staged","los"}]
         if reasons:
             removed_c=coms.pop(idx); active_ids.discard(tid)
@@ -171,7 +183,7 @@ def sync_combat_visibility(session: Session, map_context: str | None = None, rea
         token=session.tokens.get(tid) if tid else None
         if not token or _token_map_context(token) != map_ctx or not is_npc_or_monster_token(token):
             continue
-        reasons=_suspend_reasons(session, token, map_ctx)
+        reasons=_suspend_reasons(session, token, _token_map_context(token))
         if not reasons and tid not in active_ids:
             restored=dict(saved); restored.pop("suspended_reasons", None); restored.pop("suspended_at", None)
             coms.append(restored); active_ids.add(tid); added.append(restored); changed=True
