@@ -4,7 +4,7 @@ server/handlers/combat.py — Combat state management helpers and handlers.
 import logging
 import time as _time
 import uuid
-from server.session import normalize_profile_owner_key, assistant_dm_has_scope
+from server.session import normalize_profile_owner_key, assistant_dm_has_scope, owner_id_matches_user
 from server.quest_progress import apply_objective_event, normalize_quest_payload_shape
 from server.encumbrance import ENC_HEAVY
 
@@ -46,15 +46,15 @@ def _can_manage_combat(session: Session, user: User, *, full: bool = False) -> b
 
 
 def _owner_matches_user(owner_id, user: User) -> bool:
-    owner = str(owner_id or "").strip()
-    if not owner:
-        return False
-    if owner == str(user.id):
-        return True
-    owner_key = normalize_profile_owner_key(owner)
-    if not owner_key:
-        return False
-    return owner_key == normalize_profile_owner_key(getattr(user, "name", ""))
+    """Ownership check for combatants/tokens — the single canonical resolver.
+
+    Matches when ``owner_id`` is the player's user_id, display-name bucket, OR
+    resolved player_key (``auth_<id>``). Previously this only checked user_id /
+    display name, so a combatant whose owner_id was the player's player_key was
+    rejected ("You may only roll initiative for your own character.") even
+    though the player legitimately owns it.
+    """
+    return owner_id_matches_user(owner_id, None, user)
 
 
 def _has_encumbrance_attack_disadvantage(session: Session, attacker_owner_id: str) -> bool:

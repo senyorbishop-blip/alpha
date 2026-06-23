@@ -1564,6 +1564,61 @@ def normalize_profile_owner_key(name: str) -> str:
     return " ".join(str(name or "").strip().lower().split())
 
 
+def resolve_owner_identity(session, user) -> set[str]:
+    """Canonical set of identity keys a user legitimately owns.
+
+    This is the single source of truth for answering "does this user own this
+    thing?" across the server. A combatant, token, or character profile belongs
+    to ``user`` when its stored ``owner_id`` / owner-bucket key matches ANY key
+    in this set:
+
+      - the user's session-user id (``user.id``)
+      - the normalized display-name bucket (``normalize_profile_owner_key(name)``)
+      - the user's resolved ``player_key`` (``auth_<id>`` for logged-in accounts),
+        i.e. the same key the authority layer
+        (``server.http.session_access.resolve_session_authority``) resolves.
+
+    Display-name comparisons must use ``normalize_profile_owner_key`` on BOTH
+    sides so buckets line up regardless of casing/whitespace; raw ids and
+    player_keys match verbatim. The set only ever contains keys belonging to
+    this one user, so routing checks through it never widens access to another
+    user's combatant/profile.
+    """
+    keys: set[str] = set()
+    if user is None:
+        return keys
+    user_id = str(getattr(user, "id", "") or "").strip()
+    if user_id:
+        keys.add(user_id)
+    name_key = normalize_profile_owner_key(getattr(user, "name", ""))
+    if name_key:
+        keys.add(name_key)
+    player_key = str(getattr(user, "player_key", "") or "").strip()
+    if player_key:
+        keys.add(player_key)
+    return keys
+
+
+def owner_id_matches_user(owner_id, session, user) -> bool:
+    """True when ``owner_id`` resolves to an identity key owned by ``user``.
+
+    Routes all ownership comparisons through :func:`resolve_owner_identity` so
+    a raw user id, the player_key, or a (normalized) display-name bucket all
+    match. Returns False for an empty owner or an unmatched identity, so a
+    player stays blocked from another player's combatant/profile.
+    """
+    owner = str(owner_id or "").strip()
+    if not owner:
+        return False
+    identity = resolve_owner_identity(session, user)
+    if not identity:
+        return False
+    if owner in identity:
+        return True
+    owner_key = normalize_profile_owner_key(owner)
+    return bool(owner_key) and owner_key in identity
+
+
 ACTIVE_PROFILE_ID_KEY_LIMIT = 80
 
 
