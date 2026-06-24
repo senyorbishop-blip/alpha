@@ -11883,6 +11883,9 @@ let _lootInspectState   = null;
 let _lootRollPromptState = null;
 let itemLibraryEntries = {};
 let _srdItems = [];  // Global SRD items from import script
+let _srdItemsVersion = '';
+let _pendingSrdItemsVersion = '';
+const SRD_ITEMS_CACHE_PREFIX = 'tavern_srd_items:';
 window.CharacterBuilderItemLibrary = window.CharacterBuilderItemLibrary || { entries: [], srdItems: [] };
 let _itemLibrarySelectedId = null;
 let _itemLibraryModalMode = null;
@@ -33472,32 +33475,25 @@ function handleLegacyMessage(msg) {
     }
 
     case 'item_library_sync': {
+      const version = String(p.srd_items_version || '');
       if (Array.isArray(p.srd_items)) {
-        _srdItems = p.srd_items.map(s => {
-          const entry = normalizeItemLibraryEntry({
-            id: s.id,
-            name: s.name,
-            category: s.category || 'Gear',
-            rarity: s.rarity || 'Common',
-            default_qty: s.default_qty || 1,
-            price: s.default_price || '',
-            notes: s.description || '',
-            tags: s.tags || '',
-            weight_lbs: (typeof s.weight === 'number' ? s.weight : 0),
-            stack_limit: (s.stack_limit || 1),
-          });
-          if (!entry) return null;
-          entry.tags = s.tags || '';
-          entry.requires_attunement = !!s.requires_attunement || /attunement/i.test(String(s.tags || ''));
-          entry.has_spells = !!s.has_spells || /spell-granting/i.test(String(s.tags || ''));
-          entry.source = s.source || 'srd';
-          entry.weight_lbs = (typeof s.weight === 'number' ? s.weight : 0);
-          entry.stack_limit = (s.stack_limit || 1);
-          return entry;
-        }).filter(Boolean);
+        applySrdItemsPayload(p.srd_items, version);
+      } else if (version && !loadCachedSrdItems(version)) {
+        requestSrdItems(version);
       }
       publishCharacterBuilderItemLibrary();
       loadItemLibraryEntries(p.entries || []);
+      break;
+    }
+
+    case 'srd_items_response': {
+      const version = String(p.srd_items_version || '');
+      if (Array.isArray(p.srd_items)) {
+        applySrdItemsPayload(p.srd_items, version);
+        publishCharacterBuilderItemLibrary();
+        renderItemLibraryList();
+      }
+      if (!version || _pendingSrdItemsVersion === version) _pendingSrdItemsVersion = '';
       break;
     }
 
@@ -42731,6 +42727,62 @@ function normalizeItemLibraryEntry(raw) {
     if (txt) out.weapon_properties = txt.split(',').map(x => x.trim()).filter(Boolean).slice(0, 12);
   }
   return enrichItemLibraryEquipmentFromText(raw, out);
+}
+
+function normalizeSrdItemLibraryItems(items) {
+  return (items || []).map(s => {
+    const entry = normalizeItemLibraryEntry({
+      id: s.id,
+      name: s.name,
+      category: s.category || 'Gear',
+      rarity: s.rarity || 'Common',
+      default_qty: s.default_qty || 1,
+      price: s.default_price || '',
+      notes: s.description || '',
+      tags: s.tags || '',
+      weight_lbs: (typeof s.weight === 'number' ? s.weight : 0),
+      stack_limit: (s.stack_limit || 1),
+    });
+    if (!entry) return null;
+    entry.tags = s.tags || '';
+    entry.requires_attunement = !!s.requires_attunement || /attunement/i.test(String(s.tags || ''));
+    entry.has_spells = !!s.has_spells || /spell-granting/i.test(String(s.tags || ''));
+    entry.source = s.source || 'srd';
+    entry.weight_lbs = (typeof s.weight === 'number' ? s.weight : 0);
+    entry.stack_limit = (s.stack_limit || 1);
+    return entry;
+  }).filter(Boolean);
+}
+
+function applySrdItemsPayload(items, version) {
+  _srdItems = normalizeSrdItemLibraryItems(items);
+  _srdItemsVersion = String(version || _srdItemsVersion || '');
+  if (_srdItemsVersion) {
+    try {
+      localStorage.setItem(`${SRD_ITEMS_CACHE_PREFIX}${_srdItemsVersion}`, JSON.stringify(items || []));
+      localStorage.setItem(`${SRD_ITEMS_CACHE_PREFIX}current`, _srdItemsVersion);
+    } catch (err) {}
+  }
+  return _srdItems;
+}
+
+function loadCachedSrdItems(version) {
+  const key = `${SRD_ITEMS_CACHE_PREFIX}${version}`;
+  try {
+    const cached = JSON.parse(localStorage.getItem(key) || 'null');
+    if (!Array.isArray(cached)) return false;
+    applySrdItemsPayload(cached, version);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+function requestSrdItems(version) {
+  const requestedVersion = String(version || '');
+  if (requestedVersion && _pendingSrdItemsVersion === requestedVersion) return;
+  _pendingSrdItemsVersion = requestedVersion;
+  sendWS({ type: 'srd_items_request', payload: { srd_items_version: requestedVersion } });
 }
 
 function publishCharacterBuilderItemLibrary() {

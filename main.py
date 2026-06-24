@@ -58,6 +58,7 @@ from server.commercial.routes import router as commercial_router
 from server.character.routes import router as character_router
 from server.config import load_config
 from server.static_compat import resolve_legacy_class_portrait
+from server.item_library_srd import get_srd_items_version
 
 # ── GPU TTS system (Chatterbox + Dia + Kokoro) ────────────────────────────────
 try:
@@ -737,17 +738,14 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
     )
     await manager.send_to(session_id, user_id, snapshot_v2)
 
-    # Send item library sync with SRD items included
-    try:
-        from server.rules_db import get_all_srd_items
-        _srd_items_payload = get_all_srd_items()
-    except Exception:
-        _srd_items_payload = []
+    # Send item library sync with only the SRD version.  The SRD list is large,
+    # so clients request it separately only when their local versioned cache is
+    # missing or stale.
     await manager.send_to(session_id, user_id, {
         "type": "item_library_sync",
         "payload": {
             "entries": list(getattr(session, "item_library_entries", []) or []),
-            "srd_items": _srd_items_payload,
+            "srd_items_version": get_srd_items_version(),
         },
     })
 

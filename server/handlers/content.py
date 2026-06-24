@@ -162,21 +162,26 @@ def _handout_targets_user(handout: dict, session: Session, user_id: str) -> bool
 
 
 async def _broadcast_item_library_state(session: Session):
-    """Broadcast item library state to all users in the session.
+    """Broadcast session item library entries plus the current SRD version."""
+    from server.item_library_srd import get_srd_items_version
 
-    Sends both campaign-specific entries and global SRD items.
-    """
     entries = list(getattr(session, "item_library_entries", []) or [])
-    try:
-        from server.rules_db import get_all_srd_items
-        srd_items = get_all_srd_items()
-    except Exception:
-        srd_items = []
+    srd_items_version = get_srd_items_version()
     for uid in session.users.keys():
         await manager.send_to(session.id, uid, {
             "type": "item_library_sync",
-            "payload": {"entries": entries, "srd_items": srd_items},
+            "payload": {"entries": entries, "srd_items_version": srd_items_version},
         })
+
+
+async def handle_srd_items_request(payload: dict, session: Session, user: User):
+    """Send the full SRD item list only to the requesting user."""
+    from server.item_library_srd import get_srd_items_payload
+
+    await manager.send_to(session.id, user.id, {
+        "type": "srd_items_response",
+        "payload": get_srd_items_payload(),
+    })
 
 
 async def _broadcast_encounter_template_state(session: Session):

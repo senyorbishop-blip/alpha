@@ -1,4 +1,29 @@
 (function(){
+  const SRD_ITEMS_CACHE_PREFIX = 'tavern_srd_items:';
+
+  function readCachedSrdItems(version, storage) {
+    const store = storage || window.localStorage;
+    const key = `${SRD_ITEMS_CACHE_PREFIX}${String(version || '')}`;
+    try {
+      const cached = JSON.parse(store.getItem(key) || 'null');
+      return Array.isArray(cached) ? cached : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function writeCachedSrdItems(version, items, storage) {
+    if (!version || !Array.isArray(items)) return false;
+    const store = storage || window.localStorage;
+    try {
+      store.setItem(`${SRD_ITEMS_CACHE_PREFIX}${version}`, JSON.stringify(items));
+      store.setItem(`${SRD_ITEMS_CACHE_PREFIX}current`, String(version));
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
   function renderItemLibraryList(env) {
     const wrap = env.document.getElementById('itemlib-list');
     if (!wrap) return;
@@ -50,5 +75,12 @@
     renderItemLibraryList(env);
     renderItemLibraryEditor(env);
   }
-  window.AppUIItemLibrary = { renderItemLibraryList, renderItemLibraryEditor, selectItemLibraryEntry, newItemLibraryEntry };
+  window.AppUIItemLibrary = {
+    renderItemLibraryList,
+    renderItemLibraryEditor,
+    selectItemLibraryEntry,
+    newItemLibraryEntry,
+    readCachedSrdItems,
+    writeCachedSrdItems,
+  };
 })();
