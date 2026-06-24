@@ -14,6 +14,16 @@
   const dispatchChain = [];
   let dispatchDepth = 0;
 
+  const COMBAT_MESSAGE_TYPES = new Set([
+    'combat_state',
+    'combat_attack_result',
+    'combat_move_state',
+    'combat_move_preview_result',
+    'combat_initiative_rolled',
+    'token_move_denied',
+  ]);
+  let combatModuleLoadRequested = false;
+
   function rememberMessageType(type) {
     recentMessageTypes.push(String(type || '(missing)'));
     if (recentMessageTypes.length > 30) recentMessageTypes.splice(0, recentMessageTypes.length - 30);
@@ -29,6 +39,40 @@
     console.error('[AppMessageDispatch] dispatch diagnostics', payload, err || '');
     return payload;
   }
+
+  function isCombatMessageType(type) {
+    return COMBAT_MESSAGE_TYPES.has(String(type || ''));
+  }
+
+  function ensureCombatMessagesModule() {
+    if (global.AppCombatMessages || combatModuleLoadRequested) return;
+    if (!global.document || !global.document.createElement) return;
+    combatModuleLoadRequested = true;
+    try {
+      if (global.document.querySelector('script[data-app-module="combat-messages"]')) return;
+      const script = global.document.createElement('script');
+      script.src = '/static/js/gameplay/combat_messages.js?v=20260624';
+      script.async = false;
+      script.dataset.appModule = 'combat-messages';
+      script.onerror = function () {
+        console.warn('[AppMessageDispatch] combat_messages.js failed to load; legacy combat handlers remain active');
+      };
+      const parent = global.document.head || global.document.documentElement;
+      if (parent) parent.appendChild(script);
+    } catch (err) {
+      console.warn('[AppMessageDispatch] unable to request combat_messages.js; legacy combat handlers remain active', err);
+    }
+  }
+
+  function tryHandleCombatMessage(msg, env) {
+    if (!msg || !isCombatMessageType(msg.type)) return false;
+    ensureCombatMessagesModule();
+    const combatMessages = global.AppCombatMessages;
+    if (!combatMessages || typeof combatMessages.handleIncoming !== 'function') return false;
+    return combatMessages.handleIncoming(msg, env || {});
+  }
+
+  ensureCombatMessagesModule();
 
   function handleIncoming(msg, env) {
     if (!msg || typeof msg !== 'object') return false;
@@ -52,6 +96,7 @@
         const order = Array.isArray(payload.combatants) ? payload.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : [];
         console.debug('[message_dispatch] combat_state', { revision: payload.revision, order, turn: payload.turn, active: order[Number(payload.turn || 0)] || null });
       }
+      if (tryHandleCombatMessage(msg, runtimeEnv)) return true;
       runtimeEnv.handleLegacyMessage(msg);
       return true;
     } catch (err) {
@@ -135,5 +180,6 @@
     handleIncoming,
     handleLegacyDomainMessage,
     getDispatchDiagnostics,
+    isCombatMessageType,
   };
 })(window);
