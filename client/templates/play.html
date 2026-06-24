@@ -12157,6 +12157,21 @@ let _combatRound = 1;
 // until a manual refresh re-fetched full state. Track the last applied revision
 // PER STREAM so each stream only guards against its own out-of-order payloads.
 const _lastVisibilityRevisionByStream = Object.create(null);
+const _inventoryRevisionGlobal = (typeof window !== 'undefined') ? window : ((typeof globalThis !== 'undefined') ? globalThis : {});
+_inventoryRevisionGlobal._lastInventoryRevision = Number(_inventoryRevisionGlobal._lastInventoryRevision || 0);
+function getLastInventoryRevision() {
+  return Number(_inventoryRevisionGlobal._lastInventoryRevision || 0);
+}
+function setLastInventoryRevision(value) {
+  const revision = Number(value || 0);
+  if (Number.isFinite(revision)) {
+    _inventoryRevisionGlobal._lastInventoryRevision = revision;
+  }
+}
+if (typeof window !== 'undefined') {
+  window.getLastInventoryRevision = getLastInventoryRevision;
+  window.setLastInventoryRevision = setLastInventoryRevision;
+}
 function _isStaleVisibilityPayload(payload, stream = 'tokens') {
   const rev = Number(payload && payload.visibility_revision);
   if (!Number.isFinite(rev)) return false;
@@ -12239,10 +12254,9 @@ function applyTokenInterpolationFrame(now) {
 function _isStaleInventoryPayload(payload) {
   const rev = Number(payload && payload.inventory_revision);
   if (!Number.isFinite(rev)) return false;
-  const stream = 'inventory';
-  const last = Number(_lastVisibilityRevisionByStream[stream] || 0);
+  const last = getLastInventoryRevision();
   if (rev < last) return true;
-  _lastVisibilityRevisionByStream[stream] = rev;
+  setLastInventoryRevision(rev);
   return false;
 }
 
@@ -12383,7 +12397,7 @@ function applyQuickActionsSync(payload, source) {
   }
   if (Number.isFinite(charRev) && charRev < _lastCharacterRuntimeRevision) return false;
   if (Number.isFinite(spellRev) && spellRev < _lastSpellManifestRevision) return false;
-  if (Number.isFinite(invRev) && invRev < _lastInventoryRevision) return false;
+  if (Number.isFinite(invRev) && invRev < getLastInventoryRevision()) return false;
   if (Number.isFinite(rev)) _lastQuickActionsRevision = rev;
   window._serverQuickActions = p;
   _quickActionsHydration = {
@@ -33254,7 +33268,9 @@ function handleLegacyMessage(msg) {
       }
       requestRenderFrame('state_sync render');
       liveDebugLog('state_sync applied', buildClientLiveStateSummary('state_sync', p, { hidden_tokens_filtered: Number(p.hidden_tokens_filtered) || undefined, fog_hidden_tokens_filtered: Number(p.fog_hidden_tokens_filtered) || undefined }));
-      applyPlayerInventoryState(p);
+      const _stateSyncInventoryStale = _isStaleInventoryPayload(p);
+      liveDebugLog('state_sync inventory ' + (_stateSyncInventoryStale ? 'ignored' : 'applied'), buildClientLiveStateSummary('state_sync', p, { ignored: _stateSyncInventoryStale }));
+      if (!_stateSyncInventoryStale) applyPlayerInventoryState(p);
       if (p.quick_actions && typeof p.quick_actions === 'object') applyQuickActionsSync(p.quick_actions, 'state_sync');
       // Apply camp/rest state for reconnecting users
       if (p.camp_rest) {
