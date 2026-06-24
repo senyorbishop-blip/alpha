@@ -358,18 +358,29 @@ def test_stale_player_inventory_sync_payload_is_dropped_by_client():
     source = _play_html_source()
     fn_source = _extract_js_function(source, "_isStaleInventoryPayload")
     assert "inventory_revision" in fn_source
-    assert "_lastVisibilityRevisionByStream" in fn_source
+    assert "getLastInventoryRevision" in fn_source
+    assert "setLastInventoryRevision" in fn_source
+    assert "_lastInventoryRevision" in source
 
-    last_by_stream: dict[str, float] = {}
+    last_inventory_revision = 0
 
-    def is_stale(payload, stream="inventory"):
+    def get_last_inventory_revision():
+        return last_inventory_revision
+
+    def set_last_inventory_revision(value):
+        nonlocal last_inventory_revision
+        revision = float(value or 0)
+        if revision == revision and revision not in (float("inf"), float("-inf")):
+            last_inventory_revision = revision
+
+    def is_stale(payload):
         rev = payload.get("inventory_revision")
         if not isinstance(rev, (int, float)):
             return False
-        last = last_by_stream.get(stream, 0)
+        last = get_last_inventory_revision()
         if rev < last:
             return True
-        last_by_stream[stream] = rev
+        set_last_inventory_revision(rev)
         return False
 
     first = {"inventory_revision": 5, "player_inventory": ["sword"]}
@@ -387,16 +398,25 @@ def test_stale_player_inventory_sync_payload_is_dropped_by_client():
 # ---------------------------------------------------------------------------
 
 def test_missing_inventory_revision_payload_still_applies():
-    last_by_stream: dict[str, float] = {}
+    last_inventory_revision = 0
 
-    def is_stale(payload, stream="inventory"):
+    def get_last_inventory_revision():
+        return last_inventory_revision
+
+    def set_last_inventory_revision(value):
+        nonlocal last_inventory_revision
+        revision = float(value or 0)
+        if revision == revision and revision not in (float("inf"), float("-inf")):
+            last_inventory_revision = revision
+
+    def is_stale(payload):
         rev = payload.get("inventory_revision")
         if not isinstance(rev, (int, float)):
             return False
-        last = last_by_stream.get(stream, 0)
+        last = get_last_inventory_revision()
         if rev < last:
             return True
-        last_by_stream[stream] = rev
+        set_last_inventory_revision(rev)
         return False
 
     legacy_payload = {"player_inventory": ["torch"]}
