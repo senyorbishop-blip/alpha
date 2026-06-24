@@ -127,6 +127,24 @@ Move the visible chat-log rendering rules out of `play.html` so chat feed filter
 - The chat-log module must continue to filter presence spam, render only chat entries, preserve viewer/whisper channel tags, and escape role/user/message text before inserting HTML.
 - Any future chat-log work must update `tests/test_p8_chat_log_rendering.py` in the same patch so feed-rendering ownership does not drift back into the template.
 
+## Stage 11 — DM UI clutter guardrails
+
+Keep the DM interface powerful while preventing the right-sidebar from becoming a wall of always-visible controls for every role.
+
+### Live ownership after Stage 11
+
+- `client/static/js/ui/tabs.js` remains the live owner of right-sidebar tab visibility, dropdown grouping, active-tab normalization, and context focus.
+- DM-only library tools stay grouped under the library dropdown instead of being promoted into the always-visible core tab row.
+- Player and viewer roles continue to receive a reduced role-visible tab set; handler-level permissions still enforce server authority, but the UI should not advertise inaccessible DM tools.
+- Assistant-DM library access remains scope-driven instead of exposing the full DM library surface by default.
+
+### P11 guardrails
+
+- Keep DM library tabs such as shop, bestiary, spell library, and handouts grouped through the library dropdown.
+- Keep `syncDropdownVisibility()` closing/hiding empty dropdowns so viewer/player shells do not display dead controls.
+- Keep context focus as a highlight/mute system (`context-priority`, `context-muted`) rather than auto-showing every pane.
+- Any future tab or DM-panel clutter work must update `tests/test_p11_dm_ui_clutter_guardrails.py` in the same patch.
+
 1. Move gameplay systems and UI domains out one slice at a time until the inline legacy dispatcher and global state can be retired.
 
 - `client/static/js/gameplay/combat.js` remains a dormant alternate combat module until `play.html` explicitly loads and adopts it.
