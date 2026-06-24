@@ -113,9 +113,15 @@ _TOKEN_TTL = 60 * 60 * 24 * 7  # 7 days
 ADMIN_HOST_KEY: str = os.environ.get("DND_ADMIN_KEY", "").strip()
 
 if not ADMIN_HOST_KEY:
+    app_env = _resolve_app_env()
+    if app_env != "development":
+        raise RuntimeError(
+            "DND_ADMIN_KEY is not set. Refusing to start in a non-development "
+            "environment. Set DND_ADMIN_KEY in the environment or .env."
+        )
     ADMIN_HOST_KEY = secrets.token_hex(16)
     print(
-        "\n[WARNING] DND_ADMIN_KEY is not set — a temporary key has been generated for this session.\n"
+        "\n[WARNING] DND_ADMIN_KEY is not set — a temporary development key has been generated for this session.\n"
         "          To make it permanent, set DND_ADMIN_KEY in your environment or .env file.\n"
     )
 
