@@ -5,7 +5,11 @@ from __future__ import annotations
 import inspect
 
 from server.handlers import handle_message
-from server.handlers.ws_permissions import is_ws_message_allowed_for_role
+from server.handlers.ws_permissions import (
+    DM_ADMIN_MESSAGE_TYPES,
+    PLAYER_KNOWN_GAMEPLAY_MESSAGE_TYPES,
+    is_ws_message_allowed_for_role,
+)
 
 
 def test_dispatch_calls_central_ws_role_policy_before_handler_lookup():
@@ -36,6 +40,9 @@ def test_player_cannot_send_real_editor_or_dm_admin_messages():
         "assistant_dm_permissions_set",
         "grant_permission",
         "combat_update",
+        "combat_clear",
+        "combat_add_token",
+        "combat_remove_combatant",
         "hazard_zone_create",
         "camp_rest_take_rest",
         "ai_describe_scene",
@@ -59,10 +66,20 @@ def test_player_owned_token_and_gameplay_messages_remain_allowed():
         "interactable_action",
         "prop_take_item",
         "combat_attack_request",
+        "combat_roll_initiative",
+        "combat_state_request",
+        "combat_move_commit",
         "character_rest",
     ]
     for msg_type in allowed:
         assert is_ws_message_allowed_for_role(msg_type, "player").allowed, msg_type
+
+
+def test_player_initiative_roll_is_not_classified_as_dm_admin():
+    assert "combat_roll_initiative" in PLAYER_KNOWN_GAMEPLAY_MESSAGE_TYPES
+    assert "combat_roll_initiative" not in DM_ADMIN_MESSAGE_TYPES
+    assert is_ws_message_allowed_for_role("combat_roll_initiative", "player").allowed
+    assert is_ws_message_allowed_for_role("combat_roll_initiative", "dm").allowed
 
 
 def test_player_unknown_messages_default_deny():
