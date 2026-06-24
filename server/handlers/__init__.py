@@ -229,6 +229,7 @@ from server.handlers.summons import (
     handle_summon_runtime_admin,
 )
 from server.handlers.token_placement_secure import handle_token_placed_secure
+from server.handlers.ws_permissions import is_ws_message_allowed_for_role
 
 
 logger = logging.getLogger(__name__)
@@ -444,6 +445,25 @@ async def handle_message(raw: dict, session: Session, user: User):
         "conversation_queue_advance":   handle_conversation_queue_advance,
         "conversation_reaction_set":    handle_conversation_reaction_set,
     }
+
+    decision = is_ws_message_allowed_for_role(msg_type, getattr(user, "role", None))
+    if not decision.allowed:
+        logger.warning(
+            "WebSocket message blocked by role policy",
+            extra={
+                "msg_type": msg_type,
+                "reason": decision.reason,
+                "session_id": getattr(session, "id", None),
+                "user_id": getattr(user, "id", None),
+                "user_role": getattr(user, "role", None),
+            },
+        )
+        if decision.error_message:
+            await manager.send_to(session.id, user.id, {
+                "type": "error",
+                "payload": {"message": decision.error_message},
+            })
+        return
 
     handler = dispatch.get(msg_type)
     if handler:
