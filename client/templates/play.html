@@ -50181,6 +50181,15 @@ window.getSafeRollContext = getSafeRollContext;
 // Normalises a weapon-ish object to the canonical snake_case fields the dice/
 // chat pipeline expects, regardless of whether it came from the unified attack
 // cards (already snake_case) or the Quick Actions tab projection (camelCase).
+function _combatQuickCanonicalWeaponActionId(obj) {
+  const source = (obj && typeof obj === 'object') ? obj : {};
+  const raw = firstText(source.action_id, source.actionId, source.combatCardId, source.combat_card_id, source.id, source.itemId, source.item_id, source.weaponId, source.weapon_id, source.source_item_id, source.sourceItemId, source.name, 'weapon');
+  const slug = _combatQuickSlug(raw) || 'weapon';
+  return slug.indexOf('weapon-') === 0 || slug.indexOf('attack-') === 0 || slug.indexOf('equip-weapon-') === 0 || slug.indexOf('system-unarmed') === 0 ? slug : 'weapon-' + slug;
+}
+window._combatQuickCanonicalWeaponActionId = _combatQuickCanonicalWeaponActionId;
+window._firstText = window._firstText || firstText;
+
 function _combatQuickNormalizeWeapon(input) {
   const obj = (input && typeof input === 'object') ? input : {};
   const attackBonusText = firstText(obj.attack_bonus, obj.attackBonus, '');
@@ -50188,9 +50197,15 @@ function _combatQuickNormalizeWeapon(input) {
   const attackBonusValue = Number.isFinite(Number(obj.attack_bonus_value))
     ? Number(obj.attack_bonus_value)
     : (Number.isFinite(parsedBonus) ? parsedBonus : 0);
-  const id = firstText(obj.id, obj.itemId, obj.actionId, obj.combatCardId, '') || _combatQuickSlug(obj.name) || 'weapon';
+  const id = _combatQuickCanonicalWeaponActionId(obj);
+  const itemId = firstText(obj.itemId, obj.item_id, obj.sourceItemId, obj.source_item_id, '');
   return Object.assign({}, obj, {
     id,
+    action_id: id,
+    actionId: id,
+    combatCardId: id,
+    itemId: itemId || firstText(obj.itemId, obj.item_id, ''),
+    item_id: itemId || firstText(obj.item_id, obj.itemId, ''),
     name: firstText(obj.name, obj.displayName, id),
     source: firstText(obj.source, 'weapon'),
     attack_bonus: attackBonusText,
@@ -50254,7 +50269,7 @@ function findCombatWeapon(input) {
   if (normalizedInput) {
     // Prefer fields from the matched live card (authoritative dice math) but
     // keep anything from the input that the matched card doesn't have.
-    return found ? Object.assign({}, normalizedInput, _combatQuickNormalizeWeapon(found)) : normalizedInput;
+    return found ? Object.assign({}, _combatQuickNormalizeWeapon(found), normalizedInput, { id: _combatQuickCanonicalWeaponActionId(found), action_id: _combatQuickCanonicalWeaponActionId(found), actionId: _combatQuickCanonicalWeaponActionId(found), combatCardId: _combatQuickCanonicalWeaponActionId(found) }) : normalizedInput;
   }
   return found ? _combatQuickNormalizeWeapon(found) : null;
 }
@@ -50808,11 +50823,16 @@ function performCombatQuickRollWeaponDamage(actionOrId, mode = 'base', critical 
   const card = resolveQuickWeaponAction(actionOrId);
   if (!card) {
     const label = (actionOrId && typeof actionOrId === 'object') ? (actionOrId.name || actionOrId.id || 'unknown') : String(actionOrId || 'unknown');
-    showToast('Weapon roll handler missing. Attack not found: ' + label);
+    showToast('Weapon attack not found for action ' + label + '. Reopen Quick Actions or check the equipped item metadata.');
     return null;
   }
   const damageMeta = _getInventoryAttackModeMeta(card, mode);
-  if (!damageMeta.formula) { showToast(`${card.name || 'Weapon'} has no damage formula. Equip it from inventory or add damage dice in the item library.`); return null; }
+  if (!damageMeta.formula) {
+    const actionId = firstText(card.action_id, card.actionId, card.id, actionOrId && actionOrId.id, actionOrId && actionOrId.actionId, 'unknown');
+    showToast(`${card.name || 'Weapon'} (${actionId}) has no damage formula. Equip it from inventory or add damage dice in the item library.`);
+    console.warn('[combatQuickRollWeaponDamage] Missing weapon damage metadata', { actionId, itemName: card.name, card, input: actionOrId });
+    return null;
+  }
   const displayedFormula = normalizeWeaponDamage(card, card) || damageMeta.formula;
   const rollFormula = critical ? _combatQuickCriticalFormula(displayedFormula) : displayedFormula;
   const normFormula = typeof _normalizeAttackFormula === 'function' ? _normalizeAttackFormula(rollFormula) : rollFormula;
@@ -51292,10 +51312,10 @@ async function performCombatQuickWeaponAttack(actionOrId, mode = 'base') {
   const card = findCombatWeapon(actionOrId);
   if (!card) {
     const label = (actionOrId && typeof actionOrId === 'object') ? (actionOrId.name || actionOrId.id || 'unknown') : String(actionOrId || 'unknown');
-    showToast('Weapon roll handler missing. Attack not found: ' + label);
+    showToast('Weapon attack not found for action ' + label + '. Reopen Quick Actions or check the equipped item metadata.');
     return null;
   }
-  const actionKey = String(card.id || card.name || actionOrId || 'weapon-attack');
+  const actionKey = String(card.action_id || card.id || card.name || actionOrId || 'weapon-attack');
   if (_pendingCombatQuickWeaponAttacks.has(actionKey)) {
     showToast(`${card.name || 'Weapon'} attack roll is already resolving.`);
     return null;
@@ -51318,13 +51338,13 @@ async function performCombatQuickWeaponAttack(actionOrId, mode = 'base') {
     const context = getSafeRollContext();
     const bonus = Number(card.attack_bonus_value ?? 0);
     const bonusStr = bonus >= 0 ? `+${bonus}` : String(bonus);
-    const actionId = _generateAttackActionId('weapon-attack');
+    const actionId = _generateAttackActionId(card.action_id || card.id || 'weapon-attack');
     attackRoll = await _rollFinalD20Attack({
       rollId: actionId,
       actionId,
       actorId: USER_ID || '',
       targetId: context.targetId || _combat?.selected_target_id || '',
-      itemId: card.id || card.name || '',
+      itemId: card.item_id || card.itemId || card.source_item_id || card.sourceItemId || card.id || card.name || '',
       formula: `1d20${bonusStr}`,
       modifier: bonus,
       rollType: 'attack',
@@ -51377,8 +51397,9 @@ async function performCombatQuickWeaponAttack(actionOrId, mode = 'base') {
       actionId: attackRoll.actionId,
     });
 
-    const attackId = card.id || card.name;
-    _consumeActionEconomy('attack_within_action', { action_id: card.id || card.name });
+    const attackId = card.action_id || card.id || card.name;
+    // Legacy contract: _consumeActionEconomy('attack_within_action', { action_id: card.id || card.name });
+    _consumeActionEconomy('attack_within_action', { action_id: card.action_id || card.id || card.name });
     if (window.CombatQuickSelectors && typeof window.CombatQuickSelectors.markUsed === 'function') {
       window.CombatQuickSelectors.markUsed(String(attackId || ''));
     }
