@@ -120,6 +120,13 @@ Move the visible chat-log rendering rules out of `play.html` so chat feed filter
 - `client/static/js/ui/chat_log.js` is now the live owner of presence-log filtering and visible chat-log entry rendering, including viewer/whisper channel tags.
 - `client/templates/play.html` now delegates `isPresenceLogEntry()` and `addLogEntry()` through compatibility wrappers, while the existing WS handlers still decide when a log entry should be emitted.
 
+### P8 guardrails
+
+- `client/templates/play.html` must not reintroduce `addLogEntry()`, `isPresenceLogEntry()`, or `AppUIChatLog` ownership.
+- `client/static/js/ui/chat_log.js` owns the public `window.AppUIChatLog` contract: `isPresenceLogEntry` and `addLogEntry`.
+- The chat-log module must continue to filter presence spam, render only chat entries, preserve viewer/whisper channel tags, and escape role/user/message text before inserting HTML.
+- Any future chat-log work must update `tests/test_p8_chat_log_rendering.py` in the same patch so feed-rendering ownership does not drift back into the template.
+
 1. Move gameplay systems and UI domains out one slice at a time until the inline legacy dispatcher and global state can be retired.
 
 - `client/static/js/gameplay/combat.js` remains a dormant alternate combat module until `play.html` explicitly loads and adopts it.
