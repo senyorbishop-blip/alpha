@@ -25,6 +25,7 @@ def test_viewer_can_only_send_viewer_safe_messages():
 
 def test_player_cannot_send_real_editor_or_dm_admin_messages():
     denied = [
+        "token_delete",
         "fog_paint",
         "fog_toggle",
         "editor_walls_save",
@@ -50,7 +51,6 @@ def test_player_owned_token_and_gameplay_messages_remain_allowed():
         "token_create",
         "token_placed",
         "token_send_to_staging",
-        "token_delete",
         "token_move",
         "token_edit",
         "token_hp_update",
