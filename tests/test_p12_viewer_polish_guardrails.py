@@ -108,8 +108,8 @@ def test_viewer_fx_supports_recap_friendly_power_effects():
     for marker in [
         "healing_spark",
         "lightning_strike",
-        "status_ring",
-        "item_gift",
+        "knockback",
+        "projectile",
         "fireball",
     ]:
         assert marker in src
