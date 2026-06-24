@@ -211,6 +211,7 @@ def _manifest_payload(audio_dir: Path) -> dict:
                 "family": kind,
                 "layers": ["bed", "detail", "texture"],
                 "fallback": f"procedural_{kind}",
+                "asset_probe": "enabled",
             }
     return {"version": MANIFEST_VERSION, "tracks": tracks}
 
