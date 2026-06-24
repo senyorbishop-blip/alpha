@@ -3,7 +3,7 @@ import asyncio
 from server.handlers import camp_rest
 from server.handlers import common as common_handlers
 from server.handlers import inventory as inventory_handlers
-from server.session import Session, Token, User, normalize_profile_owner_key
+from server.session import Session, Token, User, normalize_profile_owner_key, build_quick_actions_sync_payload
 
 
 class CaptureManager:
@@ -153,3 +153,98 @@ def test_non_player_roles_cannot_call_character_rest(monkeypatch):
     assert session.tokens["alice-1"].hp == 2
     assert not capture.sent
     assert not capture.broadcasts
+
+
+def _attach_active_profile(session, player, *, current_hp=2, max_hp=12, slots=None, item_charges=1):
+    owner_key = normalize_profile_owner_key(player.name) or player.id
+    profile_id = "char-alice"
+    session.active_char_profiles = {player.id: profile_id}
+    session.char_profiles = {owner_key: [{
+        "id": profile_id,
+        "name": "Alice Hero",
+        "curhp": current_hp,
+        "hp": max_hp,
+        "tempHp": 3,
+        "charBook": {"currentHp": current_hp, "maxHp": max_hp, "tempHp": 3},
+        "charSheet": {"hp": {"current": current_hp, "max": max_hp, "temp": 3}},
+        "nativeCharacter": {"spellState": {"slots": slots or {"1": 0, "2": 0}, "slotMaxes": {"1": 4, "2": 2}}},
+        "nativeRuntime": {"hp": {"current": current_hp, "max": max_hp, "temp": 3}, "resources": [{"id": "second_wind", "current": 0, "max": 1, "recharge": "short_rest"}]},
+    }]}
+    session.player_inventories = {f"{owner_key}::profile::{profile_id}": [{
+        "name": "Pearl of Power",
+        "qty": 1,
+        "charges_max": 3,
+        "charges_current": item_charges,
+        "recharge_type": "long_rest",
+        "granted_spells": [{"id": "spark", "name": "Spark", "charge_cost": 1, "consume_spell_slot": False}],
+    }]}
+    return owner_key, profile_id
+
+
+def test_player_long_rest_updates_profile_hp_and_restores_spell_slots_server_side(monkeypatch):
+    capture = _patch(monkeypatch)
+    session, player, *_ = _session()
+    owner_key, _profile_id = _attach_active_profile(session, player)
+
+    asyncio.run(camp_rest.handle_character_self_rest({"rest_type": "long", "token_id": "alice-1"}, session, player))
+
+    profile = session.char_profiles[owner_key][0]
+    assert profile["curhp"] == 12
+    assert profile["tempHp"] == 0
+    assert profile["nativeRuntime"]["hp"]["current"] == 12
+    assert profile["nativeCharacter"]["spellState"]["slots"] == {"1": 4, "2": 2}
+    assert _messages(capture, "char_profiles_sync")
+    assert _messages(capture, "quick_actions_sync")
+
+
+def test_reconnect_snapshot_after_long_rest_has_restored_slots_and_item_charges(monkeypatch):
+    _patch(monkeypatch)
+    session, player, *_ = _session()
+    owner_key, profile_id = _attach_active_profile(session, player, item_charges=0)
+
+    asyncio.run(camp_rest.handle_character_self_rest({"rest_type": "long", "token_id": "alice-1"}, session, player))
+
+    snapshot = session.to_state_dict()
+    profile = next(row for row in snapshot["char_profiles"][owner_key] if row["id"] == profile_id)
+    assert profile["nativeCharacter"]["spellState"]["slots"]["1"] == 4
+    assert session.player_inventories[f"{owner_key}::profile::{profile_id}"][0]["charges_current"] == 3
+    assert build_quick_actions_sync_payload(session, player.id)["charges"][0]["charges_current"] == 3
+
+
+def test_short_rest_hit_dice_healing_updates_profile_and_quick_actions(monkeypatch):
+    capture = _patch(monkeypatch)
+    session, player, *_ = _session()
+    owner_key, _profile_id = _attach_active_profile(session, player)
+
+    asyncio.run(camp_rest.handle_character_self_rest({"rest_type": "short", "token_id": "alice-1", "healed_amount": 5}, session, player))
+
+    assert session.tokens["alice-1"].hp == 7
+    profile = session.char_profiles[owner_key][0]
+    assert profile["curhp"] == 7
+    assert profile["nativeRuntime"]["hp"]["current"] == 7
+    assert profile["nativeRuntime"]["resources"][0]["current"] == 1
+    assert _messages(capture, "quick_actions_sync")
+
+
+def test_dm_long_rest_updates_all_player_profiles_spell_slots_and_item_charges(monkeypatch):
+    capture = _patch(monkeypatch)
+    session, player, other, dm, _viewer = _session()
+    owner_key, _profile_id = _attach_active_profile(session, player, item_charges=0)
+    bob_key = normalize_profile_owner_key(other.name) or other.id
+    session.active_char_profiles[other.id] = "bob-char"
+    session.char_profiles[bob_key] = [{
+        "id": "bob-char",
+        "name": "Bob Hero",
+        "nativeCharacter": {"spellState": {"slots": {"1": 0}, "slotMaxes": {"1": 2}}},
+        "nativeRuntime": {"hp": {"current": 4, "max": 11, "temp": 3}},
+    }]
+
+    asyncio.run(camp_rest.handle_camp_rest_take_rest({"rest_type": "long"}, session, dm))
+
+    assert session.tokens["alice-1"].hp == 12
+    assert session.tokens["bob-1"].hp == 11
+    assert session.char_profiles[owner_key][0]["nativeCharacter"]["spellState"]["slots"]["1"] == 4
+    assert session.char_profiles[bob_key][0]["nativeCharacter"]["spellState"]["slots"]["1"] == 2
+    assert session.player_inventories[f"{owner_key}::profile::char-alice"][0]["charges_current"] == 3
+    assert _messages(capture, "camp_rest_rest_applied")
+    assert _messages(capture, "char_profiles_sync")
