@@ -3,9 +3,10 @@
 ## Admin key (`DND_ADMIN_KEY`)
 
 Admin endpoints use `X-Admin-Key`.
-Set `DND_ADMIN_KEY` in `.env` (recommended) or `config.txt` before startup.
+Set `DND_ADMIN_KEY` in `.env` or in the deployment environment before startup.
+Do not put admin keys, JWT secrets, API keys, passwords, or provider tokens in `config.txt`.
 
-If no key is set, runtime auto-generates one at startup, which is unsafe for stable operations because it changes on restart.
+If no key is set in development, runtime may create a temporary dev-only value. For stable operations and all public/hosted deployments, set it explicitly in `.env` or the host environment.
 
 ## Password reset operations
 
@@ -34,9 +35,11 @@ curl -X PATCH "http://localhost:8000/admin/reset-password" \
 ## Safe admin practices
 
 - Rotate admin key when staff changes
+- Rotate the JWT signing secret immediately if it was ever committed, pasted, streamed, or shared
 - Use HTTPS when exposing admin operations outside LAN
 - Never share admin key in chat logs/screenshots
 - Keep `DND_JWT_SECRET` stable and private
+- Keep `config.txt` non-secret and untracked
 
 ## Backup and restore responsibilities
 
