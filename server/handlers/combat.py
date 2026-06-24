@@ -228,10 +228,48 @@ async def run_combat_fog_sync(session: Session, reason: str = "sync", map_contex
     return result
 
 
+COMBAT_FOG_SYNC_REQUEST_COOLDOWNS = {
+    "assistant_dm": 1.0,
+    "player": 2.5,
+}
+
+
+def _combat_fog_sync_cooldown_for_user(user: User) -> float | None:
+    role = str(getattr(user, "role", "") or "").strip().lower()
+    if role == "dm":
+        return 0.0
+    if role in COMBAT_FOG_SYNC_REQUEST_COOLDOWNS:
+        return COMBAT_FOG_SYNC_REQUEST_COOLDOWNS[role]
+    return None
+
+
+def _is_combat_fog_sync_request_rate_limited(session: Session, user: User, now: float | None = None) -> bool:
+    cooldown = _combat_fog_sync_cooldown_for_user(user)
+    if cooldown is None:
+        return True
+    if cooldown <= 0:
+        return False
+    uid = str(getattr(user, "id", "") or "").strip()
+    if not uid:
+        return True
+    now = float(_time.time() if now is None else now)
+    last_by_user = getattr(session, "_combat_fog_sync_request_last_at", None)
+    if not isinstance(last_by_user, dict):
+        last_by_user = {}
+        setattr(session, "_combat_fog_sync_request_last_at", last_by_user)
+    last_at = float(last_by_user.get(uid) or 0.0)
+    if last_at and now - last_at < cooldown:
+        return True
+    last_by_user[uid] = now
+    return False
+
+
 async def handle_combat_fog_sync_request(payload: dict, session: Session, user: User):
     if user.role not in {"dm", "assistant_dm", "player"}:
         return
     if user.role == "assistant_dm" and not assistant_dm_has_scope(session, user, "combat.manage_limited"):
+        return
+    if _is_combat_fog_sync_request_rate_limited(session, user):
         return
     payload = payload if isinstance(payload, dict) else {}
     map_context = payload.get("map_context") or payload.get("map_ctx") or getattr(session, "dm_map_context", None) or "world"
