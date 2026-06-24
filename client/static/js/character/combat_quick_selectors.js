@@ -890,9 +890,9 @@
         if (pick.indexOf('spell:') === 0) pickedSpells.push(found);
         else pickedActions.push(found);
       });
-      if (invalidPicks.length && global.console && typeof global.console.warn === 'function') {
-        global.console.warn('[CombatQuickSelectors] Saved quick action picks are unavailable but preserved:', invalidPicks);
-      }
+      // Saved picks may be temporarily unavailable while inventory/character
+      // hydration is still catching up. Preserve disabled placeholders silently:
+      // this selector runs during render and must not repair, warn-spam, or save.
       // NOTE: selectQuickActions is a render-time selector and MUST stay
       // side-effect free. Canonicalizing the stored picks is handled once by
       // migrateQuickPicks() on character load, never here. Writing to
