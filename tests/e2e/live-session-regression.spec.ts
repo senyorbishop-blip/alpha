@@ -1,7 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   createIsolatedSession,
-  currentTokens,
   openRolePage,
   tokenByName,
   waitForItemLibrarySync,
@@ -247,7 +246,7 @@ test.describe('live DM/player/viewer session regression', () => {
 
     await wsSend(viewer.page, {
       type: 'viewer_power_use',
-      payload: { power_id: 'arcane_zap', target: { token_id: playerToken.id } },
+      payload: { power_id: 'arcane_zap', target_token_id: playerToken.id },
     });
     await waitForWsMessage(viewer.page, 'viewer_power_status', 'used');
     await waitForWsMessage(dm.page, 'viewer_power_fx', 'arcane_zap');
