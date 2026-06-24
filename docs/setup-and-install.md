@@ -20,6 +20,8 @@ Then edit `.env`:
 - Required for safe admin ops: `DND_ADMIN_KEY`, `DND_JWT_SECRET`
 - Optional provider keys: `ELEVENLABS_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, etc.
 
+Do not put secrets in `config.txt`. `config.txt` is for optional non-secret local runtime settings only and should stay untracked.
+
 ## Start server
 
 Option A (recommended dev launcher):
@@ -77,5 +79,6 @@ Inside that folder, key runtime data includes:
 
 - Python version mismatch (use 3.11/3.12)
 - `.env` not configured for admin operations
+- Accidentally putting secrets in `config.txt` instead of `.env`
 - LAN device on a different network/VLAN
 - Firewall blocking selected port

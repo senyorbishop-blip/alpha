@@ -4,8 +4,9 @@ Use this before each beta wave and after each update.
 
 ## 1) Admin key and auth safety
 
-- [ ] `DND_ADMIN_KEY` is explicitly set (not relying on auto-generated value).
-- [ ] `DND_JWT_SECRET` is set and stable.
+- [ ] `DND_ADMIN_KEY` is explicitly set in `.env` or the deployment environment.
+- [ ] `DND_JWT_SECRET` is set in `.env` or the deployment environment and is stable.
+- [ ] `config.txt` is untracked and contains no secrets.
 - [ ] Admin endpoints reject missing/invalid key.
 
 ## 2) Password reset operations

@@ -1,27 +1,48 @@
-"""Tests for server/auth/jwt_utils.py secret loading (env -> config.txt -> dev fallback)."""
+"""Tests for server/auth/jwt_utils.py secret loading.
+
+Auth secrets must come from environment/.env or development-only fallbacks, never
+from config.txt.
+"""
 
 import server.auth.jwt_utils as jwt_utils
 
 
 def _clear_secret_env(monkeypatch):
     monkeypatch.delenv("DND_JWT_SECRET", raising=False)
+    monkeypatch.delenv("DND_ADMIN_KEY", raising=False)
     monkeypatch.delenv("APP_ENV", raising=False)
 
 
-def test_env_var_secret_takes_priority_over_config_and_fallback(monkeypatch, tmp_path):
+def test_env_var_secret_takes_priority_over_fallback(monkeypatch, tmp_path):
     monkeypatch.setenv("DND_JWT_SECRET", "env-secret-value")
     monkeypatch.setattr(jwt_utils, "_CONFIG_PATH", tmp_path / "config.txt")
 
     assert jwt_utils._load_jwt_secret() == "env-secret-value"
 
 
-def test_config_txt_secret_used_when_env_var_absent(monkeypatch, tmp_path):
+def test_config_txt_secret_is_ignored_when_env_var_absent(monkeypatch, tmp_path):
+    _clear_secret_env(monkeypatch)
+    monkeypatch.setenv("APP_ENV", "development")
+    cfg = tmp_path / "config.txt"
+    cfg.write_text("DND_JWT_SECRET=from-config-file\nDND_ADMIN_KEY=from-config-file\n")
+    monkeypatch.setattr(jwt_utils, "_CONFIG_PATH", cfg)
+    monkeypatch.setattr(jwt_utils, "_DEV_SECRET_FILE", tmp_path / ".dnd_jwt_secret.local")
+
+    loaded = jwt_utils._load_jwt_secret()
+
+    assert loaded != "from-config-file"
+    assert (tmp_path / ".dnd_jwt_secret.local").read_text().strip() == loaded
+    assert jwt_utils._read_config_value(cfg, "DND_JWT_SECRET") == ""
+    assert jwt_utils._read_config_value(cfg, "DND_ADMIN_KEY") == ""
+
+
+def test_non_secret_config_values_still_work(monkeypatch, tmp_path):
     _clear_secret_env(monkeypatch)
     cfg = tmp_path / "config.txt"
-    cfg.write_text("DND_JWT_SECRET=from-config-file\n")
+    cfg.write_text("APP_ENV=production\n")
     monkeypatch.setattr(jwt_utils, "_CONFIG_PATH", cfg)
 
-    assert jwt_utils._load_jwt_secret() == "from-config-file"
+    assert jwt_utils._resolve_app_env() == "production"
 
 
 def test_dev_fallback_secret_is_stable_across_simulated_restarts(monkeypatch, tmp_path):
@@ -56,8 +77,8 @@ def test_non_development_env_fails_fast_instead_of_minting_random_secret(monkeyp
     assert not (tmp_path / ".dnd_jwt_secret.local").exists()
 
 
-def test_repo_root_config_path_resolves_to_real_config_txt():
-    """The config.txt lookup must be anchored to this module's location, not cwd."""
+def test_repo_root_config_path_resolves_to_repo_root():
+    """The optional config.txt lookup is anchored to this module's location, not cwd."""
     assert jwt_utils._CONFIG_PATH.name == "config.txt"
     assert jwt_utils._CONFIG_PATH.parent == jwt_utils._REPO_ROOT
     assert (jwt_utils._REPO_ROOT / "main.py").exists()
