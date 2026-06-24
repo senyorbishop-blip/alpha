@@ -379,17 +379,22 @@ def test_player_facing_character_surfaces_avoid_testing_audit_wording():
             assert phrase not in src
 
 
-def test_features_tab_stage19_adds_class_roadmap_spotlight_and_feature_filters():
+def test_features_tab_stage19_keeps_feature_filters_without_rendering_helper_cards():
     src = _read("client/static/js/character/tabs/features_tab.js")
     css = _read("client/static/css/character-sheet-premium.css")
     assert "Find a Feature" in src
-    assert "Level Roadmap" in src
-    assert "Current & Next Unlocks" in src
     assert "function _groupFeaturesByLevel(items) {" in src
     assert "data-roadmap-level" in src
     assert "cs-feature-search" in css
     assert "cs-roadmap-grid" in css
     assert "cs-spotlight-grid" in css
+
+    render_template = src[src.index("container.innerHTML = `"):src.index("container.__csCharData = charData || {};")]
+    assert "Current Features Only" not in render_template
+    assert "Current & Next Unlocks" not in render_template
+    assert "Level Roadmap" not in render_template
+    assert "_renderCurrentFeaturesNote()" not in render_template
+    assert "_renderLevelRoadmap(roadmap, level)" not in render_template
 
 
 def test_features_tab_stage20_adds_class_playbook_and_connected_system_guidance():
