@@ -595,23 +595,43 @@ export function checkStuckDie(die, now) {
  * Apply settle pulse animation to a mesh (scale pop + emissive glint).
  * @param {THREE.Mesh} mesh
  */
-export function playSettlePulse(mesh) {
+export function playSettlePulse(mesh, opts = {}) {
   const t0   = performance.now();
-  const dur  = 350;
+  const dur  = 280;
   const base = mesh.scale.clone();
-  const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+  const mats = (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).filter(Boolean);
+  const glintEnabled = opts.glint !== false;
+  const glintCap = Math.max(0, Math.min(Number(opts.glintCap ?? 0.04) || 0, 0.05));
+  const originals = mats.map(m => ({
+    material: m,
+    emissiveHex: (m.emissive && typeof m.emissive.getHex === 'function') ? m.emissive.getHex() : null,
+    emissiveIntensity: Number.isFinite(Number(m.emissiveIntensity)) ? Number(m.emissiveIntensity) : 0,
+  }));
 
-  // Emissive glint on settle
-  mats.forEach(m => { m.emissive?.setHex(0x3a9e7e); m.emissiveIntensity = 0.45; });
-  setTimeout(() => mats.forEach(m => { if (m.emissive) m.emissiveIntensity = 0.28; }), 220);
+  // Subtle emissive glint on settle. Large damage pools pass glint:false;
+  // smaller rolls are capped to avoid bright multi-die flushing. Always restore
+  // the exact original emissive color and emissiveIntensity.
+  if (glintEnabled && glintCap > 0) {
+    originals.forEach(({ material, emissiveIntensity }) => {
+      if (!material.emissive) return;
+      material.emissive.setHex(0x173a32);
+      material.emissiveIntensity = Math.min(glintCap, Math.max(emissiveIntensity, glintCap));
+    });
+  }
 
-  // Scale pulse
+  const restore = () => originals.forEach(({ material, emissiveHex, emissiveIntensity }) => {
+    if (material.emissive && emissiveHex != null) material.emissive.setHex(emissiveHex);
+    material.emissiveIntensity = emissiveIntensity;
+  });
+  if (glintEnabled) setTimeout(restore, dur + 20);
+
+  // Scale pulse only; cheap and readable for large pools.
   (function tick(now) {
     const progress = Math.min((now - t0) / dur, 1);
-    const pulse    = 1 + 0.09 * Math.sin(progress * Math.PI) * (1 - progress * 0.6);
+    const pulse    = 1 + 0.055 * Math.sin(progress * Math.PI) * (1 - progress * 0.6);
     mesh.scale.copy(base).multiplyScalar(pulse);
     if (progress < 1) requestAnimationFrame(tick);
-    else mesh.scale.copy(base);
+    else { mesh.scale.copy(base); restore(); }
   })(performance.now());
 }
 

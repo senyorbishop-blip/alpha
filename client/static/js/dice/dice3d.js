@@ -15,7 +15,6 @@
  */
 
 import * as THREE from 'three';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 // ── Sub-modules ────────────────────────────────────────────────────────
 import { DiceWorld }                        from './DiceWorld.js';
@@ -57,6 +56,9 @@ Object.defineProperty(window, 'DICE_DEBUG', {
 
 // ── Singleton world instance ─────────────────────────────────────────
 const diceWorld = new DiceWorld();
+let _prewarmDone = false;
+let _prewarmStarted = false;
+
 
 // ── Manager state ────────────────────────────────────────────────────
 let activeDice     = [];
@@ -229,6 +231,10 @@ function throwDice(configs, onSettled, opts = {}) {
     die.lastNudgeAt   = 0;
     die.faceNudges    = 0;  // post-settle face alignment nudge counter
     die.correctedAfterSettle = false;
+    die.settleGlint = clampedDice.length < 5;
+    die.settleGlintCap = clampedDice.length >= 5 ? 0 : 0.04;
+    die.mesh.castShadow = clampedDice.length < 5;
+    die.mesh.receiveShadow = clampedDice.length < 5;
     return die;
   });
 
@@ -243,6 +249,53 @@ function throwDice(configs, onSettled, opts = {}) {
   // Start animation loop
   _animate();
   return true;
+}
+
+
+function _prewarmDiceWorld() {
+  if (_prewarmDone || _prewarmStarted) return false;
+  _prewarmStarted = true;
+  try {
+    const container = document.getElementById('dice-3d-wrap') || document.body;
+    if (!diceWorld.isReady) diceWorld.init(container);
+    diceWorld.setPerformanceForCount?.(5);
+    diceWorld.setCameraForCount?.(5);
+    const theme = buildTheme(DEFAULT_THEME_ID, null);
+    const warmed = ['d20', 'd6', 'd8', 'd10'].map((type, index) => spawnDie(type, diceWorld, theme, {
+      index,
+      totalCount: 4,
+      seed: 8675309 + index,
+      spawnPos: { x: 1000 + index * 4, y: 1000, z: 1000 },
+    }));
+    warmed.forEach(die => {
+      diceWorld.remove(die.mesh);
+      if (die.body && typeof world.removeBody === 'function') world.removeBody(die.body);
+      else if (die.body && typeof world.remove === 'function') world.remove(die.body);
+    });
+    diceWorld.render?.();
+    _prewarmDone = true;
+    console.debug(`${LOG} prewarmed renderer and common combat dice (d20,d6,d8,d10)`);
+    return true;
+  } catch (err) {
+    console.debug(`${LOG} prewarm skipped`, err);
+    _prewarmStarted = false;
+    return false;
+  }
+}
+
+function scheduleDicePrewarm() {
+  const run = () => _prewarmDiceWorld();
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(run, { timeout: 2500 });
+  } else {
+    window.setTimeout(run, 1200);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', scheduleDicePrewarm, { once: true });
+} else {
+  scheduleDicePrewarm();
 }
 
 function _normalizedForcedValue(die) {
@@ -309,7 +362,7 @@ function _forceSettleDie(die, opts = {}) {
       ` secondDot=${debugInfo.secondDot.toFixed(3)} forcedSnap=${forcedSnap ? 'yes' : 'no'}`
     );
   }
-  playSettlePulse(die.mesh);
+  playSettlePulse(die.mesh, { glint: die.settleGlint !== false, glintCap: die.settleGlintCap ?? 0.04 });
 }
 
 
@@ -686,6 +739,8 @@ function hardSnapResults(values, reason = 'fallback') {
 window.DicePhysics3D = Object.freeze({
   // Core throw
   throw: (configs, onSettled, opts = {}) => throwDice(configs, onSettled, opts),
+  prewarm: () => _prewarmDiceWorld(),
+  isPrewarmed: () => _prewarmDone,
   setResult,
   hardSnapResults,
   close:          closeDice,

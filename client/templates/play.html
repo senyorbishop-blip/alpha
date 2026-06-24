@@ -25344,7 +25344,12 @@ function flushPendingDiceResults() {
 }
 window.flushPendingDiceResults = flushPendingDiceResults;
 window.appDiceSyncAuthoritativePayload = function(payload = {}) {
-  const safe = payload && typeof payload === 'object' ? payload : {};
+  const incoming = payload && typeof payload === 'object' ? payload : {};
+  const safe = {
+    ...incoming,
+    source: incoming.source || 'authoritative-sync-payload',
+    // compatibility audit string: source: safe.source || 'authoritative-sync-payload'
+  };
   if (!_isDiceUiReadyForAuthoritativeResult()) return _queueAuthoritativeDiceResult(safe);
   return _displayAuthoritativeDiceResult(safe);
 };
@@ -26325,6 +26330,8 @@ function _rollExpressionAndResolveDice(expr, meta = {}) {
     });
 
     if (!_diceWantsVisuals(mode) || meta.visualDisabled) {
+      if (typeof meta.onRollStarted === 'function') meta.onRollStarted({ source, mode: 'result-only', diceType, qty });
+      if (typeof meta.onDiceSettled === 'function') meta.onDiceSettled({ source, mode: 'result-only', diceType, qty });
       _showImmediateDiceResult({ ...payload(), source, mode: 'result-only' });
       resolve(payload());
       return;
@@ -26332,6 +26339,8 @@ function _rollExpressionAndResolveDice(expr, meta = {}) {
 
     const dp = window.DicePhysics3D;
     if (!dp || (dp.isContextLost && dp.isContextLost())) {
+      if (typeof meta.onRollStarted === 'function') meta.onRollStarted({ source, visualDisabled: true, diceType, qty });
+      if (typeof meta.onDiceSettled === 'function') meta.onDiceSettled({ source, visualDisabled: true, diceType, qty });
       _showImmediateDiceResult({ ...payload(), source, visualDisabled: true });
       resolve(payload());
       return;
@@ -26350,6 +26359,7 @@ function _rollExpressionAndResolveDice(expr, meta = {}) {
       const finalRolls = visualRolls.length === result.rolls.length ? visualRolls.slice() : result.rolls.slice();
       const finalTotal = finalRolls.reduce((sum, value) => sum + (parseInt(value, 10) || 0), 0) + modifier;
       const finalPayload = { ...payload(), rolls: finalRolls, total: finalTotal };
+      if (typeof meta.onDiceSettled === 'function') meta.onDiceSettled({ rollId, seed, source, diceType, qty });
       fillDiceResult(finalRolls, finalTotal, diceType, qty, modifier, rollLabel, {
         ...finalPayload,
         rollId,
@@ -26362,6 +26372,7 @@ function _rollExpressionAndResolveDice(expr, meta = {}) {
     };
 
     const targetResults = _expandDiceVisualResults(result.rolls, diceType);
+    if (typeof meta.onRollStarted === 'function') meta.onRollStarted({ rollId, seed, source, diceType, qty });
     showDiceAnimation(diceType, qty, null, {
       seed,
       rollId,
