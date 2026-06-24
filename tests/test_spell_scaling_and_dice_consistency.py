@@ -547,3 +547,38 @@ global.AppDice = {
     assert data['center']['damageRolls'] == [5]
     assert data['fallbackRolls'] == 0
     assert data['showLocalCalls'] == 0
+
+
+def test_spell_damage_logs_prove_result_after_dice_settles_without_pending_card():
+    data = spells_tab_eval(r'''
+const events = [];
+global.__SPELL_ROLL_PERF_TEST__ = true;
+global.navigator = { userAgent: 'pytest-browser' };
+const realLog = console.log.bind(console);
+global.console = { log: realLog, debug: (msg) => { if (String(msg).startsWith('[spell roll perf]')) events.push(String(msg).replace('[spell roll perf] ', '')); } };
+global.AppDice = {
+  rollExpressionAndResolve: async (expr, meta) => {
+    events.push('rollExpressionAndResolve_entered');
+    if (meta && typeof meta.onRollStarted === 'function') meta.onRollStarted();
+    await Promise.resolve();
+    if (meta && typeof meta.onDiceSettled === 'function') meta.onDiceSettled();
+    return { expression: expr, rolls: [3, 4, 5, 6, 1], total: 19, diceType: 6, qty: 5 };
+  }
+};
+global._showCombatResultCard = () => { events.push('result_card'); };
+(async () => {
+  await global.SpellsTab.__test.rollSpellFromUi({name:'Fireball', baseLevel:3, spell_level:3, level:3, damagePreview:'5d6'}, {charData:{level:5}}, {forcedExpr:'5d6', forcedCastLevel:3});
+  console.log(JSON.stringify({events}));
+})();
+''')
+    assert data['events'].index('clicked') < data['events'].index('dice_roll_started')
+    assert data['events'].index('dice_roll_started') < data['events'].index('dice_settled')
+    assert data['events'].index('dice_settled') < data['events'].index('result_card')
+    assert data['events'].index('result_card') < data['events'].index('result_rendered')
+
+
+def test_appdice_expression_pipeline_accepts_spell_perf_callbacks_after_settle_before_result():
+    assert 'typeof meta.onRollStarted === \'function\'' in PLAY
+    assert 'typeof meta.onDiceSettled === \'function\'' in PLAY
+    assert 'meta.onDiceSettled({ rollId, seed, source, diceType, qty });\n      fillDiceResult' in PLAY
+    assert 'spellRoll = await window.AppDice.rollExpressionAndResolve(effectiveExpr' in PLAY

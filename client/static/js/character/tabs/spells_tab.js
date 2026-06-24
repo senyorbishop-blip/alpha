@@ -653,6 +653,13 @@ function _spellAttackSaveCell(spell, charData) {
     return { ok: true, total: total, outcome: outcome };
   }
 
+  function _spellRollPerfLog(phase, data) {
+    if (global.process && global.process.versions && global.process.versions.node && !global.__SPELL_ROLL_PERF_TEST__) return;
+    if (global.console && typeof global.console.debug === 'function') {
+      global.console.debug('[spell roll perf] ' + phase, data || {});
+    }
+  }
+
   async function _rollSpellFromUi(spell, state, opts) {
     opts = opts || {};
     if (!spell) return { ok: false, reason: 'missing_spell' };
@@ -665,12 +672,20 @@ function _spellAttackSaveCell(spell, charData) {
     let result = null;
     const kind = _spellRollKind(spell);
     if (global.AppDice && typeof global.AppDice.rollExpressionAndResolve === 'function') {
+      _spellRollPerfLog('clicked', { spell: _spellName(spell), expr: expr });
       result = await global.AppDice.rollExpressionAndResolve(expr, {
         rollLabel: _spellName(spell) + ' • ' + (kind === 'healing' ? 'Healing Roll' : 'Damage Roll'),
-        source: 'character-sheet-spell-roll'
+        source: 'character-sheet-spell-roll',
+        onRollStarted: function () {
+          _spellRollPerfLog('dice_roll_started', { spell: _spellName(spell), expr: expr });
+        },
+        onDiceSettled: function () {
+          _spellRollPerfLog('dice_settled', { spell: _spellName(spell), expr: expr });
+        }
       });
       if (!result) return { ok: false, reason: 'bad_formula' };
       _renderSpellCombatResult(spell, expr, result, kind, slotLevel || _spellLevelNumber(spell));
+      _spellRollPerfLog('result_rendered', { spell: _spellName(spell), expr: expr, total: result.total });
       return { ok: true, total: result.total, expr: expr };
     }
     if (typeof global._rollDiceExpr !== 'function') return { ok: false, reason: 'no_formula' };

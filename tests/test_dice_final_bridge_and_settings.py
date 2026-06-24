@@ -70,3 +70,35 @@ def test_docs_capture_final_qa_pass():
     content = _read('docs/dice-final-qa.md')
     assert 'Dice final QA + polish pass' in content
     assert 'Shared roll visuals now have a user-facing on/off setting' in content
+
+
+def test_settle_pulse_restores_emissive_and_caps_glint():
+    content = _read('client/static/js/dice/DiceFactory.js')
+    assert 'emissiveIntensity' in content
+    assert 'emissiveHex' in content
+    assert 'material.emissive.setHex(emissiveHex)' in content
+    assert 'material.emissiveIntensity = emissiveIntensity' in content
+    assert 'Math.min(Number(opts.glintCap ?? 0.04) || 0, 0.05)' in content
+    assert 'glint: die.settleGlint !== false' in _read('client/static/js/dice/dice3d.js')
+
+
+def test_multi_dice_damage_visuals_disable_expensive_effects():
+    content = _read('client/static/js/dice/dice3d.js')
+    assert 'die.settleGlint = clampedDice.length < 5' in content
+    assert 'die.settleGlintCap = clampedDice.length >= 5 ? 0 : 0.04' in content
+    assert 'die.mesh.castShadow = clampedDice.length < 5' in content
+    assert 'die.mesh.receiveShadow = clampedDice.length < 5' in content
+    world = _read('client/static/js/dice/DiceWorld.js')
+    assert 'this.renderer.shadowMap.enabled = clamped < 6' in world
+
+
+def test_dice_prewarm_is_hidden_renderer_and_common_combat_dice_only():
+    content = _read('client/static/js/dice/dice3d.js')
+    assert 'requestIdleCallback' in content
+    assert "['d20', 'd6', 'd8', 'd10']" in content
+    assert 'prewarm: () => _prewarmDiceWorld()' in content
+    assert 'isPrewarmed: () => _prewarmDone' in content
+    assert 'diceWorld.init(container)' in content
+    assert 'diceWorld.render?.()' in content
+    assert 'showResultOverlay' not in content[content.index('function _prewarmDiceWorld'):content.index('function scheduleDicePrewarm')]
+    assert 'playRollStart' not in content[content.index('function _prewarmDiceWorld'):content.index('function scheduleDicePrewarm')]
