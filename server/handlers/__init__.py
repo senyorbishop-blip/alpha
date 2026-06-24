@@ -228,6 +228,7 @@ from server.handlers.summons import (
     handle_summon_runtime_dismiss,
     handle_summon_runtime_admin,
 )
+from server.handlers.token_placement_secure import handle_token_placed_secure
 
 
 logger = logging.getLogger(__name__)
@@ -243,7 +244,7 @@ async def handle_message(raw: dict, session: Session, user: User):
     dispatch = {
         "token_move":       handle_token_move,
         "token_create":     handle_token_create,
-        "token_placed":     handle_token_placed,
+        "token_placed":     handle_token_placed_secure,
         "token_send_to_staging": handle_token_send_to_staging,
         "token_delete":     handle_token_delete,
         "token_hp_update":  handle_token_hp_update,
