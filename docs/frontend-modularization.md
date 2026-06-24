@@ -105,6 +105,12 @@ Move the chat compose controller out of `play.html` while keeping message transp
 - `client/static/js/ui/chat.js` is now the live owner of chat target visibility, whisper-target rendering, and chat send behavior for everyone/viewers/whisper/oracle flows.
 - `client/templates/play.html` now provides a compatibility env exposing role, user list, sender identity, and `sendWS()` so the modular chat controller can reuse the existing runtime.
 
+### P7 guardrails
+
+- `client/templates/play.html` must stay thin and must not reintroduce inline chat compose functions or inline `<script>` blocks.
+- `client/static/js/ui/chat.js` owns the public `window.AppUIChat` contract: `init`, `updateChatTargetVisibility`, `renderChatTargets`, and `sendChat`.
+- Any future chat-compose work must update the focused P7 tests in `tests/test_p7_play_html_decomposition.py` so ownership does not drift back into the template.
+
 ## Stage 8 — Chat log rendering extraction
 
 Move the visible chat-log rendering rules out of `play.html` so chat feed filtering and badge bumps are modular, while the broader message pipeline stays unchanged.
