@@ -690,11 +690,15 @@ def test_authoritative_apply_exists_and_sets_aliases_and_debug():
     assert "function applyAuthoritativeCombatState(payload, source)" in src
     assert "window.applyAuthoritativeCombatState = applyAuthoritativeCombatState;" in src
     assert "window.__debugCombat = function ()" in src
-    # The single apply implementation must set the three runtime aliases.
+    # The single apply implementation updates only _combat; compatibility aliases are getters.
     apply_body = src[src.index("function combatApplyState(state, source)"):src.index("// ── Authoritative combat_state entry")]
-    assert "window._combat = _combat;" in apply_body
-    assert "window.combatState = _combat;" in apply_body
-    assert "window.currentCombat = _combat;" in apply_body
+    assert "window._combat = _combat;" not in apply_body
+    assert "window.combatState = _combat;" not in apply_body
+    assert "window.currentCombat = _combat;" not in apply_body
+    alias_body = src[src.index("function installCombatStateAliases()"):src.index("let _combatRound = 1;")]
+    assert "get() { return window._combat; }" in alias_body
+    assert "defineCombatAlias('combatState', canonicalCombatGetter);" in alias_body
+    assert "defineCombatAlias('currentCombat', canonicalCombatGetter);" in alias_body
     # applyAuthoritativeCombatState must not call the autosave / quick-action paths.
     auth_body = src[src.index("function applyAuthoritativeCombatState(payload, source)"):src.index("window.__debugCombat = function ()")]
     for forbidden in ("selectQuickActions", "renderPlayerActionsHub", "markCharProfileDirty", "scheduleCharProfileAutosave", "collectCurrentCharProfile"):

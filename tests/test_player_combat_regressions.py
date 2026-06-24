@@ -306,7 +306,10 @@ def test_combat_state_apply_updates_all_canonical_aliases_and_defers_quick_actio
     apply_end = src.index("// ── Combat tab attention", apply_start)
     body = src[apply_start:apply_end]
     for alias in ["window._combat = _combat", "window.combat = _combat", "window.combatState = _combat", "window.currentCombat = _combat"]:
-        assert alias in body
+        assert alias not in body
+    alias_body = src[src.index("function installCombatStateAliases()"):src.index("let _combatRound = 1;")]
+    assert "defineCombatAlias('combatState', canonicalCombatGetter);" in alias_body
+    assert "defineCombatAlias('currentCombat', canonicalCombatGetter);" in alias_body
     assert "forceCombatStateUISync();" in body
 
     render_start = src.index("function renderCombat()")
