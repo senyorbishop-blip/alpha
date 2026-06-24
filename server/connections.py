@@ -3,11 +3,16 @@ server/connections.py — WebSocket connection registry and broadcaster
 """
 import json
 import logging
+import time
 import uuid
 from typing import Dict, Set, Optional
 from fastapi import WebSocket
 
 logger = logging.getLogger(__name__)
+
+PAYLOAD_WARN_BYTES = 128 * 1024
+PAYLOAD_ERROR_BYTES = 512 * 1024
+SLOW_SEND_WARN_MS = 250.0
 
 
 def _socket_is_open(websocket) -> bool:
@@ -30,6 +35,7 @@ class ConnectionManager:
     def __init__(self):
         self._connections: Dict[str, Dict[str, WebSocket]] = {}
         self._connection_ids: Dict[str, Dict[str, str]] = {}
+        self._roles: Dict[str, Dict[str, str]] = {}
 
     def get_session_connections(self, session_id: str) -> Dict[str, WebSocket]:
         return self._connections.get(session_id, {})
@@ -40,6 +46,8 @@ class ConnectionManager:
             self._connections[session_id] = {}
         if session_id not in self._connection_ids:
             self._connection_ids[session_id] = {}
+        if session_id not in self._roles:
+            self._roles[session_id] = {}
         new_connection_id = connection_id or uuid.uuid4().hex
         prior = self._connections[session_id].get(user_id)
         old_connection_id = self._connection_ids.get(session_id, {}).get(user_id)
@@ -67,6 +75,7 @@ class ConnectionManager:
                 )
         self._connections[session_id][user_id] = websocket
         self._connection_ids[session_id][user_id] = new_connection_id
+        self._roles[session_id][user_id] = role or "unknown"
         logger.info(
             "[ws] connected session_id=%s user_id=%s role=%s connection_id=%s "
             "client_socket_id=%s reason=%s old_socket_replaced=%s new_socket_connected=true",
@@ -86,16 +95,104 @@ class ConnectionManager:
                 self._connection_ids[session_id].pop(user_id, None)
                 if not self._connection_ids[session_id]:
                     del self._connection_ids[session_id]
+            if session_id in self._roles:
+                self._roles[session_id].pop(user_id, None)
+                if not self._roles[session_id]:
+                    del self._roles[session_id]
             if not self._connections[session_id]:
                 del self._connections[session_id]
             return True
         return False
 
+    def _role_for(self, session_id: str, user_id: str, session_obj=None, fallback: str | None = None) -> str:
+        if fallback:
+            return fallback
+        if session_obj is not None:
+            try:
+                user = getattr(session_obj, "users", {}).get(user_id)
+                role = getattr(user, "role", None)
+                if role:
+                    return str(role)
+            except Exception:
+                pass
+        return self._roles.get(session_id, {}).get(user_id) or "unknown"
+
+    def _encode_payload(self, message: dict) -> tuple[str, int]:
+        payload = json.dumps(message)
+        return payload, len(payload.encode("utf-8"))
+
+    def _log_send_diagnostic(
+        self,
+        *,
+        session_id: str,
+        user_id: str,
+        role: str,
+        message_type: str,
+        byte_size: int,
+        duration_ms: float,
+    ) -> None:
+        # Privacy note: intentionally log metadata only. Never include raw payload
+        # fields because outbound frames may contain hidden tokens, private notes,
+        # profile contents, handout text, or other player/viewer-sensitive data.
+        log_args = (message_type or "unknown", session_id, user_id, role or "unknown", byte_size, duration_ms)
+        log_message = (
+            "[ws] outbound_send message_type=%s session_id=%s recipient_user_id=%s "
+            "recipient_role=%s byte_size=%s duration_ms=%.2f"
+        )
+        if byte_size > PAYLOAD_ERROR_BYTES:
+            logger.error(log_message, *log_args)
+        elif byte_size > PAYLOAD_WARN_BYTES:
+            logger.warning(log_message, *log_args)
+        else:
+            logger.debug(log_message, *log_args)
+        if duration_ms > SLOW_SEND_WARN_MS:
+            logger.warning(
+                "[ws] outbound_send_slow message_type=%s session_id=%s recipient_user_id=%s "
+                "recipient_role=%s byte_size=%s duration_ms=%.2f threshold_ms=%.2f",
+                message_type or "unknown",
+                session_id,
+                user_id,
+                role or "unknown",
+                byte_size,
+                duration_ms,
+                SLOW_SEND_WARN_MS,
+            )
+
+    async def _send_payload(
+        self,
+        ws: WebSocket,
+        payload: str,
+        *,
+        session_id: str,
+        user_id: str,
+        role: str,
+        message_type: str,
+        byte_size: int,
+    ) -> None:
+        started = time.perf_counter()
+        try:
+            await ws.send_text(payload)
+        finally:
+            duration_ms = (time.perf_counter() - started) * 1000.0
+            self._log_send_diagnostic(
+                session_id=session_id, user_id=user_id, role=role,
+                message_type=message_type, byte_size=byte_size, duration_ms=duration_ms,
+            )
+
     async def send_to(self, session_id: str, user_id: str, message: dict) -> bool:
         ws = self._connections.get(session_id, {}).get(user_id)
         if ws:
             try:
-                await ws.send_text(json.dumps(message))
+                payload, byte_size = self._encode_payload(message)
+                await self._send_payload(
+                    ws,
+                    payload,
+                    session_id=session_id,
+                    user_id=user_id,
+                    role=self._role_for(session_id, user_id),
+                    message_type=str(message.get("type") or "unknown"),
+                    byte_size=byte_size,
+                )
                 return True
             except Exception:
                 logger.warning("[ws] send_to failed session_id=%s user_id=%s message_type=%s", session_id, user_id, message.get("type"))
@@ -104,13 +201,22 @@ class ConnectionManager:
 
     async def broadcast(self, session_id: str, message: dict, exclude_user: Optional[str] = None):
         connections = dict(self._connections.get(session_id, {}))
-        payload = json.dumps(message)
+        payload, byte_size = self._encode_payload(message)
+        message_type = str(message.get("type") or "unknown")
         dead = []
         for uid, ws in connections.items():
             if uid == exclude_user:
                 continue
             try:
-                await ws.send_text(payload)
+                await self._send_payload(
+                    ws,
+                    payload,
+                    session_id=session_id,
+                    user_id=uid,
+                    role=self._role_for(session_id, uid),
+                    message_type=message_type,
+                    byte_size=byte_size,
+                )
             except Exception:
                 dead.append((uid, ws))
         for uid, ws in dead:
@@ -118,13 +224,22 @@ class ConnectionManager:
 
     async def broadcast_to_role(self, session_id: str, message: dict, roles: Set[str], session_obj):
         connections = dict(self._connections.get(session_id, {}))
-        payload = json.dumps(message)
+        payload, byte_size = self._encode_payload(message)
+        message_type = str(message.get("type") or "unknown")
         dead = []
         for uid, ws in connections.items():
             user = session_obj.users.get(uid)
             if user and user.role in roles:
                 try:
-                    await ws.send_text(payload)
+                    await self._send_payload(
+                        ws,
+                        payload,
+                        session_id=session_id,
+                        user_id=uid,
+                        role=self._role_for(session_id, uid, session_obj=session_obj),
+                        message_type=message_type,
+                        byte_size=byte_size,
+                    )
                 except Exception:
                     dead.append((uid, ws))
         for uid, ws in dead:
@@ -145,7 +260,8 @@ class ConnectionManager:
         visibility filtering.  Kept for potential future use.
         """
         connections = dict(self._connections.get(session_id, {}))
-        dm_payload = json.dumps(message)
+        dm_payload, dm_byte_size = self._encode_payload(message)
+        message_type = str(message.get("type") or "unknown")
         dead = []
         for uid, ws in connections.items():
             try:
@@ -154,12 +270,29 @@ class ConnectionManager:
                     payload_data = message.get("payload", {})
                     token = payload_data.get("token") if isinstance(payload_data, dict) else None
                     if token and token.get("hidden"):
-                        alt = json.dumps({"type": "token_removed_hidden", "payload": {"id": token["id"]}})
-                        await ws.send_text(alt)
+                        alt_message = {"type": "token_removed_hidden", "payload": {"id": token["id"]}}
+                        alt, alt_byte_size = self._encode_payload(alt_message)
+                        await self._send_payload(
+                            ws,
+                            alt,
+                            session_id=session_id,
+                            user_id=uid,
+                            role=self._role_for(session_id, uid, session_obj=session_obj),
+                            message_type="token_removed_hidden",
+                            byte_size=alt_byte_size,
+                        )
                         continue
                     # Note: tokens without owner_id are DM-created NPCs and ARE
                     # visible to players (unless hidden=True, handled above).
-                await ws.send_text(dm_payload)
+                await self._send_payload(
+                    ws,
+                    dm_payload,
+                    session_id=session_id,
+                    user_id=uid,
+                    role=self._role_for(session_id, uid, session_obj=session_obj),
+                    message_type=message_type,
+                    byte_size=dm_byte_size,
+                )
             except Exception:
                 dead.append((uid, ws))
         for uid, ws in dead:
