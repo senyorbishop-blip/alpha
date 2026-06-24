@@ -355,6 +355,11 @@ def bump_inventory_revision(session: Session) -> int:
     """
     next_rev = int(getattr(session, "inventory_revision", 0) or 0) + 1
     session.inventory_revision = next_rev
+    try:
+        from server.session import bump_quick_actions_revision
+        bump_quick_actions_revision(session)
+    except Exception:
+        pass
     return next_rev
 
 

@@ -546,6 +546,22 @@
     return score;
   }
 
+  function _serverQuickActions() { return (global._serverQuickActions && typeof global._serverQuickActions === 'object') ? global._serverQuickActions : {}; }
+
+  function _serverWeaponRows() {
+    return _safeArray(_serverQuickActions().weapon_actions).map(function (a) {
+      const isDamage = String(a && a.kind || '').indexOf('damage') >= 0;
+      return { id: String(a.id || ''), name: _firstText(a.name, 'Weapon'), source: 'weapon', sourceType: 'weapon', quickBarType: 'action', quickBarKind: isDamage ? 'use' : 'attack', quickBarLane: 'action', quickBarPickKey: 'action:' + String(a.id || a.name || '').toLowerCase().replace(/[^a-z0-9:_-]+/g, '-'), quickBarCanUse: !(a && a.disabled), quickBarDisabledReason: _firstText(a && a.disabled_reason, ''), quickBarDamageText: _firstText(a && a.damage_formula, ''), quickBarInfoSummary: isDamage ? 'Roll weapon damage after selecting the attack.' : 'Roll weapon attack.', damage_formula: _firstText(a && a.damage_formula, ''), damage_type: _firstText(a && a.damage_type, '') };
+    });
+  }
+
+  function _serverSpellRows() {
+    return _safeArray(_serverQuickActions().spell_actions).map(function (a) {
+      const level = Number.isFinite(Number(a && a.level)) ? Number(a.level) : 0;
+      return { id: String(a.spell_id || a.id || ''), spellId: String(a.spell_id || a.id || ''), name: _firstText(a && a.name, 'Spell'), source: 'class', sourceType: 'class', quickBarType: 'spell', quickBarLane: level === 0 ? 'cantrip' : 'spell', quickBarCanUse: !(a && a.disabled), quickBarDisabledReason: _firstText(a && a.disabled_reason, ''), level: level, baseLevel: level, spell_level: level, quickBarNeedsSlot: level > 0, quickBarInfoSummary: level === 0 ? 'Cantrip' : 'Choose cast level / spell slot.' };
+    });
+  }
+
   function _spellCandidates(runtime) {
     let spells = [];
     if (typeof global.getCombatQuickBarSpells === 'function') {
@@ -561,7 +577,7 @@
     }
     // Reject spell-level section headings / non-castable rows before they
     // ever reach scoring, sorting, or the Customize Top 5 picker.
-    spells = spells.concat(_itemSpellRows());
+    spells = spells.concat(_serverSpellRows()).concat(_itemSpellRows());
     spells = spells.filter(function (spell) { return isPlayableQuickAction(Object.assign({ quickBarType: 'spell' }, spell)); });
     const bySpell = new Map();
     spells.forEach(function (spell) {
@@ -864,7 +880,16 @@
         });
       });
     }
-    const playableRawActions = _safeArray(actionModel._allActions).filter(isPlayableQuickAction);
+    const hydration = global.__characterHydration || {};
+    const qaHydration = global.__quickActionsHydration || {};
+    const diag = _safeArray(qaHydration.diagnostics).map(function (d) { return _firstText(d && d.message, d && d.code); }).filter(Boolean).join('; ');
+    const explicitHydration = ['character', 'spells', 'inventory'].some(function (key) { return hydration[key] && hydration[key] !== 'unknown'; });
+    const hydrationBlocked = explicitHydration && (String(hydration.character || 'unknown') !== 'ok' || String(hydration.spells || 'unknown') !== 'ok' || String(hydration.inventory || 'unknown') !== 'ok');
+    if (hydrationBlocked) {
+      const reason = diag || (!hydration.active_profile_id ? 'no active character' : 'Quick Actions are waiting for character, spell, and inventory hydration.');
+      return { primaryActions: [{ id: 'quick_actions_hydration_pending', name: 'Quick Actions Hydrating', quickBarCanUse: false, quickBarDisabledReason: reason, quickBarType: 'action', category: 'Utility', quickBarInfoSummary: reason }], bonusActions: [], reactions: [], resources: [], topSpells: [] };
+    }
+    const playableRawActions = _serverWeaponRows().concat(_safeArray(actionModel._allActions)).filter(isPlayableQuickAction);
     const allActions = mark(_uniqueByName(playableRawActions, playableRawActions.length), 'action');
     const allSpells = mark(_spellCandidates(runtime).map(function (spell) { return _decorateSpell(spell, runtime); }), 'spell');
     const pickedActions = [];

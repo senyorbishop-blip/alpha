@@ -29,6 +29,7 @@ from server.session import (
     _user_bucket_key,
     _inventory_owner_key,
     _legacy_inventory_keys,
+    build_quick_actions_sync_payload,
 )
 from server.handlers.common import (
     manager,
@@ -786,6 +787,9 @@ async def _send_inventory_state(session: Session, user_id: str):
         payload["item_actions"] = item_actions
         payload["item_passives"] = item_passives
         payload["item_spell_cards"] = item_spell_cards
+        payload["quick_actions_revision"] = int(getattr(session, "quick_actions_revision", 0) or 0)
+        payload["character_runtime_revision"] = int(getattr(session, "character_runtime_revision", 0) or 0)
+        payload["spell_manifest_revision"] = int(getattr(session, "spell_manifest_revision", 0) or 0)
         payload["current_ac"] = _calculate_ac_for_user(session, user, inv)
         # Build encumbrance payload for this player
         _update_encumbrance_cache(session, user_id)
@@ -798,6 +802,8 @@ async def _send_inventory_state(session: Session, user_id: str):
         payload["party_loot_log"] = []
     logger.info("[live_state] player_inventory_sync %s", build_live_state_debug_summary(session, user_id, user.role, payload))
     await manager.send_to(session.id, user_id, {"type": "player_inventory_sync", "payload": payload})
+    if user.role == "player":
+        await manager.send_to(session.id, user_id, {"type": "quick_actions_sync", "payload": build_quick_actions_sync_payload(session, user_id)})
 
 
 def _append_party_loot_log(session: Session, entry: dict):

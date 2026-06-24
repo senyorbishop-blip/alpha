@@ -561,6 +561,9 @@ class Session:
     wall_revision: int = 0  # monotonic counter bumped on every wall create/update/delete (PR 7)
     door_revision: int = 0  # monotonic counter bumped on every door create/update/toggle/lock/delete (PR 7)
     inventory_revision: int = 0  # monotonic counter bumped on any server-authoritative inventory/item/charge mutation; clients drop stale player_inventory_sync payloads behind it
+    character_runtime_revision: int = 0  # monotonic active-character/profile runtime hydration revision
+    spell_manifest_revision: int = 0  # monotonic spell/prep/known/item-spell manifest revision
+    quick_actions_revision: int = 0  # monotonic server-assisted quick-actions hydration revision
     journal_entries: list = field(default_factory=list)
     # library_entries: preserved for campaign backward-compatibility only.
     # The legacy in-session creature library has been removed; all creatures
@@ -803,6 +806,10 @@ class Session:
             "map_mode": "world" if normalize_map_context(self.dm_map_context) == "world" else "local",
             "visibility_revision": int(self.visibility_revision or 0),
             "token_state_revision": int(self.token_state_revision or 0),
+            "inventory_revision": int(self.inventory_revision or 0),
+            "character_runtime_revision": int(self.character_runtime_revision or 0),
+            "spell_manifest_revision": int(self.spell_manifest_revision or 0),
+            "quick_actions_revision": int(self.quick_actions_revision or 0),
             "dm_nav_intent": int(self.dm_nav_intent or 0),
             "fog_maps": normalize_fog_maps(self.fog_maps),
             "fog_source": "state_sync",
@@ -1188,6 +1195,10 @@ class Session:
                 d["active_char_profile_id"] = str((self.active_char_profiles or {}).get(user_id) or "")
                 d["party_loot_log"] = list(self.party_loot_log or [])[-120:]
                 d["saved_discoveries"] = self._saved_discovery_cards_for_user(user_id)
+                try:
+                    d["quick_actions"] = build_quick_actions_sync_payload(self, user_id)
+                except Exception:
+                    d["quick_actions"] = {}
             else:
                 d["player_inventory"] = []
                 d["party_stash"] = []
@@ -1395,7 +1406,7 @@ class Session:
         native_for_spells = (active_profile or {}).get("nativeCharacter") if isinstance((active_profile or {}).get("nativeCharacter"), dict) else {}
         spell_state_for_snapshot = native_for_spells.get("spellState") if isinstance(native_for_spells.get("spellState"), dict) else {}
         spells_block = {
-            "manifest_revision": 0,
+            "manifest_revision": int(getattr(self, "spell_manifest_revision", 0) or 0),
             "hydration_status": character_hydration,
             "summary": {
                 "known_count": len(spell_state_for_snapshot.get("known") or []) if isinstance(spell_state_for_snapshot, dict) else 0,
@@ -1406,7 +1417,7 @@ class Session:
         character_block = {
             "active_profile_id": active_profile_id,
             "active_profile_owner": str(user_id or "") if active_profile_id else "",
-            "runtime_revision": 0,
+            "runtime_revision": int(getattr(self, "character_runtime_revision", 0) or 0),
             "hydration_status": character_hydration,
             "summary": {
                 "profile_count": len(state.get("char_profiles") or []) if isinstance(state.get("char_profiles"), list) else 0,
@@ -1449,6 +1460,13 @@ class Session:
                 inventory_hydration = "ok" if active_profile_id else "missing_profile"
             except Exception:
                 inventory_hydration = "unknown"
+        quick_actions_block = {}
+        if resolved_role == "player" and user_id:
+            try:
+                quick_actions_block = build_quick_actions_sync_payload(self, user_id)
+            except Exception:
+                quick_actions_block = {"revision": int(getattr(self, "quick_actions_revision", 0) or 0), "hydration_status": "unknown", "diagnostics": [{"code": "spell_data_missing", "message": "Quick Actions payload could not be built."}]}
+
         inventory_block = {
             "revision": int(getattr(self, "inventory_revision", 0) or 0),
             "hydration_status": inventory_hydration,
@@ -1507,6 +1525,7 @@ class Session:
             "character": character_block,
             "spells": spells_block,
             "inventory": inventory_block,
+            "quick_actions": quick_actions_block,
             "fog": {
                 "map_context": str((fog_entry or {}).get("map_context") or map_ctx),
                 "revision": int((fog_entry or {}).get("revision") or 0) if isinstance(fog_entry, dict) else 0,
@@ -1824,6 +1843,129 @@ def get_player_inventory_for_user(session, user_id: str) -> list:
             break
     return [auto_tag_extradimensional(entry) for entry in (_normalize_inventory_entry(x) for x in mine) if entry]
 
+
+
+def bump_character_runtime_revision(session) -> int:
+    next_rev = int(getattr(session, "character_runtime_revision", 0) or 0) + 1
+    session.character_runtime_revision = next_rev
+    return next_rev
+
+
+def bump_spell_manifest_revision(session) -> int:
+    next_rev = int(getattr(session, "spell_manifest_revision", 0) or 0) + 1
+    session.spell_manifest_revision = next_rev
+    return next_rev
+
+
+def bump_quick_actions_revision(session) -> int:
+    next_rev = int(getattr(session, "quick_actions_revision", 0) or 0) + 1
+    session.quick_actions_revision = next_rev
+    return next_rev
+
+
+def bump_character_hydration_revisions(session, *, spells: bool = True, quick_actions: bool = True) -> dict:
+    revs = {"character_runtime_revision": bump_character_runtime_revision(session)}
+    if spells:
+        revs["spell_manifest_revision"] = bump_spell_manifest_revision(session)
+    if quick_actions:
+        revs["quick_actions_revision"] = bump_quick_actions_revision(session)
+    return revs
+
+
+def build_quick_actions_sync_payload(session, user_id: str) -> dict:
+    """Server-assisted Quick Actions hydration contract for the active player.
+
+    Client remains the final renderer/executor, but this payload carries stable
+    revisions, active profile identity, server-known inventory/item-spell cards,
+    equipped weapon cards, and player-visible diagnostics/disabled reasons.
+    """
+    user = (getattr(session, "users", {}) or {}).get(user_id)
+    active_profile_id = str((getattr(session, "active_char_profiles", {}) or {}).get(user_id) or "")
+    inventory = get_player_inventory_for_user(session, user_id) if user else []
+    diagnostics = []
+    if not active_profile_id:
+        diagnostics.append({"code": "no_active_character", "message": "No active character is selected."})
+    if user and inventory == []:
+        diagnostics.append({"code": "inventory_not_loaded", "message": "Inventory is empty or not loaded yet."})
+
+    weapon_actions = []
+    equipped_weapons = []
+    for idx, item in enumerate(inventory):
+        if not isinstance(item, dict) or not bool(item.get("equipped")):
+            continue
+        kind = str(item.get("equipment_kind") or item.get("item_type") or item.get("category") or "").lower()
+        name = str(item.get("name") or "").strip()
+        if kind == "weapon" or any(h in name.lower() for h in ("dagger", "staff", "sword", "bow", "axe", "mace", "spear")):
+            equipped_weapons.append(item)
+            item_id = str(item.get("id") or f"weapon_{idx}")
+            dmg = str(item.get("damage_dice") or item.get("damage_formula") or item.get("damage") or "").strip()
+            dtype = str(item.get("damage_type") or "").strip()
+            weapon_actions.append({"id": f"weapon:{item_id}:attack", "kind": "weapon_attack", "item_id": item_id, "name": name or "Weapon", "disabled": False, "disabled_reason": "", "damage_formula": dmg, "damage_type": dtype})
+            weapon_actions.append({"id": f"weapon:{item_id}:damage", "kind": "weapon_damage", "item_id": item_id, "name": (name or "Weapon") + " Damage", "disabled": not bool(dmg), "disabled_reason": "spell data missing" if not dmg else "", "damage_formula": dmg, "damage_type": dtype})
+    if active_profile_id and not equipped_weapons:
+        diagnostics.append({"code": "no_equipped_weapon", "message": "No equipped weapon is available for Quick Actions."})
+
+    item_actions, _passives, item_spell_cards = [], [], []
+    try:
+        from server.handlers.inventory import _derive_item_actions_and_passives, _build_item_spell_cards
+        item_actions, _passives = _derive_item_actions_and_passives(inventory)
+        item_spell_cards = _build_item_spell_cards(inventory)
+    except Exception:
+        diagnostics.append({"code": "spell_data_missing", "message": "Item action/spell data could not be built."})
+
+    # Diagnostics for magic item requirements that prevent granted spells/cards.
+    for item in inventory:
+        if not isinstance(item, dict):
+            continue
+        has_granted = bool(item.get("granted_spells") or item.get("grantedSpells") or item.get("itemSpells") or item.get("item_spells") or item.get("spellsGranted") or item.get("spellGrants"))
+        if not has_granted:
+            continue
+        if not bool(item.get("equipped")):
+            diagnostics.append({"code": "item_not_equipped", "message": f"{item.get('name') or 'Item'} is not equipped."})
+        if bool(item.get("attunement_required")) and not bool(item.get("attuned")):
+            diagnostics.append({"code": "item_not_attuned", "message": f"{item.get('name') or 'Item'} is not attuned."})
+        try:
+            if int(item.get("charges_max") or 0) > 0 and int(item.get("charges_current") or 0) <= 0:
+                diagnostics.append({"code": "no_charges", "message": f"{item.get('name') or 'Item'} has no charges."})
+        except Exception:
+            pass
+
+    active_profile = _find_active_profile_for_user(session, user_id) if active_profile_id else None
+    native = active_profile.get("nativeCharacter") if isinstance(active_profile, dict) and isinstance(active_profile.get("nativeCharacter"), dict) else {}
+    spell_state = native.get("spellState") if isinstance(native.get("spellState"), dict) else {}
+    known = spell_state.get("known") if isinstance(spell_state.get("known"), list) else []
+    prepared = spell_state.get("prepared") if isinstance(spell_state.get("prepared"), list) else []
+    spell_actions = []
+    for idx, raw in enumerate((prepared or known)[:80]):
+        if isinstance(raw, dict):
+            sid = str(raw.get("id") or raw.get("spell_id") or raw.get("name") or f"spell_{idx}")
+            name = str(raw.get("name") or sid)
+            level = raw.get("level", raw.get("spell_level", 0))
+        else:
+            sid = str(raw or f"spell_{idx}")
+            name = sid.replace("-", " ").title()
+            level = 0
+        try: level_i = max(0, min(9, int(level or 0)))
+        except Exception: level_i = 0
+        spell_actions.append({"id": f"spell:{sid}", "spell_id": sid, "name": name, "level": level_i, "requires_slot": level_i > 0, "disabled": False, "disabled_reason": ""})
+
+    hydration = "ok" if active_profile_id else "missing_profile"
+    return {
+        "active_profile_id": active_profile_id,
+        "character_runtime_revision": int(getattr(session, "character_runtime_revision", 0) or 0),
+        "spell_manifest_revision": int(getattr(session, "spell_manifest_revision", 0) or 0),
+        "inventory_revision": int(getattr(session, "inventory_revision", 0) or 0),
+        "quick_actions_revision": int(getattr(session, "quick_actions_revision", 0) or 0),
+        "revision": int(getattr(session, "quick_actions_revision", 0) or 0),
+        "hydration_status": hydration,
+        "weapon_actions": weapon_actions,
+        "spell_actions": spell_actions,
+        "item_actions": item_actions,
+        "item_spell_cards": item_spell_cards,
+        "charges": [{"item_id": str(i.get("id") or ""), "name": str(i.get("name") or ""), "charges_current": i.get("charges_current"), "charges_max": i.get("charges_max")} for i in inventory if isinstance(i, dict) and (i.get("charges_current") is not None or i.get("charges_max") is not None)],
+        "disabled_reasons": diagnostics,
+        "diagnostics": diagnostics,
+    }
 
 def get_party_stash_inventory(session) -> list:
     inventories = dict(getattr(session, "player_inventories", {}) or {})

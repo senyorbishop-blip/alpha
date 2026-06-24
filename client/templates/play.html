@@ -12306,6 +12306,10 @@ if (typeof window !== 'undefined') window.applyAuthoritativeMapContext = applyAu
 // spell UI re-check themselves once reconnect hydration settles, instead of
 // staying blank from whatever stale state they rendered mid-reconnect.
 let _lastCharacterRuntimeRevision = 0;
+let _lastSpellManifestRevision = 0;
+let _lastQuickActionsRevision = 0;
+let _quickActionsHydration = { ready: false, active_profile_id: '', diagnostics: [] };
+window._serverQuickActions = null;
 let _characterHydration = { character: 'unknown', spells: 'unknown', inventory: 'unknown', active_profile_id: '' };
 if (typeof window !== 'undefined') window.__characterHydration = _characterHydration;
 function applyAuthoritativeCharacterState(payload, source) {
@@ -12314,11 +12318,17 @@ function applyAuthoritativeCharacterState(payload, source) {
   const spellsBlock = p.spells && typeof p.spells === 'object' ? p.spells : {};
   const inventoryBlock = p.inventory && typeof p.inventory === 'object' ? p.inventory : {};
   const rev = Number(characterBlock.runtime_revision);
+  const spellRev = Number(spellsBlock.manifest_revision);
+  if (Number.isFinite(spellRev) && spellRev < _lastSpellManifestRevision) {
+    _tokenMapDebugLog('character_state ignored', { source: String(source || ''), spell_manifest_revision: spellRev, tracked_spell_manifest_revision: _lastSpellManifestRevision });
+    return false;
+  }
   if (Number.isFinite(rev) && rev < _lastCharacterRuntimeRevision) {
     _tokenMapDebugLog('character_state ignored', { source: String(source || ''), runtime_revision: rev, tracked_runtime_revision: _lastCharacterRuntimeRevision });
     return false;
   }
   if (Number.isFinite(rev)) _lastCharacterRuntimeRevision = rev;
+  if (Number.isFinite(spellRev)) _lastSpellManifestRevision = spellRev;
   _characterHydration = {
     character: String(characterBlock.hydration_status || 'unknown'),
     spells: String(spellsBlock.hydration_status || 'unknown'),
@@ -12346,7 +12356,35 @@ function applyAuthoritativeCharacterState(payload, source) {
   }
   return true;
 }
-if (typeof window !== 'undefined') window.applyAuthoritativeCharacterState = applyAuthoritativeCharacterState;
+function applyQuickActionsSync(payload, source) {
+  const p = payload && typeof payload === 'object' ? payload : {};
+  const rev = Number(p.quick_actions_revision ?? p.revision);
+  const charRev = Number(p.character_runtime_revision);
+  const spellRev = Number(p.spell_manifest_revision);
+  const invRev = Number(p.inventory_revision);
+  if (Number.isFinite(rev) && rev < _lastQuickActionsRevision) {
+    _tokenMapDebugLog('quick_actions_sync ignored', { source: String(source || ''), quick_actions_revision: rev, tracked_quick_actions_revision: _lastQuickActionsRevision });
+    return false;
+  }
+  if (Number.isFinite(charRev) && charRev < _lastCharacterRuntimeRevision) return false;
+  if (Number.isFinite(spellRev) && spellRev < _lastSpellManifestRevision) return false;
+  if (Number.isFinite(invRev) && invRev < _lastInventoryRevision) return false;
+  if (Number.isFinite(rev)) _lastQuickActionsRevision = rev;
+  window._serverQuickActions = p;
+  _quickActionsHydration = {
+    ready: String(p.hydration_status || 'ok') === 'ok',
+    active_profile_id: String(p.active_profile_id || ''),
+    diagnostics: Array.isArray(p.diagnostics) ? p.diagnostics : (Array.isArray(p.disabled_reasons) ? p.disabled_reasons : []),
+  };
+  window.__quickActionsHydration = _quickActionsHydration;
+  if (Array.isArray(p.item_actions)) window._playerItemActions = p.item_actions.filter(x => x && typeof x === 'object');
+  if (Array.isArray(p.item_spell_cards)) window._playerItemSpellCards = p.item_spell_cards.filter(x => x && typeof x === 'object');
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(new CustomEvent('character:quick-actions-refresh', { detail: { source: String(source || ''), quickActions: p, hydration: _quickActionsHydration } }));
+  }
+  return true;
+}
+if (typeof window !== 'undefined') { window.applyAuthoritativeCharacterState = applyAuthoritativeCharacterState; window.applyQuickActionsSync = applyQuickActionsSync; }
 
 // One entry point for every full token snapshot (legacy state_sync,
 // authoritative_snapshot, tokens_sync, local-map enter/exit token payloads,
@@ -33202,6 +33240,7 @@ function handleLegacyMessage(msg) {
       requestRenderFrame('state_sync render');
       liveDebugLog('state_sync applied', buildClientLiveStateSummary('state_sync', p, { hidden_tokens_filtered: Number(p.hidden_tokens_filtered) || undefined, fog_hidden_tokens_filtered: Number(p.fog_hidden_tokens_filtered) || undefined }));
       applyPlayerInventoryState(p);
+      if (p.quick_actions && typeof p.quick_actions === 'object') applyQuickActionsSync(p.quick_actions, 'state_sync');
       // Apply camp/rest state for reconnecting users
       if (p.camp_rest) {
         _updateCampRestTopbarBtn(p.camp_rest);
@@ -33590,11 +33629,17 @@ function handleLegacyMessage(msg) {
       break;
     }
 
+    case 'quick_actions_sync': {
+      applyQuickActionsSync(p, 'quick_actions_sync');
+      break;
+    }
+
     case 'player_inventory_sync': {
       const _inventoryStale = _isStaleInventoryPayload(p);
       liveDebugLog('player_inventory_sync ' + (_inventoryStale ? 'ignored' : 'applied'), buildClientLiveStateSummary('player_inventory_sync', p, { ignored: _inventoryStale }));
       if (_inventoryStale) break;
       applyPlayerInventoryState(p);
+      if (p.quick_actions && typeof p.quick_actions === 'object') applyQuickActionsSync(p.quick_actions, 'player_inventory_sync');
       break;
     }
 
