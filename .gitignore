@@ -39,8 +39,9 @@ data/
 # Log files
 *.log
 
-# Environment files
+# Environment/config files
 .env
+config.txt
 
 # Auto-generated dev-only JWT secret (persisted so restarts reuse it)
 .dnd_jwt_secret.local
