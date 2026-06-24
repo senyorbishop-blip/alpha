@@ -20,6 +20,7 @@ VIEWER_ALLOWED_MESSAGE_TYPES = frozenset({
 })
 
 DM_ADMIN_MESSAGE_TYPES = frozenset({
+    "token_delete",
     "fog_paint",
     "fog_toggle",
     "editor_layer_save",
@@ -150,7 +151,6 @@ PLAYER_KNOWN_GAMEPLAY_MESSAGE_TYPES = frozenset({
     "token_create",
     "token_placed",
     "token_send_to_staging",
-    "token_delete",
     "token_edit",
     "token_hp_update",
     "token_condition",
