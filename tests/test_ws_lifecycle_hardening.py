@@ -160,7 +160,7 @@ def test_websocket_endpoint_cancels_lifecycle_tasks_and_logs_connection_id():
     assert "connection_id = await manager.connect" in src
     assert "heartbeat_handle.cancel()" in src
     assert "autosave_handle.cancel()" in src
-    assert "[WS] heartbeat start user_id=%s connection_id=%s" in src
-    assert "[WS] heartbeat stale exit user_id=%s connection_id=%s" in src
-    assert "[WS] pong received user_id=%s connection_id=%s" in src
+    assert 'logger.debug("[WS] heartbeat start user_id=%s connection_id=%s"' in src
+    assert 'logger.debug("[WS] heartbeat stale exit user_id=%s connection_id=%s"' in src
+    assert 'logger.debug("[WS] pong received user_id=%s connection_id=%s"' in src
     assert "[WS] timeout closing current socket user_id=%s connection_id=%s" in src

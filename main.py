@@ -626,12 +626,12 @@ async def _websocket_heartbeat_loop(
     connection_manager=manager,
 ):
     """Send heartbeat pings only while this task owns the current socket."""
-    logger.info("[WS] heartbeat start user_id=%s connection_id=%s", user_id, connection_id)
+    logger.debug("[WS] heartbeat start user_id=%s connection_id=%s", user_id, connection_id)
     try:
         while True:
             await asyncio.sleep(ping_interval)
             if not connection_manager.is_current_connection(session_id, user_id, connection_id):
-                logger.info("[WS] heartbeat stale exit user_id=%s connection_id=%s", user_id, connection_id)
+                logger.debug("[WS] heartbeat stale exit user_id=%s connection_id=%s", user_id, connection_id)
                 return
             if asyncio.get_running_loop().time() - last_pong["t"] > pong_timeout:
                 if connection_manager.is_current_connection(session_id, user_id, connection_id):
@@ -645,9 +645,9 @@ async def _websocket_heartbeat_loop(
                     except Exception:
                         pass
                 else:
-                    logger.info("[WS] heartbeat stale exit user_id=%s connection_id=%s", user_id, connection_id)
+                    logger.debug("[WS] heartbeat stale exit user_id=%s connection_id=%s", user_id, connection_id)
                 return
-            logger.info("[WS] sending ping user_id=%s session_id=%s connection_id=%s", user_id, session_id, connection_id)
+            logger.debug("[WS] sending ping user_id=%s session_id=%s connection_id=%s", user_id, session_id, connection_id)
             await connection_manager.send_to(session_id, user_id, {"type": "ping"})
     except asyncio.CancelledError:
         raise
@@ -830,11 +830,11 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
             # only on pong. This stops active play (chat, combat, movement) from
             # tripping a false heartbeat timeout when a pong happens to be delayed.
             _last_pong["t"] = asyncio.get_running_loop().time()
-            logger.info("[WS] received frame type=%s user_id=%s connection_id=%s last_seen updated", msg_type or "(missing)", user_id, connection_id)
+            logger.debug("[WS] received frame type=%s user_id=%s connection_id=%s last_seen updated", msg_type or "(missing)", user_id, connection_id)
 
             # Handle heartbeat pong — already counted above; skip gameplay dispatch.
             if msg_type == "pong":
-                logger.info("[WS] pong received user_id=%s connection_id=%s", user_id, connection_id)
+                logger.debug("[WS] pong received user_id=%s connection_id=%s", user_id, connection_id)
                 continue
 
             user_role = str(getattr(user, "role", "") or "").strip().lower()
