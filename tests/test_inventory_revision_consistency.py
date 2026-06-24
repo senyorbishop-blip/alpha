@@ -77,8 +77,9 @@ def _make_thunder_staff(equipped=True, attuned=True, charges=5):
 
 def _make_wand(charges=3, charges_max=3, equipped=True):
     return {
-        "name": "Wand of Secrets",
-        "id": "wand-of-secrets",
+        "name": "Test Wand of Secrets",
+        "id": "test-wand-of-secrets",
+        "rarity": "rare",
         "item_type": "wand",
         "equipped": equipped,
         "attunement_required": False,

@@ -387,57 +387,139 @@ def filter_items(
 # Compendium metadata merge
 # ---------------------------------------------------------------------------
 
-_LIVE_STATE_KEYS = frozenset({
-    "equipped", "attuned", "qty", "quantity", "charges_current",
-    "uses_current", "notes", "source", "price",
-    "consumable", "consumed_on_use", "remove_when_empty", "grants_action",
+_PLAYER_STATE_KEYS = frozenset({
+    # Player-owned state must survive compendium/library rehydration.
+    "qty", "quantity", "equipped", "attuned", "charges_current", "uses_current",
+    "notes", "price", "bag_contents", "contents", "container_contents",
+})
+
+_CANONICAL_REHYDRATE_KEYS = frozenset({
+    "id", "name", "display_name", "icon", "image_key", "image_url", "image_path",
+    "category_icon_key", "subtype_icon_key", "category", "item_type", "subtype",
+    "rarity", "slug", "aliases", "legacy_ids", "dedupe_key", "is_magic",
+    "requires_attunement", "attunement_required", "attunement", "equippable", "equip_slot",
+    "handedness", "armor_type", "weapon_type", "ammo_type", "weapon_properties",
+    "base_ac", "dex_cap", "ac_bonus", "strength_requirement", "stealth_disadvantage",
+    "attack_bonus", "damage_bonus", "damage_dice", "damage_type", "damage_formula",
+    "versatile_damage", "versatile_damage_formula", "magic_bonus", "range", "reach",
+    "charges_max", "recharge_type", "recharge_formula", "recharge_on_rest",
+    "uses_max", "granted_spells", "granted_actions", "magicActions", "passive_effects",
+    "bonuses", "resistances", "immunities", "senses_modifiers", "movement_modifiers",
+    "stat_overrides", "stat_minimums", "item_spell_save_dc", "item_spell_attack_bonus",
+    "action_card", "effect", "effect_text", "description_summary", "rules_summary",
+    "unidentified_description", "consumable", "consumed_on_use", "remove_when_empty",
+    "grants_action", "action_type", "activation_type", "usage_cost", "target_type",
+    "save_dc", "healing_formula", "item_schema_version", "weight_lbs", "stack_limit",
 })
 
 
-def merge_compendium_metadata(inventory_entry: dict) -> dict:
-    """Merge compendium metadata into an inventory entry, preserving live state.
+def _source_revision_for_item(item: dict) -> int:
+    for key in ("source_revision", "revision", "item_schema_version", "updated_at"):
+        raw = item.get(key)
+        try:
+            if raw not in (None, ""):
+                return max(1, int(float(raw)))
+        except Exception:
+            continue
+    return 1
 
-    Looks up by id, name, then any alias/legacy_id. Fills in missing compendium
-    fields (category, rarity, weapon_type, etc.) without overwriting live state.
+
+def _resolve_compendium_for_inventory(entry: dict) -> dict | None:
+    source_id = str(entry.get("source_id") or "").strip()
+    if source_id:
+        return resolve_item(source_id)
+
+    magic_item_id = str(entry.get("magic_item_id") or "").strip()
+    if magic_item_id:
+        # An explicit but unknown magic_item_id is usually a custom/homebrew row;
+        # do not fall through to a same-name library item and overwrite it.
+        return resolve_item(magic_item_id)
+
+    # Rows that already carry their own granted spells/actions without source
+    # markers are treated as self-contained custom/test items, not stale library
+    # copies, unless a source_id/magic_item_id above explicitly linked them.
+    if entry.get("granted_spells") or entry.get("granted_actions"):
+        return None
+
+    candidates = [entry.get("id"), entry.get("slug"), entry.get("name")]
+    seen: set[str] = set()
+    for raw in candidates:
+        ref = str(raw or "").strip()
+        if not ref or ref.lower() in seen:
+            continue
+        seen.add(ref.lower())
+        found = resolve_item(ref)
+        if found:
+            return found
+    return None
+
+
+def merge_compendium_metadata(inventory_entry: dict) -> dict:
+    """Safely rehydrate an inventory entry from the canonical item library.
+
+    Player-owned state (quantity, equipment/attunement state, current charges,
+    notes, and container contents) is preserved. Canonical library metadata such
+    as rarity, display fields, granted spells/actions, max charges/recharge, and
+    attack/damage metadata is refreshed whenever a source item can be resolved.
     """
     entry = dict(inventory_entry or {})
-    item_id = str(entry.get("id") or entry.get("magic_item_id") or "").strip()
-    name = str(entry.get("name") or "").strip()
-
-    comp = (
-        get_item_by_id(item_id)
-        or find_item_by_name(name)
-        or find_item_by_legacy_id(item_id)
-        or find_item_by_alias(item_id)
-    )
+    comp = _resolve_compendium_for_inventory(entry)
     if not comp:
+        entry.setdefault("source_type", str(entry.get("source_type") or "inventory"))
+        entry.setdefault("source_id", str(entry.get("source_id") or entry.get("magic_item_id") or entry.get("id") or ""))
+        entry.setdefault("source_revision", _source_revision_for_item(entry))
         return entry
 
-    def _missing_or_fallback(key: str) -> bool:
-        value = entry.get(key)
-        if value in ("", None, [], {}):
-            return True
-        if key == "rarity" and str(value).strip().lower() in {"common", "starter", "unknown"}:
-            comp_rarity = str(comp.get("rarity") or "").strip().lower()
-            return comp_rarity not in {"", "common", "starter", "unknown"}
-        if key == "source" and "starter" in str(value).strip().lower():
-            return True
-        return False
+    prior_current = entry.get("charges_current")
+    prior_max = entry.get("charges_max")
+    source_revision = _source_revision_for_item(comp)
+    has_entry_revision = entry.get("source_revision") not in (None, "")
+    entry_revision = _source_revision_for_item(entry) if has_entry_revision else source_revision
+    comp_rarity = str(comp.get("rarity") or "").strip().lower()
+    entry_rarity = str(entry.get("rarity") or "").strip().lower()
+    needs_repair = (
+        (has_entry_revision and entry_revision < source_revision)
+        or (entry_rarity in {"", "common", "starter", "unknown"} and comp_rarity not in {"", "common", "starter", "unknown"})
+        or (not entry.get("granted_spells") and bool(comp.get("granted_spells")))
+        or (int(entry.get("charges_max") or 0) <= 0 and int(comp.get("charges_max") or 0) > 0)
+    )
 
-    for key, value in comp.items():
-        if key in _LIVE_STATE_KEYS:
+    for key in _CANONICAL_REHYDRATE_KEYS:
+        if key in _PLAYER_STATE_KEYS or key not in comp:
             continue
-        if _missing_or_fallback(key):
+        value = comp.get(key)
+        if value in (None, ""):
+            continue
+        if needs_repair or entry.get(key) in (None, "", [], {}):
             entry[key] = value
 
-    # Charges are live state once present, but existing saved/imported stubs
-    # frequently omit them. Fill only when absent so spent charges survive.
-    comp_charges_max = int(comp.get("charges_max") or 0) if str(comp.get("charges_max") or "").isdigit() else 0
-    for key in ("charges_max", "charges_current"):
-        if comp_charges_max > 0 and entry.get(key) in ("", None) and comp.get(key) not in ("", None):
-            entry[key] = comp.get(key)
-    if entry.get("charges_current") in ("", None) and entry.get("charges_max") not in ("", None):
-        entry["charges_current"] = entry.get("charges_max")
+    comp_id = str(comp.get("id") or "").strip()
+    entry["source_type"] = "compendium"
+    entry["source_id"] = comp_id or str(entry.get("source_id") or entry.get("magic_item_id") or entry.get("id") or "")
+    entry["source_revision"] = source_revision
+    if comp_id:
+        entry["id"] = comp_id
+        entry.setdefault("magic_item_id", comp_id)
+
+    # Preserve current charges unless the canonical max changed enough to require
+    # clamping, or the legacy entry never had a current value at all.
+    try:
+        comp_max = max(0, int(comp.get("charges_max") or 0))
+    except Exception:
+        comp_max = 0
+    if comp_max > 0 and (needs_repair or entry.get("charges_max") in (None, "", 0, "0")):
+        entry["charges_max"] = comp_max
+        if prior_current in (None, ""):
+            entry["charges_current"] = comp.get("charges_current", comp_max) or comp_max
+        else:
+            try:
+                current = max(0, int(prior_current))
+            except Exception:
+                current = comp_max
+            entry["charges_current"] = min(current, comp_max)
+    elif prior_max not in (None, "") and prior_current not in (None, ""):
+        entry["charges_current"] = prior_current
+
     return entry
 
 
