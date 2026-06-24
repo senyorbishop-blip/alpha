@@ -89,3 +89,39 @@ def test_missing_weapon_bridge_shows_toast_and_does_not_spend_action():
     assert "if (typeof global.showToast === 'function') global.showToast(msg);" in actions
     assert 'function rollQuickWeaponAttack(ctx) {' in actions
     assert "if (_requireBridge('rollQuickWeaponAttack')) return global.rollQuickWeaponAttack(ctx);" in actions
+
+
+def test_weapon_pipeline_installs_scoped_first_text_fallback_and_canonical_id():
+    play = _read('client/templates/play.html')
+    actions = _read('client/static/js/character/combat_quick_actions.js')
+    selectors = _read('client/static/js/character/combat_quick_selectors.js')
+    assert 'function _combatQuickCanonicalWeaponActionId(obj)' in play
+    assert 'window._firstText = window._firstText || firstText;' in play
+    assert 'action_id: id' in play
+    assert 'combatCardId: id' in play
+    assert 'const canonicalId = (typeof global._combatQuickCanonicalWeaponActionId === \'function\')' in actions
+    assert 'id: canonicalId' in actions
+    assert 'actionId: canonicalId' in actions
+    assert 'action_id: canonicalId' in actions
+    assert 'const actionId = (typeof global._combatQuickCanonicalWeaponActionId === \'function\')' in selectors
+    assert 'quickBarPickKey: \'action:\' + String(actionId)' in selectors
+
+
+def test_weapon_missing_metadata_errors_include_action_id_and_item_name():
+    play = _read('client/templates/play.html')
+    actions = _read('client/static/js/character/combat_quick_actions.js')
+    assert 'Weapon attack not found for action ' in play
+    assert 'Missing weapon damage metadata' in play
+    assert "const actionId = firstText(card.action_id, card.actionId, card.id" in play
+    assert "`${card.name || 'Weapon'} (${actionId}) has no damage formula" in play
+    assert '[CombatQuickActions] Weapon damage metadata missing for modal.' in actions
+
+
+def test_weapon_attack_uses_canonical_action_id_for_roll_and_usage():
+    play = _read('client/templates/play.html')
+    fn_start = play.index('async function performCombatQuickWeaponAttack(')
+    fn_body = play[fn_start:fn_start + 5000]
+    assert "const actionKey = String(card.action_id || card.id || card.name" in fn_body
+    assert "const actionId = _generateAttackActionId(card.action_id || card.id || 'weapon-attack');" in fn_body
+    assert "const attackId = card.action_id || card.id || card.name;" in fn_body
+    assert "_consumeActionEconomy('attack_within_action', { action_id: card.action_id || card.id || card.name });" in fn_body

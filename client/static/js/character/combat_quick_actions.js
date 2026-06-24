@@ -688,8 +688,11 @@
       const rollContext = global.getSafeRollContext && global.getSafeRollContext();
       if (rollContext && rollContext.targetName) targetName = rollContext.targetName;
     } catch (_) {}
+    const canonicalId = (typeof global._combatQuickCanonicalWeaponActionId === 'function') ? global._combatQuickCanonicalWeaponActionId(source) : _firstText(source.action_id, source.actionId, source.combatCardId, source.id, source.itemId, source.name, 'weapon');
     return {
-      id: _firstText(source.id, source.itemId, source.actionId, source.name, 'weapon'),
+      id: canonicalId,
+      actionId: canonicalId,
+      action_id: canonicalId,
       name: _firstText(source.name, source.displayName, 'Weapon'),
       attackBonus: attackBonus,
       attackFormula: '1d20' + _signedBonus(attackBonus),
@@ -721,7 +724,7 @@
 
   function openWeaponAction(actionOrId) {
     const card = _findWeapon(actionOrId);
-    if (!card) return false;
+    if (!card) { if (typeof global.showToast === 'function') global.showToast('Weapon action not found: ' + (typeof actionOrId === 'object' ? _firstText(actionOrId && actionOrId.id, actionOrId && actionOrId.name, 'unknown') : String(actionOrId || 'unknown'))); return false; }
     _installStyles();
     closeModal();
     // "Used this turn" only means the action may be spent — it must never block
@@ -730,6 +733,7 @@
     const weaponContext = normalizeWeaponModalContext(card, actionOrId);
     const usedThisTurn = weaponContext.usedThisTurn;
     const displayDamageFormula = weaponContext.damageFormula;
+    if (!displayDamageFormula && global.console && typeof global.console.warn === 'function') global.console.warn('[CombatQuickActions] Weapon damage metadata missing for modal.', { actionId: weaponContext.actionId || weaponContext.id, itemName: weaponContext.name, card: card });
     const displayDamageType = weaponContext.damageType;
     const hasVersatile = !!weaponContext.versatileDamageFormula;
     const properties = weaponContext.properties.join(', ');
