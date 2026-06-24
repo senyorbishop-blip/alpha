@@ -87,12 +87,16 @@ class SoundEngine {
       soundLog('warn', `track=${track} has no manifest-backed asset entry; using fallback`);
       return null;
     }
+    if (entry.fallback && entry.asset_probe === 'startup_generated') {
+      soundLog('info', `track=${track} uses startup-generated asset path; skipping static probe and using ${entry.fallback}`);
+      return null;
+    }
     for (const rawPath of entry.files) {
       const versionedPath = rawPath.includes('?') ? rawPath : `${rawPath}?v=${manifest.version || '0'}`;
       try {
         const resp = await fetch(versionedPath, { cache: 'reload' });
         if (!resp.ok) {
-          soundLog('warn', `track=${track} asset probe failed path=${versionedPath} http=${resp.status}`);
+          soundLog('info', `track=${track} asset unavailable path=${versionedPath} http=${resp.status}; using fallback if available`);
           continue;
         }
         const arr = await resp.arrayBuffer();
@@ -103,7 +107,7 @@ class SoundEngine {
         }
         return { path: versionedPath, buffer: this._bufferCache.get(versionedPath) };
       } catch (err) {
-        soundLog('error', `track=${track} decode/playback prep failed path=${versionedPath}`, err);
+        soundLog('warn', `track=${track} decode/playback prep failed path=${versionedPath}; using fallback if available`, err);
       }
     }
     return null;

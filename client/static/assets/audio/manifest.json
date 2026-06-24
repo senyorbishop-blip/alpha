@@ -12,7 +12,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_forest"
+      "fallback": "procedural_forest",
+      "asset_probe": "startup_generated"
     },
     "wilderness_night": {
       "label": "Wilderness Night",
@@ -25,7 +26,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_forest"
+      "fallback": "procedural_forest",
+      "asset_probe": "startup_generated"
     },
     "swamp": {
       "label": "Swamp",
@@ -38,7 +40,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_forest"
+      "fallback": "procedural_forest",
+      "asset_probe": "startup_generated"
     },
     "mountain_pass": {
       "label": "Mountain Pass",
@@ -51,7 +54,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_forest"
+      "fallback": "procedural_forest",
+      "asset_probe": "startup_generated"
     },
     "rain": {
       "label": "Rain",
@@ -64,7 +68,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_forest"
+      "fallback": "procedural_forest",
+      "asset_probe": "startup_generated"
     },
     "tavern": {
       "label": "Tavern",
@@ -77,7 +82,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_tavern"
+      "fallback": "procedural_tavern",
+      "asset_probe": "startup_generated"
     },
     "inn_night": {
       "label": "Inn Night",
@@ -90,7 +96,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_tavern"
+      "fallback": "procedural_tavern",
+      "asset_probe": "startup_generated"
     },
     "marketplace": {
       "label": "Marketplace",
@@ -103,7 +110,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_tavern"
+      "fallback": "procedural_tavern",
+      "asset_probe": "startup_generated"
     },
     "city": {
       "label": "City",
@@ -116,7 +124,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_tavern"
+      "fallback": "procedural_tavern",
+      "asset_probe": "startup_generated"
     },
     "harbor": {
       "label": "Harbor",
@@ -129,7 +138,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_tavern"
+      "fallback": "procedural_tavern",
+      "asset_probe": "startup_generated"
     },
     "campfire": {
       "label": "Campfire",
@@ -142,7 +152,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_tavern"
+      "fallback": "procedural_tavern",
+      "asset_probe": "startup_generated"
     },
     "dungeon": {
       "label": "Dungeon",
@@ -155,7 +166,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_dungeon"
+      "fallback": "procedural_dungeon",
+      "asset_probe": "startup_generated"
     },
     "crypt": {
       "label": "Crypt",
@@ -168,7 +180,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_dungeon"
+      "fallback": "procedural_dungeon",
+      "asset_probe": "startup_generated"
     },
     "cave": {
       "label": "Cave",
@@ -181,7 +194,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_dungeon"
+      "fallback": "procedural_dungeon",
+      "asset_probe": "startup_generated"
     },
     "temple": {
       "label": "Temple",
@@ -194,7 +208,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_dungeon"
+      "fallback": "procedural_dungeon",
+      "asset_probe": "startup_generated"
     },
     "castle_hall": {
       "label": "Castle Hall",
@@ -207,7 +222,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_dungeon"
+      "fallback": "procedural_dungeon",
+      "asset_probe": "startup_generated"
     },
     "tension": {
       "label": "Tension / Stealth",
@@ -220,7 +236,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_dungeon"
+      "fallback": "procedural_dungeon",
+      "asset_probe": "startup_generated"
     },
     "battle": {
       "label": "Battle",
@@ -233,7 +250,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_battle"
+      "fallback": "procedural_battle",
+      "asset_probe": "startup_generated"
     },
     "boss_battle": {
       "label": "Boss Battle",
@@ -246,7 +264,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_battle"
+      "fallback": "procedural_battle",
+      "asset_probe": "startup_generated"
     },
     "storm": {
       "label": "Storm",
@@ -259,7 +278,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_battle"
+      "fallback": "procedural_battle",
+      "asset_probe": "startup_generated"
     },
     "coastal": {
       "label": "Coastal",
@@ -272,7 +292,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_battle"
+      "fallback": "procedural_battle",
+      "asset_probe": "startup_generated"
     },
     "auto": {
       "label": "Auto",
@@ -285,7 +306,8 @@
         "detail",
         "texture"
       ],
-      "fallback": "procedural_battle"
+      "fallback": "procedural_battle",
+      "asset_probe": "startup_generated"
     }
   }
 }

@@ -43,6 +43,32 @@ Minimum manual check sequence after install/update:
 4. Confirm join/rejoin, map visibility, token movement, and chat sync.
 5. Confirm save/load and reconnect behavior once.
 
+
+## Ambient audio asset generation
+
+Ambient loop files referenced by `client/static/assets/audio/manifest.json` are generated at application startup, not committed as binary assets. The FastAPI lifespan in `main.py` calls `server.ambient_audio.ensure_ambient_audio_assets(...)`, which materialises these files under `client/static/assets/audio/` when they are missing or too small:
+
+```text
+forest_loop_20260328.wav
+tavern_loop_20260328.wav
+dungeon_loop_20260328.wav
+battle_loop_20260328.wav
+```
+
+To generate them explicitly for local verification, start the app normally:
+
+```bash
+python main.py
+```
+
+or run the generation helper directly:
+
+```bash
+python -c "from pathlib import Path; from server.ambient_audio import ensure_ambient_audio_assets; ensure_ambient_audio_assets(Path('client/static/assets/audio'))"
+```
+
+The checked-in manifest keeps those startup-generated paths for deploy/runtime parity, but marks them as startup-generated so the browser sound engine does not probe missing WAV files from a fresh checkout. If startup has not materialised the WAV files yet, the live engine quietly starts the procedural fallback (`procedural_forest`, `procedural_tavern`, `procedural_dungeon`, or `procedural_battle`) instead of producing 404 noise.
+
 ## Support boundaries (read before handoff)
 
 - Founder beta is **not** public-launch production hardening.
