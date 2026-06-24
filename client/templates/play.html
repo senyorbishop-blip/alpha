@@ -34479,8 +34479,9 @@ function handleLegacyMessage(msg) {
     }
 
     case 'user_joined': {
-      const u = p.user;
-      users[u.id] = { ...u, connected: true };
+      const u = p.user || {};
+      const userHandle = u.handle || u.id;
+      if (userHandle) users[userHandle] = { ...u, id: userHandle, connected: true };
       renderPlayerList();
       buildStagingArea();
       renderViewerPanel();

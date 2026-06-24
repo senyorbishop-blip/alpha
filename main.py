@@ -8,6 +8,7 @@ import time
 import subprocess
 import threading
 import logging
+import hashlib
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -80,6 +81,21 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+def _auth_is_enforced() -> bool:
+    """Return True when WebSocket JWT auth should be enforced.
+
+    ``verify_token`` signs and verifies with ``DND_JWT_SECRET``.  Legacy/local
+    invite-code sessions remain unauthenticated when that secret is unset.
+    """
+    return bool(os.environ.get("DND_JWT_SECRET", "").strip())
+
+
+def _display_user_handle(session_id: str, user_id: str) -> str:
+    """Build a stable, display-safe user handle for join broadcasts."""
+    raw = f"{session_id}:{user_id}".encode("utf-8", errors="ignore")
+    return f"user_{hashlib.sha256(raw).hexdigest()[:12]}"
 
 
 def install_asyncio_exception_filters():
@@ -643,25 +659,11 @@ async def _websocket_heartbeat_loop(
 async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str, token: str = None, client_socket_id: str = None, reason: str = None):
     """WebSocket endpoint.
 
-    ``token`` is an optional JWT passed as a query parameter
-    (e.g. ``?token=<jwt>``). When provided it is validated; on failure the
-    connection is closed with code 4001.  If omitted, the existing
-    invite-code-based session membership is used as the authorization source
-    (backwards-compatible).
+    ``token`` is a JWT passed as a query parameter (e.g. ``?token=<jwt>``).
+    When ``DND_JWT_SECRET`` is set, DM and player sockets must provide a valid
+    token; viewers and legacy no-secret sessions can still connect without one.
+    Provided tokens are always validated and closed with code 4001 on failure.
     """
-    # Optional JWT verification (does NOT break unauthenticated legacy sessions)
-    if token:
-        jwt_payload = verify_token(token)
-        if not jwt_payload:
-            await websocket.close(code=4001, reason="Invalid or expired token")
-            return
-        # Verify the JWT subject matches the user_id path parameter to prevent
-        # identity spoofing (connecting with a valid JWT but another user's id).
-        token_sub = str(jwt_payload.get("sub") or "").strip()
-        if token_sub and token_sub != str(user_id or "").strip():
-            await websocket.close(code=4001, reason="Token identity does not match user_id")
-            return
-
     logger.info("[live_state] websocket_connect session_id=%s user_id=%s client_socket_id=%s reason=%s", session_id, user_id, client_socket_id, reason)
     session = get_session(session_id)
     # Auto-restore from DB if not in memory
@@ -684,6 +686,22 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
     user = session.users.get(user_id)
     if not user:
         await websocket.close(code=4003, reason="User not found in session")
+        return
+
+    jwt_payload = None
+    if token:
+        jwt_payload = verify_token(token)
+        if not jwt_payload:
+            await websocket.close(code=4001, reason="Invalid or expired token")
+            return
+        # Verify the JWT subject matches the user_id path parameter to prevent
+        # identity spoofing (connecting with a valid JWT but another user's id).
+        token_sub = str(jwt_payload.get("sub") or "").strip()
+        if token_sub and token_sub != str(user_id or "").strip():
+            await websocket.close(code=4001, reason="Token identity does not match user_id")
+            return
+    if _auth_is_enforced() and str(getattr(user, "role", "") or "").strip().lower() in {"dm", "player"} and not jwt_payload:
+        await websocket.close(code=4001, reason="Missing or invalid token")
         return
 
     _user_agent = None
@@ -737,7 +755,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
     await manager.broadcast(session_id, {
         "type": "user_joined",
         "payload": {
-            "user": {"id": user.id, "name": user.name, "role": user.role, "subgroup_id": session.get_user_subgroup_id(user.id)},
+            "user": {"handle": _display_user_handle(session_id, user.id), "name": user.name, "role": user.role, "subgroup_id": session.get_user_subgroup_id(user.id)},
         }
     }, exclude_user=user_id)
 
