@@ -29,6 +29,7 @@ def _run(harness_js: str) -> dict:
 const sends = [];
 let constructed = 0;
 let setTimeoutCalls = 0;
+const timeoutDelays = [];
 const timers = [];
 class FakeSocket {{
   constructor(url) {{
@@ -48,14 +49,16 @@ let _reconnectTimer = null;
 const win = {{
   WebSocket: WebSocketCtor,
   location: {{ protocol: 'http:', host: 'localhost', hostname: 'localhost' }},
-  setTimeout: (fn, ms) => {{ setTimeoutCalls += 1; const id = timers.length + 1; timers.push(fn); return id; }},
+  setTimeout: (fn, ms) => {{ setTimeoutCalls += 1; timeoutDelays.push(ms); const id = timers.length + 1; timers.push(fn); return id; }},
   clearTimeout: () => {{}},
+  Math: Object.assign(Object.create(globalThis.Math), {{ random: () => 0.5 }}),
   addEventListener: () => {{}},
   sessionStorage: {{ getItem: () => '' }},
   console: console,
 }};
 win.window = win;
 const window = win;
+const Math = win.Math;
 {src}
 window.AppWS.configure({{
   getSessionId: () => 's1',
@@ -249,6 +252,102 @@ def test_reconnect_happens_after_real_close_but_not_after_replacement():
     assert out["constructedAfterReplace"] == 2, (
         "Replacement close must not start a reconnect war (no new socket)"
     )
+
+
+def test_reconnect_uses_capped_exponential_backoff_with_jitter_and_resets_on_open():
+    out = _run(
+        """
+        const first = window.AppWS.connectWS();
+        first.open();
+
+        // Consecutive failed reconnect attempts should schedule increasing delays.
+        first.onclose({ code: 1006, reason: '', wasClean: false });
+        runTimers();
+        const second = getSocket();
+        second.onclose({ code: 1006, reason: '', wasClean: false });
+        runTimers();
+        const third = getSocket();
+        third.onclose({ code: 1006, reason: '', wasClean: false });
+        runTimers();
+        const fourth = getSocket();
+        fourth.onclose({ code: 1006, reason: '', wasClean: false });
+        runTimers();
+        const fifth = getSocket();
+        fifth.onclose({ code: 1006, reason: '', wasClean: false });
+        runTimers();
+        const sixth = getSocket();
+        sixth.onclose({ code: 1006, reason: '', wasClean: false });
+
+        const beforeReset = timeoutDelays.slice();
+        runTimers();
+        const seventh = getSocket();
+        seventh.open();
+        seventh.onclose({ code: 1006, reason: '', wasClean: false });
+        const afterResetDelay = timeoutDelays[timeoutDelays.length - 1];
+
+        const out = { beforeReset, afterResetDelay, debug: window.__debugWS() };
+        """
+    )
+    assert out["beforeReset"][:5] == [3000, 6000, 12000, 24000, 30000]
+    assert max(out["beforeReset"]) <= 30000, "Reconnect delay must never exceed 30 seconds"
+    assert out["afterResetDelay"] == 3000, "Successful open must reset backoff toward 3 seconds"
+    assert out["debug"]["reconnectAttempts"] == 0
+
+
+def test_reconnect_jitter_stays_within_ten_percent_without_exceeding_cap():
+    out = _run(
+        """
+        window.Math.random = () => 1;
+        const first = window.AppWS.connectWS();
+        first.open();
+        first.onclose({ code: 1006, reason: '', wasClean: false });
+        runTimers();
+        const second = getSocket();
+        second.onclose({ code: 1006, reason: '', wasClean: false });
+        runTimers();
+        const third = getSocket();
+        third.onclose({ code: 1006, reason: '', wasClean: false });
+        runTimers();
+        const fourth = getSocket();
+        fourth.onclose({ code: 1006, reason: '', wasClean: false });
+        runTimers();
+        const fifth = getSocket();
+        fifth.onclose({ code: 1006, reason: '', wasClean: false });
+        const high = timeoutDelays.slice();
+
+        window.Math.random = () => 0;
+        runTimers();
+        const sixth = getSocket();
+        sixth.open();
+        sixth.onclose({ code: 1006, reason: '', wasClean: false });
+        const lowAfterReset = timeoutDelays[timeoutDelays.length - 1];
+
+        const out = { high, lowAfterReset };
+        """
+    )
+    assert out["high"][:4] == [3300, 6600, 13200, 26400]
+    assert out["high"][4] == 30000
+    assert max(out["high"]) <= 30000
+    assert out["lowAfterReset"] == 2700
+
+
+def test_reconnect_close_path_keeps_only_one_timer():
+    out = _run(
+        """
+        const sock = window.AppWS.connectWS();
+        sock.open();
+        sock.onclose({ code: 1006, reason: '', wasClean: false });
+        const timerAfterFirstClose = _reconnectTimer;
+        // A duplicate close notification for the same inactive socket must not
+        // schedule a second reconnect timer.
+        sock.onclose({ code: 1006, reason: '', wasClean: false });
+        const timerAfterSecondClose = _reconnectTimer;
+        const out = { setTimeoutCalls, timerAfterFirstClose, timerAfterSecondClose, constructed };
+        """
+    )
+    assert out["setTimeoutCalls"] == 1
+    assert out["timerAfterSecondClose"] == out["timerAfterFirstClose"]
+    assert out["constructed"] == 1
 
 
 def test_debug_ws_exposes_owner_diagnostics():

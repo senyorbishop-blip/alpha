@@ -104,15 +104,22 @@
     config.setReconnectTimer(null);
   }
 
+  function getReconnectDelayMs() {
+    const baseDelay = Math.min(30000, 3000 * 2 ** Math.min(reconnectAttempts, 4));
+    const jitterFactor = 0.9 + (Math.random() * 0.2);
+    return Math.min(30000, Math.round(baseDelay * jitterFactor));
+  }
+
   function scheduleReconnect() {
     if (config.getReconnectTimer()) return;
+    const delayMs = getReconnectDelayMs();
     const timer = global.setTimeout(() => {
       config.setReconnectTimer(null);
       reconnectAttempts += 1;
       lastConnectReason = 'reconnect';
       // Reconnect happens in-place by re-opening the socket via AppWS/ws.js.
       // We never reload or navigate the page to recover the connection.
-      console.info('[WS] reconnect in-place');
+      console.info('[WS] reconnect in-place', { delayMs, reconnectAttempts });
       // Single-owner guard: never spawn a second socket if one is already
       // CONNECTING/OPEN (e.g. a manual ensureConnected raced the timer).
       const existing = config.getSocket();
@@ -120,7 +127,7 @@
         return;
       }
       connectWS();
-    }, 3000);
+    }, delayMs);
     config.setReconnectTimer(timer);
   }
 
