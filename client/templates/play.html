@@ -46192,7 +46192,7 @@ function combatApplyState(state, source) {
     count: Array.isArray(state.combatants) ? state.combatants.length : 0,
     order: Array.isArray(state.combatants) ? state.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : [],
   };
-  const authoritativeEqualRevisionSources = new Set(['combat_state', 'combat_initiative_rolled']);
+  const authoritativeEqualRevisionSources = new Set(['combat_state']);
   if (incomingRevision === null) {
     if (Number.isFinite(Number(localRevision)) && Number(localRevision) > 0) {
       console.warn('[combatApplyState] ignored legacy combat payload missing revision because authoritative combat already exists', { local_revision: localRevision, incoming: incomingSummary });
@@ -46348,6 +46348,7 @@ var _combatDebug = (typeof _combatDebug !== 'undefined' && _combatDebug) ? _comb
   lastAppliedRevision: null,
   lastAppliedActive: false,
   lastVisibilityRevision: null,
+  lastRenderSource: null,
   sawAuthoritativeActiveRevision: false,
   blockedStartFallback: false,
 };
@@ -46384,9 +46385,54 @@ window.__debugCombat = function () {
     lastAppliedActive: _combatDebug.lastAppliedActive,
     lastAppliedRevision: _combatDebug.lastAppliedRevision,
     lastVisibilityRevision: _combatDebug.lastVisibilityRevision,
+    lastRenderSource: _combatDebug.lastRenderSource,
     sawAuthoritativeActiveRevision: _combatDebug.sawAuthoritativeActiveRevision,
     blockedStartFallback: _combatDebug.blockedStartFallback,
     role: (typeof ROLE !== 'undefined') ? ROLE : null,
+  };
+};
+
+window.__debugCombatPanels = function () {
+  const c = (typeof _combat === 'object' && _combat) ? _combat : {};
+  const combatants = Array.isArray(c.combatants) ? c.combatants : [];
+  const canonicalOrder = combatants.map(x => `${x?.name || x?.id || x?.token_id || '?'}:${x?.initiative ?? '--'}`);
+  const selectors = [
+    '#combat-list .combat-entry',
+    '.combat-entry',
+    '[data-combatant-id]',
+    '.player-combat-focus .combat-entry',
+    '.active-context-combat .combat-entry',
+    '.combat-card',
+    '.combat-focus-card',
+    '.now-card',
+    '.next-card',
+  ];
+  const seen = new Set();
+  const visibleCombatCards = [];
+  selectors.forEach((selector) => {
+    let nodes = [];
+    try { nodes = Array.from(document.querySelectorAll ? document.querySelectorAll(selector) : []); } catch (_err) { nodes = []; }
+    nodes.forEach((node) => {
+      if (!node || seen.has(node)) return;
+      seen.add(node);
+      const style = node.style || {};
+      if (style.display === 'none' || style.visibility === 'hidden') return;
+      const text = String(node.textContent || node.innerText || '').replace(/\s+/g, ' ').trim();
+      if (!text) return;
+      visibleCombatCards.push({
+        selector,
+        combatantId: String(node.dataset?.combatantId || ''),
+        tokenId: String(node.dataset?.tokenId || ''),
+        text,
+      });
+    });
+  });
+  return {
+    canonicalOrder,
+    visibleCombatCards,
+    currentTurnIndex: Number.isFinite(Number(c.turn)) ? Number(c.turn) : 0,
+    lastAppliedRevision: c.revision ?? _combatDebug.lastAppliedRevision ?? null,
+    lastRenderSource: _combatDebug.lastRenderSource || null,
   };
 };
 
@@ -47128,6 +47174,7 @@ function _normalizeCombatRoster(combatState = _combat) {
 }
 
 function _renderCombatRoster(list, roster, isActive) {
+  if (typeof _combatDebug !== 'undefined' && _combatDebug) _combatDebug.lastRenderSource = 'authoritative-combat-state';
   traceEnter('_renderCombatRoster', { count: Array.isArray(roster) ? roster.length : 0, isActive: !!isActive });
   list.innerHTML = '';
   roster.forEach((model) => {
@@ -48543,6 +48590,7 @@ function togglePlayerActionsHub() {
 }
 
 function renderCombat() {
+  if (typeof _combatDebug !== 'undefined' && _combatDebug) _combatDebug.lastRenderSource = 'renderCombat';
   if (window.__depths.renderCombat > 0) __logReentry('renderCombat');
   __enterDepth('renderCombat', { active: _combat?.active, revision: _combat?.revision }, 5);
   window.__combatRenderActive = true;
@@ -49113,35 +49161,12 @@ function applyInitiativeResultToCombatState(result) {
 
 function applyCombatInitiativeRolled(payload) {
   (console.info || console.debug || console.log).call(console, '[initiative sync] combat_initiative_rolled applied', { combatant_id: payload?.combatant_id || '', token_id: payload?.token_id || '', initiative: payload?.initiative ?? payload?.total ?? null, revision: payload?.revision ?? null });
-  const incomingRevision = Number(payload && payload.revision);
-  const localRevision = Number(_combat && _combat.revision);
-  if (Number.isFinite(incomingRevision) && Number.isFinite(localRevision) && incomingRevision < localRevision) {
-    (console.info || console.debug || console.log).call(console, '[initiative sync] ignored stale combat_initiative_rolled patch', { incoming_revision: incomingRevision, local_revision: localRevision });
-    return false;
-  }
-  const combatants = Array.isArray(_combat?.combatants) ? _combat.combatants : [];
-  const combatantId = String(payload?.combatant_id || payload?.id || '').trim();
-  const tokenId = String(payload?.token_id || '').trim();
-  const row = combatants.find(c => (combatantId && String(c?.id || '') === combatantId) || (tokenId && String(c?.token_id || '') === tokenId));
-  if (!row) {
-    applyInitiativeResultToCombatState(payload);
-    return false;
-  }
-  const initiative = _initiativeResultTotal(payload);
-  const roll = _initiativeResultRoll(payload);
-  const modifier = Number(payload?.modifier ?? payload?.init_bonus ?? 0);
-  if (Number.isFinite(initiative)) row.initiative = initiative;
-  if (Number.isFinite(roll)) row.roll = roll;
-  if (Number.isFinite(modifier)) row.modifier = modifier;
-  if (Number.isFinite(incomingRevision) && (!Number.isFinite(localRevision) || incomingRevision > localRevision)) row.revision = incomingRevision;
-  if (Number.isFinite(incomingRevision) && (!Number.isFinite(localRevision) || incomingRevision > localRevision)) _combat.revision = incomingRevision;
-  window._combat = _combat;
-  window.combat = _combat;
-  window.combatState = _combat;
-  window.currentCombat = _combat;
-  if (typeof forceCombatStateUISync === 'function') forceCombatStateUISync();
-  else if (typeof renderCombat === 'function') renderCombat();
-  return true;
+  // Notification/animation only: never patch _combat from this event. The next
+  // authoritative combat_state owns initiative values, ordering, NOW/NEXT, and
+  // every visible combat panel/card. If the revision hint is ahead of local
+  // state, request a canonical repaint source instead of creating a local fork.
+  applyInitiativeResultToCombatState(payload);
+  return false;
 }
 
 
