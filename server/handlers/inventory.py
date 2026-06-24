@@ -153,7 +153,7 @@ _INVENTORY_META_KEYS = (
     "usage_cost", "range", "target_type", "save_dc", "attack_bonus", "damage_formula",
     "healing_formula", "effect_text", "grants_action", "passive_effects", "granted_spells",
     "granted_ability", "image_key", "itemSpells", "item_spells", "spellsGranted", "spellGrants",
-    "item_schema", "source_id", "source_type", "slug", "subtype", "stack_limit", "image_url", "image_path",
+    "item_schema", "source_id", "source_type", "source_revision", "slug", "subtype", "stack_limit", "image_url", "image_path",
     "category_icon_key", "subtype_icon_key",
     "scroll_data", "bonuses", "resistances", "immunities", "senses_modifiers", "movement_modifiers",
     "stat_overrides", "stat_minimums", "equippable", "weapon_type", "ammo_type", "uses_current", "uses_max",
@@ -605,7 +605,7 @@ def _normalize_player_inventory_entry(entry: dict) -> dict | None:
     )
     out["item_schema"] = canonical
     for key in (
-        "slug", "source_type", "source_id", "stack_limit", "image_url", "scroll_data",
+        "slug", "source_type", "source_id", "source_revision", "stack_limit", "image_url", "scroll_data",
         "bonuses", "resistances", "immunities", "senses_modifiers", "movement_modifiers",
         "stat_overrides", "stat_minimums", "equippable", "weapon_type", "ammo_type",
         "uses_current", "uses_max", "material_type", "recipe_tags", "profession_tags",

@@ -728,6 +728,9 @@ def test_string_granted_spell_generates_card():
 
 def test_short_rest_recharges_short_rest_item():
     staff = _make_thunder_staff(equipped=True, attuned=True, charges=2)
+    staff["id"] = "test-short-rest-staff"
+    staff["magic_item_id"] = "test-short-rest-staff"
+    staff["rarity"] = "rare"
     staff["recharge_type"] = "short_rest"
     staff["recharge_formula"] = "1d4+1"
     session, user = _setup_session_with_player([staff])
@@ -803,18 +806,127 @@ def test_recharge_never_exceeds_charges_max():
 
 def test_zero_charge_item_recovers_and_becomes_castable():
     staff = _make_thunder_staff(equipped=True, attuned=True, charges=0)
-    staff["recharge_type"] = "short_rest"
-    # Keep the compendium's "1d6+4" formula (rather than "") since this id is a
-    # known compendium item and empty fields get backfilled from compendium data.
+    # Known library item rehydrates to its canonical dawn recharge metadata, which
+    # the rest system applies on long rest because there is no time-of-day system.
     session, user = _setup_session_with_player([staff])
 
     cards = inventory_handlers._build_item_spell_cards([staff])
     assert all(c["disabled"] for c in cards)
 
-    inventory_handlers.refresh_item_charges_for_rest(session, user, "short")
+    inventory_handlers.refresh_item_charges_for_rest(session, user, "long")
     owner_key = normalize_profile_owner_key(user.name) or user.id
     refreshed_item = session.player_inventories[owner_key][0]
     assert refreshed_item["charges_current"] > 0
 
     cards = inventory_handlers._build_item_spell_cards([refreshed_item])
     assert all(not c["disabled"] for c in cards)
+
+# ---------------------------------------------------------------------------
+# Rehydration: inventory/library drift repair
+# ---------------------------------------------------------------------------
+
+def test_inventory_rehydration_repairs_library_metadata_and_preserves_player_state():
+    stale = {
+        "id": "legacy-staff-row",
+        "magic_item_id": "thunder-mage-quarterstaff-plus-3",
+        "name": "Thunder Mage Quarterstaff +3",
+        "rarity": "common",
+        "qty": 2,
+        "equipped": True,
+        "attuned": True,
+        "charges_current": 4,
+        "charges_max": 0,
+        "notes": "player note",
+        "bag_contents": [{"name": "Ruby", "qty": 1}],
+        "granted_spells": [],
+    }
+
+    repaired = inventory_handlers._normalize_player_inventory_entry(stale)
+
+    assert repaired["source_id"] == "thunder-mage-quarterstaff-plus-3"
+    assert repaired["source_type"] == "compendium"
+    assert repaired["source_revision"] >= 1
+    assert repaired["name"] == "Thunder Mage Quarterstaff, +3"
+    assert repaired["rarity"] == "very_rare"
+    assert repaired["qty"] == 2
+    assert repaired["equipped"] is True
+    assert repaired["attuned"] is True
+    assert repaired["charges_current"] == 4
+    assert repaired["charges_max"] == 10
+    assert repaired["recharge_type"] == "dawn"
+    assert repaired["recharge_formula"] == "1d6+1"
+    assert repaired["notes"] == "player note"
+    assert repaired["bag_contents"][0]["name"] == "Ruby"
+    assert {s["id"] for s in repaired["granted_spells"] if isinstance(s, dict)} >= {"lightning-bolt", "thunderwave"}
+
+
+def test_staff_granted_spells_appear_after_rehydration():
+    stale = {
+        "magic_item_id": "thunder-mage-quarterstaff-plus-3",
+        "name": "Thunder Mage Quarterstaff, +3",
+        "rarity": "common",
+        "equipped": True,
+        "attuned": True,
+        "attunement_required": True,
+        "charges_current": 3,
+        "granted_spells": [],
+    }
+
+    repaired = inventory_handlers._normalize_player_inventory_entry(stale)
+    cards = inventory_handlers._build_item_spell_cards([repaired])
+
+    spell_ids = {card["spell_id"] for card in cards}
+    assert "lightning-bolt" in spell_ids
+    assert "thunderwave" in spell_ids
+    assert all(card["charges_current"] == 3 for card in cards)
+    assert all(card["charges_max"] == 10 for card in cards)
+
+
+def test_rehydration_clamps_current_charges_when_library_max_decreases(monkeypatch):
+    comp = {
+        "id": "test-clamp-staff",
+        "name": "Clamp Staff",
+        "slug": "clamp-staff",
+        "rarity": "rare",
+        "charges_max": 5,
+        "recharge_type": "dawn",
+        "recharge_formula": "1d4+1",
+        "granted_spells": [{"id": "light", "name": "Light", "charge_cost": 1}],
+        "item_schema_version": 7,
+    }
+    monkeypatch.setattr("server.item_compendium.resolve_item", lambda ref: comp if ref == "test-clamp-staff" else None)
+
+    repaired = inventory_handlers._normalize_player_inventory_entry({
+        "id": "test-clamp-staff",
+        "source_id": "test-clamp-staff",
+        "name": "Clamp Staff",
+        "charges_max": 10,
+        "charges_current": 9,
+        "equipped": True,
+        "attuned": True,
+    })
+
+    assert repaired["charges_max"] == 5
+    assert repaired["charges_current"] == 5
+    assert repaired["source_revision"] == 7
+
+
+def test_inventory_rehydration_is_scoped_to_requesting_player():
+    session = Session(id="s-rehydrate-scope")
+    alice = User(id="alice", name="Alice", role="player")
+    bob = User(id="bob", name="Bob", role="player")
+    session.users[alice.id] = alice
+    session.users[bob.id] = bob
+    alice_key = normalize_profile_owner_key(alice.name) or alice.id
+    bob_key = normalize_profile_owner_key(bob.name) or bob.id
+    session.player_inventories = {
+        alice_key: [{"magic_item_id": "thunder-mage-quarterstaff-plus-3", "name": "Thunder Mage Quarterstaff, +3", "equipped": True, "attuned": True, "charges_current": 2}],
+        bob_key: [{"name": "Rope", "qty": 1, "notes": "bob private"}],
+    }
+
+    _, owner_key, alice_items = inventory_handlers._get_player_inventory_store(session, alice)
+
+    assert owner_key == alice_key
+    assert alice_items[0]["source_id"] == "thunder-mage-quarterstaff-plus-3"
+    assert session.player_inventories[bob_key][0]["name"] == "Rope"
+    assert "source_id" not in session.player_inventories[bob_key][0]
