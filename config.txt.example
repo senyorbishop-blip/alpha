@@ -1,18 +1,23 @@
-# Casual DnD / Tavern Tabletop config.txt template
+# Casual DnD / Tavern Tabletop local config template
 #
-# This file is optional. Environment variables override these values.
-# Keep secrets out of version control.
+# This file is optional and must stay non-secret. Runtime environment
+# variables and .env values override these settings.
+#
+# Do NOT put DND_JWT_SECRET, DND_ADMIN_KEY, API keys, passwords, or
+# provider tokens in config.txt. Put secrets in .env or deployment
+# environment variables instead.
 
 # Public domain for player links (leave blank for local-only).
 PUBLIC_DOMAIN=
 
+# Public base URL when hosted behind a reverse proxy/domain.
+PUBLIC_BASE_URL=
+
 # Local server port.
 PORT=8000
 
+# Runtime mode: development or production.
+APP_ENV=development
+
 # Optional ngrok static domain.
 NGROK_DOMAIN=
-
-# Optional stable JWT/admin values if you choose config.txt over .env.
-# Prefer setting these in .env for founder beta ops.
-DND_JWT_SECRET=
-DND_ADMIN_KEY=
