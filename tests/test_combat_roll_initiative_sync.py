@@ -457,3 +457,47 @@ async def test_replacing_same_user_socket_closes_old_and_new_receives_combat_sta
     assert old_ws.closed and old_ws.closed[-1]["code"] == 1001
     assert not _combat_state_messages(old_ws), "replaced stale tab must not receive future combat_state"
     assert _combat_state_messages(new_ws), "new visible socket must receive combat_state"
+
+
+def test_combat_state_payload_dm_not_stricter_than_player_for_visible_npc():
+    session, dm, player = _build_session()
+    dm_payload = combat_handlers._combat_state_payload_for_user(session, dm)
+    player_payload = combat_handlers._combat_state_payload_for_user(session, player)
+    dm_ids = {c.get("id") for c in dm_payload["combatants"]}
+    player_ids = {c.get("id") for c in player_payload["combatants"]}
+    assert "cmb-npc" in player_ids, "visible NPC should be present for players"
+    assert "cmb-npc" in dm_ids, "DM must also receive visible NPCs"
+    assert player_ids.issubset(dm_ids), "DM combatants must never be filtered more strictly than player combatants"
+
+
+@pytest.mark.anyio
+async def test_player_initiative_roll_sends_state_dice_and_rolled_to_dm_and_player(monkeypatch):
+    session, dm, player = _build_session()
+
+    async def _fake_save(*args, **kwargs):
+        return True
+    monkeypatch.setattr(combat_handlers, "save_campaign_async", _fake_save)
+
+    sockets = await _connect_real_sockets(session, dm.id, player.id)
+    try:
+        await combat_handlers.handle_combat_roll_initiative(
+            {"combatant_id": "cmb-hero", "roll": 16, "modifier": 2, "roll_id": "rid-player-live"},
+            session,
+            player,
+        )
+    finally:
+        combat_handlers.manager.disconnect(session.id, dm.id)
+        combat_handlers.manager.disconnect(session.id, player.id)
+
+    for uid in (dm.id, player.id):
+        sent_types = [m.get("type") for m in sockets[uid].sent]
+        assert "combat_state" in sent_types, f"{uid} must apply the authoritative combat state without refresh"
+        assert "dice_result" in sent_types, f"{uid} must receive the initiative dice popup payload"
+        assert "combat_initiative_rolled" in sent_types, f"{uid} must receive the initiative animation/diagnostic event"
+        state_idx = sent_types.index("combat_state")
+        dice_idx = sent_types.index("dice_result")
+        rolled_idx = sent_types.index("combat_initiative_rolled")
+        assert state_idx < dice_idx < rolled_idx
+        latest_state = [m for m in sockets[uid].sent if m.get("type") == "combat_state"][-1]["payload"]
+        hero = next(c for c in latest_state["combatants"] if c["id"] == "cmb-hero")
+        assert hero["initiative"] == 18

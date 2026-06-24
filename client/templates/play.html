@@ -25284,24 +25284,69 @@ window.appDiceSyncResult = function(rolls, total, diceType, qty, modifier = 0, r
   }
   return fillDiceResult(rolls, total, diceType, qty, modifier, rollLabel, meta || {});
 };
-window.appDiceSyncAuthoritativePayload = function(payload = {}) {
+window.__pendingDiceResults = Array.isArray(window.__pendingDiceResults) ? window.__pendingDiceResults : [];
+function _isDiceUiReadyForAuthoritativeResult() {
+  return !!(window.DicePhysics3D
+    && typeof window.DicePhysics3D.isReady === 'function'
+    && window.DicePhysics3D.isReady()
+    && typeof window.appDiceSyncResult === 'function');
+}
+function _queueAuthoritativeDiceResult(payload) {
+  const safe = payload && typeof payload === 'object' ? { ...payload } : {};
+  window.__pendingDiceResults.push(safe);
+  console.info('[dice queue] queued before dice ready', { roll_id: safe.roll_id || safe.rollId || '', roll_label: safe.roll_label || safe.rollLabel || '' });
+  return true;
+}
+function _displayAuthoritativeDiceResult(payload = {}) {
   const safe = payload && typeof payload === 'object' ? payload : {};
-  return window.appDiceSyncResult(
+  const effectiveUserId = (typeof getEffectiveUserId === 'function') ? getEffectiveUserId() : USER_ID;
+  const isOwnRoll = String(safe.user_id || '') === String(effectiveUserId || USER_ID || '');
+  if (safe.roll_id && _initiativeLocalDicePopupRollIds.has(String(safe.roll_id)) && isOwnRoll) {
+    _initiativeLocalDicePopupRollIds.delete(String(safe.roll_id));
+    return { displayed: false, deduped: true };
+  }
+  const pendingMeta = _pendingAuthoritativeDiceRolls.get(String(safe.roll_id || ''));
+  if (pendingMeta) _pendingAuthoritativeDiceRolls.delete(String(safe.roll_id || ''));
+  const diceType = safe.dice_type ?? safe.diceType ?? pendingMeta?.diceType ?? 20;
+  const quantity = safe.quantity ?? safe.qty ?? 1;
+  const authoritativeMeta = {
+    seed: safe.seed || pendingMeta?.seed,
+    rollId: safe.roll_id || safe.rollId || '',
+    userId: safe.user_id || '',
+    userName: safe.user_name || '',
+    source: isOwnRoll ? 'authoritative-result' : 'remote-authoritative-result',
+    mode: safe.mode || pendingMeta?.mode || getDiceRollMode(),
+    targetResults: _expandDiceVisualResults(safe.rolls, Number(diceType || 20)),
+    modifierMeta: safe.modifier_meta || safe.modifierMeta || pendingMeta?.modifierMeta || null,
+    combatantId: safe.combatant_id || safe.combatantId || '',
+    tokenId: safe.token_id || safe.tokenId || '',
+    encounterId: safe.encounter_id || safe.encounterId || '',
+    revision: safe.revision,
+  };
+  window.appDiceSyncResult(
     safe.rolls || [],
     safe.total,
-    safe.dice_type ?? safe.diceType,
-    safe.quantity ?? safe.qty,
+    diceType,
+    quantity,
     (safe.modifier ?? safe.init_bonus ?? 0),
     (safe.roll_label || safe.rollLabel || ''),
-    {
-      rollId: safe.roll_id || safe.rollId || '',
-      seed: safe.seed,
-      modifierMeta: safe.modifier_meta || safe.modifierMeta || null,
-      mode: safe.mode || null,
-      source: safe.source || 'authoritative-sync-payload',
-      targetResults: Array.isArray(safe.targetResults) ? safe.targetResults : undefined,
-    },
+    authoritativeMeta
   );
+  return { displayed: true, deduped: false };
+}
+function flushPendingDiceResults() {
+  if (!Array.isArray(window.__pendingDiceResults) || !window.__pendingDiceResults.length) return 0;
+  if (!_isDiceUiReadyForAuthoritativeResult()) return 0;
+  const queued = window.__pendingDiceResults.splice(0);
+  queued.forEach((payload) => _displayAuthoritativeDiceResult(payload));
+  console.info('[dice queue] flushed', { count: queued.length });
+  return queued.length;
+}
+window.flushPendingDiceResults = flushPendingDiceResults;
+window.appDiceSyncAuthoritativePayload = function(payload = {}) {
+  const safe = payload && typeof payload === 'object' ? payload : {};
+  if (!_isDiceUiReadyForAuthoritativeResult()) return _queueAuthoritativeDiceResult(safe);
+  return _displayAuthoritativeDiceResult(safe);
 };
 window.appDiceStartLocalPreview = function(diceType, qty, source = 'local-preview', opts = {}) {
   if (window.AppDice && typeof window.AppDice.startLocalPreview === 'function') {
@@ -34297,54 +34342,15 @@ function handleLegacyMessage(msg) {
 
     case 'dice_result': {
       if (p.log) addLogEntry({ ...p.log, type: 'dice' });
-      // Fill in the dice animation if it was triggered by THIS user.
-      // Use authoritative identity resolution to avoid missing results when USER_ID is stale.
-      const effectiveUserId = getEffectiveUserId();
       const isInitiativeResult = _isInitiativeDiceResultPayload(p);
       if (isInitiativeResult) {
         applyInitiativeResultToCombatState(p);
       }
-      // Initiative dedupe: if THIS client already played the local settled dice
-      // for this roll, the authoritative echo would be a duplicate popup — but
-      // never skip the combat-row patch above.  The row beside the name must
-      // update even on the rolling client before the next refresh.
-      if (p.roll_id && _initiativeLocalDicePopupRollIds.has(String(p.roll_id))) {
-        _initiativeLocalDicePopupRollIds.delete(String(p.roll_id));
+      if (!_isDiceUiReadyForAuthoritativeResult()) {
+        _queueAuthoritativeDiceResult(p);
         break;
       }
-      if (String(p.user_id || '') === String(effectiveUserId || USER_ID || '')) {
-        const pendingMeta = _pendingAuthoritativeDiceRolls.get(String(p.roll_id || ''));
-        if (pendingMeta) {
-          _pendingAuthoritativeDiceRolls.delete(String(p.roll_id || ''));
-        }
-        const authoritativeMeta = {
-          seed: p.seed || pendingMeta?.seed,
-          rollId: p.roll_id,
-          source: 'authoritative-result',
-          mode: p.mode || pendingMeta?.mode || getDiceRollMode(),
-          targetResults: _expandDiceVisualResults(p.rolls, Number(p.dice_type || pendingMeta?.diceType || 20)),
-          modifierMeta: p.modifier_meta || pendingMeta?.modifierMeta || null,
-        };
-        window.appDiceSyncResult(
-          p.rolls,
-          p.total,
-          p.dice_type,
-          p.quantity,
-          (p.modifier ?? p.init_bonus ?? 0),
-          (p.roll_label || ''),
-          authoritativeMeta
-        );
-      } else if (_diceWantsVisuals(getDiceRollMode())) {
-        window.appDiceShowRemoteVisual({
-          diceType: p.dice_type,
-          qty: p.quantity,
-          seed: p.seed,
-          rollId: p.roll_id,
-          mode: getDiceRollMode(),
-          source: 'remote-authoritative-result',
-          targetResults: _expandDiceVisualResults(p.rolls, Number(p.dice_type || 20)),
-        });
-      }
+      _displayAuthoritativeDiceResult(p);
       // Play dice roll audio for OTHER clients (broadcast audio event).
       // The local roller already hears dice sounds from DicePhysics3D collision audio.
       if (p.user_id !== USER_ID && p.sounds) {
@@ -46182,6 +46188,7 @@ function combatApplyState(state, source) {
     console.warn('[combatApplyState] legacy combat payload missing revision', { source: _applySource, active: incomingActive, currentRevision: localRevision });
   }
   if (incomingRevision !== null && localRevision !== null && incomingRevision < localRevision) {
+    console.info('[initiative sync] ignored stale combat_state', { incoming_revision: incomingRevision, local_revision: localRevision });
     console.debug(`[combatApplyState] applied=false reason=stale revision=${incomingRevision} local=${localRevision}`);
     _combatDebug.lastIgnoredSource = _applySource;
     _combatDebug.lastIgnoredReason = `stale-revision incoming=${incomingRevision} local=${localRevision}`;
@@ -46250,6 +46257,7 @@ function combatApplyState(state, source) {
     _playerActionEconomyRuntime.encounter_id = _combat.encounter_id || '';
   }
   const afterOrder = Array.isArray(_combat?.combatants) ? _combat.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : [];
+  console.info('[initiative sync] combat_state applied', { role: (typeof ROLE !== 'undefined' ? ROLE : ''), revision: _combat.revision, combatants: Array.isArray(_combat.combatants) ? _combat.combatants.length : 0 });
   console.debug('[combatApplyState] after', { revision: _combat.revision, order: afterOrder, turn: _combat.turn, reason: applyReason });
   console.debug(`[combatApplyState] applied=true reason=${applyReason}`);
   _combatDebug.lastAppliedSource = _applySource;
@@ -49083,6 +49091,7 @@ function applyInitiativeResultToCombatState(result) {
 
 
 function applyCombatInitiativeRolled(payload) {
+  console.info('[initiative sync] combat_initiative_rolled applied', { combatant_id: payload?.combatant_id || '', token_id: payload?.token_id || '', initiative: payload?.initiative ?? payload?.total ?? null, revision: payload?.revision ?? null });
   // Animation/card-only event. The following combat_state broadcast is
   // authoritative for roster/order/initiative values.
   applyInitiativeResultToCombatState(payload);
@@ -51800,7 +51809,9 @@ function _initDiceSystem() {
 
   // Keep this local-only. Network Nat 20/Nat 1 FX are server-authoritative.
   DicePhysics3D.setOnSpecialFx(() => {});
+  flushPendingDiceResults();
 }
+
 
 // Poll until DicePhysics3D is available (module loads asynchronously)
 (function _waitForDice(attempt) {

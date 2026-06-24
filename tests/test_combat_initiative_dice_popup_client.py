@@ -28,15 +28,18 @@ def test_initiative_roll_sends_roll_id_and_preregisters_dedupe():
     assert fn.index("_initiativeLocalDicePopupRollIds.add(initiativeRollId);") < fn.index("combat_roll_initiative")
 
 
-def test_dice_result_handler_dedupes_local_initiative_popup():
+def test_dice_result_handler_queues_before_deduping_local_initiative_popup():
     src = PLAY.read_text(encoding="utf-8")
     case_idx = src.index("case 'dice_result': {")
     case_src = src[case_idx:case_idx + 2000]
-    assert "_initiativeLocalDicePopupRollIds.has(String(p.roll_id))" in case_src
-    # The dedupe check must short-circuit before the authoritative sync display.
-    dedupe_idx = case_src.index("_initiativeLocalDicePopupRollIds.has(String(p.roll_id))")
-    sync_idx = case_src.index("window.appDiceSyncResult(")
-    assert dedupe_idx < sync_idx
+    assert "_queueAuthoritativeDiceResult(p);" in case_src
+    assert "_displayAuthoritativeDiceResult(p);" in case_src
+    display_idx = src.index("function _displayAuthoritativeDiceResult(payload = {}) {")
+    display_src = src[display_idx:display_idx + 2500]
+    assert "_initiativeLocalDicePopupRollIds.has(String(safe.roll_id)) && isOwnRoll" in display_src
+    # The queued path must run before display/dedupe so early roll_ids are not dropped.
+    assert case_src.index("_queueAuthoritativeDiceResult(p);") < case_src.index("_displayAuthoritativeDiceResult(p);")
+    assert display_src.index("_initiativeLocalDicePopupRollIds.has(String(safe.roll_id)) && isOwnRoll") < display_src.index("window.appDiceSyncResult(")
 
 
 def test_reconnect_requests_combat_state_when_active():
@@ -99,3 +102,29 @@ def test_roller_skips_own_echo_other_clients_display():
         "handleDiceResult({ roll_id: 'r1', user_id: 'someone-else' }, 'me');"
     )
     assert other["shown"] == [{"roll_id": "r1", "self": False}], "other clients must display the initiative popup"
+
+
+def test_pending_dice_queue_preserves_authoritative_fields_and_flushes_after_dice_ready():
+    src = PLAY.read_text(encoding="utf-8")
+    assert "window.__pendingDiceResults" in src
+    queue_idx = src.index("function _queueAuthoritativeDiceResult(payload)")
+    display_idx = src.index("function _displayAuthoritativeDiceResult(payload = {})")
+    flush_idx = src.index("function flushPendingDiceResults()")
+    queue_src = src[queue_idx:display_idx]
+    display_src = src[display_idx:flush_idx]
+    for field in ["user_id", "user_name", "roll_id", "dice_type", "quantity", "rolls", "total", "modifier", "roll_label", "combatant_id", "token_id", "encounter_id", "revision"]:
+        assert field in queue_src or field in display_src
+    assert "window.__pendingDiceResults.push(safe);" in queue_src
+    assert "queued.forEach((payload) => _displayAuthoritativeDiceResult(payload));" in src[flush_idx:flush_idx + 800]
+    init_idx = src.index("function _initDiceSystem()")
+    init_src = src[init_idx:init_idx + 1800]
+    assert "flushPendingDiceResults();" in init_src
+
+
+def test_quick_actions_errors_are_isolated_from_combat_render_and_dice_queue():
+    src = PLAY.read_text(encoding="utf-8")
+    render_idx = src.index("function renderCombat()")
+    render_src = src[render_idx:render_idx + 4500]
+    assert "safeClientCall('renderPlayerActionsHub'" in render_src
+    assert "safeClientCall('combatQuickBar.render'" in render_src
+    assert "_queueAuthoritativeDiceResult(p);" in src
