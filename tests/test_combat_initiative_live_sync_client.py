@@ -70,6 +70,7 @@ global.window = global;
 let _combat = {initial_combat_js};
 let _combatRound = 1;
 {_combat_apply_state_snippet()}
+{_initiative_roll_snippet()}
 {state_seq_js}
 console.log(JSON.stringify({{ calls, combat: _combat, sent: (typeof sent !== 'undefined' ? sent : undefined) }}));
 """
@@ -291,11 +292,10 @@ def test_actual_incoming_dispatch_dm_npc_roll_updates_dm_client():
     assert result["combat"]["combatants"][0]["initiative"] == 14
 
 
-def test_initiative_event_does_not_mutate_roster_and_may_request_resync():
-    # Notification-only event. combat_state is the sole authority for the roster,
-    # so applyCombatInitiativeRolled must NOT patch initiative/roll locally. When
-    # the event hints at a newer revision than we hold, it may ask the server for
-    # the authoritative state, but it never mutates or re-renders the roster.
+def test_combat_initiative_rolled_reconciles_equal_or_newer_revision():
+    # combat_initiative_rolled is a reconciliation patch: it may update the matching
+    # combatant for equal/newer revisions, but must remain protected from later
+    # legacy missing-revision snapshots by combatApplyState.
     result = _run_initiative_event(
         "let sent = []; sendWS = (msg) => sent.push(msg); applyCombatInitiativeRolled({ combatant_id: 'guard', token_id: 't-guard', initiative: 18, roll: 18, modifier: 0, revision: 3 });",
         initial_combat_js="{ active: true, turn: 0, round: 1, revision: 2, encounter_id: 'enc-1', combatants: ["
@@ -303,13 +303,44 @@ def test_initiative_event_does_not_mutate_roster_and_may_request_resync():
         "{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: null, roll: null, modifier: 0 }"
         "] }",
     )
-    assert result["calls"]["renderCombat"] == 0
+    assert result["calls"]["renderCombat"] == 1
     guard = next(c for c in result["combat"]["combatants"] if c["id"] == "guard")
-    assert guard["initiative"] is None
-    assert guard["roll"] is None
-    assert any(m.get("type") == "combat_state_request" for m in result["sent"])
+    assert guard["initiative"] == 18
+    assert guard["roll"] == 18
+    assert result["combat"]["revision"] == 3
 
 
+
+
+def test_legacy_missing_revision_cannot_overwrite_revised_combat_state():
+    result = _run(
+        "combatApplyState({ active: true, turn: 0, round: 1, revision: 3, "
+        "combatants: [{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 18 },"
+        "{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: 12 }] }, 'combat_state');"
+        "combatApplyState({ active: true, turn: 0, round: 1, "
+        "combatants: [{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: 12 },"
+        "{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null }] }, 'state_sync');"
+    )
+    assert result["calls"]["renderCombat"] == 1
+    assert result["combat"]["revision"] == 3
+    assert [(c["name"], c["initiative"]) for c in result["combat"]["combatants"]] == [("Bishop", 18), ("Guard", 12)]
+
+
+def test_combat_initiative_rolled_patch_cannot_be_undone_by_legacy_payload():
+    result = _run(
+        "combatApplyState({ active: true, turn: 0, round: 1, revision: 3, "
+        "combatants: [{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null },"
+        "{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: 12 }] }, 'combat_state');"
+        "applyCombatInitiativeRolled({ combatant_id: 'bishop', token_id: 't-bishop', initiative: 18, roll: 16, modifier: 2, revision: 3 });"
+        "combatApplyState({ active: true, turn: 0, round: 1, "
+        "combatants: [{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: 12 },"
+        "{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null }] }, 'state_sync');"
+    )
+    assert result["calls"]["renderCombat"] == 2
+    assert result["combat"]["revision"] == 3
+    bishop = next(c for c in result["combat"]["combatants"] if c["id"] == "bishop")
+    assert bishop["initiative"] == 18
+    assert bishop["roll"] == 16
 
 def test_dice_result_initiative_does_not_mutate_roster():
     # dice_result is animation/log only; applyInitiativeResultToCombatState must
@@ -327,7 +358,7 @@ def test_dice_result_initiative_does_not_mutate_roster():
     assert result["calls"]["renderCombat"] == 0
 
 
-def test_combat_initiative_rolled_does_not_mutate_roster():
+def test_combat_initiative_rolled_updates_matching_combatant_and_renders():
     result = _run_initiative_event(
         "let sent = []; sendWS = (msg) => sent.push(msg); applyCombatInitiativeRolled({ combatant_id: 'guard', token_id: 't-guard', initiative: 1, roll: 1, modifier: 0, revision: 3 });",
         initial_combat_js="{ active: true, turn: 0, round: 1, revision: 2, combatants: ["
@@ -336,9 +367,10 @@ def test_combat_initiative_rolled_does_not_mutate_roster():
         "] }",
     )
     guard = next(c for c in result["combat"]["combatants"] if c["id"] == "guard")
-    assert guard["initiative"] is None
-    assert guard["roll"] is None
-    assert result["calls"]["renderCombat"] == 0
+    assert guard["initiative"] == 1
+    assert guard["roll"] == 1
+    assert result["combat"]["revision"] == 3
+    assert result["calls"]["renderCombat"] == 1
 
 
 def test_initiative_notification_never_mutates_regardless_of_source():
@@ -383,15 +415,15 @@ console.log(JSON.stringify({{ applied, calls, combat: _combat }}));
     assert result["calls"]["renderCombat"] == 0
 
 
-def test_lower_revision_with_changed_initiative_applies_with_warning():
+def test_lower_revision_with_changed_initiative_is_ignored():
     result = _run(
         "combatApplyState({ active: true, turn: 0, round: 1, revision: 5, "
         "combatants: [{ id: 'c1', token_id: 't1', name: 'Bishop', initiative: 17 }] });"
         "combatApplyState({ active: true, turn: 0, round: 1, revision: 3, "
         "combatants: [{ id: 'c1', token_id: 't1', name: 'Bishop', initiative: 19 }] });"
     )
-    assert result["calls"]["renderCombat"] == 2
-    assert result["combat"]["combatants"][0]["initiative"] == 19
+    assert result["calls"]["renderCombat"] == 1
+    assert result["combat"]["combatants"][0]["initiative"] == 17
 
 
 def test_token_badge_renderer_reads_initiative_from_combatant_state():
@@ -637,10 +669,9 @@ console.log(JSON.stringify({{ before, rows, combat: _combat }}));
     assert result["combat"]["active"] is True
 
 
-def test_initiative_notification_patchers_do_not_mutate_roster_source():
-    # Source-of-truth guardrail: the legacy notification patchers must not locally
-    # assign initiative/roll/order or re-sort the roster. Only the authoritative
-    # combat_state apply path (combatApplyState) mutates the roster.
+def test_initiative_notification_patchers_source_contracts():
+    # dice_result remains notification-only. combat_initiative_rolled is allowed
+    # to patch the matching row for same/newer revisions, but must not re-sort.
     src = PLAY.read_text(encoding="utf-8")
     body = src[src.index("function applyInitiativeResultToCombatState(result)"):src.index("function applyCombatInitiativeRolled")]
     assert ".initiative =" not in body
@@ -648,8 +679,8 @@ def test_initiative_notification_patchers_do_not_mutate_roster_source():
     assert "_sortCombatants(" not in body
     assert "return false;" in body
     rolled = src[src.index("function applyCombatInitiativeRolled"):src.index("function _formatInitiativeCellValue")]
-    assert ".initiative =" not in rolled
-    assert ".roll =" not in rolled
+    assert "row.initiative = initiative" in rolled
+    assert "row.roll = roll" in rolled
     assert "_sortCombatants(" not in rolled
 
 

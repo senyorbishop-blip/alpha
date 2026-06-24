@@ -33142,8 +33142,8 @@ function handleLegacyMessage(msg) {
       }, 0);
       // Apply combat state
       if (p.combat !== undefined) {
-        // combatApplyState(p.combat); is intentionally routed through handleCombatStateLive for stale/empty reconnect guards.
-        handleCombatStateLive(p.combat);
+        // Source-labelled apply lets revision guards identify stale legacy state_sync combat payloads.
+        combatApplyState(p.combat, 'state_sync');
       }
       // Apply ambient sound state for reconnecting players
       if (ROLE === 'dm' && p.sound_state && p.sound_state.track && p.sound_state.track !== 'silence') {
@@ -46184,14 +46184,35 @@ function combatApplyState(state, source) {
   const incomingVisibilityRevision = Number.isFinite(Number(state.visibility_revision)) ? Number(state.visibility_revision) : null;
   const incomingSignature = _combatInitiativeSignature(state);
   const localSignature = _combatInitiativeSignature(_combat);
+  const incomingSummary = {
+    source: _applySource,
+    active: incomingActive,
+    turn: state.turn ?? null,
+    round: state.round ?? null,
+    count: Array.isArray(state.combatants) ? state.combatants.length : 0,
+    order: Array.isArray(state.combatants) ? state.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : [],
+  };
+  const authoritativeEqualRevisionSources = new Set(['combat_state', 'combat_initiative_rolled']);
   if (incomingRevision === null) {
-    console.warn('[combatApplyState] legacy combat payload missing revision', { source: _applySource, active: incomingActive, currentRevision: localRevision });
+    if (Number.isFinite(Number(localRevision)) && Number(localRevision) > 0) {
+      console.warn('[combatApplyState] ignored legacy combat payload missing revision because authoritative combat already exists', { local_revision: localRevision, incoming: incomingSummary });
+      _combatDebug.lastIgnoredSource = _applySource;
+      _combatDebug.lastIgnoredReason = `legacy-missing-revision-over-authoritative local=${localRevision}`;
+      return false;
+    }
+    console.warn('[combatApplyState] legacy combat payload missing revision', { source: _applySource, active: incomingActive, currentRevision: localRevision, boot_fallback: true });
   }
   if (incomingRevision !== null && localRevision !== null && incomingRevision < localRevision) {
-    console.info('[initiative sync] ignored stale combat_state', { incoming_revision: incomingRevision, local_revision: localRevision });
+    (console.info || console.debug || console.log).call(console, '[initiative sync] ignored stale combat_state', { incoming_revision: incomingRevision, local_revision: localRevision });
     console.debug(`[combatApplyState] applied=false reason=stale revision=${incomingRevision} local=${localRevision}`);
     _combatDebug.lastIgnoredSource = _applySource;
     _combatDebug.lastIgnoredReason = `stale-revision incoming=${incomingRevision} local=${localRevision}`;
+    return false;
+  }
+  if (incomingRevision !== null && localRevision !== null && incomingRevision === localRevision && incomingSignature !== localSignature && !authoritativeEqualRevisionSources.has(_applySource)) {
+    console.warn('[combatApplyState] ignored equal-revision non-authoritative combat payload with changed signature', { source: _applySource, revision: incomingRevision, incoming: incomingSummary });
+    _combatDebug.lastIgnoredSource = _applySource;
+    _combatDebug.lastIgnoredReason = `equal-revision-nonauthoritative source=${_applySource} revision=${incomingRevision}`;
     return false;
   }
   if (incomingRevision !== null && localRevision !== null && incomingRevision === localRevision && incomingActive === false && _combat.active && incomingSignature !== localSignature) {
@@ -46203,7 +46224,7 @@ function combatApplyState(state, source) {
   if (incomingRevision === null) applyReason = 'missing-incoming-revision';
   else if (localRevision === null) applyReason = 'missing-local-revision';
   else if (incomingRevision > localRevision) applyReason = 'newer-revision';
-  else if (incomingRevision === localRevision && incomingSignature !== localSignature) applyReason = 'equal-revision-changed-initiative';
+  else if (incomingRevision === localRevision && incomingSignature !== localSignature) applyReason = 'equal-revision-authoritative-reconciliation';
   if (incomingRevision !== null && localRevision !== null && incomingRevision === localRevision && incomingSignature !== localSignature) {
     console.warn('[combat initiative sync] applying equal revision combat_state because initiative/order changed', { incomingRevision, localRevision });
   }
@@ -46257,7 +46278,7 @@ function combatApplyState(state, source) {
     _playerActionEconomyRuntime.encounter_id = _combat.encounter_id || '';
   }
   const afterOrder = Array.isArray(_combat?.combatants) ? _combat.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : [];
-  console.info('[initiative sync] combat_state applied', { role: (typeof ROLE !== 'undefined' ? ROLE : ''), revision: _combat.revision, combatants: Array.isArray(_combat.combatants) ? _combat.combatants.length : 0 });
+  (console.info || console.debug || console.log).call(console, '[initiative sync] combat_state applied', { role: (typeof ROLE !== 'undefined' ? ROLE : ''), revision: _combat.revision, combatants: Array.isArray(_combat.combatants) ? _combat.combatants.length : 0 });
   console.debug('[combatApplyState] after', { revision: _combat.revision, order: afterOrder, turn: _combat.turn, reason: applyReason });
   console.debug(`[combatApplyState] applied=true reason=${applyReason}`);
   _combatDebug.lastAppliedSource = _applySource;
@@ -46271,7 +46292,7 @@ function combatApplyState(state, source) {
   // (turn advanced, combat ended, or the roster changed). Otherwise the
   // planning overlay keeps drawing while its Confirm/Cancel controls have left
   // the panel — a stuck overlay the player can't dismiss.
-  if (_pendingMoveConfirm && (!_combat.active || !_isActiveCombatantToken(_pendingMoveConfirm.tokenId))) {
+  if (typeof _pendingMoveConfirm !== 'undefined' && _pendingMoveConfirm && (!_combat.active || !_isActiveCombatantToken(_pendingMoveConfirm.tokenId))) {
     _clearCombatMovePlan();
   }
   if (_combat.active && (_combat.turn !== prevTurn || !prevActive)) {
@@ -49091,10 +49112,36 @@ function applyInitiativeResultToCombatState(result) {
 
 
 function applyCombatInitiativeRolled(payload) {
-  console.info('[initiative sync] combat_initiative_rolled applied', { combatant_id: payload?.combatant_id || '', token_id: payload?.token_id || '', initiative: payload?.initiative ?? payload?.total ?? null, revision: payload?.revision ?? null });
-  // Animation/card-only event. The following combat_state broadcast is
-  // authoritative for roster/order/initiative values.
-  applyInitiativeResultToCombatState(payload);
+  (console.info || console.debug || console.log).call(console, '[initiative sync] combat_initiative_rolled applied', { combatant_id: payload?.combatant_id || '', token_id: payload?.token_id || '', initiative: payload?.initiative ?? payload?.total ?? null, revision: payload?.revision ?? null });
+  const incomingRevision = Number(payload && payload.revision);
+  const localRevision = Number(_combat && _combat.revision);
+  if (Number.isFinite(incomingRevision) && Number.isFinite(localRevision) && incomingRevision < localRevision) {
+    (console.info || console.debug || console.log).call(console, '[initiative sync] ignored stale combat_initiative_rolled patch', { incoming_revision: incomingRevision, local_revision: localRevision });
+    return false;
+  }
+  const combatants = Array.isArray(_combat?.combatants) ? _combat.combatants : [];
+  const combatantId = String(payload?.combatant_id || payload?.id || '').trim();
+  const tokenId = String(payload?.token_id || '').trim();
+  const row = combatants.find(c => (combatantId && String(c?.id || '') === combatantId) || (tokenId && String(c?.token_id || '') === tokenId));
+  if (!row) {
+    applyInitiativeResultToCombatState(payload);
+    return false;
+  }
+  const initiative = _initiativeResultTotal(payload);
+  const roll = _initiativeResultRoll(payload);
+  const modifier = Number(payload?.modifier ?? payload?.init_bonus ?? 0);
+  if (Number.isFinite(initiative)) row.initiative = initiative;
+  if (Number.isFinite(roll)) row.roll = roll;
+  if (Number.isFinite(modifier)) row.modifier = modifier;
+  if (Number.isFinite(incomingRevision) && (!Number.isFinite(localRevision) || incomingRevision > localRevision)) row.revision = incomingRevision;
+  if (Number.isFinite(incomingRevision) && (!Number.isFinite(localRevision) || incomingRevision > localRevision)) _combat.revision = incomingRevision;
+  window._combat = _combat;
+  window.combat = _combat;
+  window.combatState = _combat;
+  window.currentCombat = _combat;
+  if (typeof forceCombatStateUISync === 'function') forceCombatStateUISync();
+  else if (typeof renderCombat === 'function') renderCombat();
+  return true;
 }
 
 
