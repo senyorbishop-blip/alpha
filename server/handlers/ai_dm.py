@@ -13,6 +13,7 @@ import os
 
 import httpx
 
+from server.handlers.ai_rate_limit import AiGateResult, check_ai_gate
 from server.handlers.common import Session, User, manager
 from server.handlers.narration import handle_narration_speak
 
@@ -23,10 +24,8 @@ _CLAUDE_MODEL = "claude-sonnet-4-5"
 _AI_DM_TIMEOUT = 15.0
 
 
-
 def _get_anthropic_key() -> str:
     return os.environ.get("ANTHROPIC_API_KEY", "").strip()
-
 
 
 def ai_dm_provider_state() -> dict:
@@ -38,6 +37,35 @@ def ai_dm_provider_state() -> dict:
         "fallback_used": False,
         "fallback_reason": None if configured else "anthropic_key_missing",
     }
+
+
+async def _send_ai_status(session: Session, user: User, action: str, gate: AiGateResult) -> None:
+    """Send a typed AI status response to the requester only."""
+    payload = {
+        "kind": gate.kind,
+        "action": action,
+        "message": gate.message,
+        "retry_after_seconds": gate.retry_after_seconds,
+    }
+    await manager.send_to(session.id, user.id, {"type": "ai_status", "payload": payload})
+
+
+async def _guard_ai_request(session: Session, user: User, action: str) -> bool:
+    gate = check_ai_gate(session, user, action)
+    if gate.allowed:
+        return True
+    await _send_ai_status(session, user, action, gate)
+    logger.info(
+        "[AI DM] blocked request",
+        extra={
+            "action": action,
+            "kind": gate.kind,
+            "session_id": getattr(session, "id", None),
+            "user_id": getattr(user, "id", None),
+            "user_role": getattr(user, "role", None),
+        },
+    )
+    return False
 
 
 async def _call_claude(
@@ -211,17 +239,15 @@ async def generate_session_recap(*, notes: str, style: str = "dramatic") -> dict
     return {"ok": True, "text": recap, "error": None, "provider": provider}
 
 
-# ── NPC Speak ────────────────────────────────────────────────────────────────
-
 async def handle_ai_npc_speak(payload: dict, session: Session, user: User) -> None:
     """Generate in-character NPC dialogue and broadcast as TTS + speech bubble.
 
-    Any role may trigger this handler.
-
-    Expected payload:
-      token_id, token_name, token_notes, player_message,
-      campaign_tone ("grimdark"|"heroic"|"comedic"|"mysterious"), voice_preset
+    Default role policy: DM/assistant-DM only. Override with
+    AI_DM_NPC_SPEAK_ALLOWED_ROLES for controlled self-host deployments.
     """
+    if not await _guard_ai_request(session, user, "ai_npc_speak"):
+        return
+
     token_id = str(payload.get("token_id", "")).strip()
     token_name = str(payload.get("token_name", "Someone")).strip() or "Someone"
     voice_preset = str(payload.get("voice_preset", "deep_narrator")).strip()
@@ -262,17 +288,13 @@ async def handle_ai_npc_speak(payload: dict, session: Session, user: User) -> No
     })
 
 
-# ── Rules Oracle ─────────────────────────────────────────────────────────────
-
 async def handle_ai_rules_oracle(payload: dict, session: Session, user: User) -> None:
-    """Answer a D&D 5e rules question and broadcast as a chat message.
-
-    Expected payload:
-      question, asker_name
-    """
+    """Answer a D&D 5e rules question and broadcast as a chat message."""
     question = str(payload.get("question", "")).strip()
     asker_name = str(payload.get("asker_name", "Someone")).strip() or "Someone"
     if not question:
+        return
+    if not await _guard_ai_request(session, user, "ai_rules_oracle"):
         return
 
     result = await generate_rules_answer(question=question)
@@ -287,15 +309,9 @@ async def handle_ai_rules_oracle(payload: dict, session: Session, user: User) ->
     })
 
 
-# ── Scene Describer ──────────────────────────────────────────────────────────
-
 async def handle_ai_describe_scene(payload: dict, session: Session, user: User) -> None:
-    """DM only: generate a vivid scene description and broadcast as TTS + overlay.
-
-    Expected payload:
-      terrain_type, revealed_props (list), region_label, campaign_tone
-    """
-    if user.role != "dm":
+    """DM only: generate a vivid scene description and broadcast as TTS + overlay."""
+    if not await _guard_ai_request(session, user, "ai_describe_scene"):
         return
 
     revealed_props = payload.get("revealed_props", [])
