@@ -8,12 +8,181 @@ The DM may restrict which activities are on offer and can end the scene
 at any time.  No heavy mechanics — this is pure atmosphere and interaction.
 """
 import time
-from server.session import Session, User
+from server.session import Session, User, normalize_profile_owner_key, build_quick_actions_sync_payload, bump_character_hydration_revisions
 from server.character.summon_runtime import prune_expired_temporary_summons
 from server.handlers.common import (
     manager, save_campaign_async,
     _apply_heal, _broadcast_token_state_sync, _sync_combatant_token_state,
 )
+
+def _profile_owner_keys_for_user(session: Session, user: User) -> list[str]:
+    keys: list[str] = []
+    for value in (normalize_profile_owner_key(getattr(user, "name", "")), getattr(user, "id", "")):
+        key = str(value or "").strip()
+        if key and key not in keys:
+            keys.append(key)
+    return keys
+
+
+def _active_profile_id(session: Session, user_id: str) -> str:
+    return str((getattr(session, "active_char_profiles", {}) or {}).get(user_id) or "").strip()
+
+
+def _safe_int(value, default=0, *, minimum=None, maximum=None) -> int:
+    try:
+        out = int(value)
+    except (TypeError, ValueError):
+        out = int(default)
+    if minimum is not None:
+        out = max(int(minimum), out)
+    if maximum is not None:
+        out = min(int(maximum), out)
+    return out
+
+
+def _slot_max(value) -> int:
+    if isinstance(value, dict):
+        return _safe_int(value.get("max", value.get("total", value.get("available", value.get("current", 0)))), 0, minimum=0, maximum=99)
+    return _safe_int(value, 0, minimum=0, maximum=99)
+
+
+def _restore_spell_slots(native: dict, runtime: dict | None = None) -> bool:
+    changed = False
+    spell_state = native.get("spellState") if isinstance(native.get("spellState"), dict) else {}
+    if spell_state or "spellState" in native:
+        native["spellState"] = spell_state
+        slots = spell_state.get("slots") if isinstance(spell_state.get("slots"), dict) else {}
+        slot_maxes = spell_state.get("slotMaxes") if isinstance(spell_state.get("slotMaxes"), dict) else {}
+        current = spell_state.get("slotsCurrent") if isinstance(spell_state.get("slotsCurrent"), dict) else None
+        used = spell_state.get("slotsUsed") if isinstance(spell_state.get("slotsUsed"), dict) else None
+        if current is not None:
+            for lvl, max_raw in {**slots, **slot_maxes}.items():
+                max_val = _slot_max(max_raw)
+                if max_val and current.get(str(lvl)) != max_val:
+                    current[str(lvl)] = max_val; changed = True
+            spell_state["slotsCurrent"] = current
+        elif used is not None:
+            for lvl in list(used.keys()):
+                if _safe_int(used.get(lvl), 0, minimum=0) != 0:
+                    used[lvl] = 0; changed = True
+            spell_state["slotsUsed"] = used
+        else:
+            # Legacy sheets commonly mutate slots directly as remaining slots.
+            restored = {}
+            for lvl, max_raw in slots.items():
+                max_val = _slot_max(slot_maxes.get(str(lvl), max_raw) if isinstance(slot_maxes, dict) else max_raw)
+                restored[str(lvl)] = max_val
+                if slots.get(lvl) != max_val:
+                    changed = True
+            if restored:
+                spell_state["slots"] = restored
+    if isinstance(runtime, dict):
+        spells = runtime.get("spells") if isinstance(runtime.get("spells"), dict) else {}
+        slots = spells.get("slots") if isinstance(spells.get("slots"), dict) else {}
+        for lvl, raw in list(slots.items()):
+            max_val = _slot_max(raw)
+            if isinstance(raw, dict):
+                if raw.get("current") != max_val:
+                    raw["current"] = max_val; changed = True
+                slots[lvl] = raw
+        if slots:
+            spells["slots"] = slots; runtime["spells"] = spells
+    return changed
+
+
+def _restore_resources(runtime: dict | None, rest_type: str) -> bool:
+    if not isinstance(runtime, dict):
+        return False
+    resources = runtime.get("resources") if isinstance(runtime.get("resources"), list) else []
+    changed = False
+    for res in resources:
+        if not isinstance(res, dict):
+            continue
+        recharge = str(res.get("recharge", res.get("rechargeType", res.get("refresh", "long_rest"))) or "long_rest").lower()
+        if rest_type == "short" and recharge not in {"short", "short_rest"}:
+            continue
+        if rest_type == "long" and recharge in {"none", "never"}:
+            continue
+        max_val = _safe_int(res.get("max", res.get("maximum", res.get("usesMax", 0))), 0, minimum=0, maximum=999)
+        if max_val and _safe_int(res.get("current", res.get("usesCurrent", 0)), 0, minimum=0) != max_val:
+            res["current"] = max_val
+            if "usesCurrent" in res:
+                res["usesCurrent"] = max_val
+            changed = True
+    if resources:
+        runtime["resources"] = resources
+    return changed
+
+
+def _sync_profile_runtime_for_user(session: Session, user: User, *, token=None, rest_type: str, heal_amount: int = 0) -> bool:
+    profiles = dict(getattr(session, "char_profiles", {}) or {})
+    active_id = _active_profile_id(session, getattr(user, "id", ""))
+    changed = False
+    for owner_key in _profile_owner_keys_for_user(session, user):
+        rows = list(profiles.get(owner_key) or [])
+        bucket_changed = False
+        for idx, row in enumerate(rows):
+            if not isinstance(row, dict):
+                continue
+            if active_id and str(row.get("id") or "").strip() != active_id:
+                continue
+            runtime = row.get("nativeRuntime") if isinstance(row.get("nativeRuntime"), dict) else {}
+            native = row.get("nativeCharacter") if isinstance(row.get("nativeCharacter"), dict) else {}
+            max_hp = _safe_int(getattr(token, "max_hp", row.get("hp", ((runtime.get("hp") or {}).get("max") if isinstance(runtime.get("hp"), dict) else 0))), 0, minimum=0)
+            cur_hp = _safe_int(getattr(token, "hp", row.get("curhp", max_hp)), max_hp, minimum=0)
+            temp_hp = _safe_int(getattr(token, "temp_hp", row.get("tempHp", 0)), 0, minimum=0)
+            if max_hp:
+                hp = runtime.get("hp") if isinstance(runtime.get("hp"), dict) else {}
+                hp.update({"max": max_hp, "current": min(cur_hp, max_hp), "temp": temp_hp})
+                runtime["hp"] = hp
+                combat = runtime.get("combat") if isinstance(runtime.get("combat"), dict) else {}
+                combat.update({"maxHP": max_hp, "currentHP": min(cur_hp, max_hp), "tempHP": temp_hp})
+                runtime["combat"] = combat
+                row.update({"curhp": min(cur_hp, max_hp), "hp": max_hp, "tempHp": temp_hp})
+                for block_name in ("charBook", "charSheet"):
+                    block = row.get(block_name) if isinstance(row.get(block_name), dict) else {}
+                    if block_name == "charSheet":
+                        sheet_hp = block.get("hp") if isinstance(block.get("hp"), dict) else {}
+                        sheet_hp.update({"max": max_hp, "current": min(cur_hp, max_hp), "temp": temp_hp})
+                        block["hp"] = sheet_hp
+                    block.update({"maxHp": max_hp, "currentHp": min(cur_hp, max_hp), "tempHp": temp_hp})
+                    row[block_name] = block
+                bucket_changed = True
+            if rest_type == "long" and _restore_spell_slots(native, runtime):
+                bucket_changed = True
+            if _restore_resources(runtime, rest_type):
+                bucket_changed = True
+            row["nativeRuntime"] = runtime
+            if native:
+                row["nativeCharacter"] = native
+            rows[idx] = row
+            if active_id:
+                break
+        if bucket_changed:
+            profiles[owner_key] = rows; changed = True
+    if changed:
+        session.char_profiles = profiles
+    return changed
+
+
+async def _broadcast_character_and_quick_actions(session: Session):
+    for uid, u in list((getattr(session, "users", {}) or {}).items()):
+        if getattr(u, "role", "") != "player":
+            continue
+        profiles = dict(getattr(session, "char_profiles", {}) or {})
+        mine = []
+        for key in _profile_owner_keys_for_user(session, u):
+            if isinstance(profiles.get(key), list):
+                mine = profiles.get(key); break
+        await manager.send_to(session.id, uid, {"type": "char_profiles_sync", "payload": {
+            "profiles": mine,
+            "active_profile_id": _active_profile_id(session, uid),
+            "character_runtime_revision": int(getattr(session, "character_runtime_revision", 0) or 0),
+            "spell_manifest_revision": int(getattr(session, "spell_manifest_revision", 0) or 0),
+            "quick_actions_revision": int(getattr(session, "quick_actions_revision", 0) or 0),
+        }})
+        await manager.send_to(session.id, uid, {"type": "quick_actions_sync", "payload": build_quick_actions_sync_payload(session, uid)})
+
 
 # Canonical activity definitions
 CAMP_ACTIVITIES = {
@@ -211,6 +380,9 @@ async def handle_camp_rest_take_rest(payload: dict, session: Session, user: User
             token.hp = int(max_hp)
             token.temp_hp = 0
             _sync_combatant_token_state(session, token, previous_hp=old_hp)
+            owner_user = (getattr(session, "users", {}) or {}).get(str(owner))
+            if owner_user:
+                _sync_profile_runtime_for_user(session, owner_user, token=token, rest_type="long")
             healed_tokens.append({
                 "token_id": tid,
                 "name": getattr(token, "name", "Unknown"),
@@ -222,6 +394,7 @@ async def handle_camp_rest_take_rest(payload: dict, session: Session, user: User
         for uid, session_user in list((getattr(session, "users", {}) or {}).items()):
             if getattr(session_user, "role", "") != "player":
                 continue
+            _sync_profile_runtime_for_user(session, session_user, rest_type="long")
             updated = refresh_item_charges_for_rest(session, session_user, "long")
             if updated:
                 item_recharge_updates.append({
@@ -240,6 +413,7 @@ async def handle_camp_rest_take_rest(payload: dict, session: Session, user: User
         for uid, session_user in list((getattr(session, "users", {}) or {}).items()):
             if getattr(session_user, "role", "") != "player":
                 continue
+            _sync_profile_runtime_for_user(session, session_user, rest_type="short")
             updated = refresh_item_charges_for_rest(session, session_user, "short")
             if updated:
                 item_recharge_updates.append({
@@ -278,6 +452,8 @@ async def handle_camp_rest_take_rest(payload: dict, session: Session, user: User
     session.char_profiles = profiles
 
     session.add_log(log_msg, "camp_rest", "DM")
+    bump_character_hydration_revisions(session, spells=True, quick_actions=True)
+    await _broadcast_character_and_quick_actions(session)
 
     # Sync token state across all clients if HP changed
     if healed_tokens:
@@ -359,7 +535,10 @@ async def handle_camp_rest_spend_hit_die(payload: dict, session: Session, user: 
 
     actual = _apply_heal(token, heal_amount)
     _sync_combatant_token_state(session, token)
+    _sync_profile_runtime_for_user(session, user, token=token, rest_type="short", heal_amount=actual)
+    bump_character_hydration_revisions(session, spells=False, quick_actions=True)
     await _broadcast_token_state_sync(session)
+    await _broadcast_character_and_quick_actions(session)
 
     token_name = getattr(token, "name", user.name)
     log_msg = f"☀ {token_name} spends a hit die and recovers {actual} HP ({token.hp}/{token.max_hp})."
@@ -489,6 +668,10 @@ async def handle_character_self_rest(payload: dict, session: Session, user: User
             if healed_amount > 0:
                 _sync_combatant_token_state(session, token, previous_hp=old_hp)
                 await _broadcast_token_state_sync(session)
+
+    _sync_profile_runtime_for_user(session, user, token=token, rest_type=rest_type, heal_amount=healed_amount)
+    bump_character_hydration_revisions(session, spells=True, quick_actions=True)
+    await _broadcast_character_and_quick_actions(session)
 
     char_name = str(payload.get("character_name") or getattr(token, "name", "") or user.name or "A character").strip()
     if rest_type == "long":
