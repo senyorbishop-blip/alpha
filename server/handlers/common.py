@@ -641,6 +641,15 @@ def _combat_state_payload_for_user(session: Session, user: User | None, visibili
         payload.pop("fog_suspended_combatants", None)
         payload.pop("hidden_suspended_combatants", None)
     payload["active"] = bool(payload.get("active", False))
+    econ = payload.get("combat_action_economy") if isinstance(payload.get("combat_action_economy"), dict) else {}
+    movement = payload.get("movement") if isinstance(payload.get("movement"), dict) else {}
+    if movement.get("token_id"):
+        tid = str(movement.get("token_id") or "")
+        entry = dict(econ.get(tid) or {})
+        entry.setdefault("token_id", tid)
+        entry["movement_spent"] = float(movement.get("spent_ft", entry.get("movement_spent", 0.0)) or 0.0)
+        econ[tid] = entry
+    payload["combat_action_economy"] = econ
     payload["revision"] = _safe_int(payload.get("revision"), 0, minimum=0, maximum=2**31)
     payload["updated_at"] = float(payload.get("updated_at") or 0.0)
     if visibility_revision is not None:

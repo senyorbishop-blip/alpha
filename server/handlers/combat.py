@@ -264,6 +264,140 @@ def _get_current_combatant(session: Session) -> dict | None:
     return current if isinstance(current, dict) else None
 
 
+ACTION_ECONOMY_TYPES = {"action", "bonus_action", "reaction", "ready_action", "free", "special"}
+
+def _combat_action_economy(session: Session) -> dict:
+    combat = getattr(session, "combat", None) or {}
+    if not isinstance(combat, dict):
+        combat = {"active": False, "turn": 0, "combatants": []}
+        session.combat = combat
+    econ = combat.get("combat_action_economy")
+    if not isinstance(econ, dict):
+        econ = {}
+    combat["combat_action_economy"] = econ
+    session.combat = combat
+    return econ
+
+def _default_action_economy_entry(token_id: str, combatant_id: str = "") -> dict:
+    return {
+        "token_id": str(token_id or ""),
+        "combatant_id": str(combatant_id or ""),
+        "action_used": False,
+        "bonus_action_used": False,
+        "reaction_used": False,
+        "ready_action": None,
+        "movement_spent": 0.0,
+        "free_notes": [],
+        "special_notes": [],
+        "updated_at": 0.0,
+    }
+
+def _get_action_economy_entry(session: Session, token_id: str, combatant: dict | None = None) -> dict:
+    token_id = str(token_id or "").strip()
+    econ = _combat_action_economy(session)
+    entry = econ.get(token_id) if token_id else None
+    if not isinstance(entry, dict):
+        entry = _default_action_economy_entry(token_id, str((combatant or {}).get("id") or ""))
+    entry.setdefault("token_id", token_id)
+    entry.setdefault("combatant_id", str((combatant or {}).get("id") or ""))
+    entry.setdefault("action_used", False)
+    entry.setdefault("bonus_action_used", False)
+    entry.setdefault("reaction_used", False)
+    entry.setdefault("ready_action", None)
+    entry.setdefault("movement_spent", 0.0)
+    entry.setdefault("free_notes", [])
+    entry.setdefault("special_notes", [])
+    if token_id:
+        econ[token_id] = entry
+    return entry
+
+def _sync_action_economy_roster(session: Session) -> dict:
+    combat = getattr(session, "combat", None) or {}
+    econ = _combat_action_economy(session)
+    active_ids = set()
+    for c in combat.get("combatants") or []:
+        if not isinstance(c, dict):
+            continue
+        tid = str(c.get("token_id") or "").strip()
+        if not tid:
+            continue
+        active_ids.add(tid)
+        _get_action_economy_entry(session, tid, c)
+    for tid in list(econ.keys()):
+        if tid not in active_ids:
+            econ.pop(tid, None)
+    return econ
+
+def _reset_action_economy_for_turn_start(session: Session) -> None:
+    current = _get_current_combatant(session)
+    token_id = str((current or {}).get("token_id") or "").strip()
+    if not token_id:
+        return
+    entry = _get_action_economy_entry(session, token_id, current)
+    entry["action_used"] = False
+    entry["bonus_action_used"] = False
+    entry["reaction_used"] = False
+    entry["ready_action"] = None
+    entry["updated_at"] = _time.time()
+
+def _action_economy_usage_field(action_type: str) -> str | None:
+    if action_type in {"action", "item_action", "spell", "weapon_attack"}:
+        return "action_used"
+    if action_type == "bonus_action":
+        return "bonus_action_used"
+    if action_type == "reaction":
+        return "reaction_used"
+    if action_type == "ready_action":
+        return "action_used"
+    return None
+
+def _action_economy_token_for_payload(session: Session, payload: dict) -> tuple[str, dict | None]:
+    token_id = str(payload.get("token_id") or "").strip()
+    current = _get_current_combatant(session)
+    if not token_id:
+        token_id = str((current or {}).get("token_id") or "").strip()
+    combatant = current if current and str(current.get("token_id") or "") == token_id else None
+    if combatant is None:
+        for c in (getattr(session, "combat", {}) or {}).get("combatants") or []:
+            if isinstance(c, dict) and str(c.get("token_id") or "") == token_id:
+                combatant = c; break
+    return token_id, combatant
+
+async def _deny_action_economy(session: Session, user: User, reason: str, *, client_action_id=None):
+    await _send_action_ack(session, user, action="combat_action_economy_use", client_action_id=client_action_id, status="denied", reason=reason)
+    await manager.send_to(session.id, user.id, {"type": "error", "payload": {"message": reason}})
+
+def _user_can_spend_for_token(session: Session, user: User, token_id: str, combatant: dict | None, *, override: bool = False) -> bool:
+    if user.role == "dm":
+        return True
+    current = _get_current_combatant(session)
+    action_type_ok = override is False
+    if not action_type_ok or str((current or {}).get("token_id") or "") != str(token_id or ""):
+        return False
+    token = session.tokens.get(token_id) if token_id else None
+    owner_id = str(getattr(token, "owner_id", "") or (combatant or {}).get("owner_id") or "").strip()
+    return _owner_matches_user(owner_id, user)
+
+def _mark_action_economy(session: Session, token_id: str, action_type: str, *, note: str = "", override: bool = False, combatant: dict | None = None, bump: bool = True) -> tuple[bool, str, dict]:
+    action_type = str(action_type or "action").strip().lower()
+    entry = _get_action_economy_entry(session, token_id, combatant)
+    field = _action_economy_usage_field(action_type)
+    if field and entry.get(field) and not override:
+        return False, f"{action_type.replace('_', ' ').title()} already spent.", entry
+    if field:
+        entry[field] = True
+    if action_type == "ready_action":
+        entry["ready_action"] = {"note": str(note or "Ready action")[:240], "set_at": _time.time()}
+    elif action_type == "free" and note:
+        entry.setdefault("free_notes", []).append(str(note)[:240])
+    elif action_type == "special" and note:
+        entry.setdefault("special_notes", []).append(str(note)[:240])
+    entry["updated_at"] = _time.time()
+    if bump:
+        _bump_combat_revision(session, "action_economy")
+    return True, "", entry
+
+
 def _char_profile_speed(session: Session, owner_id: str) -> int:
     """Return the speed stored in the player's most-recent char profile, or 0."""
     try:
@@ -414,6 +548,10 @@ def _ensure_combat_movement_state(session: Session, *, reset: bool = False) -> d
         if existing.get("last_y") is None and token is not None:
             existing["last_y"] = float(getattr(token, "y", 0.0) or 0.0)
     combat["movement"] = existing
+    try:
+        _get_action_economy_entry(session, token_id, current)["movement_spent"] = round(float(existing.get("spent_ft", 0.0) or 0.0), 2)
+    except Exception:
+        pass
     session.combat = combat
     return existing
 
@@ -572,6 +710,7 @@ async def _handle_combat_move_plan(payload: dict, session: Session, user: User, 
     move_state["last_x"], move_state["last_y"] = to_x, to_y
     move_state["last_resolver"] = resolved
     session.combat["movement"] = move_state
+    _get_action_economy_entry(session, token_id, current)["movement_spent"] = round(float(move_state.get("spent_ft", 0.0) or 0.0), 2)
     _bump_combat_revision(session, "move_commit")
     # The combatant whose turn this is can be a hidden/fog-hidden/wall-hidden
     # NPC the DM is moving on its turn — never broadcast position unconditionally.
@@ -599,6 +738,8 @@ async def _advance_combat_turn(session: Session):
     elif "round" not in session.combat:
         session.combat["round"] = 1
     _ensure_combat_movement_state(session, reset=True)
+    _sync_action_economy_roster(session)
+    _reset_action_economy_for_turn_start(session)
     return True
 
 
@@ -693,6 +834,7 @@ async def handle_combat_add_token(payload: dict, session: Session, user: User):
     if combatant.get("initiative") is not None:
         _sort_combatants_preserving_turn(combat)
     session.combat = combat
+    _sync_action_economy_roster(session)
     _ensure_combat_movement_state(session, reset=False)
     sync_fogged_combatants(session, reason="manual_add", map_context=current_map)
     session.add_log(f"{getattr(token, 'name', 'Token')} joined the initiative order.", "combat", user.name)
@@ -752,6 +894,8 @@ async def handle_combat_update(payload: dict, session: Session, user: User):
     if next_active and (not was_active or not session.combat.get("encounter_id")):
         session.combat["encounter_id"] = str(payload.get("encounter_id") or uuid.uuid4())
     if session.combat.get("active"):
+        _sync_action_economy_roster(session)
+        _reset_action_economy_for_turn_start(session)
         _ensure_combat_movement_state(session, reset=True)
         sync_fogged_combatants(session, reason="combat_update", map_context=payload.get("map_context"))
     else:
@@ -815,6 +959,8 @@ async def handle_combat_prev(payload: dict, session: Session, user: User):
     if new_turn == len(coms) - 1 and prev_turn == 0:
         session.combat["round"] = max(1, prev_round - 1)
     _ensure_combat_movement_state(session, reset=True)
+    _sync_action_economy_roster(session)
+    _reset_action_economy_for_turn_start(session)
     _bump_combat_revision(session, "prev_turn")
     await save_campaign_async(session)
     await _broadcast_combat(session)
@@ -828,7 +974,7 @@ async def handle_combat_clear(payload: dict, session: Session, user: User):
     sound_state = getattr(session, "sound_state", None) or {}
     pre_combat = sound_state.get("pre_combat_track", "silence")
     previous_revision = _safe_int((getattr(session, "combat", {}) or {}).get("revision"), 0, minimum=0, maximum=2**31)
-    session.combat = {"active": False, "turn": 0, "combatants": [], "movement": {}, "encounter_id": str(uuid.uuid4()), "reason": "clear_combat", "clear_reason": "clear_combat", "revision": previous_revision}
+    session.combat = {"active": False, "turn": 0, "combatants": [], "movement": {}, "combat_action_economy": {}, "encounter_id": str(uuid.uuid4()), "reason": "clear_combat", "clear_reason": "clear_combat", "revision": previous_revision}
     _bump_combat_revision(session, "clear_combat")
     event = {
         "event_type": "clear_encounter",
@@ -1267,6 +1413,45 @@ def _can_act_current_turn(session: Session, user: User) -> tuple[bool, str | Non
     return True, None
 
 
+
+async def handle_combat_action_economy_use(payload: dict, session: Session, user: User):
+    """Authoritatively spend/reset one combatant action-economy resource."""
+    combat = getattr(session, "combat", None) or {}
+    if not combat.get("active"):
+        await _deny_action_economy(session, user, "Combat is not active.", client_action_id=payload.get("client_action_id"))
+        return
+    action_type = str(payload.get("action_type") or payload.get("kind") or "action").strip().lower()
+    if action_type not in ACTION_ECONOMY_TYPES and action_type not in {"weapon_attack", "spell", "item_action"}:
+        action_type = "action"
+    token_id, combatant = _action_economy_token_for_payload(session, payload)
+    if not token_id:
+        await _deny_action_economy(session, user, "No combatant selected.", client_action_id=payload.get("client_action_id"))
+        return
+    override = bool(payload.get("override") or payload.get("dm_override"))
+    reset = bool(payload.get("reset"))
+    if reset and user.role != "dm":
+        await _deny_action_economy(session, user, "Only the DM can reset action economy.", client_action_id=payload.get("client_action_id"))
+        return
+    if not reset and not _user_can_spend_for_token(session, user, token_id, combatant, override=override):
+        await _deny_action_economy(session, user, "Only the active combatant can spend that action.", client_action_id=payload.get("client_action_id"))
+        return
+    if override and user.role != "dm":
+        await _deny_action_economy(session, user, "Only the DM can override action economy.", client_action_id=payload.get("client_action_id"))
+        return
+    if reset:
+        entry = _get_action_economy_entry(session, token_id, combatant)
+        entry.update(_default_action_economy_entry(token_id, str((combatant or {}).get("id") or "")))
+        entry["updated_at"] = _time.time()
+        _bump_combat_revision(session, "action_economy_reset")
+    else:
+        ok, reason, entry = _mark_action_economy(session, token_id, action_type, note=str(payload.get("note") or "")[:240], override=override, combatant=combatant)
+        if not ok:
+            await _deny_action_economy(session, user, reason, client_action_id=payload.get("client_action_id"))
+            return
+    await save_campaign_async(session)
+    await _broadcast_combat(session)
+    await _send_action_ack(session, user, action="combat_action_economy_use", client_action_id=payload.get("client_action_id"), status="confirmed", token_id=token_id, action_type=action_type, combat_action_economy=(session.combat or {}).get("combat_action_economy") or {})
+
 async def handle_combat_select_target(payload: dict, session: Session, user: User):
     """Store the chosen target token on the combat state and broadcast."""
     allowed, message = _can_act_current_turn(session, user)
@@ -1342,6 +1527,13 @@ async def handle_combat_attack_request(payload: dict, session: Session, user: Us
     spell_name = str(payload.get("spell_name") or "").strip()
     spell_id = str(payload.get("spell_id") or "").strip()
 
+    econ_kind = "spell" if attack_kind == "spell" else "weapon_attack"
+    ok, reason, _entry = _mark_action_economy(session, attacker_token_id, econ_kind, note=spell_name or attack_kind, override=(user.role == "dm" and bool(payload.get("override"))), combatant=current, bump=False)
+    if not ok:
+        await manager.send_to(session.id, user.id, {"type": "error", "payload": {"message": reason}})
+        await _denied(reason)
+        return
+
     session.combat["pending_attack"] = {
         "attacker_user_id": str(user.id),
         "attacker_token_id": attacker_token_id,
@@ -1363,6 +1555,7 @@ async def handle_combat_attack_request(payload: dict, session: Session, user: Us
         f"{'✨' if attack_kind == 'spell' else '⚔'} {attacker_name} → {target_name} ({action_label}) — awaiting DM",
         "system", user.name
     )
+    await save_campaign_async(session)
     await _broadcast_combat(session)
     await manager.broadcast(session.id, {"type": "log_entry", "payload": {"log": log_entry}})
     await _send_action_ack(

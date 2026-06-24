@@ -34058,6 +34058,7 @@ function handleLegacyMessage(msg) {
       }
       if (p.movement) {
         _combat.movement = p.movement;
+        if (p.combat_action_economy) _combat.combat_action_economy = p.combat_action_economy;
         // Use the guarded resync (not a bare renderCombat) so a denial landing
         // mid-render can't re-enter renderCombat synchronously.
         forceCombatStateUISync();
@@ -46386,6 +46387,7 @@ function combatApplyState(state, source) {
     hidden_suspended_combatants: Array.isArray(state.hidden_suspended_combatants) ? state.hidden_suspended_combatants : [],
     round:              state.round      ?? 1,
     movement:           state.movement   ?? null,
+    combat_action_economy: state.combat_action_economy ?? {},
     selected_target_id: state.selected_target_id || '',
     pending_attack:     state.pending_attack || null,
     revision:           incomingRevision ?? localRevision ?? 0,
@@ -47971,6 +47973,28 @@ function _getPlayerActionsSections() {
 }
 
 
+function _serverCombatActionEconomyForToken(tokenId) {
+  const econ = (_combat && _combat.combat_action_economy && typeof _combat.combat_action_economy === 'object') ? _combat.combat_action_economy : {};
+  return tokenId ? (econ[String(tokenId)] || null) : null;
+}
+function _serverActionEconomyUsageFromEntry(entry) {
+  if (!entry || typeof entry !== 'object') return {};
+  return {
+    actions_used: entry.action_used ? 1 : 0,
+    bonus_actions_used: entry.bonus_action_used ? 1 : 0,
+    reactions_used: entry.reaction_used ? 1 : 0,
+    ready_action: entry.ready_action || null,
+  };
+}
+function _sendCombatActionEconomyUse(kind, meta = {}) {
+  if (!_combat || !_combat.active) return;
+  const current = _getCombatCurrentCombatant?.() || null;
+  const tokenId = String(meta.token_id || current?.token_id || '').trim();
+  if (!tokenId) return;
+  const map = { attack_within_action: 'weapon_attack', action: 'action', bonus_action: 'bonus_action', reaction: 'reaction', ready_action: 'ready_action', item_action: 'item_action', spell: 'spell' };
+  sendWS({ type: 'combat_action_economy_use', payload: { token_id: tokenId, action_type: map[kind] || kind || 'action', action_id: meta.action_id || meta.id || '', note: meta.note || meta.name || '' } });
+}
+
 function _safeActionEconomyCount(value, fallback = 0) {
   const n = Number(value);
   if (!Number.isFinite(n)) return Math.max(0, Number(fallback) || 0);
@@ -48047,7 +48071,7 @@ function buildTurnEconomyState(character = _charSheet, combatState = _combat, tu
   const turn = Math.max(0, Number(combat.turn || 0));
   const turnKey = `${SESSION_ID || 'session'}:${combat.encounter_id || _combat?.encounter_id || 'encounter'}:${round}:${turn}:${tokenId}`;
   const moveState = (combat.movement && String(combat.movement.token_id || '') === tokenId) ? combat.movement : null;
-  const persisted = _readPersistedActionEconomyState(turnKey) || {};
+  const persisted = Object.assign({}, _readPersistedActionEconomyState(turnKey) || {}, _serverActionEconomyUsageFromEntry(_serverCombatActionEconomyForToken(tokenId)));
   const myToken = tokens[tokenId] || _getMyOwnedToken?.() || null;
   const conditions = _conditionIdsLower(myToken);
   const features = _visibleStructuredClassFeatures(_getStructuredClassFeatures());
@@ -48136,7 +48160,7 @@ function _buildActionEconomyState() {
   const haste = conditions.has('haste') || conditions.has('hasted');
   const restrained = conditions.has('restrained') || conditions.has('grappled');
 
-  const persisted = _readPersistedActionEconomyState(turnKey);
+  const persisted = Object.assign({}, _readPersistedActionEconomyState(turnKey) || {}, _serverActionEconomyUsageFromEntry(_serverCombatActionEconomyForToken(current.token_id)));
   const base = persisted && typeof persisted === 'object' ? persisted : {};
 
   const actions_total_base = 1;
@@ -48355,6 +48379,7 @@ function _consumeActionEconomy(kind, meta = {}) {
   state.turn_key = _playerActionTurnKey();
   _playerActionEconomyRuntime.state = state;
   _saveActionEconomyRuntime(state);
+  _sendCombatActionEconomyUse(kind, meta);
   renderPlayerActionsHub();
 }
 
