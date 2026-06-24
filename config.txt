@@ -1,2 +1,0 @@
-# Local config intentionally removed from source control.
-# Use .env or deployment environment variables for secrets.
