@@ -20,15 +20,18 @@ _logger = logging.getLogger(__name__)
 
 # Resolve the repo root from this file's location (server/auth/jwt_utils.py)
 # rather than the process cwd, so config.txt is found regardless of how/where
-# the server was launched from.
+# the server was launched from. config.txt is limited to non-secret settings.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _CONFIG_PATH = _REPO_ROOT / "config.txt"
 # Dev-only: persists an auto-generated secret so it survives restarts instead
 # of silently invalidating every issued cookie/token each time.
 _DEV_SECRET_FILE = _REPO_ROOT / ".dnd_jwt_secret.local"
+_SECRET_CONFIG_KEYS = {"DND_JWT_SECRET", "DND_ADMIN_KEY"}
 
 
 def _read_config_value(path: Path, key: str) -> str:
+    if key in _SECRET_CONFIG_KEYS:
+        return ""
     try:
         with path.open() as handle:
             for line in handle:
@@ -57,17 +60,12 @@ def _persist_dev_secret(secret: str) -> None:
 def _load_jwt_secret() -> str:
     """Load the JWT signing secret, preferring stable sources over randomness.
 
-    Order: DND_JWT_SECRET env var -> config.txt -> (non-development: fail
-    fast) -> (development: reuse a previously persisted auto-generated
-    secret, or generate+persist a new one). A silently-random secret would
-    invalidate every issued cookie/token on the next restart, so production
-    deployments must set DND_JWT_SECRET explicitly.
+    Order: DND_JWT_SECRET env var -> (non-development: fail fast) ->
+    (development: reuse a previously persisted auto-generated secret, or
+    generate+persist a new one). config.txt is intentionally not a secret
+    source.
     """
     secret = os.environ.get("DND_JWT_SECRET", "").strip()
-    if secret:
-        return secret
-
-    secret = _read_config_value(_CONFIG_PATH, "DND_JWT_SECRET").strip()
     if secret:
         return secret
 
@@ -78,7 +76,7 @@ def _load_jwt_secret() -> str:
             "environment (APP_ENV="
             f"{app_env}) with an auto-generated secret, since that would "
             "silently invalidate every issued session on the next restart. "
-            "Set DND_JWT_SECRET in the environment or config.txt."
+            "Set DND_JWT_SECRET in the environment or .env."
         )
 
     try:
@@ -88,7 +86,7 @@ def _load_jwt_secret() -> str:
     if existing:
         _logger.warning(
             "DND_JWT_SECRET is not set — reusing the development secret persisted "
-            "at %s. Set DND_JWT_SECRET in config.txt before deploying.",
+            "at %s. Set DND_JWT_SECRET in the environment or .env before deploying.",
             _DEV_SECRET_FILE,
         )
         return existing
@@ -98,14 +96,14 @@ def _load_jwt_secret() -> str:
     _logger.warning(
         "DND_JWT_SECRET is not set — generated a new development-only secret and "
         "persisted it to %s so it survives restarts. Set DND_JWT_SECRET in "
-        "config.txt before deploying.",
+        "the environment or .env before deploying.",
         _DEV_SECRET_FILE,
     )
     return generated
 
 
-# Secret key — loaded from env or config.txt; auto-generated only in
-# development, where it is persisted so restarts reuse the same secret.
+# Secret key — loaded from env or development fallback; config.txt is not a
+# secret source.
 _JWT_SECRET: str = _load_jwt_secret()
 
 _ALGORITHM = "HS256"
@@ -113,24 +111,12 @@ _TOKEN_TTL = 60 * 60 * 24 * 7  # 7 days
 
 # Admin host key for the /admin/reset-password endpoint.
 ADMIN_HOST_KEY: str = os.environ.get("DND_ADMIN_KEY", "").strip()
-if not ADMIN_HOST_KEY:
-    try:
-        _cfg_path = os.path.join(os.path.dirname(__file__), "..", "..", "config.txt")
-        with open(_cfg_path) as _f:
-            for _line in _f:
-                _line = _line.strip()
-                if _line.startswith("DND_ADMIN_KEY="):
-                    ADMIN_HOST_KEY = _line.split("=", 1)[1].strip()
-                    break
-    except FileNotFoundError:
-        pass
 
 if not ADMIN_HOST_KEY:
     ADMIN_HOST_KEY = secrets.token_hex(16)
     print(
         "\n[WARNING] DND_ADMIN_KEY is not set — a temporary key has been generated for this session.\n"
-        "          To make it permanent, add this line to your config.txt or .env file:\n"
-        f"          DND_ADMIN_KEY={ADMIN_HOST_KEY}\n"
+        "          To make it permanent, set DND_ADMIN_KEY in your environment or .env file.\n"
     )
 
 
