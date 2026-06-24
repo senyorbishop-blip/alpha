@@ -724,6 +724,7 @@ function collect(selector) {{
   if (selector === '.player-combat-focus .combat-entry') return elements['player-combat-focus'].children.filter(c => String(c.className || '').includes('combat-entry'));
   if (selector === '.combat-entry') return Object.values(elements).flatMap(e => e.children || []).filter(c => String(c.className || '').includes('combat-entry'));
   if (selector === '[data-combatant-id]') return Object.values(elements).flatMap(e => e.children || []).filter(c => c.dataset && c.dataset.combatantId);
+  if (selector === '.ce-order.now, .ce-order.next, .now-card, .next-card, [data-combat-turn-label]') return Object.values(elements).flatMap(e => e.children || []).flatMap(c => (c.textContent.match(/Now|Next/g) || []).map(label => ({{ textContent: label, innerText: label, style: {{}} }})));
   return [];
 }}
 global.window = global;
@@ -732,6 +733,7 @@ global.document = {{
   getElementById: (id) => elements[id] || null,
   createElement: (tag) => new Element('', tag),
   querySelectorAll: collect,
+  querySelector: (selector) => selector === '#combat-list' ? elements['combat-list'] : (selector === '#player-combat-focus' ? elements['player-combat-focus'] : null),
 }};
 elements['combat-list'] = new Element('combat-list');
 elements['combat-empty'] = new Element('combat-empty');
@@ -747,8 +749,9 @@ global.users = {{}};
 global._currentPoi = null;
 global._currentMapContextKey = () => 'world';
 global._tokenOwnedByMe = () => false;
-global._dicePhysicsActive = false;
+global._dicePhysicsActive = true;
 global._renderCombatDebounceTmr = null;
+let _forceCombatDomRepaintActive = false;
 global.safeClientCall = (label, fn) => {{ try {{ return fn(); }} catch (_err) {{ return null; }} }};
 global.renderPlayerActionsHub = () => {{}};
 global._getCombatCurrentCombatant = () => null;
@@ -813,6 +816,12 @@ console.log(JSON.stringify({{ afterRev3, afterRev4, combat: _combat }}));
             assert "Guard" in result["afterRev4"][panel] and "6 (6)" in result["afterRev4"][panel]
             assert "Bishop" in result["afterRev4"][panel] and "6 (6)" in result["afterRev4"][panel]
             assert "Bishop --" not in result["afterRev4"][panel]
-        assert result["afterRev4"]["debug"]["canonicalOrder"] == ["Guard:6", "Bishop:6"]
-        assert result["afterRev4"]["debug"]["currentTurnIndex"] == 0
-        assert result["afterRev4"]["debug"]["lastAppliedRevision"] == 4
+        debug = result["afterRev4"]["debug"]
+        assert debug["canonicalCombatRevision"] == 4
+        assert debug["canonicalOrder"] == ["Guard:6", "Bishop:6"]
+        assert "Bishop" in debug["rightCombatTabText"] and "6 (6)" in debug["rightCombatTabText"]
+        assert "Bishop" in debug["focusCombatCardText"] and "6 (6)" in debug["focusCombatCardText"]
+        assert "Now" in debug["nowNextLabels"] and "Next" in debug["nowNextLabels"]
+        assert debug["currentTurnIndex"] == 0
+        assert debug["lastAppliedRevision"] == 4
+        assert debug["lastRepaintTime"] is not None
