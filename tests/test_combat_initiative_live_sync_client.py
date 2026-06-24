@@ -292,10 +292,9 @@ def test_actual_incoming_dispatch_dm_npc_roll_updates_dm_client():
     assert result["combat"]["combatants"][0]["initiative"] == 14
 
 
-def test_combat_initiative_rolled_reconciles_equal_or_newer_revision():
-    # combat_initiative_rolled is a reconciliation patch: it may update the matching
-    # combatant for equal/newer revisions, but must remain protected from later
-    # legacy missing-revision snapshots by combatApplyState.
+def test_combat_initiative_rolled_requests_authoritative_state_without_patching():
+    # combat_initiative_rolled is notification/animation only. It must not patch
+    # local initiative values; it may request a newer authoritative combat_state.
     result = _run_initiative_event(
         "let sent = []; sendWS = (msg) => sent.push(msg); applyCombatInitiativeRolled({ combatant_id: 'guard', token_id: 't-guard', initiative: 18, roll: 18, modifier: 0, revision: 3 });",
         initial_combat_js="{ active: true, turn: 0, round: 1, revision: 2, encounter_id: 'enc-1', combatants: ["
@@ -303,11 +302,12 @@ def test_combat_initiative_rolled_reconciles_equal_or_newer_revision():
         "{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: null, roll: null, modifier: 0 }"
         "] }",
     )
-    assert result["calls"]["renderCombat"] == 1
+    assert result["calls"]["renderCombat"] == 0
     guard = next(c for c in result["combat"]["combatants"] if c["id"] == "guard")
-    assert guard["initiative"] == 18
-    assert guard["roll"] == 18
-    assert result["combat"]["revision"] == 3
+    assert guard["initiative"] is None
+    assert guard["roll"] is None
+    assert result["combat"]["revision"] == 2
+    assert result["sent"] == [{"type": "combat_state_request", "payload": {}}]
 
 
 
@@ -326,7 +326,7 @@ def test_legacy_missing_revision_cannot_overwrite_revised_combat_state():
     assert [(c["name"], c["initiative"]) for c in result["combat"]["combatants"]] == [("Bishop", 18), ("Guard", 12)]
 
 
-def test_combat_initiative_rolled_patch_cannot_be_undone_by_legacy_payload():
+def test_combat_initiative_rolled_cannot_create_local_state_fork_before_legacy_payload():
     result = _run(
         "combatApplyState({ active: true, turn: 0, round: 1, revision: 3, "
         "combatants: [{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null },"
@@ -336,11 +336,11 @@ def test_combat_initiative_rolled_patch_cannot_be_undone_by_legacy_payload():
         "combatants: [{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: 12 },"
         "{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null }] }, 'state_sync');"
     )
-    assert result["calls"]["renderCombat"] == 2
+    assert result["calls"]["renderCombat"] == 1
     assert result["combat"]["revision"] == 3
     bishop = next(c for c in result["combat"]["combatants"] if c["id"] == "bishop")
-    assert bishop["initiative"] == 18
-    assert bishop["roll"] == 16
+    assert bishop["initiative"] is None
+    assert "roll" not in bishop or bishop["roll"] is None
 
 def test_dice_result_initiative_does_not_mutate_roster():
     # dice_result is animation/log only; applyInitiativeResultToCombatState must
@@ -358,7 +358,7 @@ def test_dice_result_initiative_does_not_mutate_roster():
     assert result["calls"]["renderCombat"] == 0
 
 
-def test_combat_initiative_rolled_updates_matching_combatant_and_renders():
+def test_combat_initiative_rolled_does_not_update_matching_combatant_or_render():
     result = _run_initiative_event(
         "let sent = []; sendWS = (msg) => sent.push(msg); applyCombatInitiativeRolled({ combatant_id: 'guard', token_id: 't-guard', initiative: 1, roll: 1, modifier: 0, revision: 3 });",
         initial_combat_js="{ active: true, turn: 0, round: 1, revision: 2, combatants: ["
@@ -367,10 +367,11 @@ def test_combat_initiative_rolled_updates_matching_combatant_and_renders():
         "] }",
     )
     guard = next(c for c in result["combat"]["combatants"] if c["id"] == "guard")
-    assert guard["initiative"] == 1
-    assert guard["roll"] == 1
-    assert result["combat"]["revision"] == 3
-    assert result["calls"]["renderCombat"] == 1
+    assert guard["initiative"] is None
+    assert guard["roll"] is None
+    assert result["combat"]["revision"] == 2
+    assert result["calls"]["renderCombat"] == 0
+    assert result["sent"] == [{"type": "combat_state_request", "payload": {}}]
 
 
 def test_initiative_notification_never_mutates_regardless_of_source():
@@ -670,8 +671,7 @@ console.log(JSON.stringify({{ before, rows, combat: _combat }}));
 
 
 def test_initiative_notification_patchers_source_contracts():
-    # dice_result remains notification-only. combat_initiative_rolled is allowed
-    # to patch the matching row for same/newer revisions, but must not re-sort.
+    # dice_result and combat_initiative_rolled remain notification-only.
     src = PLAY.read_text(encoding="utf-8")
     body = src[src.index("function applyInitiativeResultToCombatState(result)"):src.index("function applyCombatInitiativeRolled")]
     assert ".initiative =" not in body
@@ -679,9 +679,10 @@ def test_initiative_notification_patchers_source_contracts():
     assert "_sortCombatants(" not in body
     assert "return false;" in body
     rolled = src[src.index("function applyCombatInitiativeRolled"):src.index("function _formatInitiativeCellValue")]
-    assert "row.initiative = initiative" in rolled
-    assert "row.roll = roll" in rolled
+    assert "row.initiative =" not in rolled
+    assert "row.roll =" not in rolled
     assert "_sortCombatants(" not in rolled
+    assert "applyInitiativeResultToCombatState(payload);" in rolled
 
 
 def test_authoritative_apply_exists_and_sets_aliases_and_debug():
@@ -699,3 +700,119 @@ def test_authoritative_apply_exists_and_sets_aliases_and_debug():
     for forbidden in ("selectQuickActions", "renderPlayerActionsHub", "markCharProfileDirty", "scheduleCharProfileAutosave", "collectCurrentCharProfile"):
         assert forbidden not in auth_body
 
+
+
+def test_guard_bishop_revision_four_repaints_all_combat_dom_for_dm_and_player():
+    src = PLAY.read_text(encoding="utf-8")
+    apply_start = src.index("function _combatInitiativeSignature(state) {")
+    apply_end = src.index("// ── Combat tab attention: glow, YOUR TURN, coach, hints ───", apply_start)
+    roster_start = src.index("function _combatRosterTokenAvatarHtml(model)")
+    roster_end = src.index("function _markLoadingWeaponUsedThisTurn", roster_start)
+    for role in ("dm", "player"):
+        code = f"""
+class Element {{
+  constructor(id = '', tag = 'div') {{ this.id = id; this.tagName = tag; this.children = []; this.style = {{}}; this.dataset = {{}}; this.className = ''; this.classList = {{ add(){{}}, remove(){{}}, toggle(){{}}, contains(){{ return false; }} }}; this._innerHTML = ''; this.textContent = ''; }}
+  set innerHTML(value) {{ this._innerHTML = String(value || ''); this.children = []; this.textContent = this._innerHTML.replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim(); }}
+  get innerHTML() {{ return this._innerHTML + this.children.map(c => c.innerHTML || c._innerHTML || '').join(''); }}
+  appendChild(child) {{ this.children.push(child); this.textContent = this.children.map(c => c.textContent || c.innerHTML || '').join(' '); return child; }}
+  querySelectorAll(selector) {{ return selector === '[data-combatant-id]' ? this.children.filter(c => c.dataset && c.dataset.combatantId) : []; }}
+  scrollIntoView() {{}}
+}}
+const elements = {{}};
+function collect(selector) {{
+  if (selector === '#combat-list .combat-entry') return elements['combat-list'].children.filter(c => String(c.className || '').includes('combat-entry'));
+  if (selector === '.player-combat-focus .combat-entry') return elements['player-combat-focus'].children.filter(c => String(c.className || '').includes('combat-entry'));
+  if (selector === '.combat-entry') return Object.values(elements).flatMap(e => e.children || []).filter(c => String(c.className || '').includes('combat-entry'));
+  if (selector === '[data-combatant-id]') return Object.values(elements).flatMap(e => e.children || []).filter(c => c.dataset && c.dataset.combatantId);
+  return [];
+}}
+global.window = global;
+{_DIAGNOSTICS_PREAMBLE}
+global.document = {{
+  getElementById: (id) => elements[id] || null,
+  createElement: (tag) => new Element('', tag),
+  querySelectorAll: collect,
+}};
+elements['combat-list'] = new Element('combat-list');
+elements['combat-empty'] = new Element('combat-empty');
+elements['player-combat-focus'] = new Element('player-combat-focus');
+['combat-controls','combat-move-row','combat-offturn-row','combat-pre','combat-add-row','combat-round-label','combat-turn-summary','combat-prev-btn','combat-next-btn','combat-end-btn','combat-auto-suggest-row','combat-auto-suggest-hostiles','combat-mark-row','combat-spell-tray','combat-weapon-tray'].forEach(id => elements[id] = new Element(id));
+global.location = {{ host: 'localhost' }};
+global.console = {{ debug(){{}}, warn(){{}}, error(){{}}, info(){{}}, log: (...args) => process.stdout.write(args.join(' ') + '\\n') }};
+global.escapeHtml = (value) => String(value ?? '').replace(/[&<>\"]/g, ch => ({{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}}[ch]));
+global.ROLE = '{role}';
+global.USER_ID = '{role}-user';
+global.tokens = {{}};
+global.users = {{}};
+global._currentPoi = null;
+global._currentMapContextKey = () => 'world';
+global._tokenOwnedByMe = () => false;
+global._dicePhysicsActive = false;
+global._renderCombatDebounceTmr = null;
+global.safeClientCall = (label, fn) => {{ try {{ return fn(); }} catch (_err) {{ return null; }} }};
+global.renderPlayerActionsHub = () => {{}};
+global._getCombatCurrentCombatant = () => null;
+global._getCombatOffturnFocusToken = () => null;
+global._combatantOwnedByMe = () => false;
+global._getUnifiedQuickAttackCards = () => [];
+global._rulesSpellbook = [];
+global._playerGrantedSpells = [];
+global._markTargeting = null;
+global._combatAutoSuggestHostiles = false;
+global._combatMovePlan = null;
+global._combatTargeting = false;
+global._combatMovementModeLabel = () => 'grid';
+global._updateCombatTabAttention = () => {{}};
+global.equipSummary = null;
+global.renderPartyStatusPanel = () => {{}};
+global.suggestVisibleHostilesForInitiative = () => {{}};
+global.setTimeout = (fn) => {{ fn(); return 1; }};
+global.clearTimeout = () => {{}};
+global.refreshRightPanelContextUI = () => {{ _renderCombatRoster(elements['combat-list'], _normalizeCombatRoster(_combat), true); }};
+global.updateActiveContext = () => {{ _renderCombatRoster(elements['player-combat-focus'], _normalizeCombatRoster(_combat), true); }};
+global.refreshBigScreenDisplayOverlay = () => {{}};
+global.refreshTokenBadges = () => {{}};
+global.refreshCombatBadges = () => {{}};
+global.renderTokens = () => {{}};
+global.drawTokens = () => {{}};
+global.requestRenderFrame = () => {{}};
+let _combat = {{ active: false, turn: 0, round: 1, revision: 0, combatants: [] }};
+let _combatRound = 1;
+let _combatInitiativeResyncTimer = null;
+let _playerActionEconomyRuntime = {{}};
+let partySnapshot = {{}};
+let activeContext = {{}};
+function _playerActionTurnKey() {{ return ''; }}
+function _resetInspectResults() {{}}
+{src[apply_start:apply_end]}
+{src[roster_start:roster_end]}
+function _canRollInitiative() {{ return false; }}
+function _formatInitiativeCellValue(combatant) {{
+  if (!combatant || combatant.initiative === null || combatant.initiative === undefined) return '--';
+  const roll = Number(combatant.roll);
+  return Number.isFinite(roll) ? `${{combatant.initiative}} (${{roll}})` : String(combatant.initiative);
+}}
+function renderCombat() {{ _renderCombatRoster(elements['combat-list'], _normalizeCombatRoster(_combat), true); }}
+applyAuthoritativeCombatState({{ active: true, turn: 0, round: 1, revision: 3, combatants: [
+  {{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: 6, roll: 6, modifier: 0 }},
+  {{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: null, roll: null, modifier: 0 }},
+] }}, 'combat_state');
+const afterRev3 = {{ sidebar: elements['combat-list'].textContent, focus: elements['player-combat-focus'].textContent }};
+applyAuthoritativeCombatState({{ active: true, turn: 0, round: 1, revision: 4, combatants: [
+  {{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: 6, roll: 6, modifier: 0 }},
+  {{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 6, roll: 6, modifier: 0 }},
+] }}, 'combat_state');
+const afterRev4 = {{ sidebar: elements['combat-list'].textContent, focus: elements['player-combat-focus'].textContent, debug: window.__debugCombatPanels() }};
+console.log(JSON.stringify({{ afterRev3, afterRev4, combat: _combat }}));
+"""
+        out = subprocess.check_output(["node", "-e", code], cwd=ROOT, text=True, timeout=30)
+        result = json.loads(out.strip().splitlines()[-1])
+        assert "Guard" in result["afterRev3"]["sidebar"] and "6 (6)" in result["afterRev3"]["sidebar"]
+        assert "Bishop" in result["afterRev3"]["sidebar"] and "--" in result["afterRev3"]["sidebar"]
+        for panel in ("sidebar", "focus"):
+            assert "Guard" in result["afterRev4"][panel] and "6 (6)" in result["afterRev4"][panel]
+            assert "Bishop" in result["afterRev4"][panel] and "6 (6)" in result["afterRev4"][panel]
+            assert "Bishop --" not in result["afterRev4"][panel]
+        assert result["afterRev4"]["debug"]["canonicalOrder"] == ["Guard:6", "Bishop:6"]
+        assert result["afterRev4"]["debug"]["currentTurnIndex"] == 0
+        assert result["afterRev4"]["debug"]["lastAppliedRevision"] == 4
