@@ -12126,9 +12126,24 @@ window.handleAuthoritativeSnapshot = handleAuthoritativeSnapshot;
 
 // Combat state (declared early to avoid TDZ errors in drawToken / canMoveToken)
 let _combat = { active: false, turn: 0, combatants: [], movement: null, selected_target_id: '', pending_attack: null, suspended_combatants: [] };
-window._combat = _combat;
-window.combatState = _combat;
-window.currentCombat = _combat;
+function installCombatStateAliases() {
+  const defineCombatAlias = (name, descriptor) => {
+    try {
+      Object.defineProperty(window, name, { configurable: true, enumerable: true, ...descriptor });
+    } catch (_) {
+      // Best-effort compatibility for unusual test/browser harnesses with locked globals.
+    }
+  };
+  defineCombatAlias('_combat', {
+    get() { return _combat; },
+    set(value) { _combat = value; },
+  });
+  const canonicalCombatGetter = { get() { return window._combat; } };
+  defineCombatAlias('combatState', canonicalCombatGetter);
+  defineCombatAlias('currentCombat', canonicalCombatGetter);
+  defineCombatAlias('combat', canonicalCombatGetter);
+}
+installCombatStateAliases();
 let _combatRound = 1;
 // Monotonic visibility revision (fog/hidden/token-position changes). Payloads
 // carrying an older revision than the last one applied are dropped so a
@@ -46391,10 +46406,6 @@ function combatApplyState(state, source) {
     revision:           incomingRevision ?? localRevision ?? 0,
     encounter_id:       state.encounter_id || _combat.encounter_id || '',
   };
-  window._combat = _combat;
-  window.combat = _combat;
-  window.combatState = _combat;
-  window.currentCombat = _combat;
   if (typeof partySnapshot === 'object' && partySnapshot) partySnapshot.combat = _combat;
   if (typeof activeContext === 'object' && activeContext) activeContext.combat = _combat;
   if (typeof initiativeList !== 'undefined' && Array.isArray(initiativeList)) {
@@ -49344,8 +49355,8 @@ function applyInitiativeResultToCombatState(result) {
 function applyCombatInitiativeRolled(payload) {
   (console.info || console.debug || console.log).call(console, '[initiative sync] combat_initiative_rolled notification received', { combatant_id: payload?.combatant_id || '', token_id: payload?.token_id || '', initiative: payload?.initiative ?? payload?.total ?? null, revision: payload?.revision ?? null });
   // Notification/animation only: never patch _combat from this event. The next
-  // authoritative combat_state owns initiative values, ordering, NOW/NEXT, and
-  // every visible combat panel/card. If the revision hint is ahead of local
+  // authoritative combat_state broadcast is the owner of initiative values,
+  // ordering, NOW/NEXT, and every visible combat panel/card. If the revision hint is ahead of local
   // state, request a canonical repaint source instead of creating a local fork.
   applyInitiativeResultToCombatState(payload);
   return false;

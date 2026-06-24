@@ -48,6 +48,13 @@ def _combat_apply_snippet() -> str:
     return src[start:end]
 
 
+def _combat_alias_snippet() -> str:
+    src = PLAY.read_text(encoding="utf-8")
+    start = src.index("function installCombatStateAliases() {")
+    end = src.index("let _combatRound = 1;", start)
+    return src[start:end]
+
+
 def _initiative_roll_snippet() -> str:
     src = PLAY.read_text(encoding="utf-8")
     start = src.index("let _combatInitiativeResyncTimer = null;")
@@ -102,6 +109,7 @@ const _origWarn = console.warn;
 console.warn = (...args) => {{ calls.warns++; }};
 {_DIAGNOSTICS_PREAMBLE}
 let _combat = {initial_combat_js};
+{_combat_alias_snippet()}
 let _combatRound = 1;
 function _sortCombatants() {{
   _combat.combatants.sort((a, b) => (b.initiative ?? -99) - (a.initiative ?? -99));
@@ -109,7 +117,14 @@ function _sortCombatants() {{
 {_combat_apply_snippet()}
 {_initiative_roll_snippet()}
 {seq_js}
-console.log(JSON.stringify({{ calls, combat: _combat, sent, debug: window.__debugCombat() }}));
+console.log(JSON.stringify({{
+  calls, combat: _combat, sent, debug: window.__debugCombat(),
+  aliases: {{
+    aliasMatch: (window._combat === window.combatState) && (window.combatState === window.currentCombat),
+    revisions: [window._combat?.revision, window.combatState?.revision, window.currentCombat?.revision],
+    activeNames: [window._combat?.combatants?.[window._combat?.turn]?.name, window.combatState?.combatants?.[window.combatState?.turn]?.name, window.currentCombat?.combatants?.[window.currentCombat?.turn]?.name],
+  }}
+}}));
 """
     out = subprocess.check_output(["node", "-e", code], cwd=ROOT, text=True, timeout=30)
     return json.loads(out.strip().splitlines()[-1])
@@ -243,10 +258,39 @@ def test_aliases_and_envelope_and_current_combatant():
         "global.__aliasMatch = (window._combat === window.combatState) && (window.combatState === window.currentCombat);"
     )
     assert result["combat"]["revision"] == 9
+    assert result["aliases"]["aliasMatch"] is True
+    assert result["aliases"]["revisions"] == [9, 9, 9]
+    assert result["aliases"]["activeNames"] == ["Guard", "Guard", "Guard"]
     # turn index 1 → current combatant is the Guard row.
     assert result["debug"]["turn"] == 1
     assert result["debug"]["currentCombatant"] == "Guard"
     assert result["debug"]["order"] == ["Bishop:7", "Guard:1"]
+
+
+def test_stale_combat_state_keeps_all_aliases_on_newer_revision():
+    result = _run(
+        "applyAuthoritativeCombatState({ active: true, turn: 0, round: 1, revision: 10, "
+        "combatants: [{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 12 }] }, 'combat_state');"
+        "applyAuthoritativeCombatState({ active: true, turn: 0, round: 1, revision: 9, "
+        "combatants: [{ id: 'guard', token_id: 't-guard', name: 'Guard', initiative: 20 }] }, 'combat_state');"
+    )
+    assert result["combat"]["revision"] == 10
+    assert result["aliases"]["aliasMatch"] is True
+    assert result["aliases"]["revisions"] == [10, 10, 10]
+    assert result["aliases"]["activeNames"] == ["Bishop", "Bishop", "Bishop"]
+
+
+def test_stale_inactive_payload_does_not_wipe_active_combat_aliases():
+    result = _run(
+        "applyAuthoritativeCombatState({ active: true, turn: 0, round: 1, revision: 7, "
+        "combatants: [{ id: 'bishop', token_id: 't-bishop', name: 'Bishop', initiative: 12 }] }, 'combat_state');"
+        "applyAuthoritativeCombatState({ active: false, turn: 0, round: 1, revision: 6, combatants: [] }, 'combat_state');"
+    )
+    assert result["combat"]["active"] is True
+    assert result["combat"]["revision"] == 7
+    assert result["aliases"]["aliasMatch"] is True
+    assert result["aliases"]["revisions"] == [7, 7, 7]
+    assert result["aliases"]["activeNames"] == ["Bishop", "Bishop", "Bishop"]
 
 
 def test_debug_combat_reports_last_ignored_for_invalid_payload():
