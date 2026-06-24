@@ -230,7 +230,9 @@ from server.handlers.summons import (
 )
 from server.handlers.token_placement_secure import handle_token_placed_secure
 from server.handlers.ws_permissions import is_ws_message_allowed_for_role
+from server.handlers.inventory_runtime_bridge import install_inventory_runtime_bridge
 
+install_inventory_runtime_bridge()
 
 logger = logging.getLogger(__name__)
 
