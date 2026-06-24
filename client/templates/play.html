@@ -1380,18 +1380,19 @@
     }
     .combat-entry {
       display: grid;
-      grid-template-columns: auto auto minmax(0, 1fr) auto;
-      gap: 0.38rem;
+      grid-template-columns: 2.35rem 1.75rem minmax(0, 1fr) auto;
+      gap: 0.34rem;
       align-items: center;
       padding: 0.45rem 0.5rem;
       border-left: 3px solid transparent;
       border: 1px solid rgba(115,135,165,0.2);
-      border-radius: 8px;
-      background: rgba(255,255,255,0.02);
-      transition: background var(--dur-instant), border-color var(--dur-instant);
+      border-radius: 10px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.028), rgba(5,8,14,0.16));
+      transition: background var(--dur-instant), border-color var(--dur-instant), box-shadow var(--dur-instant);
       cursor: default;
       position: relative;
       min-height: 3.15rem;
+      container-type: inline-size;
     }
     .combat-entry.current {
       background: rgba(0,229,204,0.12);
@@ -1414,7 +1415,7 @@
     }
     .combat-entry:hover { background: rgba(255,255,255,0.03); }
     .ce-init {
-      min-width: 30px; text-align: center; font-size: 0.8rem;
+      width: 2.35rem; min-width: 2.35rem; max-width: 2.35rem; text-align: center; font-size: 0.8rem;
       font-weight: bold; color: var(--accent); font-family: monospace;
     }
     .ce-color { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
@@ -1435,9 +1436,10 @@
       text-transform: uppercase;
     }
     .ce-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .ce-main { min-width: 0; display:flex; flex-direction:column; gap:0.2rem; }
-    .ce-topline { display:flex; align-items:center; gap:0.34rem; min-width:0; flex-wrap:wrap; }
-    .ce-name { min-width:0; font-size: 0.8rem; color: var(--parchment); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ce-main { min-width: 0; display:flex; flex-direction:column; gap:0.26rem; }
+    .ce-topline { display:flex; align-items:center; gap:0.34rem; min-width:0; flex-wrap:nowrap; width:100%; }
+    .ce-name-wrap { min-width:0; flex:1 1 auto; display:block; }
+    .ce-name { display:block; min-width:0; max-width:100%; font-size: 0.8rem; color: var(--parchment); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .ce-order {
       font-size: 0.54rem;
       letter-spacing: 0.08em;
@@ -1447,6 +1449,7 @@
       color: var(--parchment-dim);
       padding: 0.08rem 0.36rem;
       white-space: nowrap;
+      flex: 0 0 auto;
     }
     .ce-order.now {
       border-color: rgba(0,229,204,0.5);
@@ -1458,7 +1461,7 @@
       color: #f2d38b;
       background: rgba(212,175,55,0.1);
     }
-    .ce-meta { display:flex; align-items:center; gap:0.28rem; flex-wrap:wrap; min-width:0; }
+    .ce-meta { display:flex; align-items:center; gap:0.28rem; flex-wrap:wrap; min-width:0; overflow:hidden; }
     .ce-hp {
       font-size: 0.61rem;
       color: var(--parchment-dim);
@@ -1467,10 +1470,28 @@
       border-radius: 999px;
       padding: 0.08rem 0.34rem;
       background: rgba(0,0,0,0.25);
+      flex: 0 0 auto;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .ce-hp.defeated { border-color:rgba(224,112,112,0.35); color:#f0b0b0; }
     .ce-hp.hidden { border-color:rgba(155,89,182,0.38); color:#d7b8ff; }
     .ce-hp.owner { border-color:rgba(212,175,55,0.35); color:#f2d38b; }
+    .ce-hp.owner { max-width: min(9rem, 100%); }
+    .ce-hp.move .ce-move-full { display:inline; }
+    .ce-hp.move .ce-move-short { display:none; }
+    @container (max-width: 340px) {
+      .combat-entry { grid-template-columns: 2.35rem 1.75rem minmax(0, 1fr) auto; gap:0.28rem; padding-inline:0.42rem; }
+      .ce-avatar { width:26px; height:26px; border-radius:8px; }
+      .ce-main { gap:0.22rem; }
+      .ce-meta { gap:0.22rem; }
+      .ce-hp { font-size:0.57rem; padding-inline:0.28rem; }
+      .ce-hp.owner { max-width:4.8rem; }
+      .ce-hp.move .ce-move-full { display:none; }
+      .ce-hp.move .ce-move-short { display:inline; }
+      .ce-order { font-size:0.5rem; padding-inline:0.3rem; }
+    }
     .ce-arrow { font-size: 0.7rem; color: var(--accent); margin-left: 2px; }
     .ce-del { opacity: 0; cursor: pointer; font-size: 0.7rem; color: var(--blood); padding: 0 2px; transition: opacity 0.1s; justify-self:end; }
     .combat-entry:hover .ce-del { opacity: 1; }
@@ -6852,7 +6873,7 @@
         padding-bottom: 8rem;
       }
       .combat-entry {
-        grid-template-columns: auto auto minmax(0, 1fr);
+        grid-template-columns: 2.35rem 1.75rem minmax(0, 1fr) auto;
       }
       .ce-del {
         opacity: 1;
@@ -19492,7 +19513,9 @@ function layoutTokenBadges(token, renderContext = {}) {
       priority: 90,
     }));
   }
-  if (canSeeVitals && token.ac !== undefined && token.ac !== null && `${token.ac}` !== '') {
+  const crowdedTokenLabels = zoom < 0.72 || Math.max(token.width || 0, token.height || 0) * zoom < 34;
+  const veryCrowdedTokenLabels = zoom < 0.52 || Math.max(token.width || 0, token.height || 0) * zoom < 26;
+  if (!veryCrowdedTokenLabels && canSeeVitals && token.ac !== undefined && token.ac !== null && `${token.ac}` !== '') {
     rowsAbove.push(_tokenBadgeMeasurePill(`AC ${token.ac}`, {
       fontPx: _tokenBadgeReadableFontPx(11, 7),
       fill: 'rgba(16,20,28,0.92)',
@@ -19519,13 +19542,15 @@ function layoutTokenBadges(token, renderContext = {}) {
   const nameFont = `700 ${nameFontPx}px Cinzel, serif`;
   const safeName = _tokenBadgeTruncateText(token.name || 'Token', nameMaxW, nameFont);
   rowsBelow.push(_tokenBadgeMeasurePill(safeName, { fontPx: nameFontPx, family: 'Cinzel, serif', fill: 'rgba(8,10,14,0.78)', stroke: 'rgba(255,255,255,0.18)', color: '#ffffff', priority: 50 }));
-  rowsBelow.push(_tokenBadgeMeasurePill(isPlayerOwned ? 'PC' : 'NPC', {
-    fontPx: _tokenBadgeReadableFontPx(10, 7),
-    fill: 'rgba(16,18,22,0.86)',
-    stroke: isPlayerOwned ? 'rgba(0,229,204,0.5)' : 'rgba(255,121,87,0.5)',
-    color: isPlayerOwned ? '#9ff6ea' : '#ffc0aa',
-    priority: 40,
-  }));
+  if (!crowdedTokenLabels) {
+    rowsBelow.push(_tokenBadgeMeasurePill(isPlayerOwned ? 'PC' : 'NPC', {
+      fontPx: _tokenBadgeReadableFontPx(10, 7),
+      fill: 'rgba(16,18,22,0.86)',
+      stroke: isPlayerOwned ? 'rgba(0,229,204,0.5)' : 'rgba(255,121,87,0.5)',
+      color: isPlayerOwned ? '#9ff6ea' : '#ffc0aa',
+      priority: 40,
+    }));
+  }
 
   let y = topEdge - Math.max(5 / zoom, 5);
   for (let i = rowsAbove.length - 1; i >= 0; i -= 1) {
@@ -47268,7 +47293,7 @@ function _renderCombatRoster(list, roster, isActive) {
     const hpLabel = _combatRosterHpLabel(model);
     const hpStr = hpLabel ? `<span class="ce-hp${model.defeated ? ' defeated' : ''}">${escapeHtml(hpLabel)}</span>` : '';
     const ownerLabel = _combatRosterOwnerLabel(model);
-    const ownerStr = ownerLabel ? `<span class="ce-hp owner">${escapeHtml(ownerLabel)}</span>` : '';
+    const ownerStr = ownerLabel ? `<span class="ce-hp owner" title="${escapeHtml(ownerLabel)}">${escapeHtml(ownerLabel)}</span>` : '';
     const hiddenStr = (ROLE === 'dm' && model.hiddenFromPlayers) ? `<span class="ce-hp hidden">Hidden</span>` : '';
     const defeatedStr = model.defeated ? `<span class="ce-hp defeated">${model.deathSaves?.dead ? 'Dead' : 'Defeated'}</span>` : '';
     const missingStr = model.missingToken ? `<span class="ce-hp defeated">Token missing</span>` : '';
@@ -47279,7 +47304,7 @@ function _renderCombatRoster(list, roster, isActive) {
     const spentFt = Number(moveState?.spent_ft ?? 0);
     const totalFt = Math.max(0, speedFt + bonusFt);
     const moveExtras = `${bonusFt > 0 ? ' • Dash' : ''}${moveState?.difficult_terrain ? ' • DT x2' : ''}${moveState?.disengaged ? ' • Disengaged' : ''}`;
-    const moveStr = (moveState && totalFt > 0) ? `<span class="ce-hp" style="border-color:rgba(0,229,204,0.25);color:var(--cyan);">Move ${Math.round(spentFt)}/${Math.round(totalFt)} ft${moveExtras}</span>` : '';
+    const moveStr = (moveState && totalFt > 0) ? `<span class="ce-hp move" style="border-color:rgba(0,229,204,0.25);color:var(--cyan);"><span class="ce-move-full">Move ${Math.round(spentFt)}/${Math.round(totalFt)} ft${moveExtras}</span><span class="ce-move-short">${Math.round(spentFt)}/${Math.round(totalFt)} ft</span></span>` : '';
     const targetStr = model.tokenId && model.tokenId === String(_combat.selected_target_id || '') ? `<span class="ce-hp" style="border-color:rgba(255,210,90,0.45);color:#ffe9a6;">Targeted</span>` : '';
     const orderBadge = isCurrent ? '<span class="ce-order now">Now</span>' : (isNextUp ? '<span class="ce-order next">Next</span>' : `<span class="ce-order">#${model.visibleIndex + 1}</span>`);
     const arrow = isCurrent ? '<span class="ce-arrow">◀</span>' : '';
@@ -47288,12 +47313,11 @@ function _renderCombatRoster(list, roster, isActive) {
       ${_combatRosterTokenAvatarHtml(model)}
       <div class="ce-main">
         <div class="ce-topline">
-          <span class="ce-name">${escapeHtml(model.name)}</span>
+          <span class="ce-name-wrap"><span class="ce-name" title="${escapeHtml(model.name)}">${escapeHtml(model.name)}</span></span>
           ${orderBadge}
-          ${model.ownedByMe ? '<span class="ce-order">YOU</span>' : ''}
           ${arrow}
         </div>
-        <div class="ce-meta">${targetStr}${hpStr}${defeatedStr}${hiddenStr}${ownerStr}${missingStr}${mapStr}${moveStr}</div>
+        <div class="ce-meta">${targetStr}${hpStr}${defeatedStr}${hiddenStr}${ownerStr}${model.ownedByMe ? '<span class="ce-order">YOU</span>' : ''}${missingStr}${mapStr}${moveStr}</div>
       </div>
       ${delBtn}`;
     if (isCurrent) setTimeout(() => entry.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 50);
