@@ -1,4 +1,7 @@
+import asyncio
+
 from server.session import Session, Token, User
+from server.handlers import combat as combat_handlers
 from server.handlers.combat import sync_fogged_combatants, is_token_visible_to_party
 from server.handlers.common import _combat_state_payload_for_user
 
@@ -142,3 +145,126 @@ def test_fogged_npc_reappears_in_player_payload_after_reveal_without_refresh():
     assert [c['token_id'] for c in visible_payload['combatants']] == ['mage']
     assert visible_payload['combatants'][0]['initiative'] == 12
     assert 'suspended_combatants' not in visible_payload
+
+
+def test_player_first_combat_fog_sync_request_works(monkeypatch):
+    s = session_with_fog(True)
+    player = User(id='p1', name='Player', role='player')
+    calls = []
+
+    async def fake_run(session, reason='sync', map_context=None):
+        calls.append((session.id, reason, map_context))
+        return {'changed': True}
+
+    monkeypatch.setattr(combat_handlers, 'run_combat_fog_sync', fake_run)
+    monkeypatch.setattr(combat_handlers._time, 'time', lambda: 100.0)
+
+    asyncio.run(combat_handlers.handle_combat_fog_sync_request({'reason': 'manual', 'map_context': 'world'}, s, player))
+
+    assert calls == [('s', 'manual', 'world')]
+
+
+def test_immediate_second_player_combat_fog_sync_request_is_rate_limited(monkeypatch):
+    s = session_with_fog(True)
+    player = User(id='p1', name='Player', role='player')
+    calls = []
+    now = {'value': 100.0}
+
+    async def fake_run(session, reason='sync', map_context=None):
+        calls.append((reason, map_context))
+        return {'changed': True}
+
+    monkeypatch.setattr(combat_handlers, 'run_combat_fog_sync', fake_run)
+    monkeypatch.setattr(combat_handlers._time, 'time', lambda: now['value'])
+
+    asyncio.run(combat_handlers.handle_combat_fog_sync_request({'reason': 'first', 'map_context': 'world'}, s, player))
+    asyncio.run(combat_handlers.handle_combat_fog_sync_request({'reason': 'second', 'map_context': 'world'}, s, player))
+
+    assert calls == [('first', 'world')]
+
+
+def test_player_combat_fog_sync_request_after_cooldown_works(monkeypatch):
+    s = session_with_fog(True)
+    player = User(id='p1', name='Player', role='player')
+    calls = []
+    now = {'value': 100.0}
+
+    async def fake_run(session, reason='sync', map_context=None):
+        calls.append(reason)
+        return {'changed': True}
+
+    monkeypatch.setattr(combat_handlers, 'run_combat_fog_sync', fake_run)
+    monkeypatch.setattr(combat_handlers._time, 'time', lambda: now['value'])
+
+    asyncio.run(combat_handlers.handle_combat_fog_sync_request({'reason': 'first'}, s, player))
+    now['value'] += 2.5
+    asyncio.run(combat_handlers.handle_combat_fog_sync_request({'reason': 'after-cooldown'}, s, player))
+
+    assert calls == ['first', 'after-cooldown']
+
+
+def test_assistant_dm_combat_fog_sync_request_uses_short_cooldown(monkeypatch):
+    s = session_with_fog(True)
+    assistant = User(id='a1', name='Assistant', role='assistant_dm')
+    s.world_state = {
+        'assistant_dm': {
+            'users': {
+                assistant.id: {
+                    'enabled': True,
+                    'scopes': ['combat.manage_limited'],
+                    'map_contexts': [],
+                    'token_ids': [],
+                }
+            }
+        }
+    }
+    calls = []
+    now = {'value': 100.0}
+
+    async def fake_run(session, reason='sync', map_context=None):
+        calls.append(reason)
+        return {'changed': True}
+
+    monkeypatch.setattr(combat_handlers, 'run_combat_fog_sync', fake_run)
+    monkeypatch.setattr(combat_handlers._time, 'time', lambda: now['value'])
+
+    asyncio.run(combat_handlers.handle_combat_fog_sync_request({'reason': 'first'}, s, assistant))
+    asyncio.run(combat_handlers.handle_combat_fog_sync_request({'reason': 'immediate'}, s, assistant))
+    now['value'] += 1.0
+    asyncio.run(combat_handlers.handle_combat_fog_sync_request({'reason': 'after-cooldown'}, s, assistant))
+
+    assert calls == ['first', 'after-cooldown']
+
+
+def test_dm_combat_fog_sync_request_is_not_rate_limited(monkeypatch):
+    s = session_with_fog(True)
+    dm = User(id='dm1', name='DM', role='dm')
+    calls = []
+
+    async def fake_run(session, reason='sync', map_context=None):
+        calls.append(reason)
+        return {'changed': True}
+
+    monkeypatch.setattr(combat_handlers, 'run_combat_fog_sync', fake_run)
+    monkeypatch.setattr(combat_handlers._time, 'time', lambda: 100.0)
+
+    asyncio.run(combat_handlers.handle_combat_fog_sync_request({'reason': 'first'}, s, dm))
+    asyncio.run(combat_handlers.handle_combat_fog_sync_request({'reason': 'second'}, s, dm))
+
+    assert calls == ['first', 'second']
+
+
+def test_viewer_combat_fog_sync_request_is_ignored(monkeypatch):
+    s = session_with_fog(True)
+    viewer = User(id='v1', name='Viewer', role='viewer')
+    calls = []
+
+    async def fake_run(session, reason='sync', map_context=None):
+        calls.append(reason)
+        return {'changed': True}
+
+    monkeypatch.setattr(combat_handlers, 'run_combat_fog_sync', fake_run)
+
+    asyncio.run(combat_handlers.handle_combat_fog_sync_request({'reason': 'viewer'}, s, viewer))
+
+    assert calls == []
