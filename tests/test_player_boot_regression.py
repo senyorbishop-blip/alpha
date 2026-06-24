@@ -121,14 +121,13 @@ Promise.resolve().then(() => Promise.resolve()).then(() => {
     assert not any('/api/tts/warmup-phrases' in call for call in data['calls'])
 
 
-def test_autosave_render_deferral_is_bounded_not_recursive_reschedule():
+def test_autosave_render_stack_is_hard_blocked_not_deferred():
     play = _play_src()
-    guard = play[play.index("function __deferCharProfileAutosaveUntilRenderUnwinds"):play.index("function scheduleCharProfileAutosave")]
-    assert "attempts < 12" in guard
-    assert "Date.now() - startedAt < 1000" in guard
-    assert "setTimeout(run, 16)" in guard
-    assert "setTimeout(() => __deferCharProfileAutosaveUntilRenderUnwinds" not in guard
-    assert "autosave defer abandoned" in guard
+    guard = play[play.index("function scheduleCharProfileAutosave"):play.index("function scheduleCharBookQuickPanelSync")]
+    assert "__warnBlockedCharAutosave('scheduleCharProfileAutosave'" in guard
+    assert "__deferCharProfileAutosaveUntilRenderUnwinds(reason)" not in guard
+    assert "autosave deferred during render/select stack" not in guard
+    assert "[char profile] blocked autosave during render" in play
 
 
 def test_player_state_sync_boot_autosave_deferral_does_not_loop():

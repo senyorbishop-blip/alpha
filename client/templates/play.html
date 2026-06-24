@@ -35976,6 +35976,9 @@ function syncCharacterBookPassivePerceptionDerived() {
 }
 
 function updateCharacterBookDerivedValues() {
+  __enterDepth('updateCharacterBookDerivedValues', {}, 5);
+  __enterCharRenderScope('updateCharacterBookDerivedValues');
+  try {
   const levelEl = document.getElementById('cb-level');
   const profEl = document.getElementById('cb-proficiency-bonus');
   const hitDiceEl = document.getElementById('cb-hit-dice');
@@ -36015,6 +36018,7 @@ function updateCharacterBookDerivedValues() {
   });
   syncCharacterBookPassivePerceptionDerived();
   renderRulesAttackbook();
+  } finally { __exitCharRenderScope(); __exitDepth('updateCharacterBookDerivedValues'); }
 }
 
 function applyCharacterBookToQuickPanel(showDone = true) {
@@ -37738,6 +37742,9 @@ function renderNativeCharacterBookPanels() {
 }
 
 function renderRulesAttackbook() {
+  __enterDepth('renderRulesAttackbook', {}, 5);
+  __enterCharRenderScope('renderRulesAttackbook');
+  try {
   const host = document.getElementById('cb-rules-attacks');
   const summary = document.getElementById('cb-attack-summary');
   if (!host) return;
@@ -37788,6 +37795,7 @@ function renderRulesAttackbook() {
     </div>`).join('');
   renderPlayerActionsHub();
   renderNativeCharacterBookPanels();
+  } finally { __exitCharRenderScope(); __exitDepth('renderRulesAttackbook'); }
 }
 
 function _recordSpellUsage(spellLike) {
@@ -42078,6 +42086,7 @@ function markCharProfileDirty(source = 'user') {
   __enterDepth('markCharProfileDirty', { source }, 5);
   try {
   if (ROLE !== 'player') return false;
+  if (__isCharProfileRenderStackActive()) { __warnBlockedCharAutosave('markCharProfileDirty', { source }); return false; }
   if (window.__safeMode?.charProfileDirtySave || __isRemoteStateOrCombatApplying()) { console.warn('[char profile] dirty mark skipped during remote/combat apply', { source, remote: isApplyingRemoteState, stateSync: window.__stateSyncApplying, combatApply: window.__combatApplyStateActive }); return false; }
   if (isHydrating || source === 'hydrate' || source === 'render' || source === 'server') return false;
   currentDraftHash = getCharProfileDraftHash(collectCurrentCharProfile({ skipSideEffects: true }));
@@ -42101,7 +42110,8 @@ function markCharProfileClean(profile) {
 
 function __isCharProfileRenderStackActive() {
   const depths = window.__depths || {};
-  return __charProfileForbiddenAutosaveStack().some(name => Number(depths[name] || 0) > 0)
+  return __getCharRenderDepth() > 0
+    || __charProfileForbiddenAutosaveStack().some(name => Number(depths[name] || 0) > 0)
     || !!window.__combatApplyStateActive;
 }
 
@@ -42109,7 +42119,30 @@ function __isCharProfileRenderStackActive() {
 // profile must never be saved — an autosave here re-renders, which schedules
 // another autosave, recursing until the browser freezes.
 function __charProfileForbiddenAutosaveStack() {
-  return ['renderCombat', 'renderPlayerActionsHub', 'CombatQuickBar.render', 'selectQuickActions', 'combatApplyState'];
+  return ['renderCombat', 'renderPlayerActionsHub', 'renderRulesAttackbook', 'updateCharacterBookDerivedValues', 'CombatQuickBar.render', 'selectQuickActions', 'collectCurrentCharProfile', 'combatApplyState'];
+}
+
+function __getCharRenderDepth() {
+  return Math.max(0, Number(window.__charRenderDepth || 0));
+}
+
+function __enterCharRenderScope(caller) {
+  window.__charRenderDepth = __getCharRenderDepth() + 1;
+  return { caller, depth: window.__charRenderDepth };
+}
+
+function __exitCharRenderScope() {
+  window.__charRenderDepth = Math.max(0, __getCharRenderDepth() - 1);
+}
+
+let __lastBlockedCharAutosaveWarnAt = 0;
+function __warnBlockedCharAutosave(caller, extra = {}) {
+  const now = Date.now();
+  if ((now - __lastBlockedCharAutosaveWarnAt) < 1500) return;
+  __lastBlockedCharAutosaveWarnAt = now;
+  if (console && typeof console.warn === 'function') {
+    console.warn('[char profile] blocked autosave during render', Object.assign({ caller, renderDepth: __getCharRenderDepth() }, extra));
+  }
 }
 
 // In development, surface a stack trace identifying exactly which forbidden
@@ -42158,9 +42191,8 @@ function scheduleCharProfileAutosave(reason = 'user') {
   if (ROLE !== 'player') return;
   if (window.__safeMode?.charProfileDirtySave || __isRemoteStateOrCombatApplying()) { console.warn('[char profile] autosave skipped during remote/combat apply', { reason, remote: isApplyingRemoteState, stateSync: window.__stateSyncApplying, combatApply: window.__combatApplyStateActive }); return; }
   if (__isCharProfileRenderStackActive()) {
-    console.warn('[char profile] autosave deferred during render/select stack', { reason, depths: Object.assign({}, window.__depths || {}) });
+    __warnBlockedCharAutosave('scheduleCharProfileAutosave', { reason, depths: Object.assign({}, window.__depths || {}) });
     __traceForbiddenCharProfileAutosave(reason);
-    __deferCharProfileAutosaveUntilRenderUnwinds(reason);
     return;
   }
   if (isHydrating || isSaving) return;
@@ -42281,8 +42313,14 @@ function _charProfileKeySizes(profile) {
 window._charProfileKeySizes = _charProfileKeySizes;
 
 function collectCurrentCharProfile(opts = {}) {
-  initCharacterBook();
-  seedCharacterBookFromCurrentState();
+  const readOnlyCollect = !!(opts.skipSideEffects || opts.renderOnly || opts.displayOnly || __isCharProfileRenderStackActive());
+  __enterDepth('collectCurrentCharProfile', { readOnlyCollect }, 5);
+  if (readOnlyCollect) __enterCharRenderScope('collectCurrentCharProfile');
+  try {
+  if (!readOnlyCollect) {
+    initCharacterBook();
+    seedCharacterBookFromCurrentState();
+  }
   const charBook = getCharacterBookDataFromUI();
   syncCharSheetFromBookData(charBook);
   const personalization = getCharPersonalizationState();
@@ -42349,6 +42387,7 @@ function collectCurrentCharProfile(opts = {}) {
   // sent over the websocket. Runtime state is always rebuilt from canonical data
   // on load, so dropping it keeps char_profiles from growing without bound.
   return _stripCharProfileRuntimeFields(profile);
+  } finally { if (readOnlyCollect) __exitCharRenderScope(); __exitDepth('collectCurrentCharProfile'); }
 }
 
 function saveCurrentCharProfile(opts = {}) {
@@ -47708,6 +47747,7 @@ function _readPersistedActionEconomyState(turnKey) {
 
 function _saveActionEconomyRuntime(state) {
   if (!_charSheet || !state || typeof state !== 'object') return;
+  if (__isCharProfileRenderStackActive()) { __warnBlockedCharAutosave('_saveActionEconomyRuntime', { turnKey: state.turn_key || _playerActionTurnKey() || '' }); return; }
   const turnKey = String(state.turn_key || _playerActionTurnKey() || '').trim();
   const nextPayload = {
     turn_key: turnKey,
@@ -47919,9 +47959,11 @@ function _buildActionEconomyState() {
     },
     updated_at: Date.now(),
   };
+  // Read-only render snapshot: keep the in-memory view fresh, but never persist
+  // or autosave from state construction. Persistence is reserved for explicit
+  // gameplay mutations such as using an action, turn changes, or reset/rest.
   _playerActionEconomyRuntime.turn_key = turnKey;
   _playerActionEconomyRuntime.state = state;
-  _saveActionEconomyRuntime(state);
   return Object.assign(state, buildTurnEconomyState(_charSheet, _combat, current));
 }
 
@@ -48145,8 +48187,7 @@ function _actionEconomyCostLabel(action) {
 }
 
 function _isPlayerActionUsedThisTurn(action) {
-  const state = _buildActionEconomyState();
-  const turnKey = String(state?.turn_key || _playerActionTurnKey() || '');
+  const turnKey = String(_playerActionTurnKey() || _playerActionEconomyRuntime?.turn_key || '');
   const id = String(action?.id || '').trim();
   return !!(turnKey && id && _playerActionEconomyRuntime?.usage?.[turnKey]?.[id]?.used);
 }
@@ -48361,6 +48402,7 @@ function playerInspectSpell(id) {
 function renderPlayerActionsHub() {
   if (window.__depths.renderPlayerActionsHub > 0) __logReentry('renderPlayerActionsHub');
   __enterDepth('renderPlayerActionsHub', {}, 5);
+  __enterCharRenderScope('renderPlayerActionsHub');
   try {
   const hub = document.getElementById('player-actions-hub');
   if (!hub) return;
@@ -48453,7 +48495,7 @@ function renderPlayerActionsHub() {
           </div>
         </details>`;
       }).join('')}
-    </div>`;  } finally { __exitDepth('renderPlayerActionsHub'); }
+    </div>`;  } finally { __exitCharRenderScope(); __exitDepth('renderPlayerActionsHub'); }
 }
 
 function setPlayerActionsDensity(density) {

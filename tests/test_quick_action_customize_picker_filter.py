@@ -164,7 +164,7 @@ console.log(JSON.stringify({ afterFive, afterSixthAttempt, sixthRejected, afterU
     assert rows['afterUnselect'] == 4
 
 
-def test_invalid_saved_pick_is_preserved_and_warned_not_thrown():
+def test_invalid_saved_pick_is_preserved_silently_not_thrown():
     rows = _run_node("""
 global.window = global;
 window.ActionsTab = {
@@ -198,7 +198,7 @@ console.log(JSON.stringify({
   disabledNames: model.primaryActions.filter(a => a.quickBarCanUse === false).map(a => a.name),
 }));
 """)
-    assert rows['warned'] is True
+    assert rows['warned'] is False
     assert rows['picksAfter'] == ['action:real-attack', 'action:deleted-old-feature']
     assert 'Real Attack' in rows['primaryNames']
     assert 'deleted old feature' in rows['disabledNames']
