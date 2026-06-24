@@ -1331,6 +1331,17 @@ def test_play_html_uses_session_theme_css():
     )
 
 
+def test_play_html_uses_external_play_css():
+    """play.html must load the extracted base stylesheet instead of a massive inline style block."""
+    content = _play_html_content()
+    assert '<link rel="stylesheet" href="/static/css/play.css?v=1">' in content
+    assert "<style" not in content
+    css_path = os.path.join(PROJECT_ROOT, "client/static/css/play.css")
+    css = open(css_path, encoding="utf-8").read()
+    assert ":root {" in css
+    assert "#map-canvas" in css
+
+
 def test_play_html_global_functions_no_duplicate_names():
     """Top-level function names in play.html must be unique (no accidental duplicates)."""
     import re
@@ -4119,7 +4130,7 @@ def test_combat_roster_badges_and_visibility_rules_are_explicit():
 
 def test_combat_roster_survives_stacked_combat_tools_with_internal_scroll():
     """Quick attacks, turn controls, and hazard tools should not overlay or clip the roster."""
-    content = open(os.path.join(PROJECT_ROOT, "client/templates/play.html"), encoding="utf-8").read()
+    content = open(os.path.join(PROJECT_ROOT, "client/static/css/play.css"), encoding="utf-8").read()
     assert ".combat-list {" in content
     assert "overflow-y: auto;" in content
     assert "max-height: clamp(14rem, 42vh, 28rem);" in content
