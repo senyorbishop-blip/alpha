@@ -1,3 +1,4 @@
+import concurrent.futures
 import os
 import re
 from urllib.parse import parse_qs, unquote, urlparse
@@ -7,6 +8,33 @@ from fastapi.responses import JSONResponse
 
 from server.handlers.cartographer import get_image_provider
 from server.utils.pdf_parser import parse_character_pdf_data
+
+_CHARACTER_PDF_MAX_BYTES = 10 * 1024 * 1024
+_CHARACTER_PDF_HEADER_SCAN_BYTES = 1024
+_CHARACTER_PDF_PARSE_TIMEOUT_SECONDS = 8.0
+_PDF_PARSE_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=2, thread_name_prefix="character-pdf-parse")
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return max(1, int(str(os.environ.get(name, default)).strip()))
+    except Exception:
+        return default
+
+
+def _pdf_max_bytes() -> int:
+    return _env_int("CHARACTER_PDF_MAX_BYTES", _CHARACTER_PDF_MAX_BYTES)
+
+
+def _pdf_parse_timeout_seconds() -> float:
+    try:
+        return max(1.0, float(str(os.environ.get("CHARACTER_PDF_PARSE_TIMEOUT_SECONDS", _CHARACTER_PDF_PARSE_TIMEOUT_SECONDS)).strip()))
+    except Exception:
+        return _CHARACTER_PDF_PARSE_TIMEOUT_SECONDS
+
+
+def _looks_like_pdf(data: bytes) -> bool:
+    return b"%PDF-" in data[:_CHARACTER_PDF_HEADER_SCAN_BYTES]
 
 
 def _tts_runtime_summary() -> dict:
@@ -111,18 +139,31 @@ async def fetch_ddb_character_response(char_id: str):
         return JSONResponse({"error": str(exc)}, status_code=502)
 
 
-
 def parse_character_pdf_response(data: bytes):
     if not data:
         return JSONResponse({"error": "Empty file received."}, status_code=400)
+
+    max_bytes = _pdf_max_bytes()
+    if len(data) > max_bytes:
+        return JSONResponse(
+            {"error": f"PDF upload is too large. Maximum size is {max_bytes // (1024 * 1024)} MB."},
+            status_code=413,
+        )
+
+    if not _looks_like_pdf(data):
+        return JSONResponse({"error": "Uploaded file does not look like a PDF."}, status_code=400)
+
     try:
-        result = parse_character_pdf_data(data)
+        future = _PDF_PARSE_EXECUTOR.submit(parse_character_pdf_data, data)
+        result = future.result(timeout=_pdf_parse_timeout_seconds())
+    except concurrent.futures.TimeoutError:
+        future.cancel()
+        return JSONResponse({"error": "PDF import timed out. Try a smaller exported sheet or use JSON import."}, status_code=408)
     except ImportError as exc:
         return JSONResponse({"error": str(exc)}, status_code=500)
     except ValueError as exc:
         return JSONResponse({"error": str(exc)}, status_code=400)
     return JSONResponse({"ok": True, "character": result})
-
 
 
 def get_integrations_status_payload() -> dict:
@@ -161,7 +202,6 @@ def get_integrations_status_payload() -> dict:
             "anthropic_configured": anthropic_configured,
         },
     }
-
 
 
 def integrations_status_response():
