@@ -7,7 +7,7 @@ import secrets
 import logging
 
 logger = logging.getLogger(__name__)
-from server.session import Session, User, normalize_profile_owner_key, set_assistant_dm_permissions, assistant_dm_has_scope, grant_temp_permission, ACTIVE_PROFILE_ID_KEY_LIMIT, set_player_gold_for_user, _inventory_owner_key
+from server.session import Session, User, normalize_profile_owner_key, set_assistant_dm_permissions, assistant_dm_has_scope, grant_temp_permission, ACTIVE_PROFILE_ID_KEY_LIMIT, set_player_gold_for_user, _inventory_owner_key, bump_character_hydration_revisions, build_quick_actions_sync_payload
 from server.character.profile_sanitize import strip_runtime_fields
 from server.quest_library import (
     build_session_quest_from_template,
@@ -482,7 +482,15 @@ async def _send_char_profiles(session: Session, user_id: str):
     if user:
         all_profiles, owner_key, mine = _get_char_profiles_for_user(session, user)
         profiles = mine
-    await manager.send_to(session.id, user_id, {"type": "char_profiles_sync", "payload": {"profiles": profiles}})
+    await manager.send_to(session.id, user_id, {"type": "char_profiles_sync", "payload": {
+        "profiles": profiles,
+        "active_profile_id": str((getattr(session, "active_char_profiles", {}) or {}).get(user_id) or ""),
+        "character_runtime_revision": int(getattr(session, "character_runtime_revision", 0) or 0),
+        "spell_manifest_revision": int(getattr(session, "spell_manifest_revision", 0) or 0),
+        "quick_actions_revision": int(getattr(session, "quick_actions_revision", 0) or 0),
+    }})
+    if user and getattr(user, "role", "") == "player":
+        await manager.send_to(session.id, user_id, {"type": "quick_actions_sync", "payload": build_quick_actions_sync_payload(session, user_id)})
 
 
 async def handle_journal_upsert(payload: dict, session: Session, user: User):
@@ -580,6 +588,7 @@ async def handle_char_profile_upsert(payload: dict, session: Session, user: User
     active_profile_id = str((getattr(session, "active_char_profiles", {}) or {}).get(user.id) or "").strip()
     if active_profile_id and str(saved_profile.get("id") or "").strip() == active_profile_id:
         _hydrate_active_profile_inventory_state(session, user, saved_profile)
+    bump_character_hydration_revisions(session, spells=True, quick_actions=True)
     await _send_char_profiles(session, user.id)
     # Refresh encumbrance so STR/size changes are reflected immediately.
     # Also recompute equipment AC so DEX changes update token.ac before broadcasting.
@@ -605,6 +614,7 @@ async def handle_char_profile_select(payload: dict, session: Session, user: User
     else:
         active_map.pop(user.id, None)
     session.active_char_profiles = active_map
+    bump_character_hydration_revisions(session, spells=True, quick_actions=True)
     logger.info("[live_state] active_profile_update %s", build_live_state_debug_summary(session, user.id, user.role, {"active_profile_id": profile_id}))
     if selected_profile:
         _hydrate_active_profile_inventory_state(session, user, selected_profile)
