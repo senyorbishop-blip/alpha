@@ -1043,6 +1043,58 @@ async def handle_combat_death_save(payload: dict, session: Session, user: User):
     await _broadcast_combat(session)
 
 
+async def _send_initiative_sync_event(session: Session, user: User, message: dict, *, target_label: str) -> tuple[list[str], list[str]]:
+    """Send initiative follow-up events with per-socket diagnostics.
+
+    combat_state is sent first by _broadcast_combat. These follow-up events are
+    intentionally delivered in order after that state: dice_result, then
+    combat_initiative_rolled.
+    """
+    connections = dict(manager.get_session_connections(session.id))
+    sent_to: list[str] = []
+    failed: list[str] = []
+    if connections:
+        for uid in list(connections.keys()):
+            ok = await manager.send_to(session.id, uid, message)
+            if ok:
+                sent_to.append(uid)
+            else:
+                failed.append(uid)
+            logger.info(
+                "[combat initiative sync] send_after_roll type=%s rolled_by=%s target=%s revision=%s sent_to=%s failed=%s",
+                message.get("type"),
+                getattr(user, "id", None),
+                target_label,
+                (getattr(session, "combat", {}) or {}).get("revision"),
+                uid if ok else None,
+                uid if not ok else None,
+            )
+        dm_ids = [uid for uid, connected_user in (getattr(session, "users", {}) or {}).items() if getattr(connected_user, "role", "") == "dm"]
+        fallback_ids = set([getattr(user, "id", "")] + dm_ids).intersection(set(failed))
+        for uid in fallback_ids:
+            ok = await manager.send_to(session.id, uid, message)
+            logger.warning(
+                "[combat initiative sync] direct fallback type=%s rolled_by=%s target=%s revision=%s sent_to=%s failed=%s",
+                message.get("type"),
+                getattr(user, "id", None),
+                target_label,
+                (getattr(session, "combat", {}) or {}).get("revision"),
+                uid if ok else None,
+                uid if not ok else None,
+            )
+            if ok and uid not in sent_to:
+                sent_to.append(uid)
+            elif not ok and uid not in failed:
+                failed.append(uid)
+    else:
+        await manager.broadcast(session.id, message)
+        logger.info(
+            "[combat initiative sync] send_after_roll type=%s rolled_by=%s target=%s revision=%s sent_to=%s failed=%s",
+            message.get("type"), getattr(user, "id", None), target_label, (getattr(session, "combat", {}) or {}).get("revision"), [], [],
+        )
+    return sent_to, failed
+
+
 async def handle_combat_roll_initiative(payload: dict, session: Session, user: User):
     """Player or DM rolls initiative for a combatant. Rolls d20 + modifier, updates list.
 
@@ -1119,7 +1171,8 @@ async def handle_combat_roll_initiative(payload: dict, session: Session, user: U
     # combatant_id/roll_id let the roller dedupe their own already-shown local
     # animation instead of double-popping.
     initiative_name = str(target_combatant.get("name") or "Combatant")
-    await manager.broadcast(session.id, {
+    target_label = str(target_combatant.get("token_id") or target_combatant.get("id") or combatant_id or token_id or "")
+    dice_message = {
         "type": "dice_result",
         "payload": {
             "user_id": user.id,
@@ -1136,9 +1189,13 @@ async def handle_combat_roll_initiative(payload: dict, session: Session, user: U
             "revision": session.combat.get("revision"),
             "roll_id": roll_id,
         },
-    })
+    }
+    # Intended order: combat_state first (above), then dice_result, then
+    # combat_initiative_rolled. The state payload is authoritative; these two
+    # follow-up events animate/diagnose the already-applied roll.
+    dice_sent_to, dice_failed = await _send_initiative_sync_event(session, user, dice_message, target_label=target_label)
 
-    await manager.broadcast(session.id, {
+    initiative_message = {
         "type": "combat_initiative_rolled",
         "payload": {
             "combatant_id": str(target_combatant.get("id") or ""),
@@ -1149,13 +1206,15 @@ async def handle_combat_roll_initiative(payload: dict, session: Session, user: U
             "revision": session.combat.get("revision"),
             "encounter_id": session.combat.get("encounter_id"),
         },
-    })
+    }
+    rolled_sent_to, rolled_failed = await _send_initiative_sync_event(session, user, initiative_message, target_label=target_label)
     logger.info(
-        "[combat initiative sync] rolled_by=%s target=%s revision=%s sent_to=%s",
+        "[combat initiative sync] rolled_by=%s target=%s revision=%s sent_to=%s failed=%s",
         user.id,
         combatant_id or token_id,
         session.combat.get("revision"),
-        list(manager.get_session_connections(session.id).keys()),
+        {"dice_result": dice_sent_to, "combat_initiative_rolled": rolled_sent_to},
+        {"dice_result": dice_failed, "combat_initiative_rolled": rolled_failed},
     )
     log_entry = session.add_log(
         f"🎲 {user.name} initiative: {roll} + {modifier:+d} = {total}",
