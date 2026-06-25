@@ -662,7 +662,7 @@ async def _send_token_move_denied(session: Session, user: User, token, message: 
         }
     })
     await _send_action_ack(session, user, action="token_move", client_action_id=client_action_id,
-                            status="denied", reason=safe_message)
+                            status="failed", reason=safe_message)
 
 
 async def _enforce_player_combat_movement(session: Session, user: User, token, new_x: float, new_y: float, *, client_action_id=None) -> bool:

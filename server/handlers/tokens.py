@@ -33,6 +33,7 @@ from server.handlers.combat import (
     run_combat_fog_sync,
 )
 from server.handlers.hazards import _process_hazard_triggers_for_token
+from server.handlers.token_move_performance import decide_token_move_heavy_work, mark_token_move_heavy_work_ran
 from server.handlers.content import handle_discovery_trigger
 from server.handlers.narration import broadcast_narration_hook
 from server.ambient_audio import normalize_ambient_profile
@@ -427,6 +428,27 @@ async def handle_token_move(payload: dict, session: Session, user: User):
     token_id = payload.get("token_id")
     client_action_id = payload.get("client_action_id")
     token = session.tokens.get(token_id)
+    # New clients stamp each committed drag move with a per-user/token monotonic
+    # sequence.  Keep this server-side so an older in-flight packet can never
+    # rewind a newer authoritative position if websocket delivery/handler work
+    # is reordered.  Payloads without a sequence remain backward compatible.
+    move_seq_raw = payload.get("client_move_seq", payload.get("move_sequence"))
+    try:
+        move_seq = int(move_seq_raw) if move_seq_raw is not None and str(move_seq_raw).strip() != "" else None
+    except Exception:
+        move_seq = None
+    if move_seq is not None:
+        runtime = getattr(session, "_token_move_sequence_runtime", None)
+        if not isinstance(runtime, dict):
+            runtime = {}
+            setattr(session, "_token_move_sequence_runtime", runtime)
+        seq_key = f"{getattr(user, 'id', '')}:{token_id}"
+        last_seq = int(runtime.get(seq_key) or 0)
+        if move_seq < last_seq:
+            await _send_action_ack(session, user, action="token_move", client_action_id=client_action_id,
+                                    status="stale", token_id=token_id, last_client_move_seq=last_seq)
+            return
+        runtime[seq_key] = move_seq
     if not token:
         await _send_action_ack(session, user, action="token_move", client_action_id=client_action_id,
                                 status="failed", reason="Token not found.")
@@ -469,6 +491,10 @@ async def handle_token_move(payload: dict, session: Session, user: User):
             return
         movement_updated = bool((getattr(session, "combat", None) or {}).get("movement"))
 
+    heavy_decision = decide_token_move_heavy_work(
+        session, token, old_x=old_x, old_y=old_y, new_x=new_x, new_y=new_y, payload=payload
+    )
+
     token.x = new_x
     token.y = new_y
 
@@ -486,11 +512,14 @@ async def handle_token_move(payload: dict, session: Session, user: User):
     }, token, exclude_user=user.id)
     await _send_action_ack(session, user, action="token_move", client_action_id=client_action_id,
                             status="confirmed", token_id=token_id, visibility_revision=move_revision,
-                            token_state_revision=token_state_revision)
+                            token_state_revision=token_state_revision, client_move_seq=move_seq)
+    if not heavy_decision.run_heavy_work:
+        return
+    mark_token_move_heavy_work_ran(session, token, map_context=getattr(token, "map_context", "world"))
     # Movement can flip fog/footprint visibility immediately (entering or
     # leaving unrevealed fog); resync per-user so a player who just lost or
-    # gained sight of this token gets the add/remove on this very move, not
-    # only after a later unrelated change.
+    # gained sight of this token gets the add/remove on this committed move,
+    # not only after a later unrelated change.
     await _broadcast_token_visibility(session, token, "token_hidden_changed")
     await _process_hazard_triggers_for_token(session, token, trigger='enter', old_x=old_x, old_y=old_y)
     scene_triggered = await _process_scene_triggers_for_token(session, token, user, old_x=old_x, old_y=old_y)

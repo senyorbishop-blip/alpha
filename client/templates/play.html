@@ -4793,7 +4793,7 @@ let _lastCharacterRuntimeRevision = 0;
 let _lastSpellManifestRevision = 0;
 let _lastQuickActionsRevision = 0;
 let _quickActionsHydration = { ready: false, active_profile_id: '', diagnostics: [] };
-window._serverQuickActions = null;
+if (typeof window !== 'undefined') window._serverQuickActions = null;
 let _characterHydration = { character: 'unknown', spells: 'unknown', inventory: 'unknown', active_profile_id: '' };
 if (typeof window !== 'undefined') window.__characterHydration = _characterHydration;
 function applyAuthoritativeCharacterState(payload, source) {
@@ -4854,15 +4854,15 @@ function applyQuickActionsSync(payload, source) {
   if (Number.isFinite(spellRev) && spellRev < _lastSpellManifestRevision) return false;
   if (Number.isFinite(invRev) && invRev < getLastInventoryRevision()) return false;
   if (Number.isFinite(rev)) _lastQuickActionsRevision = rev;
-  window._serverQuickActions = p;
+  if (typeof window !== 'undefined') window._serverQuickActions = p;
   _quickActionsHydration = {
     ready: String(p.hydration_status || 'ok') === 'ok',
     active_profile_id: String(p.active_profile_id || ''),
     diagnostics: Array.isArray(p.diagnostics) ? p.diagnostics : (Array.isArray(p.disabled_reasons) ? p.disabled_reasons : []),
   };
-  window.__quickActionsHydration = _quickActionsHydration;
-  if (Array.isArray(p.item_actions)) window._playerItemActions = p.item_actions.filter(x => x && typeof x === 'object');
-  if (Array.isArray(p.item_spell_cards)) window._playerItemSpellCards = p.item_spell_cards.filter(x => x && typeof x === 'object');
+  if (typeof window !== 'undefined') window.__quickActionsHydration = _quickActionsHydration;
+  if (typeof window !== 'undefined' && Array.isArray(p.item_actions)) window._playerItemActions = p.item_actions.filter(x => x && typeof x === 'object');
+  if (typeof window !== 'undefined' && Array.isArray(p.item_spell_cards)) window._playerItemSpellCards = p.item_spell_cards.filter(x => x && typeof x === 'object');
   if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
     window.dispatchEvent(new CustomEvent('character:quick-actions-refresh', { detail: { source: String(source || ''), quickActions: p, hydration: _quickActionsHydration } }));
   }
@@ -5318,6 +5318,15 @@ function getRulerDisplay(dx, dy) {
 // (never delayed), only the outbound websocket send is throttled.
 const TOKEN_MOVE_THROTTLE_MS = 80;
 const _pendingTokenMoves = Object.create(null); // tokenId -> { payload, timer }
+const _tokenMoveClientSeq = Object.create(null); // tokenId -> latest committed move sequence
+
+function nextTokenMoveClientSeq(tokenId) {
+  const id = String(tokenId || '');
+  if (!id) return 0;
+  const next = (Number(_tokenMoveClientSeq[id]) || 0) + 1;
+  _tokenMoveClientSeq[id] = next;
+  return next;
+}
 
 function sendTokenMoveImmediately(payload) {
   if (typeof sendWS === 'function') sendWS({ type: 'token_move', payload });
@@ -13423,18 +13432,10 @@ function onMouseMove(e) {
       t.x = finalSnapped.x;
       t.y = finalSnapped.y;
 
-      // Throttled/coalesced broadcast — local t.x/t.y above is already updated
-      // instantly; only the outbound send is rate-limited.
-      // In started combat, the active combatant's movement MUST go through the
-      // plan/confirm (combat_move_commit) flow — never the live token_move
-      // stream. Gating here prevents a flood of token_move frames (and the
-      // plan↔stream conflict that froze the planning overlay) if a free drag
-      // ever runs while a combat move is pending or this is the moving token's
-      // turn. Non-combat drags stream normally.
-      if (!_pendingMoveConfirm && !_isActiveCombatantToken(drag.tokenId)) {
-        const _moveActionId = registerPendingAction(createClientActionId('tm'), { action: 'token_move', tokenId: drag.tokenId });
-        scheduleTokenMoveSend(drag.tokenId, { token_id: drag.tokenId, x: t.x, y: t.y, preview: true, client_action_id: _moveActionId });
-      }
+      // Drag preview is strictly client-local: do not stream every
+      // mousemove to the server. The server-authoritative movement (including
+      // blockers, combat budgets, fog/LOS, hazards, scene triggers, and acks)
+      // is committed at controlled frequency from mouse-up/finalization below.
     }
   }
 }
@@ -13526,9 +13527,18 @@ function onMouseUp(e) {
         showToast(_pendingMoveConfirm?.resolver?.valid ? 'Planning move — choose Confirm Move or Cancel Move.' : (_pendingMoveConfirm?.resolver?.reason || 'Invalid movement preview.'));
       }
     } else if (t) {
-      // Drag end always flushes immediately with the final position —
-      // never delayed by the in-drag throttle above.
-      flushPendingTokenMove(drag.tokenId, { token_id: drag.tokenId, x: t.x, y: t.y });
+      // Drag end is the authoritative commit. Stamp a client action id for the
+      // sender-only ack and a per-token monotonic sequence so the server can
+      // ignore older in-flight commits without weakening movement authority.
+      const _moveActionId = registerPendingAction(createClientActionId('tm'), { action: 'token_move', tokenId: drag.tokenId });
+      flushPendingTokenMove(drag.tokenId, {
+        token_id: drag.tokenId,
+        x: t.x,
+        y: t.y,
+        final: true,
+        client_action_id: _moveActionId,
+        client_move_seq: nextTokenMoveClientSeq(drag.tokenId),
+      });
     }
     drag.active = false;
     drag.tokenId = null;
@@ -17146,7 +17156,10 @@ document.addEventListener('mouseup', e => {
   }
   if (drag.active && !_draggingFromStaging) {
     const t = tokens[drag.tokenId];
-    if (t) flushPendingTokenMove(drag.tokenId, { token_id: drag.tokenId, x: t.x, y: t.y });
+    if (t) {
+      const _moveActionId = registerPendingAction(createClientActionId('tm'), { action: 'token_move', tokenId: drag.tokenId });
+      flushPendingTokenMove(drag.tokenId, { token_id: drag.tokenId, x: t.x, y: t.y, final: true, client_action_id: _moveActionId, client_move_seq: nextTokenMoveClientSeq(drag.tokenId) });
+    }
     drag.active = false; drag.tokenId = null;
   }
   if (!_draggingFromStaging) return;
@@ -26533,7 +26546,7 @@ function handleLegacyMessage(msg) {
       // plus any recompute still queued for the next frame, so the "PLANNING
       // MOVE" overlay can never get stuck after the token has authoritatively
       // moved (on either the player's or the DM's view).
-      if (_combatMovePlanMatchesToken(p.token_id)) _clearCombatMovePlan();
+      if (typeof _combatMovePlanMatchesToken === 'function' && _combatMovePlanMatchesToken(p.token_id)) _clearCombatMovePlan();
       if (drag.active && String(drag.tokenId || '') === String(p.token_id || '')) {
         // Ignore echoed/relayed positions while this client is dragging the same token;
         // applying them mid-drag causes visible rubber-banding on slow connections.
@@ -26573,7 +26586,7 @@ function handleLegacyMessage(msg) {
     case 'token_move_denied': {
       // Denial is an error path — tear down the whole plan/overlay (not just
       // _pendingMoveConfirm) so it can't get stuck on "PLANNING MOVE".
-      if (_combatMovePlanMatchesToken(p.token_id)) _clearCombatMovePlan();
+      if (typeof _combatMovePlanMatchesToken === 'function' && _combatMovePlanMatchesToken(p.token_id)) _clearCombatMovePlan();
       if (p.token_id && tokens[p.token_id]) {
         if (Number.isFinite(Number(p.x))) tokens[p.token_id].x = Number(p.x);
         if (Number.isFinite(Number(p.y))) tokens[p.token_id].y = Number(p.y);
