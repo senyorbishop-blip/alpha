@@ -211,6 +211,11 @@
     if (title) title.textContent = activeConfig.label || 'Live Table';
     if (safeRoot.dataset) {
       safeRoot.dataset.dmActiveMode = activeMode;
+      safeRoot.dataset.debugOpen = activeMode === 'debug' ? 'true' : 'false';
+    }
+    if (safeRoot.body && safeRoot.body.dataset) {
+      safeRoot.body.dataset.dmActiveMode = activeMode;
+      safeRoot.body.dataset.debugOpen = activeMode === 'debug' ? 'true' : 'false';
     }
     return activeConfig;
   }
