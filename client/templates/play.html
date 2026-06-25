@@ -17116,13 +17116,24 @@ function _stagingTokenBelongsToConnectedPlayer(token) {
   ));
 }
 
+function _stagingTokenVisibleToDm(token) {
+  if (!token) return false;
+  const ownerId = String(token.owner_id || '').trim();
+  // NPCs/monsters/DM-controlled staged tokens usually have no player owner;
+  // keep them visible to the DM so the staging tray can be used for ambushes
+  // and off-map prep while still hiding offline player tokens below.
+  if (!ownerId) return true;
+  return _stagingTokenBelongsToConnectedPlayer(token);
+}
+
 function _visibleStagingTokensForRole(stagingList) {
   const list = Array.isArray(stagingList) ? stagingList : [];
   if (ROLE === 'dm') {
-    // Keep the DM's staging rail focused on players who are currently logged in.
-    // Offline player tokens stay in _stagingTokens/server state and reappear when
-    // that player reconnects, but they do not crowd the active placement rail.
-    return list.filter(t => _stagingTokenBelongsToConnectedPlayer(t));
+    // Keep the DM's staging rail focused on connected player tokens plus
+    // unowned NPC/monster prep tokens. Offline player tokens stay in
+    // _stagingTokens/server state and reappear when that player reconnects,
+    // but they do not crowd the active placement rail.
+    return list.filter(t => _stagingTokenVisibleToDm(t));
   }
   // Players only see their own staging tokens — filter out DM/offline-party tokens entirely.
   return list.filter(t => _tokenOwnedByMe(t));
