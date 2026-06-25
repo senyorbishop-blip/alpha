@@ -119,7 +119,7 @@
   <div class="rail-divider"></div>
 
   <!-- Flyout toggle buttons -->
-  <button class="rail-btn" id="rail-token-btn" data-help="dm-token-tools" onclick="toggleFlyout('flyout-token')" style="display:none;">
+  <button class="rail-btn" id="rail-token-btn" data-dm-tool="spawn-token" data-help="dm-token-tools" onclick="toggleFlyout('flyout-token')" style="display:none;">
     🪙<span class="rail-tooltip">Create Token</span>
   </button>
   <button class="rail-btn" id="rail-char-btn" data-help="my-character" onclick="toggleFlyout('flyout-char')" style="display:none;">
@@ -131,26 +131,26 @@
   <button class="rail-btn" id="rail-dice-btn" data-help="dice-quick-actions" onclick="toggleFlyout('flyout-dice')">
     🎲<span class="rail-tooltip">Dice Tray</span>
   </button>
-  <button class="rail-btn" id="rail-journal-btn" onclick="toggleFlyout('flyout-journal')">
+  <button class="rail-btn" id="rail-journal-btn" data-dm-tool="journal-shortcuts" onclick="toggleFlyout('flyout-journal')">
     📚<span class="rail-tooltip">Journal & Handouts</span>
   </button>
 
-  <button class="rail-btn" id="rail-editor-btn" data-help="dm-map-editor" onclick="toggleFlyout('flyout-editor')" style="display:none;">
+  <button class="rail-btn" id="rail-editor-btn" data-dm-tool="terrain-tools" data-help="dm-map-editor" onclick="toggleFlyout('flyout-editor')" style="display:none;">
     🧱<span class="rail-tooltip">Map Editor</span>
   </button>
-  <button class="rail-btn" id="rail-map-btn" onclick="toggleFlyout('flyout-map')" style="display:none;">
+  <button class="rail-btn" id="rail-map-btn" data-dm-tool="lighting-weather-tools" onclick="toggleFlyout('flyout-map')" style="display:none;">
     🗺<span class="rail-tooltip">Battle Map</span>
   </button>
-  <button class="rail-btn" id="rail-perm-btn" onclick="toggleFlyout('flyout-perm')" style="display:none;">
+  <button class="rail-btn" id="rail-perm-btn" data-dm-tool="viewer-power-shortcuts" onclick="toggleFlyout('flyout-perm')" style="display:none;">
     👁<span class="rail-tooltip">Permissions</span>
   </button>
-  <button class="rail-btn" id="rail-fog-btn" data-help="dm-fog" onclick="toggleFlyout('flyout-fog')" style="display:none;">
+  <button class="rail-btn" id="rail-fog-btn" data-dm-tool="fog-tools" data-help="dm-fog" onclick="toggleFlyout('flyout-fog')" style="display:none;">
     🌫<span class="rail-tooltip">Fog of War</span>
   </button>
-  <button class="rail-btn" id="rail-sound-btn" onclick="toggleFlyout('flyout-sound')" style="display:none;">
+  <button class="rail-btn" id="rail-sound-btn" data-dm-tool="narration-shortcuts" onclick="toggleFlyout('flyout-sound')" style="display:none;">
     🔊<span class="rail-tooltip">Ambient Sound</span>
   </button>
-  <button class="rail-btn" id="rail-assistant-btn" onclick="toggleFlyout('flyout-assistant')" style="display:none;">
+  <button class="rail-btn" id="rail-assistant-btn" data-dm-tool="current-scene-notes" onclick="toggleFlyout('flyout-assistant')" style="display:none;">
     🧙<span class="rail-tooltip">DM Assistant</span>
   </button>
   <button class="rail-btn" id="rail-cart-btn" onclick="toggleFlyout('flyout-cart')" style="display:none;">
@@ -625,16 +625,16 @@
     <span id="editor-brush-help"></span>
     <span id="editor-prop-size-val"></span>
     <span id="editor-prop-rotation-val"></span>
-    <button id="editor-wall-tool-segment"></button>
+    <button id="editor-wall-tool-segment" data-dm-tool="wall-tools"></button>
     <button id="editor-wall-tool-room"></button>
-    <button id="editor-wall-tool-door"></button>
+    <button id="editor-wall-tool-door" data-dm-tool="door-tools"></button>
     <button id="editor-wall-tool-opening"></button>
     <input type="checkbox" id="editor-wall-straight" checked />
     <input type="checkbox" id="editor-chest-hidden" checked />
     <input type="range" id="editor-prop-size" min="1" max="4" value="1" oninput="setEditorPropSize(this.value)" />
     <button id="editor-prop-rotate-left"></button>
     <button id="editor-prop-rotate-right"></button>
-    <button id="editor-save-btn"></button>
+    <button id="editor-save-btn" data-dm-tool="map-save-apply"></button>
     <button id="editor-clear-btn"></button>
   </div>
 
@@ -656,7 +656,7 @@
   <div class="sidebar-section" id="editor-marker-section" style="display:none;"></div>
 
   <!-- Asset Library Section -->
-  <div class="sidebar-section" id="editor-asset-library-section" style="display:none;">
+  <div class="sidebar-section" id="editor-asset-library-section" data-dm-tool="asset-library" style="display:none;">
     <div class="sidebar-label" style="display:flex;align-items:center;justify-content:space-between;">
       <span>🖼 Asset Library</span>
     </div>
@@ -1008,7 +1008,7 @@
     <div class="sound-section">
       <div class="sound-section-header">📜 Narration</div>
       <div class="sound-section-note">Write a short beat, preview the voice, then broadcast when you are happy with the tone.</div>
-      <textarea id="narration-text-input"
+      <textarea id="narration-text-input" data-dm-tool="narration"
         placeholder="Enter narration text…"
         rows="3"
         class="narration-textarea"></textarea>
@@ -1567,6 +1567,10 @@
           <a class="dm-context-marker" href="#selected-quick-panel" data-dm-tool="selected-token-summary">Selected token summary</a>
           <a class="dm-context-marker" href="#players-panel" data-dm-tool="party-overview">Party overview</a>
           <a class="dm-context-marker" href="#right-panel-context" data-dm-tool="current-scene-notes">Current scene notes</a>
+          <a class="dm-context-marker" href="#rtab-handouts" data-dm-tool="handout-shortcuts">Handout shortcuts</a>
+          <a class="dm-context-marker" href="#rail-journal-btn" data-dm-tool="journal-shortcuts">Journal shortcuts</a>
+          <a class="dm-context-marker" href="#narration-text-input" data-dm-tool="narration-shortcuts">Narration shortcuts</a>
+          <a class="dm-context-marker" href="#rail-perm-btn" data-dm-tool="viewer-power-shortcuts">Viewer power shortcuts</a>
           <a class="dm-context-marker" href="#save-btn" data-dm-tool="compact-save-state">Compact save state</a>
         </div>
       </section>
@@ -1593,6 +1597,8 @@
           <a class="dm-context-marker" href="#flyout-editor" data-dm-tool="wall-tools">Wall tools</a>
           <a class="dm-context-marker" href="#flyout-editor" data-dm-tool="door-tools">Door tools</a>
           <a class="dm-context-marker" href="#flyout-fog" data-dm-tool="reveal-hide-tools">Reveal / hide</a>
+          <a class="dm-context-marker" href="#editor-layer-tokens" data-dm-tool="token-layer">Token layer</a>
+          <a class="dm-context-marker" href="#editor-layer-props" data-dm-tool="prop-layer">Prop layer</a>
           <a class="dm-context-marker" href="#asset-library-panel" data-dm-tool="asset-library">Asset library</a>
           <a class="dm-context-marker" href="#weather-canvas" data-dm-tool="lighting-weather-tools">Lighting / weather</a>
           <a class="dm-context-marker" href="#save-btn" data-dm-tool="map-save-apply">Map save / apply</a>
@@ -1654,8 +1660,13 @@
         <p>Debug diagnostics are hidden by default and only appear while Debug mode is active.</p>
         <div class="dm-context-marker-grid" aria-label="Debug tool markers">
           <a class="dm-context-marker" href="#stream-readiness-panel" data-dm-tool="stream-readiness">Stream readiness</a>
+          <a class="dm-context-marker" href="#stream-readiness-panel" data-dm-tool="payload-warnings">Payload warnings</a>
+          <a class="dm-context-marker" href="#ws-status-wrap" data-dm-tool="reconnect-warnings">Reconnect warnings</a>
           <a class="dm-context-marker" href="#ws-status-wrap" data-dm-tool="websocket-diagnostics">WebSocket diagnostics</a>
           <a class="dm-context-marker" href="#topbar" data-dm-tool="sync-diagnostics">Sync diagnostics</a>
+          <a class="dm-context-marker" href="#flyout-fog" data-dm-tool="visibility-checks">Visibility checks</a>
+          <a class="dm-context-marker" href="#dm-mode-hint" data-dm-tool="dm-focus-testing-guidance">DM focus / testing guidance</a>
+          <a class="dm-context-marker" href="#dm-mode-hint" data-dm-tool="development-only-hints">Development-only hints</a>
         </div>
       </section>
       <section class="dm-context-mode-section dm-legacy-tools-fallback" data-dm-mode="run" data-dm-context-section="legacy-tools-fallback" aria-label="More / Legacy Tools fallback">
