@@ -264,3 +264,29 @@ body.dm-map-first-active #display-overlay-exit {
     transform: none !important;
   }
 }
+
+/* Approved mockup structure: DM-only map-first placement over the legacy play grid. */
+body.dm-map-first-active {
+  grid-template-rows: var(--mf-topbar-height, 3rem) minmax(0, 1fr) var(--mf-bottom-strip-height, 4rem);
+  grid-template-areas:
+    "topbar topbar topbar"
+    "rail map context"
+    "rail quick context";
+}
+body.dm-map-first-active #topbar { grid-area: topbar; }
+body.dm-map-first-active #sidebar-left.dm-map-first-rail { grid-area: rail; }
+body.dm-map-first-active #canvas-wrap.dm-map-first-map-stage { grid-area: map; }
+body.dm-map-first-active #sidebar-right.dm-map-first-right-context { grid-area: context; }
+body.dm-map-first-active #dm-map-first-quick-strip.dm-map-first-quick-strip { grid-area: quick; }
+body:not(.dm-map-first-active) #dm-live-mode-rail,
+body:not(.dm-map-first-active) #dm-context-shell,
+body:not(.dm-map-first-active) #dm-map-first-quick-strip {
+  display: none !important;
+}
+body.dm-map-first-active .dm-map-first-quick-strip[hidden] { display: none !important; }
+body.dm-map-first-active .dm-panel-mode-inactive { display: none !important; }
+body.dm-map-first-active .dm-legacy-tools-fallback {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(212, 166, 55, 0.18);
+}
