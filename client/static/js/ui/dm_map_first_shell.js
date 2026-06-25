@@ -4,7 +4,8 @@
   const MODES = Object.freeze([
     {
       id: 'run',
-      label: 'Run Game',
+      label: 'Live Table',
+      aliases: ['run-game', 'session', 'table-view'],
       context: ['selected-token', 'party-overview', 'handouts', 'narration', 'save-state'],
     },
     {
@@ -56,7 +57,7 @@
   ]);
 
   function listModes() {
-    return MODES.map((mode) => ({ ...mode, context: [...mode.context] }));
+    return MODES.map((mode) => ({ ...mode, context: [...mode.context], aliases: [...(mode.aliases || [])] }));
   }
 
   function listQuickActions() {
@@ -64,7 +65,10 @@
   }
 
   function findMode(modeId) {
-    return MODES.find((mode) => mode.id === modeId) || MODES[0];
+    return MODES.find((mode) => {
+      if (mode.id === modeId) return true;
+      return Array.isArray(mode.aliases) && mode.aliases.includes(modeId);
+    }) || MODES[0];
   }
 
   function setActiveMode(root, modeId) {
@@ -72,12 +76,14 @@
     const mode = findMode(modeId);
     root.dataset.dmMode = mode.id;
     root.querySelectorAll('[data-dm-mode-button]').forEach((button) => {
-      const active = button.getAttribute('data-dm-mode-button') === mode.id;
+      const buttonMode = findMode(button.getAttribute('data-dm-mode-button'));
+      const active = buttonMode.id === mode.id;
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
       button.toggleAttribute('data-active', active);
     });
     root.querySelectorAll('[data-dm-context-panel]').forEach((panel) => {
-      const active = panel.getAttribute('data-dm-context-panel') === mode.id;
+      const panelMode = findMode(panel.getAttribute('data-dm-context-panel'));
+      const active = panelMode.id === mode.id;
       panel.toggleAttribute('data-active', active);
     });
     return mode;
