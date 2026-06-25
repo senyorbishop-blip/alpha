@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 
 from server.handlers import combat as combat_handlers
 from server.handlers import tokens as token_handlers
@@ -166,6 +167,78 @@ async def test_player_blocked_from_placing_second_active_owned_token(monkeypatch
     assert sent, "Player should receive a rejection message."
     assert "one active token" in str(sent[-1][0][2]["payload"]["message"]).lower()
     assert broadcast == []
+
+
+@pytest.mark.anyio
+async def test_player_place_character_recalls_existing_token_from_other_map(monkeypatch):
+    session = Session(id="s-token-recall-other-map")
+    player = User(id="p1", name="Player One", role="player")
+    session.users[player.id] = player
+    session.tokens["tok-existing"] = Token(
+        id="tok-existing",
+        name="Existing Hero",
+        x=10,
+        y=20,
+        width=40,
+        height=40,
+        color="#fff",
+        shape="circle",
+        owner_id=player.id,
+        staged=False,
+        map_context="old-map",
+    )
+
+    sent = []
+    broadcast_events = []
+
+    async def _send_to(*args, **kwargs):
+        sent.append((args, kwargs))
+
+    async def _broadcast_token_event(_manager, _session, event_type, payload, token):
+        broadcast_events.append((event_type, payload, token.id))
+
+    async def _noop(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr(token_handlers.manager, "send_to", _send_to)
+    monkeypatch.setattr(token_handlers, "_broadcast_token_event", _broadcast_token_event)
+    monkeypatch.setattr(token_handlers, "_broadcast_token_state_sync", _noop)
+    monkeypatch.setattr(token_handlers, "run_combat_fog_sync", _noop)
+    monkeypatch.setattr(token_handlers, "save_campaign_async", _noop)
+
+    await token_handlers.handle_token_create(
+        {
+            "name": "Existing Hero",
+            "owner_id": player.id,
+            "x": 260,
+            "y": 280,
+            "tokenType": "player",
+            "map_context": "world",
+        },
+        session,
+        player,
+    )
+
+    assert len([t for t in session.tokens.values() if t.owner_id == player.id and not t.staged]) == 1
+    token = session.tokens["tok-existing"]
+    assert token.x == 260
+    assert token.y == 280
+    assert token.map_context == "world"
+    assert sent == []
+    assert broadcast_events
+    assert broadcast_events[-1][0] == "token_placed"
+    assert broadcast_events[-1][1]["token_id"] == "tok-existing"
+
+
+def test_place_character_uses_appws_queue_instead_of_stale_lexical_ws_gate():
+    src = (Path(__file__).resolve().parents[1] / "client/templates/play.html").read_text(encoding="utf-8")
+    start = src.index("function placeCharacter()")
+    end = src.index("\n\n// ═══════════════════════════════════════════════════════════════════\n// TOKEN MANAGEMENT", start)
+    body = src[start:end]
+    assert "Not connected — please wait and try again." not in body
+    assert "legacy lexical `ws`" in body
+    assert "type: 'token_placed'" in body
+    assert "placeCharacterFromStaging" in body
 
 
 @pytest.mark.anyio
