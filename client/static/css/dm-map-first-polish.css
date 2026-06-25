@@ -290,3 +290,55 @@ body.dm-map-first-active .dm-legacy-tools-fallback {
   padding-top: 0.75rem;
   border-top: 1px solid rgba(212, 166, 55, 0.18);
 }
+
+/* Final pre-removal polish: keep legacy surfaces contained inside the DM-only shell. */
+body.dm-map-first-active #sidebar-right.dm-map-first-right-context {
+  flex: 0 0 var(--mf-right-context-width, clamp(18rem, 23vw, 25rem));
+  overflow: hidden;
+  max-height: 100%;
+}
+
+body.dm-map-first-active .dm-map-first-context-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+body.dm-map-first-active #right-tab-bar,
+body.dm-map-first-active #right-panel-context,
+body.dm-map-first-active #sidebar-right .rtab-pane {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+body.dm-map-first-active #right-panel-context,
+body.dm-map-first-active #sidebar-right .rtab-pane.active {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+body.dm-map-first-active #dm-map-first-quick-strip.dm-map-first-quick-strip {
+  max-width: min(36rem, calc(100% - 1.5rem));
+  pointer-events: none;
+}
+
+body.dm-map-first-active #dm-map-first-quick-strip .dm-map-first-quick-action {
+  pointer-events: auto;
+}
+
+body.dm-map-first-active #dm-map-first-quick-strip .dm-map-first-quick-action:focus-visible,
+body.dm-map-first-active #right-tab-bar .rtab:focus-visible,
+body.dm-map-first-active .rail-btn:focus-visible {
+  outline: 2px solid rgba(0, 229, 204, 0.72);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  body.dm-map-first-active #sidebar-right.dm-map-first-right-context {
+    flex-basis: auto;
+    max-height: 36vh;
+  }
+}
