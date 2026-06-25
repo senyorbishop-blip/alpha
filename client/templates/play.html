@@ -25567,8 +25567,6 @@ function handleLegacyMessage(msg) {
       (p.log || []).forEach(e => addLogEntry({ ...e, role: users[e.user_id]?.role }));
 
       renderPlayerList();
-      renderViewerPanel();
-      _startViewerCooldownTimer();
       if (window.AppUIChat && typeof window.AppUIChat.renderChatTargets === 'function') {
         window.AppUIChat.renderChatTargets(__createChatEnv());
       }
@@ -25611,6 +25609,8 @@ function handleLegacyMessage(msg) {
       viewerPowerCatalog = { ...(p.viewer_power_catalog || {}) };
       assistantDmPermissions = (p.assistant_dm_permissions && typeof p.assistant_dm_permissions === "object") ? { ...p.assistant_dm_permissions } : {};
       _showViewerPresence = !!p.show_viewer_presence;
+      renderViewerPanel();
+      _startViewerCooldownTimer();
       const _vpChk = document.getElementById('viewer-presence-toggle');
       if (_vpChk) _vpChk.checked = _showViewerPresence;
       hazardZones = { ...(p.hazard_zones || {}) };

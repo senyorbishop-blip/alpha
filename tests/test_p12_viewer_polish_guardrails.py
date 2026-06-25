@@ -113,3 +113,11 @@ def test_viewer_fx_supports_recap_friendly_power_effects():
         "fireball",
     ]:
         assert marker in src
+
+
+def test_play_state_sync_renders_viewer_panel_after_profiles_are_loaded():
+    src = (ROOT / "client" / "templates" / "play.html").read_text(encoding="utf-8")
+    profile_assign = "viewerProfiles = { ...(p.viewer_profiles || {}) };"
+    render_after = "viewerProfiles = { ...(p.viewer_profiles || {}) };\n      viewerPendingActions = { ...(p.viewer_pending_actions || {}) };\n      viewerPowerCatalog = { ...(p.viewer_power_catalog || {}) };\n      assistantDmPermissions = (p.assistant_dm_permissions && typeof p.assistant_dm_permissions === \"object\") ? { ...p.assistant_dm_permissions } : {};\n      _showViewerPresence = !!p.show_viewer_presence;\n      renderViewerPanel();"
+    assert profile_assign in src
+    assert render_after in src

@@ -256,6 +256,33 @@ async def _broadcast_viewer_power_catalog(session: Session):
     await manager.broadcast(session.id, {'type': 'viewer_power_catalog_sync', 'payload': payload})
 
 
+def _find_viewer_for_power_admin(session: Session, viewer_ref: str):
+    """Resolve a DM-selected viewer from user id, player_key, or profile key.
+
+    Older clients and restored sessions may refer to viewers by different stable
+    identifiers. Accepting these aliases keeps DM grants pointed at the live
+    viewer profile instead of silently no-oping when the browser-selected value
+    is not the in-memory user id.
+    """
+    ref = str(viewer_ref or '').strip()[:64]
+    if not ref:
+        return None
+    users = dict(getattr(session, 'users', {}) or {})
+    direct = users.get(ref)
+    if direct and _role(direct) == 'viewer':
+        return direct
+    for cand in users.values():
+        if _role(cand) != 'viewer':
+            continue
+        aliases = _viewer_key_aliases(cand)
+        player_key = str(getattr(cand, 'player_key', '') or '').strip()[:64]
+        if player_key and player_key not in aliases:
+            aliases.append(player_key)
+        if ref in aliases:
+            return cand
+    return None
+
+
 def _get_or_create_viewer_profile(session: Session, user: User) -> tuple[dict, dict, str]:
     profiles = _get_viewer_profiles(session)
     key = _resolve_viewer_profile_key(session, user)
@@ -856,8 +883,9 @@ async def handle_viewer_power_grant(payload: dict, session: Session, user: User)
     charges = 1
     defs = _viewer_power_defs(session)
     requires_approval = bool(payload.get('requires_approval', defs.get(power_id, {}).get('approval_default', False)))
-    viewer = (session.users or {}).get(viewer_user_id)
-    if not viewer or _role(viewer) != 'viewer' or power_id not in defs:
+    viewer = _find_viewer_for_power_admin(session, viewer_user_id)
+    if not viewer or power_id not in defs:
+        await manager.send_to(session.id, user.id, {'type': 'viewer_power_status', 'payload': {'kind': 'error', 'message': 'Choose an online viewer and valid power before granting.'}})
         return
     profiles, profile, _ = _get_or_create_viewer_profile(session, viewer)
     powers = dict(profile.get('powers') or {})
@@ -866,6 +894,7 @@ async def handle_viewer_power_grant(payload: dict, session: Session, user: User)
     profiles[_viewer_key_for_user(viewer)] = profile
     session.viewer_profiles = profiles
     await _broadcast_viewer_profiles(session)
+    await manager.send_to(session.id, user.id, {'type': 'viewer_power_status', 'payload': {'kind': 'granted', 'message': f"Granted {defs.get(power_id, {}).get('name', power_id)} to {viewer.name}."}})
     await save_campaign_async(session)
 
 
@@ -874,9 +903,10 @@ async def handle_viewer_power_grant_preset(payload: dict, session: Session, user
         return
     viewer_user_id = str(payload.get('viewer_user_id') or '').strip()
     preset_id = str(payload.get('preset_id') or '').strip()
-    viewer = (session.users or {}).get(viewer_user_id)
+    viewer = _find_viewer_for_power_admin(session, viewer_user_id)
     preset = VIEWER_POWER_PRESETS.get(preset_id)
-    if not viewer or _role(viewer) != 'viewer' or not preset:
+    if not viewer or not preset:
+        await manager.send_to(session.id, user.id, {'type': 'viewer_power_status', 'payload': {'kind': 'error', 'message': 'Choose an online viewer and valid preset before granting.'}})
         return
     defs = _viewer_power_defs(session)
     profiles, profile, _ = _get_or_create_viewer_profile(session, viewer)
@@ -898,6 +928,7 @@ async def handle_viewer_power_grant_preset(payload: dict, session: Session, user
     profiles[_viewer_key_for_user(viewer)] = profile
     session.viewer_profiles = profiles
     await _broadcast_viewer_profiles(session)
+    await manager.send_to(session.id, user.id, {'type': 'viewer_power_status', 'payload': {'kind': 'granted', 'message': f"Granted {preset.get('name', preset_id)} to {viewer.name}."}})
     await save_campaign_async(session)
 
 
@@ -906,8 +937,9 @@ async def handle_viewer_power_revoke(payload: dict, session: Session, user: User
         return
     viewer_user_id = str(payload.get('viewer_user_id') or '').strip()
     power_id = str(payload.get('power_id') or '').strip()
-    viewer = (session.users or {}).get(viewer_user_id)
-    if not viewer or _role(viewer) != 'viewer':
+    viewer = _find_viewer_for_power_admin(session, viewer_user_id)
+    if not viewer:
+        await manager.send_to(session.id, user.id, {'type': 'viewer_power_status', 'payload': {'kind': 'error', 'message': 'Choose an online viewer before revoking.'}})
         return
     profiles, profile, _ = _get_or_create_viewer_profile(session, viewer)
     powers = dict(profile.get('powers') or {})

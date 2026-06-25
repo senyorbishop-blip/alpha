@@ -446,3 +446,28 @@ def test_viewer_power_grant_preset_applies_all_powers(monkeypatch):
     powers = (profile or {}).get("powers") or {}
     for pid in expected_powers:
         assert pid in powers, f"Preset power '{pid}' must be in viewer profile after preset grant"
+
+def test_viewer_power_grant_accepts_stable_player_key_alias(monkeypatch):
+    """DM grants should resolve stable viewer aliases used by restored clients."""
+    from server.handlers import viewer_powers as vp
+    session, dm, player, viewer = _make_session()
+    viewer.player_key = "stable-viewer-key"
+    broadcasts, sent = _patch_manager(monkeypatch)
+
+    async def _save(_):
+        return True
+
+    monkeypatch.setattr(vp, "save_campaign_async", _save)
+
+    asyncio.run(vp.handle_viewer_power_grant(
+        {"viewer_user_id": "stable-viewer-key", "power_id": "pebble_toss"},
+        session, dm,
+    ))
+
+    profile = _viewer_profile(session, viewer)
+    assert profile is not None
+    assert "pebble_toss" in (profile.get("powers") or {})
+    assert any(
+        uid == dm.id and msg.get("type") == "viewer_power_status" and "Granted" in ((msg.get("payload") or {}).get("message") or "")
+        for _, uid, msg in sent
+    )
