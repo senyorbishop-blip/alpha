@@ -22835,38 +22835,13 @@ function drawViewerPowerTargetingOverlay() {
 }
 
 function isPresenceLogEntry(entry) {
-  if (window.AppUIChatLog && typeof window.AppUIChatLog.isPresenceLogEntry === 'function') {
-    return window.AppUIChatLog.isPresenceLogEntry(entry);
-  }
-  if (!entry || entry.type !== 'system' || !entry.message) return false;
-  const msg = String(entry.message).toLowerCase();
-  return msg.includes(' joined as ') || msg.includes(' connected.') || msg.includes(' disconnected.') || msg.includes(' returned to the session.');
+  return !!(window.AppUIChatLog && typeof window.AppUIChatLog.isPresenceLogEntry === 'function' && window.AppUIChatLog.isPresenceLogEntry(entry));
 }
 
 function addLogEntry(entry) {
   if (window.AppUIChatLog && typeof window.AppUIChatLog.addLogEntry === 'function') {
     window.AppUIChatLog.addLogEntry(__createChatLogEnv(), entry);
-    return;
   }
-  if (isPresenceLogEntry(entry)) return;
-  // Chat panel shows ONLY chat messages — dice results and system messages
-  // are shown via overlays and toasts to keep the chat channel clean.
-  if (entry.type !== 'chat') return;
-  const feed = document.getElementById('log-feed');
-  const div  = document.createElement('div');
-  const channel = entry.channel || '';
-  div.className = `log-entry chat${channel === 'viewers' ? ' channel-viewers' : channel === 'whisper' ? ' channel-whisper' : ''}`;
-  let channelTag = '';
-  if (channel === 'viewers') {
-    channelTag = `<span style="margin-left:0.35rem;font-size:0.62rem;color:rgba(155,89,182,0.85);">👁</span>`;
-  } else if (channel === 'whisper') {
-    channelTag = `<span style="margin-left:0.35rem;font-size:0.62rem;color:var(--parchment-dim);">🤫</span>`;
-  }
-  const whisperTag = entry.private ? `<span style="margin-left:0.35rem;font-size:0.62rem;color:#f0c674;">(private)</span>` : '';
-  div.innerHTML = `<span class="log-user ${escapeHtml(entry.role || '')}">${escapeHtml(entry.user)}:</span> ${escapeHtml(entry.message)}${channelTag}${whisperTag}`;
-  feed.appendChild(div);
-  feed.scrollTop = feed.scrollHeight;
-  bumpLogBadge();
 }
 
 function addDMNotif(text) {

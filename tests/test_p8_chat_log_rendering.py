@@ -16,12 +16,15 @@ CHAT_LOG_MODULE = ROOT / "client" / "static" / "js" / "ui" / "chat_log.js"
 FRONTEND_DOC = ROOT / "docs" / "frontend-modularization.md"
 
 
-def test_play_template_does_not_reclaim_chat_log_rendering():
+def test_play_template_keeps_only_chat_log_compatibility_wrappers():
     html = PLAY_TEMPLATE.read_text(encoding="utf-8")
+    wrapper_slice = html[html.index("function isPresenceLogEntry") : html.index("function addDMNotif")]
 
-    assert "function addLogEntry" not in html
-    assert "function isPresenceLogEntry" not in html
-    assert "AppUIChatLog" not in html
+    assert "function addLogEntry" in wrapper_slice
+    assert "function isPresenceLogEntry" in wrapper_slice
+    assert "window.AppUIChatLog.addLogEntry(__createChatLogEnv(), entry)" in wrapper_slice
+    assert "feed.appendChild" not in wrapper_slice
+    assert "div.innerHTML" not in wrapper_slice
 
 
 def test_chat_log_module_owns_public_contract():
