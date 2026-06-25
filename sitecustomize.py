@@ -1,10 +1,10 @@
 """Runtime hotfixes loaded by Python's site startup.
 
-This file intentionally keeps the patch narrow: viewer power grant messages from
-DM UI surfaces can arrive with a viewer profile key rather than the exact
-``viewer_user_id`` expected by ``server.handlers.viewer_powers``.  The wrapper
-normalizes that target before the existing handler runs and sends explicit
-status feedback so the DM/viewer are not left with a silent no-op.
+This file intentionally keeps patches narrow:
+- Viewer power grants can arrive from DM UI surfaces with a viewer profile key
+  rather than the exact ``viewer_user_id`` expected by the handler.
+- Stream-readiness/debug chrome should not take over the DM screen during live
+  play; it is now hidden by default and remains opt-in for debugging.
 """
 from __future__ import annotations
 
@@ -17,6 +17,9 @@ from typing import Any
 
 _TARGET_MODULE = "server.handlers.viewer_powers"
 _PATCH_FLAG = "_viewer_power_grant_delivery_hotfix_applied"
+_MAIN_MODULE = "main"
+_DM_UI_PATCH_FLAG = "_dm_live_ui_declutter_hotfix_applied"
+_DM_UI_INJECT_MARKER = "dm-live-ui-declutter-hotfix"
 
 
 def _clean(value: Any) -> str:
@@ -220,8 +223,179 @@ def patch_viewer_power_delivery_now() -> bool:
     return bool(getattr(module, _PATCH_FLAG, False))
 
 
+def _dm_ui_declutter_bundle() -> str:
+    return """
+<!-- dm-live-ui-declutter-hotfix -->
+<style id="dm-live-ui-declutter-style">
+  /* Hide DM stream/debug chrome by default. It is useful in QA but noisy live. */
+  #stream-readiness-panel,
+  [data-stream-readiness-panel],
+  .stream-readiness-panel {
+    display: none !important;
+    visibility: hidden !important;
+    max-width: 0 !important;
+    max-height: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+  }
+  html[data-dm-debug-ui="1"] #stream-readiness-panel,
+  body[data-dm-debug-ui="1"] #stream-readiness-panel {
+    display: block !important;
+    visibility: visible !important;
+    max-width: 300px !important;
+    max-height: none !important;
+    padding: 0.28rem 0.45rem !important;
+    border: 1px solid rgba(0,229,204,0.22) !important;
+    overflow: hidden !important;
+  }
+  #dm-mode-hint,
+  .dm-focus-card,
+  .dm-focus-note,
+  .dm-focus-banner,
+  .dm-workflow-hint,
+  .dm-live-guidance,
+  [data-dm-focus],
+  [data-dm-guide="focus"] {
+    display: none !important;
+  }
+  #topbar { overflow: hidden; min-width: 0; }
+  #ws-status-wrap { min-width: 0; }
+  #session-info { max-width: min(18vw, 230px); }
+</style>
+<script id="dm-live-ui-declutter-script">
+(function(){
+  const READINESS_KEY = 'dnd_show_stream_readiness';
+  function debugUiEnabled(){
+    try { return window.localStorage.getItem(READINESS_KEY) === '1'; } catch (_err) { return false; }
+  }
+  function setDebugUiState(enabled){
+    try { window.localStorage.setItem(READINESS_KEY, enabled ? '1' : '0'); } catch (_err) {}
+    document.documentElement.toggleAttribute('data-dm-debug-ui', !!enabled);
+    if (document.body) document.body.toggleAttribute('data-dm-debug-ui', !!enabled);
+  }
+  function hideElement(el){
+    if (!el || el.getAttribute('data-dm-debug-ui-keep') === '1') return;
+    el.style.setProperty('display', 'none', 'important');
+    el.setAttribute('aria-hidden', 'true');
+  }
+  function hideDmClutter(){
+    if (debugUiEnabled()) {
+      setDebugUiState(true);
+    } else {
+      setDebugUiState(false);
+      document.querySelectorAll('#stream-readiness-panel,[data-stream-readiness-panel],.stream-readiness-panel').forEach(hideElement);
+    }
+    document.querySelectorAll('#dm-mode-hint,.dm-focus-card,.dm-focus-note,.dm-focus-banner,.dm-workflow-hint,.dm-live-guidance,[data-dm-focus],[data-dm-guide="focus"]').forEach(hideElement);
+    document.querySelectorAll('aside div, section div, main div, p').forEach(function(el){
+      if (!el || el.children.length > 6) return;
+      const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+      if (/^DM focus:/i.test(text) || text.includes('DM focus: Prep in Library')) hideElement(el);
+    });
+  }
+  window.showDMStreamReadiness = function(){ setDebugUiState(true); hideDmClutter(); };
+  window.hideDMStreamReadiness = function(){ setDebugUiState(false); hideDmClutter(); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', hideDmClutter, { once: true });
+  else hideDmClutter();
+  setTimeout(hideDmClutter, 250);
+  setTimeout(hideDmClutter, 1000);
+  try {
+    new MutationObserver(function(){ hideDmClutter(); }).observe(document.documentElement, { childList: true, subtree: true });
+  } catch (_err) {}
+})();
+</script>
+""".strip()
+
+
+def _inject_dm_ui_declutter(html: str) -> str:
+    if not isinstance(html, str) or _DM_UI_INJECT_MARKER in html:
+        return html
+    bundle = _dm_ui_declutter_bundle()
+    if "</head>" in html:
+        return html.replace("</head>", bundle + "\n</head>", 1)
+    if "</body>" in html:
+        return html.replace("</body>", bundle + "\n</body>", 1)
+    return html + "\n" + bundle
+
+
+def _apply_dm_ui_declutter_patch(module: ModuleType) -> ModuleType:
+    app = getattr(module, "app", None)
+    if app is None or getattr(app.state, _DM_UI_PATCH_FLAG, False):
+        return module
+
+    @app.middleware("http")
+    async def _dm_ui_declutter_middleware(request, call_next):
+        response = await call_next(request)
+        content_type = str(response.headers.get("content-type") or "")
+        if "text/html" not in content_type.lower():
+            return response
+        try:
+            body = b""
+            async for chunk in response.body_iterator:
+                body += chunk
+            text = body.decode(getattr(response, "charset", None) or "utf-8", errors="replace")
+            patched = _inject_dm_ui_declutter(text)
+            headers = dict(response.headers)
+            headers.pop("content-length", None)
+            from starlette.responses import Response
+            return Response(
+                content=patched,
+                status_code=response.status_code,
+                headers=headers,
+                media_type=getattr(response, "media_type", None) or "text/html",
+                background=getattr(response, "background", None),
+            )
+        except Exception:
+            return response
+
+    setattr(app.state, _DM_UI_PATCH_FLAG, True)
+    return module
+
+
+class _MainPatchLoader(importlib.abc.Loader):
+    def __init__(self, wrapped: importlib.abc.Loader):
+        self._wrapped = wrapped
+
+    def create_module(self, spec):  # pragma: no cover - passthrough to default loader
+        create_module = getattr(self._wrapped, "create_module", None)
+        if create_module:
+            return create_module(spec)
+        return None
+
+    def exec_module(self, module: ModuleType) -> None:
+        self._wrapped.exec_module(module)
+        _apply_dm_ui_declutter_patch(module)
+
+
+class _MainPatchFinder(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname: str, path: Any = None, target: Any = None):
+        if fullname != _MAIN_MODULE:
+            return None
+        spec = importlib.machinery.PathFinder.find_spec(fullname, path)
+        if not spec or not spec.loader or isinstance(spec.loader, _MainPatchLoader):
+            return spec
+        spec.loader = _MainPatchLoader(spec.loader)
+        return spec
+
+
+def patch_dm_ui_declutter_now() -> bool:
+    """Patch the main FastAPI app immediately if importable."""
+    module = sys.modules.get(_MAIN_MODULE)
+    if module is None:
+        module = importlib.import_module(_MAIN_MODULE)
+    _apply_dm_ui_declutter_patch(module)
+    app = getattr(module, "app", None)
+    return bool(app is not None and getattr(app.state, _DM_UI_PATCH_FLAG, False))
+
+
 if not any(isinstance(finder, _ViewerPowerPatchFinder) for finder in sys.meta_path):
     sys.meta_path.insert(0, _ViewerPowerPatchFinder())
 
+if not any(isinstance(finder, _MainPatchFinder) for finder in sys.meta_path):
+    sys.meta_path.insert(0, _MainPatchFinder())
+
 if _TARGET_MODULE in sys.modules:
     _apply_patch(sys.modules[_TARGET_MODULE])
+
+if _MAIN_MODULE in sys.modules:
+    _apply_dm_ui_declutter_patch(sys.modules[_MAIN_MODULE])
