@@ -11,12 +11,16 @@ This module is the server-side guard mirroring the client's
 ``_stripCharProfileRuntimeFields`` so profiles are cleaned both before they are
 persisted (defence in depth) and via an explicit migration for already-oversized
 profiles. The migration only removes known runtime caches — it never deletes real
-character data (name, ability scores, inventory, spell selections, etc.).
+character data (name, ability scores, inventory, spell selections, etc.). Large
+inline ``data:image`` strings are relocated into ``/static/user_uploads`` beside
+this runtime stripping so PDF-imported portraits do not bloat every state sync.
 """
 from __future__ import annotations
 
 import re
 from typing import Any
+
+from server.character.profile_assets import sanitize_profile_persistence
 
 # Exact key names that only ever hold rebuildable runtime state. Keep this list
 # in sync with CHAR_PROFILE_RUNTIME_KEYS in client/templates/play.html.
@@ -51,12 +55,7 @@ def _is_runtime_key(key: str) -> bool:
     return key in RUNTIME_KEYS or bool(_HTML_KEY_RE.search(key))
 
 
-def strip_runtime_fields(value: Any, _seen: set[int] | None = None) -> Any:
-    """Recursively remove runtime/transient keys from ``value`` in place.
-
-    Returns the same object for convenience. Cycles and non-dict/list values are
-    handled gracefully.
-    """
+def _strip_runtime_fields_only(value: Any, _seen: set[int] | None = None) -> Any:
     seen = _seen if _seen is not None else set()
     if isinstance(value, dict):
         ident = id(value)
@@ -67,22 +66,37 @@ def strip_runtime_fields(value: Any, _seen: set[int] | None = None) -> Any:
             if _is_runtime_key(key):
                 del value[key]
                 continue
-            strip_runtime_fields(value[key], seen)
+            _strip_runtime_fields_only(value[key], seen)
     elif isinstance(value, list):
         ident = id(value)
         if ident in seen:
             return value
         seen.add(ident)
         for item in value:
-            strip_runtime_fields(item, seen)
+            _strip_runtime_fields_only(item, seen)
+    return value
+
+
+def strip_runtime_fields(value: Any, _seen: set[int] | None = None) -> Any:
+    """Recursively remove runtime/transient keys from ``value`` in place.
+
+    Returns the same object for convenience. Cycles and non-dict/list values are
+    handled gracefully. When called at the profile save boundary, this also
+    relocates oversized inline data-image fields and applies persistence-size
+    caps so already-canonical but huge image strings do not survive saves.
+    """
+    _strip_runtime_fields_only(value, _seen)
+    if isinstance(value, dict):
+        sanitize_profile_persistence(value, profile_label=str(value.get("id") or value.get("name") or "?"))
     return value
 
 
 def clean_oversized_profile(profile: Any) -> Any:
     """Migration entry point: strip runtime caches from a single stored profile.
 
-    Safe to call on already-clean profiles (it is a no-op then) and never removes
-    canonical character data — only the rebuildable runtime keys above.
+    Safe to call on already-clean profiles and never removes canonical character
+    data — only rebuildable runtime keys are stripped. Oversized data-image
+    strings are relocated and any remaining clearly-oversized string is capped.
     """
     return strip_runtime_fields(profile)
 
