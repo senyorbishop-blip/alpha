@@ -3426,6 +3426,69 @@ def test_apply_loot_to_chest_missing_prop_returns_false():
     assert result is False
 
 
+# ── Per-item lock + treasure budget for loot generation ───────────────────────
+
+def _init_isolated_srd_items_db(tmp_path, monkeypatch):
+    import server.db as _sdb
+    import server.rules_db as rdb
+
+    db_file = str(tmp_path / "test.db")
+    monkeypatch.setattr(_sdb, "DB_PATH", db_file)
+    monkeypatch.setattr(rdb, "_seed_srd_items_from_magic_items", lambda: None)
+    rdb.init_srd_items_table()
+
+
+def test_generate_loot_preview_keeps_locked_item_without_duplicating(tmp_path, monkeypatch):
+    """Locked items are returned verbatim, and new items never duplicate a kept name."""
+    _init_isolated_srd_items_db(tmp_path, monkeypatch)
+    from server.handlers.inventory import generate_loot_preview
+
+    item_a = {"id": "seq_longsword", "name": "Longsword", "rarity": "Common", "qty": 1, "gp": 15}
+    preview = generate_loot_preview(6, keep=[item_a])
+
+    names = [it["name"] for it in preview["items"]]
+    assert names.count("Longsword") == 1
+    assert item_a in preview["items"]
+    # Any newly-generated items must be distinct from the kept item.
+    new_items = [it for it in preview["items"] if it.get("name") != "Longsword"]
+    assert len(new_items) == len(preview["items"]) - 1
+
+
+def test_generate_loot_preview_budget_band(tmp_path, monkeypatch):
+    """budget.band is 'balanced' for a level-appropriate haul, 'generous' when overloaded."""
+    _init_isolated_srd_items_db(tmp_path, monkeypatch)
+    from server.handlers.inventory import generate_loot_preview
+
+    # Fill every slot with locked items (max slots for the level-5 band is 6) so the
+    # haul value is fully deterministic — no random item can be additionally rolled.
+    level = 5
+    target_gp = level * 140
+    balanced_keep = [
+        {"name": f"Token Reward {i}", "rarity": "Common", "qty": 1, "gp": 110}
+        for i in range(6)
+    ]
+    balanced = generate_loot_preview(level, keep=balanced_keep)
+    assert balanced["budget"]["band"] == "balanced"
+    assert balanced["budget"]["target_gp"] == target_gp
+
+    # An 800gp item forced in at level 1 (target 140gp) is generous no matter what
+    # else gets rolled alongside it.
+    generous_keep = [{"name": "Forced Artifact", "rarity": "Rare", "qty": 1, "gp": 800}]
+    generous = generate_loot_preview(1, keep=generous_keep)
+    assert generous["budget"]["band"] == "generous"
+
+
+def test_generate_loot_preview_theme_filters_category(tmp_path, monkeypatch):
+    """Requesting a theme biases generated items toward that category when matches exist."""
+    _init_isolated_srd_items_db(tmp_path, monkeypatch)
+    from server.handlers.inventory import generate_loot_preview
+
+    preview = generate_loot_preview(3, theme="weapon")
+    assert preview["items"], "Expected at least one generated item"
+    for item in preview["items"]:
+        assert item.get("category", "").lower() == "weapon"
+
+
 def test_inventory_entry_normalization_preserves_optional_loot_metadata():
     from server.handlers.inventory import _normalize_player_inventory_entry
 

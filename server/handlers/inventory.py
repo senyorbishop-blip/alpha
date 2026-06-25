@@ -4525,41 +4525,25 @@ def _pick_magic_items(cr_band: tuple) -> list[dict]:
 
 
 async def handle_generate_loot(payload: dict, session: Session, user: User):
-    """DM-only. Generate loot for a prop based on dungeon level."""
+    """DM-only. Generate a level-aware loot preview, optionally keeping locked items."""
     if user.role != "dm":
         return await manager.send_to(session.id, user.id, {"type": "error", "payload": {"message": "DM only."}})
 
-    prop_id   = str(payload.get("prop_id") or "").strip()[:64]
-    prop_type = str(payload.get("prop_type") or "loot_pile").strip().lower()
-    dungeon_level = max(1, min(10, int(payload.get("dungeon_level") or 1)))
+    prop_id = str(payload.get("prop_id") or "").strip()[:64]
+    dungeon_level = max(1, min(20, int(payload.get("dungeon_level") or 1)))
 
-    cr_min, cr_max = _DUNGEON_LEVEL_TO_CR.get(dungeon_level, (0, 4))
-    band = _cr_band(cr_min)
+    raw_keep = payload.get("keep")
+    keep = [it for it in raw_keep if isinstance(it, dict)] if isinstance(raw_keep, list) else None
 
-    is_hoard = prop_type in {"chest", "lockbox", "sack"}
-    table_type = "hoard" if is_hoard else "individual"
+    raw_theme = payload.get("theme")
+    theme = str(raw_theme).strip() or None if raw_theme else None
 
-    coins  = _generate_coins(band, table_type)
-    magic_items = _pick_magic_items(band) if is_hoard else []
-
-    loot_entry = {
-        "prop_id": prop_id,
-        "prop_type": prop_type,
-        "dungeon_level": dungeon_level,
-        "cr_band": list(band),
-        "table_type": table_type,
-        "coins": coins,
-        "magic_items": magic_items,
-    }
-
-    # Save pending loot keyed by prop_id in session state
-    pending = dict(getattr(session, "_pending_loot", {}) or {})
-    pending[prop_id or "_unsaved"] = loot_entry
-    session._pending_loot = pending
+    preview = generate_loot_preview(dungeon_level, keep=keep, theme=theme)
+    preview["prop_id"] = prop_id
 
     await manager.send_to(session.id, user.id, {
         "type": "loot_generated",
-        "payload": loot_entry,
+        "payload": preview,
     })
 
 
@@ -4775,21 +4759,81 @@ def _weighted_rarity_pick(level_band: tuple) -> str:
     return "Common"
 
 
-def _pick_srd_item_by_rarity(rarity: str) -> dict | None:
-    """Pick a random SRD item with the given rarity; falls back to Common."""
+def _pick_srd_item_by_rarity(rarity: str, theme: str | None = None) -> dict | None:
+    """Pick a random SRD item with the given rarity; falls back to Common.
+
+    When ``theme`` is given, prefer items whose category/tags match it; if no
+    item in the rarity pool matches the theme, fall back to the full pool
+    rather than returning nothing.
+    """
     from server.rules_db import get_srd_items_by_rarity
     pool = get_srd_items_by_rarity(rarity)
     if not pool:
         pool = get_srd_items_by_rarity("Common")
     if not pool:
         return None
+    theme = str(theme or "").strip().lower()
+    if theme:
+        themed = [
+            it for it in pool
+            if theme in str(it.get("category", "")).lower() or theme in str(it.get("tags", "")).lower()
+        ]
+        if themed:
+            pool = themed
     return _random.choice(pool)
 
 
-def generate_loot_preview(dungeon_level: int) -> dict:
+# Rough gp value per rarity tier, used when an item has no parseable price
+# (e.g. most magic items, whose value comes from rarity rather than a price tag).
+_RARITY_GP_FALLBACK: dict[str, float] = {
+    "common": 50, "uncommon": 250, "rare": 1500,
+    "very rare": 5000, "legendary": 20000, "artifact": 50000,
+}
+
+_PRICE_UNIT_TO_GP = {"pp": 10, "gp": 1, "ep": 0.5, "sp": 0.1, "cp": 0.01}
+
+
+def _parse_price_to_gp(default_price) -> float:
+    """Parse a price string like '15 gp' or '2 sp' into a gp amount."""
+    match = re.match(r"\s*([\d.]+)\s*([a-zA-Z]+)", str(default_price or ""))
+    if not match:
+        return 0.0
+    amount = float(match.group(1))
+    unit = match.group(2).lower()
+    return amount * _PRICE_UNIT_TO_GP.get(unit, 1)
+
+
+def _item_gp_value(srd_item: dict, rarity: str) -> float:
+    """Resolve a gp value for an SRD item, falling back to a rarity-based estimate."""
+    gp = _parse_price_to_gp(srd_item.get("default_price"))
+    if gp <= 0:
+        gp = _RARITY_GP_FALLBACK.get(str(rarity or "common").strip().lower(), 50)
+    return round(gp, 2)
+
+
+def _loot_budget(total_gp: float, dungeon_level: int) -> dict:
+    """Classify a treasure haul's value relative to a per-level target."""
+    target_gp = round(dungeon_level * 140, 2)
+    if target_gp <= 0:
+        band = "balanced"
+    elif total_gp < target_gp * 0.65:
+        band = "light"
+    elif total_gp > target_gp * 1.5:
+        band = "generous"
+    else:
+        band = "balanced"
+    return {"total_gp": round(total_gp, 2), "target_gp": target_gp, "band": band}
+
+
+def generate_loot_preview(dungeon_level: int, keep: list | None = None, theme: str | None = None) -> dict:
     """Generate a loot preview for a given dungeon level.
 
-    Returns a dict with keys: dungeon_level, gold, items (list).
+    ``keep`` is an optional list of item dicts the DM has locked from a prior
+    roll; they are included verbatim and only the remaining slots are rolled,
+    avoiding duplicates of the kept item names. ``theme`` optionally biases
+    newly-rolled items toward a category (e.g. "weapon", "potion").
+
+    Returns a dict with keys: dungeon_level, gold, items (list), budget.
     Does NOT modify any session state.
     """
     level = max(1, min(20, int(dungeon_level)))
@@ -4797,25 +4841,41 @@ def generate_loot_preview(dungeon_level: int) -> dict:
     min_count, max_count = _LEVEL_ITEM_COUNTS.get(band, (2, 5))
     count = _random.randint(min_count, max_count)
 
-    items = []
-    for _ in range(count):
-        rarity = _weighted_rarity_pick(band)
-        srd_item = _pick_srd_item_by_rarity(rarity)
-        if srd_item:
-            items.append({
-                "id": srd_item["id"],
-                "name": srd_item["name"],
-                "rarity": rarity,
-                "category": srd_item.get("category", "Gear"),
-                "qty": 1,
-            })
+    kept_items = [dict(it) for it in (keep or []) if isinstance(it, dict)]
+    used_names = {str(it.get("name", "")).strip().lower() for it in kept_items}
 
+    slots = max(0, count - len(kept_items))
+    generated = []
+    attempts = 0
+    max_attempts = max(slots * 25, 25)
+    while len(generated) < slots and attempts < max_attempts:
+        attempts += 1
+        rarity = _weighted_rarity_pick(band)
+        srd_item = _pick_srd_item_by_rarity(rarity, theme=theme)
+        if not srd_item:
+            continue
+        name_key = str(srd_item["name"]).strip().lower()
+        if name_key in used_names:
+            continue
+        used_names.add(name_key)
+        generated.append({
+            "id": srd_item["id"],
+            "name": srd_item["name"],
+            "rarity": rarity,
+            "category": srd_item.get("category", "Gear"),
+            "qty": 1,
+            "gp": _item_gp_value(srd_item, rarity),
+        })
+
+    items = kept_items + generated
     gold = _random.randint(level * 2, level * 10)
+    total_gp = gold + sum(float(it.get("gp") or 0) for it in items)
 
     return {
         "dungeon_level": level,
         "gold": gold,
         "items": items,
+        "budget": _loot_budget(total_gp, level),
     }
 
 

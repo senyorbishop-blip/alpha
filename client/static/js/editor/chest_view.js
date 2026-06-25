@@ -24,6 +24,11 @@
   let _propData = null;
   let _role     = 'player';
 
+  // DM-only loot generator preview state. Reset whenever the chest is (re)opened
+  // or the previewed loot is committed to the chest. Locking is preview-only —
+  // nothing here persists until _addLootToChest() runs.
+  let _lootGen = null; // { items: [{...item, _locked}], budget, gold } | null
+
   const MODAL_ID = 'dnd-chest-view';
 
   function esc(str) {
@@ -96,6 +101,128 @@
     el.textContent = `${used} / ${total} slots`;
   }
 
+  /* ── DM loot generator ───────────────────────────────────────────────────── */
+
+  function _renderLootRow(item, idx) {
+    const valueLabel = item.gp != null ? `${item.gp} gp` : '';
+    const row = window.ItemRow.renderItemRow(item, {
+      mode: 'loot',
+      rowClassName: 'cv-loot-row',
+      rowId: `cv-loot-row-${idx}`,
+      valueLabel,
+      locked: !!item._locked,
+      lockToggle: {
+        onClick: `ChestView._toggleLootLock(${idx})`,
+        lockedLabel: '🔒 Locked',
+        unlockedLabel: '🔓 Unlocked',
+      },
+    });
+    return row.outerHTML;
+  }
+
+  function _renderLootList() {
+    if (!_modalEl) return;
+    const list  = _modalEl.querySelector('#cv-loot-list');
+    const empty = _modalEl.querySelector('#cv-loot-empty');
+    if (!list || !empty) return;
+    const items = (_lootGen && _lootGen.items) || [];
+    empty.style.display = items.length ? 'none' : 'block';
+    list.innerHTML = items.map((it, idx) => _renderLootRow(it, idx)).join('');
+  }
+
+  const _BUDGET_BAND_COLORS = { light: '#d99a2b', balanced: '#1fab95', generous: '#dd6a52' };
+
+  function _renderLootBudget() {
+    if (!_modalEl) return;
+    const el = _modalEl.querySelector('#cv-loot-budget');
+    if (!el) return;
+    const budget = _lootGen && _lootGen.budget;
+    if (!budget) { el.style.display = 'none'; return; }
+    const totalGp  = Number(budget.total_gp) || 0;
+    const targetGp = Number(budget.target_gp) || 0;
+    const pct   = targetGp > 0 ? Math.max(0, Math.min(100, Math.round((totalGp / targetGp) * 100))) : 0;
+    const color = _BUDGET_BAND_COLORS[budget.band] || _BUDGET_BAND_COLORS.balanced;
+    el.style.display = 'block';
+    el.innerHTML = `
+      <div class="cv-loot-budget-row">
+        <span class="cv-loot-budget-amounts">${Math.round(totalGp)} gp / ${Math.round(targetGp)} gp target</span>
+        <span class="cv-loot-budget-badge" style="color:${color};border-color:${color}99;background:${color}22;">${esc(budget.band)}</span>
+      </div>
+      <div class="cv-loot-budget-bar"><div class="cv-loot-budget-fill" style="width:${pct}%;background:${color};"></div></div>
+    `;
+  }
+
+  function _setLootButtonsEnabled(hasItems) {
+    if (!_modalEl) return;
+    const rerollBtn = _modalEl.querySelector('#cv-loot-reroll-btn');
+    const addBtn    = _modalEl.querySelector('#cv-loot-add-btn');
+    if (rerollBtn) rerollBtn.disabled = !hasItems;
+    if (addBtn)    addBtn.disabled    = !hasItems;
+  }
+
+  /** DM button: generate or reroll loot. When keepLocked, locked rows are resent as `keep`. */
+  function _generateLoot(keepLocked) {
+    if (!_modalEl || !_propData || _role !== 'dm') return;
+    const levelInput = _modalEl.querySelector('#cv-loot-level');
+    const themeInput = _modalEl.querySelector('#cv-loot-theme');
+    const level = Math.max(1, Math.min(20, parseInt(levelInput && levelInput.value, 10) || 5));
+    const theme = themeInput ? String(themeInput.value || '') : '';
+    const keep = (keepLocked && _lootGen)
+      ? _lootGen.items.filter(it => it._locked).map(it => {
+          const copy = Object.assign({}, it);
+          delete copy._locked;
+          return copy;
+        })
+      : [];
+    if (typeof sendWS === 'function') {
+      sendWS({
+        type: 'generate_loot',
+        payload: { prop_id: _propData.id, dungeon_level: level, theme, keep },
+      });
+    }
+  }
+
+  /** Called by play.html when the WS loot_generated (preview) response arrives. */
+  function _onLootGenerated(payload) {
+    if (!_modalEl || !_propData || !payload) return;
+    if (payload.prop_id && payload.prop_id !== _propData.id) return;
+    const lockedNames = new Set(
+      (_lootGen ? _lootGen.items.filter(it => it._locked) : []).map(it => String(it.name || '').toLowerCase())
+    );
+    const items = (Array.isArray(payload.items) ? payload.items : []).map(it => Object.assign({}, it, {
+      _locked: lockedNames.has(String(it.name || '').toLowerCase()),
+    }));
+    _lootGen = { items, budget: payload.budget || null, gold: payload.gold || 0 };
+    _renderLootList();
+    _renderLootBudget();
+    _setLootButtonsEnabled(items.length > 0);
+  }
+
+  /** Toggle a generated row's lock state (preview-only; does not persist). */
+  function _toggleLootLock(idx) {
+    if (!_lootGen || !_lootGen.items[idx]) return;
+    _lootGen.items[idx]._locked = !_lootGen.items[idx]._locked;
+    _renderLootList();
+  }
+
+  /** DM button: commit the full current preview (locked + unlocked) into the chest, unchanged. */
+  function _addLootToChest() {
+    if (!_lootGen || !_propData || !_lootGen.items.length) return;
+    const items = _lootGen.items.map(it => ({ name: it.name, qty: it.qty || 1, rarity: it.rarity, gp: it.gp }));
+    const updated = (typeof window._chestAddLootItems === 'function')
+      ? window._chestAddLootItems(_propData.id, items)
+      : null;
+    if (updated) _propData.inventory = updated.inventory;
+    const count = items.length;
+    _lootGen = null;
+    _renderItems();
+    _updateSlotCount();
+    _renderLootList();
+    _renderLootBudget();
+    _setLootButtonsEnabled(false);
+    showTakeResult(`Added ${count} item${count === 1 ? '' : 's'} to the chest.`, true);
+  }
+
   /* ── Public API ───────────────────────────────────────────────────────── */
 
   /* ── Mimic ───────────────────────────────────────────────────────────────── */
@@ -156,6 +283,7 @@
     close();
     _propData = propData || {};
     _role     = String(role || 'player');
+    _lootGen  = null;
 
     // ── Mimic check (players only) ──────────────────────────────────────────
     // When the DM arms mimic mode, players opening the chest should always
@@ -202,6 +330,35 @@
 
         <!-- Item list -->
         <div class="cv-list"></div>
+
+        ${isDm ? `
+        <!-- DM loot generator -->
+        <div class="cv-lootgen">
+          <div class="cv-lootgen-head">
+            <span class="cv-lootgen-title">🎲 Generate Loot</span>
+            <div class="cv-lootgen-controls">
+              <label class="cv-loot-level-label">Lvl <span id="cv-loot-level-val">5</span></label>
+              <input id="cv-loot-level" type="range" min="1" max="20" value="5"
+                     oninput="document.getElementById('cv-loot-level-val').textContent=this.value" />
+              <select id="cv-loot-theme" class="cv-loot-theme-select">
+                <option value="">Any theme</option>
+                <option value="weapon">Weapons</option>
+                <option value="armor">Armor</option>
+                <option value="potion">Potions</option>
+                <option value="scroll">Scrolls</option>
+                <option value="wondrous">Wondrous</option>
+              </select>
+            </div>
+          </div>
+          <div id="cv-loot-budget" class="cv-loot-budget" style="display:none;"></div>
+          <div id="cv-loot-list" class="cv-loot-list"></div>
+          <div id="cv-loot-empty" class="cv-loot-empty">No loot generated yet.</div>
+          <div class="cv-lootgen-actions">
+            <button class="cv-loot-btn" onclick="ChestView._generateLoot(false)">🎲 Generate Loot</button>
+            <button class="cv-loot-btn" id="cv-loot-reroll-btn" onclick="ChestView._generateLoot(true)" disabled>🔄 Reroll Unlocked</button>
+            <button class="cv-loot-btn cv-loot-add-btn" id="cv-loot-add-btn" onclick="ChestView._addLootToChest()" disabled>➕ Add to Chest</button>
+          </div>
+        </div>` : ''}
 
         <!-- Footer -->
         <div class="cv-footer">
@@ -500,6 +657,59 @@
         background:rgba(180,40,40,0.22);border-color:rgba(220,60,60,0.5);
         color:#f08080;box-shadow:0 0 6px rgba(220,60,60,0.25);
       }
+
+      /* DM loot generator panel */
+      #${MODAL_ID} .cv-lootgen {
+        flex-shrink:0;border-top:2px dashed rgba(139,90,20,0.3);
+        padding:0.6rem 0.9rem;display:flex;flex-direction:column;gap:0.45rem;
+        background:rgba(139,90,20,0.06);max-height:38vh;overflow-y:auto;
+      }
+      #${MODAL_ID} .cv-lootgen-head {
+        display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;
+      }
+      #${MODAL_ID} .cv-lootgen-title { font-weight:700;font-size:13px;color:#5a3a10; }
+      #${MODAL_ID} .cv-lootgen-controls { display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap; }
+      #${MODAL_ID} .cv-loot-level-label { font-size:11px;color:#6b4c2a;white-space:nowrap; }
+      #${MODAL_ID} #cv-loot-level { width:110px;accent-color:#8b4513; }
+      #${MODAL_ID} .cv-loot-theme-select {
+        font-size:11px;padding:0.25rem 0.4rem;border-radius:6px;
+        border:1px solid rgba(139,90,20,0.3);background:rgba(255,255,255,0.5);color:#3a2710;
+      }
+      #${MODAL_ID} .cv-loot-budget { display:flex;flex-direction:column;gap:0.25rem; }
+      #${MODAL_ID} .cv-loot-budget-row {
+        display:flex;align-items:center;justify-content:space-between;gap:0.5rem;font-size:11px;color:#5a3a10;
+      }
+      #${MODAL_ID} .cv-loot-budget-badge {
+        font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;
+        border:1px solid;border-radius:999px;padding:1px 8px;
+      }
+      #${MODAL_ID} .cv-loot-budget-bar {
+        height:6px;border-radius:4px;background:rgba(139,90,20,0.15);overflow:hidden;
+      }
+      #${MODAL_ID} .cv-loot-budget-fill { height:100%;transition:width 0.2s; }
+      #${MODAL_ID} .cv-loot-list { display:flex;flex-direction:column;gap:0.35rem; }
+      #${MODAL_ID} .cv-loot-row {
+        background:rgba(255,255,255,0.4);border:1px solid rgba(139,90,20,0.18);border-radius:8px;
+      }
+      #${MODAL_ID} .item-row-lock-toggle {
+        padding:0.25rem 0.6rem;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;
+        border:1px solid rgba(139,90,20,0.3);background:rgba(255,255,255,0.5);color:#5a3a10;
+      }
+      #${MODAL_ID} .cv-loot-empty {
+        text-align:center;color:#8b6b3d;font-size:12px;font-style:italic;padding:0.4rem 0;
+      }
+      #${MODAL_ID} .cv-lootgen-actions { display:flex;gap:0.4rem;flex-wrap:wrap; }
+      #${MODAL_ID} .cv-loot-btn {
+        flex:1;min-width:110px;padding:0.4rem 0.6rem;border-radius:7px;
+        font-size:11px;font-weight:600;cursor:pointer;border:1px solid rgba(139,90,20,0.3);
+        background:rgba(139,90,20,0.1);color:#5a3a10;
+      }
+      #${MODAL_ID} .cv-loot-btn:hover:not(:disabled) { background:rgba(139,90,20,0.2); }
+      #${MODAL_ID} .cv-loot-btn:disabled { opacity:0.5;cursor:not-allowed; }
+      #${MODAL_ID} .cv-loot-add-btn {
+        background:rgba(0,150,130,0.12);border-color:rgba(0,150,130,0.35);color:#0a6b5c;
+      }
+      #${MODAL_ID} .cv-loot-add-btn:hover:not(:disabled) { background:rgba(0,150,130,0.22); }
     `;
     document.head.appendChild(s);
   }
@@ -593,5 +803,6 @@
   window.ChestView = Object.freeze({
     open, close, refresh, isOpen, getOpenPropId, showTakeResult,
     _take, _openManage, _toggleMimic, _closeMimicReveal, _openMimicBestiary,
+    _generateLoot, _onLootGenerated, _toggleLootLock, _addLootToChest,
   });
 })();

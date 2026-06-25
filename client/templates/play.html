@@ -14623,6 +14623,43 @@ window._chestMimicToggle = function (propId, enabled) {
 };
 
 /**
+ * Called by ChestView's "Add to Chest" button to commit a generated loot
+ * preview (locked + unlocked items, unchanged) into a chest prop's real
+ * inventory. Persists via the normal editor-props save path and returns the
+ * updated prop so ChestView can refresh its contents list immediately.
+ * @param {string} propId
+ * @param {Array<{name:string, rarity?:string, gp?:number}>} items
+ * @returns {Object|null} the updated prop, or null if not found
+ */
+window._chestAddLootItems = function (propId, items) {
+  if (!propId || !Array.isArray(items) || !items.length) return null;
+  let updated = null;
+  const appendTo = function (prop) {
+    if (!Array.isArray(prop.inventory)) prop.inventory = [];
+    items.forEach(function (it) {
+      const entry = normalizeEditorPropInventoryEntry({
+        name: it.name,
+        qty: it.qty || 1,
+        notes: it.rarity ? `${it.rarity}${it.gp ? ` · ${it.gp} gp` : ''}` : '',
+        price: '',
+      }, prop.kind);
+      if (entry) prop.inventory.push(entry);
+    });
+    updated = prop;
+  };
+  Object.values(_editorPropsAll || {}).forEach(function (propList) {
+    (Array.isArray(propList) ? propList : []).forEach(function (prop) {
+      if (prop && prop.id === propId) appendTo(prop);
+    });
+  });
+  (_editorPropItems || []).forEach(function (prop) {
+    if (prop && prop.id === propId && prop !== updated) appendTo(prop);
+  });
+  if (updated) saveEditorProps(true);
+  return updated;
+};
+
+/**
  * Navigate the right panel to the bestiary tab and search for "Mimic".
  * Works from ChestView mimic reveal and from mimic prop clicks.
  */
@@ -27162,8 +27199,14 @@ function handleLegacyMessage(msg) {
       break;
     }
     case 'loot_generated': {
-      // p = {loot_id, prop_id, items:[...]} — sent to DM only
-      openLootModal(p);
+      // New chest-preview format carries a `budget` block and targets the
+      // open ChestView's loot-generator panel; the legacy hoard-pile format
+      // (coins/magic_items, no budget) opens the distribution modal instead.
+      if (p && p.budget && typeof ChestView !== 'undefined' && typeof ChestView._onLootGenerated === 'function') {
+        ChestView._onLootGenerated(p);
+      } else {
+        openLootModal(p);
+      }
       break;
     }
     case 'loot_received': {
