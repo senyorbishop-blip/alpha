@@ -227,3 +227,40 @@ def test_dm_audit_map_first_shell_keeps_map_central_after_mode_switches():
     assert "buttons.forEach((button) => {" in bridge
     assert 'grid-template-columns: var(--mf-left-rail-width' in css
     assert 'minmax(0, 1fr)' in css
+
+
+def test_npc_monster_compact_adapter_reuses_existing_bestiary_and_token_handlers():
+    src = read(BRIDGE)
+    assert "dm-compact-bestiary-search" in src
+    assert "doc.getElementById('bestiary-search')" in src
+    assert "existing.dispatchEvent(new Event('input', { bubbles: true }))" in src
+    assert "beginBestiarySpawn" in src
+    assert "switchRTab('bestiary')" in src
+    assert "toggleFlyout('flyout-token')" in src
+    assert "switchRTab('combat')" in src
+
+
+def test_npc_monster_visible_panel_hides_registry_audit_rows_by_default():
+    bridge = read(BRIDGE)
+    css = read(Path('client/static/css/dm-map-first-polish.css'))
+    assert "appendNpcMonsterPanel(doc, section)" in bridge
+    assert "appendTextElement" not in bridge
+    assert "section.dataset.dmModeHelp = definition.description" in bridge
+    assert "marker.hidden = true" in bridge
+    assert "body.dm-map-first-active .dm-context-marker-grid" in css
+    assert "clip-path: inset(50%) !important" in css
+    assert "body.dm-map-first-active .dm-npc-compact-panel" in css
+    assert "body.dm-map-first-active #right-panel-context" in css
+    assert "display: none !important" in css
+
+
+def test_creature_spawn_route_contract_remains_unchanged():
+    routes = read(Path('server/creatures/routes.py'))
+    service = read(Path('server/creatures/service.py'))
+    assert '@router.get("/api/library/creatures")' in routes
+    assert '@router.post("/api/library/creatures/{creature_id}/spawn")' in routes
+    assert 'return await spawn_creature_response(creature_id, request, body)' in routes
+    for field in ['session_id', 'user_id', 'map_context', 'grid_size_px', 'gridSizePx']:
+        assert field in service
+    assert '"from_bestiary": True' in service
+    assert '"token_created"' in service
