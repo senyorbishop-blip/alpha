@@ -3,6 +3,7 @@ from pathlib import Path
 DOC = Path('docs/ui-dm-map-first-shell.md')
 CSS = Path('client/static/css/dm-map-first-shell.css')
 JS = Path('client/static/js/ui/dm_map_first_shell.js')
+REGISTRY = Path('client/static/js/ui/dm_mode_tool_registry.js')
 
 
 def read(path: Path) -> str:
@@ -13,6 +14,7 @@ def test_dm_shell_scaffold_files_exist():
     assert DOC.exists()
     assert CSS.exists()
     assert JS.exists()
+    assert REGISTRY.exists()
 
 
 def test_dm_shell_documents_map_first_layout():
@@ -25,6 +27,15 @@ def test_dm_shell_documents_map_first_layout():
         'no full `play.html` rewrite',
     ]:
         assert phrase in text
+
+
+def test_live_table_replaces_run_game_as_user_facing_label():
+    doc = read(DOC)
+    js = read(JS)
+    assert 'Live Table' in doc
+    assert "label: 'Live Table'" in js
+    assert "id: 'run'" in js
+    assert 'run-game' in js
 
 
 def test_dm_shell_modes_cover_all_core_dm_sections():
@@ -65,6 +76,28 @@ def test_dm_shell_context_covers_all_major_tools():
         assert tool in text
 
 
+def test_dm_mode_tool_registry_maps_tools_without_losing_functions():
+    registry = read(REGISTRY)
+    required = [
+        'Live Table',
+        'selected-token-summary',
+        'party-overview',
+        'current-scene-notes',
+        'initiative-order',
+        'fog-tools',
+        'wall-tools',
+        'door-tools',
+        'bestiary-search',
+        'shop-setup',
+        'viewer-power-grants',
+        'pending-approvals',
+        'stream-readiness',
+        'websocket-diagnostics',
+    ]
+    for phrase in required:
+        assert phrase in registry
+
+
 def test_dm_shell_css_keeps_map_as_primary_region():
     css = read(CSS)
     assert 'grid-template-areas' in css
@@ -80,3 +113,5 @@ def test_debug_panel_is_hidden_unless_opened():
     assert '[data-dm-debug-panel]' in css
     assert 'data-debug-open="true"' in css
     assert 'display: none !important' in css
+    registry = read(REGISTRY)
+    assert 'closedByDefault: true' in registry
