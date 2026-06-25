@@ -70,3 +70,44 @@ def test_player_and_viewer_screens_remain_unchanged_by_dm_mode_bridge():
     assert 'dm-context-shell' in src and 'hidden' in src
     assert 'element.hidden = !isActive' in bridge
     assert 'removeChild' not in bridge and '.remove()' not in bridge
+
+
+def test_polished_map_first_active_mode_styling_exists():
+    css = read(Path('client/static/css/dm-map-first-shell.css'))
+    assert 'body.dm-map-first-active .dm-live-mode-rail .dm-map-first-mode-button[aria-pressed="true"]' in css
+    assert 'body.dm-map-first-active .dm-live-mode-rail .dm-map-first-mode-button[data-dm-mode-active="true"]' in css
+    assert ':focus-visible' in css
+
+
+def test_polished_right_context_width_uses_map_first_tokens():
+    css = read(Path('client/static/css/dm-map-first-shell.css'))
+    assert 'body.dm-map-first-active #sidebar-right.dm-map-first-right-context' in css
+    assert 'width: var(--mf-right-context-width' in css
+    assert 'max-width: var(--mf-right-context-width' in css
+
+
+def test_polished_rail_width_uses_map_first_tokens():
+    css = read(Path('client/static/css/dm-map-first-shell.css'))
+    assert 'body.dm-map-first-active #sidebar-left.dm-map-first-rail' in css
+    assert 'width: var(--mf-left-rail-width' in css
+    assert '--mf-left-rail-width' in css
+
+
+def test_polished_map_stage_still_uses_minmax_zero_one_fraction():
+    css = read(Path('client/static/css/dm-map-first-shell.css'))
+    assert 'minmax(0, 1fr)' in css
+    assert 'grid-template-columns: var(--mf-left-rail-width' in css
+
+
+def test_polished_debug_hidden_styling_still_exists():
+    css = read(Path('client/static/css/dm-map-first-shell.css'))
+    assert '[data-dm-debug-panel][hidden]' in css
+    assert 'display: none !important;' in css
+
+
+def test_polished_responsive_css_exists():
+    css = read(Path('client/static/css/dm-map-first-shell.css'))
+    assert '@media (max-width: 1100px)' in css
+    assert '@media (max-width: 900px)' in css
+    assert '@media (max-width: 680px)' in css
+    assert '@media (prefers-reduced-motion: reduce)' in css
