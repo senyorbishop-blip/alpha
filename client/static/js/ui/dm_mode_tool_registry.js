@@ -128,6 +128,8 @@
         'websocket-diagnostics',
         'sync-diagnostics',
         'visibility-checks',
+        'dm-focus-testing-guidance',
+        'development-only-hints',
       ]),
       keepOut: Object.freeze([]),
       closedByDefault: true,

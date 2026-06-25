@@ -127,3 +127,103 @@ def test_polished_overlay_passthrough_is_limited_to_passive_overlays():
     assert 'body.dm-map-first-active #scene-description-overlay' in css
     assert 'body.dm-map-first-active #display-overlay-exit' in css
     assert 'body.dm-map-first-active #roll-visual-portal {' not in css
+from pathlib import Path
+
+PLAY = Path('client/templates/play.html')
+REGISTRY = Path('client/static/js/ui/dm_mode_tool_registry.js')
+BRIDGE = Path('client/static/js/ui/dm_panel_mode_bridge.js')
+
+EXPECTED_MODE_TOOLS = {
+    'run': [
+        'selected-token-summary', 'party-overview', 'current-scene-notes',
+        'handout-shortcuts', 'journal-shortcuts', 'narration-shortcuts',
+        'viewer-power-shortcuts', 'compact-save-state',
+    ],
+    'combat': [
+        'initiative-order', 'current-turn', 'hp-summary', 'conditions',
+        'action-usage', 'movement-usage', 'attack-roll-helpers',
+        'damage-roll-helpers', 'save-dc-helpers', 'end-turn-controls',
+    ],
+    'map-build': [
+        'terrain-tools', 'fog-tools', 'wall-tools', 'door-tools',
+        'reveal-hide-tools', 'token-layer', 'prop-layer',
+        'lighting-weather-tools', 'asset-library', 'map-save-apply',
+    ],
+    'npc-monster': [
+        'bestiary-search', 'spawn-token', 'creature-hp-ac-speed',
+        'visibility-state', 'initiative-modifier', 'conditions',
+        'creature-notes', 'creature-quick-actions',
+    ],
+    'loot-shop': [
+        'item-search', 'loot-containers', 'corpse-loot', 'shop-setup',
+        'grant-item', 'grant-gold', 'charges', 'attunement',
+        'party-inventory-adjustments',
+    ],
+    'session-tools': [
+        'quests', 'handouts', 'journal', 'discoveries', 'narration',
+        'sound', 'polls', 'party-messages', 'autosave-save-tools',
+    ],
+    'viewer-powers': [
+        'connected-viewers', 'viewer-power-grants', 'pending-approvals',
+        'cooldowns', 'target-selection', 'approved-rejected-feedback',
+    ],
+    'debug': [
+        'stream-readiness', 'payload-warnings', 'reconnect-warnings',
+        'websocket-diagnostics', 'sync-diagnostics', 'visibility-checks',
+        'dm-focus-testing-guidance', 'development-only-hints',
+    ],
+}
+
+
+def _read(path: Path) -> str:
+    return path.read_text(encoding='utf-8')
+
+
+def test_dm_audit_all_expected_tool_markers_have_mode_homes():
+    play = _read(PLAY)
+    registry = _read(REGISTRY)
+    for mode, tools in EXPECTED_MODE_TOOLS.items():
+        assert f"data-dm-mode=\"{mode}\"" in play or f"{mode}: Object.freeze" in registry or f"'{mode}': Object.freeze" in registry
+        for tool in tools:
+            assert f"data-dm-tool=\"{tool}\"" in play, f"missing marker for {mode}:{tool}"
+            assert f"'{tool}'" in registry, f"missing registry entry for {mode}:{tool}"
+
+
+def test_dm_audit_existing_controls_gained_stable_markers_without_handler_changes():
+    play = _read(PLAY)
+    expected_fragments = [
+        'id="rail-editor-btn" data-dm-tool="terrain-tools" data-help="dm-map-editor" onclick="toggleFlyout(\'flyout-editor\')"',
+        'id="rail-fog-btn" data-dm-tool="fog-tools" data-help="dm-fog" onclick="toggleFlyout(\'flyout-fog\')"',
+        'id="rail-sound-btn" data-dm-tool="narration-shortcuts" onclick="toggleFlyout(\'flyout-sound\')"',
+        'id="rail-perm-btn" data-dm-tool="viewer-power-shortcuts" onclick="toggleFlyout(\'flyout-perm\')"',
+        'id="editor-wall-tool-door" data-dm-tool="door-tools"',
+        'id="editor-save-btn" data-dm-tool="map-save-apply"',
+    ]
+    for fragment in expected_fragments:
+        assert fragment in play
+
+
+def test_dm_audit_more_legacy_tools_preserves_unmigrated_controls():
+    play = _read(PLAY)
+    assert 'data-dm-context-section="legacy-tools-fallback"' in play
+    assert 'More / Legacy Tools' in play
+    assert 'Existing tools remain in the left rail flyouts and legacy right tabs until a later migration.' in play
+
+
+def test_dm_audit_debug_hidden_by_default_and_explicitly_closed():
+    play = _read(PLAY)
+    registry = _read(REGISTRY)
+    bridge = _read(BRIDGE)
+    assert 'data-dm-context-section="debug" aria-label="Debug DM tools" data-dm-debug-panel hidden' in play
+    assert 'closedByDefault: true' in registry
+    assert "activeMode === 'debug' ? 'true' : 'false'" in bridge
+
+
+def test_dm_audit_map_first_shell_keeps_map_central_after_mode_switches():
+    play = _read(PLAY)
+    bridge = _read(BRIDGE)
+    css = _read(Path('client/static/css/dm-map-first-polish.css'))
+    assert '<span class="dm-context-map-note">Map remains primary</span>' in play
+    assert "buttons.forEach((button) => {" in bridge
+    assert 'grid-template-columns: var(--mf-left-rail-width' in css
+    assert 'minmax(0, 1fr)' in css
