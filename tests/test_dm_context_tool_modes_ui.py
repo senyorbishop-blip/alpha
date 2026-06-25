@@ -10,33 +10,33 @@ def read(path: Path) -> str:
 
 
 def test_map_build_mode_includes_fog_walls_doors_and_reveal_markers():
-    src = read(PLAY)
+    src = read(BRIDGE)
     registry = read(REGISTRY)
-    assert 'data-dm-mode="map-build"' in src
+    assert "mode: 'map-build'" in src
     for marker in ['fog-tools', 'wall-tools', 'door-tools', 'reveal-hide-tools']:
         assert marker in src
         assert marker in registry
-    assert 'data-map-build-markers="fog-tools wall-tools door-tools reveal-hide-tools' in src
+    assert "markerName: 'mapBuildMarkers'" in src
 
 
 def test_npc_monster_mode_includes_bestiary_spawn_and_visibility_markers():
-    src = read(PLAY)
+    src = read(BRIDGE)
     registry = read(REGISTRY)
-    assert 'data-dm-mode="npc-monster"' in src
+    assert "mode: 'npc-monster'" in src
     for marker in ['bestiary-search', 'spawn-token', 'visibility-state']:
         assert marker in src
         assert marker in registry
-    assert 'data-npc-monster-markers="bestiary-search spawn-token visibility-state' in src
+    assert "markerName: 'npcMonsterMarkers'" in src
 
 
 def test_live_table_context_keeps_setup_and_debug_tools_out():
-    src = read(PLAY)
+    src = read(BRIDGE)
     registry = read(REGISTRY)
-    assert 'data-dm-mode="run"' in src
+    assert "mode: 'run'" in src
     for marker in ['wall-editor', 'fog-brush', 'shop-editor', 'debug-diagnostics']:
         assert marker in src
         assert marker in registry
-    assert 'data-live-table-clean-markers="wall-editor fog-brush shop-editor debug-diagnostics"' in src
+    assert "markerName: 'liveTableCleanMarkers'" in src
 
 
 def test_existing_map_edit_controls_remain_in_dom():

@@ -6,6 +6,111 @@
   const MODE_INACTIVE_CLASS = 'dm-panel-mode-inactive';
   const SECTION_SELECTOR = '[data-dm-mode], [data-dm-tool], [data-dm-section]';
 
+  const MODE_PANEL_DEFINITIONS = Object.freeze([
+    Object.freeze({
+      mode: 'run',
+      label: 'Live Table clean context',
+      description: 'Live Table keeps the session view focused on party status, chat, combat pacing, dice, handouts, and the selected-token quick panel.',
+      markerName: 'liveTableCleanMarkers',
+      markers: Object.freeze(['wall-editor', 'fog-brush', 'shop-editor', 'debug-diagnostics']),
+      markerText: 'Wall, fog, shop setup, and debug tools stay in their dedicated DM modes so Live Table remains clean.',
+      tools: Object.freeze([
+        Object.freeze({ id: 'party-overview', label: 'Party', action: "switchRTab('party')" }),
+        Object.freeze({ id: 'current-scene-notes', label: 'Moments', action: "switchRTab('memory')" }),
+        Object.freeze({ id: 'handout-shortcuts', label: 'Handouts', action: "switchRTab('handouts')" }),
+        Object.freeze({ id: 'narration-shortcuts', label: 'Sound / Narration', action: "toggleFlyout('flyout-sound')" }),
+      ]),
+    }),
+    Object.freeze({
+      mode: 'map-build',
+      label: 'Map Build tools',
+      description: 'Map Build groups setup-heavy editing controls without changing fog, reveal/hide, token visibility, wall collision, door collision, or placement authority.',
+      markerName: 'mapBuildMarkers',
+      markers: Object.freeze(['fog-tools', 'wall-tools', 'door-tools', 'reveal-hide-tools', 'terrain-tools', 'token-layer', 'prop-layer', 'lighting-weather-tools', 'asset-library', 'map-save-apply']),
+      tools: Object.freeze([
+        Object.freeze({ id: 'terrain-tools', label: 'Terrain Tools', action: "toggleFlyout('flyout-editor')" }),
+        Object.freeze({ id: 'fog-tools', label: 'Fog Tools', action: "toggleFlyout('flyout-fog')" }),
+        Object.freeze({ id: 'wall-tools', label: 'Wall Tools', action: "toggleFlyout('flyout-editor')" }),
+        Object.freeze({ id: 'door-tools', label: 'Door Tools', action: "toggleFlyout('flyout-editor')" }),
+        Object.freeze({ id: 'reveal-hide-tools', label: 'Reveal / Hide', action: "toggleFlyout('flyout-fog')" }),
+        Object.freeze({ id: 'token-layer', label: 'Token Layer', action: "toggleFlyout('flyout-editor')" }),
+        Object.freeze({ id: 'prop-layer', label: 'Prop Layer', action: "toggleFlyout('flyout-editor')" }),
+        Object.freeze({ id: 'lighting-weather-tools', label: 'Lighting / Weather', action: "toggleFlyout('flyout-map')" }),
+        Object.freeze({ id: 'asset-library', label: 'Asset Library', action: "toggleFlyout('flyout-editor')" }),
+        Object.freeze({ id: 'map-save-apply', label: 'Map Save / Apply', action: "toggleFlyout('flyout-editor')" }),
+      ]),
+    }),
+    Object.freeze({
+      mode: 'npc-monster',
+      label: 'NPC and Monster tools',
+      description: 'NPC / Monster groups creature search, spawning, stats, visibility, conditions, notes, and quick actions while preserving the existing bestiary and token editor controls.',
+      markerName: 'npcMonsterMarkers',
+      markers: Object.freeze(['bestiary-search', 'spawn-token', 'visibility-state', 'creature-hp-ac-speed', 'initiative-modifier', 'conditions', 'creature-notes', 'creature-quick-actions']),
+      tools: Object.freeze([
+        Object.freeze({ id: 'bestiary-search', label: 'Bestiary Search', action: "switchRTab('bestiary')" }),
+        Object.freeze({ id: 'spawn-token', label: 'Spawn Token', action: "switchRTab('bestiary')" }),
+        Object.freeze({ id: 'creature-hp-ac-speed', label: 'HP / AC / Speed', action: "toggleFlyout('flyout-token')" }),
+        Object.freeze({ id: 'visibility-state', label: 'Visibility State', action: "toggleFlyout('flyout-token')" }),
+        Object.freeze({ id: 'initiative-modifier', label: 'Initiative Modifier', action: "toggleFlyout('flyout-token')" }),
+        Object.freeze({ id: 'conditions', label: 'Conditions', action: "toggleFlyout('flyout-token')" }),
+        Object.freeze({ id: 'creature-notes', label: 'Creature Notes', action: "toggleFlyout('flyout-token')" }),
+        Object.freeze({ id: 'creature-quick-actions', label: 'Quick Actions', action: "toggleFlyout('flyout-token')" }),
+      ]),
+    }),
+    Object.freeze({
+      mode: 'debug',
+      label: 'Debug diagnostics',
+      description: 'Debug diagnostics are closed by default.',
+      tools: Object.freeze([]),
+    }),
+  ]);
+
+  function appendTextElement(doc, parent, tagName, className, text) {
+    const el = doc.createElement(tagName);
+    if (className) el.className = className;
+    el.textContent = text;
+    parent.appendChild(el);
+    return el;
+  }
+
+  function ensureModePanels(root) {
+    const safeRoot = root || document;
+    const doc = safeRoot.createElement ? safeRoot : document;
+    const body = safeRoot.querySelector ? safeRoot.querySelector('#dm-context-shell .dm-map-first-context-body') : null;
+    if (!body || body.dataset.dmContextPanelsMounted === 'true') return;
+    body.dataset.dmContextPanelsMounted = 'true';
+    MODE_PANEL_DEFINITIONS.forEach((definition) => {
+      const section = doc.createElement('section');
+      section.className = 'dm-context-mode-panel';
+      section.dataset.dmMode = definition.mode;
+      section.setAttribute('aria-label', definition.label);
+      appendTextElement(doc, section, 'p', '', definition.description);
+      if (definition.tools.length) {
+        const grid = doc.createElement('div');
+        grid.className = 'dm-context-tool-grid';
+        grid.setAttribute('aria-label', `${definition.label} shortcuts`);
+        definition.tools.forEach((tool) => {
+          const button = doc.createElement('button');
+          button.type = 'button';
+          button.className = 'mini-btn';
+          button.dataset.dmTool = tool.id;
+          button.setAttribute('onclick', tool.action);
+          button.textContent = tool.label;
+          grid.appendChild(button);
+        });
+        section.appendChild(grid);
+      }
+      if (definition.markers && definition.markers.length) {
+        const marker = doc.createElement('div');
+        marker.className = definition.mode === 'run' ? 'dm-context-keepout' : 'dm-context-markers';
+        marker.dataset[definition.markerName] = definition.markers.join(' ');
+        marker.textContent = definition.markerText || '';
+        section.appendChild(marker);
+      }
+      body.appendChild(section);
+    });
+  }
+
   function registry() {
     return window.AppUIDMModeToolRegistry || {};
   }
@@ -92,6 +197,7 @@
 
   function activateMode(root, modeId) {
     const safeRoot = root || document;
+    ensureModePanels(safeRoot);
     const activeMode = normalizeMode(modeId);
     const sections = Array.from(safeRoot.querySelectorAll(SECTION_SELECTOR));
     sections.forEach((section) => applySectionState(section, activeMode));
