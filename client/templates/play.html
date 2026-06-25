@@ -66,7 +66,7 @@
     <div id="ws-status" title="WebSocket"></div>
     <div id="ws-status-label">Connecting…</div>
   </div>
-  <div id="stream-readiness-panel" aria-live="polite" style="display:none;min-width:210px;max-width:300px;padding:0.28rem 0.45rem;border:1px solid rgba(0,229,204,0.22);border-radius:7px;background:rgba(0,0,0,0.24);font-size:0.58rem;line-height:1.35;color:var(--parchment-dim);">Stream readiness loading…</div>
+  <div id="stream-readiness-panel" data-dm-mode="debug" data-dm-tool="stream-readiness" data-dm-debug-panel hidden aria-live="polite" style="display:none;min-width:210px;max-width:300px;padding:0.28rem 0.45rem;border:1px solid rgba(0,229,204,0.22);border-radius:7px;background:rgba(0,0,0,0.24);font-size:0.58rem;line-height:1.35;color:var(--parchment-dim);">Stream readiness loading…</div>
   <!-- ? Help / Walkthrough button — always visible in topbar -->
   <button id="topbar-help-btn" data-help="help-hub" title="Help Hub &amp; Walkthrough"
     onclick="window.AppOnboarding&&AppOnboarding.showHelpHub(typeof ROLE!=='undefined'?ROLE:'viewer')"
@@ -4682,7 +4682,10 @@ function renderStreamReadinessPanel() {
   const panel = document.getElementById('stream-readiness-panel');
   if (!panel) return;
   const role = getEffectiveRole ? getEffectiveRole() : ROLE;
-  if (role !== 'dm') { panel.style.display = 'none'; return; }
+  const debugOpen = document.body && document.body.dataset && document.body.dataset.debugOpen === 'true';
+  if (role !== 'dm') { panel.style.display = 'none'; panel.hidden = true; return; }
+  if (!debugOpen) { panel.style.display = 'none'; panel.hidden = true; return; }
+  panel.hidden = false;
   const connectedPlayers = Object.values(users || {}).filter((u) => u && u.connected && String(u.role || '').toLowerCase() === 'player').length;
   const connectedViewers = Object.values(users || {}).filter((u) => u && u.connected && String(u.role || '').toLowerCase() === 'viewer').length;
   const lastSave = STREAM_READINESS_STATUS.lastAutosaveAt ? new Date(STREAM_READINESS_STATUS.lastAutosaveAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'not yet';
