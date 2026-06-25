@@ -60,7 +60,17 @@
     Object.freeze({
       mode: 'debug',
       label: 'Debug diagnostics',
-      description: 'Debug diagnostics are closed by default.',
+      description: 'Debug diagnostics are closed by default and visible to the DM only when Debug mode is active.',
+      debugPanel: true,
+      diagnostics: Object.freeze([
+        Object.freeze({ id: 'stream-readiness', text: 'Stream readiness loading…', mountId: 'stream-readiness-panel' }),
+        Object.freeze({ id: 'payload-warnings', text: 'Payload warnings remain tracked in the stream readiness summary.' }),
+        Object.freeze({ id: 'reconnect-warnings', text: 'Reconnect warnings remain tracked in the stream readiness summary.' }),
+        Object.freeze({ id: 'websocket-diagnostics', text: 'WebSocket diagnostics remain available through the standard status dot/label and debug helpers.' }),
+        Object.freeze({ id: 'sync-diagnostics', text: 'Sync diagnostics remain available through live-state debug summaries.' }),
+        Object.freeze({ id: 'visibility-checks', text: 'Visibility checks remain grouped here with hidden-token and fog safety diagnostics.' }),
+        Object.freeze({ id: 'dm-focus-testing-guidance', text: 'DM focus/testing guidance and development-only hints live in Debug, not Live Table.' }),
+      ]),
       tools: Object.freeze([]),
     }),
   ]);
@@ -71,6 +81,24 @@
     el.textContent = text;
     parent.appendChild(el);
     return el;
+  }
+
+  function appendDebugDiagnostics(doc, section, diagnostics) {
+    section.dataset.dmDebugPanel = '';
+    const grid = doc.createElement('div');
+    grid.className = 'dm-context-marker-grid';
+    grid.setAttribute('aria-label', 'Debug diagnostic tools');
+    Array.from(diagnostics || []).forEach((diagnostic) => {
+      const mounted = diagnostic.mountId ? doc.getElementById(diagnostic.mountId) : null;
+      const card = mounted || doc.createElement('div');
+      card.classList.add('dm-debug-diagnostic-card');
+      card.dataset.dmTool = diagnostic.id;
+      if (!card.textContent || card.textContent.trim() === '') card.textContent = diagnostic.text;
+      if (diagnostic.mountId && !mounted) card.id = diagnostic.mountId;
+      if (diagnostic.mountId === 'stream-readiness-panel') card.setAttribute('aria-live', 'polite');
+      grid.appendChild(card);
+    });
+    section.appendChild(grid);
   }
 
   function ensureModePanels(root) {
@@ -85,6 +113,9 @@
       section.dataset.dmMode = definition.mode;
       section.setAttribute('aria-label', definition.label);
       appendTextElement(doc, section, 'p', '', definition.description);
+      if (definition.debugPanel) {
+        appendDebugDiagnostics(doc, section, definition.diagnostics);
+      }
       if (definition.tools.length) {
         const grid = doc.createElement('div');
         grid.className = 'dm-context-tool-grid';
@@ -211,6 +242,11 @@
     if (title) title.textContent = activeConfig.label || 'Live Table';
     if (safeRoot.dataset) {
       safeRoot.dataset.dmActiveMode = activeMode;
+      safeRoot.dataset.debugOpen = activeMode === 'debug' ? 'true' : 'false';
+    }
+    if (safeRoot.body && safeRoot.body.dataset) {
+      safeRoot.body.dataset.dmActiveMode = activeMode;
+      safeRoot.body.dataset.debugOpen = activeMode === 'debug' ? 'true' : 'false';
     }
     return activeConfig;
   }
