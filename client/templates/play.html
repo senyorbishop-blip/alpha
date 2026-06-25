@@ -1550,8 +1550,50 @@
       <span class="dm-context-map-note">Map remains primary</span>
     </div>
     <div class="dm-map-first-context-body">
-      <p>Use the existing tabs and legacy controls below. This shell only changes DM navigation and context framing.</p>
-      <div data-dm-debug-panel hidden>Debug diagnostics are closed by default.</div>
+      <section class="dm-context-mode-panel" data-dm-mode="run" aria-label="Live Table clean context">
+        <p>Live Table keeps the session view focused on party status, chat, combat pacing, dice, handouts, and the selected-token quick panel.</p>
+        <div class="dm-context-tool-grid" aria-label="Live Table shortcuts">
+          <button type="button" class="mini-btn" data-dm-tool="party-overview" onclick="switchRTab('party')">Party</button>
+          <button type="button" class="mini-btn" data-dm-tool="current-scene-notes" onclick="switchRTab('memory')">Moments</button>
+          <button type="button" class="mini-btn" data-dm-tool="handout-shortcuts" onclick="switchRTab('handouts')">Handouts</button>
+          <button type="button" class="mini-btn" data-dm-tool="narration-shortcuts" onclick="toggleFlyout('flyout-sound')">Sound / Narration</button>
+        </div>
+        <div class="dm-context-keepout" data-live-table-clean-markers="wall-editor fog-brush shop-editor debug-diagnostics">Wall, fog, shop setup, and debug tools stay in their dedicated DM modes so Live Table remains clean.</div>
+      </section>
+
+      <section class="dm-context-mode-panel" data-dm-mode="map-build" aria-label="Map Build tools">
+        <p>Map Build groups setup-heavy editing controls without changing fog, reveal/hide, token visibility, wall collision, door collision, or placement authority.</p>
+        <div class="dm-context-tool-grid" aria-label="Map Build shortcuts">
+          <button type="button" class="mini-btn" data-dm-tool="terrain-tools" onclick="toggleFlyout('flyout-editor')">Terrain Tools</button>
+          <button type="button" class="mini-btn" data-dm-tool="fog-tools" onclick="toggleFlyout('flyout-fog')">Fog Tools</button>
+          <button type="button" class="mini-btn" data-dm-tool="wall-tools" onclick="toggleFlyout('flyout-editor')">Wall Tools</button>
+          <button type="button" class="mini-btn" data-dm-tool="door-tools" onclick="toggleFlyout('flyout-editor')">Door Tools</button>
+          <button type="button" class="mini-btn" data-dm-tool="reveal-hide-tools" onclick="toggleFlyout('flyout-fog')">Reveal / Hide</button>
+          <button type="button" class="mini-btn" data-dm-tool="token-layer" onclick="toggleFlyout('flyout-editor')">Token Layer</button>
+          <button type="button" class="mini-btn" data-dm-tool="prop-layer" onclick="toggleFlyout('flyout-editor')">Prop Layer</button>
+          <button type="button" class="mini-btn" data-dm-tool="lighting-weather-tools" onclick="toggleFlyout('flyout-map')">Lighting / Weather</button>
+          <button type="button" class="mini-btn" data-dm-tool="asset-library" onclick="toggleFlyout('flyout-editor')">Asset Library</button>
+          <button type="button" class="mini-btn" data-dm-tool="map-save-apply" onclick="toggleFlyout('flyout-editor')">Map Save / Apply</button>
+        </div>
+        <div class="dm-context-markers" data-map-build-markers="fog-tools wall-tools door-tools reveal-hide-tools terrain-tools token-layer prop-layer lighting-weather-tools asset-library map-save-apply"></div>
+      </section>
+
+      <section class="dm-context-mode-panel" data-dm-mode="npc-monster" aria-label="NPC and Monster tools">
+        <p>NPC / Monster groups creature search, spawning, stats, visibility, conditions, notes, and quick actions while preserving the existing bestiary and token editor controls.</p>
+        <div class="dm-context-tool-grid" aria-label="NPC / Monster shortcuts">
+          <button type="button" class="mini-btn" data-dm-tool="bestiary-search" onclick="switchRTab('bestiary')">Bestiary Search</button>
+          <button type="button" class="mini-btn" data-dm-tool="spawn-token" onclick="switchRTab('bestiary')">Spawn Token</button>
+          <button type="button" class="mini-btn" data-dm-tool="creature-hp-ac-speed" onclick="toggleFlyout('flyout-token')">HP / AC / Speed</button>
+          <button type="button" class="mini-btn" data-dm-tool="visibility-state" onclick="toggleFlyout('flyout-token')">Visibility State</button>
+          <button type="button" class="mini-btn" data-dm-tool="initiative-modifier" onclick="toggleFlyout('flyout-token')">Initiative Modifier</button>
+          <button type="button" class="mini-btn" data-dm-tool="conditions" onclick="toggleFlyout('flyout-token')">Conditions</button>
+          <button type="button" class="mini-btn" data-dm-tool="creature-notes" onclick="toggleFlyout('flyout-token')">Creature Notes</button>
+          <button type="button" class="mini-btn" data-dm-tool="creature-quick-actions" onclick="toggleFlyout('flyout-token')">Quick Actions</button>
+        </div>
+        <div class="dm-context-markers" data-npc-monster-markers="bestiary-search spawn-token visibility-state creature-hp-ac-speed initiative-modifier conditions creature-notes creature-quick-actions"></div>
+      </section>
+
+      <section class="dm-context-mode-panel" data-dm-mode="debug" aria-label="Debug diagnostics" data-dm-debug-panel>Debug diagnostics are closed by default.</section>
     </div>
   </section>
   <!-- Tab bar -->
@@ -16189,7 +16231,7 @@ function syncLootRevealStateWithInventory() {
 
 function switchToInventoryFromLootReveal() {
   closeLootRevealModal();
-  if (typeof switchRightTab === 'function') switchRightTab('inventory');
+  if (typeof switchRightTab === 'function') switchRTab('inventory');
 }
 
 function inspectInventoryItem(index) {
