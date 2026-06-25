@@ -60,6 +60,7 @@
     <div id="ws-status" title="WebSocket"></div>
     <div id="ws-status-label">Connecting…</div>
   </div>
+  <div id="stream-readiness-panel" aria-live="polite" style="display:none;min-width:210px;max-width:300px;padding:0.28rem 0.45rem;border:1px solid rgba(0,229,204,0.22);border-radius:7px;background:rgba(0,0,0,0.24);font-size:0.58rem;line-height:1.35;color:var(--parchment-dim);">Stream readiness loading…</div>
   <!-- ? Help / Walkthrough button — always visible in topbar -->
   <button id="topbar-help-btn" data-help="help-hub" title="Help Hub &amp; Walkthrough"
     onclick="window.AppOnboarding&&AppOnboarding.showHelpHub(typeof ROLE!=='undefined'?ROLE:'viewer')"
@@ -3746,7 +3747,7 @@ window.__playerBootState = window.__playerBootState || { checkpoint: 'PLAYER_BOO
 <script src="/static/js/core/runtime_bridge.js"></script>
 <!-- Runtime ownership boundary: boot_shell is the ordered startup-sequencing owner. -->
 <script src="/static/js/core/boot_shell.js"></script>
-<script src="/static/js/core/ws.js?v=heartbeat-pong-v4"></script>
+<script src="/static/js/core/ws.js?v=heartbeat-pong-v5-stream-readiness"></script>
 <!-- Stage 1 runtime path: AppMessageDispatch is the live first-hop handoff into handleLegacyMessage(); AppMessageHandlers is intentionally not loaded here. -->
 <script src="/static/js/core/message_dispatch.js"></script>
 <!-- Stage 4 ownership: render/boot.js is the live canvas bootstrap owner; play.html keeps drawLoop()/drawFrame() and interaction handlers via compatibility wrappers. -->
@@ -4473,13 +4474,71 @@ window.__LIVE_DEBUG__ = window.__LIVE_DEBUG__ === true;
 function liveDebugLog(label, payload) {
   try {
     if (!window.__LIVE_DEBUG__) return false;
-    console.debug('[live_state]', label, payload || {});
+    console.debug('[live_state]', label, _redactClientLogPayload(payload || {}));
     return true;
   } catch (_err) {
     return false;
   }
 }
 window.liveDebugLog = liveDebugLog;
+
+const STREAM_READINESS_STATUS = window.STREAM_READINESS_STATUS || {
+  lastAutosaveAt: 0,
+  payloadWarnings: 0,
+  reconnectWarnings: 0,
+  lastFriendlyDiagnostic: '',
+};
+window.STREAM_READINESS_STATUS = STREAM_READINESS_STATUS;
+function _redactClientLogPayload(value, depth = 0) {
+  if (depth > 4) return '[redacted-depth]';
+  if (Array.isArray(value)) return value.slice(0, 20).map((entry) => _redactClientLogPayload(entry, depth + 1));
+  if (!value || typeof value !== 'object') return value;
+  const safe = {};
+  Object.entries(value).forEach(([key, val]) => {
+    const k = String(key || '').toLowerCase();
+    if (/payload|body|notes|handout|private|secret|hidden|token|profile|character/.test(k) && !/count|revision|status|filtered|type|id$/.test(k)) {
+      safe[key] = '[redacted]';
+    } else {
+      safe[key] = _redactClientLogPayload(val, depth + 1);
+    }
+  });
+  return safe;
+}
+function _streamFriendlyDiagnostic(kind, message, opts = {}) {
+  const text = String(message || 'Something went wrong. Try again or reconnect.');
+  STREAM_READINESS_STATUS.lastFriendlyDiagnostic = text;
+  if (kind === 'payload_warning') STREAM_READINESS_STATUS.payloadWarnings += 1;
+  if (kind === 'reconnect_warning') STREAM_READINESS_STATUS.reconnectWarnings += 1;
+  if (opts.toast !== false && typeof showToast === 'function') showToast(text);
+  renderStreamReadinessPanel();
+  return text;
+}
+window._streamFriendlyDiagnostic = _streamFriendlyDiagnostic;
+function _streamWsStatusLabel() {
+  try {
+    const dbg = window.__debugWS && window.__debugWS();
+    if (dbg && dbg.readyState === WebSocket.OPEN) return 'connected';
+    if (dbg && dbg.readyState === WebSocket.CONNECTING) return 'connecting';
+  } catch (_err) {}
+  const label = document.getElementById('ws-status-label');
+  return label ? String(label.textContent || 'unknown') : 'unknown';
+}
+function renderStreamReadinessPanel() {
+  const panel = document.getElementById('stream-readiness-panel');
+  if (!panel) return;
+  const role = getEffectiveRole ? getEffectiveRole() : ROLE;
+  if (role !== 'dm') { panel.style.display = 'none'; return; }
+  const connectedPlayers = Object.values(users || {}).filter((u) => u && u.connected && String(u.role || '').toLowerCase() === 'player').length;
+  const connectedViewers = Object.values(users || {}).filter((u) => u && u.connected && String(u.role || '').toLowerCase() === 'viewer').length;
+  const lastSave = STREAM_READINESS_STATUS.lastAutosaveAt ? new Date(STREAM_READINESS_STATUS.lastAutosaveAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'not yet';
+  const mapId = String((typeof _getCurrentMapContext === 'function' ? _getCurrentMapContext() : (_currentPoi && _currentPoi.id) || 'world') || 'world');
+  panel.style.display = 'block';
+  panel.innerHTML = `<strong style="color:var(--gold);font-size:0.62rem;">Stream readiness</strong><br>`
+    + `Players ${connectedPlayers} · Viewers ${connectedViewers}<br>`
+    + `Autosave ${escapeHtml(lastSave)} · WS ${escapeHtml(_streamWsStatusLabel())}<br>`
+    + `Session ${escapeHtml(String(SESSION_ID || '—'))} · Map ${escapeHtml(mapId)}<br>`
+    + `Payload warnings ${STREAM_READINESS_STATUS.payloadWarnings} · Reconnect warnings ${STREAM_READINESS_STATUS.reconnectWarnings}`;
+}
 function buildClientLiveStateSummary(messageType, payload, extra) {
   const p = payload && typeof payload === 'object' ? payload : {};
   const combatPayload = p.combat && typeof p.combat === 'object' ? p.combat : (window._combat || window.combat || {});
@@ -5632,6 +5691,10 @@ function initUI() {
   // Topbar
   refreshRoleBadge();
   document.getElementById('session-info').textContent = `${NAME} · ${SESSION_ID}`;
+  renderStreamReadinessPanel();
+  if (ROLE === 'player' && !String((window.ACTIVE_CHAR_PROFILE_ID || '')).trim() && !(_charSheet || (Array.isArray(charProfiles) && charProfiles.length))) {
+    _streamFriendlyDiagnostic('missing_character', 'Player setup needed: choose or create an active character before using Quick Actions.', { toast: true });
+  }
   if (window.DMAssistant && typeof window.DMAssistant.setRole === 'function') window.DMAssistant.setRole(ROLE);
 
   // Show DM-only rail buttons and flyout panels
@@ -21279,7 +21342,7 @@ function saveCampaign() {
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({ user_id: USER_ID })
   }).then(r => r.json()).then(d => {
-    if (d.ok) { showToast('Campaign saved!'); showParchmentToast('✦ Campaign saved!', 'info', 3000); }
+    if (d.ok) { STREAM_READINESS_STATUS.lastAutosaveAt = Date.now(); renderStreamReadinessPanel(); showToast('Campaign saved!'); showParchmentToast('✦ Campaign saved!', 'info', 3000); }
     else showToast('Save failed: ' + (d.error || '?'));
   });
 }
@@ -23257,12 +23320,14 @@ function _setWsStatus(state, detail = '') {
     dot.classList.toggle('expired', state === 'expired');
     dot.title = copy[state] || copy.idle;
   }
+  if (state === 'reconnecting') STREAM_READINESS_STATUS.reconnectWarnings += 1;
   if (label) {
     label.textContent = copy[state] || copy.idle;
     label.classList.toggle('connected', state === 'connected');
     label.classList.toggle('reconnecting', state === 'reconnecting' || state === 'connecting');
     label.classList.toggle('expired', state === 'expired');
   }
+  renderStreamReadinessPanel();
 }
 
 function _renderIntegrationStatus(status) {
@@ -25568,6 +25633,7 @@ function handleLegacyMessage(msg) {
 
       renderPlayerList();
       renderViewerPanel();
+      renderStreamReadinessPanel();
       _startViewerCooldownTimer();
       if (window.AppUIChat && typeof window.AppUIChat.renderChatTargets === 'function') {
         window.AppUIChat.renderChatTargets(__createChatEnv());
@@ -26141,7 +26207,15 @@ function handleLegacyMessage(msg) {
     }
 
     case 'quick_actions_sync': {
-      applyQuickActionsSync(p, 'quick_actions_sync');
+      try {
+        applyQuickActionsSync(p, 'quick_actions_sync');
+        if (Array.isArray(p.diagnostics) && p.diagnostics.some((d) => String(d?.level || d?.status || '').toLowerCase().includes('error'))) {
+          _streamFriendlyDiagnostic('quick_actions', 'Quick Actions need attention: some action metadata is unavailable.', { toast: true });
+        }
+      } catch (err) {
+        _streamFriendlyDiagnostic('quick_actions', 'Quick Actions are unavailable right now. Reopen the character sheet or reconnect.', { toast: true });
+        reportClientRuntimeError('Quick Actions unavailable', err);
+      }
       break;
     }
 
@@ -26574,7 +26648,7 @@ function handleLegacyMessage(msg) {
         // mid-render can't re-enter renderCombat synchronously.
         forceCombatStateUISync();
       }
-      if (p.message) showToast(p.message);
+      _streamFriendlyDiagnostic('token_move_rejected', p.message || 'Token move rejected by the server.', { toast: true });
       break;
     }
 
@@ -27122,6 +27196,9 @@ function handleLegacyMessage(msg) {
     }
     case 'viewer_power_status': {
       if (p.message) showToast(p.message);
+      if (String(p.status || '').toLowerCase().includes('reject') || String(p.status || '').toLowerCase().includes('denied') || p.ok === false) {
+        _streamFriendlyDiagnostic('viewer_power_rejected', p.message || 'Viewer power rejected by the server.', { toast: true });
+      }
       break;
     }
     case 'viewer_fx': {
@@ -27184,7 +27261,15 @@ function handleLegacyMessage(msg) {
       break;
     }
     case 'error': {
-      showToast('⚠ ' + (p.message || 'Something went wrong — refresh and try again.'));
+      const rawMessage = String(p.message || 'Something went wrong — refresh and try again.');
+      const lower = rawMessage.toLowerCase();
+      let friendly = rawMessage;
+      if (lower.includes('quick')) friendly = 'Quick Actions are unavailable right now. Check your active character and try again.';
+      else if (lower.includes('spell') || lower.includes('metadata')) friendly = 'Spell/action details are missing. Reopen the sheet or ask the DM to resync.';
+      else if (lower.includes('rest')) friendly = 'Rest sync failed. Ask the DM to retry the rest or reconnect.';
+      else if (lower.includes('snapshot') || lower.includes('reconnect')) friendly = 'Reconnect snapshot failed. Stay on this page while live sync retries.';
+      else if (lower.includes('viewer power')) friendly = 'Viewer power rejected by the server.';
+      _streamFriendlyDiagnostic(lower.includes('reconnect') ? 'reconnect_warning' : 'runtime_error', '⚠ ' + friendly, { toast: true });
       break;
     }
     case 'loot_generated': {

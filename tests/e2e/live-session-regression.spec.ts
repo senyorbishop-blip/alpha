@@ -98,7 +98,19 @@ test.describe('live DM/player/viewer session regression', () => {
     await expect(viewer.page.locator('#rail-token-btn')).not.toBeVisible();
     await expect(viewer.page.locator('#rail-editor-btn')).not.toBeVisible();
     await expect(viewer.page.locator('#rail-fog-btn')).not.toBeVisible();
+    await expect(dm.page.locator('#stream-readiness-panel')).toBeVisible();
+    await expect(player.page.locator('#stream-readiness-panel')).not.toBeVisible();
+    await expect(viewer.page.locator('#stream-readiness-panel')).not.toBeVisible();
     await expectNoInitialPayloadErrors(player, viewer);
+
+    await player.page.evaluate(() => {
+      (window as any).handleLegacyMessage?.({ type: 'error', payload: { message: 'quick actions metadata missing' } });
+    });
+    await expect(player.page.locator('#toast')).toContainText(/Quick Actions are unavailable/i);
+    await player.page.evaluate(() => {
+      (window as any).handleLegacyMessage?.({ type: 'error', payload: { message: 'rest sync failed' } });
+    });
+    await expect(player.page.locator('#toast')).toContainText(/Rest sync failed/i);
 
     await wsSend(viewer.page, { type: 'token_create', payload: { name: 'Viewer Forbidden Token', x: 10, y: 10 } });
     await wsSend(player.page, { type: 'fog_paint', payload: { cells: ['0,0'], visible: false, map_context: 'world' } });
