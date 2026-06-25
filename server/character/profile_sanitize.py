@@ -55,6 +55,10 @@ def _is_runtime_key(key: str) -> bool:
     return key in RUNTIME_KEYS or bool(_HTML_KEY_RE.search(key))
 
 
+def _looks_like_profile_document(value: dict) -> bool:
+    return any(key in value for key in ("charSheet", "nativeRuntime", "nativeCharacter", "charBook", "sourceMode", "importMeta"))
+
+
 def _strip_runtime_fields_only(value: Any, _seen: set[int] | None = None) -> Any:
     seen = _seen if _seen is not None else set()
     if isinstance(value, dict):
@@ -81,12 +85,12 @@ def strip_runtime_fields(value: Any, _seen: set[int] | None = None) -> Any:
     """Recursively remove runtime/transient keys from ``value`` in place.
 
     Returns the same object for convenience. Cycles and non-dict/list values are
-    handled gracefully. When called at the profile save boundary, this also
+    handled gracefully. When the root value is a profile document, this also
     relocates oversized inline data-image fields and applies persistence-size
     caps so already-canonical but huge image strings do not survive saves.
     """
     _strip_runtime_fields_only(value, _seen)
-    if isinstance(value, dict):
+    if isinstance(value, dict) and _looks_like_profile_document(value):
         sanitize_profile_persistence(value, profile_label=str(value.get("id") or value.get("name") or "?"))
     return value
 
