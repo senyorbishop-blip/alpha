@@ -13,6 +13,7 @@ import base64
 import json
 import logging
 import re
+import sys
 from typing import Any
 
 from server.asset_pipeline import sha256_hex
@@ -214,6 +215,7 @@ def enforce_profile_size_caps(profile: Any, *, profile_label: str = "", string_c
 
 def sanitize_profile_persistence(profile: Any, *, profile_label: str = "") -> dict[str, Any]:
     """Relocate large inline images and apply persistence-size guardrails."""
+    install_db_large_field_diagnostics()
     relocated = relocate_large_inline_images(profile, profile_label=profile_label)
     warnings = enforce_profile_size_caps(profile, profile_label=profile_label)
     return {"relocated": relocated, "warnings": warnings, "bytes": json_size(profile)}
@@ -293,3 +295,32 @@ def char_profiles_bloat_diagnostics_from_serialized(serialized: str) -> str:
     if data_urls:
         parts.append("data_urls[" + " ".join(f"{path}={size}" for path, size in data_urls) + "]")
     return " ".join(parts)
+
+
+def install_db_large_field_diagnostics() -> bool:
+    """Extend server.db char_profiles large-field diagnostics when db is loaded.
+
+    This avoids rewriting the large persistence module while still making the
+    existing ``large_field`` warning include largest-profile, charSheet,
+    nativeRuntime, and data-URL path diagnostics before the next save warning.
+    """
+    db_mod = sys.modules.get("server.db")
+    if db_mod is None:
+        return False
+    if bool(getattr(db_mod, "_char_profile_bloat_diag_installed", False)):
+        return True
+    old = getattr(db_mod, "_char_profiles_size_breakdown", None)
+    if not callable(old):
+        return False
+
+    def _patched_char_profiles_size_breakdown(value: str, limit: int = 8) -> str:
+        base = old(value, limit=limit)
+        detail = char_profiles_bloat_diagnostics_from_serialized(value)
+        return " ".join(part for part in (base, detail) if part)
+
+    setattr(db_mod, "_char_profiles_size_breakdown", _patched_char_profiles_size_breakdown)
+    setattr(db_mod, "_char_profile_bloat_diag_installed", True)
+    return True
+
+
+install_db_large_field_diagnostics()
