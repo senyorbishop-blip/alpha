@@ -11,12 +11,16 @@ This module is the server-side guard mirroring the client's
 ``_stripCharProfileRuntimeFields`` so profiles are cleaned both before they are
 persisted (defence in depth) and via an explicit migration for already-oversized
 profiles. The migration only removes known runtime caches — it never deletes real
-character data (name, ability scores, inventory, spell selections, etc.).
+character data (name, ability scores, inventory, spell selections, etc.). It also
+relocates oversized inline ``data:image`` URLs into ``/static/user_uploads`` so
+PDF-imported portraits do not bloat every state sync.
 """
 from __future__ import annotations
 
 import re
 from typing import Any
+
+from server.character.profile_assets import sanitize_profile_persistence
 
 # Exact key names that only ever hold rebuildable runtime state. Keep this list
 # in sync with CHAR_PROFILE_RUNTIME_KEYS in client/templates/play.html.
@@ -78,13 +82,17 @@ def strip_runtime_fields(value: Any, _seen: set[int] | None = None) -> Any:
     return value
 
 
-def clean_oversized_profile(profile: Any) -> Any:
-    """Migration entry point: strip runtime caches from a single stored profile.
+def clean_oversized_profile(profile: Any, *, profile_label: str = "") -> Any:
+    """Migration entry point: strip runtime caches and relocate large images.
 
-    Safe to call on already-clean profiles (it is a no-op then) and never removes
-    canonical character data — only the rebuildable runtime keys above.
+    Safe to call on already-clean profiles and never removes canonical character
+    data — only rebuildable runtime keys are stripped. Large inline data-image
+    strings are relocated to static user-upload files, and any remaining clearly
+    oversized strings are capped with a warning.
     """
-    return strip_runtime_fields(profile)
+    strip_runtime_fields(profile)
+    sanitize_profile_persistence(profile, profile_label=profile_label)
+    return profile
 
 
 def clean_char_profiles_map(profiles: dict) -> int:
@@ -93,11 +101,12 @@ def clean_char_profiles_map(profiles: dict) -> int:
     cleaned = 0
     if not isinstance(profiles, dict):
         return 0
-    for entries in profiles.values():
+    for owner_key, entries in profiles.items():
         if not isinstance(entries, list):
             continue
         for profile in entries:
             if isinstance(profile, dict):
-                clean_oversized_profile(profile)
+                label = f"{owner_key}/{profile.get('id') or profile.get('name') or '?'}"
+                clean_oversized_profile(profile, profile_label=label)
                 cleaned += 1
     return cleaned
