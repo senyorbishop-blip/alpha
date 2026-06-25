@@ -1524,6 +1524,16 @@
   </div>
 </div>
 
+<nav id="dm-map-first-quick-strip" class="dm-map-first-quick-strip" aria-label="DM quick actions" data-dm-quick-strip="true" hidden>
+  <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="select" onclick="setTool('select')">Select</button>
+  <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="move" onclick="setTool('select')">Move</button>
+  <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="measure" onclick="setTool('ruler')">Measure</button>
+  <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="draw" onclick="toggleFlyout('flyout-editor')">Draw</button>
+  <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="light" onclick="toggleFlyout('flyout-map')">Light</button>
+  <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="notes" onclick="switchRTab('memory')">Notes</button>
+  <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="more" onclick="toggleFlyout('flyout-editor')">More</button>
+</nav>
+
 <div id="display-overlay-shell" aria-live="polite" aria-hidden="true">
   <div class="display-overlay-row">
     <div class="display-chip" id="display-session-chip">Session</div>
@@ -1575,6 +1585,32 @@
           <a class="dm-context-marker" href="#combat-next-btn" data-dm-tool="end-turn-controls">End turn controls</a>
         </div>
       </section>
+      <section class="dm-context-mode-section" data-dm-mode="map-build" data-dm-context-section="map-build" aria-label="Map Build DM tools">
+        <p>Map Build groups the existing terrain, fog, wall, door, lighting, weather, asset, and map save controls while leaving map authority unchanged.</p>
+        <div class="dm-context-marker-grid" aria-label="Map Build tool markers">
+          <a class="dm-context-marker" href="#flyout-editor" data-dm-tool="terrain-tools">Terrain tools</a>
+          <a class="dm-context-marker" href="#flyout-fog" data-dm-tool="fog-tools">Fog tools</a>
+          <a class="dm-context-marker" href="#flyout-editor" data-dm-tool="wall-tools">Wall tools</a>
+          <a class="dm-context-marker" href="#flyout-editor" data-dm-tool="door-tools">Door tools</a>
+          <a class="dm-context-marker" href="#flyout-fog" data-dm-tool="reveal-hide-tools">Reveal / hide</a>
+          <a class="dm-context-marker" href="#asset-library-panel" data-dm-tool="asset-library">Asset library</a>
+          <a class="dm-context-marker" href="#weather-canvas" data-dm-tool="lighting-weather-tools">Lighting / weather</a>
+          <a class="dm-context-marker" href="#save-btn" data-dm-tool="map-save-apply">Map save / apply</a>
+        </div>
+      </section>
+      <section class="dm-context-mode-section" data-dm-mode="npc-monster" data-dm-context-section="npc-monster" aria-label="NPC / Monster DM tools">
+        <p>NPC / Monster groups the existing bestiary, spawn, creature stat, visibility, initiative, condition, notes, and quick-action controls without changing token authority.</p>
+        <div class="dm-context-marker-grid" aria-label="NPC / Monster tool markers">
+          <a class="dm-context-marker" href="#bestiary-search" data-dm-tool="bestiary-search">Bestiary search</a>
+          <a class="dm-context-marker" href="#bsm-spawn-btn" data-dm-tool="spawn-token">Spawn token</a>
+          <a class="dm-context-marker" href="#flyout-token" data-dm-tool="creature-hp-ac-speed">HP / AC / speed</a>
+          <a class="dm-context-marker" href="#new-token-hidden" data-dm-tool="visibility-state">Visibility state</a>
+          <a class="dm-context-marker" href="#token-init-mod" data-dm-tool="initiative-modifier">Initiative modifier</a>
+          <a class="dm-context-marker" href="#ctx-cond-btn" data-dm-tool="conditions">Conditions</a>
+          <a class="dm-context-marker" href="#token-notes" data-dm-tool="creature-notes">Creature notes</a>
+          <a class="dm-context-marker" href="#te-monster-quick-wrap" data-dm-tool="creature-quick-actions">Creature quick actions</a>
+        </div>
+      </section>
       <section class="dm-context-mode-section" data-dm-mode="loot-shop" data-dm-context-section="loot-shop" aria-label="Loot / Shop DM tools">
         <p>Loot / Shop gathers the existing economy, item, corpse, shop, charge, attunement, and party inventory controls without changing inventory or pricing logic.</p>
         <div class="dm-context-marker-grid" aria-label="Loot / Shop tool markers">
@@ -1614,7 +1650,17 @@
           <a class="dm-context-marker" href="#viewer-power-controls" data-dm-tool="approved-rejected-feedback">Approved / rejected feedback</a>
         </div>
       </section>
-      <div data-dm-debug-panel hidden>Debug diagnostics are closed by default.</div>
+      <section class="dm-context-mode-section" data-dm-mode="debug" data-dm-context-section="debug" aria-label="Debug DM tools" data-dm-debug-panel hidden>
+        <p>Debug diagnostics are hidden by default and only appear while Debug mode is active.</p>
+        <div class="dm-context-marker-grid" aria-label="Debug tool markers">
+          <a class="dm-context-marker" href="#stream-readiness-panel" data-dm-tool="stream-readiness">Stream readiness</a>
+          <a class="dm-context-marker" href="#ws-status-wrap" data-dm-tool="websocket-diagnostics">WebSocket diagnostics</a>
+          <a class="dm-context-marker" href="#topbar" data-dm-tool="sync-diagnostics">Sync diagnostics</a>
+        </div>
+      </section>
+      <section class="dm-context-mode-section dm-legacy-tools-fallback" data-dm-mode="run" data-dm-context-section="legacy-tools-fallback" aria-label="More / Legacy Tools fallback">
+        <p><strong>More / Legacy Tools</strong> keeps unmoved DM controls accessible while this map-first layout is staged. Existing tools remain in the left rail flyouts and legacy right tabs until a later migration.</p>
+      </section>
     </div>
   </section>
   <!-- Tab bar -->
@@ -5800,8 +5846,10 @@ function initUI() {
     document.body.classList.add('dm-map-first-active');
     const dmRailShell = document.getElementById('dm-live-mode-rail');
     const dmContextShell = document.getElementById('dm-context-shell');
+    const dmQuickStrip = document.getElementById('dm-map-first-quick-strip');
     if (dmRailShell) dmRailShell.hidden = false;
     if (dmContextShell) dmContextShell.hidden = false;
+    if (dmQuickStrip) dmQuickStrip.hidden = false;
     if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.init === 'function') {
       window.AppUIDMPanelModeBridge.init(document);
     }
