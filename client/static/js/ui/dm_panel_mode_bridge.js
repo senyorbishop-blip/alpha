@@ -100,10 +100,13 @@
       button.dataset.dmModeActive = String(isActive);
       button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
+    const activeConfig = getModeConfig(activeMode);
+    const titleEl = safeRoot.getElementById ? safeRoot.getElementById('dm-context-title') : null;
+    if (titleEl) titleEl.textContent = activeConfig.label;
     if (safeRoot.dataset) {
       safeRoot.dataset.dmActiveMode = activeMode;
     }
-    return getModeConfig(activeMode);
+    return activeConfig;
   }
 
   function init(root) {
