@@ -10,6 +10,9 @@
   // - Move low-risk websocket/message shell routing here by
   //   delegating to explicit env callbacks.
 
+  const DISPATCH_DEBUG = !!global.__LIVE_DEBUG__ || (global.localStorage && global.localStorage.getItem('dnd_live_debug') === '1');
+  function dispatchDebugLog() { if (DISPATCH_DEBUG && global.console && console.debug) console.debug.apply(console, arguments); }
+
   const recentMessageTypes = [];
   const dispatchChain = [];
   let dispatchDepth = 0;
@@ -94,7 +97,7 @@
       if (msgType === 'combat_state') {
         const payload = msg.payload || {};
         const order = Array.isArray(payload.combatants) ? payload.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : [];
-        console.debug('[message_dispatch] combat_state', { revision: payload.revision, order, turn: payload.turn, active: order[Number(payload.turn || 0)] || null });
+        dispatchDebugLog('[message_dispatch] combat_state', { revision: payload.revision, combatants: order.length, turn: payload.turn, activeIndex: Number(payload.turn || 0) });
       }
       if (tryHandleCombatMessage(msg, runtimeEnv)) return true;
       runtimeEnv.handleLegacyMessage(msg);

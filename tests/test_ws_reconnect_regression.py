@@ -10,10 +10,10 @@ COMBAT = ROOT / "server/handlers/combat.py"
 
 def test_ws_core_logs_version_and_ping_pong_flow():
     src = WS.read_text(encoding="utf-8")
-    assert "heartbeat-pong-v4" in src
+    assert "heartbeat-pong-v5-stream-readiness" in src
     assert "console.info('[WS] core loaded version', CORE_WS_VERSION);" in src
-    assert "console.info('[WS] received ping');" in src
-    assert "console.info('[WS] sent pong');" in src
+    assert "wsDebugLog('[WS] received ping');" in src
+    assert "wsDebugLog('[WS] sent pong');" in src
     assert "console.warn('[WS] pong send failed', err);" in src
     assert "if (msg && msg.type === 'ping')" in src
     assert "sendPong(socket);" in src
@@ -30,7 +30,7 @@ def test_server_logs_pong_and_updates_last_seen_for_any_frame():
 
 def test_play_loads_ws_with_cache_busting_and_no_inline_websocket_bypass():
     src = PLAY.read_text(encoding="utf-8")
-    assert '<script src="/static/js/core/ws.js?v=heartbeat-pong-v4"></script>' in src
+    assert '<script src="/static/js/core/ws.js?v=heartbeat-pong-v5-stream-readiness"></script>' in src
     assert "new WebSocket" not in src
     ping_case = src[src.index("case 'ping': {"):src.index("case 'user_joined': {", src.index("case 'ping': {"))]
     assert "Transport heartbeat pongs are handled in core/ws.js" in ping_case
@@ -76,8 +76,8 @@ def test_state_sync_applies_ordered_fog_tokens_combat_and_dm_preview_persistence
     # applyAuthoritativeFogState() entry point instead of calling
     # fogApplyState() directly.
     assert "applyAuthoritativeFogState(p, 'state_sync');" in sync_block
-    assert "handleCombatStateLive(p.combat);" in sync_block
-    assert sync_block.index("applyAuthoritativeFogState(p, 'state_sync');") < sync_block.index("handleCombatStateLive(p.combat);")
+    assert "combatApplyState(p.combat, 'state_sync');" in sync_block
+    assert sync_block.index("applyAuthoritativeFogState(p, 'state_sync');") < sync_block.index("combatApplyState(p.combat, 'state_sync');")
     assert "DM_FOG_PREVIEW_STORAGE_KEY" in src
     assert "function reapplyDmFogPreviewAfterReconnect()" in src
     assert "window.localStorage.setItem(DM_FOG_PREVIEW_STORAGE_KEY" in src

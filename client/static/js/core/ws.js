@@ -1,7 +1,9 @@
 (function (global) {
   'use strict';
 
-  const CORE_WS_VERSION = 'heartbeat-pong-v4';
+  const CORE_WS_VERSION = 'heartbeat-pong-v5-stream-readiness';
+  const WS_DEBUG = !!global.__LIVE_DEBUG__ || (global.localStorage && global.localStorage.getItem('dnd_live_debug') === '1');
+  function wsDebugLog() { if (WS_DEBUG && global.console && console.debug) console.debug.apply(console, arguments); }
   console.info('[WS] core loaded version', CORE_WS_VERSION);
 
   let config = {
@@ -63,7 +65,7 @@
     try { stack = (new Error('duplicate connect attempt')).stack || ''; } catch (_err) {}
     duplicateConnectStacks.push({ reason: String(reason || lastConnectReason || ''), stack, at: Date.now() });
     if (duplicateConnectStacks.length > 20) duplicateConnectStacks.shift();
-    console.debug('[WS] duplicate connect attempt ignored (socket already live)', { reason: reason || lastConnectReason || '' });
+    wsDebugLog('[WS] duplicate connect attempt ignored (socket already live)', { reason: reason || lastConnectReason || '' });
   }
 
   // A server close with code 1001 + reason "Replaced by a newer connection"
@@ -82,7 +84,7 @@
     try {
       if (socket && socket.readyState === global.WebSocket.OPEN) {
         socket.send(JSON.stringify({ type: 'pong' }));
-        console.info('[WS] sent pong');
+        wsDebugLog('[WS] sent pong');
       }
     } catch (err) {
       console.warn('[WS] pong send failed', err);
@@ -295,14 +297,14 @@
       // flicker/reconnect during active combat. Heartbeat pings must never reach
       // the gameplay handlers, so we return after replying.
       if (msg && msg.type === 'ping') {
-        console.info('[WS] received ping');
+        wsDebugLog('[WS] received ping');
         sendPong(socket);
         return;
       }
       if (msg && msg.type === 'combat_state') {
         const payload = msg.payload || {};
         const order = Array.isArray(payload.combatants) ? payload.combatants.map(c => `${c?.name || c?.id || c?.token_id || '?'}:${c?.initiative ?? '--'}`) : [];
-        console.debug(`[WS] received combat_state revision=${payload.revision ?? 'none'} order=${JSON.stringify(order).replace(/\"/g, "'")}`);
+        wsDebugLog(`[WS] received combat_state revision=${payload.revision ?? 'none'} order=${JSON.stringify(order).replace(/\"/g, "'")}`);
       }
       config.onMessage(msg);
     };
