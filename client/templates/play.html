@@ -29876,9 +29876,14 @@ function _openShortRestModal() {
     if (typeof initPremiumSheetIfNeeded === 'function') initPremiumSheetIfNeeded();
 
     if (typeof sendWS === 'function') {
+      const restToken = _myOwnRestToken();
       sendWS({ type: 'character_rest', payload: {
         rest_type: 'short', character_name: sheet.name || NAME || 'Character',
-        hit_dice_spent: diceSpentThisRest, healed_amount: totalHealed, token_id: _myOwnRestToken()?.id || '',
+        hit_dice_spent: diceSpentThisRest, healed_amount: totalHealed, token_id: restToken?.id || '',
+        current_hp: Math.max(0, parseInt(sheet.currentHp, 10) || 0),
+        max_hp: Math.max(0, parseInt(sheet.maxHp, 10) || 0),
+        temp_hp: Math.max(0, parseInt(restToken?.tempHp ?? restToken?.temp_hp ?? sheet.tempHp ?? 0, 10) || 0),
+        hit_dice_state: { total: hd.total, available: hd.available, dieSize: hd.dieSize, spent: hd.spent },
       }});
     }
 

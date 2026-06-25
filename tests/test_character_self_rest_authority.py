@@ -248,3 +248,48 @@ def test_dm_long_rest_updates_all_player_profiles_spell_slots_and_item_charges(m
     assert session.player_inventories[f"{owner_key}::profile::char-alice"][0]["charges_current"] == 3
     assert _messages(capture, "camp_rest_rest_applied")
     assert _messages(capture, "char_profiles_sync")
+
+
+def test_short_rest_absolute_hp_contract_is_idempotent_after_prior_token_vitals(monkeypatch):
+    capture = _patch(monkeypatch)
+    session, player, *_ = _session()
+    owner_key, _profile_id = _attach_active_profile(session, player)
+    # Simulate the live client's optimistic token vitals edit arriving before
+    # the final character_rest packet.  The rest packet carries absolute HP, so
+    # the server must not add healed_amount a second time.
+    session.tokens["alice-1"].hp = 7
+
+    asyncio.run(camp_rest.handle_character_self_rest({
+        "rest_type": "short",
+        "token_id": "alice-1",
+        "healed_amount": 5,
+        "current_hp": 7,
+        "temp_hp": 5,
+        "hit_dice_state": {"total": 5, "available": 4, "dieSize": 10, "spent": 1},
+    }, session, player))
+
+    assert session.tokens["alice-1"].hp == 7
+    assert session.tokens["alice-1"].temp_hp == 5
+    profile = session.char_profiles[owner_key][0]
+    assert profile["nativeRuntime"]["hp"]["current"] == 7
+    assert profile["charSheet"]["_hitDiceState"] == {"total": 5, "available": 4, "dieSize": 10, "spent": 1}
+    applied = _messages(capture, "character_rest_applied")
+    assert applied[-1]["payload"]["hp"] == 7
+
+
+def test_long_rest_recharges_dawn_and_daily_items_for_self_rest(monkeypatch):
+    _patch(monkeypatch)
+    session, player, *_ = _session()
+    owner_key, profile_id = _attach_active_profile(session, player, item_charges=0)
+    inv_key = f"{owner_key}::profile::{profile_id}"
+    session.player_inventories[inv_key] = [
+        {"name": "Dawn Wand", "qty": 1, "charges_max": 4, "charges_current": 0, "recharge_type": "dawn", "granted_spells": [{"id": "spark"}]},
+        {"name": "Daily Charm", "qty": 1, "charges_max": 2, "charges_current": 0, "recharge_type": "daily", "granted_spells": [{"id": "spark"}]},
+    ]
+
+    asyncio.run(camp_rest.handle_character_self_rest({"rest_type": "long", "token_id": "alice-1"}, session, player))
+
+    assert session.player_inventories[inv_key][0]["charges_current"] == 4
+    assert session.player_inventories[inv_key][1]["charges_current"] == 2
+    quick = build_quick_actions_sync_payload(session, player.id)
+    assert {row["name"]: row["charges_current"] for row in quick["charges"]} == {"Dawn Wand": 4, "Daily Charm": 2}

@@ -114,7 +114,7 @@ def _restore_resources(runtime: dict | None, rest_type: str) -> bool:
     return changed
 
 
-def _sync_profile_runtime_for_user(session: Session, user: User, *, token=None, rest_type: str, heal_amount: int = 0) -> bool:
+def _sync_profile_runtime_for_user(session: Session, user: User, *, token=None, rest_type: str, heal_amount: int = 0, hit_dice_state: dict | None = None) -> bool:
     profiles = dict(getattr(session, "char_profiles", {}) or {})
     active_id = _active_profile_id(session, getattr(user, "id", ""))
     changed = False
@@ -151,6 +151,21 @@ def _sync_profile_runtime_for_user(session: Session, user: User, *, token=None, 
             if rest_type == "long" and _restore_spell_slots(native, runtime):
                 bucket_changed = True
             if _restore_resources(runtime, rest_type):
+                bucket_changed = True
+            if hit_dice_state and isinstance(hit_dice_state, dict):
+                clean_hd = {
+                    "total": _safe_int(hit_dice_state.get("total"), 0, minimum=0, maximum=99),
+                    "available": _safe_int(hit_dice_state.get("available"), 0, minimum=0, maximum=99),
+                    "dieSize": _safe_int(hit_dice_state.get("dieSize", hit_dice_state.get("die_size")), 8, minimum=2, maximum=20),
+                    "spent": _safe_int(hit_dice_state.get("spent"), 0, minimum=0, maximum=99),
+                }
+                clean_hd["available"] = min(clean_hd["available"], clean_hd["total"])
+                clean_hd["spent"] = min(clean_hd["spent"], clean_hd["total"])
+                runtime["hitDice"] = clean_hd
+                row["hitDiceState"] = clean_hd
+                sheet = row.get("charSheet") if isinstance(row.get("charSheet"), dict) else {}
+                sheet["_hitDiceState"] = clean_hd
+                row["charSheet"] = sheet
                 bucket_changed = True
             row["nativeRuntime"] = runtime
             if native:
@@ -598,6 +613,48 @@ def _apply_rest_heal_without_overflow(token, amount: int) -> int:
     return actual
 
 
+def _safe_optional_rest_hp(payload: dict, key: str) -> int | None:
+    if key not in payload:
+        return None
+    try:
+        value = int(payload.get(key))
+    except (TypeError, ValueError):
+        return None
+    return max(0, min(value, 9999))
+
+
+def _apply_short_rest_hp_contract(token, payload: dict) -> int:
+    """Apply short-rest HP from either the new absolute contract or legacy delta.
+
+    New clients send ``current_hp`` after rolling/spending hit dice.  Setting the
+    absolute value makes the operation idempotent when an earlier token vitals
+    edit reached the server before the final rest message.  Older clients only
+    send ``heal_amount``/``healed_amount`` and retain the legacy additive path.
+    """
+    if token is None:
+        return 0
+    try:
+        current = int(getattr(token, "hp") or 0)
+        max_hp = int(getattr(token, "max_hp") or 0)
+    except (TypeError, ValueError):
+        return 0
+    if max_hp <= 0:
+        return 0
+    absolute_hp = _safe_optional_rest_hp(payload, "current_hp")
+    if absolute_hp is None:
+        absolute_hp = _safe_optional_rest_hp(payload, "hp")
+    if absolute_hp is not None:
+        next_hp = min(max_hp, absolute_hp)
+        token.hp = next_hp
+        # Short rests do not grant or clear temp HP; preserve it unless the
+        # client included the authoritative current temp value.
+        temp_hp = _safe_optional_rest_hp(payload, "temp_hp")
+        if temp_hp is not None:
+            token.temp_hp = temp_hp
+        return max(0, next_hp - current)
+    return _apply_rest_heal_without_overflow(token, _safe_rest_heal_amount(payload))
+
+
 async def _prune_rest_summons(session: Session, rest_type: str) -> list[str]:
     removed_temp_summon_tokens: list[str] = []
     profiles = dict(getattr(session, "char_profiles", {}) or {})
@@ -662,14 +719,15 @@ async def handle_character_self_rest(payload: dict, session: Session, user: User
         await _broadcast_token_state_sync(session)
     else:
         heal_amount = _safe_rest_heal_amount(payload)
-        if heal_amount > 0:
+        has_absolute_hp = _safe_optional_rest_hp(payload, "current_hp") is not None or _safe_optional_rest_hp(payload, "hp") is not None
+        if heal_amount > 0 or has_absolute_hp:
             old_hp = int(getattr(token, "hp") or 0)
-            healed_amount = _apply_rest_heal_without_overflow(token, heal_amount)
-            if healed_amount > 0:
+            healed_amount = _apply_short_rest_hp_contract(token, payload)
+            if int(getattr(token, "hp", old_hp) or 0) != old_hp or healed_amount > 0:
                 _sync_combatant_token_state(session, token, previous_hp=old_hp)
                 await _broadcast_token_state_sync(session)
 
-    _sync_profile_runtime_for_user(session, user, token=token, rest_type=rest_type, heal_amount=healed_amount)
+    _sync_profile_runtime_for_user(session, user, token=token, rest_type=rest_type, heal_amount=healed_amount, hit_dice_state=payload.get("hit_dice_state") if isinstance(payload.get("hit_dice_state"), dict) else None)
     bump_character_hydration_revisions(session, spells=True, quick_actions=True)
     await _broadcast_character_and_quick_actions(session)
 
