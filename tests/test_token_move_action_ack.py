@@ -98,7 +98,7 @@ async def test_token_move_without_client_action_id_still_works(patched):
 
 
 @pytest.mark.anyio
-async def test_denied_token_move_sends_denied_action_ack(monkeypatch, patched):
+async def test_denied_token_move_sends_failed_action_ack(monkeypatch, patched):
     session, _dm, player, token = _build_session()
 
     class _Blocker:
@@ -116,7 +116,7 @@ async def test_denied_token_move_sends_denied_action_ack(monkeypatch, patched):
 
     acks = _acks(patched, user_id=player.id)
     assert len(acks) == 1
-    assert acks[0]["status"] == "denied"
+    assert acks[0]["status"] == "failed"
     assert acks[0]["client_action_id"] == "abc-2"
     assert "reason" in acks[0] and acks[0]["reason"]
 
@@ -204,3 +204,75 @@ async def test_action_ack_does_not_replace_authoritative_token_moved_broadcast(p
     assert patched.broadcasts[0]["type"] == "token_moved"
     assert patched.broadcasts[0]["payload"]["x"] == 3
     assert patched.broadcasts[0]["payload"]["y"] == 4
+
+@pytest.mark.anyio
+async def test_rapid_token_moves_with_sequences_do_not_regress_final_position(patched):
+    session, _dm, player, token = _build_session()
+
+    await token_handlers.handle_token_move(
+        {"token_id": token.id, "x": 10, "y": 10, "final": True, "client_move_seq": 1, "client_action_id": "seq-1"},
+        session,
+        player,
+    )
+    await token_handlers.handle_token_move(
+        {"token_id": token.id, "x": 20, "y": 20, "final": True, "client_move_seq": 2, "client_action_id": "seq-2"},
+        session,
+        player,
+    )
+
+    assert token.x == 20 and token.y == 20
+    assert len(patched.broadcasts) == 2
+    assert patched.broadcasts[-1]["payload"]["x"] == 20
+    assert patched.broadcasts[-1]["payload"]["y"] == 20
+
+
+@pytest.mark.anyio
+async def test_stale_token_move_sequence_is_ignored_server_side(patched):
+    session, _dm, player, token = _build_session()
+
+    await token_handlers.handle_token_move(
+        {"token_id": token.id, "x": 20, "y": 20, "final": True, "client_move_seq": 2, "client_action_id": "seq-new"},
+        session,
+        player,
+    )
+    await token_handlers.handle_token_move(
+        {"token_id": token.id, "x": 5, "y": 5, "final": True, "client_move_seq": 1, "client_action_id": "seq-old"},
+        session,
+        player,
+    )
+
+    assert token.x == 20 and token.y == 20
+    assert len(patched.broadcasts) == 1
+    stale_acks = [ack for ack in _acks(patched, user_id=player.id) if ack["client_action_id"] == "seq-old"]
+    assert stale_acks and stale_acks[0]["status"] == "stale"
+
+
+@pytest.mark.anyio
+async def test_fog_hidden_npc_visibility_updates_immediately_after_committed_move(monkeypatch):
+    session, dm, _player, _hero = _build_session()
+    npc = Token(id="npc-1", name="Goblin", x=0, y=0, width=40, height=40, color="#0f0", shape="circle", owner_id=None, token_type="npc")
+    session.tokens[npc.id] = npc
+    visibility_calls = []
+
+    async def _fake_event(manager, sess, msg_type, payload, tok, exclude_user=None):
+        return 1
+
+    async def _capture_visibility(sess, tok, msg_type="token_hidden_changed"):
+        visibility_calls.append({"token_id": tok.id, "msg_type": msg_type, "x": tok.x, "y": tok.y})
+
+    async def _noop(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr(token_handlers, "_broadcast_token_event", _fake_event)
+    monkeypatch.setattr(token_handlers, "_broadcast_token_visibility", _capture_visibility)
+    monkeypatch.setattr(token_handlers, "_process_hazard_triggers_for_token", _noop)
+    monkeypatch.setattr(token_handlers, "_process_scene_triggers_for_token", _noop)
+    monkeypatch.setattr(token_handlers, "run_combat_fog_sync", _noop)
+
+    await token_handlers.handle_token_move(
+        {"token_id": npc.id, "x": 50, "y": 50, "final": True, "client_move_seq": 1, "client_action_id": "npc-move"},
+        session,
+        dm,
+    )
+
+    assert visibility_calls == [{"token_id": npc.id, "msg_type": "token_hidden_changed", "x": 50.0, "y": 50.0}]

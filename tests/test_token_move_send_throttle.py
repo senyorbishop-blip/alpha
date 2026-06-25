@@ -30,7 +30,7 @@ def _throttle_helpers_snippet() -> str:
 
 def _on_mouse_move_drag_block() -> str:
     src = PLAY.read_text(encoding="utf-8")
-    start = src.index("// Throttled/coalesced broadcast")
+    start = src.index("// Drag preview is strictly client-local")
     end = src.index("}\n}", start) + 3
     return src[start:end]
 
@@ -48,9 +48,10 @@ def test_play_html_defines_throttle_helpers():
         assert name in snippet
 
 
-def test_drag_move_handler_uses_schedule_helper_not_raw_sendws():
+def test_drag_move_handler_keeps_preview_client_local():
     snippet = _on_mouse_move_drag_block()
-    assert "scheduleTokenMoveSend(" in snippet
+    assert "Drag preview is strictly client-local" in snippet
+    assert "scheduleTokenMoveSend(" not in snippet
     assert "sendWS({ type: 'token_move'" not in snippet
 
 
