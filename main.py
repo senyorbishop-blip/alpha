@@ -798,20 +798,6 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
         last_pong=_last_pong,
     ))
 
-    # Role-based message type allow-lists (Part 5.2)
-    _VIEWER_ALLOWED = frozenset({"ping", "pong", "viewer_power_use", "viewer_cursor_update", "viewer_emote", "poll_vote"})
-    _PLAYER_DENIED = frozenset({
-        "token_delete",
-        "fog_paint", "editor_layer_save", "editor_wall_save", "editor_prop_save",
-        "combat_update", "combat_claim_campaign",
-    })
-    _ASSISTANT_DM_DENIED = frozenset({
-        "token_create", "token_delete", "editor_layer_save", "editor_layer_clear", "editor_wall_save", "editor_wall_clear",
-        "editor_prop_save", "editor_prop_clear", "editor_path_save", "editor_path_clear", "editor_label_save", "editor_label_clear",
-        "editor_marker_save", "editor_marker_clear", "map_set_url", "local_map_enter", "local_map_exit", "bring_all_to_map",
-        "assistant_dm_permissions_set",
-    })
-
     try:
         while True:
             raw_text = await websocket.receive_text()
@@ -820,7 +806,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
             except json.JSONDecodeError:
                 continue
 
-            # Role-based emit filtering
+            # Decode the message type for heartbeat handling and downstream dispatch.
             msg_type = str(raw.get("type") or "")
 
             # Heartbeat liveness: any valid frame the client sends proves the
@@ -835,22 +821,10 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
                 logger.debug("[WS] pong received user_id=%s connection_id=%s", user_id, connection_id)
                 continue
 
-            user_role = str(getattr(user, "role", "") or "").strip().lower()
-            if user_role == "viewer" and msg_type not in _VIEWER_ALLOWED:
-                # Viewers are receive-only; silently drop all non-ping messages
-                continue
-            if user_role == "player" and msg_type in _PLAYER_DENIED:
-                await manager.send_to(session_id, user_id, {
-                    "type": "error",
-                    "payload": {"message": "You don't have permission to do that."}
-                })
-                continue
-            if user_role == "assistant_dm" and msg_type in _ASSISTANT_DM_DENIED:
-                await manager.send_to(session_id, user_id, {
-                    "type": "error",
-                    "payload": {"message": "Assistant DM scope does not allow that action."}
-                })
-                continue
+            # Role permission policy is centralized in server.handlers.ws_permissions
+            # and enforced by handle_message immediately before dispatch. Keep this
+            # endpoint focused on transport/auth/heartbeat concerns so role allow-lists
+            # cannot drift from the canonical handler policy.
 
             try:
                 await handle_message(raw, session, user)
