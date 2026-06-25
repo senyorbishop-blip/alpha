@@ -7545,3 +7545,71 @@
     .token-hover-chip.warn { border-color:rgba(231,76,60,0.38);background:rgba(231,76,60,0.10);color:#ffb3a8; }
 
   
+/* Live DM mode rail shell: DM-only visual layer around the existing controls. */
+body.dm-map-first-active {
+  grid-template-columns: 86px minmax(0, 1fr) minmax(310px, 350px);
+}
+body.dm-map-first-active #canvas-wrap[data-map-primary="true"] {
+  min-width: 0;
+  min-height: 0;
+}
+.dm-live-mode-rail {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.36rem;
+  padding: 0.2rem 0.32rem 0.52rem;
+  border-bottom: 1px solid rgba(0,229,204,0.16);
+}
+.dm-live-mode-rail[hidden],
+.dm-live-context-shell[hidden] {
+  display: none !important;
+}
+.dm-live-mode-rail-label {
+  color: var(--gold-dim);
+  font-family: 'Cinzel', serif;
+  font-size: 0.48rem;
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-transform: uppercase;
+}
+.dm-live-mode-rail .dm-map-first-mode-button {
+  width: 100%;
+  min-height: 3.15rem;
+  font-size: 0.54rem;
+  line-height: 1.1;
+}
+.dm-live-mode-rail .dm-map-first-mode-button span {
+  display: block;
+}
+.dm-live-mode-rail .dm-map-first-mode-button[data-dm-mode-active="true"] {
+  border-color: rgba(0,229,204,0.62);
+  color: #d5fffb;
+  background: linear-gradient(180deg, rgba(0,229,204,0.18), rgba(0,229,204,0.06));
+  box-shadow: 0 0 0 1px rgba(0,229,204,0.18) inset;
+}
+.dm-legacy-controls-shell {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+.dm-live-context-shell {
+  border-bottom: 1px solid rgba(0,229,204,0.16);
+  background: linear-gradient(180deg, rgba(0,229,204,0.06), rgba(0,0,0,0.14));
+}
+.dm-context-map-note {
+  color: var(--parchment-dim);
+  font-size: 0.58rem;
+  letter-spacing: 0.05em;
+}
+@media (max-width: 900px) {
+  body.dm-map-first-active {
+    grid-template-columns: 74px minmax(0, 1fr);
+  }
+  .dm-live-mode-rail .dm-map-first-mode-button {
+    min-height: 3rem;
+    font-size: 0.5rem;
+  }
+}
