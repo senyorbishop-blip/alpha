@@ -63,6 +63,8 @@ export async function openRolePage(browser: Browser, session: TestSession, role:
   });
   await page.addInitScript(() => {
     (window as any).__e2eMessages = [];
+    (window as any).__e2eInboundDiagnostics = [];
+    (window as any).__e2eOutboundDiagnostics = [];
     (window as any).__e2eWs = { opens: 0, closes: [], errors: 0 };
     const NativeWS = window.WebSocket;
     class E2EWebSocket extends NativeWS {
@@ -72,8 +74,23 @@ export async function openRolePage(browser: Browser, session: TestSession, role:
         this.addEventListener('close', (ev) => { (window as any).__e2eWs.closes.push({ code: ev.code, reason: ev.reason }); });
         this.addEventListener('error', () => { (window as any).__e2eWs.errors += 1; });
         this.addEventListener('message', (ev) => {
-          try { (window as any).__e2eMessages.push(JSON.parse(String(ev.data))); } catch { /* ignore non-json */ }
+          const raw = String(ev.data);
+          try {
+            const msg = JSON.parse(raw);
+            (window as any).__e2eMessages.push(msg);
+            (window as any).__e2eInboundDiagnostics.push({ type: msg?.type || 'unknown', byteSize: new Blob([raw]).size });
+          } catch { /* ignore non-json */ }
         });
+      }
+      send(data: string | ArrayBufferLike | Blob | ArrayBufferView) {
+        try {
+          const type = typeof data === 'string' ? (JSON.parse(data)?.type || 'unknown') : 'binary';
+          const byteSize = typeof data === 'string' ? new Blob([data]).size : 0;
+          (window as any).__e2eOutboundDiagnostics.push({ type, byteSize });
+        } catch {
+          (window as any).__e2eOutboundDiagnostics.push({ type: 'unknown', byteSize: 0 });
+        }
+        return super.send(data as any);
       }
     }
     (window as any).WebSocket = E2EWebSocket as any;

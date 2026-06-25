@@ -11,6 +11,8 @@ import {
 const PLAYER_TOKEN = 'E2E Bishop';
 const HIDDEN_NPC = 'E2E Hidden Guard';
 
+const PAYLOAD_ERROR_BYTES = 512 * 1024;
+
 async function waitForWsMessage(page: Page, type: string, text?: string) {
   await page.waitForFunction(
     ({ messageType, containsText }) => {
@@ -45,6 +47,23 @@ async function combatState(page: Page) {
   return page.evaluate(() => (window as any)._combat || (window as any).combatState || null);
 }
 
+async function lastWsMessage(page: Page, type: string) {
+  return page.evaluate((messageType) => {
+    const messages = ((window as any).__e2eMessages || []).filter((m: any) => m?.type === messageType);
+    return messages[messages.length - 1] || null;
+  }, type);
+}
+
+async function expectNoInitialPayloadErrors(...roles: RolePage[]) {
+  for (const role of roles.filter((r) => r.role !== 'dm')) {
+    const oversized = await role.page.evaluate((threshold) => {
+      const initial = ((window as any).__e2eInboundDiagnostics || []).filter((d: any) => ['state_sync', 'authoritative_snapshot'].includes(d?.type));
+      return initial.filter((d: any) => Number(d?.byteSize || 0) > threshold).map((d: any) => ({ type: d.type, byteSize: d.byteSize }));
+    }, PAYLOAD_ERROR_BYTES);
+    expect(oversized, `${role.role} initial payload diagnostics over hard threshold`).toEqual([]);
+  }
+}
+
 async function expectNoRuntimeErrors(...roles: RolePage[]) {
   const runtimeError = /(ReferenceError|SyntaxError|TypeError:|Uncaught|Message dispatch)/i;
   for (const role of roles) {
@@ -65,6 +84,25 @@ test.describe('live DM/player/viewer session regression', () => {
       waitForItemLibrarySync(player.page),
       waitForItemLibrarySync(viewer.page),
     ]);
+
+    await expect(dm.page.locator('#topbar-role')).toContainText(/DM/i);
+    await expect(player.page.locator('#topbar-role')).toContainText(/Player/i);
+    await expect(viewer.page.locator('#topbar-role')).toContainText(/Viewer/i);
+    await expect(dm.page.locator('#rail-token-btn')).toBeVisible();
+    await expect(dm.page.locator('#rail-editor-btn')).toBeVisible();
+    await expect(dm.page.locator('#rail-fog-btn')).toBeVisible();
+    await expect(player.page.locator('#rail-token-btn')).not.toBeVisible();
+    await expect(player.page.locator('#rail-editor-btn')).not.toBeVisible();
+    await expect(player.page.locator('#rail-fog-btn')).not.toBeVisible();
+    await expect(player.page.locator('#rail-char-btn')).toBeVisible();
+    await expect(viewer.page.locator('#rail-token-btn')).not.toBeVisible();
+    await expect(viewer.page.locator('#rail-editor-btn')).not.toBeVisible();
+    await expect(viewer.page.locator('#rail-fog-btn')).not.toBeVisible();
+    await expectNoInitialPayloadErrors(player, viewer);
+
+    await wsSend(viewer.page, { type: 'token_create', payload: { name: 'Viewer Forbidden Token', x: 10, y: 10 } });
+    await wsSend(player.page, { type: 'fog_paint', payload: { cells: ['0,0'], visible: false, map_context: 'world' } });
+    await expect.poll(() => tokenByName(dm.page, 'Viewer Forbidden Token'), { message: 'viewer must not create tokens' }).toBeNull();
 
     // DM places the player token and a hidden NPC. The player token must appear
     // to player/DM, while the hidden NPC must never appear to player/viewer.
@@ -107,6 +145,8 @@ test.describe('live DM/player/viewer session regression', () => {
         speed: 30,
         map_context: 'world',
         hidden: true,
+        staged: true,
+        fog_hidden: true,
         color: '#ef4444',
       },
     });
@@ -185,14 +225,44 @@ test.describe('live DM/player/viewer session regression', () => {
     }, { message: 'player initiative should sync', timeout: 20_000 }).toBe(14);
 
     await wsSend(player.page, {
-      type: 'token_move',
-      payload: { token_id: playerToken.id, x: 140, y: 100, client_action_id: 'e2e-move-player' },
+      type: 'combat_move_preview',
+      payload: { token_id: playerToken.id, to_x: 130, to_y: 100, path: [{ x: 100, y: 100 }, { x: 130, y: 100 }], grid_size_px: 40 },
+    });
+    await waitForWsMessage(player.page, 'combat_move_preview_result');
+    const previewBroadcasts = await dm.page.evaluate((tokenId) => ((window as any).__e2eMessages || []).filter((m: any) => m?.type === 'token_moved' && m?.payload?.token_id === tokenId).length, playerToken.id);
+
+    await wsSend(player.page, {
+      type: 'combat_move_commit',
+      payload: { token_id: playerToken.id, to_x: 140, to_y: 100, path: [{ x: 100, y: 100 }, { x: 140, y: 100 }], grid_size_px: 40, client_action_id: 'e2e-move-player' },
     });
 
     await expect.poll(async () => Number((await tokenByName(dm.page, PLAYER_TOKEN))?.x), {
       message: 'DM should see player token movement',
       timeout: 20_000,
     }).toBe(140);
+    const afterCommitBroadcasts = await dm.page.evaluate((tokenId) => ((window as any).__e2eMessages || []).filter((m: any) => m?.type === 'token_moved' && m?.payload?.token_id === tokenId).length, playerToken.id);
+    expect(afterCommitBroadcasts, 'preview should not spam token_moved; commit should broadcast once').toBe(previewBroadcasts + 1);
+    const committedMove = await lastWsMessage(player.page, 'token_moved');
+    const committedRevision = Number(committedMove?.payload?.token_state_revision || 0);
+    await player.page.evaluate(({ tokenId, revision }) => {
+      (window as any).handleLegacyMessage?.({ type: 'token_moved', payload: { token_id: tokenId, x: 90, y: 90, token_state_revision: Math.max(0, revision - 1) } });
+    }, { tokenId: playerToken.id, revision: committedRevision });
+    expect(Number((await tokenByName(player.page, PLAYER_TOKEN))?.x), 'stale local/lower revision movement must not overwrite committed position').toBe(140);
+
+    await wsSend(player.page, {
+      type: 'char_profile_upsert',
+      payload: { id: 'e2e-bishop-profile', name: PLAYER_TOKEN, nativeCharacter: { identity: { name: PLAYER_TOKEN, className: 'Wizard' }, classes: [{ classId: 'wizard', level: 5 }], spellState: { known: ['fire-bolt', 'magic-missile'], prepared: ['magic-missile'], slots: { 1: { max: 4, used: 0 } }, rituals: [] } } },
+    });
+    await waitForWsMessage(player.page, 'char_profiles_sync', 'e2e-bishop-profile');
+    await wsSend(player.page, { type: 'char_profile_select', payload: { id: 'e2e-bishop-profile' } });
+    await wsSend(dm.page, { type: 'inventory_add_item', payload: { target_user_id: session.playerUserId, entry: { id: 'e2e-dagger', name: 'Dagger', equipped: true, equipment_kind: 'weapon', damage_dice: '1d4', damage_type: 'piercing' } } });
+    await wsSend(dm.page, { type: 'inventory_add_item', payload: { target_user_id: session.playerUserId, entry: { id: 'e2e-wand', name: 'Wand of Magic Missiles', equipped: true, attunement_required: false, equipment_kind: 'wand', charges_current: 3, charges_max: 7, granted_spells: [{ id: 'magic-missile', name: 'Magic Missile', charge_cost: 1, cast_level: 1 }] } } });
+    await waitForWsMessage(player.page, 'quick_actions_sync');
+    const quickPayload = await lastWsMessage(player.page, 'quick_actions_sync');
+    expect((quickPayload?.payload?.weapon_actions || []).some((a: any) => /Dagger/i.test(a?.name || '')), 'weapon Quick Action should exist').toBeTruthy();
+    expect((quickPayload?.payload?.spell_actions || []).some((a: any) => /Magic Missile/i.test(a?.name || '')), 'spell Quick Action should exist').toBeTruthy();
+    expect((quickPayload?.payload?.item_spell_cards || []).some((a: any) => /Magic Missile/i.test(a?.name || '')), 'item-granted spell/charge action should exist').toBeTruthy();
+    expect(Array.isArray(quickPayload?.payload?.diagnostics), 'Quick Action diagnostics should be structured').toBeTruthy();
 
     // Quick Actions should at least hydrate their bridge/runtime without throwing.
     // Dedicated unit tests cover exact weapon/spell picker math; this e2e catches
@@ -209,6 +279,10 @@ test.describe('live DM/player/viewer session regression', () => {
     }));
     expect(quickActionRuntime.hasQuickActions, 'CombatQuickActions runtime should load').toBeTruthy();
 
+    await wsSend(dm.page, { type: 'camp_rest_take_rest', payload: { rest_type: 'short' } });
+    await waitForWsMessage(player.page, 'camp_rest_rest_applied', 'short');
+    await waitForWsMessage(player.page, 'quick_actions_sync');
+
     // DM long rest should restore the damaged player token and broadcast rest,
     // token, character, inventory, and quick action sync events.
     await wsSend(dm.page, { type: 'camp_rest_take_rest', payload: { rest_type: 'long' } });
@@ -224,6 +298,7 @@ test.describe('live DM/player/viewer session regression', () => {
     // hydrate from server state.
     const reconnectedPlayer = await openRolePage(browser, session, 'player');
     await waitForWsMessage(reconnectedPlayer.page, 'quick_actions_sync');
+    await expectNoInitialPayloadErrors(reconnectedPlayer);
     await expect.poll(async () => Number((await tokenByName(reconnectedPlayer.page, PLAYER_TOKEN))?.hp), {
       message: 'reconnected player should see restored HP',
       timeout: 20_000,
