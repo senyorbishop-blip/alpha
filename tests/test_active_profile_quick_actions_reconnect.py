@@ -95,7 +95,7 @@ def test_authoritative_snapshot_inventory_summary_includes_equipped_items_for_ow
     assert inventory["summary"]["item_count"] == 3
     assert inventory["summary"]["equipped_count"] == 2
     names = {item["name"] for item in inventory["summary"]["equipped_items"]}
-    assert names == {"Thunder Mage Quarterstaff +3", "Dagger"}
+    assert names == {"Thunder Mage Quarterstaff, +3", "Dagger"}
 
 
 def test_authoritative_snapshot_never_leaks_other_players_inventory_to_a_player():
@@ -223,7 +223,7 @@ def test_quick_actions_payload_in_snapshot_has_weapons_spells_item_cards_and_rev
     assert any(a["kind"] == "weapon_attack" and a["name"] == "Dagger" for a in quick["weapon_actions"])
     assert any(a["kind"] == "weapon_damage" and a["damage_formula"] == "1d4" for a in quick["weapon_actions"])
     assert any(a["name"] == "Staff of Fire" for a in quick["weapon_actions"])
-    assert any(s["name"] == "Fireball" and s["requires_slot"] is False for s in quick["spell_actions"])
+    assert any(s["name"] == "Fireball" and s["requires_slot"] is True and s["requires_cast_level_prompt"] is True for s in quick["spell_actions"])
     assert any(card["spell_id"] == "fireball" and card["disabled"] is True for card in quick["item_spell_cards"])
     assert any(d["code"] == "no_charges" for d in quick["diagnostics"])
 
@@ -241,4 +241,83 @@ def test_quick_actions_payload_reports_item_not_equipped_and_not_attuned():
 
     assert "item_not_equipped" in codes
     assert "item_not_attuned" in codes
-    assert quick["item_spell_cards"] == []
+    assert quick["item_spell_cards"] and all(card["disabled"] for card in quick["item_spell_cards"])
+
+
+def test_quick_actions_contract_dagger_attack_damage_and_levelled_spell_prompt():
+    session = _build_session()
+    native = session.char_profiles["bishop"][0]["nativeCharacter"]
+    native["spellSaveDc"] = 15
+    native["spellAttack"] = "+7"
+    native["spellState"] = {
+        "known": ["fire-bolt", "fireball"],
+        "prepared": ["fire-bolt", "fireball"],
+        "slots": {"3": {"max": 2, "used": 0}, "4": {"max": 1, "used": 0}},
+    }
+    session.player_inventories = {"bishop::profile::f-bishop": [{"id": "dagger-1", "name": "Dagger", "equipped": True, "equipment_kind": "weapon", "damage_dice": "1d4", "damage_type": "piercing"}]}
+
+    quick = session.to_authoritative_snapshot_for_role("player", "player-1", source="ws_connect")["payload"]["quick_actions"]
+
+    assert any(a["kind"] == "weapon_attack" and a["name"] == "Dagger" for a in quick["weapon_actions"])
+    assert any(a["kind"] == "weapon_damage" and a["damage_formula"] == "1d4" for a in quick["weapon_actions"])
+    cantrip = next(a for a in quick["spell_actions"] if a["spell_id"] == "fire-bolt")
+    assert cantrip["kind"] == "cantrip_spell"
+    assert cantrip["requires_slot"] is False
+    assert cantrip["attack_type"] == "Ranged Spell Attack"
+    assert cantrip["spell_attack_bonus"] == 7
+    fireball = next(a for a in quick["spell_actions"] if a["spell_id"] == "fireball")
+    assert fireball["requires_cast_level_prompt"] is True
+    assert fireball["can_upcast"] is True
+    assert fireball["available_cast_levels"] == [3, 4]
+    assert fireball["saving_throw"] == "DEX"
+    assert fireball["save_dc"] == 15
+
+
+def test_quick_actions_contract_quarterstaff_rarity_charges_granted_spells():
+    session = _build_session()
+    session.player_inventories = {"bishop::profile::f-bishop": [{
+        "id": "staff-3", "name": "Quarterstaff +3", "rarity": "very_rare",
+        "equipped": True, "attunement_required": True, "attuned": True,
+        "equipment_kind": "weapon", "damage_dice": "1d6", "damage_type": "bludgeoning",
+        "charges_current": 3, "charges_max": 10,
+        "granted_spells": [{"id": "lightning-bolt", "name": "Lightning Bolt", "charge_cost": 2, "cast_level": 3}],
+    }]}
+
+    quick = session.to_authoritative_snapshot_for_role("player", "player-1", source="ws_connect")["payload"]["quick_actions"]
+
+    assert any(a["kind"] == "weapon_attack" and a["name"] == "Quarterstaff +3" for a in quick["weapon_actions"])
+    assert quick["charges"] == [{"item_id": "staff-3", "name": "Quarterstaff +3", "charges_current": 3, "charges_max": 10}]
+    card = next(c for c in quick["item_spell_cards"] if c["spell_id"] == "lightning-bolt")
+    assert card["kind"] == "item_granted_spell"
+    assert card["disabled"] is False
+    assert card["charges_current"] == 3
+    assert card["charges_max"] == 10
+
+
+def test_quick_actions_disabled_item_spell_reasons_and_missing_active_profile():
+    session = _build_session(active_profile_id="ghost-profile")
+    session.player_inventories = {"bishop::profile::ghost-profile": [
+        {"id": "s1", "name": "Packed Staff", "equipped": False, "attunement_required": False, "charges_current": 2, "charges_max": 3, "granted_spells": [{"id": "fireball", "charge_cost": 1}]},
+        {"id": "s2", "name": "Unattuned Staff", "equipped": True, "attunement_required": True, "attuned": False, "charges_current": 2, "charges_max": 3, "granted_spells": [{"id": "fireball", "charge_cost": 1}]},
+        {"id": "s3", "name": "Empty Staff", "equipped": True, "attunement_required": False, "charges_current": 0, "charges_max": 3, "granted_spells": [{"id": "fireball", "charge_cost": 1}]},
+        {"id": "s4", "name": "Mystery Staff", "equipped": True, "attunement_required": False, "charges_current": 1, "charges_max": 3, "granted_spells": [{"id": "not-a-real-spell-xyz", "charge_cost": 1}]},
+    ]}
+
+    quick = session.to_authoritative_snapshot_for_role("player", "player-1", source="ws_connect")["payload"]["quick_actions"]
+
+    assert quick["hydration_status"] == "missing_runtime"
+    assert any(d["code"] == "missing_active_profile" for d in quick["diagnostics"])
+    reasons = {c["item_id"]: c["disabled_reason"] for c in quick["item_spell_cards"]}
+    assert reasons["s1"] == "Not equipped."
+    assert reasons["s2"] == "Not attuned."
+    assert reasons["s3"].startswith("No charges")
+    assert reasons["s4"] == "Missing spell data."
+
+
+def test_quick_actions_no_equipped_weapon_diagnostic():
+    session = _build_session()
+    session.player_inventories = {"bishop::profile::f-bishop": [{"id": "rope", "name": "Rope", "equipped": False}]}
+
+    quick = session.to_authoritative_snapshot_for_role("player", "player-1", source="ws_connect")["payload"]["quick_actions"]
+
+    assert any(d["code"] == "no_equipped_weapon" for d in quick["diagnostics"])

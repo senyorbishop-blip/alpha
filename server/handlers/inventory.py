@@ -2031,10 +2031,6 @@ def _build_item_spell_cards(items: list[dict]) -> list[dict]:
         granted_spells = list(item.get("granted_spells") or item.get("grantedSpells") or item.get("itemSpells") or item.get("item_spells") or item.get("spellsGranted") or item.get("spellGrants") or [])
         if not granted_spells:
             continue
-        if not bool(item.get("equipped")):
-            continue
-        if not _item_is_attuned(item):
-            continue
 
         item_id = str(item.get("id") or item.get("magic_item_id") or f"item_{idx}")
         item_name = str(item.get("name") or "Item")
@@ -2064,9 +2060,18 @@ def _build_item_spell_cards(items: list[dict]) -> list[dict]:
             spell_meta = get_spell_metadata(spell_id) or {}
             resolved_name = str(spell_meta.get("displayName") or spell_name)
 
+            missing_spell_data = not bool(spell_meta)
             has_charges = charges_current < 0 or charges_current >= charge_cost
-            disabled = not has_charges
-            disabled_reason = f"Not enough charges (need {charge_cost}, have {max(0, charges_current)})." if disabled else ""
+            disabled_reason = ""
+            if not bool(item.get("equipped")):
+                disabled_reason = "Not equipped."
+            elif not _item_is_attuned(item):
+                disabled_reason = "Not attuned."
+            elif not has_charges:
+                disabled_reason = f"No charges (need {charge_cost}, have {max(0, charges_current)})."
+            elif missing_spell_data:
+                disabled_reason = "Missing spell data."
+            disabled = bool(disabled_reason)
 
             cards.append({
                 "source": "item_spell",
