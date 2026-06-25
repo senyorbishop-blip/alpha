@@ -7,9 +7,16 @@ export type TestSession = { sessionId: string; dmUserId: string; playerUserId: s
 const criticalConsole = /\b(ReferenceError|SyntaxError|TypeError:|Uncaught|Failed to load resource: the server responded with a status of (?:4|5)\d\d)\b/i;
 const harmless = [/favicon\.ico/i, /ResizeObserver loop/i];
 
+async function getCsrfToken(request: APIRequestContext): Promise<string> {
+  await request.get('/health');
+  const state = await request.storageState();
+  return state.cookies.find(c => c.name === 'csrf_token')?.value || '';
+}
+
 export async function registerUser(request: APIRequestContext, role: RoleName, prefix: string) {
   const unique = `${prefix}-${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const res = await request.post('/api/auth/register', {
+    headers: { 'X-CSRF-Token': await getCsrfToken(request) },
     data: { username: unique, email: `${unique}@e2e.invalid`, password: 'playwright-pass', role },
   });
   expect(res.ok(), `${role} registration should succeed: ${await res.text()}`).toBeTruthy();
@@ -20,7 +27,7 @@ export async function registerUser(request: APIRequestContext, role: RoleName, p
 export async function createIsolatedSession(request: APIRequestContext, browser: Browser, prefix = 'e2e'): Promise<TestSession> {
   const dmAuth = await registerUser(request, 'dm', prefix);
   const create = await request.post('/api/session/create', {
-    headers: { Authorization: `Bearer ${dmAuth.token}` },
+    headers: { Authorization: `Bearer ${dmAuth.token}`, 'X-CSRF-Token': await getCsrfToken(request) },
     data: { dm_name: 'E2E Dungeon Master', campaign_name: `E2E ${Date.now()}` },
   });
   expect(create.ok(), `session create should succeed: ${await create.text()}`).toBeTruthy();
@@ -29,7 +36,7 @@ export async function createIsolatedSession(request: APIRequestContext, browser:
   async function join(role: 'player' | 'viewer', invite: string) {
     const auth = await registerUser(request, role, prefix);
     const res = await request.post('/api/session/join', {
-      headers: { Authorization: `Bearer ${auth.token}` },
+      headers: { Authorization: `Bearer ${auth.token}`, 'X-CSRF-Token': await getCsrfToken(request) },
       data: { session_id: created.session_id, invite_code: invite },
     });
     expect(res.ok(), `${role} join should succeed: ${await res.text()}`).toBeTruthy();
