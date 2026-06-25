@@ -5,6 +5,7 @@ import json
 import logging
 import time
 import uuid
+from server.payload_diagnostics import log_payload_size_diagnostic
 from typing import Dict, Set, Optional
 from fastapi import WebSocket
 
@@ -145,6 +146,14 @@ class ConnectionManager:
             logger.warning(log_message, *log_args)
         else:
             logger.debug(log_message, *log_args)
+        log_payload_size_diagnostic(
+            logger,
+            session_id=session_id,
+            recipient_user_id=user_id,
+            recipient_role=role or "unknown",
+            message_type=message_type or "unknown",
+            byte_size=byte_size,
+        )
         if duration_ms > SLOW_SEND_WARN_MS:
             logger.warning(
                 "[ws] outbound_send_slow message_type=%s session_id=%s recipient_user_id=%s "
