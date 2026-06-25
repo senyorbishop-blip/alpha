@@ -225,3 +225,107 @@ if not any(isinstance(finder, _ViewerPowerPatchFinder) for finder in sys.meta_pa
 
 if _TARGET_MODULE in sys.modules:
     _apply_patch(sys.modules[_TARGET_MODULE])
+
+# DM live UI chrome hide rules. Kept as CSS-only and injected through the app
+# shell so the QA panel is not visible in normal live use.
+_MAIN_MODULE = "main"
+_DM_UI_PATCH_FLAG = "_dm_live_ui_chrome_css_applied"
+_DM_UI_INJECT_MARKER = "dm-live-ui-chrome-css-hotfix"
+_DM_UI_SELECTORS = "#stream-readiness-panel,[data-stream-readiness-panel],.stream-readiness-panel,#dm-mode-hint,.dm-focus-card,.dm-focus-note,.dm-focus-banner,.dm-workflow-hint,.dm-live-guidance,[data-dm-focus],[data-dm-guide=focus]"
+_DM_UI_RULES = (
+    _DM_UI_SELECTORS
+    + "{display:none!important;visibility:hidden!important;max-width:0!important;max-height:0!important;padding:0!important;border:0!important;overflow:hidden!important;}"
+    + "#topbar{overflow:hidden;min-width:0;}#ws-status-wrap{min-width:0;}#session-info{max-width:min(18vw,230px);}"
+)
+
+
+def inject_dm_live_ui_chrome_css(html: str) -> str:
+    if not isinstance(html, str) or _DM_UI_INJECT_MARKER in html:
+        return html
+    lt = chr(60)
+    gt = chr(62)
+    block = (
+        lt + "!-- " + _DM_UI_INJECT_MARKER + " --" + gt
+        + lt + "style id='" + _DM_UI_INJECT_MARKER + "'" + gt
+        + _DM_UI_RULES
+        + lt + "/style" + gt
+    )
+    if "</head>" in html:
+        return html.replace("</head>", block + "\n</head>", 1)
+    if "</body>" in html:
+        return html.replace("</body>", block + "\n</body>", 1)
+    return html + "\n" + block
+
+
+def _apply_dm_ui_css_patch(module: ModuleType) -> ModuleType:
+    app = getattr(module, "app", None)
+    if app is None or getattr(app.state, _DM_UI_PATCH_FLAG, False):
+        return module
+
+    @app.middleware("http")
+    async def _dm_live_ui_chrome_middleware(request, call_next):
+        response = await call_next(request)
+        if "text/html" not in str(response.headers.get("content-type") or "").lower():
+            return response
+        try:
+            body = b""
+            async for chunk in response.body_iterator:
+                body += chunk
+            text = body.decode(getattr(response, "charset", None) or "utf-8", errors="replace")
+            headers = dict(response.headers)
+            headers.pop("content-length", None)
+            from starlette.responses import Response
+            return Response(
+                content=inject_dm_live_ui_chrome_css(text),
+                status_code=response.status_code,
+                headers=headers,
+                media_type=getattr(response, "media_type", None) or "text/html",
+                background=getattr(response, "background", None),
+            )
+        except Exception:
+            return response
+
+    setattr(app.state, _DM_UI_PATCH_FLAG, True)
+    return module
+
+
+class _MainPatchLoader(importlib.abc.Loader):
+    def __init__(self, wrapped: importlib.abc.Loader):
+        self._wrapped = wrapped
+
+    def create_module(self, spec):
+        create_module = getattr(self._wrapped, "create_module", None)
+        if create_module:
+            return create_module(spec)
+        return None
+
+    def exec_module(self, module: ModuleType) -> None:
+        self._wrapped.exec_module(module)
+        _apply_dm_ui_css_patch(module)
+
+
+class _MainPatchFinder(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname: str, path: Any = None, target: Any = None):
+        if fullname != _MAIN_MODULE:
+            return None
+        spec = importlib.machinery.PathFinder.find_spec(fullname, path)
+        if not spec or not spec.loader or isinstance(spec.loader, _MainPatchLoader):
+            return spec
+        spec.loader = _MainPatchLoader(spec.loader)
+        return spec
+
+
+def patch_dm_live_ui_chrome_now() -> bool:
+    module = sys.modules.get(_MAIN_MODULE)
+    if module is None:
+        module = importlib.import_module(_MAIN_MODULE)
+    _apply_dm_ui_css_patch(module)
+    app = getattr(module, "app", None)
+    return bool(app is not None and getattr(app.state, _DM_UI_PATCH_FLAG, False))
+
+
+if not any(isinstance(finder, _MainPatchFinder) for finder in sys.meta_path):
+    sys.meta_path.insert(0, _MainPatchFinder())
+
+if _MAIN_MODULE in sys.modules:
+    _apply_dm_ui_css_patch(sys.modules[_MAIN_MODULE])
