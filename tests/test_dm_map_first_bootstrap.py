@@ -3,6 +3,8 @@ from pathlib import Path
 PLAY = Path('client/templates/play.html')
 BOOTSTRAP = Path('client/static/js/ui/dm_map_first_bootstrap.js')
 SHELL_CSS = Path('client/static/css/dm-map-first-shell.css')
+POLISH_CSS = Path('client/static/css/dm-map-first-polish.css')
+REGISTRY = Path('client/static/js/ui/dm_mode_tool_registry.js')
 
 
 def read(path: Path) -> str:
@@ -65,3 +67,86 @@ def test_debug_remains_hidden_by_default():
     assert '.dm-map-first-shell:not([data-debug-open="true"]) [data-dm-debug-panel]' in css
     assert 'display: none !important' in css
     assert 'data-debug-open="true"' in css
+
+
+def test_final_polish_keeps_dm_rail_active_styling_obvious():
+    css = read(POLISH_CSS)
+    assert 'body.dm-map-first-active .dm-live-mode-rail .dm-map-first-mode-button[aria-pressed="true"]' in css
+    assert 'body.dm-map-first-active .dm-live-mode-rail .dm-map-first-mode-button[data-dm-mode-active="true"]' in css
+    assert 'rgba(212, 166, 55, 0.72)' in css
+    assert 'box-shadow: 0 0 0 1px rgba(212, 166, 55, 0.18) inset' in css
+
+
+def test_final_polish_context_panel_width_is_controlled_and_internal_scrolls():
+    css = read(POLISH_CSS)
+    assert 'body.dm-map-first-active #sidebar-right.dm-map-first-right-context' in css
+    assert 'width: var(--mf-right-context-width, clamp(18rem, 23vw, 25rem))' in css
+    assert 'max-width: var(--mf-right-context-width, clamp(18rem, 23vw, 25rem))' in css
+    assert 'overflow: hidden' in css
+    assert 'body.dm-map-first-active .dm-map-first-context-body' in css
+    assert 'overflow-y: auto' in css
+    assert 'overflow-x: hidden' in css
+
+
+def test_final_polish_map_stage_remains_minmax_and_rail_does_not_squeeze_map():
+    css = read(POLISH_CSS)
+    assert 'grid-template-columns: var(--mf-left-rail-width, 4.75rem) minmax(0, 1fr) var(--mf-right-context-width, clamp(18rem, 23vw, 25rem))' in css
+    assert 'body.dm-map-first-active #canvas-wrap.dm-map-first-map-stage[data-map-primary="true"]' in css
+    assert 'min-width: 0' in css
+    assert '--mf-left-rail-width: 4.35rem' in css
+    assert '--mf-left-rail-width: 3.65rem' in css
+
+
+def test_final_polish_dm_shell_does_not_apply_to_player_or_viewer():
+    src = read(PLAY)
+    css = read(POLISH_CSS)
+    assert "if (ROLE === 'dm')" in src
+    assert "document.body.classList.add('dm-map-first-active')" in src
+    assert "ROLE === 'player'" not in src[src.index("document.body.classList.add('dm-map-first-active')") - 80:src.index("document.body.classList.add('dm-map-first-active')") + 120]
+    assert "ROLE === 'viewer'" not in src[src.index("document.body.classList.add('dm-map-first-active')") - 80:src.index("document.body.classList.add('dm-map-first-active')") + 120]
+    assert 'body.dm-map-first-active' in css
+    assert 'body:not(.dm-map-first-active) #dm-live-mode-rail' in css
+
+
+def test_final_polish_more_legacy_tools_and_debug_hidden_remain_available():
+    src = read(PLAY)
+    css = read(POLISH_CSS)
+    assert 'More / Legacy Tools' in src
+    assert 'dm-legacy-tools-fallback' in src
+    assert 'data-dm-quick-action="more"' in src
+    assert 'data-dm-debug-panel hidden' in src
+    assert 'body.dm-map-first-active:not([data-debug-open="true"]) [data-dm-debug-panel]' in css
+    assert 'display: none !important' in css
+
+
+def test_final_polish_quick_strip_is_clean_and_does_not_block_map_interaction():
+    css = read(POLISH_CSS)
+    assert 'body.dm-map-first-active #dm-map-first-quick-strip.dm-map-first-quick-strip' in css
+    assert 'pointer-events: none' in css
+    assert 'body.dm-map-first-active #dm-map-first-quick-strip .dm-map-first-quick-action' in css
+    assert 'pointer-events: auto' in css
+    assert 'max-width: min(36rem, calc(100% - 1.5rem))' in css
+
+
+def test_final_polish_expected_dm_tool_markers_remain_registered():
+    src = read(PLAY) + read(REGISTRY)
+    expected = [
+        'selected-token-summary', 'party-overview', 'current-scene-notes',
+        'initiative-order', 'current-turn', 'action-usage', 'movement-usage',
+        'terrain-tools', 'fog-tools', 'wall-tools', 'door-tools', 'asset-library',
+        'bestiary-search', 'spawn-token', 'creature-hp-ac-speed',
+        'item-search', 'loot-containers', 'shop-setup', 'grant-item', 'grant-gold',
+        'quests', 'handouts', 'journal', 'narration', 'sound', 'polls',
+        'connected-viewers', 'viewer-power-grants', 'pending-approvals',
+    ]
+    for marker in expected:
+        assert marker in src
+
+
+def test_final_polish_has_focus_responsive_and_reduced_motion_rules():
+    css = read(POLISH_CSS)
+    assert ':focus-visible' in css
+    assert '@media (max-width: 1100px)' in css
+    assert '@media (max-width: 900px)' in css
+    assert '@media (max-width: 680px)' in css
+    assert '@media (prefers-reduced-motion: reduce)' in css
