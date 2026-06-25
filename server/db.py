@@ -359,6 +359,11 @@ def init_db():
             "ALTER TABLE shops ADD COLUMN shop_sales_enabled INTEGER NOT NULL DEFAULT 1",
             "ALTER TABLE shops ADD COLUMN player_sell_enabled INTEGER NOT NULL DEFAULT 1",
             "ALTER TABLE shops ADD COLUMN buyback_enabled INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE shops ADD COLUMN personality TEXT NOT NULL DEFAULT 'friendly'",
+            "ALTER TABLE shops ADD COLUMN dialogue_enabled INTEGER NOT NULL DEFAULT 1",
+            "ALTER TABLE shops ADD COLUMN voice TEXT NOT NULL DEFAULT 'grand_narrator'",
+            "ALTER TABLE shops ADD COLUMN tts_enabled INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE shops ADD COLUMN greeting_override TEXT NOT NULL DEFAULT ''",
             "ALTER TABLE shop_transactions ADD COLUMN direction TEXT NOT NULL DEFAULT 'buy'",
         ]:
             try:
@@ -520,6 +525,11 @@ def init_db():
             buy_rate_pct INTEGER NOT NULL DEFAULT 50,
             accepted_item_types_json TEXT NOT NULL DEFAULT '["weapon","armour","consumable","tool","material","trinket","magic","misc"]',
             buyback_enabled INTEGER NOT NULL DEFAULT 0,
+            personality     TEXT NOT NULL DEFAULT 'friendly',
+            dialogue_enabled INTEGER NOT NULL DEFAULT 1,
+            voice           TEXT NOT NULL DEFAULT 'grand_narrator',
+            tts_enabled     INTEGER NOT NULL DEFAULT 0,
+            greeting_override TEXT NOT NULL DEFAULT '',
             description     TEXT NOT NULL DEFAULT '',
             is_open         INTEGER NOT NULL DEFAULT 1,
             created_at      REAL NOT NULL,
@@ -2199,6 +2209,14 @@ def _parse_shop_sell_fields(shop: dict) -> dict:
     # Backward-compat for old callers.
     shop["selling_enabled"] = shop["player_sell_enabled"]
     shop["buyback_enabled"] = bool(int(shop.get("buyback_enabled") or 0))
+    personality = str(shop.get("personality") or "friendly").strip().lower()
+    if personality not in {"friendly", "gruff", "greedy", "shifty", "scholarly"}:
+        personality = "friendly"
+    shop["personality"] = personality
+    shop["dialogue_enabled"] = bool(int(shop.get("dialogue_enabled") if shop.get("dialogue_enabled") is not None else 1))
+    shop["voice"] = str(shop.get("voice") or "grand_narrator").strip()[:80] or "grand_narrator"
+    shop["tts_enabled"] = bool(int(shop.get("tts_enabled") or 0))
+    shop["greeting_override"] = str(shop.get("greeting_override") or "")[:220]
     return shop
 
 
@@ -2265,7 +2283,9 @@ def upsert_shop(campaign_id: str, prop_id: str, name: str, shopkeeper_name: str,
                 shop_type: str, description: str, inventory: list, taught_profession_ids: list[str] | None = None,
                 crafting_enabled: bool = True, shop_sales_enabled: bool = True, player_sell_enabled: bool = True,
                 buy_categories: list[str] | None = None, vendor_cash_units: int | None = 0, buy_rate_pct: int = 50,
-                accepted_item_types: list[str] | None = None, buyback_enabled: bool = False) -> Optional[dict]:
+                accepted_item_types: list[str] | None = None, buyback_enabled: bool = False,
+                personality: str = "friendly", dialogue_enabled: bool = True, voice: str = "grand_narrator",
+                tts_enabled: bool = False, greeting_override: str = "") -> Optional[dict]:
     """Create or replace a shop and its full inventory. Returns the shop dict."""
     import secrets as _secrets
     try:
@@ -2302,6 +2322,11 @@ def upsert_shop(campaign_id: str, prop_id: str, name: str, shopkeeper_name: str,
                 accepted_clean.append(item_type)
             if not accepted_clean:
                 accepted_clean = list(valid_types)
+            personality = str(personality or "friendly").strip().lower()[:40]
+            if personality not in {"friendly", "gruff", "greedy", "shifty", "scholarly"}:
+                personality = "friendly"
+            voice = str(voice or "grand_narrator").strip()[:80] or "grand_narrator"
+            greeting_override = str(greeting_override or "").strip()[:220]
             row = conn.execute(
                 "SELECT id FROM shops WHERE campaign_id=? AND prop_id=?",
                 (campaign_id, prop_id)
@@ -2311,12 +2336,13 @@ def upsert_shop(campaign_id: str, prop_id: str, name: str, shopkeeper_name: str,
                 conn.execute("""
                     UPDATE shops SET name=?, shopkeeper_name=?, shop_type=?, taught_professions_json=?, crafting_enabled=?,
                     selling_enabled=?, shop_sales_enabled=?, player_sell_enabled=?, buy_categories_json=?,
-                    vendor_cash_units=?, buy_rate_pct=?, accepted_item_types_json=?, buyback_enabled=?, description=?, is_open=1
+                    vendor_cash_units=?, buy_rate_pct=?, accepted_item_types_json=?, buyback_enabled=?, personality=?, dialogue_enabled=?, voice=?, tts_enabled=?, greeting_override=?, description=?, is_open=1
                     WHERE id=?
                 """, (
                     name, shopkeeper_name, shop_type, json.dumps(taught), 1 if crafting_enabled else 0,
                     1 if player_sell_enabled else 0, 1 if shop_sales_enabled else 0, 1 if player_sell_enabled else 0, json.dumps(buy_categories_clean),
-                    vendor_cash_units, buy_rate_pct, json.dumps(accepted_clean), 1 if buyback_enabled else 0, description, shop_id
+                    vendor_cash_units, buy_rate_pct, json.dumps(accepted_clean), 1 if buyback_enabled else 0,
+                    personality, 1 if dialogue_enabled else 0, voice, 1 if tts_enabled else 0, greeting_override, description, shop_id
                 ))
             else:
                 shop_id = _secrets.token_hex(8)
@@ -2325,14 +2351,14 @@ def upsert_shop(campaign_id: str, prop_id: str, name: str, shopkeeper_name: str,
                         id, campaign_id, prop_id, name, shopkeeper_name, shop_type, taught_professions_json,
                         crafting_enabled, selling_enabled, shop_sales_enabled, player_sell_enabled,
                         buy_categories_json, vendor_cash_units, buy_rate_pct, accepted_item_types_json,
-                        buyback_enabled, description, is_open, created_at
+                        buyback_enabled, personality, dialogue_enabled, voice, tts_enabled, greeting_override, description, is_open, created_at
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
                 """, (
                     shop_id, campaign_id, prop_id, name, shopkeeper_name, shop_type, json.dumps(taught),
                     1 if crafting_enabled else 0, 1 if player_sell_enabled else 0, 1 if shop_sales_enabled else 0, 1 if player_sell_enabled else 0,
                     json.dumps(buy_categories_clean), vendor_cash_units, buy_rate_pct, json.dumps(accepted_clean),
-                    1 if buyback_enabled else 0, description, now
+                    1 if buyback_enabled else 0, personality, 1 if dialogue_enabled else 0, voice, 1 if tts_enabled else 0, greeting_override, description, now
                 ))
             # Replace inventory
             conn.execute("DELETE FROM shop_inventory WHERE shop_id=?", (shop_id,))

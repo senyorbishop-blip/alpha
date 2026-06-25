@@ -3009,6 +3009,13 @@ async def handle_dm_configure_shop(payload: dict, session: Session, user: User):
     if shop_type not in {"general", "blacksmith", "alchemist", "magic", "black_market"}:
         shop_type = "general"
     description = str(payload.get("description") or "").strip()[:500]
+    personality = str(payload.get("personality") or "friendly").strip().lower()[:40]
+    if personality not in {"friendly", "gruff", "greedy", "shifty", "scholarly"}:
+        personality = "friendly"
+    dialogue_enabled = bool(payload.get("dialogue_enabled", True))
+    voice = str(payload.get("voice") or "grand_narrator").strip()[:80] or "grand_narrator"
+    tts_enabled = bool(payload.get("tts_enabled", False))
+    greeting_override = str(payload.get("greeting_override") or "").strip()[:220]
     raw_inventory = payload.get("inventory")
     raw_taught = payload.get("taught_profession_ids")
     crafting_enabled = bool(payload.get("crafting_enabled", True))
@@ -3059,6 +3066,11 @@ async def handle_dm_configure_shop(payload: dict, session: Session, user: User):
         buy_rate_pct=buy_rate_pct,
         accepted_item_types=accepted_item_types,
         buyback_enabled=buyback_enabled,
+        personality=personality,
+        dialogue_enabled=dialogue_enabled,
+        voice=voice,
+        tts_enabled=tts_enabled,
+        greeting_override=greeting_override,
     )
     if not shop:
         return await manager.send_to(session.id, user.id, {
