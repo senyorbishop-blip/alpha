@@ -152,3 +152,54 @@ Keep the DM interface powerful while preventing the right-sidebar from becoming 
 - `client/static/js/editor/serialization.js` remains the authoritative map serializer, while `editor/state.js` and `editor/runtime.js` stay dormant until `play.html` explicitly loads them.
 
 - Stage 5 expectation: when ownership changes, update both the script-load docs and the focused `tests/` guardrails in the same patch so runtime boundaries do not drift.
+
+## Stage 12 — Staged extraction plan and first safe extraction lock
+
+This stage records the next extraction sequence before any broader `play.html`
+rewrite. The rule for each stage is to add or update an invariant first, move
+only one live slice, and keep compatibility globals until all loaded callers are
+proven migrated.
+
+### Planned low-risk sequence
+
+1. Finish chat-log rendering extraction by making `client/static/js/ui/chat_log.js`
+   the only renderer while keeping `play.html` compatibility wrappers.
+2. Extract viewer panel display into a new loaded UI module after adding static
+   checks for the `viewer-list`, `viewer-empty`, viewer power controls, and role
+   dependent visibility contracts.
+3. Extract non-critical tab badge helpers that are not already owned by
+   `client/static/js/ui/tabs.js`, one badge family at a time.
+4. Only after those UI slices are stable, consider gameplay-adjacent panels such
+   as inventory or combat summaries; do not move gameplay state collections in
+   the same patch as panel rendering.
+
+### First extraction implemented
+
+- `client/static/js/ui/chat_log.js` remains loaded by `play.html` and is the live
+  owner of visible chat-log entry rendering.
+- `client/templates/play.html` keeps global `addLogEntry(entry)` and
+  `isPresenceLogEntry(entry)` as compatibility wrappers because inline WS
+  handlers and historical event flows still call those global names.
+- The inline fallback chat renderer was removed from the wrappers; rendering now
+  requires the loaded `window.AppUIChatLog` contract, proving the module is the
+  active path rather than a dormant duplicate.
+
+### Globals intentionally retained
+
+These functions remain global in `play.html` at this stage:
+
+- `addLogEntry(entry)` — compatibility entrypoint used by inline message/session
+  handlers; delegates to `window.AppUIChatLog.addLogEntry()`.
+- `isPresenceLogEntry(entry)` — compatibility predicate used by legacy callers;
+  delegates to `window.AppUIChatLog.isPresenceLogEntry()`.
+- Editor-panel globals called indirectly by the loaded `ui/editor_panel.js`
+  callback bridge: `setEditorTerrain`, `setEditorBrush`, `setEditorWallTool`,
+  `setEditorFileAsset`, `setEditorDndPropAsset`, `setEditorLayerMode`,
+  `saveEditorMap`, and `clearEditorMap`.
+
+### Guardrails added
+
+- `tests/test_runtime_global_invariants.py` checks that `chat_log.js` is loaded
+  before the inline runtime, that chat-log wrappers remain global, that rendering
+  stays in the module, and that the loaded editor panel still has the globals it
+  calls indirectly.
