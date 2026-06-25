@@ -1872,19 +1872,87 @@ def bump_character_hydration_revisions(session, *, spells: bool = True, quick_ac
     return revs
 
 
-def build_quick_actions_sync_payload(session, user_id: str) -> dict:
-    """Server-assisted Quick Actions hydration contract for the active player.
+def _qa_slug(value: str) -> str:
+    return str(value or "").strip().lower().replace(" ", "-")
 
-    Client remains the final renderer/executor, but this payload carries stable
-    revisions, active profile identity, server-known inventory/item-spell cards,
-    equipped weapon cards, and player-visible diagnostics/disabled reasons.
-    """
+
+def _qa_safe_int(value, default: int = 0, minimum: int = 0, maximum: int = 99) -> int:
+    try:
+        parsed = int(value)
+    except Exception:
+        return default
+    return max(minimum, min(maximum, parsed))
+
+
+def _qa_spellcasting_stats(native: dict) -> dict:
+    stats = native.get("spellcasting") if isinstance(native.get("spellcasting"), dict) else {}
+    dc = _qa_safe_int(native.get("spellSaveDc", native.get("spell_save_dc", stats.get("saveDc", stats.get("spellSaveDc", 0)))), 0, 0, 40)
+    atk_raw = native.get("spellAttack", native.get("spell_attack", stats.get("attackBonus", stats.get("spellAttack", 0))))
+    atk = _qa_safe_int(str(atk_raw).replace("+", ""), 0, -20, 40)
+    return {"spell_save_dc": dc, "spell_attack_bonus": atk}
+
+
+def _qa_spell_action(raw, idx: int, native: dict, diagnostics: list[dict]) -> dict | None:
+    from server.item_compendium import get_spell_metadata
+    if isinstance(raw, dict):
+        sid = str(raw.get("spellId") or raw.get("spell_id") or raw.get("id") or raw.get("name") or f"spell_{idx}").strip()
+        fallback_name = str(raw.get("name") or sid).strip()
+        explicit_level = raw.get("level", raw.get("spell_level", raw.get("baseLevel")))
+    else:
+        sid = str(raw or f"spell_{idx}").strip()
+        fallback_name = sid.replace("-", " ").title()
+        explicit_level = None
+    if not sid:
+        return None
+    meta = get_spell_metadata(_qa_slug(sid)) or get_spell_metadata(sid) or {}
+    if not meta and explicit_level is None:
+        diagnostics.append({"code": "spell_data_missing", "message": f"Spell data is missing for {fallback_name}."})
+    level_i = _qa_safe_int(explicit_level if explicit_level is not None else meta.get("level"), 0, 0, 9)
+    spell_id = str(meta.get("id") or _qa_slug(sid))
+    name = str(meta.get("displayName") or fallback_name or spell_id)
+    stats = _qa_spellcasting_stats(native)
+    slots = ((native.get("spellState") or {}).get("slots") if isinstance(native.get("spellState"), dict) else {}) or native.get("spellSlots") or {}
+    available_levels = []
+    if level_i > 0:
+        for lvl in range(level_i, 10):
+            row = slots.get(str(lvl), slots.get(lvl, None)) if isinstance(slots, dict) else None
+            if isinstance(row, dict):
+                max_v = _qa_safe_int(row.get("max", row.get("total", 0)), 0, 0, 99)
+                used_v = _qa_safe_int(row.get("used", 0), 0, 0, 99)
+                if max_v - used_v > 0:
+                    available_levels.append(lvl)
+            elif isinstance(row, int) and row > 0:
+                available_levels.append(lvl)
+    attack_type = str(meta.get("attackType") or "")
+    save = str(meta.get("savingThrow") or "")
+    action_kind = "cantrip_spell" if level_i == 0 else "levelled_spell"
+    if level_i > 0 and available_levels and max(available_levels) > level_i:
+        action_kind = "upcast_spell"
+    if save:
+        action_kind = "save_dc_spell" if level_i == 0 else action_kind
+    return {
+        "id": f"spell:{spell_id}", "kind": action_kind, "spell_id": spell_id, "name": name,
+        "level": level_i, "base_level": level_i, "requires_slot": level_i > 0,
+        "requires_cast_level_prompt": level_i > 0, "available_cast_levels": available_levels,
+        "default_cast_level": level_i, "can_upcast": bool(available_levels and max(available_levels) > level_i),
+        "attack_type": attack_type, "spell_attack_bonus": stats["spell_attack_bonus"],
+        "saving_throw": save, "save_dc": stats["spell_save_dc"] if save else 0,
+        "damage_formula": str(meta.get("damageFormula") or ""), "damage_type": str(meta.get("damageType") or ""),
+        "disabled": False, "disabled_reason": "",
+    }
+
+
+def build_quick_actions_sync_payload(session, user_id: str) -> dict:
+    """Server-authoritative Quick Actions hydration contract for the active player."""
     user = (getattr(session, "users", {}) or {}).get(user_id)
     active_profile_id = str((getattr(session, "active_char_profiles", {}) or {}).get(user_id) or "")
+    active_profile = _find_active_profile_for_user(session, user_id) if active_profile_id else None
     inventory = get_player_inventory_for_user(session, user_id) if user else []
     diagnostics = []
     if not active_profile_id:
         diagnostics.append({"code": "no_active_character", "message": "No active character is selected."})
+    elif not active_profile:
+        diagnostics.append({"code": "missing_active_profile", "message": f"Active character profile {active_profile_id} could not be restored."})
     if user and inventory == []:
         diagnostics.append({"code": "inventory_not_loaded", "message": "Inventory is empty or not loaded yet."})
 
@@ -1895,13 +1963,14 @@ def build_quick_actions_sync_payload(session, user_id: str) -> dict:
             continue
         kind = str(item.get("equipment_kind") or item.get("item_type") or item.get("category") or "").lower()
         name = str(item.get("name") or "").strip()
-        if kind == "weapon" or any(h in name.lower() for h in ("dagger", "staff", "sword", "bow", "axe", "mace", "spear")):
+        if kind == "weapon" or any(h in name.lower() for h in ("dagger", "staff", "sword", "bow", "axe", "mace", "spear", "quarterstaff")):
             equipped_weapons.append(item)
-            item_id = str(item.get("id") or f"weapon_{idx}")
+            item_id = str(item.get("id") or item.get("magic_item_id") or f"weapon_{idx}")
             dmg = str(item.get("damage_dice") or item.get("damage_formula") or item.get("damage") or "").strip()
             dtype = str(item.get("damage_type") or "").strip()
-            weapon_actions.append({"id": f"weapon:{item_id}:attack", "kind": "weapon_attack", "item_id": item_id, "name": name or "Weapon", "disabled": False, "disabled_reason": "", "damage_formula": dmg, "damage_type": dtype})
-            weapon_actions.append({"id": f"weapon:{item_id}:damage", "kind": "weapon_damage", "item_id": item_id, "name": (name or "Weapon") + " Damage", "disabled": not bool(dmg), "disabled_reason": "spell data missing" if not dmg else "", "damage_formula": dmg, "damage_type": dtype})
+            bonus = _qa_safe_int(item.get("attack_bonus", item.get("weapon_attack_bonus", 0)), 0, -20, 40)
+            weapon_actions.append({"id": f"weapon:{item_id}:attack", "kind": "weapon_attack", "item_id": item_id, "name": name or "Weapon", "disabled": False, "disabled_reason": "", "attack_bonus": bonus, "damage_formula": dmg, "damage_type": dtype})
+            weapon_actions.append({"id": f"weapon:{item_id}:damage", "kind": "weapon_damage", "item_id": item_id, "name": (name or "Weapon") + " Damage", "disabled": not bool(dmg), "disabled_reason": "weapon damage not found" if not dmg else "", "damage_formula": dmg, "damage_type": dtype})
     if active_profile_id and not equipped_weapons:
         diagnostics.append({"code": "no_equipped_weapon", "message": "No equipped weapon is available for Quick Actions."})
 
@@ -1913,7 +1982,6 @@ def build_quick_actions_sync_payload(session, user_id: str) -> dict:
     except Exception:
         diagnostics.append({"code": "spell_data_missing", "message": "Item action/spell data could not be built."})
 
-    # Diagnostics for magic item requirements that prevent granted spells/cards.
     for item in inventory:
         if not isinstance(item, dict):
             continue
@@ -1930,26 +1998,23 @@ def build_quick_actions_sync_payload(session, user_id: str) -> dict:
         except Exception:
             pass
 
-    active_profile = _find_active_profile_for_user(session, user_id) if active_profile_id else None
     native = active_profile.get("nativeCharacter") if isinstance(active_profile, dict) and isinstance(active_profile.get("nativeCharacter"), dict) else {}
     spell_state = native.get("spellState") if isinstance(native.get("spellState"), dict) else {}
     known = spell_state.get("known") if isinstance(spell_state.get("known"), list) else []
     prepared = spell_state.get("prepared") if isinstance(spell_state.get("prepared"), list) else []
     spell_actions = []
+    seen_spells = set()
     for idx, raw in enumerate((prepared or known)[:80]):
-        if isinstance(raw, dict):
-            sid = str(raw.get("id") or raw.get("spell_id") or raw.get("name") or f"spell_{idx}")
-            name = str(raw.get("name") or sid)
-            level = raw.get("level", raw.get("spell_level", 0))
-        else:
-            sid = str(raw or f"spell_{idx}")
-            name = sid.replace("-", " ").title()
-            level = 0
-        try: level_i = max(0, min(9, int(level or 0)))
-        except Exception: level_i = 0
-        spell_actions.append({"id": f"spell:{sid}", "spell_id": sid, "name": name, "level": level_i, "requires_slot": level_i > 0, "disabled": False, "disabled_reason": ""})
+        action = _qa_spell_action(raw, idx, native, diagnostics)
+        if action and action["spell_id"] not in seen_spells:
+            seen_spells.add(action["spell_id"])
+            spell_actions.append(action)
+    for card in item_spell_cards:
+        if isinstance(card, dict):
+            card.setdefault("kind", "item_granted_spell")
+            card.setdefault("requires_cast_level_prompt", False)
 
-    hydration = "ok" if active_profile_id else "missing_profile"
+    hydration = "ok" if active_profile_id and active_profile else ("missing_runtime" if active_profile_id else "missing_profile")
     return {
         "active_profile_id": active_profile_id,
         "character_runtime_revision": int(getattr(session, "character_runtime_revision", 0) or 0),
