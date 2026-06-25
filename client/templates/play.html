@@ -1549,8 +1549,35 @@
       <span id="dm-context-title">Live Table</span>
       <span class="dm-context-map-note">Map remains primary</span>
     </div>
-    <div class="dm-map-first-context-body">
-      <p>Use the existing tabs and legacy controls below. This shell only changes DM navigation and context framing.</p>
+    <div class="dm-map-first-context-body" data-dm-context-body="true">
+      <section class="dm-context-mode-section" data-dm-mode="run" data-dm-context-section="live-table" aria-label="Live Table DM tools">
+        <p>Live Table groups the already-loaded session controls for the active table without changing their handlers.</p>
+        <div class="dm-context-marker-grid" aria-label="Live Table tool markers">
+          <a class="dm-context-marker" href="#selected-quick-panel" data-dm-tool="selected-token-summary">Selected token summary</a>
+          <a class="dm-context-marker" href="#players-panel" data-dm-tool="party-overview">Party overview</a>
+          <a class="dm-context-marker" href="#right-panel-context" data-dm-tool="current-scene-notes">Current scene notes</a>
+          <a class="dm-context-marker" href="#rtab-handouts" data-dm-tool="handout-shortcuts">Handout shortcuts</a>
+          <a class="dm-context-marker" href="#rail-journal-btn" data-dm-tool="journal-shortcuts">Journal shortcuts</a>
+          <a class="dm-context-marker" href="#rail-sound-btn" data-dm-tool="narration-shortcuts">Narration shortcuts</a>
+          <a class="dm-context-marker" href="#viewer-power-controls" data-dm-tool="viewer-power-shortcuts">Viewer power shortcuts</a>
+          <a class="dm-context-marker" href="#save-btn" data-dm-tool="compact-save-state">Compact save / autosave state</a>
+        </div>
+      </section>
+      <section class="dm-context-mode-section" data-dm-mode="combat" data-dm-context-section="combat" aria-label="Combat DM tools">
+        <p>Combat groups the existing encounter controls in place; formulas, dice, token authority, and WebSocket logic stay untouched.</p>
+        <div class="dm-context-marker-grid" aria-label="Combat tool markers">
+          <a class="dm-context-marker" href="#combat-list" data-dm-tool="initiative-order">Initiative order</a>
+          <a class="dm-context-marker" href="#combat-turn-summary" data-dm-tool="current-turn">Current turn</a>
+          <a class="dm-context-marker" href="#combat-list" data-dm-tool="hp-summary">HP summary</a>
+          <a class="dm-context-marker" href="#ctx-cond-btn" data-dm-tool="conditions">Conditions</a>
+          <a class="dm-context-marker" href="#player-actions-hub" data-dm-tool="action-usage">Action usage</a>
+          <a class="dm-context-marker" href="#combat-move-row" data-dm-tool="movement-usage">Movement usage</a>
+          <a class="dm-context-marker" href="#combat-weapon-tray" data-dm-tool="attack-roll-helpers">Attack roll helpers</a>
+          <a class="dm-context-marker" href="#hazard-panel" data-dm-tool="damage-roll-helpers">Damage roll helpers</a>
+          <a class="dm-context-marker" href="#haz-save" data-dm-tool="save-dc-helpers">Save / DC helpers</a>
+          <a class="dm-context-marker" href="#combat-next-btn" data-dm-tool="end-turn-controls">End turn controls</a>
+        </div>
+      </section>
       <div data-dm-debug-panel hidden>Debug diagnostics are closed by default.</div>
     </div>
   </section>
