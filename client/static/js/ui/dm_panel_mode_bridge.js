@@ -75,12 +75,109 @@
     }),
   ]);
 
-  function appendTextElement(doc, parent, tagName, className, text) {
-    const el = doc.createElement(tagName);
-    if (className) el.className = className;
-    el.textContent = text;
-    parent.appendChild(el);
-    return el;
+
+  function runAction(action) {
+    if (!action) return;
+    try {
+      // Existing play.html handlers own these actions; this adapter only calls them.
+      Function(action)();
+    } catch (err) {
+      console.warn('[dm-panel-mode] action failed', action, err);
+    }
+  }
+
+  function appendCompactButton(doc, parent, options) {
+    const button = doc.createElement('button');
+    button.type = 'button';
+    button.className = options.className || 'dm-compact-action';
+    if (options.tool) button.dataset.dmTool = options.tool;
+    if (options.tab) button.dataset.dmCompactTab = options.tab;
+    button.textContent = options.label;
+    if (options.title) button.title = options.title;
+    if (options.action) button.addEventListener('click', () => runAction(options.action));
+    parent.appendChild(button);
+    return button;
+  }
+
+  function appendCompactShortcutPanel(doc, section, definition) {
+    const grid = doc.createElement('div');
+    grid.className = 'dm-compact-shortcuts';
+    grid.setAttribute('aria-label', `${definition.label} shortcuts`);
+    Array.from(definition.tools || []).slice(0, 4).forEach((tool) => {
+      appendCompactButton(doc, grid, {
+        className: 'dm-compact-action',
+        tool: tool.id,
+        label: tool.label,
+        title: tool.label,
+        action: tool.action,
+      });
+    });
+    section.appendChild(grid);
+  }
+
+  function appendNpcMonsterPanel(doc, section) {
+    const panel = doc.createElement('div');
+    panel.className = 'dm-npc-compact-panel';
+    panel.dataset.dmCompactNpcPanel = 'true';
+
+    const tabs = doc.createElement('div');
+    tabs.className = 'dm-npc-compact-tabs';
+    tabs.setAttribute('aria-label', 'NPC / Monster tools');
+    [
+      ['bestiary', 'Bestiary', "switchRTab('bestiary')"],
+      ['spawn', 'Spawn', "switchRTab('bestiary')"],
+      ['token', 'Token', "toggleFlyout('flyout-token')"],
+      ['combat', 'Combat', "switchRTab('combat')"],
+    ].forEach(([tab, label, action], index) => {
+      const btn = appendCompactButton(doc, tabs, { className: 'dm-npc-compact-tab', tab, label, action });
+      btn.setAttribute('aria-pressed', index === 0 ? 'true' : 'false');
+    });
+    panel.appendChild(tabs);
+
+    const searchRow = doc.createElement('div');
+    searchRow.className = 'dm-npc-search-row';
+    const search = doc.createElement('input');
+    search.id = 'dm-compact-bestiary-search';
+    search.type = 'search';
+    search.placeholder = 'Search bestiary…';
+    search.setAttribute('aria-label', 'Search bestiary');
+    search.dataset.dmTool = 'bestiary-search';
+    search.addEventListener('input', () => {
+      const existing = doc.getElementById('bestiary-search');
+      if (!existing) return;
+      existing.value = search.value;
+      existing.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    searchRow.appendChild(search);
+    appendCompactButton(doc, searchRow, {
+      className: 'dm-filter-chip',
+      label: 'Filters',
+      title: 'Open full bestiary filters',
+      action: "switchRTab('bestiary')",
+    });
+    panel.appendChild(searchRow);
+
+    const list = doc.createElement('div');
+    list.className = 'dm-npc-card-list';
+    list.setAttribute('aria-label', 'Compact creature results');
+    ['Use the Bestiary tab results', 'Select a creature for preview', 'Spawn onto the map'].forEach((text) => {
+      const card = doc.createElement('button');
+      card.type = 'button';
+      card.className = 'dm-npc-card';
+      card.textContent = text;
+      card.addEventListener('click', () => runAction("switchRTab('bestiary')"));
+      list.appendChild(card);
+    });
+    panel.appendChild(list);
+
+    const actions = doc.createElement('div');
+    actions.className = 'dm-npc-primary-actions';
+    appendCompactButton(doc, actions, { className: 'dm-primary-action', tool: 'spawn-token', label: 'Spawn', action: "if (typeof beginBestiarySpawn === 'function') beginBestiarySpawn(); else switchRTab('bestiary')" });
+    appendCompactButton(doc, actions, { tool: 'creature-quick-actions', label: 'Add to Encounter', action: "switchRTab('combat')" });
+    appendCompactButton(doc, actions, { tool: 'creature-hp-ac-speed', label: 'Edit', action: "toggleFlyout('flyout-token')" });
+    appendCompactButton(doc, actions, { tool: 'visibility-state', label: 'Hide / Reveal', action: "toggleFlyout('flyout-token')" });
+    section.appendChild(panel);
+    section.appendChild(actions);
   }
 
   function appendDebugDiagnostics(doc, section, diagnostics) {
@@ -112,29 +209,24 @@
       section.className = 'dm-context-mode-panel';
       section.dataset.dmMode = definition.mode;
       section.setAttribute('aria-label', definition.label);
-      appendTextElement(doc, section, 'p', '', definition.description);
+      if (definition.description) {
+        section.setAttribute('title', definition.description);
+        section.dataset.dmModeHelp = definition.description;
+      }
       if (definition.debugPanel) {
         appendDebugDiagnostics(doc, section, definition.diagnostics);
       }
-      if (definition.tools.length) {
-        const grid = doc.createElement('div');
-        grid.className = 'dm-context-tool-grid';
-        grid.setAttribute('aria-label', `${definition.label} shortcuts`);
-        definition.tools.forEach((tool) => {
-          const button = doc.createElement('button');
-          button.type = 'button';
-          button.className = 'mini-btn';
-          button.dataset.dmTool = tool.id;
-          button.setAttribute('onclick', tool.action);
-          button.textContent = tool.label;
-          grid.appendChild(button);
-        });
-        section.appendChild(grid);
+      if (definition.mode === 'npc-monster') {
+        appendNpcMonsterPanel(doc, section);
+      } else if (definition.tools.length && !definition.debugPanel) {
+        appendCompactShortcutPanel(doc, section, definition);
       }
       if (definition.markers && definition.markers.length) {
         const marker = doc.createElement('div');
         marker.className = definition.mode === 'run' ? 'dm-context-keepout' : 'dm-context-markers';
         marker.dataset[definition.markerName] = definition.markers.join(' ');
+        marker.hidden = true;
+        marker.setAttribute('aria-hidden', 'true');
         marker.textContent = definition.markerText || '';
         section.appendChild(marker);
       }
