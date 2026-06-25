@@ -20216,10 +20216,10 @@ function placeCharacter() {
   const name    = rawName || NAME || 'Adventurer';
   const center  = screenToWorld(canvas.width / 2, canvas.height / 2);
 
-  if (!ws || ws.readyState !== WebSocket.OPEN) {
-    showToast('Not connected — please wait and try again.');
-    return;
-  }
+  // WebSocket ownership lives in AppWS/runtime_bridge; the legacy lexical `ws`
+  // binding can be stale because AppWS stores the active socket on window.ws.
+  // Do not block placement here: sendWS will queue during a reconnect, and the
+  // server will authoritatively accept/reject once the socket is open.
 
   // Read token stats from form
   const maxHpParsed = parseInt(document.getElementById('char-hp')?.value, 10);
@@ -20340,6 +20340,52 @@ function placeCharacter() {
   const mapCtx = ROLE === 'dm'
     ? (_currentPoi ? (_currentPoi.id || '__local__') : 'world')
     : _dmMapContext;
+  const stagedOwnedTok = Object.values(_stagingTokens || {}).find(t => _tokenOwnedByMe(t) && Boolean(t?.staged));
+  if (stagedOwnedTok) {
+    stagedOwnedTok.name = tokenName;
+    stagedOwnedTok.hp = curHpVal ?? hpVal ?? stagedOwnedTok.hp;
+    stagedOwnedTok.maxHp = hpVal ?? stagedOwnedTok.maxHp;
+    stagedOwnedTok.tempHp = tempHpVal;
+    stagedOwnedTok.initiativeMod = initVal;
+    stagedOwnedTok.ac = acVal;
+    stagedOwnedTok.speed = speedVal;
+    stagedOwnedTok.hasDarkvision = speciesHasDarkvision;
+    stagedOwnedTok.darkvisionRadius = speciesDarkvisionRadius;
+    stagedOwnedTok.level = levelVal;
+    stagedOwnedTok.faction = factionVal;
+    stagedOwnedTok.passivePerception = passiveVal;
+    stagedOwnedTok.notes = notesVal;
+    const stagedPlaced = { ...stagedOwnedTok, x: center.x - (stagedOwnedTok.width || getEditorGridSizePx()) / 2, y: center.y - (stagedOwnedTok.height || getEditorGridSizePx()) / 2 };
+    const snappedStaged = snapTokenToGrid(stagedPlaced.x, stagedPlaced.y, stagedPlaced);
+    sendWS({ type: 'token_edit', payload: {
+      token_id: stagedOwnedTok.id,
+      profile_id: resolveActiveCharProfileId(),
+      libraryId: resolveActiveCharProfileId(),
+      name: tokenName,
+      hp: curHpVal ?? hpVal ?? stagedOwnedTok.hp,
+      maxHp: hpVal ?? stagedOwnedTok.maxHp,
+      tempHp: tempHpVal,
+      initiativeMod: initVal,
+      ac: acVal,
+      speed: speedVal,
+      hasDarkvision: speciesHasDarkvision,
+      darkvisionRadius: speciesDarkvisionRadius,
+      level: levelVal,
+      faction: factionVal,
+      passivePerception: passiveVal,
+      notes: notesVal,
+    } });
+    sendWS({ type: 'token_placed', payload: {
+      token_id: stagedOwnedTok.id,
+      x: snappedStaged.x,
+      y: snappedStaged.y,
+      map_context: mapCtx,
+    } });
+    requestCharacterBookOverviewRender('placeCharacterFromStaging');
+    showToast(`${tokenName} returned to the board!`);
+    showParchmentToast(`⚔ ${tokenName} returned to the board!`, 'info', 3000);
+    return;
+  }
 
   const clientNonce = 'tok_' + Math.random().toString(36).slice(2, 10);
   const tokenImageCandidate = String(_charSheet?.tokenImageUrl || _pendingLoadedCharacterTokenSeed?.tokenImageUrl || _charSheet?.avatarUrl || '').trim();

@@ -424,6 +424,58 @@ async def _deny_player_single_token_limit(session: Session, user: User, *, token
     })
 
 
+async def _move_player_owned_token_from_other_map(payload: dict, session: Session, user: User, active_tokens: list) -> bool:
+    """Let a player bring their one existing token onto the DM's current map."""
+    if user.role != "player" or len(active_tokens) != 1:
+        return False
+    token = active_tokens[0]
+    requested_ctx = normalize_map_context(payload.get("map_context", getattr(token, "map_context", "world")))
+    current_ctx = normalize_map_context(getattr(token, "map_context", "world"))
+    if requested_ctx == current_ctx:
+        return False
+
+    token.x = payload.get("x", token.x)
+    token.y = payload.get("y", token.y)
+    token.map_context = requested_ctx
+    token.staged = False
+    if payload.get("name"):
+        token.name = str(payload.get("name"))[:80]
+    if payload.get("hp") is not None:
+        token.hp = _safe_int(payload.get("hp"), getattr(token, "hp", 1), minimum=0)
+    if payload.get("maxHp") is not None:
+        token.max_hp = _safe_int(payload.get("maxHp"), getattr(token, "max_hp", 1), minimum=1)
+    if payload.get("tempHp") is not None:
+        token.temp_hp = _safe_int(payload.get("tempHp"), getattr(token, "temp_hp", 0), minimum=0)
+    if payload.get("initiativeMod") is not None:
+        token.initiative_mod = _safe_int(payload.get("initiativeMod"), getattr(token, "initiative_mod", 0))
+    if payload.get("ac") is not None:
+        token.ac = _safe_int(payload.get("ac"), getattr(token, "ac", 10), minimum=1)
+    if payload.get("speed") is not None:
+        token.speed = _safe_int(payload.get("speed"), getattr(token, "speed", 30), minimum=0)
+    if payload.get("profile_id") is not None:
+        token.profile_id = str(payload.get("profile_id") or "")[:120]
+    if payload.get("libraryId", payload.get("library_id")) is not None:
+        token.library_id = str(payload.get("libraryId", payload.get("library_id")) or "")[:120]
+    if payload.get("image_url"):
+        token.image_url = str(payload.get("image_url") or "")[:300]
+    token_rev = _stamp_token_revision(session, token)
+    placed_payload = {
+        "token": build_token_runtime_payload(session, token),
+        "token_id": token.id,
+        "x": token.x,
+        "y": token.y,
+        "map_context": requested_ctx,
+        "client_nonce": payload.get("client_nonce"),
+        "token_state_revision": token_rev,
+        "visibility_revision": int(getattr(session, "visibility_revision", 0) or 0),
+    }
+    await _broadcast_token_event(manager, session, "token_placed", placed_payload, token)
+    await _broadcast_token_state_sync(session)
+    await run_combat_fog_sync(session, reason="token_recalled", map_context=requested_ctx)
+    await save_campaign_async(session)
+    return True
+
+
 async def handle_token_move(payload: dict, session: Session, user: User):
     token_id = payload.get("token_id")
     client_action_id = payload.get("client_action_id")
@@ -548,7 +600,10 @@ async def handle_token_create(payload: dict, session: Session, user: User):
                 "payload": {"message": "Players can only create tokens they own."}
             })
             return
-        if _player_active_owned_tokens(session, user.id):
+        active_owned_tokens = _player_active_owned_tokens(session, user.id)
+        if active_owned_tokens:
+            if await _move_player_owned_token_from_other_map(payload, session, user, active_owned_tokens):
+                return
             await _deny_player_single_token_limit(session, user, token_name="token")
             return
     elif user.role == "viewer":
