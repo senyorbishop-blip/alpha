@@ -248,6 +248,9 @@
       safeRoot.body.dataset.dmActiveMode = activeMode;
       safeRoot.body.dataset.debugOpen = activeMode === 'debug' ? 'true' : 'false';
     }
+    if (typeof window.renderStreamReadinessPanel === 'function') {
+      window.renderStreamReadinessPanel();
+    }
     return activeConfig;
   }
 

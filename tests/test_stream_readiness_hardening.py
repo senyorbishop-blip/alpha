@@ -8,7 +8,8 @@ CHECKLIST = Path('docs/before-stream-checklist.md').read_text(encoding='utf-8')
 
 def test_dm_only_stream_readiness_panel_contract():
     assert 'id="stream-readiness-panel"' in PLAY_HTML
-    assert "if (role !== 'dm') { panel.style.display = 'none'; return; }" in PLAY_HTML
+    assert "if (role !== 'dm') { panel.style.display = 'none'; panel.hidden = true; return; }" in PLAY_HTML
+    assert "if (!debugOpen) { panel.style.display = 'none'; panel.hidden = true; return; }" in PLAY_HTML
     assert 'connectedPlayers' in PLAY_HTML
     assert 'connectedViewers' in PLAY_HTML
     assert 'Payload warnings' in PLAY_HTML
