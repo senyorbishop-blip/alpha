@@ -1,0 +1,134 @@
+/*
+ * Casual D&D / Alpha — map-first UI design tokens.
+ * Foundation only: these tokens support the new visual direction without
+ * changing gameplay behaviour or current screen structure.
+ */
+:root {
+  /* Core palette: dark fantasy with cyan magic and antique gold accents. */
+  --mf-bg-void: #05070a;
+  --mf-bg-deep: #090f11;
+  --mf-bg-map-edge: #050807;
+  --mf-surface: #101719;
+  --mf-surface-raised: #151f22;
+  --mf-surface-glass: rgba(13, 20, 23, 0.88);
+  --mf-surface-ink: rgba(5, 8, 10, 0.92);
+  --mf-border-soft: rgba(212, 166, 55, 0.16);
+  --mf-border-cyan: rgba(0, 229, 204, 0.26);
+  --mf-text: #e8dcc8;
+  --mf-text-muted: rgba(232, 220, 200, 0.64);
+  --mf-parchment: #d7c18c;
+  --mf-parchment-dark: #8a6b34;
+  --mf-cyan: #00e5cc;
+  --mf-cyan-soft: rgba(0, 229, 204, 0.16);
+  --mf-gold: #d4a637;
+  --mf-gold-soft: rgba(212, 166, 55, 0.18);
+  --mf-purple: #9b59d0;
+  --mf-red: #b33a2f;
+  --mf-green: #2ecc71;
+  --mf-blue: #47b7ff;
+  --mf-warning: #e0a83b;
+
+  /* Role accents. */
+  --mf-role-dm: var(--mf-gold);
+  --mf-role-player: var(--mf-cyan);
+  --mf-role-viewer: var(--mf-purple);
+
+  /* Spacing. */
+  --mf-space-1: 0.25rem;
+  --mf-space-2: 0.5rem;
+  --mf-space-3: 0.75rem;
+  --mf-space-4: 1rem;
+  --mf-space-5: 1.25rem;
+  --mf-space-6: 1.5rem;
+  --mf-space-8: 2rem;
+
+  /* Typography. */
+  --mf-font-display: 'Cinzel', serif;
+  --mf-font-body: 'Crimson Pro', Georgia, serif;
+  --mf-font-mono: 'Share Tech Mono', monospace;
+  --mf-text-xs: 0.62rem;
+  --mf-text-sm: 0.72rem;
+  --mf-text-base: 0.85rem;
+  --mf-text-md: 1rem;
+  --mf-text-lg: 1.18rem;
+  --mf-line-tight: 1.25;
+  --mf-line-base: 1.5;
+
+  /* Radius and depth. */
+  --mf-radius-sm: 6px;
+  --mf-radius-md: 10px;
+  --mf-radius-lg: 14px;
+  --mf-radius-xl: 18px;
+  --mf-radius-pill: 999px;
+  --mf-shadow-card: 0 10px 24px rgba(0, 0, 0, 0.32);
+  --mf-shadow-panel: 0 18px 42px rgba(0, 0, 0, 0.42);
+  --mf-glow-cyan: 0 0 18px rgba(0, 229, 204, 0.16);
+  --mf-glow-gold: 0 0 18px rgba(212, 166, 55, 0.15);
+
+  /* Map-first layout sizing. */
+  --mf-topbar-height: 3rem;
+  --mf-left-rail-width: 4.75rem;
+  --mf-right-context-width: clamp(18rem, 23vw, 25rem);
+  --mf-right-context-collapsed-width: 3rem;
+  --mf-bottom-strip-height: 4rem;
+  --mf-player-hud-width: 18rem;
+  --mf-viewer-panel-width: 18rem;
+  --mf-drawer-width: min(28rem, calc(100vw - 4rem));
+  --mf-drawer-wide: min(42rem, calc(100vw - 4rem));
+  --mf-modal-width: min(48rem, calc(100vw - 3rem));
+
+  /* Layering. */
+  --mf-z-map: 1;
+  --mf-z-map-tools: 20;
+  --mf-z-hud: 50;
+  --mf-z-rail: 70;
+  --mf-z-context: 80;
+  --mf-z-drawer: 250;
+  --mf-z-modal: 500;
+  --mf-z-toast: 800;
+  --mf-z-debug: 900;
+
+  /* Status states. */
+  --mf-state-loading: rgba(71, 183, 255, 0.14);
+  --mf-state-error: rgba(179, 58, 47, 0.16);
+  --mf-state-success: rgba(46, 204, 113, 0.14);
+  --mf-state-warning: rgba(224, 168, 59, 0.16);
+  --mf-state-disabled: rgba(255, 255, 255, 0.08);
+}
+
+.map-first-card {
+  border: 1px solid var(--mf-border-cyan);
+  border-radius: var(--mf-radius-lg);
+  background: linear-gradient(180deg, var(--mf-surface-glass), var(--mf-surface-ink));
+  box-shadow: var(--mf-shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  color: var(--mf-text);
+}
+
+.map-first-parchment-card {
+  border: 1px solid rgba(212, 166, 55, 0.28);
+  border-radius: var(--mf-radius-md);
+  background: linear-gradient(180deg, #dfcfaa, #b99b61);
+  color: #201607;
+  box-shadow: var(--mf-shadow-card);
+}
+
+.map-first-compact-player-hud {
+  max-width: var(--mf-player-hud-width);
+}
+
+.map-first-viewer-panel {
+  max-width: var(--mf-viewer-panel-width);
+}
+
+.map-first-right-context-panel {
+  width: var(--mf-right-context-width);
+  max-width: var(--mf-right-context-width);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-first-card,
+  .map-first-parchment-card {
+    transition: none !important;
+    animation: none !important;
+  }
+}
