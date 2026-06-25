@@ -111,3 +111,11 @@ def test_polished_responsive_css_exists():
     assert '@media (max-width: 900px)' in css
     assert '@media (max-width: 680px)' in css
     assert '@media (prefers-reduced-motion: reduce)' in css
+
+
+def test_polished_overlay_passthrough_is_limited_to_passive_overlays():
+    css = read(Path('client/static/css/dm-map-first-shell.css'))
+    assert 'body.dm-map-first-active #display-overlay-shell' in css
+    assert 'body.dm-map-first-active #scene-description-overlay' in css
+    assert 'body.dm-map-first-active #display-overlay-exit' in css
+    assert 'body.dm-map-first-active #roll-visual-portal {' not in css

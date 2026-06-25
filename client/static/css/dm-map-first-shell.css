@@ -403,14 +403,11 @@ body.dm-map-first-active:not([data-debug-open="true"]) [data-dm-debug-panel] {
 }
 
 body.dm-map-first-active #display-overlay-shell,
-body.dm-map-first-active #scene-description-overlay,
-body.dm-map-first-active #roll-visual-portal {
+body.dm-map-first-active #scene-description-overlay {
   pointer-events: none;
 }
 
-body.dm-map-first-active #display-overlay-exit,
-body.dm-map-first-active #roll-visual-portal button,
-body.dm-map-first-active #roll-visual-portal [role="button"] {
+body.dm-map-first-active #display-overlay-exit {
   pointer-events: auto;
 }
 
