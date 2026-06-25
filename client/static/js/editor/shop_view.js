@@ -22,6 +22,7 @@
   // Sell tab state
   let _sellOffers = [];         // array of offer objects from server
   let _sellLoading = false;     // waiting for sell_offers response
+  let _greetingSpokenText = '';
   let _sellMeta = {             // shop sell config echoed from server
     selling_enabled: true,
     buy_rate_pct: 50,
@@ -358,6 +359,7 @@
     const shopName = String(_shopData.name || 'Shop');
     const shopkeeper = String(_shopData.shopkeeper_name || 'Shopkeeper');
     const typeLabel = SHOP_TYPE_LABELS[_shopData.shop_type] || 'General Store';
+    const dialogueCtx = _dialogueCtx();
 
     const modal = document.createElement('div');
     modal.id = MODAL_ID;
@@ -398,6 +400,30 @@
     modal.querySelector('.sv-close').addEventListener('click', close);
     modal.querySelector('.sv-done').addEventListener('click', close);
     modal.querySelectorAll('.sv-tab').forEach(btn => btn.addEventListener('click', () => _setActiveTab(btn.dataset.tab || 'buy')));
+    if (window.ShopkeeperDialogue && typeof window.ShopkeeperDialogue.say === 'function') {
+      _greetingSpokenText = window.ShopkeeperDialogue.say('greeting', dialogueCtx);
+      if (window.ShopkeeperDialogue.speakGreeting) window.ShopkeeperDialogue.speakGreeting(_greetingSpokenText, dialogueCtx);
+      if (window.ShopkeeperDialogue.enrichGreeting) {
+        window.ShopkeeperDialogue.enrichGreeting(dialogueCtx).then(text => {
+          if (text && window.ShopkeeperDialogue.speakGreeting) window.ShopkeeperDialogue.speakGreeting(text, dialogueCtx);
+        });
+      }
+    }
+  }
+
+  function _dialogueCtx() {
+    const s = _shopData || {};
+    return {
+      shop_id: s.id,
+      shopkeeper_name: s.shopkeeper_name || 'Shopkeeper',
+      personality: s.personality || 'friendly',
+      shop_type: s.shop_type || 'general',
+      description: s.description || '',
+      dialogue_enabled: s.dialogue_enabled !== false,
+      voice: s.voice || 'grand_narrator',
+      tts_enabled: s.tts_enabled === true,
+      greeting_override: s.greeting_override || '',
+    };
   }
 
   function updateInventory(items) {
@@ -452,6 +478,7 @@
         haggle: result.price_quote.haggle || {},
       };
     }
+    if (window.ShopkeeperDialogue) window.ShopkeeperDialogue.say(result.success ? 'haggle_win' : 'haggle_fail', _dialogueCtx());
     _renderActiveTab();
   }
 
@@ -462,6 +489,8 @@
       noteEl.textContent = result.message || '';
       noteEl.className = 'sv-footer-note ' + (result.success ? 'sv-note-ok' : 'sv-note-err');
     }
+    if (result.success && window.ShopkeeperDialogue) window.ShopkeeperDialogue.say('purchase', _dialogueCtx());
+    if (!result.success && window.ShopkeeperDialogue) window.ShopkeeperDialogue.say('cannot_afford', _dialogueCtx());
     if (result.price_state && typeof result.price_state === 'object') _priceState = { ...result.price_state };
     if (result.player_gold_units != null) updateGold(result.player_gold_units);
   }
@@ -553,6 +582,7 @@
       noteEl.textContent = result.message || '';
       noteEl.className = 'sv-footer-note ' + (result.success ? 'sv-note-ok' : 'sv-note-err');
     }
+    if (window.ShopkeeperDialogue) window.ShopkeeperDialogue.say(result.success ? 'sell_accepted' : 'sell_rejected', _dialogueCtx());
     if (result.player_gold_units != null) updateGold(result.player_gold_units);
     if (result.success && _shopData && typeof sendWS === 'function') {
       // Refresh sell offers after a successful sale
@@ -591,10 +621,12 @@
         };
       }
     }
+    if (window.ShopkeeperDialogue) window.ShopkeeperDialogue.say(result.success ? 'haggle_win' : 'haggle_fail', _dialogueCtx());
     if (_activeTab === 'sell') _renderActiveTab();
   }
 
   function close() {
+    if (_modalEl && _shopData && window.ShopkeeperDialogue) window.ShopkeeperDialogue.say('farewell', _dialogueCtx());
     if (_modalEl) _modalEl.remove();
     _modalEl = null;
     _shopData = null;

@@ -22,6 +22,21 @@
 
   const PANEL_ID = 'dnd-shop-panel';
 
+  const SHOPKEEPER_PERSONALITIES = [
+    { value: 'friendly', label: 'Friendly' },
+    { value: 'gruff', label: 'Gruff' },
+    { value: 'greedy', label: 'Greedy' },
+    { value: 'shifty', label: 'Shifty' },
+    { value: 'scholarly', label: 'Scholarly' },
+  ];
+
+  const SHOPKEEPER_VOICES = [
+    { value: 'grand_narrator', label: 'Grand Narrator' },
+    { value: 'warm_storyteller', label: 'Warm Storyteller' },
+    { value: 'gruff_merchant', label: 'Gruff Merchant' },
+    { value: 'mysterious_oracle', label: 'Mysterious Oracle' },
+  ];
+
   const SHOP_TYPES = [
     { value: 'general',      label: 'General Store' },
     { value: 'blacksmith',   label: 'Blacksmith'    },
@@ -205,6 +220,11 @@
       name:            _panelEl.querySelector('#sp-shop-name')?.value?.trim() || 'Shop',
       shopkeeper_name: _panelEl.querySelector('#sp-shopkeeper-name')?.value?.trim() || 'Shopkeeper',
       shop_type:       _panelEl.querySelector('#sp-shop-type')?.value || 'general',
+      personality:     _panelEl.querySelector('#sp-personality')?.value || 'friendly',
+      dialogue_enabled: !!_panelEl.querySelector('#sp-dialogue-enabled')?.checked,
+      voice:           _panelEl.querySelector('#sp-voice')?.value || 'grand_narrator',
+      tts_enabled:     !!_panelEl.querySelector('#sp-tts-enabled')?.checked,
+      greeting_override: _panelEl.querySelector('#sp-greeting-override')?.value?.trim() || '',
       description:     _panelEl.querySelector('#sp-description')?.value?.trim() || '',
       taught_profession_ids,
       crafting_enabled: !!_panelEl.querySelector('#sp-crafting-enabled')?.checked,
@@ -254,6 +274,11 @@
     const shopkeeper   = String(instance.shopkeeper_name || '');
     const shopType     = String(instance.shop_type || 'general');
     const description  = String(instance.description || '');
+    const personality = String(instance.personality || 'friendly');
+    const dialogueEnabled = instance.dialogue_enabled !== false;
+    const voice = String(instance.voice || 'grand_narrator');
+    const ttsEnabled = !!instance.tts_enabled;
+    const greetingOverride = String(instance.greeting_override || '');
     const craftingEnabled = instance.crafting_enabled !== false;
     const shopSalesEnabled = instance.shop_sales_enabled !== false;
     const playerSellEnabled = (instance.player_sell_enabled ?? instance.selling_enabled) !== false;
@@ -270,6 +295,12 @@
       : (Array.isArray(instance.taught_professions_json) ? instance.taught_professions_json : []);
     const taughtInitial = taughtRaw.length ? taughtRaw : (DEFAULT_PROF_BY_TYPE[shopType] || []);
 
+    const personalityOptions = SHOPKEEPER_PERSONALITIES.map(p =>
+      `<option value="${p.value}"${personality === p.value ? ' selected' : ''}>${p.label}</option>`
+    ).join('');
+    const voiceOptions = SHOPKEEPER_VOICES.map(v =>
+      `<option value="${v.value}"${voice === v.value ? ' selected' : ''}>${v.label}</option>`
+    ).join('');
     const typeOptions = SHOP_TYPES.map(t =>
       `<option value="${t.value}"${shopType === t.value ? ' selected' : ''}>${t.label}</option>`
     ).join('');
@@ -303,6 +334,23 @@
           </label>
           <label class="sp-label">Type
             <select class="sp-input" id="sp-shop-type">${typeOptions}</select>
+          </label>
+          <label class="sp-label">Personality
+            <select class="sp-input" id="sp-personality">${personalityOptions}</select>
+          </label>
+          <label class="sp-label">Voice
+            <select class="sp-input" id="sp-voice">${voiceOptions}</select>
+          </label>
+          <label class="sp-label sp-checkbox-label">
+            <input type="checkbox" id="sp-dialogue-enabled" ${dialogueEnabled ? 'checked' : ''} />
+            <span>Dialogue enabled</span>
+          </label>
+          <label class="sp-label sp-checkbox-label">
+            <input type="checkbox" id="sp-tts-enabled" ${ttsEnabled ? 'checked' : ''} />
+            <span>Speak greeting (TTS)</span>
+          </label>
+          <label class="sp-label sp-full">Greeting override
+            <input class="sp-input" id="sp-greeting-override" maxlength="220" placeholder="Optional custom greeting line…" />
           </label>
           <label class="sp-label sp-full">Description
             <textarea class="sp-input" id="sp-description" rows="2" maxlength="500" placeholder="Flavor text shown to players…"></textarea>
@@ -387,6 +435,7 @@
     panel.querySelector('#sp-shop-name').value = propName;
     panel.querySelector('#sp-shopkeeper-name').value = shopkeeper;
     panel.querySelector('#sp-description').value = description;
+    panel.querySelector('#sp-greeting-override').value = greetingOverride;
 
     panel.querySelector('.sp-close-btn').addEventListener('click', close);
     panel.querySelector('#sp-cancel-btn').addEventListener('click', close);
