@@ -165,7 +165,8 @@
 .dm-map-first-shell[data-debug-open="false"] [data-dm-debug-panel],
 .dm-map-first-shell:not([data-debug-open="true"]) [data-dm-debug-panel],
 body.dm-map-first-active[data-debug-open="false"] [data-dm-debug-panel],
-body.dm-map-first-active:not([data-debug-open="true"]) [data-dm-debug-panel] {
+body.dm-map-first-active:not([data-debug-open="true"]) [data-dm-debug-panel],
+body.dm-map-first-active:not([data-debug-open="true"]) #stream-readiness-panel {
   display: none !important;
 }
 

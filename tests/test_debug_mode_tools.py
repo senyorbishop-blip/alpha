@@ -17,11 +17,13 @@ def test_debug_panel_is_hidden_by_default_and_closed_until_debug_mode():
     assert 'data-dm-debug-panel hidden' in src
     assert 'Debug diagnostics are closed by default' in src
     assert 'body.dm-map-first-active:not([data-debug-open="true"]) [data-dm-debug-panel]' in css
+    assert 'body.dm-map-first-active:not([data-debug-open="true"]) #stream-readiness-panel' in css
     assert "safeRoot.body.dataset.debugOpen = activeMode === 'debug' ? 'true' : 'false';" in bridge
 
 
 def test_debug_mode_exposes_readiness_and_diagnostics_tools():
     src = read(PLAY)
+    bridge = read(BRIDGE)
     registry = read(REGISTRY)
     for tool in [
         'stream-readiness',
@@ -32,10 +34,12 @@ def test_debug_mode_exposes_readiness_and_diagnostics_tools():
         'visibility-checks',
         'dm-focus-testing-guidance',
     ]:
-        assert f'data-dm-tool="{tool}"' in src or f"'{tool}'" in registry
+        assert f"id: '{tool}'" in bridge or f"'{tool}'" in registry
     assert 'id="stream-readiness-panel"' in src
-    assert 'Payload warnings remain tracked' in src
-    assert 'Reconnect warnings remain tracked' in src
+    assert 'appendDebugDiagnostics' in bridge
+    assert "mountId: 'stream-readiness-panel'" in bridge
+    assert 'Payload warnings remain tracked' in bridge
+    assert 'Reconnect warnings remain tracked' in bridge
 
 
 def test_live_table_does_not_include_debug_readiness_panels():

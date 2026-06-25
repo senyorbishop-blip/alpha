@@ -65,6 +65,7 @@
     <div id="ws-status" title="WebSocket"></div>
     <div id="ws-status-label">Connecting…</div>
   </div>
+  <div id="stream-readiness-panel" aria-live="polite" style="display:none;min-width:210px;max-width:300px;padding:0.28rem 0.45rem;border:1px solid rgba(0,229,204,0.22);border-radius:7px;background:rgba(0,0,0,0.24);font-size:0.58rem;line-height:1.35;color:var(--parchment-dim);">Stream readiness loading…</div>
   <!-- ? Help / Walkthrough button — always visible in topbar -->
   <button id="topbar-help-btn" data-help="help-hub" title="Help Hub &amp; Walkthrough"
     onclick="window.AppOnboarding&&AppOnboarding.showHelpHub(typeof ROLE!=='undefined'?ROLE:'viewer')"
@@ -1577,18 +1578,7 @@
           <a class="dm-context-marker" href="#combat-next-btn" data-dm-tool="end-turn-controls">End turn controls</a>
         </div>
       </section>
-      <section class="dm-context-mode-section" data-dm-mode="debug" data-dm-context-section="debug" data-dm-debug-panel hidden aria-label="Debug diagnostics">
-        <p>Debug diagnostics are closed by default and visible to the DM only when Debug mode is active.</p>
-        <div class="dm-context-marker-grid" aria-label="Debug diagnostic tools">
-          <div id="stream-readiness-panel" class="dm-debug-diagnostic-card" data-dm-tool="stream-readiness" aria-live="polite" style="display:none;">Stream readiness loading…</div>
-          <div class="dm-debug-diagnostic-card" data-dm-tool="payload-warnings">Payload warnings remain tracked in the stream readiness summary.</div>
-          <div class="dm-debug-diagnostic-card" data-dm-tool="reconnect-warnings">Reconnect warnings remain tracked in the stream readiness summary.</div>
-          <div class="dm-debug-diagnostic-card" data-dm-tool="websocket-diagnostics">WebSocket diagnostics remain available through the standard status dot/label and debug helpers.</div>
-          <div class="dm-debug-diagnostic-card" data-dm-tool="sync-diagnostics">Sync diagnostics remain available through live-state debug summaries.</div>
-          <div class="dm-debug-diagnostic-card" data-dm-tool="visibility-checks">Visibility checks remain grouped here with hidden-token and fog safety diagnostics.</div>
-          <div class="dm-debug-diagnostic-card" data-dm-tool="dm-focus-testing-guidance">DM focus/testing guidance and development-only hints live in Debug, not Live Table.</div>
-        </div>
-      </section>
+      <div data-dm-debug-panel hidden>Debug diagnostics are closed by default.</div>
     </div>
   </section>
   <!-- Tab bar -->
