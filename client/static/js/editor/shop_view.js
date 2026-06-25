@@ -55,6 +55,13 @@
     return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;min-width:${size}px;border-radius:6px;background:rgba(255,255,255,0.08);border:1px solid rgba(139,90,20,.25);font-size:${Math.max(12, Math.round(size * 0.62))}px;">🧰</span>`;
   }
 
+  function _renderItemRow(item, opts) {
+    if (window.ItemRow && typeof window.ItemRow.renderItemRow === 'function') {
+      return window.ItemRow.renderItemRow(item, opts).outerHTML;
+    }
+    return renderItem(item);
+  }
+
   function fmtGold(units) {
     const total = Math.max(0, Math.round(Number(units) || 0));
     const gp = Math.floor(total / 100);
@@ -98,35 +105,17 @@
 
   function renderItem(item) {
     const priceInfo = getServerPrice(item);
-    const qty = item.quantity;
-    const isOos = qty !== null && qty !== undefined && Number(qty) <= 0;
-    const isInfinite = qty === null || qty === undefined;
-    const qtyBadge = isOos
-      ? '<span class="sv-badge sv-oos">Out of stock</span>'
-      : isInfinite
-        ? '<span class="sv-badge sv-inf">∞ In stock</span>'
-        : `<span class="sv-badge">×${qty}</span>`;
-
-    const canAfford = priceInfo.finalUnits === 0 || _goldUnits >= priceInfo.finalUnits;
-    const buyBtn = isOos ? '' : `
-      <button class="sv-buy-btn${!canAfford ? ' sv-cant-afford' : ''}" onclick="ShopView._buy('${esc(item.id)}')">🪙 Buy</button>`;
-
     const haggledAlready = !!priceInfo.haggleActive;
-    const haggleBtn = isOos ? '' : `
-      <button class="sv-haggle-btn${haggledAlready ? ' sv-haggled' : ''}" onclick="ShopView._haggle('${esc(item.id)}')">${haggledAlready ? '✅ Haggled' : '🗣 Haggle'}</button>`;
-
-    return `
-      <div class="sv-item${isOos ? ' sv-item-oos' : ''}">
-        <div class="sv-item-top">
-          ${renderItemToken(item, 22)}
-          <span class="sv-item-name">${esc(item.item_name || item.name || 'Item')}</span>
-          ${priceBadge(priceInfo)}
-          ${qtyBadge}
-        </div>
-        ${item.description ? `<div class="sv-item-desc">${esc(item.description)}</div>` : ''}
-        <div class="sv-item-actions">${buyBtn}${haggleBtn}</div>
-      </div>
-    `;
+    return _renderItemRow(item, {
+      mode: 'buy',
+      rowClassName: 'sv-item',
+      gold: _goldUnits,
+      priceCp: priceInfo.finalUnits,
+      priceHtml: priceBadge(priceInfo),
+      noteHtml: item.description ? `<div class="item-row-note">${esc(item.description)}</div>` : '',
+      buy: { onClick: `ShopView._buy('${esc(item.id)}')` },
+      haggle: { onClick: `ShopView._haggle('${esc(item.id)}')`, active: haggledAlready },
+    });
   }
 
   function _getProfMap() {
@@ -290,38 +279,30 @@
     const haggledAlready = !!(offer.haggle && offer.haggle.active);
     const finalUnits = Number(offer.final_offer_units) || 0;
     const baseUnits = Number(offer.base_offer_units) || 0;
+    const item = Object.assign({}, offer.item_data || { name: offer.item_name, item_type: offer.item_type }, { priceCp: finalUnits });
 
-    let offerHtml;
+    let priceHtml = null;
+    let rejectReason = '';
     if (!accepted) {
-      offerHtml = `<span class="sv-badge sv-rejected" title="Category not accepted">Not accepted</span>`;
+      rejectReason = 'Category not accepted';
     } else if (locked) {
-      offerHtml = `<span class="sv-badge sv-locked" title="Buyback not enabled">Locked (recently bought)</span>`;
+      rejectReason = 'Buyback not enabled (recently bought)';
     } else if (haggledAlready && finalUnits > baseUnits) {
-      offerHtml = `<span class="sv-price sv-discounted"><s>${fmtGold(baseUnits)}</s> ${fmtGold(finalUnits)} <span class="sv-discount-badge">+${offer.haggle.bonus_pct}%</span></span>`;
-    } else {
-      offerHtml = `<span class="sv-price">${fmtGold(finalUnits)}</span>`;
+      priceHtml = `<span class="item-row-price"><s>${fmtGold(baseUnits)}</s> ${fmtGold(finalUnits)} <span class="sv-discount-badge">+${offer.haggle.bonus_pct}%</span></span>`;
     }
 
     const canSell = accepted && !locked && finalUnits > 0;
-    const sellBtn = canSell
-      ? `<button class="sv-buy-btn" onclick="ShopView._sell('${esc(offer.item_name)}')">💰 Sell ×1</button>`
-      : '';
-    const haggleBtn = (canSell && !haggledAlready)
-      ? `<button class="sv-haggle-btn" onclick="ShopView._haggleSell('${esc(offer.item_name)}')">🗣 Haggle</button>`
-      : (haggledAlready ? '<span class="sv-badge sv-inf">Haggles</span>' : '');
-
-    return `
-      <div class="sv-item${!accepted || locked ? ' sv-item-oos' : ''}">
-        <div class="sv-item-top">
-          ${renderItemToken(offer.item_data || { name: offer.item_name, item_type: offer.item_type }, 20)}
-          <span class="sv-item-name">${esc(offer.item_name)}</span>
-          ${offerHtml}
-          <span class="sv-badge">×${offer.qty}</span>
-          <span class="sv-badge" title="Category">${esc(offer.item_type)}</span>
-        </div>
-        <div class="sv-item-actions">${sellBtn}${haggleBtn}</div>
-      </div>
-    `;
+    return _renderItemRow(item, {
+      mode: 'sell',
+      rowClassName: 'sv-item',
+      nameOverride: offer.item_name,
+      accepted: accepted && !locked,
+      rejectReason,
+      priceHtml,
+      extraBadgesHtml: `<span class="item-row-badge">×${offer.qty}</span>`,
+      sell: canSell ? { onClick: `ShopView._sell('${esc(offer.item_name)}')`, label: '💰 Sell ×1' } : null,
+      haggle: canSell ? { onClick: `ShopView._haggleSell('${esc(offer.item_name)}')`, active: haggledAlready } : null,
+    });
   }
 
   function _renderSell() {

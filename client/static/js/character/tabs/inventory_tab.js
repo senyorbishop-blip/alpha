@@ -258,25 +258,26 @@
   function _renderItem(item, itemIndex) {
     const equipped = Boolean(item.equipped);
     const meta = _itemMeta(item);
-    return `<div class="cs-inv-item" data-item-index="${_esc(String(itemIndex))}" style="display:block;">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.65rem;">
-        <div style="min-width:0;flex:1;">
-          <div style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;">
-            <span class="cs-inv-item-name">${_esc(item.name || '—')}</span>
-            <span class="cs-inv-item-qty">×${_esc(String(item.qty || item.quantity || 1))}</span>
-            ${equipped ? '<span class="cs-status-chip good">Equipped</span>' : ''}
-          </div>
-          ${meta ? `<div class="cs-summary-note" style="margin-top:0.18rem;">${_esc(meta)}</div>` : ''}
-        </div>
-        <button class="cs-inv-equip-btn${equipped ? ' equipped' : ''}"
-                data-item-index="${_esc(String(itemIndex))}"
-                aria-pressed="${equipped}"
-                aria-label="${equipped ? 'Unequip' : 'Equip'} ${_esc(item.name || 'item')}">
-          ${equipped ? 'Unequip' : 'Equip'}
-        </button>
-      </div>
-      ${_renderEquippedActions(item, itemIndex)}
-    </div>`;
+    const name = item.name || 'Item';
+    const row = window.ItemRow.renderItemRow(item, {
+      mode: 'inventory',
+      rowClassName: 'cs-inv-item',
+      dataset: { itemIndex: String(itemIndex) },
+      equipped,
+      noteHtml: meta ? `<div class="cs-summary-note" style="margin-top:0.18rem;">${_esc(meta)}</div>` : '',
+      equip: {
+        className: `cs-inv-equip-btn${equipped ? ' equipped' : ''}`,
+        attrs: {
+          'data-item-index': String(itemIndex),
+          'aria-pressed': String(equipped),
+          'aria-label': `${equipped ? 'Unequip' : 'Equip'} ${name}`,
+        },
+      },
+    });
+    row.style.display = 'block';
+    const equippedActionsHtml = _renderEquippedActions(item, itemIndex);
+    if (equippedActionsHtml) row.insertAdjacentHTML('beforeend', equippedActionsHtml);
+    return row.outerHTML;
   }
 
   function _gearFallbackItems(charData) {

@@ -26,16 +26,6 @@
 
   const MODAL_ID = 'dnd-chest-view';
 
-  // D&D rarity colours
-  const RARITY_COLORS = {
-    common:      '#9d9d9d',
-    uncommon:    '#1eff00',
-    rare:        '#0070dd',
-    'very rare': '#a335ee',
-    legendary:   '#ff8000',
-    artifact:    '#e6cc80',
-  };
-
   function esc(str) {
     return String(str || '')
       .replace(/&/g, '&amp;')
@@ -45,66 +35,40 @@
   }
 
 
-  function renderItemToken(entry, size = 22) {
-    if (window.AppItemImages && typeof window.AppItemImages.renderToken === 'function') {
-      return window.AppItemImages.renderToken(entry || {}, { size, radius: 6, label: entry?.name || 'Item' });
-    }
-    return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;min-width:${size}px;border-radius:6px;background:rgba(255,255,255,0.08);border:1px solid rgba(139,90,20,.25);font-size:${Math.max(12, Math.round(size * 0.62))}px;">🧰</span>`;
-  }
-
   /* ── Item card renderer ───────────────────────────────────────────────── */
   function _renderItemCard(entry, idx, isDm) {
     const qty           = Math.max(1, Number(entry.qty) || 1);
     const isMagic       = !!entry.is_magic;
     const isIdentified  = entry.is_identified !== false;
-    const rarity        = String(entry.rarity || '').toLowerCase();
     const attunement    = !!entry.attunement_required;
 
     const displayName  = isMagic && !isIdentified
       ? '??? — Unidentified Magic Item'
-      : esc(entry.name || 'Item');
+      : (entry.name || 'Item');
     const displayNotes = isMagic && !isIdentified && entry.unidentified_description
       ? esc(entry.unidentified_description)
       : esc(entry.notes || '');
-
-    // Rarity badge
-    let rarityBadge = '';
-    if (rarity && RARITY_COLORS[rarity]) {
-      const col = RARITY_COLORS[rarity];
-      rarityBadge = `<span class="cv-badge" style="color:${col};border-color:${col}55;">${esc(entry.rarity)}</span>`;
-    }
 
     const magicBadge    = isMagic    ? '<span class="cv-badge cv-badge-magic">✨ Magic</span>'         : '';
     const attuneBadge   = attunement ? '<span class="cv-badge cv-badge-attune">⚡ Attunement</span>'   : '';
     const unidentBadge  = isMagic && !isIdentified
       ? '<span class="cv-badge cv-badge-unident">? Unidentified</span>' : '';
-
-    const badgeRow = (rarityBadge || magicBadge || attuneBadge || unidentBadge)
-      ? `<div class="cv-badge-row">${rarityBadge}${magicBadge}${attuneBadge}${unidentBadge}</div>`
+    const extraBadgesHtml = (magicBadge || attuneBadge || unidentBadge)
+      ? `<div class="cv-badge-row">${magicBadge}${attuneBadge}${unidentBadge}</div>`
       : '';
 
-    const takeAll = qty > 1
-      ? `<button class="cv-take-btn cv-take-all"
-               onclick="ChestView._take(${idx}, ${qty})"
-               title="Take all ${qty}">Take All (${qty})</button>`
-      : '';
-
-    return `
-      <div class="cv-item" id="cv-item-${idx}">
-        <div class="cv-item-top">
-          ${renderItemToken(entry, 22)}
-          <span class="cv-item-name">${displayName}</span>
-          <span class="cv-qty-badge">×${qty}</span>
-        </div>
-        ${badgeRow}
-        ${displayNotes ? `<div class="cv-item-notes">${displayNotes}</div>` : ''}
-        <div class="cv-item-actions">
-          <button class="cv-take-btn"
-                  onclick="ChestView._take(${idx}, 1)"
-                  title="Take 1">🎒 Take 1</button>
-          ${takeAll}
-        </div>
-      </div>`;
+    const row = window.ItemRow.renderItemRow(entry, {
+      mode: 'chest',
+      rowClassName: 'cv-item',
+      rowId: `cv-item-${idx}`,
+      nameOverride: displayName,
+      qty,
+      noteHtml: displayNotes ? `<div class="cv-item-notes">${displayNotes}</div>` : '',
+      extraBadgesHtml,
+      takeOne: { onClick: `ChestView._take(${idx}, 1)`, label: '🎒 Take 1' },
+      takeAll: { onClick: `ChestView._take(${idx}, ${qty})`, label: `Take All (${qty})` },
+    });
+    return row.outerHTML;
   }
 
   function _renderItems() {
