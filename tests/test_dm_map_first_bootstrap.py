@@ -21,10 +21,15 @@ def test_live_play_page_references_map_first_assets_in_safe_order():
     ]
     for asset in expected:
         assert asset in src
-    assert src.index('/static/css/play.css') < src.index('/static/css/map-first-ui-tokens.css')
-    assert src.index('/static/js/ui/dm_map_first_shell.js') < src.index('/static/js/ui/dm_mode_tool_registry.js')
-    assert src.index('/static/js/ui/dm_mode_tool_registry.js') < src.index('/static/js/ui/dm_panel_mode_bridge.js')
-    assert src.index('/static/js/ui/dm_panel_mode_bridge.js') < src.index('/static/js/ui/dm_map_first_bootstrap.js')
+    # The base stylesheet can be preceded by token defaults, but the final map-first
+    # shell stylesheet must still layer after play.css for runtime overrides.
+    assert src.index('/static/css/play.css') < src.rindex('/static/css/map-first-ui-tokens.css')
+    assert src.rindex('/static/css/map-first-ui-tokens.css') < src.rindex('/static/css/dm-map-first-shell.css')
+    # The runtime bootstrap block at the end of play.html owns the active map-first
+    # boot order; earlier compatibility loads must not be treated as the ordering source.
+    assert src.rindex('/static/js/ui/dm_map_first_shell.js') < src.rindex('/static/js/ui/dm_mode_tool_registry.js')
+    assert src.rindex('/static/js/ui/dm_mode_tool_registry.js') < src.rindex('/static/js/ui/dm_panel_mode_bridge.js')
+    assert src.rindex('/static/js/ui/dm_panel_mode_bridge.js') < src.rindex('/static/js/ui/dm_map_first_bootstrap.js')
 
 
 def test_bootstrap_exists_and_calls_bridge_init_for_dm_only():
