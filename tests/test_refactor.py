@@ -2691,41 +2691,17 @@ def test_viewer_power_cooldown_timer_in_html():
 
 
 def test_viewer_power_use_in_ws_allowed_list():
-    """main.py _VIEWER_ALLOWED must contain 'viewer_power_use' so viewers can send powers."""
-    main_py_path = os.path.join(PROJECT_ROOT, "main.py")
-    with open(main_py_path, "r", encoding="utf-8") as f:
-        source = f.read()
-    # The frozenset must include viewer_power_use
-    assert '"viewer_power_use"' in source or "'viewer_power_use'" in source, (
-        "viewer_power_use must appear in main.py (needed for _VIEWER_ALLOWED)"
-    )
-    # Confirm it is inside the _VIEWER_ALLOWED definition (not just somewhere else)
-    import re
-    m = re.search(r'_VIEWER_ALLOWED\s*=\s*frozenset\(\{([^}]+)\}\)', source)
-    assert m, "_VIEWER_ALLOWED frozenset definition not found in main.py"
-    allowed_body = m.group(1)
-    assert "viewer_power_use" in allowed_body, (
-        f"'viewer_power_use' must be in _VIEWER_ALLOWED frozenset body; "
-        f"found: {allowed_body.strip()}"
-    )
+    """ws_permissions.py must allow viewers to send powers."""
+    from server.handlers.ws_permissions import is_ws_message_allowed_for_role
+
+    assert is_ws_message_allowed_for_role("viewer_power_use", "viewer").allowed
 
 
 def test_viewer_emote_in_ws_allowed_list():
-    """main.py _VIEWER_ALLOWED must contain 'viewer_emote' so viewers can emote."""
-    main_py_path = os.path.join(PROJECT_ROOT, "main.py")
-    with open(main_py_path, "r", encoding="utf-8") as f:
-        source = f.read()
-    assert '"viewer_emote"' in source or "'viewer_emote'" in source, (
-        "viewer_emote must appear in main.py (needed for _VIEWER_ALLOWED)"
-    )
-    import re
-    m = re.search(r'_VIEWER_ALLOWED\s*=\s*frozenset\(\{([^}]+)\}\)', source)
-    assert m, "_VIEWER_ALLOWED frozenset definition not found in main.py"
-    allowed_body = m.group(1)
-    assert "viewer_emote" in allowed_body, (
-        f"'viewer_emote' must be in _VIEWER_ALLOWED frozenset body; "
-        f"found: {allowed_body.strip()}"
-    )
+    """ws_permissions.py must allow viewers to emote."""
+    from server.handlers.ws_permissions import is_ws_message_allowed_for_role
+
+    assert is_ws_message_allowed_for_role("viewer_emote", "viewer").allowed
 
 
 def test_token_emote_route_in_dispatch_table():

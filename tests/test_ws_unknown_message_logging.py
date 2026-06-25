@@ -8,7 +8,7 @@ from server.session import Session, User
 
 def test_unknown_message_type_logs_warning_and_sends_generic_error(monkeypatch, caplog):
     session = Session(id="session-unknown-msg")
-    user = User(id="player-unknown-msg", name="Unknown Msg Player", role="player")
+    user = User(id="dm-unknown-msg", name="Unknown Msg DM", role="dm")
     sent = []
 
     async def fake_send_to(session_id, user_id, message):
@@ -37,13 +37,13 @@ def test_unknown_message_type_logs_warning_and_sends_generic_error(monkeypatch, 
 
     record = warnings[0]
     assert record.session_id == "session-unknown-msg"
-    assert record.user_id == "player-unknown-msg"
-    assert record.user_role == "player"
+    assert record.user_id == "dm-unknown-msg"
+    assert record.user_role == "dm"
 
     assert sent == [
         (
             "session-unknown-msg",
-            "player-unknown-msg",
+            "dm-unknown-msg",
             {
                 "type": "error",
                 "payload": {"message": "Something went wrong. Please refresh and try again."},
