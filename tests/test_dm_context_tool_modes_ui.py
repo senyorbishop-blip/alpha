@@ -282,17 +282,21 @@ def test_rich_combat_mode_exposes_real_encounter_controls():
     for label, action in [
         ('Start Combat', 'AppUIDMActions.startCombat()'),
         ('Previous Turn', 'AppUIDMActions.previousTurn()'),
-        ('End / Next Turn', 'AppUIDMActions.nextTurn()'),
-        ('End Combat', 'AppUIDMActions.endCombat()'),
-        ('Roll Initiative', 'AppUIDMActions.rollInitiative()'),
+        ('Next / End Turn', 'AppUIDMActions.nextTurn()'),
+        ('End Combat / Clear Combat', 'AppUIDMActions.endCombat()'),
+        ('Roll Initiative', 'AppUIDMActions.rollInitiativeSelected()'),
+        ('Roll Selected Initiative', 'AppUIDMActions.rollInitiativeSelected()'),
+        ('Roll All Initiative', 'AppUIDMActions.rollInitiativeAll()'),
         ('Add Combatant', 'AppUIDMActions.addCombatant()'),
-        ('Add Selected Token', 'AppUIDMActions.addSelectedTokenToCombat()'),
+        ('Add Selected Token to Combat', 'AppUIDMActions.addSelectedToCombat()'),
         ('Open Tracker', 'AppUIDMActions.openCombatTracker()'),
     ]:
         assert label in src
         assert action in src
-    for fn in ['combatStart', 'combatPrev', 'combatNext', 'combatClear', 'combatRollInitiative', 'combatAddManual']:
+    for fn in ['combatStart', 'combatPrev', 'combatNext', 'combatClear', 'combatRollInitiative', 'combatAddManual', 'combatAddTokenToInitiative']:
         assert f"callGlobal('{fn}'" in src
+    for bridge_fn in ['startCombat', 'rollInitiativeSelected', 'rollInitiativeAll', 'addSelectedToCombat', 'previousTurn', 'nextTurn', 'endCombat']:
+        assert bridge_fn + ': function' in src
 
 
 def test_rich_viewer_powers_mode_exposes_grants_approvals_cooldowns_and_settings():
@@ -318,3 +322,24 @@ def test_map_first_hidden_right_tabs_have_controlled_legacy_drawer_adapter():
     assert 'body.dm-map-first-active.dm-legacy-drawer-open #sidebar-right .rtab-shell' in css
     assert "document.body.classList.add('dm-legacy-drawer-open')" in js
     assert 'body.dm-map-first-active.dm-legacy-drawer-open #right-tab-bar' in css
+
+
+def test_map_first_token_selection_updates_new_context_without_opening_legacy_panel():
+    play = read(Path('client/templates/play.html'))
+    css = read(Path('client/static/css/dm-map-first-fixes.css'))
+    assert "if (hitIsSelectable && ROLE === 'dm')" in play
+    assert 'ctxToken = hit;' in play
+    assert 'refreshRightPanelContextUI();' in play
+    assert "document.body.classList.remove('dm-legacy-drawer-open')" in play
+    assert 'body.dm-map-first-active:not(.dm-legacy-drawer-open) #sidebar-right .rtab-shell' in css
+    assert 'visibility: hidden !important;' in css
+
+
+def test_backend_combat_roll_initiative_contract_still_registered():
+    dispatch = read(Path('server/handlers/__init__.py'))
+    handler = read(Path('server/handlers/combat.py'))
+    assert 'combat_roll_initiative' in dispatch
+    assert 'handle_combat_roll_initiative' in dispatch
+    assert 'async def handle_combat_roll_initiative(payload: dict, session: Session, user: User)' in handler
+    for field in ['combatant_id', 'roll', 'modifier', 'roll_id']:
+        assert field in handler

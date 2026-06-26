@@ -179,3 +179,14 @@ body.dm-map-first-active.dm-legacy-drawer-open #sidebar-right .rtab-pane:not(.ac
     width: auto;
   }
 }
+
+/* Keep accidental token/player selection from reopening the full legacy right panel. */
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #sidebar-right .rtab-shell,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #sidebar-right .rtab-panes,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #sidebar-right .rtab-pane,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #right-tab-bar,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #right-panel-context {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

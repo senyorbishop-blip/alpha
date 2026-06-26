@@ -83,6 +83,27 @@
   }
 
   function isLive() { var c = combat(); return !!(c && c.active && roster().length); }
+  function selectedTokenId() {
+    var id = g('_teTokenId');
+    if (id) return String(id);
+    var tok = g('ctxToken');
+    if (tok && tok.id) return String(tok.id);
+    if (typeof g('getSelectedTokenId') === 'function') {
+      try { return String(g('getSelectedTokenId')() || ''); } catch (_e) {}
+    }
+    return '';
+  }
+  function selectedCombatant() {
+    var tid = selectedTokenId();
+    var rows = roster();
+    if (tid) {
+      for (var i = 0; i < rows.length; i++) {
+        var com = rows[i] && rows[i].combatant;
+        if (com && String(com.token_id || '') === tid) return com;
+      }
+    }
+    return (rows.filter(function (r) { return r.isCurrent; })[0] || rows[0] || {}).combatant || null;
+  }
 
 
   /* ---------- DM action bridge: clean panel -> live runtime controls ---------- */
@@ -137,9 +158,12 @@
     endTurn: function () { return callGlobal('combatEndTurn') || callGlobal('combatNext'); },
     endCombat: function () { return callGlobal('combatClear'); },
     clearCombat: function () { return callGlobal('combatClear'); },
-    rollInitiative: function () { var rows = roster(); var target = (rows.filter(function (r) { return r.isCurrent; })[0] || rows[0] || {}).combatant || {}; if (target.id) return callGlobal('combatRollInitiative', [target.id]); return warnAction('Roll initiative', 'no combatant available'); },
+    rollInitiativeSelected: function () { var target = selectedCombatant(); if (target && target.id) return callGlobal('combatRollInitiative', [target.id]); return warnAction('Roll selected initiative', 'no selected/current combatant available'); },
+    rollInitiativeAll: function () { var rows = roster(); var any = false; rows.forEach(function (r) { var com = r && r.combatant; if (com && com.id) { any = true; callGlobal('combatRollInitiative', [com.id]); } }); if (!any) return warnAction('Roll all initiative', 'no combatants available'); return true; },
+    rollInitiative: function () { return Actions.rollInitiativeSelected(); },
+    addSelectedToCombat: function () { var id = selectedTokenId(); if (id && typeof g('combatAddTokenToInitiative') === 'function') return callGlobal('combatAddTokenToInitiative', [id]); if (id && typeof g('combatAddSelectedTokenToInitiative') === 'function') return callGlobal('combatAddSelectedTokenToInitiative', [id]); return warnAction('Add selected token to combat', id ? 'no add-token function available' : 'no selected token'); },
     addCombatant: function () { return callGlobal('combatAddManual'); },
-    addSelectedTokenToCombat: function () { return callGlobal('combatAddSelectedTokenToInitiative') || openLegacyDrawer('combat'); },
+    addSelectedTokenToCombat: function () { return Actions.addSelectedToCombat(); },
     openCombatTracker: function () { return openLegacyDrawer('combat'); },
     openViewerPowers: function () { openFlyout('flyout-perm'); return openLegacyDrawer('party'); },
     grantViewerPower: function () { return callGlobal('grantViewerPower') || openLegacyDrawer('party'); },
@@ -310,11 +334,13 @@
           '<div class="dcx-actions dcx-combat-controls">' +
             action('\u2694', 'Start Combat', 'pull current map tokens', "AppUIDMActions.startCombat()") +
             action('\u25C0', 'Previous Turn', 'step initiative back', "AppUIDMActions.previousTurn()") +
-            action('\u25B6', 'End / Next Turn', 'advance initiative', "AppUIDMActions.nextTurn()") +
-            action('\u2715', 'End Combat', 'clear encounter', "AppUIDMActions.endCombat()") +
-            action('\uD83C\uDFB2', 'Roll Initiative', 'selected combatant', "AppUIDMActions.rollInitiative()") +
-            action('\u2795', 'Add Combatant', 'manual / selected token', "AppUIDMActions.addCombatant()") +
-            action('\uD83D\uDCCC', 'Add Selected Token', 'where supported', "AppUIDMActions.addSelectedTokenToCombat()") +
+            action('\u25B6', 'Next / End Turn', 'advance initiative', "AppUIDMActions.nextTurn()") +
+            action('\u2715', 'End Combat / Clear Combat', 'clear encounter', "AppUIDMActions.endCombat()") +
+            action('\uD83C\uDFB2', 'Roll Initiative', 'selected or current combatant', "AppUIDMActions.rollInitiativeSelected()") +
+            action('\uD83C\uDFB2', 'Roll Selected Initiative', 'selected token in encounter', "AppUIDMActions.rollInitiativeSelected()") +
+            action('\uD83C\uDFB2', 'Roll All Initiative', 'all combatants', "AppUIDMActions.rollInitiativeAll()") +
+            action('\u2795', 'Add Combatant', 'manual entry', "AppUIDMActions.addCombatant()") +
+            action('\uD83D\uDCCC', 'Add Selected Token to Combat', 'current map token', "AppUIDMActions.addSelectedToCombat()") +
             action('\uD83D\uDCCB', 'Open Tracker', 'compact details drawer', "AppUIDMActions.openCombatTracker()") +
           '</div>') +
         sessionToolsBlock();
