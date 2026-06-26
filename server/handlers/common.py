@@ -706,7 +706,11 @@ async def _broadcast_combat(session):
         }
         if ok:
             sent_to.append(uid)
-            logger.info("[combat initiative sync] delivered %s", log_data)
+            # Per-recipient delivery is logged at DEBUG only: a single combat
+            # advance fans out to every connected client, so emitting one INFO
+            # line per recipient floods the logs. The broadcast_complete summary
+            # below carries the per-broadcast signal at INFO.
+            logger.debug("[combat initiative sync] delivered %s", log_data)
         else:
             failed.append(uid)
             logger.warning("[combat initiative sync] failed_send %s", log_data)
@@ -717,10 +721,12 @@ async def _broadcast_combat(session):
         logger.info("[combat initiative sync] no active sockets %s", {**summary, "session_id": session.id, "sent_to": []})
         await manager.broadcast(session.id, {"type": "combat_state", "payload": payload})
     logger.info(
-        "[combat initiative sync] broadcast_complete revision=%s attempted=%s sent_to=%s failed=%s",
+        "[combat initiative sync] broadcast_complete revision=%s turn=%s current=%s attempted=%s sent=%s failed=%s",
         (getattr(session, "combat", None) or {}).get("revision"),
-        attempted,
-        sent_to,
+        summary.get("turn"),
+        summary.get("current"),
+        len(attempted),
+        len(sent_to),
         failed,
     )
     return {"attempted": [entry["user_id"] for entry in attempted], "sent_to": sent_to, "failed": failed, "visibility_revision": revision}
