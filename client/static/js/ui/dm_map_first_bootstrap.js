@@ -88,9 +88,19 @@
         '#sidebar-right #combat-list',
         '#sidebar-right #combat-controls',
       ];
+      // Hide the legacy panes WITHOUT inline `!important`. The steady-state CSS
+      // (dm-map-first-fixes.css FIX 9, scoped to :not(.dm-legacy-drawer-open))
+      // already pins them off-screen with `!important`, so these inline styles
+      // only need to win the brief boot flash before that CSS settles. Crucially,
+      // they must remain *overridable*: when the DM opens a compact legacy drawer
+      // the FIX 8 rule promotes the active pane to `visibility:visible !important;
+      // pointer-events:auto !important`, and an inline `!important` here would beat
+      // that (author inline !important > author stylesheet !important), leaving the
+      // drawer present-but-invisible and unclickable. Plain inline values yield to
+      // the stylesheet `!important`, so the drawer shows and stays interactive.
       document.querySelectorAll(legacySelectors.join(',')).forEach(function(el) {
-        el.style.setProperty('visibility', 'hidden', 'important');
-        el.style.setProperty('pointer-events', 'none', 'important');
+        el.style.setProperty('visibility', 'hidden');
+        el.style.setProperty('pointer-events', 'none');
         el.style.position = 'fixed';
         el.style.left = '-9999px';
         el.style.top = '-9999px';
