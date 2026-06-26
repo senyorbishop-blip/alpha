@@ -83,6 +83,8 @@
       Function(action)();
     } catch (err) {
       console.warn('[dm-panel-mode] action failed', action, err);
+    } finally {
+      forceLegacyRightPanelsClosed(document);
     }
   }
 
@@ -238,6 +240,54 @@
     return window.AppUIDMModeToolRegistry || {};
   }
 
+
+  function isMapFirstActive(docRoot) {
+    const body = docRoot && docRoot.body ? docRoot.body : document.body;
+    return !!(body && body.classList && body.classList.contains('dm-map-first-active'));
+  }
+
+  function forceLegacyRightPanelsClosed(root, options) {
+    const safeRoot = root || document;
+    const docRoot = safeRoot.querySelector ? safeRoot : document;
+    const body = docRoot.body || document.body;
+    if (!body || !isMapFirstActive(docRoot)) return false;
+    const allowDrawer = !!(options && options.allowDrawer) || body.classList.contains('dm-legacy-drawer-open');
+    if (!allowDrawer) body.classList.remove('dm-legacy-drawer-open');
+    const selectors = [
+      '#right-tab-bar',
+      '#right-panel-context',
+      '#sidebar-right .rtab-shell',
+      '#sidebar-right .rtab-panes',
+      '#sidebar-right .rtab-pane',
+      '#rtab-pane-combat',
+      '#combat-list',
+      '#combat-controls',
+      '#combat-pre',
+      '#combat-add-row',
+      '#combat-spell-tray',
+      '#combat-weapon-tray',
+      '#right-panel-context',
+    ];
+    docRoot.querySelectorAll(selectors.join(',')).forEach((el) => {
+      if (!allowDrawer || !el.closest('.rtab-shell')) {
+        el.setAttribute('aria-hidden', 'true');
+        el.dataset.dmMapFirstLegacyHidden = 'true';
+      }
+    });
+    return true;
+  }
+
+  let legacyObserver = null;
+  function ensureLegacyPanelObserver(root) {
+    const safeRoot = root || document;
+    const docRoot = safeRoot.querySelector ? safeRoot : document;
+    if (legacyObserver || typeof MutationObserver !== 'function') return;
+    const sidebar = docRoot.getElementById ? docRoot.getElementById('sidebar-right') : null;
+    if (!sidebar) return;
+    legacyObserver = new MutationObserver(() => forceLegacyRightPanelsClosed(docRoot));
+    legacyObserver.observe(sidebar, { attributes: true, childList: true, subtree: true, attributeFilter: ['class', 'style', 'hidden', 'aria-hidden'] });
+  }
+
   function registryModes() {
     const source = registry().modes || {};
     return Object.keys(source).length ? source : {
@@ -339,7 +389,7 @@
     tabsEl.innerHTML = tabs.map(function (t, i) {
       const badge = t[2] ? '<span class="dcx-badge">' + t[2] + '</span>' : '';
       return '<button class="dcx-tab" type="button" aria-pressed="' + (i === 0) +
-        '" onclick="switchRTab(\'' + String(t[0]).replace(/'/g, '') + '\')">' + String(t[1]) + badge + '</button>';
+        '" data-dm-compact-tab="' + String(t[0]).replace(/"/g, '') + '" onclick="if(window.AppUIDMActions&&AppUIDMActions.openCompactCombatDrawer)AppUIDMActions.openCompactCombatDrawer();">' + String(t[1]) + badge + '</button>';
     }).join('');
     tabsEl.style.display = tabs.length ? 'flex' : 'none';
 
@@ -387,6 +437,8 @@
       safeRoot.body.dataset.debugOpen = activeMode === 'debug' ? 'true' : 'false';
     }
     renderRichContext(safeRoot, activeMode);
+    ensureLegacyPanelObserver(safeRoot);
+    forceLegacyRightPanelsClosed(safeRoot);
     if (typeof window.renderStreamReadinessPanel === 'function') {
       window.renderStreamReadinessPanel();
     }
@@ -412,6 +464,8 @@
       || (safeRoot.body && safeRoot.body.dataset && safeRoot.body.dataset.dmActiveMode)
       || FALLBACK_MODE;
     renderRichContext(safeRoot, normalizeMode(activeMode));
+    ensureLegacyPanelObserver(safeRoot);
+    forceLegacyRightPanelsClosed(safeRoot);
   }
 
   window.AppUIDMPanelModeBridge = Object.freeze({
@@ -421,6 +475,7 @@
     registerPanelSection,
     activateMode,
     refresh,
+    forceLegacyRightPanelsClosed,
     init,
   });
 })();
