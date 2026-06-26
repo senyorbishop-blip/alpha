@@ -1,0 +1,891 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alpha D&D · Player & Viewer Panels (redesign preview)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Tokens — mirrors client/static/css/map-first-ui-tokens.css
+   so this preview drops straight into your codebase.
+   ============================================================ */
+:root{
+  --mf-bg-void:#05070a; --mf-bg-deep:#090f11; --mf-bg-map-edge:#050807;
+  --mf-surface:#101719; --mf-surface-raised:#151f22;
+  --mf-surface-glass:rgba(13,20,23,.88); --mf-surface-ink:rgba(5,8,10,.92);
+  --mf-border-soft:rgba(212,166,55,.16); --mf-border-cyan:rgba(0,229,204,.26);
+  --mf-text:#e8dcc8; --mf-text-muted:rgba(232,220,200,.64);
+  --mf-parchment:#d7c18c; --mf-cyan:#00e5cc; --mf-cyan-soft:rgba(0,229,204,.16);
+  --mf-gold:#d4a637; --mf-gold-soft:rgba(212,166,55,.18);
+  --mf-purple:#9b59d0; --mf-red:#b33a2f; --mf-green:#2ecc71; --mf-blue:#47b7ff;
+  --mf-font-display:'Cinzel',serif; --mf-font-body:'Crimson Pro',Georgia,serif;
+  --mf-font-mono:'Share Tech Mono',monospace;
+  --mf-radius-sm:6px; --mf-radius-md:10px; --mf-radius-lg:14px; --mf-radius-xl:18px;
+  --mf-topbar-h:3.25rem; --mf-rail-w:5rem; --mf-context-w:22.5rem;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font-family:var(--mf-font-body); color:var(--mf-text);
+  background:
+    radial-gradient(circle at 50% 28%, rgba(0,229,204,.06), transparent 38rem),
+    linear-gradient(180deg,var(--mf-bg-deep),var(--mf-bg-void));
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit; color:inherit; cursor:pointer}
+::selection{background:rgba(0,229,204,.3)}
+
+/* ============================================================ SHELL */
+.shell{
+  height:100dvh; display:grid;
+  grid-template-columns:var(--mf-rail-w) minmax(0,1fr) var(--mf-context-w);
+  grid-template-rows:var(--mf-topbar-h) minmax(0,1fr);
+  grid-template-areas:"topbar topbar topbar" "rail map context";
+  overflow:hidden;
+}
+
+/* ============================================================ TOPBAR */
+.topbar{
+  grid-area:topbar; display:flex; align-items:center; gap:1rem; padding:0 1rem;
+  border-bottom:1px solid var(--mf-border-soft);
+  background:linear-gradient(180deg,rgba(10,15,17,.96),rgba(5,8,10,.94));
+}
+.brand{display:flex; align-items:center; gap:.6rem; padding-right:.4rem}
+.brand .mark{
+  width:30px; height:30px; border-radius:9px; display:grid; place-items:center;
+  background:linear-gradient(150deg,var(--mf-gold),#7a5a1e);
+  color:#1a1206; font-weight:700; font-family:var(--mf-font-display); font-size:.95rem;
+  box-shadow:0 0 16px rgba(212,166,55,.25);
+}
+.brand .name{font-family:var(--mf-font-display); font-weight:700; letter-spacing:.14em; font-size:.82rem; color:#f0d58a}
+.brand .sub{display:block; font-size:.5rem; letter-spacing:.32em; color:var(--mf-text-muted); margin-top:1px}
+.topbar .session{display:flex; flex-direction:column; line-height:1.15; margin-left:.4rem}
+.topbar .session .title{font-family:var(--mf-font-display); font-size:.82rem; color:var(--mf-text)}
+.topbar .session .meta{font-size:.62rem; color:var(--mf-text-muted)}
+.topbar .spacer{flex:1}
+.tb-btn{
+  display:inline-flex; align-items:center; gap:.4rem; height:2rem; padding:0 .7rem;
+  border:1px solid var(--mf-border-soft); border-radius:9px; background:rgba(255,255,255,.025);
+  color:var(--mf-text-muted); font-size:.68rem; letter-spacing:.02em; transition:.14s;
+}
+.tb-btn:hover{border-color:var(--mf-border-cyan); color:var(--mf-cyan); background:rgba(0,229,204,.06)}
+.tb-btn.primary{border-color:rgba(0,229,204,.4); color:var(--mf-cyan)}
+.tb-btn .ic{font-size:.82rem; opacity:.9}
+.live-dot{display:inline-flex; align-items:center; gap:.4rem; font-size:.66rem; color:var(--mf-green)}
+.live-dot::before{content:""; width:7px; height:7px; border-radius:50%; background:var(--mf-green); box-shadow:0 0 8px var(--mf-green)}
+.dm-mode-pill{
+  display:inline-flex; align-items:center; gap:.45rem; height:2rem; padding:0 .55rem 0 .7rem;
+  border:1px solid rgba(212,166,55,.45); border-radius:999px;
+  background:linear-gradient(180deg,rgba(212,166,55,.16),rgba(212,166,55,.04));
+  color:#f0d58a; font-family:var(--mf-font-display); font-size:.66rem; letter-spacing:.06em;
+}
+
+/* ============================================================ LEFT RAIL */
+.rail{
+  grid-area:rail; display:flex; flex-direction:column; gap:.3rem;
+  padding:.55rem .4rem; border-right:1px solid rgba(212,166,55,.2);
+  background:
+    linear-gradient(180deg,rgba(16,23,25,.96),rgba(5,8,10,.96)),
+    radial-gradient(circle at 50% 0,rgba(212,166,55,.1),transparent 11rem);
+  box-shadow:10px 0 26px rgba(0,0,0,.22);
+}
+.rail-label{font-family:var(--mf-font-display); font-size:.46rem; letter-spacing:.18em; color:var(--mf-gold); text-align:center; opacity:.8; margin:.1rem 0 .25rem}
+.mode-btn{
+  display:grid; justify-items:center; gap:.18rem; width:100%; min-height:3rem;
+  padding:.4rem .18rem; border:1px solid rgba(232,220,200,.08); border-radius:12px;
+  background:rgba(255,255,255,.022); color:rgba(232,220,200,.74);
+  font-family:var(--mf-font-display); font-size:.5rem; font-weight:600; line-height:1.1;
+  letter-spacing:.03em; text-align:center; transition:.14s;
+}
+.mode-btn .gly{font-size:1.05rem; line-height:1; filter:grayscale(.2)}
+.mode-btn:hover{border-color:rgba(0,229,204,.45); color:#eafffb; background:rgba(0,229,204,.09)}
+.mode-btn[aria-pressed="true"]{
+  border-color:rgba(212,166,55,.72); color:#fff6d8;
+  background:linear-gradient(180deg,rgba(212,166,55,.22),rgba(0,229,204,.08)),rgba(10,16,18,.9);
+  box-shadow:0 0 0 1px rgba(212,166,55,.18) inset, 0 0 18px rgba(212,166,55,.14);
+}
+.mode-btn[aria-pressed="true"] .gly{filter:none}
+.rail .grow{flex:1}
+.rail-collapse{
+  width:100%; height:2rem; border:1px solid var(--mf-border-soft); border-radius:9px;
+  background:transparent; color:var(--mf-text-muted); font-size:.8rem;
+}
+.rail-collapse:hover{border-color:var(--mf-border-cyan); color:var(--mf-cyan)}
+
+/* ============================================================ MAP STAGE */
+.map{
+  grid-area:map; position:relative; overflow:hidden; min-width:0; min-height:0;
+  background:
+    linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px),
+    radial-gradient(circle at 38% 42%, #1c2422, #0c1110 60%, #070b0a),
+    var(--mf-bg-map-edge);
+  background-size:34px 34px,34px 34px,auto,auto;
+  box-shadow:inset 0 0 0 1px rgba(0,229,204,.07), inset 0 0 60px rgba(0,0,0,.5);
+}
+.map-token{
+  position:absolute; width:44px; height:44px; border-radius:50%;
+  display:grid; place-items:center; font-size:.62rem; font-family:var(--mf-font-mono);
+  color:#06110f; font-weight:700; transform:translate(-50%,-50%); cursor:pointer; transition:.12s;
+  box-shadow:0 4px 12px rgba(0,0,0,.5), 0 0 0 2px rgba(0,0,0,.4);
+}
+.map-token:hover{transform:translate(-50%,-50%) scale(1.08)}
+.map-token .hp{
+  position:absolute; bottom:-13px; left:50%; transform:translateX(-50%);
+  font-size:.5rem; color:var(--mf-text); background:rgba(5,8,10,.85);
+  padding:.02rem .28rem; border-radius:5px; white-space:nowrap; border:1px solid var(--mf-border-soft);
+}
+.map-token.foe{background:radial-gradient(circle at 35% 30%,#e07a6a,#9c3326); color:#1c0a06}
+.map-token.ally{background:radial-gradient(circle at 35% 30%,#6fe0d2,#129b8b)}
+.map-token.active-turn{box-shadow:0 0 0 3px var(--mf-gold), 0 0 22px rgba(212,166,55,.55)}
+.map-watermark{
+  position:absolute; left:50%; top:.7rem; transform:translateX(-50%);
+  font-family:var(--mf-font-display); letter-spacing:.18em; font-size:.6rem;
+  color:var(--mf-text-muted); opacity:.55; pointer-events:none;
+}
+
+/* floating bottom toolbar */
+.toolbar{
+  position:absolute; left:50%; bottom:1rem; transform:translateX(-50%);
+  display:flex; align-items:center; gap:.2rem; padding:.32rem;
+  border:1px solid var(--mf-border-cyan); border-radius:14px;
+  background:rgba(5,8,10,.9); backdrop-filter:blur(10px);
+  box-shadow:0 12px 30px rgba(0,0,0,.5);
+}
+.tool{
+  display:grid; justify-items:center; gap:.12rem; min-width:3.4rem; padding:.36rem .5rem;
+  border:1px solid transparent; border-radius:10px; background:transparent;
+  color:var(--mf-text-muted); font-size:.56rem; letter-spacing:.04em; transition:.12s;
+}
+.tool .gly{font-size:.95rem}
+.tool:hover{color:var(--mf-cyan)}
+.tool[aria-pressed="true"]{border-color:var(--mf-border-cyan); color:var(--mf-cyan); background:rgba(0,229,204,.08)}
+
+/* ============================================================ RIGHT CONTEXT */
+.context{
+  grid-area:context; min-width:0; display:flex; flex-direction:column;
+  border-left:1px solid rgba(212,166,55,.2);
+  background:
+    linear-gradient(180deg,rgba(16,23,25,.96),rgba(7,11,13,.97)),
+    radial-gradient(circle at 50% 0,rgba(0,229,204,.1),transparent 18rem);
+}
+.ctx-head{
+  display:flex; align-items:center; justify-content:space-between; gap:.6rem;
+  padding:.7rem .85rem; border-bottom:1px solid rgba(212,166,55,.22);
+  background:linear-gradient(180deg,rgba(212,166,55,.08),rgba(0,0,0,.06));
+}
+.ctx-head .t{display:flex; align-items:center; gap:.5rem}
+.ctx-head .t .gly{font-size:1rem}
+.ctx-head .t h2{margin:0; font-family:var(--mf-font-display); font-size:.84rem; letter-spacing:.08em; color:#f0d58a}
+.ctx-head .note{font-size:.55rem; color:var(--mf-text-muted); letter-spacing:.04em}
+.ctx-collapse{
+  width:1.6rem; height:1.6rem; border:1px solid var(--mf-border-soft); border-radius:7px;
+  background:transparent; color:var(--mf-text-muted); font-size:.7rem;
+}
+/* tab strip */
+.ctx-tabs{display:flex; gap:.3rem; padding:.5rem .7rem; border-bottom:1px solid var(--mf-border-soft)}
+.ctx-tab{
+  flex:1; display:flex; align-items:center; justify-content:center; gap:.3rem;
+  height:2rem; border:1px solid var(--mf-border-soft); border-radius:9px;
+  background:rgba(255,255,255,.022); color:var(--mf-text-muted); font-size:.62rem; transition:.12s;
+}
+.ctx-tab:hover{border-color:var(--mf-border-cyan); color:var(--mf-cyan)}
+.ctx-tab[aria-pressed="true"]{
+  border-color:rgba(0,229,204,.45); color:var(--mf-cyan); background:rgba(0,229,204,.08);
+}
+.ctx-tab .badge{font-size:.5rem; padding:.02rem .3rem; border-radius:6px; background:var(--mf-red); color:#fff}
+
+.ctx-body{min-height:0; overflow:auto; padding:.7rem .75rem 1.2rem; display:flex; flex-direction:column; gap:.7rem}
+.ctx-body::-webkit-scrollbar{width:8px}
+.ctx-body::-webkit-scrollbar-thumb{background:rgba(212,166,55,.22); border-radius:6px}
+
+/* generic blocks */
+.eyebrow{font-family:var(--mf-font-display); font-size:.55rem; letter-spacing:.16em; color:var(--mf-text-muted); text-transform:uppercase; display:flex; align-items:center; justify-content:space-between}
+.eyebrow .act{color:var(--mf-cyan); font-size:.55rem; letter-spacing:.04em; cursor:pointer; font-family:var(--mf-font-body)}
+.card{
+  border:1px solid var(--mf-border-soft); border-radius:var(--mf-radius-lg);
+  background:linear-gradient(180deg,rgba(255,255,255,.022),rgba(0,0,0,.12));
+}
+.card.glow{border-color:rgba(212,166,55,.4); box-shadow:0 0 0 1px rgba(212,166,55,.1) inset, 0 0 22px rgba(212,166,55,.1)}
+
+/* current-turn hero */
+.turn{display:flex; gap:.6rem; padding:.6rem}
+.turn .portrait{
+  width:48px; height:48px; border-radius:11px; flex:none;
+  background:radial-gradient(circle at 35% 30%,#6fe0d2,#0e7a6e);
+  border:2px solid var(--mf-gold); box-shadow:0 0 14px rgba(212,166,55,.3);
+}
+.turn .info{flex:1; min-width:0}
+.turn .info .row1{display:flex; align-items:center; gap:.35rem}
+.turn .info .nm{font-family:var(--mf-font-display); font-size:.84rem; color:var(--mf-text)}
+.turn .info .crown{color:var(--mf-gold); font-size:.7rem}
+.turn .info .cls{font-size:.6rem; color:var(--mf-text-muted)}
+.chips{display:flex; gap:.35rem; margin-top:.35rem}
+.chip{font-family:var(--mf-font-mono); font-size:.6rem; padding:.12rem .4rem; border-radius:6px; border:1px solid var(--mf-border-soft); color:var(--mf-text-muted)}
+.chip b{color:var(--mf-text)}
+.turn .hpwrap{width:84px; flex:none; text-align:right}
+.hpbar{height:6px; border-radius:4px; background:rgba(255,255,255,.08); overflow:hidden; margin-top:.3rem}
+.hpbar > i{display:block; height:100%; border-radius:4px; background:linear-gradient(90deg,#d3573f,#e89a3f)}
+.hpnum{font-family:var(--mf-font-mono); font-size:.62rem; color:var(--mf-text)}
+.hpnum .small{color:var(--mf-text-muted); font-size:.5rem}
+
+/* initiative list */
+.init{display:flex; flex-direction:column; gap:.28rem}
+.init-row{
+  display:grid; grid-template-columns:1.3rem 1fr auto auto; align-items:center; gap:.5rem;
+  padding:.4rem .5rem; border:1px solid transparent; border-radius:10px;
+  background:rgba(255,255,255,.022); transition:.12s;
+}
+.init-row:hover{border-color:var(--mf-border-cyan)}
+.init-row[data-active="true"]{
+  border-color:rgba(0,229,204,.45); background:rgba(0,229,204,.09);
+  box-shadow:0 0 16px rgba(0,229,204,.1);
+}
+.init-row .ord{font-family:var(--mf-font-mono); font-size:.66rem; color:var(--mf-text-muted); text-align:center}
+.init-row[data-active="true"] .ord{color:var(--mf-cyan)}
+.init-row .who{display:flex; flex-direction:column; min-width:0}
+.init-row .who .n{font-size:.72rem; color:var(--mf-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.init-row .who .k{font-size:.52rem; color:var(--mf-text-muted)}
+.init-row .mod{font-family:var(--mf-font-mono); font-size:.6rem; color:var(--mf-cyan)}
+.init-row .ihp{font-family:var(--mf-font-mono); font-size:.58rem; color:var(--mf-text-muted)}
+
+/* party overview */
+.party{display:flex; flex-direction:column; gap:.34rem}
+.party-row{display:grid; grid-template-columns:1.5rem 1fr 4.6rem; align-items:center; gap:.5rem}
+.party-row .av{width:22px; height:22px; border-radius:7px; background:radial-gradient(circle at 35% 30%,#6fe0d2,#0e7a6e); flex:none}
+.party-row .pn{font-size:.7rem; color:var(--mf-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.party-row .pbar{height:5px}
+.party-row.full .pbar > i{background:linear-gradient(90deg,#28b765,#5fe0a0)}
+.party-row .pnum{font-family:var(--mf-font-mono); font-size:.55rem; color:var(--mf-text-muted); text-align:right}
+
+/* action grid */
+.actions{display:grid; grid-template-columns:1fr 1fr; gap:.4rem}
+.action{
+  display:flex; align-items:center; gap:.5rem; padding:.5rem .55rem; text-align:left;
+  border:1px solid var(--mf-border-soft); border-radius:11px; background:rgba(255,255,255,.022); transition:.12s;
+}
+.action:hover{border-color:var(--mf-border-cyan); background:rgba(0,229,204,.06)}
+.action .ai{
+  width:26px; height:26px; border-radius:8px; flex:none; display:grid; place-items:center; font-size:.8rem;
+  background:rgba(0,229,204,.1); border:1px solid var(--mf-border-cyan); color:var(--mf-cyan);
+}
+.action .al{display:flex; flex-direction:column; line-height:1.15; min-width:0}
+.action .al .t{font-size:.7rem; color:var(--mf-text)}
+.action .al .s{font-size:.52rem; color:var(--mf-text-muted)}
+.action.full{grid-column:1 / -1; justify-content:center; color:var(--mf-text-muted); font-size:.62rem}
+
+/* session tools row */
+.stools{display:grid; grid-template-columns:repeat(4,1fr); gap:.4rem}
+.stool{
+  display:grid; justify-items:center; gap:.22rem; padding:.5rem .2rem;
+  border:1px solid var(--mf-border-soft); border-radius:10px; background:rgba(255,255,255,.022);
+  font-size:.52rem; color:var(--mf-text-muted); transition:.12s;
+}
+.stool .gly{font-size:.95rem}
+.stool:hover{border-color:var(--mf-border-cyan); color:var(--mf-cyan)}
+
+/* npc search + cards */
+.searchrow{display:flex; gap:.4rem}
+.searchrow input{
+  flex:1; height:2rem; border:1px solid var(--mf-border-soft); border-radius:9px;
+  background:rgba(0,0,0,.25); color:var(--mf-text); padding:0 .6rem; font-family:var(--mf-font-body); font-size:.7rem;
+}
+.searchrow input:focus{outline:none; border-color:var(--mf-border-cyan)}
+.searchrow .filter{height:2rem; padding:0 .7rem; border:1px solid var(--mf-border-cyan); border-radius:9px; background:rgba(0,229,204,.06); color:var(--mf-cyan); font-size:.62rem}
+.bcard{
+  display:grid; grid-template-columns:auto 1fr auto; gap:.5rem; align-items:center;
+  padding:.5rem .55rem; border:1px solid var(--mf-border-soft); border-radius:11px;
+  background:rgba(255,255,255,.022); transition:.12s; text-align:left; width:100%;
+}
+.bcard:hover{border-color:var(--mf-border-cyan); background:rgba(0,229,204,.05)}
+.bcard .cr{font-family:var(--mf-font-mono); font-size:.55rem; padding:.12rem .35rem; border-radius:6px; background:rgba(212,166,55,.16); color:#f0d58a; border:1px solid rgba(212,166,55,.3)}
+.bcard .bn{display:flex; flex-direction:column}
+.bcard .bn .n{font-size:.74rem; color:var(--mf-text)}
+.bcard .bn .k{font-size:.52rem; color:var(--mf-text-muted)}
+.bcard .src{font-size:.5rem; color:var(--mf-text-muted); letter-spacing:.06em}
+.primary-actions{display:grid; grid-template-columns:1fr 1fr; gap:.4rem}
+.pa{
+  height:2.2rem; border-radius:10px; border:1px solid var(--mf-border-soft);
+  background:rgba(255,255,255,.022); color:var(--mf-text); font-size:.66rem; transition:.12s;
+}
+.pa:hover{border-color:var(--mf-border-cyan); color:var(--mf-cyan)}
+.pa.go{border-color:rgba(0,229,204,.5); background:rgba(0,229,204,.12); color:var(--mf-cyan); font-weight:600}
+
+/* simple tool list (map build / loot / etc) */
+.toollist{display:flex; flex-direction:column; gap:.34rem}
+.tl{
+  display:flex; align-items:center; gap:.55rem; padding:.5rem .55rem; text-align:left;
+  border:1px solid var(--mf-border-soft); border-radius:10px; background:rgba(255,255,255,.022); transition:.12s;
+}
+.tl:hover{border-color:var(--mf-border-cyan); background:rgba(0,229,204,.05)}
+.tl .ti{width:24px; height:24px; border-radius:7px; flex:none; display:grid; place-items:center; font-size:.78rem; background:rgba(212,166,55,.1); border:1px solid rgba(212,166,55,.25); color:#f0d58a}
+.tl .tt{font-size:.7rem; color:var(--mf-text)}
+.tl .ts{font-size:.52rem; color:var(--mf-text-muted); margin-left:auto}
+
+.empty{padding:1rem .8rem; text-align:center; color:var(--mf-text-muted); font-size:.66rem; border:1px dashed var(--mf-border-soft); border-radius:12px}
+
+/* toast */
+#toast{
+  position:fixed; left:50%; bottom:5.2rem; transform:translateX(-50%) translateY(10px);
+  background:rgba(5,8,10,.95); border:1px solid var(--mf-border-cyan); color:var(--mf-cyan);
+  padding:.5rem .9rem; border-radius:10px; font-size:.7rem; font-family:var(--mf-font-mono);
+  opacity:0; pointer-events:none; transition:.2s; z-index:50; box-shadow:0 0 20px rgba(0,229,204,.15);
+}
+#toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+/* flyout — fixed bug: docks to the RIGHT of the new rail width, never overlaps map edge */
+.flyout-demo{
+  position:absolute; left:calc(var(--mf-rail-w) + .5rem); top:.6rem; width:230px;
+  border:1px solid var(--mf-border-cyan); border-radius:14px;
+  background:linear-gradient(180deg,rgba(20,28,30,.98),rgba(8,12,13,.98)); backdrop-filter:blur(12px);
+  box-shadow:0 18px 42px rgba(0,0,0,.5); padding:.7rem; display:none; z-index:30;
+}
+.flyout-demo.open{display:block; animation:fin .15s ease}
+@keyframes fin{from{opacity:0; transform:translateX(-8px)} to{opacity:1; transform:none}}
+.flyout-demo h4{margin:.1rem 0 .5rem; font-family:var(--mf-font-display); font-size:.7rem; letter-spacing:.06em; color:#f0d58a}
+.flyout-demo .fclose{position:absolute; right:.5rem; top:.45rem; background:none; border:none; color:var(--mf-text-muted); font-size:.8rem}
+.flyout-demo .frow{font-size:.62rem; color:var(--mf-text-muted); margin:.3rem 0}
+
+@media (max-width:1100px){ :root{--mf-context-w:19rem} }
+@media (prefers-reduced-motion:reduce){ *{animation:none!important; transition:none!important} }
+
+/* ============================================================
+   ROLE LAYER — additions on top of the shared DM stylesheet.
+   Player accent = cyan (default). Viewer accent = purple.
+   Body gets data-role="player|viewer"; only accents + two
+   floating HUDs change. Everything else is the same shell.
+   ============================================================ */
+:root{ --mf-role:var(--mf-cyan); --mf-role-soft:var(--mf-cyan-soft); --mf-role-line:var(--mf-border-cyan); }
+body[data-role="viewer"]{ --mf-role:var(--mf-purple); --mf-role-soft:rgba(155,89,208,.16); --mf-role-line:rgba(155,89,208,.4); }
+
+/* role-tinted context + rail headers replace the gold DM tint */
+body[data-role] .context{
+  border-left-color:var(--mf-role-line);
+  background:
+    linear-gradient(180deg,rgba(16,23,25,.96),rgba(7,11,13,.97)),
+    radial-gradient(circle at 50% 0,var(--mf-role-soft),transparent 18rem);
+}
+body[data-role] .ctx-head{ border-bottom-color:var(--mf-role-line); background:linear-gradient(180deg,var(--mf-role-soft),rgba(0,0,0,.06)); }
+body[data-role] .ctx-head .t h2{ color:var(--mf-role); }
+body[data-role] .ctx-tab[aria-pressed="true"]{ border-color:var(--mf-role-line); color:var(--mf-role); background:var(--mf-role-soft); }
+body[data-role] .ctx-tab:hover{ border-color:var(--mf-role-line); color:var(--mf-role); }
+
+/* rail label + active mode follow the role accent (no DM gold) */
+body[data-role] .rail{ border-right-color:var(--mf-role-line);
+  background:linear-gradient(180deg,rgba(16,23,25,.96),rgba(5,8,10,.96)),radial-gradient(circle at 50% 0,var(--mf-role-soft),transparent 11rem); }
+body[data-role] .rail-label{ color:var(--mf-role); }
+body[data-role] .mode-btn[aria-pressed="true"]{
+  border-color:var(--mf-role-line); color:#eafffb;
+  background:linear-gradient(180deg,var(--mf-role-soft),rgba(255,255,255,.02)),rgba(10,16,18,.9);
+  box-shadow:0 0 0 1px var(--mf-role-line) inset, 0 0 18px var(--mf-role-soft);
+}
+body[data-role] .mode-btn:hover{ border-color:var(--mf-role-line); }
+
+/* role badge pill in topbar (replaces DM Mode pill) */
+.role-pill{
+  display:inline-flex; align-items:center; gap:.45rem; height:2rem; padding:0 .8rem;
+  border:1px solid var(--mf-role-line); border-radius:999px; background:var(--mf-role-soft);
+  color:var(--mf-role); font-family:var(--mf-font-display); font-size:.66rem; letter-spacing:.08em; white-space:nowrap;
+}
+/* role switcher (preview-only convenience, top bar) */
+.role-switch{display:inline-flex; gap:.25rem; padding:.2rem; border:1px solid var(--mf-border-soft); border-radius:999px; background:rgba(0,0,0,.3)}
+.role-switch button{
+  height:1.7rem; padding:0 .85rem; border:0; border-radius:999px; background:transparent;
+  color:var(--mf-text-muted); font-family:var(--mf-font-display); font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; transition:.14s;
+}
+.role-switch button.on-p{background:var(--mf-cyan-soft); color:var(--mf-cyan); box-shadow:inset 0 0 0 1px var(--mf-border-cyan)}
+.role-switch button.on-v{background:rgba(155,89,208,.16); color:var(--mf-purple); box-shadow:inset 0 0 0 1px rgba(155,89,208,.4)}
+
+/* action-icon + tool-list glyph chips re-tinted to the role accent */
+body[data-role="viewer"] .action .ai{ background:var(--mf-role-soft); border-color:var(--mf-role-line); color:var(--mf-role); }
+body[data-role="viewer"] .tl .ti{ background:var(--mf-role-soft); border-color:var(--mf-role-line); color:var(--mf-role); }
+
+/* ---- PLAYER: floating, draggable quick bar (lives over the map) ---- */
+.quickbar{
+  position:absolute; left:50%; bottom:1rem; transform:translateX(-50%);
+  display:flex; align-items:stretch; gap:.15rem; padding:.4rem .5rem;
+  border:1px solid var(--mf-border-cyan); border-radius:16px;
+  background:rgba(5,8,10,.92); backdrop-filter:blur(10px);
+  box-shadow:0 14px 34px rgba(0,0,0,.55); z-index:25; user-select:none;
+}
+.quickbar .drag{
+  display:grid; place-items:center; width:1rem; cursor:grab; color:rgba(0,229,204,.4); font-size:.8rem;
+}
+.quickbar .drag:active{cursor:grabbing}
+.qb-hp{display:flex; flex-direction:column; justify-content:center; gap:.18rem; padding:0 .5rem 0 .35rem}
+.qb-hp .num{font-family:var(--mf-font-display); font-size:.78rem; color:var(--mf-cyan); text-align:center; line-height:1}
+.qb-hp .lab{font-size:.42rem; letter-spacing:.14em; text-transform:uppercase; color:var(--mf-text-muted); text-align:center}
+.qb-hp .mini{width:52px; height:4px; border-radius:99px; background:rgba(255,255,255,.1); overflow:hidden}
+.qb-hp .mini > i{display:block; height:100%; width:71%; background:linear-gradient(90deg,#d3573f,#e89a3f)}
+.qb-sep{width:1px; background:rgba(0,229,204,.14); margin:.15rem .1rem}
+.qb-btn{
+  display:grid; justify-items:center; align-content:center; gap:.18rem; min-width:3.1rem; padding:.3rem .35rem;
+  border:1px solid transparent; border-radius:11px; background:transparent; color:var(--mf-text-muted);
+  font-family:var(--mf-font-display); font-size:.46rem; letter-spacing:.04em; transition:.12s;
+}
+.qb-btn .g{font-size:.98rem; line-height:1}
+.qb-btn:hover{border-color:var(--mf-border-cyan); color:var(--mf-cyan); background:rgba(0,229,204,.08)}
+.qb-btn.spent{opacity:.4}
+.qb-btn.spent .g{filter:grayscale(1)}
+
+/* ---- VIEWER: floating power HUD (replaces quick bar; powers only) ---- */
+.viewerhud{
+  position:absolute; left:50%; bottom:1rem; transform:translateX(-50%);
+  display:flex; align-items:stretch; gap:.3rem; padding:.45rem .6rem;
+  border:1px solid rgba(155,89,208,.4); border-radius:16px;
+  background:rgba(8,5,12,.92); backdrop-filter:blur(10px);
+  box-shadow:0 14px 34px rgba(0,0,0,.55); z-index:25;
+}
+.viewerhud .vh-label{
+  display:flex; flex-direction:column; justify-content:center; padding:0 .55rem 0 .2rem;
+  font-family:var(--mf-font-display); font-size:.5rem; letter-spacing:.14em; text-transform:uppercase; color:var(--mf-purple);
+}
+.vh-pow{
+  display:grid; justify-items:center; align-content:center; gap:.16rem; min-width:3.4rem; padding:.35rem .4rem;
+  border:1px solid rgba(155,89,208,.3); border-radius:11px; background:rgba(155,89,208,.08);
+  color:var(--mf-text); font-family:var(--mf-font-display); font-size:.46rem; letter-spacing:.03em; transition:.12s;
+}
+.vh-pow .g{font-size:1rem; line-height:1}
+.vh-pow .dice{font-family:var(--mf-font-mono); font-size:.5rem; color:var(--mf-purple)}
+.vh-pow:hover{background:rgba(155,89,208,.2); border-color:rgba(155,89,208,.55)}
+.vh-pow.locked{opacity:.4; cursor:not-allowed}
+.vh-pow.locked .g{filter:grayscale(1)}
+.vh-pow .flag{position:absolute}
+.vh-sep{width:1px; background:rgba(155,89,208,.2); margin:.15rem 0}
+.vh-emotes{display:flex; align-items:center; gap:.25rem; padding-left:.2rem}
+.vh-e{width:1.9rem; height:1.9rem; display:grid; place-items:center; border:1px solid rgba(155,89,208,.22);
+  border-radius:9px; background:rgba(155,89,208,.07); font-size:.92rem; transition:.12s}
+.vh-e:hover{background:rgba(155,89,208,.2); border-color:rgba(155,89,208,.5)}
+
+/* viewer can't drive turns — the map watermark gets a small "watching" chip */
+.watch-chip{
+  position:absolute; right:.7rem; top:.7rem; display:inline-flex; align-items:center; gap:.35rem;
+  padding:.25rem .6rem; border:1px solid rgba(155,89,208,.35); border-radius:999px;
+  background:rgba(155,89,208,.1); color:var(--mf-purple); font-size:.56rem; letter-spacing:.06em;
+}
+.watch-chip::before{content:""; width:6px; height:6px; border-radius:50%; background:var(--mf-purple); box-shadow:0 0 8px var(--mf-purple)}
+
+/* approval / cooldown mini tags reused inside context power cards */
+.ptag{font-size:.5rem; letter-spacing:.05em; text-transform:uppercase; padding:.08rem .4rem; border-radius:999px}
+.ptag.rdy{background:rgba(46,204,113,.13); color:var(--mf-green); border:1px solid rgba(46,204,113,.3)}
+.ptag.app{background:rgba(224,168,59,.12); color:#e0a83b; border:1px solid rgba(224,168,59,.3)}
+.ptag.cd{background:rgba(255,255,255,.05); color:var(--mf-text-muted); border:1px solid var(--mf-border-soft)}
+.powcard{display:flex; flex-direction:column; gap:.3rem; padding:.55rem}
+.powcard .ph{display:flex; align-items:center; justify-content:space-between}
+.powcard .ph .pn{font-family:var(--mf-font-display); font-size:.72rem; color:var(--mf-text)}
+.powcard .ph .pd{font-family:var(--mf-font-mono); font-size:.6rem; color:var(--mf-purple)}
+.powcard .px{font-size:.64rem; color:var(--mf-text-muted); line-height:1.35}
+.powcard .pf{display:flex; gap:.3rem; flex-wrap:wrap; margin-top:.1rem}
+.powcard.cool{opacity:.55}
+
+</style>
+</head>
+<body data-role="player">
+<div class="shell" id="shell">
+
+  <!-- ===== TOPBAR ===== -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark">A</div>
+      <div><span class="name">ALPHA D&amp;D</span><span class="sub">VIRTUAL TABLETOP</span></div>
+    </div>
+    <div class="session">
+      <span class="title">Curse of the Iron Cell</span>
+      <span class="meta">Session 14 · Prison Break</span>
+    </div>
+    <div class="spacer"></div>
+    <span class="live-dot">Live Sync</span>
+    <div class="role-switch" role="tablist" aria-label="Preview role">
+      <button id="sw-p" class="on-p" data-call="role" data-role="player">⚔ Player</button>
+      <button id="sw-v" data-call="role" data-role="viewer">👁 Viewer</button>
+    </div>
+    <span class="role-pill" id="role-pill">⚔ Player · Lyra</span>
+  </header>
+
+  <!-- ===== LEFT RAIL ===== -->
+  <nav class="rail" id="rail" aria-label="Modes">
+    <div class="rail-label" id="rail-label">PLAYER</div>
+    <!-- rail buttons injected per role -->
+    <div id="rail-modes" style="display:flex;flex-direction:column;gap:.3rem"></div>
+    <div class="grow"></div>
+    <button class="rail-collapse" title="Collapse rail" data-call="collapse-rail">«</button>
+  </nav>
+
+  <!-- ===== MAP ===== -->
+  <main class="map" id="map">
+    <div class="map-watermark">PRISON BREAK · LOWER CELLS</div>
+    <div class="watch-chip" id="watch-chip" style="display:none">Watching</div>
+
+    <!-- tokens (player sees own + visible; viewer sees same visible set) -->
+    <div class="map-token foe active-turn" style="left:48%; top:18%" data-call="token" data-tok="Goblin">G<span class="hp">11/11</span></div>
+    <div class="map-token ally" style="left:50%; top:40%" data-call="token" data-tok="Elphaba">E<span class="hp">68/68</span></div>
+    <div class="map-token ally" style="left:53%; top:46%" data-call="token" data-tok="Kyndov">K<span class="hp">67/67</span></div>
+    <div class="map-token ally" style="left:49%; top:53%" data-call="token" data-tok="Aric">A<span class="hp">18/38</span></div>
+    <div class="map-token ally" style="left:51%; top:64%; box-shadow:0 0 0 3px var(--mf-cyan),0 4px 12px rgba(0,0,0,.5)" data-call="token" data-tok="Lyra">L<span class="hp">22/31</span></div>
+    <div class="map-token foe" style="left:33%; top:42%" data-call="token" data-tok="Shaman">S<span class="hp">—</span></div>
+
+    <!-- PLAYER: draggable quick bar -->
+    <div class="quickbar" id="quickbar">
+      <div class="drag" id="qb-drag" title="Drag to move">⠿</div>
+      <div class="qb-hp">
+        <div class="num">22/31</div>
+        <div class="mini"><i></i></div>
+        <div class="lab">HP</div>
+      </div>
+      <div class="qb-sep"></div>
+      <button class="qb-btn" data-call="dispatch" data-raw="rollAttack('longsword')"><span class="g">⚔</span>Attack</button>
+      <button class="qb-btn" data-call="dispatch" data-raw="castSpell('hunters-mark')"><span class="g">✦</span>H.&nbsp;Mark</button>
+      <button class="qb-btn" data-call="dispatch" data-raw="castSpell('cure-wounds')"><span class="g">✚</span>Cure</button>
+      <div class="qb-sep"></div>
+      <button class="qb-btn" data-call="dispatch" data-raw="combatDash()"><span class="g">⇉</span>Dash</button>
+      <button class="qb-btn" data-call="dispatch" data-raw="combatToggleDisengage()"><span class="g">↯</span>Disengage</button>
+      <div class="qb-sep"></div>
+      <button class="qb-btn" data-call="dispatch" data-raw="toggleFlyout('flyout-dice')"><span class="g">⚄</span>Dice</button>
+      <button class="qb-btn" data-call="dispatch" data-raw="toggleSheet()"><span class="g">📖</span>Sheet</button>
+    </div>
+
+    <!-- VIEWER: power HUD (hidden until viewer role) -->
+    <div class="viewerhud" id="viewerhud" style="display:none">
+      <div class="vh-label">Your<br>Powers</div>
+      <button class="vh-pow" data-call="dispatch" data-raw="useViewerPower('arcane_zap')"><span class="g">⚡</span>Arcane Zap<span class="dice">1d10</span></button>
+      <button class="vh-pow" data-call="dispatch" data-raw="useViewerPower('healing_spark')"><span class="g">✚</span>H. Spark<span class="dice">1d4</span></button>
+      <button class="vh-pow locked" title="On cooldown · 0:38" data-call="dispatch" data-raw="useViewerPower('flash_freeze')"><span class="g">❄</span>Freeze<span class="dice">0:38</span></button>
+      <div class="vh-sep"></div>
+      <div class="vh-emotes">
+        <button class="vh-e" data-call="dispatch" data-raw="sendViewerEmote('👏')">👏</button>
+        <button class="vh-e" data-call="dispatch" data-raw="sendViewerEmote('😱')">😱</button>
+        <button class="vh-e" data-call="dispatch" data-raw="sendViewerEmote('🔥')">🔥</button>
+        <button class="vh-e" data-call="dispatch" data-raw="sendViewerEmote('👑')">👑</button>
+      </div>
+    </div>
+
+    <!-- player floating toolbar mirrors DM toolbar but viewer-safe set is filtered in JS -->
+    <div class="toolbar" id="map-toolbar" role="toolbar" aria-label="Map tools">
+      <button class="tool" aria-pressed="true" data-call="tool" data-tool="select"><span class="gly">⌖</span>Select</button>
+      <button class="tool" data-call="tool" data-tool="measure" data-player-only><span class="gly">📏</span>Measure</button>
+      <button class="tool" data-call="tool" data-tool="ping" data-player-only><span class="gly">📍</span>Ping</button>
+      <button class="tool" data-call="tool" data-tool="notes" data-player-only><span class="gly">🗒</span>Notes</button>
+    </div>
+  </main>
+
+  <!-- ===== RIGHT CONTEXT ===== -->
+  <aside class="context" aria-label="Context">
+    <div class="ctx-head">
+      <div class="t"><span class="gly" id="ctx-gly">⚔</span><h2 id="ctx-title">My Turn</h2></div>
+      <span class="note" id="ctx-note">Round 3 · Goblins ambush</span>
+    </div>
+    <div class="ctx-tabs" id="ctx-tabs"></div>
+    <div class="ctx-body" id="ctx-body"></div>
+  </aside>
+
+</div>
+
+<div id="toast"></div>
+<script>
+/* ============================================================
+   DISPATCH SHIM — identical contract to the DM redesign.
+   Calls the real play.html function if present; otherwise
+   toasts the call so the preview stays fully clickable.
+   Every control routes through here → "everything stays wired".
+   ============================================================ */
+function dispatch(fnName, ...args){
+  try{ if(typeof window[fnName]==='function'){ return window[fnName](...args); } }
+  catch(e){ console.warn('[panel] call failed', fnName, e); }
+  toast(prettyCall(fnName,args));
+}
+function prettyCall(fn,args){ const a=args.length?'('+args.map(x=>JSON.stringify(x)).join(', ')+')':''; return fn+a; }
+let _t; function toast(msg){ const el=document.getElementById('toast'); el.textContent='→ '+msg; el.classList.add('show'); clearTimeout(_t); _t=setTimeout(()=>el.classList.remove('show'),1600); }
+function esc(s){return String(s).replace(/"/g,'&quot;');}
+
+/* ---- shared demo data ---- */
+const PARTY=[
+  {n:'Lyra',hp:22,max:31,full:false},
+  {n:'Aric',hp:18,max:38,full:false},
+  {n:'Elphaba S.',hp:68,max:68,full:true},
+  {n:'Kyndov A.',hp:67,max:67,full:true},
+];
+const INITIATIVE=[
+  {n:'Lyra',k:'You · Lv5 Ranger',mod:'+3',hp:'22/31',active:true},
+  {n:'Aric',k:'Lv5 Fighter',mod:'+1',hp:'18/38'},
+  {n:'Goblin Shaman',k:'CR 1 · caster',mod:'+2',hp:'—'},
+  {n:'Goblin Warrior',k:'CR 1/4',mod:'+1',hp:'15/15'},
+];
+const POWERS=[
+  {id:'arcane_zap',n:'Arcane Zap',d:'1d10',x:'Deal 1d10 damage to one token.',state:'rdy'},
+  {id:'healing_spark',n:'Healing Spark',d:'1d4',x:'Restore 1d4 hit points to one token.',state:'rdy'},
+  {id:'fireball',n:'Fireball',d:'4d6',x:'15 ft burst, 4d6 fire; Dex save DC 13 for half.',state:'app'},
+  {id:'flash_freeze',n:'Flash Freeze',d:'DEX 12',x:'Freeze a token for 20s unless it saves.',state:'cd'},
+];
+
+function bar(hp,max,full){
+  const pct=Math.max(0,Math.min(100,Math.round(hp/max*100)));
+  const fill=full?'background:linear-gradient(90deg,#28b765,#5fe0a0)':'';
+  return `<div class="hpbar"><i style="width:${pct}%;${fill}"></i></div>`;
+}
+/* template helpers — same vocabulary as the DM file */
+function block(title,inner,cls='',headAction='',headLabel='Open'){
+  const eb=title?`<div class="eyebrow">${title}${headAction?`<span class="act" data-call="dispatch" data-raw="${esc(headAction)}">${headLabel}</span>`:''}</div>`:'';
+  return `<section>${eb}<div class="${cls||'card'}" style="margin-top:.4rem">${inner}</div></section>`;
+}
+function partyBlock(label='switchRTab(\'party\')'){
+  return block('Party overview',`<div class="party" style="padding:.55rem">${PARTY.map(p=>`
+    <div class="party-row ${p.full?'full':''}">
+      <span class="av"></span><span class="pn">${p.n}</span>
+      <span style="display:flex;flex-direction:column;gap:.1rem">${bar(p.hp,p.max,p.full)}<span class="pnum">${p.hp}/${p.max}</span></span>
+    </div>`).join('')}</div>`,'',label,'Full party');
+}
+function initiative(){
+  return `<div class="init" style="padding:.5rem">${INITIATIVE.map((r,i)=>`
+    <div class="init-row" data-active="${!!r.active}" data-call="dispatch" data-raw="combatSelectTarget('${r.n}')">
+      <span class="ord">${i+1}</span>
+      <span class="who"><span class="n">${r.n}</span><span class="k">${r.k}</span></span>
+      <span class="mod">${r.mod}</span><span class="ihp">${r.hp}</span>
+    </div>`).join('')}</div>`;
+}
+function action(ic,t,s,raw){
+  return `<button class="action" data-call="dispatch" data-raw="${esc(raw)}"><span class="ai">${ic}</span><span class="al"><span class="t">${t}</span><span class="s">${s}</span></span></button>`;
+}
+function tl(ic,t,s,raw){
+  return `<button class="tl" data-call="dispatch" data-raw="${esc(raw)}"><span class="ti">${ic}</span><span class="tt">${t}</span>${s?`<span class="ts">${s}</span>`:''}</button>`;
+}
+function stool(g,l,raw){
+  return `<button class="stool" data-call="dispatch" data-raw="${esc(raw)}"><span class="gly">${g}</span>${l}</button>`;
+}
+function powerCard(p){
+  const cool=p.state==='cd';
+  const tag=p.state==='rdy'?'<span class="ptag rdy">Ready</span>'
+    :p.state==='app'?'<span class="ptag app">DM approval</span>'
+    :'<span class="ptag cd">Cooldown 0:38</span>';
+  const aim=p.id==='fireball'?'<span class="ptag" style="background:rgba(0,0,0,.3);color:var(--mf-text-muted);border:1px solid var(--mf-border-soft)">Aim a point</span>'
+    :'<span class="ptag" style="background:rgba(0,0,0,.3);color:var(--mf-text-muted);border:1px solid var(--mf-border-soft)">Target token</span>';
+  return `<button class="card powcard ${cool?'cool':''}" data-call="dispatch" data-raw="useViewerPower('${p.id}')" style="text-align:left;width:100%">
+    <div class="ph"><span class="pn">${p.n}</span><span class="pd">${p.d}</span></div>
+    <div class="px">${p.x}</div>
+    <div class="pf">${tag}${p.state==='app'?aim:aim}</div>
+  </button>`;
+}
+
+/* ============================================================
+   ROLE DEFINITIONS — rail modes + per-mode context render.
+   Mirrors the DM file's MODES map, but scoped to each role's
+   real ws_permissions surface.
+   ============================================================ */
+const ROLES={
+  player:{
+    accentGly:'⚔', pill:'⚔ Player · Lyra', railLabel:'PLAYER',
+    modes:[
+      ['turn','⚔','My Turn'],
+      ['character','🛡','Character'],
+      ['inventory','🎒','Pouch'],
+      ['social','🗣','Social'],
+    ],
+    MODES:{
+      'turn':{gly:'⚔',title:'My Turn',note:'Round 3 · Goblins ambush',
+        tabs:[['combat','Turn'],['party','Party'],['log','Log']],
+        render(){return `
+          ${block('Current turn',`
+            <div class="turn">
+              <div class="portrait"></div>
+              <div class="info">
+                <div class="row1"><span class="nm">Lyra</span><span class="crown">★</span></div>
+                <div class="cls">Lv 5 Ranger · You</div>
+                <div class="chips"><span class="chip">AC <b>15</b></span><span class="chip">Init <b>+3</b></span><span class="chip">Move <b>30/30</b></span></div>
+              </div>
+              <div class="hpwrap"><span class="hpnum">22<span class="small">/31</span></span>${bar(22,31)}</div>
+            </div>
+            <div class="actions" style="padding:0 .6rem .6rem;grid-template-columns:1fr 1fr 1fr">
+              <button class="pa" data-call="dispatch" data-raw="combatActionEconomyUse('action')">Action</button>
+              <button class="pa" data-call="dispatch" data-raw="combatActionEconomyUse('bonus_action')">Bonus</button>
+              <button class="pa" style="opacity:.4;text-decoration:line-through" data-call="dispatch" data-raw="combatActionEconomyUse('reaction')">Reaction</button>
+              <button class="action go pa" style="grid-column:1/-1" data-call="dispatch" data-raw="combatEndTurn()">End turn  ▸</button>
+            </div>`,'card glow')}
+          ${block('Quick actions',`
+            <div class="actions">
+              ${action('⚔','Longsword','Melee attack',"rollAttack('longsword')")}
+              ${action('✦',"Hunter's Mark",'1st-level spell',"castSpell('hunters-mark')")}
+              ${action('✚','Cure Wounds','1st slot',"castSpell('cure-wounds')")}
+              ${action('⟳','Uncanny Dodge','Reaction',"useReaction('uncanny-dodge')")}
+              <button class="action full" data-call="dispatch" data-raw="openActionsHub()">— More actions —</button>
+            </div>`)}
+          ${block('Initiative order',initiative(),'',"combatRollInitiative()",'Roll')}
+          ${partyBlock()}
+        `;}
+      },
+      'character':{gly:'🛡',title:'Character',note:'Lyra · Lv 5 Ranger',
+        tabs:[['sheet','Sheet'],['spells','Spells'],['conditions','Status']],
+        render(){return `
+          ${block('Open full sheet',`<div class="actions"><button class="action go pa" style="grid-column:1/-1" data-call="dispatch" data-raw="toggleSheet()">📖 Open character book ▸</button></div>`,'card glow')}
+          ${block('Ability scores',`<div class="stools" style="grid-template-columns:repeat(3,1fr);padding:.55rem">
+            ${['STR +3','DEX +5','CON +2','INT +1','WIS +4','CHA +0'].map(s=>`<span class="stool" style="cursor:default"><span class="gly" style="font-family:var(--mf-font-display);color:var(--mf-cyan)">${s.split(' ')[1]}</span>${s.split(' ')[0]}</span>`).join('')}
+          </div>`)}
+          ${block('Spells · save DC 14',`<div class="toollist">
+            ${tl('✦',"Hunter's Mark",'concentration',"castSpell('hunters-mark')")}
+            ${tl('✚','Cure Wounds','1st · 2/4',"castSpell('cure-wounds')")}
+            ${tl('🌿','Spike Growth','2nd · 1/2',"castSpell('spike-growth')")}
+          </div>`,'',"toggleFlyout('flyout-char')",'Manage')}
+        `;}
+      },
+      'inventory':{gly:'🎒',title:'Pouch',note:'142 gp · 6 items',
+        tabs:[['items','Items'],['gold','Gold'],['shop','Shop']],
+        render(){return `
+          ${block('Carry',`<div class="toollist">
+            ${tl('🎒','Backpack','6 items',"toggleFlyout('flyout-char')")}
+            ${tl('🪙','Gold','142 gp',"treasuryGet()")}
+            ${tl('🛒','Shop','buy · sell · haggle',"openShop()")}
+            ${tl('🎁','Stash','claim items',"switchRTab('inventory')")}
+          </div>`)}
+          ${block('Rest',`<div class="actions">
+            ${action('🏕','Short rest','spend hit dice',"characterRest('short')")}
+            ${action('🌙','Long rest','full recovery',"characterRest('long')")}
+          </div>`)}
+        `;}
+      },
+      'social':{gly:'🗣',title:'Social',note:'Talk · vote · log',
+        tabs:[['chat','Chat'],['quests','Quests'],['moments','Moments']],
+        render(){return `
+          ${block('Table',`<div class="toollist">
+            ${tl('💬','Party chat','',"switchRTab('chat')")}
+            ${tl('🗣','Emote','react in scene',"openEmotePicker()")}
+            ${tl('📊','Vote in poll','live',"switchRTab('chat')")}
+            ${tl('🔊','Narration','listen',"narrationSpeak()")}
+          </div>`)}
+          ${block('Records',`<div class="toollist">
+            ${tl('📓','Journal','',"toggleFlyout('flyout-journal')")}
+            ${tl('🗺','Quests','accept',"sessionQuestAccept()")}
+            ${tl('⭐','Log a moment','',"addPartyMemory()")}
+          </div>`)}
+        `;}
+      },
+    }
+  },
+  viewer:{
+    accentGly:'👁', pill:'👁 Viewer', railLabel:'VIEWER',
+    modes:[
+      ['powers','👁','Powers'],
+      ['watch','📺','Watch'],
+      ['react','🗣','React'],
+    ],
+    MODES:{
+      'powers':{gly:'👁',title:'Powers',note:'Granted by the DM',
+        tabs:[['powers','Powers'],['queue','Pending']],
+        render(){return `
+          ${block('',`<div class="empty" style="border-style:solid;border-color:var(--mf-role-line);color:var(--mf-text-muted)">The DM has granted you 3 powers. Click a token on the map, then fire a power. Some need DM approval first.</div>`)}
+          ${block('Granted powers',`<div style="display:flex;flex-direction:column;gap:.45rem">${POWERS.map(powerCard).join('')}</div>`,'',"openViewerPowerHelp()",'How?')}
+        `;}
+      },
+      'watch':{gly:'📺',title:'Watch',note:'Read-only · live sync',
+        tabs:[['party','Party'],['initiative','Initiative']],
+        render(){return `
+          ${block('Initiative order',initiative())}
+          ${partyBlock("switchRTab('party')")}
+        `;}
+      },
+      'react':{gly:'🗣',title:'React',note:'Emotes · polls · chat',
+        tabs:[['chat','Chat'],['polls','Polls']],
+        render(){return `
+          ${block('Live poll',`<div class="card" style="padding:.6rem">
+            <div style="font-family:var(--mf-font-body);font-size:.78rem;color:var(--mf-text);margin-bottom:.5rem">Spare the goblin shaman?</div>
+            <button class="tl" style="width:100%;margin-bottom:.3rem" data-call="dispatch" data-raw="pollVote('spare')"><span class="tt">Spare him</span><span class="ts" style="color:var(--mf-purple)">62%</span></button>
+            <button class="tl" style="width:100%" data-call="dispatch" data-raw="pollVote('finish')"><span class="tt">Finish the fight</span><span class="ts" style="color:var(--mf-purple)">38%</span></button>
+          </div>`)}
+          ${block('Emotes',`<div class="stools" style="grid-template-columns:repeat(4,1fr);padding:.55rem">
+            ${['👏','😱','🔥','👑','🎲','💀','❤','🍺'].map(e=>`<button class="stool" data-call="dispatch" data-raw="sendViewerEmote('${e}')"><span class="gly">${e}</span></button>`).join('')}
+          </div>`)}
+          ${block('Chat',`<div class="toollist">${tl('💬','Open chat','viewer channel',"switchRTab('chat')")}</div>`)}
+        `;}
+      },
+    }
+  }
+};
+
+let currentRole='player';
+let currentMode='turn';
+
+function setRole(role){
+  currentRole=role;
+  document.body.dataset.role=role;
+  const R=ROLES[role];
+  document.getElementById('role-pill').textContent=R.pill;
+  document.getElementById('rail-label').textContent=R.railLabel;
+  document.getElementById('sw-p').className = role==='player'?'on-p':'';
+  document.getElementById('sw-v').className = role==='viewer'?'on-v':'';
+  // rail modes
+  document.getElementById('rail-modes').innerHTML=R.modes.map((m,i)=>
+    `<button class="mode-btn" data-mode="${m[0]}" aria-pressed="${i===0}"><span class="gly">${m[1]}</span><span>${m[2]}</span></button>`
+  ).join('');
+  // HUDs
+  document.getElementById('quickbar').style.display = role==='player'?'':'none';
+  document.getElementById('viewerhud').style.display = role==='viewer'?'':'none';
+  document.getElementById('watch-chip').style.display = role==='viewer'?'':'none';
+  // toolbar: hide player-only tools for viewer (viewer keeps Select + cursor only)
+  document.querySelectorAll('#map-toolbar [data-player-only]').forEach(b=>b.style.display = role==='viewer'?'none':'');
+  // boot first mode
+  setMode(R.modes[0][0]);
+}
+
+function setMode(mode){
+  const R=ROLES[currentRole];
+  const m=R.MODES[mode]||R.MODES[R.modes[0][0]];
+  currentMode=mode;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));
+  document.getElementById('ctx-gly').textContent=m.gly;
+  document.getElementById('ctx-title').textContent=m.title;
+  document.getElementById('ctx-note').textContent=m.note;
+  const tabs=document.getElementById('ctx-tabs');
+  tabs.innerHTML=(m.tabs||[]).map((t,i)=>`<button class="ctx-tab" aria-pressed="${i===0}" data-call="dispatch" data-raw="switchRTab('${t[0]}')">${t[1]}${t[2]?`<span class="badge">${t[2]}</span>`:''}</button>`).join('');
+  document.getElementById('ctx-body').innerHTML=m.render();
+}
+
+/* ---- click routing ---- */
+document.addEventListener('click',(e)=>{
+  const t=e.target.closest('[data-call],[data-mode]');
+  if(!t) return;
+  if(t.dataset.mode!==undefined && t.classList.contains('mode-btn')){ setMode(t.dataset.mode); return; }
+  const call=t.dataset.call;
+  if(call==='role'){ setRole(t.dataset.role); return; }
+  if(call==='dispatch'){
+    if(t.dataset.raw){
+      const raw=t.dataset.raw, mt=raw.match(/^(\w+)\((.*)\)$/);
+      if(mt){ let args=[]; try{ args=mt[2]?JSON.parse('['+mt[2].replace(/'/g,'"')+']'):[]; }catch(_){} dispatch(mt[1],...args); }
+      else dispatch(raw);
+    }
+    if(t.classList.contains('ctx-tab')){ t.parentElement.querySelectorAll('.ctx-tab').forEach(x=>x.setAttribute('aria-pressed','false')); t.setAttribute('aria-pressed','true'); }
+    return;
+  }
+  if(call==='tool'){
+    document.querySelectorAll('#map-toolbar .tool').forEach(x=>x.setAttribute('aria-pressed','false'));
+    t.setAttribute('aria-pressed','true');
+    dispatch('setTool', t.dataset.tool); return;
+  }
+  if(call==='token'){ dispatch('selectToken', t.dataset.tok); return; }
+  if(call==='save'){ dispatch('saveState'); return; }
+  if(call==='collapse-rail'){ document.getElementById('shell').classList.toggle('rail-collapsed'); return; }
+});
+
+/* ---- draggable player quick bar ---- */
+(function(){
+  const bar=document.getElementById('quickbar'), handle=document.getElementById('qb-drag'), map=document.getElementById('map');
+  let drag=false,ox,oy,bx,by;
+  handle.addEventListener('pointerdown',e=>{
+    drag=true; const r=bar.getBoundingClientRect(), mr=map.getBoundingClientRect();
+    ox=e.clientX; oy=e.clientY; bx=r.left-mr.left; by=r.top-mr.top;
+    bar.style.transform='none'; bar.style.left=bx+'px'; bar.style.top=by+'px'; bar.style.bottom='auto';
+    handle.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  handle.addEventListener('pointermove',e=>{
+    if(!drag) return; const mr=map.getBoundingClientRect();
+    const nx=bx+(e.clientX-ox), ny=by+(e.clientY-oy);
+    bar.style.left=Math.max(4,Math.min(mr.width-bar.offsetWidth-4,nx))+'px';
+    bar.style.top=Math.max(4,Math.min(mr.height-bar.offsetHeight-4,ny))+'px';
+  });
+  handle.addEventListener('pointerup',()=>{drag=false;});
+})();
+
+/* boot in Player view */
+setRole('player');
+</script>
+</body>
+</html>

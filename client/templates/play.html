@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="/static/css/dm-map-first-polish.css">
   <link rel="stylesheet" href="/static/css/dm-map-first-fixes.css">
   <link rel="stylesheet" href="/static/css/dm-context-render.css">
+  <link rel="stylesheet" href="/static/css/role-panels.css">
 </head>
 <body>
 
@@ -91,6 +92,17 @@
     <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="viewer-powers" aria-pressed="false">👁<span>Viewer Powers</span></button>
     <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="debug" aria-pressed="false">🐞<span>Debug</span></button>
   </nav>
+
+  <!-- PLAYER rail (shown only for player role, hidden by default) -->
+  <nav id="player-role-rail" aria-label="Player modes">
+    <div id="player-rail-modes" style="display:flex;flex-direction:column;gap:.3rem;width:100%"></div>
+  </nav>
+
+  <!-- VIEWER rail (shown only for viewer role, hidden by default) -->
+  <nav id="viewer-role-rail" aria-label="Viewer modes">
+    <div id="viewer-rail-modes" style="display:flex;flex-direction:column;gap:.3rem;width:100%"></div>
+  </nav>
+
   <div id="dm-legacy-controls-shell" class="dm-legacy-controls-shell" aria-label="Legacy DM controls remain accessible">
   <div id="dm-mode-switch">
     <div id="dm-mode-switch-label">DM Workflow Mode</div>
@@ -1511,6 +1523,40 @@
 </div>
 <div id="canvas-wrap" class="tool-select session-frame dm-map-first-map-stage" data-map-primary="true">
   <canvas id="map-canvas"></canvas>
+
+  <!-- PLAYER: draggable quick bar (shown only for player role) -->
+  <div id="rp-quickbar">
+    <div class="drag" id="rp-qb-drag" title="Drag to move">⠿</div>
+    <div class="qb-hp">
+      <div class="num" id="rp-qb-hp-num">—</div>
+      <div class="mini"><i id="rp-qb-hp-bar" style="width:100%"></i></div>
+      <div class="lab">HP</div>
+    </div>
+    <div class="qb-sep"></div>
+    <div id="rp-qb-actions"><!-- populated by subscribePlayerQuickActions() --></div>
+    <div class="qb-sep"></div>
+    <button class="qb-btn" onclick="combatDash()"><span class="g">⇉</span>Dash</button>
+    <button class="qb-btn" onclick="combatToggleDisengage()"><span class="g">↯</span>Disengage</button>
+    <div class="qb-sep"></div>
+    <button class="qb-btn" onclick="typeof toggleFlyout==='function'&&toggleFlyout('flyout-dice')"><span class="g">⚄</span>Dice</button>
+    <button class="qb-btn" onclick="typeof toggleSheet==='function'&&toggleSheet()"><span class="g">📖</span>Sheet</button>
+  </div>
+
+  <!-- VIEWER: power HUD (shown only for viewer role) -->
+  <div id="rp-viewerhud">
+    <div class="vh-label">Your<br>Powers</div>
+    <div id="rp-vh-powers"><!-- populated by subscribeViewerProfiles() --></div>
+    <div class="vh-sep"></div>
+    <div class="vh-emotes">
+      <button class="vh-e" onclick="typeof sendViewerEmote==='function'&&sendViewerEmote('👏')">👏</button>
+      <button class="vh-e" onclick="typeof sendViewerEmote==='function'&&sendViewerEmote('😱')">😱</button>
+      <button class="vh-e" onclick="typeof sendViewerEmote==='function'&&sendViewerEmote('🔥')">🔥</button>
+      <button class="vh-e" onclick="typeof sendViewerEmote==='function'&&sendViewerEmote('👑')">👑</button>
+    </div>
+  </div>
+
+  <!-- VIEWER: watching chip -->
+  <div id="rp-watch-chip">Watching</div>
   <canvas id="weather-canvas"
     style="position:absolute;top:0;left:0;width:100%;height:100%;
            pointer-events:none;z-index:5;"></canvas>
@@ -1559,6 +1605,27 @@
 
 <!-- ── RIGHT SIDEBAR ── -->
 <div id="sidebar-right" class="dm-map-first-right-context">
+
+  <!-- PLAYER context shell (shown only for player role) -->
+  <div id="player-context-shell" aria-label="Player context">
+    <div class="rp-ctx-head">
+      <div class="t"><span class="gly" id="rp-player-ctx-gly">⚔</span><h2 id="rp-player-ctx-title">My Turn</h2></div>
+      <span class="note" id="rp-player-ctx-note"></span>
+    </div>
+    <div class="rp-ctx-tabs" id="rp-player-ctx-tabs"></div>
+    <div class="rp-ctx-body" id="rp-player-ctx-body"></div>
+  </div>
+
+  <!-- VIEWER context shell (shown only for viewer role) -->
+  <div id="viewer-context-shell" aria-label="Viewer context">
+    <div class="rp-ctx-head">
+      <div class="t"><span class="gly" id="rp-viewer-ctx-gly">👁</span><h2 id="rp-viewer-ctx-title">Powers</h2></div>
+      <span class="note" id="rp-viewer-ctx-note">Granted by the DM</span>
+    </div>
+    <div class="rp-ctx-tabs" id="rp-viewer-ctx-tabs"></div>
+    <div class="rp-ctx-body" id="rp-viewer-ctx-body"></div>
+  </div>
+
   <section id="dm-context-shell" class="dm-live-context-shell" aria-label="DM context shell" data-dm-context-shell="true" hidden>
     <div class="dm-map-first-context-header">
       <span id="dm-context-title">Live Table</span>
@@ -5995,6 +6062,7 @@ function initUI() {
     }, 800);
   }
 
+  initRolePanels();
   applyPremiumRoleShellPolish();
 
   try {
@@ -37447,6 +37515,498 @@ function initPartyRosterTabs() {
   }
   setPartyRosterView(ROLE === 'viewer' ? 'viewers' : 'party');
 }
+
+// ══════════════════════════════════════════════════════════════
+// PLAYER & VIEWER ROLE PANELS — boot + render
+// Role is read once from server authority. Never mutated here.
+// ══════════════════════════════════════════════════════════════
+(function() {
+
+/* ---- helpers ---- */
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function _rpHpBar(hp, max, cls) {
+  const pct = max > 0 ? Math.max(0, Math.min(100, Math.round(hp / max * 100))) : 0;
+  return `<div class="rp-hpbar ${cls||''}"><i style="width:${pct}%"></i></div>`;
+}
+
+function _rpBlock(eyebrow, inner, cardCls, actRaw, actLabel) {
+  const eb = eyebrow ? `<div class="rp-eyebrow">${eyebrow}${actRaw ? `<span class="act" onclick="${esc(actRaw)}">${actLabel||'Open'}</span>` : ''}</div>` : '';
+  return `<section>${eb}<div class="${cardCls || 'rp-card'}" style="margin-top:.4rem">${inner}</div></section>`;
+}
+
+function _rpInitList() {
+  const combatants = Array.isArray(_combat && _combat.combatants) ? _combat.combatants : [];
+  if (!combatants.length) return `<div class="rp-empty">No active combat order.</div>`;
+  const turn = Math.max(0, Number(_combat.turn) || 0);
+  return `<div class="rp-init">${combatants.slice(0, 8).map((c, i) => {
+    const active = i === turn && !!_combat.active;
+    const tok = c.token_id && tokens ? tokens[c.token_id] : null;
+    const hp = tok ? `${Number(tok.hp||0)}/${Number(tok.max_hp||tok.hp||0)}` : '—';
+    return `<div class="rp-init-row" data-active="${active}" onclick="typeof combatSelectTarget==='function'&&combatSelectTarget(${esc(JSON.stringify(c.token_id||''))})">
+      <span class="ord">${i+1}</span>
+      <span class="who"><span class="n">${esc(c.name||'?')}</span><span class="k">${esc(c.kind||'')}</span></span>
+      <span class="mod">${c.initiative != null ? (c.initiative >= 0 ? '+' : '') + c.initiative : ''}</span>
+      <span class="ihp">${hp}</span>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function _rpPartyBlock() {
+  const partyTokens = Object.values(tokens || {}).filter(t => t && !t.hidden && t.is_pc);
+  if (!partyTokens.length) return `<div class="rp-empty">No party members visible.</div>`;
+  return `<div class="rp-party">${partyTokens.slice(0, 6).map(t => {
+    const hp = Number(t.hp || 0), max = Number(t.max_hp || t.hp || 1);
+    const full = hp >= max;
+    return `<div class="rp-party-row">
+      <span class="av"></span>
+      <span class="pn">${esc(t.name || 'Hero')}</span>
+      <span style="display:flex;flex-direction:column;gap:.1rem">
+        ${_rpHpBar(hp, max, full ? 'full' : '')}
+        <span class="rp-pnum">${hp}/${max}</span>
+      </span>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+/* ---- Player MODES ---- */
+const PLAYER_MODES = [
+  { id: 'turn',      gly: '⚔', label: 'My Turn',   tabs: [['combat','Turn'],['party','Party'],['log','Log']] },
+  { id: 'character', gly: '🛡', label: 'Character', tabs: [['sheet','Sheet'],['spells','Spells']] },
+  { id: 'inventory', gly: '🎒', label: 'Pouch',     tabs: [['items','Items'],['gold','Gold']] },
+  { id: 'social',    gly: '🗣', label: 'Social',    tabs: [['chat','Chat'],['quests','Quests']] },
+];
+
+const VIEWER_MODES = [
+  { id: 'powers', gly: '👁', label: 'Powers', tabs: [['powers','Powers']] },
+  { id: 'watch',  gly: '📺', label: 'Watch',  tabs: [['party','Party'],['init','Initiative']] },
+  { id: 'react',  gly: '🗣', label: 'React',  tabs: [['chat','Chat'],['polls','Polls']] },
+];
+
+/* ---- Player context renders ---- */
+function _renderPlayerMode(modeId) {
+  const glEl = document.getElementById('rp-player-ctx-gly');
+  const titEl = document.getElementById('rp-player-ctx-title');
+  const noteEl = document.getElementById('rp-player-ctx-note');
+  const tabsEl = document.getElementById('rp-player-ctx-tabs');
+  const bodyEl = document.getElementById('rp-player-ctx-body');
+  if (!bodyEl) return;
+
+  const modeInfo = PLAYER_MODES.find(m => m.id === modeId) || PLAYER_MODES[0];
+  if (glEl) glEl.textContent = modeInfo.gly;
+  if (titEl) titEl.textContent = modeInfo.label;
+  if (noteEl) noteEl.textContent = '';
+  if (tabsEl) {
+    tabsEl.innerHTML = (modeInfo.tabs || []).map((t, i) =>
+      `<button class="rp-ctx-tab" aria-pressed="${i===0}" onclick="typeof switchRTab==='function'&&switchRTab(${esc(JSON.stringify(t[0]))})">${t[1]}</button>`
+    ).join('');
+  }
+
+  // mark active rail button
+  document.querySelectorAll('#player-rail-modes .rp-mode-btn').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.mode === modeId))
+  );
+
+  let html = '';
+  if (modeId === 'turn') {
+    const myToken = Object.values(tokens || {}).find(t => t && t.owner_id === USER_ID) || null;
+    const cs = _charSheet || {};
+    const name = myToken ? (myToken.name || cs.name || NAME || 'You') : (cs.name || NAME || 'You');
+    const hp = myToken ? Number(myToken.hp || 0) : Number(cs.hp || 0);
+    const maxHp = myToken ? Number(myToken.max_hp || myToken.hp || 1) : Number(cs.max_hp || cs.hp || 1);
+    const ac = myToken ? (myToken.ac || cs.ac || '—') : (cs.ac || '—');
+    const spd = cs.speed || myToken?.speed || '—';
+    const isMyTurn = _combat && _combat.active && (() => {
+      const cur = (_combat.combatants || [])[Math.max(0, Number(_combat.turn)||0)] || null;
+      return cur && (cur.owner_id === USER_ID || cur.token_id === myToken?.id);
+    })();
+    const actionUsed = isMyTurn && (_combatActionUsed || false);
+    const bonusUsed  = isMyTurn && (_combatBonusUsed || false);
+    const reactionUsed = isMyTurn && (_combatReactionUsed || false);
+
+    html += _rpBlock('Current turn', `
+      <div class="rp-turn">
+        <div class="portrait"></div>
+        <div class="info">
+          <div class="row1"><span class="nm">${esc(name)}</span></div>
+          <div class="cls">${esc(String(cs.class_name||cs.class||'').slice(0,20))} ${cs.level ? 'Lv '+cs.level : ''}</div>
+          <div class="rp-chips">
+            <span class="rp-chip">AC <b>${esc(String(ac))}</b></span>
+            <span class="rp-chip">Spd <b>${esc(String(spd))}</b></span>
+          </div>
+        </div>
+        <div class="hpwrap">
+          <span class="rp-hpnum">${hp}<span class="small">/${maxHp}</span></span>
+          ${_rpHpBar(hp, maxHp)}
+        </div>
+      </div>
+      <div class="rp-econ-row">
+        <button class="rp-econ-btn${actionUsed?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('action')">Action</button>
+        <button class="rp-econ-btn${bonusUsed?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('bonus_action')">Bonus</button>
+        <button class="rp-econ-btn${reactionUsed?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('reaction')">Reaction</button>
+        <button class="rp-action go" style="grid-column:1/-1;justify-content:center;font-size:.66rem;" onclick="typeof combatEndTurn==='function'&&combatEndTurn()">End turn ▸</button>
+      </div>
+    `, 'rp-card glow');
+
+    html += `<section><div class="rp-eyebrow">Quick actions</div><div id="rp-quick-actions-area" style="margin-top:.4rem"><div id="rp-quick-actions-grid" class="rp-actions"></div></div></section>`;
+    html += _rpBlock('Initiative order', _rpInitList(), '', "typeof combatRollInitiative==='function'&&combatRollInitiative()", 'Roll');
+    html += _rpBlock('Party', _rpPartyBlock());
+
+  } else if (modeId === 'character') {
+    html += _rpBlock('Open full sheet',
+      `<div style="padding:.6rem"><button class="rp-action go" style="width:100%;justify-content:center;" onclick="typeof toggleSheet==='function'&&toggleSheet()">📖 Open character book ▸</button></div>`,
+      'rp-card glow');
+    const cs = _charSheet || {};
+    const scores = [
+      ['STR', cs.str_score||cs.str||10], ['DEX', cs.dex_score||cs.dex||10],
+      ['CON', cs.con_score||cs.con||10], ['INT', cs.int_score||cs.int||10],
+      ['WIS', cs.wis_score||cs.wis||10], ['CHA', cs.cha_score||cs.cha||10],
+    ];
+    html += _rpBlock('Ability scores', `<div class="rp-stools" style="grid-template-columns:repeat(3,1fr);padding:.55rem">
+      ${scores.map(([s,v]) => {
+        const mod = Math.floor((Number(v)-10)/2);
+        return `<span class="rp-stool" style="cursor:default"><span class="gly" style="color:var(--mf-role)">${mod>=0?'+':''}${mod}</span>${s}</span>`;
+      }).join('')}
+    </div>`);
+    const spells = Array.isArray(cs.spells) ? cs.spells.slice(0,6) : [];
+    html += _rpBlock('Spells', spells.length ? `<div class="rp-toollist">
+      ${spells.map(sp => `<button class="rp-tl" onclick="typeof castPlayerGrantedSpell==='function'?castPlayerGrantedSpell(${esc(JSON.stringify(sp.id||sp.name||''))}):castRulesSpell(${esc(JSON.stringify(sp.name||''))})">
+        <span class="ti">✦</span><span class="tt">${esc(sp.name||sp.id||'Spell')}</span><span class="ts">${esc(sp.level_slot||'')}</span>
+      </button>`).join('')}
+    </div>` : `<div class="rp-empty">No spells loaded.</div>`, '',
+      "typeof toggleFlyout==='function'&&toggleFlyout('flyout-char')", 'Manage');
+
+  } else if (modeId === 'inventory') {
+    html += _rpBlock('Carry', `<div class="rp-toollist">
+      <button class="rp-tl" onclick="typeof toggleFlyout==='function'&&toggleFlyout('flyout-char')"><span class="ti">🎒</span><span class="tt">Backpack</span></button>
+      <button class="rp-tl" onclick="typeof switchRTab==='function'&&switchRTab('inventory')"><span class="ti">🪙</span><span class="tt">Gold</span></button>
+      <button class="rp-tl" onclick="typeof openShopFromProp==='function'&&openShopFromProp(null)"><span class="ti">🛒</span><span class="tt">Shop</span></button>
+    </div>`);
+    html += _rpBlock('Rest', `<div class="rp-actions">
+      <button class="rp-action" onclick="typeof onCampRestTopbarClick==='function'&&onCampRestTopbarClick()"><span class="ai">🏕</span><span class="al"><span class="t">Short rest</span><span class="s">spend hit dice</span></span></button>
+      <button class="rp-action" onclick="typeof onCampRestTopbarClick==='function'&&onCampRestTopbarClick()"><span class="ai">🌙</span><span class="al"><span class="t">Long rest</span><span class="s">full recovery</span></span></button>
+    </div>`);
+
+  } else if (modeId === 'social') {
+    html += _rpBlock('Table', `<div class="rp-toollist">
+      <button class="rp-tl" onclick="typeof switchRTab==='function'&&switchRTab('chat')"><span class="ti">💬</span><span class="tt">Party chat</span></button>
+      <button class="rp-tl" onclick="typeof switchRTab==='function'&&switchRTab('chat')"><span class="ti">📊</span><span class="tt">Vote in poll</span></button>
+      <button class="rp-tl" onclick="typeof addPartyMemory==='function'&&addPartyMemory()"><span class="ti">⭐</span><span class="tt">Log a moment</span></button>
+    </div>`);
+    html += _rpBlock('Records', `<div class="rp-toollist">
+      <button class="rp-tl" onclick="typeof toggleFlyout==='function'&&toggleFlyout('flyout-journal')"><span class="ti">📓</span><span class="tt">Journal</span></button>
+      <button class="rp-tl" onclick="typeof switchRTab==='function'&&switchRTab('handouts')"><span class="ti">🗺</span><span class="tt">Quests</span></button>
+    </div>`);
+  }
+
+  bodyEl.innerHTML = html;
+  _refreshPlayerQuickActionsGrid();
+}
+
+/* ---- Viewer context renders ---- */
+function _renderViewerMode(modeId) {
+  const glEl  = document.getElementById('rp-viewer-ctx-gly');
+  const titEl = document.getElementById('rp-viewer-ctx-title');
+  const noteEl= document.getElementById('rp-viewer-ctx-note');
+  const tabsEl= document.getElementById('rp-viewer-ctx-tabs');
+  const bodyEl= document.getElementById('rp-viewer-ctx-body');
+  if (!bodyEl) return;
+
+  const modeInfo = VIEWER_MODES.find(m => m.id === modeId) || VIEWER_MODES[0];
+  if (glEl) glEl.textContent = modeInfo.gly;
+  if (titEl) titEl.textContent = modeInfo.label;
+  if (noteEl) noteEl.textContent = modeId === 'powers' ? 'Granted by the DM' : modeId === 'watch' ? 'Read-only · live sync' : 'Emotes · polls · chat';
+  if (tabsEl) {
+    tabsEl.innerHTML = (modeInfo.tabs || []).map((t, i) =>
+      `<button class="rp-ctx-tab" aria-pressed="${i===0}">${t[1]}</button>`
+    ).join('');
+  }
+
+  document.querySelectorAll('#viewer-rail-modes .rp-mode-btn').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.mode === modeId))
+  );
+
+  let html = '';
+  if (modeId === 'powers') {
+    html += _rpViewerPowersHtml();
+  } else if (modeId === 'watch') {
+    html += _rpBlock('Initiative order', _rpInitList());
+    html += _rpBlock('Party', _rpPartyBlock());
+  } else if (modeId === 'react') {
+    const activePoll = typeof _activePoll !== 'undefined' ? _activePoll : null;
+    if (activePoll && activePoll.id) {
+      const opts = Array.isArray(activePoll.options) ? activePoll.options : [];
+      html += _rpBlock('Live poll', `<div class="rp-card" style="padding:.6rem">
+        <div style="font-family:var(--mf-font-body);font-size:.78rem;color:var(--mf-text);margin-bottom:.5rem">${esc(activePoll.question||'Poll')}</div>
+        ${opts.map((o, i) => `<button class="rp-tl" style="width:100%;margin-bottom:.3rem" onclick="if(typeof sendWS==='function')sendWS({type:'poll_vote',payload:{poll_id:${esc(JSON.stringify(activePoll.id))},option_index:${i}}})"><span class="tt">${esc(o.label||o)}</span><span class="ts" style="color:var(--mf-role)">${o.pct != null ? o.pct+'%' : ''}</span></button>`).join('')}
+      </div>`);
+    } else {
+      html += `<div class="rp-empty">No active poll right now.</div>`;
+    }
+    html += _rpBlock('Emotes', `<div class="rp-stools" style="grid-template-columns:repeat(4,1fr);padding:.55rem">
+      ${['👏','😱','🔥','👑','🎲','💀','❤','🍺'].map(e =>
+        `<button class="rp-stool" onclick="typeof sendViewerEmote==='function'&&sendViewerEmote(${esc(JSON.stringify(e))})"><span class="gly">${e}</span></button>`
+      ).join('')}
+    </div>`);
+    html += _rpBlock('Chat', `<div class="rp-toollist"><button class="rp-tl" onclick="typeof switchRTab==='function'&&switchRTab('chat')"><span class="ti">💬</span><span class="tt">Open chat</span></button></div>`);
+  }
+  bodyEl.innerHTML = html;
+}
+
+function _rpViewerPowersHtml() {
+  const profileKey = Object.keys(viewerProfiles || {})[0];
+  const profile = profileKey ? viewerProfiles[profileKey] : null;
+  const entries = profile ? Object.values(profile.powers || {}).filter(e => Number(e?.charges || 0) > 0) : [];
+  if (!entries.length) {
+    return `<div class="rp-empty" style="border-style:solid;border-color:var(--mf-role-line)">The DM has not granted any powers yet. Powers appear here when granted.</div>`;
+  }
+  const defs = typeof viewerPowerDefs === 'function' ? viewerPowerDefs() : {};
+  const cards = entries.map(entry => {
+    const pid = entry.power_id;
+    const def = defs[pid] || {};
+    const name = typeof viewerPowerName === 'function' ? viewerPowerName(pid) : (def.name || pid);
+    const desc = typeof viewerPowerDescription === 'function' ? viewerPowerDescription(pid) : (def.description || '');
+    const coolLabel = typeof viewerPowerCooldownLabel === 'function' ? viewerPowerCooldownLabel(entry) : '';
+    const onCd = coolLabel && coolLabel !== 'Ready' && coolLabel !== 'No cooldown';
+    const needsApproval = entry.requires_approval;
+    const state = onCd ? 'cd' : (needsApproval ? 'app' : 'rdy');
+    const tag = state === 'rdy' ? '<span class="ptag rdy">Ready</span>'
+      : state === 'app' ? '<span class="ptag app">DM approval</span>'
+      : `<span class="ptag cd">${esc(coolLabel)}</span>`;
+    const dmgDice = def.damage_dice || def.heal_dice || '';
+    return `<button class="powcard${onCd?' cool':''}" onclick="${onCd?'':("typeof useViewerPower==='function'&&useViewerPower("+esc(JSON.stringify(pid))+")")}" style="width:100%;text-align:left">
+      <div class="ph"><span class="pn">${esc(name)}</span><span class="pd">${esc(dmgDice)}</span></div>
+      <div class="px">${esc(desc)}</div>
+      <div class="pf">${tag}</div>
+    </button>`;
+  }).join('');
+  return `<section><div class="rp-eyebrow">Granted powers</div><div style="display:flex;flex-direction:column;gap:.45rem;margin-top:.4rem">${cards}</div></section>`;
+}
+
+/* ---- Player Quick Actions (from live manifest) ---- */
+function _refreshPlayerQuickActionsGrid() {
+  const grid = document.getElementById('rp-quick-actions-grid');
+  if (!grid) return;
+  const actions = window._serverQuickActions;
+  if (!actions || (!Array.isArray(actions.attacks) && !Array.isArray(actions.spells) && !Array.isArray(actions.items))) {
+    grid.innerHTML = `<div class="rp-empty" style="grid-column:1/-1">No quick actions loaded yet.</div>`;
+    return;
+  }
+  let buttons = [];
+  (actions.attacks || []).slice(0,2).forEach(a => {
+    buttons.push(`<button class="rp-action" onclick="typeof runSheetQuickAction==='function'&&runSheetQuickAction(${esc(JSON.stringify(a))})"><span class="ai">⚔</span><span class="al"><span class="t">${esc(a.name||'Attack')}</span><span class="s">Melee</span></span></button>`);
+  });
+  (actions.spells || []).slice(0,2).forEach(s => {
+    buttons.push(`<button class="rp-action" onclick="typeof runSheetQuickAction==='function'&&runSheetQuickAction(${esc(JSON.stringify(s))})"><span class="ai">✦</span><span class="al"><span class="t">${esc(s.name||'Spell')}</span><span class="s">${esc(s.level_slot||s.level||'')}</span></span></button>`);
+  });
+  (actions.items || []).slice(0,2).forEach(item => {
+    buttons.push(`<button class="rp-action" onclick="typeof runSheetQuickAction==='function'&&runSheetQuickAction(${esc(JSON.stringify(item))})"><span class="ai">🧪</span><span class="al"><span class="t">${esc(item.name||'Item')}</span><span class="s">Use</span></span></button>`);
+  });
+  if (!buttons.length) {
+    grid.innerHTML = `<div class="rp-empty" style="grid-column:1/-1">No quick actions available.</div>`;
+    return;
+  }
+  grid.innerHTML = buttons.join('') +
+    `<button class="rp-action full" onclick="typeof toggleSheet==='function'&&toggleSheet()">— More actions —</button>`;
+}
+
+function _refreshPlayerHpBar() {
+  const myToken = Object.values(tokens || {}).find(t => t && t.owner_id === USER_ID) || null;
+  const cs = _charSheet || {};
+  const hp    = myToken ? Number(myToken.hp    || 0) : Number(cs.hp     || 0);
+  const maxHp = myToken ? Number(myToken.max_hp|| myToken.hp||1) : Number(cs.max_hp||cs.hp||1);
+  const numEl = document.getElementById('rp-qb-hp-num');
+  const barEl = document.getElementById('rp-qb-hp-bar');
+  if (numEl) numEl.textContent = `${hp}/${maxHp}`;
+  if (barEl) barEl.style.width = `${maxHp > 0 ? Math.max(0,Math.min(100,Math.round(hp/maxHp*100))) : 100}%`;
+}
+
+function _refreshViewerHud() {
+  const hudPows = document.getElementById('rp-vh-powers');
+  if (!hudPows) return;
+  const profileKey = Object.keys(viewerProfiles || {})[0];
+  const profile = profileKey ? viewerProfiles[profileKey] : null;
+  const entries = profile ? Object.values(profile.powers || {}).filter(e => Number(e?.charges || 0) > 0) : [];
+  if (!entries.length) {
+    hudPows.innerHTML = `<span class="vh-pow locked"><span class="g">👁</span><span class="dice">—</span></span>`;
+    return;
+  }
+  const defs = typeof viewerPowerDefs === 'function' ? viewerPowerDefs() : {};
+  hudPows.innerHTML = entries.slice(0,4).map(entry => {
+    const pid = entry.power_id;
+    const def = defs[pid] || {};
+    const name = typeof viewerPowerName === 'function' ? viewerPowerName(pid) : (def.name || pid);
+    const coolLabel = typeof viewerPowerCooldownLabel === 'function' ? viewerPowerCooldownLabel(entry) : '';
+    const onCd = coolLabel && coolLabel !== 'Ready' && coolLabel !== 'No cooldown';
+    const dmgDice = def.damage_dice || def.heal_dice || '';
+    const shortName = name.split(' ').slice(0,2).join(' ');
+    return `<button class="vh-pow${onCd?' locked':''}" title="${esc(name)}${onCd?' · '+coolLabel:''}"
+      onclick="${onCd?'':("typeof useViewerPower==='function'&&useViewerPower("+esc(JSON.stringify(pid))+")") }">
+      <span class="g">⚡</span>${esc(shortName)}<span class="dice">${esc(onCd ? coolLabel : dmgDice)}</span>
+    </button>`;
+  }).join('');
+}
+
+/* ---- Viewer profile sync callback ---- */
+function subscribeViewerProfiles() {
+  // renderViewerPanel() is already called on viewer_profiles_sync and viewer_power_catalog_sync.
+  // We hook into it here by patching the hook event that already fires.
+  const orig = window._rpOnViewerProfileSync;
+  if (!orig) {
+    window._rpOnViewerProfileSync = function() {
+      _refreshViewerHud();
+      const modeId = window._rpViewerMode || 'powers';
+      if (modeId === 'powers') _renderViewerMode('powers');
+    };
+    // Patch renderViewerPanel to also fire our hook
+    const origRVP = typeof renderViewerPanel === 'function' ? renderViewerPanel : null;
+    if (origRVP) {
+      window.renderViewerPanel = function() {
+        origRVP.apply(this, arguments);
+        if (typeof window._rpOnViewerProfileSync === 'function') {
+          try { window._rpOnViewerProfileSync(); } catch(_) {}
+        }
+      };
+    }
+  }
+}
+
+/* ---- Player quick actions refresh callback ---- */
+function subscribePlayerQuickActions() {
+  window.addEventListener('character:quick-actions-refresh', function() {
+    _refreshPlayerQuickActionsGrid();
+    _refreshPlayerHpBar();
+  });
+  // Also subscribe to character sheet changes
+  window.addEventListener('character:sheet-updated', function() {
+    _refreshPlayerHpBar();
+    const modeId = window._rpPlayerMode || 'turn';
+    if (modeId === 'turn') _renderPlayerMode('turn');
+  });
+}
+
+/* ---- Drag for player quick bar ---- */
+function _mountQbDrag() {
+  const bar    = document.getElementById('rp-quickbar');
+  const handle = document.getElementById('rp-qb-drag');
+  const mapEl  = document.getElementById('canvas-wrap');
+  if (!bar || !handle || !mapEl) return;
+  let drag = false, ox, oy, bx, by;
+  handle.addEventListener('pointerdown', function(e) {
+    drag = true;
+    const r  = bar.getBoundingClientRect();
+    const mr = mapEl.getBoundingClientRect();
+    ox = e.clientX; oy = e.clientY;
+    bx = r.left - mr.left; by = r.top - mr.top;
+    bar.style.transform = 'none';
+    bar.style.left = bx + 'px';
+    bar.style.top  = by + 'px';
+    bar.style.bottom = 'auto';
+    handle.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  handle.addEventListener('pointermove', function(e) {
+    if (!drag) return;
+    const mr = mapEl.getBoundingClientRect();
+    const nx = bx + (e.clientX - ox);
+    const ny = by + (e.clientY - oy);
+    bar.style.left = Math.max(4, Math.min(mr.width  - bar.offsetWidth  - 4, nx)) + 'px';
+    bar.style.top  = Math.max(4, Math.min(mr.height - bar.offsetHeight - 4, ny)) + 'px';
+  });
+  handle.addEventListener('pointerup', function() { drag = false; });
+}
+
+/* ---- Toolbar filtering for viewer ---- */
+function filterToolbarForViewer() {
+  // Select tool stays. Ruler, ping, spell already hidden by existing code.
+  // Hide any remaining DM-only toolbar elements.
+  const dmOnlyTools = ['tool-ruler','tool-ping','tool-spell'];
+  dmOnlyTools.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+
+/* ======= BOOT ======= */
+window.initRolePanels = function initRolePanels() {
+  const effectiveRole = String(window._serverResolvedRole || window.ROLE || 'viewer').toLowerCase();
+  if (effectiveRole === 'dm' || effectiveRole === 'assistant_dm') return;
+
+  document.body.setAttribute('data-role', effectiveRole);
+
+  if (effectiveRole === 'player') {
+    // Show player rail, populate modes
+    const rail = document.getElementById('player-role-rail');
+    if (rail) rail.style.display = 'flex';
+    const modesEl = document.getElementById('player-rail-modes');
+    if (modesEl) {
+      modesEl.innerHTML = PLAYER_MODES.map((m, i) =>
+        `<button class="rp-mode-btn" data-mode="${esc(m.id)}" aria-pressed="${i===0}" onclick="window._rpSetPlayerMode(this.dataset.mode)"><span class="gly">${m.gly}</span><span>${m.label}</span></button>`
+      ).join('');
+    }
+
+    // Show player context
+    const ctx = document.getElementById('player-context-shell');
+    if (ctx) ctx.style.display = 'flex';
+
+    // Show quick bar
+    const qb = document.getElementById('rp-quickbar');
+    if (qb) qb.style.display = 'flex';
+
+    _mountQbDrag();
+    subscribePlayerQuickActions();
+    window._rpPlayerMode = 'turn';
+    _renderPlayerMode('turn');
+    _refreshPlayerHpBar();
+
+  } else {
+    // viewer
+    const rail = document.getElementById('viewer-role-rail');
+    if (rail) rail.style.display = 'flex';
+    const modesEl = document.getElementById('viewer-rail-modes');
+    if (modesEl) {
+      modesEl.innerHTML = VIEWER_MODES.map((m, i) =>
+        `<button class="rp-mode-btn" data-mode="${esc(m.id)}" aria-pressed="${i===0}" onclick="window._rpSetViewerMode(this.dataset.mode)"><span class="gly">${m.gly}</span><span>${m.label}</span></button>`
+      ).join('');
+    }
+
+    // Show viewer context
+    const ctx = document.getElementById('viewer-context-shell');
+    if (ctx) ctx.style.display = 'flex';
+
+    // Show viewer HUD + watch chip
+    const hud = document.getElementById('rp-viewerhud');
+    if (hud) hud.style.display = 'flex';
+    const chip = document.getElementById('rp-watch-chip');
+    if (chip) chip.style.display = 'inline-flex';
+
+    filterToolbarForViewer();
+    subscribeViewerProfiles();
+    window._rpViewerMode = 'powers';
+    _renderViewerMode('powers');
+    _refreshViewerHud();
+  }
+};
+
+window._rpSetPlayerMode = function(modeId) {
+  window._rpPlayerMode = modeId;
+  _renderPlayerMode(modeId);
+};
+
+window._rpSetViewerMode = function(modeId) {
+  window._rpViewerMode = modeId;
+  _renderViewerMode(modeId);
+};
+
+// Re-render turn context on combat state changes
+window.addEventListener('combat:state-updated', function() {
+  if ((window._serverResolvedRole || window.ROLE || '').toLowerCase() !== 'player') return;
+  if ((window._rpPlayerMode || 'turn') === 'turn') _renderPlayerMode('turn');
+  _refreshPlayerHpBar();
+});
+
+})();
+// END ROLE PANELS
 
 function applyPremiumRoleShellPolish() {
   const tabBar = document.getElementById('right-tab-bar');
