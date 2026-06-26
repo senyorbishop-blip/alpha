@@ -133,6 +133,13 @@ def _apply_patch(module: ModuleType) -> ModuleType:
     if getattr(module, _PATCH_FLAG, False):
         return module
 
+    # The handler now performs flexible viewer resolution and status feedback
+    # natively, so wrapping it here would double-send DM/viewer notifications.
+    # Mark the patch as applied (so callers see success) without rewrapping.
+    if getattr(module, "_VIEWER_GRANT_NATIVE_DELIVERY", False):
+        setattr(module, _PATCH_FLAG, True)
+        return module
+
     original_grant = module.handle_viewer_power_grant
     original_grant_preset = module.handle_viewer_power_grant_preset
 
