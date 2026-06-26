@@ -521,19 +521,19 @@
     try {
       ensureModePanels(safeRoot);
       const activeMode = normalizeMode(modeId);
-      const sections = Array.from(safeRoot.querySelectorAll(SECTION_SELECTOR));
+      const sections = Array.from(document.querySelectorAll(SECTION_SELECTOR));
       sections.forEach((section) => applySectionState(section, activeMode));
-      safeRoot.querySelectorAll('[data-dm-mode-button]').forEach((button) => {
+      document.querySelectorAll('[data-dm-mode-button]').forEach((button) => {
         const isActive = normalizeMode(button.dataset.dmModeButton) === activeMode;
         button.dataset.dmModeActive = String(isActive);
         button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
       });
       const activeConfig = getModeConfig(activeMode);
-      const titleEl = safeRoot.getElementById ? safeRoot.getElementById('dm-context-title') : null;
+      const titleEl = document.getElementById('dm-context-title');
       if (titleEl) titleEl.textContent = activeConfig.label || 'Live Table';
-      if (safeRoot.dataset) {
-        safeRoot.dataset.dmActiveMode = activeMode;
-        safeRoot.dataset.debugOpen = activeMode === 'debug' ? 'true' : 'false';
+      const shellEl = document.getElementById('dm-context-shell');
+      if (shellEl) {
+        shellEl.dataset.dmActiveMode = activeMode;
       }
       if (safeRoot.body && safeRoot.body.dataset) {
         safeRoot.body.dataset.dmActiveMode = activeMode;
