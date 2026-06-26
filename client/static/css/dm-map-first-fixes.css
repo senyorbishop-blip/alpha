@@ -1,0 +1,76 @@
+/*
+ * dm-map-first-fixes.css
+ * Casual D&D / Alpha — targeted fixes for the DM map-first shell.
+ * Load this AFTER dm-map-first-shell.css and dm-map-first-polish.css.
+ *
+ *   <link rel="stylesheet" href="/static/css/dm-map-first-fixes.css">
+ *
+ * It changes nothing about gameplay handlers — it only repositions and
+ * declutters so the new layout reads as finished.
+ */
+
+/* ------------------------------------------------------------------
+ * FIX 1 — The "left panel came out / floating over the map" bug.
+ *
+ * .flyout is `position:fixed; left:48px; top:42px` (sized for the OLD
+ * 48px rail). The new rail is --mf-left-rail-width (4.75rem ≈ 76px), so
+ * Create Token / Editor / Fog etc. open in the wrong place and overlap
+ * the map's left edge. Re-anchor every flyout to the right of the new
+ * rail, just under the topbar, as a tidy floating card.
+ * ------------------------------------------------------------------ */
+body.dm-map-first-active .flyout {
+  left: calc(var(--mf-left-rail-width, 4.75rem) + 0.5rem);
+  top:  calc(var(--mf-topbar-height, 3rem) + 0.5rem);
+  bottom: auto;
+  max-height: calc(100dvh - var(--mf-topbar-height, 3rem) - var(--mf-bottom-strip-height, 4rem) - 1.5rem);
+  width: 248px;
+  border: 1px solid var(--mf-border-cyan, rgba(0,229,204,.26));
+  border-radius: 14px;
+  box-shadow: 0 18px 42px rgba(0,0,0,.5);
+}
+/* Wider editor / journal flyouts keep their width but follow the new anchor. */
+body.dm-map-first-active #flyout-editor { width: min(360px, calc(100vw - var(--mf-left-rail-width) - var(--mf-right-context-width) - 2rem)); }
+body.dm-map-first-active #flyout-journal { width: min(820px, calc(100vw - var(--mf-left-rail-width) - 2rem)); }
+
+/* ------------------------------------------------------------------
+ * FIX 2 — Two left panels at once.
+ *
+ * The legacy DM controls shell (workflow Prep/Live switch + the old
+ * tool icons) renders in the rail alongside the new DM mode buttons,
+ * and the bottom quick strip now owns select/move/measure/draw/light.
+ * Collapse the legacy controls so the rail shows ONE clean column of
+ * modes. Buttons stay in the DOM (handlers intact) but out of the way.
+ *
+ * If you'd rather keep a few legacy icons, delete the lines you want
+ * back instead of hiding the whole shell.
+ * ------------------------------------------------------------------ */
+body.dm-map-first-active #dm-legacy-controls-shell { display: none; }
+body.dm-map-first-active #dm-mode-switch { display: none !important; }
+
+/* The new mode rail is the rail. Make sure it shows even though the
+ * markup ships it hidden (the bootstrap unhides it for DMs, this is a
+ * belt-and-braces so a missed boot still renders the rail). */
+body.dm-map-first-active .dm-live-mode-rail[hidden] { display: flex !important; }
+
+/* ------------------------------------------------------------------
+ * FIX 3 — The right context was a wall of text-link "markers".
+ * Tighten spacing so until you swap in the rich renderer (see
+ * INTEGRATION.md) the marker lists at least read as grouped cards.
+ * ------------------------------------------------------------------ */
+body.dm-map-first-active .dm-context-marker-grid { gap: 0.3rem; }
+body.dm-map-first-active .dm-context-marker {
+  padding: 0.5rem 0.6rem;
+  border-radius: 10px;
+  background: rgba(255,255,255,.022);
+}
+/* Hide every mode section except the active one (belt-and-braces with
+ * the bridge's hidden attribute, prevents stacked panels like image 1). */
+body.dm-map-first-active .dm-context-mode-section { display: none; }
+body.dm-map-first-active .dm-context-mode-section.dm-panel-mode-active,
+body.dm-map-first-active .dm-context-mode-section[data-dm-mode-active="true"] { display: flex; }
+
+/* ------------------------------------------------------------------
+ * FIX 4 — Reveal the bottom quick strip (markup ships it `hidden`;
+ * bootstrap unhides for DM — this keeps it visible if boot is skipped).
+ * ------------------------------------------------------------------ */
+body.dm-map-first-active #dm-map-first-quick-strip[hidden] { display: flex !important; }
