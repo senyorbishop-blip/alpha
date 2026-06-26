@@ -27771,11 +27771,12 @@ function handleLegacyMessage(msg) {
           is_magic: !!item.is_magic,
           is_identified: item.is_identified !== false,
         });
-        const existingIdx = playerInventory.findIndex(it => it.id === item.id);
+        const existingIdx = item.id ? playerInventory.findIndex(it => it.id === item.id) : -1;
         if (existingIdx >= 0) playerInventory[existingIdx] = normItem;
         else playerInventory.push(normItem);
       });
       renderInventoryPanel();
+      if (ROLE === 'player' && typeof _rpRerender === 'function') _rpRerender();
       if (receivedItems.length || Object.keys(receivedCoins).some(key => Number(receivedCoins[key]) > 0)) {
         const sourceName = String(p.source || 'Treasure').trim() || 'Treasure';
         const eventLabel = p.event === 'chest_take' ? 'Chest Opened' : 'Loot Received';
@@ -27844,7 +27845,7 @@ function handleLegacyMessage(msg) {
         // Add magic items to inventory with shimmer
         received.forEach(item => {
           const normItem = Object.assign({}, item, { identified: !item.is_magic });
-          const existingIdx = playerInventory.findIndex(it => it.id === item.id);
+          const existingIdx = item.id ? playerInventory.findIndex(it => it.id === item.id) : -1;
           if (existingIdx >= 0) {
             playerInventory[existingIdx] = normItem;
           } else {
@@ -27852,6 +27853,7 @@ function handleLegacyMessage(msg) {
           }
         });
         renderInventoryPanel();
+        if (ROLE === 'player' && typeof _rpRerender === 'function') _rpRerender();
         // Add shimmer class to magic items in the inventory list
         setTimeout(() => {
           const rows = document.querySelectorAll('#inventory-list > div');
@@ -37111,6 +37113,11 @@ function applyPlayerInventoryState(payload) {
   syncLootRevealStateWithInventory();
   renderInventoryPanel();
   renderPlayerActionsHub();
+  // Refresh the map-first player dashboard ("Pouch > Items / Gold") in place so
+  // freshly looted/granted items and gold appear live. Without this the player
+  // only sees the legacy #inventory-list update, leaving the Pouch surface they
+  // actually look at stale until they manually switch modes/tabs.
+  if (ROLE === 'player' && typeof _rpRerender === 'function') _rpRerender();
   if (window.CombatQuickBar && typeof window.CombatQuickBar.render === 'function') window.CombatQuickBar.render();
   if (typeof requestCharacterBookOverviewRender === 'function') requestCharacterBookOverviewRender('player_inventory_sync');
   if (typeof initPremiumSheetIfNeeded === 'function') initPremiumSheetIfNeeded();
