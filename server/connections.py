@@ -1,8 +1,10 @@
 """
 server/connections.py — WebSocket connection registry and broadcaster
 """
+import asyncio
 import json
 import logging
+import os
 import time
 import uuid
 from server.payload_diagnostics import log_payload_size_diagnostic
@@ -14,6 +16,27 @@ logger = logging.getLogger(__name__)
 PAYLOAD_WARN_BYTES = 128 * 1024
 PAYLOAD_ERROR_BYTES = 512 * 1024
 SLOW_SEND_WARN_MS = 250.0
+
+# A single send must never be allowed to block the broadcaster indefinitely.
+# A half-open socket (sleeping laptop, dropped wifi, backgrounded phone, NAT
+# idle-timeout) does not fail fast: once the transport buffer fills, send_text
+# awaits a drain that never completes. Without a bound that one dead peer
+# freezes live sync for the whole session. The timeout is generous enough for
+# large initial syncs over slow-but-alive links yet well under the 60s
+# heartbeat timeout, so it only ever reaps genuinely wedged sockets.
+DEFAULT_SEND_TIMEOUT_SECONDS = 10.0
+MIN_SEND_TIMEOUT_SECONDS = 1.0
+
+
+def send_timeout_seconds() -> float:
+    raw = os.environ.get("WS_SEND_TIMEOUT_SECONDS")
+    if raw is None or str(raw).strip() == "":
+        return DEFAULT_SEND_TIMEOUT_SECONDS
+    try:
+        value = float(str(raw).strip())
+    except Exception:
+        return DEFAULT_SEND_TIMEOUT_SECONDS
+    return max(MIN_SEND_TIMEOUT_SECONDS, value)
 
 
 def _socket_is_open(websocket) -> bool:
@@ -179,10 +202,24 @@ class ConnectionManager:
         byte_size: int,
     ) -> None:
         started = time.perf_counter()
+        timed_out = False
         try:
-            await ws.send_text(payload)
+            await asyncio.wait_for(ws.send_text(payload), timeout=send_timeout_seconds())
+        except asyncio.TimeoutError:
+            # The socket is wedged (half-open TCP / unresponsive peer). Surface it
+            # as a send failure so the caller reaps the connection instead of
+            # letting one dead recipient stall live sync for everyone else.
+            timed_out = True
+            raise
         finally:
             duration_ms = (time.perf_counter() - started) * 1000.0
+            if timed_out:
+                logger.warning(
+                    "[ws] outbound_send_timeout message_type=%s session_id=%s recipient_user_id=%s "
+                    "recipient_role=%s byte_size=%s duration_ms=%.2f timeout_s=%.2f",
+                    message_type or "unknown", session_id, user_id, role or "unknown",
+                    byte_size, duration_ms, send_timeout_seconds(),
+                )
             self._log_send_diagnostic(
                 session_id=session_id, user_id=user_id, role=role,
                 message_type=message_type, byte_size=byte_size, duration_ms=duration_ms,
@@ -208,51 +245,64 @@ class ConnectionManager:
                 self.disconnect(session_id, user_id, ws)
         return False
 
+    async def _gather_sends(self, session_id: str, sends: list) -> None:
+        """Deliver many sends concurrently and reap whichever sockets failed.
+
+        ``sends`` is a list of ``(uid, ws, coroutine)`` tuples. Running them
+        concurrently (rather than awaiting each in turn) is what prevents a
+        single slow or wedged recipient from adding head-of-line latency to
+        every other client's live sync. Each coroutine is already bounded by the
+        per-send timeout in ``_send_payload``; any that fail (timeout, transport
+        error) have their socket removed from the registry so the next broadcast
+        skips them.
+        """
+        if not sends:
+            return
+        results = await asyncio.gather(*(coro for _, _, coro in sends), return_exceptions=True)
+        for (uid, ws, _), result in zip(sends, results):
+            if isinstance(result, asyncio.CancelledError):
+                # Preserve cancellation semantics — do not swallow a cancel.
+                raise result
+            if isinstance(result, BaseException):
+                self.disconnect(session_id, uid, ws)
+
     async def broadcast(self, session_id: str, message: dict, exclude_user: Optional[str] = None):
         connections = dict(self._connections.get(session_id, {}))
         payload, byte_size = self._encode_payload(message)
         message_type = str(message.get("type") or "unknown")
-        dead = []
-        for uid, ws in connections.items():
-            if uid == exclude_user:
-                continue
-            try:
-                await self._send_payload(
-                    ws,
-                    payload,
-                    session_id=session_id,
-                    user_id=uid,
-                    role=self._role_for(session_id, uid),
-                    message_type=message_type,
-                    byte_size=byte_size,
-                )
-            except Exception:
-                dead.append((uid, ws))
-        for uid, ws in dead:
-            self.disconnect(session_id, uid, ws)
+        sends = [
+            (uid, ws, self._send_payload(
+                ws,
+                payload,
+                session_id=session_id,
+                user_id=uid,
+                role=self._role_for(session_id, uid),
+                message_type=message_type,
+                byte_size=byte_size,
+            ))
+            for uid, ws in connections.items()
+            if uid != exclude_user
+        ]
+        await self._gather_sends(session_id, sends)
 
     async def broadcast_to_role(self, session_id: str, message: dict, roles: Set[str], session_obj):
         connections = dict(self._connections.get(session_id, {}))
         payload, byte_size = self._encode_payload(message)
         message_type = str(message.get("type") or "unknown")
-        dead = []
+        sends = []
         for uid, ws in connections.items():
             user = session_obj.users.get(uid)
             if user and user.role in roles:
-                try:
-                    await self._send_payload(
-                        ws,
-                        payload,
-                        session_id=session_id,
-                        user_id=uid,
-                        role=self._role_for(session_id, uid, session_obj=session_obj),
-                        message_type=message_type,
-                        byte_size=byte_size,
-                    )
-                except Exception:
-                    dead.append((uid, ws))
-        for uid, ws in dead:
-            self.disconnect(session_id, uid, ws)
+                sends.append((uid, ws, self._send_payload(
+                    ws,
+                    payload,
+                    session_id=session_id,
+                    user_id=uid,
+                    role=self._role_for(session_id, uid, session_obj=session_obj),
+                    message_type=message_type,
+                    byte_size=byte_size,
+                )))
+        await self._gather_sends(session_id, sends)
 
     async def broadcast_filtered(self, session_id: str, message: dict,
                                  hide_hidden_tokens: bool = False, dm_id: str = None,
@@ -271,41 +321,37 @@ class ConnectionManager:
         connections = dict(self._connections.get(session_id, {}))
         dm_payload, dm_byte_size = self._encode_payload(message)
         message_type = str(message.get("type") or "unknown")
-        dead = []
+        sends = []
         for uid, ws in connections.items():
-            try:
-                is_dm = (uid == dm_id)
-                if not is_dm and hide_hidden_tokens:
-                    payload_data = message.get("payload", {})
-                    token = payload_data.get("token") if isinstance(payload_data, dict) else None
-                    if token and token.get("hidden"):
-                        alt_message = {"type": "token_removed_hidden", "payload": {"id": token["id"]}}
-                        alt, alt_byte_size = self._encode_payload(alt_message)
-                        await self._send_payload(
-                            ws,
-                            alt,
-                            session_id=session_id,
-                            user_id=uid,
-                            role=self._role_for(session_id, uid, session_obj=session_obj),
-                            message_type="token_removed_hidden",
-                            byte_size=alt_byte_size,
-                        )
-                        continue
-                    # Note: tokens without owner_id are DM-created NPCs and ARE
-                    # visible to players (unless hidden=True, handled above).
-                await self._send_payload(
-                    ws,
-                    dm_payload,
-                    session_id=session_id,
-                    user_id=uid,
-                    role=self._role_for(session_id, uid, session_obj=session_obj),
-                    message_type=message_type,
-                    byte_size=dm_byte_size,
-                )
-            except Exception:
-                dead.append((uid, ws))
-        for uid, ws in dead:
-            self.disconnect(session_id, uid, ws)
+            is_dm = (uid == dm_id)
+            if not is_dm and hide_hidden_tokens:
+                payload_data = message.get("payload", {})
+                token = payload_data.get("token") if isinstance(payload_data, dict) else None
+                if token and token.get("hidden"):
+                    alt_message = {"type": "token_removed_hidden", "payload": {"id": token["id"]}}
+                    alt, alt_byte_size = self._encode_payload(alt_message)
+                    sends.append((uid, ws, self._send_payload(
+                        ws,
+                        alt,
+                        session_id=session_id,
+                        user_id=uid,
+                        role=self._role_for(session_id, uid, session_obj=session_obj),
+                        message_type="token_removed_hidden",
+                        byte_size=alt_byte_size,
+                    )))
+                    continue
+                # Note: tokens without owner_id are DM-created NPCs and ARE
+                # visible to players (unless hidden=True, handled above).
+            sends.append((uid, ws, self._send_payload(
+                ws,
+                dm_payload,
+                session_id=session_id,
+                user_id=uid,
+                role=self._role_for(session_id, uid, session_obj=session_obj),
+                message_type=message_type,
+                byte_size=dm_byte_size,
+            )))
+        await self._gather_sends(session_id, sends)
 
     def is_connected(self, session_id: str, user_id: str) -> bool:
         return user_id in self._connections.get(session_id, {})
