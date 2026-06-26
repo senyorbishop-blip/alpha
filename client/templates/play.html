@@ -5859,15 +5859,19 @@ function initUI() {
 
   // Show DM-only rail buttons and flyout panels
   if (ROLE === 'dm') {
-    document.body.classList.add('dm-map-first-active');
-    const dmRailShell = document.getElementById('dm-live-mode-rail');
-    const dmContextShell = document.getElementById('dm-context-shell');
-    const dmQuickStrip = document.getElementById('dm-map-first-quick-strip');
-    if (dmRailShell) dmRailShell.hidden = false;
-    if (dmContextShell) dmContextShell.hidden = false;
-    if (dmQuickStrip) dmQuickStrip.hidden = false;
-    if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.init === 'function') {
-      window.AppUIDMPanelModeBridge.init(document);
+    try {
+      document.body.classList.add('dm-map-first-active');
+      const dmRailShell = document.getElementById('dm-live-mode-rail');
+      const dmContextShell = document.getElementById('dm-context-shell');
+      const dmQuickStrip = document.getElementById('dm-map-first-quick-strip');
+      if (dmRailShell) dmRailShell.hidden = false;
+      if (dmContextShell) dmContextShell.hidden = false;
+      if (dmQuickStrip) dmQuickStrip.hidden = false;
+      if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.init === 'function') {
+        window.AppUIDMPanelModeBridge.init(document);
+      }
+    } catch (err) {
+      console.warn('[dm-map-first] initial shell skipped so core boot can continue', err);
     }
     try {
       const storedMode = String(localStorage.getItem('dm_workflow_mode') || '').trim().toLowerCase();
@@ -13458,9 +13462,13 @@ function onMouseDown(e) {
       refreshRightPanelContextUI();
       if (document.body?.classList?.contains('dm-map-first-active')) {
         document.body.classList.remove('dm-legacy-drawer-open');
-        if (window.AppUIDMActions && typeof window.AppUIDMActions.selectToken === 'function') window.AppUIDMActions.selectToken(hit);
-        if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.refresh === 'function') window.AppUIDMPanelModeBridge.refresh(document);
-        if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.forceLegacyRightPanelsClosed === 'function') window.AppUIDMPanelModeBridge.forceLegacyRightPanelsClosed(document);
+        try {
+          if (window.AppUIDMActions && typeof window.AppUIDMActions.selectToken === 'function') window.AppUIDMActions.selectToken(hit);
+          if (window.__DM_MAP_FIRST_CAN_ENHANCE === true && window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.refresh === 'function') window.AppUIDMPanelModeBridge.refresh(document);
+          if (window.__DM_MAP_FIRST_CAN_ENHANCE === true && window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.forceLegacyRightPanelsClosed === 'function') window.AppUIDMPanelModeBridge.forceLegacyRightPanelsClosed(document);
+        } catch (err) {
+          console.warn('[dm-map-first] token context enhancement skipped', err);
+        }
       }
     }
     if (hitIsSelectable && canMoveToken(hit)) {
@@ -26069,6 +26077,18 @@ function handleLegacyMessage(msg) {
       if (window.AppConversation && typeof window.AppConversation.applyState === 'function') {
         window.AppConversation.applyState(p.conversation_mode || { active: false });
       }
+      if (ROLE === 'dm') {
+        setTimeout(() => {
+          try {
+            window.__DM_MAP_FIRST_CAN_ENHANCE = true;
+            if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.refresh === 'function') {
+              window.AppUIDMPanelModeBridge.refresh(document);
+            }
+          } catch (err) {
+            console.warn('[dm-map-first] deferred enhancement skipped after state sync', err);
+          }
+        }, 0);
+      }
 
       if (ROLE === 'player') {
         syncMyCharacterFormFromToken(true);
@@ -37798,7 +37818,7 @@ function refreshRightPanelContextUI() {
   __enterDepth('refreshRightPanelContextUI', {}, 5);
   try {
     refreshSelectedQuickPanel(); renderDmCompanionPanel(); __syncRightTabRegistry();
-    if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.refresh === 'function') {
+    if (window.__DM_MAP_FIRST_CAN_ENHANCE === true && window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.refresh === 'function') {
       window.AppUIDMPanelModeBridge.refresh(document);
     }
   }
@@ -37904,7 +37924,7 @@ function switchRTab(tab) {
       _updateCombatTabAttention(_combat.active);
     }
   }
-  if (document.body?.classList?.contains('dm-map-first-active') && !(document.body?.classList?.contains('dm-legacy-drawer-open'))) {
+  if (window.__DM_MAP_FIRST_CAN_ENHANCE === true && document.body?.classList?.contains('dm-map-first-active') && !(document.body?.classList?.contains('dm-legacy-drawer-open'))) {
     if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.forceLegacyRightPanelsClosed === 'function') {
       window.AppUIDMPanelModeBridge.forceLegacyRightPanelsClosed(document);
     }

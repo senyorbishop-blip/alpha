@@ -34,8 +34,10 @@ def test_bridge_forces_legacy_panels_closed_after_activate_and_refresh():
     src = read(BRIDGE)
     assert 'function forceLegacyRightPanelsClosed' in src
     assert 'function ensureLegacyPanelObserver' in src
-    assert 'new MutationObserver' in src
-    assert 'forceLegacyRightPanelsClosed(safeRoot);' in src
+    assert 'new MutationObserver' not in src
+    assert "window.__DISABLE_DM_MAP_FIRST_GUARD = true" in src
+    assert 'window.__DM_MAP_FIRST_CAN_ENHANCE === true' in src
+    assert "console.warn('[dm-panel-mode] activate skipped to preserve app boot'" in src
     assert 'forceLegacyRightPanelsClosed,' in src
 
 

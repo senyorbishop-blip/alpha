@@ -48,6 +48,10 @@
 
   function init() {
     try {
+      if (window.__DM_MAP_FIRST_CAN_ENHANCE !== true) {
+        window.__dmMapFirstBootstrap = Object.freeze({ initialized: false, deferred: true, role: getBootRole() });
+        return null;
+      }
       if (!isDmRole()) return null;
       const root = findDmRoot();
       if (!hasDmOnlyAnchor(root)) return null;
@@ -66,11 +70,11 @@
   }
 
   function scheduleInit() {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', init, { once: true });
-      return;
-    }
-    init();
+    // DM map-first enhancements are intentionally not run during initial
+    // DOMContentLoaded boot. Core boot, WebSocket connect, request_state/state
+    // sync, and first render must win; play.html enables
+    // __DM_MAP_FIRST_CAN_ENHANCE after state_sync and then calls refresh().
+    window.__dmMapFirstBootstrap = Object.freeze({ initialized: false, deferred: true, role: getBootRole() });
   }
 
   window.AppUIDMMapFirstBootstrap = Object.freeze({
