@@ -37933,6 +37933,9 @@ function openInventoryFromCharacterBook() {
 }
 
 function switchRTab(tab) {
+  // If the new DM shell is active, redirect tab clicks there instead of the
+  // legacy right-panel tab system. The intercept returns true if it handled it.
+  if (window.AppUIDMSwitchRTabIntercept && window.AppUIDMSwitchRTabIntercept(tab)) return;
   if (tab === 'party') {
     setPartyRosterView('party');
   }

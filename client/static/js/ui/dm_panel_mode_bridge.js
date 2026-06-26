@@ -408,6 +408,54 @@
     return element;
   }
 
+  /* ---------------------------------------------------------------
+   * switchRTabIntercept — called by tab clicks inside the new right
+   * panel. Updates active-tab styling and re-renders content for the
+   * chosen sub-section WITHOUT touching the legacy AppUITabs system.
+   * --------------------------------------------------------------- */
+  const TAB_TO_MODE_SECTION = {
+    // combat mode sub-tabs
+    combat:    'combat', turns: 'combat',
+    // live table
+    run: 'run',
+    // shared cross-mode tabs that refresh current mode
+    party: null, inventory: null, memory: null, log: null,
+    // npc
+    bestiary: 'npc-monster', spawn: 'npc-monster',
+    // loot
+    shop: 'loot-shop', items: 'loot-shop',
+    // session
+    handouts: 'session-tools', quests: 'session-tools',
+    // viewer
+    viewers: 'viewer-powers',
+  };
+
+  function switchRTabIntercept(safeRoot, tab) {
+    // Update pressed state on .dcx-tab buttons
+    const tabBar = safeRoot.querySelector('.dcx-tabs');
+    if (tabBar) {
+      tabBar.querySelectorAll('.dcx-tab').forEach(function (btn) {
+        const isThis = btn.dataset.tab === tab || btn.textContent.trim().toLowerCase() === tab;
+        btn.setAttribute('aria-pressed', String(isThis));
+      });
+    }
+    // Re-render content for tab's owning mode (or refresh current mode for cross-mode tabs)
+    const docRoot = safeRoot && safeRoot.querySelector ? safeRoot : document;
+    const body = docRoot.body || document.body;
+    const currentMode = (body && body.dataset && body.dataset.dmActiveMode) || FALLBACK_MODE;
+    const targetMode = TAB_TO_MODE_SECTION[tab] || currentMode;
+    try { renderRichContext(safeRoot, normalizeMode(targetMode)); } catch (_e) {}
+    // Never let the call bubble to the legacy tab system:
+    return true;
+  }
+
+  window.AppUIDMSwitchRTabIntercept = function (tab) {
+    if (!isMapFirstActive(document)) return false;   // fall through to legacy when shell inactive
+    const root = document.getElementById('dm-context-shell') || document;
+    switchRTabIntercept(root, tab);
+    return true;   // signals play.html to skip legacy routing
+  };
+
   function renderRichContext(safeRoot, activeMode) {
     // Mount rich, live content (current turn, initiative, party, tools) into the
     // context body. Replaces the old text-link markers. No-ops if the renderer
@@ -428,8 +476,9 @@
     const tabs = typeof renderer.tabs === 'function' ? (renderer.tabs(activeMode) || []) : [];
     tabsEl.innerHTML = tabs.map(function (t, i) {
       const badge = t[2] ? '<span class="dcx-badge">' + t[2] + '</span>' : '';
-      return '<button class="dcx-tab" type="button" aria-pressed="' + (i === 0) +
-        '" data-dm-compact-tab="' + String(t[0]).replace(/"/g, '') + '" onclick="if(window.AppUIDMActions&&AppUIDMActions.openCompactCombatDrawer)AppUIDMActions.openCompactCombatDrawer();">' + String(t[1]) + badge + '</button>';
+      const key = String(t[0]).replace(/['"]/g, '');
+      return '<button class="dcx-tab" type="button" data-tab="' + key + '" data-dm-compact-tab="' + key + '" aria-pressed="' + (i === 0) +
+        '" onclick="switchRTab(\'' + key + '\'\')">' + String(t[1]) + badge + '</button>';
     }).join('');
     tabsEl.style.display = tabs.length ? 'flex' : 'none';
 

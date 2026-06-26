@@ -218,3 +218,56 @@ body.dm-map-first-active:not(.dm-legacy-drawer-open) #dm-context-shell {
   visibility: visible !important;
   pointer-events: auto !important;
 }
+
+/* ==================================================================
+ * FIX 8 — Legacy right panel suppression (stronger, survives JS re-show).
+ *
+ * The tab system (AppUITabs.switchRTab) actively sets display:block on
+ * .rtab-pane.active when tabs are clicked, fighting our display:none.
+ * Switch to position:fixed + visibility:hidden so it's off-screen
+ * regardless of what the tab JS does to display.
+ * ================================================================== */
+body.dm-map-first-active #right-tab-bar {
+  display: none !important;
+}
+body.dm-map-first-active #sidebar-right .rtab-pane,
+body.dm-map-first-active #sidebar-right .rtab-panes,
+body.dm-map-first-active #sidebar-right .rtab-shell,
+body.dm-map-first-active #sidebar-right #right-panel-context,
+body.dm-map-first-active #sidebar-right #combat-list,
+body.dm-map-first-active #sidebar-right #combat-controls,
+body.dm-map-first-active #sidebar-right #combat-pre,
+body.dm-map-first-active #sidebar-right #combat-add-row,
+body.dm-map-first-active #sidebar-right #combat-spell-tray,
+body.dm-map-first-active #sidebar-right #combat-weapon-tray,
+body.dm-map-first-active #sidebar-right #players-panel,
+body.dm-map-first-active #sidebar-right #rtab-pane-combat {
+  position: fixed !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* dm-context-shell must fill the right column entirely */
+body.dm-map-first-active #sidebar-right {
+  display: flex;
+  flex-direction: column;
+}
+body.dm-map-first-active #dm-context-shell {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex !important;
+  flex-direction: column;
+}
+body.dm-map-first-active .dm-map-first-context-body {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: none !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.62rem;
+}
