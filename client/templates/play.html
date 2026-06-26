@@ -1538,8 +1538,9 @@
     <button class="qb-btn" onclick="combatDash()"><span class="g">⇉</span>Dash</button>
     <button class="qb-btn" onclick="combatToggleDisengage()"><span class="g">↯</span>Disengage</button>
     <div class="qb-sep"></div>
-    <button class="qb-btn" onclick="typeof setTool==='function'&&setTool('ruler')" title="Measure distance for moves, attacks & spells"><span class="g">📏</span>Measure</button>
-    <button class="qb-btn" onclick="typeof selectSpellTool==='function'&&selectSpellTool()" title="Place an attack/spell area template (circle, cone, line…)"><span class="g">🔮</span>Shapes</button>
+    <button class="qb-btn active" id="rp-tool-move" onclick="typeof setTool==='function'&&setTool('select')" title="Move / drag the map and your token"><span class="g">✥</span>Move</button>
+    <button class="qb-btn" id="rp-tool-ruler" onclick="typeof setTool==='function'&&setTool(currentTool==='ruler'?'select':'ruler')" title="Measure distance for moves, attacks & spells (tap again to stop)"><span class="g">📏</span>Measure</button>
+    <button class="qb-btn" id="rp-tool-shapes" onclick="if(currentTool==='spell'){setTool('select');}else if(typeof selectSpellTool==='function'){selectSpellTool();}" title="Place an attack/spell area template (circle, cone, line…) — tap again to stop"><span class="g">🔮</span>Shapes</button>
     <div class="qb-sep"></div>
     <button class="qb-btn" onclick="if(window.CombatQuickBar&&typeof window.CombatQuickBar.openManual==='function')window.CombatQuickBar.openManual();"><span class="g">⚔</span>Actions</button>
     <button class="qb-btn" onclick="typeof toggleFlyout==='function'&&toggleFlyout('flyout-dice')"><span class="g">⚄</span>Dice</button>
@@ -14465,6 +14466,12 @@ function setTool(tool) {
   ['select','ruler','ping','spell','poi'].forEach(t => {
     document.getElementById(`tool-${t}`)?.classList.toggle('active', t === tool);
   });
+  // Mirror the active tool onto the player quick-bar tool buttons. The DM tool
+  // rail is hidden for the player role, so these buttons are the player's only
+  // visible way back to move/drag after picking Measure or Shapes.
+  document.getElementById('rp-tool-move')?.classList.toggle('active', tool === 'select');
+  document.getElementById('rp-tool-ruler')?.classList.toggle('active', tool === 'ruler');
+  document.getElementById('rp-tool-shapes')?.classList.toggle('active', tool === 'spell');
   // Close any open flyout when switching to a canvas tool
   if (['ruler','ping','spell','poi'].includes(tool)) closeAllFlyouts();
   wrap.className = tool === 'select' ? 'tool-select' :
@@ -33123,6 +33130,10 @@ document.addEventListener('keydown', e => {
     setTool('select');
     return;
   }
+  if (e.key === 'Escape' && currentTool === 'ruler') {
+    setTool('select');
+    return;
+  }
   if (e.key === 'Escape') {
     if (document.getElementById('char-sheet-panel')?.classList.contains('open')) {
       closeCharacterBook();
@@ -37622,6 +37633,55 @@ function _rpWeightBlock() {
   </div>`);
 }
 
+/* ---- Inline bag/container expansion inside the pouch panel ----
+   Clicking a bag of holding / haversack / other container in the pouch toggles
+   an inline view of what is stored inside it (capacity, contents, "Out"), so the
+   player never has to leave the map for the full character sheet just to look in
+   a bag. */
+function _rpToggleBagContents(idx) {
+  const wrap = document.getElementById(`rp-bag-contents-${idx}`);
+  if (!wrap) return;
+  const toggleLbl = document.getElementById(`rp-bag-toggle-${idx}`);
+  if (wrap.style.display !== 'none') {
+    wrap.style.display = 'none';
+    if (toggleLbl) toggleLbl.textContent = '🎒 open ▸';
+    return;
+  }
+  const inv = (typeof playerInventory !== 'undefined' && Array.isArray(playerInventory)) ? playerInventory
+    : (Array.isArray((_charSheet || {}).inventory) ? _charSheet.inventory : []);
+  const item = inv[idx];
+  if (!item) return;
+  const enc = window.AppEncumbrance || null;
+  const bagKey = String(item.id || '');
+  // Prefer the DM-synced bag summary; fall back to the item's own bag_contents.
+  let bagSummary = null;
+  if (enc && typeof enc.getLastEncData === 'function') {
+    const data = enc.getLastEncData();
+    const bags = (data && Array.isArray(data.bags)) ? data.bags : [];
+    bagSummary = bags.find(b => String(b && b.id || '') === bagKey) || null;
+  }
+  if (!bagSummary) {
+    const contents = Array.isArray(item.bag_contents) ? item.bag_contents : [];
+    const contentsWeight = contents.reduce((s, bi) =>
+      s + (enc && typeof enc.getItemWeight === 'function' ? enc.getItemWeight(bi) * Math.max(1, bi.qty || 1) : 0), 0);
+    const capacity = Number(item.capacity_lbs || 500);
+    bagSummary = {
+      id: bagKey,
+      name: item.name,
+      own_weight: Number(item.own_weight_lbs || 0),
+      capacity,
+      contents_weight: contentsWeight,
+      fill_pct: capacity > 0 ? Math.min(100, (contentsWeight / capacity) * 100) : 0,
+      contents,
+    };
+  }
+  wrap.innerHTML = (enc && typeof enc.buildBagRowHtml === 'function')
+    ? enc.buildBagRowHtml(bagSummary, idx)
+    : '<div class="rp-empty">Bag contents are unavailable right now.</div>';
+  wrap.style.display = '';
+  if (toggleLbl) toggleLbl.textContent = '🎒 close ▾';
+}
+
 /* ---- Inline pouch item list (the in-panel "new way" to scan carried gear) ---- */
 function _rpItemsList() {
   const inv = (typeof playerInventory !== 'undefined' && Array.isArray(playerInventory)) ? playerInventory
@@ -37637,18 +37697,28 @@ function _rpItemsList() {
     const isBag = (typeof isInventoryContainerEntry === 'function') && isInventoryContainerEntry(it);
     const equipped = !!(it && it.equipped);
     const sub = isBag ? 'container' : String((it && (it.rarity || it.category || it.source)) || '').trim();
-    // Bags / extradimensional containers open the full backpack where the nested
-    // contents (bag of holding, haversack…) can be browsed. Every other item opens
-    // the inline inspect card where the player can read what it does and use,
-    // equip or drop it without leaving the map.
-    const click = isBag
-      ? "typeof openCharacterBook==='function'&&openCharacterBook('inventory')"
-      : `typeof inspectInventoryItem==='function'&&inspectInventoryItem(${idx})`;
-    const tail = isBag ? '<span class="ts">🎒 open</span>'
-      : (qty > 1 ? `<span class="ts" style="color:var(--mf-role)">×${qty}</span>` : '<span class="ts">inspect ▸</span>');
-    return `<button class="rp-tl" onclick="${click}" title="${esc(String(it && it.name || 'Item'))}">
+    const name = esc(String(it && it.name || 'Item'));
+    const equippedTag = equipped ? ' <span class="ts" style="color:var(--mf-role)">• equipped</span>' : '';
+    if (isBag) {
+      // Bags / extradimensional containers (bag of holding, haversack…) expand
+      // their contents right here in the pouch so the player can see what is
+      // stored inside the bag, instead of being bounced to the full character
+      // sheet. Everything else opens the inline inspect card.
+      return `<div class="rp-bag-row">
+        <button class="rp-tl" onclick="typeof _rpToggleBagContents==='function'&&_rpToggleBagContents(${idx})" title="Open ${name}">
+          ${icon}
+          <span class="tt">${name}${equippedTag}</span>
+          ${sub ? `<span class="ts">${esc(sub)}</span>` : ''}
+          <span class="ts" id="rp-bag-toggle-${idx}">🎒 open ▸</span>
+        </button>
+        <div class="rp-bag-contents" id="rp-bag-contents-${idx}" style="display:none"></div>
+      </div>`;
+    }
+    const click = `typeof inspectInventoryItem==='function'&&inspectInventoryItem(${idx})`;
+    const tail = qty > 1 ? `<span class="ts" style="color:var(--mf-role)">×${qty}</span>` : '<span class="ts">inspect ▸</span>';
+    return `<button class="rp-tl" onclick="${click}" title="${name}">
       ${icon}
-      <span class="tt">${esc(String(it && it.name || 'Item'))}${equipped ? ' <span class="ts" style="color:var(--mf-role)">• equipped</span>' : ''}</span>
+      <span class="tt">${name}${equippedTag}</span>
       ${sub ? `<span class="ts">${esc(sub)}</span>` : ''}
       ${tail}
     </button>`;

@@ -259,6 +259,14 @@ body[data-role="viewer"] #canvas-wrap {
 }
 .qb-btn.spent { opacity: .4; }
 .qb-btn.spent .g { filter: grayscale(1); }
+/* Active map tool (Move / Measure / Shapes) so the player can see which tool
+   is engaged and tap Move (or the lit tool again) to return to move/drag. */
+.qb-btn.active {
+  border-color: var(--mf-cyan, #00e5cc);
+  color: var(--mf-cyan, #00e5cc);
+  background: rgba(0,229,204,.14);
+  box-shadow: 0 0 0 1px var(--mf-cyan, #00e5cc) inset;
+}
 
 /* ---- Viewer: Power HUD ------------------------------------ */
 #rp-viewerhud {
@@ -561,6 +569,9 @@ body[data-role="viewer"] #canvas-wrap {
 .rp-tl .tt { font-size: .7rem; color: var(--mf-text, #e8dcc8); }
 .rp-tl .ts { font-size: .52rem; color: var(--mf-text-muted, rgba(232,220,200,.64)); margin-left: auto; }
 .rp-toollist { display: flex; flex-direction: column; gap: .34rem; }
+.rp-bag-row { display: flex; flex-direction: column; gap: .34rem; }
+.rp-bag-row .rp-tl { width: 100%; }
+.rp-bag-contents { width: 100%; }
 .rp-stools { display: grid; grid-template-columns: repeat(4,1fr); gap: .4rem; }
 .rp-stool {
   display: grid;
@@ -796,6 +807,20 @@ body[data-role="viewer"] #flyout-journal {
    ------------------------------------------------------------------ */
 body[data-role="player"] #combat-quick-bar-toggle,
 body[data-role="viewer"] #combat-quick-bar-toggle {
+  display: none !important;
+}
+
+/* ------------------------------------------------------------------
+   The legacy in-panel "Turn Economy / Actions" hub (#player-actions-hub)
+   is superseded by the player context shell's "My Turn" panel (action
+   economy + End turn) and the floating Quick Actions bar. It was still
+   rendering at the bottom of the legacy combat drawer for players, so the
+   old TURN ECONOMY panel showed twice. Keep it out of the map-first
+   player/viewer UI. (renderPlayerActionsHub sets an inline display, so the
+   !important here is required to win.)
+   ------------------------------------------------------------------ */
+body[data-role="player"] #player-actions-hub,
+body[data-role="viewer"] #player-actions-hub {
   display: none !important;
 }
 
