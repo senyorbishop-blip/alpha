@@ -88,6 +88,7 @@
         const effectiveRole = String(config.getRole() || 'viewer').toLowerCase();
         const status = global.document.getElementById('ws-status');
         if (status) status.classList.add('connected');
+        console.info('[play-boot] websocket open', { role: effectiveRole });
         if (typeof global._setWsStatus === 'function') global._setWsStatus('connected');
         storeSet('socket.connected', true);
         storeSet('socket.status', 'connected');

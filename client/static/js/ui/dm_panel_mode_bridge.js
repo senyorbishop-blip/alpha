@@ -12,6 +12,32 @@
     window.__DISABLE_DM_MAP_FIRST_GUARD = true;
   }
 
+  function isDmMapFirstDisabled() {
+    if (window.__DISABLE_DM_MAP_FIRST === true) return true;
+    try {
+      if (new URLSearchParams(window.location.search).get('disable_dm_map_first') === '1') return true;
+      return String(window.localStorage && window.localStorage.getItem('disableDmMapFirst') || '') === '1';
+    } catch (_err) {
+      return false;
+    }
+  }
+
+  if (isDmMapFirstDisabled()) {
+    window.__DISABLE_DM_MAP_FIRST = true;
+    window.AppUIDMPanelModeBridge = Object.freeze({
+      listModes: () => [],
+      getModeConfig: () => ({ id: FALLBACK_MODE, label: 'Live Table', primaryTools: [] }),
+      classifyElement: () => ({ id: FALLBACK_MODE, label: 'Live Table', primaryTools: [] }),
+      registerPanelSection: () => null,
+      activateMode: () => null,
+      refresh: () => null,
+      forceLegacyRightPanelsClosed: () => false,
+      init: () => null,
+    });
+    console.info('[dm-map-first] bridge disabled by kill switch');
+    return;
+  }
+
   const MODE_PANEL_DEFINITIONS = Object.freeze([
     Object.freeze({
       mode: 'run',
@@ -90,7 +116,7 @@
     } catch (err) {
       console.warn('[dm-panel-mode] action failed', action, err);
     } finally {
-      forceLegacyRightPanelsClosed(document);
+      if (window.__DM_MAP_FIRST_CAN_ENHANCE === true) forceLegacyRightPanelsClosed(document);
     }
   }
 
@@ -262,7 +288,7 @@
   }
 
   function forceLegacyRightPanelsClosed(root, options) {
-    if (isLegacyGuardDisabled()) return false;
+    if (isDmMapFirstDisabled() || window.__DM_MAP_FIRST_CAN_ENHANCE !== true || isLegacyGuardDisabled()) return false;
     const safeRoot = root || document;
     const docRoot = safeRoot.querySelector ? safeRoot : document;
     const body = docRoot.body || document.body;
@@ -452,9 +478,8 @@
         safeRoot.body.dataset.debugOpen = activeMode === 'debug' ? 'true' : 'false';
       }
       renderRichContext(safeRoot, activeMode);
-      if (window.__DM_MAP_FIRST_CAN_ENHANCE === true) {
+      if (window.__DM_MAP_FIRST_CAN_ENHANCE === true && !isDmMapFirstDisabled()) {
         ensureLegacyPanelObserver(safeRoot);
-        forceLegacyRightPanelsClosed(safeRoot);
       }
       if (typeof window.renderStreamReadinessPanel === 'function') {
         window.renderStreamReadinessPanel();
@@ -467,6 +492,7 @@
   }
 
   function init(root) {
+    if (isDmMapFirstDisabled()) return null;
     const safeRoot = root || document;
     const buttons = Array.from(safeRoot.querySelectorAll('[data-dm-mode-button]'));
     buttons.forEach((button) => {
@@ -481,14 +507,13 @@
   // that mutate _combat/charProfiles/etc. need a way to refresh the panel.
   function refresh(root) {
     const safeRoot = root || document;
-    if (window.__DM_MAP_FIRST_CAN_ENHANCE !== true) return null;
+    if (isDmMapFirstDisabled() || window.__DM_MAP_FIRST_CAN_ENHANCE !== true) return null;
     const activeMode = (safeRoot.dataset && safeRoot.dataset.dmActiveMode)
       || (safeRoot.body && safeRoot.body.dataset && safeRoot.body.dataset.dmActiveMode)
       || FALLBACK_MODE;
     try {
       renderRichContext(safeRoot, normalizeMode(activeMode));
       ensureLegacyPanelObserver(safeRoot);
-      forceLegacyRightPanelsClosed(safeRoot);
     } catch (err) {
       console.warn('[dm-panel-mode] refresh skipped to preserve app runtime', err);
     }

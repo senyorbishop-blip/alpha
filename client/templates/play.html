@@ -3829,6 +3829,21 @@ Shortbow — +5 to hit, 1d6+3 piercing"></textarea>
 window.__PLAY_BOOT_ROLE = "{{ play_role|default('viewer') }}";
 window.__PLAY_BOOT_MANIFEST = "{{ boot_manifest_name|default('viewer') }}";
 window.__playerBootState = window.__playerBootState || { checkpoint: 'PLAYER_BOOT_HTML_LOADED', scriptsStarted: false, wsOpened: false };
+(function () {
+  function dmMapFirstDisabledFromBoot() {
+    try {
+      var queryDisabled = new URLSearchParams(window.location.search).get('disable_dm_map_first') === '1';
+      var storageDisabled = String(window.localStorage && window.localStorage.getItem('disableDmMapFirst') || '') === '1';
+      return window.__DISABLE_DM_MAP_FIRST === true || queryDisabled || storageDisabled;
+    } catch (_err) {
+      return window.__DISABLE_DM_MAP_FIRST === true;
+    }
+  }
+  window.__dmMapFirstDisabledFromBoot = dmMapFirstDisabledFromBoot;
+  window.__DISABLE_DM_MAP_FIRST = dmMapFirstDisabledFromBoot();
+  window.__DM_MAP_FIRST_CAN_ENHANCE = false;
+  console.info('[play-boot] play.html loaded', { role: window.__PLAY_BOOT_ROLE, dmMapFirstDisabled: window.__DISABLE_DM_MAP_FIRST });
+})();
 </script>
 {% for script in boot_scripts %}
 <script src="{{ script }}"></script>
@@ -3986,6 +4001,9 @@ const USER_ID    = params.get('user_id')    || '';
 const ROLE       = params.get('role')       || 'viewer';
 const NAME       = params.get('name')       || 'Unknown';
 const RETURNING  = params.get('returning')  === '1';
+window.PLAY_ROLE = ROLE;
+window.ROLE = ROLE;
+console.info('[play-boot] ROLE detected', { role: ROLE, dmMapFirstDisabled: window.__DISABLE_DM_MAP_FIRST === true });
 const DISPLAY_MODE_PARAM = String(params.get('display') || '').trim().toLowerCase();
 let _serverResolvedRole = ROLE;
 let _serverAuthority = { resolvedUserId: USER_ID, sessionDmId: '', participantRole: ROLE, isSessionDm: ROLE === 'dm' };
@@ -5839,6 +5857,7 @@ function ensureRollVisualPortal() {
 window.ensureRollVisualPortal = ensureRollVisualPortal;
 
 function initUI() {
+  console.info('[play-boot] initUI start');
   ensureRollVisualPortal();
   try {
     const stored = String(localStorage.getItem('combat_player_actions_collapsed') || '').trim();
@@ -5859,7 +5878,7 @@ function initUI() {
 
   // Show DM-only rail buttons and flyout panels
   if (ROLE === 'dm') {
-    try {
+    if (window.__DISABLE_DM_MAP_FIRST !== true) try {
       document.body.classList.add('dm-map-first-active');
       const dmRailShell = document.getElementById('dm-live-mode-rail');
       const dmContextShell = document.getElementById('dm-context-shell');
@@ -5867,11 +5886,11 @@ function initUI() {
       if (dmRailShell) dmRailShell.hidden = false;
       if (dmContextShell) dmContextShell.hidden = false;
       if (dmQuickStrip) dmQuickStrip.hidden = false;
-      if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.init === 'function') {
-        window.AppUIDMPanelModeBridge.init(document);
-      }
+      // DM map-first init is deferred until after the socket opens/state_sync arrives.
+      // Do not call AppUIDMPanelModeBridge.init() during core boot.
     } catch (err) {
-      console.warn('[dm-map-first] initial shell skipped so core boot can continue', err);
+      window.__DISABLE_DM_MAP_FIRST = true;
+      console.warn('[dm-map-first] disabled after initUI shell error', err);
     }
     try {
       const storedMode = String(localStorage.getItem('dm_workflow_mode') || '').trim().toLowerCase();
@@ -6085,6 +6104,7 @@ function initUI() {
     if (Date.now() < (_ignorePropPopupOutsideClickUntil || 0)) return;
     if (propPopup && propPopup.style.display === 'block' && !propPopup.contains(e.target)) propPopupClose();
   });
+  console.info('[play-boot] initUI done');
 }
 
 function buildColorSwatches() {
@@ -11200,6 +11220,7 @@ function __createLegacyRenderBootEnv() {
 }
 
 function initCanvas() {
+  console.info('[play-boot] initCanvas start');
   const renderEnv = __createLegacyRenderBootEnv();
   syncCompactTokenHoverStatsSetting();
   if (window.AppRenderBoot && typeof window.AppRenderBoot.initCanvas === 'function') {
@@ -11209,6 +11230,7 @@ function initCanvas() {
     wrap.addEventListener('touchmove',   onTouchMove,   { passive: false });
     wrap.addEventListener('touchend',    onTouchEnd,    { passive: true });
     wrap.addEventListener('touchcancel', onTouchEnd,    { passive: true });
+    console.info('[play-boot] initCanvas done');
     return;
   }
 
@@ -11238,6 +11260,7 @@ function initCanvas() {
   window.addEventListener('resize', resizeCanvas);
   _renderLoopStarted = true;
   requestAnimationFrame(drawLoop);
+  console.info('[play-boot] initCanvas done');
 }
 
 // World ↔ screen helpers
@@ -13460,7 +13483,7 @@ function onMouseDown(e) {
       ctxToken = hit;
       _teTokenId = hit.id;
       refreshRightPanelContextUI();
-      if (document.body?.classList?.contains('dm-map-first-active')) {
+      if (window.__DISABLE_DM_MAP_FIRST !== true && window.__DM_MAP_FIRST_CAN_ENHANCE === true && document.body?.classList?.contains('dm-map-first-active')) {
         document.body.classList.remove('dm-legacy-drawer-open');
         try {
           if (window.AppUIDMActions && typeof window.AppUIDMActions.selectToken === 'function') window.AppUIDMActions.selectToken(hit);
@@ -24678,6 +24701,7 @@ function renderPrivateStoryHookAdminList() {
 // WEBSOCKET
 // ═══════════════════════════════════════════════════════════════════
 function connectWS() {
+  console.info('[play-boot] connectWS start', { role: ROLE });
   const runConnect = async () => {
     const authority = await syncSessionAuthority('ws_preconnect');
     if (authority && authority.redirected) return null;
@@ -26077,15 +26101,26 @@ function handleLegacyMessage(msg) {
       if (window.AppConversation && typeof window.AppConversation.applyState === 'function') {
         window.AppConversation.applyState(p.conversation_mode || { active: false });
       }
+      console.info('[play-boot] state_sync received', { role: ROLE });
       if (ROLE === 'dm') {
         setTimeout(() => {
+          if (window.__DISABLE_DM_MAP_FIRST === true) {
+            console.info('[dm-map-first] init skipped by kill switch');
+            return;
+          }
           try {
+            console.info('[dm-map-first] init start');
             window.__DM_MAP_FIRST_CAN_ENHANCE = true;
-            if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.refresh === 'function') {
+            if (window.AppUIDMMapFirstBootstrap && typeof window.AppUIDMMapFirstBootstrap.init === 'function') {
+              window.AppUIDMMapFirstBootstrap.init();
+            } else if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.refresh === 'function') {
               window.AppUIDMPanelModeBridge.refresh(document);
             }
+            console.info('[dm-map-first] init done');
           } catch (err) {
-            console.warn('[dm-map-first] deferred enhancement skipped after state sync', err);
+            window.__DISABLE_DM_MAP_FIRST = true;
+            window.__DM_MAP_FIRST_CAN_ENHANCE = false;
+            console.warn('[dm-map-first] disabled after boot error', err);
           }
         }, 0);
       }
@@ -37924,7 +37959,7 @@ function switchRTab(tab) {
       _updateCombatTabAttention(_combat.active);
     }
   }
-  if (window.__DM_MAP_FIRST_CAN_ENHANCE === true && document.body?.classList?.contains('dm-map-first-active') && !(document.body?.classList?.contains('dm-legacy-drawer-open'))) {
+  if (window.__DISABLE_DM_MAP_FIRST !== true && window.__DM_MAP_FIRST_CAN_ENHANCE === true && document.body?.classList?.contains('dm-map-first-active') && !(document.body?.classList?.contains('dm-legacy-drawer-open'))) {
     if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.forceLegacyRightPanelsClosed === 'function') {
       window.AppUIDMPanelModeBridge.forceLegacyRightPanelsClosed(document);
     }
