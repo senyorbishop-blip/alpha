@@ -15,6 +15,8 @@
       smoke_burst:     { name:'Smoke Burst',       kind:'area_status',   description:'10 ft burst that can blind targets briefly. CON save negates. Useful for short vision denial.',          target_mode:'point', cooldown_sec:45,  area_shape:'burst', radius_ft:10, cone_angle_deg:60, line_width_ft:5, condition:'blinded',    duration_sec:10 },
       knockback:       { name:'Knockback',         kind:'knockback',     description:'Choose a point on the map. Blasts the nearest token exactly one 5 ft grid square away from that point.', target_mode:'point', cooldown_sec:30,  area_shape:'burst', radius_ft:5 },
       give_potion:     { name:'Give Potion',       kind:'grant_item',    description:'Give the targeted player token a Potion of Minor Healing (heals 1d4).',                                 target_mode:'token', cooldown_sec:0 },
+      chain_lightning: { name:'Chain Lightning',   kind:'chain_damage',  description:'Strike one token, then arc to nearby tokens — bouncing between 4 and 6 in all. Each takes 4d6 damage; Dex save DC 17 for half.', target_mode:'token', cooldown_sec:90 },
+      give_random_item:{ name:'Give Random Item',  kind:'grant_random_item', description:'Give the targeted player token a random item drawn from the item library.',                          target_mode:'token', cooldown_sec:30 },
     };
     return { ...base, ...(env.viewerPowerCatalog || {}) };
   }
