@@ -2866,9 +2866,14 @@
     #roll-visual-portal > * { pointer-events: auto; }
     #roll-visual-portal #dice-overlay-bg,
     #roll-visual-portal #dice-3d-wrap,
-    #roll-visual-portal .dice-roll-banner {
+    #roll-visual-portal .dice-roll-banner,
+    /* Idle result popup must not swallow clicks on the DM selected-token panel
+     * beneath it; re-enabled only while shown (rule further below). The id-scoped
+     * selector here outranks `#roll-visual-portal > *` above. */
+    #roll-visual-portal #dice-result-popup {
       pointer-events: none;
     }
+    #roll-visual-portal #dice-result-popup.show { pointer-events: auto; }
     #dice-overlay-bg {
       display: none;
       position: fixed;
@@ -2954,7 +2959,11 @@
       bottom: clamp(1rem, 2.2vh, 1.8rem);
       transform: translateY(18px) scale(0.97);
       z-index: 4;
-      pointer-events: auto;
+      /* Idle, this popup sits invisibly (opacity:0) in the bottom-right corner —
+       * exactly over the DM selected-token quick panel. With pointer-events:auto
+       * it silently swallowed clicks on Hide/Conditions/Delete. Only capture
+       * pointer events while actually shown (.show below). */
+      pointer-events: none;
       font-family: 'Cinzel', serif;
       color: #f4e8d0;
       opacity: 0;
@@ -2978,6 +2987,7 @@
     .dice-result-popup.show {
       opacity: 1;
       transform: translateY(0) scale(1);
+      pointer-events: auto;
     }
     .dice-result-strip {
       display: flex;
