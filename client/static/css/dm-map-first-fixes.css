@@ -118,48 +118,52 @@ body.dm-map-first-active .dm-map-first-quick-action .qa-ic {
  * them. This is not the old cluttered panel returning; only the active
  * legacy pane appears inside a bounded overlay.
  * ================================================================== */
-body.dm-map-first-active.dm-legacy-drawer-open #sidebar-right .rtab-shell {
+body.dm-map-first-active.dm-legacy-drawer-open #sidebar-right > .rtab-pane.active,
+body.dm-map-first-active.dm-legacy-drawer-open #sidebar-right > .rtab-pane[style*="display: block"],
+body.dm-map-first-active.dm-legacy-drawer-open #sidebar-right > .rtab-pane[style*="display:block"] {
   display: flex !important;
-  position: fixed;
-  right: calc(var(--mf-right-context-width, clamp(18rem, 23vw, 25rem)) + 0.75rem);
-  top: calc(var(--mf-topbar-height, 3rem) + 0.75rem);
-  width: min(24rem, calc(100vw - var(--mf-left-rail-width, 4.75rem) - var(--mf-right-context-width, 22rem) - 2rem));
-  max-height: calc(100dvh - var(--mf-topbar-height, 3rem) - var(--mf-bottom-strip-height, 4rem) - 1.5rem);
-  overflow: hidden;
-  border: 1px solid var(--mf-border-cyan, rgba(0,229,204,.26));
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(24, 20, 16, 0.98), rgba(10, 9, 8, 0.96));
-  box-shadow: 0 18px 52px rgba(0,0,0,.58), 0 0 0 1px rgba(212,166,55,.08) inset;
-  z-index: 70;
+  flex-direction: column !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  position: fixed !important;
+  right: calc(var(--mf-right-context-width, clamp(18rem, 23vw, 25rem)) + 0.75rem) !important;
+  top: calc(var(--mf-topbar-height, 3rem) + 0.75rem) !important;
+  left: auto !important;
+  width: min(26rem, calc(100vw - var(--mf-left-rail-width, 4.75rem) - var(--mf-right-context-width, 22rem) - 2rem)) !important;
+  height: auto !important;
+  max-height: calc(100dvh - var(--mf-topbar-height, 3rem) - var(--mf-bottom-strip-height, 4rem) - 1.5rem) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  border: 1px solid var(--mf-border-cyan, rgba(0,229,204,.4)) !important;
+  border-radius: 16px !important;
+  background: linear-gradient(180deg, rgba(24, 20, 16, 0.99), rgba(10, 9, 8, 0.98)) !important;
+  box-shadow: 0 18px 52px rgba(0,0,0,.6), 0 0 0 1px rgba(212,166,55,.1) inset !important;
+  z-index: 90 !important;
+  padding: 0.75rem !important;
 }
 
-body.dm-map-first-active.dm-legacy-drawer-open #sidebar-right .rtab-panes {
-  display: block !important;
-  min-height: 0;
-  overflow-y: auto;
-}
-
+/* The tab strip floats just above the open drawer pane so the DM can switch tabs */
 body.dm-map-first-active.dm-legacy-drawer-open #right-tab-bar {
   display: flex !important;
-  flex: 0 0 auto;
-  overflow-x: auto;
-  border-bottom: 1px solid rgba(212,166,55,.14);
+  visibility: visible !important;
+  pointer-events: auto !important;
+  position: fixed !important;
+  right: calc(var(--mf-right-context-width, clamp(18rem, 23vw, 25rem)) + 0.75rem) !important;
+  top: calc(var(--mf-topbar-height, 3rem) - 1.65rem) !important;
+  left: auto !important;
+  width: min(26rem, calc(100vw - var(--mf-left-rail-width, 4.75rem) - var(--mf-right-context-width, 22rem) - 2rem)) !important;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  z-index: 91 !important;
+  background: transparent !important;
 }
 
-body.dm-map-first-active.dm-legacy-drawer-open #sidebar-right .rtab-pane.active,
-body.dm-map-first-active.dm-legacy-drawer-open #sidebar-right .rtab-pane[style*="display: block"] {
-  display: block !important;
-}
-
-body.dm-map-first-active.dm-legacy-drawer-open #sidebar-right .rtab-pane:not(.active):not([style*="display: block"]) {
-  display: none !important;
-}
-
+/* A close affabordance: clicking the map area should close the drawer (handled in JS) */
 @media (max-width: 1100px) {
-  body.dm-map-first-active.dm-legacy-drawer-open #sidebar-right .rtab-shell {
-    left: calc(var(--mf-left-rail-width, 4.35rem) + 0.75rem);
-    right: calc(var(--mf-right-context-width, 19rem) + 0.5rem);
-    width: auto;
+  body.dm-map-first-active.dm-legacy-drawer-open #sidebar-right > .rtab-pane.active,
+  body.dm-map-first-active.dm-legacy-drawer-open #sidebar-right > .rtab-pane[style*="display: block"] {
+    right: 0.5rem !important;
+    width: min(22rem, calc(100vw - var(--mf-left-rail-width, 4.35rem) - 1rem)) !important;
   }
 }
 
