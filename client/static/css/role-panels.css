@@ -679,6 +679,16 @@ body[data-role="viewer"] #canvas-wrap {
 .rp-hpnum .small { color: var(--mf-text-muted, rgba(232,220,200,.64)); font-size: .5rem; }
 .rp-hpbar6 { height: 6px; border-radius: 4px; background: rgba(255,255,255,.08); overflow: hidden; margin-top: .3rem; }
 .rp-hpbar6 > i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg,#d3573f,#e89a3f); }
+.rp-turn-note {
+  margin: .5rem .1rem 0;
+  padding: .42rem .5rem;
+  font-size: .64rem;
+  line-height: 1.4;
+  color: var(--mf-text-muted, rgba(232,220,200,.7));
+  background: rgba(255,255,255,.04);
+  border: 1px dashed var(--mf-role-line, rgba(0,229,204,.24));
+  border-radius: 8px;
+}
 
 /* ---- Quick Actions area (live data) ----------------------- */
 #rp-quick-actions-area {
@@ -749,3 +759,58 @@ body[data-role="viewer"] #viewer-context-shell {
   min-height: 0;
   overflow: hidden;
 }
+
+/* ============================================================
+   Flyout re-anchor for player/viewer roles.
+   .flyout is `position:fixed; left:48px` (sized for the OLD 48px DM
+   rail). Player/viewer use the wider --mf-left-rail-width (4.75rem)
+   rail at z-index 200, which covers the left edge of any flyout that
+   still opens at 48px — so the Dice Vault etc. render partly clipped.
+   Re-anchor every flyout to the right of the role rail, mirroring the
+   DM map-first fix in dm-map-first-fixes.css.
+   ============================================================ */
+body[data-role="player"] .flyout,
+body[data-role="viewer"] .flyout {
+  left: calc(var(--mf-left-rail-width, 4.75rem) + 0.5rem);
+  top: calc(var(--mf-topbar-height, 42px) + 0.5rem);
+  bottom: auto;
+  max-height: calc(100dvh - var(--mf-topbar-height, 42px) - 1.5rem);
+  border-radius: 14px;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.5);
+}
+
+/* Wider flyouts keep their own width but follow the new left anchor. */
+body[data-role="player"] #flyout-journal,
+body[data-role="viewer"] #flyout-journal {
+  width: min(820px, calc(100vw - var(--mf-left-rail-width, 4.75rem) - 2rem));
+}
+
+/* ------------------------------------------------------------------
+   The combat Quick Bar is now reachable from the bottom player bar
+   (the "Quick Actions" button in #rp-quickbar), so the separate
+   floating toggle pill is redundant. Hide it for player/viewer roles;
+   the bar itself (#combat-quick-bar) still opens via openManual().
+   ------------------------------------------------------------------ */
+body[data-role="player"] #combat-quick-bar-toggle,
+body[data-role="viewer"] #combat-quick-bar-toggle {
+  display: none !important;
+}
+
+/* Back button shown when a player hands the right column off to a legacy
+   pane (chat / inventory / quests) from the context shell. */
+.rp-panel-back {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  margin: .4rem .55rem 0;
+  padding: .35rem .6rem;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: var(--mf-role, #9ff6ea);
+  background: rgba(0, 0, 0, .25);
+  border: 1px solid var(--mf-role-line, rgba(0, 229, 204, .32));
+  border-radius: 999px;
+  cursor: pointer;
+}
+.rp-panel-back:hover { background: rgba(0, 229, 204, .12); }
