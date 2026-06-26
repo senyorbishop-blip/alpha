@@ -264,3 +264,57 @@ def test_creature_spawn_route_contract_remains_unchanged():
         assert field in service
     assert '"from_bestiary": True' in service
     assert '"token_created"' in service
+
+
+def test_rich_dm_context_uses_action_bridge_instead_of_hidden_switch_tabs():
+    src = read(Path('client/static/js/ui/dm_context_render.js'))
+    assert 'window.AppUIDMActions = Actions' in src
+    assert 'openLegacyDrawer(tab)' in src
+    visible = src[src.index('var RENDER = {'):]
+    assert 'onclick="switchRTab' not in visible
+    assert 'onclick="toggleFlyout' not in visible
+    assert 'AppUIDMActions.openCombatTracker()' in visible
+    assert 'AppUIDMActions.openViewerPowers()' in visible
+
+
+def test_rich_combat_mode_exposes_real_encounter_controls():
+    src = read(Path('client/static/js/ui/dm_context_render.js'))
+    for label, action in [
+        ('Start Combat', 'AppUIDMActions.startCombat()'),
+        ('Previous Turn', 'AppUIDMActions.previousTurn()'),
+        ('End / Next Turn', 'AppUIDMActions.nextTurn()'),
+        ('End Combat', 'AppUIDMActions.endCombat()'),
+        ('Roll Initiative', 'AppUIDMActions.rollInitiative()'),
+        ('Add Combatant', 'AppUIDMActions.addCombatant()'),
+        ('Add Selected Token', 'AppUIDMActions.addSelectedTokenToCombat()'),
+        ('Open Tracker', 'AppUIDMActions.openCombatTracker()'),
+    ]:
+        assert label in src
+        assert action in src
+    for fn in ['combatStart', 'combatPrev', 'combatNext', 'combatClear', 'combatRollInitiative', 'combatAddManual']:
+        assert f"callGlobal('{fn}'" in src
+
+
+def test_rich_viewer_powers_mode_exposes_grants_approvals_cooldowns_and_settings():
+    src = read(Path('client/static/js/ui/dm_context_render.js'))
+    for label, action in [
+        ('Grant Power', 'AppUIDMActions.openViewerPowers()'),
+        ('Pending Approvals', 'AppUIDMActions.openViewerPowers()'),
+        ('Approve Pending', 'AppUIDMActions.approveViewerPower()'),
+        ('Reject Pending', 'AppUIDMActions.rejectViewerPower()'),
+        ('Cooldowns / Settings', 'AppUIDMActions.openViewerPowerSettings()'),
+        ('Target Selection', 'AppUIDMActions.openViewerPowers()'),
+    ]:
+        assert label in src
+        assert action in src
+    for fn in ['grantViewerPower', 'grantViewerPowerPreset', 'decideViewerPending']:
+        assert f"callGlobal('{fn}'" in src
+
+
+def test_map_first_hidden_right_tabs_have_controlled_legacy_drawer_adapter():
+    css = read(Path('client/static/css/dm-map-first-fixes.css'))
+    js = read(Path('client/static/js/ui/dm_context_render.js'))
+    assert 'body.dm-map-first-active #right-tab-bar,' in css
+    assert 'body.dm-map-first-active.dm-legacy-drawer-open #sidebar-right .rtab-shell' in css
+    assert "document.body.classList.add('dm-legacy-drawer-open')" in js
+    assert 'body.dm-map-first-active.dm-legacy-drawer-open #right-tab-bar' in css

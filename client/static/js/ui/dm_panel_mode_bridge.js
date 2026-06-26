@@ -376,8 +376,8 @@
       button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
     const activeConfig = getModeConfig(activeMode);
-    const title = safeRoot.getElementById ? safeRoot.getElementById('dm-context-title') : null;
-    if (title) title.textContent = activeConfig.label || 'Live Table';
+    const titleEl = safeRoot.getElementById ? safeRoot.getElementById('dm-context-title') : null;
+    if (titleEl) titleEl.textContent = activeConfig.label || 'Live Table';
     if (safeRoot.dataset) {
       safeRoot.dataset.dmActiveMode = activeMode;
       safeRoot.dataset.debugOpen = activeMode === 'debug' ? 'true' : 'false';
