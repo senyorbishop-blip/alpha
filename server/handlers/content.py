@@ -650,6 +650,16 @@ async def handle_char_profile_delete(payload: dict, session: Session, user: User
     await save_campaign_async(session)
 
 
+def _dice_roll_audience(session: Session, roller: User) -> set[str]:
+    """User ids allowed to see a private dice roll: the roller plus every DM."""
+    audience = {str(getattr(roller, "id", "") or "")}
+    for uid, u in (getattr(session, "users", {}) or {}).items():
+        if str(getattr(u, "role", "") or "").strip().lower() == "dm":
+            audience.add(str(uid))
+    audience.discard("")
+    return audience
+
+
 async def handle_dice_roll(payload: dict, session: Session, user: User):
     import random
     dice_type = int(payload.get("dice_type", 20))
@@ -690,8 +700,6 @@ async def handle_dice_roll(payload: dict, session: Session, user: User):
     else:
         message = f"{user.name} rolled {quantity}d{dice_type}: [{roll_str}] = {total}"
 
-    log_entry = session.add_log(message, "dice", user.name)
-
     # Classify result sound for the audio_event broadcast
     def _result_sound(dt: int, r: list) -> str:
         if dt == 20 and quantity == 1:
@@ -708,38 +716,67 @@ async def handle_dice_roll(payload: dict, session: Session, user: User):
         "result": _result_sound(dice_type, rolls),
     }
 
-    await manager.broadcast(session.id, {
-        "type": "dice_result",
-        "payload": {
-            "user_id": user.id,
-            "user_name": user.name,
-            "dice_type": dice_type,
-            "quantity": quantity,
-            "rolls": rolls,
-            "total": total,
-            "modifier": modifier,
-            "init_bonus": modifier,
-            "roll_label": roll_label,
-            "mode": mode,
-            "seed": seed,
-            "roll_id": roll_id,
-            "theme": theme,
-            "percentile_pairs": percentile_pairs,
-            "log": log_entry,
-            "sounds": sounds,
-        }
-    })
+    # Initiative is the one roll the whole table is meant to see; every other
+    # roll (attacks, saves, ability checks, damage, …) is private to the roller
+    # and the DM(s). Previously *all* rolls were broadcast, so players saw each
+    # other's private rolls.
+    is_public_roll = "initiative" in roll_label.lower()
 
+    result_payload = {
+        "user_id": user.id,
+        "user_name": user.name,
+        "dice_type": dice_type,
+        "quantity": quantity,
+        "rolls": rolls,
+        "total": total,
+        "modifier": modifier,
+        "init_bonus": modifier,
+        "roll_label": roll_label,
+        "mode": mode,
+        "seed": seed,
+        "roll_id": roll_id,
+        "theme": theme,
+        "percentile_pairs": percentile_pairs,
+        "sounds": sounds,
+    }
+
+    fx_type = ""
     if dice_type == 20 and quantity == 1 and len(rolls) == 1:
         fx_type = "nat20" if int(rolls[0]) == 20 else "nat1" if int(rolls[0]) == 1 else ""
+
+    if is_public_roll:
+        log_entry = session.add_log(message, "dice", user.name)
+        result_payload["log"] = log_entry
+        await manager.broadcast(session.id, {"type": "dice_result", "payload": result_payload})
         if fx_type:
             await manager.broadcast(session.id, {
                 "type": "dice_special_fx",
-                "payload": {
-                    "user_id": user.id,
-                    "result": int(rolls[0]),
-                    "fx_type": fx_type,
-                },
+                "payload": {"user_id": user.id, "result": int(rolls[0]), "fx_type": fx_type},
+            })
+        return
+
+    # Private roll: the log entry is ephemeral (never persisted to the shared
+    # session log, so it can't leak to other players through a later state
+    # snapshot) and is delivered only to the roller and the DM(s).
+    private_log = {
+        "id": secrets.token_hex(4),
+        "timestamp": time.time(),
+        "type": "dice",
+        "user": user.name,
+        "message": message,
+        "private": True,
+        "roll_user_id": user.id,
+    }
+    result_payload["log"] = private_log
+    result_payload["private"] = True
+    audience = _dice_roll_audience(session, user)
+    for uid in audience:
+        await manager.send_to(session.id, uid, {"type": "dice_result", "payload": result_payload})
+    if fx_type:
+        for uid in audience:
+            await manager.send_to(session.id, uid, {
+                "type": "dice_special_fx",
+                "payload": {"user_id": user.id, "result": int(rolls[0]), "fx_type": fx_type},
             })
 
 

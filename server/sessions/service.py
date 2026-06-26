@@ -427,6 +427,13 @@ async def delete_session_token_response(request, session_id: str, token_id: str)
     corpse_states = dict(getattr(session, "corpse_states", {}) or {})
     corpse_states.pop(str(token_id), None)
     session.corpse_states = corpse_states
+    # A deleted token must also leave any active initiative order so it doesn't
+    # linger as a ghost combatant. Local import avoids a circular dependency.
+    from server.handlers.combat import remove_token_from_combat, _bump_combat_revision
+    from server.handlers.common import _broadcast_combat
+    if remove_token_from_combat(session, str(token_id)):
+        _bump_combat_revision(session, "token_deleted")
+        await _broadcast_combat(session)
     await save_campaign_async(session)
     return JSONResponse({"ok": True, "token_id": token_id})
 

@@ -166,6 +166,14 @@ def sync_combat_visibility(session: Session, map_context: str | None = None, rea
     for idx in range(len(coms)-1, -1, -1):
         c=coms[idx] or {}; tid=str(c.get("token_id") or "")
         token=session.tokens.get(tid) if tid else None
+        # A combatant bound to a token that no longer exists (deleted mid-combat)
+        # is a ghost entry — drop it from the roster entirely, on any map. Not a
+        # "suspension" (which can be restored), so it is not added to ``removed``.
+        if tid and token is None:
+            coms.pop(idx); active_ids.discard(tid); suspended_by_token.pop(tid, None)
+            changed=True
+            _adjust_turn_after_removal(combat, idx, str(c.get("id") or ""), old_turn)
+            continue
         if not token or _token_map_context(token) != map_ctx or not is_npc_or_monster_token(token):
             continue
         # Always judge fog/LOS against the token's OWN map context, never the
@@ -915,6 +923,61 @@ async def handle_combat_remove_combatant(payload: dict, session: Session, user: 
     _bump_combat_revision(session, "remove_combatant")
     await save_campaign_async(session)
     await _broadcast_combat(session)
+
+
+def remove_token_from_combat(session: Session, token_id: str) -> bool:
+    """Drop every combatant (and suspended entry) bound to ``token_id``.
+
+    Called when a token is deleted mid-combat so the initiative roster never
+    keeps a ghost entry for a token that no longer exists. Mutates
+    ``session.combat`` in place and returns True when the roster changed. The
+    caller is responsible for bumping the combat revision, saving, and
+    broadcasting the updated state.
+    """
+    token_id = str(token_id or "").strip()
+    if not token_id:
+        return False
+    combat = getattr(session, "combat", None) or {}
+    coms = combat.get("combatants") if isinstance(combat.get("combatants"), list) else []
+    old_turn = _safe_int(combat.get("turn"), 0, minimum=0, maximum=max(0, len(coms) - 1))
+    current_id = str((coms[old_turn] or {}).get("id") or "") if 0 <= old_turn < len(coms) else ""
+    changed = False
+    removed_names: list[str] = []
+    kept = []
+    for c in coms:
+        if str((c or {}).get("token_id") or "") == token_id:
+            changed = True
+            removed_names.append(str((c or {}).get("name") or "Combatant"))
+            continue
+        kept.append(c)
+    for key in ("suspended_combatants", "fog_suspended_combatants", "hidden_suspended_combatants"):
+        lst = combat.get(key)
+        if isinstance(lst, list):
+            pruned = [x for x in lst if str((x or {}).get("token_id") or "") != token_id]
+            if len(pruned) != len(lst):
+                changed = True
+            combat[key] = pruned
+    if not changed:
+        return False
+    combat["combatants"] = kept
+    if not kept:
+        combat["turn"] = 0
+        combat["movement"] = {}
+    elif current_id and any(str((c or {}).get("id") or "") == current_id for c in kept):
+        # The active combatant survived — keep the pointer on it.
+        for i, c in enumerate(kept):
+            if str((c or {}).get("id") or "") == current_id:
+                combat["turn"] = i
+                break
+    else:
+        # The active combatant (or one before it) was removed — clamp the turn.
+        combat["turn"] = min(old_turn, len(kept) - 1)
+    session.combat = combat
+    _sync_action_economy_roster(session)
+    _ensure_combat_movement_state(session, reset=True)
+    for name in removed_names:
+        session.add_log(f"{name} left the initiative order (token removed).", "combat", "System")
+    return True
 
 
 async def handle_combat_update(payload: dict, session: Session, user: User):
