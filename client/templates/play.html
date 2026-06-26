@@ -12928,8 +12928,12 @@ function syncCompactTokenHoverStatsSetting() {
 
 function _tokenHoverCanShowStats(token) {
   if (!token) return false;
+  // DM-only quick card (the setting lives in the DM-only token sidebar and is
+  // togglable there). It used to also auto-show on a player's own token, but
+  // players have no way to dismiss it, so the card popped up over their token
+  // every time they hovered/moved it. Keep it DM-only as the feature intends.
   if (ROLE === 'dm') return _showCompactTokenStatsOnHover;
-  return ROLE === 'player' && _tokenOwnedByMe(token);
+  return false;
 }
 
 function _tokenHoverInt(...values) {
