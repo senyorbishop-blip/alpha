@@ -7623,3 +7623,11 @@ body.dm-map-first-active #canvas-wrap[data-map-primary="true"] {
     font-size: 0.5rem;
   }
 }
+
+/* Token editor: hide DM-only controls when a player edits their own token.
+   The server only applies the player-editable fields for a non-DM owner, so
+   showing name/HP/colour/type/vision/hidden/size would mislead players into
+   thinking those edits stick. openTokenEditor() toggles .te-hide-dm-only. */
+#token-editor.te-hide-dm-only .te-dm-only {
+  display: none !important;
+}

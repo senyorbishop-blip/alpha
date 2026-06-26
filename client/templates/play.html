@@ -2495,9 +2495,9 @@
     <div id="te-condition-strip" style="display:none;justify-content:center;gap:0.3rem;flex-wrap:wrap;margin-top:0.42rem;"></div>
     <button type="button" onclick="openTokenEditorConditions()" style="width:100%;margin-top:0.45rem;padding:0.34rem;background:rgba(93,122,255,0.12);border:1px solid rgba(93,122,255,0.35);border-radius:4px;color:#c7d2ff;font-size:0.66rem;cursor:pointer;font-family:'Cinzel',serif;letter-spacing:0.06em;">⚡ Manage Conditions</button>
   </div>
-  <div style="font-size:0.58rem;color:var(--gold-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.2rem;">Name</div>
-  <input type="text" id="te-name" maxlength="24" oninput="refreshTokenEditorSummary()" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:3px;color:var(--parchment);font-size:0.85rem;padding:0.35rem;box-sizing:border-box;margin-bottom:0.6rem;" />
-  <div style="display:flex;gap:0.5rem;margin-bottom:0.6rem;">
+  <div class="te-dm-only" style="font-size:0.58rem;color:var(--gold-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.2rem;">Name</div>
+  <input type="text" id="te-name" maxlength="24" oninput="refreshTokenEditorSummary()" class="te-dm-only" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:3px;color:var(--parchment);font-size:0.85rem;padding:0.35rem;box-sizing:border-box;margin-bottom:0.6rem;" />
+  <div class="te-dm-only" style="display:flex;gap:0.5rem;margin-bottom:0.6rem;">
     <div style="flex:1;">
       <div style="font-size:0.58rem;color:var(--gold-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.2rem;">Max HP</div>
       <input type="number" id="te-maxhp" min="0" oninput="refreshTokenEditorSummary()" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:3px;color:var(--parchment);font-size:0.85rem;padding:0.35rem;box-sizing:border-box;text-align:center;" />
@@ -2507,8 +2507,8 @@
       <input type="number" id="te-curhp" min="0" oninput="refreshTokenEditorSummary()" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:3px;color:var(--parchment);font-size:0.85rem;padding:0.35rem;box-sizing:border-box;text-align:center;" />
     </div>
   </div>
-  <div style="font-size:0.58rem;color:var(--gold-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem;">Token Color</div>
-  <div id="te-color-swatches" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.6rem;"></div>
+  <div class="te-dm-only" style="font-size:0.58rem;color:var(--gold-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem;">Token Color</div>
+  <div id="te-color-swatches" class="te-dm-only" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.6rem;"></div>
   <div style="display:flex;gap:0.5rem;margin-bottom:0.6rem;">
     <div style="flex:1;">
       <div style="font-size:0.58rem;color:var(--gold-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.2rem;">Temp HP</div>
@@ -2540,7 +2540,7 @@
     </div>
   </div>
   <div style="display:flex;gap:0.5rem;margin-bottom:0.6rem;">
-    <div style="flex:1;">
+    <div class="te-dm-only" style="flex:1;">
       <div style="font-size:0.58rem;color:var(--gold-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.2rem;">Token Type</div>
       <select id="te-type" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:3px;color:var(--parchment);font-size:0.75rem;padding:0.3rem;">
         <option value="player">Player</option>
@@ -2562,7 +2562,7 @@
   <input type="text" id="te-image-url" placeholder="Or paste portrait URL…" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:3px;color:var(--parchment);font-size:0.72rem;padding:0.3rem;box-sizing:border-box;margin-bottom:0.45rem;" />
   <div style="font-size:0.58rem;color:var(--gold-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.2rem;">Notes</div>
   <textarea id="te-notes" style="width:100%;min-height:70px;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:3px;color:var(--parchment);font-size:0.78rem;padding:0.45rem;box-sizing:border-box;resize:vertical;margin-bottom:0.6rem;"></textarea>
-  <div style="display:flex;gap:0.5rem;margin-bottom:0.6rem;">
+  <div class="te-dm-only" style="display:flex;gap:0.5rem;margin-bottom:0.6rem;">
     <div style="flex:1;">
       <div style="font-size:0.58rem;color:var(--gold-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.2rem;">Size</div>
       <select id="te-size" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:3px;color:var(--parchment);font-size:0.75rem;padding:0.3rem;">
@@ -2578,7 +2578,7 @@
       </label>
     </div>
   </div>
-  <div id="te-vision-wrap" style="margin-bottom:0.7rem;padding:0.55rem 0.6rem;border:1px solid rgba(72,193,181,0.28);border-radius:6px;background:linear-gradient(180deg, rgba(72,193,181,0.08), rgba(0,0,0,0.18));">
+  <div id="te-vision-wrap" class="te-dm-only" style="margin-bottom:0.7rem;padding:0.55rem 0.6rem;border:1px solid rgba(72,193,181,0.28);border-radius:6px;background:linear-gradient(180deg, rgba(72,193,181,0.08), rgba(0,0,0,0.18));">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.42rem;">
       <div style="font-size:0.58rem;color:#a7fff4;letter-spacing:0.12em;text-transform:uppercase;">Vision Setup</div>
       <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.62rem;color:var(--parchment-dim);cursor:pointer;">
@@ -2613,7 +2613,7 @@
     </div>
     <div style="margin-top:0.35rem;font-size:0.56rem;color:var(--parchment-dim);line-height:1.35;">Used by viewer power save checks for monster and NPC tokens. Leave blank to fall back safely.</div>
   </div>
-  <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.7rem;color:#e74c3c;cursor:pointer;margin-bottom:0.6rem;padding:0.35rem 0.5rem;background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.2);border-radius:3px;">
+  <label class="te-dm-only" style="display:flex;align-items:center;gap:0.4rem;font-size:0.7rem;color:#e74c3c;cursor:pointer;margin-bottom:0.6rem;padding:0.35rem 0.5rem;background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.2);border-radius:3px;">
     <input type="checkbox" id="te-hidden" style="accent-color:#e74c3c;" /> 🚫 Hidden from players &amp; viewers
   </label>
   <div id="te-monster-quick-wrap" style="display:none;margin-bottom:0.65rem;padding:0.55rem 0.6rem;border:1px solid rgba(122,232,160,0.28);border-radius:6px;background:linear-gradient(180deg, rgba(46,204,113,0.09), rgba(0,0,0,0.2));">
@@ -13942,8 +13942,11 @@ function onRightClick(e) {
     const deleteEl = document.getElementById('ctx-delete'); if (deleteEl) deleteEl.style.display = canDeleteToken ? 'flex' : 'none';
     const editEl = document.getElementById('ctx-edit-token');
     const editSep = document.getElementById('ctx-edit-sep');
-    if (editEl) editEl.style.display = ROLE === 'dm' ? 'flex' : 'none';
-    if (editSep) editSep.style.display = ROLE === 'dm' ? 'block' : 'none';
+    // Owners may edit their own token (the server authorises owner edits and
+    // applies only the player-editable fields); the DM may edit any token.
+    const canEditToken = ROLE === 'dm' || _tokenOwnedByMe(hit);
+    if (editEl) editEl.style.display = canEditToken ? 'flex' : 'none';
+    if (editSep) editSep.style.display = canEditToken ? 'block' : 'none';
     const hideBtn = document.getElementById('ctx-toggle-hidden');
     if (hideBtn && ROLE === 'dm') {
       hideBtn.style.display = 'flex';
@@ -33023,7 +33026,12 @@ function openTokenEditor() {
   });
   refreshTokenSaveBonusEditorVisibility();
   refreshVisionPreviewUi();
-  document.getElementById('token-editor').style.display = 'block';
+  // Players editing their own token only see the fields the server lets owners
+  // change; DM-only controls (name, HP, colour, type, vision, hidden, size) are
+  // hidden via .te-dm-only so a player is never shown an edit that won't persist.
+  const teEl = document.getElementById('token-editor');
+  teEl.classList.toggle('te-hide-dm-only', ROLE !== 'dm');
+  teEl.style.display = 'block';
   document.getElementById('token-editor-bg').style.display = 'block';
   refreshTokenEditorSummary();
   refreshConditionSummaries();

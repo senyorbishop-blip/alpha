@@ -19,8 +19,11 @@
     const isOwner = !!(hit && hit.owner_id && hit.owner_id === env.getUserId());
     const editEl = document.getElementById('ctx-edit-token');
     const editSep = document.getElementById('ctx-edit-sep');
-    if (editEl) editEl.style.display = isDm ? 'flex' : 'none';
-    if (editSep) editSep.style.display = isDm ? 'block' : 'none';
+    // Owners may edit their own token (the server authorises owner edits and
+    // applies only the player-editable fields); the DM may edit any token.
+    const canEditToken = isDm || isOwner;
+    if (editEl) editEl.style.display = canEditToken ? 'flex' : 'none';
+    if (editSep) editSep.style.display = canEditToken ? 'block' : 'none';
 
     const hideBtn = document.getElementById('ctx-toggle-hidden');
     if (hideBtn) {
