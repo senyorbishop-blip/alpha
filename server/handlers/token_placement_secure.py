@@ -22,6 +22,7 @@ from server.handlers.tokens import (
     _owner_matches_user,
     _player_active_owned_tokens,
 )
+from server.handlers.combat import run_combat_fog_sync
 
 
 async def handle_token_placed_secure(payload: dict, session: Session, user: User):
@@ -51,6 +52,8 @@ async def handle_token_placed_secure(payload: dict, session: Session, user: User
             })
         return
 
+    was_staged = bool(getattr(token, "staged", False))
+    prev_ctx = normalize_map_context(getattr(token, "map_context", "world"))
     token.x = payload.get("x", token.x)
     token.y = payload.get("y", token.y)
     token.map_context = payload.get("map_context", token.map_context)
@@ -74,4 +77,10 @@ async def handle_token_placed_secure(payload: dict, session: Session, user: User
         token,
     )
     await _broadcast_token_state_sync(session)
+    # Bringing a token out of staging — or repositioning/replacing an already
+    # active one onto a (possibly different) map — can flip what fog/vision
+    # reveals, so resync combat fog for the destination map.
+    new_ctx = normalize_map_context(getattr(token, "map_context", "world"))
+    if was_staged or new_ctx != prev_ctx:
+        await run_combat_fog_sync(session, reason="token_placed", map_context=new_ctx)
     await save_campaign_async(session)

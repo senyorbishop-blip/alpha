@@ -20633,16 +20633,50 @@ function placeCharacter() {
     if (placeBtn) placeBtn.textContent = '🛡 Place My Character';
     return;
   }
-  const hasActiveOwnedToken = Object.values(tokens).some(t => _tokenOwnedByMe(t) && !Boolean(t?.staged));
-  if (hasActiveOwnedToken) {
-    showToast('You already have an active token on the field. Remove or stage it before placing another.');
-    return;
-  }
-
   const tokenName = name;
   const mapCtx = ROLE === 'dm'
     ? (_currentPoi ? (_currentPoi.id || '__local__') : 'world')
     : _dmMapContext;
+
+  // If the player already has an active token on the grid, "Place My Character"
+  // relocates/replaces that token rather than refusing. The single-active-token
+  // rule means we move the one they already own (and refresh its stats) instead
+  // of creating a second — this is what lets a player re-place their token,
+  // including pulling it onto the DM's current map from another one.
+  const activeOwnedTok = Object.values(tokens).find(t => _tokenOwnedByMe(t) && !Boolean(t?.staged));
+  if (activeOwnedTok) {
+    const relocBase = { ...activeOwnedTok, x: center.x - (activeOwnedTok.width || getEditorGridSizePx()) / 2, y: center.y - (activeOwnedTok.height || getEditorGridSizePx()) / 2 };
+    const snappedReloc = snapTokenToGrid(relocBase.x, relocBase.y, relocBase);
+    sendWS({ type: 'token_edit', payload: {
+      token_id: activeOwnedTok.id,
+      profile_id: resolveActiveCharProfileId(),
+      libraryId: resolveActiveCharProfileId(),
+      name: tokenName,
+      hp: curHpVal ?? hpVal ?? activeOwnedTok.hp,
+      maxHp: hpVal ?? activeOwnedTok.maxHp,
+      tempHp: tempHpVal,
+      initiativeMod: initVal,
+      ac: acVal,
+      speed: speedVal,
+      hasDarkvision: speciesHasDarkvision,
+      darkvisionRadius: speciesDarkvisionRadius,
+      level: levelVal,
+      faction: factionVal,
+      passivePerception: passiveVal,
+      notes: notesVal,
+    } });
+    sendWS({ type: 'token_placed', payload: {
+      token_id: activeOwnedTok.id,
+      x: snappedReloc.x,
+      y: snappedReloc.y,
+      map_context: mapCtx,
+    } });
+    requestCharacterBookOverviewRender('placeCharacterRelocate');
+    showToast(`${tokenName} repositioned on the board!`);
+    showParchmentToast(`⚔ ${tokenName} repositioned on the board!`, 'info', 3000);
+    return;
+  }
+
   const stagedOwnedTok = Object.values(_stagingTokens || {}).find(t => _tokenOwnedByMe(t) && Boolean(t?.staged));
   if (stagedOwnedTok) {
     stagedOwnedTok.name = tokenName;
