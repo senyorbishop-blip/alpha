@@ -37794,13 +37794,17 @@ function _refreshPlayerQuickActionsGrid() {
   }
   let buttons = [];
   (actions.attacks || []).slice(0,2).forEach(a => {
-    buttons.push(`<button class="rp-action" onclick="typeof runSheetQuickAction==='function'&&runSheetQuickAction(${esc(JSON.stringify(a))})"><span class="ai">⚔</span><span class="al"><span class="t">${esc(a.name||'Attack')}</span><span class="s">Melee</span></span></button>`);
+    buttons.push(`<button class="rp-action" onclick="typeof combatAttackSelected==='function'&&combatAttackSelected()"><span class="ai">⚔</span><span class="al"><span class="t">${esc(a.name||'Attack')}</span><span class="s">Melee</span></span></button>`);
   });
   (actions.spells || []).slice(0,2).forEach(s => {
-    buttons.push(`<button class="rp-action" onclick="typeof runSheetQuickAction==='function'&&runSheetQuickAction(${esc(JSON.stringify(s))})"><span class="ai">✦</span><span class="al"><span class="t">${esc(s.name||'Spell')}</span><span class="s">${esc(s.level_slot||s.level||'')}</span></span></button>`);
+    const spId = esc(JSON.stringify(s.id||s.name||''));
+    const castFn = s.granted ? 'castPlayerGrantedSpell' : 'castRulesSpell';
+    const spArg = s.granted ? spId : esc(JSON.stringify(s.name||''));
+    buttons.push(`<button class="rp-action" onclick="typeof ${castFn}==='function'&&${castFn}(${spArg})"><span class="ai">✦</span><span class="al"><span class="t">${esc(s.name||'Spell')}</span><span class="s">${esc(s.level_slot||s.level||'')}</span></span></button>`);
   });
   (actions.items || []).slice(0,2).forEach(item => {
-    buttons.push(`<button class="rp-action" onclick="typeof runSheetQuickAction==='function'&&runSheetQuickAction(${esc(JSON.stringify(item))})"><span class="ai">🧪</span><span class="al"><span class="t">${esc(item.name||'Item')}</span><span class="s">Use</span></span></button>`);
+    const itemKey = esc(JSON.stringify(item.key||item.name||''));
+    buttons.push(`<button class="rp-action" onclick="typeof runSheetQuickAction==='function'&&runSheetQuickAction(${itemKey})"><span class="ai">🧪</span><span class="al"><span class="t">${esc(item.name||'Item')}</span><span class="s">Use</span></span></button>`);
   });
   if (!buttons.length) {
     grid.innerHTML = `<div class="rp-empty" style="grid-column:1/-1">No quick actions available.</div>`;
@@ -37935,6 +37939,23 @@ window.initRolePanels = function initRolePanels() {
   document.body.setAttribute('data-role', effectiveRole);
 
   if (effectiveRole === 'player') {
+    // Bug 1: Hide legacy right panel elements that stack behind the new context shell
+    const tabBar = document.getElementById('right-tab-bar');
+    if (tabBar) tabBar.style.display = 'none';
+    document.querySelectorAll('.rtab-pane').forEach(el => el.style.display = 'none');
+    const dash = document.getElementById('player-dashboard-shell');
+    if (dash) dash.style.display = 'none';
+    const dmCtx = document.getElementById('dm-context-shell');
+    if (dmCtx) dmCtx.hidden = true;
+    const rpCtx = document.getElementById('right-panel-context');
+    if (rpCtx) rpCtx.style.display = 'none';
+
+    // Bug 4: Hide DM-only left rail controls
+    const dmLegacy = document.getElementById('dm-legacy-controls-shell');
+    if (dmLegacy) dmLegacy.style.display = 'none';
+    const dmModeSwitch = document.getElementById('dm-mode-switch');
+    if (dmModeSwitch) dmModeSwitch.style.display = 'none';
+
     // Show player rail, populate modes
     const rail = document.getElementById('player-role-rail');
     if (rail) rail.style.display = 'flex';
@@ -37960,6 +37981,23 @@ window.initRolePanels = function initRolePanels() {
     _refreshPlayerHpBar();
 
   } else {
+    // Bug 1 (viewer): Hide legacy right panel elements
+    const tabBar = document.getElementById('right-tab-bar');
+    if (tabBar) tabBar.style.display = 'none';
+    document.querySelectorAll('.rtab-pane').forEach(el => el.style.display = 'none');
+    const dash = document.getElementById('player-dashboard-shell');
+    if (dash) dash.style.display = 'none';
+    const dmCtx = document.getElementById('dm-context-shell');
+    if (dmCtx) dmCtx.hidden = true;
+    const rpCtx = document.getElementById('right-panel-context');
+    if (rpCtx) rpCtx.style.display = 'none';
+
+    // Bug 4 (viewer): Hide DM-only left rail controls
+    const dmLegacy = document.getElementById('dm-legacy-controls-shell');
+    if (dmLegacy) dmLegacy.style.display = 'none';
+    const dmModeSwitch = document.getElementById('dm-mode-switch');
+    if (dmModeSwitch) dmModeSwitch.style.display = 'none';
+
     // viewer
     const rail = document.getElementById('viewer-role-rail');
     if (rail) rail.style.display = 'flex';
