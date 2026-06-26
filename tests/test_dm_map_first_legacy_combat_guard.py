@@ -21,13 +21,24 @@ def test_map_first_css_hides_legacy_right_panels_and_combat_tracker():
         '#rtab-pane-combat',
         '#combat-list',
         '#combat-controls',
-        '#token-editor',
         '[data-legacy-combat-tracker]',
         '[data-selected-token-panel]',
     ]:
         assert selector in css
     assert 'body.dm-map-first-active:not(.dm-legacy-drawer-open)' in css
     assert '#dm-context-shell' in css
+
+
+def test_map_first_does_not_force_hide_token_editor_modal():
+    # The token editor (#token-editor) is a deliberately-opened centred modal,
+    # not legacy right-panel chrome. It must NOT be in the map-first
+    # display:none suppression block or the DM can never edit a token while in
+    # map-first mode (the inline display:block loses to display:none !important).
+    css = read(FIXES)
+    assert '#token-editor' not in css, (
+        '#token-editor must not be force-hidden by dm-map-first-fixes.css; it is a '
+        'modal the DM opens via Edit Token.'
+    )
 
 
 def test_bridge_forces_legacy_panels_closed_after_activate_and_refresh():
