@@ -38243,7 +38243,14 @@ function _rpViewerPowersHtml() {
     const name = typeof viewerPowerName === 'function' ? viewerPowerName(pid) : (def.name || pid);
     const desc = typeof viewerPowerDescription === 'function' ? viewerPowerDescription(pid) : (def.description || '');
     const coolLabel = typeof viewerPowerCooldownLabel === 'function' ? viewerPowerCooldownLabel(entry) : '';
-    const onCd = coolLabel && coolLabel !== 'Ready' && coolLabel !== 'No cooldown';
+    // "On cooldown" must reflect the live cooldown timer, not merely that the
+    // power *has* a cooldown configured. viewerPowerCooldownLabel() returns an
+    // informational label like "90s cooldown" even when the power is ready, so
+    // string-matching it greyed out freshly granted powers (Fireball, Trip Hex,
+    // Knockback, …) and left them unusable.
+    const onCd = typeof _viewerPowerOnCooldown === 'function'
+      ? _viewerPowerOnCooldown(entry)
+      : (Number(entry?.cooldown_until || 0) > Date.now() / 1000);
     const needsApproval = entry.requires_approval;
     const state = onCd ? 'cd' : (needsApproval ? 'app' : 'rdy');
     const tag = state === 'rdy' ? '<span class="ptag rdy">Ready</span>'
@@ -38322,7 +38329,10 @@ function _refreshViewerHud() {
     const def = defs[pid] || {};
     const name = typeof viewerPowerName === 'function' ? viewerPowerName(pid) : (def.name || pid);
     const coolLabel = typeof viewerPowerCooldownLabel === 'function' ? viewerPowerCooldownLabel(entry) : '';
-    const onCd = coolLabel && coolLabel !== 'Ready' && coolLabel !== 'No cooldown';
+    // Use the live cooldown timer, not the informational label (see _rpViewerPowersHtml).
+    const onCd = typeof _viewerPowerOnCooldown === 'function'
+      ? _viewerPowerOnCooldown(entry)
+      : (Number(entry?.cooldown_until || 0) > Date.now() / 1000);
     const dmgDice = def.damage_dice || def.heal_dice || '';
     const shortName = name.split(' ').slice(0,2).join(' ');
     return `<button class="vh-pow${onCd?' locked':''}" title="${esc(name)}${onCd?' · '+coolLabel:''}"
