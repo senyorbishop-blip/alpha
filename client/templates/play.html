@@ -32600,6 +32600,42 @@ function openMyTokenPanel() {
   if (flyout && !flyout.classList.contains('open')) toggleFlyout('flyout-char-token');
 }
 
+// One-click "place / re-place my token" used by the map-first player panel.
+// The new player shell (My Turn / Character / Pouch / Social) replaced the old
+// left rail, which is where the "Place My Character" button used to live, so
+// players were left with no surfaced way to drop or re-drop their token. This
+// drives the existing placeCharacter() place/unstage/relocate path directly:
+//   • no token  → creates one on the DM's current map at screen center
+//   • staged    → brings the staged token onto the board
+//   • on board  → relocates (re-places) it onto the DM's current map/center
+// We seed the hidden token form from the live token (or the loaded character
+// sheet) first so placement keeps the player's real stats instead of blanks,
+// and clear updateTokenId so placeCharacter() runs placement rather than the
+// "update stats only" branch.
+function rpPlaceOrMoveMyToken() {
+  if (typeof ROLE !== 'undefined' && ROLE !== 'player') return;
+  try { if (typeof syncMyCharacterFormFromToken === 'function') syncMyCharacterFormFromToken(); } catch (_e) {}
+  const cs = _charSheet || {};
+  const setIfEmpty = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const cur = el.value == null ? '' : String(el.value).trim();
+    if (cur === '' && val != null && val !== '') el.value = val;
+  };
+  setIfEmpty('char-name', cs.name || (typeof NAME !== 'undefined' ? NAME : ''));
+  setIfEmpty('char-hp', cs.maxHp ?? cs.hp);
+  setIfEmpty('char-curhp', cs.currentHp ?? cs.maxHp ?? cs.hp);
+  setIfEmpty('char-ac', cs.ac);
+  setIfEmpty('char-speed', cs.speed);
+  setIfEmpty('char-initiative', cs.initiative);
+  setIfEmpty('char-level', cs.level);
+  setIfEmpty('char-passive', cs.passivePerception);
+  const placeBtn = document.querySelector('.place-char-btn');
+  if (placeBtn) placeBtn.dataset.updateTokenId = '';
+  if (typeof placeCharacter === 'function') placeCharacter();
+}
+if (typeof window !== 'undefined') window.rpPlaceOrMoveMyToken = rpPlaceOrMoveMyToken;
+
 function syncMyCharacterFormFromToken(preferVisible = true) {
   if (ROLE !== 'player') return;
   const visibleTok = Object.values(tokens).find(t => _tokenOwnedByMe(t));
@@ -37973,16 +38009,23 @@ function _renderPlayerMode(modeId, subTab) {
       // The full action surface lives in the floating Quick Bar; the panel only
       // needs a single launcher rather than a duplicated action grid.
       const quickActionsLauncher = `<section><div style="padding:.1rem 0 0"><button class="rp-action go" style="width:100%;justify-content:center;" onclick="if(window.CombatQuickBar&&typeof window.CombatQuickBar.openManual==='function'){window.CombatQuickBar.openManual();}else if(typeof toggleSheet==='function'){toggleSheet();}">⚔ Open quick actions ▸</button></div></section>`;
+      // Place / re-place the player's token on the map. The map-first shell has
+      // no other surfaced affordance for this, so it always appears in My Turn.
+      const myActiveTok = Object.values(tokens || {}).find(t => t && t.owner_id === USER_ID && !t.staged) || null;
+      const placeLabel = myActiveTok ? '📍 Move / re-place my token' : '📍 Place my token on the map';
+      const placeTokenLauncher = `<section><div style="padding:.1rem 0 0"><button class="rp-action go" style="width:100%;justify-content:center;" onclick="if(typeof rpPlaceOrMoveMyToken==='function')rpPlaceOrMoveMyToken();">${placeLabel} ▸</button></div></section>`;
       if (combatActive) {
         const econ = isMyTurn
           ? _rpActionEconomyHtml()
           : `<div class="rp-turn-note">Waiting — it's ${esc(String(current && current.name || 'another combatant'))}'s turn.</div>`;
         html += _rpBlock(isMyTurn ? 'Your turn' : 'Current turn', charCard + econ, 'rp-card glow');
         html += quickActionsLauncher;
+        html += placeTokenLauncher;
         html += _rpBlock('Initiative order', _rpInitList(), '', "_rpRollMyInitiative()", 'Roll mine');
       } else {
         html += _rpBlock('Your character', charCard + `<div class="rp-turn-note">Combat hasn't started. Your turn actions appear here once initiative is rolled.</div>`, 'rp-card');
         html += quickActionsLauncher;
+        html += placeTokenLauncher;
       }
       html += _rpBlock('Party', _rpPartyBlock());
     }
