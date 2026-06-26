@@ -132,6 +132,7 @@
         if (effectiveRole === 'dm' && typeof global.reapplyDmFogPreviewAfterReconnect === 'function') global.setTimeout(global.reapplyDmFogPreviewAfterReconnect, 0);
       },
       onClose: function (_event) {
+        const effectiveRole = String(config.getRole() || 'viewer').toLowerCase();
         if (global.liveDebugLog) global.liveDebugLog('websocket close/reconnect pending', { role: effectiveRole, code: _event && _event.code, reason: _event && _event.reason });
         const status = global.document.getElementById('ws-status');
         if (status) status.classList.remove('connected');

@@ -318,6 +318,52 @@
     return element;
   }
 
+  function renderRichContext(safeRoot, activeMode) {
+    // Mount rich, live content (current turn, initiative, party, tools) into the
+    // context body. Replaces the old text-link markers. No-ops if the renderer
+    // module isn't present, so the panel degrades to the marker fallback.
+    const renderer = window.AppUIDMContextRender;
+    if (!renderer || typeof renderer.render !== 'function') return;
+    const docRoot = safeRoot && safeRoot.querySelector ? safeRoot : document;
+    const body = docRoot.querySelector('#dm-context-shell .dm-map-first-context-body');
+    if (!body) return;
+
+    // Tab strip (mounted once, refreshed per mode).
+    let tabsEl = body.querySelector('.dcx-tabs');
+    if (!tabsEl) {
+      tabsEl = document.createElement('div');
+      tabsEl.className = 'dcx-tabs';
+      body.insertBefore(tabsEl, body.firstChild);
+    }
+    const tabs = typeof renderer.tabs === 'function' ? (renderer.tabs(activeMode) || []) : [];
+    tabsEl.innerHTML = tabs.map(function (t, i) {
+      const badge = t[2] ? '<span class="dcx-badge">' + t[2] + '</span>' : '';
+      return '<button class="dcx-tab" type="button" aria-pressed="' + (i === 0) +
+        '" onclick="switchRTab(\'' + String(t[0]).replace(/'/g, '') + '\')">' + String(t[1]) + badge + '</button>';
+    }).join('');
+    tabsEl.style.display = tabs.length ? 'flex' : 'none';
+
+    // Rich content container (mounted once, refilled per mode).
+    let rich = body.querySelector('#dm-rich-context');
+    if (!rich) {
+      rich = document.createElement('div');
+      rich.id = 'dm-rich-context';
+      if (tabsEl.nextSibling) body.insertBefore(rich, tabsEl.nextSibling);
+      else body.appendChild(rich);
+    }
+    try { rich.innerHTML = renderer.render(activeMode); } catch (_e) { return; }
+    if (typeof renderer.afterRender === 'function') {
+      try { renderer.afterRender(rich); } catch (_e2) {}
+    }
+
+    // Header glyph + note, mirroring the chosen mode.
+    if (typeof renderer.meta === 'function') {
+      const m = renderer.meta(activeMode) || {};
+      const noteEl = docRoot.querySelector('.dm-context-map-note');
+      if (noteEl && m.note) noteEl.textContent = m.note;
+    }
+  }
+
   function activateMode(root, modeId) {
     const safeRoot = root || document;
     ensureModePanels(safeRoot);
@@ -340,6 +386,7 @@
       safeRoot.body.dataset.dmActiveMode = activeMode;
       safeRoot.body.dataset.debugOpen = activeMode === 'debug' ? 'true' : 'false';
     }
+    renderRichContext(safeRoot, activeMode);
     if (typeof window.renderStreamReadinessPanel === 'function') {
       window.renderStreamReadinessPanel();
     }
@@ -355,12 +402,25 @@
     return activateMode(safeRoot, FALLBACK_MODE);
   }
 
+  // Re-renders the rich context panel for whatever mode is currently active,
+  // without touching mode/button state. Live state pushes (combat_state,
+  // state_sync, etc.) arrive independently of mode-switch clicks, so callers
+  // that mutate _combat/charProfiles/etc. need a way to refresh the panel.
+  function refresh(root) {
+    const safeRoot = root || document;
+    const activeMode = (safeRoot.dataset && safeRoot.dataset.dmActiveMode)
+      || (safeRoot.body && safeRoot.body.dataset && safeRoot.body.dataset.dmActiveMode)
+      || FALLBACK_MODE;
+    renderRichContext(safeRoot, normalizeMode(activeMode));
+  }
+
   window.AppUIDMPanelModeBridge = Object.freeze({
     listModes,
     getModeConfig,
     classifyElement,
     registerPanelSection,
     activateMode,
+    refresh,
     init,
   });
 })();
