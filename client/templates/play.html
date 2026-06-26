@@ -1538,6 +1538,7 @@
     <button class="qb-btn" onclick="combatDash()"><span class="g">⇉</span>Dash</button>
     <button class="qb-btn" onclick="combatToggleDisengage()"><span class="g">↯</span>Disengage</button>
     <div class="qb-sep"></div>
+    <button class="qb-btn" onclick="if(window.CombatQuickBar&&typeof window.CombatQuickBar.openManual==='function')window.CombatQuickBar.openManual();"><span class="g">⚔</span>Actions</button>
     <button class="qb-btn" onclick="typeof toggleFlyout==='function'&&toggleFlyout('flyout-dice')"><span class="g">⚄</span>Dice</button>
     <button class="qb-btn" onclick="typeof toggleSheet==='function'&&toggleSheet()"><span class="g">📖</span>Sheet</button>
   </div>
@@ -37587,7 +37588,7 @@ const VIEWER_MODES = [
 ];
 
 /* ---- Player context renders ---- */
-function _renderPlayerMode(modeId) {
+function _renderPlayerMode(modeId, subTab) {
   const glEl = document.getElementById('rp-player-ctx-gly');
   const titEl = document.getElementById('rp-player-ctx-title');
   const noteEl = document.getElementById('rp-player-ctx-note');
@@ -37596,12 +37597,18 @@ function _renderPlayerMode(modeId) {
   if (!bodyEl) return;
 
   const modeInfo = PLAYER_MODES.find(m => m.id === modeId) || PLAYER_MODES[0];
+  const tabIds = (modeInfo.tabs || []).map(t => t[0]);
+  // Resolve the active sub-tab: explicit arg → remembered → first tab.
+  const activeTab = (subTab && tabIds.includes(subTab))
+    ? subTab
+    : (tabIds.includes(window._rpPlayerTab) ? window._rpPlayerTab : (tabIds[0] || ''));
+  window._rpPlayerTab = activeTab;
   if (glEl) glEl.textContent = modeInfo.gly;
   if (titEl) titEl.textContent = modeInfo.label;
   if (noteEl) noteEl.textContent = '';
   if (tabsEl) {
-    tabsEl.innerHTML = (modeInfo.tabs || []).map((t, i) =>
-      `<button class="rp-ctx-tab" aria-pressed="${i===0}" onclick="typeof switchRTab==='function'&&switchRTab(${esc(JSON.stringify(t[0]))})">${t[1]}</button>`
+    tabsEl.innerHTML = (modeInfo.tabs || []).map((t) =>
+      `<button class="rp-ctx-tab" aria-pressed="${t[0]===activeTab}" onclick="_rpSetPlayerTab(${esc(JSON.stringify(modeId))},${esc(JSON.stringify(t[0]))})">${t[1]}</button>`
     ).join('');
   }
 
@@ -37619,15 +37626,14 @@ function _renderPlayerMode(modeId) {
     const maxHp = myToken ? Number(myToken.max_hp || myToken.hp || 1) : Number(cs.max_hp || cs.hp || 1);
     const ac = myToken ? (myToken.ac || cs.ac || '—') : (cs.ac || '—');
     const spd = cs.speed || myToken?.speed || '—';
-    const isMyTurn = _combat && _combat.active && (() => {
-      const cur = (_combat.combatants || [])[Math.max(0, Number(_combat.turn)||0)] || null;
-      return cur && (cur.owner_id === USER_ID || cur.token_id === myToken?.id);
-    })();
+    const combatActive = !!(_combat && _combat.active);
+    const current = combatActive ? ((_combat.combatants || [])[Math.max(0, Number(_combat.turn)||0)] || null) : null;
+    const isMyTurn = combatActive && current && (current.owner_id === USER_ID || current.token_id === myToken?.id);
     const actionUsed = isMyTurn && (_combatActionUsed || false);
     const bonusUsed  = isMyTurn && (_combatBonusUsed || false);
     const reactionUsed = isMyTurn && (_combatReactionUsed || false);
 
-    html += _rpBlock('Current turn', `
+    const charCard = `
       <div class="rp-turn">
         <div class="portrait"></div>
         <div class="info">
@@ -37642,64 +37648,88 @@ function _renderPlayerMode(modeId) {
           <span class="rp-hpnum">${hp}<span class="small">/${maxHp}</span></span>
           ${_rpHpBar(hp, maxHp)}
         </div>
-      </div>
-      <div class="rp-econ-row">
-        <button class="rp-econ-btn${actionUsed?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('action')">Action</button>
-        <button class="rp-econ-btn${bonusUsed?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('bonus_action')">Bonus</button>
-        <button class="rp-econ-btn${reactionUsed?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('reaction')">Reaction</button>
-        <button class="rp-action go" style="grid-column:1/-1;justify-content:center;font-size:.66rem;" onclick="typeof combatEndTurn==='function'&&combatEndTurn()">End turn ▸</button>
-      </div>
-    `, 'rp-card glow');
+      </div>`;
 
-    html += `<section><div class="rp-eyebrow">Quick actions</div><div id="rp-quick-actions-area" style="margin-top:.4rem"><div id="rp-quick-actions-grid" class="rp-actions"></div></div></section>`;
-    html += _rpBlock('Initiative order', _rpInitList(), '', "typeof combatRollInitiative==='function'&&combatRollInitiative()", 'Roll');
-    html += _rpBlock('Party', _rpPartyBlock());
+    if (activeTab === 'party') {
+      html += _rpBlock('Party', _rpPartyBlock());
+      html += _rpBlock('Initiative order', _rpInitList(), '', "typeof combatRollInitiative==='function'&&combatRollInitiative()", 'Roll');
+    } else if (activeTab === 'log') {
+      html += _rpBlock('Table log', `<div style="padding:.6rem"><button class="rp-action go" style="width:100%;justify-content:center;" onclick="_rpOpenPanelView('log')">💬 Open table chat & log ▸</button></div>`, 'rp-card');
+    } else {
+      // 'combat' (Turn) sub-tab — the default action surface.
+      if (combatActive) {
+        const econ = isMyTurn
+          ? `<div class="rp-econ-row">
+              <button class="rp-econ-btn${actionUsed?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('action')">Action</button>
+              <button class="rp-econ-btn${bonusUsed?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('bonus_action')">Bonus</button>
+              <button class="rp-econ-btn${reactionUsed?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('reaction')">Reaction</button>
+              <button class="rp-action go" style="grid-column:1/-1;justify-content:center;font-size:.66rem;" onclick="typeof combatEndTurn==='function'&&combatEndTurn()">End turn ▸</button>
+            </div>`
+          : `<div class="rp-turn-note">Waiting — it's ${esc(String(current && current.name || 'another combatant'))}'s turn.</div>`;
+        html += _rpBlock(isMyTurn ? 'Your turn' : 'Current turn', charCard + econ, 'rp-card glow');
+        html += `<section><div class="rp-eyebrow">Quick actions</div><div id="rp-quick-actions-area" style="margin-top:.4rem"><div id="rp-quick-actions-grid" class="rp-actions"></div></div></section>`;
+        html += _rpBlock('Initiative order', _rpInitList(), '', "typeof combatRollInitiative==='function'&&combatRollInitiative()", 'Roll');
+      } else {
+        html += _rpBlock('Your character', charCard + `<div class="rp-turn-note">Combat hasn't started. Your turn actions appear here once initiative is rolled.</div>`, 'rp-card');
+        html += `<section><div class="rp-eyebrow">Quick actions</div><div id="rp-quick-actions-area" style="margin-top:.4rem"><div id="rp-quick-actions-grid" class="rp-actions"></div></div></section>`;
+      }
+      html += _rpBlock('Party', _rpPartyBlock());
+    }
 
   } else if (modeId === 'character') {
-    html += _rpBlock('Open full sheet',
-      `<div style="padding:.6rem"><button class="rp-action go" style="width:100%;justify-content:center;" onclick="typeof toggleSheet==='function'&&toggleSheet()">📖 Open character book ▸</button></div>`,
-      'rp-card glow');
-    const cs = _charSheet || {};
-    const scores = [
-      ['STR', cs.str_score||cs.str||10], ['DEX', cs.dex_score||cs.dex||10],
-      ['CON', cs.con_score||cs.con||10], ['INT', cs.int_score||cs.int||10],
-      ['WIS', cs.wis_score||cs.wis||10], ['CHA', cs.cha_score||cs.cha||10],
-    ];
-    html += _rpBlock('Ability scores', `<div class="rp-stools" style="grid-template-columns:repeat(3,1fr);padding:.55rem">
-      ${scores.map(([s,v]) => {
-        const mod = Math.floor((Number(v)-10)/2);
-        return `<span class="rp-stool" style="cursor:default"><span class="gly" style="color:var(--mf-role)">${mod>=0?'+':''}${mod}</span>${s}</span>`;
-      }).join('')}
-    </div>`);
-    const spells = Array.isArray(cs.spells) ? cs.spells.slice(0,6) : [];
-    html += _rpBlock('Spells', spells.length ? `<div class="rp-toollist">
-      ${spells.map(sp => `<button class="rp-tl" onclick="typeof castPlayerGrantedSpell==='function'?castPlayerGrantedSpell(${esc(JSON.stringify(sp.id||sp.name||''))}):castRulesSpell(${esc(JSON.stringify(sp.name||''))})">
-        <span class="ti">✦</span><span class="tt">${esc(sp.name||sp.id||'Spell')}</span><span class="ts">${esc(sp.level_slot||'')}</span>
-      </button>`).join('')}
-    </div>` : `<div class="rp-empty">No spells loaded.</div>`, '',
-      "typeof toggleFlyout==='function'&&toggleFlyout('flyout-char')", 'Manage');
+    if (activeTab === 'spells') {
+      const spells = Array.isArray(_playerGrantedSpells) ? _playerGrantedSpells : [];
+      html += _rpBlock('Spells', spells.length ? `<div class="rp-toollist">
+        ${spells.slice(0,12).map(sp => `<button class="rp-tl" onclick="typeof castPlayerGrantedSpell==='function'?castPlayerGrantedSpell(${esc(JSON.stringify(sp.grant_id||sp.id||sp.name||''))}):(typeof castRulesSpell==='function'&&castRulesSpell(${esc(JSON.stringify(sp.name||''))}))">
+          <span class="ti">✦</span><span class="tt">${esc(sp.name||sp.id||'Spell')}</span><span class="ts">${esc(sp.level_label||(sp.spell_level!=null?('Lv '+sp.spell_level):'')||'')}</span>
+        </button>`).join('')}
+      </div>` : `<div class="rp-empty">No spells loaded.</div>`, '',
+        "typeof switchRTab==='function'&&_rpOpenPanelView('spelllib')", 'Manage');
+    } else {
+      // 'sheet' sub-tab — open-book shortcut + live stats from the sheet.
+      html += _rpBlock('Open full sheet',
+        `<div style="padding:.6rem"><button class="rp-action go" style="width:100%;justify-content:center;" onclick="typeof toggleSheet==='function'&&toggleSheet()">📖 Open character book ▸</button></div>`,
+        'rp-card glow');
+      const mods = (typeof _getCharacterModifiersForDice === 'function') ? _getCharacterModifiersForDice() : {};
+      const scores = [['STR','str'],['DEX','dex'],['CON','con'],['INT','int'],['WIS','wis'],['CHA','cha']];
+      html += _rpBlock('Ability scores', `<div class="rp-stools" style="grid-template-columns:repeat(3,1fr);padding:.55rem">
+        ${scores.map(([label,key]) => {
+          const mod = parseInt(mods[key], 10) || 0;
+          return `<span class="rp-stool" style="cursor:default"><span class="gly" style="color:var(--mf-role)">${mod>=0?'+':''}${mod}</span>${label}</span>`;
+        }).join('')}
+      </div>`);
+    }
 
   } else if (modeId === 'inventory') {
-    html += _rpBlock('Carry', `<div class="rp-toollist">
-      <button class="rp-tl" onclick="typeof toggleFlyout==='function'&&toggleFlyout('flyout-char')"><span class="ti">🎒</span><span class="tt">Backpack</span></button>
-      <button class="rp-tl" onclick="typeof switchRTab==='function'&&switchRTab('inventory')"><span class="ti">🪙</span><span class="tt">Gold</span></button>
-      <button class="rp-tl" onclick="typeof openShopFromProp==='function'&&openShopFromProp(null)"><span class="ti">🛒</span><span class="tt">Shop</span></button>
-    </div>`);
-    html += _rpBlock('Rest', `<div class="rp-actions">
-      <button class="rp-action" onclick="typeof onCampRestTopbarClick==='function'&&onCampRestTopbarClick()"><span class="ai">🏕</span><span class="al"><span class="t">Short rest</span><span class="s">spend hit dice</span></span></button>
-      <button class="rp-action" onclick="typeof onCampRestTopbarClick==='function'&&onCampRestTopbarClick()"><span class="ai">🌙</span><span class="al"><span class="t">Long rest</span><span class="s">full recovery</span></span></button>
-    </div>`);
+    if (activeTab === 'gold') {
+      html += _rpBlock('Coin & gold', `<div style="padding:.6rem"><button class="rp-action go" style="width:100%;justify-content:center;" onclick="typeof openCharacterBook==='function'&&openCharacterBook('inventory')">🪙 Open gold & inventory ▸</button></div>`, 'rp-card');
+    } else {
+      // 'items' sub-tab — item listing + rest.
+      html += _rpBlock('Carry', `<div class="rp-toollist">
+        <button class="rp-tl" onclick="typeof openCharacterBook==='function'&&openCharacterBook('inventory')"><span class="ti">🎒</span><span class="tt">Backpack</span></button>
+        <button class="rp-tl" onclick="typeof openCharacterBook==='function'&&openCharacterBook('inventory')"><span class="ti">🪙</span><span class="tt">Gold</span></button>
+        <button class="rp-tl" onclick="typeof openShopFromProp==='function'&&openShopFromProp(null)"><span class="ti">🛒</span><span class="tt">Shop</span></button>
+      </div>`);
+      html += _rpBlock('Rest', `<div class="rp-actions">
+        <button class="rp-action" onclick="typeof onCampRestTopbarClick==='function'&&onCampRestTopbarClick()"><span class="ai">🏕</span><span class="al"><span class="t">Short rest</span><span class="s">spend hit dice</span></span></button>
+        <button class="rp-action" onclick="typeof onCampRestTopbarClick==='function'&&onCampRestTopbarClick()"><span class="ai">🌙</span><span class="al"><span class="t">Long rest</span><span class="s">full recovery</span></span></button>
+      </div>`);
+    }
 
   } else if (modeId === 'social') {
-    html += _rpBlock('Table', `<div class="rp-toollist">
-      <button class="rp-tl" onclick="typeof switchRTab==='function'&&switchRTab('chat')"><span class="ti">💬</span><span class="tt">Party chat</span></button>
-      <button class="rp-tl" onclick="typeof switchRTab==='function'&&switchRTab('chat')"><span class="ti">📊</span><span class="tt">Vote in poll</span></button>
-      <button class="rp-tl" onclick="typeof addPartyMemory==='function'&&addPartyMemory()"><span class="ti">⭐</span><span class="tt">Log a moment</span></button>
-    </div>`);
-    html += _rpBlock('Records', `<div class="rp-toollist">
-      <button class="rp-tl" onclick="typeof toggleFlyout==='function'&&toggleFlyout('flyout-journal')"><span class="ti">📓</span><span class="tt">Journal</span></button>
-      <button class="rp-tl" onclick="typeof switchRTab==='function'&&switchRTab('handouts')"><span class="ti">🗺</span><span class="tt">Quests</span></button>
-    </div>`);
+    if (activeTab === 'quests') {
+      html += _rpBlock('Records', `<div class="rp-toollist">
+        <button class="rp-tl" onclick="typeof toggleFlyout==='function'&&toggleFlyout('flyout-journal')"><span class="ti">📓</span><span class="tt">Journal</span></button>
+        <button class="rp-tl" onclick="typeof toggleFlyout==='function'&&toggleFlyout('flyout-journal')"><span class="ti">🗺</span><span class="tt">Quests</span></button>
+      </div>`);
+    } else {
+      // 'chat' sub-tab — table comms.
+      html += _rpBlock('Table', `<div class="rp-toollist">
+        <button class="rp-tl" onclick="_rpOpenPanelView('log')"><span class="ti">💬</span><span class="tt">Party chat</span></button>
+        <button class="rp-tl" onclick="_rpOpenPanelView('log')"><span class="ti">📊</span><span class="tt">Vote in poll</span></button>
+        <button class="rp-tl" onclick="typeof addPartyMemory==='function'&&addPartyMemory()"><span class="ti">⭐</span><span class="tt">Log a moment</span></button>
+      </div>`);
+    }
   }
 
   bodyEl.innerHTML = html;
@@ -38034,8 +38064,51 @@ window.initRolePanels = function initRolePanels() {
 };
 
 window._rpSetPlayerMode = function(modeId) {
+  // If a legacy pane (chat/inventory/…) is currently borrowing the right
+  // column, restore the context shell before switching modes.
+  if (typeof window._rpBackToContext === 'function') window._rpBackToContext();
   window._rpPlayerMode = modeId;
+  window._rpPlayerTab = null;
   _renderPlayerMode(modeId);
+};
+
+// Switch the active sub-tab within the current player mode and re-render.
+window._rpSetPlayerTab = function(modeId, tabId) {
+  window._rpPlayerTab = tabId;
+  _renderPlayerMode(modeId, tabId);
+};
+
+// Hand the right column off to one of the existing legacy panes (chat, party,
+// inventory, …). The player context shell is hidden while the pane is shown,
+// and a Back button restores the context overview. This reuses the real,
+// fully-wired panels instead of re-implementing them inside the context shell.
+window._rpOpenPanelView = function(tab) {
+  const shell = document.getElementById('player-context-shell');
+  if (shell) shell.style.display = 'none';
+  let back = document.getElementById('rp-panel-back');
+  if (!back) {
+    back = document.createElement('button');
+    back.id = 'rp-panel-back';
+    back.type = 'button';
+    back.className = 'rp-panel-back';
+    back.innerHTML = '← Back';
+    back.onclick = window._rpBackToContext;
+    const sr = document.getElementById('sidebar-right');
+    if (sr) sr.insertBefore(back, sr.firstChild);
+  }
+  back.style.display = '';
+  if (typeof switchRTab === 'function') switchRTab(tab);
+};
+
+window._rpBackToContext = function() {
+  document.querySelectorAll('#sidebar-right .rtab-pane').forEach((el) => {
+    el.style.display = 'none';
+    el.classList.remove('active');
+  });
+  const back = document.getElementById('rp-panel-back');
+  if (back) back.style.display = 'none';
+  const shell = document.getElementById('player-context-shell');
+  if (shell) shell.style.display = 'flex';
 };
 
 window._rpSetViewerMode = function(modeId) {
