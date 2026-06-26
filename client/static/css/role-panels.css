@@ -845,3 +845,130 @@ body[data-role="viewer"] #player-actions-hub {
   cursor: pointer;
 }
 .rp-panel-back:hover { background: rgba(0, 229, 204, .12); }
+.rp-panel-back:active { transform: translateY(1px); }
+
+/* ============================================================
+   VISUAL ELEVATION (player/viewer role layer)
+   In-place polish only — reuses the existing dark-fantasy tokens
+   (--mf-role / --mf-role-soft / --mf-role-line / --mf-cyan / gold
+   accents). No new theme, no new palette. Focus: hierarchy, motion,
+   focus-visible affordances, pressed feedback, and small-viewport
+   safety for the floating HUDs.
+   ============================================================ */
+
+/* ---- Unified keyboard focus ring across role controls --------
+   Real, focusable controls get a consistent role-tinted ring so
+   keyboard players always see where they are. */
+.rp-mode-btn:focus-visible,
+.rp-ctx-tab:focus-visible,
+.qb-btn:focus-visible,
+.vh-pow:focus-visible,
+.vh-e:focus-visible,
+.rp-action:focus-visible,
+.rp-tl:focus-visible,
+.rp-econ-btn:focus-visible,
+.rp-stool:focus-visible,
+.powcard:focus-visible,
+.rp-panel-back:focus-visible {
+  outline: 2px solid var(--mf-role);
+  outline-offset: 2px;
+}
+/* Quiet the mouse-click outline; keyboard ring above still wins. */
+.rp-mode-btn:focus:not(:focus-visible),
+.rp-ctx-tab:focus:not(:focus-visible),
+.qb-btn:focus:not(:focus-visible),
+.rp-action:focus:not(:focus-visible),
+.rp-tl:focus:not(:focus-visible) { outline: none; }
+
+/* ---- Motion: smooth, subtle, consistent ---------------------- */
+/* Resource/HP bar fills ease toward their new width instead of
+   snapping, so damage/heal reads as a deliberate change. */
+.rp-hpbar > i,
+.rp-hpbar6 > i,
+.qb-hp .mini > i,
+.rp-econ-btn { transition: width .34s cubic-bezier(.4, 0, .2, 1), background .2s ease, border-color .12s, color .12s, opacity .18s; }
+.qb-hp .mini > i { transition: width .34s cubic-bezier(.4, 0, .2, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rp-hpbar > i, .rp-hpbar6 > i, .qb-hp .mini > i { transition: none; }
+}
+
+/* ---- Player rail: clearer pressed + active hierarchy --------- */
+.rp-mode-btn { will-change: transform; }
+.rp-mode-btn:active { transform: translateY(1px); }
+.rp-mode-btn[aria-pressed="true"] .gly { filter: drop-shadow(0 0 6px var(--mf-role-soft)); }
+
+/* ---- Context tabs: tighter, more legible active state -------- */
+.rp-ctx-tab { font-weight: 600; }
+.rp-ctx-tab[aria-pressed="true"] {
+  box-shadow: 0 0 0 1px var(--mf-role-line) inset;
+}
+.rp-ctx-tab:active { transform: translateY(1px); }
+
+/* ---- Context body: gentle section rhythm + first-child reset - */
+.rp-ctx-body > section + section {
+  padding-top: .55rem;
+  border-top: 1px solid rgba(212, 166, 55, .1);
+}
+.rp-eyebrow { margin-bottom: .45rem; }
+
+/* ---- Quick bar: depth, drag affordance, pressed feedback ----- */
+#rp-quickbar {
+  /* Layer the existing drop shadow with a faint inset rim-light so the
+     bar reads as a raised, premium slab against the map. */
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, .55),
+    0 0 0 1px rgba(0, 229, 204, .08) inset,
+    0 1px 0 rgba(255, 255, 255, .05) inset;
+  align-items: center;
+}
+#rp-quickbar .drag {
+  border-radius: 8px;
+  touch-action: none;
+  transition: color .14s, background .14s;
+}
+#rp-quickbar .drag:hover {
+  color: var(--mf-cyan, #00e5cc);
+  background: rgba(0, 229, 204, .08);
+}
+.qb-btn { will-change: transform; }
+.qb-btn:active { transform: translateY(1px); }
+.qb-btn[aria-pressed="true"] {
+  border-color: var(--mf-cyan, #00e5cc);
+  color: var(--mf-cyan, #00e5cc);
+  background: rgba(0, 229, 204, .12);
+}
+/* HP readout in the bar gets the same eased fill as the panel bars. */
+#rp-qb-hp-bar { transition: width .34s cubic-bezier(.4, 0, .2, 1); }
+
+/* ---- Tiles / actions: cohesive hover + pressed --------------- */
+.rp-action, .rp-tl, .rp-stool, .powcard, .vh-pow, .vh-e { will-change: transform; }
+.rp-action:active, .rp-tl:active, .rp-stool:active,
+.powcard:active:not(.cool), .vh-e:active, .vh-pow:active:not(.locked) {
+  transform: translateY(1px);
+}
+.rp-action .ai { transition: background .14s, border-color .14s; }
+.rp-action:hover .ai, .rp-tl:hover .ti {
+  box-shadow: 0 0 12px var(--mf-role-soft);
+}
+
+/* ---- Init / party rows: hover lift for scannability --------- */
+.rp-init-row:hover { border-color: var(--mf-role-line); background: rgba(255, 255, 255, .03); }
+
+/* ---- Viewer power HUD: pressed + active sheen --------------- */
+.vh-pow:active:not(.locked) { transform: translateY(1px); }
+
+/* ============================================================
+   Small-viewport safety: the floating HUDs must never overflow
+   the map or push controls off-screen / under the right column.
+   ============================================================ */
+@media (max-width: 920px) {
+  #rp-quickbar {
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: calc(100% - 1rem);
+    row-gap: .25rem;
+  }
+  #rp-quickbar .qb-sep { display: none; }
+  #rp-viewerhud { flex-wrap: wrap; justify-content: center; max-width: calc(100% - 1rem); }
+}

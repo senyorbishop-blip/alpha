@@ -1546,6 +1546,8 @@
     <button class="qb-btn" onclick="if(window.CombatQuickBar&&typeof window.CombatQuickBar.openManual==='function')window.CombatQuickBar.openManual();"><span class="g">⚔</span>Actions</button>
     <button class="qb-btn" onclick="typeof toggleFlyout==='function'&&toggleFlyout('flyout-dice')"><span class="g">⚄</span>Dice</button>
     <button class="qb-btn" onclick="typeof toggleSheet==='function'&&toggleSheet()"><span class="g">📖</span>Sheet</button>
+    <div class="qb-sep"></div>
+    <button class="qb-btn" id="rp-tool-sound" aria-pressed="false" onclick="typeof _rpToggleSound==='function'&&_rpToggleSound(this)" title="Personal volume — master, ambient & SFX"><span class="g">🔊</span>Sound</button>
   </div>
 
   <!-- VIEWER: power HUD (shown only for viewer role) -->
@@ -38164,6 +38166,7 @@ function _renderPlayerMode(modeId, subTab) {
       html += _rpBlock('Records', `<div class="rp-toollist">
         <button class="rp-tl" onclick="typeof toggleFlyout==='function'&&toggleFlyout('flyout-journal')"><span class="ti">📓</span><span class="tt">Journal</span></button>
         <button class="rp-tl" onclick="typeof toggleFlyout==='function'&&toggleFlyout('flyout-journal')"><span class="ti">🗺</span><span class="tt">Quests</span></button>
+        <button class="rp-tl" onclick="_rpOpenPanelView('memory')"><span class="ti">⭐</span><span class="tt">Moments</span><span class="ts">story timeline ▸</span></button>
       </div>`);
     } else {
       // 'chat' sub-tab — table comms.
@@ -38552,6 +38555,22 @@ window._rpBackToContext = function() {
   if (back) back.style.display = 'none';
   const shell = document.getElementById('player-context-shell');
   if (shell) shell.style.display = 'flex';
+};
+
+// Surface the player's personal volume controls from the new map-first UI.
+// The legacy entry point (the floating #sound-indicator, opacity:0 until audio
+// plays) is easy to miss and its .open class rule is defeated by the popup's
+// inline display:none. Toggle the popup's display directly so the player-only
+// quick-bar "Sound" button is robust without touching the shared indicator.
+window._rpToggleSound = function(btn) {
+  const popup = document.getElementById('sound-vol-popup');
+  if (!popup) return;
+  const open = popup.style.display === 'block';
+  popup.style.display = open ? 'none' : 'block';
+  popup.classList.toggle('open', !open);
+  if (btn && btn.setAttribute) btn.setAttribute('aria-pressed', String(!open));
+  const tool = document.getElementById('rp-tool-sound');
+  if (tool) tool.classList.toggle('active', !open);
 };
 
 window._rpSetViewerMode = function(modeId) {
