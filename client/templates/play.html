@@ -83,14 +83,14 @@
 <div id="sidebar-left" class="dm-map-first-rail">
   <nav id="dm-live-mode-rail" class="dm-live-mode-rail" aria-label="DM mode rail" data-dm-rail-shell="true" hidden>
     <div class="dm-live-mode-rail-label">DM Modes</div>
-    <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="run" aria-pressed="true">▶<span>Live Table</span></button>
-    <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="combat" aria-pressed="false">⚔<span>Combat</span></button>
-    <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="map-build" aria-pressed="false">🧱<span>Map Build</span></button>
-    <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="npc-monster" aria-pressed="false">🐉<span>NPC / Monster</span></button>
-    <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="loot-shop" aria-pressed="false">🏪<span>Loot / Shop</span></button>
-    <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="session-tools" aria-pressed="false">📜<span>Session Tools</span></button>
-    <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="viewer-powers" aria-pressed="false">👁<span>Viewer Powers</span></button>
-    <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="debug" aria-pressed="false">🐞<span>Debug</span></button>
+    <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="run" aria-pressed="true" onclick="window.AppUIDMPanelModeBridge&&AppUIDMPanelModeBridge.activateMode(document,this.dataset.dmModeButton)">▶<span>Live Table</span></button>
+    <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="combat" aria-pressed="false" onclick="window.AppUIDMPanelModeBridge&&AppUIDMPanelModeBridge.activateMode(document,this.dataset.dmModeButton)">⚔<span>Combat</span></button>
+    <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="map-build" aria-pressed="false" onclick="window.AppUIDMPanelModeBridge&&AppUIDMPanelModeBridge.activateMode(document,this.dataset.dmModeButton)">🧱<span>Map Build</span></button>
+    <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="npc-monster" aria-pressed="false" onclick="window.AppUIDMPanelModeBridge&&AppUIDMPanelModeBridge.activateMode(document,this.dataset.dmModeButton)">🐉<span>NPC / Monster</span></button>
+    <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="loot-shop" aria-pressed="false" onclick="window.AppUIDMPanelModeBridge&&AppUIDMPanelModeBridge.activateMode(document,this.dataset.dmModeButton)">🏪<span>Loot / Shop</span></button>
+    <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="session-tools" aria-pressed="false" onclick="window.AppUIDMPanelModeBridge&&AppUIDMPanelModeBridge.activateMode(document,this.dataset.dmModeButton)">📜<span>Session Tools</span></button>
+    <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="viewer-powers" aria-pressed="false" onclick="window.AppUIDMPanelModeBridge&&AppUIDMPanelModeBridge.activateMode(document,this.dataset.dmModeButton)">👁<span>Viewer Powers</span></button>
+    <button class="dm-map-first-mode-button" type="button" data-dm-mode-button="debug" aria-pressed="false" onclick="window.AppUIDMPanelModeBridge&&AppUIDMPanelModeBridge.activateMode(document,this.dataset.dmModeButton)">🐞<span>Debug</span></button>
   </nav>
 
   <!-- PLAYER rail (shown only for player role, hidden by default) -->
@@ -26179,7 +26179,9 @@ function handleLegacyMessage(msg) {
           try {
             console.info('[dm-map-first] init start');
             window.__DM_MAP_FIRST_CAN_ENHANCE = true;
-            if (window.AppUIDMMapFirstBootstrap && typeof window.AppUIDMMapFirstBootstrap.init === 'function') {
+            if (window.AppUIDMMapFirstBootstrap && typeof window.AppUIDMMapFirstBootstrap.initWithRetry === 'function') {
+              window.AppUIDMMapFirstBootstrap.initWithRetry();
+            } else if (window.AppUIDMMapFirstBootstrap && typeof window.AppUIDMMapFirstBootstrap.init === 'function') {
               window.AppUIDMMapFirstBootstrap.init();
             } else if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.refresh === 'function') {
               window.AppUIDMPanelModeBridge.refresh(document);

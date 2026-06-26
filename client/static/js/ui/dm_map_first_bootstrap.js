@@ -120,8 +120,50 @@
     window.__dmMapFirstBootstrap = Object.freeze({ initialized: false, deferred: true, role: getBootRole() });
   }
 
+  // Self-healing: if init() is called before the bridge script has loaded,
+  // retry up to 5 times with 200ms spacing rather than silently failing.
+  function initWithRetry(attempt) {
+    attempt = attempt || 1;
+    const bridge = window.AppUIDMPanelModeBridge;
+    const renderer = window.AppUIDMContextRender;
+    if (!bridge || typeof bridge.init !== 'function' || !renderer || typeof renderer.render !== 'function') {
+      if (attempt < 6) {
+        console.info('[dm-map-first] bridge not ready, retrying in 200ms (attempt ' + attempt + ')');
+        setTimeout(function() { initWithRetry(attempt + 1); }, 200);
+      } else {
+        console.warn('[dm-map-first] giving up after 5 retries — bridge or renderer never loaded');
+      }
+      return null;
+    }
+    return init();
+  }
+
+  // Diagnostic helper — run in browser console to see why panel isn't working
+  function diagnose() {
+    var d = {
+      role: getBootRole(),
+      isDm: isDmRole(),
+      disabled: isDisabled(),
+      canEnhance: window.__DM_MAP_FIRST_CAN_ENHANCE,
+      bootstrapState: JSON.stringify(window.__dmMapFirstBootstrap || {}),
+      bridgeLoaded: !!(window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.init === 'function'),
+      rendererLoaded: !!(window.AppUIDMContextRender && typeof window.AppUIDMContextRender.render === 'function'),
+      bodyHasActiveClass: document.body.classList.contains('dm-map-first-active'),
+      railHidden: !!(document.getElementById('dm-live-mode-rail') || {hidden:true}).hidden,
+      shellHidden: !!(document.getElementById('dm-context-shell') || {hidden:true}).hidden,
+      modeButtonCount: document.querySelectorAll('[data-dm-mode-button]').length,
+      richContextLen: (document.getElementById('dm-rich-context') || {innerHTML:''}).innerHTML.length,
+      contextTitle: (document.getElementById('dm-context-title') || {textContent:'?'}).textContent,
+      tabBarDisplay: getComputedStyle(document.getElementById('right-tab-bar') || document.body).display,
+    };
+    console.table(d);
+    return d;
+  }
+
   window.AppUIDMMapFirstBootstrap = Object.freeze({
     init,
+    initWithRetry,
+    diagnose,
     findDmRoot,
     getBootRole,
     isDmRole,
