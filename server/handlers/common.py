@@ -2,6 +2,7 @@
 server/handlers/common.py — Shared imports, constants, and utility functions
 used across all handler sub-modules.
 """
+import asyncio
 import logging
 from typing import Any
 
@@ -201,11 +202,19 @@ async def _broadcast_token_event(manager, session, msg_type: str, payload: dict,
         enriched.setdefault("map_context", normalize_map_context(getattr(token, "map_context", "world")))
     enriched["token_state_revision"] = token_rev
     enriched["visibility_revision"] = int(getattr(session, "visibility_revision", 0) or 0)
-    for uid, u in session.users.items():
-        if uid == exclude_user:
-            continue
-        if _is_token_visible_to_user(session, token, u):
-            await manager.send_to(session.id, uid, {"type": msg_type, "payload": enriched})
+    out = {"type": msg_type, "payload": enriched}
+    recipients = [
+        uid for uid, u in session.users.items()
+        if uid != exclude_user and _is_token_visible_to_user(session, token, u)
+    ]
+    # Deliver concurrently so one slow/half-open client cannot stall token-move
+    # sync for everyone else — keeps movement smooth even when a player's link
+    # is bad. send_to bounds each send and reaps dead sockets on failure.
+    if recipients:
+        await asyncio.gather(
+            *(manager.send_to(session.id, uid, out) for uid in recipients),
+            return_exceptions=True,
+        )
     return token_rev
 
 
