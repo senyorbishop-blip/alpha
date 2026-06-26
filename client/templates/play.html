@@ -22754,12 +22754,25 @@ function renderViewerPowerRecapLog() {
 }
 
 function grantViewerPower() {
-  const viewerUserId = String(document.getElementById('viewer-power-dm-target')?.value || '').trim();
+  const sel = document.getElementById('viewer-power-dm-target');
+  const viewerUserId = String(sel?.value || '').trim();
+  const viewerName = _selectedViewerDisplayName(sel, viewerUserId);
   const powerId = String(document.getElementById('viewer-power-dm-power')?.value || '').trim();
   const requiresApproval = !!document.getElementById('viewer-power-dm-approval')?.checked;
   const cooldownSec = Math.max(0, parseInt(document.getElementById('viewer-power-dm-cooldown')?.value || '0', 10) || 0);
   if (!viewerUserId || !powerId) return showToast('Choose a viewer and power first');
-  sendWS({ type:'viewer_power_grant', payload:{ viewer_user_id: viewerUserId, power_id: powerId, charges: 1, requires_approval: requiresApproval, cooldown_sec: cooldownSec } });
+  sendWS({ type:'viewer_power_grant', payload:{ viewer_user_id: viewerUserId, name: viewerName, power_id: powerId, charges: 1, requires_approval: requiresApproval, cooldown_sec: cooldownSec } });
+}
+
+// The DM's `users` map keys a viewer who joined after load by their privacy
+// handle, so `viewer_user_id` may be a handle rather than a raw id. Send the
+// display name alongside it so the server can resolve the viewer by name if the
+// handle/id does not match an active viewer.
+function _selectedViewerDisplayName(sel, viewerUserId) {
+  const fromUsers = (users && users[viewerUserId] && users[viewerUserId].name) || '';
+  if (fromUsers) return String(fromUsers).trim();
+  const opt = sel && sel.options && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex] : null;
+  return String((opt && opt.text) || '').trim();
 }
 
 function createCustomViewerPower() {
@@ -22804,10 +22817,12 @@ function updateCustomPowerBuilderFields(kind) {
 }
 
 function grantViewerPowerPreset() {
-  const viewerUserId = String(document.getElementById('viewer-power-dm-target')?.value || '').trim();
+  const sel = document.getElementById('viewer-power-dm-target');
+  const viewerUserId = String(sel?.value || '').trim();
+  const viewerName = _selectedViewerDisplayName(sel, viewerUserId);
   const presetId = String(document.getElementById('viewer-power-dm-preset')?.value || '').trim();
   if (!viewerUserId || !presetId) return showToast('Choose a viewer and preset first');
-  sendWS({ type:'viewer_power_grant_preset', payload:{ viewer_user_id: viewerUserId, preset_id: presetId } });
+  sendWS({ type:'viewer_power_grant_preset', payload:{ viewer_user_id: viewerUserId, name: viewerName, preset_id: presetId } });
 }
 
 function decideViewerPending(pendingId, approve) {

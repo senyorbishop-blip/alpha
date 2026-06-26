@@ -109,6 +109,68 @@ def test_dm_grant_preset_resolves_profile_key_and_notifies_viewer(monkeypatch):
     assert "Support Pack" in viewer_statuses[-1]["payload"]["message"]
 
 
+def test_dm_grant_resolves_viewer_by_privacy_handle(monkeypatch):
+    """A viewer who joins after the DM loaded is keyed in the DM client by the
+    ``user_joined`` privacy handle, so the grant arrives addressed by handle
+    rather than raw user id. Resolution must still find the viewer."""
+    _apply_hotfix()
+    from server.handlers import viewer_powers as vp
+    from server.session import display_user_handle
+
+    session, dm, viewer = _make_session()
+    sent = _patch_manager(monkeypatch)
+    _patch_save(monkeypatch)
+
+    handle = display_user_handle(session.id, viewer.id)
+    assert handle != viewer.id
+
+    asyncio.run(vp.handle_viewer_power_grant(
+        {"viewer_user_id": handle, "power_id": "fireball"},
+        session,
+        dm,
+    ))
+
+    profile_key = vp._viewer_key_for_user(viewer)
+    powers = (session.viewer_profiles.get(profile_key) or {}).get("powers") or {}
+    assert "fireball" in powers, "Grant addressed by privacy handle should reach the viewer"
+
+    dm_statuses = [
+        message for _sid, uid, message in sent
+        if uid == dm.id and message.get("type") == "viewer_power_status"
+    ]
+    assert dm_statuses and dm_statuses[-1]["payload"]["kind"] == "granted"
+
+    # And the matching revoke (also addressed by handle) should clear it.
+    asyncio.run(vp.handle_viewer_power_revoke(
+        {"viewer_user_id": handle, "power_id": "fireball"},
+        session,
+        dm,
+    ))
+    powers_after = (session.viewer_profiles.get(profile_key) or {}).get("powers") or {}
+    assert "fireball" not in powers_after, "Revoke addressed by privacy handle should remove the power"
+
+
+def test_dm_grant_resolves_viewer_by_display_name_when_id_drifts(monkeypatch):
+    """If the dropdown carries a stale id but the display name is sent, the
+    server should still resolve the connected viewer by name."""
+    _apply_hotfix()
+    from server.handlers import viewer_powers as vp
+
+    session, dm, viewer = _make_session()
+    sent = _patch_manager(monkeypatch)
+    _patch_save(monkeypatch)
+
+    asyncio.run(vp.handle_viewer_power_grant(
+        {"viewer_user_id": "stale-or-old-id", "name": viewer.name, "power_id": "pebble_toss"},
+        session,
+        dm,
+    ))
+
+    profile_key = vp._viewer_key_for_user(viewer)
+    powers = (session.viewer_profiles.get(profile_key) or {}).get("powers") or {}
+    assert "pebble_toss" in powers
+
+
 def test_failed_dm_grant_reports_to_dm_instead_of_silent_noop(monkeypatch):
     _apply_hotfix()
     from server.handlers import viewer_powers as vp
