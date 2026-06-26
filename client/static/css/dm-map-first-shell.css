@@ -158,6 +158,15 @@
   outline: none;
 }
 
+/* Active map tool (e.g. Ping) so the DM can see which canvas tool is engaged
+   and tap it again to return to select/move. */
+.dm-map-first-quick-action.active {
+  border-color: var(--mf-cyan, #00e5cc);
+  color: var(--mf-cyan, #00e5cc);
+  background: rgba(0, 229, 204, 0.14);
+  box-shadow: 0 0 0 1px var(--mf-cyan, #00e5cc) inset;
+}
+
 .dm-map-first-shell[data-context-collapsed="true"] {
   grid-template-columns: var(--mf-left-rail-width, 4.75rem) minmax(0, 1fr) var(--mf-right-context-collapsed-width, 3rem);
 }
