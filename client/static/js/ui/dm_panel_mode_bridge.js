@@ -6,6 +6,12 @@
   const MODE_INACTIVE_CLASS = 'dm-panel-mode-inactive';
   const SECTION_SELECTOR = '[data-dm-mode], [data-dm-tool], [data-dm-section]';
 
+  // Emergency regression kill switch. Default to disabled for the risky legacy
+  // panel guard so DM boot/WebSocket startup cannot be blocked by panel cleanup.
+  if (typeof window.__DISABLE_DM_MAP_FIRST_GUARD === 'undefined') {
+    window.__DISABLE_DM_MAP_FIRST_GUARD = true;
+  }
+
   const MODE_PANEL_DEFINITIONS = Object.freeze([
     Object.freeze({
       mode: 'run',
@@ -246,7 +252,17 @@
     return !!(body && body.classList && body.classList.contains('dm-map-first-active'));
   }
 
+  function isLegacyGuardDisabled() {
+    if (window.__DISABLE_DM_MAP_FIRST_GUARD === true) return true;
+    try {
+      return String(window.localStorage && window.localStorage.getItem('disableDmMapFirstGuard') || '') === '1';
+    } catch (_err) {
+      return false;
+    }
+  }
+
   function forceLegacyRightPanelsClosed(root, options) {
+    if (isLegacyGuardDisabled()) return false;
     const safeRoot = root || document;
     const docRoot = safeRoot.querySelector ? safeRoot : document;
     const body = docRoot.body || document.body;
@@ -270,22 +286,20 @@
     ];
     docRoot.querySelectorAll(selectors.join(',')).forEach((el) => {
       if (!allowDrawer || !el.closest('.rtab-shell')) {
-        el.setAttribute('aria-hidden', 'true');
+        if (el.getAttribute('aria-hidden') !== 'true') el.setAttribute('aria-hidden', 'true');
         el.dataset.dmMapFirstLegacyHidden = 'true';
       }
     });
     return true;
   }
 
-  let legacyObserver = null;
   function ensureLegacyPanelObserver(root) {
-    const safeRoot = root || document;
-    const docRoot = safeRoot.querySelector ? safeRoot : document;
-    if (legacyObserver || typeof MutationObserver !== 'function') return;
-    const sidebar = docRoot.getElementById ? docRoot.getElementById('sidebar-right') : null;
-    if (!sidebar) return;
-    legacyObserver = new MutationObserver(() => forceLegacyRightPanelsClosed(docRoot));
-    legacyObserver.observe(sidebar, { attributes: true, childList: true, subtree: true, attributeFilter: ['class', 'style', 'hidden', 'aria-hidden'] });
+    // Temporarily disabled: observing #sidebar-right while writing attributes
+    // inside that subtree can thrash during boot and prevent the live app from
+    // reaching connectWS/request_state. Keep this as a safe no-op until the
+    // guard is reintroduced with a proven post-connect debounce.
+    void root;
+    return null;
   }
 
   function registryModes() {
@@ -416,33 +430,40 @@
 
   function activateMode(root, modeId) {
     const safeRoot = root || document;
-    ensureModePanels(safeRoot);
-    const activeMode = normalizeMode(modeId);
-    const sections = Array.from(safeRoot.querySelectorAll(SECTION_SELECTOR));
-    sections.forEach((section) => applySectionState(section, activeMode));
-    safeRoot.querySelectorAll('[data-dm-mode-button]').forEach((button) => {
-      const isActive = normalizeMode(button.dataset.dmModeButton) === activeMode;
-      button.dataset.dmModeActive = String(isActive);
-      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-    });
-    const activeConfig = getModeConfig(activeMode);
-    const titleEl = safeRoot.getElementById ? safeRoot.getElementById('dm-context-title') : null;
-    if (titleEl) titleEl.textContent = activeConfig.label || 'Live Table';
-    if (safeRoot.dataset) {
-      safeRoot.dataset.dmActiveMode = activeMode;
-      safeRoot.dataset.debugOpen = activeMode === 'debug' ? 'true' : 'false';
+    try {
+      ensureModePanels(safeRoot);
+      const activeMode = normalizeMode(modeId);
+      const sections = Array.from(safeRoot.querySelectorAll(SECTION_SELECTOR));
+      sections.forEach((section) => applySectionState(section, activeMode));
+      safeRoot.querySelectorAll('[data-dm-mode-button]').forEach((button) => {
+        const isActive = normalizeMode(button.dataset.dmModeButton) === activeMode;
+        button.dataset.dmModeActive = String(isActive);
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+      const activeConfig = getModeConfig(activeMode);
+      const titleEl = safeRoot.getElementById ? safeRoot.getElementById('dm-context-title') : null;
+      if (titleEl) titleEl.textContent = activeConfig.label || 'Live Table';
+      if (safeRoot.dataset) {
+        safeRoot.dataset.dmActiveMode = activeMode;
+        safeRoot.dataset.debugOpen = activeMode === 'debug' ? 'true' : 'false';
+      }
+      if (safeRoot.body && safeRoot.body.dataset) {
+        safeRoot.body.dataset.dmActiveMode = activeMode;
+        safeRoot.body.dataset.debugOpen = activeMode === 'debug' ? 'true' : 'false';
+      }
+      renderRichContext(safeRoot, activeMode);
+      if (window.__DM_MAP_FIRST_CAN_ENHANCE === true) {
+        ensureLegacyPanelObserver(safeRoot);
+        forceLegacyRightPanelsClosed(safeRoot);
+      }
+      if (typeof window.renderStreamReadinessPanel === 'function') {
+        window.renderStreamReadinessPanel();
+      }
+      return activeConfig;
+    } catch (err) {
+      console.warn('[dm-panel-mode] activate skipped to preserve app boot', err);
+      return getModeConfig(FALLBACK_MODE);
     }
-    if (safeRoot.body && safeRoot.body.dataset) {
-      safeRoot.body.dataset.dmActiveMode = activeMode;
-      safeRoot.body.dataset.debugOpen = activeMode === 'debug' ? 'true' : 'false';
-    }
-    renderRichContext(safeRoot, activeMode);
-    ensureLegacyPanelObserver(safeRoot);
-    forceLegacyRightPanelsClosed(safeRoot);
-    if (typeof window.renderStreamReadinessPanel === 'function') {
-      window.renderStreamReadinessPanel();
-    }
-    return activeConfig;
   }
 
   function init(root) {
@@ -460,12 +481,18 @@
   // that mutate _combat/charProfiles/etc. need a way to refresh the panel.
   function refresh(root) {
     const safeRoot = root || document;
+    if (window.__DM_MAP_FIRST_CAN_ENHANCE !== true) return null;
     const activeMode = (safeRoot.dataset && safeRoot.dataset.dmActiveMode)
       || (safeRoot.body && safeRoot.body.dataset && safeRoot.body.dataset.dmActiveMode)
       || FALLBACK_MODE;
-    renderRichContext(safeRoot, normalizeMode(activeMode));
-    ensureLegacyPanelObserver(safeRoot);
-    forceLegacyRightPanelsClosed(safeRoot);
+    try {
+      renderRichContext(safeRoot, normalizeMode(activeMode));
+      ensureLegacyPanelObserver(safeRoot);
+      forceLegacyRightPanelsClosed(safeRoot);
+    } catch (err) {
+      console.warn('[dm-panel-mode] refresh skipped to preserve app runtime', err);
+    }
+    return null;
   }
 
   window.AppUIDMPanelModeBridge = Object.freeze({
