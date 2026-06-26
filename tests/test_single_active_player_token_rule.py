@@ -3,6 +3,7 @@ from pathlib import Path
 
 from server.handlers import combat as combat_handlers
 from server.handlers import tokens as token_handlers
+from server.handlers import token_placement_secure as placement_handlers
 from server.restore import restore_session_from_db
 from server.session import Session, Token, User
 
@@ -228,6 +229,74 @@ async def test_player_place_character_recalls_existing_token_from_other_map(monk
     assert broadcast_events
     assert broadcast_events[-1][0] == "token_placed"
     assert broadcast_events[-1][1]["token_id"] == "tok-existing"
+
+
+@pytest.mark.anyio
+async def test_player_can_reposition_their_existing_active_token(monkeypatch):
+    """Re-placing the one active token a player owns relocates it instead of
+    being rejected as a "second" token. This is the grid-replace path used when
+    a player clicks "Place My Character" while already on the board."""
+    session = Session(id="s-token-replace-same-map")
+    player = User(id="p1", name="Player One", role="player")
+    session.users[player.id] = player
+    session.tokens["tok-active"] = Token(
+        id="tok-active",
+        name="Active Hero",
+        x=100,
+        y=100,
+        width=40,
+        height=40,
+        color="#fff",
+        shape="circle",
+        owner_id=player.id,
+        staged=False,
+        map_context="world",
+    )
+
+    sent = []
+    broadcast_events = []
+
+    async def _send_to(*args, **kwargs):
+        sent.append((args, kwargs))
+
+    async def _broadcast_token_event(_manager, _session, event_type, payload, token):
+        broadcast_events.append((event_type, payload, token.id))
+
+    async def _noop(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr(placement_handlers.manager, "send_to", _send_to)
+    monkeypatch.setattr(placement_handlers, "_broadcast_token_event", _broadcast_token_event)
+    monkeypatch.setattr(placement_handlers, "_broadcast_token_state_sync", _noop)
+    monkeypatch.setattr(placement_handlers, "run_combat_fog_sync", _noop)
+    monkeypatch.setattr(placement_handlers, "save_campaign_async", _noop)
+
+    await placement_handlers.handle_token_placed_secure(
+        {"token_id": "tok-active", "x": 320, "y": 360, "map_context": "world"},
+        session,
+        player,
+    )
+
+    token = session.tokens["tok-active"]
+    assert token.x == 320
+    assert token.y == 360
+    assert token.staged is False
+    assert len([t for t in session.tokens.values() if t.owner_id == player.id and not t.staged]) == 1
+    assert sent == [], "Repositioning the same token must not be rejected."
+    assert broadcast_events and broadcast_events[-1][0] == "token_placed"
+    assert broadcast_events[-1][2] == "tok-active"
+
+
+def test_place_character_relocates_existing_active_token_instead_of_refusing():
+    src = (Path(__file__).resolve().parents[1] / "client/templates/play.html").read_text(encoding="utf-8")
+    start = src.index("function placeCharacter()")
+    end = src.index("\n\n// ═══════════════════════════════════════════════════════════════════\n// TOKEN MANAGEMENT", start)
+    body = src[start:end]
+    # The hard refusal that blocked re-placing an on-grid token must be gone.
+    assert "Remove or stage it before placing another." not in body
+    # ...replaced by a relocate path that moves the player's existing token.
+    assert "activeOwnedTok" in body
+    assert "placeCharacterRelocate" in body
 
 
 def test_place_character_uses_appws_queue_instead_of_stale_lexical_ws_gate():
