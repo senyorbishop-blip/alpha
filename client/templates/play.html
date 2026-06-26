@@ -1541,6 +1541,7 @@
     <button class="qb-btn active" id="rp-tool-move" onclick="typeof setTool==='function'&&setTool('select')" title="Move / drag the map and your token"><span class="g">✥</span>Move</button>
     <button class="qb-btn" id="rp-tool-ruler" onclick="typeof setTool==='function'&&setTool(currentTool==='ruler'?'select':'ruler')" title="Measure distance for moves, attacks & spells (tap again to stop)"><span class="g">📏</span>Measure</button>
     <button class="qb-btn" id="rp-tool-shapes" onclick="if(currentTool==='spell'){setTool('select');}else if(typeof selectSpellTool==='function'){selectSpellTool();}" title="Place an attack/spell area template (circle, cone, line…) — tap again to stop"><span class="g">🔮</span>Shapes</button>
+    <button class="qb-btn" id="rp-tool-ping" onclick="typeof setTool==='function'&&setTool(currentTool==='ping'?'select':'ping')" title="Point & Ping a spot on the map for everyone to see (tap again to stop)"><span class="g">📍</span>Ping</button>
     <div class="qb-sep"></div>
     <button class="qb-btn" onclick="if(window.CombatQuickBar&&typeof window.CombatQuickBar.openManual==='function')window.CombatQuickBar.openManual();"><span class="g">⚔</span>Actions</button>
     <button class="qb-btn" onclick="typeof toggleFlyout==='function'&&toggleFlyout('flyout-dice')"><span class="g">⚄</span>Dice</button>
@@ -1584,6 +1585,7 @@
   <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="move" onclick="setTool('select')"><span class="qa-ic">✥</span>Move</button>
   <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="measure" onclick="setTool('ruler')"><span class="qa-ic">📏</span>Measure</button>
   <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="shapes" onclick="selectSpellTool()"><span class="qa-ic">🔮</span>Shapes</button>
+  <button class="dm-map-first-quick-action" id="dm-tool-ping" type="button" data-dm-quick-action="ping" onclick="setTool(currentTool==='ping'?'select':'ping')" title="Point &amp; Ping a spot on the map (tap again to stop)"><span class="qa-ic">📍</span>Ping</button>
   <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="draw" onclick="toggleFlyout('flyout-editor')"><span class="qa-ic">✎</span>Draw</button>
   <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="map" onclick="toggleFlyout('flyout-map')"><span class="qa-ic">🗺</span>Map</button>
   <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="notes" onclick="toggleFlyout('flyout-journal')"><span class="qa-ic">🗒</span>Notes</button>
@@ -14479,6 +14481,9 @@ function setTool(tool) {
   document.getElementById('rp-tool-move')?.classList.toggle('active', tool === 'select');
   document.getElementById('rp-tool-ruler')?.classList.toggle('active', tool === 'ruler');
   document.getElementById('rp-tool-shapes')?.classList.toggle('active', tool === 'spell');
+  document.getElementById('rp-tool-ping')?.classList.toggle('active', tool === 'ping');
+  // Mirror the active tool onto the DM map-first quick strip too.
+  document.getElementById('dm-tool-ping')?.classList.toggle('active', tool === 'ping');
   // Close any open flyout when switching to a canvas tool
   if (['ruler','ping','spell','poi'].includes(tool)) closeAllFlyouts();
   wrap.className = tool === 'select' ? 'tool-select' :
@@ -21619,6 +21624,17 @@ function refreshPingPermissionUi() {
     hint.textContent = _playerPingAllowedForCurrentMap()
       ? 'DM can always ping. Players can point and ping on this map.'
       : 'DM can always ping. Players are blocked from point/ping on this map.';
+  }
+  // Reflect ping availability on the player quick-bar ping button. The DM can
+  // always ping, so only the player button needs gating per-map.
+  const playerPingBtn = document.getElementById('rp-tool-ping');
+  if (playerPingBtn && ROLE === 'player') {
+    const allowed = _playerPingAllowedForCurrentMap();
+    playerPingBtn.disabled = !allowed;
+    playerPingBtn.classList.toggle('disabled', !allowed);
+    playerPingBtn.title = allowed
+      ? 'Point & Ping a spot on the map for everyone to see (tap again to stop)'
+      : 'The DM has disabled Point & Ping on this map.';
   }
 }
 

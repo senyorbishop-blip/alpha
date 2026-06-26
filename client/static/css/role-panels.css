@@ -259,6 +259,9 @@ body[data-role="viewer"] #canvas-wrap {
 }
 .qb-btn.spent { opacity: .4; }
 .qb-btn.spent .g { filter: grayscale(1); }
+/* Player ping button when the DM has disabled Point & Ping on this map. */
+.qb-btn.disabled,
+.qb-btn:disabled { opacity: .4; cursor: not-allowed; }
 /* Active map tool (Move / Measure / Shapes) so the player can see which tool
    is engaged and tap Move (or the lit tool again) to return to move/drag. */
 .qb-btn.active {
