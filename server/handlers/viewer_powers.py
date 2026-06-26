@@ -5,6 +5,7 @@ import time
 import random
 import secrets
 import re
+from server.session import display_user_handle
 from server.map_logic import find_movement_blocker
 from server.handlers.common import (
     Session, User, manager,
@@ -836,6 +837,17 @@ def _viewer_match_candidates(session: Session, viewer: User) -> set[str]:
         if cleaned:
             candidates.add(cleaned)
             candidates.add(cleaned.lower())
+    # The DM client keys a viewer who joined *after* it loaded by the privacy
+    # handle from the ``user_joined`` broadcast (the raw id is withheld), so a
+    # grant for that viewer arrives addressed by handle, not user id. Recompute
+    # the deterministic handle here so resolution still finds the right viewer.
+    try:
+        handle = display_user_handle(str(getattr(session, 'id', '') or ''), str(getattr(viewer, 'id', '') or ''))
+        if handle:
+            candidates.add(handle)
+            candidates.add(handle.lower())
+    except Exception:
+        pass
     try:
         for alias in _viewer_key_aliases(viewer):
             cleaned = str(alias or '').strip()[:128]
@@ -1003,9 +1015,10 @@ async def handle_viewer_power_grant_preset(payload: dict, session: Session, user
 async def handle_viewer_power_revoke(payload: dict, session: Session, user: User):
     if _role(user) != 'dm':
         return
-    viewer_user_id = str(payload.get('viewer_user_id') or '').strip()
     power_id = str(payload.get('power_id') or '').strip()
-    viewer = (session.users or {}).get(viewer_user_id)
+    # Resolve the same way grants do so a viewer addressed by privacy handle
+    # (joined after the DM loaded) can still be revoked instead of no-oping.
+    viewer = _resolve_grant_target_viewer(session, payload)
     if not viewer or _role(viewer) != 'viewer':
         return
     profiles, profile, _ = _get_or_create_viewer_profile(session, viewer)

@@ -1,6 +1,7 @@
 """
 server/session.py — In-memory session + state management for Phase 1
 """
+import hashlib
 import secrets
 import time
 from typing import Dict, List, Optional, Any
@@ -8,6 +9,19 @@ from dataclasses import dataclass, field
 from copy import deepcopy
 from server.encumbrance import auto_tag_extradimensional
 from server.quest_premium_progression import build_premium_progression_snapshot
+
+
+def display_user_handle(session_id: str, user_id: str) -> str:
+    """Build a stable, display-safe user handle for join broadcasts.
+
+    The handle is deterministic from ``(session_id, user_id)`` so any surface
+    that only learns a participant's handle (e.g. the DM client receiving a
+    ``user_joined`` broadcast that omits the raw id for privacy) can be mapped
+    back to the real user by recomputing this value. Keep this in lockstep with
+    every consumer — it is the single source of truth for the handle algorithm.
+    """
+    raw = f"{session_id}:{user_id}".encode("utf-8", errors="ignore")
+    return f"user_{hashlib.sha256(raw).hexdigest()[:12]}"
 
 
 

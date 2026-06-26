@@ -8,7 +8,6 @@ import time
 import subprocess
 import threading
 import logging
-import hashlib
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -93,10 +92,7 @@ def _auth_is_enforced() -> bool:
     return bool(os.environ.get("DND_JWT_SECRET", "").strip())
 
 
-def _display_user_handle(session_id: str, user_id: str) -> str:
-    """Build a stable, display-safe user handle for join broadcasts."""
-    raw = f"{session_id}:{user_id}".encode("utf-8", errors="ignore")
-    return f"user_{hashlib.sha256(raw).hexdigest()[:12]}"
+from server.session import display_user_handle as _display_user_handle  # shared handle algorithm
 
 
 def install_asyncio_exception_filters():
