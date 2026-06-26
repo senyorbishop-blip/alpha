@@ -22,7 +22,10 @@ def test_compact_token_hover_card_is_dm_toggleable_and_not_label_clutter():
 def test_token_hover_card_respects_dm_stats_visibility_boundaries():
     src = _src()
     assert "if (ROLE === 'dm') return _showCompactTokenStatsOnHover;" in src
-    assert "return ROLE === 'player' && _tokenOwnedByMe(token);" in src
+    # The hover card is DM-only: players used to get it on their own token, but
+    # it popped up over their token on every hover/move with no way to dismiss
+    # it, so the player branch was removed.
+    assert "return ROLE === 'player' && _tokenOwnedByMe(token);" not in src
     assert "const canSeeDmStats = ROLE === 'dm' || _tokenOwnedByMe(token);" in src
     assert "updateTokenHoverCardFromPointer(e, _mw);" in src
 
