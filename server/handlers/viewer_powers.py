@@ -808,6 +808,87 @@ def _extract_target_point(target: dict | None, result: list | tuple | None) -> d
     return None
 
 
+# Marker so the legacy ``sitecustomize`` runtime hotfix can detect that grant
+# delivery (viewer/DM status feedback + flexible target resolution) is handled
+# natively here and avoid double-wrapping / duplicate status messages.
+_VIEWER_GRANT_NATIVE_DELIVERY = True
+
+
+def _grant_payload_viewer_candidates(payload: dict) -> set[str]:
+    """Collect every identifier the DM UI might use to name a viewer target."""
+    candidates: set[str] = set()
+    for key in (
+        'viewer_user_id', 'user_id', 'viewer_id', 'viewer_key', 'profile_key',
+        'target_viewer_id', 'target_viewer_key', 'viewer', 'name',
+    ):
+        cleaned = str((payload or {}).get(key) or '').strip()[:128]
+        if cleaned:
+            candidates.add(cleaned)
+            candidates.add(cleaned.lower())
+    return candidates
+
+
+def _viewer_match_candidates(session: Session, viewer: User) -> set[str]:
+    """All identifiers a grant payload could carry that should match this viewer."""
+    candidates: set[str] = set()
+    for raw in (getattr(viewer, 'id', ''), getattr(viewer, 'player_key', ''), getattr(viewer, 'name', '')):
+        cleaned = str(raw or '').strip()[:128]
+        if cleaned:
+            candidates.add(cleaned)
+            candidates.add(cleaned.lower())
+    try:
+        for alias in _viewer_key_aliases(viewer):
+            cleaned = str(alias or '').strip()[:128]
+            if cleaned:
+                candidates.add(cleaned)
+                candidates.add(cleaned.lower())
+    except Exception:
+        pass
+    try:
+        profiles = _get_viewer_profiles(session)
+        key = _viewer_key_for_user(viewer)
+        profile = dict(profiles.get(key) or {})
+        for raw in (key, profile.get('viewer_key'), profile.get('user_id'), profile.get('name')):
+            cleaned = str(raw or '').strip()[:128]
+            if cleaned:
+                candidates.add(cleaned)
+                candidates.add(cleaned.lower())
+    except Exception:
+        pass
+    return candidates
+
+
+def _resolve_grant_target_viewer(session: Session, payload: dict) -> User | None:
+    """Resolve the intended viewer from a grant payload.
+
+    DM UI surfaces can send the viewer's user id, profile key, player_key, or
+    display name; tolerate all of them instead of silently no-oping when the
+    exact ``viewer_user_id`` does not match.
+    """
+    candidates = _grant_payload_viewer_candidates(payload)
+    if not candidates:
+        return None
+    users = getattr(session, 'users', {}) or {}
+    # Fast path: a candidate is a direct user-id of a connected viewer.
+    for cand in candidates:
+        viewer = users.get(cand)
+        if viewer and _role(viewer) == 'viewer':
+            return viewer
+    # Fallback: match against each viewer's known identifiers / profile keys.
+    for viewer in users.values():
+        if _role(viewer) != 'viewer':
+            continue
+        if candidates & _viewer_match_candidates(session, viewer):
+            return viewer
+    return None
+
+
+async def _send_viewer_power_status(session: Session, user_id: str, kind: str, message: str):
+    if not user_id:
+        return
+    await manager.send_to(session.id, user_id, {'type': 'viewer_power_status', 'payload': {'kind': kind, 'message': message}})
+
+
 async def handle_viewer_power_create(payload: dict, session: Session, user: User):
     if _role(user) != 'dm':
         return
@@ -851,32 +932,47 @@ async def handle_viewer_power_create(payload: dict, session: Session, user: User
 async def handle_viewer_power_grant(payload: dict, session: Session, user: User):
     if _role(user) != 'dm':
         return
-    viewer_user_id = str(payload.get('viewer_user_id') or '').strip()
+    payload = dict(payload or {})
     power_id = str(payload.get('power_id') or '').strip()
     charges = 1
     defs = _viewer_power_defs(session)
-    requires_approval = bool(payload.get('requires_approval', defs.get(power_id, {}).get('approval_default', False)))
-    viewer = (session.users or {}).get(viewer_user_id)
-    if not viewer or _role(viewer) != 'viewer' or power_id not in defs:
+    dm_id = str(getattr(user, 'id', '') or '')
+    viewer = _resolve_grant_target_viewer(session, payload)
+    if not viewer or power_id not in defs:
+        await _send_viewer_power_status(
+            session, dm_id, 'grant_failed',
+            'Viewer power was not sent. Check the viewer is connected and the power is valid.',
+        )
         return
+    requires_approval = bool(payload.get('requires_approval', defs.get(power_id, {}).get('approval_default', False)))
     profiles, profile, _ = _get_or_create_viewer_profile(session, viewer)
     powers = dict(profile.get('powers') or {})
+    already_had = power_id in powers
     powers[power_id] = {'power_id': power_id, 'charges': charges, 'enabled': True, 'requires_approval': requires_approval, 'cooldown_sec': max(0, min(86400, int(payload.get('cooldown_sec', defs.get(power_id, {}).get('cooldown_sec', 0)) or 0))), 'cooldown_until': 0.0}
     profile['powers'] = powers
     profiles[_viewer_key_for_user(viewer)] = profile
     session.viewer_profiles = profiles
     await _broadcast_viewer_profiles(session)
     await save_campaign_async(session)
+    power_name = str(defs.get(power_id, {}).get('name') or power_id)
+    verb = 'refreshed' if already_had else 'granted'
+    await _send_viewer_power_status(session, str(getattr(viewer, 'id', '') or ''), 'granted', f"The DM {verb} you {power_name}.")
+    await _send_viewer_power_status(session, dm_id, 'granted', f"{power_name} sent to {getattr(viewer, 'name', 'viewer')}.")
 
 
 async def handle_viewer_power_grant_preset(payload: dict, session: Session, user: User):
     if _role(user) != 'dm':
         return
-    viewer_user_id = str(payload.get('viewer_user_id') or '').strip()
+    payload = dict(payload or {})
     preset_id = str(payload.get('preset_id') or '').strip()
-    viewer = (session.users or {}).get(viewer_user_id)
+    dm_id = str(getattr(user, 'id', '') or '')
+    viewer = _resolve_grant_target_viewer(session, payload)
     preset = VIEWER_POWER_PRESETS.get(preset_id)
-    if not viewer or _role(viewer) != 'viewer' or not preset:
+    if not viewer or not preset:
+        await _send_viewer_power_status(
+            session, dm_id, 'grant_failed',
+            'Viewer power pack was not sent. Check the viewer is connected and the preset is valid.',
+        )
         return
     defs = _viewer_power_defs(session)
     profiles, profile, _ = _get_or_create_viewer_profile(session, viewer)
@@ -899,6 +995,9 @@ async def handle_viewer_power_grant_preset(payload: dict, session: Session, user
     session.viewer_profiles = profiles
     await _broadcast_viewer_profiles(session)
     await save_campaign_async(session)
+    preset_name = str((preset or {}).get('name') or preset_id or 'viewer power pack')
+    await _send_viewer_power_status(session, str(getattr(viewer, 'id', '') or ''), 'granted', f"The DM granted you {preset_name}.")
+    await _send_viewer_power_status(session, dm_id, 'granted', f"{preset_name} sent to {getattr(viewer, 'name', 'viewer')}.")
 
 
 async def handle_viewer_power_revoke(payload: dict, session: Session, user: User):
