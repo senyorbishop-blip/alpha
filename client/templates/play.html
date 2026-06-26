@@ -13452,6 +13452,13 @@ function onMouseDown(e) {
     const hit = hitTestTokens(w.x, w.y);
     // Players cannot interact with DM tokens (no owner)
     const hitIsSelectable = hit && (ROLE === 'dm' || _tokenOwnedByMe(hit));
+    if (hitIsSelectable && ROLE === 'dm') {
+      ctxToken = hit;
+      refreshRightPanelContextUI();
+      if (document.body?.classList?.contains('dm-map-first-active')) {
+        document.body.classList.remove('dm-legacy-drawer-open');
+      }
+    }
     if (hitIsSelectable && canMoveToken(hit)) {
       closeTokenEmotePalette();
       const moveGate = getCombatMoveRestrictionForToken(hit);
@@ -37537,6 +37544,11 @@ function _quickPanelCenterOnPoint(x, y) {
   cam.y = -Number(y);
   clampCamera();
   drawFrame();
+}
+
+
+function getSelectedTokenId() {
+  return _teTokenId || ctxToken?.id || '';
 }
 
 function quickPanelFocusSelection() {
