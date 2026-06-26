@@ -439,14 +439,19 @@
     const roleCanUseQuickBar = role === 'player';
     const shouldShow = roleCanUseQuickBar && !dismissed && (!!combat.active || !!state.manual);
     const toggle = document.getElementById('combat-quick-bar-toggle');
+    // The role-panel player/viewer UI owns its own launcher (the bottom
+    // #rp-quickbar "Actions" button), so the legacy floating toggle pill is
+    // redundant there and must stay hidden — otherwise it flickers back in on
+    // every combat render. When that bar is present, never reveal the toggle.
+    const newRoleBarOwnsLauncher = !!document.getElementById('rp-quickbar');
     // Toggle is visible for known players; when role is unknown don't change it
-    if (toggle && role) toggle.hidden = !roleCanUseQuickBar;
+    if (toggle && role) toggle.hidden = newRoleBarOwnsLauncher || !roleCanUseQuickBar;
     // During active combat the toggle must always be visible for players so they
     // can reopen the bar after closing it — never let dismissed state hide it.
-    if (toggle && roleCanUseQuickBar && combat.active) toggle.hidden = false;
+    if (toggle && roleCanUseQuickBar && combat.active && !newRoleBarOwnsLauncher) toggle.hidden = false;
     if (!shouldShow) {
       root.hidden = true;
-      if (toggle && roleCanUseQuickBar) toggle.hidden = false;
+      if (toggle && roleCanUseQuickBar && !newRoleBarOwnsLauncher) toggle.hidden = false;
       _applyTogglePosition();
       state.combatWasActive = !!combat.active;
       _saveState();

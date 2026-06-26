@@ -37557,20 +37557,90 @@ function _rpInitList() {
 }
 
 function _rpPartyBlock() {
-  const partyTokens = Object.values(tokens || {}).filter(t => t && !t.hidden && t.is_pc);
-  if (!partyTokens.length) return `<div class="rp-empty">No party members visible.</div>`;
-  return `<div class="rp-party">${partyTokens.slice(0, 6).map(t => {
+  // Party = every visible PC token plus the viewer's own token (so the player
+  // always sees the character they're playing, even when they're the only PC on
+  // the map). Self is pinned to the top and badged "You".
+  const visible = Object.values(tokens || {}).filter(t => t && !t.hidden);
+  const mine = visible.find(t => t.owner_id && t.owner_id === USER_ID) || null;
+  const ordered = [];
+  const seen = new Set();
+  [mine, ...visible.filter(t => t.is_pc || (t.owner_id && t.owner_id === USER_ID))].forEach(t => {
+    if (!t || seen.has(t.id)) return;
+    seen.add(t.id);
+    ordered.push(t);
+  });
+  if (!ordered.length) return `<div class="rp-empty">No party members visible.</div>`;
+  return `<div class="rp-party">${ordered.slice(0, 6).map(t => {
     const hp = Number(t.hp || 0), max = Number(t.max_hp || t.hp || 1);
     const full = hp >= max;
-    return `<div class="rp-party-row">
-      <span class="av"></span>
-      <span class="pn">${esc(t.name || 'Hero')}</span>
+    const isMe = !!(t.owner_id && t.owner_id === USER_ID);
+    const img = String(t.image_url || '').trim();
+    const av = img
+      ? `<span class="av" style="background-image:url('${esc(img)}');background-size:cover;background-position:center;background-repeat:no-repeat"></span>`
+      : `<span class="av"></span>`;
+    return `<div class="rp-party-row${isMe ? ' me' : ''}">
+      ${av}
+      <span class="pn">${esc(t.name || 'Hero')}${isMe ? '<span class="rp-you">You</span>' : ''}</span>
       <span style="display:flex;flex-direction:column;gap:.1rem">
         ${_rpHpBar(hp, max, full ? 'full' : '')}
         <span class="rp-pnum">${hp}/${max}</span>
       </span>
     </div>`;
   }).join('')}</div>`;
+}
+
+/* ---- Carried weight / encumbrance (always shown to the player) ---- */
+function _rpWeightBlock() {
+  const enc = window.AppEncumbrance;
+  if (!enc || typeof enc.getTotalCarriedWeight !== 'function') return '';
+  const cs = _charSheet || {};
+  const inv = (typeof playerInventory !== 'undefined' && Array.isArray(playerInventory)) ? playerInventory
+    : (Array.isArray(cs.inventory) ? cs.inventory : []);
+  const goldUnits = (typeof playerGold !== 'undefined') ? Math.max(0, Number(playerGold) || 0) : 0;
+  const str = (Array.isArray(cs.stats) && Number(cs.stats[0])) || 10;
+  const size = cs.size || 'medium';
+  // Prefer the DM-synced encumbrance numbers when the DM has it enabled,
+  // otherwise compute the estimate locally so weight is never hidden.
+  const live = (typeof enc.getLastEncData === 'function') ? enc.getLastEncData() : null;
+  const liveOn = !!(live && live.enabled);
+  const current  = liveOn && live.total_weight != null ? Number(live.total_weight) : enc.getTotalCarriedWeight(inv, goldUnits);
+  const capacity = liveOn && live.capacity ? Number(live.capacity) : enc.getCarryCapacity(str, size);
+  const pct = capacity > 0 ? Math.min(100, Math.round(current / capacity * 100)) : 0;
+  let color = '#28b765', lbl = 'Unencumbered';
+  if (pct >= 100)      { color = '#e74c3c'; lbl = 'Over capacity'; }
+  else if (pct >= 66)  { color = '#e67e22'; lbl = 'Heavily encumbered'; }
+  else if (pct >= 33)  { color = '#f1c40f'; lbl = 'Encumbered'; }
+  return _rpBlock('Weight', `<div style="padding:.55rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.32rem">
+      <span style="font-size:.62rem;font-weight:700;color:${color}">${esc(lbl)}</span>
+      <span class="rp-pnum" style="text-align:right">${current.toFixed(1)} / ${Math.round(capacity)} lbs</span>
+    </div>
+    <div class="rp-hpbar"><i style="width:${pct}%;background:${color}"></i></div>
+  </div>`);
+}
+
+/* ---- Inline pouch item list (the in-panel "new way" to scan carried gear) ---- */
+function _rpItemsList() {
+  const inv = (typeof playerInventory !== 'undefined' && Array.isArray(playerInventory)) ? playerInventory
+    : (Array.isArray((_charSheet||{}).inventory) ? _charSheet.inventory : []);
+  if (!inv.length) {
+    return `<div class="rp-empty">Your pouch is empty. Loot, buy, or have the DM grant items.</div>`;
+  }
+  const rows = inv.slice(0, 14).map((it) => {
+    const icon = (typeof renderItemVisualToken === 'function')
+      ? renderItemVisualToken(it, { size: 22, radius: 6, label: it && it.name || 'Item' })
+      : `<span class="ti">🎒</span>`;
+    const qty = Math.max(1, parseInt(it && it.qty, 10) || 1);
+    const sub = String((it && (it.rarity || it.category || it.source)) || '').trim();
+    return `<button class="rp-tl" onclick="typeof openCharacterBook==='function'&&openCharacterBook('inventory')" title="${esc(String(it && it.name || 'Item'))}">
+      ${icon}
+      <span class="tt">${esc(String(it && it.name || 'Item'))}</span>
+      ${sub ? `<span class="ts">${esc(sub)}</span>` : ''}
+      ${qty > 1 ? `<span class="ts" style="color:var(--mf-role)">×${qty}</span>` : ''}
+    </button>`;
+  }).join('');
+  const more = inv.length > 14 ? `<button class="rp-tl" onclick="typeof openCharacterBook==='function'&&openCharacterBook('inventory')"><span class="ti">➕</span><span class="tt">${inv.length - 14} more in backpack…</span></button>` : '';
+  return `<div class="rp-toollist">${rows}${more}</div>`;
 }
 
 /* ---- Player MODES ---- */
@@ -37629,13 +37699,23 @@ function _renderPlayerMode(modeId, subTab) {
     const combatActive = !!(_combat && _combat.active);
     const current = combatActive ? ((_combat.combatants || [])[Math.max(0, Number(_combat.turn)||0)] || null) : null;
     const isMyTurn = combatActive && current && (current.owner_id === USER_ID || current.token_id === myToken?.id);
-    const actionUsed = isMyTurn && (_combatActionUsed || false);
-    const bonusUsed  = isMyTurn && (_combatBonusUsed || false);
-    const reactionUsed = isMyTurn && (_combatReactionUsed || false);
+    // Action-economy "used" flags are derived from the live turn economy model
+    // (the bare _combatActionUsed/_combatBonusUsed/_combatReactionUsed globals
+    // never existed and threw ReferenceError on every turn render).
+    const _turnEcon = (isMyTurn && typeof buildTurnEconomyState === 'function')
+      ? (() => { try { return buildTurnEconomyState(cs, _combat, current); } catch (_e) { return null; } })()
+      : null;
+    const actionUsed   = !!(_turnEcon && _turnEcon.action && _turnEcon.action.used > 0);
+    const bonusUsed    = !!(_turnEcon && _turnEcon.bonusAction && _turnEcon.bonusAction.used > 0);
+    const reactionUsed = !!(_turnEcon && _turnEcon.reaction && _turnEcon.reaction.used > 0);
 
+    const _turnPortrait = String((myToken && myToken.image_url) || cs.tokenImageUrl || cs.portraitUrl || (cs.book && cs.book.portraitUrl) || '').trim();
+    const _turnPortraitStyle = _turnPortrait
+      ? ` style="background-image:url('${esc(_turnPortrait)}');background-size:cover;background-position:center;background-repeat:no-repeat"`
+      : '';
     const charCard = `
       <div class="rp-turn">
-        <div class="portrait"></div>
+        <div class="portrait"${_turnPortraitStyle}></div>
         <div class="info">
           <div class="row1"><span class="nm">${esc(name)}</span></div>
           <div class="cls">${esc(String(cs.class_name||cs.class||'').slice(0,20))} ${cs.level ? 'Lv '+cs.level : ''}</div>
@@ -37657,6 +37737,9 @@ function _renderPlayerMode(modeId, subTab) {
       html += _rpBlock('Table log', `<div style="padding:.6rem"><button class="rp-action go" style="width:100%;justify-content:center;" onclick="_rpOpenPanelView('log')">💬 Open table chat & log ▸</button></div>`, 'rp-card');
     } else {
       // 'combat' (Turn) sub-tab — the default action surface.
+      // The full action surface lives in the floating Quick Bar; the panel only
+      // needs a single launcher rather than a duplicated action grid.
+      const quickActionsLauncher = `<section><div style="padding:.1rem 0 0"><button class="rp-action go" style="width:100%;justify-content:center;" onclick="if(window.CombatQuickBar&&typeof window.CombatQuickBar.openManual==='function'){window.CombatQuickBar.openManual();}else if(typeof toggleSheet==='function'){toggleSheet();}">⚔ Open quick actions ▸</button></div></section>`;
       if (combatActive) {
         const econ = isMyTurn
           ? `<div class="rp-econ-row">
@@ -37667,11 +37750,11 @@ function _renderPlayerMode(modeId, subTab) {
             </div>`
           : `<div class="rp-turn-note">Waiting — it's ${esc(String(current && current.name || 'another combatant'))}'s turn.</div>`;
         html += _rpBlock(isMyTurn ? 'Your turn' : 'Current turn', charCard + econ, 'rp-card glow');
-        html += `<section><div class="rp-eyebrow">Quick actions</div><div id="rp-quick-actions-area" style="margin-top:.4rem"><div id="rp-quick-actions-grid" class="rp-actions"></div></div></section>`;
+        html += quickActionsLauncher;
         html += _rpBlock('Initiative order', _rpInitList(), '', "typeof combatRollInitiative==='function'&&combatRollInitiative()", 'Roll');
       } else {
         html += _rpBlock('Your character', charCard + `<div class="rp-turn-note">Combat hasn't started. Your turn actions appear here once initiative is rolled.</div>`, 'rp-card');
-        html += `<section><div class="rp-eyebrow">Quick actions</div><div id="rp-quick-actions-area" style="margin-top:.4rem"><div id="rp-quick-actions-grid" class="rp-actions"></div></div></section>`;
+        html += quickActionsLauncher;
       }
       html += _rpBlock('Party', _rpPartyBlock());
     }
@@ -37698,13 +37781,18 @@ function _renderPlayerMode(modeId, subTab) {
           return `<span class="rp-stool" style="cursor:default"><span class="gly" style="color:var(--mf-role)">${mod>=0?'+':''}${mod}</span>${label}</span>`;
         }).join('')}
       </div>`);
+      // Party vitals at a glance — lets the player support teammates (heals,
+      // buffs, revives) without leaving their own sheet.
+      html += _rpBlock('Party vitals', _rpPartyBlock());
     }
 
   } else if (modeId === 'inventory') {
     if (activeTab === 'gold') {
       html += _rpBlock('Coin & gold', `<div style="padding:.6rem"><button class="rp-action go" style="width:100%;justify-content:center;" onclick="typeof openCharacterBook==='function'&&openCharacterBook('inventory')">🪙 Open gold & inventory ▸</button></div>`, 'rp-card');
     } else {
-      // 'items' sub-tab — item listing + rest.
+      // 'items' sub-tab — carried weight, live item listing, quick links + rest.
+      html += _rpWeightBlock();
+      html += _rpBlock('Items', _rpItemsList(), '', "typeof openCharacterBook==='function'&&openCharacterBook('inventory')", 'Manage');
       html += _rpBlock('Carry', `<div class="rp-toollist">
         <button class="rp-tl" onclick="typeof openCharacterBook==='function'&&openCharacterBook('inventory')"><span class="ti">🎒</span><span class="tt">Backpack</span></button>
         <button class="rp-tl" onclick="typeof openCharacterBook==='function'&&openCharacterBook('inventory')"><span class="ti">🪙</span><span class="tt">Gold</span></button>
