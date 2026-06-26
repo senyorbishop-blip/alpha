@@ -691,3 +691,23 @@ body[data-role="viewer"] #canvas-wrap {
   grid-template-columns: 1fr 1fr;
   gap: .4rem;
 }
+
+/* Let the floating role HUDs escape the map's clipped paint box. */
+body[data-role="player"] #canvas-wrap,
+body[data-role="viewer"] #canvas-wrap { overflow: visible; }
+
+/* Re-clip the canvas/grid layers so the map art itself still can't bleed. */
+body[data-role="player"] #canvas-wrap > canvas,
+body[data-role="viewer"] #canvas-wrap > canvas { clip-path: inset(0); }
+
+/* Float the role HUDs above the map and right panel. */
+#rp-quickbar, #rp-viewerhud { z-index: 40; }
+#rp-watch-chip { z-index: 41; }
+
+/* No DM rail surfaces for player/viewer roles. */
+body[data-role="player"] #dm-legacy-controls-shell,
+body[data-role="viewer"] #dm-legacy-controls-shell,
+body[data-role="player"] #dm-mode-switch,
+body[data-role="viewer"] #dm-mode-switch,
+body[data-role="player"] #dm-live-mode-rail,
+body[data-role="viewer"] #dm-live-mode-rail { display: none !important; }
