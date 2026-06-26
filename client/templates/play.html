@@ -1533,9 +1533,9 @@
   <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="move" onclick="setTool('select')"><span class="qa-ic">✥</span>Move</button>
   <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="measure" onclick="setTool('ruler')"><span class="qa-ic">📏</span>Measure</button>
   <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="draw" onclick="toggleFlyout('flyout-editor')"><span class="qa-ic">✎</span>Draw</button>
-  <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="light" onclick="toggleFlyout('flyout-map')"><span class="qa-ic">☼</span>Light</button>
-  <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="notes" onclick="switchRTab('memory')"><span class="qa-ic">🗒</span>Notes</button>
-  <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="more" onclick="toggleFlyout('flyout-editor')"><span class="qa-ic">⋯</span>More</button>
+  <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="map" onclick="toggleFlyout('flyout-map')"><span class="qa-ic">🗺</span>Map</button>
+  <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="notes" onclick="toggleFlyout('flyout-journal')"><span class="qa-ic">🗒</span>Notes</button>
+  <button class="dm-map-first-quick-action" type="button" data-dm-quick-action="more" onclick="toggleFlyout('flyout-sound')"><span class="qa-ic">⋯</span>More</button>
 </nav>
 
 <div id="display-overlay-shell" aria-live="polite" aria-hidden="true">
@@ -37936,6 +37936,12 @@ function switchRTab(tab) {
   // If the new DM shell is active, redirect tab clicks there instead of the
   // legacy right-panel tab system. The intercept returns true if it handled it.
   if (window.AppUIDMSwitchRTabIntercept && window.AppUIDMSwitchRTabIntercept(tab)) return;
+  // Fall-through: this tab needs the real legacy panel (journal, handouts,
+  // bestiary, shop, etc.). Open the legacy drawer so it's visible over the
+  // map-first shell rather than hidden by the suppression CSS.
+  if (window.__DM_MAP_FIRST_CAN_ENHANCE === true && document.body?.classList?.contains('dm-map-first-active')) {
+    document.body.classList.add('dm-legacy-drawer-open');
+  }
   if (tab === 'party') {
     setPartyRosterView('party');
   }

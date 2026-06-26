@@ -449,11 +449,21 @@
     return true;
   }
 
+  // Tabs the rich panel renders itself (re-render in place). Any tab NOT in
+  // this set falls through to the real legacy panel (journal, handouts,
+  // bestiary search, shop, etc.) which has content the rich panel can't show.
+  const RICH_HANDLED_TABS = {
+    combat: true, turns: true, party: true, run: true,
+    terrain: true, walls: true, fog: true,
+    spawn: true, items: true, viewers: true,
+  };
+
   window.AppUIDMSwitchRTabIntercept = function (tab) {
-    if (!isMapFirstActive(document)) return false;   // fall through to legacy when shell inactive
+    if (!isMapFirstActive(document)) return false;   // shell inactive → legacy
+    if (!RICH_HANDLED_TABS[tab]) return false;        // real-content tab → legacy
     const root = document.getElementById('dm-context-shell') || document;
     switchRTabIntercept(root, tab);
-    return true;   // signals play.html to skip legacy routing
+    return true;   // handled in the rich panel; play.html skips legacy routing
   };
 
   function renderRichContext(safeRoot, activeMode) {
@@ -478,7 +488,7 @@
       const badge = t[2] ? '<span class="dcx-badge">' + t[2] + '</span>' : '';
       const key = String(t[0]).replace(/['"]/g, '');
       return '<button class="dcx-tab" type="button" data-tab="' + key + '" data-dm-compact-tab="' + key + '" aria-pressed="' + (i === 0) +
-        '" onclick="switchRTab(\'' + key + '\'\')">' + String(t[1]) + badge + '</button>';
+        '" onclick="switchRTab(\'' + key + '\')">' + String(t[1]) + badge + '</button>';
     }).join('');
     tabsEl.style.display = tabs.length ? 'flex' : 'none';
 
