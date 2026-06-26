@@ -37978,6 +37978,19 @@ window.initRolePanels = function initRolePanels() {
     _renderPlayerMode('turn');
     _refreshPlayerHpBar();
 
+    // Map-first grid is applied by role-panels.css via body[data-role]. The canvas
+    // may have measured a 0-size box during early boot; re-fit it now that the
+    // role grid is in place. Use the app's existing resize path — do NOT
+    // reimplement canvas sizing.
+    requestAnimationFrame(() => {
+      try {
+        if (typeof resizeCanvas === 'function') resizeCanvas();
+        else if (window.AppRenderBoot && typeof window.AppRenderBoot.resizeCanvas === 'function') window.AppRenderBoot.resizeCanvas(renderEnv);
+        if (typeof requestRenderFrame === 'function') requestRenderFrame('role-panels-init');
+        else if (typeof draw === 'function') draw();
+      } catch (e) { console.warn('[rolepanels] canvas refit failed', e); }
+    });
+
   } else {
     // viewer
     const rail = document.getElementById('viewer-role-rail');
@@ -38004,6 +38017,19 @@ window.initRolePanels = function initRolePanels() {
     window._rpViewerMode = 'powers';
     _renderViewerMode('powers');
     _refreshViewerHud();
+
+    // Map-first grid is applied by role-panels.css via body[data-role]. The canvas
+    // may have measured a 0-size box during early boot; re-fit it now that the
+    // role grid is in place. Use the app's existing resize path — do NOT
+    // reimplement canvas sizing.
+    requestAnimationFrame(() => {
+      try {
+        if (typeof resizeCanvas === 'function') resizeCanvas();
+        else if (window.AppRenderBoot && typeof window.AppRenderBoot.resizeCanvas === 'function') window.AppRenderBoot.resizeCanvas(renderEnv);
+        if (typeof requestRenderFrame === 'function') requestRenderFrame('role-panels-init');
+        else if (typeof draw === 'function') draw();
+      } catch (e) { console.warn('[rolepanels] canvas refit failed', e); }
+    });
   }
 };
 
