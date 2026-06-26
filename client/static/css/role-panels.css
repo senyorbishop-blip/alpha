@@ -163,6 +163,12 @@ body[data-role="viewer"] {
   border-radius: 6px;
 }
 
+/* Bug 2: allow quickbar to render outside canvas-wrap bounds */
+body[data-role="player"] #canvas-wrap,
+body[data-role="viewer"] #canvas-wrap {
+  overflow: visible;
+}
+
 /* ---- Player: draggable Quick Bar -------------------------- */
 #rp-quickbar {
   position: absolute;
