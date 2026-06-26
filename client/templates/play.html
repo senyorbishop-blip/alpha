@@ -13454,9 +13454,13 @@ function onMouseDown(e) {
     const hitIsSelectable = hit && (ROLE === 'dm' || _tokenOwnedByMe(hit));
     if (hitIsSelectable && ROLE === 'dm') {
       ctxToken = hit;
+      _teTokenId = hit.id;
       refreshRightPanelContextUI();
       if (document.body?.classList?.contains('dm-map-first-active')) {
         document.body.classList.remove('dm-legacy-drawer-open');
+        if (window.AppUIDMActions && typeof window.AppUIDMActions.selectToken === 'function') window.AppUIDMActions.selectToken(hit);
+        if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.refresh === 'function') window.AppUIDMPanelModeBridge.refresh(document);
+        if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.forceLegacyRightPanelsClosed === 'function') window.AppUIDMPanelModeBridge.forceLegacyRightPanelsClosed(document);
       }
     }
     if (hitIsSelectable && canMoveToken(hit)) {
@@ -37898,6 +37902,11 @@ function switchRTab(tab) {
     // Re-apply glow if leaving combat tab while combat is active
     if (typeof _updateCombatTabAttention === 'function') {
       _updateCombatTabAttention(_combat.active);
+    }
+  }
+  if (document.body?.classList?.contains('dm-map-first-active') && !(document.body?.classList?.contains('dm-legacy-drawer-open'))) {
+    if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.forceLegacyRightPanelsClosed === 'function') {
+      window.AppUIDMPanelModeBridge.forceLegacyRightPanelsClosed(document);
     }
   }
 }

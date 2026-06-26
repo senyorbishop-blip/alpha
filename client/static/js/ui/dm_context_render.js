@@ -119,10 +119,11 @@
     warnAction(name, 'missing global function');
     return undefined;
   }
-  function clickId(id, label) {
+  function clickId(id, label, options) {
+    options = options || {};
     var el = document.getElementById(id);
     if (el && typeof el.click === 'function') { el.click(); return true; }
-    warnAction(label || id, 'missing #' + id);
+    if (!options.quiet) warnAction(label || id, 'missing #' + id);
     return false;
   }
   function openLegacyDrawer(tab) {
@@ -131,7 +132,25 @@
     try {
       document.body.classList.add('dm-legacy-drawer-open');
       document.body.dataset.dmLegacyDrawerTab = String(tab || '');
+      if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.forceLegacyRightPanelsClosed === 'function') {
+        window.AppUIDMPanelModeBridge.forceLegacyRightPanelsClosed(document, { allowDrawer: true });
+      }
     } catch (_e) {}
+  }
+  function refreshContext() {
+    try {
+      if (window.AppUIDMPanelModeBridge && typeof window.AppUIDMPanelModeBridge.refresh === 'function') {
+        window.AppUIDMPanelModeBridge.refresh(document);
+        return true;
+      }
+    } catch (err) { if (window.console) console.warn('[dm-actions] refreshContext failed', err); }
+    warnAction('Refresh context', 'AppUIDMPanelModeBridge.refresh missing');
+    return false;
+  }
+  function sendCombatRollInitiative(combatantId) {
+    if (typeof g('sendWS') !== 'function') return warnAction('Roll initiative', 'sendWS missing');
+    var payload = combatantId ? { combatant_id: combatantId } : {};
+    return callGlobal('sendWS', [{ type: 'combat_roll_initiative', payload: payload }]);
   }
   function closeLegacyDrawer() {
     try {
@@ -152,19 +171,27 @@
   }
   var Actions = window.AppUIDMActions || {};
   Object.assign(Actions, {
-    startCombat: function () { return callGlobal('combatStart'); },
-    previousTurn: function () { return callGlobal('combatPrev'); },
-    nextTurn: function () { return callGlobal('combatNext'); },
-    endTurn: function () { return callGlobal('combatEndTurn') || callGlobal('combatNext'); },
-    endCombat: function () { return callGlobal('combatClear'); },
-    clearCombat: function () { return callGlobal('combatClear'); },
-    rollInitiativeSelected: function () { var target = selectedCombatant(); if (target && target.id) return callGlobal('combatRollInitiative', [target.id]); return warnAction('Roll selected initiative', 'no selected/current combatant available'); },
-    rollInitiativeAll: function () { var rows = roster(); var any = false; rows.forEach(function (r) { var com = r && r.combatant; if (com && com.id) { any = true; callGlobal('combatRollInitiative', [com.id]); } }); if (!any) return warnAction('Roll all initiative', 'no combatants available'); return true; },
+    refreshContext: refreshContext,
+    selectToken: function (tokenOrId) {
+      var id = tokenOrId && tokenOrId.id ? tokenOrId.id : tokenOrId;
+      if (id) { try { window._teTokenId = String(id); } catch (_e) {} }
+      refreshContext();
+      return !!id;
+    },
+    startCombat: function () { return (typeof g('combatStart') === 'function') ? callGlobal('combatStart') : clickId('combat-start-btn', 'Start combat'); },
+    previousTurn: function () { return (typeof g('combatPrev') === 'function') ? callGlobal('combatPrev') : clickId('combat-prev-btn', 'Previous turn'); },
+    nextTurn: function () { return (typeof g('combatNext') === 'function') ? callGlobal('combatNext') : clickId('combat-next-btn', 'Next turn'); },
+    endTurn: function () { return (typeof g('combatEndTurn') === 'function') ? callGlobal('combatEndTurn') : Actions.nextTurn(); },
+    endCombat: function () { return (typeof g('combatClear') === 'function') ? callGlobal('combatClear') : clickId('combat-end-btn', 'End combat'); },
+    clearCombat: function () { return Actions.endCombat(); },
+    rollInitiativeSelected: function () { var target = selectedCombatant(); if (target && target.id) return (typeof g('combatRollInitiative') === 'function') ? callGlobal('combatRollInitiative', [target.id]) : sendCombatRollInitiative(target.id); return clickId('combat-roll-selected-btn', 'Roll selected initiative', { quiet: true }) || warnAction('Roll selected initiative', 'no selected/current combatant available'); },
+    rollInitiativeAll: function () { var rows = roster(); var any = false; rows.forEach(function (r) { var com = r && r.combatant; if (com && com.id) { any = true; (typeof g('combatRollInitiative') === 'function') ? callGlobal('combatRollInitiative', [com.id]) : sendCombatRollInitiative(com.id); } }); if (!any) return clickId('combat-roll-all-btn', 'Roll all initiative', { quiet: true }) || sendCombatRollInitiative(); return true; },
     rollInitiative: function () { return Actions.rollInitiativeSelected(); },
-    addSelectedToCombat: function () { var id = selectedTokenId(); if (id && typeof g('combatAddTokenToInitiative') === 'function') return callGlobal('combatAddTokenToInitiative', [id]); if (id && typeof g('combatAddSelectedTokenToInitiative') === 'function') return callGlobal('combatAddSelectedTokenToInitiative', [id]); return warnAction('Add selected token to combat', id ? 'no add-token function available' : 'no selected token'); },
+    addSelectedToCombat: function () { var id = selectedTokenId(); if (id && typeof g('combatAddTokenToInitiative') === 'function') return callGlobal('combatAddTokenToInitiative', [id]); if (id && typeof g('combatAddSelectedTokenToInitiative') === 'function') return callGlobal('combatAddSelectedTokenToInitiative', [id]); return clickId('combat-add-selected-btn', 'Add selected token to combat', { quiet: true }) || warnAction('Add selected token to combat', id ? 'no add-token function available' : 'no selected token'); },
     addCombatant: function () { return callGlobal('combatAddManual'); },
     addSelectedTokenToCombat: function () { return Actions.addSelectedToCombat(); },
     openCombatTracker: function () { return openLegacyDrawer('combat'); },
+    openCompactCombatDrawer: function () { return openLegacyDrawer('combat'); },
     openViewerPowers: function () { openFlyout('flyout-perm'); return openLegacyDrawer('party'); },
     grantViewerPower: function () { return callGlobal('grantViewerPower') || openLegacyDrawer('party'); },
     grantViewerPowerPreset: function () { return callGlobal('grantViewerPowerPreset') || openLegacyDrawer('party'); },

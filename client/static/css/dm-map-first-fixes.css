@@ -190,3 +190,31 @@ body.dm-map-first-active:not(.dm-legacy-drawer-open) #right-panel-context {
   visibility: hidden !important;
   pointer-events: none !important;
 }
+
+/* Regression guard: token selection and switchRTab('combat') may still toggle
+   legacy right-tab DOM. In DM map-first mode those controls remain callable but
+   invisible unless the explicit compact drawer is open. */
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #rtab-pane-combat,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #combat-list,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #combat-controls,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #combat-pre,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #combat-add-row,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #combat-mark-row,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #combat-spell-tray,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #combat-weapon-tray,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #token-editor,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #player-panel,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) [data-legacy-combat-tracker],
+body.dm-map-first-active:not(.dm-legacy-drawer-open) [data-selected-token-panel],
+body.dm-map-first-active:not(.dm-legacy-drawer-open) .legacy-combat-tracker,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) .selected-token-panel {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #dm-context-shell {
+  display: flex !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
