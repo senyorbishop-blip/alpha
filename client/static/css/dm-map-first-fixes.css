@@ -210,21 +210,21 @@ body.dm-map-first-active:not(.dm-legacy-drawer-open) #dm-context-shell {
  * Switch to position:fixed + visibility:hidden so it's off-screen
  * regardless of what the tab JS does to display.
  * ================================================================== */
-body.dm-map-first-active #right-tab-bar {
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #right-tab-bar {
   display: none !important;
 }
-body.dm-map-first-active #sidebar-right .rtab-pane,
-body.dm-map-first-active #sidebar-right .rtab-panes,
-body.dm-map-first-active #sidebar-right .rtab-shell,
-body.dm-map-first-active #sidebar-right #right-panel-context,
-body.dm-map-first-active #sidebar-right #combat-list,
-body.dm-map-first-active #sidebar-right #combat-controls,
-body.dm-map-first-active #sidebar-right #combat-pre,
-body.dm-map-first-active #sidebar-right #combat-add-row,
-body.dm-map-first-active #sidebar-right #combat-spell-tray,
-body.dm-map-first-active #sidebar-right #combat-weapon-tray,
-body.dm-map-first-active #sidebar-right #players-panel,
-body.dm-map-first-active #sidebar-right #rtab-pane-combat {
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #sidebar-right .rtab-pane,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #sidebar-right .rtab-panes,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #sidebar-right .rtab-shell,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #sidebar-right #right-panel-context,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #sidebar-right #combat-list,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #sidebar-right #combat-controls,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #sidebar-right #combat-pre,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #sidebar-right #combat-add-row,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #sidebar-right #combat-spell-tray,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #sidebar-right #combat-weapon-tray,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #sidebar-right #players-panel,
+body.dm-map-first-active:not(.dm-legacy-drawer-open) #sidebar-right #rtab-pane-combat {
   position: fixed !important;
   left: -9999px !important;
   top: -9999px !important;
@@ -253,4 +253,31 @@ body.dm-map-first-active .dm-map-first-context-body {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0.62rem;
+}
+
+/* ==================================================================
+ * FIX 10 — Selected-token quick panel stays clickable.
+ *
+ * #selected-quick-panel (Focus / Edit / Hide / Conditions / Delete) is a
+ * direct child of #sidebar-right, NOT part of the suppressed legacy tabs.
+ * In the flexed map-first column the context shell (flex:1 1 0) could
+ * squeeze it to zero height or another layer could intercept its clicks,
+ * so the buttons render but appear inert. Pin it as its own non-shrinking,
+ * interactive block above the rest of the column.
+ * ================================================================== */
+body.dm-map-first-active #sidebar-right #selected-quick-panel {
+  position: relative;
+  z-index: 72;
+  pointer-events: auto !important;
+}
+body.dm-map-first-active #sidebar-right #selected-quick-panel.active {
+  display: flex !important;
+  visibility: visible !important;
+  flex: 0 0 auto;
+  max-height: 45vh;
+  overflow-y: auto;
+}
+body.dm-map-first-active #sidebar-right #selected-quick-panel .sqp-actions,
+body.dm-map-first-active #sidebar-right #selected-quick-panel .sqp-btn {
+  pointer-events: auto !important;
 }
