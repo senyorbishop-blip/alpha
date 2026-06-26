@@ -1538,6 +1538,9 @@
     <button class="qb-btn" onclick="combatDash()"><span class="g">⇉</span>Dash</button>
     <button class="qb-btn" onclick="combatToggleDisengage()"><span class="g">↯</span>Disengage</button>
     <div class="qb-sep"></div>
+    <button class="qb-btn" onclick="typeof setTool==='function'&&setTool('ruler')" title="Measure distance for moves, attacks & spells"><span class="g">📏</span>Measure</button>
+    <button class="qb-btn" onclick="typeof selectSpellTool==='function'&&selectSpellTool()" title="Place an attack/spell area template (circle, cone, line…)"><span class="g">🔮</span>Shapes</button>
+    <div class="qb-sep"></div>
     <button class="qb-btn" onclick="if(window.CombatQuickBar&&typeof window.CombatQuickBar.openManual==='function')window.CombatQuickBar.openManual();"><span class="g">⚔</span>Actions</button>
     <button class="qb-btn" onclick="typeof toggleFlyout==='function'&&toggleFlyout('flyout-dice')"><span class="g">⚄</span>Dice</button>
     <button class="qb-btn" onclick="typeof toggleSheet==='function'&&toggleSheet()"><span class="g">📖</span>Sheet</button>
@@ -37626,21 +37629,147 @@ function _rpItemsList() {
   if (!inv.length) {
     return `<div class="rp-empty">Your pouch is empty. Loot, buy, or have the DM grant items.</div>`;
   }
-  const rows = inv.slice(0, 14).map((it) => {
+  const rows = inv.slice(0, 14).map((it, idx) => {
     const icon = (typeof renderItemVisualToken === 'function')
       ? renderItemVisualToken(it, { size: 22, radius: 6, label: it && it.name || 'Item' })
       : `<span class="ti">🎒</span>`;
     const qty = Math.max(1, parseInt(it && it.qty, 10) || 1);
-    const sub = String((it && (it.rarity || it.category || it.source)) || '').trim();
-    return `<button class="rp-tl" onclick="typeof openCharacterBook==='function'&&openCharacterBook('inventory')" title="${esc(String(it && it.name || 'Item'))}">
+    const isBag = (typeof isInventoryContainerEntry === 'function') && isInventoryContainerEntry(it);
+    const equipped = !!(it && it.equipped);
+    const sub = isBag ? 'container' : String((it && (it.rarity || it.category || it.source)) || '').trim();
+    // Bags / extradimensional containers open the full backpack where the nested
+    // contents (bag of holding, haversack…) can be browsed. Every other item opens
+    // the inline inspect card where the player can read what it does and use,
+    // equip or drop it without leaving the map.
+    const click = isBag
+      ? "typeof openCharacterBook==='function'&&openCharacterBook('inventory')"
+      : `typeof inspectInventoryItem==='function'&&inspectInventoryItem(${idx})`;
+    const tail = isBag ? '<span class="ts">🎒 open</span>'
+      : (qty > 1 ? `<span class="ts" style="color:var(--mf-role)">×${qty}</span>` : '<span class="ts">inspect ▸</span>');
+    return `<button class="rp-tl" onclick="${click}" title="${esc(String(it && it.name || 'Item'))}">
       ${icon}
-      <span class="tt">${esc(String(it && it.name || 'Item'))}</span>
+      <span class="tt">${esc(String(it && it.name || 'Item'))}${equipped ? ' <span class="ts" style="color:var(--mf-role)">• equipped</span>' : ''}</span>
       ${sub ? `<span class="ts">${esc(sub)}</span>` : ''}
-      ${qty > 1 ? `<span class="ts" style="color:var(--mf-role)">×${qty}</span>` : ''}
+      ${tail}
     </button>`;
   }).join('');
   const more = inv.length > 14 ? `<button class="rp-tl" onclick="typeof openCharacterBook==='function'&&openCharacterBook('inventory')"><span class="ti">➕</span><span class="tt">${inv.length - 14} more in backpack…</span></button>` : '';
   return `<div class="rp-toollist">${rows}${more}</div>`;
+}
+
+/* ---- Role-panel resource helpers (slots, gold, class resources, economy) ---- */
+// Re-render the player's current mode/tab in place (used after a +/- step).
+function _rpRerender() {
+  if (typeof _renderPlayerMode === 'function') {
+    try { _renderPlayerMode(window._rpPlayerMode || 'turn', window._rpPlayerTab); } catch (_e) {}
+  }
+}
+
+// Compact +/- stepper used by the slot and resource chips.
+function _rpStepBtn(sym, onclick, title) {
+  return `<button type="button" title="${esc(String(title||''))}" style="border:1px solid var(--mf-role-line,rgba(127,209,192,.3));background:rgba(127,209,192,.08);color:var(--mf-text,#dfe);border-radius:5px;min-width:20px;height:20px;line-height:1;cursor:pointer;font-size:.8rem;padding:0;margin-left:.18rem" onclick="${esc(onclick)}">${sym}</button>`;
+}
+
+// Inline gold readout so the player can see coin without opening the sheet.
+function _rpGoldInner() {
+  const units = (typeof _getLivePlayerGoldValue === 'function')
+    ? _getLivePlayerGoldValue()
+    : Math.max(0, Math.round(Number((typeof playerGold !== 'undefined') ? playerGold : window.playerGold) || 0));
+  const total = Math.max(0, Math.round(Number(units) || 0));
+  const gp = Math.floor(total / 100), sp = Math.floor((total % 100) / 10), cp = total % 10;
+  const coins = [['gp', gp, '#f1c40f'], ['sp', sp, '#cfd8dc'], ['cp', cp, '#cd7f32']];
+  return `<div style="padding:.7rem .6rem">
+    <div style="display:flex;align-items:baseline;gap:.45rem;margin-bottom:.55rem">
+      <span style="font-size:1.5rem;line-height:1;font-weight:800;color:#f1c40f">${gp.toLocaleString()}</span>
+      <span style="font-size:.62rem;letter-spacing:.05em;text-transform:uppercase;color:var(--mf-role,#7fd1c0)">gold on hand</span>
+    </div>
+    <div class="rp-stools" style="grid-template-columns:repeat(3,1fr);padding:0">
+      ${coins.map(([lbl,val,col]) => `<span class="rp-stool" style="cursor:default"><span class="gly" style="color:${col}">${val}</span>${lbl.toUpperCase()}</span>`).join('')}
+    </div>
+  </div>`;
+}
+
+// Spell-slot tracker (max from the profile, expended tracked client-side).
+function _rpSpellSlotsInner() {
+  const slotState = (typeof _spellSlotState !== 'undefined' && _spellSlotState) ? _spellSlotState : {};
+  const slots = Object.entries((_charSheet && _charSheet.spellSlots) || {})
+    .sort((a, b) => Number(a[0]) - Number(b[0]))
+    .map(([level, max]) => {
+      const cap = Math.max(0, Number(max || 0) || 0);
+      const used = Math.max(0, parseInt(slotState[String(level)] || 0, 10) || 0);
+      return { level: Number(level), current: Math.max(0, cap - used), max: cap };
+    })
+    .filter(row => row.max > 0);
+  if (!slots.length) return '';
+  return `<div class="rp-chips" style="flex-wrap:wrap;gap:.35rem;padding:.5rem">
+    ${slots.map(s => `<span class="rp-chip" style="display:inline-flex;align-items:center;gap:.15rem">Lv ${s.level} <b style="color:var(--mf-role)">${s.current}/${s.max}</b>${_rpStepBtn('−', `typeof adjustSpellSlotQuick==='function'&&adjustSpellSlotQuick('${s.level}',1);_rpRerender()`, 'Spend a level '+s.level+' slot')}${_rpStepBtn('+', `typeof adjustSpellSlotQuick==='function'&&adjustSpellSlotQuick('${s.level}',-1);_rpRerender()`, 'Restore a level '+s.level+' slot')}</span>`).join('')}
+  </div>`;
+}
+
+// Class resources (sorcery points, rage, ki, channel divinity, bardic
+// inspiration, superiority dice, etc.) with +/- when the resource is trackable.
+function _rpClassResourcesInner() {
+  const nativeResources = (typeof _getResolvedNativeResources === 'function' ? _getResolvedNativeResources() : [])
+    .filter(r => r && Number.isFinite(r.max) && r.max > 0);
+  const structured = (typeof _getStructuredClassFeatures === 'function' ? _getStructuredClassFeatures() : [])
+    .map(feature => ({ feature, state: (typeof _getClassFeatureResourceState === 'function') ? _getClassFeatureResourceState(feature) : null }))
+    .filter(row => row.state);
+  const classResources = (typeof _getClassResourceEntries === 'function' ? _getClassResourceEntries() : []);
+  let chips = '';
+  if (nativeResources.length) {
+    chips = nativeResources.map(r => {
+      const ref = esc(String(r.id || r.name));
+      return `<span class="rp-chip" style="display:inline-flex;align-items:center;gap:.15rem">${esc(r.name)}: <b style="color:var(--mf-role)">${esc(r.summary || (r.current + '/' + r.max))}</b>${_rpStepBtn('−', `typeof adjustNativeResourceUse==='function'&&adjustNativeResourceUse('${ref}',1);_rpRerender()`, 'Use '+r.name)}${_rpStepBtn('+', `typeof adjustNativeResourceUse==='function'&&adjustNativeResourceUse('${ref}',-1);_rpRerender()`, 'Restore '+r.name)}</span>`;
+    }).join('');
+  } else if (structured.length) {
+    chips = structured.map(row => {
+      const key = esc(String(row.feature.key));
+      return `<span class="rp-chip" style="display:inline-flex;align-items:center;gap:.15rem">${esc(row.feature.name)}: <b style="color:var(--mf-role)">${esc(row.state.summary)}</b>${_rpStepBtn('−', `typeof adjustClassFeatureUse==='function'&&adjustClassFeatureUse('${key}',1);_rpRerender()`, 'Use '+row.feature.name)}${_rpStepBtn('+', `typeof adjustClassFeatureUse==='function'&&adjustClassFeatureUse('${key}',-1);_rpRerender()`, 'Restore '+row.feature.name)}</span>`;
+    }).join('');
+  } else if (classResources.length) {
+    chips = classResources.map(entry => `<span class="rp-chip">${esc(entry.name)}: <b style="color:var(--mf-role)">${esc(entry.summary || (entry.current + '/' + entry.max))}</b></span>`).join('');
+  }
+  if (!chips) return '';
+  return `<div class="rp-chips" style="flex-wrap:wrap;gap:.35rem;padding:.5rem">${chips}</div>`;
+}
+
+// Movement bar + accurate action/bonus/reaction counts for the player's turn.
+function _rpActionEconomyHtml() {
+  const st = (typeof _buildActionEconomyState === 'function') ? _buildActionEconomyState() : null;
+  if (!st) return '';
+  const aRem = Math.max(0, (st.actions_total || 0) - (st.actions_used || 0));
+  const bRem = Math.max(0, (st.bonus_actions_total || 0) - (st.bonus_actions_used || 0));
+  const rRem = Math.max(0, (st.reactions_total || 0) - (st.reactions_used || 0));
+  const mvTotal = Math.max(0, Number(st.movement_total || 0));
+  const mvRem = Math.max(0, Number(st.movement_remaining || 0));
+  const mvPct = mvTotal > 0 ? Math.max(0, Math.min(100, Math.round(mvRem / mvTotal * 100))) : 0;
+  const move = `<div style="margin-bottom:.4rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem">
+      <span style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--mf-text-dim,#9aa)">Movement</span>
+      <span class="rp-pnum">${mvRem} / ${mvTotal} ft left</span>
+    </div>
+    <div class="rp-hpbar"><i style="width:${mvPct}%;background:var(--mf-role)"></i></div>
+  </div>`;
+  return `${move}<div class="rp-econ-row">
+    <button class="rp-econ-btn${aRem<=0?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('action');_rpRerender()">Action · ${aRem}/${st.actions_total}</button>
+    <button class="rp-econ-btn${bRem<=0?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('bonus_action');_rpRerender()">Bonus · ${bRem}/${st.bonus_actions_total}</button>
+    <button class="rp-econ-btn${rRem<=0?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('reaction');_rpRerender()">Reaction · ${rRem}/${st.reactions_total}</button>
+    <button class="rp-action go" style="grid-column:1/-1;justify-content:center;font-size:.66rem;" onclick="typeof combatEndTurn==='function'&&combatEndTurn()">End turn ▸</button>
+  </div>`;
+}
+
+// Roll initiative for the player's OWN combatant (the panel button used to call
+// combatRollInitiative() with no id, which silently no-oped).
+function _rpRollMyInitiative() {
+  const combatants = Array.isArray(_combat && _combat.combatants) ? _combat.combatants : [];
+  const mine = combatants.find(c => c && typeof _isMyToken === 'function' && _isMyToken(c.token_id));
+  if (!mine) { if (typeof showToast === 'function') showToast('No combatant of yours in the initiative order yet.'); return; }
+  const idx = combatants.indexOf(mine);
+  if (typeof _canRollInitiative === 'function' && !_canRollInitiative(mine, idx)) {
+    if (typeof showToast === 'function') showToast(mine.initiative != null ? 'Initiative already set — you can reroll on your turn.' : 'Initiative can be rolled once combat is active.');
+    return;
+  }
+  if (typeof combatRollInitiative === 'function') combatRollInitiative(mine.id);
 }
 
 /* ---- Player MODES ---- */
@@ -37732,7 +37861,7 @@ function _renderPlayerMode(modeId, subTab) {
 
     if (activeTab === 'party') {
       html += _rpBlock('Party', _rpPartyBlock());
-      html += _rpBlock('Initiative order', _rpInitList(), '', "typeof combatRollInitiative==='function'&&combatRollInitiative()", 'Roll');
+      html += _rpBlock('Initiative order', _rpInitList(), '', "_rpRollMyInitiative()", 'Roll mine');
     } else if (activeTab === 'log') {
       html += _rpBlock('Table log', `<div style="padding:.6rem"><button class="rp-action go" style="width:100%;justify-content:center;" onclick="_rpOpenPanelView('log')">💬 Open table chat & log ▸</button></div>`, 'rp-card');
     } else {
@@ -37742,16 +37871,11 @@ function _renderPlayerMode(modeId, subTab) {
       const quickActionsLauncher = `<section><div style="padding:.1rem 0 0"><button class="rp-action go" style="width:100%;justify-content:center;" onclick="if(window.CombatQuickBar&&typeof window.CombatQuickBar.openManual==='function'){window.CombatQuickBar.openManual();}else if(typeof toggleSheet==='function'){toggleSheet();}">⚔ Open quick actions ▸</button></div></section>`;
       if (combatActive) {
         const econ = isMyTurn
-          ? `<div class="rp-econ-row">
-              <button class="rp-econ-btn${actionUsed?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('action')">Action</button>
-              <button class="rp-econ-btn${bonusUsed?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('bonus_action')">Bonus</button>
-              <button class="rp-econ-btn${reactionUsed?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('reaction')">Reaction</button>
-              <button class="rp-action go" style="grid-column:1/-1;justify-content:center;font-size:.66rem;" onclick="typeof combatEndTurn==='function'&&combatEndTurn()">End turn ▸</button>
-            </div>`
+          ? _rpActionEconomyHtml()
           : `<div class="rp-turn-note">Waiting — it's ${esc(String(current && current.name || 'another combatant'))}'s turn.</div>`;
         html += _rpBlock(isMyTurn ? 'Your turn' : 'Current turn', charCard + econ, 'rp-card glow');
         html += quickActionsLauncher;
-        html += _rpBlock('Initiative order', _rpInitList(), '', "typeof combatRollInitiative==='function'&&combatRollInitiative()", 'Roll');
+        html += _rpBlock('Initiative order', _rpInitList(), '', "_rpRollMyInitiative()", 'Roll mine');
       } else {
         html += _rpBlock('Your character', charCard + `<div class="rp-turn-note">Combat hasn't started. Your turn actions appear here once initiative is rolled.</div>`, 'rp-card');
         html += quickActionsLauncher;
@@ -37761,6 +37885,13 @@ function _renderPlayerMode(modeId, subTab) {
 
   } else if (modeId === 'character') {
     if (activeTab === 'spells') {
+      // Spell slots remaining + class resources (sorcery points, rage, ki,
+      // channel divinity, bardic inspiration…) so casters can track what they
+      // have left without opening the full book.
+      const slotsHtml = _rpSpellSlotsInner();
+      if (slotsHtml) html += _rpBlock('Spell slots', slotsHtml);
+      const resHtml = _rpClassResourcesInner();
+      if (resHtml) html += _rpBlock('Class resources', resHtml);
       const spells = Array.isArray(_playerGrantedSpells) ? _playerGrantedSpells : [];
       html += _rpBlock('Spells', spells.length ? `<div class="rp-toollist">
         ${spells.slice(0,12).map(sp => `<button class="rp-tl" onclick="typeof castPlayerGrantedSpell==='function'?castPlayerGrantedSpell(${esc(JSON.stringify(sp.grant_id||sp.id||sp.name||''))}):(typeof castRulesSpell==='function'&&castRulesSpell(${esc(JSON.stringify(sp.name||''))}))">
@@ -37781,6 +37912,12 @@ function _renderPlayerMode(modeId, subTab) {
           return `<span class="rp-stool" style="cursor:default"><span class="gly" style="color:var(--mf-role)">${mod>=0?'+':''}${mod}</span>${label}</span>`;
         }).join('')}
       </div>`);
+      // Spell slots + class resources right on the sheet so the player can see
+      // what their class has left (slots, sorcery points, rage, ki, …) at a glance.
+      const sheetSlotsHtml = _rpSpellSlotsInner();
+      if (sheetSlotsHtml) html += _rpBlock('Spell slots', sheetSlotsHtml);
+      const sheetResHtml = _rpClassResourcesInner();
+      if (sheetResHtml) html += _rpBlock('Class resources', sheetResHtml);
       // Party vitals at a glance — lets the player support teammates (heals,
       // buffs, revives) without leaving their own sheet.
       html += _rpBlock('Party vitals', _rpPartyBlock());
@@ -37788,7 +37925,8 @@ function _renderPlayerMode(modeId, subTab) {
 
   } else if (modeId === 'inventory') {
     if (activeTab === 'gold') {
-      html += _rpBlock('Coin & gold', `<div style="padding:.6rem"><button class="rp-action go" style="width:100%;justify-content:center;" onclick="typeof openCharacterBook==='function'&&openCharacterBook('inventory')">🪙 Open gold & inventory ▸</button></div>`, 'rp-card');
+      html += _rpBlock('Coin & gold', _rpGoldInner(), 'rp-card');
+      html += _rpBlock('Manage', `<div style="padding:.5rem"><button class="rp-action go" style="width:100%;justify-content:center;" onclick="typeof openCharacterBook==='function'&&openCharacterBook('inventory')">🪙 Open gold & inventory ▸</button></div>`);
     } else {
       // 'items' sub-tab — carried weight, live item listing, quick links + rest.
       html += _rpWeightBlock();
