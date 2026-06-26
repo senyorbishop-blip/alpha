@@ -235,7 +235,8 @@
   function ensureModePanels(root) {
     const safeRoot = root || document;
     const doc = safeRoot.createElement ? safeRoot : document;
-    const body = safeRoot.querySelector ? safeRoot.querySelector('#dm-context-shell .dm-map-first-context-body') : null;
+    // Always use document — root may be #sidebar-left which doesn't contain the shell
+    const body = document.querySelector('#dm-context-shell .dm-map-first-context-body');
     if (!body || body.dataset.dmContextPanelsMounted === 'true') return;
     body.dataset.dmContextPanelsMounted = 'true';
     MODE_PANEL_DEFINITIONS.forEach((definition) => {
@@ -290,8 +291,8 @@
   function forceLegacyRightPanelsClosed(root, options) {
     if (isDmMapFirstDisabled() || window.__DM_MAP_FIRST_CAN_ENHANCE !== true || isLegacyGuardDisabled()) return false;
     const safeRoot = root || document;
-    const docRoot = safeRoot.querySelector ? safeRoot : document;
-    const body = docRoot.body || document.body;
+    const docRoot = document; // always use document — root may be #sidebar-left
+    const body = document.body;
     if (!body || !isMapFirstActive(docRoot)) return false;
     const allowDrawer = !!(options && options.allowDrawer) || body.classList.contains('dm-legacy-drawer-open');
     if (!allowDrawer) body.classList.remove('dm-legacy-drawer-open');
@@ -462,7 +463,7 @@
     if (!isMapFirstActive(document)) return false;   // shell inactive → legacy
     if (!RICH_HANDLED_TABS[tab]) return false;        // real-content tab → legacy
     const root = document.getElementById('dm-context-shell') || document;
-    switchRTabIntercept(root, tab);
+    switchRTabIntercept(document, tab);
     return true;   // handled in the rich panel; play.html skips legacy routing
   };
 
@@ -472,7 +473,9 @@
     // module isn't present, so the panel degrades to the marker fallback.
     const renderer = window.AppUIDMContextRender;
     if (!renderer || typeof renderer.render !== 'function') return;
-    const docRoot = safeRoot && safeRoot.querySelector ? safeRoot : document;
+    // Always search from document — safeRoot may be #sidebar-left which does
+    // not contain #dm-context-shell. The shell is always a top-level element.
+    const docRoot = document;
     const body = docRoot.querySelector('#dm-context-shell .dm-map-first-context-body');
     if (!body) return;
 
