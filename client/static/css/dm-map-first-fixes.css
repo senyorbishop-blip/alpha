@@ -74,3 +74,55 @@ body.dm-map-first-active .dm-context-mode-section[data-dm-mode-active="true"] { 
  * bootstrap unhides for DM — this keeps it visible if boot is skipped).
  * ------------------------------------------------------------------ */
 body.dm-map-first-active #dm-map-first-quick-strip[hidden] { display: flex !important; }
+
+/* ==================================================================
+ * FIX 5 — Context body height cap was cutting the rich panel short.
+ * dm-map-first-polish.css sets max-height: min(34vh, 23rem) which
+ * clips the new content and lets the legacy right panel bleed through.
+ * Remove the cap and let the body fill the available column height.
+ * ================================================================== */
+body.dm-map-first-active .dm-map-first-context-body {
+  max-height: none !important;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ==================================================================
+ * FIX 6 — Hide the legacy right-panel tabs and panes while the new
+ * DM context shell is active. They sit in the same sidebar-right div
+ * and were bleeding through underneath the new panel.
+ * ================================================================== */
+body.dm-map-first-active #right-tab-bar,
+body.dm-map-first-active #sidebar-right .rtab-pane,
+body.dm-map-first-active #sidebar-right .rtab-panes,
+body.dm-map-first-active #sidebar-right .rtab-shell,
+body.dm-map-first-active #right-panel-context { display: none !important; }
+
+/* Make sure dm-context-shell itself fills the column */
+body.dm-map-first-active #dm-context-shell {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==================================================================
+ * FIX 7 — Bottom toolbar icons.
+ * Buttons had text-only; .qa-ic wraps the glyph above the label.
+ * ================================================================== */
+body.dm-map-first-active .dm-map-first-quick-action {
+  display: grid;
+  justify-items: center;
+  gap: 0.14rem;
+  min-width: 3.4rem;
+  padding: 0.36rem 0.5rem;
+  font-size: 0.56rem;
+  letter-spacing: 0.04em;
+}
+body.dm-map-first-active .dm-map-first-quick-action .qa-ic {
+  font-size: 0.95rem;
+  line-height: 1;
+  display: block;
+}
