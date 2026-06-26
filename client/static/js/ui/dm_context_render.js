@@ -8,9 +8,8 @@
  * Design rules:
  *   - Reads LIVE state (_combat, _normalizeCombatRoster, charProfiles) defensively.
  *     Any missing global falls back to a friendly placeholder; never throws, never blanks.
- *   - Every control calls an EXISTING play.html global (combatNext, switchRTab,
- *     toggleFlyout, beginBestiarySpawn, …) via inline onclick — same convention
- *     as the rest of the page, so nothing new has to be wired.
+ *   - Every control calls AppUIDMActions, a small adapter that reuses existing
+ *     play.html globals/buttons and warns clearly when a target is unavailable.
  *
  * Public API (used by dm_panel_mode_bridge.js):
  *   AppUIDMContextRender.meta(mode)  -> { gly, title, note }
@@ -85,6 +84,88 @@
 
   function isLive() { var c = combat(); return !!(c && c.active && roster().length); }
 
+
+  /* ---------- DM action bridge: clean panel -> live runtime controls ---------- */
+  function warnAction(name, detail) {
+    if (window.console) console.warn('[dm-actions] ' + name + ' unavailable' + (detail ? ': ' + detail : ''));
+    try { if (typeof window.showToast === 'function') window.showToast(name + ' is not available in this view.'); } catch (_e) {}
+  }
+  function callGlobal(name, args) {
+    var fn = g(name);
+    if (typeof fn === 'function') {
+      try { return fn.apply(window, args || []); } catch (err) { if (window.console) console.warn('[dm-actions] ' + name + ' failed', err); return undefined; }
+    }
+    warnAction(name, 'missing global function');
+    return undefined;
+  }
+  function clickId(id, label) {
+    var el = document.getElementById(id);
+    if (el && typeof el.click === 'function') { el.click(); return true; }
+    warnAction(label || id, 'missing #' + id);
+    return false;
+  }
+  function openLegacyDrawer(tab) {
+    if (typeof g('switchRTab') === 'function') callGlobal('switchRTab', [tab]);
+    else warnAction('Open ' + tab, 'switchRTab missing');
+    try {
+      document.body.classList.add('dm-legacy-drawer-open');
+      document.body.dataset.dmLegacyDrawerTab = String(tab || '');
+    } catch (_e) {}
+  }
+  function closeLegacyDrawer() {
+    try {
+      document.body.classList.remove('dm-legacy-drawer-open');
+      delete document.body.dataset.dmLegacyDrawerTab;
+    } catch (_e) {}
+  }
+  function openFlyout(id) {
+    if (typeof g('toggleFlyout') === 'function') return callGlobal('toggleFlyout', [id]);
+    return clickId(id, 'Open ' + id);
+  }
+  function firstPendingId() {
+    var fn = g('currentViewerPendingEntries');
+    if (typeof fn === 'function') {
+      try { var rows = fn(); return rows && rows[0] && rows[0].id; } catch (_e) {}
+    }
+    return '';
+  }
+  var Actions = window.AppUIDMActions || {};
+  Object.assign(Actions, {
+    startCombat: function () { return callGlobal('combatStart'); },
+    previousTurn: function () { return callGlobal('combatPrev'); },
+    nextTurn: function () { return callGlobal('combatNext'); },
+    endTurn: function () { return callGlobal('combatEndTurn') || callGlobal('combatNext'); },
+    endCombat: function () { return callGlobal('combatClear'); },
+    clearCombat: function () { return callGlobal('combatClear'); },
+    rollInitiative: function () { var rows = roster(); var target = (rows.filter(function (r) { return r.isCurrent; })[0] || rows[0] || {}).combatant || {}; if (target.id) return callGlobal('combatRollInitiative', [target.id]); return warnAction('Roll initiative', 'no combatant available'); },
+    addCombatant: function () { return callGlobal('combatAddManual'); },
+    addSelectedTokenToCombat: function () { return callGlobal('combatAddSelectedTokenToInitiative') || openLegacyDrawer('combat'); },
+    openCombatTracker: function () { return openLegacyDrawer('combat'); },
+    openViewerPowers: function () { openFlyout('flyout-perm'); return openLegacyDrawer('party'); },
+    grantViewerPower: function () { return callGlobal('grantViewerPower') || openLegacyDrawer('party'); },
+    grantViewerPowerPreset: function () { return callGlobal('grantViewerPowerPreset') || openLegacyDrawer('party'); },
+    approveViewerPower: function (id) { id = id || firstPendingId(); return id ? callGlobal('decideViewerPending', [id, true]) : warnAction('Approve viewer power', 'no pending approval selected'); },
+    rejectViewerPower: function (id) { id = id || firstPendingId(); return id ? callGlobal('decideViewerPending', [id, false]) : warnAction('Reject viewer power', 'no pending approval selected'); },
+    openViewerPowerSettings: function () { return openFlyout('flyout-perm'); },
+    openBestiary: function () { return openLegacyDrawer('bestiary'); },
+    spawnSelectedCreature: function () { return callGlobal('beginBestiarySpawn') || openLegacyDrawer('bestiary'); },
+    editSelectedToken: function () { return openFlyout('flyout-token'); },
+    toggleSelectedHidden: function () { return clickId('te-hidden', 'Toggle selected hidden') || openFlyout('flyout-token'); },
+    openParty: function () { return openLegacyDrawer('party'); },
+    openMemory: function () { return openLegacyDrawer('memory'); },
+    openHandouts: function () { return openLegacyDrawer('handouts'); },
+    openInventory: function () { return openLegacyDrawer('inventory'); },
+    openShop: function () { return openLegacyDrawer('shop'); },
+    openChat: function () { return openLegacyDrawer('chat'); },
+    openEditor: function () { return openFlyout('flyout-editor'); },
+    openFog: function () { return openFlyout('flyout-fog'); },
+    openMap: function () { return openFlyout('flyout-map'); },
+    openSound: function () { return openFlyout('flyout-sound'); },
+    openJournal: function () { return openFlyout('flyout-journal'); },
+    closeLegacyDrawer: closeLegacyDrawer
+  });
+  window.AppUIDMActions = Actions;
+
   /* ---------- party rows ---------- */
   function partyRows() {
     var rows = roster().filter(function (r) { return r.isPlayerOwned; });
@@ -144,27 +225,27 @@
           '<span class="dcx-pcol">' + hpBar(p.hp, p.max, p.full) + '<span class="dcx-pnum">' + label + '</span></span></div>';
       }).join('') + '</div>';
     }
-    return block('Party overview', inner, { action: "switchRTab('party')", actionLabel: 'Full party' });
+    return block('Party overview', inner, { action: "AppUIDMActions.openParty()", actionLabel: 'Full party' });
   }
 
   function initiativeBlock() {
     var rows = roster();
     if (!isLive()) {
       return block('Initiative order',
-        empty('Combat isn\u2019t running.<br><button class="dcx-start" type="button" onclick="combatStart()">\u2694 Start combat</button>'));
+        empty('Combat isn\u2019t running.<br><button class="dcx-start" type="button" onclick="AppUIDMActions.startCombat()">\u2694 Start combat</button>'));
     }
     var inner = '<div class="dcx-init">' + rows.map(function (r, i) {
       var h = rowHp(r);
       var hpTxt = (h.hp != null && h.max != null) ? esc(h.hp) + '/' + esc(h.max) : '';
       var kind = r.isPlayerOwned ? 'Player' : (r.combatant && r.combatant.kind) || 'NPC';
       return '<div class="dcx-init-row" data-active="' + (!!r.isCurrent) + '" ' +
-        'onclick="switchRTab(\'combat\')">' +
+        'onclick="AppUIDMActions.openCombatTracker()">' +
         '<span class="dcx-ord">' + (i + 1) + '</span>' +
         '<span class="dcx-who"><span class="n">' + esc(r.name || 'Combatant') + '</span><span class="k">' + esc(kind) + '</span></span>' +
         '<span class="dcx-mod">' + esc(modifier(r.initiative)) + '</span>' +
         '<span class="dcx-ihp">' + hpTxt + '</span></div>';
     }).join('') + '</div>';
-    return block('Initiative order', inner, { action: "switchRTab('combat')", actionLabel: 'Open tracker' });
+    return block('Initiative order', inner, { action: "AppUIDMActions.openCombatTracker()", actionLabel: 'Open tracker' });
   }
 
   function currentTurnBlock() {
@@ -183,17 +264,17 @@
         '<div class="dcx-hpwrap"><span class="dcx-hpnum">' + (h.hp != null ? esc(h.hp) : '—') +
           '<span class="sm">' + (h.max != null ? '/' + esc(h.max) : '') + '</span></span>' + hpBar(h.hp, h.max) + '</div>' +
       '</div>' +
-      '<div class="dcx-turn-cta"><button class="dcx-primary" type="button" onclick="combatNext()">End turn \u25B8</button></div>';
+      '<div class="dcx-turn-cta"><button class="dcx-primary" type="button" onclick="AppUIDMActions.nextTurn()">End turn \u25B8</button></div>';
     return block('Current turn', inner, { cls: 'dcx-card glow' });
   }
 
   function sessionToolsBlock() {
     return block('Session tools',
       '<div class="dcx-stools">' +
-        stool('\uD83D\uDCD3', 'Notes', "switchRTab('memory')") +
-        stool('\uD83D\uDCDC', 'Handouts', "switchRTab('handouts')") +
-        stool('\uD83C\uDFB5', 'Sound', "toggleFlyout('flyout-sound')") +
-        stool('\uD83D\uDCD3', 'Journal', "toggleFlyout('flyout-journal')") +
+        stool('\uD83D\uDCD3', 'Notes', "AppUIDMActions.openMemory()") +
+        stool('\uD83D\uDCDC', 'Handouts', "AppUIDMActions.openHandouts()") +
+        stool('\uD83C\uDFB5', 'Sound', "AppUIDMActions.openSound()") +
+        stool('\uD83D\uDCD3', 'Journal', "AppUIDMActions.openJournal()") +
       '</div>');
   }
 
@@ -225,72 +306,80 @@
     },
     'combat': function () {
       return currentTurnBlock() + initiativeBlock() + partyBlock() +
-        block('Quick actions',
-          '<div class="dcx-actions">' +
-            action('\u2694', 'Attack', 'selected token', "switchRTab('combat')") +
-            action('\u2728', 'Cast spell', 'from sheet', "switchRTab('combat')") +
-            action('\u271A', 'Heal', 'cure wounds', "switchRTab('combat')") +
-            action('\u27F3', 'Reaction', 'hold / ready', "switchRTab('combat')") +
+        block('Encounter controls',
+          '<div class="dcx-actions dcx-combat-controls">' +
+            action('\u2694', 'Start Combat', 'pull current map tokens', "AppUIDMActions.startCombat()") +
+            action('\u25C0', 'Previous Turn', 'step initiative back', "AppUIDMActions.previousTurn()") +
+            action('\u25B6', 'End / Next Turn', 'advance initiative', "AppUIDMActions.nextTurn()") +
+            action('\u2715', 'End Combat', 'clear encounter', "AppUIDMActions.endCombat()") +
+            action('\uD83C\uDFB2', 'Roll Initiative', 'selected combatant', "AppUIDMActions.rollInitiative()") +
+            action('\u2795', 'Add Combatant', 'manual / selected token', "AppUIDMActions.addCombatant()") +
+            action('\uD83D\uDCCC', 'Add Selected Token', 'where supported', "AppUIDMActions.addSelectedTokenToCombat()") +
+            action('\uD83D\uDCCB', 'Open Tracker', 'compact details drawer', "AppUIDMActions.openCombatTracker()") +
           '</div>') +
         sessionToolsBlock();
     },
     'map-build': function () {
       return block('Build tools',
         '<div class="dcx-toollist">' +
-          tool('\u26F0', 'Terrain tools', 'paint', "toggleFlyout('flyout-editor')") +
-          tool('\uD83E\uDDF1', 'Wall tools', 'collision', "toggleFlyout('flyout-editor')") +
-          tool('\uD83D\uDEAA', 'Door tools', 'linked', "toggleFlyout('flyout-editor')") +
-          tool('\uD83C\uDF2B', 'Fog tools', 'reveal/hide', "toggleFlyout('flyout-fog')") +
-          tool('\uD83D\uDDFA', 'Token layer', '', "toggleFlyout('flyout-editor')") +
-          tool('\uD83E\uDE91', 'Prop layer', '', "toggleFlyout('flyout-editor')") +
-          tool('\u263C', 'Lighting / weather', '', "toggleFlyout('flyout-map')") +
-          tool('\uD83D\uDCE6', 'Asset library', '', "initAssetLibrary()") +
+          tool('\u26F0', 'Terrain tools', 'paint', "AppUIDMActions.openEditor()") +
+          tool('\uD83E\uDDF1', 'Wall tools', 'collision', "AppUIDMActions.openEditor()") +
+          tool('\uD83D\uDEAA', 'Door tools', 'linked', "AppUIDMActions.openEditor()") +
+          tool('\uD83C\uDF2B', 'Fog tools', 'reveal/hide', "AppUIDMActions.openFog()") +
+          tool('\uD83D\uDDFA', 'Token layer', '', "AppUIDMActions.openEditor()") +
+          tool('\uD83E\uDE91', 'Prop layer', '', "AppUIDMActions.openEditor()") +
+          tool('\u263C', 'Lighting / weather', '', "AppUIDMActions.openMap()") +
+          tool('\uD83D\uDCE6', 'Asset library', '', "AppUIDMActions.openEditor()") +
         '</div>') +
-        block('Apply', '<button class="dcx-primary wide" type="button" onclick="toggleFlyout(\'flyout-editor\')">Open map editor \u25B8</button>');
+        block('Apply', '<button class="dcx-primary wide" type="button" onclick="AppUIDMActions.openEditor()">Open map editor \u25B8</button>');
     },
     'npc-monster': function () {
       return block('Find a creature',
         '<div class="dcx-searchrow"><input id="dcx-bestiary-search" type="search" placeholder="Search bestiary\u2026" autocomplete="off">' +
-          '<button class="dcx-filter" type="button" onclick="switchRTab(\'bestiary\')">Filters</button></div>' +
+          '<button class="dcx-filter" type="button" onclick="AppUIDMActions.openBestiary()">Filters</button></div>' +
           '<div class="dcx-hint">Type to search, then pick a creature in the Bestiary tab.</div>') +
         block('Place on map',
           '<div class="dcx-primary-actions">' +
-            '<button class="dcx-pa go" type="button" onclick="beginBestiarySpawn()">\u2295 Spawn</button>' +
-            '<button class="dcx-pa" type="button" onclick="switchRTab(\'combat\')">+ Encounter</button>' +
-            '<button class="dcx-pa" type="button" onclick="toggleFlyout(\'flyout-token\')">\u270E Edit stats</button>' +
-            '<button class="dcx-pa" type="button" onclick="switchRTab(\'bestiary\')">\u25D0 Hide / reveal</button>' +
+            '<button class="dcx-pa go" type="button" onclick="AppUIDMActions.spawnSelectedCreature()">\u2295 Spawn</button>' +
+            '<button class="dcx-pa" type="button" onclick="AppUIDMActions.openCombatTracker()">+ Encounter</button>' +
+            '<button class="dcx-pa" type="button" onclick="AppUIDMActions.editSelectedToken()">\u270E Edit stats</button>' +
+            '<button class="dcx-pa" type="button" onclick="AppUIDMActions.openBestiary()">\u25D0 Hide / reveal</button>' +
           '</div>');
     },
     'loot-shop': function () {
       return block('Economy tools',
         '<div class="dcx-toollist">' +
-          tool('\uD83D\uDD0E', 'Item search', 'SRD + custom', "switchRTab('shop')") +
-          tool('\uD83D\uDCE6', 'Loot containers', '', "switchRTab('shop')") +
-          tool('\uD83C\uDFEA', 'Shop setup', '', "switchRTab('shop')") +
-          tool('\uD83C\uDF81', 'Grant item', 'to party', "switchRTab('inventory')") +
-          tool('\uD83E\uDE99', 'Grant gold', 'to party', "switchRTab('inventory')") +
-          tool('\u26A1', 'Charges / attunement', '', "switchRTab('inventory')") +
+          tool('\uD83D\uDD0E', 'Item search', 'SRD + custom', "AppUIDMActions.openShop()") +
+          tool('\uD83D\uDCE6', 'Loot containers', '', "AppUIDMActions.openShop()") +
+          tool('\uD83C\uDFEA', 'Shop setup', '', "AppUIDMActions.openShop()") +
+          tool('\uD83C\uDF81', 'Grant item', 'to party', "AppUIDMActions.openInventory()") +
+          tool('\uD83E\uDE99', 'Grant gold', 'to party', "AppUIDMActions.openInventory()") +
+          tool('\u26A1', 'Charges / attunement', '', "AppUIDMActions.openInventory()") +
         '</div>');
     },
     'session-tools': function () {
       return block('Story &amp; table',
         '<div class="dcx-toollist">' +
-          tool('\uD83C\uDFAF', 'Quests', '', "toggleFlyout('flyout-journal')") +
-          tool('\uD83D\uDCD3', 'Journal', '', "toggleFlyout('flyout-journal')") +
-          tool('\uD83D\uDCDC', 'Handouts', 'share', "switchRTab('handouts')") +
-          tool('\uD83C\uDF99', 'Narration', '', "toggleFlyout('flyout-sound')") +
-          tool('\uD83C\uDFB5', 'Sound / ambience', '', "toggleFlyout('flyout-sound')") +
-          tool('\uD83D\uDCAC', 'Party message', '', "switchRTab('chat')") +
+          tool('\uD83C\uDFAF', 'Quests', '', "AppUIDMActions.openJournal()") +
+          tool('\uD83D\uDCD3', 'Journal', '', "AppUIDMActions.openJournal()") +
+          tool('\uD83D\uDCDC', 'Handouts', 'share', "AppUIDMActions.openHandouts()") +
+          tool('\uD83C\uDF99', 'Narration', '', "AppUIDMActions.openSound()") +
+          tool('\uD83C\uDFB5', 'Sound / ambience', '', "AppUIDMActions.openSound()") +
+          tool('\uD83D\uDCAC', 'Party message', '', "AppUIDMActions.openChat()") +
         '</div>');
     },
     'viewer-powers': function () {
-      return block('Connected viewers', empty('No viewers connected.<br>Share the viewer link to let spectators join.')) +
+      return block('Connected viewers', '<div id="dcx-viewer-summary">' + empty('No viewers connected.<br>Share the viewer link to let spectators join.') + '</div>') +
         block('Power controls',
           '<div class="dcx-toollist">' +
-            tool('\uD83C\uDF81', 'Grant power', '', "toggleFlyout('flyout-perm')") +
-            tool('\u23F3', 'Pending approvals', '', "toggleFlyout('flyout-perm')") +
-            tool('\u2744', 'Cooldowns', '', "toggleFlyout('flyout-perm')") +
-          '</div>');
+            tool('\uD83C\uDF81', 'Grant Power', 'selected viewer', "AppUIDMActions.openViewerPowers()") +
+            tool('\u23F3', 'Pending Approvals', 'review queue', "AppUIDMActions.openViewerPowers()") +
+            tool('\u2705', 'Approve Pending', 'first queued power', "AppUIDMActions.approveViewerPower()") +
+            tool('\u274C', 'Reject Pending', 'first queued power', "AppUIDMActions.rejectViewerPower()") +
+            tool('\u2744', 'Cooldowns / Settings', 'FX + limits', "AppUIDMActions.openViewerPowerSettings()") +
+            tool('\uD83C\uDFAF', 'Target Selection', 'viewer target/source', "AppUIDMActions.openViewerPowers()") +
+          '</div>') +
+        block('Management', '<button class="dcx-primary wide" type="button" onclick="AppUIDMActions.openViewerPowers()">Open compact viewer powers drawer \u25B8</button>');
     },
     'debug': function () {
       return block('Diagnostics',
