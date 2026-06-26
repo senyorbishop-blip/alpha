@@ -194,7 +194,7 @@
     openCompactCombatDrawer: function () { return openLegacyDrawer('combat'); },
     openViewerPowers: function () { openFlyout('flyout-perm'); return openLegacyDrawer('party'); },
     grantViewerPower: function () { return callGlobal('grantViewerPower') || openLegacyDrawer('party'); },
-    grantViewerPowerPreset: function () { return callGlobal('grantViewerPowerPreset') || openLegacyDrawer('party'); },
+    grantViewerPowerPreset: function () { return callGlobal('grantViewerPowerPreset'); },
     approveViewerPower: function (id) { id = id || firstPendingId(); return id ? callGlobal('decideViewerPending', [id, true]) : warnAction('Approve viewer power', 'no pending approval selected'); },
     rejectViewerPower: function (id) { id = id || firstPendingId(); return id ? callGlobal('decideViewerPending', [id, false]) : warnAction('Reject viewer power', 'no pending approval selected'); },
     openViewerPowerSettings: function () { return openFlyout('flyout-perm'); },
@@ -207,7 +207,7 @@
     openHandouts: function () { return openLegacyDrawer('handouts'); },
     openInventory: function () { return openLegacyDrawer('inventory'); },
     openShop: function () { return openLegacyDrawer('shop'); },
-    openChat: function () { return openLegacyDrawer('chat'); },
+    openChat: function () { return openLegacyDrawer('log'); },
     openEditor: function () { return openFlyout('flyout-editor'); },
     openFog: function () { return openFlyout('flyout-fog'); },
     openMap: function () { return openFlyout('flyout-map'); },
@@ -343,7 +343,7 @@
   var TABS = {
     'run':           [['party', 'Party'], ['inventory', 'Inventory'], ['memory', 'Moments'], ['combat', 'Combat']],
     'combat':        [['combat', 'Turns'], ['party', 'Party'], ['memory', 'Log']],
-    'map-build':     [['terrain', 'Terrain'], ['walls', 'Walls'], ['fog', 'Fog']],
+    'map-build':     [],
     'npc-monster':   [['bestiary', 'Bestiary'], ['combat', 'Encounter']],
     'loot-shop':     [['shop', 'Items'], ['inventory', 'Party']],
     'session-tools': [['handouts', 'Handouts'], ['memory', 'Journal']],
@@ -375,14 +375,10 @@
     'map-build': function () {
       return block('Build tools',
         '<div class="dcx-toollist">' +
-          tool('\u26F0', 'Terrain tools', 'paint', "AppUIDMActions.openEditor()") +
-          tool('\uD83E\uDDF1', 'Wall tools', 'collision', "AppUIDMActions.openEditor()") +
-          tool('\uD83D\uDEAA', 'Door tools', 'linked', "AppUIDMActions.openEditor()") +
-          tool('\uD83C\uDF2B', 'Fog tools', 'reveal/hide', "AppUIDMActions.openFog()") +
-          tool('\uD83D\uDDFA', 'Token layer', '', "AppUIDMActions.openEditor()") +
-          tool('\uD83E\uDE91', 'Prop layer', '', "AppUIDMActions.openEditor()") +
-          tool('\u263C', 'Lighting / weather', '', "AppUIDMActions.openMap()") +
-          tool('\uD83D\uDCE6', 'Asset library', '', "AppUIDMActions.openEditor()") +
+          tool('\u26F0', 'Map Editor', 'terrain, walls, doors, props', "AppUIDMActions.openEditor()") +
+          tool('\uD83D\uDDFA', 'Place Token', 'create / place on map', "AppUIDMActions.editSelectedToken()") +
+          tool('\u263C', 'Lighting / Weather', '', "AppUIDMActions.openMap()") +
+          tool('\uD83C\uDF2B', 'Fog of War', 'reveal/hide', "AppUIDMActions.openFog()") +
         '</div>') +
         block('Apply', '<button class="dcx-primary wide" type="button" onclick="AppUIDMActions.openEditor()">Open map editor \u25B8</button>');
     },
@@ -396,7 +392,7 @@
             '<button class="dcx-pa go" type="button" onclick="AppUIDMActions.spawnSelectedCreature()">\u2295 Spawn</button>' +
             '<button class="dcx-pa" type="button" onclick="AppUIDMActions.openCombatTracker()">+ Encounter</button>' +
             '<button class="dcx-pa" type="button" onclick="AppUIDMActions.editSelectedToken()">\u270E Edit stats</button>' +
-            '<button class="dcx-pa" type="button" onclick="AppUIDMActions.openBestiary()">\u25D0 Hide / reveal</button>' +
+            '<button class="dcx-pa" type="button" onclick="AppUIDMActions.toggleSelectedHidden()">\u25D0 Hide / reveal</button>' +
           '</div>');
     },
     'loot-shop': function () {
@@ -405,9 +401,9 @@
           tool('\uD83D\uDD0E', 'Item search', 'SRD + custom', "AppUIDMActions.openShop()") +
           tool('\uD83D\uDCE6', 'Loot containers', '', "AppUIDMActions.openShop()") +
           tool('\uD83C\uDFEA', 'Shop setup', '', "AppUIDMActions.openShop()") +
-          tool('\uD83C\uDF81', 'Grant item', 'to party', "AppUIDMActions.openInventory()") +
-          tool('\uD83E\uDE99', 'Grant gold', 'to party', "AppUIDMActions.openInventory()") +
-          tool('\u26A1', 'Charges / attunement', '', "AppUIDMActions.openInventory()") +
+          tool('\uD83C\uDF81', 'Grant item', 'open inventory', "AppUIDMActions.openInventory()") +
+          tool('\uD83E\uDE99', 'Grant gold', 'open inventory', "AppUIDMActions.openInventory()") +
+          tool('\u26A1', 'Charges / attunement', 'open inventory', "AppUIDMActions.openInventory()") +
         '</div>');
     },
     'session-tools': function () {
@@ -425,7 +421,8 @@
       return block('Connected viewers', '<div id="dcx-viewer-summary">' + empty('No viewers connected.<br>Share the viewer link to let spectators join.') + '</div>') +
         block('Power controls',
           '<div class="dcx-toollist">' +
-            tool('\uD83C\uDF81', 'Grant Power', 'selected viewer', "AppUIDMActions.openViewerPowers()") +
+            tool('\uD83C\uDF81', 'Grant Power / Presets', 'Fireball, Knockback\u2026', "AppUIDMActions.openViewerPowers()") +
+            tool('\uD83D\uDCE6', 'Grant Preset Pack', 'Support / Chaos / Boss', "AppUIDMActions.grantViewerPowerPreset()") +
             tool('\u23F3', 'Pending Approvals', 'review queue', "AppUIDMActions.openViewerPowers()") +
             tool('\u2705', 'Approve Pending', 'first queued power', "AppUIDMActions.approveViewerPower()") +
             tool('\u274C', 'Reject Pending', 'first queued power', "AppUIDMActions.rejectViewerPower()") +
@@ -437,9 +434,7 @@
     'debug': function () {
       return block('Diagnostics',
         '<div class="dcx-toollist">' +
-          tool('\uD83D\uDCE1', 'Stream readiness', 'live', "if(window.renderStreamReadinessPanel)renderStreamReadinessPanel()") +
-          tool('\uD83D\uDD0C', 'WebSocket', 'status', "void 0") +
-          tool('\uD83D\uDD04', 'Sync diagnostics', '', "void 0") +
+          tool('\uD83D\uDCE1', 'Stream readiness', 'WS + sync status', "if(window.renderStreamReadinessPanel)renderStreamReadinessPanel()") +
         '</div>') +
         '<div id="stream-readiness-panel" aria-live="polite"></div>';
     },
