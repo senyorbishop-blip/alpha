@@ -37945,11 +37945,11 @@ window.initRolePanels = function initRolePanels() {
   document.body.setAttribute('data-role', effectiveRole);
 
   // Hide legacy right-panel surfaces so the role context shell owns the column.
-  ['right-tab-bar', 'player-dashboard-shell', 'right-panel-context'].forEach((id) => {
+  ['right-tab-bar', 'player-dashboard-shell', 'right-panel-context', 'dm-context-shell'].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
-  document.querySelectorAll('#sidebar-right .rtab-pane').forEach((el) => { el.style.display = 'none'; });
+  document.querySelectorAll('#sidebar-right .rtab-pane, #sidebar-right .rtab-shell').forEach((el) => { el.style.display = 'none'; });
   const dmCtxShared = document.getElementById('dm-context-shell');
   if (dmCtxShared) dmCtxShared.hidden = true;
 
