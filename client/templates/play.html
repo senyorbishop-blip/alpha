@@ -20939,26 +20939,46 @@ async function ctxOpenTokenDetails() {
   const token = ctxToken;
   ctxClose();
   if (!token || ROLE !== 'dm') return;
+  // Tokens spawned from the bestiary carry a `creature_id` that links them back
+  // to their library entry — this is the reliable match even when the DM has
+  // renamed the token or it has a numbered suffix (e.g. "Goblin 2").
+  const creatureId = String(token.creature_id || token.creatureId || '').trim();
   const tokenName = String(token.name || '').trim();
-  if (!tokenName) {
-    showToast('This token has no name to match a bestiary entry.');
+  if (!creatureId && !tokenName) {
+    showToast('This token has no name or creature link to match a bestiary entry.');
     return;
   }
   const normalized = tokenName.toLowerCase();
-  const exactMatch = (Array.isArray(_bestiaryCreatures) ? _bestiaryCreatures : []).find(c => String(c?.name || '').trim().toLowerCase() === normalized);
-  if (exactMatch) {
+  const matchById = (list) => creatureId
+    ? (Array.isArray(list) ? list : []).find(c => String(c?.id || '') === creatureId || String(c?.canonical_creature_id || '') === creatureId)
+    : null;
+  const matchByName = (list) => normalized
+    ? (Array.isArray(list) ? list : []).find(c => String(c?.name || '').trim().toLowerCase() === normalized)
+    : null;
+  const cached = matchById(_bestiaryCreatures) || matchByName(_bestiaryCreatures);
+  if (cached) {
     _bestiaryTokenContext = { token_id: token.id, token_name: token.name || 'Token' };
-    openBestiaryStatModal(exactMatch);
+    openBestiaryStatModal(cached);
     return;
   }
   try {
     const owner = _bestiaryOwnerId();
-    const res = await fetch(`/api/library/creatures?owner_id=${encodeURIComponent(owner)}&search=${encodeURIComponent(tokenName)}`);
+    // Always include session_id so the DM-only library endpoint authorises via
+    // session authority. Without it the endpoint falls back to the global
+    // account role, which a per-session DM usually does not have → 403 → the
+    // modal would open empty with nothing for the DM to review.
+    const params = new URLSearchParams({ owner_id: owner });
+    if (SESSION_ID) params.set('session_id', SESSION_ID);
+    // When we have a creature link, fetch unfiltered so the linked entry is
+    // guaranteed to be present even if the token was renamed; otherwise narrow
+    // the lookup by the token's name.
+    if (!creatureId && tokenName) params.set('search', tokenName);
+    const res = await fetch('/api/library/creatures?' + params.toString());
     const data = await res.json().catch(() => ({}));
     const creatures = Array.isArray(data?.creatures) ? data.creatures : [];
-    const best = creatures.find(c => String(c?.name || '').trim().toLowerCase() === normalized) || creatures[0];
+    const best = matchById(creatures) || matchByName(creatures) || (tokenName ? creatures[0] : null);
     if (!best) {
-      showToast(`No bestiary entry found for "${tokenName}".`);
+      showToast(`No bestiary entry found for "${tokenName || 'this token'}".`);
       return;
     }
     _bestiaryTokenContext = { token_id: token.id, token_name: token.name || 'Token' };
