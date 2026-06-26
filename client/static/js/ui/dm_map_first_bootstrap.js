@@ -46,8 +46,21 @@
     );
   }
 
+  function isDisabled() {
+    if (window.__DISABLE_DM_MAP_FIRST === true) return true;
+    try {
+      if (new URLSearchParams(window.location.search).get('disable_dm_map_first') === '1') return true;
+      return String(window.localStorage && window.localStorage.getItem('disableDmMapFirst') || '') === '1';
+    } catch (_err) { return false; }
+  }
+
   function init() {
     try {
+      if (isDisabled()) {
+        window.__DISABLE_DM_MAP_FIRST = true;
+        window.__dmMapFirstBootstrap = Object.freeze({ initialized: false, disabled: true, role: getBootRole() });
+        return null;
+      }
       if (window.__DM_MAP_FIRST_CAN_ENHANCE !== true) {
         window.__dmMapFirstBootstrap = Object.freeze({ initialized: false, deferred: true, role: getBootRole() });
         return null;
@@ -70,6 +83,11 @@
   }
 
   function scheduleInit() {
+    if (isDisabled()) {
+      window.__DISABLE_DM_MAP_FIRST = true;
+      window.__dmMapFirstBootstrap = Object.freeze({ initialized: false, disabled: true, role: getBootRole() });
+      return;
+    }
     // DM map-first enhancements are intentionally not run during initial
     // DOMContentLoaded boot. Core boot, WebSocket connect, request_state/state
     // sync, and first render must win; play.html enables

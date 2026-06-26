@@ -62,6 +62,20 @@ def test_bootstrap_does_not_initialize_for_player_or_viewer_only_markup():
     assert "'viewer'" not in src
 
 
+
+def test_dm_map_first_has_emergency_kill_switch_and_deferred_boot():
+    play = read(PLAY)
+    bootstrap = read(BOOTSTRAP)
+    assert 'disable_dm_map_first' in play
+    assert 'disableDmMapFirst' in play
+    assert 'window.__DISABLE_DM_MAP_FIRST' in play
+    assert 'Do not call AppUIDMPanelModeBridge.init() during core boot.' in play
+    assert 'window.AppUIDMMapFirstBootstrap.init()' in play
+    assert play.index("console.info('[play-boot] connectWS start'") < play.index("console.info('[dm-map-first] init start'")
+    assert 'disable_dm_map_first' in bootstrap
+    assert 'disableDmMapFirst' in bootstrap
+    assert 'initialized: false, disabled: true' in bootstrap
+
 def test_debug_remains_hidden_by_default():
     css = read(SHELL_CSS)
     assert '.dm-map-first-shell:not([data-debug-open="true"]) [data-dm-debug-panel]' in css
