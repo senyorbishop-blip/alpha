@@ -20760,6 +20760,12 @@ function placeCharacter() {
 
   const clientNonce = 'tok_' + Math.random().toString(36).slice(2, 10);
   const tokenImageCandidate = String(_charSheet?.tokenImageUrl || _pendingLoadedCharacterTokenSeed?.tokenImageUrl || _charSheet?.avatarUrl || '').trim();
+  // A player's first token is created STAGED: it lands in the "Waiting to place"
+  // staging rail (only the owning player sees their own staged token there) and
+  // stays until the player drags it onto the map — at which point the rail hides
+  // again. This restores the player-facing staging bar. DMs keep dropping tokens
+  // straight onto the board.
+  const stageOnCreate = ROLE === 'player';
   const payload = {
     name: tokenName,
     color: playerColor,
@@ -20774,6 +20780,7 @@ function placeCharacter() {
     profile_id: resolveActiveCharProfileId(),
     libraryId: resolveActiveCharProfileId(),
   };
+  if (stageOnCreate) payload.staged = true;
   if (tokenImageCandidate) payload.image_url = tokenImageCandidate;
   if (hpVal !== null) {
     payload.hp = curHpVal ?? hpVal;
@@ -20799,8 +20806,13 @@ function placeCharacter() {
   if (charImageFile) _pendingTokenImageCreate = { clientNonce, file: charImageFile };
   sendWS({ type: 'token_create', payload });
   requestCharacterBookOverviewRender('placeCharacter');
-  showToast(`${name} placed on the board!`);
-  showParchmentToast(`⚔ ${name} placed on the board!`, 'info', 3000);
+  if (stageOnCreate) {
+    showToast(`${name} is waiting in the staging tray — drag it onto the map to place.`);
+    showParchmentToast(`⬜ ${name} is waiting to place — drag from the staging tray onto the map.`, 'info', 3500);
+  } else {
+    showToast(`${name} placed on the board!`);
+    showParchmentToast(`⚔ ${name} placed on the board!`, 'info', 3000);
+  }
 }
 
 
@@ -32687,7 +32699,8 @@ function openMyTokenPanel() {
 // left rail, which is where the "Place My Character" button used to live, so
 // players were left with no surfaced way to drop or re-drop their token. This
 // drives the existing placeCharacter() place/unstage/relocate path directly:
-//   • no token  → creates one on the DM's current map at screen center
+//   • no token  → creates a STAGED token in the "Waiting to place" tray; the
+//                 player then drags it onto the map (the tray hides once placed)
 //   • staged    → brings the staged token onto the board
 //   • on board  → relocates (re-places) it onto the DM's current map/center
 // We seed the hidden token form from the live token (or the loaded character
