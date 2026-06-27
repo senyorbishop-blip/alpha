@@ -10,10 +10,12 @@ ability scores, inventory, spell selections, class features, HP, or conditions.
 from __future__ import annotations
 
 import base64
+import io
 import json
 import logging
 import re
 import sys
+from copy import deepcopy
 from typing import Any
 
 from server.asset_pipeline import sha256_hex
@@ -22,6 +24,170 @@ from server.paths import ASSETS_DIR, ensure_data_dirs
 logger = logging.getLogger(__name__)
 
 DATA_IMAGE_RE = re.compile(r"^data:(image/[a-zA-Z0-9.+-]+);base64,(.*)$", re.S)
+
+PROFILE_SYNC_STRING_MAX_BYTES = 4096
+PROFILE_SYNC_MAX_BYTES = 256 * 1024
+PROFILE_THUMB_MAX_BYTES = 128 * 1024
+PROFILE_THUMB_MAX_DIM = 256
+DATA_PDF_RE = re.compile(r"^data:application/pdf;base64,", re.I | re.S)
+_IMAGE_FIELD_NAMES = frozenset({
+    "avatarUrl", "portraitUrl", "tokenImageUrl", "imageUrl", "image_url", "portrait_url", "thumb_url", "thumbnailUrl",
+})
+
+
+def _looks_like_data_asset(value: str) -> bool:
+    return bool(DATA_IMAGE_RE.match(value) or DATA_PDF_RE.match(value) or (value.startswith("data:") and ";base64," in value[:120]))
+
+
+def _thumb_filename_for_url(url: str) -> str | None:
+    if not isinstance(url, str) or not url.startswith(USER_UPLOADS_URL_PREFIX + "/"):
+        return None
+    name = url.rsplit("/", 1)[-1]
+    stem = name.rsplit(".", 1)[0]
+    return f"{stem}_thumb.jpg"
+
+
+def ensure_profile_portrait_thumbnail(url: str, *, max_bytes: int = PROFILE_THUMB_MAX_BYTES) -> str:
+    """Return a small static thumbnail URL for a relocated profile portrait.
+
+    Only local ``/static/user_uploads`` images are transformed. Remote URLs and
+    non-image files are returned unchanged so clients can still lazy-load them
+    without embedding bytes in WebSocket frames.
+    """
+    thumb_name = _thumb_filename_for_url(str(url or ""))
+    if not thumb_name:
+        return str(url or "")
+    source = USER_UPLOADS_DIR / str(url).rsplit("/", 1)[-1]
+    dest = USER_UPLOADS_DIR / thumb_name
+    if dest.exists() and dest.stat().st_size <= max_bytes:
+        return f"{USER_UPLOADS_URL_PREFIX}/{thumb_name}"
+    if not source.exists() or source.suffix.lower() not in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
+        return str(url or "")
+    try:
+        from PIL import Image
+        with Image.open(source) as img:
+            img = img.convert("RGB")
+            img.thumbnail((PROFILE_THUMB_MAX_DIM, PROFILE_THUMB_MAX_DIM), Image.LANCZOS)
+            quality = 82
+            while True:
+                while quality >= 45:
+                    buf = io.BytesIO()
+                    img.save(buf, format="JPEG", quality=quality, optimize=True)
+                    raw = buf.getvalue()
+                    if len(raw) <= max_bytes:
+                        ensure_data_dirs()
+                        USER_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+                        dest.write_bytes(raw)
+                        return f"{USER_UPLOADS_URL_PREFIX}/{thumb_name}"
+                    quality -= 8
+                width, height = img.size
+                if max(width, height) <= 64:
+                    break
+                scale = 0.75
+                img = img.resize((max(1, int(width * scale)), max(1, int(height * scale))), Image.LANCZOS)
+                quality = 70
+    except Exception as exc:
+        logger.warning("[char_profile_assets] thumbnail generation failed url=%s error=%s", url, exc)
+    return str(url or "")
+
+
+def _profile_asset_metadata(url: str, *, original_bytes: int = 0, mime: str = "") -> dict[str, Any]:
+    return {
+        "available": bool(url),
+        "asset_url": url,
+        "url": url,
+        "mime": mime,
+        "bytes": int(original_bytes or 0),
+        "lazy": True,
+        "embedded": False,
+    }
+
+
+def sanitize_profile_for_websocket(profile: Any) -> Any:
+    """Deep-copy a profile and strip inline/base64 asset blobs for WS sync.
+
+    Character rules data is preserved; only large string blobs (inline images,
+    PDFs, and oversized arbitrary strings) are replaced by lightweight lazy-load
+    metadata. Portrait-like fields are normalized to ``portrait_url`` and
+    ``thumb_url`` so clients can show a small image without receiving base64.
+    """
+    if not isinstance(profile, dict):
+        return profile
+    out = deepcopy(profile)
+    portrait_url = ""
+    thumb_url = ""
+    seen: set[int] = set()
+
+    def note_portrait(url: str) -> None:
+        nonlocal portrait_url, thumb_url
+        if url and not _looks_like_data_asset(url):
+            portrait_url = portrait_url or url
+            thumb_url = thumb_url or ensure_profile_portrait_thumbnail(url)
+
+    def walk(node: Any, path: str = "") -> Any:
+        if isinstance(node, dict):
+            ident = id(node)
+            if ident in seen:
+                return node
+            seen.add(ident)
+            for key in list(node.keys()):
+                child = node.get(key)
+                key_s = str(key)
+                if isinstance(child, str):
+                    size = len(child.encode("utf-8", errors="ignore"))
+                    if key_s in _IMAGE_FIELD_NAMES and child and not _looks_like_data_asset(child):
+                        note_portrait(child)
+                    if _looks_like_data_asset(child):
+                        decoded = _decode_data_image(child)
+                        url = None
+                        mime = "application/pdf" if DATA_PDF_RE.match(child) else ""
+                        if decoded:
+                            mime = decoded[0]
+                            url = _write_profile_image_asset(child, key_path=_path_join(path, key_s), profile_label=str(out.get("id") or out.get("name") or "?"))
+                            if url and key_s in _IMAGE_FIELD_NAMES:
+                                note_portrait(url)
+                        node[key] = _profile_asset_metadata(url or "", original_bytes=size, mime=mime)
+                    elif size > PROFILE_SYNC_STRING_MAX_BYTES:
+                        node[key] = {"truncated": True, "bytes": size, "lazy": True, "embedded": False}
+                    continue
+                node[key] = walk(child, _path_join(path, key_s))
+            return node
+        if isinstance(node, list):
+            ident = id(node)
+            if ident in seen:
+                return node
+            seen.add(ident)
+            for idx, child in enumerate(list(node)):
+                node[idx] = walk(child, _path_join(path, idx))
+        return node
+
+    walk(out)
+    # Canonical lightweight portrait metadata for clients.
+    for source in (
+        (((out.get("nativeCharacter") or {}).get("identity") or {}).get("portraitUrl") if isinstance(out.get("nativeCharacter"), dict) else ""),
+        ((out.get("charSheet") or {}).get("avatarUrl") if isinstance(out.get("charSheet"), dict) else ""),
+        ((out.get("charBook") or {}).get("avatarUrl") if isinstance(out.get("charBook"), dict) else ""),
+        out.get("avatarUrl"), out.get("portraitUrl"), out.get("tokenImageUrl"),
+    ):
+        if isinstance(source, str):
+            note_portrait(source)
+    out["portrait_url"] = portrait_url
+    out["thumb_url"] = thumb_url or portrait_url
+    out["asset_sync"] = {"embedded_assets": False, "lazy_assets": True}
+    if json_size(out) > PROFILE_SYNC_MAX_BYTES:
+        # Last-resort safety: keep common summary/canonical roots but drop large import/raw documents.
+        for key in ("sourceDocument", "rawDocument", "pdf", "pdfData", "importRaw", "rawText"):
+            if key in out:
+                out[key] = {"omitted_from_sync": True, "lazy": True}
+    return out
+
+
+def sanitize_profiles_for_websocket(profiles: Any) -> Any:
+    if isinstance(profiles, dict):
+        return {k: sanitize_profiles_for_websocket(v) for k, v in profiles.items()}
+    if isinstance(profiles, list):
+        return [sanitize_profile_for_websocket(v) for v in profiles]
+    return profiles
 DATA_IMAGE_INLINE_THRESHOLD_BYTES = 4 * 1024
 DATA_IMAGE_DIAGNOSTIC_THRESHOLD_BYTES = 4 * 1024
 PROFILE_STRING_FIELD_MAX_BYTES = 64 * 1024

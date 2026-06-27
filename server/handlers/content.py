@@ -9,6 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 from server.session import Session, User, normalize_profile_owner_key, set_assistant_dm_permissions, assistant_dm_has_scope, grant_temp_permission, ACTIVE_PROFILE_ID_KEY_LIMIT, set_player_gold_for_user, _inventory_owner_key, bump_character_hydration_revisions, build_quick_actions_sync_payload
 from server.character.profile_sanitize import strip_runtime_fields
+from server.character.profile_assets import sanitize_profiles_for_websocket
 from server.quest_library import (
     build_session_quest_from_template,
     get_quest_template,
@@ -483,7 +484,7 @@ async def _send_char_profiles(session: Session, user_id: str):
         all_profiles, owner_key, mine = _get_char_profiles_for_user(session, user)
         profiles = mine
     await manager.send_to(session.id, user_id, {"type": "char_profiles_sync", "payload": {
-        "profiles": profiles,
+        "profiles": sanitize_profiles_for_websocket(profiles),
         "active_profile_id": str((getattr(session, "active_char_profiles", {}) or {}).get(user_id) or ""),
         "character_runtime_revision": int(getattr(session, "character_runtime_revision", 0) or 0),
         "spell_manifest_revision": int(getattr(session, "spell_manifest_revision", 0) or 0),
@@ -982,12 +983,22 @@ async def handle_chat_message(payload: dict, session: Session, user: User):
 
 async def handle_request_state(payload: dict, session: Session, user: User):
     """Send full state snapshot to requesting user."""
-    state = session.to_state_dict_for_role(user.role, user.id)
-    logger.info("[live_state] request_state reason=%s summary=%s", (payload or {}).get("reason"), build_live_state_debug_summary(session, user.id, user.role, state))
-    await manager.send_to(session.id, user.id, {
-        "type": "state_sync",
-        "payload": state
-    })
+    reason = str((payload or {}).get("reason") or "").strip().lower()
+    now = time.monotonic()
+    last_initial = float(getattr(user, "_last_initial_state_sync_at", 0.0) or 0.0)
+    skip_duplicate_reconnect_state = reason == "reconnect" and last_initial and (now - last_initial) < 2.0
+    if skip_duplicate_reconnect_state:
+        logger.info(
+            "[live_state] request_state skipped duplicate initial state_sync reason=%s session_id=%s user_id=%s age_ms=%.1f",
+            reason, session.id, user.id, (now - last_initial) * 1000.0,
+        )
+    else:
+        state = session.to_state_dict_for_role(user.role, user.id)
+        logger.info("[live_state] request_state reason=%s summary=%s", reason, build_live_state_debug_summary(session, user.id, user.role, state))
+        await manager.send_to(session.id, user.id, {
+            "type": "state_sync",
+            "payload": state
+        })
     await manager.send_to(
         session.id,
         user.id,

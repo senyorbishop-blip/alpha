@@ -23,6 +23,7 @@ MONITORED_MESSAGE_TYPES = frozenset({
     "fog_delta",
     "player_inventory_sync",
     "quick_actions_sync",
+    "char_profiles_sync",
 })
 
 
@@ -76,6 +77,32 @@ def log_payload_size_diagnostic(
     else:
         logger.debug(log_message, *args)
 
+
+
+def top_level_payload_sizes(message: dict[str, Any], *, limit: int = 8) -> list[tuple[str, int]]:
+    payload = message.get("payload") if isinstance(message, dict) else None
+    if not isinstance(payload, dict):
+        return []
+    sizes = [(str(key), payload_byte_size({"value": value})) for key, value in payload.items()]
+    sizes.sort(key=lambda kv: kv[1], reverse=True)
+    return sizes[:limit]
+
+
+def log_top_level_payload_keys(logger: logging.Logger, *, session_id: str, recipient_user_id: str, recipient_role: str, message: dict[str, Any]) -> None:
+    message_type = str((message or {}).get("type") or "")
+    if message_type not in {"state_sync", "char_profiles_sync"}:
+        return
+    top = top_level_payload_sizes(message)
+    if not top:
+        return
+    logger.warning(
+        "[payload_size_breakdown] message_type=%s session_id=%s recipient_user_id=%s recipient_role=%s top_level_bytes=%s",
+        message_type,
+        session_id,
+        recipient_user_id,
+        recipient_role or "unknown",
+        ",".join(f"{key}:{size}" for key, size in top),
+    )
 
 def build_payload_size_report_for_role(session, role: str, user_id: str) -> dict[str, Any]:
     """Build a metadata-only sample payload size report for one session role."""

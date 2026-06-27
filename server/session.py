@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from copy import deepcopy
 from server.encumbrance import auto_tag_extradimensional
 from server.quest_premium_progression import build_premium_progression_snapshot
+from server.character.profile_assets import sanitize_profiles_for_websocket
 
 
 def display_user_handle(session_id: str, user_id: str) -> str:
@@ -832,7 +833,7 @@ class Session:
             "party_memory_log": list(self.party_memory_log or []),
             "library_entries": list(self.library_entries or []),
             "item_library_entries": list(self.item_library_entries or []),
-            "char_profiles": dict(self.char_profiles or {}),
+            "char_profiles": sanitize_profiles_for_websocket(dict(self.char_profiles or {})),
             "active_char_profiles": dict(self.active_char_profiles or {}),
             "player_gold": dict(self.player_gold or {}),
             "editor_layers": dict(self.editor_layers or {}),
@@ -1137,7 +1138,7 @@ class Session:
             d["journal_entries"] = list(self.journal_entries or [])
             d["library_entries"] = list(self.library_entries or [])
             d["item_library_entries"] = list(self.item_library_entries or [])
-            d["char_profiles"] = dict(self.char_profiles or {})
+            d["char_profiles"] = sanitize_profiles_for_websocket(dict(self.char_profiles or {}))
             d["player_inventories"] = build_player_inventory_payload_for_dm(self)
             d["party_stash"] = get_party_stash_inventory(self)
             d["party_loot_log"] = list(self.party_loot_log or [])[-120:]
@@ -1199,7 +1200,7 @@ class Session:
                 mine = list(profiles.get(owner_key, []) or [])
                 if not mine and user_id in profiles:
                     mine = list(profiles.get(user_id, []) or [])
-                d["char_profiles"] = mine
+                d["char_profiles"] = sanitize_profiles_for_websocket(mine)
             else:
                 d["char_profiles"] = []
             if role == "player" and user_id:

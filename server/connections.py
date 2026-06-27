@@ -7,7 +7,7 @@ import logging
 import os
 import time
 import uuid
-from server.payload_diagnostics import log_payload_size_diagnostic
+from server.payload_diagnostics import log_payload_size_diagnostic, log_top_level_payload_keys
 from typing import Dict, Set, Optional
 from fastapi import WebSocket
 
@@ -230,6 +230,7 @@ class ConnectionManager:
         if ws:
             try:
                 payload, byte_size = self._encode_payload(message)
+                log_top_level_payload_keys(logger, session_id=session_id, recipient_user_id=user_id, recipient_role=self._role_for(session_id, user_id), message=message)
                 await self._send_payload(
                     ws,
                     payload,

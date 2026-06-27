@@ -729,7 +729,8 @@ async def _broadcast_inventory_state(session: Session):
     # Bumped once per call (not per-recipient) — every call site here represents
     # one real inventory-affecting mutation, never a read-only query or preview.
     bump_inventory_revision(session)
-    for uid in list((getattr(session, "users", {}) or {}).keys()):
+    active_user_ids = set(manager.get_session_connections(session.id).keys())
+    for uid in active_user_ids:
         await _send_inventory_state(session, uid)
     await _broadcast_token_state_sync(session)
 
