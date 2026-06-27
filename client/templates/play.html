@@ -4002,8 +4002,9 @@ window.__playerBootState = window.__playerBootState || { checkpoint: 'PLAYER_BOO
 <!-- Runtime ownership boundary: boot_shell is the ordered startup-sequencing owner. -->
 <script src="/static/js/core/boot_shell.js"></script>
 <script src="/static/js/core/ws.js?v=heartbeat-pong-v5-stream-readiness"></script>
-<!-- Stage 1 runtime path: AppMessageDispatch is the live first-hop handoff into handleLegacyMessage(); AppMessageHandlers is intentionally not loaded here. -->
+<!-- Phase 4 runtime path: AppMessageDispatch is the live first-hop handoff into handleLegacyMessage(); AppMessageHandlers is the live module path for the verified-equivalent handlers it covers (see docs/message_handler_migration_map.md). -->
 <script src="/static/js/core/message_dispatch.js"></script>
+<script src="/static/js/core/message_handlers.js"></script>
 <!-- Stage 4 ownership: render/boot.js is the live canvas bootstrap owner; play.html keeps drawLoop()/drawFrame() and interaction handlers via compatibility wrappers. -->
 <script src="/static/js/render/boot.js"></script>
 <script src="/static/js/render/fog.js"></script>
@@ -26006,6 +26007,40 @@ function __createLegacyMessageShellEnv() {
       _premiumQuestProgression = value && typeof value === 'object' ? value : _premiumQuestProgression;
     },
     refreshGuildBoardIfOpen: () => { if (_openGuildBoardPropId) renderGuildBoardModal(); },
+
+    // Phase 4 message-handler migration: env contract for the verified
+    // behavior-twin handlers in window.AppMessageHandlers. Each entry points at
+    // play.html's real function/state so the module reaches the live code
+    // through the env bridge rather than re-implementing it. See
+    // docs/message_handler_migration_map.md.
+    // -- char_profiles_sync --
+    loadCharProfiles,
+    // -- editor_layers_sync --
+    setEditorLayersAll: (value) => { _editorLayersAll = value; },
+    preserveDirtyEditorContextInSync,
+    shouldReloadEditorLayerFromSync,
+    ensureEditorLayerLoaded,
+    // -- editor_world_sync --
+    setEditorPathsAll: (value) => { _editorPathsAll = value; },
+    setEditorLabelsAll: (value) => { _editorLabelsAll = value; },
+    setEditorMarkersAll: (value) => { _editorMarkersAll = value; },
+    setEditorLightsAll: (value) => { _editorLightsAll = value; },
+    ensureEditorPathsLoaded,
+    ensureEditorLabelsLoaded,
+    ensureEditorMarkersLoaded,
+    refreshEditorWeatherControls,
+    refreshEditorMapStyleControls,
+    drawFrame,
+    // -- viewer_pending_sync --
+    setViewerPendingActions: (value) => { viewerPendingActions = value; },
+    renderViewerPanel,
+    // -- viewer_fx --
+    showViewerFx,
+    // -- permission_granted -- (inline only consults the live `tokens` map)
+    getToken: (id) => tokens[id] || null,
+    addLogEntry,
+    getUserId: () => USER_ID,
+    showToast,
   };
 }
 
@@ -26910,10 +26945,8 @@ function handleLegacyMessage(msg) {
       break;
     }
 
-    case 'char_profiles_sync': {
-      loadCharProfiles(p.profiles || []);
-      break;
-    }
+    // char_profiles_sync migrated to AppMessageHandlers.handleCharProfilesSync
+    // (routed in message_dispatch.js handleLegacyDomainMessage).
 
     case 'quick_actions_sync': {
       try {
@@ -26937,11 +26970,8 @@ function handleLegacyMessage(msg) {
       break;
     }
 
-    case 'editor_layers_sync': {
-      _editorLayersAll = preserveDirtyEditorContextInSync('terrain', p.layers || {});
-      if (shouldReloadEditorLayerFromSync('terrain')) ensureEditorLayerLoaded(true);
-      break;
-    }
+    // editor_layers_sync migrated to AppMessageHandlers.handleEditorLayersSync
+    // (routed in message_dispatch.js handleLegacyDomainMessage).
 
     case 'editor_walls_sync': {
       window._wallRevision = Math.max(Number(window._wallRevision) || 0, Number(p.wall_revision) || 0);
@@ -26980,19 +27010,8 @@ function handleLegacyMessage(msg) {
       break;
     }
 
-    case 'editor_world_sync': {
-      _editorPathsAll = { ...(p.paths || {}) };
-      _editorLabelsAll = { ...(p.labels || {}) };
-      _editorMarkersAll = { ...(p.markers || {}) };
-      _editorLightsAll = { ...(p.lights || {}) };
-      ensureEditorPathsLoaded(true);
-      ensureEditorLabelsLoaded(true);
-      ensureEditorMarkersLoaded(true);
-      refreshEditorWeatherControls();
-      refreshEditorMapStyleControls();
-      drawFrame();
-      break;
-    }
+    // editor_world_sync migrated to AppMessageHandlers.handleEditorWorldSync
+    // (routed in message_dispatch.js handleLegacyDomainMessage).
 
     case 'prop_action_result': {
       if (!__handlePlayerScopedUiEvent(msg)) {
@@ -27868,15 +27887,8 @@ function handleLegacyMessage(msg) {
       break;
     }
 
-    case 'permission_granted': {
-      if (tokens[p.token_id]) {
-        if (!tokens[p.token_id].temp_permissions) tokens[p.token_id].temp_permissions = {};
-        tokens[p.token_id].temp_permissions[p.user_id] = Date.now() / 1000 + p.duration;
-      }
-      if (p.log) addLogEntry(p.log);
-      if (p.user_id === USER_ID) showToast(`You have control of token for ${p.duration}s!`);
-      break;
-    }
+    // permission_granted migrated to AppMessageHandlers.handlePermissionGranted
+    // (routed in message_dispatch.js handleLegacyDomainMessage).
 
 
     case 'viewer_profiles_sync': {
@@ -27898,11 +27910,8 @@ function handleLegacyMessage(msg) {
       drawFrame();
       break;
     }
-    case 'viewer_pending_sync': {
-      viewerPendingActions = { ...(p.viewer_pending_actions || {}) };
-      renderViewerPanel();
-      break;
-    }
+    // viewer_pending_sync migrated to AppMessageHandlers.handleViewerPendingSync
+    // (routed in message_dispatch.js handleLegacyDomainMessage).
     case 'viewer_power_status': {
       if (p.message) showToast(p.message);
       if (String(p.status || '').toLowerCase().includes('reject') || String(p.status || '').toLowerCase().includes('denied') || p.ok === false) {
@@ -27910,10 +27919,8 @@ function handleLegacyMessage(msg) {
       }
       break;
     }
-    case 'viewer_fx': {
-      showViewerFx(p);
-      break;
-    }
+    // viewer_fx migrated to AppMessageHandlers.handleViewerFx
+    // (routed in message_dispatch.js handleLegacyDomainMessage).
     case 'viewer_power_fx': {
       _handleViewerPowerFx(p);
       break;

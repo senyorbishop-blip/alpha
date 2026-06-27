@@ -3652,29 +3652,30 @@ def test_loot_preview_confirm_uses_add_loot_endpoint():
 
 
 
-def test_play_html_uses_message_dispatch_not_message_handlers():
-    """play.html should load the first-hop dispatcher, not the dormant alternate router."""
+def test_play_html_loads_message_dispatch_and_handlers():
+    """Phase 4: play.html loads the first-hop dispatcher AND the module router
+    (message_handlers.js is the live path for its verified-equivalent handlers)."""
     play_path = os.path.join(PROJECT_ROOT, "client", "templates", "play.html")
     with open(play_path, "r", encoding="utf-8") as f:
         src = f.read()
     assert '/static/js/core/message_dispatch.js' in src, (
         'play.html must load core/message_dispatch.js as the live first-hop dispatcher'
     )
-    assert '/static/js/core/message_handlers.js' not in src, (
-        'play.html must not load dormant core/message_handlers.js during Stage 1'
+    assert '/static/js/core/message_handlers.js' in src, (
+        'play.html must load core/message_handlers.js as the module path for migrated handlers'
     )
 
 
-def test_message_handlers_marked_dormant():
-    """message_handlers.js should self-identify as a dormant alternate router."""
+def test_message_handlers_marked_partially_live():
+    """message_handlers.js should self-identify as loaded/partially-live, not dormant."""
     path = os.path.join(PROJECT_ROOT, 'client', 'static', 'js', 'core', 'message_handlers.js')
     with open(path, 'r', encoding='utf-8') as f:
         src = f.read()
-    assert 'dormant env-injected message router' in src, (
-        'message_handlers.js should document that it is dormant'
+    assert 'env-injected message router (partially live)' in src, (
+        'message_handlers.js should document that it is now loaded/partially live'
     )
-    assert 'AppWS -> AppMessageDispatch -> play.html handleLegacyMessage()' in src, (
-        'message_handlers.js should point readers to the live runtime path'
+    assert 'IS loaded by `client/templates/play.html`' in src, (
+        'message_handlers.js should document that it is loaded'
     )
 
 
@@ -3854,9 +3855,10 @@ def test_play_html_stage5_script_load_guardrails():
     with open(play_path, "r", encoding="utf-8") as f:
         src = f.read()
 
-    # Live first-hop dispatcher remains loaded; dormant alternate stays unloaded.
+    # Live first-hop dispatcher remains loaded; module router is now loaded too
+    # (Phase 4 — live path for the verified-equivalent handlers it covers).
     assert '/static/js/core/message_dispatch.js' in src
-    assert '/static/js/core/message_handlers.js' not in src
+    assert '/static/js/core/message_handlers.js' in src
 
     # Live sound/narration path remains loaded.
     assert '/static/js/ui/sound_engine.js' in src
