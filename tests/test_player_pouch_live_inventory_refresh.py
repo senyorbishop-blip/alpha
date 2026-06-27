@@ -42,6 +42,7 @@ def test_inventory_sync_refreshes_player_pouch_surface():
     # The Pouch surface the player actually looks at is rendered from playerInventory.
     assert "function _rpItemsList()" in play
     assert "function _rpRerender()" in play
+    assert "window._rpRerender = _rpRerender;" in play
 
     body = _slice_function(play, "function applyPlayerInventoryState(")
     # The authoritative sync must re-render the live player dashboard (Pouch),
@@ -60,6 +61,12 @@ def test_optimistic_loot_paths_also_refresh_pouch_and_guard_empty_ids():
     # Both optimistic loot paths refresh the Pouch in place.
     assert play.count("if (ROLE === 'player' && typeof _rpRerender === 'function') _rpRerender();") >= 1
     assert "if (ROLE === 'player' && typeof _rpRerender === 'function') _rpRerender();" in play
+
+    # Inline onclick handlers resolve globals through window in some browsers,
+    # so generated resource/economy controls must not call an unqualified
+    # _rpRerender symbol.
+    assert ";_rpRerender()" not in play
+    assert "typeof window._rpRerender==='function'&&window._rpRerender()" in play
 
     # Empty/missing ids must not be matched as "existing" (would overwrite an
     # unrelated id-less item). Loot merge only matches by id when one is present.
