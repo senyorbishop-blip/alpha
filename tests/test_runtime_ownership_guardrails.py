@@ -26,9 +26,15 @@ def test_play_html_keeps_live_websocket_dispatch_chain_loaded():
     assert runtime_bridge_idx < boot_shell_idx < ws_idx < dispatch_idx
 
 
-def test_play_html_does_not_load_dormant_message_handlers_router():
+def test_play_html_loads_message_handlers_router_after_dispatch():
+    """Phase 4: message_handlers.js is now loaded as the module path for the
+    verified-equivalent handlers, after the first-hop dispatcher."""
     src = _read(PLAY_HTML)
-    assert '/static/js/core/message_handlers.js' not in src
+    assert '/static/js/core/message_handlers.js' in src
+    dispatch_idx = src.index('/static/js/core/message_dispatch.js')
+    handlers_idx = src.index('/static/js/core/message_handlers.js')
+    boot_idx = src.index('/static/js/render/boot.js')
+    assert dispatch_idx < handlers_idx < boot_idx
 
 
 def test_message_dispatch_still_routes_to_legacy_play_html_handler():

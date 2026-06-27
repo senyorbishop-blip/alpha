@@ -1,12 +1,17 @@
 /**
- * message_handlers.js — dormant env-injected message router.
+ * message_handlers.js — env-injected message router (partially live).
  *
- * Stage 1 note:
- * - This file is NOT loaded by `client/templates/play.html`.
- * - The live incoming-message path is:
+ * Phase 4 migration note:
+ * - This file IS loaded by `client/templates/play.html`.
+ * - It is the live runtime path for the verified behavior-twin handlers that
+ *   `AppMessageDispatch.handleLegacyDomainMessage` delegates to (see
+ *   docs/message_handler_migration_map.md for the migrated set).
+ * - The remaining handlers in this file are NOT yet routed: their inline twins
+ *   in play.html `handleLegacyMessage()` have drifted from these copies, so for
+ *   those types the live path remains:
  *   AppWS -> AppMessageDispatch -> play.html handleLegacyMessage().
- * - Do not treat this file as runtime authority unless play.html explicitly
- *   loads it and the dispatcher handoff is migrated.
+ * - Behavior-preserving only: do not "improve" or rewire a handler here without
+ *   first verifying parity against its inline twin.
  */
 (function(){
 
