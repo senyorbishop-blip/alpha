@@ -38,9 +38,11 @@ VIEWER_BASE_POWER_DEFS = {
     "smoke_burst": {"name": "Smoke Burst", "kind": "area_status", "dice": (1, 1), "amount": 0, "radius_ft": 10, "target_mode": "point", "approval_default": True, "condition": "blinded", "duration_sec": 10, "save": "con", "save_dc": 12, "save_negates": True, "description": "10 ft burst that can blind targets briefly. CON save negates. Good for short vision denial.", "cooldown_sec": 45},
     "knockback": {"name": "Knockback", "kind": "knockback", "dice": (1, 1), "amount": 0, "radius_ft": 5, "target_mode": "point", "approval_default": False, "description": "Blast the nearest token one grid square away from the clicked point.", "cooldown_sec": 30},
     "give_potion": {"name": "Give Potion", "kind": "grant_item", "dice": (1, 1), "amount": 0, "target_mode": "token", "approval_default": False, "description": "Give the targeted player token a Potion of Minor Healing (heals 1d4).", "cooldown_sec": 0, "item_payload": {"name": "Potion of Minor Healing", "notes": "Heals 1d4 HP when used", "qty": 1}},
+    "chain_lightning": {"name": "Chain Lightning", "kind": "chain_damage", "dice": (4, 6), "amount": 0, "target_mode": "token", "approval_default": True, "save": "dex", "save_dc": 17, "save_half": True, "chain_min": 4, "chain_max": 6, "chain_radius_ft": 30, "description": "Strike one token, then arc to nearby tokens — bouncing between 4 and 6 in all. Each takes 4d6 lightning damage; Dex save DC 17 for half.", "cooldown_sec": 90},
+    "give_random_item": {"name": "Give Random Item", "kind": "grant_random_item", "dice": (1, 1), "amount": 0, "target_mode": "token", "approval_default": False, "description": "Give the targeted player token a random item drawn from the item library.", "cooldown_sec": 30},
 }
 VIEWER_POWER_DEFS = VIEWER_BASE_POWER_DEFS
-_ALLOWED_VIEWER_POWER_KINDS = {"single_damage", "single_heal", "area_damage", "single_status", "area_status", "knockback", "grant_item"}
+_ALLOWED_VIEWER_POWER_KINDS = {"single_damage", "single_heal", "area_damage", "single_status", "area_status", "knockback", "grant_item", "chain_damage", "grant_random_item"}
 _ALLOWED_SAVE_TYPES = {"", "str", "dex", "con", "int", "wis", "cha"}
 _ALLOWED_AREA_SHAPES = {"burst", "cone", "line", "aura"}
 _KNOCKBACK_DIRS = [(1, 0), (-1, 0), (0, 1), (0, -1)]
@@ -53,6 +55,8 @@ _FX_COLOR_FOR_KIND = {
     'area_status': '#a855f7',
     'knockback': '#f97316',
     'grant_item': '#fbbf24',
+    'chain_damage': '#60a5fa',
+    'grant_random_item': '#fbbf24',
 }
 
 
@@ -146,6 +150,7 @@ VIEWER_POWER_PRESETS = {
         "grants": [
             {"power_id": "healing_spark", "charges": 1, "requires_approval": False},
             {"power_id": "battle_blessing", "charges": 1, "requires_approval": False},
+            {"power_id": "give_random_item", "charges": 1, "requires_approval": False},
         ],
     },
     "chaos_pack": {
@@ -163,6 +168,7 @@ VIEWER_POWER_PRESETS = {
             {"power_id": "battle_blessing", "charges": 1, "requires_approval": False},
             {"power_id": "flash_freeze", "charges": 1, "requires_approval": True},
             {"power_id": "meteor_pop", "charges": 1, "requires_approval": True},
+            {"power_id": "chain_lightning", "charges": 1, "requires_approval": True},
         ],
     },
 }
@@ -538,6 +544,68 @@ async def _resolve_viewer_power(session: Session, actor_name: str, power_id: str
         fx_kind = 'lightning_strike' if power_id == 'arcane_zap' else 'projectile'
         await _broadcast_viewer_fx(session, fx_kind, {'x': tcx, 'y': tcy, 'x1': tcx - 280, 'y1': tcy - 180, 'x2': tcx, 'y2': tcy, 'token_id': token.id, 'label': f"-{total}", 'color': '#ff8a65'})
         msg = f"{actor_name} used {power['name']} on {token.name} for {total} damage ({'+'.join(map(str, rolls))})."
+    elif power['kind'] == 'chain_damage':
+        token = _resolve_target_token(session, target)
+        if not token:
+            return None, 'Choose a visible target token.'
+        map_context = _token_map_context(token)
+        chain_radius_px = (float(power.get('chain_radius_ft', 30)) / FT_PER_GRID) * PX_PER_GRID
+        chain_min = max(1, int(power.get('chain_min', 4) or 4))
+        chain_max = max(chain_min, int(power.get('chain_max', 6) or 6))
+        bounce_target = random.randint(chain_min, chain_max)
+        save_dc = int(power.get('save_dc', 0) or 0)
+        save_type = str(power.get('save') or '').strip().lower()
+        # Build the bounce chain: start at the chosen token, then arc to the
+        # nearest not-yet-hit token within range of the last token struck.
+        chain = [token]
+        hit_ids = {token.id}
+        while len(chain) < bounce_target:
+            lx, ly = _token_center(chain[-1])
+            best = None
+            best_dist = float('inf')
+            for cand in (session.tokens or {}).values():
+                if cand.id in hit_ids:
+                    continue
+                if getattr(cand, 'hidden', False) or getattr(cand, 'staged', False):
+                    continue
+                if _token_map_context(cand) != map_context:
+                    continue
+                ccx, ccy = _token_center(cand)
+                dist = ((ccx - lx) ** 2 + (ccy - ly) ** 2) ** 0.5
+                if dist <= chain_radius_px and dist < best_dist:
+                    best_dist = dist
+                    best = cand
+            if best is None:
+                break
+            chain.append(best)
+            hit_ids.add(best.id)
+        hit_summaries = []
+        prev_cx, prev_cy = None, None
+        for hop, cand in enumerate(chain):
+            hop_total, hop_rolls = _roll_simple(power['dice'][0], power['dice'][1], power.get('amount', 0))
+            saved = False
+            save_total = None
+            if save_type:
+                save_bonus = _token_save_bonus(session, cand, save_type)
+                save_total, saved = _resolve_save(save_dc, save_bonus)
+            applied = hop_total
+            if saved and power.get('save_half'):
+                applied = hop_total // 2
+            previous_hp = getattr(cand, 'hp', None)
+            _apply_damage(cand, applied)
+            combat_dirty = _sync_combatant_token_state(session, cand, previous_hp=previous_hp) or combat_dirty
+            ccx, ccy = _token_center(cand)
+            if prev_cx is None:
+                fx_x1, fx_y1 = ccx - 280, ccy - 180
+            else:
+                fx_x1, fx_y1 = prev_cx, prev_cy
+            await _broadcast_viewer_fx(session, 'lightning_strike', {'x': ccx, 'y': ccy, 'x1': fx_x1, 'y1': fx_y1, 'x2': ccx, 'y2': ccy, 'token_id': cand.id, 'label': f"-{applied}", 'color': '#60a5fa'})
+            prev_cx, prev_cy = ccx, ccy
+            hit_summaries.append(f"{cand.name} ({'save ' + str(save_total) + ' → ' if save_total is not None else ''}{applied} dmg{' half' if saved and power.get('save_half') else ''})")
+            affected.append(cand)
+        names = ', '.join(hit_summaries[:6]) + ('…' if len(hit_summaries) > 6 else '')
+        save_text = f" {save_type.upper()} save DC {save_dc} for half" if save_type and save_dc else ''
+        msg = f"{actor_name} cast {power['name']}, arcing through {len(chain)} target{'s' if len(chain) != 1 else ''}{save_text}: {names or 'no one'}."
     elif power['kind'] == 'single_heal':
         token = _resolve_target_token(session, target)
         if not token:
@@ -738,6 +806,42 @@ async def _resolve_viewer_power(session: Session, actor_name: str, power_id: str
         await _broadcast_viewer_fx(session, 'item_gift', {'x': tcx, 'y': tcy, 'token_id': token.id, 'label': item_name})
         affected = [token]
         msg = f"{actor_name} gave {token.name} a {item_name} (×{qty})."
+    elif power['kind'] == 'grant_random_item':
+        token = _resolve_target_token(session, target)
+        if not token:
+            return None, 'Choose a visible target token.'
+        owner_id = str(getattr(token, 'owner_id', '') or '').strip()
+        if not owner_id:
+            return None, 'That token does not belong to a player.'
+        target_user = (session.users or {}).get(owner_id)
+        if not target_user or getattr(target_user, 'role', '') != 'player':
+            return None, "That token's owner is not a connected player."
+        try:
+            from server.rules_db import get_all_srd_items
+            library = list(get_all_srd_items() or [])
+        except Exception:
+            library = []
+        chosen = random.choice(library) if library else None
+        if chosen:
+            item_name = str(chosen.get('name') or '').strip()[:80] or 'Mystery Item'
+            raw_entry = {
+                'name': item_name,
+                'notes': str(chosen.get('description') or '').strip()[:160],
+            }
+            price = str(chosen.get('default_price') or '').strip()
+            qty = max(1, int(chosen.get('default_qty', 1) or 1))
+        else:
+            item_name = 'Potion of Minor Healing'
+            raw_entry = {'name': item_name, 'notes': 'Heals 1d4 HP when used'}
+            price = ''
+            qty = 1
+        from server.handlers.inventory import _add_item_to_player_inventory, _broadcast_inventory_state
+        _add_item_to_player_inventory(session, target_user, raw_entry, qty, source_name=f'Viewer: {actor_name}', price=price)
+        await _broadcast_inventory_state(session)
+        tcx, tcy = _token_center(token)
+        await _broadcast_viewer_fx(session, 'item_gift', {'x': tcx, 'y': tcy, 'token_id': token.id, 'label': item_name})
+        affected = [token]
+        msg = f"{actor_name} gave {token.name} a random item from the library: {item_name}" + (f" (×{qty})" if qty > 1 else "") + "."
     else:
         return None, 'Unsupported viewer power.'
     log = session.add_log(msg, 'system', actor_name)
