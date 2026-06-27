@@ -4175,15 +4175,35 @@ function _normalizeOwnerKey(value) {
     .replace(/_+/g, '_');
 }
 
-function _tokenOwnedByMe(token) {
-  if (!token) return false;
-  const owner = String(token.owner_id || '').trim();
+// Does an arbitrary owner_id string resolve to the current user? Mirrors the
+// server's resolve_owner_identity: a raw user id (URL param OR server-resolved
+// authority id, e.g. the auth_<id> player_key) OR the normalized display-name
+// bucket all count as "me". Centralized so token and combatant ownership checks
+// never drift apart.
+function _ownerIdMatchesMe(ownerId) {
+  const owner = String(ownerId || '').trim();
   if (!owner) return false;
-  const effectiveUserId = getEffectiveUserId();
-  if (owner === effectiveUserId) return true;
+  if (owner === getEffectiveUserId()) return true;
+  if (owner === String(USER_ID || '').trim()) return true;
   const ownerKey = _normalizeOwnerKey(owner);
   if (!ownerKey) return false;
   return ownerKey === _normalizeOwnerKey(NAME);
+}
+
+function _tokenOwnedByMe(token) {
+  if (!token) return false;
+  return _ownerIdMatchesMe(token.owner_id);
+}
+
+// A combatant belongs to me when its bound token does, OR — even if that token
+// is missing from my local roster (different map context, not yet synced) — when
+// the combatant's own stored owner_id resolves to me. Players roll/act for their
+// own combatant via this check, so it must never depend solely on the token
+// being loaded client-side.
+function _combatantOwnedByMe(combatant, token = null) {
+  const tok = token || (combatant && combatant.token_id ? (typeof tokens !== 'undefined' ? tokens[combatant.token_id] : null) : null);
+  if (tok && _tokenOwnedByMe(tok)) return true;
+  return !!combatant && _ownerIdMatchesMe(combatant.owner_id);
 }
 
 function _tokenOwnedByUser(token, user) {
@@ -37974,7 +37994,7 @@ function _rpActionEconomyHtml() {
 // combatRollInitiative() with no id, which silently no-oped).
 function _rpRollMyInitiative() {
   const combatants = Array.isArray(_combat && _combat.combatants) ? _combat.combatants : [];
-  const mine = combatants.find(c => c && typeof _isMyToken === 'function' && _isMyToken(c.token_id));
+  const mine = combatants.find(c => c && typeof _combatantOwnedByMe === 'function' && _combatantOwnedByMe(c));
   if (!mine) { if (typeof showToast === 'function') showToast('No combatant of yours in the initiative order yet.'); return; }
   const idx = combatants.indexOf(mine);
   if (typeof _canRollInitiative === 'function' && !_canRollInitiative(mine, idx)) {
@@ -43186,7 +43206,9 @@ function _canRollInitiative(com, idx) {
   // OR reroll on their own turn
   const hasRolled = com.initiative !== null && com.initiative !== undefined;
   const isCurrent = idx === _combat.turn;
-  if (!_isMyToken(com.token_id)) return false;
+  // Resolve ownership from the combatant itself, not just its (possibly
+  // unsynced/missing) token, so a player can always roll their own initiative.
+  if (!_combatantOwnedByMe(com)) return false;
   return !hasRolled || isCurrent; // free roll if unrolled, reroll only on their turn
 }
 
@@ -43248,10 +43270,18 @@ function _resolveCombatantInitiativeModifier(combatant, token = null) {
   const tokenMod = _parseInitiativeModifierValue(combatTok?.initiativeMod, null);
   if (tokenMod !== null) return tokenMod;
 
-  const ownedByCurrentUser = !!(combatTok && _tokenOwnedByMe(combatTok));
-  if (ownedByCurrentUser) return _resolveCharacterSheetInitiativeModifier();
-
   const combatantMod = _parseInitiativeModifierValue(combatant?.modifier, null);
+  if (_combatantOwnedByMe(combatant, combatTok)) {
+    // The player's own combatant: prefer the live character-sheet initiative
+    // bonus, but fall back to the modifier stored on the combatant at combat
+    // start so a not-yet-loaded sheet never silently drops their bonus (which
+    // is exactly the "initiative modifier wasn't added" bug).
+    const sheetMod = _resolveCharacterSheetInitiativeModifier();
+    if (sheetMod) return sheetMod;
+    if (combatantMod !== null) return combatantMod;
+    return sheetMod || 0;
+  }
+
   return combatantMod !== null ? combatantMod : 0;
 }
 
