@@ -39,6 +39,8 @@ _ITEM_FILES = [
     "legendary_magic_items.json",
     "artifact_magic_items.json",
     "homebrew_items.json",
+    "expanded_magic_items.json",
+    "expanded_crafting_materials.json",
 ]
 
 _SPELL_FILES = [
