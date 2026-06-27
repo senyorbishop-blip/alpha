@@ -256,6 +256,12 @@
       .item-row-rarity{font-size:10px;font-weight:700;border-radius:999px;padding:1px 8px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;}
       .item-row-actions{display:flex;flex-direction:column;align-items:flex-end;gap:.3rem;flex-shrink:0;}
       .item-row-actions-buttons{display:flex;gap:.35rem;flex-wrap:wrap;justify-content:flex-end;}
+      .item-row-buy-btn,.item-row-take-btn,.item-row-haggle-btn,.item-row-lock-toggle{min-height:36px;padding:.35rem .85rem;border-radius:8px;font-size:13px;font-weight:700;line-height:1;cursor:pointer;border:1px solid transparent;}
+      .item-row-buy-btn:disabled,.item-row-take-btn:disabled,.item-row-haggle-btn:disabled,.item-row-lock-toggle:disabled{opacity:.5;cursor:not-allowed;}
+      .item-row-buy-btn,.item-row-take-btn{background:#8b4513;color:#fff;border-color:#6b3410;}
+      .item-row-buy-btn:not(:disabled):hover,.item-row-take-btn:not(:disabled):hover{background:#a0522d;}
+      .item-row-haggle-btn,.item-row-lock-toggle,.item-row-take-all{background:rgba(100,60,20,.14);color:#6b3d0a;border:1px solid rgba(100,60,20,.42);}
+      .item-row-haggle-btn:not(:disabled):hover,.item-row-lock-toggle:not(:disabled):hover,.item-row-take-all:not(:disabled):hover{background:rgba(100,60,20,.24);}
       .item-row-badge{font-size:11px;border-radius:10px;padding:1px 7px;background:rgba(128,128,128,.15);border:1px solid rgba(128,128,128,.3);}
       .item-row-badge-oos{opacity:.7;}
       .item-row-badge-rejected{color:#b91c1c;border-color:rgba(185,28,28,.4);background:rgba(185,28,28,.08);}
