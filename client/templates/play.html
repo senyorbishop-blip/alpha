@@ -20545,6 +20545,11 @@ function refreshCharSummary() {
   refreshConditionSummaries();
   refreshDiceModifierSelector();
   renderMyCharacterTab();
+  // Re-render the map-first player context panel (the "Character" sheet hero card
+  // reads HP/AC/etc. from this same snapshot) so live token HP syncs are reflected
+  // there too — not just in the legacy #char-summary-* readout. _rpRerender no-ops
+  // for the DM and when the player panel isn't mounted.
+  if (ROLE === 'player' && typeof _rpRerender === 'function') _rpRerender();
 }
 
 // ── My Character tab: player-facing "at a glance" hero card ──────────────────
