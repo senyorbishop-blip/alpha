@@ -48,7 +48,8 @@
       "stub": true,
       "damage_dice": "1d8",
       "damage_type": "slashing",
-      "weapon_type": "battleaxe"
+      "weapon_type": "battleaxe",
+      "weight_lbs": 4.0
     },
     {
       "id": "book-of-exalted-deeds",
@@ -91,7 +92,8 @@
         "minor_detrimental_slots": 1,
         "major_detrimental_slots": 1
       },
-      "stub": true
+      "stub": true,
+      "weight_lbs": 5.0
     },
     {
       "id": "book-of-vile-darkness",
@@ -134,7 +136,8 @@
         "minor_detrimental_slots": 1,
         "major_detrimental_slots": 1
       },
-      "stub": true
+      "stub": true,
+      "weight_lbs": 5.0
     },
     {
       "id": "eye-of-vecna",
@@ -177,7 +180,8 @@
         "minor_detrimental_slots": 1,
         "major_detrimental_slots": 1
       },
-      "stub": true
+      "stub": true,
+      "weight_lbs": 0.5
     },
     {
       "id": "hand-of-vecna",
@@ -220,7 +224,8 @@
         "minor_detrimental_slots": 1,
         "major_detrimental_slots": 1
       },
-      "stub": true
+      "stub": true,
+      "weight_lbs": 0.5
     },
     {
       "id": "orb-of-dragonkind",
@@ -263,7 +268,8 @@
         "minor_detrimental_slots": 1,
         "major_detrimental_slots": 1
       },
-      "stub": true
+      "stub": true,
+      "weight_lbs": 0.5
     },
     {
       "id": "sword-of-kas",
@@ -309,7 +315,8 @@
       "stub": true,
       "damage_dice": "1d8",
       "damage_type": "slashing",
-      "weapon_type": "longsword"
+      "weapon_type": "longsword",
+      "weight_lbs": 3.0
     },
     {
       "id": "wand-of-orcus",
@@ -355,7 +362,8 @@
       "stub": true,
       "damage_dice": "1d6",
       "damage_type": "necrotic",
-      "weapon_type": "wand"
+      "weapon_type": "wand",
+      "weight_lbs": 3.0
     }
   ]
 }

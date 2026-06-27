@@ -47,7 +47,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "potionofgreaterhealing",
-      "description_summary": "Drink: regain 4d4+4 HP."
+      "description_summary": "Drink: regain 4d4+4 HP.",
+      "weight_lbs": 0.5
     },
     {
       "id": "potion-of-resistance",
@@ -101,7 +102,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "potionofresistance",
-      "description_summary": "Drink: for 1 hour gain resistance to one damage type (acid/cold/fire/force/lightning/necrotic/poison/psychic/radiant/thunder)."
+      "description_summary": "Drink: for 1 hour gain resistance to one damage type (acid/cold/fire/force/lightning/necrotic/poison/psychic/radiant/thunder).",
+      "weight_lbs": 0.5
     },
     {
       "id": "potion-of-animal-friendship",
@@ -146,7 +148,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "potionofanimalfriendship",
-      "description_summary": "Drink: for 1 hour, cast Animal Friendship (DC 13) at will."
+      "description_summary": "Drink: for 1 hour, cast Animal Friendship (DC 13) at will.",
+      "weight_lbs": 0.5
     },
     {
       "id": "potion-of-growth",
@@ -191,7 +194,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "potionofgrowth",
-      "description_summary": "Drink: for 1d4 hours, Enlarge effect (Large size, advantage on Str checks/saves, +1d4 damage)."
+      "description_summary": "Drink: for 1d4 hours, Enlarge effect (Large size, advantage on Str checks/saves, +1d4 damage).",
+      "weight_lbs": 0.5
     },
     {
       "id": "potion-of-giant-strength",
@@ -247,7 +251,8 @@
         "potion-of-giant-strength"
       ],
       "dedupe_key": "potionofgiantstrength",
-      "description_summary": "Drink: for 1 hour, Strength becomes 21 (Hill Giant). No effect if Strength already higher."
+      "description_summary": "Drink: for 1 hour, Strength becomes 21 (Hill Giant). No effect if Strength already higher.",
+      "weight_lbs": 0.5
     },
     {
       "id": "potion-of-water-breathing",
@@ -298,7 +303,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "potionofwaterbreathing",
-      "description_summary": "Drink: breathe underwater for 1 hour."
+      "description_summary": "Drink: breathe underwater for 1 hour.",
+      "weight_lbs": 0.5
     },
     {
       "id": "spell-scroll-2nd-level",
@@ -342,7 +348,8 @@
         "spell_scroll_2nd_level"
       ],
       "legacy_ids": [],
-      "dedupe_key": "spellscroll2ndlevel"
+      "dedupe_key": "spellscroll2ndlevel",
+      "weight_lbs": 0.0
     },
     {
       "id": "spell-scroll-3rd-level",
@@ -386,7 +393,8 @@
         "spell_scroll_3rd_level"
       ],
       "legacy_ids": [],
-      "dedupe_key": "spellscroll3rdlevel"
+      "dedupe_key": "spellscroll3rdlevel",
+      "weight_lbs": 0.0
     },
     {
       "id": "scroll-of-protection",
@@ -431,7 +439,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "scrollofprotection",
-      "description_summary": "Action: read aloud. 5-minute effect: protected from one creature type. Attacks from that type at disadvantage; type can't possess you."
+      "description_summary": "Action: read aloud. 5-minute effect: protected from one creature type. Attacks from that type at disadvantage; type can't possess you.",
+      "weight_lbs": 0.0
     },
     {
       "id": "wand-of-magic-missiles",
@@ -449,12 +458,7 @@
       "equip_slot": "main_hand",
       "charges_max": 7,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [
         {
           "id": "magic-missile",
@@ -486,7 +490,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "wandofmagicmissiles",
-      "description_summary": "7 charges. Expend 1–3 charges to cast Magic Missile at 1st (1 charge), 2nd (2), or 3rd level (3). Regain 1d6+1 at dawn; 1 in 20 destroyed at 0 charges."
+      "description_summary": "7 charges. Expend 1–3 charges to cast Magic Missile at 1st (1 charge), 2nd (2), or 3rd level (3). Regain 1d6+1 at dawn; 1 in 20 destroyed at 0 charges.",
+      "weight_lbs": 1.0
     },
     {
       "id": "wand-of-web",
@@ -504,12 +509,7 @@
       "equip_slot": "main_hand",
       "charges_max": 7,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [
         {
           "id": "web",
@@ -540,7 +540,8 @@
         "wand_of_web"
       ],
       "legacy_ids": [],
-      "dedupe_key": "wandofweb"
+      "dedupe_key": "wandofweb",
+      "weight_lbs": 1.0
     },
     {
       "id": "wand-of-secrets",
@@ -558,12 +559,7 @@
       "equip_slot": "main_hand",
       "charges_max": 7,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
       "granted_actions": [
         {
@@ -584,7 +580,8 @@
         "wand_of_secrets"
       ],
       "legacy_ids": [],
-      "dedupe_key": "wandofsecrets"
+      "dedupe_key": "wandofsecrets",
+      "weight_lbs": 1.0
     },
     {
       "id": "wand-of-the-war-mage-plus1",
@@ -602,12 +599,7 @@
       "equip_slot": "main_hand",
       "charges_max": 7,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
       "granted_actions": [
         {
@@ -629,7 +621,8 @@
         "wand_of_the_war_mage_1"
       ],
       "legacy_ids": [],
-      "dedupe_key": "wandofthewarmage1"
+      "dedupe_key": "wandofthewarmage1",
+      "weight_lbs": 1.0
     },
     {
       "id": "quarterstaff-plus1",
@@ -646,26 +639,13 @@
       "equippable": true,
       "equip_slot": "main_hand",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "quarterstaff-plus1-action",
-          "name": "Quarterstaff +1",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 16,
       "item_spell_attack_bonus": 8,
       "weapon_type": "simple_melee",
@@ -690,7 +670,8 @@
         "quarterstaff_1"
       ],
       "legacy_ids": [],
-      "dedupe_key": "quarterstaff1"
+      "dedupe_key": "quarterstaff1",
+      "weight_lbs": 4.0
     },
     {
       "id": "immovable-rod",
@@ -707,13 +688,8 @@
       "equippable": true,
       "equip_slot": "main_hand",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
       "granted_actions": [
         {
@@ -727,7 +703,7 @@
       ],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "immovable-rod",
@@ -736,7 +712,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "immovablerod",
-      "description_summary": "Action: press button to fix rod in place (cannot be moved by up to 8,000 lbs of force until pressed again). Holds position in mid-air."
+      "description_summary": "Action: press button to fix rod in place (cannot be moved by up to 8,000 lbs of force until pressed again). Holds position in mid-air.",
+      "weight_lbs": 2.0
     },
     {
       "id": "rod-of-the-pact-keeper-plus1",
@@ -753,12 +730,8 @@
       "equippable": true,
       "equip_slot": "main_hand",
       "charges_max": 0,
-      "recharge_type": "dawn",
+      "recharge_type": "none",
       "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        },
         {
           "type": "spell_save_dc_bonus",
           "bonus": 1,
@@ -773,18 +746,10 @@
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "rod-of-the-pact-keeper-plus1-action",
-          "name": "Rod of the Pact Keeper +1",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 16,
       "item_spell_attack_bonus": 8,
       "slug": "rod-of-the-pact-keeper-1",
@@ -795,7 +760,8 @@
       "legacy_ids": [],
       "dedupe_key": "rodofthepactkeeper1",
       "spell_save_dc_bonus": 1,
-      "spell_attack_bonus": 1
+      "spell_attack_bonus": 1,
+      "weight_lbs": 2.0
     },
     {
       "id": "ring-of-jumping",
@@ -813,12 +779,7 @@
       "equip_slot": "ring",
       "charges_max": 3,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [
         {
           "id": "jump",
@@ -849,7 +810,8 @@
         "ring_of_jumping"
       ],
       "legacy_ids": [],
-      "dedupe_key": "ringofjumping"
+      "dedupe_key": "ringofjumping",
+      "weight_lbs": 0.0
     },
     {
       "id": "ring-of-mind-shielding",
@@ -866,26 +828,13 @@
       "equippable": true,
       "equip_slot": "ring",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "ring-of-mind-shielding-action",
-          "name": "Ring of Mind Shielding",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "ring-of-mind-shielding",
@@ -893,7 +842,8 @@
         "ring_of_mind_shielding"
       ],
       "legacy_ids": [],
-      "dedupe_key": "ringofmindshielding"
+      "dedupe_key": "ringofmindshielding",
+      "weight_lbs": 6.0
     },
     {
       "id": "ring-of-swimming",
@@ -910,26 +860,13 @@
       "equippable": true,
       "equip_slot": "ring",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "ring-of-swimming-action",
-          "name": "Ring of Swimming",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "ring-of-swimming",
@@ -937,7 +874,8 @@
         "ring_of_swimming"
       ],
       "legacy_ids": [],
-      "dedupe_key": "ringofswimming"
+      "dedupe_key": "ringofswimming",
+      "weight_lbs": 0.0
     },
     {
       "id": "ring-of-warmth",
@@ -954,26 +892,13 @@
       "equippable": true,
       "equip_slot": "ring",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "ring-of-warmth-action",
-          "name": "Ring of Warmth",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "ring-of-warmth",
@@ -981,7 +906,8 @@
         "ring_of_warmth"
       ],
       "legacy_ids": [],
-      "dedupe_key": "ringofwarmth"
+      "dedupe_key": "ringofwarmth",
+      "weight_lbs": 0.0
     },
     {
       "id": "ring-of-water-walking",
@@ -998,26 +924,13 @@
       "equippable": true,
       "equip_slot": "ring",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "ring-of-water-walking-action",
-          "name": "Ring of Water Walking",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "ring-of-water-walking",
@@ -1025,7 +938,8 @@
         "ring_of_water_walking"
       ],
       "legacy_ids": [],
-      "dedupe_key": "ringofwaterwalking"
+      "dedupe_key": "ringofwaterwalking",
+      "weight_lbs": 0.0
     },
     {
       "id": "bag-of-holding",
@@ -1042,7 +956,7 @@
       "equippable": true,
       "equip_slot": "trinket",
       "charges_max": 0,
-      "recharge_type": "dawn",
+      "recharge_type": "none",
       "passive_effects": [
         {
           "type": "container",
@@ -1053,18 +967,10 @@
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "bag-of-holding-action",
-          "name": "Bag of Holding",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "bag-of-holding",
@@ -1094,7 +1000,7 @@
       "equippable": true,
       "equip_slot": "feet",
       "charges_max": 0,
-      "recharge_type": "dawn",
+      "recharge_type": "none",
       "passive_effects": [
         {
           "type": "advantage",
@@ -1104,18 +1010,10 @@
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "boots-of-elvenkind-action",
-          "name": "Boots of Elvenkind",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "boots-of-elvenkind",
@@ -1124,7 +1022,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "bootsofelvenkind",
-      "description_summary": "Your movement is silent. Advantage on Dexterity (Stealth) checks while moving."
+      "description_summary": "Your movement is silent. Advantage on Dexterity (Stealth) checks while moving.",
+      "weight_lbs": 0.5
     },
     {
       "id": "boots-of-striding-and-springing",
@@ -1141,26 +1040,13 @@
       "equippable": true,
       "equip_slot": "feet",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "boots-of-striding-and-springing-action",
-          "name": "Boots of Striding and Springing",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "boots-of-striding-and-springing",
@@ -1168,7 +1054,8 @@
         "boots_of_striding_and_springing"
       ],
       "legacy_ids": [],
-      "dedupe_key": "bootsofstridingandspringing"
+      "dedupe_key": "bootsofstridingandspringing",
+      "weight_lbs": 0.5
     },
     {
       "id": "boots-of-the-winterlands",
@@ -1185,26 +1072,13 @@
       "equippable": true,
       "equip_slot": "feet",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "boots-of-the-winterlands-action",
-          "name": "Boots of the Winterlands",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "boots-of-the-winterlands",
@@ -1212,7 +1086,8 @@
         "boots_of_the_winterlands"
       ],
       "legacy_ids": [],
-      "dedupe_key": "bootsofthewinterlands"
+      "dedupe_key": "bootsofthewinterlands",
+      "weight_lbs": 0.5
     },
     {
       "id": "bracers-of-archery",
@@ -1229,7 +1104,7 @@
       "equippable": true,
       "equip_slot": "hands",
       "charges_max": 0,
-      "recharge_type": "dawn",
+      "recharge_type": "none",
       "passive_effects": [
         {
           "type": "damage_bonus",
@@ -1247,18 +1122,10 @@
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "bracers-of-archery-action",
-          "name": "Bracers of Archery",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "bracers-of-archery",
@@ -1267,7 +1134,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "bracersofarchery",
-      "description_summary": "Attuned: +2 damage with longbows/shortbows; gain proficiency with longbow and shortbow."
+      "description_summary": "Attuned: +2 damage with longbows/shortbows; gain proficiency with longbow and shortbow.",
+      "weight_lbs": 0.5
     },
     {
       "id": "brooch-of-shielding",
@@ -1284,26 +1152,13 @@
       "equippable": true,
       "equip_slot": "neck",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "brooch-of-shielding-action",
-          "name": "Brooch of Shielding",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "brooch-of-shielding",
@@ -1311,7 +1166,8 @@
         "brooch_of_shielding"
       ],
       "legacy_ids": [],
-      "dedupe_key": "broochofshielding"
+      "dedupe_key": "broochofshielding",
+      "weight_lbs": 6.0
     },
     {
       "id": "broom-of-flying",
@@ -1328,26 +1184,13 @@
       "equippable": true,
       "equip_slot": "trinket",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "broom-of-flying-action",
-          "name": "Broom of Flying",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "broom-of-flying",
@@ -1355,7 +1198,8 @@
         "broom_of_flying"
       ],
       "legacy_ids": [],
-      "dedupe_key": "broomofflying"
+      "dedupe_key": "broomofflying",
+      "weight_lbs": 0.5
     },
     {
       "id": "cloak-of-elvenkind",
@@ -1372,7 +1216,7 @@
       "equippable": true,
       "equip_slot": "cloak",
       "charges_max": 0,
-      "recharge_type": "dawn",
+      "recharge_type": "none",
       "passive_effects": [
         {
           "type": "advantage",
@@ -1387,18 +1231,10 @@
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "cloak-of-elvenkind-action",
-          "name": "Cloak of Elvenkind",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "cloak-of-elvenkind",
@@ -1407,7 +1243,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "cloakofelvenkind",
-      "description_summary": "Attuned: advantage on Stealth; others have disadvantage on sight-based Perception vs you."
+      "description_summary": "Attuned: advantage on Stealth; others have disadvantage on sight-based Perception vs you.",
+      "weight_lbs": 0.5
     },
     {
       "id": "cloak-of-protection",
@@ -1424,7 +1261,7 @@
       "equippable": true,
       "equip_slot": "cloak",
       "charges_max": 0,
-      "recharge_type": "dawn",
+      "recharge_type": "none",
       "passive_effects": [
         {
           "type": "ac_bonus",
@@ -1438,18 +1275,10 @@
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "cloak-of-protection-action",
-          "name": "Cloak of Protection",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "cloak-of-protection",
@@ -1458,7 +1287,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "cloakofprotection",
-      "description_summary": "Attuned (cloak slot): +1 AC and +1 to all saving throws."
+      "description_summary": "Attuned (cloak slot): +1 AC and +1 to all saving throws.",
+      "weight_lbs": 0.5
     },
     {
       "id": "cloak-of-the-manta-ray",
@@ -1475,26 +1305,13 @@
       "equippable": true,
       "equip_slot": "cloak",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "cloak-of-the-manta-ray-action",
-          "name": "Cloak of the Manta Ray",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "cloak-of-the-manta-ray",
@@ -1502,7 +1319,8 @@
         "cloak_of_the_manta_ray"
       ],
       "legacy_ids": [],
-      "dedupe_key": "cloakofthemantaray"
+      "dedupe_key": "cloakofthemantaray",
+      "weight_lbs": 0.5
     },
     {
       "id": "decanter-of-endless-water",
@@ -1519,26 +1337,13 @@
       "equippable": true,
       "equip_slot": "trinket",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "decanter-of-endless-water-action",
-          "name": "Decanter of Endless Water",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "decanter-of-endless-water",
@@ -1546,7 +1351,8 @@
         "decanter_of_endless_water"
       ],
       "legacy_ids": [],
-      "dedupe_key": "decanterofendlesswater"
+      "dedupe_key": "decanterofendlesswater",
+      "weight_lbs": 0.5
     },
     {
       "id": "deck-of-illusions",
@@ -1563,26 +1369,13 @@
       "equippable": true,
       "equip_slot": "trinket",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "deck-of-illusions-action",
-          "name": "Deck of Illusions",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "deck-of-illusions",
@@ -1590,7 +1383,8 @@
         "deck_of_illusions"
       ],
       "legacy_ids": [],
-      "dedupe_key": "deckofillusions"
+      "dedupe_key": "deckofillusions",
+      "weight_lbs": 0.5
     },
     {
       "id": "dust-of-disappearance",
@@ -1607,26 +1401,13 @@
       "equippable": true,
       "equip_slot": "trinket",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "dust-of-disappearance-action",
-          "name": "Dust of Disappearance",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "dust-of-disappearance",
@@ -1634,7 +1415,8 @@
         "dust_of_disappearance"
       ],
       "legacy_ids": [],
-      "dedupe_key": "dustofdisappearance"
+      "dedupe_key": "dustofdisappearance",
+      "weight_lbs": 0.5
     },
     {
       "id": "dust-of-dryness",
@@ -1651,26 +1433,13 @@
       "equippable": true,
       "equip_slot": "trinket",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "dust-of-dryness-action",
-          "name": "Dust of Dryness",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "dust-of-dryness",
@@ -1678,7 +1447,8 @@
         "dust_of_dryness"
       ],
       "legacy_ids": [],
-      "dedupe_key": "dustofdryness"
+      "dedupe_key": "dustofdryness",
+      "weight_lbs": 0.5
     },
     {
       "id": "dust-of-sneezing-and-choking",
@@ -1695,26 +1465,13 @@
       "equippable": true,
       "equip_slot": "trinket",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "dust-of-sneezing-and-choking-action",
-          "name": "Dust of Sneezing and Choking",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "dust-of-sneezing-and-choking",
@@ -1722,7 +1479,8 @@
         "dust_of_sneezing_and_choking"
       ],
       "legacy_ids": [],
-      "dedupe_key": "dustofsneezingandchoking"
+      "dedupe_key": "dustofsneezingandchoking",
+      "weight_lbs": 0.5
     },
     {
       "id": "eyes-of-charming",
@@ -1740,12 +1498,7 @@
       "equip_slot": "head",
       "charges_max": 7,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
       "granted_actions": [
         {
@@ -1766,7 +1519,8 @@
         "eyes_of_charming"
       ],
       "legacy_ids": [],
-      "dedupe_key": "eyesofcharming"
+      "dedupe_key": "eyesofcharming",
+      "weight_lbs": 0.5
     },
     {
       "id": "eyes-of-minute-seeing",
@@ -1783,26 +1537,13 @@
       "equippable": true,
       "equip_slot": "head",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "eyes-of-minute-seeing-action",
-          "name": "Eyes of Minute Seeing",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "eyes-of-minute-seeing",
@@ -1810,7 +1551,8 @@
         "eyes_of_minute_seeing"
       ],
       "legacy_ids": [],
-      "dedupe_key": "eyesofminuteseeing"
+      "dedupe_key": "eyesofminuteseeing",
+      "weight_lbs": 0.5
     },
     {
       "id": "eyes-of-the-eagle",
@@ -1827,7 +1569,7 @@
       "equippable": true,
       "equip_slot": "head",
       "charges_max": 0,
-      "recharge_type": "dawn",
+      "recharge_type": "none",
       "passive_effects": [
         {
           "type": "advantage",
@@ -1841,18 +1583,10 @@
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "eyes-of-the-eagle-action",
-          "name": "Eyes of the Eagle",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "eyes-of-the-eagle",
@@ -1861,7 +1595,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "eyesoftheeagle",
-      "description_summary": "Attuned: advantage on sight-based Perception checks. Keen vision at all distances."
+      "description_summary": "Attuned: advantage on sight-based Perception checks. Keen vision at all distances.",
+      "weight_lbs": 0.5
     },
     {
       "id": "gauntlets-of-ogre-power",
@@ -1878,7 +1613,7 @@
       "equippable": true,
       "equip_slot": "hands",
       "charges_max": 0,
-      "recharge_type": "dawn",
+      "recharge_type": "none",
       "passive_effects": [
         {
           "type": "stat_minimum",
@@ -1888,18 +1623,10 @@
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "gauntlets-of-ogre-power-action",
-          "name": "Gauntlets of Ogre Power",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "gauntlets-of-ogre-power",
@@ -1908,7 +1635,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "gauntletsofogrepower",
-      "description_summary": "Attuned: your Strength score becomes 19 (if not already higher)."
+      "description_summary": "Attuned: your Strength score becomes 19 (if not already higher).",
+      "weight_lbs": 0.5
     },
     {
       "id": "gem-of-brightness",
@@ -1926,12 +1654,7 @@
       "equip_slot": "trinket",
       "charges_max": 7,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
       "granted_actions": [
         {
@@ -1952,7 +1675,8 @@
         "gem_of_brightness"
       ],
       "legacy_ids": [],
-      "dedupe_key": "gemofbrightness"
+      "dedupe_key": "gemofbrightness",
+      "weight_lbs": 0.5
     },
     {
       "id": "gloves-of-missile-snaring",
@@ -1969,26 +1693,13 @@
       "equippable": true,
       "equip_slot": "hands",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "gloves-of-missile-snaring-action",
-          "name": "Gloves of Missile Snaring",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "gloves-of-missile-snaring",
@@ -1996,7 +1707,8 @@
         "gloves_of_missile_snaring"
       ],
       "legacy_ids": [],
-      "dedupe_key": "glovesofmissilesnaring"
+      "dedupe_key": "glovesofmissilesnaring",
+      "weight_lbs": 0.5
     },
     {
       "id": "gloves-of-swimming-and-climbing",
@@ -2013,7 +1725,7 @@
       "equippable": true,
       "equip_slot": "hands",
       "charges_max": 0,
-      "recharge_type": "dawn",
+      "recharge_type": "none",
       "passive_effects": [
         {
           "type": "speed",
@@ -2031,18 +1743,10 @@
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "gloves-of-swimming-and-climbing-action",
-          "name": "Gloves of Swimming and Climbing",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "gloves-of-swimming-and-climbing",
@@ -2051,7 +1755,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "glovesofswimmingandclimbing",
-      "description_summary": "Attuned: swim and climb speed equal to walking speed; no Str checks to climb/swim."
+      "description_summary": "Attuned: swim and climb speed equal to walking speed; no Str checks to climb/swim.",
+      "weight_lbs": 0.5
     },
     {
       "id": "goggles-of-night",
@@ -2068,7 +1773,7 @@
       "equippable": true,
       "equip_slot": "head",
       "charges_max": 0,
-      "recharge_type": "dawn",
+      "recharge_type": "none",
       "passive_effects": [
         {
           "type": "darkvision",
@@ -2078,18 +1783,10 @@
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "goggles-of-night-action",
-          "name": "Goggles of Night",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "goggles-of-night",
@@ -2098,7 +1795,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "gogglesofnight",
-      "description_summary": "Darkvision 60 ft while worn (or +60 ft if already have darkvision)."
+      "description_summary": "Darkvision 60 ft while worn (or +60 ft if already have darkvision).",
+      "weight_lbs": 0.5
     },
     {
       "id": "hat-of-disguise",
@@ -2115,13 +1813,8 @@
       "equippable": true,
       "equip_slot": "head",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [
         {
           "id": "disguise-self",
@@ -2133,18 +1826,10 @@
           "spell_id": "disguise-self"
         }
       ],
-      "granted_actions": [
-        {
-          "id": "hat-of-disguise-action",
-          "name": "Hat of Disguise",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "hat-of-disguise",
@@ -2152,7 +1837,8 @@
         "hat_of_disguise"
       ],
       "legacy_ids": [],
-      "dedupe_key": "hatofdisguise"
+      "dedupe_key": "hatofdisguise",
+      "weight_lbs": 0.5
     },
     {
       "id": "headband-of-intellect",
@@ -2169,7 +1855,7 @@
       "equippable": true,
       "equip_slot": "head",
       "charges_max": 0,
-      "recharge_type": "dawn",
+      "recharge_type": "none",
       "passive_effects": [
         {
           "type": "stat_minimum",
@@ -2179,18 +1865,10 @@
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "headband-of-intellect-action",
-          "name": "Headband of Intellect",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "headband-of-intellect",
@@ -2199,7 +1877,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "headbandofintellect",
-      "description_summary": "Attuned: your Intelligence score becomes 19 (if not already higher)."
+      "description_summary": "Attuned: your Intelligence score becomes 19 (if not already higher).",
+      "weight_lbs": 0.5
     },
     {
       "id": "helm-of-comprehending-languages",
@@ -2216,13 +1895,8 @@
       "equippable": true,
       "equip_slot": "head",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [
         {
           "id": "comprehend-languages",
@@ -2234,18 +1908,10 @@
           "spell_id": "comprehend-languages"
         }
       ],
-      "granted_actions": [
-        {
-          "id": "helm-of-comprehending-languages-action",
-          "name": "Helm of Comprehending Languages",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "helm-of-comprehending-languages",
@@ -2253,7 +1919,8 @@
         "helm_of_comprehending_languages"
       ],
       "legacy_ids": [],
-      "dedupe_key": "helmofcomprehendinglanguages"
+      "dedupe_key": "helmofcomprehendinglanguages",
+      "weight_lbs": 0.5
     },
     {
       "id": "helm-of-telepathy",
@@ -2270,26 +1937,13 @@
       "equippable": true,
       "equip_slot": "head",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "helm-of-telepathy-action",
-          "name": "Helm of Telepathy",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "helm-of-telepathy",
@@ -2297,7 +1951,8 @@
         "helm_of_telepathy"
       ],
       "legacy_ids": [],
-      "dedupe_key": "helmoftelepathy"
+      "dedupe_key": "helmoftelepathy",
+      "weight_lbs": 0.5
     },
     {
       "id": "javelin-of-lightning",
@@ -2314,12 +1969,7 @@
       "equip_slot": "main_hand",
       "charges_max": 0,
       "recharge_type": "none",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
       "granted_actions": [
         {
@@ -2365,13 +2015,8 @@
       "equippable": true,
       "equip_slot": "neck",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [
         {
           "id": "detect-thoughts",
@@ -2383,18 +2028,10 @@
           "spell_id": "detect-thoughts"
         }
       ],
-      "granted_actions": [
-        {
-          "id": "medallion-of-thoughts-action",
-          "name": "Medallion of Thoughts",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "medallion-of-thoughts",
@@ -2402,7 +2039,8 @@
         "medallion_of_thoughts"
       ],
       "legacy_ids": [],
-      "dedupe_key": "medallionofthoughts"
+      "dedupe_key": "medallionofthoughts",
+      "weight_lbs": 0.5
     },
     {
       "id": "necklace-of-adaptation",
@@ -2419,26 +2057,13 @@
       "equippable": true,
       "equip_slot": "neck",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "necklace-of-adaptation-action",
-          "name": "Necklace of Adaptation",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "necklace-of-adaptation",
@@ -2446,7 +2071,8 @@
         "necklace_of_adaptation"
       ],
       "legacy_ids": [],
-      "dedupe_key": "necklaceofadaptation"
+      "dedupe_key": "necklaceofadaptation",
+      "weight_lbs": 0.5
     },
     {
       "id": "periapt-of-health",
@@ -2463,7 +2089,7 @@
       "equippable": true,
       "equip_slot": "neck",
       "charges_max": 0,
-      "recharge_type": "dawn",
+      "recharge_type": "none",
       "passive_effects": [
         {
           "type": "immunity",
@@ -2477,18 +2103,10 @@
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "periapt-of-health-action",
-          "name": "Periapt of Health",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "periapt-of-health",
@@ -2497,7 +2115,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "periaptofhealth",
-      "description_summary": "Disease immunity while worn. Cures existing diseases."
+      "description_summary": "Disease immunity while worn. Cures existing diseases.",
+      "weight_lbs": 0.5
     },
     {
       "id": "periapt-of-wound-closure",
@@ -2514,7 +2133,7 @@
       "equippable": true,
       "equip_slot": "neck",
       "charges_max": 0,
-      "recharge_type": "dawn",
+      "recharge_type": "none",
       "passive_effects": [
         {
           "type": "stabilize_on_death_save_success",
@@ -2527,18 +2146,10 @@
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "periapt-of-wound-closure-action",
-          "name": "Periapt of Wound Closure",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "periapt-of-wound-closure",
@@ -2547,7 +2158,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "periaptofwoundclosure",
-      "description_summary": "Attuned: auto-stabilize on death save success; double hit dice rolled on short rests."
+      "description_summary": "Attuned: auto-stabilize on death save success; double hit dice rolled on short rests.",
+      "weight_lbs": 0.5
     },
     {
       "id": "robe-of-useful-items",
@@ -2564,26 +2176,13 @@
       "equippable": true,
       "equip_slot": "armor",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "robe-of-useful-items-action",
-          "name": "Robe of Useful Items",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "robe-of-useful-items",
@@ -2591,7 +2190,8 @@
         "robe_of_useful_items"
       ],
       "legacy_ids": [],
-      "dedupe_key": "robeofusefulitems"
+      "dedupe_key": "robeofusefulitems",
+      "weight_lbs": 0.5
     },
     {
       "id": "slippers-of-spider-climbing",
@@ -2608,26 +2208,13 @@
       "equippable": true,
       "equip_slot": "feet",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "slippers-of-spider-climbing-action",
-          "name": "Slippers of Spider Climbing",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "slippers-of-spider-climbing",
@@ -2635,7 +2222,8 @@
         "slippers_of_spider_climbing"
       ],
       "legacy_ids": [],
-      "dedupe_key": "slippersofspiderclimbing"
+      "dedupe_key": "slippersofspiderclimbing",
+      "weight_lbs": 0.5
     },
     {
       "id": "stone-of-good-luck",
@@ -2652,7 +2240,7 @@
       "equippable": true,
       "equip_slot": "trinket",
       "charges_max": 0,
-      "recharge_type": "dawn",
+      "recharge_type": "none",
       "passive_effects": [
         {
           "type": "roll_bonus",
@@ -2665,18 +2253,10 @@
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "stone-of-good-luck-action",
-          "name": "Stone of Good Luck",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "stone-of-good-luck",
@@ -2685,7 +2265,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "stoneofgoodluck",
-      "description_summary": "Attuned: +1 to all ability checks and saving throws."
+      "description_summary": "Attuned: +1 to all ability checks and saving throws.",
+      "weight_lbs": 0.5
     },
     {
       "id": "cap-of-water-breathing",

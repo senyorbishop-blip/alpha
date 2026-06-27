@@ -35,7 +35,8 @@
       "legacy_ids": [
         "mi_athkatla_smuggler_s_coin"
       ],
-      "dedupe_key": "athkatlasmugglerscoin"
+      "dedupe_key": "athkatlasmugglerscoin",
+      "weight_lbs": 0.5
     },
     {
       "id": "baron-s-ledger-key",
@@ -76,7 +77,8 @@
       "legacy_ids": [
         "mi_baron_s_ledger_key"
       ],
-      "dedupe_key": "baronsledgerkey"
+      "dedupe_key": "baronsledgerkey",
+      "weight_lbs": 0.5
     },
     {
       "id": "baron-s-signet-ring",
@@ -125,7 +127,8 @@
       ],
       "dedupe_key": "baronssignetring",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Baron’s Signet Ring.",
-      "unidentified_description": "An unidentified rare ring radiating magic."
+      "unidentified_description": "An unidentified rare ring radiating magic.",
+      "draft": true
     },
     {
       "id": "brosst-guard-captain-s-blade",
@@ -189,7 +192,8 @@
       "damage_bonus": 1,
       "damage_dice": "1d8",
       "damage_type": "slashing",
-      "weapon_type": "longsword"
+      "weapon_type": "longsword",
+      "draft": true
     },
     {
       "id": "brosst-guard-shield",
@@ -229,7 +233,8 @@
         "mi_brosst_guard_shield"
       ],
       "dedupe_key": "brosstguardshield",
-      "ac_bonus": 1
+      "ac_bonus": 1,
+      "weight_lbs": 6.0
     },
     {
       "id": "bruno-s-lucky-treat",
@@ -293,7 +298,8 @@
       "unidentified_description": "An unidentified rare wondrous radiating magic.",
       "consumable": true,
       "consumed_on_use": true,
-      "save_bonus": 1
+      "save_bonus": 1,
+      "draft": true
     },
     {
       "id": "candle-of-shar-s-whisper",
@@ -347,7 +353,8 @@
       "limited_uses": {
         "max": 3,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 0.5
     },
     {
       "id": "chaos-wheel-coin",
@@ -406,7 +413,8 @@
       "limited_uses": {
         "max": 1,
         "recharge": "dawn"
-      }
+      },
+      "draft": true
     },
     {
       "id": "cultist-black-candle",
@@ -474,7 +482,8 @@
       "limited_uses": {
         "max": 1,
         "recharge": "dawn"
-      }
+      },
+      "draft": true
     },
     {
       "id": "fireball-viewer-token",
@@ -542,7 +551,8 @@
       "limited_uses": {
         "max": 1,
         "recharge": "dawn"
-      }
+      },
+      "draft": true
     },
     {
       "id": "guild-of-seagull-token",
@@ -590,7 +600,8 @@
       ],
       "dedupe_key": "guildofseagulltoken",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Guild of Seagull Token.",
-      "unidentified_description": "An unidentified rare wondrous radiating magic."
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "draft": true
     },
     {
       "id": "lost-noble-signet",
@@ -623,7 +634,8 @@
       "legacy_ids": [
         "mi_lost_noble_signet"
       ],
-      "dedupe_key": "lostnoblesignet"
+      "dedupe_key": "lostnoblesignet",
+      "weight_lbs": 0.0
     },
     {
       "id": "map-fragment-of-brosst",
@@ -664,7 +676,8 @@
       "legacy_ids": [
         "mi_map_fragment_of_brosst"
       ],
-      "dedupe_key": "mapfragmentofbrosst"
+      "dedupe_key": "mapfragmentofbrosst",
+      "weight_lbs": 0.5
     },
     {
       "id": "prison-break-lockpick-set",
@@ -712,7 +725,8 @@
       ],
       "dedupe_key": "prisonbreaklockpickset",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Prison Break Lockpick Set.",
-      "unidentified_description": "An unidentified rare tool radiating magic."
+      "unidentified_description": "An unidentified rare tool radiating magic.",
+      "draft": true
     },
     {
       "id": "prison-warden-s-manacles",
@@ -754,7 +768,8 @@
         "mi_prison_warden_s_manacles"
       ],
       "dedupe_key": "prisonwardensmanacles",
-      "spell_save_dc": 15
+      "spell_save_dc": 15,
+      "weight_lbs": 0.5
     },
     {
       "id": "seagull-feather-cloak",
@@ -811,7 +826,8 @@
         {
           "type": "slow_fall"
         }
-      ]
+      ],
+      "draft": true
     },
     {
       "id": "seagull-guild-banner",
@@ -844,7 +860,8 @@
       "legacy_ids": [
         "mi_seagull_guild_banner"
       ],
-      "dedupe_key": "seagullguildbanner"
+      "dedupe_key": "seagullguildbanner",
+      "weight_lbs": 0.5
     },
     {
       "id": "shadow-prisoner-s-shank",
@@ -909,7 +926,8 @@
       },
       "damage_dice": "1d4",
       "damage_type": "piercing",
-      "weapon_type": "dagger"
+      "weapon_type": "dagger",
+      "draft": true
     },
     {
       "id": "shar-cultist-dagger",
@@ -959,7 +977,8 @@
       },
       "damage_dice": "1d4",
       "damage_type": "piercing",
-      "weapon_type": "dagger"
+      "weapon_type": "dagger",
+      "weight_lbs": 3.0
     },
     {
       "id": "shar-touched-amulet",
@@ -1031,7 +1050,8 @@
       "unidentified_description": "An unidentified rare wondrous radiating magic.",
       "resistances": [
         "necrotic"
-      ]
+      ],
+      "draft": true
     }
   ]
 }

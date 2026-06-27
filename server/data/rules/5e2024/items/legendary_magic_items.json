@@ -37,7 +37,8 @@
       ],
       "dedupe_key": "apparatusofkwalish",
       "blocked_proprietary": true,
-      "stub": true
+      "stub": true,
+      "weight_lbs": 0.5
     },
     {
       "id": "armor-of-invulnerability",
@@ -91,7 +92,8 @@
       ],
       "immunities": [
         "nonmagical_damage"
-      ]
+      ],
+      "weight_lbs": 30.0
     },
     {
       "id": "belt-of-cloud-giant-strength",
@@ -136,7 +138,8 @@
           "stat": "strength",
           "minimum": 27
         }
-      ]
+      ],
+      "weight_lbs": 0.5
     },
     {
       "id": "belt-of-storm-giant-strength",
@@ -181,7 +184,8 @@
           "stat": "strength",
           "minimum": 29
         }
-      ]
+      ],
+      "weight_lbs": 0.5
     },
     {
       "id": "cloak-of-invisibility",
@@ -226,7 +230,8 @@
       "limited_uses": {
         "max": 120,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 0.5
     },
     {
       "id": "crystal-ball-of-mind-reading",
@@ -276,7 +281,8 @@
       "legacy_ids": [
         "mi_crystal_ball_of_mind_reading"
       ],
-      "dedupe_key": "crystalballofmindreading"
+      "dedupe_key": "crystalballofmindreading",
+      "weight_lbs": 0.5
     },
     {
       "id": "crystal-ball-of-telepathy",
@@ -326,7 +332,8 @@
       "legacy_ids": [
         "mi_crystal_ball_of_telepathy"
       ],
-      "dedupe_key": "crystalballoftelepathy"
+      "dedupe_key": "crystalballoftelepathy",
+      "weight_lbs": 0.5
     },
     {
       "id": "cubic-gate",
@@ -380,7 +387,8 @@
       "limited_uses": {
         "max": 3,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 0.5
     },
     {
       "id": "deck-of-many-things",
@@ -414,7 +422,8 @@
         "mi_deck_of_many_things"
       ],
       "dedupe_key": "deckofmanythings",
-      "stub": true
+      "stub": true,
+      "weight_lbs": 0.5
     },
     {
       "id": "efreeti-chain",
@@ -461,7 +470,8 @@
       "ac_bonus": 3,
       "resistances": [
         "fire"
-      ]
+      ],
+      "weight_lbs": 0.5
     },
     {
       "id": "hammer-of-thunderbolts",
@@ -521,7 +531,8 @@
       ],
       "damage_dice": "2d6",
       "damage_type": "bludgeoning",
-      "weapon_type": "maul"
+      "weapon_type": "maul",
+      "weight_lbs": 0.075
     },
     {
       "id": "ioun-stone-greater-absorption",
@@ -566,7 +577,8 @@
       "limited_uses": {
         "max": 50,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 0.5
     },
     {
       "id": "ioun-stone-mastery",
@@ -599,7 +611,8 @@
       "legacy_ids": [
         "mi_ioun_stone_mastery"
       ],
-      "dedupe_key": "iounstonemastery"
+      "dedupe_key": "iounstonemastery",
+      "weight_lbs": 0.5
     },
     {
       "id": "ioun-stone-regeneration",
@@ -632,7 +645,8 @@
       "legacy_ids": [
         "mi_ioun_stone_regeneration"
       ],
-      "dedupe_key": "iounstoneregeneration"
+      "dedupe_key": "iounstoneregeneration",
+      "weight_lbs": 2.0
     },
     {
       "id": "iron-flask",
@@ -674,7 +688,8 @@
         "mi_iron_flask"
       ],
       "dedupe_key": "ironflask",
-      "spell_save_dc": 17
+      "spell_save_dc": 17,
+      "weight_lbs": 0.5
     },
     {
       "id": "ring-of-djinni-summoning",
@@ -724,7 +739,8 @@
       "legacy_ids": [
         "mi_ring_of_djinni_summoning"
       ],
-      "dedupe_key": "ringofdjinnisummoning"
+      "dedupe_key": "ringofdjinnisummoning",
+      "weight_lbs": 0.0
     },
     {
       "id": "ring-of-elemental-command",
@@ -759,7 +775,8 @@
       ],
       "dedupe_key": "ringofelementalcommand",
       "blocked_proprietary": true,
-      "stub": true
+      "stub": true,
+      "weight_lbs": 0.0
     },
     {
       "id": "ring-of-invisibility",
@@ -777,12 +794,7 @@
       "equip_slot": "ring",
       "charges_max": 0,
       "recharge_type": "none",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [
         {
           "id": "invisibility",
@@ -804,13 +816,6 @@
       ],
       "granted_actions": [
         {
-          "id": "ring-of-invisibility-action",
-          "name": "Ring of Invisibility",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        },
-        {
           "id": "ring-of-invisibility-use",
           "name": "Ring of Invisibility",
           "action_type": "item_action",
@@ -820,7 +825,7 @@
       ],
       "source": "srd_compendium",
       "charges_current": 3,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "ring-of-invisibility",
@@ -834,7 +839,8 @@
       "dedupe_key": "ringofinvisibility",
       "description_summary": "Ring of Invisibility: concise open-compatible runtime summary for legendary ring.",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Ring of Invisibility.",
-      "unidentified_description": "An unidentified legendary ring radiating magic."
+      "unidentified_description": "An unidentified legendary ring radiating magic.",
+      "weight_lbs": 0.0
     },
     {
       "id": "ring-of-spell-turning",
@@ -867,7 +873,8 @@
       "legacy_ids": [
         "mi_ring_of_spell_turning"
       ],
-      "dedupe_key": "ringofspellturning"
+      "dedupe_key": "ringofspellturning",
+      "weight_lbs": 0.0
     },
     {
       "id": "ring-of-three-wishes",
@@ -885,12 +892,7 @@
       "equip_slot": "ring",
       "charges_max": 3,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [
         {
           "id": "wish",
@@ -946,7 +948,8 @@
       "limited_uses": {
         "max": 3,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 0.0
     },
     {
       "id": "robe-of-the-archmagi",
@@ -966,28 +969,16 @@
       "recharge_type": "none",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        },
-        {
           "type": "spell_attack_bonus",
           "bonus": 2,
           "requires_attunement": true
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "robe-of-the-archmagi-action",
-          "name": "Robe of the Archmagi",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "robe-of-the-archmagi",
@@ -1002,7 +993,8 @@
       "description_summary": "Robe of the Archmagi: concise open-compatible runtime summary for legendary wondrous.",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Robe of the Archmagi.",
       "unidentified_description": "An unidentified legendary wondrous radiating magic.",
-      "spell_attack_bonus": 2
+      "spell_attack_bonus": 2,
+      "weight_lbs": 0.5
     },
     {
       "id": "rod-of-lordly-might",
@@ -1021,10 +1013,6 @@
       "charges_max": 6,
       "recharge_type": "dawn",
       "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        },
         {
           "type": "attack_bonus",
           "bonus": 3,
@@ -1076,7 +1064,8 @@
         "max": 6,
         "recharge": "dawn"
       },
-      "spell_save_dc": 17
+      "spell_save_dc": 17,
+      "weight_lbs": 2.0
     },
     {
       "id": "scarab-of-protection",
@@ -1121,7 +1110,8 @@
       "limited_uses": {
         "max": 12,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 0.0
     },
     {
       "id": "sovereign-glue",
@@ -1164,7 +1154,8 @@
       ],
       "dedupe_key": "sovereignglue",
       "consumable": true,
-      "consumed_on_use": true
+      "consumed_on_use": true,
+      "weight_lbs": 0.5
     },
     {
       "id": "spell-scroll-9th-level",
@@ -1209,7 +1200,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "spellscroll9thlevel",
-      "description_summary": "Contains a 9th-level spell. Cast once (DC 19, +11 attack). Scroll destroyed after. Non-class members may attempt DC 19 Arcana; on fail nothing happens but scroll is destroyed."
+      "description_summary": "Contains a 9th-level spell. Cast once (DC 19, +11 attack). Scroll destroyed after. Non-class members may attempt DC 19 Arcana; on fail nothing happens but scroll is destroyed.",
+      "weight_lbs": 0.0
     },
     {
       "id": "sphere-of-annihilation",
@@ -1242,7 +1234,8 @@
       "legacy_ids": [
         "mi_sphere_of_annihilation"
       ],
-      "dedupe_key": "sphereofannihilation"
+      "dedupe_key": "sphereofannihilation",
+      "weight_lbs": 0.5
     },
     {
       "id": "staff-of-the-magi",
@@ -1316,7 +1309,8 @@
         "recharge": "dawn"
       },
       "spell_save_dc": 17,
-      "spell_attack_bonus": 9
+      "spell_attack_bonus": 9,
+      "weight_lbs": 4.0
     },
     {
       "id": "talisman-of-pure-good",
@@ -1362,7 +1356,8 @@
         "max": 7,
         "recharge": "dawn"
       },
-      "spell_save_dc": 20
+      "spell_save_dc": 20,
+      "weight_lbs": 0.5
     },
     {
       "id": "talisman-of-the-sphere",
@@ -1395,7 +1390,8 @@
       "legacy_ids": [
         "mi_talisman_of_the_sphere"
       ],
-      "dedupe_key": "talismanofthesphere"
+      "dedupe_key": "talismanofthesphere",
+      "weight_lbs": 0.5
     },
     {
       "id": "talisman-of-ultimate-evil",
@@ -1441,7 +1437,8 @@
         "max": 6,
         "recharge": "dawn"
       },
-      "spell_save_dc": 20
+      "spell_save_dc": 20,
+      "weight_lbs": 0.5
     },
     {
       "id": "universal-solvent",
@@ -1484,7 +1481,8 @@
       ],
       "dedupe_key": "universalsolvent",
       "consumable": true,
-      "consumed_on_use": true
+      "consumed_on_use": true,
+      "weight_lbs": 0.5
     },
     {
       "id": "well-of-many-worlds",
@@ -1525,7 +1523,67 @@
       "legacy_ids": [
         "mi_well_of_many_worlds"
       ],
-      "dedupe_key": "wellofmanyworlds"
+      "dedupe_key": "wellofmanyworlds",
+      "weight_lbs": 0.5
+    },
+    {
+      "id": "vorpal-sword",
+      "name": "Vorpal Sword",
+      "item_schema_version": 2,
+      "category": "weapon",
+      "subtype": "magic_weapon",
+      "rarity": "legendary",
+      "requires_attunement": true,
+      "attunement": {
+        "required": true,
+        "supported": true
+      },
+      "equippable": true,
+      "equip_slot": "main_hand",
+      "charges_max": 0,
+      "recharge_type": "none",
+      "passive_effects": [
+        {
+          "type": "note",
+          "summary": "Magic weapon starter entry with original short summary."
+        }
+      ],
+      "granted_spells": [],
+      "granted_actions": [
+        {
+          "id": "vorpal-sword-action",
+          "name": "Vorpal Sword",
+          "action_type": "item_action",
+          "summary": "Use this weapon’s special property when its trigger applies."
+        }
+      ],
+      "source": "starter_compendium",
+      "weapon_type": "magic_weapon",
+      "damage_dice": "by base weapon",
+      "damage_type": "by base weapon",
+      "range": "by base weapon",
+      "reach": "by base weapon",
+      "handedness": "by base weapon",
+      "weapon_properties": [],
+      "weight_lbs": 3,
+      "price_gp": 0,
+      "attack_bonus": 3,
+      "damage_bonus": 3,
+      "magic_bonus": 3,
+      "extra_damage": {
+        "summary": "See item action metadata for conditional extra damage."
+      },
+      "action_card": {
+        "type": "weapon_attack",
+        "bonus": 3
+      },
+      "slug": "vorpal-sword",
+      "aliases": [
+        "vorpal_sword"
+      ],
+      "legacy_ids": [],
+      "dedupe_key": "vorpalsword",
+      "description_summary": "Standard magic weapon weapon."
     }
   ]
 }

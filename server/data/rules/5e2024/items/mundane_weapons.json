@@ -3543,64 +3543,6 @@
       "description_summary": "Standard magic weapon weapon."
     },
     {
-      "id": "vorpal-sword",
-      "name": "Vorpal Sword",
-      "item_schema_version": 2,
-      "category": "weapon",
-      "subtype": "magic_weapon",
-      "rarity": "common",
-      "requires_attunement": true,
-      "attunement": {
-        "required": false
-      },
-      "equippable": true,
-      "equip_slot": "main_hand",
-      "charges_max": 0,
-      "recharge_type": "none",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Magic weapon starter entry with original short summary."
-        }
-      ],
-      "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "vorpal-sword-action",
-          "name": "Vorpal Sword",
-          "action_type": "item_action",
-          "summary": "Use this weapon’s special property when its trigger applies."
-        }
-      ],
-      "source": "starter_compendium",
-      "weapon_type": "magic_weapon",
-      "damage_dice": "by base weapon",
-      "damage_type": "by base weapon",
-      "range": "by base weapon",
-      "reach": "by base weapon",
-      "handedness": "by base weapon",
-      "weapon_properties": [],
-      "weight_lbs": 3,
-      "price_gp": 0,
-      "attack_bonus": 3,
-      "damage_bonus": 3,
-      "magic_bonus": 3,
-      "extra_damage": {
-        "summary": "See item action metadata for conditional extra damage."
-      },
-      "action_card": {
-        "type": "weapon_attack",
-        "bonus": 3
-      },
-      "slug": "vorpal-sword",
-      "aliases": [
-        "vorpal_sword"
-      ],
-      "legacy_ids": [],
-      "dedupe_key": "vorpalsword",
-      "description_summary": "Standard magic weapon weapon."
-    },
-    {
       "id": "weapon-of-warning",
       "name": "Weapon of Warning",
       "item_schema_version": 2,
