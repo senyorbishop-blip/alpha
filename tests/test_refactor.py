@@ -2848,6 +2848,21 @@ def test_viewer_powers_js_defs_match_server():
     )
 
 
+def test_play_html_viewer_power_defs_match_server():
+    """The live play.html grant dropdown must include every server base viewer power."""
+    from server.handlers.viewer_powers import VIEWER_BASE_POWER_DEFS
+
+    html_source = _play_html_content()
+    missing = []
+    for power_id in VIEWER_BASE_POWER_DEFS:
+        if f"{power_id}:" not in html_source:
+            missing.append(power_id)
+    assert not missing, (
+        f"play.html viewerPowerDefs() is missing server-defined power(s): {missing}. "
+        "Update the live viewerPowerDefs() base object so DMs can grant every base power."
+    )
+
+
 def test_custom_power_builder_shows_save_for_status():
     """play.html updateCustomPowerBuilderFields must show save row for status powers."""
     content = _play_html_content()
