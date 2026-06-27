@@ -125,10 +125,29 @@
     };
   }
 
+  // Phase 4 message-handler migration: types whose handler in
+  // window.AppMessageHandlers is a verified behavior-twin of the former inline
+  // case in play.html handleLegacyMessage(). Delegating here makes the module
+  // the live path; the inline case is removed once parity is confirmed. See
+  // docs/message_handler_migration_map.md. Combat types are intentionally
+  // excluded — they are routed to AppCombatMessages before legacy dispatch.
+  const MIGRATED_MODULE_HANDLERS = {
+    char_profiles_sync: 'handleCharProfilesSync',
+  };
+
+  function tryHandleMigratedModuleMessage(msg, runtimeEnv) {
+    const handlerName = MIGRATED_MODULE_HANDLERS[msg.type];
+    if (!handlerName) return false;
+    const handlers = global.AppMessageHandlers;
+    if (!handlers || typeof handlers[handlerName] !== 'function') return false;
+    return handlers[handlerName](msg.payload || {}, runtimeEnv) === true;
+  }
+
   function handleLegacyDomainMessage(msg, env) {
     if (!msg || typeof msg !== 'object') return false;
     const runtimeEnv = env || {};
     const p = msg.payload || {};
+    if (tryHandleMigratedModuleMessage(msg, runtimeEnv)) return true;
     switch (msg.type) {
       case 'journal_sync':
         if (typeof runtimeEnv.loadJournalEntries === 'function') runtimeEnv.loadJournalEntries(p.entries || []);
