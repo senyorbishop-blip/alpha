@@ -49,7 +49,11 @@
     }
     const direct = String(item && (item.equipment_kind || item.item_type || item.kind || item.category || '') || '').trim().toLowerCase();
     if (direct === 'armour') return 'armor';
-    return direct;
+    if (direct) return direct;
+    // Name-based fallback for rings
+    const name = String(item && item.name || '').trim().toLowerCase();
+    if (/\bring\b/.test(name)) return 'ring';
+    return '';
   }
 
   function _qty(item) {
@@ -77,7 +81,11 @@
   }
 
   function _isContainer(item) {
-    return !!(item && (item.is_container || item.extradimensional || item.capacity_lbs || Array.isArray(item.bag_contents)));
+    if (!item) return false;
+    if (item.is_container || item.extradimensional || item.capacity_lbs || Array.isArray(item.bag_contents)) return true;
+    const name = String(item.name || '').trim().toLowerCase();
+    return /\b(backpack|bag of holding|handy haversack|portable hole|bag of devouring|cart|carts|wagon|chest|barrel|sack)\b/.test(name)
+      || /\b(riding horse|draft horse|warhorse|mule|donkey|horse)\b/.test(name);
   }
 
   function _containerContentsWeight(item) {
@@ -108,7 +116,7 @@
 
   function _equippableItems(items) {
     return (Array.isArray(items) ? items : []).filter(function (item) {
-      return ['weapon', 'armor', 'shield'].includes(_itemKind(item));
+      return ['weapon', 'armor', 'shield', 'ring', 'accessory', 'wondrous'].includes(_itemKind(item));
     });
   }
 
@@ -316,10 +324,11 @@
     const useable = !!(item.grants_action || item.consumable || item.healing_formula || chargesMax > 0);
     const buttons = [
       _actionButton('inspect', 'Inspect', itemIndex),
-      ['weapon', 'armor', 'shield'].includes(_itemKind(item)) ? _actionButton(equipped ? 'unequip' : 'equip', equipped ? 'Unequip' : 'Equip', itemIndex) : '',
+      ['weapon', 'armor', 'shield', 'ring', 'accessory', 'wondrous'].includes(_itemKind(item)) ? _actionButton(equipped ? 'unequip' : 'equip', equipped ? 'Unequip' : 'Equip', itemIndex) : '',
       needsAttune ? _actionButton(item.attuned ? 'unattune' : 'attune', item.attuned ? 'Unattune' : 'Attune', itemIndex) : '',
       useable ? _actionButton('use', 'Use', itemIndex) : '',
       !_isContainer(item) ? _actionButton('move', 'Move', itemIndex) : '',
+      !_isContainer(item) ? _actionButton('send-to-player', 'Send', itemIndex) : '',
       _actionButton('drop', 'Drop', itemIndex),
       _isContainer(item) ? _actionButton('open-container', 'Open', itemIndex) : '',
     ].filter(Boolean).join('');
@@ -501,14 +510,86 @@
     }
   }
 
+  function _openContainerModal(bagIndex, charData) {
+    const items = _inventorySourceItems(charData || {});
+    const bagItem = items[bagIndex];
+    if (!bagItem) return;
+    const bagName = _esc(bagItem.name || 'Container');
+    const contents = Array.isArray(bagItem.bag_contents) ? bagItem.bag_contents : [];
+    const cap = _containerCapacity(bagItem);
+    const fill = _containerContentsWeight(bagItem);
+    const pct = cap > 0 ? Math.min(100, Math.round((fill / cap) * 100)) : 0;
+
+    // Available items that can be put in (not the bag itself, not already inside)
+    const available = items.map(function (it, idx) { return { it: it, idx: idx }; }).filter(function (e) {
+      return e.idx !== bagIndex && !_isContainer(e.it) && !(e.it.container_name || e.it.container);
+    });
+
+    const contentsHtml = contents.length
+      ? contents.map(function (row, ci) {
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.06);">' +
+          '<span>' + _esc(row.name || 'Item') + ' <span style="color:rgba(255,255,255,0.45);font-size:0.8em;">×' + _esc(String(_qty(row))) + ' • ' + _esc(_fmtWeight(_weight(row) * _qty(row))) + '</span></span>' +
+          '<button type="button" style="font-size:0.7rem;padding:0.2rem 0.5rem;background:rgba(220,60,60,0.15);border:1px solid rgba(220,60,60,0.35);color:#ff7070;border-radius:6px;cursor:pointer;" data-modal-remove-ci="' + String(ci) + '">Remove</button>' +
+          '</div>';
+      }).join('')
+      : '<div style="color:rgba(255,255,255,0.4);padding:0.6rem 0.5rem;font-size:0.85em;">Empty.</div>';
+
+    const addOptsHtml = available.length
+      ? '<select id="rp-container-add-sel" style="flex:1;min-width:0;padding:0.3rem 0.5rem;background:rgba(8,20,28,0.7);border:1px solid rgba(201,162,39,0.3);color:#e8d5a3;border-radius:6px;font-size:0.82rem;">' +
+        '<option value="">— select item —</option>' +
+        available.map(function (e) { return '<option value="' + String(e.idx) + '">' + _esc(e.it.name || 'Item') + ' (' + _esc(_fmtWeight(_weight(e.it))) + ')</option>'; }).join('') +
+        '</select>' +
+        '<button type="button" id="rp-container-add-btn" style="padding:0.3rem 0.7rem;background:rgba(0,229,204,0.1);border:1px solid rgba(0,229,204,0.35);color:#00e5cc;border-radius:6px;cursor:pointer;white-space:nowrap;">Put In</button>'
+      : '<span style="color:rgba(255,255,255,0.35);font-size:0.82em;">No items available to add.</span>';
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.72);';
+    overlay.innerHTML = '<div style="background:#0d1a22;border:1px solid rgba(201,162,39,0.35);border-radius:14px;min-width:320px;max-width:480px;width:90vw;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.7);">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.8rem 1rem;border-bottom:1px solid rgba(201,162,39,0.2);">' +
+      '<strong style="color:#c9a227;font-size:1rem;">' + bagName + '</strong>' +
+      '<button type="button" id="rp-container-close" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.2rem;cursor:pointer;line-height:1;">✕</button>' +
+      '</div>' +
+      (cap > 0 ? '<div style="padding:0.5rem 1rem 0;">' +
+        '<div style="font-size:0.75rem;color:rgba(255,255,255,0.45);margin-bottom:0.25rem;">Contents: ' + _esc(_fmtWeight(fill)) + ' / ' + _esc(_fmtWeight(cap)) + '</div>' +
+        '<div style="height:6px;border-radius:999px;background:rgba(128,128,128,.18);overflow:hidden;"><div style="height:100%;width:' + _esc(String(pct)) + '%;background:#c9a227;"></div></div>' +
+        '</div>' : '') +
+      '<div style="overflow-y:auto;flex:1;padding:0.5rem 0;">' + contentsHtml + '</div>' +
+      '<div style="padding:0.6rem 1rem;border-top:1px solid rgba(255,255,255,0.08);display:flex;gap:0.5rem;align-items:center;">' + addOptsHtml + '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) { document.body.removeChild(overlay); return; }
+      const closeBtn = e.target.closest('#rp-container-close');
+      if (closeBtn) { document.body.removeChild(overlay); return; }
+      const removeBtn = e.target.closest('[data-modal-remove-ci]');
+      if (removeBtn) {
+        const ci = parseInt(removeBtn.getAttribute('data-modal-remove-ci') || '-1', 10);
+        if (ci >= 0) _sendInventoryWs('bag_remove_item', { bag_index: bagIndex, content_index: ci, qty: 1 });
+        document.body.removeChild(overlay);
+        return;
+      }
+      const addBtn = e.target.closest('#rp-container-add-btn');
+      if (addBtn) {
+        const sel = overlay.querySelector('#rp-container-add-sel');
+        const val = sel && sel.value;
+        if (!val && val !== 0) return;
+        _sendInventoryWs('bag_add_item', { bag_index: bagIndex, item_index: parseInt(String(val), 10), qty: 1 });
+        document.body.removeChild(overlay);
+        return;
+      }
+    });
+  }
+
   function _bindInteractions(container, charData) {
     container.addEventListener('click', function (e) {
       const equipBtn = e.target.closest('.cs-inv-equip-btn');
       if (equipBtn) {
         const idx = parseInt(equipBtn.getAttribute('data-item-index'), 10);
-        const inv = _equippableItems(_inventorySourceItems(charData || {}));
-        const item = inv[idx];
-        if (!item) return;
+        const allItems = _inventorySourceItems(charData || {});
+        const item = allItems[idx];
+        // Only process equip clicks for items that can actually be equipped
+        if (!item || !['weapon', 'armor', 'shield', 'ring', 'accessory', 'wondrous'].includes(_itemKind(item))) return;
         const nextEquipped = !item.equipped;
         _patchEquippedState(item, nextEquipped, charData);
         const liveIndex = _resolveLiveInventoryIndex(item);
@@ -563,9 +644,23 @@
         if (chosen) _sendInventoryWs('bag_add_item', { bag_index: chosen.idx, item_index: Math.max(0, itemIndex), qty: 1 });
         return;
       }
+      if (action === 'send-to-player') {
+        var players = (typeof global.sessionUsers !== 'undefined' && Array.isArray(global.sessionUsers) ? global.sessionUsers : [])
+          .filter(function (u) { return u && String(u.user_id || u.id || '') !== String(typeof global.MY_USER_ID !== 'undefined' ? global.MY_USER_ID : ''); });
+        if (!players.length) { alert('No other players in this session.'); return; }
+        var playerList = players.map(function (p, n) { return String(n + 1) + '. ' + (p.name || p.display_name || p.username || 'Player'); }).join('\n');
+        var allItems = _inventorySourceItems(charData || {});
+        var theItem = allItems[itemIndex];
+        var choice = prompt('Send "' + (theItem ? theItem.name || 'item' : 'item') + '" to which player?\n' + playerList, '1');
+        if (choice === null) return;
+        var chosen = players[(parseInt(choice || '0', 10) || 0) - 1];
+        if (!chosen) { alert('Invalid selection.'); return; }
+        var targetId = String(chosen.user_id || chosen.id || '');
+        if (targetId) _sendInventoryWs('inventory_transfer_item', { item_index: Math.max(0, itemIndex), target_user_id: targetId, qty: 1 });
+        return;
+      }
       if (action === 'open-container') {
-        const card = actionBtn.closest('.cs-inv-container-card');
-        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        _openContainerModal(itemIndex, charData);
         return;
       }
       if (action === 'container-remove') {
