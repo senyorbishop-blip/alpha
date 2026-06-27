@@ -4022,6 +4022,13 @@ window.__playerBootState = window.__playerBootState || { checkpoint: 'PLAYER_BOO
 <!-- Phase 4 runtime path: AppMessageDispatch is the live first-hop handoff into handleLegacyMessage(); AppMessageHandlers is the live module path for the verified-equivalent handlers it covers (see docs/message_handler_migration_map.md). -->
 <script src="/static/js/core/message_dispatch.js"></script>
 <script src="/static/js/core/message_handlers.js"></script>
+<!-- Combat env builder + dormant combat module. Loaded so window.AppGameplayCombat
+     and AppEnvBuildersGameplay.getCombatEnv are available for buildCombatEnv()'s
+     runtime sanity check. NOT yet the live combat path: play.html's inline combat
+     UI/state/render functions remain authoritative (the module is a stale fork —
+     see buildCombatEnv() and the combat-migration notes). No routing wired here. -->
+<script src="/static/js/core/env_builders_gameplay.js"></script>
+<script src="/static/js/gameplay/combat.js"></script>
 <!-- Stage 4 ownership: render/boot.js is the live canvas bootstrap owner; play.html keeps drawLoop()/drawFrame() and interaction handlers via compatibility wrappers. -->
 <script src="/static/js/render/boot.js"></script>
 <script src="/static/js/render/fog.js"></script>
@@ -44205,6 +44212,69 @@ function _sortCombatants() {
 function _pushCombat() {
   sendWS({ type: 'combat_update', payload: { ..._combat, round: _combatRound } });
 }
+
+// ── Combat module env builder (groundwork; NOT yet the live combat path) ──────
+// Builds the env-injected surface that gameplay/combat.js (window.AppGameplayCombat)
+// expects. Every member points at play.html's live functions/state — never a
+// re-implementation — so getCombat/setCombat read & write the same _combat object
+// the inline UI and the message side already share. USER_ID resolves via
+// getEffectiveUserId() so the module's role gating would match the inline
+// _canActCurrentTurn/_combatantOwnedByMe semantics.
+//
+// Currently used ONLY by the boot-time sanity check below. Combat actions still
+// run through play.html's inline globals because the module is a stale fork of
+// several functions — combatApplyState, renderCombat, the role-gating helpers,
+// and combatStart/RollInitiative/Remove/SelectTarget/AttackSelected all diverge
+// from the live inline versions. Do not repoint onclicks through this builder
+// until those functions are reconciled (see the combat-migration notes).
+function buildCombatEnv() {
+  const B = window.AppEnvBuildersGameplay;
+  if (!B || typeof B.getCombatEnv !== 'function') return null;
+  return B.getCombatEnv({
+    document: document,
+    ROLE: ROLE,
+    USER_ID: getEffectiveUserId(),
+    tokens: tokens,
+    getCurrentPoi: () => _currentPoi,
+    getCharSheet: () => _charSheet,
+    addLogEntry: (typeof addLogEntry === 'function') ? addLogEntry : (() => {}),
+    getStore: () => (typeof window !== 'undefined' && window.AppStore) ? window.AppStore : null,
+    getUserName: () => (typeof NAME !== 'undefined' ? NAME : ''),
+    showToast: (typeof showToast === 'function') ? showToast : (() => {}),
+    sendWS: (typeof sendWS === 'function') ? sendWS : (() => {}),
+    showDiceAnimation: (typeof showDiceAnimation === 'function') ? showDiceAnimation : undefined,
+    fillDiceResult: (typeof fillDiceResult === 'function') ? fillDiceResult : undefined,
+    appDiceSyncResult: window.appDiceSyncResult,
+    appDiceSyncAuthoritativePayload: window.appDiceSyncAuthoritativePayload,
+    appDiceShowLocalResult: window.appDiceShowLocalResult,
+    confirm: (msg) => window.confirm(msg),
+    prompt: (msg, def) => window.prompt(msg, def),
+    getCombat: () => _combat,
+    setCombat: (v) => { _combat = v; },
+    getCombatRound: () => _combatRound,
+    setCombatRound: (v) => { _combatRound = v; },
+    renderCombat: renderCombat,
+    getCombatTargeting: () => _combatTargeting,
+    setCombatTargeting: (v) => { _combatTargeting = v; },
+    pulseCombatTarget: (tokenId) => _pulseCombatTarget(tokenId),
+  });
+}
+window.buildCombatEnv = buildCombatEnv;
+
+// One-time groundwork sanity check (§3): confirm the dormant combat module and
+// its env builder loaded, and that buildCombatEnv() exposes the full 22-member
+// surface the module expects. Logs only — routes no combat action through it.
+try {
+  const _cEnv = buildCombatEnv();
+  const _cReq = ['ROLE','USER_ID','_charSheet','_currentPoi','addLogEntry','appDiceShowLocalResult','confirm','document','getCombat','getCombatRound','getCombatTargeting','getStore','getUserName','prompt','pulseCombatTarget','renderCombat','sendWS','setCombat','setCombatRound','setCombatTargeting','showToast','tokens'];
+  const _cMissing = _cEnv ? _cReq.filter(k => !(k in _cEnv)) : _cReq.slice();
+  console.debug('[combat module groundwork]', {
+    moduleLoaded: !!window.AppGameplayCombat,
+    envBuilderLoaded: !!(window.AppEnvBuildersGameplay && window.AppEnvBuildersGameplay.getCombatEnv),
+    envComplete: !!_cEnv && _cMissing.length === 0,
+    missingEnvKeys: _cMissing,
+  });
+} catch (_e) { console.debug('[combat module groundwork] env check failed', _e); }
 
 
 // ── Combat targeting & attack flow ────────────────────────────────────────
