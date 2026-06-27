@@ -25424,6 +25424,10 @@ function applyAuthoritativeTokenSync(payload = {}) {
   updatePermSelects();
   if (ROLE === 'player') syncMyCharacterFormFromToken(true);
   renderTokenEmotePanel();
+  // Full token snapshots (join/reconnect/tokens_sync/map enter-exit) bring
+  // freshly-synced party member tokens and their HP. Refresh the party status
+  // panel so health bars live-sync without needing a manual tab refresh.
+  if (typeof renderPartyStatusPanel === 'function') renderPartyStatusPanel();
 }
 
 // ═══════════════════════════════════════════════════════════════════
