@@ -1010,6 +1010,18 @@ body[data-role="player"] .rp-ctx-tab[aria-pressed="true"] {
   color: #8ff7ec;
   box-shadow: 0 0 0 1px rgba(0,229,204,.20) inset, 0 0 16px rgba(0,229,204,.12);
 }
+.rp-char-banner {
+  display: flex;
+  align-items: center;
+  gap: .38rem;
+  margin: -.28rem -.2rem -.2rem;
+  color: #d8b866;
+  font: 700 .72rem/1 var(--mf-font-display, 'Cinzel', serif);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.rp-char-banner span { color: rgba(212,166,55,.68); }
+
 .rp-char-hero {
   position: relative;
   display: flex;
@@ -1127,3 +1139,11 @@ body[data-role="player"] .rp-ctx-tab[aria-pressed="true"] {
 }
 .rp-char-book-cta:hover { background: linear-gradient(180deg, rgba(0,229,204,.24), rgba(0,80,72,.22)); }
 body[data-role="player"] #rp-quickbar .qb-hp { display: none !important; }
+
+/* Player/viewer map-first shells own the right column. Keep the legacy selected
+   token summary from reappearing as a bottom-right duplicate under the new
+   character/context panel. */
+body[data-role="player"] #selected-quick-panel,
+body[data-role="viewer"] #selected-quick-panel {
+  display: none !important;
+}

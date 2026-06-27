@@ -38303,6 +38303,7 @@ function _rpMyCharacterHeroHtml() {
   const questBody = quest ? `<strong>${escapeHtml(quest.title || 'Untitled quest')}</strong><span>${escapeHtml(String(quest.summary || quest.description || 'Follow the next objective in your journal.'))}</span>` : '<strong>No active quest</strong><span>Your next objective will appear here when the DM shares one.</span>';
   const discBody = disc ? `<strong>${escapeHtml(disc.title || 'New discovery')}</strong><span>${escapeHtml(String(disc.body || disc.summary || 'A recent clue has been added to your journal.'))}</span>` : '<strong>No latest discovery</strong><span>Private clues, handouts, and notes will surface here.</span>';
   return `<div class="rp-char-hero">
+    <div class="rp-char-banner"><span>⚜</span><strong>Casual D&amp;D</strong></div>
     <div class="rp-char-identity"><div class="rp-char-portrait">${portraitInner}</div><div class="rp-char-nameblock"><h3>${escapeHtml(name)}</h3><p>${escapeHtml(classLine)}</p>${subclass ? `<em>${escapeHtml(subclass)}</em>` : ''}</div><button class="rp-char-gear" type="button" onclick="openCharacterBook()" title="Open character book">⚙</button></div>
     <div class="rp-char-hp"><div class="rp-char-hp-head"><span>HP</span><b>${hasHp ? curHp : '—'} <small>/ ${hasHp ? maxHp : '—'}</small></b><i></i><div class="rp-char-temp"><span>Temp HP</span><strong>${tempHp}</strong></div></div><div class="rp-char-hp-bar"><u class="${hpClass}" style="width:${hpPct}%"></u></div></div>
     <div class="rp-char-stats"><div><span>AC</span><b>${Number.isFinite(ac) ? ac : '—'}</b></div><div><span>Initiative</span><b>${formatSignedSummaryValue(init)}</b></div><div><span>Speed</span><b>${_myCharFmtSpeed(speed)}</b></div></div>
@@ -38745,13 +38746,15 @@ window.initRolePanels = function initRolePanels() {
   document.body.setAttribute('data-role', effectiveRole);
 
   // Hide legacy right-panel surfaces so the role context shell owns the column.
-  ['right-tab-bar', 'player-dashboard-shell', 'right-panel-context', 'dm-context-shell'].forEach((id) => {
+  ['right-tab-bar', 'player-dashboard-shell', 'right-panel-context', 'selected-quick-panel', 'dm-context-shell'].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
   document.querySelectorAll('#sidebar-right .rtab-pane, #sidebar-right .rtab-shell').forEach((el) => { el.style.display = 'none'; });
   const dmCtxShared = document.getElementById('dm-context-shell');
   if (dmCtxShared) dmCtxShared.hidden = true;
+  const selectedQuick = document.getElementById('selected-quick-panel');
+  if (selectedQuick) selectedQuick.classList.remove('active');
 
   if (effectiveRole === 'player') {
     // Show player rail, populate modes
