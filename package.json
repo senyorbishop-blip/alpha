@@ -1,21 +1,21 @@
 {
   "name": "alpha",
-  "version": "1.0.0",
+  "version": "0.9.1-beta",
   "description": "Multiplayer D&D tabletop app with live WebSocket sync, DM/player/viewer roles, map tooling, combat helpers, fog/vision, chat, and narration/audio.",
-  "main": "check_creation.js",
+  "main": "main.py",
   "directories": {
     "doc": "docs",
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "playwright test",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "SEE LICENSE IN LICENSE.txt",
   "type": "commonjs",
   "devDependencies": {
     "@playwright/test": "^1.54.0"
