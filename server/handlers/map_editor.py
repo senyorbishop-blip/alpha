@@ -7,6 +7,7 @@ import secrets
 import time
 
 logger = logging.getLogger(__name__)
+from server.editor_schema import canonical_weather_type
 from server.session import normalize_interactable, assistant_dm_has_scope, normalize_map_context, normalize_map_context_from_payload, normalize_fog_maps
 from server.quest_progress import apply_objective_event, normalize_quest_payload_shape
 from server.living_world_events import emit_world_event, consume_world_event
@@ -1547,16 +1548,21 @@ async def handle_weather_set(payload: dict, session: Session, user: User):
         return {"type": "error", "payload": {"message": "DM only."}}
 
     map_ctx    = payload.get("map_context", getattr(session, "current_map", "default"))
-    w_type     = payload.get("weather_type", "none")
-    intensity  = max(0.0, min(1.0, float(payload.get("intensity", 0.5))))
-    wind_angle = max(0.0, min(360.0, float(payload.get("wind_angle", 0.0))))
-    wind_speed = max(0.0, min(1.0,   float(payload.get("wind_speed", 0.3))))
+
+    def _f(value, default, lo, hi):
+        try:
+            return max(lo, min(hi, float(value)))
+        except (TypeError, ValueError):
+            return default
 
     weather_cfg = {
-        "weather_type": w_type,
-        "intensity":    intensity,
-        "wind_angle":   wind_angle,
-        "wind_speed":   wind_speed,
+        "weather_type":        canonical_weather_type(payload.get("weather_type", "none")),
+        "intensity":           _f(payload.get("intensity", 0.5), 0.5, 0.0, 1.0),
+        "wind_angle":          _f(payload.get("wind_angle", 0.0), 0.0, 0.0, 360.0),
+        "wind_speed":          _f(payload.get("wind_speed", 0.3), 0.3, 0.0, 1.0),
+        "darkness":            _f(payload.get("darkness", 0.0), 0.0, 0.0, 1.0),
+        "lightning_frequency": _f(payload.get("lightning_frequency", 0.5), 0.5, 0.0, 1.0),
+        "audio_linked":        bool(payload.get("audio_linked", True)),
     }
 
     if not hasattr(session, "map_settings") or session.map_settings is None:

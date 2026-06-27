@@ -1072,19 +1072,24 @@
           <select id="weather-type-select" class="sound-slider"
                   style="flex:1;padding:0.2rem 0.3rem;"
                   onchange="dmWeatherChanged()">
-            <option value="none">— None —</option>
-            <option value="rain">🌧 Rain</option>
+            <option value="none">— Clear —</option>
+            <option value="rain">🌧 Light Rain</option>
+            <option value="heavy_rain">🌧🌧 Heavy Rain</option>
+            <option value="storm">⛈ Storm</option>
             <option value="snow">❄️ Snow</option>
-            <option value="fog">🌫 Fog</option>
-            <option value="stormy">⛈ Stormy</option>
-            <option value="sandstorm">🏜 Sandstorm</option>
-            <option value="ash">🌋 Ash Fall</option>
-            <option value="aurora">🌌 Aurora</option>
             <option value="blizzard">🌨 Blizzard</option>
+            <option value="fog">🌫 Fog / Mist</option>
+            <option value="ash">🌋 Ash &amp; Embers</option>
+            <option value="sand">🏜 Sand &amp; Dust</option>
+            <option value="arcane_storm">🔮 Arcane Storm</option>
+            <option value="aurora">🌌 Aurora</option>
           </select>
           <input  id="weather-intensity" type="range" min="0" max="1" step="0.01"
                   value="0.5" class="sound-slider" oninput="dmWeatherChanged()"
                   title="Intensity" />
+        </div>
+        <div id="weather-storm-note" style="display:none;font-size:0.58rem;color:var(--parchment-dim);line-height:1.35;margin:0.25rem 0 0.1rem;font-style:italic;">
+          Storm = heavy rain + strong wind + lightning + thunder + darkened scene.
         </div>
         <div class="sound-vol-row" style="align-items:center;gap:0.5rem;margin-top:0.3rem;">
           <span style="font-size:0.62rem;color:var(--parchment-dim);white-space:nowrap;">Wind</span>
@@ -1107,6 +1112,18 @@
           </div>
           <input type="hidden" id="weather-wind-angle" value="0" />
         </div>
+        <div class="sound-vol-row" style="align-items:center;gap:0.5rem;margin-top:0.3rem;">
+          <span style="font-size:0.62rem;color:var(--parchment-dim);white-space:nowrap;">Darkness</span>
+          <input id="weather-darkness" type="range" min="0" max="1" step="0.01"
+                 value="0" class="sound-slider" style="flex:1;" oninput="dmWeatherChanged()"
+                 title="Darkness / Atmosphere" />
+        </div>
+        <div class="sound-vol-row" id="weather-lightning-row" style="align-items:center;gap:0.5rem;margin-top:0.25rem;display:none;">
+          <span style="font-size:0.62rem;color:var(--parchment-dim);white-space:nowrap;">Lightning</span>
+          <input id="weather-lightning-freq" type="range" min="0" max="1" step="0.01"
+                 value="0.5" class="sound-slider" style="flex:1;" oninput="dmWeatherChanged()"
+                 title="Lightning Frequency" />
+        </div>
         <div class="sound-vol-row" style="align-items:center;gap:0.5rem;margin-top:0.25rem;">
           <span style="font-size:0.62rem;color:var(--parchment-dim);white-space:nowrap;">Transition</span>
           <select id="weather-transition" class="sound-slider" style="flex:1;padding:0.15rem 0.25rem;"
@@ -1116,6 +1133,14 @@
             <option value="15000" selected>15s</option>
             <option value="30000">30s</option>
           </select>
+        </div>
+        <label class="sound-vol-row" style="align-items:center;gap:0.4rem;margin-top:0.3rem;font-size:0.62rem;color:var(--parchment-dim);cursor:pointer;">
+          <input id="weather-audio-link" type="checkbox" checked onchange="dmWeatherChanged()" style="margin:0;" />
+          <span>Use matching ambience</span>
+        </label>
+        <div class="sound-vol-row" style="gap:0.4rem;margin-top:0.45rem;">
+          <button type="button" class="sound-sfx-btn" style="flex:1;" onclick="weatherPreviewAsPlayer()" title="Re-render exactly as players see it">👁 Preview</button>
+          <button type="button" class="sound-sfx-btn" style="flex:1;" onclick="weatherResetCurrent()" title="Clear weather on this map">↺ Reset</button>
         </div>
       </div>
     </details>
@@ -23922,22 +23947,89 @@ function dmSoundStopAll() {
   _updateSoundPanelTrackUI('silence');
 }
 
+let _lastWeatherAudioType = null;
+function _canonWeatherType(t) {
+  return (window.AppWeather && window.AppWeather.canonType) ? window.AppWeather.canonType(t) : String(t || 'none');
+}
+// Show/hide the storm explainer + lightning-frequency control based on type.
+function _syncWeatherPanelForType(canonType) {
+  const hasLightning = canonType === 'storm' || canonType === 'arcane_storm';
+  const lr = document.getElementById('weather-lightning-row');
+  if (lr) lr.style.display = hasLightning ? '' : 'none';
+  const note = document.getElementById('weather-storm-note');
+  if (note) note.style.display = (canonType === 'storm') ? '' : 'none';
+}
 function dmWeatherChanged() {
-  const weather_type = document.getElementById('weather-type-select')?.value;
+  const rawType      = document.getElementById('weather-type-select')?.value;
+  const weather_type = _canonWeatherType(rawType);
   const intensity    = parseFloat(document.getElementById('weather-intensity')?.value ?? 0);
   const wind_speed   = parseFloat(document.getElementById('weather-wind-speed')?.value ?? 0.3);
   const wind_angle   = parseFloat(document.getElementById('weather-wind-angle')?.value ?? 0);
+  const darkness     = parseFloat(document.getElementById('weather-darkness')?.value ?? 0);
+  const lightning_frequency = parseFloat(document.getElementById('weather-lightning-freq')?.value ?? 0.5);
+  const audio_linked = !!document.getElementById('weather-audio-link')?.checked;
   const map_context  = editorMapContextKey();
-  sendWS({ type: 'weather_set', payload: { weather_type, intensity, wind_angle, wind_speed, map_context } });
+
+  _syncWeatherPanelForType(weather_type);
+
+  sendWS({ type: 'weather_set', payload: {
+    weather_type, intensity, wind_angle, wind_speed,
+    darkness, lightning_frequency, audio_linked, map_context,
+  } });
   // Apply locally so DM sees it immediately without waiting for the echo
   if (WeatherSystem) {
+    const opts = { darkness, lightningFrequency: lightning_frequency, audioLinked: audio_linked };
     const transMs = parseInt(document.getElementById('weather-transition')?.value ?? 0);
     if (transMs > 0) {
-      WeatherSystem.transitionTo(weather_type, intensity, transMs, wind_angle, wind_speed);
+      WeatherSystem.transitionTo(weather_type, intensity, transMs, wind_angle, wind_speed, opts);
     } else {
-      WeatherSystem.setWeather(weather_type, intensity, wind_angle, wind_speed);
+      WeatherSystem.setWeather(weather_type, intensity, wind_angle, wind_speed, opts);
     }
   }
+
+  // Optional matching ambience — only react when the *type* changes so dragging
+  // sliders never restarts the loop. Opt-in via the "Use matching ambience" toggle.
+  if (audio_linked && weather_type !== _lastWeatherAudioType) {
+    const preset = window.AppWeather && window.AppWeather.presets && window.AppWeather.presets[weather_type];
+    const track  = preset && preset.audio;
+    try {
+      if (track && track !== 'silence' && window.audioManager && typeof audioManager.playAmbient === 'function') {
+        audioManager.playAmbient(track, 1500);
+      }
+    } catch (e) { /* ambience optional — weather visuals unaffected */ }
+  }
+  _lastWeatherAudioType = weather_type;
+}
+
+// "Preview as player": re-render the current settings instantly (no transition),
+// so the DM sees the exact frame players see. DM and players share WeatherSystem,
+// so this is a faithful preview.
+function weatherPreviewAsPlayer() {
+  const sel = document.getElementById('weather-type-select');
+  if (!sel || !WeatherSystem) return;
+  const weather_type = _canonWeatherType(sel.value);
+  const intensity  = parseFloat(document.getElementById('weather-intensity')?.value ?? 0.5);
+  const wind_speed = parseFloat(document.getElementById('weather-wind-speed')?.value ?? 0.3);
+  const wind_angle = parseFloat(document.getElementById('weather-wind-angle')?.value ?? 0);
+  const darkness   = parseFloat(document.getElementById('weather-darkness')?.value ?? 0);
+  const lightningFrequency = parseFloat(document.getElementById('weather-lightning-freq')?.value ?? 0.5);
+  WeatherSystem.setWeather(weather_type, intensity, wind_angle, wind_speed, { darkness, lightningFrequency });
+  if (typeof showToast === 'function') showToast('Previewing weather exactly as players see it.');
+}
+
+// "Reset weather": clear weather on the current map and broadcast.
+function weatherResetCurrent() {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+  set('weather-type-select', 'none');
+  set('weather-intensity', '0.5');
+  set('weather-wind-speed', '0.3');
+  set('weather-wind-angle', '0');
+  set('weather-darkness', '0');
+  set('weather-lightning-freq', '0.5');
+  const dot = document.getElementById('weather-compass-dot');
+  if (dot) dot.style.transform = 'translate(-50%, -50%)';
+  _lastWeatherAudioType = null;
+  dmWeatherChanged();
 }
 
 /* ── Compass widget for wind direction ── */
@@ -25496,15 +25588,63 @@ function applyAuthoritativeTokenSync(payload = {}) {
 // MESSAGE HANDLERS
 // ═══════════════════════════════════════════════════════════════════
 
+// ── Weather presets — single source of truth for every weather type ──
+// Each preset declares its visual/audio identity so the engine and the DM
+// panel stay in sync. `style` selects the particle/draw family; the numeric
+// multipliers scale the shared particle factories so two presets that share a
+// style (e.g. rain / heavy_rain / storm) still feel clearly distinct.
+//   density   : particle-count multiplier (capped per style, see _particleCount)
+//   speed     : fall-speed multiplier
+//   size      : particle size multiplier
+//   opacity   : particle opacity multiplier
+//   slant     : how strongly wind tilts the streaks (rain/sand styles)
+//   tint      : [r,g,b] of the atmosphere/darkness overlay
+//   darkness  : base strength of that overlay (0 = none) — scaled by intensity
+//   lightning : null, or {interval,jitter,double,color} cadence config
+//   shake     : storm screen-pulse allowed (gated by reduced-motion)
+//   audio     : matching ambience track id (used by the "Audio Link" toggle)
+const WEATHER_PRESETS = {
+  none:         { label:'Clear',        style:'none',  density:0,    speed:1,    size:1,    opacity:1,    slant:0,   tint:[0,0,0],       darkness:0,    lightning:null, shake:false, audio:'silence' },
+  rain:         { label:'Light Rain',   style:'rain',  density:0.5,  speed:0.85, size:0.85, opacity:0.85, slant:0.6, tint:[120,150,190], darkness:0.06, lightning:null, shake:false, audio:'rain' },
+  heavy_rain:   { label:'Heavy Rain',   style:'rain',  density:1.0,  speed:1.15, size:1.05, opacity:1.0,  slant:1.1, tint:[70,90,125],   darkness:0.18, lightning:null, shake:false, audio:'heavy_rain' },
+  storm:        { label:'Storm',        style:'rain',  density:1.15, speed:1.35, size:1.15, opacity:1.05, slant:1.7, tint:[26,34,58],    darkness:0.34, lightning:{interval:12,jitter:6,double:0.35,color:'cool'}, shake:true,  audio:'storm' },
+  snow:         { label:'Snow',         style:'snow',  density:0.55, speed:0.85, size:0.9,  opacity:0.9,  slant:0.4, tint:[205,218,238], darkness:0.04, lightning:null, shake:false, audio:'wind' },
+  blizzard:     { label:'Blizzard',     style:'blizzard', density:1.0, speed:1.5, size:0.8, opacity:1.0, slant:1.4, tint:[210,222,240], darkness:0.10, lightning:null, shake:false, audio:'blizzard', haze:true },
+  fog:          { label:'Fog / Mist',   style:'fog',   density:1,    speed:1,    size:1,    opacity:1,    slant:0,   tint:[200,210,222], darkness:0.05, lightning:null, shake:false, audio:'wind' },
+  ash:          { label:'Ash & Embers', style:'ash',   density:0.7,  speed:1,    size:1,    opacity:0.95, slant:0.3, tint:[40,30,22],    darkness:0.16, lightning:null, shake:false, audio:'silence' },
+  sand:         { label:'Sand & Dust',  style:'sand',  density:0.85, speed:1,    size:1,    opacity:0.9,  slant:1.0, tint:[178,134,68],  darkness:0.12, lightning:null, shake:false, audio:'wind' },
+  arcane_storm: { label:'Arcane Storm', style:'rain',  density:0.9,  speed:1.1,  size:1.1,  opacity:0.95, slant:1.0, tint:[60,30,90],    darkness:0.22, lightning:{interval:10,jitter:5,double:0.4,color:'arcane'}, shake:true, audio:'storm', arcane:true },
+  aurora:       { label:'Aurora',       style:'aurora',density:0,    speed:1,    size:1,    opacity:1,    slant:0,   tint:[0,0,0],       darkness:0,    lightning:null, shake:false, audio:'silence' },
+};
+// Backward-compat aliases for legacy/saved weather type names.
+const WEATHER_TYPE_ALIASES = {
+  stormy:'storm', thunderstorm:'storm', thunder:'storm',
+  sandstorm:'sand', dust:'sand', 'sand_storm':'sand',
+  snowy:'snow', cloudy:'fog', mist:'fog', windy:'fog',
+  'heavy rain':'heavy_rain', heavyrain:'heavy_rain', 'heavy-rain':'heavy_rain', downpour:'heavy_rain',
+  embers:'ash', magic:'arcane_storm', magical:'arcane_storm', 'arcane storm':'arcane_storm',
+};
+function canonWeatherType(t) {
+  let key = String(t == null ? 'none' : t).trim().toLowerCase().replace(/\s+/g, '_');
+  if (WEATHER_TYPE_ALIASES[key]) key = WEATHER_TYPE_ALIASES[key];
+  return WEATHER_PRESETS[key] ? key : 'none';
+}
+// Exposed so non-module code (schema adapters, tests) can normalize safely.
+window.AppWeather = window.AppWeather || {};
+window.AppWeather.canonType = canonWeatherType;
+window.AppWeather.presets   = WEATHER_PRESETS;
+
 // ── WeatherSystem — screen-space particle weather overlay ──────────
 WeatherSystem = (() => {
   const cvs = document.getElementById('weather-canvas');
   const ctx  = cvs ? cvs.getContext('2d') : null;
 
-  let type       = 'none';
+  let type       = 'none';      // canonical preset key
   let intensity  = 0.5;
   let windAngle  = 0;    // 0-360 degrees (0 = north/up, 90 = east/right)
   let windSpeed  = 0.3;  // 0-1
+  let darkness   = 0;    // 0-1 DM atmosphere boost on top of preset.darkness
+  let lightningFreq = 0.5; // 0-1, higher = more frequent strikes
   let rafId      = null;
   let particles  = [];
 
@@ -25516,7 +25656,7 @@ WeatherSystem = (() => {
   let _oldParticles       = [];
   let _oldType            = 'none';
 
-  // Lightning state (stormy only)
+  // Lightning state (storm / arcane_storm only)
   let _lightningTimer     = null;
   let _lightningFlash     = 0;   // >0 = currently flashing
   let _lightningBolt      = null;
@@ -25524,6 +25664,14 @@ WeatherSystem = (() => {
 
   const W = () => cvs ? cvs.width  : window.innerWidth;
   const H = () => cvs ? cvs.height : window.innerHeight;
+
+  const _preset = () => WEATHER_PRESETS[type] || WEATHER_PRESETS.none;
+
+  // Accessibility: respect prefers-reduced-motion live (user can toggle mid-session).
+  function reducedMotion() {
+    try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+    catch (e) { return false; }
+  }
 
   /* ── wind helpers ── */
   function windDx() {
@@ -25534,15 +25682,16 @@ WeatherSystem = (() => {
     return Math.cos(windAngle * Math.PI / 180) * windSpeed;
   }
 
-  /* ── particle factories ── */
+  /* ── particle factories (scaled by the active preset) ── */
   function mkRain() {
-    const wdx = windDx();
+    const pr = _preset();
+    const wdx = windDx() * pr.slant;
     return { x:       Math.random()*W()*1.4 - W()*0.2,
              y:       Math.random()*H() - H(),
-             speed:   14 + Math.random()*12,
-             len:     18 + Math.random()*20,
-             opacity: 0.25 + Math.random()*0.45,
-             width:   0.7 + Math.random()*0.8,
+             speed:   (14 + Math.random()*12) * pr.speed,
+             len:     (18 + Math.random()*20) * pr.size,
+             opacity: (0.25 + Math.random()*0.45) * pr.opacity,
+             width:   (0.7 + Math.random()*0.8) * pr.size,
              wdx };
   }
   function mkSnow() {
@@ -25591,50 +25740,49 @@ WeatherSystem = (() => {
              isEmber };
   }
   function mkBlizzard() {
-    const wdx = windDx() * 3 + 1.5;
+    const pr = _preset();
+    const wdx = windDx() * 3 * pr.slant + 1.5;
     return { x:      Math.random()*W()*1.4 - W()*0.2,
              y:      Math.random()*H() - H(),
-             r:      0.8 + Math.random()*2.5,
-             speed:  1.5 + Math.random()*3.5,
+             r:      (0.8 + Math.random()*2.5) * pr.size,
+             speed:  (1.5 + Math.random()*3.5) * pr.speed,
              drift:  wdx + (Math.random()-0.5)*0.5,
              wobble: Math.random()*Math.PI*2,
              wSpd:   0.02 + Math.random()*0.04,
              rot:    Math.random()*Math.PI*2,
              rotSpd: (Math.random()-0.5)*0.08,
-             opacity:0.5 + Math.random()*0.4,
+             opacity:(0.5 + Math.random()*0.4) * pr.opacity,
              wdx };
   }
 
-  /* ── particle counts ── */
-  const rainN      = () => Math.floor(100 + 180*intensity);
-  const snowN      = () => Math.floor( 60 + 200*intensity);
-  const fogN       = ()  => 4;
-  const sandN      = () => Math.floor(120 + 280*intensity);
-  const ashN       = () => Math.floor( 60 + 140*intensity);
-  const blizzardN  = () => Math.floor(500 + 300*intensity);
-
-  function _mkParticle(t) {
-    switch (t) {
-      case 'rain':
-      case 'stormy':    return mkRain();
-      case 'snow':      return mkSnow();
-      case 'fog':       return mkFog();
-      case 'sandstorm': return mkSand();
-      case 'ash':       return mkAsh();
-      case 'blizzard':  return mkBlizzard();
-      default:          return null;
-    }
-  }
+  /* ── particle counts — hard caps per type keep the frame budget bounded.
+     Reduced-motion trims density ~30% to ease weaker machines / vestibular load. ── */
   function _particleCount(t) {
+    let n;
     switch (t) {
-      case 'rain':      return rainN();
-      case 'stormy':    return Math.floor(150 + 220*intensity);
-      case 'snow':      return snowN();
-      case 'fog':       return fogN();
-      case 'sandstorm': return sandN();
-      case 'ash':       return ashN();
-      case 'blizzard':  return blizzardN();
-      default:          return 0;
+      case 'rain':         n = 80  + 60*intensity;  break;  // 80–140
+      case 'heavy_rain':   n = 180 + 120*intensity; break;  // 180–300
+      case 'storm':        n = 220 + 140*intensity; break;  // 220–360
+      case 'arcane_storm': n = 180 + 120*intensity; break;  // 180–300
+      case 'snow':         n = 80  + 100*intensity; break;  // 80–180
+      case 'blizzard':     n = 180 + 100*intensity; break;  // 180–280
+      case 'sand':         n = 120 + 160*intensity; break;  // 120–280
+      case 'ash':          n = 60  + 80*intensity;  break;  // 60–140
+      case 'fog':          n = 5;                   break;  // overlay bands, not many particles
+      default:             n = 0;                   break;  // none / aurora
+    }
+    if (reducedMotion() && t !== 'fog') n *= 0.7;
+    return Math.floor(n);
+  }
+  function _mkParticle(t) {
+    switch (WEATHER_PRESETS[t] ? WEATHER_PRESETS[t].style : 'none') {
+      case 'rain':     return mkRain();
+      case 'snow':     return mkSnow();
+      case 'blizzard': return mkBlizzard();
+      case 'fog':      return mkFog();
+      case 'sand':     return mkSand();
+      case 'ash':      return mkAsh();
+      default:         return null;
     }
   }
 
@@ -25649,13 +25797,22 @@ WeatherSystem = (() => {
 
   /* ── draw functions ── */
   function drawRain(pArr, alpha) {
-    const RAD  = (-15 + windDx()*30) * Math.PI / 180;
+    const pr   = _preset();
+    const RAD  = (-10 + windDx()*30) * pr.slant * Math.PI / 180;
     const dx   = Math.sin(RAD), dy = Math.cos(RAD);
+    const arcane = !!pr.arcane;
     ctx.save();
     ctx.globalAlpha = alpha;
+    if (arcane) { ctx.shadowColor = 'rgba(150,110,255,0.7)'; ctx.shadowBlur = 4; }
     for (const p of pArr) {
       ctx.beginPath();
-      ctx.strokeStyle = `rgba(174,214,241,${p.opacity})`;
+      if (arcane) {
+        ctx.strokeStyle = (Math.floor(p.x) & 1)
+          ? `rgba(165,130,255,${p.opacity})`   // arcane violet
+          : `rgba(95,210,255,${p.opacity})`;   // arcane cyan
+      } else {
+        ctx.strokeStyle = `rgba(174,214,241,${p.opacity})`;
+      }
       ctx.lineWidth   = p.width;
       ctx.moveTo(p.x, p.y);
       ctx.lineTo(p.x - dx*p.len, p.y - dy*p.len);
@@ -25699,9 +25856,7 @@ WeatherSystem = (() => {
   function drawSand(pArr, alpha) {
     ctx.save();
     ctx.globalAlpha = alpha;
-    // Ambient tint
-    ctx.fillStyle = `rgba(180,120,40,${0.08 * intensity})`;
-    ctx.fillRect(0, 0, W(), H());
+    // (atmosphere tint handled by the unified darkness overlay)
     for (const p of pArr) {
       ctx.beginPath();
       ctx.strokeStyle = `rgba(200,160,80,${p.opacity})`;
@@ -25715,9 +25870,7 @@ WeatherSystem = (() => {
   function drawAsh(pArr, alpha) {
     ctx.save();
     ctx.globalAlpha = alpha;
-    // Dark overlay tint
-    ctx.fillStyle = `rgba(40,30,20,${0.07 * intensity})`;
-    ctx.fillRect(0, 0, W(), H());
+    // (smoky atmosphere handled by the unified darkness overlay)
     for (const p of pArr) {
       ctx.beginPath();
       if (p.isEmber) {
@@ -25733,8 +25886,8 @@ WeatherSystem = (() => {
   function drawBlizzard(pArr, alpha) {
     ctx.save();
     ctx.globalAlpha = alpha;
-    // White tint overlay
-    ctx.fillStyle = `rgba(255,255,255,${0.12 * intensity})`;
+    // Whiteout haze (blizzard-specific) — kept light to preserve readability
+    ctx.fillStyle = `rgba(238,244,255,${0.10 * intensity * (reducedMotion() ? 0.5 : 1)})`;
     ctx.fillRect(0, 0, W(), H());
     for (const p of pArr) {
       ctx.save();
@@ -25781,21 +25934,20 @@ WeatherSystem = (() => {
   }
 
   function _drawParticles(t, pArr, alpha) {
-    switch (t) {
-      case 'rain':
-      case 'stormy':    drawRain(pArr, alpha);      break;
-      case 'snow':      drawSnow(pArr, alpha);      break;
-      case 'fog':       drawFog(pArr, alpha);       break;
-      case 'sandstorm': drawSand(pArr, alpha);      break;
-      case 'ash':       drawAsh(pArr, alpha);       break;
-      case 'blizzard':  drawBlizzard(pArr, alpha);  break;
-      case 'aurora':    drawAurora(alpha);           break;
+    switch (WEATHER_PRESETS[t] ? WEATHER_PRESETS[t].style : 'none') {
+      case 'rain':     drawRain(pArr, alpha);     break;
+      case 'snow':     drawSnow(pArr, alpha);     break;
+      case 'blizzard': drawBlizzard(pArr, alpha); break;
+      case 'fog':      drawFog(pArr, alpha);      break;
+      case 'sand':     drawSand(pArr, alpha);     break;
+      case 'ash':      drawAsh(pArr, alpha);      break;
+      case 'aurora':   drawAurora(alpha);         break;
     }
   }
 
   /* ── update functions ── */
   function updateRain(p) {
-    const RAD  = (-15 + windDx()*30) * Math.PI / 180;
+    const RAD  = (-10 + windDx()*30) * _preset().slant * Math.PI / 180;
     p.y += p.speed;
     p.x += Math.sin(RAD) * p.speed + p.wdx * 0.6;
     if (p.y > H() || p.x < -80 || p.x > W()+80) { Object.assign(p, mkRain()); p.y = -p.len; }
@@ -25838,40 +25990,77 @@ WeatherSystem = (() => {
   }
 
   function _updateParticles(t, pArr) {
-    switch (t) {
-      case 'rain':
-      case 'stormy':    for (const p of pArr) updateRain(p);     break;
-      case 'snow':      for (const p of pArr) updateSnow(p);     break;
-      case 'fog':       for (const p of pArr) updateFog(p);      break;
-      case 'sandstorm': for (const p of pArr) updateSand(p);     break;
-      case 'ash':       for (const p of pArr) updateAsh(p);      break;
-      case 'blizzard':  for (const p of pArr) updateBlizzard(p); break;
+    switch (WEATHER_PRESETS[t] ? WEATHER_PRESETS[t].style : 'none') {
+      case 'rain':     for (const p of pArr) updateRain(p);     break;
+      case 'snow':     for (const p of pArr) updateSnow(p);     break;
+      case 'blizzard': for (const p of pArr) updateBlizzard(p); break;
+      case 'fog':      for (const p of pArr) updateFog(p);      break;
+      case 'sand':     for (const p of pArr) updateSand(p);     break;
+      case 'ash':      for (const p of pArr) updateAsh(p);      break;
     }
   }
+  // Does the current preset produce lightning?
+  function _hasLightning() { return !!(_preset().lightning); }
 
   /* ── lightning (stormy) ── */
   function _scheduleLightning() {
     if (_lightningTimer) clearTimeout(_lightningTimer);
-    const delay = (8 + Math.random() * 17) * 1000;
+    const cfg = _preset().lightning;
+    if (!cfg) { _lightningTimer = null; return; }
+    // DM "Lightning Frequency" (0..1) bends the base interval: higher = sooner.
+    const freqFactor = 1.8 - 1.35 * Math.max(0, Math.min(1, lightningFreq));
+    const delay = Math.max(4, cfg.interval * freqFactor + Math.random() * cfg.jitter) * 1000;
     _lightningTimer = setTimeout(_triggerLightning, delay);
   }
 
+  // Thunder hook — local playback only (never broadcasts, so N clients don't
+  // each spam a table-wide SFX). Safe no-op if no audio system is present.
+  function _thunder() {
+    try {
+      if (window.AppWeather && typeof window.AppWeather.onThunder === 'function') { window.AppWeather.onThunder(); return; }
+      if (window.audioManager) {
+        if (typeof audioManager.playLocalSFX === 'function')  { audioManager.playLocalSFX('thunder', 0.7); return; }
+        if (typeof audioManager.playSFXLocal === 'function')  { audioManager.playSFXLocal('thunder'); return; }
+        if (typeof audioManager.playSFX === 'function')       { audioManager.playSFX('thunder'); return; }
+      }
+    } catch (e) { /* no audio asset/engine — visuals continue unaffected */ }
+  }
+
+  // Brief, tiny screen jolt on a strike. Purely cosmetic (canvas is
+  // pointer-events:none) and fully disabled under reduced-motion.
+  function _screenPulse() {
+    if (!cvs || reducedMotion() || !_preset().shake) return;
+    const dx = (Math.random() - 0.5) * 5, dy = (Math.random() - 0.5) * 5;
+    cvs.style.transform = `translate(${dx}px, ${dy}px)`;
+    setTimeout(() => { if (cvs) cvs.style.transform = ''; }, 70);
+  }
+
   function _triggerLightning() {
-    if (type !== 'stormy') return;
-    // Step 1: white flash
-    _lightningFlash = 0.65;
+    if (!_hasLightning()) return;
+    const cfg     = _preset().lightning;
+    const arcane  = cfg.color === 'arcane';
+    const reduced = reducedMotion();
+    // Step 1: flash — softer under reduced-motion to avoid a harsh strobe.
+    const peak = reduced ? 0.28 : 0.62;
+    _lightningFlash = peak;
     const flashStart = performance.now();
     function fadeFlash() {
       const elapsed = performance.now() - flashStart;
-      _lightningFlash = Math.max(0, 0.65 * (1 - elapsed / 80));
+      _lightningFlash = Math.max(0, peak * (1 - elapsed / 90));
       if (_lightningFlash > 0) requestAnimationFrame(fadeFlash);
       else _lightningFlash = 0;
     }
     requestAnimationFrame(fadeFlash);
+    _screenPulse();
+
+    // Optional quick double-flash (never under reduced-motion — no strobing).
+    if (!reduced && Math.random() < (cfg.double || 0)) {
+      setTimeout(() => { if (_hasLightning()) { _lightningFlash = peak * 0.8; _screenPulse(); } }, 130);
+    }
 
     // Step 2: draw bolt at 50ms
     setTimeout(() => {
-      if (type !== 'stormy') return;
+      if (!_hasLightning()) return;
       const w = W(), h = H();
       const startX = w * (0.1 + Math.random() * 0.8);
       const segs = 5 + Math.floor(Math.random() * 4);
@@ -25899,7 +26088,7 @@ WeatherSystem = (() => {
         }
         forks.push(forkPts);
       }
-      _lightningBolt = { points, forks };
+      _lightningBolt = { points, forks, arcane };
       _boltAlpha = 0.9;
 
       const boltStart = performance.now();
@@ -25912,23 +26101,21 @@ WeatherSystem = (() => {
       requestAnimationFrame(fadeBolt);
     }, 50);
 
-    // Step 3: thunder sound after variable delay
+    // Step 3: thunder shortly after the flash (distance feel via variable delay)
     const thunderDelay = (Math.random() * 0.7 + 0.3) * 3000;
-    setTimeout(() => {
-      if (type === 'stormy') {
-        try { sendWS({ type: 'sound_play_sfx', payload: { sfx_id: 'thunder', volume: 0.7 } }); }
-        catch(e) { /* ignore if WS not ready */ }
-      }
-    }, thunderDelay);
+    setTimeout(() => { if (_hasLightning()) _thunder(); }, thunderDelay);
 
-    // Schedule next lightning
+    // Schedule next strike
     _scheduleLightning();
   }
 
   function _drawLightning() {
+    const arcane = _lightningBolt ? _lightningBolt.arcane : (_preset().lightning && _preset().lightning.color === 'arcane');
     if (_lightningFlash > 0) {
       ctx.save();
-      ctx.fillStyle = `rgba(255,255,255,${_lightningFlash})`;
+      ctx.fillStyle = arcane
+        ? `rgba(190,150,255,${_lightningFlash})`
+        : `rgba(255,255,255,${_lightningFlash})`;
       ctx.fillRect(0, 0, W(), H());
       ctx.restore();
     }
@@ -25936,9 +26123,9 @@ WeatherSystem = (() => {
       const bolt = _lightningBolt;
       ctx.save();
       ctx.globalAlpha = _boltAlpha;
-      ctx.strokeStyle = 'rgba(200,240,255,0.9)';
+      ctx.strokeStyle = bolt.arcane ? 'rgba(205,170,255,0.95)' : 'rgba(200,240,255,0.9)';
       ctx.lineWidth = 2;
-      ctx.shadowColor = 'rgba(180,230,255,0.8)';
+      ctx.shadowColor = bolt.arcane ? 'rgba(180,120,255,0.85)' : 'rgba(180,230,255,0.8)';
       ctx.shadowBlur = 8;
       // Main bolt
       ctx.beginPath();
@@ -25957,6 +26144,21 @@ WeatherSystem = (() => {
     }
   }
 
+  // Unified atmosphere/darkness overlay (drawn under particles each frame).
+  function _drawAtmosphere(alpha) {
+    const pr = _preset();
+    if (!pr || pr.darkness <= 0 && darkness <= 0) return;
+    // Preset darkness scales with intensity; DM "darkness" slider adds on top.
+    let a = pr.darkness * (0.45 + 0.55 * intensity) + darkness * 0.45;
+    a = Math.min(0.55, a) * alpha;          // hard cap protects readability
+    if (a <= 0.002) return;
+    const [r, g, b] = pr.tint;
+    ctx.save();
+    ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+    ctx.fillRect(0, 0, W(), H());
+    ctx.restore();
+  }
+
   /* ── main loop ── */
   function loop() {
     if (!ctx) return;
@@ -25968,6 +26170,7 @@ WeatherSystem = (() => {
       const newAlpha = _transitionProgress;
       const oldAlpha = 1 - _transitionProgress;
 
+      _drawAtmosphere(newAlpha);
       if (_oldType !== 'none' && _oldParticles.length > 0) {
         _updateParticles(_oldType, _oldParticles);
         _drawParticles(_oldType, _oldParticles, oldAlpha);
@@ -25977,7 +26180,7 @@ WeatherSystem = (() => {
         _drawParticles(type, particles, newAlpha);
       }
       if (type === 'aurora') drawAurora(newAlpha);
-      if (type === 'stormy') _drawLightning();
+      if (_hasLightning()) _drawLightning();
 
       if (_transitionProgress >= 1) {
         _transitionActive = false;
@@ -25987,9 +26190,10 @@ WeatherSystem = (() => {
       }
     } else {
       if (type === 'none') { rafId = null; return; }
+      _drawAtmosphere(1);
       _updateParticles(type, particles);
       _drawParticles(type, particles, 1);
-      if (type === 'stormy') _drawLightning();
+      if (_hasLightning()) _drawLightning();
     }
 
     rafId = requestAnimationFrame(loop);
@@ -26000,15 +26204,28 @@ WeatherSystem = (() => {
     _lightningFlash = 0;
     _lightningBolt  = null;
     _boltAlpha      = 0;
+    if (cvs) cvs.style.transform = '';
+  }
+
+  // Apply the extended DM controls (darkness / lightning frequency) shared by
+  // setWeather + transitionTo. `opts` is optional → callers passing only the
+  // legacy positional args keep working unchanged.
+  function _applyOpts(opts) {
+    if (!opts) return;
+    if (opts.darkness !== undefined && opts.darkness !== null)
+      darkness = Math.max(0, Math.min(1, Number(opts.darkness) || 0));
+    if (opts.lightningFrequency !== undefined && opts.lightningFrequency !== null)
+      lightningFreq = Math.max(0, Math.min(1, Number(opts.lightningFrequency)));
   }
 
   /* ── public ── */
   return {
-    setWeather(t, i, wAngle, wSpeed) {
-      type      = t      || 'none';
+    setWeather(t, i, wAngle, wSpeed, opts) {
+      type      = canonWeatherType(t);
       intensity = Math.max(0, Math.min(1, i ?? 0.5));
       if (wAngle !== undefined) windAngle = Math.max(0, Math.min(360, Number(wAngle) || 0));
       if (wSpeed !== undefined) windSpeed = Math.max(0, Math.min(1,   Number(wSpeed) || 0.3));
+      _applyOpts(opts);
       _transitionActive = false;
       _oldParticles = [];
       _oldType = 'none';
@@ -26018,16 +26235,17 @@ WeatherSystem = (() => {
       if (type !== 'none') {
         init();
         rafId = requestAnimationFrame(loop);
-        if (type === 'stormy') _scheduleLightning();
+        if (_hasLightning()) _scheduleLightning();
       }
     },
-    transitionTo(newType, newIntensity, durationMs, wAngle, wSpeed) {
+    transitionTo(newType, newIntensity, durationMs, wAngle, wSpeed, opts) {
       _oldParticles = particles.slice();
       _oldType      = type;
-      type      = newType      || 'none';
+      type      = canonWeatherType(newType);
       intensity = Math.max(0, Math.min(1, newIntensity ?? 0.5));
       if (wAngle !== undefined) windAngle = Math.max(0, Math.min(360, Number(wAngle) || 0));
       if (wSpeed !== undefined) windSpeed = Math.max(0, Math.min(1,   Number(wSpeed) || 0.3));
+      _applyOpts(opts);
       _transitionProgress = 0;
       _transitionDuration = Math.max(0, durationMs || 0);
       _transitionStart    = performance.now();
@@ -26036,7 +26254,7 @@ WeatherSystem = (() => {
       if (type !== 'none') {
         init();
         if (!rafId) rafId = requestAnimationFrame(loop);
-        if (type === 'stormy') _scheduleLightning();
+        if (_hasLightning()) _scheduleLightning();
       } else {
         // Fading out — keep old loop going until transition done
         if (!rafId) rafId = requestAnimationFrame(loop);
@@ -26046,6 +26264,9 @@ WeatherSystem = (() => {
     get intensity() { return intensity; },
     get windAngle() { return windAngle; },
     get windSpeed() { return windSpeed; },
+    get darkness()  { return darkness; },
+    get lightningFrequency() { return lightningFreq; },
+    get preset()    { return _preset(); },
   };
 })();
 
@@ -26594,7 +26815,8 @@ function handleLegacyMessage(msg) {
           String(ws.weather_type || 'none'),
           Number(ws.intensity ?? 0.5),
           Number(ws.wind_angle ?? 0),
-          Number(ws.wind_speed ?? 0.3)
+          Number(ws.wind_speed ?? 0.3),
+          { darkness: Number(ws.darkness ?? 0), lightningFrequency: Number(ws.lightning_frequency ?? 0.5) }
         );
       }
       requestRenderFrame('state_sync render');
@@ -28223,8 +28445,11 @@ function handleLegacyMessage(msg) {
       break;
     }
     case 'weather_sync': {
-      const { weather_type, intensity, wind_angle, wind_speed } = msg.payload || {};
-      if (WeatherSystem) WeatherSystem.setWeather(weather_type, intensity, wind_angle, wind_speed);
+      const w = msg.payload || {};
+      if (WeatherSystem) WeatherSystem.setWeather(
+        w.weather_type, w.intensity, w.wind_angle, w.wind_speed,
+        { darkness: w.darkness, lightningFrequency: w.lightning_frequency }
+      );
       break;
     }
     case 'viewer_emote': {

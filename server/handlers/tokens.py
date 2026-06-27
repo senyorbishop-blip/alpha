@@ -1,6 +1,7 @@
 """
 server/handlers/tokens.py — Token creation, movement, and state handlers.
 """
+from server.editor_schema import canonical_weather_type
 from server.session import create_token, assistant_dm_has_scope, build_token_runtime_payload
 from server.map_logic import find_movement_blocker
 from server.handlers.common import (
@@ -192,16 +193,19 @@ async def _apply_scene_trigger_action(session: Session, zone: dict, action: dict
 
     if action_type == "weather_preset":
         weather_cfg = {
-            "weather_type": str(payload.get("weather_type") or payload.get("preset") or "none").strip().lower()[:24] or "none",
+            "weather_type": canonical_weather_type(payload.get("weather_type") or payload.get("preset") or "none"),
             "intensity": max(0.0, min(1.0, float(payload.get("intensity", 0.5) or 0.5))),
             "wind_angle": max(0.0, min(360.0, float(payload.get("wind_angle", 0.0) or 0.0))),
             "wind_speed": max(0.0, min(1.0, float(payload.get("wind_speed", 0.3) or 0.3))),
+            "darkness": max(0.0, min(1.0, float(payload.get("darkness", 0.0) or 0.0))),
+            "lightning_frequency": max(0.0, min(1.0, float(payload.get("lightning_frequency", 0.5) or 0.5))),
+            "audio_linked": bool(payload.get("audio_linked", True)),
             "map_context": map_ctx,
         }
         session.weather_state = dict(weather_cfg)
         settings = dict((getattr(session, "map_settings", {}) or {}))
         row = dict(settings.get(map_ctx) or {})
-        row["weather"] = {k: weather_cfg[k] for k in ("weather_type", "intensity", "wind_angle", "wind_speed")}
+        row["weather"] = {k: v for k, v in weather_cfg.items() if k != "map_context"}
         settings[map_ctx] = row
         session.map_settings = settings
         await manager.broadcast(session.id, {"type": "weather_sync", "payload": weather_cfg})

@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 from typing import Any
 
-from server.editor_schema import normalize_map_settings
+from server.editor_schema import canonical_weather_type, normalize_map_settings
 from server.map_document import build_map_documents_from_session, normalize_map_documents
 from server.faction_reputation import normalize_faction_reputation_state
 
@@ -145,11 +145,19 @@ def normalize_sound_state(raw: Any) -> dict:
 
 def normalize_weather_state(raw: Any) -> dict:
     src = _as_dict(raw)
+    # Accept either the legacy {type, wind} editor shape or the runtime
+    # {weather_type, wind_speed, wind_angle} shape; unknown types → "none".
+    canon = canonical_weather_type(src.get("weather_type", src.get("type", "none")))
     return {
-        "weather_type": _safe_text(src.get("weather_type"), "none", 24).lower(),
+        "weather_type": canon,
         "intensity": _clamp_float(src.get("intensity", 0.5), 0.5, 0.0, 1.0),
-        "wind_angle": _clamp_float(src.get("wind_angle", 0.0), 0.0, 0.0, 360.0),
-        "wind_speed": _clamp_float(src.get("wind_speed", 0.3), 0.3, 0.0, 1.0),
+        "wind_angle": _clamp_float(src.get("wind_angle", src.get("windAngle", 0.0)), 0.0, 0.0, 360.0),
+        "wind_speed": _clamp_float(src.get("wind_speed", src.get("wind", 0.3)), 0.3, 0.0, 1.0),
+        "darkness": _clamp_float(src.get("darkness", 0.0), 0.0, 0.0, 1.0),
+        "lightning_frequency": _clamp_float(
+            src.get("lightning_frequency", src.get("lightningFrequency", 0.5)), 0.5, 0.0, 1.0
+        ),
+        "audio_linked": bool(src.get("audio_linked", src.get("audioLinked", True))),
         "map_context": _safe_text(src.get("map_context"), "world", 80),
     }
 

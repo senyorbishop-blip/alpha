@@ -13,7 +13,7 @@
         "texture"
       ],
       "fallback": "procedural_forest",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "wilderness_night": {
       "label": "Wilderness Night",
@@ -27,7 +27,7 @@
         "texture"
       ],
       "fallback": "procedural_forest",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "swamp": {
       "label": "Swamp",
@@ -41,7 +41,7 @@
         "texture"
       ],
       "fallback": "procedural_forest",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "mountain_pass": {
       "label": "Mountain Pass",
@@ -55,21 +55,7 @@
         "texture"
       ],
       "fallback": "procedural_forest",
-      "asset_probe": "startup_generated"
-    },
-    "rain": {
-      "label": "Rain",
-      "files": [
-        "/static/assets/audio/forest_loop_20260328.wav"
-      ],
-      "family": "forest",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_forest",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "tavern": {
       "label": "Tavern",
@@ -83,7 +69,7 @@
         "texture"
       ],
       "fallback": "procedural_tavern",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "inn_night": {
       "label": "Inn Night",
@@ -97,7 +83,7 @@
         "texture"
       ],
       "fallback": "procedural_tavern",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "marketplace": {
       "label": "Marketplace",
@@ -111,7 +97,7 @@
         "texture"
       ],
       "fallback": "procedural_tavern",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "city": {
       "label": "City",
@@ -125,7 +111,7 @@
         "texture"
       ],
       "fallback": "procedural_tavern",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "harbor": {
       "label": "Harbor",
@@ -139,7 +125,7 @@
         "texture"
       ],
       "fallback": "procedural_tavern",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "campfire": {
       "label": "Campfire",
@@ -153,7 +139,7 @@
         "texture"
       ],
       "fallback": "procedural_tavern",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "dungeon": {
       "label": "Dungeon",
@@ -167,7 +153,7 @@
         "texture"
       ],
       "fallback": "procedural_dungeon",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "crypt": {
       "label": "Crypt",
@@ -181,7 +167,7 @@
         "texture"
       ],
       "fallback": "procedural_dungeon",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "cave": {
       "label": "Cave",
@@ -195,7 +181,7 @@
         "texture"
       ],
       "fallback": "procedural_dungeon",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "temple": {
       "label": "Temple",
@@ -209,7 +195,7 @@
         "texture"
       ],
       "fallback": "procedural_dungeon",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "castle_hall": {
       "label": "Castle Hall",
@@ -223,7 +209,7 @@
         "texture"
       ],
       "fallback": "procedural_dungeon",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "tension": {
       "label": "Tension / Stealth",
@@ -237,7 +223,7 @@
         "texture"
       ],
       "fallback": "procedural_dungeon",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "battle": {
       "label": "Battle",
@@ -251,7 +237,7 @@
         "texture"
       ],
       "fallback": "procedural_battle",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "boss_battle": {
       "label": "Boss Battle",
@@ -265,21 +251,7 @@
         "texture"
       ],
       "fallback": "procedural_battle",
-      "asset_probe": "startup_generated"
-    },
-    "storm": {
-      "label": "Storm",
-      "files": [
-        "/static/assets/audio/battle_loop_20260328.wav"
-      ],
-      "family": "battle",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_battle",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "coastal": {
       "label": "Coastal",
@@ -293,7 +265,7 @@
         "texture"
       ],
       "fallback": "procedural_battle",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
     },
     "auto": {
       "label": "Auto",
@@ -307,7 +279,77 @@
         "texture"
       ],
       "fallback": "procedural_battle",
-      "asset_probe": "startup_generated"
+      "asset_probe": "enabled"
+    },
+    "storm": {
+      "label": "Storm",
+      "files": [
+        "/static/assets/audio/storm_loop_20260328.wav"
+      ],
+      "family": "weather",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_weather",
+      "asset_probe": "enabled"
+    },
+    "rain": {
+      "label": "Rain",
+      "files": [
+        "/static/assets/audio/storm_loop_20260328.wav"
+      ],
+      "family": "weather",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_weather",
+      "asset_probe": "enabled"
+    },
+    "heavy_rain": {
+      "label": "Heavy Rain",
+      "files": [
+        "/static/assets/audio/storm_loop_20260328.wav"
+      ],
+      "family": "weather",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_weather",
+      "asset_probe": "enabled"
+    },
+    "blizzard": {
+      "label": "Blizzard",
+      "files": [
+        "/static/assets/audio/storm_loop_20260328.wav"
+      ],
+      "family": "weather",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_weather",
+      "asset_probe": "enabled"
+    },
+    "wind": {
+      "label": "Wind",
+      "files": [
+        "/static/assets/audio/storm_loop_20260328.wav"
+      ],
+      "family": "weather",
+      "layers": [
+        "bed",
+        "detail",
+        "texture"
+      ],
+      "fallback": "procedural_weather",
+      "asset_probe": "enabled"
     }
   }
 }

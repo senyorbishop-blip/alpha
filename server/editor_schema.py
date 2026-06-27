@@ -89,6 +89,64 @@ def _clamp_float(value, default: float, minimum: float, maximum: float) -> float
 
 
 
+# ── Canonical weather vocabulary (shared by map-settings + persistence) ──
+# Keep this list in sync with WEATHER_PRESETS in client/templates/play.html.
+VALID_WEATHER_TYPES = {
+    "none", "rain", "heavy_rain", "storm", "snow", "blizzard",
+    "fog", "ash", "sand", "arcane_storm", "aurora",
+}
+WEATHER_TYPE_ALIASES = {
+    "stormy": "storm", "thunderstorm": "storm", "thunder": "storm",
+    "sandstorm": "sand", "sand_storm": "sand", "dust": "sand",
+    "snowy": "snow", "cloudy": "fog", "mist": "fog", "windy": "fog",
+    "heavy rain": "heavy_rain", "heavyrain": "heavy_rain",
+    "heavy-rain": "heavy_rain", "downpour": "heavy_rain",
+    "embers": "ash", "magic": "arcane_storm", "magical": "arcane_storm",
+    "arcane storm": "arcane_storm",
+}
+
+
+def canonical_weather_type(value: Any) -> str:
+    """Map any legacy / saved / user weather type onto a known canonical key.
+
+    Unknown types fall back to 'none' so old or malformed maps never break.
+    """
+    key = str(value if value is not None else "none").strip().lower().replace(" ", "_")
+    key = WEATHER_TYPE_ALIASES.get(key, key)
+    return key if key in VALID_WEATHER_TYPES else "none"
+
+
+def normalize_weather_block(raw: Any) -> dict:
+    """Canonical, backward-compatible weather shape for a single map context.
+
+    Accepts both the legacy editor shape ({type, wind}) and the runtime shape
+    ({weather_type, wind_speed, wind_angle}). Emits the snake_case superset used
+    on the wire / in persistence, plus a legacy ``wind`` mirror for older readers.
+    """
+    w = dict(raw or {})
+    canon = canonical_weather_type(w.get("type", w.get("weather_type", "none")))
+    wind_speed = _clamp_float(
+        w.get("wind_speed", w.get("windSpeed", w.get("wind", 0.2))), 0.2, 0.0, 1.0
+    )
+    return {
+        "enabled": _coerce_bool(w.get("enabled"), False),
+        "type": canon,
+        # mirror canonical type under both names so either reader resolves it
+        "weather_type": canon,
+        "intensity": _clamp_float(w.get("intensity", 0.5), 0.5, 0.0, 1.0),
+        "wind_speed": wind_speed,
+        # legacy single-field readers still expect ``wind``
+        "wind": wind_speed,
+        "wind_angle": _clamp_float(w.get("wind_angle", w.get("windAngle", 0.0)), 0.0, 0.0, 360.0),
+        "darkness": _clamp_float(w.get("darkness", 0.0), 0.0, 0.0, 1.0),
+        "lightning_frequency": _clamp_float(
+            w.get("lightning_frequency", w.get("lightningFrequency", 0.5)), 0.5, 0.0, 1.0
+        ),
+        "audio_linked": _coerce_bool(w.get("audio_linked", w.get("audioLinked", True)), True),
+    }
+
+
+
 def normalize_map_settings(raw: dict | None) -> dict:
     src = dict(raw or {})
     weather = dict(src.get('weather') or {})
@@ -111,12 +169,7 @@ def normalize_map_settings(raw: dict | None) -> dict:
         'grid': {
             'size_px': int(_clamp_float(grid.get('size_px', 64), 64, 16, 256)),
         },
-        'weather': {
-            'enabled': bool(weather.get('enabled', False)),
-            'type': str(weather.get('type') or 'none')[:20],
-            'intensity': _clamp_float(weather.get('intensity', 0.5), 0.5, 0.0, 1.0),
-            'wind': _clamp_float(weather.get('wind', 0.2), 0.2, 0.0, 1.0),
-        },
+        'weather': normalize_weather_block(weather),
         'vision': {
             'enabled': bool(vision.get('enabled', True)),
             'door_blocks_vision_when_closed': bool(vision.get('door_blocks_vision_when_closed', True)),
