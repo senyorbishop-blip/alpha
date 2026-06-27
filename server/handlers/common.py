@@ -636,6 +636,11 @@ def _combat_state_payload_for_user(session: Session, user: User | None, visibili
                 continue
             token_id = str(combatant.get("token_id") or "")
             token = (getattr(session, "tokens", {}) or {}).get(token_id) if token_id else None
+            # Ghost combatant: bound to a token that no longer exists (deleted
+            # mid-combat). Never surface it. Manually-added combatants have no
+            # token_id and are unaffected.
+            if token_id and token is None:
+                continue
             if token is not None and is_npc_or_monster_token(token):
                 map_context = str(combatant.get("map_context") or _token_map_context(token) or getattr(session, "dm_map_context", "world") or "world")
                 from server.visibility import token_blocked_by_los
@@ -687,7 +692,55 @@ def _combat_payload_debug_summary(payload: dict) -> dict:
     }
 
 
+def _prune_deleted_token_combatants(session) -> bool:
+    """Drop combatants whose token no longer exists (deleted mid-combat).
+
+    Central safety net so a ghost combatant never survives in the authoritative
+    roster, regardless of which code path deleted the token. Manual combatants
+    (no token_id) are always kept. Returns True if the roster changed.
+    """
+    combat = getattr(session, "combat", None)
+    if not isinstance(combat, dict):
+        return False
+    tokens = getattr(session, "tokens", {}) or {}
+
+    def _alive(entry) -> bool:
+        tid = str((entry or {}).get("token_id") or "")
+        return (not tid) or (tid in tokens)
+
+    changed = False
+    coms = combat.get("combatants")
+    if isinstance(coms, list) and coms:
+        old_turn = _safe_int(combat.get("turn"), 0, minimum=0, maximum=max(0, len(coms) - 1))
+        current_id = str((coms[old_turn] or {}).get("id") or "") if 0 <= old_turn < len(coms) else ""
+        kept = [c for c in coms if _alive(c)]
+        if len(kept) != len(coms):
+            changed = True
+            combat["combatants"] = kept
+            if not kept:
+                combat["turn"] = 0
+                combat["movement"] = {}
+            elif current_id and any(str((c or {}).get("id") or "") == current_id for c in kept):
+                for i, c in enumerate(kept):
+                    if str((c or {}).get("id") or "") == current_id:
+                        combat["turn"] = i
+                        break
+            else:
+                combat["turn"] = min(old_turn, len(kept) - 1)
+    for key in ("suspended_combatants", "fog_suspended_combatants", "hidden_suspended_combatants"):
+        lst = combat.get(key)
+        if isinstance(lst, list):
+            pruned = [x for x in lst if _alive(x)]
+            if len(pruned) != len(lst):
+                changed = True
+                combat[key] = pruned
+    if changed:
+        session.combat = combat
+    return changed
+
+
 async def _broadcast_combat(session):
+    _prune_deleted_token_combatants(session)
     revision = bump_visibility_revision(session)
     connections = manager.get_session_connections(session.id)
     sent_to = []

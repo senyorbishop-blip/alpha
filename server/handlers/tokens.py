@@ -31,6 +31,8 @@ from server.handlers.combat import (
     _send_token_move_denied,
     _can_act_current_turn,
     run_combat_fog_sync,
+    remove_token_from_combat,
+    _bump_combat_revision,
 )
 from server.handlers.hazards import _process_hazard_triggers_for_token
 from server.handlers.token_move_performance import decide_token_move_heavy_work, mark_token_move_heavy_work_ran
@@ -708,6 +710,9 @@ async def handle_token_delete(payload: dict, session: Session, user: User):
     corpse_states = dict(getattr(session, "corpse_states", {}) or {})
     corpse_states.pop(str(token_id), None)
     session.corpse_states = corpse_states
+    # A deleted token must also leave any active initiative order — otherwise a
+    # ghost combatant lingers in the combat list for the whole table.
+    combat_changed = remove_token_from_combat(session, str(token_id))
     if token:
         log_entry = session.add_log(f"{user.name} removed token '{token.name}'.", "system")
         deleted_payload = {
@@ -728,6 +733,9 @@ async def handle_token_delete(payload: dict, session: Session, user: User):
                 "payload": deleted_payload
             }, {"dm"}, session)
         await _broadcast_token_state_sync(session)
+        if combat_changed:
+            _bump_combat_revision(session, "token_deleted")
+            await _broadcast_combat(session)
         await save_campaign_async(session)
 
 
