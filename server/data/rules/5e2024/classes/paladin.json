@@ -10,7 +10,7 @@
     "wis",
     "cha"
   ],
-  "subclassLevel": 2,
+  "subclassLevel": 3,
   "subclassDisplayName": "Sacred Oath",
   "armorProficiencies": [
     "light",
@@ -164,8 +164,7 @@
       "proficiencyBonus": 2,
       "features": [
         "Fighting Style",
-        "Channel Divinity (1 use)",
-        "Sacred Oath (Subclass)"
+        "Channel Divinity (1 use)"
       ],
       "classMechanics": {
         "layOnHandsPool": 10,
@@ -176,8 +175,7 @@
       },
       "unlockIds": [
         "paladin-fighting-style",
-        "paladin-channel-divinity-1-use",
-        "paladin-sacred-oath-subclass"
+        "paladin-channel-divinity-1-use"
       ]
     },
     {

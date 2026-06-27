@@ -32,6 +32,7 @@ def test_founder_beta_checklists_include_new_systems_hardening_gate():
 def test_runtime_contracts_for_new_systems_stay_wired_in_live_paths():
     handlers = Path("server/handlers/__init__.py").read_text(encoding="utf-8")
     play = Path("client/templates/play.html").read_text(encoding="utf-8")
+    play_css = Path("client/static/css/play.css").read_text(encoding="utf-8")
 
     # Server dispatch contracts
     assert '"assistant_dm_permissions_set": handle_assistant_dm_permissions_set' in handlers
@@ -46,7 +47,8 @@ def test_runtime_contracts_for_new_systems_stay_wired_in_live_paths():
     assert 'sendWS({ type: \'assistant_dm_permissions_set\'' in play
     assert 'sendWS({ type: \'prep_pack_library_list\'' in play
     assert 'sendWS({ type: \'prep_pack_import\'' in play
-    assert '#session-event-overlay[data-cinematic="true"]' in play
+    # Cinematic overlay styling was extracted from play.html into play.css.
+    assert '#session-event-overlay[data-cinematic="true"]' in play_css
 
     # Split-party coverage currently lives in backend and test contracts.
     split_party_tests = Path("tests/test_split_party.py").read_text(encoding="utf-8")

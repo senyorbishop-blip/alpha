@@ -2,6 +2,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAY = ROOT / "client" / "templates" / "play.html"
+CSS = ROOT / "client" / "static" / "css" / "play.css"
 ONBOARDING = ROOT / "client" / "static" / "js" / "ui" / "onboarding.js"
 
 
@@ -12,11 +13,12 @@ def _read(path):
 def test_roll_visuals_use_single_portal_above_sheet_below_onboarding():
     play = _read(PLAY)
     onboarding = _read(ONBOARDING)
+    css = _read(CSS)  # CSS was extracted out of play.html into play.css
 
-    assert "--z-roll-visuals: 16000;" in play
-    assert "#roll-visual-portal" in play
-    assert "<div id=\"roll-visual-portal\"" in play
-    assert "z-index: 15600;" in play  # character sheet modal layer
+    assert "--z-roll-visuals: 16000;" in css
+    assert "#roll-visual-portal" in css  # portal styling moved into play.css
+    assert "<div id=\"roll-visual-portal\"" in play  # portal element still in play.html
+    assert "z-index: 15600;" in css  # character sheet modal layer
     assert "z-index:20000;" in onboarding  # onboarding intentionally wins
 
 

@@ -5,6 +5,11 @@ def _play_html() -> str:
     return Path('client/templates/play.html').read_text(encoding='utf-8')
 
 
+def _play_css() -> str:
+    # CSS was extracted out of play.html into the dedicated stylesheet.
+    return Path('client/static/css/play.css').read_text(encoding='utf-8')
+
+
 def test_combat_header_has_turn_summary_mount():
     src = _play_html()
     assert 'id="combat-turn-summary"' in src
@@ -20,7 +25,7 @@ def test_combat_entries_include_order_badges_and_meta_layout():
 
 
 def test_tab_and_combat_panes_keep_scroll_containment():
-    src = _play_html()
+    src = _play_css()
     assert 'overscroll-behavior: contain;' in src
     assert '#rtab-pane-combat {' in src
     assert 'overflow-y: auto;' in src
@@ -29,7 +34,7 @@ def test_tab_and_combat_panes_keep_scroll_containment():
 
 
 def test_combat_cards_use_responsive_two_row_layout():
-    src = _play_html()
+    src = _play_css()
     assert 'grid-template-columns: 2.35rem 1.75rem minmax(0, 1fr) auto;' in src
     assert '.ce-name-wrap { min-width:0; flex:1 1 auto; display:block; }' in src
     assert 'overflow: hidden; text-overflow: ellipsis; white-space: nowrap;' in src

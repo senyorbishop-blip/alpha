@@ -139,13 +139,18 @@ def test_broadcast_sends_to_all_connections():
 
 
 def test_viewer_filter_only_restricts_sending():
-    """The viewer WebSocket filter must only restrict outgoing messages, not incoming."""
-    main_path = os.path.join(PROJECT_ROOT, "main.py")
-    with open(main_path, "r") as f:
-        src = f.read()
+    """The viewer WebSocket filter must only restrict outgoing messages, not incoming.
+
+    The viewer send allow-list moved from main.py's _VIEWER_ALLOWED into the
+    central WS role policy (server/handlers/ws_permissions.py) as the
+    VIEWER_ALLOWED_MESSAGE_TYPES frozenset.
+    """
+    from server.handlers.ws_permissions import VIEWER_ALLOWED_MESSAGE_TYPES
     # The viewer allow-list should only gate what viewers can SEND
-    assert '_VIEWER_ALLOWED' in src, "Viewer allow-list must exist"
-    assert 'viewer_power_use' in src, "Viewers can send viewer_power_use"
+    assert VIEWER_ALLOWED_MESSAGE_TYPES, "Viewer allow-list must exist"
+    assert 'viewer_power_use' in VIEWER_ALLOWED_MESSAGE_TYPES, (
+        "Viewers can send viewer_power_use"
+    )
 
 
 # ---------------------------------------------------------------------------

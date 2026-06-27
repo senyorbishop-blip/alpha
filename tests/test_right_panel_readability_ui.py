@@ -5,8 +5,13 @@ def _play_html() -> str:
     return Path('client/templates/play.html').read_text(encoding='utf-8')
 
 
+def _play_css() -> str:
+    return Path('client/static/css/play.css').read_text(encoding='utf-8')
+
+
 def test_right_panel_has_shared_readability_scaffold_classes():
-    src = _play_html()
+    # CSS was extracted from play.html into play.css; these rules now live there.
+    src = _play_css()
     for token in (
         '.rtab-pane-head {',
         '.rtab-pane-head-actions {',
@@ -17,7 +22,8 @@ def test_right_panel_has_shared_readability_scaffold_classes():
 
 
 def test_major_right_tabs_opt_out_of_nested_shell_scroll_when_active():
-    src = _play_html()
+    # CSS was extracted from play.html into play.css; these rules now live there.
+    src = _play_css()
     for pane in (
         '#rtab-pane-party.active',
         '#rtab-pane-inventory.active',

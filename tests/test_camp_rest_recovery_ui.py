@@ -10,7 +10,8 @@ def test_camp_rest_module_has_player_recovery_summary_and_death_save_track():
 
 
 def test_play_html_has_mobile_friendly_camp_rest_recovery_styles():
-    src = Path("client/templates/play.html").read_text(encoding="utf-8")
+    # CSS was extracted out of play.html into the dedicated stylesheet.
+    src = Path("client/static/css/play.css").read_text(encoding="utf-8")
     assert ".cr-player-recovery {" in src
     assert ".cr-hit-die-btn {" in src
     assert ".cr-rest-btn { min-height: 44px;" in src

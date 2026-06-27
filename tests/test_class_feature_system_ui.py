@@ -65,5 +65,6 @@ def test_character_book_level_derived_progression_helpers_are_present():
 
 
 def test_mobile_layout_has_large_class_resource_chips():
-    src = _play_html()
+    # CSS was extracted out of play.html into the dedicated stylesheet.
+    src = Path('client/static/css/play.css').read_text(encoding='utf-8')
     assert '.char-state-chip.resource { width: 100%; justify-content: space-between; flex-wrap: wrap; row-gap: 0.2rem; }' in src

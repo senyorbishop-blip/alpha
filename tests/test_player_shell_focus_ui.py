@@ -47,10 +47,13 @@ def test_player_role_shell_uses_tab_registry_visibility_contract_for_library_tab
 
 
 def test_play_template_exposes_player_dashboard_onboarding_styles_and_quest_empty_state():
+    # CSS was extracted from play.html into play.css; the style rules now live there.
+    css_src = _read("client/static/css/play.css")
+    assert ".player-dashboard-start" in css_src
+    assert ".player-dashboard-quest-spotlight" in css_src
+    assert ".player-dashboard-moments" in css_src
+    assert ".player-dashboard-moment[data-moment-type=\"discovery\"]" in css_src
+    assert ".player-dashboard-moment[data-moment-type=\"handout\"]" in css_src
+    # The inline JS quest accessor still lives in play.html.
     play_src = _read("client/templates/play.html")
-    assert ".player-dashboard-start" in play_src
-    assert ".player-dashboard-quest-spotlight" in play_src
-    assert ".player-dashboard-moments" in play_src
-    assert ".player-dashboard-moment[data-moment-type=\"discovery\"]" in play_src
-    assert ".player-dashboard-moment[data-moment-type=\"handout\"]" in play_src
     assert "getSessionQuests: () => Array.isArray(_sessionQuests) ? _sessionQuests.slice() : []" in play_src

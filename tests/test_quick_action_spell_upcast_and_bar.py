@@ -70,7 +70,12 @@ console.log(JSON.stringify(rows));
 def test_quick_bar_button_visibility_drag_persist_and_player_role():
     assert "roleCanUseQuickBar = role === 'player'" in BAR
     assert 'if (toggle) toggle.hidden = true;' in BAR
-    assert 'if (toggle && roleCanUseQuickBar) toggle.hidden = false;' in BAR
+    # The toggle pill is revealed (hidden = false) for players during combat /
+    # when the bar is hidden, gated on the player role and the absence of the
+    # role-panel launcher. The reveal is now conditional rather than a single
+    # unconditional line, but it still keys off roleCanUseQuickBar.
+    assert 'if (toggle && roleCanUseQuickBar && combat.active && !newRoleBarOwnsLauncher) toggle.hidden = false;' in BAR
+    assert 'if (toggle && roleCanUseQuickBar && !newRoleBarOwnsLauncher) toggle.hidden = false;' in BAR
     assert 'buttonX' in BAR and 'buttonY' in BAR
     assert '_startToggleDrag' in BAR and '_dragToggle' in BAR and '_stopToggleDrag' in BAR
     assert 'suppressToggleClick' in BAR

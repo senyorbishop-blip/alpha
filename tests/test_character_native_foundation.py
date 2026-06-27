@@ -58,7 +58,11 @@ def test_resolve_runtime_computes_level_and_proficiency_bonus():
     assert runtime["levelTotal"] == 5
     assert runtime["proficiencyBonus"] == 3
     assert runtime["speed"]["walk"] == 35
-    assert runtime["hp"]["max"] == 45
+    # 5e multiclass HP: only the very first character level (here Ranger 1) gets
+    # the maximum hit die; every later level — including the first level taken in
+    # a second class (Rogue 1) — uses the average. Ranger3/Rogue2 with CON +2:
+    # 10 + 6 + 6 (Ranger) + 5 + 5 (Rogue) + 2*5 (CON) = 42.
+    assert runtime["hp"]["max"] == 42
 
 
 def test_profile_entry_mapper_keeps_legacy_and_native_shapes_together():

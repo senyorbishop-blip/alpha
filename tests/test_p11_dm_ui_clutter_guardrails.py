@@ -100,5 +100,5 @@ def test_docs_record_p11_dm_ui_clutter_guardrails():
     assert "## Stage 11 — DM UI clutter guardrails" in doc
     assert "right-sidebar" in doc
     assert "library dropdown" in doc
-    assert "role-visible tabs" in doc
+    assert "role-visible tab set" in doc
     assert "tests/test_p11_dm_ui_clutter_guardrails.py" in doc

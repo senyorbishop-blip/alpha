@@ -127,7 +127,9 @@ def test_final_polish_more_legacy_tools_and_debug_hidden_remain_available():
     css = read(POLISH_CSS)
     assert 'More / Legacy Tools' in src
     assert 'dm-legacy-tools-fallback' in src
-    assert 'data-dm-quick-action="more"' in src
+    # The standalone "more" quick-strip button was dropped; legacy-tool access now
+    # lives in its dedicated context section, which remains available.
+    assert 'data-dm-context-section="legacy-tools-fallback"' in src
     assert 'data-dm-debug-panel hidden' in src
     assert 'body.dm-map-first-active:not([data-debug-open="true"]) [data-dm-debug-panel]' in css
     assert 'display: none !important' in css

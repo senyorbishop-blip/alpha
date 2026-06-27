@@ -2,6 +2,30 @@
   "level": 1,
   "spells": [
     {
+      "id": "absorb-elements",
+      "displayName": "Absorb Elements",
+      "level": 1,
+      "school": "Abjuration",
+      "castingTime": "1 Reaction",
+      "range": "Self",
+      "components": "S",
+      "duration": "1 Round",
+      "classes": [
+        "Druid",
+        "Ranger",
+        "Sorcerer",
+        "Wizard"
+      ],
+      "description": "Absorb Elements spell data entry for the 5e2024 rules catalog. This entry includes baseline casting metadata for character-builder selection and filtering.",
+      "damageType": null,
+      "damageFormula": null,
+      "scalingNote": null,
+      "attackType": null,
+      "savingThrow": null,
+      "ritual": false,
+      "concentration": false
+    },
+    {
       "id": "alarm",
       "displayName": "Alarm",
       "level": 1,

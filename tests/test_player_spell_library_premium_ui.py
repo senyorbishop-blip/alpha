@@ -28,7 +28,8 @@ def test_player_spell_library_cards_expose_cast_and_premium_markers():
 
 
 def test_player_spell_library_mobile_first_controls_and_stack_rules():
-    src = _read("client/templates/play.html")
+    # CSS was extracted from play.html into play.css; these rules now live there.
+    src = _read("client/static/css/play.css")
     assert ".granted-spell-toolbar { display:flex;" in src
     assert ".granted-spell-filter-chip { border:1px solid" in src
     assert ".granted-spell-cast-btn { font-size:0.68rem;" in src

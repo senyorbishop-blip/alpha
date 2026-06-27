@@ -30,13 +30,15 @@ def test_apply_levelup_accepts_explicit_subclass_choice_without_defaulting():
 
 
 def test_runtime_marks_subclass_pending_when_unlock_level_reached_without_choice():
+    # Paladin chooses its Sacred Oath subclass at level 3 (5e 2014 & 2024), so the
+    # character must be at level 3 to be "at the unlock level without a choice".
     resolved = resolve_character_runtime(
         {
-            "classes": [{"classId": "paladin", "level": 2}],
+            "classes": [{"classId": "paladin", "level": 3}],
             "abilities": {"scores": {"str": 16, "dex": 10, "con": 14, "int": 8, "wis": 10, "cha": 14}},
         }
     )
     class_display = resolved.get("runtime", {}).get("classDisplay") or {}
-    assert class_display.get("subclassUnlockLevel") == 2
+    assert class_display.get("subclassUnlockLevel") == 3
     assert class_display.get("subclassPending") is True
     assert class_display.get("subclassId") == ""

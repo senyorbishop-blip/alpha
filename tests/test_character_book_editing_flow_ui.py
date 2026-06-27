@@ -64,7 +64,8 @@ def test_character_profile_user_input_and_quick_panel_use_single_debounced_save_
 
 
 def test_mobile_edit_layout_avoids_horizontal_scroll_and_uses_larger_tap_targets():
-    src = _play_html()
+    # CSS was extracted out of play.html into the dedicated stylesheet.
+    src = Path('client/static/css/play.css').read_text(encoding='utf-8')
     assert '.sheet-page-scroll { overflow-x: hidden; }' in src
     assert '.sheet-page-tabs { flex-wrap: wrap; overflow-x: hidden; }' in src
     assert '.sheet-book-input, .sheet-book-textarea, .sheet-book-select { min-height: 40px; }' in src
@@ -170,7 +171,8 @@ def test_live_play_sheet_hides_legacy_roots_and_edit_hides_premium_root():
 
 
 def test_character_sheet_css_prevents_inactive_roots_bleeding_through():
-    src = _play_html()
+    # CSS was extracted out of play.html into the dedicated stylesheet.
+    src = Path('client/static/css/play.css').read_text(encoding='utf-8')
     assert '#char-sheet-panel[hidden]' in src
     assert '#char-sheet-panel[data-sheet-mode="closed"]' in src
     assert '#char-book-pages .sheet-page[hidden]' in src

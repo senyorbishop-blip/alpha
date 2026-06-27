@@ -50,7 +50,7 @@ def test_websocket_close_reconnects_in_place_without_location_reload():
 
     # Reconnect is performed in-place by re-opening the socket, not by reloading.
     schedule = _slice(src, "function scheduleReconnect() {", "function installLifecycleHooks(")
-    assert "console.info('[WS] reconnect in-place');" in schedule
+    assert "console.info('[WS] reconnect in-place'," in schedule
     assert "connectWS();" in schedule
     assert "location.reload" not in schedule
 

@@ -2353,7 +2353,7 @@ def upsert_shop(campaign_id: str, prop_id: str, name: str, shopkeeper_name: str,
                         buy_categories_json, vendor_cash_units, buy_rate_pct, accepted_item_types_json,
                         buyback_enabled, personality, dialogue_enabled, voice, tts_enabled, greeting_override, description, is_open, created_at
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
                 """, (
                     shop_id, campaign_id, prop_id, name, shopkeeper_name, shop_type, json.dumps(taught),
                     1 if crafting_enabled else 0, 1 if player_sell_enabled else 0, 1 if shop_sales_enabled else 0, 1 if player_sell_enabled else 0,

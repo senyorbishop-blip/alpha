@@ -143,14 +143,16 @@ def test_chat_message_empty_text_not_broadcast(monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_dice_roll_d20_broadcasts_result(monkeypatch):
-    """Rolling a d20 should broadcast dice_result."""
+    """A public (initiative) d20 roll should broadcast dice_result to everyone."""
     from server.handlers import content as ch
     session, dm, player, viewer = _make_session()
     mgr = _fake_manager()
     monkeypatch.setattr(ch, "manager", mgr)
 
+    # Initiative is the one roll type that is broadcast to the whole table.
     asyncio.run(ch.handle_dice_roll(
-        {"dice_type": 20, "quantity": 1, "modifier": 0, "seed": 42},
+        {"dice_type": 20, "quantity": 1, "modifier": 0, "seed": 42,
+         "roll_label": "initiative"},
         session,
         player,
     ))
@@ -172,8 +174,10 @@ def test_dice_roll_includes_sounds_in_payload(monkeypatch):
         player,
     ))
 
+    # Normal (non-initiative) rolls are private: delivered to the roller + DMs
+    # via send_to, not broadcast to everyone.
     dice_msgs = [
-        msg for _, msg, _ in mgr._broadcasts
+        msg for _, uid, msg in mgr._sent
         if msg["type"] == "dice_result"
     ]
     assert dice_msgs
@@ -215,11 +219,13 @@ def test_dice_roll_d20_nat20_broadcasts_special_fx(monkeypatch):
         player,
     ))
 
-    types = [msg["type"] for _, msg, _ in mgr._broadcasts]
+    # A normal (private) roll delivers its special FX over the private channel
+    # to the roller + DMs, not via a table-wide broadcast.
+    types = [msg["type"] for _, _, msg in mgr._sent]
     assert "dice_special_fx" in types
 
     fx_msgs = [
-        msg for _, msg, _ in mgr._broadcasts
+        msg for _, _, msg in mgr._sent
         if msg["type"] == "dice_special_fx"
     ]
     assert fx_msgs[0]["payload"]["fx_type"] == "nat20"
@@ -242,8 +248,9 @@ def test_dice_roll_d20_nat1_broadcasts_special_fx(monkeypatch):
         player,
     ))
 
+    # Private roll: special FX delivered to the roller + DMs over send_to.
     fx_msgs = [
-        msg for _, msg, _ in mgr._broadcasts
+        msg for _, _, msg in mgr._sent
         if msg["type"] == "dice_special_fx"
     ]
     assert fx_msgs
@@ -270,8 +277,9 @@ def test_dice_roll_modifier_applied_to_total(monkeypatch):
         player,
     ))
 
+    # Private (non-initiative) roll: result delivered via send_to.
     dice_msgs = [
-        msg for _, msg, _ in mgr._broadcasts
+        msg for _, _, msg in mgr._sent
         if msg["type"] == "dice_result"
     ]
     assert dice_msgs
@@ -309,8 +317,9 @@ def test_dice_roll_d100_percentile_result(monkeypatch):
         player,
     ))
 
+    # Private (non-initiative) roll: result delivered via send_to.
     dice_msgs = [
-        msg for _, msg, _ in mgr._broadcasts
+        msg for _, _, msg in mgr._sent
         if msg["type"] == "dice_result"
     ]
     assert dice_msgs
@@ -331,8 +340,9 @@ def test_dice_roll_multi_quantity(monkeypatch):
         player,
     ))
 
+    # Private (non-initiative) roll: result delivered via send_to.
     dice_msgs = [
-        msg for _, msg, _ in mgr._broadcasts
+        msg for _, _, msg in mgr._sent
         if msg["type"] == "dice_result"
     ]
     assert dice_msgs

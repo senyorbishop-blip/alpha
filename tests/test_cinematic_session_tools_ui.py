@@ -9,6 +9,12 @@ def _read_play_html() -> str:
         return f.read()
 
 
+def _read_play_css() -> str:
+    css_path = os.path.join(PROJECT_ROOT, "client", "static", "css", "play.css")
+    with open(css_path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
 def test_play_page_exposes_session_event_overlay_shell():
     src = _read_play_html()
     assert 'id="session-event-overlay"' in src
@@ -46,6 +52,8 @@ def test_session_event_overlay_uses_short_non_blocking_lifecycle():
     src = _read_play_html()
     assert "Math.max(1400, Math.min(6000" in src
     assert "_sessionEventDismissTimer = setTimeout(dismissSessionEventOverlay, duration);" in src
-    assert "#session-event-overlay.open" in src
-    assert "pointer-events: auto;" in src
-    assert "#session-event-overlay[data-cinematic=\"true\"]" in src
+    # Overlay styling was extracted from play.html into play.css.
+    css = _read_play_css()
+    assert "#session-event-overlay.open" in css
+    assert "pointer-events: auto;" in css
+    assert "#session-event-overlay[data-cinematic=\"true\"]" in css

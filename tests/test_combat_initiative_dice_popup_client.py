@@ -55,7 +55,8 @@ def test_state_sync_applies_combat_on_reconnect():
     # state_sync must restore combat so active initiative survives a reconnect.
     sync_block = src[src.index("case 'state_sync': {"):src.index("case 'state_sync': {") + 12000]
     assert "if (p.combat !== undefined) {" in sync_block
-    assert "combatApplyState(p.combat);" in sync_block
+    # combatApplyState now takes a source argument identifying the apply path.
+    assert "combatApplyState(p.combat, 'state_sync');" in sync_block
 
 
 def _run_dedupe_sim(harness_js: str) -> dict:

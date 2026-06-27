@@ -17,9 +17,11 @@ def test_play_page_has_intentional_big_screen_toggle_and_mode_class():
 
 def test_big_screen_mode_hides_dm_shell_surfaces_and_uses_player_safe_overlay():
     src = _read('client/templates/play.html')
-    assert 'body.big-screen-display-mode #sidebar-left' in src
-    assert 'body.big-screen-display-mode #sidebar-right' in src
-    assert 'body.big-screen-display-mode .flyout' in src
+    # Big-screen surface-hiding styling was extracted from play.html into play.css.
+    css = _read('client/static/css/play.css')
+    assert 'body.big-screen-display-mode #sidebar-left' in css
+    assert 'body.big-screen-display-mode #sidebar-right' in css
+    assert 'body.big-screen-display-mode .flyout' in css
     assert 'id="display-overlay-exit"' in src
     assert "if (_bigScreenDisplayMode && ROLE === 'dm')" in src
     assert "if (tok.hidden) return false;" in src
