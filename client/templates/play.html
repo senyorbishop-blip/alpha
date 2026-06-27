@@ -1530,9 +1530,7 @@
     <div class="drag" id="rp-qb-drag" title="Drag to move">⠿</div>
     <div id="rp-qb-actions"><!-- populated by subscribePlayerQuickActions() --></div>
     <div class="qb-sep"></div>
-    <button class="qb-btn" onclick="combatDash()"><span class="g">⇉</span>Dash</button>
-    <button class="qb-btn" onclick="combatToggleDisengage()"><span class="g">↯</span>Disengage</button>
-    <div class="qb-sep"></div>
+    <!-- Dash & Disengage live in the Combat tab (only meaningful during combat); not on the always-on map quickbar. -->
     <button class="qb-btn active" id="rp-tool-move" onclick="typeof setTool==='function'&&setTool('select')" title="Move / drag the map and your token"><span class="g">✥</span>Move</button>
     <button class="qb-btn" id="rp-tool-ruler" onclick="typeof setTool==='function'&&setTool(currentTool==='ruler'?'select':'ruler')" title="Measure distance for moves, attacks & spells (tap again to stop)"><span class="g">📏</span>Measure</button>
     <button class="qb-btn" id="rp-tool-shapes" onclick="if(currentTool==='spell'){setTool('select');}else if(typeof selectSpellTool==='function'){selectSpellTool();}" title="Place an attack/spell area template (circle, cone, line…) — tap again to stop"><span class="g">🔮</span>Shapes</button>
@@ -38967,23 +38965,11 @@ window.addEventListener('combat:state-updated', function() {
 // END ROLE PANELS
 
 function applyPremiumRoleShellPolish() {
-  const tabBar = document.getElementById('right-tab-bar');
-  if (tabBar && !document.getElementById('shell-role-focus')) {
-    const focus = document.createElement('div');
-    focus.id = 'shell-role-focus';
-    tabBar.insertAdjacentElement('afterend', focus);
-  }
-
-  const focus = document.getElementById('shell-role-focus');
-  if (focus) {
-    const copy = ROLE === 'dm'
-      ? '<strong>DM focus:</strong> Prep in <strong>Library</strong>, run live flow in <strong>Combat</strong>, drive storytelling through <strong>Journal/Sound</strong>, and manage players/viewers from <strong>Party</strong>.'
-      : ROLE === 'player'
-        ? '<strong>Player focus:</strong> Open <strong>My Character</strong> + <strong>Dice</strong> from the left rail, then use <strong>Inventory</strong>, <strong>Spells</strong>, and <strong>Journal</strong> only when needed.'
-        : '<strong>Viewer focus:</strong> Follow <strong>Party</strong> + <strong>Chat</strong>. Any granted power shows charges, cooldowns, and approval state before you can fire it.';
-    focus.innerHTML = copy;
-    focus.style.display = 'block';
-  }
+  // The old per-role focus help blurb was removed — it was stale guidance UI that
+  // no longer matched the current rail/tab layout. Drop any stray element that a
+  // previous session may have injected.
+  const staleFocus = document.getElementById('shell-role-focus');
+  if (staleFocus) staleFocus.remove();
 
   // Intentional cosmetic overrides for the player role only.
   // - viewersBtn.hidden: suppresses the Party sub-panel "Viewers" toggle; players

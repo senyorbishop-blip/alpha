@@ -12,22 +12,23 @@ def test_play_page_has_premium_role_shell_polish_hook():
     src = _read('client/templates/play.html')
     assert 'function applyPremiumRoleShellPolish()' in src
     assert 'applyPremiumRoleShellPolish();' in src
-    assert "id = 'shell-role-focus'" in src
     assert 'Viewer mode: this tool is DM/player only.' in src
+
+
+def test_play_page_drops_stale_role_focus_blurb():
+    """The old "Player focus: …" role-focus help blurb was removed; the polish
+    hook should now clean up any stray element instead of injecting one."""
+    src = _read('client/templates/play.html')
+    assert "focus.id = 'shell-role-focus'" not in src
+    assert 'Player focus:' not in src
+    css = _read('client/static/css/play.css')
+    assert '#shell-role-focus' not in css
 
 
 def test_play_page_reduces_viewer_library_and_inventory_clutter():
     src = _read('client/templates/play.html')
     assert "ROLE === 'viewer'" in src
     assert "prepPriorityTabs = ['rtab-dropdown-library', 'rtab-memory'];" in src
-
-
-def test_play_page_focus_copy_matches_role_tool_hierarchy():
-    src = _read('client/templates/play.html')
-    assert 'Prep in <strong>Library</strong>' in src
-    assert 'storytelling through <strong>Journal/Sound</strong>' in src
-    assert '<strong>My Character</strong> + <strong>Dice</strong>' in src
-    assert 'charges, cooldowns, and approval state' in src
 
 
 def test_onboarding_viewer_step_calls_out_permissions_and_cooldowns():

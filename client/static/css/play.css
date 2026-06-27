@@ -2250,19 +2250,6 @@
     }
     .panel-collapse-toggle:hover { background: rgba(255,255,255,0.04); }
     .panel-collapse-toggle:focus-visible { outline: 2px solid rgba(0,229,204,0.4); outline-offset: 2px; box-shadow: 0 0 0 4px rgba(0,229,204,0.12); }
-    #shell-role-focus {
-      display: none;
-      margin: 0.5rem 0.75rem 0.15rem;
-      padding: 0.5rem 0.6rem;
-      border-radius: 8px;
-      border: 1px solid rgba(0,229,204,0.18);
-      background: rgba(0,229,204,0.04);
-      font-size: 0.64rem;
-      line-height: 1.45;
-      color: var(--parchment-dim);
-    }
-    #shell-role-focus strong { color: var(--parchment); font-weight: 700; }
-
     /* Players panel */
     #players-panel { padding: 0.6rem 0.75rem; flex: 1 1 auto; min-height: 0; display:flex; flex-direction:column; gap:0.55rem; }
     .party-section-card {
