@@ -1147,3 +1147,36 @@ body[data-role="player"] #selected-quick-panel,
 body[data-role="viewer"] #selected-quick-panel {
   display: none !important;
 }
+
+/* ---- Pouch: inline equip row + rarity dot + bag "add" ---- */
+.rp-eq-row { display: flex; align-items: stretch; gap: .34rem; }
+.rp-eq-row .rp-tl { flex: 1 1 auto; min-width: 0; }
+
+.rp-equip-btn {
+  flex: 0 0 auto;
+  align-self: stretch;
+  padding: 0 .7rem;
+  border: 1px solid var(--mf-role-line, rgba(127,209,192,.32));
+  border-radius: 10px;
+  background: var(--mf-role-soft, rgba(127,209,192,.08));
+  color: var(--mf-role, #7fd1c0);
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: .12s;
+  white-space: nowrap;
+}
+.rp-equip-btn:hover { background: var(--mf-role-line, rgba(127,209,192,.18)); }
+.rp-equip-btn.is-equipped {
+  border-color: rgba(212,175,55,.45);
+  background: rgba(212,175,55,.12);
+  color: #d4af37;
+}
+
+.rp-rarity-dot { display: inline-block; }
+.rp-tl .rp-rarity-dot { margin-left: .15rem; }
+
+.rp-bag-add { opacity: .85; }
+.rp-bag-add:hover { opacity: 1; }

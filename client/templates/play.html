@@ -38095,11 +38095,99 @@ function _rpWeightBlock() {
   </div>`);
 }
 
-/* ---- Inline bag/container expansion inside the pouch panel ----
-   Clicking a bag of holding / haversack / other container in the pouch toggles
-   an inline view of what is stored inside it (capacity, contents, "Out"), so the
-   player never has to leave the map for the full character sheet just to look in
-   a bag. */
+/* ============================================================================
+ * Pouch panel — items list + inline equip + container expansion
+ * Drop-in replacements for play.html:
+ *   _rpInvSource()  (new shared helper)
+ *   _rpItemsList()
+ *   _rpToggleBagContents(idx)
+ * ==========================================================================*/
+
+// Single source of truth so the list and the bag-toggle never disagree on
+// which array (or which index) they are reading.
+function _rpInvSource() {
+  if (typeof playerInventory !== 'undefined' && Array.isArray(playerInventory)) return playerInventory;
+  if (_charSheet && Array.isArray(_charSheet.inventory)) return _charSheet.inventory;
+  return [];
+}
+
+// Small glanceable rarity dot — colour carries the info, no redundant word.
+function _rpRarityDot(it) {
+  const raw = String((it && it.rarity) || '').trim();
+  if (!raw) return '';
+  const key = raw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const color = (typeof _RARITY_BADGE_COLORS !== 'undefined' && _RARITY_BADGE_COLORS[key]) || '#8da1bf';
+  return `<span class="rp-rarity-dot" title="${esc(key)}" style="width:7px;height:7px;border-radius:50%;background:${color};flex-shrink:0;box-shadow:0 0 4px ${color}66;"></span>`;
+}
+
+function _rpItemsList() {
+  const inv = _rpInvSource();
+  if (!inv.length) {
+    return `<div class="rp-empty">Your pouch is empty. Loot, buy, or have the DM grant items.</div>`;
+  }
+  const rows = inv.slice(0, 14).map((it, idx) => {
+    const icon = (typeof renderItemVisualToken === 'function')
+      ? renderItemVisualToken(it, { size: 22, radius: 6, label: it && it.name || 'Item' })
+      : `<span class="ti">🎒</span>`;
+    const qty = Math.max(1, parseInt(it && it.qty, 10) || 1);
+    const isBag = (typeof isInventoryContainerEntry === 'function') && isInventoryContainerEntry(it);
+    const equipped = !!(it && it.equipped);
+    const name = esc(String(it && it.name || 'Item'));
+    const kind = (typeof inferEquipmentKindFromRaw === 'function') ? inferEquipmentKindFromRaw(it) : '';
+    const equippable = ['weapon', 'armor', 'shield'].includes(kind);
+    const dot = _rpRarityDot(it);
+    const equippedTag = equipped ? ` <span class="ts" style="color:var(--mf-role)">• equipped</span>` : '';
+
+    if (isBag) {
+      // Containers expand their contents inline so the player can look inside
+      // without leaving the map.
+      return `<div class="rp-bag-row">
+        <button class="rp-tl" onclick="typeof _rpToggleBagContents==='function'&&_rpToggleBagContents(${idx})" title="Open ${name}">
+          ${icon}
+          <span class="tt">${name}${equippedTag}</span>
+          ${dot}
+          <span class="ts" id="rp-bag-toggle-${idx}">🎒 open ▸</span>
+        </button>
+        <div class="rp-bag-contents" id="rp-bag-contents-${idx}" style="display:none"></div>
+      </div>`;
+    }
+
+    // Equippable gear gets an inline Equip/Unequip toggle on the right; the row
+    // body still opens the inspect card. Non-buttons can't nest, so the row is
+    // a wrapper holding two sibling buttons.
+    const inspectClick = `typeof inspectInventoryItem==='function'&&inspectInventoryItem(${idx})`;
+    const qtyTag = qty > 1 ? `<span class="ts" style="color:var(--mf-role)">×${qty}</span>` : '';
+
+    if (equippable) {
+      const eqAction = equipped ? 'unequipInventoryItem' : 'equipInventoryItem';
+      const eqLabel = equipped ? 'Unequip' : 'Equip';
+      return `<div class="rp-eq-row">
+        <button class="rp-tl" onclick="${inspectClick}" title="${name}">
+          ${icon}
+          <span class="tt">${name}${equippedTag}</span>
+          ${dot}
+          ${qtyTag}
+        </button>
+        <button class="rp-equip-btn${equipped ? ' is-equipped' : ''}"
+                onclick="event.stopPropagation();typeof ${eqAction}==='function'&&${eqAction}(${idx})"
+                title="${eqLabel} ${name}">${eqLabel}</button>
+      </div>`;
+    }
+
+    const tail = qtyTag || '<span class="ts">inspect ▸</span>';
+    return `<button class="rp-tl" onclick="${inspectClick}" title="${name}">
+      ${icon}
+      <span class="tt">${name}${equippedTag}</span>
+      ${dot}
+      ${tail}
+    </button>`;
+  }).join('');
+  const more = inv.length > 14
+    ? `<button class="rp-tl" onclick="typeof openCharacterBook==='function'&&openCharacterBook('inventory')"><span class="ti">➕</span><span class="tt">${inv.length - 14} more in backpack…</span></button>`
+    : '';
+  return `<div class="rp-toollist">${rows}${more}</div>`;
+}
+
 function _rpToggleBagContents(idx) {
   const wrap = document.getElementById(`rp-bag-contents-${idx}`);
   if (!wrap) return;
@@ -38109,12 +38197,12 @@ function _rpToggleBagContents(idx) {
     if (toggleLbl) toggleLbl.textContent = '🎒 open ▸';
     return;
   }
-  const inv = (typeof playerInventory !== 'undefined' && Array.isArray(playerInventory)) ? playerInventory
-    : (Array.isArray((_charSheet || {}).inventory) ? _charSheet.inventory : []);
+  const inv = _rpInvSource();
   const item = inv[idx];
   if (!item) return;
   const enc = window.AppEncumbrance || null;
   const bagKey = String(item.id || '');
+
   // Prefer the DM-synced bag summary; fall back to the item's own bag_contents.
   let bagSummary = null;
   if (enc && typeof enc.getLastEncData === 'function') {
@@ -38137,56 +38225,22 @@ function _rpToggleBagContents(idx) {
       contents,
     };
   }
-  wrap.innerHTML = (enc && typeof enc.buildBagRowHtml === 'function')
+
+  let html = (enc && typeof enc.buildBagRowHtml === 'function')
     ? enc.buildBagRowHtml(bagSummary, idx)
-    : '<div class="rp-empty">Bag contents are unavailable right now.</div>';
+    : '';
+  if (!html) {
+    html = '<div class="rp-empty">Bag contents are unavailable right now.</div>';
+  }
+  // Always give the player a way to PUT things in the bag, even when empty —
+  // this is what made the old version feel like it "didn't open".
+  html += `<button class="rp-tl rp-bag-add" onclick="typeof openCharacterBook==='function'&&openCharacterBook('inventory')" title="Move items into ${esc(String(item.name || 'bag'))}">
+    <span class="ti">➕</span><span class="tt">Move items in / out…</span>
+  </button>`;
+
+  wrap.innerHTML = html;
   wrap.style.display = '';
   if (toggleLbl) toggleLbl.textContent = '🎒 close ▾';
-}
-
-/* ---- Inline pouch item list (the in-panel "new way" to scan carried gear) ---- */
-function _rpItemsList() {
-  const inv = (typeof playerInventory !== 'undefined' && Array.isArray(playerInventory)) ? playerInventory
-    : (Array.isArray((_charSheet||{}).inventory) ? _charSheet.inventory : []);
-  if (!inv.length) {
-    return `<div class="rp-empty">Your pouch is empty. Loot, buy, or have the DM grant items.</div>`;
-  }
-  const rows = inv.slice(0, 14).map((it, idx) => {
-    const icon = (typeof renderItemVisualToken === 'function')
-      ? renderItemVisualToken(it, { size: 22, radius: 6, label: it && it.name || 'Item' })
-      : `<span class="ti">🎒</span>`;
-    const qty = Math.max(1, parseInt(it && it.qty, 10) || 1);
-    const isBag = (typeof isInventoryContainerEntry === 'function') && isInventoryContainerEntry(it);
-    const equipped = !!(it && it.equipped);
-    const sub = isBag ? 'container' : String((it && (it.rarity || it.category || it.source)) || '').trim();
-    const name = esc(String(it && it.name || 'Item'));
-    const equippedTag = equipped ? ' <span class="ts" style="color:var(--mf-role)">• equipped</span>' : '';
-    if (isBag) {
-      // Bags / extradimensional containers (bag of holding, haversack…) expand
-      // their contents right here in the pouch so the player can see what is
-      // stored inside the bag, instead of being bounced to the full character
-      // sheet. Everything else opens the inline inspect card.
-      return `<div class="rp-bag-row">
-        <button class="rp-tl" onclick="typeof _rpToggleBagContents==='function'&&_rpToggleBagContents(${idx})" title="Open ${name}">
-          ${icon}
-          <span class="tt">${name}${equippedTag}</span>
-          ${sub ? `<span class="ts">${esc(sub)}</span>` : ''}
-          <span class="ts" id="rp-bag-toggle-${idx}">🎒 open ▸</span>
-        </button>
-        <div class="rp-bag-contents" id="rp-bag-contents-${idx}" style="display:none"></div>
-      </div>`;
-    }
-    const click = `typeof inspectInventoryItem==='function'&&inspectInventoryItem(${idx})`;
-    const tail = qty > 1 ? `<span class="ts" style="color:var(--mf-role)">×${qty}</span>` : '<span class="ts">inspect ▸</span>';
-    return `<button class="rp-tl" onclick="${click}" title="${name}">
-      ${icon}
-      <span class="tt">${name}${equippedTag}</span>
-      ${sub ? `<span class="ts">${esc(sub)}</span>` : ''}
-      ${tail}
-    </button>`;
-  }).join('');
-  const more = inv.length > 14 ? `<button class="rp-tl" onclick="typeof openCharacterBook==='function'&&openCharacterBook('inventory')"><span class="ti">➕</span><span class="tt">${inv.length - 14} more in backpack…</span></button>` : '';
-  return `<div class="rp-toollist">${rows}${more}</div>`;
 }
 
 /* ---- Role-panel resource helpers (slots, gold, class resources, economy) ---- */
