@@ -15,10 +15,13 @@ FADE_SAMPLES = int(SAMPLE_RATE * 0.35)
 MANIFEST_VERSION = "20260328"
 
 TRACK_VARIANTS = {
-    "forest": ["forest", "wilderness_night", "swamp", "mountain_pass", "rain"],
+    "forest": ["forest", "wilderness_night", "swamp", "mountain_pass"],
     "tavern": ["tavern", "inn_night", "marketplace", "city", "harbor", "campfire"],
     "dungeon": ["dungeon", "crypt", "cave", "temple", "castle_hall", "tension"],
-    "battle": ["battle", "boss_battle", "storm", "coastal", "auto"],
+    "battle": ["battle", "boss_battle", "coastal", "auto"],
+    # Dedicated weather family — storm no longer borrows the battle loop.
+    # First entry ("storm") provides the canonical generated asset.
+    "weather": ["storm", "rain", "heavy_rain", "blizzard", "wind"],
 }
 _TRACK_TO_FAMILY = {
     str(track).strip().lower(): family
@@ -163,7 +166,30 @@ def _battle(t: float, low: float, high: float) -> tuple[float, float]:
     return base * 1.02, base * 0.98
 
 
-_RENDERERS = {"forest": _forest, "tavern": _tavern, "dungeon": _dungeon, "battle": _battle}
+def _storm(t: float, low: float, high: float) -> tuple[float, float]:
+    # Steady rain: bright filtered noise, gently amplitude-modulated for life.
+    rain = 0.10 * high * (0.85 + 0.15 * math.sin(2 * math.pi * 0.7 * t))
+    # Hiss/body bed from the low-passed noise.
+    body = 0.06 * low
+    # Wind gusts: slow swelling low-noise envelope.
+    gust = 0.07 * low * (0.5 + 0.5 * math.sin(2 * math.pi * 0.05 * t + 0.6))
+    # Distant thunder: low-frequency rumble bursts at a few points in the loop,
+    # with a soft attack and a long decay so it reads as far-off, not percussive.
+    thunder = 0.0
+    for start, freq in ((4.0, 48.0), (11.5, 38.0), (17.0, 55.0)):
+        dt = (t - start) % DURATION_SEC
+        if 0 < dt < 2.4:
+            env = math.exp(-1.8 * dt) * (1 - math.exp(-30 * dt))
+            thunder += (
+                0.5 * math.sin(2 * math.pi * freq * dt)
+                + 0.3 * math.sin(2 * math.pi * freq * 1.5 * dt)
+            ) * env * 0.5
+    sub = 0.03 * math.sin(2 * math.pi * 30 * t)
+    base = rain + body + gust + thunder + sub
+    return base * 0.98, base * 1.02
+
+
+_RENDERERS = {"forest": _forest, "tavern": _tavern, "dungeon": _dungeon, "battle": _battle, "weather": _storm}
 
 
 def _write_wave(path: Path, kind: str) -> None:
@@ -195,12 +221,14 @@ def _manifest_payload(audio_dir: Path) -> dict:
         "tavern": f"/static/assets/audio/tavern_loop_{MANIFEST_VERSION}.wav",
         "dungeon": f"/static/assets/audio/dungeon_loop_{MANIFEST_VERSION}.wav",
         "battle": f"/static/assets/audio/battle_loop_{MANIFEST_VERSION}.wav",
+        "weather": f"/static/assets/audio/storm_loop_{MANIFEST_VERSION}.wav",
     }
     labels = {
-        "forest": "Forest", "wilderness_night": "Wilderness Night", "swamp": "Swamp", "mountain_pass": "Mountain Pass", "rain": "Rain",
+        "forest": "Forest", "wilderness_night": "Wilderness Night", "swamp": "Swamp", "mountain_pass": "Mountain Pass",
         "tavern": "Tavern", "inn_night": "Inn Night", "marketplace": "Marketplace", "city": "City", "harbor": "Harbor", "campfire": "Campfire",
         "dungeon": "Dungeon", "crypt": "Crypt", "cave": "Cave", "temple": "Temple", "castle_hall": "Castle Hall", "tension": "Tension / Stealth",
-        "battle": "Battle", "boss_battle": "Boss Battle", "storm": "Storm", "coastal": "Coastal", "auto": "Auto",
+        "battle": "Battle", "boss_battle": "Boss Battle", "coastal": "Coastal", "auto": "Auto",
+        "storm": "Storm", "rain": "Rain", "heavy_rain": "Heavy Rain", "blizzard": "Blizzard", "wind": "Wind",
     }
     tracks = {}
     for kind, aliases in TRACK_VARIANTS.items():
@@ -229,4 +257,4 @@ def normalize_ambient_profile(track: str) -> str:
     key = str(track or "").strip().lower()
     if not key:
         return "silence"
-    return _TRACK_TO_FAMILY.get(key, key if key in {"forest", "tavern", "dungeon", "battle", "silence"} else "silence")
+    return _TRACK_TO_FAMILY.get(key, key if key in {"forest", "tavern", "dungeon", "battle", "weather", "silence"} else "silence")

@@ -216,6 +216,9 @@ def test_save_and_restore_persist_sound_weather_and_viewer_state():
                 "intensity": 1.0,
                 "wind_angle": 360.0,
                 "wind_speed": 0.0,
+                "darkness": 0.0,
+                "lightning_frequency": 0.5,
+                "audio_linked": True,
                 "map_context": "crypt",
             }
             assert loaded["viewer_pending_actions"] == {"pending1": {"viewer_key": "user:v1", "kind": "heal"}}
