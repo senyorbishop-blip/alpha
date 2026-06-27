@@ -140,6 +140,16 @@ def _derive_scroll_data(name: str, effect_text: str, granted_spells: list) -> di
 def normalize_item_record(raw_item: dict | None, *, source_type: str = "inventory", source_id: str = "") -> dict:
     src = dict(raw_item or {})
     name = _clean_text(src.get("name") or src.get("item_name"), limit=120) or "Unknown Item"
+
+    # Attunement: nested attunement.required is canonical — derive requires_attunement from it
+    # so the two fields can never disagree after normalisation.
+    _attn_obj = src.get("attunement") if isinstance(src.get("attunement"), dict) else {}
+    _attn_required = _attn_obj.get("required")
+    _requires_attunement: bool = (
+        bool(_attn_required)
+        if _attn_required is not None
+        else bool(src.get("attunement_required") or src.get("requires_attunement"))
+    )
     tags = _ensure_list(src.get("tags") or src.get("recipe_tags") or [])
     tags_flat = [str(t).lower() for t in tags if not isinstance(t, (dict, list))]
 
@@ -211,7 +221,7 @@ def normalize_item_record(raw_item: dict | None, *, source_type: str = "inventor
             "ac_bonus": _safe_int(src.get("ac_bonus"), 0, minimum=-10, maximum=20),
             "strength_requirement": _safe_int(src.get("strength_requirement"), 0, minimum=0, maximum=30),
             "stealth_disadvantage": bool(src.get("stealth_disadvantage", False)),
-            "requires_attunement": bool(src.get("attunement_required") or src.get("requires_attunement")),
+            "requires_attunement": _requires_attunement,
             "attuned": bool(src.get("attuned")),
             "proficiency_group": _clean_text(src.get("proficiency_group"), limit=40),
             "item_spell_attack_bonus": _safe_int(src.get("item_spell_attack_bonus"), 0, minimum=-20, maximum=30),

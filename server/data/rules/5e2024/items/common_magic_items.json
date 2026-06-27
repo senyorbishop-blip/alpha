@@ -417,26 +417,13 @@
       "equippable": true,
       "equip_slot": "main_hand",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "staff-action",
-          "name": "Staff",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "weapon_type": "simple_melee",

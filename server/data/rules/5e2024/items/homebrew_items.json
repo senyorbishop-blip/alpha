@@ -125,7 +125,8 @@
       ],
       "dedupe_key": "baronssignetring",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Baron’s Signet Ring.",
-      "unidentified_description": "An unidentified rare ring radiating magic."
+      "unidentified_description": "An unidentified rare ring radiating magic.",
+      "draft": true
     },
     {
       "id": "brosst-guard-captain-s-blade",
@@ -189,7 +190,8 @@
       "damage_bonus": 1,
       "damage_dice": "1d8",
       "damage_type": "slashing",
-      "weapon_type": "longsword"
+      "weapon_type": "longsword",
+      "draft": true
     },
     {
       "id": "brosst-guard-shield",
@@ -293,7 +295,8 @@
       "unidentified_description": "An unidentified rare wondrous radiating magic.",
       "consumable": true,
       "consumed_on_use": true,
-      "save_bonus": 1
+      "save_bonus": 1,
+      "draft": true
     },
     {
       "id": "candle-of-shar-s-whisper",
@@ -406,7 +409,8 @@
       "limited_uses": {
         "max": 1,
         "recharge": "dawn"
-      }
+      },
+      "draft": true
     },
     {
       "id": "cultist-black-candle",
@@ -474,7 +478,8 @@
       "limited_uses": {
         "max": 1,
         "recharge": "dawn"
-      }
+      },
+      "draft": true
     },
     {
       "id": "fireball-viewer-token",
@@ -542,7 +547,8 @@
       "limited_uses": {
         "max": 1,
         "recharge": "dawn"
-      }
+      },
+      "draft": true
     },
     {
       "id": "guild-of-seagull-token",
@@ -590,7 +596,8 @@
       ],
       "dedupe_key": "guildofseagulltoken",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Guild of Seagull Token.",
-      "unidentified_description": "An unidentified rare wondrous radiating magic."
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "draft": true
     },
     {
       "id": "lost-noble-signet",
@@ -712,7 +719,8 @@
       ],
       "dedupe_key": "prisonbreaklockpickset",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Prison Break Lockpick Set.",
-      "unidentified_description": "An unidentified rare tool radiating magic."
+      "unidentified_description": "An unidentified rare tool radiating magic.",
+      "draft": true
     },
     {
       "id": "prison-warden-s-manacles",
@@ -811,7 +819,8 @@
         {
           "type": "slow_fall"
         }
-      ]
+      ],
+      "draft": true
     },
     {
       "id": "seagull-guild-banner",
@@ -909,7 +918,8 @@
       },
       "damage_dice": "1d4",
       "damage_type": "piercing",
-      "weapon_type": "dagger"
+      "weapon_type": "dagger",
+      "draft": true
     },
     {
       "id": "shar-cultist-dagger",
@@ -1031,7 +1041,8 @@
       "unidentified_description": "An unidentified rare wondrous radiating magic.",
       "resistances": [
         "necrotic"
-      ]
+      ],
+      "draft": true
     }
   ]
 }

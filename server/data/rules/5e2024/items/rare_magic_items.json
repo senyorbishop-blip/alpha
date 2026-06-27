@@ -22,28 +22,16 @@
       "recharge_type": "none",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        },
-        {
           "type": "stat_minimum",
           "stat": "constitution",
           "minimum": 19
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "amulet-of-health-action",
-          "name": "Amulet of Health",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "amulet-of-health",
@@ -202,12 +190,7 @@
       "equip_slot": "boots",
       "charges_max": 0,
       "recharge_type": "none",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [
         {
           "id": "levitate",
@@ -229,13 +212,6 @@
       ],
       "granted_actions": [
         {
-          "id": "boots-of-levitation-action",
-          "name": "Boots of Levitation",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        },
-        {
           "id": "boots-of-levitation-use",
           "name": "Boots of Levitation",
           "action_type": "item_action",
@@ -245,7 +221,7 @@
       ],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "boots-of-levitation",
@@ -279,27 +255,15 @@
       "recharge_type": "none",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        },
-        {
           "type": "movement",
           "mode": "double_speed"
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "boots-of-speed-action",
-          "name": "Boots of Speed",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "boots-of-speed",
@@ -388,28 +352,16 @@
       "recharge_type": "none",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        },
-        {
           "type": "ac_bonus",
           "bonus": 2,
           "requires_attunement": true
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "bracers-of-defense-action",
-          "name": "Bracers of Defense",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "bracers-of-defense",
@@ -669,26 +621,13 @@
       "equippable": true,
       "equip_slot": "cloak",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "cloak-of-the-bat-action",
-          "name": "Cloak of the Bat",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "cloak-of-the-bat",
@@ -893,25 +832,12 @@
       "equip_slot": "trinket",
       "charges_max": 0,
       "recharge_type": "none",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "handy-haversack-action",
-          "name": "Handy Haversack",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "handy-haversack",
@@ -943,12 +869,7 @@
       "equip_slot": "helm",
       "charges_max": 3,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [
         {
           "spell_id": "teleport",
@@ -1013,21 +934,9 @@
       "equip_slot": "trinket",
       "charges_max": 0,
       "recharge_type": "none",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
       "granted_actions": [
-        {
-          "id": "horn-of-blasting-action",
-          "name": "Horn of Blasting",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        },
         {
           "id": "horn-of-blasting-use",
           "name": "Horn of Blasting",
@@ -1038,7 +947,7 @@
       ],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "horn-of-blasting",
@@ -1071,12 +980,7 @@
       "equip_slot": "trinket",
       "charges_max": 1,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
       "granted_actions": [
         {
@@ -1174,26 +1078,13 @@
       "equippable": true,
       "equip_slot": "trinket",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "instrument-of-the-bards-action",
-          "name": "Instrument of the Bards",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "instrument-of-the-bards",
@@ -1259,12 +1150,7 @@
       "equip_slot": "neck",
       "charges_max": 7,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [
         {
           "spell_id": "fireball",
@@ -1332,27 +1218,15 @@
       "recharge_type": "none",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        },
-        {
           "type": "immunity",
           "damage": "poison"
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "periapt-of-proof-against-poison-action",
-          "name": "Periapt of Proof against Poison",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "periapt-of-proof-against-poison",
@@ -1387,25 +1261,12 @@
       "equip_slot": "trinket",
       "charges_max": 0,
       "recharge_type": "none",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "portable-hole-action",
-          "name": "Portable Hole",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "portable-hole",
@@ -1906,26 +1767,13 @@
       "equippable": true,
       "equip_slot": "main_hand",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "quarterstaff-plus2-action",
-          "name": "Quarterstaff +2",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 17,
       "item_spell_attack_bonus": 9,
       "weapon_type": "simple_melee",
@@ -2067,25 +1915,12 @@
       "equip_slot": "ring",
       "charges_max": 0,
       "recharge_type": "none",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "ring-of-feather-falling-action",
-          "name": "Ring of Feather Falling",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "ring-of-feather-falling",
@@ -2119,27 +1954,15 @@
       "recharge_type": "none",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        },
-        {
           "type": "movement",
           "mode": "free_action"
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "ring-of-free-action-action",
-          "name": "Ring of Free Action",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "ring-of-free-action",
@@ -2178,10 +2001,6 @@
       "recharge_type": "none",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        },
-        {
           "type": "ac_bonus",
           "bonus": 1,
           "requires_attunement": true
@@ -2193,18 +2012,10 @@
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "ring-of-protection-action",
-          "name": "Ring of Protection",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "ring-of-protection",
@@ -2241,27 +2052,15 @@
       "recharge_type": "none",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        },
-        {
           "type": "resistance",
           "damage": "choice"
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "ring-of-resistance-action",
-          "name": "Ring of Resistance",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "ring-of-resistance",
@@ -2296,25 +2095,12 @@
       "equip_slot": "ring",
       "charges_max": 0,
       "recharge_type": "none",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "ring-of-spell-storing-action",
-          "name": "Ring of Spell Storing",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 3,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "ring-of-spell-storing",
@@ -2392,10 +2178,6 @@
       "charges_max": 1,
       "recharge_type": "dawn",
       "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        },
         {
           "type": "senses",
           "mode": "xray"
@@ -2505,12 +2287,7 @@
       "equip_slot": "hand",
       "charges_max": 1,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
       "granted_actions": [
         {
@@ -2566,12 +2343,8 @@
       "equippable": true,
       "equip_slot": "main_hand",
       "charges_max": 0,
-      "recharge_type": "dawn",
+      "recharge_type": "none",
       "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        },
         {
           "type": "spell_save_dc_bonus",
           "bonus": 2,
@@ -2586,18 +2359,10 @@
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "rod-of-the-pact-keeper-plus2-action",
-          "name": "Rod of the Pact Keeper +2",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 17,
       "item_spell_attack_bonus": 9,
       "slug": "rod-of-the-pact-keeper-2",
@@ -2768,12 +2533,7 @@
       "equip_slot": "weapon",
       "charges_max": 10,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [
         {
           "id": "cure-wounds",
@@ -2958,12 +2718,7 @@
       "equip_slot": "weapon",
       "charges_max": 10,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [
         {
           "id": "pass-without-trace",
@@ -3053,12 +2808,7 @@
       "equip_slot": "main_hand",
       "charges_max": 10,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
       "granted_actions": [
         {
@@ -3218,12 +2968,7 @@
       "equip_slot": "hand",
       "charges_max": 7,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
       "granted_actions": [
         {
@@ -3279,12 +3024,7 @@
       "equip_slot": "hand",
       "charges_max": 7,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [
         {
           "id": "fear",
@@ -3351,12 +3091,7 @@
       "equip_slot": "hand",
       "charges_max": 7,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [
         {
           "id": "fireball",
@@ -3432,12 +3167,7 @@
       "equip_slot": "hand",
       "charges_max": 7,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [
         {
           "id": "lightning-bolt",
@@ -3512,12 +3242,7 @@
       "equip_slot": "hand",
       "charges_max": 7,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [
         {
           "id": "hold-person",
@@ -3586,28 +3311,16 @@
       "recharge_type": "none",
       "passive_effects": [
         {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        },
-        {
           "type": "spell_attack_bonus",
           "bonus": 2,
           "requires_attunement": true
         }
       ],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "wand-of-the-war-mage-plus2-action",
-          "name": "Wand of the War Mage +2",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 7,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 17,
       "item_spell_attack_bonus": 9,
       "slug": "wand-of-the-war-mage-plus2",
@@ -3642,12 +3355,7 @@
       "equip_slot": "hand",
       "charges_max": 7,
       "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "passive_effects": [],
       "granted_spells": [],
       "granted_actions": [
         {
@@ -3703,26 +3411,13 @@
       "equippable": true,
       "equip_slot": "trinket",
       "charges_max": 0,
-      "recharge_type": "dawn",
-      "passive_effects": [
-        {
-          "type": "note",
-          "summary": "Starter magic item metadata."
-        }
-      ],
+      "recharge_type": "none",
+      "passive_effects": [],
       "granted_spells": [],
-      "granted_actions": [
-        {
-          "id": "wings-of-flying-action",
-          "name": "Wings of Flying",
-          "action_type": "item_action",
-          "charge_cost": 1,
-          "summary": "Activate this item."
-        }
-      ],
+      "granted_actions": [],
       "source": "srd_compendium",
       "charges_current": 0,
-      "recharge_formula": "1d6+1",
+      "recharge_formula": "",
       "item_spell_save_dc": 15,
       "item_spell_attack_bonus": 7,
       "slug": "wings-of-flying",
