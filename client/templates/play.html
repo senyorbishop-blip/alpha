@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="/static/css/spotlight.css">
   <link rel="stylesheet" href="/static/css/character-builder.css">
   <link rel="stylesheet" href="/static/css/character-sheet-premium.css">
+  <link rel="stylesheet" href="/static/css/my-character-tab.css">
   <link rel="stylesheet" href="/static/css/map-first-ui-tokens.css">
   <link rel="stylesheet" href="/static/css/dm-map-first-shell.css">
   <link rel="stylesheet" href="/static/css/dm-map-first-polish.css">
@@ -1757,6 +1758,10 @@
   </section>
   <!-- Tab bar -->
   <div id="right-tab-bar" role="tablist" aria-label="Right panel tabs" style="position:relative;">
+    <button class="rtab" id="rtab-character" role="tab" type="button" aria-controls="rtab-pane-character" data-rtab-target="character">
+      <span class="rtab-icon" aria-hidden="true">🪶</span>My Character
+      <span class="rtab-badge" id="rtab-character-badge"></span>
+    </button>
     <button class="rtab active" id="rtab-party" role="tab" type="button" aria-controls="rtab-pane-party" data-rtab-target="party">
       <span class="rtab-icon" aria-hidden="true">⚔</span>Party
       <span class="rtab-badge" id="rtab-party-badge"></span>
@@ -1825,6 +1830,11 @@
     </div>
     <div class="sqp-meta" id="selected-quick-meta"></div>
     <div class="sqp-actions" id="selected-quick-actions"></div>
+  </div>
+
+  <!-- My Character Tab: player-facing at-a-glance hero card -->
+  <div class="rtab-pane" id="rtab-pane-character" role="tabpanel" aria-labelledby="rtab-character">
+    <div id="mychar-card" class="mychar-card" aria-live="polite"></div>
   </div>
 
   <!-- Party Tab: DM + Players -->
@@ -5418,7 +5428,9 @@ const _flyoutBtnMap = {
 };
 
 // Right sidebar tab state (declared early to avoid TDZ errors in shop/log badge handlers)
-let _activeRTab = (_runtimeStore && _runtimeStore.get) ? (_runtimeStore.get('ui.activeRightTab', 'party')) : 'party';
+// Players land on their "My Character" hero card by default; DMs/viewers keep Party.
+const __DEFAULT_RIGHT_TAB = (ROLE === 'player') ? 'character' : 'party';
+let _activeRTab = (_runtimeStore && _runtimeStore.get) ? (_runtimeStore.get('ui.activeRightTab', __DEFAULT_RIGHT_TAB)) : __DEFAULT_RIGHT_TAB;
 let _rightPanelContextLockUntil = 0;
 let _rightPanelLastContextKey = 'neutral';
 let _partyRosterView = 'party';
@@ -20466,6 +20478,199 @@ function refreshCharSummary() {
   refreshIdentityPreviewCard();
   refreshConditionSummaries();
   refreshDiceModifierSelector();
+  renderMyCharacterTab();
+}
+
+// ── My Character tab: player-facing "at a glance" hero card ──────────────────
+function _myCharFmtSpeed(speed) {
+  return Number.isFinite(speed) && speed > 0 ? `${speed} ft` : '—';
+}
+
+function _myCharActiveQuest() {
+  const quests = (Array.isArray(_sessionQuests) ? _sessionQuests : []).filter((q) => q && _journalQuestCanView(q));
+  if (!quests.length) return null;
+  const byRecent = (a, b) => Number(b.updated_at || b.created_at || 0) - Number(a.updated_at || a.created_at || 0);
+  const active = quests.filter((q) => _journalQuestStatusGroup(q.status) === 'active').sort(byRecent);
+  const available = quests.filter((q) => _journalQuestStatusGroup(q.status) === 'available').sort(byRecent);
+  return active[0] || available[0] || null;
+}
+
+function _myCharLatestDiscovery() {
+  const discs = (Array.isArray(savedDiscoveries) ? savedDiscoveries : []).filter(Boolean);
+  if (!discs.length) return null;
+  return discs.slice().sort((a, b) => Number(b.updated_at || b.created_at || 0) - Number(a.updated_at || a.created_at || 0))[0];
+}
+
+function _myCharIsPrivateDiscovery(disc) {
+  const vis = disc && typeof disc.visibility === 'object' ? disc.visibility : {};
+  const mode = String(vis.mode || disc?.visibility || '').toLowerCase();
+  return ['private', 'private_player', 'player_private', 'personal'].includes(mode) || disc?.private === true;
+}
+
+function renderMyCharacterTab() {
+  const host = document.getElementById('mychar-card');
+  if (!host) return;
+  if (ROLE !== 'player') { host.innerHTML = ''; return; }
+
+  const c = (_charSheet && typeof _charSheet === 'object') ? _charSheet : {};
+  const book = (c.book && typeof c.book === 'object') ? c.book : {};
+  const snap = getActivePlayerCharacterSnapshot();
+
+  const hasCharacter = !!(
+    (c && (c.name || (Array.isArray(c.classes) && c.classes.length) || c.species || c.race)) ||
+    (Number.isFinite(snap.maxHp) && snap.maxHp > 0)
+  );
+  if (!hasCharacter) {
+    host.innerHTML = `
+      <div class="mychar-banner">
+        <span class="mychar-banner-crest">⚜</span>
+        <span class="mychar-banner-title">Casual D&amp;D</span>
+      </div>
+      <div class="mychar-empty">
+        <strong>No character yet</strong>
+        Build or import a character to see your hero card here — HP, defenses, conditions, quests, and discoveries all in one place.
+        <div><button type="button" onclick="openCharacterBook()">Open Character Sheet</button></div>
+      </div>`;
+    _myCharSyncConnection();
+    return;
+  }
+
+  const name = snap.name || c.name || book.name || 'Adventurer';
+  const level = parseInt(c.totalLevel ?? c.level ?? book.level, 10) || 1;
+  const heroClass = ((Array.isArray(c.classes) ? c.classes : []).map((x) => x && x.name).filter(Boolean).join(' / ')) || c.className || book.className || '';
+  const subclass = ((Array.isArray(c.classes) ? c.classes : []).map((x) => x && x.subclass).filter(Boolean).join(' / ')) || c.subclass || book.subclass || '';
+  const race = c.species || c.race || book.species || book.race || '';
+  const portrait = String(c.avatarUrl || book.avatarUrl || c.tokenImageUrl || '').trim();
+  const classLine = [`Level ${level}`, race, heroClass].filter(Boolean).join(' · ');
+
+  const curHp = Number.isFinite(snap.currentHp) ? snap.currentHp : (parseInt(c.currentHp, 10));
+  const maxHp = Number.isFinite(snap.maxHp) ? snap.maxHp : (parseInt(c.maxHp, 10));
+  const tempHp = Math.max(0, parseInt(snap.tempHp, 10) || 0);
+  const hasHp = Number.isFinite(curHp) && Number.isFinite(maxHp) && maxHp > 0;
+  const hpPct = hasHp ? Math.max(0, Math.min(100, (curHp / maxHp) * 100)) : 0;
+  const hpClass = hpPct > 50 ? '' : (hpPct > 25 ? 'mid' : 'low');
+
+  const ac = Number.isFinite(snap.ac) ? snap.ac : (parseInt(c.ac, 10));
+  const init = Number.isFinite(snap.initiative) ? snap.initiative : (parseInt(c.initiative, 10) || 0);
+  const speed = Number.isFinite(snap.speed) ? snap.speed : (parseInt(c.speed, 10));
+  const passive = parseInt(c.passivePerception ?? book.passivePerception, 10);
+  const inspiration = String(c.inspiration ?? book.inspiration ?? '').trim();
+  const hasInspiration = inspiration && !/^(0|no|none|false)$/i.test(inspiration);
+
+  // Conditions (live, from the player's own token) + concentration
+  const myTok = _getMyOwnedToken();
+  const condIds = Array.isArray(myTok?.conditions) ? myTok.conditions.filter(Boolean) : [];
+  const condChips = condIds.map((id) => {
+    const meta = CONDITIONS_MAP[id] || { icon: '•', name: id, color: '#00e5cc' };
+    return `<span class="mychar-chip" style="border-color:${meta.color}66;background:${meta.color}1f;" title="${escapeHtml(meta.name)}"><span class="ic">${escapeHtml(meta.icon)}</span>${escapeHtml(meta.name)}</span>`;
+  });
+  const concSpell = (typeof _getActiveConcentrationSpellName === 'function') ? _getActiveConcentrationSpellName() : '';
+  const alreadyConc = condIds.some((id) => String(id).toLowerCase() === 'concentrating');
+  if (concSpell && !alreadyConc) {
+    condChips.push(`<span class="mychar-chip" title="Concentrating on ${escapeHtml(concSpell)}"><span class="ic">🔮</span>Concentration</span>`);
+  }
+
+  const quest = _myCharActiveQuest();
+  const disc = _myCharLatestDiscovery();
+
+  const portraitInner = portrait
+    ? `<img src="${escapeHtml(portrait)}" alt="Portrait of ${escapeHtml(name)}" loading="lazy">`
+    : `<span>${escapeHtml(String(name).slice(0, 1).toUpperCase() || 'A')}</span>`;
+
+  host.innerHTML = `
+    <div class="mychar-banner">
+      <span class="mychar-banner-crest">⚜</span>
+      <span class="mychar-banner-title">Casual D&amp;D</span>
+      <button class="mychar-gear" type="button" onclick="openCharacterBook()" title="Open full character sheet" aria-label="Open full character sheet">⚙</button>
+    </div>
+
+    <div class="mychar-identity">
+      <div class="mychar-portrait">${portraitInner}</div>
+      <div class="mychar-identity-meta">
+        <div class="mychar-name">${escapeHtml(name)}</div>
+        <div class="mychar-classline">${escapeHtml(classLine || 'Adventurer')}</div>
+        ${subclass ? `<div class="mychar-subclass">${escapeHtml(subclass)}</div>` : ''}
+      </div>
+      <span class="mychar-identity-gem" aria-hidden="true">◆</span>
+    </div>
+
+    <div class="mychar-hp">
+      <div class="mychar-hp-top">
+        <span class="mychar-hp-label">HP</span>
+        <span class="mychar-hp-val"><b>${hasHp ? curHp : '—'}</b> / ${hasHp ? maxHp : '—'}</span>
+        <span class="mychar-hp-spacer"></span>
+        ${tempHp > 0 ? `<div class="mychar-temp"><span class="mychar-temp-label">Temp HP</span><span class="mychar-temp-val">${tempHp}</span></div>` : ''}
+      </div>
+      <div class="mychar-hp-bar"><div class="mychar-hp-fill ${hpClass}" style="width:${Math.round(hpPct)}%;"></div></div>
+    </div>
+
+    <div class="mychar-stat-row">
+      <div class="mychar-stat"><div class="mychar-stat-label">AC</div><div class="mychar-stat-val">${Number.isFinite(ac) ? ac : '—'}</div></div>
+      <div class="mychar-stat"><div class="mychar-stat-label">Initiative</div><div class="mychar-stat-val">${formatSignedSummaryValue(init)}</div></div>
+      <div class="mychar-stat"><div class="mychar-stat-label">Speed</div><div class="mychar-stat-val">${_myCharFmtSpeed(speed)}</div></div>
+    </div>
+
+    <div class="mychar-stat-row mychar-stat-row--split">
+      <div class="mychar-stat"><div class="mychar-stat-label">Passive Perception</div><div class="mychar-stat-val">${Number.isFinite(passive) && passive > 0 ? passive : '—'}</div></div>
+      <div class="mychar-stat"><div class="mychar-stat-label">Inspiration</div><div class="mychar-stat-val mychar-insp ${hasInspiration ? '' : 'off'}">◆</div></div>
+    </div>
+
+    <div class="mychar-section">
+      <div class="mychar-section-label">Conditions</div>
+      <div class="mychar-chips">${condChips.length ? condChips.join('') : '<span class="mychar-chip-empty">None active</span>'}</div>
+    </div>
+
+    ${quest ? `
+    <div class="mychar-entry mychar-entry--quest">
+      <div class="mychar-entry-kicker">◆ Active Quest</div>
+      <div class="mychar-entry-row">
+        <span class="mychar-entry-icon" aria-hidden="true">📕</span>
+        <div>
+          <div class="mychar-entry-title">${escapeHtml(quest.title || 'Untitled quest')}</div>
+          ${quest.summary || quest.description ? `<div class="mychar-entry-sub">${escapeHtml(String(quest.summary || quest.description))}</div>` : ''}
+        </div>
+      </div>
+    </div>` : ''}
+
+    ${disc ? `
+    <div class="mychar-entry mychar-entry--discovery">
+      <div class="mychar-entry-kicker">✦ Latest Discovery</div>
+      <div class="mychar-entry-row">
+        <span class="mychar-entry-icon" aria-hidden="true">📜</span>
+        <div>
+          <div class="mychar-entry-title">${escapeHtml(disc.title || 'New Discovery')}${_myCharIsPrivateDiscovery(disc) ? '<span class="mychar-private">Private</span>' : ''}</div>
+          ${disc.body ? `<div class="mychar-entry-sub">${escapeHtml(String(disc.body))}</div>` : ''}
+        </div>
+      </div>
+    </div>` : ''}
+
+    <div class="mychar-footer">
+      <span class="mychar-conn-dot" id="mychar-conn-dot"></span>
+      <span id="mychar-conn-label">Connecting…</span>
+      <span class="mychar-footer-signal" aria-hidden="true">▮▮▮</span>
+    </div>`;
+
+  _myCharSyncConnection();
+}
+
+function _myCharSyncConnection() {
+  const dot = document.getElementById('mychar-conn-dot');
+  const label = document.getElementById('mychar-conn-label');
+  if (!dot && !label) return;
+  const src = document.getElementById('ws-status');
+  let state = 'connecting';
+  if (src) {
+    if (src.classList.contains('connected')) state = 'connected';
+    else if (src.classList.contains('expired')) state = 'expired';
+    else if (src.classList.contains('reconnecting')) state = 'reconnecting';
+  }
+  const copy = { connected: 'Connected', reconnecting: 'Reconnecting…', expired: 'Session expired', connecting: 'Connecting…' };
+  if (dot) {
+    dot.classList.toggle('connected', state === 'connected');
+    dot.classList.toggle('reconnecting', state === 'reconnecting');
+    dot.classList.toggle('expired', state === 'expired');
+  }
+  if (label) label.textContent = copy[state] || copy.connecting;
 }
 
 function refreshTokenEditorSummary() {
@@ -23803,6 +24008,7 @@ function _setWsStatus(state, detail = '') {
     label.classList.toggle('expired', state === 'expired');
   }
   renderStreamReadinessPanel();
+  if (typeof _myCharSyncConnection === 'function') _myCharSyncConnection();
 }
 
 function _renderIntegrationStatus(status) {
@@ -26044,6 +26250,7 @@ function loadSavedDiscoveries(cards) {
     });
   }
   _renderNarrativeCueBadges();
+  if (typeof renderMyCharacterTab === 'function') renderMyCharacterTab();
 }
 
 function handleLegacyMessage(msg) {
@@ -33694,6 +33901,7 @@ function loadSessionQuests(quests) {
   _questSyncInitialized = true;
   _renderNarrativeCueBadges();
   renderJournalPanel();
+  if (typeof renderMyCharacterTab === 'function') renderMyCharacterTab();
 }
 
 function _journalQuestSectionDefaultOpen(key) {
@@ -38688,10 +38896,11 @@ function __syncTabsShellState() {
 }
 
 function __getActiveRightTabShellState() {
+  const fallback = _activeRTab || __DEFAULT_RIGHT_TAB || 'party';
   if (_runtimeStore && typeof _runtimeStore.get === 'function') {
-    return String(_runtimeStore.get('ui.activeRightTab', _activeRTab || 'party') || 'party');
+    return String(_runtimeStore.get('ui.activeRightTab', fallback) || fallback);
   }
-  return String(_activeRTab || 'party');
+  return String(fallback);
 }
 
 function __getUnreadLogShellState() {
@@ -39048,8 +39257,8 @@ function __createTabsEnv() {
     document,
     getRole: () => ROLE,
     getActiveTab: () => __getActiveRightTabShellState(),
-    getDefaultTab: () => 'party',
-    setActiveTab: (tab) => { _activeRTab = String(tab || 'party'); __syncTabsShellState(); },
+    getDefaultTab: () => __DEFAULT_RIGHT_TAB,
+    setActiveTab: (tab) => { _activeRTab = String(tab || __DEFAULT_RIGHT_TAB); __syncTabsShellState(); },
     getUnreadLog: () => __getUnreadLogShellState(),
     setUnreadLog: (value) => { _unreadLog = Math.max(0, Number(value) || 0); __syncTabsShellState(); },
     clearUnreadMemory: () => { _unreadMemory = 0; },
@@ -39127,6 +39336,9 @@ function switchRTab(tab) {
   }
   if (tab === 'party') {
     setPartyRosterView('party');
+  }
+  if (tab === 'character' && typeof renderMyCharacterTab === 'function') {
+    renderMyCharacterTab();
   }
   if (_isMobilePanelViewport()) {
     document.getElementById('sidebar-right')?.classList.remove('mobile-panel-open');

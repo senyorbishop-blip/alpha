@@ -15,6 +15,7 @@
   // bare role strings.  The two sets of helpers share identical semantics.
 
   const TAB_REGISTRY = [
+    { id: 'character', label: 'My Character', paneSelector: '#rtab-pane-character', buttonSelector: '#rtab-character', order: 5, group: 'core', supportsBadge: true, isVisible: (env) => isRole(env, 'player') },
     { id: 'party', label: 'Party', paneSelector: '#rtab-pane-party', buttonSelector: '#rtab-party', order: 10, group: 'core', supportsBadge: true, isVisible: () => true },
     { id: 'inventory', label: 'Inventory', paneSelector: '#rtab-pane-inventory', buttonSelector: '#rtab-inventory', order: 20, group: 'core', supportsBadge: true, isVisible: (env) => canUsePlayerTabs(env) },
     { id: 'log', label: 'Chat', paneSelector: '#rtab-pane-log', buttonSelector: '#rtab-log', order: 30, group: 'core', supportsBadge: true, isVisible: () => true },
