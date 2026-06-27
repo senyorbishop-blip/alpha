@@ -651,12 +651,27 @@ async def handle_char_profile_delete(payload: dict, session: Session, user: User
     await save_campaign_async(session)
 
 
-def _dice_roll_audience(session: Session, roller: User) -> set[str]:
-    """User ids allowed to see a private dice roll: the roller plus every DM."""
-    audience = {str(getattr(roller, "id", "") or "")}
-    for uid, u in (getattr(session, "users", {}) or {}).items():
-        if str(getattr(u, "role", "") or "").strip().lower() == "dm":
-            audience.add(str(uid))
+def _dice_roll_audience(session: Session, roller: User, visibility: str = "private") -> set[str]:
+    """User ids that should receive a dice roll's popup / special FX / private log.
+
+    Visibility tiers (default ``private``):
+      * ``private`` — the roller only. Nobody else sees the big dice popup.
+      * ``dm``      — the roller plus every connected DM.
+      * ``table``   — everyone in the session (normally delivered via
+                      ``manager.broadcast``; the full id set is returned here for
+                      completeness/testing).
+    """
+    roller_id = str(getattr(roller, "id", "") or "")
+    if visibility == "table":
+        audience = {str(uid) for uid in (getattr(session, "users", {}) or {}).keys()}
+        audience.add(roller_id)
+    elif visibility == "dm":
+        audience = {roller_id}
+        for uid, u in (getattr(session, "users", {}) or {}).items():
+            if str(getattr(u, "role", "") or "").strip().lower() == "dm":
+                audience.add(str(uid))
+    else:  # private (default) — roller only
+        audience = {roller_id}
     audience.discard("")
     return audience
 
@@ -717,11 +732,19 @@ async def handle_dice_roll(payload: dict, session: Session, user: User):
         "result": _result_sound(dice_type, rolls),
     }
 
-    # Initiative is the one roll the whole table is meant to see; every other
-    # roll (attacks, saves, ability checks, damage, …) is private to the roller
-    # and the DM(s). Previously *all* rolls were broadcast, so players saw each
-    # other's private rolls.
-    is_public_roll = "initiative" in roll_label.lower()
+    # Roll popups are private by default. The roller alone sees the big dice
+    # result popup / special FX. The caller can widen this with an explicit
+    # visibility flag:
+    #   * "dm"    — the roller plus the DM(s)
+    #   * "table" — the whole table (broadcast)
+    # Initiative is NOT special-cased as public anymore: the combat initiative
+    # *tracker* is synchronised separately through combat_state, so the order
+    # still updates for everyone while the dice popup stays private to the
+    # roller. (Previously any roll whose label contained "initiative" was
+    # broadcast, so every player saw each other's initiative dice popup.)
+    visibility = str(payload.get("visibility") or payload.get("roll_visibility") or "private").strip().lower()
+    if visibility not in ("private", "dm", "table"):
+        visibility = "private"
 
     result_payload = {
         "user_id": user.id,
@@ -745,7 +768,9 @@ async def handle_dice_roll(payload: dict, session: Session, user: User):
     if dice_type == 20 and quantity == 1 and len(rolls) == 1:
         fx_type = "nat20" if int(rolls[0]) == 20 else "nat1" if int(rolls[0]) == 1 else ""
 
-    if is_public_roll:
+    if visibility == "table":
+        # Table roll: persisted to the shared session log (survives reconnect)
+        # and broadcast to everyone, popup + FX included.
         log_entry = session.add_log(message, "dice", user.name)
         result_payload["log"] = log_entry
         await manager.broadcast(session.id, {"type": "dice_result", "payload": result_payload})
@@ -756,9 +781,10 @@ async def handle_dice_roll(payload: dict, session: Session, user: User):
             })
         return
 
-    # Private roll: the log entry is ephemeral (never persisted to the shared
-    # session log, so it can't leak to other players through a later state
-    # snapshot) and is delivered only to the roller and the DM(s).
+    # Private / DM roll: the log entry is ephemeral (never persisted to the
+    # shared session log, so it can't leak to other players through a later
+    # state snapshot) and is delivered only to the calculated audience. The
+    # special FX follow the exact same audience as the dice_result.
     private_log = {
         "id": secrets.token_hex(4),
         "timestamp": time.time(),
@@ -770,7 +796,7 @@ async def handle_dice_roll(payload: dict, session: Session, user: User):
     }
     result_payload["log"] = private_log
     result_payload["private"] = True
-    audience = _dice_roll_audience(session, user)
+    audience = _dice_roll_audience(session, user, visibility)
     for uid in audience:
         await manager.send_to(session.id, uid, {"type": "dice_result", "payload": result_payload})
     if fx_type:
