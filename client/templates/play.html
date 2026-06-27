@@ -5216,6 +5216,21 @@ if (typeof window !== 'undefined') { window.applyAuthoritativeCharacterState = a
 // `token_state_revision` than the last one this client applied, and tracks
 // which currently-hidden token ids the snapshot is aware of so a later
 // stale single-token event can't resurrect one of them.
+
+function refreshViewerPowerTargetsAfterTokenChange(reason) {
+  // Viewer powers are rendered before the full token projection during initial
+  // state_sync, reconnect, and local-map navigation. Re-render the viewer panel
+  // after authoritative token changes so the target/source dropdown and area
+  // targeting controls always reflect the currently visible map tokens.
+  if (ROLE !== 'viewer') return;
+  if (typeof renderViewerPanel !== 'function') return;
+  try {
+    renderViewerPanel();
+  } catch (err) {
+    console.warn('[viewer powers] target refresh failed', reason, err);
+  }
+}
+
 function applyAuthoritativeTokenSnapshot(payload, source) {
   const p = payload && typeof payload === 'object' ? payload : {};
   const rev = Number(p.token_state_revision);
@@ -5225,6 +5240,7 @@ function applyAuthoritativeTokenSnapshot(payload, source) {
   }
   if (Number.isFinite(rev)) _lastTokenStateRevision = rev;
   applyAuthoritativeTokenSync(p);
+  refreshViewerPowerTargetsAfterTokenChange('token_snapshot:' + String(source || 'unknown'));
   _suppressedHiddenTokenIds.clear();
   const tokenPayload = p.tokens && typeof p.tokens === 'object' ? p.tokens : {};
   Object.keys(tokenPayload).forEach(id => {
@@ -5266,6 +5282,7 @@ function applyAuthoritativeTokenEvent(eventType, payload, applyFn, source) {
     _clearTokenSuppressed(tokenId);
   }
   applyFn();
+  refreshViewerPowerTargetsAfterTokenChange('token_event:' + String(eventType || source || 'unknown'));
   _tokenMapDebugLog('token_event applied', { source: String(source || ''), event: eventType, token_id: tokenId, token_state_revision: Number(p.token_state_revision) || undefined });
   return true;
 }
