@@ -213,7 +213,80 @@
     openMap: function () { return openFlyout('flyout-map'); },
     openSound: function () { return openFlyout('flyout-sound'); },
     openJournal: function () { return openFlyout('flyout-journal'); },
-    closeLegacyDrawer: closeLegacyDrawer
+    closeLegacyDrawer: closeLegacyDrawer,
+
+    openItemSearch: function () {
+      // Open the item library manager (search + manage SRD & custom items)
+      if (typeof g('openItemLibraryManager') === 'function') return callGlobal('openItemLibraryManager');
+      if (typeof g('openItemLibraryModal') === 'function') return callGlobal('openItemLibraryModal', ['manage']);
+      return warnAction('Item Search', 'openItemLibraryManager not available');
+    },
+
+    openLootContainers: function () {
+      // Open inventory tab and scroll to the party stash / loot section
+      openLegacyDrawer('inventory');
+      try {
+        setTimeout(function () {
+          var stash = document.getElementById('party-stash-widget');
+          if (stash) {
+            stash.style.display = stash.style.display === 'none' ? 'flex' : stash.style.display;
+            stash.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 120);
+      } catch (_e) {}
+    },
+
+    openShopSetup: function () {
+      // Try to open ShopPanel for a selected shop prop; fall back to opening a blank ShopPanel
+      var ShopPanel = g('ShopPanel');
+      if (ShopPanel && typeof ShopPanel.open === 'function') {
+        // Try to find a currently selected shop prop
+        var prop = null;
+        try {
+          var ctxProp = g('ctxProp') || g('_ctxShopProp') || g('_selectedProp');
+          if (ctxProp && ctxProp.kind && String(ctxProp.kind).toLowerCase().indexOf('shop') !== -1) prop = ctxProp;
+        } catch (_e) {}
+        if (prop) {
+          try { if (typeof g('configureShopFromProp') === 'function') return callGlobal('configureShopFromProp', [prop]); } catch (_e) {}
+        }
+        // Open with generic defaults — DM can still configure all fields
+        try {
+          ShopPanel.open({ name: 'New Shop', shopkeeper: '', type: 'general', personality: 'friendly', inventory: [] }, function () {});
+          return;
+        } catch (_e) {}
+      }
+      // Last resort: open the shop ledger tab
+      openLegacyDrawer('shop');
+      try {
+        if (typeof g('showToast') === 'function') g('showToast')('Right-click a shop prop on the map to configure it.');
+      } catch (_e) {}
+    },
+
+    openGrantItem: function () {
+      openLegacyDrawer('inventory');
+      try {
+        setTimeout(function () {
+          if (typeof g('openInventoryManualAddModal') === 'function') callGlobal('openInventoryManualAddModal');
+        }, 150);
+      } catch (_e) {}
+    },
+
+    openGrantGold: function () {
+      openLegacyDrawer('inventory');
+      try {
+        setTimeout(function () {
+          if (typeof g('openInventoryGoldModal') === 'function') callGlobal('openInventoryGoldModal', ['add']);
+        }, 150);
+      } catch (_e) {}
+    },
+
+    openAttunement: function () {
+      // Attunement is managed per-item in the inventory panel
+      openLegacyDrawer('inventory');
+      try {
+        if (typeof g('showToast') === 'function') g('showToast')('Select an item in inventory to attune/unattune it.');
+      } catch (_e) {}
+    }
   });
   window.AppUIDMActions = Actions;
 
@@ -398,12 +471,12 @@
     'loot-shop': function () {
       return block('Economy tools',
         '<div class="dcx-toollist">' +
-          tool('\uD83D\uDD0E', 'Item search', 'SRD + custom', "AppUIDMActions.openShop()") +
-          tool('\uD83D\uDCE6', 'Loot containers', '', "AppUIDMActions.openShop()") +
-          tool('\uD83C\uDFEA', 'Shop setup', '', "AppUIDMActions.openShop()") +
-          tool('\uD83C\uDF81', 'Grant item', 'open inventory', "AppUIDMActions.openInventory()") +
-          tool('\uD83E\uDE99', 'Grant gold', 'open inventory', "AppUIDMActions.openInventory()") +
-          tool('\u26A1', 'Charges / attunement', 'open inventory', "AppUIDMActions.openInventory()") +
+          tool('\uD83D\uDD0E', 'Item search', 'SRD + custom library', "AppUIDMActions.openItemSearch()") +
+          tool('\uD83D\uDCE6', 'Loot containers', 'party stash &amp; chests', "AppUIDMActions.openLootContainers()") +
+          tool('\uD83C\uDFEA', 'Shop setup', 'configure NPC shop', "AppUIDMActions.openShopSetup()") +
+          tool('\uD83C\uDF81', 'Grant item', 'add to player inventory', "AppUIDMActions.openGrantItem()") +
+          tool('\uD83E\uDE99', 'Grant gold', 'award currency', "AppUIDMActions.openGrantGold()") +
+          tool('\u26A1', 'Charges / attunement', 'manage in inventory', "AppUIDMActions.openAttunement()") +
         '</div>');
     },
     'session-tools': function () {
