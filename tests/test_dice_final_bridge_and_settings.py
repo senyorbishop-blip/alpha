@@ -102,3 +102,10 @@ def test_dice_prewarm_is_hidden_renderer_and_common_combat_dice_only():
     assert 'diceWorld.render?.()' in content
     assert 'showResultOverlay' not in content[content.index('function _prewarmDiceWorld'):content.index('function scheduleDicePrewarm')]
     assert 'playRollStart' not in content[content.index('function _prewarmDiceWorld'):content.index('function scheduleDicePrewarm')]
+
+def test_dice3d_imports_room_environment_for_preview_renderer():
+    content = _read('client/static/js/dice/dice3d.js')
+    assert "import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';" in content
+    preview = content[content.index('function createPreview'):content.index('// Public API', content.index('function createPreview'))]
+    assert 'new RoomEnvironment()' in preview
+
