@@ -10,6 +10,8 @@ from server.faction_reputation import normalize_faction_reputation_state
 
 PERSISTED_LIST_FIELDS = {
     "journal_entries",
+    "codex_entries",
+    "codex_links",
     "library_entries",
     "item_library_entries",
     "party_loot_log",
@@ -567,6 +569,76 @@ def normalize_world_state(raw: Any) -> dict[str, Any]:
     }
 
 
+def _normalize_codex_entry(entry: Any) -> dict | None:
+    if not isinstance(entry, dict):
+        return None
+    entry_id = str(entry.get("id") or "").strip()[:64]
+    if not entry_id:
+        return None
+    entry_type = str(entry.get("type") or "note").strip().lower()[:32]
+    if entry_type not in {"note", "log", "lore", "quest"}:
+        entry_type = "note"
+    visibility = str(entry.get("visibility") or "party").strip().lower()[:16]
+    if visibility not in {"private", "party", "dm"}:
+        visibility = "party"
+    return {
+        "id": entry_id,
+        "type": entry_type,
+        "visibility": visibility,
+        "author_id": str(entry.get("author_id") or "").strip()[:64],
+        "title": str(entry.get("title") or "").strip()[:240],
+        "content_md": str(entry.get("content_md") or "")[:16000],
+        "created_at": float(entry.get("created_at") or 0.0),
+        "updated_at": float(entry.get("updated_at") or 0.0),
+        "tags": [str(t)[:64] for t in (entry.get("tags") or []) if isinstance(t, str)][:32],
+        "poi_id": str(entry.get("poi_id") or "").strip()[:64] or None,
+    }
+
+
+def normalize_codex_entries(raw: Any) -> list:
+    src = raw if isinstance(raw, list) else []
+    out = []
+    for item in src:
+        normalized = _normalize_codex_entry(item)
+        if normalized is not None:
+            out.append(normalized)
+    return out
+
+
+def _normalize_codex_link(link: Any) -> dict | None:
+    if not isinstance(link, dict):
+        return None
+    link_id = str(link.get("id") or "").strip()[:64]
+    if not link_id:
+        return None
+    from_type = str(link.get("from_type") or "").strip()[:32]
+    from_id = str(link.get("from_id") or "").strip()[:64]
+    to_type = str(link.get("to_type") or "").strip()[:32]
+    to_id = str(link.get("to_id") or "").strip()[:64]
+    if not from_type or not from_id or not to_type or not to_id:
+        return None
+    return {
+        "id": link_id,
+        "from_type": from_type,
+        "from_id": from_id,
+        "to_type": to_type,
+        "to_id": to_id,
+        "label": str(link.get("label") or "").strip()[:120],
+        "author_id": str(link.get("author_id") or "").strip()[:64],
+        "created_at": float(link.get("created_at") or 0.0),
+    }
+
+
+def normalize_codex_links(raw: Any) -> list:
+    src = raw if isinstance(raw, list) else []
+    out = []
+    for item in src:
+        normalized = _normalize_codex_link(item)
+        if normalized is not None:
+            out.append(normalized)
+    return out
+
+
 def normalize_persisted_campaign_data(data: dict[str, Any] | None) -> dict[str, Any]:
     src = data or {}
     normalized = dict(src)
@@ -579,6 +651,8 @@ def normalize_persisted_campaign_data(data: dict[str, Any] | None) -> dict[str, 
     normalized["world_state"] = normalize_world_state(src.get("world_state"))
     for field in PERSISTED_LIST_FIELDS:
         normalized[field] = _as_list(src.get(field))
+    normalized["codex_entries"] = normalize_codex_entries(src.get("codex_entries"))
+    normalized["codex_links"] = normalize_codex_links(src.get("codex_links"))
     normalized["discovery_cards"] = normalize_discovery_cards(src.get("discovery_cards"))
     normalized["private_story_hooks"] = normalize_private_story_hooks(src.get("private_story_hooks"))
     normalized["encounter_templates"] = normalize_encounter_templates(src.get("encounter_templates"))
@@ -622,6 +696,8 @@ def extract_persistable_campaign_state(session: Any) -> dict[str, Any]:
         "fog_maps": getattr(session, "fog_maps", None) or {},
         "combat": getattr(session, "combat", None) or {},
         "journal_entries": _clone(getattr(session, "journal_entries", None) or []),
+        "codex_entries": _clone(getattr(session, "codex_entries", None) or []),
+        "codex_links": _clone(getattr(session, "codex_links", None) or []),
         "library_entries": _clone(getattr(session, "library_entries", None) or []),
         "item_library_entries": _clone(getattr(session, "item_library_entries", None) or []),
         "char_profiles": _clone(getattr(session, "char_profiles", None) or {}),

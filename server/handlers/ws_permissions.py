@@ -17,6 +17,7 @@ VIEWER_ALLOWED_MESSAGE_TYPES = frozenset({
     "viewer_cursor_update",
     "viewer_emote",
     "poll_vote",
+    "codex_link_query",
 })
 
 DM_ADMIN_MESSAGE_TYPES = frozenset({
@@ -234,6 +235,10 @@ PLAYER_KNOWN_GAMEPLAY_MESSAGE_TYPES = frozenset({
     "conversation_queue_join",
     "conversation_queue_leave",
     "conversation_reaction_set",
+    "codex_upsert",
+    "codex_delete",
+    "codex_link_set",
+    "codex_link_query",
 })
 
 

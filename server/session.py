@@ -580,6 +580,8 @@ class Session:
     spell_manifest_revision: int = 0  # monotonic spell/prep/known/item-spell manifest revision
     quick_actions_revision: int = 0  # monotonic server-assisted quick-actions hydration revision
     journal_entries: list = field(default_factory=list)
+    codex_entries: list = field(default_factory=list)
+    codex_links: list = field(default_factory=list)
     # library_entries: preserved for campaign backward-compatibility only.
     # The legacy in-session creature library has been removed; all creatures
     # now live in the DB-backed user_creature_library (see /api/library/creatures).
@@ -1136,6 +1138,8 @@ class Session:
         if role == "dm":
             d["pois"] = {pid: p.to_dict(include_dm_notes=True) for pid, p in self.pois.items()}
             d["journal_entries"] = list(self.journal_entries or [])
+            d["codex_entries"] = list(self.codex_entries or [])
+            d["codex_links"] = list(self.codex_links or [])
             d["library_entries"] = list(self.library_entries or [])
             d["item_library_entries"] = list(self.item_library_entries or [])
             d["char_profiles"] = sanitize_profiles_for_websocket(dict(self.char_profiles or {}))
@@ -1191,6 +1195,14 @@ class Session:
                     combat_public.pop("hidden_suspended_combatants", None)
                     d["combat"] = combat_public
             d["journal_entries"] = [entry for entry in (self.journal_entries or []) if entry.get("shared")]
+            d["codex_entries"] = [
+                e for e in (self.codex_entries or [])
+                if isinstance(e, dict) and (
+                    e.get("visibility") == "party"
+                    or (e.get("visibility") == "private" and e.get("author_id") == user_id)
+                )
+            ]
+            d["codex_links"] = list(self.codex_links or [])
             d["library_entries"] = []
             d["item_library_entries"] = list(self.item_library_entries or [])
             if role == "player" and user_id:
