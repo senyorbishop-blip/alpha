@@ -6,7 +6,6 @@ from typing import Any
 from server.editor_schema import normalize_map_settings
 from server.map_document import build_map_documents_from_session, normalize_map_documents
 from server.faction_reputation import normalize_faction_reputation_state
-from server.session import normalize_scene_trigger_zone
 
 
 PERSISTED_LIST_FIELDS = {
@@ -515,6 +514,11 @@ def normalize_world_state(raw: Any) -> dict[str, Any]:
             "guild_rank_id": _safe_text(entry.get("guild_rank_id"), "", 64),
             "meta": _as_dict(entry.get("meta")),
         })
+    # Imported lazily to avoid a circular import at module load: server.session
+    # pulls in server.character -> ... -> server.db -> server.persistence_schema,
+    # so importing from server.session at the top level would deadlock the chain.
+    from server.session import normalize_scene_trigger_zone
+
     trigger_zones: dict[str, dict[str, Any]] = {}
     for _, item in _as_dict(src.get("scene_trigger_zones")).items():
         zone = normalize_scene_trigger_zone(item)
