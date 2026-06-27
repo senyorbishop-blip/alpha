@@ -249,7 +249,19 @@ def ensure_ambient_audio_assets(audio_dir: Path) -> None:
         asset_path = audio_dir / filename
         if not asset_path.exists() or asset_path.stat().st_size <= 1024:
             _write_wave(asset_path, kind)
-    (audio_dir / "manifest.json").write_text(json.dumps(_manifest_payload(audio_dir), indent=2))
+    manifest_path = audio_dir / "manifest.json"
+    # Only write the manifest if it doesn't exist or is still the old list-based schema (schema < 2).
+    # The repo ships manifest.json at schema 2 with layered stems, stingers, and SFX — preserve it.
+    _should_write = True
+    if manifest_path.exists():
+        try:
+            existing = json.loads(manifest_path.read_text())
+            if int(existing.get("schema", 1)) >= 2:
+                _should_write = False
+        except Exception:
+            pass
+    if _should_write:
+        manifest_path.write_text(json.dumps(_manifest_payload(audio_dir), indent=2))
 
 
 def normalize_ambient_profile(track: str) -> str:
