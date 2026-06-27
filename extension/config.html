@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Viewer Powers — Setup</title>
+  <script src="https://extension-files.twitch.tv/helper/v1/twitch-ext.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main id="app" class="panel">
+    <header class="panel__head">
+      <h1 class="panel__title">Viewer Powers — Setup</h1>
+      <p id="status" class="panel__status" role="status">Connecting…</p>
+    </header>
+
+    <section class="config">
+      <label class="config__label" for="session-id">Live game session ID</label>
+      <p class="config__hint">Paste the session ID from your game's DM tools, then save to bind this channel to that game.</p>
+      <input id="session-id" class="config__input" type="text" autocomplete="off" placeholder="e.g. a1b2c3d4" />
+
+      <h2 class="config__subhead">Purchasable powers</h2>
+      <p class="config__hint">Leave all unchecked to offer the full catalog. Costs are set in the Bits Products section of the Developer Console (one SKU per power).</p>
+      <div id="power-config" class="config__powers"></div>
+
+      <button id="save" class="btn btn--primary" type="button">Save &amp; bind session</button>
+      <p id="save-status" class="config__savestatus" role="status"></p>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+</body>
+</html>

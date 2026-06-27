@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Viewer Powers</title>
+  <!-- Twitch Extension Helper — required for auth, identity, and Bits. -->
+  <script src="https://extension-files.twitch.tv/helper/v1/twitch-ext.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main id="app" class="panel">
+    <header class="panel__head">
+      <h1 class="panel__title">Viewer Powers</h1>
+      <p id="status" class="panel__status" role="status">Connecting…</p>
+    </header>
+
+    <!-- Shown until the viewer shares their Twitch identity. -->
+    <section id="identity-gate" class="gate" hidden>
+      <p class="gate__msg">Link your Twitch identity to use powers on this stream.</p>
+      <button id="share-identity" class="btn btn--primary" type="button">Link my Twitch identity</button>
+    </section>
+
+    <!-- Shown when Bits are disabled for this viewer/extension. -->
+    <p id="bits-disabled" class="notice" hidden>Bits are not available here right now.</p>
+
+    <!-- Bits power buttons. Each buys ONE known power the viewer selects. -->
+    <section id="powers" class="powers" hidden>
+      <h2 class="powers__heading">Use Bits to trigger a power</h2>
+      <div id="power-list" class="power-list"></div>
+    </section>
+
+    <!-- Subscriber free claim. -->
+    <section id="sub-section" class="sub" hidden>
+      <h2 class="powers__heading">Subscriber power</h2>
+      <p class="sub__note">Active subscribers can claim one power on a cooldown.</p>
+      <div id="sub-list" class="power-list"></div>
+    </section>
+  </main>
+
+  <script src="viewer.js"></script>
+</body>
+</html>
