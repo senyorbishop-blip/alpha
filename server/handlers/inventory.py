@@ -84,7 +84,7 @@ _CREATURE_NAME_HINTS = (
     "hawk", "owl", "imp", "sprite", "homunculus",
 )
 
-_EQUIPMENT_KINDS = {"armor", "shield", "weapon", "gear"}
+_EQUIPMENT_KINDS = {"armor", "shield", "weapon", "gear", "ring", "accessory", "wondrous"}
 _ARMOR_TYPES = {"light", "medium", "heavy"}
 _HANDEDNESS = {"one_handed", "two_handed", "shield"}
 _EQUIP_SLOTS = {"armor", "shield", "main_hand", "off_hand"}
@@ -1836,6 +1836,16 @@ def _equip_item(session: Session, user: User, item_index: int) -> tuple[bool, st
             return False, "Cannot equip a shield while wielding a two-handed weapon."
         item["equipped"] = True
         item["equip_slot"] = "shield"
+    elif equipment_kind in ("ring", "accessory", "wondrous"):
+        # Allow up to 2 rings (finger_1 / finger_2); accessories go to neck or wrist slots with no hard cap.
+        ring_slots = [str(it.get("equip_slot") or "").strip().lower() for _, it in _iter_equipped_items(mine, equipment_kind)]
+        if equipment_kind == "ring" and len(ring_slots) >= 2:
+            return False, "You can only wear 2 rings at a time."
+        slot = "finger_1" if (equipment_kind == "ring" and "finger_1" not in ring_slots) else (
+            "finger_2" if equipment_kind == "ring" else equipment_kind
+        )
+        item["equipped"] = True
+        item["equip_slot"] = slot
     elif equipment_kind == "weapon":
         handedness = str(item.get("handedness") or "one_handed").strip().lower()
         if handedness == "two_handed":

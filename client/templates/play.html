@@ -16657,7 +16657,7 @@ function selectLootRevealItem(index) {
   const canTransfer = inventoryIndex >= 0 && ROLE !== 'viewer';
   const canClaimFromStash = _lootRevealState.mode === 'stash' && ROLE !== 'viewer';
   const isInventoryItem = _lootRevealState.mode === 'inventory' && inventoryIndex >= 0;
-  const isEquippableItem = ['armor','shield','weapon'].includes(inferEquipmentKindFromRaw(item));
+  const isEquippableItem = ['armor','shield','weapon','ring','accessory','wondrous'].includes(inferEquipmentKindFromRaw(item));
   const transferTargetId = canTransfer ? getInventoryTransferTargetId() : '';
   const stashTargetId = canClaimFromStash && ROLE === 'dm' ? getPartyStashTargetUserId() : '';
   const stashTargetName = stashTargetId ? (Object.values(users || {}).find(u => u && u.id === stashTargetId)?.name || 'player') : '';
@@ -36364,17 +36364,18 @@ document.addEventListener('DOMContentLoaded', () => {
 function inferEquipmentKindFromRaw(raw) {
   if (!raw || typeof raw !== 'object') return '';
   const explicit = String(raw.equipment_kind || '').trim().toLowerCase();
-  if (['armor', 'shield', 'weapon', 'gear'].includes(explicit)) return explicit;
+  if (['armor', 'shield', 'weapon', 'gear', 'ring', 'accessory', 'wondrous'].includes(explicit)) return explicit;
   const itemType = String(raw.item_type || '').trim().toLowerCase();
-  if (['armor', 'shield', 'weapon'].includes(itemType)) return itemType;
+  if (['armor', 'shield', 'weapon', 'ring', 'accessory', 'wondrous'].includes(itemType)) return itemType;
   const category = String(raw.category || '').trim().toLowerCase();
-  if (['armor', 'shield', 'weapon'].includes(category)) return category;
+  if (['armor', 'shield', 'weapon', 'ring', 'accessory'].includes(category)) return category;
   const tags = String(raw.tags || '').trim().toLowerCase();
-  if (['armor', 'shield', 'weapon'].includes(tags)) return tags;
+  if (['armor', 'shield', 'weapon', 'ring', 'accessory'].includes(tags)) return tags;
   const name = String(raw.name || '').trim().toLowerCase();
   if (name.includes('shield')) return 'shield';
   if (/(sword|axe|bow|crossbow|dagger|mace|maul|hammer|spear|javelin|halberd|glaive|rapier|scimitar|club|staff|trident|whip|flail)/.test(name)) return 'weapon';
   if (/(armor|armour|mail|leather|plate|chain shirt|chainmail|scale mail|breastplate|splint|hide armor)/.test(name)) return 'armor';
+  if (/\bring\b/.test(name)) return 'ring';
   return '';
 }
 
@@ -37737,7 +37738,11 @@ function toggleBagExpand(btn, idx) {
 
 function isInventoryContainerEntry(item) {
   if (!item || typeof item !== 'object') return false;
-  return !!(item.extradimensional || item.is_container || Number(item.capacity_lbs || 0) > 0 || Array.isArray(item.bag_contents));
+  if (item.extradimensional || item.is_container || Number(item.capacity_lbs || 0) > 0 || Array.isArray(item.bag_contents)) return true;
+  // Detect well-known containers by name even when flags aren't set
+  const name = String(item.name || '').trim().toLowerCase();
+  return /\b(backpack|bag of holding|handy haversack|portable hole|bag of devouring|cart|carts|wagon|chest|barrel|sack)\b/.test(name)
+    || /\b(riding horse|draft horse|warhorse|mule|donkey|horse)\b/.test(name);
 }
 
 function dmSetPlayerStr(targetUserId) {
@@ -38087,7 +38092,7 @@ function renderInventoryPanel() {
           putInBagHtml = `<select class="mini-input" id="bag-sel-${idx}" style="font-size:0.6rem;padding:0.2rem 0.35rem;max-width:90px;" title="Choose bag"><option value="">🎒 Bag…</option>${bagOpts}</select><button class="mini-btn" onclick="(function(){var s=document.getElementById('bag-sel-${idx}');if(!s||s.value==='')return;encumbranceBagAddItem(parseInt(s.value),${idx},1);})()" style="margin:0;font-size:0.64rem;padding:0.25rem 0.45rem;background:rgba(0,229,204,0.08);border-color:rgba(0,229,204,0.3);color:var(--cyan);">Put In</button>`;
         }
 
-        const isEquippable = ['armor','shield','weapon'].includes(inferEquipmentKindFromRaw(item));
+        const isEquippable = ['armor','shield','weapon','ring','accessory','wondrous'].includes(inferEquipmentKindFromRaw(item));
         const equippedSlotLabel = formatEquipmentSlotLabel(item.equip_slot);
         const acMeta = inferEquipmentKindFromRaw(item) === 'armor'
           ? (Number.isFinite(Number(item.base_ac)) ? `Base AC ${Math.max(0, Number(item.base_ac))}` : '')
@@ -38348,7 +38353,7 @@ function _rpItemsList() {
   if (!inv.length) {
     return `<div class="rp-empty">Your pouch is empty. Loot, buy, or have the DM grant items.</div>`;
   }
-  const rows = inv.slice(0, 14).map((it, idx) => {
+  const rows = inv.map((it, idx) => {
     const icon = (typeof renderItemVisualToken === 'function')
       ? renderItemVisualToken(it, { size: 22, radius: 6, label: it && it.name || 'Item' })
       : `<span class="ti">🎒</span>`;
@@ -38357,7 +38362,7 @@ function _rpItemsList() {
     const equipped = !!(it && it.equipped);
     const name = esc(String(it && it.name || 'Item'));
     const kind = (typeof inferEquipmentKindFromRaw === 'function') ? inferEquipmentKindFromRaw(it) : '';
-    const equippable = ['weapon', 'armor', 'shield'].includes(kind);
+    const equippable = ['weapon', 'armor', 'shield', 'ring', 'accessory', 'wondrous'].includes(kind);
     const dot = _rpRarityDot(it);
     const equippedTag = equipped ? ` <span class="ts" style="color:var(--mf-role)">• equipped</span>` : '';
 
@@ -38381,6 +38386,8 @@ function _rpItemsList() {
     const inspectClick = `typeof inspectInventoryItem==='function'&&inspectInventoryItem(${idx})`;
     const qtyTag = qty > 1 ? `<span class="ts" style="color:var(--mf-role)">×${qty}</span>` : '';
 
+    const sendBtn = `<button class="rp-send-btn" onclick="event.stopPropagation();typeof _rpSendItemToPlayer==='function'&&_rpSendItemToPlayer(${idx})" title="Send to another player" style="font-size:0.62rem;padding:0.2rem 0.45rem;background:rgba(100,180,255,0.08);border:1px solid rgba(100,180,255,0.3);color:#64b4ff;border-radius:6px;cursor:pointer;white-space:nowrap;flex-shrink:0;">Send</button>`;
+
     if (equippable) {
       const eqAction = equipped ? 'unequipInventoryItem' : 'equipInventoryItem';
       const eqLabel = equipped ? 'Unequip' : 'Equip';
@@ -38394,21 +38401,47 @@ function _rpItemsList() {
         <button class="rp-equip-btn${equipped ? ' is-equipped' : ''}"
                 onclick="event.stopPropagation();typeof ${eqAction}==='function'&&${eqAction}(${idx})"
                 title="${eqLabel} ${name}">${eqLabel}</button>
+        ${sendBtn}
       </div>`;
     }
 
     const tail = qtyTag || '<span class="ts">inspect ▸</span>';
-    return `<button class="rp-tl" onclick="${inspectClick}" title="${name}">
-      ${icon}
-      <span class="tt">${name}${equippedTag}</span>
-      ${dot}
-      ${tail}
-    </button>`;
+    return `<div class="rp-eq-row">
+      <button class="rp-tl" onclick="${inspectClick}" title="${name}" style="flex:1;min-width:0;">
+        ${icon}
+        <span class="tt">${name}${equippedTag}</span>
+        ${dot}
+        ${tail}
+      </button>
+      ${sendBtn}
+    </div>`;
   }).join('');
-  const more = inv.length > 14
-    ? `<button class="rp-tl" onclick="typeof openCharacterBook==='function'&&openCharacterBook('inventory')"><span class="ti">➕</span><span class="tt">${inv.length - 14} more in backpack…</span></button>`
-    : '';
-  return `<div class="rp-toollist">${rows}${more}</div>`;
+  return `<div class="rp-toollist">${rows}</div>`;
+}
+
+function _rpSendItemToPlayer(itemIdx) {
+  // Collect online players from the session player list (excludes self)
+  const players = (typeof sessionUsers !== 'undefined' && Array.isArray(sessionUsers) ? sessionUsers : [])
+    .filter(u => u && String(u.user_id || u.id || '') !== String(typeof MY_USER_ID !== 'undefined' ? MY_USER_ID : ''));
+  if (!players.length) {
+    if (typeof showToast === 'function') showToast('No other players in this session.');
+    else alert('No other players in this session.');
+    return;
+  }
+  const inv = _rpInvSource();
+  const item = inv[itemIdx];
+  if (!item) return;
+  const playerList = players.map((p, n) => `${n + 1}. ${p.name || p.display_name || p.username || 'Player'}`).join('\n');
+  const choice = prompt(`Send "${item.name || 'item'}" to which player?\n${playerList}`, '1');
+  if (choice === null) return;
+  const chosen = players[(parseInt(choice || '0', 10) || 0) - 1];
+  if (!chosen) { if (typeof showToast === 'function') showToast('Invalid selection.'); return; }
+  const targetId = String(chosen.user_id || chosen.id || '');
+  if (!targetId) { if (typeof showToast === 'function') showToast('Could not determine player ID.'); return; }
+  if (typeof sendWS === 'function') {
+    sendWS({ type: 'inventory_transfer_item', payload: { item_index: itemIdx, target_user_id: targetId, qty: 1 } });
+    if (typeof showToast === 'function') showToast(`Sent ${item.name || 'item'} to ${chosen.name || chosen.display_name || 'player'}.`);
+  }
 }
 
 function _rpToggleBagContents(idx) {
