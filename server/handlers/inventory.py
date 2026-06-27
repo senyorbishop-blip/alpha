@@ -161,7 +161,7 @@ _INVENTORY_META_KEYS = (
     "weight_lbs", "extradimensional", "is_container", "own_weight_lbs", "capacity_lbs", "volume_ft3",
     "is_devouring", "bag_contents",
     "item_spell_attack_bonus", "item_spell_save_dc", "item_schema_version",
-    "modifiers", "charges", "recharge", "grantedSpells", "grantedActions", "requiresAttunement", "requirements",
+    "modifiers", "charges", "recharge", "grantedSpells", "grantedActions", "requiresAttunement", "requires_attunement", "requirements",
     "equipped", "equip_slot", *_EQUIPMENT_META_KEYS,
 )
 
@@ -223,9 +223,17 @@ def _normalize_item_runtime_fields(entry: dict, out: dict) -> None:
 
 
 def _item_is_attuned(item: dict) -> bool:
-    if not bool(item.get("attunement_required")):
+    if not bool(item.get("attunement_required") or item.get("requires_attunement") or item.get("requiresAttunement")):
         return True
     return bool(item.get("attuned"))
+
+
+def _item_requires_attunement(item: dict) -> bool:
+    return bool(item.get("attunement_required") or item.get("requires_attunement") or item.get("requiresAttunement"))
+
+
+def _attuned_item_count(items: list[dict]) -> int:
+    return sum(1 for item in list(items or []) if isinstance(item, dict) and _item_requires_attunement(item) and bool(item.get("attuned")))
 
 
 def _extract_known_healing_formula(name: str, effect: str) -> str:
@@ -1909,17 +1917,129 @@ async def handle_inventory_unequip_item(payload: dict, session: Session, user: U
         await _send_inventory_action_result(session, target_user.id, f"{msg} AC is now {ac_value}.")
 
 
+async def handle_inventory_attune_item(payload: dict, session: Session, user: User):
+    if user.role not in {"dm", "player"}:
+        return
+    target_user = _inventory_target_user(session, user, payload.get("target_user_id"))
+    item_index = _safe_int(payload.get("item_index"), -1, minimum=-1, maximum=9999)
+    inventories, owner_key, mine = _get_player_inventory_store(session, target_user)
+    if item_index < 0 or item_index >= len(mine):
+        return await _send_inventory_action_result(session, user.id, "Choose an item to attune.")
+    item = dict(mine[item_index] or {})
+    if not _item_requires_attunement(item):
+        return await _send_inventory_action_result(session, user.id, f"{item.get('name') or 'That item'} does not require attunement.")
+    if bool(item.get("attuned")):
+        return await _send_inventory_action_result(session, user.id, f"{item.get('name') or 'That item'} is already attuned.")
+    if _attuned_item_count(mine) >= 3:
+        return await _send_inventory_action_result(session, user.id, "Attunement limit reached (3/3). Unattune another item first.")
+    item["attunement_required"] = True
+    item["requires_attunement"] = True
+    item["attuned"] = True
+    mine[item_index] = item
+    inventories[owner_key] = [entry for entry in (_normalize_player_inventory_entry(x) for x in mine) if entry]
+    session.player_inventories = inventories
+    ac_value = _recompute_equipment_effects(session, target_user)
+    await _broadcast_inventory_state(session)
+    await save_campaign_async(session)
+    await _send_inventory_action_result(session, user.id, f"Attuned {item.get('name') or 'item'}. Attunement {_attuned_item_count(mine)}/3. AC is now {ac_value}.")
+    if target_user.id != user.id:
+        await _send_inventory_action_result(session, target_user.id, f"Attuned {item.get('name') or 'item'}.")
+
+
+async def handle_inventory_unattune_item(payload: dict, session: Session, user: User):
+    if user.role not in {"dm", "player"}:
+        return
+    target_user = _inventory_target_user(session, user, payload.get("target_user_id"))
+    item_index = _safe_int(payload.get("item_index"), -1, minimum=-1, maximum=9999)
+    inventories, owner_key, mine = _get_player_inventory_store(session, target_user)
+    if item_index < 0 or item_index >= len(mine):
+        return await _send_inventory_action_result(session, user.id, "Choose an item to unattune.")
+    item = dict(mine[item_index] or {})
+    if not bool(item.get("attuned")):
+        return await _send_inventory_action_result(session, user.id, f"{item.get('name') or 'That item'} is not attuned.")
+    item["attuned"] = False
+    mine[item_index] = item
+    inventories[owner_key] = [entry for entry in (_normalize_player_inventory_entry(x) for x in mine) if entry]
+    session.player_inventories = inventories
+    ac_value = _recompute_equipment_effects(session, target_user)
+    await _broadcast_inventory_state(session)
+    await save_campaign_async(session)
+    await _send_inventory_action_result(session, user.id, f"Unattuned {item.get('name') or 'item'}. Attunement {_attuned_item_count(mine)}/3. AC is now {ac_value}.")
+    if target_user.id != user.id:
+        await _send_inventory_action_result(session, target_user.id, f"Unattuned {item.get('name') or 'item'}.")
+
+
 def _roll_formula_total(formula: str) -> int:
+    total, _rolls, _modifier = _roll_formula_detail(formula)
+    return total
+
+
+def _roll_formula_detail(formula: str) -> tuple[int, list[int], int]:
     text = str(formula or "").strip().lower().replace(" ", "")
     if not text:
-        return 0
+        return 0, [], 0
     match = re.fullmatch(r"(\d+)d(\d+)([+-]\d+)?", text)
     if not match:
-        return 0
+        return 0, [], 0
     dice = _safe_int(match.group(1), 1, minimum=1, maximum=50)
     sides = _safe_int(match.group(2), 1, minimum=1, maximum=100)
     modifier = _safe_int(match.group(3) or 0, 0, minimum=-200, maximum=200)
-    return sum(random.randint(1, sides) for _ in range(max(1, dice))) + modifier
+    rolls = [random.randint(1, sides) for _ in range(max(1, dice))]
+    return sum(rolls) + modifier, rolls, modifier
+
+
+def _apply_healing_to_player_hp(session: Session, user: User, amount: int) -> dict:
+    healed = max(0, int(amount or 0))
+    target_name = str(getattr(user, "name", "") or "character")
+    before_hp = None
+    after_hp = None
+    max_hp = None
+
+    for token in (getattr(session, "tokens", {}) or {}).values():
+        if not _owner_matches_user(getattr(token, "owner_id", ""), user):
+            continue
+        if bool(getattr(token, "staged", False)):
+            continue
+        current = int(getattr(token, "hp", 0) or 0)
+        cap = int(getattr(token, "max_hp", 0) or 0)
+        if cap <= 0:
+            continue
+        before_hp = current
+        max_hp = cap
+        after_hp = min(cap, current + healed)
+        token.hp = after_hp
+        target_name = str(getattr(token, "name", "") or target_name)
+        break
+
+    profiles = dict(getattr(session, "char_profiles", {}) or {})
+    owner_key = normalize_profile_owner_key(getattr(user, "name", "")) or user.id
+    rows = list(profiles.get(owner_key) or profiles.get(user.id) or [])
+    if rows:
+        latest_index = max(range(len(rows)), key=lambda idx: float((rows[idx] or {}).get("updated_at") or 0.0))
+        profile = dict(rows[latest_index] or {})
+        sheet = dict(profile.get("charSheet") or {})
+        hp = dict(sheet.get("hp") or {})
+        book = dict(profile.get("charBook") or {})
+        current = _safe_int(hp.get("current", sheet.get("currentHp", book.get("currentHp", before_hp if before_hp is not None else 0))), 0, minimum=0, maximum=9999)
+        cap = _safe_int(hp.get("max", sheet.get("maxHp", book.get("maxHp", max_hp if max_hp is not None else 0))), 0, minimum=0, maximum=9999)
+        if cap > 0:
+            before_hp = current if before_hp is None else before_hp
+            max_hp = cap if max_hp is None else max_hp
+            after_profile_hp = min(cap, current + healed)
+            after_hp = after_profile_hp if after_hp is None else after_hp
+            hp["current"] = after_profile_hp
+            hp["max"] = cap
+            sheet["hp"] = hp
+            sheet["currentHp"] = after_profile_hp
+            sheet["maxHp"] = cap
+            book["currentHp"] = after_profile_hp
+            book["maxHp"] = cap
+            profile["charSheet"] = sheet
+            profile["charBook"] = book
+            rows[latest_index] = profile
+            profiles[owner_key if owner_key in profiles else user.id] = rows
+            session.char_profiles = profiles
+    return {"target_name": target_name, "before_hp": before_hp, "after_hp": after_hp, "max_hp": max_hp}
 
 
 async def handle_inventory_use_item_action(payload: dict, session: Session, user: User):
@@ -1991,7 +2111,11 @@ async def handle_inventory_use_item_action(payload: dict, session: Session, user
         "target_type": str(action_payload.get("target_type") or ""),
     }
     if result["healing_formula"]:
-        result["healing_total"] = _roll_formula_total(result["healing_formula"])
+        healing_total, rolls, modifier = _roll_formula_detail(result["healing_formula"])
+        result["healing_total"] = healing_total
+        result["healing_rolls"] = rolls
+        result["healing_modifier"] = modifier
+        result["healing_target"] = _apply_healing_to_player_hp(session, user, healing_total)
     await _broadcast_inventory_state(session)
     await _send_action_ack(
         session, user, action="inventory_use_item_action", client_action_id=client_action_id,
@@ -1999,11 +2123,19 @@ async def handle_inventory_use_item_action(payload: dict, session: Session, user
         inventory_revision=int(getattr(session, "inventory_revision", 0) or 0),
     )
     await manager.send_to(session.id, user.id, {"type": "inventory_item_used", "payload": result})
+    if result.get("healing_total"):
+        target = dict(result.get("healing_target") or {})
+        chat_text = (
+            f"{result['item_name']} used. Rolled {result['healing_formula']} = {result['healing_total']}. "
+            f"Healed {target.get('target_name') or user.name} for {result['healing_total']} HP."
+        )
+    else:
+        chat_text = f"🧰 **{result['action_name']}** — {result['item_name']}."
     await manager.broadcast(session.id, {
         "type": "chat_message",
         "payload": {
             "user": user.name,
-            "message": f"🧰 **{result['action_name']}** — {result['item_name']}.",
+            "message": chat_text,
             "channel": "everyone",
             "msg_type": "system",
         },

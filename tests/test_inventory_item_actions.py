@@ -127,3 +127,57 @@ def test_non_structured_item_still_normalizes_without_breaking():
     assert item is not None
     assert item["name"] == "Old Rope"
     assert item["qty"] == 2
+
+@pytest.mark.anyio
+async def test_cannot_attune_more_than_three_items(monkeypatch):
+    items = [
+        {"name": "Ring 1", "attunement_required": True, "attuned": True, "equipped": True},
+        {"name": "Ring 2", "attunement_required": True, "attuned": True, "equipped": True},
+        {"name": "Ring 3", "attunement_required": True, "attuned": True, "equipped": True},
+        {"name": "Ring 4", "attunement_required": True, "attuned": False, "equipped": True},
+    ]
+    session, user = _setup_session_with_player(items)
+    sent = []
+
+    async def _send_to(_sid, _uid, msg):
+        sent.append(msg)
+
+    monkeypatch.setattr(inventory_handlers.manager, "send_to", _send_to)
+    await inventory_handlers.handle_inventory_attune_item({"item_index": 3}, session, user)
+
+    owner_key = normalize_profile_owner_key(user.name) or user.id
+    assert session.player_inventories[owner_key][3]["attuned"] is False
+    assert any("3/3" in str(msg.get("payload", {}).get("message", "")) for msg in sent)
+
+
+@pytest.mark.anyio
+async def test_use_potion_heals_token_and_broadcasts_roll(monkeypatch):
+    from server.session import Token
+
+    session, user = _setup_session_with_player([
+        {"name": "Potion of Healing", "item_type": "potion", "qty": 1, "healing_formula": "2d4+2", "consumable": True, "consumed_on_use": True},
+    ])
+    session.tokens["tok1"] = Token(id="tok1", name="Bishop", x=0, y=0, width=1, height=1, color="#fff", shape="circle", owner_id=user.id, hp=2, max_hp=12)
+    sent = []
+
+    async def _send_to(_sid, _uid, msg):
+        sent.append(msg)
+
+    async def _broadcast(_sid, msg):
+        sent.append(msg)
+
+    async def _save(_session):
+        return None
+
+    monkeypatch.setattr(inventory_handlers.manager, "send_to", _send_to)
+    monkeypatch.setattr(inventory_handlers.manager, "broadcast", _broadcast)
+    monkeypatch.setattr(inventory_handlers, "save_campaign_async", _save)
+    monkeypatch.setattr(inventory_handlers.random, "randint", lambda _a, _b: 3)
+
+    await inventory_handlers.handle_inventory_use_item_action({"item_index": 0}, session, user)
+
+    assert session.tokens["tok1"].hp == 10
+    owner_key = normalize_profile_owner_key(user.name) or user.id
+    assert session.player_inventories[owner_key] == []
+    chat = [m for m in sent if m.get("type") == "chat_message"][-1]
+    assert "Potion of Healing used. Rolled 2d4+2 = 8. Healed Bishop for 8 HP." in chat["payload"]["message"]
