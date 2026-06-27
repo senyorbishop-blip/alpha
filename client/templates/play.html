@@ -38136,6 +38136,7 @@ function _rpRerender() {
     try { _renderPlayerMode(window._rpPlayerMode || 'turn', window._rpPlayerTab); } catch (_e) {}
   }
 }
+window._rpRerender = _rpRerender;
 
 // Compact +/- stepper used by the slot and resource chips.
 function _rpStepBtn(sym, onclick, title) {
@@ -38174,7 +38175,7 @@ function _rpSpellSlotsInner() {
     .filter(row => row.max > 0);
   if (!slots.length) return '';
   return `<div class="rp-chips" style="flex-wrap:wrap;gap:.35rem;padding:.5rem">
-    ${slots.map(s => `<span class="rp-chip" style="display:inline-flex;align-items:center;gap:.15rem">Lv ${s.level} <b style="color:var(--mf-role)">${s.current}/${s.max}</b>${_rpStepBtn('−', `typeof adjustSpellSlotQuick==='function'&&adjustSpellSlotQuick('${s.level}',1);_rpRerender()`, 'Spend a level '+s.level+' slot')}${_rpStepBtn('+', `typeof adjustSpellSlotQuick==='function'&&adjustSpellSlotQuick('${s.level}',-1);_rpRerender()`, 'Restore a level '+s.level+' slot')}</span>`).join('')}
+    ${slots.map(s => `<span class="rp-chip" style="display:inline-flex;align-items:center;gap:.15rem">Lv ${s.level} <b style="color:var(--mf-role)">${s.current}/${s.max}</b>${_rpStepBtn('−', `typeof adjustSpellSlotQuick==='function'&&adjustSpellSlotQuick('${s.level}',1);typeof window._rpRerender==='function'&&window._rpRerender()`, 'Spend a level '+s.level+' slot')}${_rpStepBtn('+', `typeof adjustSpellSlotQuick==='function'&&adjustSpellSlotQuick('${s.level}',-1);typeof window._rpRerender==='function'&&window._rpRerender()`, 'Restore a level '+s.level+' slot')}</span>`).join('')}
   </div>`;
 }
 
@@ -38191,12 +38192,12 @@ function _rpClassResourcesInner() {
   if (nativeResources.length) {
     chips = nativeResources.map(r => {
       const ref = esc(String(r.id || r.name));
-      return `<span class="rp-chip" style="display:inline-flex;align-items:center;gap:.15rem">${esc(r.name)}: <b style="color:var(--mf-role)">${esc(r.summary || (r.current + '/' + r.max))}</b>${_rpStepBtn('−', `typeof adjustNativeResourceUse==='function'&&adjustNativeResourceUse('${ref}',1);_rpRerender()`, 'Use '+r.name)}${_rpStepBtn('+', `typeof adjustNativeResourceUse==='function'&&adjustNativeResourceUse('${ref}',-1);_rpRerender()`, 'Restore '+r.name)}</span>`;
+      return `<span class="rp-chip" style="display:inline-flex;align-items:center;gap:.15rem">${esc(r.name)}: <b style="color:var(--mf-role)">${esc(r.summary || (r.current + '/' + r.max))}</b>${_rpStepBtn('−', `typeof adjustNativeResourceUse==='function'&&adjustNativeResourceUse('${ref}',1);typeof window._rpRerender==='function'&&window._rpRerender()`, 'Use '+r.name)}${_rpStepBtn('+', `typeof adjustNativeResourceUse==='function'&&adjustNativeResourceUse('${ref}',-1);typeof window._rpRerender==='function'&&window._rpRerender()`, 'Restore '+r.name)}</span>`;
     }).join('');
   } else if (structured.length) {
     chips = structured.map(row => {
       const key = esc(String(row.feature.key));
-      return `<span class="rp-chip" style="display:inline-flex;align-items:center;gap:.15rem">${esc(row.feature.name)}: <b style="color:var(--mf-role)">${esc(row.state.summary)}</b>${_rpStepBtn('−', `typeof adjustClassFeatureUse==='function'&&adjustClassFeatureUse('${key}',1);_rpRerender()`, 'Use '+row.feature.name)}${_rpStepBtn('+', `typeof adjustClassFeatureUse==='function'&&adjustClassFeatureUse('${key}',-1);_rpRerender()`, 'Restore '+row.feature.name)}</span>`;
+      return `<span class="rp-chip" style="display:inline-flex;align-items:center;gap:.15rem">${esc(row.feature.name)}: <b style="color:var(--mf-role)">${esc(row.state.summary)}</b>${_rpStepBtn('−', `typeof adjustClassFeatureUse==='function'&&adjustClassFeatureUse('${key}',1);typeof window._rpRerender==='function'&&window._rpRerender()`, 'Use '+row.feature.name)}${_rpStepBtn('+', `typeof adjustClassFeatureUse==='function'&&adjustClassFeatureUse('${key}',-1);typeof window._rpRerender==='function'&&window._rpRerender()`, 'Restore '+row.feature.name)}</span>`;
     }).join('');
   } else if (classResources.length) {
     chips = classResources.map(entry => `<span class="rp-chip">${esc(entry.name)}: <b style="color:var(--mf-role)">${esc(entry.summary || (entry.current + '/' + entry.max))}</b></span>`).join('');
@@ -38223,9 +38224,9 @@ function _rpActionEconomyHtml() {
     <div class="rp-hpbar"><i style="width:${mvPct}%;background:var(--mf-role)"></i></div>
   </div>`;
   return `${move}<div class="rp-econ-row">
-    <button class="rp-econ-btn${aRem<=0?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('action');_rpRerender()">Action · ${aRem}/${st.actions_total}</button>
-    <button class="rp-econ-btn${bRem<=0?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('bonus_action');_rpRerender()">Bonus · ${bRem}/${st.bonus_actions_total}</button>
-    <button class="rp-econ-btn${rRem<=0?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('reaction');_rpRerender()">Reaction · ${rRem}/${st.reactions_total}</button>
+    <button class="rp-econ-btn${aRem<=0?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('action');typeof window._rpRerender==='function'&&window._rpRerender()">Action · ${aRem}/${st.actions_total}</button>
+    <button class="rp-econ-btn${bRem<=0?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('bonus_action');typeof window._rpRerender==='function'&&window._rpRerender()">Bonus · ${bRem}/${st.bonus_actions_total}</button>
+    <button class="rp-econ-btn${rRem<=0?' used':''}" onclick="typeof _sendCombatActionEconomyUse==='function'&&_sendCombatActionEconomyUse('reaction');typeof window._rpRerender==='function'&&window._rpRerender()">Reaction · ${rRem}/${st.reactions_total}</button>
     <button class="rp-action go" style="grid-column:1/-1;justify-content:center;font-size:.66rem;" onclick="typeof combatEndTurn==='function'&&combatEndTurn()">End turn ▸</button>
   </div>`;
 }
