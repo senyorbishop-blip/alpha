@@ -133,6 +133,11 @@
   // excluded — they are routed to AppCombatMessages before legacy dispatch.
   const MIGRATED_MODULE_HANDLERS = {
     char_profiles_sync: 'handleCharProfilesSync',
+    editor_layers_sync: 'handleEditorLayersSync',
+    editor_world_sync: 'handleEditorWorldSync',
+    viewer_pending_sync: 'handleViewerPendingSync',
+    viewer_fx: 'handleViewerFx',
+    permission_granted: 'handlePermissionGranted',
   };
 
   function tryHandleMigratedModuleMessage(msg, runtimeEnv) {
