@@ -197,10 +197,13 @@ def test_combat_controls_header_has_help_button():
 # ── play.html: combat hint bar HTML element ───────────────────────────────
 
 def test_play_html_has_combat_hint_bar():
+    # The hint-bar markup still lives in play.html...
     src = _read("client/templates/play.html")
     assert 'id="combat-hint-bar"' in src
-    assert "combat-hint-visible" in src
     assert "rtab-pane-combat" in src
+    # ...but its visibility CSS class rule was extracted into play.css.
+    css = _read("client/static/css/play.css")
+    assert "combat-hint-visible" in css
 
 
 # ── play.html: combat coach HTML element ─────────────────────────────────

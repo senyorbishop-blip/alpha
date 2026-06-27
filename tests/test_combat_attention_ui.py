@@ -23,30 +23,35 @@ def _read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
+def _read_css() -> str:
+    # CSS was extracted out of play.html into the dedicated stylesheet.
+    return _read("client/static/css/play.css")
+
+
 # ── CSS for glow states ────────────────────────────────────────────────────
 
 def test_combat_glow_css_defined():
-    src = _read("client/templates/play.html")
+    src = _read_css()
     assert "combat-glow" in src
     assert "combat-pulse" in src
 
 
 def test_combat_your_turn_css_defined():
-    src = _read("client/templates/play.html")
+    src = _read_css()
     assert "combat-your-turn" in src
     assert "combat-your-turn-pulse" in src
     assert "YOUR TURN" in src
 
 
 def test_combat_your_turn_uses_accent_color():
-    src = _read("client/templates/play.html")
+    src = _read_css()
     your_turn_block_start = src.index("combat-your-turn {")
     your_turn_block = src[your_turn_block_start:your_turn_block_start + 300]
     assert "var(--accent)" in your_turn_block or "#00e5cc" in your_turn_block
 
 
 def test_combat_glow_uses_danger_color():
-    src = _read("client/templates/play.html")
+    src = _read_css()
     glow_block_start = src.index("#rtab-combat.combat-glow {")
     glow_block = src[glow_block_start:glow_block_start + 200]
     # Should use red/danger color for generic combat glow
@@ -104,7 +109,7 @@ def test_your_turn_badge_set_on_own_combatant():
 def test_glow_cleared_on_combat_tab_switch():
     src = _read("client/templates/play.html")
     switch_fn_start = src.index("function switchRTab")
-    switch_fn = src[switch_fn_start:switch_fn_start + 700]
+    switch_fn = src[switch_fn_start:switch_fn_start + 2500]
     assert "tab === 'combat'" in switch_fn
     assert "combat-glow" in switch_fn
     assert "classList.remove" in switch_fn
@@ -113,14 +118,14 @@ def test_glow_cleared_on_combat_tab_switch():
 def test_glow_reapplied_when_leaving_combat_tab():
     src = _read("client/templates/play.html")
     switch_fn_start = src.index("function switchRTab")
-    switch_fn = src[switch_fn_start:switch_fn_start + 1400]
+    switch_fn = src[switch_fn_start:switch_fn_start + 2500]
     assert "_updateCombatTabAttention" in switch_fn
 
 
 # ── Dashboard and sheet attention ─────────────────────────────────────────
 
 def test_dashboard_combat_button_gets_attention_css():
-    src = _read("client/templates/play.html")
+    src = _read_css()
     assert "player-dashboard-btn--combat.combat-attention" in src
     assert "player-dashboard-btn--combat.your-turn-attention" in src
 
@@ -131,7 +136,7 @@ def test_dashboard_combat_button_has_attention_class_in_html():
 
 
 def test_sheet_combat_tab_gets_attention_css():
-    src = _read("client/templates/play.html")
+    src = _read_css()
     assert '.sheet-page-tab[data-page="combat"].combat-attention' in src
     assert '.sheet-page-tab[data-page="combat"].your-turn-attention' in src
 

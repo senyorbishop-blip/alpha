@@ -307,17 +307,22 @@ def install_db_large_field_diagnostics() -> bool:
     db_mod = sys.modules.get("server.db")
     if db_mod is None:
         return False
-    if bool(getattr(db_mod, "_char_profile_bloat_diag_installed", False)):
-        return True
     old = getattr(db_mod, "_char_profiles_size_breakdown", None)
     if not callable(old):
         return False
+    # Detect the patch via a tag on the live function rather than a module-level
+    # flag: reloading server.db resets _char_profiles_size_breakdown back to the
+    # original (un-patched) implementation while leaving any module attribute we
+    # set behind, so a flag check would wrongly skip re-installing the patch.
+    if getattr(old, "_char_profile_bloat_diag_patched", False):
+        return True
 
     def _patched_char_profiles_size_breakdown(value: str, limit: int = 8) -> str:
         base = old(value, limit=limit)
         detail = char_profiles_bloat_diagnostics_from_serialized(value)
         return " ".join(part for part in (base, detail) if part)
 
+    _patched_char_profiles_size_breakdown._char_profile_bloat_diag_patched = True
     setattr(db_mod, "_char_profiles_size_breakdown", _patched_char_profiles_size_breakdown)
     setattr(db_mod, "_char_profile_bloat_diag_installed", True)
     return True

@@ -5,8 +5,13 @@ def _play_html() -> str:
     return Path('client/templates/play.html').read_text(encoding='utf-8')
 
 
+def _play_css() -> str:
+    return Path('client/static/css/play.css').read_text(encoding='utf-8')
+
+
 def test_play_has_shared_panel_consistency_classes():
-    src = _play_html()
+    # CSS was extracted from play.html into play.css; these rules now live there.
+    src = _play_css()
     for token in (
         '.panel-helper-text {',
         '.panel-empty-state {',

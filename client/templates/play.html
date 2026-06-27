@@ -4201,9 +4201,10 @@ function _tokenOwnedByMe(token) {
 // own combatant via this check, so it must never depend solely on the token
 // being loaded client-side.
 function _combatantOwnedByMe(combatant, token = null) {
-  const tok = token || (combatant && combatant.token_id ? (typeof tokens !== 'undefined' ? tokens[combatant.token_id] : null) : null);
+  if (!combatant) return false;
+  const tok = token || (combatant.token_id ? (typeof tokens !== 'undefined' ? tokens[combatant.token_id] : null) : null);
   if (tok && _tokenOwnedByMe(tok)) return true;
-  return !!combatant && _ownerIdMatchesMe(combatant.owner_id);
+  return _ownerIdMatchesMe(combatant.owner_id || combatant.owner);
 }
 
 function _tokenOwnedByUser(token, user) {
@@ -40728,20 +40729,6 @@ function _assertCombatDomFreshAfterAuthoritativeState() {
 function _isActiveCombatTab() {
   const sidebar = document.getElementById('sidebar-right');
   return sidebar && sidebar.getAttribute('data-active-tab') === 'combat';
-}
-
-function _combatantOwnedByMe(combatant) {
-  if (!combatant) return false;
-  const tokenId = String(combatant.token_id || '').trim();
-  const tok = tokenId && tokens ? tokens[tokenId] : null;
-  if (tok && _tokenOwnedByMe(tok)) return true;
-  const owner = String(combatant.owner_id || combatant.owner || '').trim();
-  if (!owner) return false;
-  const effectiveUserId = getEffectiveUserId();
-  if (owner === effectiveUserId) return true;
-  const ownerKey = _normalizeOwnerKey(owner);
-  if (!ownerKey) return false;
-  return ownerKey === _normalizeOwnerKey(NAME);
 }
 
 function _getMyTurnCombatant() {

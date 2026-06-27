@@ -20,7 +20,8 @@ def test_tabs_module_resets_non_chat_pane_scroll_on_switch():
 
 
 def test_play_page_has_scroll_gutter_and_dense_panel_grouping_polish():
-    src = _read('client/templates/play.html')
+    # CSS was extracted from play.html into play.css; these rules now live there.
+    src = _read('client/static/css/play.css')
     assert 'scrollbar-gutter: stable both-edges;' in src
     assert '#combat-move-row,' in src
     assert '#combat-weapon-tray,' in src

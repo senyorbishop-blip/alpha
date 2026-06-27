@@ -660,6 +660,8 @@
       "variantGroup": "warlock-pact-chain-familiar"
     },
     "warlock-mystic-arcanum-6th": {
+      "name": "Mystic Arcanum (6th)",
+      "displayName": "Mystic Arcanum (6th)",
       "summary": "Choose one 6th-level spell from the Warlock spell list. You can cast it once per Long Rest without expending a spell slot. This spell is separate from your Pact Magic slots.",
       "description": "Your patron bestows a Mystic Arcanum — a powerful spell beyond your Pact Magic. Choose one 6th-level spell from the Warlock spell list as your arcanum. You can cast this spell once without expending a spell slot. You must finish a Long Rest before you can cast it this way again. At higher levels you gain additional arcana: a 7th-level spell at Warlock level 7 (gained from the warlock-mystic-arcanum-7th feature), an 8th-level spell at level 9, and a 9th-level spell at level 11.",
       "tags": [

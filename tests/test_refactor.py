@@ -16,10 +16,33 @@ import inspect
 import asyncio
 import re
 
+import pytest
+
 # Ensure the project root is on the path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
+
+
+@pytest.fixture(autouse=True)
+def _restore_connections_manager():
+    """Restore the shared ConnectionManager singleton after each test.
+
+    The spawn-creature tests (_spawn_test_context) rebind
+    ``server.connections.manager`` to a lightweight fake without restoring it.
+    Left unchecked, that fake leaks into the rest of the suite and breaks any
+    later test that touches the real manager's internals (e.g.
+    tests/test_ws_auth_and_join_privacy.py clears ``manager._connections`` in
+    its own fixture). Snapshot the real singleton here and put it back on
+    teardown so the pollution can never escape this module.
+    """
+    import server.connections as connections_mod
+
+    original_manager = connections_mod.manager
+    try:
+        yield
+    finally:
+        connections_mod.manager = original_manager
 
 
 def _get_csrf_token(client) -> str:
@@ -4138,7 +4161,7 @@ def test_combat_coach_can_be_collapsed_by_players():
 def test_player_turn_detection_falls_back_to_combatant_owner_id():
     """Players must see their turn/actions even if token owner lookup is stale or name-based."""
     content = open(os.path.join(PROJECT_ROOT, "client/templates/play.html"), encoding="utf-8").read()
-    assert "function _combatantOwnedByMe(combatant)" in content
+    assert "function _combatantOwnedByMe(combatant, token = null)" in content
     assert "combatant.owner_id || combatant.owner" in content
     assert "return _combatantOwnedByMe(cur) ? cur : null;" in content
     assert "if (_combatantOwnedByMe(current)) return current;" in content

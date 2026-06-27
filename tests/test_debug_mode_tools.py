@@ -81,7 +81,11 @@ def test_player_and_viewer_cannot_open_dm_debug_tools():
     dm_block = src[dm_block_start:dm_block_start + 2200]
     assert "if (dmRailShell) dmRailShell.hidden = false;" in dm_block
     assert "if (dmContextShell) dmContextShell.hidden = false;" in dm_block
-    assert "window.AppUIDMPanelModeBridge.init(document);" in dm_block
+    # The bridge init is deferred to the DM-only map-first bootstrap and is no
+    # longer called inline during core boot. The boot shell only unhides DM shells
+    # for DMs; the actual mode bridge init runs later via the bootstrap.
+    assert "Do not call AppUIDMPanelModeBridge.init() during core boot." in dm_block
+    assert "window.AppUIDMMapFirstBootstrap.init()" in src
     assert "role !== 'dm'" in src
 
 

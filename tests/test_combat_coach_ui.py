@@ -20,6 +20,11 @@ def _read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
+def _read_css() -> str:
+    # CSS was extracted out of play.html into the dedicated stylesheet.
+    return _read("client/static/css/play.css")
+
+
 # ── HTML element ──────────────────────────────────────────────────────────
 
 def test_combat_coach_html_element_present():
@@ -37,19 +42,19 @@ def test_combat_coach_is_inside_combat_tab_pane():
 # ── CSS ───────────────────────────────────────────────────────────────────
 
 def test_coach_css_defined():
-    src = _read("client/templates/play.html")
+    src = _read_css()
     assert "#combat-coach {" in src
     assert ".coach-title {" in src
     assert ".coach-item {" in src
 
 
 def test_coach_done_class_defined():
-    src = _read("client/templates/play.html")
+    src = _read_css()
     assert ".coach-item.done {" in src
 
 
 def test_coach_class_hint_css_defined():
-    src = _read("client/templates/play.html")
+    src = _read_css()
     assert ".coach-class-hint {" in src
 
 

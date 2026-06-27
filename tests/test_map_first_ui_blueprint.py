@@ -42,7 +42,7 @@ def test_player_and_viewer_stay_map_first_and_compact():
         'rest confirmation panel',
         'Viewer view stays map-first and stream friendly',
         'minimal overlay',
-        'powers panel compact',
+        'compact viewer powers panel',
     ]:
         assert phrase in text
 

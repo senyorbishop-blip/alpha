@@ -28,7 +28,11 @@ def test_map_stage_exists_central_and_right_context_does_not_contain_canvas():
 
 def test_left_rail_modes_and_live_table_default():
     html = read(HTML)
-    assert 'data-dm-mode-button="run" aria-pressed="true">▶<span>Live Table</span>' in html
+    # The run/Live-Table button is the default-pressed mode. An onclick bridge
+    # invocation now sits between aria-pressed and the closing bracket, so assert
+    # the button is pressed and carries the Live Table label.
+    assert 'data-dm-mode-button="run" aria-pressed="true"' in html
+    assert '▶<span>Live Table</span>' in html
     for mode in ['run', 'combat', 'map-build', 'npc-monster', 'loot-shop', 'session-tools', 'viewer-powers', 'debug']:
         assert f'data-dm-mode-button="{mode}"' in html
 
@@ -52,8 +56,14 @@ def test_player_and_viewer_do_not_render_dm_shell_or_rail():
 
 def test_bottom_quick_strip_and_legacy_more_fallback_exist():
     html = read(HTML)
-    for action in ['select', 'move', 'measure', 'draw', 'light', 'notes', 'more']:
+    # Quick-strip core map tools. The strip was expanded during the map-first
+    # polish pass (shapes/ping/map/dice added; the standalone "more" quick button
+    # was dropped in favor of the dedicated legacy-tools fallback section below).
+    for action in ['select', 'move', 'measure', 'draw', 'notes']:
         assert f'data-dm-quick-action="{action}"' in html
+    # "More / Legacy Tools" access now lives in its own context section rather than
+    # a quick-strip button, but it remains fully present.
     assert 'More / Legacy Tools' in html
     assert 'dm-legacy-tools-fallback' in html
+    assert 'data-dm-context-section="legacy-tools-fallback"' in html
     assert 'dm-legacy-controls-shell' in html

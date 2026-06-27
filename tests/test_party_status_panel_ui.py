@@ -5,6 +5,10 @@ def _play_html() -> str:
     return Path('client/templates/play.html').read_text(encoding='utf-8')
 
 
+def _play_css() -> str:
+    return Path('client/static/css/play.css').read_text(encoding='utf-8')
+
+
 def test_party_status_panel_mount_and_renderer_present():
     src = _play_html()
     assert 'id="party-status-panel"' in src
@@ -23,7 +27,8 @@ def test_party_status_panel_includes_player_safe_combat_state_markers():
 
 
 def test_party_status_panel_mobile_first_styles_present():
-    src = _play_html()
+    # CSS was extracted from play.html into play.css; these rules now live there.
+    src = _play_css()
     assert '.party-status-list {' in src
     assert 'touch-action: pan-y;' in src
     assert '@media (max-width: 900px) {' in src

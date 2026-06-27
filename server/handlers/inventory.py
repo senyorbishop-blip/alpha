@@ -2017,11 +2017,18 @@ async def handle_inventory_use_item_action(payload: dict, session: Session, user
     await save_campaign_async(session)
 
 
-def _build_item_spell_cards(items: list[dict]) -> list[dict]:
-    """Build castable item-spell cards for all equipped+attuned items that grant spells.
+def _build_item_spell_cards(items: list[dict], *, include_unavailable: bool = False) -> list[dict]:
+    """Build item-spell cards for items that grant spells.
 
-    These cards are delivered as `item_spell_cards` in the inventory state payload.
-    They are distinct from class-prepared spells and must not consume spell slots.
+    By default only items that are actually equipped and (if required) attuned
+    yield cards — these are delivered as `item_spell_cards` in the inventory
+    state payload and are the player's castable item spells. They are distinct
+    from class-prepared spells and must not consume spell slots.
+
+    When ``include_unavailable`` is True (used by the quick-actions snapshot),
+    unequipped/unattuned items still yield cards, but they are marked
+    ``disabled`` with a human-readable ``disabled_reason`` so the UI can explain
+    why the spell cannot be cast.
     """
     from server.item_compendium import get_spell_metadata  # local import to avoid circular
     cards: list[dict] = []
@@ -2031,6 +2038,16 @@ def _build_item_spell_cards(items: list[dict]) -> list[dict]:
         granted_spells = list(item.get("granted_spells") or item.get("grantedSpells") or item.get("itemSpells") or item.get("item_spells") or item.get("spellsGranted") or item.get("spellGrants") or [])
         if not granted_spells:
             continue
+
+        # Item-granted spells are only available when the item is actually
+        # equipped and (if it requires attunement) attuned. An item sitting in
+        # the bag must not contribute castable spell cards unless the caller has
+        # asked to surface them as disabled (e.g. the quick-actions UI).
+        if not include_unavailable:
+            if not bool(item.get("equipped")):
+                continue
+            if not _item_is_attuned(item):
+                continue
 
         item_id = str(item.get("id") or item.get("magic_item_id") or f"item_{idx}")
         item_name = str(item.get("name") or "Item")

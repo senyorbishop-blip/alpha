@@ -572,8 +572,9 @@ def test_server_authoritative_results_preserved_for_display():
     assert "targetResults: Array.isArray(rollOpts?.targetResults)" in content, (
         "showDiceAnimation must pass authoritative targetResults into DicePhysics3D.throw"
     )
-    assert "source: 'authoritative-result'" in content, (
-        "dice_result handling must launch visual animation from the authoritative response"
+    assert "source: isOwnRoll ? 'authoritative-result' : 'remote-authoritative-result'" in content, (
+        "dice_result handling must launch visual animation from the authoritative response "
+        "(tagging own rolls 'authoritative-result' and remote rolls 'remote-authoritative-result')"
     )
     # Regression guard: do not mutate server rolls to physics rolls.
     assert "_dice3dRollMeta.rolls = physicsRolls" not in content, (

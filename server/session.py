@@ -1992,7 +1992,9 @@ def build_quick_actions_sync_payload(session, user_id: str) -> dict:
     try:
         from server.handlers.inventory import _derive_item_actions_and_passives, _build_item_spell_cards
         item_actions, _passives = _derive_item_actions_and_passives(inventory)
-        item_spell_cards = _build_item_spell_cards(inventory)
+        # Quick actions surface unequipped/unattuned item spells as disabled cards
+        # so the UI can explain why they cannot be cast.
+        item_spell_cards = _build_item_spell_cards(inventory, include_unavailable=True)
     except Exception:
         diagnostics.append({"code": "spell_data_missing", "message": "Item action/spell data could not be built."})
 

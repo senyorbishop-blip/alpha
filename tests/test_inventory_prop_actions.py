@@ -1,8 +1,36 @@
 import asyncio
 from pathlib import Path
 
+import pytest
+
 from server.handlers import inventory
 from server.session import Session, User, Token, get_player_gold_for_user
+
+
+@pytest.fixture(autouse=True)
+def _restore_shared_manager_methods():
+    """Restore the shared ConnectionManager methods after each test.
+
+    These tests overwrite ``inventory.manager.send_to`` /
+    ``inventory.manager.broadcast`` (and ``inventory.save_campaign_async``)
+    directly on the *shared* singleton — ``inventory.manager`` is the same
+    object as ``main.manager`` / ``server.connections.manager``. The test
+    ``_broadcast`` stubs have a narrower signature (no ``exclude_user``), so if
+    they leak, any later test that drives ``main.websocket_endpoint`` raises a
+    TypeError (this is what broke tests/test_ws_auth_and_join_privacy.py in the
+    full suite). Snapshot and restore the originals so the stubs can't escape
+    this module.
+    """
+    manager = inventory.manager
+    original_send_to = manager.send_to
+    original_broadcast = manager.broadcast
+    original_save_campaign_async = inventory.save_campaign_async
+    try:
+        yield
+    finally:
+        manager.send_to = original_send_to
+        manager.broadcast = original_broadcast
+        inventory.save_campaign_async = original_save_campaign_async
 
 
 async def _run_take_with_context_fallback(sent_messages):

@@ -334,6 +334,10 @@ def _compute_base_hp(document: dict, level_total: int, runtime_classes: list[dic
     max_hp = 0
     classes = runtime_classes if isinstance(runtime_classes, list) else []
     if classes:
+        # 5e rule: only the character's very first level (the first class listed)
+        # grants the maximum hit-die roll. Every other level — including the first
+        # level of any class taken via multiclassing — uses the average.
+        is_first_character_level = True
         for row in classes:
             if not isinstance(row, dict):
                 continue
@@ -343,10 +347,10 @@ def _compute_base_hp(document: dict, level_total: int, runtime_classes: list[dic
             hit_die = _safe_int((class_catalog or {}).get("hitDie"), 8, minimum=1)
             hit_die_average = max(1, (hit_die // 2) + 1)
             class_hp = 0
-            # Each class grants max hit die at its own first level (5e multiclass rule).
-            for class_level in range(lvl):
-                gain = (hit_die if class_level == 0 else hit_die_average) + con_mod
-                class_hp += max(1, gain)
+            for _class_level in range(lvl):
+                base_gain = hit_die if is_first_character_level else hit_die_average
+                class_hp += max(1, base_gain + con_mod)
+                is_first_character_level = False
             max_hp += class_hp
             hit_dice.append({"die": hit_die, "count": lvl, "classId": class_id})
     else:

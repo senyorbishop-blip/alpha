@@ -65,7 +65,12 @@ def test_player_and_viewer_screens_remain_unchanged_by_dm_mode_bridge():
     src = read(PLAY)
     bridge = read(BRIDGE)
     assert "if (ROLE === 'dm')" in src
-    assert "window.AppUIDMPanelModeBridge.init(document);" in src
+    # The bridge init is no longer called inline during core boot; it is deferred
+    # to the DM-only map-first bootstrap (which internally calls bridge.init(root)).
+    assert "window.AppUIDMMapFirstBootstrap.init()" in src
+    bootstrap = read(Path('client/static/js/ui/dm_map_first_bootstrap.js'))
+    assert 'bridge.init(root)' in bootstrap
+    assert "if (!isDmRole()) return null;" in bootstrap
     assert "document.body.classList.add('dm-map-first-active');" in src
     assert 'dm-context-shell' in src and 'hidden' in src
     assert 'element.hidden = !isActive' in bridge
@@ -318,8 +323,13 @@ def test_rich_viewer_powers_mode_exposes_grants_approvals_cooldowns_and_settings
 def test_map_first_hidden_right_tabs_have_controlled_legacy_drawer_adapter():
     css = read(Path('client/static/css/dm-map-first-fixes.css'))
     js = read(Path('client/static/js/ui/dm_context_render.js'))
-    assert 'body.dm-map-first-active #right-tab-bar,' in css
-    assert 'body.dm-map-first-active.dm-legacy-drawer-open #sidebar-right .rtab-shell' in css
+    # The legacy right tabs are hidden by default; the hiding rule is now scoped to
+    # the closed-drawer state (:not(.dm-legacy-drawer-open)) so the controlled
+    # drawer can reveal a single pane on demand.
+    assert 'body.dm-map-first-active:not(.dm-legacy-drawer-open) #right-tab-bar,' in css
+    # When the drawer is explicitly opened, the active legacy pane (and its tab bar)
+    # surface in a bounded overlay rather than the old cluttered panel.
+    assert 'body.dm-map-first-active.dm-legacy-drawer-open #sidebar-right > .rtab-pane.active' in css
     assert "document.body.classList.add('dm-legacy-drawer-open')" in js
     assert 'body.dm-map-first-active.dm-legacy-drawer-open #right-tab-bar' in css
 

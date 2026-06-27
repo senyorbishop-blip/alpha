@@ -189,8 +189,14 @@ def test_play_page_exposes_offturn_combat_tray_hooks():
     with open(play_path, "r", encoding="utf-8") as f:
         src = f.read()
 
+    # The off-turn tray markup + behavior live inline in play.html, but its CSS
+    # was extracted to client/static/css/play.css during the refactor.
+    css_path = os.path.join(PROJECT_ROOT, "client", "static", "css", "play.css")
+    with open(css_path, "r", encoding="utf-8") as f:
+        css = f.read()
+
     assert 'id="combat-offturn-row"' in src
-    assert ".combat-offturn-row" in src
+    assert ".combat-offturn-row" in css
     assert "function offturnReact()" in src
     assert "function offturnReadyAction()" in src
     assert "function offturnMarkTarget()" in src

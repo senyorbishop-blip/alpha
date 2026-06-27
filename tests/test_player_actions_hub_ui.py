@@ -22,7 +22,8 @@ def test_player_actions_hub_includes_requested_categories_and_spell_markers():
 
 
 def test_player_actions_hub_is_mobile_first():
-    src = _read('client/templates/play.html')
+    # CSS was extracted from play.html into play.css; these rules now live there.
+    src = _read('client/static/css/play.css')
     assert '.player-action-use-btn { width: 100%; min-height: 40px; }' in src
     assert '.player-action-meta { grid-template-columns: 1fr; }' in src
 
