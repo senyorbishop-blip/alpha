@@ -29,15 +29,24 @@ _SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 class CSRFMiddleware(BaseHTTPMiddleware):
     """Double-submit cookie CSRF middleware for FastAPI / Starlette."""
 
-    def __init__(self, app, *, cookie_secure: bool = False, cookie_samesite: str = "lax") -> None:
+    def __init__(self, app, *, cookie_secure: bool = False, cookie_samesite: str = "lax", exempt_prefixes: tuple[str, ...] = ()) -> None:
         super().__init__(app)
         self._cookie_secure = cookie_secure
         self._cookie_samesite = cookie_samesite
+        # Path prefixes exempt from the double-submit token check. Intended for
+        # endpoints authenticated by another signed credential that are called
+        # cross-origin and therefore cannot carry our CSRF cookie/header (e.g.
+        # the Twitch Extension EBS, secured by Twitch-signed Extension JWTs).
+        self._exempt_prefixes = tuple(exempt_prefixes)
 
     async def dispatch(self, request: Request, call_next):
         # WebSocket upgrade requests are exempt – browsers enforce same-origin
         # for WS handshakes and custom headers cannot be sent during the upgrade.
         if request.headers.get("upgrade", "").lower() == "websocket":
+            return await call_next(request)
+
+        # Exempt configured path prefixes (authenticated by another signed token).
+        if self._exempt_prefixes and request.url.path.startswith(self._exempt_prefixes):
             return await call_next(request)
 
         if request.method in _SAFE_METHODS:

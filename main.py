@@ -57,6 +57,7 @@ from server.creatures.routes import router as creatures_router
 from server.maps.routes import router as maps_router
 from server.commercial.routes import router as commercial_router
 from server.character.routes import router as character_router
+from server.twitch_ext.routes import router as twitch_ext_router
 from server.config import load_config
 from server.static_compat import resolve_legacy_class_portrait
 from server.item_library_srd import get_srd_items_version
@@ -248,6 +249,7 @@ app.include_router(creatures_router)
 app.include_router(maps_router)
 app.include_router(commercial_router)
 app.include_router(character_router)
+app.include_router(twitch_ext_router)
 
 # Creature-library compatibility contract (intentionally declarative).
 # Real route implementation lives in server/creatures/routes.py via include_router above.
@@ -304,6 +306,10 @@ app.add_middleware(
     CSRFMiddleware,
     cookie_secure=APP_CONFIG.auth_cookie_secure,
     cookie_samesite=APP_CONFIG.auth_cookie_samesite,
+    # The Twitch Extension EBS is called cross-origin from Twitch's hosted
+    # iframe and is authenticated by Twitch-signed Extension JWTs, so it cannot
+    # participate in the double-submit cookie scheme.
+    exempt_prefixes=("/api/twitch/ext/",),
 )
 
 

@@ -1,0 +1,119 @@
+/* extension/style.css — shared styling for the viewer panel and config page.
+ * Sized for Twitch Panel (320px) and Component views; mobile-friendly. */
+
+:root {
+  --bg: #0e0e10;
+  --panel: #18181b;
+  --panel-2: #1f1f23;
+  --text: #efeff1;
+  --muted: #adadb8;
+  --accent: #9147ff;
+  --accent-2: #772ce8;
+  --ok: #00b35c;
+  --line: #2a2a2e;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', Roobert, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+}
+
+.panel {
+  padding: 12px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.panel__head { margin-bottom: 10px; }
+.panel__title { font-size: 16px; margin: 0 0 4px; }
+.panel__status { margin: 0; color: var(--muted); font-size: 12px; min-height: 16px; }
+
+.gate {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+}
+.gate__msg { margin: 0 0 10px; color: var(--muted); }
+
+.notice {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  color: var(--muted);
+}
+
+.powers, .sub { margin-top: 12px; }
+.powers__heading { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 8px; }
+.sub__note { margin: 0 0 8px; color: var(--muted); font-size: 12px; }
+
+.power-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 360px) { .power-list { grid-template-columns: 1fr; } }
+
+.power-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .12s ease, transform .06s ease;
+}
+.power-btn:hover:not(:disabled) { border-color: var(--accent); }
+.power-btn:active:not(:disabled) { transform: translateY(1px); }
+.power-btn:disabled { opacity: .5; cursor: not-allowed; }
+.power-btn--sub { border-color: var(--accent-2); }
+
+.power-btn__name { font-weight: 600; }
+.power-btn__cost { color: var(--accent); font-size: 12px; }
+.power-btn__tag {
+  font-size: 10px;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+
+.btn {
+  display: inline-block;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn--primary { background: var(--accent); color: #fff; }
+.btn--primary:hover { background: var(--accent-2); }
+
+/* config page */
+.config { margin-top: 8px; }
+.config__label { display: block; font-weight: 600; margin-bottom: 4px; }
+.config__subhead { font-size: 13px; margin: 16px 0 4px; }
+.config__hint { color: var(--muted); font-size: 12px; margin: 0 0 8px; }
+.config__input {
+  width: 100%;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 10px;
+  margin-bottom: 8px;
+}
+.config__powers { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+@media (max-width: 360px) { .config__powers { grid-template-columns: 1fr; } }
+.config__power { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.config__savestatus { color: var(--ok); font-size: 12px; min-height: 16px; margin-top: 8px; }

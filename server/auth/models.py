@@ -133,18 +133,27 @@ def init_auth_db() -> None:
         );
 
         """)
-        # Campaign ownership columns (added via migration if absent)
+        # Column migrations (added if absent). Includes ``twitch_id`` on users —
+        # the identity link the "Sign in with Twitch" flow populates and that the
+        # Twitch Extension EBS uses to map a Twitch viewer to a local account.
         for migration in [
             "ALTER TABLE campaigns ADD COLUMN owner_user_id TEXT",
             "ALTER TABLE campaigns ADD COLUMN owner_username TEXT",
             "ALTER TABLE campaigns ADD COLUMN claimed_at REAL",
             "ALTER TABLE campaigns ADD COLUMN visibility TEXT NOT NULL DEFAULT 'public'",
+            "ALTER TABLE users ADD COLUMN twitch_id TEXT",
         ]:
             try:
                 conn.execute(migration)
                 conn.commit()
             except Exception:
                 pass
+        # Best-effort uniqueness/lookup index for the Twitch identity link.
+        try:
+            conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_twitch_id ON users(twitch_id) WHERE twitch_id IS NOT NULL")
+            conn.commit()
+        except Exception:
+            pass
 
 
 def merge_legacy_users_from_db(legacy_db_path: Optional[str] = None) -> dict:
@@ -260,6 +269,38 @@ def get_user_by_email(email: str) -> Optional[dict]:
             "SELECT * FROM users WHERE LOWER(email)=LOWER(?)", (email,)
         ).fetchone()
     return dict(row) if row else None
+
+
+def get_user_by_twitch_id(twitch_id: str) -> Optional[dict]:
+    """Return the local account linked to a Twitch user id, or None.
+
+    Defensive against installs where the ``twitch_id`` column has not been
+    migrated yet (the "Sign in with Twitch" flow owns populating it): a missing
+    column degrades to "no match" instead of raising.
+    """
+    tid = str(twitch_id or "").strip()
+    if not tid:
+        return None
+    try:
+        with get_conn() as conn:
+            row = conn.execute("SELECT * FROM users WHERE twitch_id=?", (tid,)).fetchone()
+    except sqlite3.OperationalError:
+        return None
+    return dict(row) if row else None
+
+
+def set_user_twitch_id(user_id: str, twitch_id: str) -> bool:
+    """Link a local account to a Twitch user id. Best-effort; returns success."""
+    uid = str(user_id or "").strip()
+    tid = str(twitch_id or "").strip()
+    if not uid or not tid:
+        return False
+    try:
+        with get_conn() as conn:
+            conn.execute("UPDATE users SET twitch_id=? WHERE id=?", (tid, uid))
+        return True
+    except sqlite3.OperationalError:
+        return False
 
 
 def get_user_by_username_or_email(identifier: str) -> Optional[dict]:
