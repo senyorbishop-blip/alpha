@@ -58,6 +58,7 @@ from server.maps.routes import router as maps_router
 from server.commercial.routes import router as commercial_router
 from server.character.routes import router as character_router
 from server.twitch_ext.routes import router as twitch_ext_router
+from server.http.health import router as health_router
 from server.config import load_config
 from server.static_compat import resolve_legacy_class_portrait
 from server.item_library_srd import get_srd_items_version
@@ -234,6 +235,7 @@ if APP_CONFIG.trust_proxy_headers:
     app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 # Register auth, campaign claim, and user asset/stat routers
+app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(claim_router)
 app.include_router(assets_router)
