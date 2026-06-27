@@ -710,6 +710,12 @@
         background:rgba(0,150,130,0.12);border-color:rgba(0,150,130,0.35);color:#0a6b5c;
       }
       #${MODAL_ID} .cv-loot-add-btn:hover:not(:disabled) { background:rgba(0,150,130,0.22); }
+      /* Shared item-row text inherits the page's light body color; force dark tones so it reads on the parchment chest surface. */
+      #${MODAL_ID} .item-row-name { color:#2c1a08; }
+      #${MODAL_ID} .item-row-secondary { color:#6b4c2a; }
+      #${MODAL_ID} .item-row-price { color:#3f2511; }
+      #${MODAL_ID} .item-row-note { color:#6b4c2a; }
+      #${MODAL_ID} .item-row-badge { color:#4a2f18; }
     `;
     document.head.appendChild(s);
   }

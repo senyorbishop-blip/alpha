@@ -682,6 +682,12 @@
       #${MODAL_ID} .sv-replace-select{min-height:40px;border-radius:8px;padding:.25rem .45rem}
       #${MODAL_ID} .sv-muted{color:#6b4c2a}
       #${MODAL_ID} .sv-section-head{font-size:12px;font-weight:700;color:#5c3317;text-transform:uppercase;letter-spacing:.06em;margin:.3rem 0}
+      /* Shared item-row text inherits the page's light body color; force dark tones so it reads on the parchment shop surface. */
+      #${MODAL_ID} .item-row-name{color:#3f2511}
+      #${MODAL_ID} .item-row-secondary{color:#6b4c2a}
+      #${MODAL_ID} .item-row-price{color:#3f2511}
+      #${MODAL_ID} .item-row-note{color:#6b4c2a}
+      #${MODAL_ID} .item-row-badge{color:#4a2f18}
       @media (max-width: 680px){
         #${MODAL_ID}{align-items:stretch;justify-content:stretch}
         #${MODAL_ID} .sv-dialog{width:100vw;max-width:100vw;max-height:100vh;border-radius:0}
