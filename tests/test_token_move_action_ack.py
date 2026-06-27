@@ -47,8 +47,15 @@ def patched(monkeypatch):
     async def _noop(*args, **kwargs):
         return None
 
+    # Disable move coalescing so the token_moved broadcast is emitted
+    # immediately (one per frame), exercising the legacy synchronous path these
+    # assertions were written against. The coalescer reaches the broadcast via
+    # server.handlers.common._broadcast_token_event (lazy import at flush time),
+    # so the capture is patched there rather than on the tokens module.
+    monkeypatch.setenv("MOVE_COALESCE_WINDOW_MS", "0")
     monkeypatch.setattr(token_handlers.manager, "send_to", _fake_send_to)
-    monkeypatch.setattr(token_handlers, "_broadcast_token_event", _capture_event)
+    monkeypatch.setattr("server.handlers.common._broadcast_token_event", _capture_event)
+    monkeypatch.setattr("server.handlers.durability.mark_session_dirty", lambda *a, **k: None)
     monkeypatch.setattr(token_handlers, "_broadcast_token_visibility", _noop)
     monkeypatch.setattr(token_handlers, "_process_hazard_triggers_for_token", _noop)
     monkeypatch.setattr(token_handlers, "_process_scene_triggers_for_token", _noop)
@@ -263,7 +270,9 @@ async def test_fog_hidden_npc_visibility_updates_immediately_after_committed_mov
     async def _noop(*args, **kwargs):
         return None
 
-    monkeypatch.setattr(token_handlers, "_broadcast_token_event", _fake_event)
+    monkeypatch.setenv("MOVE_COALESCE_WINDOW_MS", "0")
+    monkeypatch.setattr("server.handlers.common._broadcast_token_event", _fake_event)
+    monkeypatch.setattr("server.handlers.durability.mark_session_dirty", lambda *a, **k: None)
     monkeypatch.setattr(token_handlers, "_broadcast_token_visibility", _capture_visibility)
     monkeypatch.setattr(token_handlers, "_process_hazard_triggers_for_token", _noop)
     monkeypatch.setattr(token_handlers, "_process_scene_triggers_for_token", _noop)

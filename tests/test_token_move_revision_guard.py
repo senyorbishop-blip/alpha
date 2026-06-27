@@ -46,7 +46,9 @@ async def test_token_moved_broadcast_carries_increasing_revision(monkeypatch):
     async def _noop(*args, **kwargs):
         return None
 
-    monkeypatch.setattr(token_handlers, "_broadcast_token_event", _capture_event)
+    monkeypatch.setenv("MOVE_COALESCE_WINDOW_MS", "0")
+    monkeypatch.setattr("server.handlers.common._broadcast_token_event", _capture_event)
+    monkeypatch.setattr("server.handlers.durability.mark_session_dirty", lambda *a, **k: None)
     monkeypatch.setattr(token_handlers, "_broadcast_token_visibility", _noop)
     monkeypatch.setattr(token_handlers, "_process_hazard_triggers_for_token", _noop)
     monkeypatch.setattr(token_handlers, "_process_scene_triggers_for_token", _noop)
@@ -80,7 +82,9 @@ async def test_token_moved_omits_revision_only_if_counter_never_bumped(monkeypat
     async def _noop(*args, **kwargs):
         return None
 
-    monkeypatch.setattr(token_handlers, "_broadcast_token_event", _capture_event)
+    monkeypatch.setenv("MOVE_COALESCE_WINDOW_MS", "0")
+    monkeypatch.setattr("server.handlers.common._broadcast_token_event", _capture_event)
+    monkeypatch.setattr("server.handlers.durability.mark_session_dirty", lambda *a, **k: None)
     monkeypatch.setattr(token_handlers, "_broadcast_token_visibility", _noop)
     monkeypatch.setattr(token_handlers, "_process_hazard_triggers_for_token", _noop)
     monkeypatch.setattr(token_handlers, "_process_scene_triggers_for_token", _noop)
