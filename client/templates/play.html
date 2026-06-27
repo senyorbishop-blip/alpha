@@ -20351,14 +20351,11 @@ function _resolveCanonicalHpFromProfileAndToken(profile, ownedToken, fallback = 
   const profileBook = (profile && typeof profile.charBook === 'object') ? profile.charBook : {};
   const profileBookHp = (profileBook && typeof profileBook.hp === 'object') ? profileBook.hp : {};
 
-  const runtimeMax = toIntOrNull(runtimeHp.max ?? runtimeCombat.maxHP ?? runtimeCombat.maxHp);
-  if (runtimeMax != null && runtimeMax > 0) {
-    const runtimeCurrentRaw = toIntOrNull(runtimeHp.current ?? runtimeCombat.currentHP ?? runtimeCombat.currentHp);
-    const runtimeCurrent = runtimeCurrentRaw == null ? runtimeMax : Math.max(0, Math.min(runtimeMax, runtimeCurrentRaw));
-    const runtimeTemp = Math.max(0, toIntOrNull(runtimeHp.temp ?? runtimeCombat.tempHP ?? runtimeCombat.tempHp) ?? 0);
-    return { maxHp: runtimeMax, currentHp: runtimeCurrent, tempHp: runtimeTemp, source: 'nativeRuntime.hp' };
-  }
-
+  // A placed/staged player token is the live tabletop authority for HP.
+  // Native profile runtime can lag behind a DM-side token HP edit until the
+  // next full profile/state sync, so prefer the owned token whenever it carries
+  // complete HP data. This keeps the map badge, My Character card, and party
+  // snapshot in lock-step for players.
   const tokenMax = toIntOrNull(ownedToken?.maxHp);
   const tokenCurrent = toIntOrNull(ownedToken?.hp);
   if (tokenMax != null && tokenMax > 0 && tokenCurrent != null) {
@@ -20368,6 +20365,14 @@ function _resolveCanonicalHpFromProfileAndToken(profile, ownedToken, fallback = 
       tempHp: Math.max(0, toIntOrNull(ownedToken?.tempHp) ?? 0),
       source: 'ownedToken',
     };
+  }
+
+  const runtimeMax = toIntOrNull(runtimeHp.max ?? runtimeCombat.maxHP ?? runtimeCombat.maxHp);
+  if (runtimeMax != null && runtimeMax > 0) {
+    const runtimeCurrentRaw = toIntOrNull(runtimeHp.current ?? runtimeCombat.currentHP ?? runtimeCombat.currentHp);
+    const runtimeCurrent = runtimeCurrentRaw == null ? runtimeMax : Math.max(0, Math.min(runtimeMax, runtimeCurrentRaw));
+    const runtimeTemp = Math.max(0, toIntOrNull(runtimeHp.temp ?? runtimeCombat.tempHP ?? runtimeCombat.tempHp) ?? 0);
+    return { maxHp: runtimeMax, currentHp: runtimeCurrent, tempHp: runtimeTemp, source: 'nativeRuntime.hp' };
   }
 
   const fallbackMax = toIntOrNull(
@@ -20465,6 +20470,47 @@ function _syncCharSheetFromOwnedToken(tok) {
   if (tok.initiativeMod != null) _charSheet.initiative = parseInt(tok.initiativeMod, 10);
   if (tok.speed != null) _charSheet.speed = parseInt(tok.speed, 10);
   if (tok.image_url) _charSheet.tokenImageUrl = String(tok.image_url);
+}
+
+function _syncActiveProfileHpFromOwnedToken(tok) {
+  if (ROLE !== 'player' || !tok || !_tokenOwnedByMe(tok)) return;
+  const cur = Math.max(0, parseInt(tok.hp, 10) || 0);
+  const max = Math.max(1, parseInt(tok.maxHp, 10) || 1);
+  const temp = Math.max(0, parseInt(tok.tempHp, 10) || 0);
+  const activeProfileId = String(resolveActiveCharProfileId?.() || _activeCharProfileId || '').trim();
+  const profile = (Array.isArray(charProfiles) ? charProfiles : []).find(p => String(p?.id || '') === activeProfileId)
+    || _partyStatusActiveProfile?.();
+  if (!profile || typeof profile !== 'object') return;
+  profile.curhp = cur;
+  profile.hp = max;
+  profile.tempHp = temp;
+  const runtime = (profile.nativeRuntime && typeof profile.nativeRuntime === 'object') ? profile.nativeRuntime : {};
+  const runtimeHp = (runtime.hp && typeof runtime.hp === 'object') ? runtime.hp : {};
+  runtimeHp.current = cur;
+  runtimeHp.max = max;
+  runtimeHp.temp = temp;
+  runtime.hp = runtimeHp;
+  const combat = (runtime.combat && typeof runtime.combat === 'object') ? runtime.combat : {};
+  combat.currentHP = cur;
+  combat.maxHP = max;
+  combat.tempHP = temp;
+  runtime.combat = combat;
+  profile.nativeRuntime = runtime;
+  const book = (profile.charBook && typeof profile.charBook === 'object') ? profile.charBook : {};
+  book.currentHp = cur;
+  book.maxHp = max;
+  book.tempHp = temp;
+  profile.charBook = book;
+  const sheet = (profile.charSheet && typeof profile.charSheet === 'object') ? profile.charSheet : {};
+  const sheetHp = (sheet.hp && typeof sheet.hp === 'object') ? sheet.hp : {};
+  sheetHp.current = cur;
+  sheetHp.max = max;
+  sheetHp.temp = temp;
+  sheet.hp = sheetHp;
+  sheet.currentHp = cur;
+  sheet.maxHp = max;
+  sheet.tempHp = temp;
+  profile.charSheet = sheet;
 }
 
 function getActivePlayerCharacterSnapshot() {
@@ -27436,7 +27482,7 @@ function handleLegacyMessage(msg) {
           updTok.hp = p.hp; updTok.maxHp = p.maxHp;
           _cacheTokenByContext(updTok);
           if (_hpPopupTokenId === p.token_id) updateHpPopupDisplay(updTok);
-          if (ROLE === 'player' && updTok.owner_id === USER_ID) syncMyCharacterFormFromToken();
+          if (ROLE === 'player' && updTok.owner_id === USER_ID) { _syncActiveProfileHpFromOwnedToken(updTok); syncMyCharacterFormFromToken(); }
           if (ROLE === 'player' && updTok.owner_id === USER_ID) {
             const nextHp = Number(p.hp);
             if (Number.isFinite(prevHp) && Number.isFinite(nextHp) && prevHp <= 0 && nextHp > 0) {
