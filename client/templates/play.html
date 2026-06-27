@@ -5664,7 +5664,7 @@ function getRulerDisplay(dx, dy) {
 // helpers coalesce same-token updates into the latest x/y and send at a
 // fixed interval; the local token's x/y is mutated by the caller immediately
 // (never delayed), only the outbound websocket send is throttled.
-const TOKEN_MOVE_THROTTLE_MS = 80;
+const TOKEN_MOVE_THROTTLE_MS = 40;
 const _pendingTokenMoves = Object.create(null); // tokenId -> { payload, timer }
 const _tokenMoveClientSeq = Object.create(null); // tokenId -> latest committed move sequence
 
@@ -13823,10 +13823,17 @@ function onMouseMove(e) {
       t.x = finalSnapped.x;
       t.y = finalSnapped.y;
 
-      // Drag preview is strictly client-local: do not stream every
-      // mousemove to the server. The server-authoritative movement (including
-      // blockers, combat budgets, fog/LOS, hazards, scene triggers, and acks)
-      // is committed at controlled frequency from mouse-up/finalization below.
+      // Stream a throttled trail of drag positions so other players see
+      // the token glide while it is being moved. The local preview remains
+      // immediate; scheduleTokenMoveSend only coalesces outbound websocket
+      // traffic, and mouse-up below still sends a guaranteed final commit with
+      // the action ack/id used for authoritative denial handling.
+      scheduleTokenMoveSend(drag.tokenId, {
+        token_id: drag.tokenId,
+        x: t.x,
+        y: t.y,
+        client_move_seq: nextTokenMoveClientSeq(drag.tokenId),
+      });
     }
   }
 }

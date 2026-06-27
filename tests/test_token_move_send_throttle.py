@@ -3,8 +3,9 @@
 
 Dragging a token fires onMouseMove far more often than the server needs
 token_move updates. The local token's x/y is mutated by the caller
-immediately (see onMouseMove in play.html) — only the outbound websocket
-send is throttled/coalesced through the helpers extracted and exercised
+immediately (see onMouseMove in play.html), while a throttled outbound trail
+lets remote clients see movement before the guaranteed final commit. Only the
+outbound websocket send is throttled/coalesced through the helpers extracted and exercised
 here: scheduleTokenMoveSend, flushPendingTokenMove, flushAllPendingTokenMoves,
 sendTokenMoveImmediately, clearPendingTokenMove, clearAllPendingTokenMoves.
 
@@ -30,7 +31,7 @@ def _throttle_helpers_snippet() -> str:
 
 def _on_mouse_move_drag_block() -> str:
     src = PLAY.read_text(encoding="utf-8")
-    start = src.index("// Drag preview is strictly client-local")
+    start = src.index("// Stream a throttled trail of drag positions")
     end = src.index("}\n}", start) + 3
     return src[start:end]
 
@@ -48,10 +49,11 @@ def test_play_html_defines_throttle_helpers():
         assert name in snippet
 
 
-def test_drag_move_handler_keeps_preview_client_local():
+def test_drag_move_handler_streams_throttled_remote_preview_without_direct_send():
     snippet = _on_mouse_move_drag_block()
-    assert "Drag preview is strictly client-local" in snippet
-    assert "scheduleTokenMoveSend(" not in snippet
+    assert "Stream a throttled trail of drag positions" in snippet
+    assert "scheduleTokenMoveSend(" in snippet
+    assert "client_move_seq: nextTokenMoveClientSeq" in snippet
     assert "sendWS({ type: 'token_move'" not in snippet
 
 
@@ -98,7 +100,7 @@ def test_multiple_drag_moves_within_throttle_window_coalesce_to_latest():
 scheduleTokenMoveSend('tok-1', { token_id: 'tok-1', x: 1, y: 1 });
 scheduleTokenMoveSend('tok-1', { token_id: 'tok-1', x: 2, y: 2 });
 scheduleTokenMoveSend('tok-1', { token_id: 'tok-1', x: 3, y: 3 });
-advanceTime(80);
+advanceTime(40);
 console.log(JSON.stringify(sentMessages));
 """)
     assert len(results) == 1
@@ -172,9 +174,9 @@ console.log(JSON.stringify(sentMessages));
 def test_different_tokens_throttle_independently():
     results = _run_node("""
 scheduleTokenMoveSend('tok-1', { token_id: 'tok-1', x: 1, y: 1 });
-advanceTime(80);
+advanceTime(40);
 scheduleTokenMoveSend('tok-2', { token_id: 'tok-2', x: 2, y: 2 });
-advanceTime(80);
+advanceTime(40);
 console.log(JSON.stringify(sentMessages));
 """)
     assert [m["payload"]["token_id"] for m in results] == ["tok-1", "tok-2"]
