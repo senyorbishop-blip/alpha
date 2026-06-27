@@ -376,7 +376,11 @@ async def _broadcast_token_state_sync(session: Session):
     """Send an authoritative token snapshot to every connected client."""
     revision = bump_visibility_revision(session)
     map_ctx = normalize_map_context(getattr(session, "dm_map_context", "world"))
-    for uid, u in (session.users or {}).items():
+    active_user_ids = set(manager.get_session_connections(session.id).keys())
+    for uid in active_user_ids:
+        u = (session.users or {}).get(uid)
+        if not u:
+            continue
         payload = {
             "tokens": _visible_tokens_payload_for_user(session, u),
             "corpse_states": dict(getattr(session, "corpse_states", {}) or {}),

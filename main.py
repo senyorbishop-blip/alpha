@@ -721,6 +721,10 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
         "type": "state_sync",
         "payload": state
     })
+    try:
+        setattr(user, "_last_initial_state_sync_at", time.monotonic())
+    except Exception:
+        pass
     snapshot_v2 = session.to_authoritative_snapshot_for_role(user.role, user_id, source="ws_connect")
     snapshot_payload = snapshot_v2.get("payload") if isinstance(snapshot_v2.get("payload"), dict) else {}
     character_block = snapshot_payload.get("character") if isinstance(snapshot_payload.get("character"), dict) else {}
