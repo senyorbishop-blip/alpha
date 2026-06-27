@@ -142,14 +142,36 @@ def test_chat_message_empty_text_not_broadcast(monkeypatch):
 # handle_dice_roll
 # ---------------------------------------------------------------------------
 
-def test_dice_roll_d20_broadcasts_result(monkeypatch):
-    """A public (initiative) d20 roll should broadcast dice_result to everyone."""
+def test_dice_roll_table_visibility_broadcasts_result(monkeypatch):
+    """A visibility="table" d20 roll should broadcast dice_result to everyone."""
     from server.handlers import content as ch
     session, dm, player, viewer = _make_session()
     mgr = _fake_manager()
     monkeypatch.setattr(ch, "manager", mgr)
 
-    # Initiative is the one roll type that is broadcast to the whole table.
+    # "table" is the explicit opt-in to show a roll to the whole table.
+    asyncio.run(ch.handle_dice_roll(
+        {"dice_type": 20, "quantity": 1, "modifier": 0, "seed": 42,
+         "visibility": "table"},
+        session,
+        player,
+    ))
+
+    types = [msg["type"] for _, msg, _ in mgr._broadcasts]
+    assert "dice_result" in types
+
+
+def test_dice_roll_initiative_label_is_private(monkeypatch):
+    """A bare "initiative"-labelled roll is no longer broadcast to everyone.
+
+    The combat initiative tracker is synced separately via combat_state, so the
+    big dice popup stays private to the roller.
+    """
+    from server.handlers import content as ch
+    session, dm, player, viewer = _make_session()
+    mgr = _fake_manager()
+    monkeypatch.setattr(ch, "manager", mgr)
+
     asyncio.run(ch.handle_dice_roll(
         {"dice_type": 20, "quantity": 1, "modifier": 0, "seed": 42,
          "roll_label": "initiative"},
@@ -157,8 +179,10 @@ def test_dice_roll_d20_broadcasts_result(monkeypatch):
         player,
     ))
 
-    types = [msg["type"] for _, msg, _ in mgr._broadcasts]
-    assert "dice_result" in types
+    broadcast_types = [msg["type"] for _, msg, _ in mgr._broadcasts]
+    assert "dice_result" not in broadcast_types
+    recipients = {uid for _, uid, msg in mgr._sent if msg["type"] == "dice_result"}
+    assert recipients == {player.id}
 
 
 def test_dice_roll_includes_sounds_in_payload(monkeypatch):

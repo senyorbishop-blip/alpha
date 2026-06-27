@@ -728,8 +728,9 @@ def test_combat_update_assigns_new_encounter_id_for_new_combat(monkeypatch):
     assert combat_payloads[-1]["encounter_id"] == session.combat["encounter_id"]
 
 
-def test_combat_roll_initiative_broadcasts_explicit_roll_delta(monkeypatch):
-    """Initiative rolls broadcast both combat_state and a targeted delta for live clients."""
+def test_combat_roll_initiative_broadcasts_state_and_private_roll_delta(monkeypatch):
+    """Initiative rolls broadcast combat_state to everyone, but the targeted
+    combat_initiative_rolled delta is delivered privately to the roller only."""
     from server.handlers import combat as ch
     session, dm, player = _make_session_with_combat([
         {"id": "c1", "token_id": "tok1", "name": "Alice", "initiative": None, "is_player": True, "owner_id": "player1", "modifier": 2},
@@ -743,11 +744,14 @@ def test_combat_roll_initiative_broadcasts_explicit_roll_delta(monkeypatch):
     monkeypatch.setattr(ch, "save_campaign_async", _save)
     asyncio.run(ch.handle_combat_roll_initiative({"combatant_id": "c1", "roll": 14}, session, player))
 
-    types = [msg["type"] for _, msg, _ in broadcasts]
-    assert "combat_state" in types
-    assert "combat_initiative_rolled" in types
-    delta = [msg["payload"] for _, msg, _ in broadcasts if msg["type"] == "combat_initiative_rolled"][-1]
-    assert delta == {
+    # The authoritative tracker state is broadcast to the whole table.
+    assert "combat_state" in [msg["type"] for _, msg, _ in broadcasts]
+    # The popup/animation delta is NOT broadcast — it is sent only to the roller.
+    assert "combat_initiative_rolled" not in [msg["type"] for _, msg, _ in broadcasts]
+    rolled = [(uid, msg["payload"]) for _, uid, msg in sent if msg["type"] == "combat_initiative_rolled"]
+    assert rolled, "the roller must receive the combat_initiative_rolled delta"
+    assert {uid for uid, _ in rolled} == {"player1"}
+    assert rolled[-1][1] == {
         "combatant_id": "c1",
         "token_id": "tok1",
         "initiative": 16,

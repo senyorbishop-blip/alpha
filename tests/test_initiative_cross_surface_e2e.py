@@ -96,11 +96,12 @@ async def test_foreign_npc_roll_reaches_every_client_in_one_broadcast(monkeypatc
 
 @pytest.mark.anyio
 async def test_initiative_rolled_notification_payload_cannot_carry_a_roster(monkeypatch):
-    """combat_initiative_rolled is broadcast alongside combat_state from the
-    same handler, but its payload must be structurally notification-only (no
-    combatants/turn/round) so that a client which only sees this message
-    (e.g. the accompanying combat_state was dropped/reordered) has nothing in
-    the payload it could use to mutate the roster."""
+    """combat_initiative_rolled is delivered privately to the roller alongside
+    the table-wide combat_state, but its payload must be structurally
+    notification-only (no combatants/turn/round) so that a client which only
+    sees this message (e.g. the accompanying combat_state was dropped/reordered)
+    has nothing in the payload it could use to mutate the roster. Non-roller
+    clients must not receive the notification at all."""
     session, dm, player = _build_session()
 
     async def _fake_save(*args, **kwargs):
@@ -116,12 +117,15 @@ async def test_initiative_rolled_notification_payload_cannot_carry_a_roster(monk
         combat_handlers.manager.disconnect(session.id, dm.id)
         combat_handlers.manager.disconnect(session.id, player.id)
 
-    notifications = _initiative_notifications(sockets[player.id])
-    assert notifications, "the notification must still be broadcast for animation/log purposes"
+    # The DM is the roller, so only the DM receives the private notification.
+    notifications = _initiative_notifications(sockets[dm.id])
+    assert notifications, "the roller must still receive the notification for animation/log purposes"
     payload = notifications[-1]["payload"]
     assert "combatants" not in payload
     assert "turn" not in payload
     assert "round" not in payload
+    # The non-rolling player must not see the roller's private popup/animation.
+    assert not _initiative_notifications(sockets[player.id])
 
 
 @pytest.mark.anyio

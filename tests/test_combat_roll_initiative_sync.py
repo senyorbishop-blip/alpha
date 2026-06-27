@@ -267,11 +267,13 @@ async def test_suspended_combatants_filtered_for_player_via_broadcast_combat(mon
     assert "hidden_suspended_combatants" not in player_payload
 
 @pytest.mark.anyio
-async def test_roll_initiative_emits_dice_result_popup(monkeypatch):
-    """Initiative must drive the shared dice_result popup path so the roll shows
-    consistently for the DM and every player, with the correct roll/modifier/total."""
+async def test_roll_initiative_emits_private_dice_result_popup(monkeypatch):
+    """Initiative drives the dice_result popup path, but PRIVATELY: only the
+    roller receives it (via send_to), with the correct roll/modifier/total. It
+    must NOT be broadcast to the whole table."""
     session, dm, player = _build_session()
     broadcasts = []
+    sent = []
 
     async def _fake_broadcast_combat(session):
         return None
@@ -280,8 +282,9 @@ async def test_roll_initiative_emits_dice_result_popup(monkeypatch):
         # broadcast(session_id, message[, exclude_user])
         broadcasts.append(args[1] if len(args) > 1 else kwargs.get("message"))
 
-    async def _fake_send_to(*args, **kwargs):
-        return None
+    async def _fake_send_to(session_id, user_id, message):
+        sent.append((user_id, message))
+        return True
 
     async def _fake_save(*args, **kwargs):
         return True
@@ -297,8 +300,12 @@ async def test_roll_initiative_emits_dice_result_popup(monkeypatch):
         player,
     )
 
-    dice = [m for m in broadcasts if m and m.get("type") == "dice_result"]
-    assert dice, "initiative roll must broadcast a dice_result popup event"
+    # The dice popup is never broadcast — only the log_entry is.
+    assert not [m for m in broadcasts if m and m.get("type") == "dice_result"]
+    dice = [m for uid, m in sent if m and m.get("type") == "dice_result"]
+    assert dice, "initiative roll must send a dice_result popup to the roller"
+    # Every dice_result recipient must be the roller (the player), nobody else.
+    assert {uid for uid, m in sent if m.get("type") == "dice_result"} == {player.id}
     p = dice[-1]["payload"]
     assert p["user_id"] == player.id
     assert p["user_name"] == player.name
@@ -318,16 +325,17 @@ async def test_roll_initiative_emits_dice_result_popup(monkeypatch):
 async def test_roll_initiative_authoritative_value_matches_dice_result(monkeypatch):
     """The combat list initiative value must equal the dice_result total."""
     session, dm, player = _build_session()
-    broadcasts = []
+    sent = []
 
     async def _fake_broadcast_combat(session):
         return None
 
     async def _fake_manager_broadcast(*args, **kwargs):
-        broadcasts.append(args[1] if len(args) > 1 else kwargs.get("message"))
-
-    async def _fake_send_to(*args, **kwargs):
         return None
+
+    async def _fake_send_to(session_id, user_id, message):
+        sent.append((user_id, message))
+        return True
 
     async def _fake_save(*args, **kwargs):
         return True
@@ -344,7 +352,7 @@ async def test_roll_initiative_authoritative_value_matches_dice_result(monkeypat
     )
 
     npc = next(c for c in session.combat["combatants"] if c["id"] == "cmb-npc")
-    dice = [m for m in broadcasts if m and m.get("type") == "dice_result"][-1]["payload"]
+    dice = [m for uid, m in sent if m and m.get("type") == "dice_result"][-1]["payload"]
     assert npc["initiative"] == dice["total"] == 9
 
 
@@ -471,14 +479,22 @@ def test_combat_state_payload_dm_not_stricter_than_player_for_visible_npc():
 
 
 @pytest.mark.anyio
-async def test_player_initiative_roll_sends_state_dice_and_rolled_to_dm_and_player(monkeypatch):
+async def test_player_initiative_roll_keeps_dice_popup_private_but_syncs_tracker(monkeypatch):
+    """A player initiative roll must:
+      * update the combat_state tracker for EVERYONE (DM + every player), and
+      * deliver the dice_result popup + combat_initiative_rolled animation ONLY
+        to the roller, never to other clients (including the DM).
+    """
     session, dm, player = _build_session()
+    # A second player who must never see the roller's private popup.
+    other = User(id="u2", name="Player Two", role="player")
+    session.users[other.id] = other
 
     async def _fake_save(*args, **kwargs):
         return True
     monkeypatch.setattr(combat_handlers, "save_campaign_async", _fake_save)
 
-    sockets = await _connect_real_sockets(session, dm.id, player.id)
+    sockets = await _connect_real_sockets(session, dm.id, player.id, other.id)
     try:
         await combat_handlers.handle_combat_roll_initiative(
             {"combatant_id": "cmb-hero", "roll": 16, "modifier": 2, "roll_id": "rid-player-live"},
@@ -488,16 +504,27 @@ async def test_player_initiative_roll_sends_state_dice_and_rolled_to_dm_and_play
     finally:
         combat_handlers.manager.disconnect(session.id, dm.id)
         combat_handlers.manager.disconnect(session.id, player.id)
+        combat_handlers.manager.disconnect(session.id, other.id)
 
-    for uid in (dm.id, player.id):
+    # Everyone gets the authoritative tracker update with the new initiative.
+    for uid in (dm.id, player.id, other.id):
         sent_types = [m.get("type") for m in sockets[uid].sent]
         assert "combat_state" in sent_types, f"{uid} must apply the authoritative combat state without refresh"
-        assert "dice_result" in sent_types, f"{uid} must receive the initiative dice popup payload"
-        assert "combat_initiative_rolled" in sent_types, f"{uid} must receive the initiative animation/diagnostic event"
-        state_idx = sent_types.index("combat_state")
-        dice_idx = sent_types.index("dice_result")
-        rolled_idx = sent_types.index("combat_initiative_rolled")
-        assert state_idx < dice_idx < rolled_idx
         latest_state = [m for m in sockets[uid].sent if m.get("type") == "combat_state"][-1]["payload"]
         hero = next(c for c in latest_state["combatants"] if c["id"] == "cmb-hero")
         assert hero["initiative"] == 18
+
+    # Only the roller sees the big dice popup + animation, after combat_state.
+    roller_types = [m.get("type") for m in sockets[player.id].sent]
+    assert "dice_result" in roller_types, "the roller must receive their own initiative dice popup"
+    assert "combat_initiative_rolled" in roller_types, "the roller must receive the initiative animation event"
+    state_idx = roller_types.index("combat_state")
+    dice_idx = roller_types.index("dice_result")
+    rolled_idx = roller_types.index("combat_initiative_rolled")
+    assert state_idx < dice_idx < rolled_idx
+
+    # Other clients (DM + the second player) must NOT receive the popup/animation.
+    for uid in (dm.id, other.id):
+        sent_types = [m.get("type") for m in sockets[uid].sent]
+        assert "dice_result" not in sent_types, f"{uid} must not see the roller's private dice popup"
+        assert "combat_initiative_rolled" not in sent_types, f"{uid} must not see the roller's private animation"

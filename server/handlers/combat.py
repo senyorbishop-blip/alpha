@@ -1348,54 +1348,38 @@ async def handle_combat_death_save(payload: dict, session: Session, user: User):
 
 
 async def _send_initiative_sync_event(session: Session, user: User, message: dict, *, target_label: str) -> tuple[list[str], list[str]]:
-    """Send initiative follow-up events with per-socket diagnostics.
+    """Send an initiative follow-up popup/animation event to the roller only.
 
-    combat_state is sent first by _broadcast_combat. These follow-up events are
-    intentionally delivered in order after that state: dice_result, then
-    combat_initiative_rolled.
+    The authoritative initiative *tracker* is synced to everyone separately by
+    ``_broadcast_combat`` (combat_state). These follow-up events — the
+    dice_result popup and the combat_initiative_rolled animation — are
+    popup/animation only and must stay PRIVATE to the person who rolled.
+    Broadcasting them previously made the big dice popup appear for every
+    connected client whenever anyone rolled initiative.
+
+    combat_state is still delivered first; this event is sent after it, but only
+    to the roller, so the order the roller observes is: combat_state →
+    dice_result → combat_initiative_rolled.
     """
-    connections = dict(manager.get_session_connections(session.id))
+    roller_id = str(getattr(user, "id", "") or "")
     sent_to: list[str] = []
     failed: list[str] = []
-    if connections:
-        for uid in list(connections.keys()):
-            ok = await manager.send_to(session.id, uid, message)
-            if ok:
-                sent_to.append(uid)
-            else:
-                failed.append(uid)
-            logger.info(
-                "[combat initiative sync] send_after_roll type=%s rolled_by=%s target=%s revision=%s sent_to=%s failed=%s",
-                message.get("type"),
-                getattr(user, "id", None),
-                target_label,
-                (getattr(session, "combat", {}) or {}).get("revision"),
-                uid if ok else None,
-                uid if not ok else None,
-            )
-        dm_ids = [uid for uid, connected_user in (getattr(session, "users", {}) or {}).items() if getattr(connected_user, "role", "") == "dm"]
-        fallback_ids = set([getattr(user, "id", "")] + dm_ids).intersection(set(failed))
-        for uid in fallback_ids:
-            ok = await manager.send_to(session.id, uid, message)
-            logger.warning(
-                "[combat initiative sync] direct fallback type=%s rolled_by=%s target=%s revision=%s sent_to=%s failed=%s",
-                message.get("type"),
-                getattr(user, "id", None),
-                target_label,
-                (getattr(session, "combat", {}) or {}).get("revision"),
-                uid if ok else None,
-                uid if not ok else None,
-            )
-            if ok and uid not in sent_to:
-                sent_to.append(uid)
-            elif not ok and uid not in failed:
-                failed.append(uid)
+    if not roller_id:
+        return sent_to, failed
+    ok = await manager.send_to(session.id, roller_id, message)
+    if ok:
+        sent_to.append(roller_id)
     else:
-        await manager.broadcast(session.id, message)
-        logger.info(
-            "[combat initiative sync] send_after_roll type=%s rolled_by=%s target=%s revision=%s sent_to=%s failed=%s",
-            message.get("type"), getattr(user, "id", None), target_label, (getattr(session, "combat", {}) or {}).get("revision"), [], [],
-        )
+        failed.append(roller_id)
+    logger.info(
+        "[combat initiative sync] send_after_roll type=%s rolled_by=%s target=%s revision=%s sent_to=%s failed=%s",
+        message.get("type"),
+        getattr(user, "id", None),
+        target_label,
+        (getattr(session, "combat", {}) or {}).get("revision"),
+        roller_id if ok else None,
+        roller_id if not ok else None,
+    )
     return sent_to, failed
 
 
@@ -1469,9 +1453,11 @@ async def handle_combat_roll_initiative(payload: dict, session: Session, user: U
             session.combat.get("revision"),
         )
 
-    # Drive the dice popup through the same authoritative dice_result path that
-    # every other roll uses, so BOTH the DM and players see the initiative roll
-    # land consistently (previously only the roller saw a local-only popup). The
+    # Drive the dice popup through the dice_result path, but PRIVATELY: only the
+    # roller sees their own big initiative popup (and the matching
+    # combat_initiative_rolled animation). The initiative *tracker* still updates
+    # for everyone via the combat_state broadcast above, so the order populates
+    # for all clients without showing them someone else's dice popup. The
     # combatant_id/roll_id let the roller dedupe their own already-shown local
     # animation instead of double-popping.
     initiative_name = str(target_combatant.get("name") or "Combatant")

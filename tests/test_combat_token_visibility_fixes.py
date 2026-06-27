@@ -171,36 +171,98 @@ def test_attack_roll_is_private(monkeypatch):
     cap = _Capture()
     monkeypatch.setattr(content_handlers, 'manager', cap)
     _run_roll(cap, s, s.users['p1'], 'Longsword Attack')
-    # No broadcast; only roller + DM receive it.
+    # No broadcast; only the roller receives it by default (not even the DM).
     dice_msgs = [m for m in cap.broadcasts if m.get('type') == 'dice_result']
     assert dice_msgs == []
     recipients = {uid for uid, m in cap.sent if m.get('type') == 'dice_result'}
-    assert recipients == {'p1', 'dm1'}
+    assert recipients == {'p1'}
     assert 'p2' not in recipients
+    assert 'dm1' not in recipients
     # Private rolls are not persisted to the shared session log.
     assert all(e.get('type') != 'dice' for e in s.log)
 
 
-def test_initiative_roll_is_public(monkeypatch):
+def test_initiative_roll_is_private_by_default(monkeypatch):
+    """An "initiative"-labelled roll is no longer special-cased as public.
+
+    The combat initiative tracker is synced separately via combat_state, so the
+    dice popup stays private to the roller. The label alone must NOT broadcast
+    the dice_result to the whole table anymore.
+    """
     s = _dice_session()
     cap = _Capture()
     monkeypatch.setattr(content_handlers, 'manager', cap)
     _run_roll(cap, s, s.users['p1'], 'Initiative')
     dice_msgs = [m for m in cap.broadcasts if m.get('type') == 'dice_result']
-    assert len(dice_msgs) == 1
-    # Public rolls are persisted to the session log so they survive reconnect.
-    assert any(e.get('type') == 'dice' for e in s.log)
+    assert dice_msgs == []
+    recipients = {uid for uid, m in cap.sent if m.get('type') == 'dice_result'}
+    assert recipients == {'p1'}
+    assert 'p2' not in recipients
+    assert 'dm1' not in recipients
+    # Private rolls are not persisted to the shared session log.
+    assert all(e.get('type') != 'dice' for e in s.log)
 
 
-def test_private_nat20_fx_only_to_audience(monkeypatch):
+def test_visibility_dm_includes_roller_and_dm(monkeypatch):
+    """visibility="dm" delivers the popup to the roller plus the DM(s)."""
     s = _dice_session()
     cap = _Capture()
     monkeypatch.setattr(content_handlers, 'manager', cap)
-    # Force a nat20 by seeding deterministically and checking either fx path.
-    payload = {'dice_type': 20, 'quantity': 1, 'modifier': 0, 'roll_label': 'Stealth', 'seed': 1}
+    payload = {'dice_type': 20, 'quantity': 1, 'modifier': 2, 'roll_label': 'Stealth',
+               'seed': 42, 'visibility': 'dm'}
+    asyncio.run(content_handlers.handle_dice_roll(payload, s, s.users['p1']))
+    assert [m for m in cap.broadcasts if m.get('type') == 'dice_result'] == []
+    recipients = {uid for uid, m in cap.sent if m.get('type') == 'dice_result'}
+    assert recipients == {'p1', 'dm1'}
+    assert 'p2' not in recipients
+    # DM-scoped private rolls still stay out of the shared session log.
+    assert all(e.get('type') != 'dice' for e in s.log)
+
+
+def test_visibility_table_broadcasts_to_everyone(monkeypatch):
+    """visibility="table" broadcasts the dice_result and persists the log."""
+    s = _dice_session()
+    cap = _Capture()
+    monkeypatch.setattr(content_handlers, 'manager', cap)
+    payload = {'dice_type': 20, 'quantity': 1, 'modifier': 0, 'roll_label': 'Perception',
+               'seed': 42, 'visibility': 'table'}
+    asyncio.run(content_handlers.handle_dice_roll(payload, s, s.users['p1']))
+    dice_msgs = [m for m in cap.broadcasts if m.get('type') == 'dice_result']
+    assert len(dice_msgs) == 1
+    # Table rolls are persisted to the session log so they survive reconnect.
+    assert any(e.get('type') == 'dice' for e in s.log)
+
+
+def test_private_nat20_fx_follows_dice_result_audience(monkeypatch):
+    """A private nat20 sends its dice_special_fx to exactly the same audience as
+    the dice_result — the roller only (never broadcast)."""
+    s = _dice_session()
+    cap = _Capture()
+    monkeypatch.setattr(content_handlers, 'manager', cap)
+    # seed=5 yields a natural 20 on the first d20.
+    payload = {'dice_type': 20, 'quantity': 1, 'modifier': 0, 'roll_label': 'Stealth', 'seed': 5}
+    asyncio.run(content_handlers.handle_dice_roll(payload, s, s.users['p1']))
+    # Nothing broadcast for a private roll.
+    assert [m for m in cap.broadcasts if m.get('type') == 'dice_special_fx'] == []
+    fx_recipients = {uid for uid, m in cap.sent if m.get('type') == 'dice_special_fx'}
+    dice_recipients = {uid for uid, m in cap.sent if m.get('type') == 'dice_result'}
+    assert fx_recipients, "a nat20 must emit a dice_special_fx event"
+    assert fx_recipients == dice_recipients == {'p1'}
+
+
+def test_table_nat20_fx_follows_dice_result_audience(monkeypatch):
+    """A visibility="table" nat20 broadcasts the dice_special_fx to the table,
+    mirroring the dice_result broadcast."""
+    s = _dice_session()
+    cap = _Capture()
+    monkeypatch.setattr(content_handlers, 'manager', cap)
+    payload = {'dice_type': 20, 'quantity': 1, 'modifier': 0, 'roll_label': 'Initiative',
+               'seed': 5, 'visibility': 'table'}
     asyncio.run(content_handlers.handle_dice_roll(payload, s, s.users['p1']))
     fx_broadcasts = [m for m in cap.broadcasts if m.get('type') == 'dice_special_fx']
-    assert fx_broadcasts == []  # never broadcast for a private roll
-    fx_sent = [uid for uid, m in cap.sent if m.get('type') == 'dice_special_fx']
-    # If a nat20/nat1 happened, it only went to roller/DM; otherwise none.
-    assert set(fx_sent) <= {'p1', 'dm1'}
+    dice_broadcasts = [m for m in cap.broadcasts if m.get('type') == 'dice_result']
+    assert len(dice_broadcasts) == 1
+    assert len(fx_broadcasts) == 1
+    assert fx_broadcasts[0]['payload']['fx_type'] == 'nat20'
+    # No private per-user FX sends when the roll is public.
+    assert [uid for uid, m in cap.sent if m.get('type') == 'dice_special_fx'] == []
