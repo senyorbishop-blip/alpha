@@ -32,6 +32,7 @@
   <link rel="stylesheet" href="/static/css/dm-map-first-fixes.css">
   <link rel="stylesheet" href="/static/css/dm-context-render.css">
   <link rel="stylesheet" href="/static/css/role-panels.css">
+  <link rel="stylesheet" href="/static/css/themes.css">
 </head>
 <body>
 
@@ -175,6 +176,9 @@
   </button>
   <button class="rail-btn" onclick="resetView()">
     ⌂<span class="rail-tooltip">Reset View</span>
+  </button>
+  <button class="rail-btn" id="rail-theme-btn" onclick="toggleFlyout('flyout-theme')">
+    🎨<span class="rail-tooltip">UI Theme</span>
   </button>
 </div>
 </div>
@@ -1520,6 +1524,84 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- Theme Settings flyout -->
+<div class="flyout" id="flyout-theme">
+  <div class="sidebar-section" style="padding:0.9rem 0.85rem 1rem;">
+    <!-- ============================================================
+         Player UI Settings panel (Casual D&D Theme Pack)
+         theme-settings.js auto-wires this via the data-mf-* attributes.
+         ============================================================ -->
+    <section class="mf-settings">
+      <h2 class="mf-settings__title">Player UI Settings</h2>
+
+      <div class="mf-settings__group">
+        <label class="mf-settings__label">Theme</label>
+        <select data-mf="theme">
+          <option value="dark-fantasy">Dark Fantasy (default)</option>
+          <option value="parchment">Parchment</option>
+          <option value="arcane-cyan">Arcane Cyan</option>
+          <option value="blood-steel">Blood &amp; Steel</option>
+          <option value="wood-elves">Wood Elves</option>
+          <option value="divine">Divine Radiance</option>
+          <option value="necromancer">Bone &amp; Shadow</option>
+          <option value="high-contrast">High Contrast</option>
+        </select>
+      </div>
+
+      <div class="mf-settings__group">
+        <label class="mf-settings__label">HUD Size</label>
+        <div class="mf-settings__segs">
+          <button type="button" data-mf-size="0.9">Compact</button>
+          <button type="button" data-mf-size="1">Normal</button>
+          <button type="button" data-mf-size="1.12">Large</button>
+        </div>
+      </div>
+
+      <div class="mf-settings__group">
+        <label class="mf-settings__label">Accent Color</label>
+        <div class="mf-settings__swatches">
+          <button type="button" data-mf-accent="#00e5cc" style="background:#00e5cc"></button>
+          <button type="button" data-mf-accent="#d4a637" style="background:#d4a637"></button>
+          <button type="button" data-mf-accent="#b33a2f" style="background:#b33a2f"></button>
+          <button type="button" data-mf-accent="#9b59d0" style="background:#9b59d0"></button>
+          <button type="button" data-mf-accent="#2ecc71" style="background:#2ecc71"></button>
+        </div>
+      </div>
+
+      <div class="mf-settings__group">
+        <label class="mf-settings__label">Show / Hide</label>
+        <div class="mf-settings__toggles">
+          <label><input type="checkbox" data-mf-show="passive"> Passive Perception</label>
+          <label><input type="checkbox" data-mf-show="initiative"> Initiative</label>
+          <label><input type="checkbox" data-mf-show="speed"> Speed</label>
+          <label><input type="checkbox" data-mf-show="conditions"> Conditions</label>
+          <label><input type="checkbox" data-mf-show="quest"> Quest Focus</label>
+          <label><input type="checkbox" data-mf-show="discovery"> Latest Discovery</label>
+        </div>
+      </div>
+
+      <div class="mf-settings__group">
+        <label class="mf-settings__label">HUD Position</label>
+        <div class="mf-settings__segs">
+          <button type="button" data-mf-pos="left">Left</button>
+          <button type="button" data-mf-pos="right">Right</button>
+          <button type="button" data-mf-pos="bottom">Bottom</button>
+        </div>
+      </div>
+
+      <div class="mf-settings__row">
+        <span>Reduce Animations</span>
+        <button type="button" class="mf-settings__switch" data-mf="reduce" aria-pressed="false"></button>
+      </div>
+
+      <div class="mf-settings__foot">
+        <button type="button" data-mf="reset">Reset to Default</button>
+        <span class="mf-settings__saved">Settings are saved locally 🔒</span>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -47936,5 +48018,6 @@ async function bestiaryMakeVariant() {
 {% for deferred_script in deferred_boot_scripts %}
 <script src="{{ deferred_script }}"></script>
 {% endfor %}
+<script src="/static/js/theme-settings.js"></script>
 </body>
 </html>

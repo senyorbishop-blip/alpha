@@ -1,0 +1,166 @@
+/* ============================================================================
+   Casual D&D — Theme Pack
+   Load this LAST (after map-first-ui-tokens.css, session-theme.css, etc.)
+   so its [data-theme] overrides win the cascade.
+
+   HOW IT WORKS
+   - Colour theming: setting  <html data-theme="parchment">  re-points your
+     existing --mf-* tokens. Anything already using var(--mf-*) reskins for
+     free. This is safe and cannot change layout.
+   - Material theming (textures, carved/bone/iron frames): OPT-IN. Add
+     class="mf-themed" to a panel to give it the active theme's surface +
+     frame. Nothing gets a frame unless you ask for it, so layout never breaks.
+   - Texture paths are relative to THIS file: /static/css/ -> ../textures/.
+   ============================================================================ */
+
+/* ---- base additions (defaults so nothing breaks before a theme is set) ---- */
+:root{
+  --mf-accent: var(--mf-cyan);
+  --mf-accent-soft: var(--mf-cyan-soft);
+  --mf-hp-high:#2ecc71; --mf-hp-low:#e67e22;
+  --mf-hud-scale:1;
+  /* material slots (a theme fills these; default = no texture) */
+  --mf-mat-surface:none; --mf-mat-overlay:none; --mf-mat-frame:none;
+  --mf-mat-frame-slice:0; --mf-mat-frame-width:0px; --mf-mat-frame-repeat:stretch;
+}
+
+/* generic material hook — a theme sets the slots, this applies them */
+.mf-themed{
+  background-image: var(--mf-mat-overlay), var(--mf-mat-surface);
+  background-position:center,center; background-repeat:no-repeat,no-repeat;
+  background-size:contain,cover;
+  border-style:solid; border-color:transparent;
+  border-width:var(--mf-mat-frame-width);
+  border-image:var(--mf-mat-frame) var(--mf-mat-frame-slice) var(--mf-mat-frame-repeat);
+}
+
+/* reduce-animations (settings toggle sets data-reduce-motion on <html>) */
+html[data-reduce-motion="true"] *,
+html[data-reduce-motion="true"] *::before,
+html[data-reduce-motion="true"] *::after{ transition:none !important; animation:none !important; }
+
+/* =====================================================================
+   DARK FANTASY  (default — your current palette; no override needed,
+   but listed so the theme menu has a canonical id)
+   ===================================================================== */
+[data-theme="dark-fantasy"]{ --mf-accent:#00e5cc; --mf-accent-soft:rgba(0,229,204,.16); }
+
+/* =====================================================================
+   PARCHMENT — torn aged paper
+   ===================================================================== */
+[data-theme="parchment"]{
+  --mf-bg-void:#9c7d44; --mf-bg-deep:#c2a467; --mf-surface:#ddc183;
+  --mf-surface-raised:rgba(255,248,225,.5); --mf-surface-glass:#ddc183;
+  --mf-surface-ink:rgba(90,60,20,.35);
+  --mf-border-soft:rgba(96,62,24,.55); --mf-border-cyan:rgba(96,62,24,.7);
+  --mf-text:#2b1c08; --mf-text-muted:rgba(64,44,18,.72);
+  --mf-parchment:#8a6b34; --mf-parchment-dark:#5a3416;
+  --mf-accent:#7a4e14; --mf-accent-soft:rgba(122,78,20,.2);
+  --mf-hp-high:#7a8f30; --mf-hp-low:#a9802f;
+  --mf-mat-surface:url("../textures/parchment-tile.jpg");
+}
+[data-theme="parchment"] .mf-themed{ box-shadow:inset 0 0 34px rgba(90,60,20,.22),0 10px 22px rgba(60,40,15,.3); }
+/* torn-sheet variant for hero panels (e.g. the player HUD) */
+[data-theme="parchment"] .mf-torn{
+  background:url("../textures/parchment-torn.png") center/100% 100% no-repeat;
+  border:none; box-shadow:none; filter:drop-shadow(0 12px 16px rgba(0,0,0,.55));
+}
+
+/* =====================================================================
+   BLOOD & STEEL — forged iron frame, blood spatter, etched rune
+   ===================================================================== */
+[data-theme="blood-steel"]{
+  --mf-bg-void:#100707; --mf-bg-deep:#170b0b; --mf-surface:#221313;
+  --mf-surface-raised:#2c1919; --mf-surface-glass:rgba(34,19,19,.92);
+  --mf-border-soft:rgba(150,150,160,.22); --mf-border-cyan:rgba(199,60,50,.45);
+  --mf-text:#f0dada; --mf-text-muted:rgba(240,218,218,.6);
+  --mf-parchment:#c0938f;
+  --mf-accent:#e3342f; --mf-accent-soft:rgba(227,52,47,.18);
+  --mf-hp-high:#2ecc71; --mf-hp-low:#c0392b;
+  --mf-mat-surface:url("../textures/steel-blood.jpg");
+  --mf-mat-overlay:url("../textures/blood-drips.png");
+  --mf-mat-frame:url("../textures/steel-frame.png");
+  --mf-mat-frame-slice:44; --mf-mat-frame-width:15px; --mf-mat-frame-repeat:stretch;
+}
+[data-theme="blood-steel"] .mf-themed{ background-size:100% auto,cover; background-position:top center,center; }
+
+/* =====================================================================
+   ARCANE CYAN — starfield, nebula, glowing spell circle
+   ===================================================================== */
+[data-theme="arcane-cyan"]{
+  --mf-bg-void:#03121a; --mf-bg-deep:#061d28; --mf-surface:#0a2632;
+  --mf-surface-raised:#0e303f; --mf-surface-glass:rgba(10,38,50,.9);
+  --mf-border-soft:rgba(0,229,204,.22); --mf-border-cyan:rgba(0,229,204,.4);
+  --mf-text:#d6f3f6; --mf-text-muted:rgba(214,243,246,.6);
+  --mf-parchment:#6fd4d0;
+  --mf-accent:#22d3ee; --mf-accent-soft:rgba(34,211,238,.18);
+  --mf-hp-high:#2ecc71; --mf-hp-low:#1b9aaf;
+  --mf-mat-surface:url("../textures/arcane-tex.jpg");
+  --mf-mat-overlay:url("../textures/arcane-circle.png");
+}
+[data-theme="arcane-cyan"] .mf-themed{ box-shadow:inset 0 0 50px rgba(0,30,45,.6),0 0 26px rgba(34,211,238,.18); }
+
+/* =====================================================================
+   WOOD ELVES — planked oak, carved green frame, gold beading, leaves
+   ===================================================================== */
+[data-theme="wood-elves"]{
+  --mf-bg-void:#1a2213; --mf-bg-deep:#243016; --mf-surface:#3a3a22;
+  --mf-surface-raised:rgba(64,72,40,.5); --mf-surface-glass:#2f3a1f;
+  --mf-border-soft:rgba(120,150,70,.4); --mf-border-cyan:rgba(150,180,90,.45);
+  --mf-text:#ece4c8; --mf-text-muted:rgba(236,228,200,.66);
+  --mf-parchment:#c9b676;
+  --mf-accent:#c9a24a; --mf-accent-soft:rgba(201,162,74,.2);
+  --mf-hp-high:#6f9a30; --mf-hp-low:#c9a227;
+  --mf-mat-surface:url("../textures/wood-tex.jpg");
+  --mf-mat-frame:url("../textures/wood-frame.png");
+  --mf-mat-frame-slice:50; --mf-mat-frame-width:16px;
+}
+
+/* =====================================================================
+   DIVINE RADIANCE — white marble, gold frame, radiant sunburst (LIGHT)
+   ===================================================================== */
+[data-theme="divine"]{
+  --mf-bg-void:#2b2d3a; --mf-bg-deep:#e3e9f1; --mf-surface:#f4f1e8;
+  --mf-surface-raised:rgba(255,255,255,.66); --mf-surface-glass:#f7f4ec;
+  --mf-border-soft:rgba(196,160,70,.4); --mf-border-cyan:rgba(196,160,70,.55);
+  --mf-text:#2b2d3a; --mf-text-muted:rgba(43,45,58,.6);
+  --mf-parchment:#c8a13a;
+  --mf-accent:#c8a13a; --mf-accent-soft:rgba(200,161,58,.18);
+  --mf-hp-high:#3a9bd6; --mf-hp-low:#e0c24a;
+  --mf-mat-surface:url("../textures/marble.jpg");
+  --mf-mat-overlay:url("../textures/halo.png");
+  --mf-mat-frame:url("../textures/gold-frame.png");
+  --mf-mat-frame-slice:48; --mf-mat-frame-width:14px;
+}
+[data-theme="divine"] .mf-themed{ box-shadow:inset 0 0 50px rgba(255,240,200,.5),0 0 30px rgba(255,220,140,.35); }
+
+/* =====================================================================
+   BONE & SHADOW — gravestone, bone frame (skulls + femurs), green sigil
+   ===================================================================== */
+[data-theme="necromancer"]{
+  --mf-bg-void:#070709; --mf-bg-deep:#0d0d10; --mf-surface:#16161a;
+  --mf-surface-raised:#1d1d22; --mf-surface-glass:rgba(18,18,22,.9);
+  --mf-border-soft:rgba(150,200,150,.18); --mf-border-cyan:rgba(120,224,140,.35);
+  --mf-text:#dcd8c8; --mf-text-muted:rgba(220,216,200,.55);
+  --mf-parchment:#b8b49c;
+  --mf-accent:#7fe08a; --mf-accent-soft:rgba(127,224,138,.16);
+  --mf-hp-high:#7fe08a; --mf-hp-low:#4a7a4a;
+  --mf-mat-surface:url("../textures/gravestone.jpg");
+  --mf-mat-overlay:url("../textures/necro-sigil.png");
+  --mf-mat-frame:url("../textures/bone-frame.png");
+  --mf-mat-frame-slice:70; --mf-mat-frame-width:22px; --mf-mat-frame-repeat:round;
+}
+[data-theme="necromancer"] .mf-themed{ background-size:56%,cover; }
+
+/* =====================================================================
+   HIGH CONTRAST — accessibility (no texture)
+   ===================================================================== */
+[data-theme="high-contrast"]{
+  --mf-bg-void:#000; --mf-bg-deep:#000; --mf-surface:#0a0a0a; --mf-surface-raised:#161616;
+  --mf-surface-glass:#0a0a0a; --mf-surface-ink:#000;
+  --mf-border-soft:#fff; --mf-border-cyan:#ffd400;
+  --mf-text:#fff; --mf-text-muted:#d6d6d6; --mf-parchment:#ffd400;
+  --mf-accent:#ffd400; --mf-accent-soft:rgba(255,212,0,.2);
+  --mf-hp-high:#00e000; --mf-hp-low:#ffd400;
+}
+[data-theme="high-contrast"] .mf-themed{ border:3px solid #fff !important; box-shadow:none !important; background:#000 !important; }
