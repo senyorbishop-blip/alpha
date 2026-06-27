@@ -36,6 +36,8 @@ from server.handlers.combat import (
 )
 from server.handlers.hazards import _process_hazard_triggers_for_token
 from server.handlers.token_move_performance import decide_token_move_heavy_work, mark_token_move_heavy_work_ran
+from server.handlers.move_coalescer import schedule_token_move_flush
+from server.handlers.durability import mark_session_dirty
 from server.handlers.content import handle_discovery_trigger
 from server.handlers.narration import broadcast_narration_hook
 from server.ambient_audio import normalize_ambient_profile
@@ -552,21 +554,41 @@ async def handle_token_move(payload: dict, session: Session, user: User):
     token.x = new_x
     token.y = new_y
 
-    # Stamp the same visibility/position revision counter that tokens_sync uses,
-    # so out-of-order token_moved deliveries (the highest-frequency message in the
-    # system) can be dropped client-side instead of rubber-banding a token back
-    # to a stale position.
-    move_revision = bump_visibility_revision(session)
-    token_state_revision = await _broadcast_token_event(manager, session, "token_moved", {
-        "token_id": token_id,
-        "x": token.x,
-        "y": token.y,
-        "moved_by": user.name,
-        "visibility_revision": move_revision,
-    }, token, exclude_user=user.id)
+    # The token_moved fan-out is the highest-frequency message in the system: a
+    # single drag emits dozens of frames per second. Coalesce repeated moves of
+    # the same token into one broadcast per ~50ms window, carrying only the
+    # final position, with BOTH revision bumps (visibility + token_state)
+    # happening once at flush time. The synchronous state mutation, validation,
+    # and the mover's own ack below all stay immediate. Clients still drop
+    # stale/out-of-order token_moved events because the counters remain
+    # monotonic (one bump per flush). With MOVE_COALESCE_WINDOW_MS=0 this sends
+    # immediately, reproducing the legacy one-broadcast-per-frame behavior.
+    immediate_token_state_revision = await schedule_token_move_flush(
+        session, token,
+        lambda: {
+            "token_id": token_id,
+            "x": token.x,
+            "y": token.y,
+            "moved_by": user.name,
+            # Read at flush time, after the visibility bump, so the coalesced
+            # broadcast carries the final monotonic revision (the same value
+            # _broadcast_token_event re-stamps). Clients drop stale moves off it.
+            "visibility_revision": int(getattr(session, "visibility_revision", 0) or 0),
+        },
+        exclude_user=user.id,
+    )
+    # Ack with the synchronously-known position. Report the revisions only as
+    # actually broadcast: the immediate (disabled-window) value when we sent
+    # now, otherwise the session's current already-broadcast revisions — never a
+    # future revision that the coalesced flush has not emitted yet.
+    if immediate_token_state_revision is not None:
+        ack_token_state_revision = immediate_token_state_revision
+    else:
+        ack_token_state_revision = int(getattr(session, "token_state_revision", 0) or 0)
+    move_revision = int(getattr(session, "visibility_revision", 0) or 0)
     await _send_action_ack(session, user, action="token_move", client_action_id=client_action_id,
                             status="confirmed", token_id=token_id, visibility_revision=move_revision,
-                            token_state_revision=token_state_revision, client_move_seq=move_seq)
+                            token_state_revision=ack_token_state_revision, client_move_seq=move_seq)
     if not heavy_decision.run_heavy_work:
         return
     mark_token_move_heavy_work_ran(session, token, map_context=getattr(token, "map_context", "world"))
@@ -788,6 +810,7 @@ async def handle_token_hp_update(payload: dict, session: Session, user: User):
          "corpse_state": corpse_state_payload}, token)
     if combat_changed:
         await _broadcast_combat(session)
+    mark_session_dirty(session)
     await save_campaign_async(session)
 
 

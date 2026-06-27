@@ -25,6 +25,7 @@ from server.handlers.common import (
     _broadcast_token_event,
 )
 from server.movement import resolve_movement, normalize_movement_mode
+from server.handlers.durability import mark_session_dirty
 
 logger = logging.getLogger(__name__)
 
@@ -1039,6 +1040,7 @@ async def handle_combat_next(payload: dict, session: Session, user: User):
         await _process_end_round_hazards(session, round_number=prev_round)
     await _process_current_start_turn_hazards(session)
     _bump_combat_revision(session, "next_turn")
+    mark_session_dirty(session)
     await save_campaign_async(session)
     await _broadcast_combat(session)
 

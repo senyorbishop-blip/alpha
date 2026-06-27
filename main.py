@@ -32,6 +32,8 @@ from server.paths import DATA_DIR, DB_PATH, MAPS_DIR, BACKUPS_DIR, ensure_data_d
 from server.connections import manager
 from server.handlers import handle_message
 from server.handlers.common import build_live_state_debug_summary
+from server.handlers.move_coalescer import cancel_session_flushes
+from server.handlers.durability import mark_session_dirty, flush_session_durability
 from server.auth.models import init_auth_db, merge_legacy_users_from_db
 from server.auth.dependencies import install_auth_runtime
 from server.auth.routes import router as auth_router
@@ -851,6 +853,13 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str, user_id: str
                     "log": leave_log,
                 }
             })
+        # When the last connection for this session is gone, tear down its
+        # deferred timers: cancel pending move flushes (so no late send fires
+        # against a dead session), then flush the debounced durability save once
+        # synchronously so the final ~2s window isn't lost on clean shutdown.
+        if not manager.get_session_connections(session_id):
+            cancel_session_flushes(session_id)
+            await flush_session_durability(session)
     finally:
         heartbeat_handle.cancel()
         if autosave_handle is not None:
@@ -907,6 +916,7 @@ async def api_generate_loot(request: Request):
     if not applied:
         return JSONResponse({"error": f"Prop '{chest_id}' not found in session."}, status_code=404)
 
+    mark_session_dirty(session)
     await save_campaign_async(session)
 
     # Broadcast updated props so every connected client sees refreshed chest contents.
@@ -994,6 +1004,7 @@ async def api_chest_add_loot(chest_id: str, request: Request):
             status_code=404,
         )
 
+    mark_session_dirty(session)
     await save_campaign_async(session)
 
     # Broadcast updated props so every connected client sees the refreshed chest.
