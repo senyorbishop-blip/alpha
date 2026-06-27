@@ -1528,12 +1528,6 @@
   <!-- PLAYER: draggable quick bar (shown only for player role) -->
   <div id="rp-quickbar">
     <div class="drag" id="rp-qb-drag" title="Drag to move">⠿</div>
-    <div class="qb-hp">
-      <div class="num" id="rp-qb-hp-num">—</div>
-      <div class="mini"><i id="rp-qb-hp-bar" style="width:100%"></i></div>
-      <div class="lab">HP</div>
-    </div>
-    <div class="qb-sep"></div>
     <div id="rp-qb-actions"><!-- populated by subscribePlayerQuickActions() --></div>
     <div class="qb-sep"></div>
     <button class="qb-btn" onclick="combatDash()"><span class="g">⇉</span>Dash</button>
@@ -20653,13 +20647,7 @@ function renderMyCharacterTab() {
       </div>
     </div>` : ''}
 
-    <div class="mychar-footer">
-      <span class="mychar-conn-dot" id="mychar-conn-dot"></span>
-      <span id="mychar-conn-label">Connecting…</span>
-      <span class="mychar-footer-signal" aria-hidden="true">▮▮▮</span>
-    </div>`;
-
-  _myCharSyncConnection();
+    <button class="mychar-book-cta" type="button" onclick="openCharacterBook()">📖 Open character book ▸</button>`;
 }
 
 function _myCharSyncConnection() {
@@ -38246,8 +38234,8 @@ function _rpRollMyInitiative() {
 
 /* ---- Player MODES ---- */
 const PLAYER_MODES = [
-  { id: 'turn',      gly: '⚔', label: 'My Turn',   tabs: [['combat','Turn'],['party','Party'],['log','Log']] },
   { id: 'character', gly: '🛡', label: 'Character', tabs: [['sheet','Sheet'],['spells','Spells']] },
+  { id: 'turn',      gly: '⚔', label: 'My Turn',   tabs: [['combat','Turn'],['party','Party'],['log','Log']] },
   { id: 'inventory', gly: '🎒', label: 'Pouch',     tabs: [['items','Items'],['gold','Gold']] },
   { id: 'social',    gly: '🗣', label: 'Social',    tabs: [['chat','Chat'],['quests','Quests']] },
 ];
@@ -38257,6 +38245,52 @@ const VIEWER_MODES = [
   { id: 'watch',  gly: '📺', label: 'Watch',  tabs: [['party','Party'],['init','Initiative']] },
   { id: 'react',  gly: '🗣', label: 'React',  tabs: [['chat','Chat'],['polls','Polls']] },
 ];
+
+
+function _rpMyCharacterHeroHtml() {
+  const c = (_charSheet && typeof _charSheet === 'object') ? _charSheet : {};
+  const book = (c.book && typeof c.book === 'object') ? c.book : {};
+  const snap = (typeof getActivePlayerCharacterSnapshot === 'function') ? getActivePlayerCharacterSnapshot() : {};
+  const name = snap.name || c.name || book.name || NAME || 'Adventurer';
+  const level = parseInt(c.totalLevel ?? c.level ?? book.level, 10) || 1;
+  const className = ((Array.isArray(c.classes) ? c.classes : []).map(x => x && x.name).filter(Boolean).join(' / ')) || c.className || book.className || '';
+  const subclass = ((Array.isArray(c.classes) ? c.classes : []).map(x => x && x.subclass).filter(Boolean).join(' / ')) || c.subclass || book.subclass || '';
+  const race = c.species || c.race || book.species || book.race || '';
+  const portrait = String(c.avatarUrl || book.avatarUrl || c.tokenImageUrl || '').trim();
+  const classLine = [`Level ${level}`, race, className].filter(Boolean).join(' · ') || 'Adventurer';
+  const curHp = Number.isFinite(snap.currentHp) ? snap.currentHp : parseInt(c.currentHp ?? c.hp, 10);
+  const maxHp = Number.isFinite(snap.maxHp) ? snap.maxHp : parseInt(c.maxHp ?? c.max_hp, 10);
+  const tempHp = Math.max(0, parseInt(snap.tempHp ?? c.tempHp, 10) || 0);
+  const hasHp = Number.isFinite(curHp) && Number.isFinite(maxHp) && maxHp > 0;
+  const hpPct = hasHp ? Math.max(0, Math.min(100, Math.round(curHp / maxHp * 100))) : 0;
+  const hpClass = hpPct > 50 ? '' : (hpPct > 25 ? 'mid' : 'low');
+  const ac = Number.isFinite(snap.ac) ? snap.ac : parseInt(c.ac, 10);
+  const init = Number.isFinite(snap.initiative) ? snap.initiative : (parseInt(c.initiative, 10) || 0);
+  const speed = Number.isFinite(snap.speed) ? snap.speed : parseInt(c.speed, 10);
+  const passive = parseInt(c.passivePerception ?? book.passivePerception, 10);
+  const inspiration = String(c.inspiration ?? book.inspiration ?? '').trim();
+  const hasInspiration = inspiration && !/^(0|no|none|false)$/i.test(inspiration);
+  const myTok = typeof _getMyOwnedToken === 'function' ? _getMyOwnedToken() : null;
+  const condIds = Array.isArray(myTok?.conditions) ? myTok.conditions.filter(Boolean) : [];
+  const chips = condIds.map(id => { const meta = CONDITIONS_MAP[id] || { icon:'✦', name:id, color:'#00e5cc' }; return `<span class="rp-char-chip" style="border-color:${meta.color}66;background:${meta.color}1f"><span>${escapeHtml(meta.icon)}</span>${escapeHtml(meta.name)}</span>`; });
+  const concSpell = (typeof _getActiveConcentrationSpellName === 'function') ? _getActiveConcentrationSpellName() : '';
+  if (concSpell && !condIds.some(id => String(id).toLowerCase() === 'concentrating')) chips.push('<span class="rp-char-chip concentration"><span>🔮</span>Concentration</span>');
+  const quest = (typeof _myCharActiveQuest === 'function') ? _myCharActiveQuest() : null;
+  const disc = (typeof _myCharLatestDiscovery === 'function') ? _myCharLatestDiscovery() : null;
+  const portraitInner = portrait ? `<img src="${escapeHtml(portrait)}" alt="Portrait of ${escapeHtml(name)}" loading="lazy">` : `<span>${escapeHtml(String(name).slice(0,1).toUpperCase() || 'A')}</span>`;
+  const questBody = quest ? `<strong>${escapeHtml(quest.title || 'Untitled quest')}</strong><span>${escapeHtml(String(quest.summary || quest.description || 'Follow the next objective in your journal.'))}</span>` : '<strong>No active quest</strong><span>Your next objective will appear here when the DM shares one.</span>';
+  const discBody = disc ? `<strong>${escapeHtml(disc.title || 'New discovery')}</strong><span>${escapeHtml(String(disc.body || disc.summary || 'A recent clue has been added to your journal.'))}</span>` : '<strong>No latest discovery</strong><span>Private clues, handouts, and notes will surface here.</span>';
+  return `<div class="rp-char-hero">
+    <div class="rp-char-identity"><div class="rp-char-portrait">${portraitInner}</div><div class="rp-char-nameblock"><h3>${escapeHtml(name)}</h3><p>${escapeHtml(classLine)}</p>${subclass ? `<em>${escapeHtml(subclass)}</em>` : ''}</div><button class="rp-char-gear" type="button" onclick="openCharacterBook()" title="Open character book">⚙</button></div>
+    <div class="rp-char-hp"><div class="rp-char-hp-head"><span>HP</span><b>${hasHp ? curHp : '—'} <small>/ ${hasHp ? maxHp : '—'}</small></b><i></i><div class="rp-char-temp"><span>Temp HP</span><strong>${tempHp}</strong></div></div><div class="rp-char-hp-bar"><u class="${hpClass}" style="width:${hpPct}%"></u></div></div>
+    <div class="rp-char-stats"><div><span>AC</span><b>${Number.isFinite(ac) ? ac : '—'}</b></div><div><span>Initiative</span><b>${formatSignedSummaryValue(init)}</b></div><div><span>Speed</span><b>${_myCharFmtSpeed(speed)}</b></div></div>
+    <div class="rp-char-stats secondary"><div><span>Passive Perception</span><b>${Number.isFinite(passive) && passive > 0 ? passive : '—'}</b></div><div><span>Inspiration</span><b class="insp ${hasInspiration ? '' : 'off'}">◆</b></div></div>
+    <div class="rp-char-conditions"><label>Conditions</label><div>${chips.length ? chips.join('') : '<span class="rp-char-chip empty">None active</span>'}</div></div>
+  </div>
+  <div class="rp-lore-card quest"><div class="k">Active Quest</div><div class="row"><span class="art">▧</span><p>${questBody}</p><span class="mark">◇</span></div></div>
+  <div class="rp-lore-card discovery"><div class="k">Latest Discovery</div><div class="row"><span class="art">📜</span><p>${discBody}</p></div></div>
+  <button class="rp-char-book-cta" type="button" onclick="openCharacterBook()">📖 Open character book ▸</button>`;
+}
 
 /* ---- Player context renders ---- */
 function _renderPlayerMode(modeId, subTab) {
@@ -38379,10 +38413,8 @@ function _renderPlayerMode(modeId, subTab) {
       </div>` : `<div class="rp-empty">No spells loaded.</div>`, '',
         "typeof switchRTab==='function'&&_rpOpenPanelView('spelllib')", 'Manage');
     } else {
-      // 'sheet' sub-tab — open-book shortcut + live stats from the sheet.
-      html += _rpBlock('Open full sheet',
-        `<div style="padding:.6rem"><button class="rp-action go" style="width:100%;justify-content:center;" onclick="typeof toggleSheet==='function'&&toggleSheet()">📖 Open character book ▸</button></div>`,
-        'rp-card glow');
+      // 'sheet' sub-tab — premium hero summary first, secondary stats below.
+      html += _rpMyCharacterHeroHtml();
       const mods = (typeof _getCharacterModifiersForDice === 'function') ? _getCharacterModifiersForDice() : {};
       const scores = [['STR','str'],['DEX','dex'],['CON','con'],['INT','int'],['WIS','wis'],['CHA','cha']];
       html += _rpBlock('Ability scores', `<div class="rp-stools" style="grid-template-columns:repeat(3,1fr);padding:.55rem">
@@ -38720,8 +38752,8 @@ window.initRolePanels = function initRolePanels() {
 
     _mountQbDrag();
     subscribePlayerQuickActions();
-    window._rpPlayerMode = 'turn';
-    _renderPlayerMode('turn');
+    window._rpPlayerMode = 'character';
+    _renderPlayerMode('character');
     _refreshPlayerHpBar();
 
     // Map-first grid is applied by role-panels.css via body[data-role]. The canvas

@@ -322,7 +322,23 @@
   margin-top: 0.2rem;
 }
 
-/* ── Footer connection ── */
+/* Legacy connection footer intentionally unused in the player character card; top-bar sync remains the source of truth. */
+.mychar-book-cta {
+  width: 100%;
+  min-height: 2.25rem;
+  border: 1px solid rgba(0, 229, 204, 0.44);
+  border-radius: 11px;
+  background: linear-gradient(180deg, rgba(0, 229, 204, 0.14), rgba(0, 80, 72, 0.18));
+  color: #8ff7ec;
+  font-family: 'Cinzel', serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.mychar-book-cta:hover { background: linear-gradient(180deg, rgba(0, 229, 204, 0.22), rgba(0, 80, 72, 0.22)); }
+
 .mychar-footer {
   display: flex;
   align-items: center;
