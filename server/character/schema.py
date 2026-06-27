@@ -285,7 +285,12 @@ def normalize_character_document(raw: Any) -> dict:
     # these to keep parsed combat values playable.
     import_meta = src.get("importMeta") if isinstance(src.get("importMeta"), dict) else {}
     import_origin = str(import_meta.get("origin") or import_meta.get("source") or "").strip().lower()
-    if source_mode in {"dndbeyond", "dndbeyond_pdf", "pdf"} or "pdf" in import_origin:
+    is_import_source = (
+        source_mode in {"dndbeyond", "dndbeyond_json", "dndbeyond_pdf", "pdf"}
+        or "pdf" in import_origin
+        or "dndbeyond" in import_origin
+    )
+    if is_import_source:
         for key in (
             "maxHP",
             "currentHP",
@@ -295,8 +300,34 @@ def normalize_character_document(raw: Any) -> dict:
             "proficiencyBonus",
             "defenses",
             "passives",
+            # Imported reconciliation values the AC/HP resolver compares against
+            # the native calculation. Dropping these silently reverts imported
+            # AC/HP back to the calculated value on the next normalize.
+            "importedAc",
+            "importedMaxHp",
+            "importedCurrentHp",
+            "importedTempHp",
+            "importedHitDice",
+            "importedCustomModifiers",
         ):
             if key in src:
                 base[key] = _clone(src.get(key))
+
+    # AC/HP reconciliation choices (selected mode, manual override, review
+    # status, rolled HP) are player/DM decisions that must survive every
+    # normalize regardless of source mode. Otherwise an approved imported PDF
+    # AC/HP "revokes back" to the auto-resolved value the next time the sheet
+    # is reopened or synced.
+    for key in (
+        "acSelectedMode",
+        "acReviewStatus",
+        "acManualOverride",
+        "hpSelectedMode",
+        "hpReviewStatus",
+        "hpManualOverride",
+        "hpPerLevelRolls",
+    ):
+        if key in src:
+            base[key] = _clone(src.get(key))
 
     return base

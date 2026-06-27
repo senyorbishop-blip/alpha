@@ -24,6 +24,11 @@ from server.item_compendium import merge_compendium_metadata
 
 _RESOLVER_VERSION = 1
 
+# Source modes that carry imported AC/HP values worth preferring over the
+# native calculation until a player/DM explicitly reconciles them. Covers both
+# the D&D Beyond PDF export and the D&D Beyond JSON import paths.
+_IMPORTED_SOURCE_MODES = {"pdf", "dndbeyond", "dndbeyond_json", "dndbeyond_pdf"}
+
 
 def _clone(value: Any) -> Any:
     return copy.deepcopy(value)
@@ -422,7 +427,7 @@ def resolveHitPointsRuntime(characterDocument: dict[str, Any], *, base_hp: dict[
         mode, final = "imported_pdf", imported_max
     elif selected == "average":
         mode, final = "average", avg
-    elif imported_max and imported_max != avg and str(doc.get("sourceMode") or "").lower() in {"pdf", "dndbeyond_pdf"}:
+    elif imported_max and imported_max != avg and str(doc.get("sourceMode") or "").lower() in _IMPORTED_SOURCE_MODES:
         mode, final = "imported_pdf", imported_max
     else:
         mode, final = "average", avg
@@ -630,7 +635,7 @@ def _resolve_ac_audit(
         final_value = imported_ac
     elif selected_mode == "calculated":
         final_value = calculated_value
-    elif imported_ac and imported_ac != calculated_value and (missing_data or str(document.get("sourceMode") or "").lower() in {"pdf", "dndbeyond_pdf"}):
+    elif imported_ac and imported_ac != calculated_value and (missing_data or str(document.get("sourceMode") or "").lower() in _IMPORTED_SOURCE_MODES):
         selected_mode = "imported_pdf"
         final_value = imported_ac
     else:

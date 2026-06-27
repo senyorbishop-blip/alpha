@@ -658,3 +658,44 @@ def test_schema_preserves_pdf_import_source_mode():
     normalized = resolve_runtime(doc)["document"]
 
     assert normalized["sourceMode"] == "dndbeyond_pdf"
+
+
+def test_imported_ac_hp_survive_normalize_round_trip():
+    """A D&D Beyond PDF import must not lose its imported AC/HP or selected mode
+    when the document is re-normalized (e.g. reopened or synced). Regression for
+    AC 'revoking back' to the calculated value for PDF importers."""
+    doc = default_character_document()
+    doc["sourceMode"] = "pdf"
+    doc["classes"] = [{"classId": "wizard", "name": "Wizard", "level": 1}]
+    doc["abilities"]["scores"] = {"str": 10, "dex": 14, "con": 10, "int": 16, "wis": 12, "cha": 10}
+    # Imported sheet had armour/bonuses Alpha cannot recompute, so imported AC/HP
+    # differ from the native calculation.
+    doc["ac"] = 18
+    doc["importedAc"] = 18
+    doc["maxHP"] = 30
+    doc["importedMaxHp"] = 30
+    doc["importedCurrentHp"] = 30
+
+    normalized = resolve_runtime(doc)["document"]
+
+    assert normalized["importedAc"] == 18
+    assert normalized["importedMaxHp"] == 30
+    runtime = resolve_runtime(normalized)["runtime"]["characterSheetRuntime"]
+    assert runtime["ac"]["value"] == 18
+    assert runtime["hp"]["max"] == 30
+
+
+def test_approved_imported_mode_persists_through_normalize():
+    """Once a player/DM approves the imported AC/HP, the selected mode and
+    manual overrides must survive normalization regardless of source mode."""
+    doc = default_character_document()
+    doc["sourceMode"] = "pdf"
+    doc["acSelectedMode"] = "imported_pdf"
+    doc["ac"] = 17
+    doc["importedAc"] = 17
+    doc["hpManualOverride"] = 25
+
+    normalized = resolve_runtime(doc)["document"]
+
+    assert normalized["acSelectedMode"] == "imported_pdf"
+    assert normalized["hpManualOverride"] == 25
