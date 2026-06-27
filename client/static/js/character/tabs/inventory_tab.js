@@ -52,6 +52,60 @@
     return direct;
   }
 
+  function _qty(item) {
+    return Math.max(1, parseInt(item && (item.qty || item.quantity || item.count) || 1, 10) || 1);
+  }
+
+  function _weight(item) {
+    const explicit = Number(item && (item.weight_lbs || item.weight || item.unit_weight_lbs));
+    if (Number.isFinite(explicit) && explicit >= 0) return explicit;
+    const name = String(item && item.name || '').toLowerCase();
+    if (name.indexOf('rope') >= 0) return 10;
+    if (name.indexOf('potion') >= 0) return 0.5;
+    if (name.indexOf('quarterstaff') >= 0 || name.indexOf('staff') >= 0) return 4;
+    if (name.indexOf('backpack') >= 0) return 5;
+    return 0;
+  }
+
+  function _fmtWeight(value) {
+    const n = Number(value) || 0;
+    return (Math.round(n * 10) / 10).toString().replace(/\.0$/, '') + ' lb';
+  }
+
+  function _requiresAttunement(item) {
+    return !!(item && (item.attunement_required || item.requires_attunement || item.requiresAttunement));
+  }
+
+  function _isContainer(item) {
+    return !!(item && (item.is_container || item.extradimensional || item.capacity_lbs || Array.isArray(item.bag_contents)));
+  }
+
+  function _containerContentsWeight(item) {
+    return (Array.isArray(item && item.bag_contents) ? item.bag_contents : []).reduce(function (sum, row) {
+      return sum + (_weight(row) * _qty(row));
+    }, 0);
+  }
+
+  function _containerCapacity(item) {
+    return Math.max(0, Number(item && item.capacity_lbs) || (item && item.extradimensional ? 500 : 0));
+  }
+
+  function _containerLabel(item) {
+    const bag = String(item && (item.container_name || item.container || item.location || '') || '').trim();
+    return bag ? 'In ' + bag : '';
+  }
+
+  function _sendInventoryWs(type, payload) {
+    if (typeof global.sendWS === 'function') global.sendWS({ type: type, payload: payload || {} });
+  }
+
+  function _actionButton(action, label, index, extraAttrs) {
+    const attrs = Object.assign({ 'data-item-action': action, 'data-item-index': String(index) }, extraAttrs || {});
+    return '<button type="button" class="cs-feature-inspect" ' + Object.keys(attrs).map(function (key) {
+      return _esc(key) + '="' + _esc(attrs[key]) + '"';
+    }).join(' ') + '>' + _esc(label) + '</button>';
+  }
+
   function _equippableItems(items) {
     return (Array.isArray(items) ? items : []).filter(function (item) {
       return ['weapon', 'armor', 'shield'].includes(_itemKind(item));
@@ -64,23 +118,12 @@
     });
   }
 
-  function _renderBackpack(items) {
-    const backpack = _backpackItems(items).slice(0, 10);
-    if (!backpack.length) {
-      return '<div class="cs-action-section"><div class="cs-action-section-title">Backpack</div><div class="cs-empty-state compact"><span>No backpack items found. Imported non-equipped gear will appear here when supported.</span></div></div>';
-    }
-    return '<div class="cs-action-section"><div class="cs-action-section-title">Backpack</div><div class="cs-overview-list">' + backpack.map(function (item) {
-      const qty = parseInt(item && (item.quantity || item.qty || item.count) || 0, 10);
-      const note = [qty > 1 ? ('Qty ' + qty) : '', item && (item.notes || item.description || item.category || item.item_type) || ''].filter(Boolean).join(' • ');
-      return '<div class="cs-overview-row"><strong>' + _esc(item && item.name || 'Item') + '</strong><span>' + _esc(note) + '</span></div>';
-    }).join('') + '</div></div>';
-  }
-
   function _renderAttunement(items) {
-    const attuned = (Array.isArray(items) ? items : []).filter(function (item) { return !!(item && (item.attuned || item.requires_attunement || item.attunement)); });
-    const count = attuned.filter(function (item) { return !!(item && item.attuned); }).length;
-    const label = attuned.length ? (String(count) + ' attuned / ' + String(attuned.length) + ' attunement-capable') : 'No attunement items found';
-    return '<div class="cs-action-section"><div class="cs-action-section-title">Attunement</div><div class="cs-feature-section-copy">' + _esc(label) + '</div></div>';
+    const capable = (Array.isArray(items) ? items : []).map(function (item, idx) { return { item: item, originalIndex: idx }; }).filter(function (entry) { return _requiresAttunement(entry.item); });
+    const count = capable.filter(function (entry) { return !!(entry && entry.item && entry.item.attuned); }).length;
+    return '<div class="cs-action-section"><div class="cs-action-section-title">Attunement ' + _esc(String(count)) + '/3</div>' +
+      (capable.length ? capable.map(function (entry) { return _renderItem(entry.item, entry.originalIndex, { compact: true }); }).join('') : '<div class="cs-empty-state compact"><span>No attunement items found.</span></div>') +
+      '</div>';
   }
 
   function _categoryForItem(item) {
@@ -255,16 +298,44 @@
     return attunementWarn + chargeRow + (pieces.length ? '<div class="cs-combat-chip-row" style="margin-top:0.45rem;flex-wrap:wrap;">' + pieces.join('') + '</div>' : '');
   }
 
-  function _renderItem(item, itemIndex) {
+  function _renderItem(item, itemIndex, opts) {
+    opts = opts || {};
     const equipped = Boolean(item.equipped);
     const meta = _itemMeta(item);
     const name = item.name || 'Item';
+    const needsAttune = _requiresAttunement(item);
+    const chargesMax = Number(item.charges_max || item.uses_max || (item.charges && item.charges.max) || 0) || 0;
+    const chargesCur = Number(item.charges_current || item.uses_current || (item.charges && item.charges.current) || 0) || 0;
+    const badges = [
+      equipped ? '<span class="item-row-badge item-row-badge-equipped">Equipped</span>' : '',
+      needsAttune ? '<span class="item-row-badge">Requires Attunement</span>' : '',
+      item.attuned ? '<span class="item-row-badge">Attuned</span>' : '',
+      chargesMax > 0 ? '<span class="item-row-badge">Charges ' + _esc(String(chargesCur)) + '/' + _esc(String(chargesMax)) + '</span>' : '',
+      _containerLabel(item) ? '<span class="item-row-badge">' + _esc(_containerLabel(item)) + '</span>' : '',
+    ].filter(Boolean).join('');
+    const useable = !!(item.grants_action || item.consumable || item.healing_formula || chargesMax > 0);
+    const buttons = [
+      _actionButton('inspect', 'Inspect', itemIndex),
+      ['weapon', 'armor', 'shield'].includes(_itemKind(item)) ? _actionButton(equipped ? 'unequip' : 'equip', equipped ? 'Unequip' : 'Equip', itemIndex) : '',
+      needsAttune ? _actionButton(item.attuned ? 'unattune' : 'attune', item.attuned ? 'Unattune' : 'Attune', itemIndex) : '',
+      useable ? _actionButton('use', 'Use', itemIndex) : '',
+      !_isContainer(item) ? _actionButton('move', 'Move', itemIndex) : '',
+      _actionButton('drop', 'Drop', itemIndex),
+      _isContainer(item) ? _actionButton('open-container', 'Open', itemIndex) : '',
+    ].filter(Boolean).join('');
+    const metaBits = [
+      meta,
+      _fmtWeight(_weight(item)) + ' each',
+      'Qty ' + _qty(item),
+      item.item_type || item.category || item.equipment_kind || '',
+    ].filter(Boolean).join(' • ');
     const row = window.ItemRow.renderItemRow(item, {
-      mode: 'inventory',
+      mode: 'view',
       rowClassName: 'cs-inv-item',
       dataset: { itemIndex: String(itemIndex) },
       equipped,
-      noteHtml: meta ? `<div class="cs-summary-note" style="margin-top:0.18rem;">${_esc(meta)}</div>` : '',
+      noteHtml: `<div class="cs-summary-note" style="margin-top:0.18rem;">${_esc(metaBits)}</div>`,
+      extraBadgesHtml: badges ? '<div class="cs-combat-chip-row" style="margin-top:0.35rem;flex-wrap:wrap;">' + badges + '</div>' : '',
       equip: {
         className: `cs-inv-equip-btn${equipped ? ' equipped' : ''}`,
         attrs: {
@@ -275,9 +346,34 @@
       },
     });
     row.style.display = 'block';
+    if (buttons) row.insertAdjacentHTML('beforeend', '<div class="cs-combat-chip-row" style="margin-top:0.45rem;flex-wrap:wrap;">' + buttons + '</div>');
     const equippedActionsHtml = _renderEquippedActions(item, itemIndex);
     if (equippedActionsHtml) row.insertAdjacentHTML('beforeend', equippedActionsHtml);
     return row.outerHTML;
+  }
+
+  function _renderSection(title, items, empty) {
+    return '<div class="cs-action-section"><div class="cs-action-section-title">' + _esc(title) + '</div>' +
+      (items.length ? items.map(function (entry) { return _renderItem(entry.item, entry.originalIndex); }).join('') : '<div class="cs-empty-state compact"><span>' + _esc(empty || 'No items.') + '</span></div>') +
+      '</div>';
+  }
+
+  function _renderContainers(entries) {
+    return '<div class="cs-action-section"><div class="cs-action-section-title">Containers</div>' +
+      (entries.length ? entries.map(function (entry) {
+        const item = entry.item;
+        const fill = _containerContentsWeight(item);
+        const cap = _containerCapacity(item);
+        const pct = cap > 0 ? Math.min(100, Math.round((fill / cap) * 100)) : 0;
+        return '<div class="cs-inv-container-card">' + _renderItem(item, entry.originalIndex) +
+          '<div class="cs-summary-note">Bag weight: ' + _esc(_fmtWeight(_weight(item))) + ' • Contents: ' + _esc(_fmtWeight(fill)) + ' • Capacity: ' + _esc(cap ? _fmtWeight(cap) : '—') + '</div>' +
+          '<div style="height:8px;border-radius:999px;background:rgba(128,128,128,.18);overflow:hidden;margin:.35rem 0;"><div style="height:100%;width:' + _esc(String(pct)) + '%;background:var(--gold,#c9a227);"></div></div>' +
+          '<div class="cs-overview-list">' + (Array.isArray(item.bag_contents) && item.bag_contents.length ? item.bag_contents.map(function (row, ci) {
+            return '<div class="cs-overview-row"><strong>' + _esc(row.name || 'Item') + '</strong><span>' + _esc('Qty ' + _qty(row) + ' • ' + _fmtWeight(_weight(row) * _qty(row))) + '</span>' +
+              _actionButton('container-remove', 'Remove', entry.originalIndex, { 'data-content-index': String(ci) }) + '</div>';
+          }).join('') : '<div class="cs-empty-state compact"><span>Empty.</span></div>') + '</div></div>';
+      }).join('') : '<div class="cs-empty-state compact"><span>No containers found.</span></div>') +
+      '</div>';
   }
 
   function _gearFallbackItems(charData) {
@@ -439,6 +535,49 @@
       const chargeCost = parseInt(actionBtn.getAttribute('data-charge-cost') || '1', 10);
       const castLevel = parseInt(actionBtn.getAttribute('data-cast-level') || '0', 10);
 
+      if (action === 'equip' || action === 'unequip') {
+        _sendInventoryWs(action === 'equip' ? 'inventory_equip_item' : 'inventory_unequip_item', { item_index: Math.max(0, itemIndex) });
+        return;
+      }
+      if (action === 'attune' || action === 'unattune') {
+        _sendInventoryWs(action === 'attune' ? 'inventory_attune_item' : 'inventory_unattune_item', { item_index: Math.max(0, itemIndex) });
+        return;
+      }
+      if (action === 'use') {
+        _sendInventoryWs('inventory_use_item_action', { item_index: Math.max(0, itemIndex) });
+        return;
+      }
+      if (action === 'drop') {
+        _sendInventoryWs('inventory_remove_item', { item_index: Math.max(0, itemIndex), qty: 1 });
+        return;
+      }
+      if (action === 'move') {
+        const items = _inventorySourceItems(charData || {});
+        const containers = items.map(function (row, idx) { return { row: row, idx: idx }; }).filter(function (entry) { return _isContainer(entry.row); });
+        if (!containers.length) {
+          alert('No available containers found.');
+          return;
+        }
+        const choice = prompt('Move to container:\\n' + containers.map(function (entry, n) { return String(n + 1) + '. ' + (entry.row.name || 'Container'); }).join('\\n'), '1');
+        const chosen = containers[(parseInt(choice || '0', 10) || 0) - 1];
+        if (chosen) _sendInventoryWs('bag_add_item', { bag_index: chosen.idx, item_index: Math.max(0, itemIndex), qty: 1 });
+        return;
+      }
+      if (action === 'open-container') {
+        const card = actionBtn.closest('.cs-inv-container-card');
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      if (action === 'container-remove') {
+        const contentIndex = parseInt(actionBtn.getAttribute('data-content-index') || '-1', 10);
+        _sendInventoryWs('bag_remove_item', { bag_index: Math.max(0, itemIndex), content_index: Math.max(0, contentIndex), qty: 1 });
+        return;
+      }
+      if (action === 'inspect') {
+        alert(String(actionBtn.closest('.cs-inv-item')?.querySelector('.item-row-name')?.textContent || 'Item'));
+        return;
+      }
+
       if (action === 'attack' && actionId && typeof global.playerUseAction === 'function') {
         global.playerUseAction(actionSource, actionId);
         return;
@@ -481,42 +620,21 @@
 
     const currency = _liveCurrency(charData);
     const sourceItems = _inventorySourceItems(charData);
-    const inventory = _equippableItems(sourceItems);
-
-    if (!inventory.length) {
-      container.innerHTML = `${_renderCurrency(currency)}
-        <div class="cs-empty-state">
-          <span class="cs-empty-state-icon">🛡️</span>
-          <span>No equipped weapon found. Go to Inventory to equip one.</span>
-          <span class="cs-summary-note">Equipped weapons, armour, and shields appear here when the import or inventory has equippable gear.</span>
-        </div>
-        ${_renderBackpack(sourceItems)}
-        ${_renderAttunement(sourceItems)}`;
-      return;
-    }
-
-    const groups = {};
-    CATEGORY_ORDER.forEach(function (cat) { groups[cat] = []; });
-    inventory.forEach(function (item, i) {
-      const category = _categoryForItem(item);
-      groups[category].push({ item: item, originalIndex: i });
-    });
-
-    const sections = CATEGORY_ORDER.map(function (cat) {
-      const entries = groups[cat] || [];
-      if (!entries.length) return '';
-      return `<div class="cs-inv-category">
-        <div class="cs-inv-category-title">${_esc(cat)}</div>
-        ${entries.map(function (entry) { return _renderItem(entry.item, entry.originalIndex); }).join('')}
-      </div>`;
-    }).join('');
+    const entries = sourceItems.map(function (item, idx) { return { item: item, originalIndex: idx }; });
+    const equipped = entries.filter(function (entry) { return !!(entry.item && entry.item.equipped); });
+    const containers = entries.filter(function (entry) { return _isContainer(entry.item); });
+    const consumables = entries.filter(function (entry) { return !!(entry.item && (entry.item.consumable || entry.item.healing_formula || String(entry.item.item_type || '').toLowerCase() === 'potion')); });
+    const carried = entries.filter(function (entry) { return !entry.item?.equipped && !_isContainer(entry.item) && !entry.item?.container && !entry.item?.container_name; });
 
     container.innerHTML = `
       <div class="cs-action-section"><div class="cs-action-section-title">Currency</div>${_renderCurrency(currency) || '<div class="cs-empty-state compact"><span>No currency found.</span></div>'}</div>
-      <div class="cs-feature-section-copy" style="margin-bottom:0.65rem;">Inventory is grouped as Equipped, Backpack, Currency, and Attunement so the live play loadout is easy to scan without losing imported items.</div>
-      <div class="cs-action-section"><div class="cs-action-section-title">Equipped</div>${sections || '<div class="cs-empty-state compact"><span>No equipped weapon found. Go to Inventory to equip one.</span></div>'}</div>
-      ${_renderBackpack(sourceItems)}
+      <div class="cs-feature-section-copy" style="margin-bottom:0.65rem;">Inventory is grouped by Equipped, Attunement, Containers, Consumables, Carried Items, and All Items while reusing the live inventory websocket handlers.</div>
+      ${_renderSection('Equipped', equipped, 'No equipped items.')}
       ${_renderAttunement(sourceItems)}
+      ${_renderContainers(containers)}
+      ${_renderSection('Consumables', consumables, 'No consumables.')}
+      ${_renderSection('Carried Items', carried, 'No carried items.')}
+      ${_renderSection('All Items', entries, 'No inventory items.')}
     `;
 
     if (!container.__inventoryTabBound) {
