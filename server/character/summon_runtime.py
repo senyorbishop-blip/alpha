@@ -184,6 +184,64 @@ _TINKER_ARTILLERIST_ARC_CANNON = {
 }
 
 
+# Owned-animal pet stat blocks. Pets are static (not class-scaled): the numbers
+# below are the full combat profile, keyed by the pet summon template id.
+_PET_COMPANIONS = {
+    "pet-dog": {
+        "ac": 12,
+        "hp": 6,
+        "size": "medium",
+        "movement": {"walk": 40},
+        "senses": {},
+        "traits": ["Keen Smell"],
+        "color": "#c8a36b",
+        "emoji": "\U0001F415",
+        "actions": [
+            {"id": "bite", "name": "Bite", "classification": "attack", "range": "Melee 5 ft", "attackBonus": 3, "damage": {"formula": "1d6+1", "type": "piercing"}, "summary": "A trained bite; can knock a Medium or smaller target prone on a hit."}
+        ],
+    },
+    "pet-cat": {
+        "ac": 12,
+        "hp": 2,
+        "size": "tiny",
+        "movement": {"walk": 40, "climb": 30},
+        "senses": {},
+        "traits": ["Keen Smell"],
+        "color": "#9a9a9a",
+        "emoji": "\U0001F408",
+        "actions": [
+            {"id": "claws", "name": "Claws", "classification": "attack", "range": "Melee 5 ft", "attackBonus": 4, "damage": {"formula": "1", "type": "slashing"}, "summary": "A quick raking swipe."}
+        ],
+    },
+    "pet-bird": {
+        "ac": 12,
+        "hp": 1,
+        "size": "tiny",
+        "movement": {"walk": 10, "fly": 60},
+        "senses": {},
+        "traits": ["Keen Sight", "Flyby"],
+        "color": "#6fb3ff",
+        "emoji": "\U0001F985",
+        "actions": [
+            {"id": "talons", "name": "Talons", "classification": "attack", "range": "Melee 5 ft", "attackBonus": 5, "damage": {"formula": "1", "type": "slashing"}, "summary": "A diving talon strike; ideal for scouting and hit-and-run."}
+        ],
+    },
+    "pet-monkey": {
+        "ac": 12,
+        "hp": 3,
+        "size": "tiny",
+        "movement": {"walk": 30, "climb": 30},
+        "senses": {},
+        "traits": ["Nimble Escape"],
+        "color": "#b07a4b",
+        "emoji": "\U0001F412",
+        "actions": [
+            {"id": "bite", "name": "Bite", "classification": "attack", "range": "Melee 5 ft", "attackBonus": 4, "damage": {"formula": "1", "type": "piercing"}, "summary": "A cheeky bite; can also grab and carry small objects."}
+        ],
+    },
+}
+
+
 def _ability_mod(value: Any) -> int:
     return (_safe_int(value, 10) - 10) // 2
 
@@ -492,6 +550,75 @@ def resolve_warlock_familiar_actor(*, native_document: dict[str, Any], template:
             "shape": "circle",
             "image_url": str(template.get("imageUrl") or "").strip() or None,
             "fallbackEmoji": "🦇",
+        },
+    }
+
+
+def resolve_pet_actor(*, native_document: dict[str, Any], template: dict[str, Any], selected_variant: str, owner_user: User, profile_id: str) -> dict[str, Any]:
+    """Resolve an owned-animal pet actor.
+
+    Pets are not class-gated. The combat profile is static (read directly from
+    ``_PET_COMPANIONS``) rather than scaled from the owner's class/level.
+    """
+    pet = _PET_COMPANIONS.get(selected_variant)
+    if not isinstance(pet, dict):
+        raise ValueError("invalid_variant")
+
+    token_name = str(template.get("tokenName") or template.get("displayName") or "Pet").strip()
+    hp = max(1, _safe_int(pet.get("hp"), 1, minimum=1))
+    ac = max(1, _safe_int(pet.get("ac"), 10, minimum=1))
+    movement = copy.deepcopy(pet.get("movement") or template.get("movement") or {"walk": 30})
+    senses = copy.deepcopy(pet.get("senses") or template.get("senses") or {})
+    command_model = str(template.get("commandModel") or "owner_controlled").strip().lower()
+    action_rows = [
+        _normalize_action_payload(
+            actor={},
+            action=row,
+            index=index,
+            attack_bonus=(_safe_int(row.get("attackBonus"), 0) if row.get("attackBonus") is not None else None),
+            save_dc=(_safe_int(row.get("saveDC"), 0) if row.get("saveDC") is not None else None),
+            command_model=command_model,
+        )
+        for index, row in enumerate(list(pet.get("actions") or []))
+        if isinstance(row, dict)
+    ]
+    return {
+        "id": f"summon-{owner_user.id}-{int(time.time() * 1000)}",
+        "templateId": str(template.get("id") or selected_variant),
+        "variantId": selected_variant,
+        "variantName": str(template.get("displayName") or token_name),
+        "name": token_name,
+        "actorType": "companion",
+        "summonCategory": "companion",
+        "size": str(pet.get("size") or template.get("size") or "small"),
+        "movement": movement,
+        "senses": senses,
+        "ac": ac,
+        "hp": {"current": hp, "max": hp},
+        "actions": action_rows,
+        "attacks": _legacy_attacks_from_actions(action_rows),
+        "traits": copy.deepcopy(pet.get("traits") or []),
+        "proficiencyBonus": 0,
+        "levelSource": {
+            "classId": "pet",
+            "subclassId": "",
+            "classLevel": 1,
+            "featureId": str(template.get("sourceFeatureId") or "pet-ownership"),
+            "featureName": "Owned Pet",
+        },
+        "owner": {"userId": str(owner_user.id), "userName": str(owner_user.name), "profileId": str(profile_id or "")},
+        "commandModel": command_model,
+        "source": {
+            "classId": str(template.get("sourceClassId") or "pet"),
+            "subclassId": "",
+            "featureId": str(template.get("sourceFeatureId") or "pet-ownership"),
+            "variantGroup": str(template.get("variantGroup") or selected_variant),
+        },
+        "tokenVisual": {
+            "color": str(pet.get("color") or "#c8a36b"),
+            "shape": "circle",
+            "image_url": str(template.get("imageUrl") or "").strip() or None,
+            "fallbackEmoji": str(pet.get("emoji") or "\U0001F43E"),
         },
     }
 
@@ -1345,6 +1472,13 @@ def build_summon_runtime_payload(*, session: Session, user: User, payload: dict[
                 profile_id=owner_profile_id,
             ),
             ("warlock", "", "familiar"): lambda: resolve_warlock_familiar_actor(
+                native_document=native,
+                template=template,
+                selected_variant=selected_variant,
+                owner_user=user,
+                profile_id=owner_profile_id,
+            ),
+            ("pet", "", "companion"): lambda: resolve_pet_actor(
                 native_document=native,
                 template=template,
                 selected_variant=selected_variant,

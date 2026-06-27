@@ -853,6 +853,42 @@
     </div>`;
   }
 
+  function _renderPetShop(charData) {
+    const shop = charData && charData.petShop && typeof charData.petShop === 'object' ? charData.petShop : {};
+    const entries = _safeArray(shop.entries).filter(function (entry) { return entry && typeof entry === 'object'; });
+    if (!entries.length) return '';
+    const wallet = shop.wallet && typeof shop.wallet === 'object' ? shop.wallet : {};
+    const walletGp = _num(wallet.gp, 0);
+    const ownedCount = entries.filter(function (entry) { return !!entry.owned; }).length;
+    return `<div class="cs-combat-callout" style="margin-top:.55rem;">
+      <div class="cs-combat-callout-title">Pet Shop</div>
+      <div class="cs-combat-callout-copy">Buy and own animals as companions. Owned pets appear in the Summon Manager above to summon, move, and command in combat. Wallet: ${_esc(String(walletGp))} gp • Owned: ${ownedCount}/${entries.length}.</div>
+      <div style="display:grid;gap:.45rem;margin-top:.5rem;">
+        ${entries.map(function (entry) {
+          const templateId = _firstText(entry.templateId, '');
+          const owned = !!entry.owned;
+          const affordable = !!entry.affordable;
+          const price = _num(entry.priceGp, 0);
+          const btn = owned
+            ? `<button type="button" class="cs-feature-inspect" data-pet-release="${_esc(templateId)}">Release</button>`
+            : `<button type="button" class="cs-feature-inspect" data-pet-buy="${_esc(templateId)}" ${affordable ? '' : 'disabled'}>${affordable ? 'Buy' : 'Need gold'}</button>`;
+          return `<div style="border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:.45rem .52rem;background:rgba(0,0,0,.18);">
+            <div style="display:flex;justify-content:space-between;gap:.45rem;align-items:flex-start;">
+              <div>
+                <div style="font-weight:700;font-size:.72rem;">${_esc(_firstText(entry.emoji, ''))} ${_esc(_firstText(entry.name, 'Pet'))}${owned ? ' • <span style="color:#7ad67a;">Owned</span>' : ''}</div>
+                <div style="font-size:.6rem;color:rgba(235,230,210,.72);">${_esc(_firstText(entry.blurb, ''))}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.3rem;">
+                <div style="font-size:.6rem;color:rgba(235,230,210,.72);white-space:nowrap;">${_esc(String(price))} gp</div>
+                ${btn}
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+
   function _summonActionRows(charData) {
     return _safeArray(charData && charData.summonActions).map(function (entry, index) {
       if (!entry || typeof entry !== 'object') return null;
@@ -1484,7 +1520,8 @@
     const isBeastMaster = sourceClassId === 'ranger' && sourceSubclassId === 'beast-master';
     const isWarlockChain = sourceClassId === 'warlock' && summonGroupId === 'warlock-pact-chain-familiar';
     const isTinkerMechanist = sourceClassId === 'tinker' && sourceSubclassId === 'mechanist' && summonTemplateId === 'tinker-mechanist-companion-frame';
-    return !!(isBeastMaster || isWarlockChain || isTinkerMechanist);
+    const isPet = sourceClassId === 'pet' || /^pet-/.test(summonGroupId) || /^pet-/.test(summonTemplateId);
+    return !!(isBeastMaster || isWarlockChain || isTinkerMechanist || isPet);
   }
 
 
@@ -2382,7 +2419,8 @@
           const isBeastMaster = sourceClassId === 'ranger' && sourceSubclassId === 'beast-master';
           const isWarlockChain = sourceClassId === 'warlock' && String(summonMeta.summonGroupId || '').toLowerCase() === 'warlock-pact-chain-familiar';
           const isTinkerMechanist = sourceClassId === 'tinker' && sourceSubclassId === 'mechanist' && String(summonMeta.summonTemplateId || '').toLowerCase() === 'tinker-mechanist-companion-frame';
-          if (!isBeastMaster && !isWarlockChain && !isTinkerMechanist) {
+          const isPet = sourceClassId === 'pet' || /^pet-/.test(String(summonMeta.summonGroupId || '').toLowerCase()) || /^pet-/.test(String(summonMeta.summonTemplateId || '').toLowerCase());
+          if (!isBeastMaster && !isWarlockChain && !isTinkerMechanist && !isPet) {
             if (typeof global.showToast === 'function') global.showToast(`${label}: runtime path is not live for this class yet.`);
             return;
           }
@@ -2480,6 +2518,46 @@
           global.inspectSummonTokenById(tokenId);
         } else if (typeof global.showToast === 'function') {
           global.showToast('Summon token is missing on this map.');
+        }
+        return;
+      }
+      const petBuyBtn = e.target.closest('[data-pet-buy]');
+      if (petBuyBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const templateId = String(petBuyBtn.getAttribute('data-pet-buy') || '');
+        if (templateId && typeof global.sendWS === 'function') {
+          global.sendWS({
+            type: 'pet_acquire',
+            payload: {
+              template_id: templateId,
+              profile_id: _firstText(model && model.charData && model.charData.id, model && model.charData && model.charData.charId, ''),
+            },
+          });
+          if (typeof global.showToast === 'function') global.showToast('Buying pet...');
+        } else if (typeof global.showToast === 'function') {
+          global.showToast('Pet purchase failed: websocket runtime unavailable.');
+        }
+        return;
+      }
+      const petReleaseBtn = e.target.closest('[data-pet-release]');
+      if (petReleaseBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const templateId = String(petReleaseBtn.getAttribute('data-pet-release') || '');
+        if (!templateId) return;
+        if (typeof global.confirm === 'function' && !global.confirm('Release this pet? Any active token will be removed.')) return;
+        if (typeof global.sendWS === 'function') {
+          global.sendWS({
+            type: 'pet_release',
+            payload: {
+              template_id: templateId,
+              profile_id: _firstText(model && model.charData && model.charData.id, model && model.charData && model.charData.charId, ''),
+            },
+          });
+          if (typeof global.showToast === 'function') global.showToast('Releasing pet...');
+        } else if (typeof global.showToast === 'function') {
+          global.showToast('Pet release failed: websocket runtime unavailable.');
         }
         return;
       }
@@ -2737,6 +2815,7 @@
       ${_renderSection('Imported / Legacy Attack Lines', textAttacks, { emptyLabel: 'No imported attack lines detected.' })}
       ${_renderSection('Item Actions', itemActions, { emptyLabel: 'No usable item actions are loaded yet.' })}
       ${_renderSummonManager(summonActions)}
+      ${_renderPetShop(charData || {})}
       ${_renderSection('Summon / Deploy Actions', summonActions, { emptyLabel: 'No summon or deploy actions are unlocked for this character.' })}
       ${_renderSection('Native Actions', nativeActionsForSection, { emptyLabel: isWildShapeActive ? 'Wild Shape attacks are currently driving your attack surface.' : 'No structured main actions are loaded yet.' })}
       ${_renderSection('Bonus Actions', native.bonusActions, { emptyLabel: 'No structured bonus actions are loaded yet.' })}
