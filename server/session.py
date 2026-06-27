@@ -2421,10 +2421,6 @@ def build_token_runtime_payload(session: "Session", token) -> dict:
         if payload.get("maxHp") is not None:
             payload["hp"] = min(int(payload["maxHp"]), int(payload["hp"]))
     payload["tempHp"] = max(0, int(getattr(token, "temp_hp", summary.get("tempHp") or 0) or 0))
-    if summary.get("actions"):
-        payload["actions"] = summary["actions"]
-    if summary.get("spells"):
-        payload["spells"] = summary["spells"]
     return payload
 
 
