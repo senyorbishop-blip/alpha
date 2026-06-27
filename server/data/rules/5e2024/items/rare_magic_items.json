@@ -51,7 +51,8 @@
           "stat": "constitution",
           "minimum": 19
         }
-      ]
+      ],
+      "weight_lbs": 0.0
     },
     {
       "id": "bag-of-beans",
@@ -97,7 +98,8 @@
       "limited_uses": {
         "max": 3,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 0.5
     },
     {
       "id": "bead-of-force",
@@ -139,7 +141,8 @@
         "mi_bead_of_force"
       ],
       "dedupe_key": "beadofforce",
-      "spell_save_dc": 15
+      "spell_save_dc": 15,
+      "weight_lbs": 0.5
     },
     {
       "id": "belt-of-dwarvenkind",
@@ -172,7 +175,8 @@
       "legacy_ids": [
         "mi_belt_of_dwarvenkind"
       ],
-      "dedupe_key": "beltofdwarvenkind"
+      "dedupe_key": "beltofdwarvenkind",
+      "weight_lbs": 0.5
     },
     {
       "id": "boots-of-levitation",
@@ -235,7 +239,8 @@
       "dedupe_key": "bootsoflevitation",
       "description_summary": "Boots of Levitation: concise open-compatible runtime summary for rare wondrous.",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Boots of Levitation.",
-      "unidentified_description": "An unidentified rare wondrous radiating magic."
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "weight_lbs": 0.5
     },
     {
       "id": "boots-of-speed",
@@ -282,7 +287,8 @@
         {
           "type": "double_speed"
         }
-      ]
+      ],
+      "weight_lbs": 0.5
     },
     {
       "id": "bowl-of-commanding-water-elementals",
@@ -332,7 +338,8 @@
       "legacy_ids": [
         "mi_bowl_of_commanding_water_elementals"
       ],
-      "dedupe_key": "bowlofcommandingwaterelementals"
+      "dedupe_key": "bowlofcommandingwaterelementals",
+      "weight_lbs": 2.0
     },
     {
       "id": "bracers-of-defense",
@@ -376,7 +383,8 @@
       "description_summary": "Bracers of Defense: concise open-compatible runtime summary for rare wondrous.",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Bracers of Defense.",
       "unidentified_description": "An unidentified rare wondrous radiating magic.",
-      "ac_bonus": 2
+      "ac_bonus": 2,
+      "weight_lbs": 0.5
     },
     {
       "id": "brazier-of-commanding-fire-elementals",
@@ -426,7 +434,8 @@
       "legacy_ids": [
         "mi_brazier_of_commanding_fire_elementals"
       ],
-      "dedupe_key": "brazierofcommandingfireelementals"
+      "dedupe_key": "brazierofcommandingfireelementals",
+      "weight_lbs": 0.5
     },
     {
       "id": "cape-of-the-mountebank",
@@ -476,7 +485,8 @@
       "legacy_ids": [
         "mi_cape_of_the_mountebank"
       ],
-      "dedupe_key": "capeofthemountebank"
+      "dedupe_key": "capeofthemountebank",
+      "weight_lbs": 0.5
     },
     {
       "id": "censer-of-controlling-air-elementals",
@@ -526,7 +536,8 @@
       "legacy_ids": [
         "mi_censer_of_controlling_air_elementals"
       ],
-      "dedupe_key": "censerofcontrollingairelementals"
+      "dedupe_key": "censerofcontrollingairelementals",
+      "weight_lbs": 0.5
     },
     {
       "id": "chime-of-opening",
@@ -571,7 +582,8 @@
       "limited_uses": {
         "max": 10,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 0.5
     },
     {
       "id": "cloak-of-displacement",
@@ -604,7 +616,8 @@
       "legacy_ids": [
         "mi_cloak_of_displacement"
       ],
-      "dedupe_key": "cloakofdisplacement"
+      "dedupe_key": "cloakofdisplacement",
+      "weight_lbs": 0.5
     },
     {
       "id": "cloak-of-the-bat",
@@ -635,7 +648,8 @@
         "cloak_of_the_bat"
       ],
       "legacy_ids": [],
-      "dedupe_key": "cloakofthebat"
+      "dedupe_key": "cloakofthebat",
+      "weight_lbs": 0.5
     },
     {
       "id": "dimensional-shackles",
@@ -676,7 +690,8 @@
       "legacy_ids": [
         "mi_dimensional_shackles"
       ],
-      "dedupe_key": "dimensionalshackles"
+      "dedupe_key": "dimensionalshackles",
+      "weight_lbs": 0.5
     },
     {
       "id": "elixir-of-health",
@@ -719,7 +734,8 @@
       ],
       "dedupe_key": "elixirofhealth",
       "consumable": true,
-      "consumed_on_use": true
+      "consumed_on_use": true,
+      "weight_lbs": 0.5
     },
     {
       "id": "folding-boat",
@@ -760,7 +776,8 @@
       "legacy_ids": [
         "mi_folding_boat"
       ],
-      "dedupe_key": "foldingboat"
+      "dedupe_key": "foldingboat",
+      "weight_lbs": 0.5
     },
     {
       "id": "gem-of-seeing",
@@ -814,7 +831,8 @@
       "limited_uses": {
         "max": 3,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 0.5
     },
     {
       "id": "handy-haversack",
@@ -851,7 +869,8 @@
       "dedupe_key": "handyhaversack",
       "description_summary": "Handy Haversack: concise open-compatible runtime summary for rare wondrous.",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Handy Haversack.",
-      "unidentified_description": "An unidentified rare wondrous radiating magic."
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "weight_lbs": 0.5
     },
     {
       "id": "helm-of-teleportation",
@@ -916,7 +935,8 @@
       "limited_uses": {
         "max": 3,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 0.5
     },
     {
       "id": "horn-of-blasting",
@@ -962,7 +982,8 @@
       "description_summary": "Horn of Blasting: concise open-compatible runtime summary for rare wondrous.",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Horn of Blasting.",
       "unidentified_description": "An unidentified rare wondrous radiating magic.",
-      "spell_save_dc": 15
+      "spell_save_dc": 15,
+      "weight_lbs": 0.5
     },
     {
       "id": "horn-of-valhalla",
@@ -1019,7 +1040,8 @@
       "limited_uses": {
         "max": 1,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 0.5
     },
     {
       "id": "instant-fortress",
@@ -1061,7 +1083,8 @@
         "mi_instant_fortress"
       ],
       "dedupe_key": "instantfortress",
-      "spell_save_dc": 15
+      "spell_save_dc": 15,
+      "weight_lbs": 0.5
     },
     {
       "id": "instrument-of-the-bards",
@@ -1092,7 +1115,8 @@
         "instrument_of_the_bards"
       ],
       "legacy_ids": [],
-      "dedupe_key": "instrumentofthebards"
+      "dedupe_key": "instrumentofthebards",
+      "weight_lbs": 0.5
     },
     {
       "id": "ioun-stone-protection",
@@ -1132,7 +1156,8 @@
         "mi_ioun_stone_protection"
       ],
       "dedupe_key": "iounstoneprotection",
-      "ac_bonus": 1
+      "ac_bonus": 1,
+      "weight_lbs": 0.5
     },
     {
       "id": "necklace-of-fireballs",
@@ -1198,7 +1223,8 @@
         "max": 7,
         "recharge": "dawn"
       },
-      "spell_save_dc": 15
+      "spell_save_dc": 15,
+      "weight_lbs": 0.5
     },
     {
       "id": "periapt-of-proof-against-poison",
@@ -1243,7 +1269,8 @@
       "unidentified_description": "An unidentified rare wondrous radiating magic.",
       "immunities": [
         "poison"
-      ]
+      ],
+      "weight_lbs": 0.5
     },
     {
       "id": "portable-hole",
@@ -1280,7 +1307,8 @@
       "dedupe_key": "portablehole",
       "description_summary": "Portable Hole: concise open-compatible runtime summary for rare wondrous.",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Portable Hole.",
-      "unidentified_description": "An unidentified rare wondrous radiating magic."
+      "unidentified_description": "An unidentified rare wondrous radiating magic.",
+      "weight_lbs": 0.5
     },
     {
       "id": "potion-of-clairvoyance",
@@ -1332,7 +1360,8 @@
       ],
       "dedupe_key": "potionofclairvoyance",
       "consumable": true,
-      "consumed_on_use": true
+      "consumed_on_use": true,
+      "weight_lbs": 0.5
     },
     {
       "id": "potion-of-diminution",
@@ -1375,7 +1404,8 @@
       ],
       "dedupe_key": "potionofdiminution",
       "consumable": true,
-      "consumed_on_use": true
+      "consumed_on_use": true,
+      "weight_lbs": 0.5
     },
     {
       "id": "potion-of-fire-giant-strength",
@@ -1430,7 +1460,8 @@
         }
       ],
       "consumable": true,
-      "consumed_on_use": true
+      "consumed_on_use": true,
+      "weight_lbs": 0.5
     },
     {
       "id": "potion-of-frost-giant-strength",
@@ -1485,7 +1516,8 @@
         }
       ],
       "consumable": true,
-      "consumed_on_use": true
+      "consumed_on_use": true,
+      "weight_lbs": 0.5
     },
     {
       "id": "potion-of-gaseous-form",
@@ -1537,7 +1569,8 @@
       ],
       "dedupe_key": "potionofgaseousform",
       "consumable": true,
-      "consumed_on_use": true
+      "consumed_on_use": true,
+      "weight_lbs": 0.5
     },
     {
       "id": "potion-of-heroism",
@@ -1589,7 +1622,8 @@
       ],
       "dedupe_key": "potionofheroism",
       "consumable": true,
-      "consumed_on_use": true
+      "consumed_on_use": true,
+      "weight_lbs": 0.5
     },
     {
       "id": "potion-of-invulnerability",
@@ -1640,7 +1674,8 @@
         "all_damage"
       ],
       "consumable": true,
-      "consumed_on_use": true
+      "consumed_on_use": true,
+      "weight_lbs": 0.5
     },
     {
       "id": "potion-of-mind-reading",
@@ -1692,7 +1727,8 @@
       ],
       "dedupe_key": "potionofmindreading",
       "consumable": true,
-      "consumed_on_use": true
+      "consumed_on_use": true,
+      "weight_lbs": 0.5
     },
     {
       "id": "potion-of-superior-healing",
@@ -1750,7 +1786,8 @@
       "dedupe_key": "potionofsuperiorhealing",
       "description_summary": "Potion of Superior Healing: concise open-compatible runtime summary for rare potion.",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Potion of Superior Healing.",
-      "unidentified_description": "An unidentified rare potion radiating magic."
+      "unidentified_description": "An unidentified rare potion radiating magic.",
+      "weight_lbs": 0.5
     },
     {
       "id": "quarterstaff-plus2",
@@ -1798,7 +1835,8 @@
         "quarterstaff_2"
       ],
       "legacy_ids": [],
-      "dedupe_key": "quarterstaff2"
+      "dedupe_key": "quarterstaff2",
+      "weight_lbs": 4.0
     },
     {
       "id": "ring-of-animal-influence",
@@ -1852,7 +1890,8 @@
       "limited_uses": {
         "max": 3,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 0.0
     },
     {
       "id": "ring-of-evasion",
@@ -1897,7 +1936,8 @@
       "limited_uses": {
         "max": 3,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 0.0
     },
     {
       "id": "ring-of-feather-falling",
@@ -1934,7 +1974,8 @@
       "dedupe_key": "ringoffeatherfalling",
       "description_summary": "Ring of Feather Falling: concise open-compatible runtime summary for rare ring.",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Ring of Feather Falling.",
-      "unidentified_description": "An unidentified rare ring radiating magic."
+      "unidentified_description": "An unidentified rare ring radiating magic.",
+      "weight_lbs": 0.0
     },
     {
       "id": "ring-of-free-action",
@@ -1981,7 +2022,8 @@
         {
           "type": "free_action"
         }
-      ]
+      ],
+      "weight_lbs": 0.0
     },
     {
       "id": "ring-of-protection",
@@ -2032,7 +2074,8 @@
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Ring of Protection.",
       "unidentified_description": "An unidentified rare ring radiating magic.",
       "ac_bonus": 1,
-      "save_bonus": 1
+      "save_bonus": 1,
+      "weight_lbs": 0.0
     },
     {
       "id": "ring-of-resistance",
@@ -2077,7 +2120,8 @@
       "unidentified_description": "An unidentified rare ring radiating magic.",
       "resistances": [
         "choice"
-      ]
+      ],
+      "weight_lbs": 0.0
     },
     {
       "id": "ring-of-spell-storing",
@@ -2114,7 +2158,8 @@
       "dedupe_key": "ringofspellstoring",
       "description_summary": "Ring of Spell Storing: concise open-compatible runtime summary for rare ring.",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Ring of Spell Storing.",
-      "unidentified_description": "An unidentified rare ring radiating magic."
+      "unidentified_description": "An unidentified rare ring radiating magic.",
+      "weight_lbs": 0.0
     },
     {
       "id": "ring-of-the-ram",
@@ -2159,7 +2204,8 @@
       "limited_uses": {
         "max": 3,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 0.0
     },
     {
       "id": "ring-of-x-ray-vision",
@@ -2226,7 +2272,8 @@
         {
           "type": "xray"
         }
-      ]
+      ],
+      "weight_lbs": 0.0
     },
     {
       "id": "robe-of-eyes",
@@ -2269,7 +2316,8 @@
         {
           "type": "truesight"
         }
-      ]
+      ],
+      "weight_lbs": 0.5
     },
     {
       "id": "rod-of-rulership",
@@ -2326,7 +2374,8 @@
         "max": 1,
         "recharge": "dawn"
       },
-      "spell_save_dc": 15
+      "spell_save_dc": 15,
+      "weight_lbs": 2.0
     },
     {
       "id": "rod-of-the-pact-keeper-plus2",
@@ -2373,7 +2422,8 @@
       "legacy_ids": [],
       "dedupe_key": "rodofthepactkeeper2",
       "spell_save_dc_bonus": 2,
-      "spell_attack_bonus": 2
+      "spell_attack_bonus": 2,
+      "weight_lbs": 2.0
     },
     {
       "id": "spell-scroll-4th-level",
@@ -2417,7 +2467,8 @@
         "spell_scroll_4th_level"
       ],
       "legacy_ids": [],
-      "dedupe_key": "spellscroll4thlevel"
+      "dedupe_key": "spellscroll4thlevel",
+      "weight_lbs": 0.0
     },
     {
       "id": "spell-scroll-5th-level",
@@ -2461,7 +2512,8 @@
         "spell_scroll_5th_level"
       ],
       "legacy_ids": [],
-      "dedupe_key": "spellscroll5thlevel"
+      "dedupe_key": "spellscroll5thlevel",
+      "weight_lbs": 0.0
     },
     {
       "id": "staff-of-charming",
@@ -2515,7 +2567,8 @@
       "limited_uses": {
         "max": 10,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 4.0
     },
     {
       "id": "staff-of-healing",
@@ -2605,7 +2658,8 @@
       "limited_uses": {
         "max": 10,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 4.0
     },
     {
       "id": "staff-of-swarming-insects",
@@ -2659,7 +2713,8 @@
       "limited_uses": {
         "max": 10,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 4.0
     },
     {
       "id": "staff-of-the-python",
@@ -2700,7 +2755,8 @@
       "legacy_ids": [
         "mi_staff_of_the_python"
       ],
-      "dedupe_key": "staffofthepython"
+      "dedupe_key": "staffofthepython",
+      "weight_lbs": 4.0
     },
     {
       "id": "staff-of-the-woodlands",
@@ -2790,7 +2846,8 @@
       "limited_uses": {
         "max": 10,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 4.0
     },
     {
       "id": "staff-of-withering",
@@ -2845,7 +2902,8 @@
         "staff_of_withering"
       ],
       "legacy_ids": [],
-      "dedupe_key": "staffofwithering"
+      "dedupe_key": "staffofwithering",
+      "weight_lbs": 4.0
     },
     {
       "id": "stone-of-controlling-earth-elementals",
@@ -2895,7 +2953,8 @@
       "legacy_ids": [
         "mi_stone_of_controlling_earth_elementals"
       ],
-      "dedupe_key": "stoneofcontrollingearthelementals"
+      "dedupe_key": "stoneofcontrollingearthelementals",
+      "weight_lbs": 0.5
     },
     {
       "id": "wand-of-binding",
@@ -2950,7 +3009,8 @@
         "max": 7,
         "recharge": "dawn"
       },
-      "spell_save_dc": 17
+      "spell_save_dc": 17,
+      "weight_lbs": 1.0
     },
     {
       "id": "wand-of-enemy-detection",
@@ -3006,7 +3066,8 @@
       "limited_uses": {
         "max": 7,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 1.0
     },
     {
       "id": "wand-of-fear",
@@ -3073,7 +3134,8 @@
         "max": 7,
         "recharge": "dawn"
       },
-      "spell_save_dc": 15
+      "spell_save_dc": 15,
+      "weight_lbs": 1.0
     },
     {
       "id": "wand-of-fireballs",
@@ -3149,7 +3211,8 @@
         "max": 7,
         "recharge": "dawn"
       },
-      "spell_save_dc": 15
+      "spell_save_dc": 15,
+      "weight_lbs": 1.0
     },
     {
       "id": "wand-of-lightning-bolts",
@@ -3224,7 +3287,8 @@
         "max": 7,
         "recharge": "dawn"
       },
-      "spell_save_dc": 15
+      "spell_save_dc": 15,
+      "weight_lbs": 0.075
     },
     {
       "id": "wand-of-paralysis",
@@ -3291,7 +3355,8 @@
         "max": 7,
         "recharge": "dawn"
       },
-      "spell_save_dc": 15
+      "spell_save_dc": 15,
+      "weight_lbs": 1.0
     },
     {
       "id": "wand-of-the-war-mage-plus2",
@@ -3337,7 +3402,8 @@
       "description_summary": "Wand of the War Mage +2: concise open-compatible runtime summary for rare wand.",
       "effect": "Runtime metadata covers bonuses, charges, spells, attunement, and safe summary for Wand of the War Mage +2.",
       "unidentified_description": "An unidentified rare wand radiating magic.",
-      "spell_attack_bonus": 2
+      "spell_attack_bonus": 2,
+      "weight_lbs": 1.0
     },
     {
       "id": "wand-of-wonder",
@@ -3394,7 +3460,8 @@
         "max": 7,
         "recharge": "dawn"
       },
-      "spell_save_dc": 15
+      "spell_save_dc": 15,
+      "weight_lbs": 1.0
     },
     {
       "id": "wings-of-flying",
@@ -3425,7 +3492,8 @@
         "wings_of_flying"
       ],
       "legacy_ids": [],
-      "dedupe_key": "wingsofflying"
+      "dedupe_key": "wingsofflying",
+      "weight_lbs": 0.5
     }
   ]
 }

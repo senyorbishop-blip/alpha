@@ -47,7 +47,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "potionofhealing",
-      "description_summary": "Drink: regain 2d4+2 HP. Takes an action to administer to another creature."
+      "description_summary": "Drink: regain 2d4+2 HP. Takes an action to administer to another creature.",
+      "weight_lbs": 0.5
     },
     {
       "id": "potion-of-climbing",
@@ -106,7 +107,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "potionofclimbing",
-      "description_summary": "Drink: for 1 hour gain climb speed equal to walking speed and advantage on Strength (Athletics) checks."
+      "description_summary": "Drink: for 1 hour gain climb speed equal to walking speed and advantage on Strength (Athletics) checks.",
+      "weight_lbs": 0.5
     },
     {
       "id": "antitoxin",
@@ -157,7 +159,8 @@
       "aliases": [],
       "legacy_ids": [],
       "dedupe_key": "antitoxin",
-      "description_summary": "Drink: advantage on Constitution saves against poison for 1 hour."
+      "description_summary": "Drink: advantage on Constitution saves against poison for 1 hour.",
+      "weight_lbs": 0.5
     },
     {
       "id": "acid-vial",
@@ -206,7 +209,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "acidvial",
-      "description_summary": "Throw at creature/object (5 ft range). Hit: 2d6 acid damage. Near miss: 1 acid damage."
+      "description_summary": "Throw at creature/object (5 ft range). Hit: 2d6 acid damage. Near miss: 1 acid damage.",
+      "weight_lbs": 0.5
     },
     {
       "id": "alchemist-s-fire",
@@ -255,7 +259,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "alchemistsfire",
-      "description_summary": "Throw at creature/object (20 ft). Hit: 1d4 fire each turn until action to extinguish (DC 10 Dex)."
+      "description_summary": "Throw at creature/object (20 ft). Hit: 1d4 fire each turn until action to extinguish (DC 10 Dex).",
+      "weight_lbs": 0.5
     },
     {
       "id": "basic-poison",
@@ -308,7 +313,8 @@
         "type": "constitution",
         "dc": 10,
         "fail": "1d4 poison + poisoned"
-      }
+      },
+      "weight_lbs": 0.5
     },
     {
       "id": "spell-scroll-cantrip",
@@ -353,7 +359,8 @@
       ],
       "legacy_ids": [],
       "dedupe_key": "spellscrollcantrip",
-      "description_summary": "Contains a cantrip. Any class that can cast cantrips may cast it once, then the scroll is consumed."
+      "description_summary": "Contains a cantrip. Any class that can cast cantrips may cast it once, then the scroll is consumed.",
+      "weight_lbs": 0.0
     },
     {
       "id": "spell-scroll-1st-level",
@@ -400,7 +407,8 @@
       "dedupe_key": "spellscroll1stlevel",
       "description_summary": "Contains a 1st-level spell. Cast once (DC 13, +5 attack), scroll consumed.",
       "item_spell_save_dc": 13,
-      "item_spell_attack_bonus": 5
+      "item_spell_attack_bonus": 5,
+      "weight_lbs": 0.0
     },
     {
       "id": "staff",
@@ -445,7 +453,8 @@
       "slug": "staff",
       "aliases": [],
       "legacy_ids": [],
-      "dedupe_key": "staff"
+      "dedupe_key": "staff",
+      "weight_lbs": 4.0
     },
     {
       "id": "clockwork-amulet",

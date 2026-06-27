@@ -324,14 +324,24 @@ _SMALL_BLOCKED_ARMOR_CATEGORIES = {"heavy armor", "heavy armour"}
 # ─── Public helpers ───────────────────────────────────────────────────────────
 
 def get_item_weight(item: dict) -> float:
-    """Return per-unit weight in lbs for one inventory item dict."""
-    # 1. Explicit override stored on the item
+    """Return per-unit weight in lbs for one inventory item dict.
+
+    Primary source: weight_lbs authored on the item record (JSON is authoritative
+    for all library items after scripts/migrate_item_weights.py has been run).
+
+    The in-code name/keyword/category tables below are LEGACY FALLBACKS for
+    unmigrated or user-imported items that lack an authored weight_lbs.  Do not
+    add new library weights here — write them directly to the item JSON instead.
+    """
+    # 1. Authored weight on the item (primary source — always preferred)
     explicit = item.get("weight_lbs")
     if explicit is not None:
         try:
             return max(0.0, float(explicit))
         except Exception:
             pass
+
+    # --- LEGACY FALLBACKS (unmigrated / user-imported items only) ---
 
     # 1.5 Weight hints embedded in imported text fields (e.g. "1 lb.")
     for field in ("weight", "notes", "effect", "unidentified_description"):
@@ -348,21 +358,21 @@ def get_item_weight(item: dict) -> float:
 
     name_lower = str(item.get("name") or "").strip().lower()
 
-    # 2. Exact name lookup
+    # 2. Exact name lookup (legacy)
     if name_lower in ITEM_WEIGHT_BY_NAME:
         return ITEM_WEIGHT_BY_NAME[name_lower]
 
-    # 3. Keyword substring lookup
+    # 3. Keyword substring lookup (legacy)
     for kw, w in _KEYWORD_WEIGHTS:
         if kw in name_lower:
             return w
 
-    # 4. Category lookup
+    # 4. Category lookup (legacy)
     cat = str(item.get("category") or "").strip().lower()
     if cat in ITEM_WEIGHT_BY_CATEGORY:
         return ITEM_WEIGHT_BY_CATEGORY[cat]
 
-    # 5. item_type lookup
+    # 5. item_type lookup (legacy)
     itype = str(item.get("item_type") or "").strip().lower()
     if itype in ITEM_WEIGHT_BY_TYPE:
         return ITEM_WEIGHT_BY_TYPE[itype]

@@ -35,7 +35,8 @@
       "legacy_ids": [
         "mi_athkatla_smuggler_s_coin"
       ],
-      "dedupe_key": "athkatlasmugglerscoin"
+      "dedupe_key": "athkatlasmugglerscoin",
+      "weight_lbs": 0.5
     },
     {
       "id": "baron-s-ledger-key",
@@ -76,7 +77,8 @@
       "legacy_ids": [
         "mi_baron_s_ledger_key"
       ],
-      "dedupe_key": "baronsledgerkey"
+      "dedupe_key": "baronsledgerkey",
+      "weight_lbs": 0.5
     },
     {
       "id": "baron-s-signet-ring",
@@ -231,7 +233,8 @@
         "mi_brosst_guard_shield"
       ],
       "dedupe_key": "brosstguardshield",
-      "ac_bonus": 1
+      "ac_bonus": 1,
+      "weight_lbs": 6.0
     },
     {
       "id": "bruno-s-lucky-treat",
@@ -350,7 +353,8 @@
       "limited_uses": {
         "max": 3,
         "recharge": "dawn"
-      }
+      },
+      "weight_lbs": 0.5
     },
     {
       "id": "chaos-wheel-coin",
@@ -630,7 +634,8 @@
       "legacy_ids": [
         "mi_lost_noble_signet"
       ],
-      "dedupe_key": "lostnoblesignet"
+      "dedupe_key": "lostnoblesignet",
+      "weight_lbs": 0.0
     },
     {
       "id": "map-fragment-of-brosst",
@@ -671,7 +676,8 @@
       "legacy_ids": [
         "mi_map_fragment_of_brosst"
       ],
-      "dedupe_key": "mapfragmentofbrosst"
+      "dedupe_key": "mapfragmentofbrosst",
+      "weight_lbs": 0.5
     },
     {
       "id": "prison-break-lockpick-set",
@@ -762,7 +768,8 @@
         "mi_prison_warden_s_manacles"
       ],
       "dedupe_key": "prisonwardensmanacles",
-      "spell_save_dc": 15
+      "spell_save_dc": 15,
+      "weight_lbs": 0.5
     },
     {
       "id": "seagull-feather-cloak",
@@ -853,7 +860,8 @@
       "legacy_ids": [
         "mi_seagull_guild_banner"
       ],
-      "dedupe_key": "seagullguildbanner"
+      "dedupe_key": "seagullguildbanner",
+      "weight_lbs": 0.5
     },
     {
       "id": "shadow-prisoner-s-shank",
@@ -969,7 +977,8 @@
       },
       "damage_dice": "1d4",
       "damage_type": "piercing",
-      "weapon_type": "dagger"
+      "weapon_type": "dagger",
+      "weight_lbs": 3.0
     },
     {
       "id": "shar-touched-amulet",
