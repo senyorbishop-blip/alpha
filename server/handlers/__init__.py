@@ -227,6 +227,11 @@ from server.handlers.summons import (
     handle_summon_runtime_request,
     handle_summon_runtime_dismiss,
     handle_summon_runtime_admin,
+    handle_summon_action_use,
+)
+from server.handlers.pets import (
+    handle_pet_acquire,
+    handle_pet_release,
 )
 from server.handlers.token_placement_secure import handle_token_placed_secure
 from server.handlers.ws_permissions import is_ws_message_allowed_for_role
@@ -301,6 +306,9 @@ async def handle_message(raw: dict, session: Session, user: User):
         "summon_runtime_request": handle_summon_runtime_request,
         "summon_runtime_dismiss": handle_summon_runtime_dismiss,
         "summon_runtime_admin": handle_summon_runtime_admin,
+        "summon_action_use": handle_summon_action_use,
+        "pet_acquire": handle_pet_acquire,
+        "pet_release": handle_pet_release,
         "journal_upsert":         handle_journal_upsert,
         "journal_delete":         handle_journal_delete,
         "session_quest_upsert":   handle_session_quest_upsert,

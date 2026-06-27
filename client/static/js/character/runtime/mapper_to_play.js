@@ -852,6 +852,9 @@
     if (runtimeSummonActions.length) {
       out.summonActions = clone(runtimeSummonActions);
     }
+    if (runtime.petShop && typeof runtime.petShop === 'object') {
+      out.petShop = clone(runtime.petShop);
+    }
 
     var runtimeOriginTraits = asArray(runtime.originTraits).filter(function onlyTraitRows(row) { return row && typeof row === 'object'; });
     var runtimeBackgroundFeatures = asArray(runtime.backgroundFeatures).filter(function onlyBackgroundRows(row) { return row && typeof row === 'object'; });
@@ -982,6 +985,9 @@
     var runtimeSummonActions = asArray(runtime.summonActions).filter(function onlySummonRows(row) { return row && typeof row === 'object'; });
     if (runtimeSummonActions.length) {
       out.summonActions = clone(runtimeSummonActions);
+    }
+    if (runtime.petShop && typeof runtime.petShop === 'object') {
+      out.petShop = clone(runtime.petShop);
     }
 
     var runtimeOriginTraits = asArray(runtime.originTraits).filter(function onlyTraitRows(row) { return row && typeof row === 'object'; });

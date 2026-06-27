@@ -15,6 +15,7 @@ from server.character.feature_authored_data import build_background_feature_prof
 from server.character.rules_catalog import get_class_catalog_row, get_subclass_catalog_row, load_rules_catalog
 from server.character.spell_compendium import build_character_spell_manifest
 from server.character.summon_catalog import get_summon_template
+from server.character.pet_catalog import list_pet_shop_entries, is_pet_template
 from server.character.talent_engine import apply_talent_grants, resolve_talents_for_runtime
 from server.character.summon_state import sync_summon_unlocks_from_features
 from server.character.schema import default_runtime
@@ -1439,6 +1440,51 @@ def _build_runtime_summon_actions(
     return out
 
 
+def _build_runtime_pet_shop(document: dict[str, Any]) -> dict[str, Any]:
+    """Build the pet shop surface for the character runtime.
+
+    Pets are bought with character currency and recorded as unlocked summon
+    templates. This exposes the purchasable catalog (with an ``owned`` flag and
+    affordability) plus the character's wallet so the client can render a buy
+    panel without an extra round-trip.
+    """
+    summons = document.get("summons") if isinstance(document.get("summons"), dict) else {}
+    owned = {
+        str(t or "").strip().lower()
+        for t in (summons.get("unlockedTemplates") or [])
+        if is_pet_template(t)
+    }
+    equipment = document.get("equipment") if isinstance(document.get("equipment"), dict) else {}
+    currency = equipment.get("currency") if isinstance(equipment.get("currency"), dict) else {}
+    rates = {"pp": 1000, "gp": 100, "ep": 50, "sp": 10, "cp": 1}
+    wallet_copper = 0
+    for coin, rate in rates.items():
+        wallet_copper += max(0, _safe_int(currency.get(coin), 0)) * rate
+    wallet_gp = wallet_copper // 100
+
+    entries = []
+    for entry in list_pet_shop_entries():
+        template_id = str(entry.get("templateId") or "").strip().lower()
+        price_gp = max(0, _safe_int(entry.get("priceGp"), 0))
+        is_owned = template_id in owned
+        entries.append({
+            "templateId": template_id,
+            "summonGroupId": str(entry.get("summonGroupId") or "").strip().lower(),
+            "name": str(entry.get("name") or ""),
+            "emoji": str(entry.get("emoji") or ""),
+            "blurb": str(entry.get("blurb") or ""),
+            "priceGp": price_gp,
+            "owned": is_owned,
+            "affordable": is_owned or wallet_copper >= price_gp * 100,
+        })
+    return {
+        "entries": entries,
+        "ownedTemplateIds": sorted(owned),
+        "wallet": {"gp": wallet_gp, "copper": wallet_copper},
+        "currency": {coin: max(0, _safe_int(currency.get(coin), 0)) for coin in rates},
+    }
+
+
 def resolve_character_runtime(document: Any) -> dict:
     """Resolve canonical character document into runtime payload.
 
@@ -1721,6 +1767,7 @@ def resolve_character_runtime(document: Any) -> dict:
     runtime["featFeatures"] = _resolve_runtime_feat_features(normalized)
     runtime["nativeFeatures"] = _dedupe_named_runtime_rows(runtime["classFeatures"] + runtime["originTraits"] + runtime["backgroundFeatures"] + runtime["featFeatures"])
     runtime["summonActions"] = _build_runtime_summon_actions(normalized, runtime_classes)
+    runtime["petShop"] = _build_runtime_pet_shop(normalized)
 
     class_saving_throws = []
     if isinstance((primary_catalog or {}).get("savingThrows"), list):
