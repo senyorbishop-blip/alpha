@@ -2,7 +2,11 @@ import asyncio
 
 from server.session import Session, Token, User
 from server.handlers import combat as combat_handlers
-from server.handlers.combat import sync_fogged_combatants, is_token_visible_to_party
+from server.handlers.combat import (
+    sync_fogged_combatants,
+    sync_active_player_tokens,
+    is_token_visible_to_party,
+)
 from server.handlers.common import _combat_state_payload_for_user
 
 
@@ -145,6 +149,88 @@ def test_fogged_npc_reappears_in_player_payload_after_reveal_without_refresh():
     assert [c['token_id'] for c in visible_payload['combatants']] == ['mage']
     assert visible_payload['combatants'][0]['initiative'] == 12
     assert 'suspended_combatants' not in visible_payload
+
+
+def test_player_token_on_map_auto_added_to_active_combat():
+    s = session_with_fog(True)
+    g = tok('goblin'); s.tokens[g.id] = g; s.combat['combatants'] = [combatant(g, 18)]; s.combat['turn'] = 0
+    pc = tok('hero', typ='player', owner='u1'); s.tokens[pc.id] = pc
+    result = sync_active_player_tokens(s, 'world', 'token_placed')
+    assert result['changed'] is True
+    assert 'hero' in [c['token_id'] for c in s.combat['combatants']]
+    # Late arrivals come in un-rolled so the DM/player rolls for them.
+    hero = next(c for c in s.combat['combatants'] if c['token_id'] == 'hero')
+    assert hero['initiative'] is None
+    # The active combatant pointer stays on the goblin whose turn it was.
+    assert s.combat['combatants'][s.combat['turn']]['token_id'] == 'goblin'
+
+
+def test_player_token_auto_added_independent_of_npc_fog_setting():
+    s = session_with_fog(True)
+    s.settings = {'combat': {'auto_sync_npcs_with_fog': 'off'}}
+    pc = tok('hero', typ='player', owner='u1'); s.tokens[pc.id] = pc
+    # The NPC fog sync is a no-op under this setting...
+    assert sync_fogged_combatants(s, 'token_placed', 'world')['changed'] is False
+    # ...but the player still joins the order.
+    result = sync_active_player_tokens(s, 'world', 'token_placed')
+    assert result['changed'] is True
+    assert [c['token_id'] for c in s.combat['combatants']] == ['hero']
+
+
+def test_hidden_or_staged_player_token_not_auto_added():
+    s = session_with_fog(True)
+    h = tok('hero', typ='player', owner='u1', hidden=True)
+    st = tok('rogue', typ='player', owner='u2', staged=True)
+    s.tokens[h.id] = h; s.tokens[st.id] = st
+    result = sync_active_player_tokens(s, 'world', 'token_placed')
+    assert result['changed'] is False
+    assert s.combat['combatants'] == []
+
+
+def test_player_token_on_other_map_not_added():
+    s = session_with_fog(True)
+    pc = tok('hero', typ='player', owner='u1'); pc.map_context = 'dungeon'; s.tokens[pc.id] = pc
+    result = sync_active_player_tokens(s, 'world', 'token_placed')
+    assert result['changed'] is False
+    assert s.combat['combatants'] == []
+
+
+def test_existing_player_combatant_not_duplicated():
+    s = session_with_fog(True)
+    pc = tok('hero', typ='player', owner='u1'); s.tokens[pc.id] = pc
+    s.combat['combatants'] = [combatant(pc, 14)]
+    result = sync_active_player_tokens(s, 'world', 'token_placed')
+    assert result['changed'] is False
+    assert [c['token_id'] for c in s.combat['combatants']] == ['hero']
+
+
+def test_player_token_not_added_when_combat_inactive():
+    s = session_with_fog(True)
+    s.combat = {'active': False, 'turn': 0, 'round': 1, 'combatants': []}
+    pc = tok('hero', typ='player', owner='u1'); s.tokens[pc.id] = pc
+    result = sync_active_player_tokens(s, 'world', 'token_placed')
+    assert result['changed'] is False
+    assert s.combat['combatants'] == []
+
+
+def test_run_combat_fog_sync_broadcasts_when_only_player_added(monkeypatch):
+    s = session_with_fog(True)
+    s.settings = {'combat': {'auto_sync_npcs_with_fog': 'off'}}
+    pc = tok('hero', typ='player', owner='u1'); s.tokens[pc.id] = pc
+    broadcasts = []
+
+    async def fake_save(session):
+        return None
+
+    async def fake_broadcast(session):
+        broadcasts.append(session.id)
+
+    monkeypatch.setattr(combat_handlers, 'save_campaign_async', fake_save)
+    monkeypatch.setattr(combat_handlers, '_broadcast_combat', fake_broadcast)
+
+    asyncio.run(combat_handlers.run_combat_fog_sync(s, 'token_placed', 'world'))
+    assert broadcasts == ['s']
+    assert [c['token_id'] for c in s.combat['combatants']] == ['hero']
 
 
 def test_player_first_combat_fog_sync_request_works(monkeypatch):

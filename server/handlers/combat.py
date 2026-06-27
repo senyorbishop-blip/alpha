@@ -228,9 +228,64 @@ def sync_fogged_combatants(session: Session, reason: str = "sync", map_context: 
     return sync_combat_visibility(session, map_context=map_context, reason=reason)
 
 
+def sync_active_player_tokens(session: Session, map_context: str | None = None, reason: str = "sync") -> dict:
+    """Auto-add visible player-owned tokens to the active initiative order.
+
+    NPC/monster tokens that appear mid-combat are folded into initiative by
+    ``sync_combat_visibility`` (the fog-reveal path). Player tokens are not:
+    they are never fog-suspended, and that function is gated on the NPC fog
+    setting and can early-return entirely. So a player who joins — or whose
+    token is placed on the encounter map — after combat has begun never shows
+    up in the order, even though every other token does. This runs alongside
+    the fog sync, independent of the NPC fog setting, so a late-arriving
+    player token gets the same automatic entry as everything else on the map.
+
+    The combatant is added with ``initiative=None`` so the DM/player rolls for
+    it exactly like the encounter's other fresh entries.
+    """
+    combat = getattr(session, "combat", None) or {}
+    if not combat.get("active"):
+        return {"changed": False, "added": []}
+    # A read-only snapshot (DM reconnect, new-joiner state rebuild) must never
+    # mutate the shared roster — mirrors the guard in sync_combat_visibility.
+    if str(reason or "") == "state_snapshot":
+        return {"changed": False, "added": []}
+    map_ctx = str(map_context or _current_combat_map_context(session, reason) or "world")[:80] or "world"
+    coms = combat.get("combatants") if isinstance(combat.get("combatants"), list) else []
+    suspended = combat.get("suspended_combatants") if isinstance(combat.get("suspended_combatants"), list) else []
+    known_ids = {str((c or {}).get("token_id") or "") for c in coms}
+    known_ids |= {str((c or {}).get("token_id") or "") for c in suspended if isinstance(c, dict)}
+    added: list[dict] = []
+    for token in list((getattr(session, "tokens", {}) or {}).values()):
+        tid = str(getattr(token, "id", "") or "")
+        if not tid or tid in known_ids:
+            continue
+        if _token_map_context(token) != map_ctx or not is_player_owned_token(token):
+            continue
+        # Hidden/staged player tokens are deliberately off the board; everything
+        # else present on the encounter map belongs in the order.
+        if bool(getattr(token, "hidden", False)) or bool(getattr(token, "staged", False)):
+            continue
+        combatant = _combatant_from_token(session, token)
+        coms.append(combatant); known_ids.add(tid); added.append(combatant)
+    if not added:
+        return {"changed": False, "added": []}
+    combat["combatants"] = coms
+    _sort_combatants_preserving_turn(combat)
+    combat["turn"] = _safe_int(combat.get("turn"), 0, minimum=0, maximum=max(0, len(coms) - 1))
+    session.combat = combat
+    _sync_action_economy_roster(session)
+    _ensure_combat_movement_state(session, reset=False)
+    for c in added:
+        session.add_log(f"{c.get('name') or 'A character'} joined the initiative order.", "combat", "System")
+    return {"changed": True, "added": added}
+
+
 async def run_combat_fog_sync(session: Session, reason: str = "sync", map_context: str | None = None) -> dict:
     result = sync_fogged_combatants(session, reason=reason, map_context=map_context)
-    if result.get("changed"):
+    # Late-arriving player tokens enter initiative the same way other tokens do.
+    player_result = sync_active_player_tokens(session, reason=reason, map_context=map_context)
+    if result.get("changed") or player_result.get("changed"):
         _bump_combat_revision(session, reason or "fog_sync")
         await save_campaign_async(session)
         await _broadcast_combat(session)
