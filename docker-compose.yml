@@ -1,0 +1,35 @@
+# =============================================================================
+# docker-compose.yml — single-host run for Tavern Tabletop
+#   1. cp .env.example .env   (set DND_JWT_SECRET + any API keys you use)
+#   2. docker compose up --build
+#   3. open http://localhost:8000
+# Runtime data persists in the named volume `tavern-data` (mounted at /data).
+# =============================================================================
+services:
+  app:
+    build: .
+    image: tavern-tabletop:local
+    container_name: tavern-tabletop
+    env_file:
+      - .env
+    environment:
+      # Keep runtime data on the volume regardless of what .env says.
+      DND_DATA_DIR: /data
+      PORT: "8000"
+      # Behind a TLS-terminating proxy? uncomment so secure cookies work:
+      # TRUST_PROXY_HEADERS: "1"
+      # APP_ENV: "production"
+    ports:
+      - "8000:8000"
+    volumes:
+      - tavern-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  tavern-data:

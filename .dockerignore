@@ -1,0 +1,41 @@
+# Keep the Docker build context small & the image clean.
+# The .git directory alone is ~380 MB — excluding it is the biggest win.
+.git
+.github
+.gitattributes
+
+# Python caches / envs
+**/__pycache__
+*.py[cod]
+.venv
+venv
+env
+.pytest_cache
+.coverage
+htmlcov
+
+# Node / Playwright (only used for E2E, not at runtime)
+node_modules
+playwright-report
+test-results
+.tmp
+
+# Tests & docs aren't needed inside the runtime image
+tests
+docs
+*.md
+!README.md
+
+# Secrets & local config must never enter the image
+.env
+config.txt
+.dnd_jwt_secret.local
+
+# Editor backups / scratch
+*.bak
+tmp_check.js
+check_creation.js
+check_roster.js
+
+# Runtime-generated audio loops (regenerated on demand)
+client/static/assets/audio/*_loop_*.wav

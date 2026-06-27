@@ -203,6 +203,8 @@ def get_conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
+    conn.execute("PRAGMA synchronous=NORMAL")
     # Ensure the string/blob limit is 1GB (some SQLite builds default lower)
     try:
         conn.setlimit(0, 1_000_000_000)  # SQLITE_LIMIT_LENGTH = 0
