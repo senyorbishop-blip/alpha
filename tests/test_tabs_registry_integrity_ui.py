@@ -47,7 +47,9 @@ def test_active_tab_is_always_normalized_to_a_visible_registered_pane():
     assert 'env.setActiveTab?.(activeTab);' in tabs_src
 
     # Runtime env provides a canonical fallback default for startup and stale shell recovery.
-    assert "getDefaultTab: () => 'party'," in play_src
+    # Players land on their "My Character" hero card by default; DMs/viewers keep Party.
+    assert 'getDefaultTab: () => __DEFAULT_RIGHT_TAB,' in play_src
+    assert "const __DEFAULT_RIGHT_TAB = (ROLE === 'player') ? 'character' : 'party';" in play_src
 
 
 def test_visible_tabs_require_registry_mapped_button_and_pane_mounts():
@@ -231,5 +233,5 @@ def test_active_tab_fallback_returns_party_when_no_visible_tab_matches():
 
     # Explicit 'party' hard-fallback in getDefaultTab.
     assert "if (!visible.length) return 'party';" in tabs_src
-    # Env provides canonical startup default.
-    assert "getDefaultTab: () => 'party'," in _read(PLAY_PATH)
+    # Env provides a canonical, role-aware startup default (players → character, others → party).
+    assert 'getDefaultTab: () => __DEFAULT_RIGHT_TAB,' in _read(PLAY_PATH)
