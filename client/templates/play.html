@@ -48031,5 +48031,98 @@ async function bestiaryMakeVariant() {
 <script src="{{ deferred_script }}"></script>
 {% endfor %}
 <script src="/static/js/theme-settings.js"></script>
+<script>
+(function () {
+  "use strict";
+  var CONTAINER_RE = /bag of holding|handy haversack|portable hole|ring of holding/i;
+
+  function getInv() {
+    try { if (typeof playerInventory !== "undefined" && Array.isArray(playerInventory) && playerInventory.length) return playerInventory; } catch (e) {}
+    try { if (typeof _charSheet !== "undefined" && _charSheet && Array.isArray(_charSheet.inventory)) return _charSheet.inventory; } catch (e) {}
+    return [];
+  }
+  function isBag(i) {
+    return !!(i && (i.extradimensional || i.is_container || Number(i.capacity_lbs || 0) > 0 || Array.isArray(i.bag_contents) || CONTAINER_RE.test(i.name || "")));
+  }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function wt(i) {
+    try { var e = window.AppEncumbrance; return e && e.getItemWeight ? Number(e.getItemWeight(i) || 0) : Number(i.weight_lbs || i.weight || 0); }
+    catch (e) { return 0; }
+  }
+
+  function renderBag(idx) {
+    var inv = getInv(), item = inv[idx] || {};
+    var contents = null, capacity = Number(item.capacity_lbs || 500), fill = 0, ownw = Number(item.own_weight_lbs || 0), cw = 0;
+    try {
+      var e = window.AppEncumbrance, d = e && e.getLastEncData && e.getLastEncData(), bags = (d && d.bags) || [];
+      var s = bags.find(function (b) {
+        return String(b.id || "") === String(item.id || "") || String(b.name || "").toLowerCase() === String(item.name || "").toLowerCase();
+      });
+      if (s) { contents = s.contents || []; capacity = s.capacity || capacity; cw = s.contents_weight || 0; ownw = s.own_weight || ownw; fill = s.fill_pct || 0; }
+    } catch (e2) {}
+    if (contents === null) {
+      contents = Array.isArray(item.bag_contents) ? item.bag_contents : [];
+      cw = contents.reduce(function (a, b) { return a + wt(b) * Math.max(1, b.qty || 1); }, 0);
+      fill = capacity > 0 ? Math.min(100, cw / capacity * 100) : 0;
+    }
+
+    var rows = contents.length ? contents.map(function (c, ci) {
+      return '<div style="display:flex;justify-content:space-between;gap:.4rem;align-items:center;padding:.28rem .5rem;border-radius:6px;background:rgba(10,18,28,.42);">'
+        + '<span style="font-size:.7rem;color:var(--parchment,#d7c18c);flex:1;min-width:0;">' + esc(c.name) + ' <span style="color:var(--parchment-dim,#9a8a66);font-size:.62rem;">· ' + wt(c).toFixed(1) + ' lbs</span></span>'
+        + '<span style="font-size:.66rem;color:var(--gold,#d4a637);">×' + (c.qty || 1) + '</span>'
+        + '<button onclick="window.encumbranceBagRemoveItem&&encumbranceBagRemoveItem(' + idx + ',' + ci + ')" style="font-size:.58rem;padding:.12rem .4rem;border-radius:4px;background:rgba(231,76,60,.14);border:1px solid rgba(231,76,60,.35);color:#e57373;cursor:pointer;">Out</button>'
+        + '</div>';
+    }).join("") : '<div style="font-size:.66rem;color:var(--parchment-dim,#9a8a66);padding:.28rem .5rem;">Empty.</div>';
+
+    var opts = inv.map(function (it, i) { return { it: it, i: i }; })
+      .filter(function (o) { return o.i !== idx && o.it && !isBag(o.it); })
+      .map(function (o) { return '<option value="' + o.i + '">' + esc(o.it.name) + (o.it.qty > 1 ? (" ×" + o.it.qty) : "") + "</option>"; }).join("");
+    var putin = '<div style="display:flex;gap:.35rem;margin-top:.45rem;">'
+      + '<select id="cdnd-bagsel-' + idx + '" style="flex:1;min-width:0;font-size:.64rem;padding:.2rem .35rem;background:var(--mf-surface-raised,#151f22);color:var(--mf-text,#e8dcc8);border:1px solid var(--mf-border-soft,rgba(212,166,55,.25));border-radius:6px;"><option value="">➕ Put an item in…</option>' + opts + "</select>"
+      + '<button onclick="window.cdndPutInBag&&cdndPutInBag(' + idx + ')" style="font-size:.64rem;padding:.2rem .55rem;border-radius:6px;background:rgba(0,229,204,.1);border:1px solid rgba(0,229,204,.35);color:var(--mf-cyan,#00e5cc);cursor:pointer;">Add</button>'
+      + "</div>";
+
+    var barColor = fill >= 90 ? "#e74c3c" : (fill >= 60 ? "#f39c12" : "#2ecc71");
+    return '<div style="margin-top:.4rem;padding:.5rem;border:1px solid rgba(0,229,204,.2);border-radius:8px;background:rgba(0,229,204,.04);">'
+      + '<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem;flex-wrap:wrap;">'
+      + '<span style="font-size:.68rem;color:var(--gold,#d4a637);font-weight:700;">🎒 ' + esc(item.name || "Bag") + "</span>"
+      + '<span style="font-size:.6rem;color:var(--parchment-dim,#9a8a66);">' + ownw + " lbs carried</span>"
+      + '<span style="font-size:.6rem;color:var(--parchment-dim,#9a8a66);">[' + cw.toFixed(1) + " / " + Number(capacity).toFixed(0) + " lbs inside]</span></div>"
+      + '<div style="height:4px;border-radius:2px;background:rgba(255,255,255,.08);margin-bottom:.4rem;overflow:hidden;"><div style="height:100%;width:' + Math.min(100, fill).toFixed(1) + "%;background:" + barColor + ';"></div></div>'
+      + '<div style="display:flex;flex-direction:column;gap:.22rem;">' + rows + "</div>"
+      + putin + "</div>";
+  }
+
+  // 1 + 2: global, working bag-open toggle that always renders something
+  window._rpToggleBagContents = function (idx) {
+    var wrap = document.getElementById("rp-bag-contents-" + idx);
+    if (!wrap) return;
+    var lbl = document.getElementById("rp-bag-toggle-" + idx);
+    if (wrap.style.display !== "none") { wrap.style.display = "none"; if (lbl) lbl.textContent = "🎒 open ▸"; return; }
+    wrap.innerHTML = renderBag(idx);
+    wrap.style.display = "";
+    if (lbl) lbl.textContent = "🎒 close ▾";
+  };
+
+  // 3: move the selected item into the bag, then re-render if still open
+  window.cdndPutInBag = function (idx) {
+    var sel = document.getElementById("cdnd-bagsel-" + idx);
+    if (!sel || sel.value === "") return;
+    var itemIdx = parseInt(sel.value, 10);
+    var fn = (typeof window.encumbranceBagAddItem === "function") ? window.encumbranceBagAddItem
+           : (typeof encumbranceBagAddItem === "function") ? encumbranceBagAddItem : null;
+    if (!fn) { console.warn("[bag fix] encumbranceBagAddItem missing"); return; }
+    fn(idx, itemIdx, 1);
+    setTimeout(function () {
+      var w = document.getElementById("rp-bag-contents-" + idx);
+      if (w && w.style.display !== "none") w.innerHTML = renderBag(idx);
+    }, 500);
+  };
+
+  console.log("[CasualDnD bag fix] loaded — open + put-in ready");
+})();
+</script>
 </body>
 </html>
