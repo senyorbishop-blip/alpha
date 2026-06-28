@@ -28,6 +28,7 @@
     hudScale: "1",
     hudPosition: "left",
     reduceMotion: false,
+    hubBorder: "none",
     show: { passive: true, speed: true, quest: true,
             initiative: false, conditions: false, discovery: false }
   };
@@ -63,6 +64,14 @@
     ROOT.style.setProperty("--mf-cyan-soft", hexToSoft(acc));
     ROOT.style.setProperty("--mf-hud-scale", state.hudScale);
     ROOT.setAttribute("data-hud-position", state.hudPosition);
+    // hub border preset — applied to the player's own card element only
+    var card = document.getElementById("mychar-card");
+    if (card) {
+      var border = state.hubBorder || "none";
+      card.setAttribute("data-hub-border", border);
+      if (border !== "none") { card.classList.add("mf-themed"); }
+      else { card.classList.remove("mf-themed"); }
+    }
 
     // let the rest of the app react to non-colour prefs if it wants to
     document.dispatchEvent(new CustomEvent("mf-theme-change", { detail: JSON.parse(JSON.stringify(state)) }));
@@ -75,6 +84,7 @@
 
   function syncControls() {
     var sel = $("[data-mf='theme']"); if (sel) sel.value = state.theme;
+    var hb = $("[data-mf='hubBorder']"); if (hb) hb.value = state.hubBorder || "none";
     $all("[data-mf-size]").forEach(function (b) {
       b.setAttribute("aria-pressed", String(b.getAttribute("data-mf-size") === state.hudScale)); });
     $all("[data-mf-pos]").forEach(function (b) {
@@ -88,6 +98,8 @@
   function wire() {
     var sel = $("[data-mf='theme']");
     if (sel) sel.addEventListener("change", function () { state.theme = sel.value; save(state); apply(); });
+    var hb = $("[data-mf='hubBorder']");
+    if (hb) hb.addEventListener("change", function () { state.hubBorder = hb.value; save(state); apply(); });
 
     $all("[data-mf-size]").forEach(function (b) {
       b.addEventListener("click", function () { state.hudScale = b.getAttribute("data-mf-size"); save(state); apply(); }); });
