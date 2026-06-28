@@ -1142,7 +1142,7 @@ class Session:
             d["codex_links"] = list(self.codex_links or [])
             d["library_entries"] = list(self.library_entries or [])
             d["item_library_entries"] = list(self.item_library_entries or [])
-            d["char_profiles"] = sanitize_profiles_for_websocket(dict(self.char_profiles or {}))
+            # char_profiles already sanitized by to_state_dict(); reuse to avoid double sanitization.
             d["player_inventories"] = build_player_inventory_payload_for_dm(self)
             d["party_stash"] = get_party_stash_inventory(self)
             d["party_loot_log"] = list(self.party_loot_log or [])[-120:]
