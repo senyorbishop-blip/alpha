@@ -12479,6 +12479,29 @@ function shouldRenderTokenLabelAt(worldX, worldY) {
 }
 
 
+function _hexToRgba(hex, alpha) {
+  var h = (hex || '').replace('#', '');
+  if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  if (h.length !== 6) return 'rgba(0,229,204,' + alpha + ')';
+  return 'rgba('+parseInt(h.slice(0,2),16)+','+parseInt(h.slice(2,4),16)+','+parseInt(h.slice(4,6),16)+','+alpha+')';
+}
+
+function _getThemeCanvasColors() {
+  var s = getComputedStyle(document.documentElement);
+  var g = function(v, fb) { return s.getPropertyValue(v).trim() || fb; };
+  var accent   = g('--mf-accent',   '#00e5cc');
+  var gold     = g('--mf-gold',     '#d4a637');
+  var hpHigh   = g('--mf-hp-high',  '#2ecc71');
+  var red      = g('--mf-red',      '#b33a2f');
+  return { accent, gold, hpHigh, red,
+    accentStroke: _hexToRgba(accent, 0.65),
+    accentText:   _hexToRgba(accent, 0.95),
+    goldStroke:   _hexToRgba(gold,   0.72),
+    hpStroke:     _hexToRgba(hpHigh, 0.58),
+    redStroke:    _hexToRgba(red,    0.6),
+  };
+}
+
 function _tokenBadgeReadableFontPx(screenPx, minWorldPx = 7) {
   const zoom = Math.max(0.25, Number(cam?.zoom) || 1);
   return Math.max(minWorldPx, screenPx / zoom);
@@ -12532,14 +12555,15 @@ function layoutTokenBadges(token, renderContext = {}) {
   const isPlayerOwned = !!token.owner_id || token.token_type === 'player';
   const rowsAbove = [];
   const rowsBelow = [];
+  const tc = _getThemeCanvasColors();
 
   if (renderContext.turnLabel) {
     const isNow = renderContext.turnLabel === 'NOW';
     rowsAbove.push(_tokenBadgeMeasurePill(renderContext.turnLabel, {
       fontPx: _tokenBadgeReadableFontPx(12, 8),
       fill: isNow ? 'rgba(60,40,0,0.94)' : 'rgba(20,30,50,0.94)',
-      stroke: isNow ? 'rgba(255,215,0,0.92)' : 'rgba(180,200,220,0.82)',
-      color: isNow ? '#ffe27a' : '#cce0f5',
+      stroke: isNow ? tc.goldStroke : 'rgba(180,200,220,0.82)',
+      color: isNow ? tc.gold : '#cce0f5',
       priority: 100,
     }));
   }
@@ -12549,8 +12573,8 @@ function layoutTokenBadges(token, renderContext = {}) {
     rowsAbove.push(_tokenBadgeMeasurePill(`INIT ${initiativeValue}`, {
       fontPx: _tokenBadgeReadableFontPx(10, 7),
       fill: 'rgba(36,24,8,0.92)',
-      stroke: 'rgba(245,158,11,0.68)',
-      color: '#ffd78a',
+      stroke: tc.goldStroke,
+      color: tc.gold,
       priority: 90,
     }));
   }
@@ -12560,8 +12584,8 @@ function layoutTokenBadges(token, renderContext = {}) {
     rowsAbove.push(_tokenBadgeMeasurePill(`AC ${token.ac}`, {
       fontPx: _tokenBadgeReadableFontPx(11, 7),
       fill: 'rgba(16,20,28,0.92)',
-      stroke: 'rgba(125,211,252,0.62)',
-      color: '#d9f4ff',
+      stroke: tc.accentStroke,
+      color: tc.accentText,
       priority: 80,
     }));
   }
@@ -12572,8 +12596,8 @@ function layoutTokenBadges(token, renderContext = {}) {
     rowsAbove.push(_tokenBadgeMeasurePill(`HP ${shownCur}/${shownMax}`, {
       fontPx: _tokenBadgeReadableFontPx(10, 7),
       fill: 'rgba(12,24,18,0.92)',
-      stroke: 'rgba(46,204,113,0.55)',
-      color: '#d9ffe6',
+      stroke: tc.hpStroke,
+      color: tc.hpHigh,
       priority: 60,
     }));
   }
@@ -12587,8 +12611,8 @@ function layoutTokenBadges(token, renderContext = {}) {
     rowsBelow.push(_tokenBadgeMeasurePill(isPlayerOwned ? 'PC' : 'NPC', {
       fontPx: _tokenBadgeReadableFontPx(10, 7),
       fill: 'rgba(16,18,22,0.86)',
-      stroke: isPlayerOwned ? 'rgba(0,229,204,0.5)' : 'rgba(255,121,87,0.5)',
-      color: isPlayerOwned ? '#9ff6ea' : '#ffc0aa',
+      stroke: isPlayerOwned ? tc.accentStroke : tc.redStroke,
+      color: isPlayerOwned ? tc.accentText : '#ffc0aa',
       priority: 40,
     }));
   }
