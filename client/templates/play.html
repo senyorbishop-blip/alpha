@@ -48270,5 +48270,36 @@ async function bestiaryMakeVariant() {
   console.log("[CasualDnD theme] picker loaded");
 })();
 </script>
+<script>
+(function () {
+  "use strict";
+  var tries = 0, MAX = 15;
+
+  function haveItems() {
+    try { return (typeof _srdItems !== "undefined" && Array.isArray(_srdItems) && _srdItems.length > 0); }
+    catch (e) { return false; }
+  }
+  function send() {
+    // direct send (not requestSrdItems) so it bypasses the suppressed path;
+    // empty version => server returns the full current list.
+    try {
+      if (typeof sendWS === "function") { sendWS({ type: "srd_items_request", payload: { srd_items_version: "" } }); return true; }
+      if (window.sendWS) { window.sendWS({ type: "srd_items_request", payload: { srd_items_version: "" } }); return true; }
+    } catch (e) {}
+    return false;
+  }
+  function tick() {
+    tries++;
+    if (haveItems()) { console.log("[CasualDnD SRD fix] items loaded (" + _srdItems.length + ")"); return; }
+    if (tries > MAX) { console.warn("[CasualDnD SRD fix] gave up after " + MAX + " tries — check the server has items + was restarted after import"); return; }
+    send();
+    setTimeout(tick, 2000);
+  }
+
+  // first attempt a few seconds in, after the initial state_sync has applied
+  setTimeout(tick, 3000);
+  console.log("[CasualDnD SRD fix] armed — will fetch SRD items once state settles");
+})();
+</script>
 </body>
 </html>
