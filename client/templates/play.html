@@ -48124,5 +48124,127 @@ async function bestiaryMakeVariant() {
   console.log("[CasualDnD bag fix] loaded — open + put-in ready");
 })();
 </script>
+<script>
+(function () {
+  "use strict";
+  var KEY = "casual-dnd-theme-v1";
+  var ROOT = document.documentElement;
+
+  var THEMES = [
+    ["dark-fantasy", "Dark Fantasy", "#00e5cc"],
+    ["parchment", "Parchment", "#7a4e14"],
+    ["arcane-cyan", "Arcane Cyan", "#22d3ee"],
+    ["blood-steel", "Blood & Steel", "#e3342f"],
+    ["wood-elves", "Wood Elves", "#c9a24a"],
+    ["divine", "Divine Radiance", "#c8a13a"],
+    ["necromancer", "Bone & Shadow", "#7fe08a"],
+    ["high-contrast", "High Contrast", "#ffd400"]
+  ];
+
+  var CSS = '' +
+  '[data-theme="parchment"]{--mf-bg-void:#9c7d44;--mf-bg-deep:#c2a467;--mf-surface:#ddc183;--mf-surface-raised:rgba(255,248,225,.5);--mf-surface-glass:#ddc183;--mf-surface-ink:rgba(90,60,20,.35);--mf-border-soft:rgba(96,62,24,.55);--mf-border-cyan:rgba(96,62,24,.7);--mf-text:#2b1c08;--mf-text-muted:rgba(64,44,18,.72);--mf-parchment:#8a6b34;--mf-parchment-dark:#5a3416;}' +
+  '[data-theme="arcane-cyan"]{--mf-bg-void:#03121a;--mf-bg-deep:#061d28;--mf-surface:#0a2632;--mf-surface-raised:#0e303f;--mf-surface-glass:rgba(10,38,50,.9);--mf-border-soft:rgba(0,229,204,.22);--mf-border-cyan:rgba(0,229,204,.4);--mf-text:#d6f3f6;--mf-text-muted:rgba(214,243,246,.6);--mf-parchment:#6fd4d0;}' +
+  '[data-theme="blood-steel"]{--mf-bg-void:#100707;--mf-bg-deep:#170b0b;--mf-surface:#221313;--mf-surface-raised:#2c1919;--mf-surface-glass:rgba(34,19,19,.92);--mf-border-soft:rgba(150,150,160,.22);--mf-border-cyan:rgba(199,60,50,.45);--mf-text:#f0dada;--mf-text-muted:rgba(240,218,218,.6);--mf-parchment:#c0938f;}' +
+  '[data-theme="wood-elves"]{--mf-bg-void:#1a2213;--mf-bg-deep:#243016;--mf-surface:#3a3a22;--mf-surface-raised:rgba(64,72,40,.5);--mf-surface-glass:#2f3a1f;--mf-border-soft:rgba(120,150,70,.4);--mf-border-cyan:rgba(150,180,90,.45);--mf-text:#ece4c8;--mf-text-muted:rgba(236,228,200,.66);--mf-parchment:#c9b676;}' +
+  '[data-theme="divine"]{--mf-bg-void:#2b2d3a;--mf-bg-deep:#e3e9f1;--mf-surface:#f4f1e8;--mf-surface-raised:rgba(255,255,255,.66);--mf-surface-glass:#f7f4ec;--mf-border-soft:rgba(196,160,70,.4);--mf-border-cyan:rgba(196,160,70,.55);--mf-text:#2b2d3a;--mf-text-muted:rgba(43,45,58,.6);--mf-parchment:#c8a13a;}' +
+  '[data-theme="necromancer"]{--mf-bg-void:#070709;--mf-bg-deep:#0d0d10;--mf-surface:#16161a;--mf-surface-raised:#1d1d22;--mf-surface-glass:rgba(18,18,22,.9);--mf-border-soft:rgba(150,200,150,.18);--mf-border-cyan:rgba(120,224,140,.35);--mf-text:#dcd8c8;--mf-text-muted:rgba(220,216,200,.55);--mf-parchment:#b8b49c;}' +
+  '[data-theme="high-contrast"]{--mf-bg-void:#000;--mf-bg-deep:#000;--mf-surface:#0a0a0a;--mf-surface-raised:#161616;--mf-surface-glass:#0a0a0a;--mf-surface-ink:#000;--mf-border-soft:#fff;--mf-border-cyan:#ffd400;--mf-text:#fff;--mf-text-muted:#d6d6d6;--mf-parchment:#ffd400;}' +
+  'html[data-reduce-motion="true"] *,html[data-reduce-motion="true"] *::before,html[data-reduce-motion="true"] *::after{transition:none!important;animation:none!important;}' +
+  '#cdnd-theme-btn{position:fixed;right:14px;bottom:14px;z-index:99999;width:42px;height:42px;border-radius:50%;border:1px solid var(--mf-border-soft,rgba(212,166,55,.3));background:var(--mf-surface-glass,rgba(13,20,23,.92));color:var(--mf-accent,var(--mf-cyan,#00e5cc));font-size:20px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.4);}' +
+  '#cdnd-theme-pop{position:fixed;right:14px;bottom:64px;z-index:99999;width:236px;display:none;flex-direction:column;gap:11px;padding:14px;border-radius:14px;font-family:var(--mf-font-body,Georgia,serif);color:var(--mf-text,#e8dcc8);background:var(--mf-surface-glass,rgba(13,20,23,.96));border:1px solid var(--mf-border-soft,rgba(212,166,55,.3));box-shadow:0 16px 40px rgba(0,0,0,.5);}' +
+  '#cdnd-theme-pop.open{display:flex;}' +
+  '#cdnd-theme-pop h4{margin:0;font-family:var(--mf-font-display,Cinzel,serif);font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mf-accent,var(--mf-cyan,#00e5cc));}' +
+  '#cdnd-theme-pop label{display:block;font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mf-text-muted,rgba(232,220,200,.6));margin-bottom:5px;}' +
+  '#cdnd-theme-pop select{width:100%;padding:7px 9px;font-size:.8rem;color:var(--mf-text,#e8dcc8);background:var(--mf-surface-raised,#151f22);border:1px solid var(--mf-border-soft,rgba(212,166,55,.25));border-radius:9px;cursor:pointer;}' +
+  '#cdnd-theme-sw{display:flex;gap:9px;}' +
+  '#cdnd-theme-sw button{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;}' +
+  '#cdnd-theme-sw button[aria-pressed="true"]{border-color:var(--mf-text,#e8dcc8);transform:scale(1.12);}' +
+  '#cdnd-theme-row{display:flex;align-items:center;justify-content:space-between;font-size:.74rem;}' +
+  '#cdnd-theme-row button{width:36px;height:19px;border-radius:999px;position:relative;cursor:pointer;background:var(--mf-surface-raised,#151f22);border:1px solid var(--mf-border-soft,rgba(212,166,55,.25));}' +
+  '#cdnd-theme-row button[aria-pressed="true"]{background:var(--mf-accent,var(--mf-cyan,#00e5cc));}' +
+  '#cdnd-theme-row button::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:var(--mf-text,#e8dcc8);transition:left .18s;}' +
+  '#cdnd-theme-row button[aria-pressed="true"]::after{left:18px;}' +
+  '#cdnd-theme-reset{font-size:.66rem;padding:6px 12px;border-radius:8px;cursor:pointer;color:var(--mf-text,#e8dcc8);background:var(--mf-surface-raised,#151f22);border:1px solid var(--mf-border-soft,rgba(212,166,55,.25));}';
+
+  function softHex(hex) {
+    var n = parseInt(hex.slice(1), 16);
+    return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + ",0.18)";
+  }
+  function load() {
+    try { return Object.assign({ theme: "dark-fantasy", accent: "auto", reduce: false }, JSON.parse(localStorage.getItem(KEY) || "{}")); }
+    catch (e) { return { theme: "dark-fantasy", accent: "auto", reduce: false }; }
+  }
+  function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+  function accentOf(s) {
+    if (s.accent !== "auto") return s.accent;
+    var t = THEMES.find(function (x) { return x[0] === s.theme; });
+    return t ? t[2] : "#00e5cc";
+  }
+
+  var state = load();
+
+  function apply() {
+    var acc = accentOf(state);
+    ROOT.setAttribute("data-theme", state.theme);
+    ROOT.setAttribute("data-reduce-motion", state.reduce ? "true" : "false");
+    ROOT.style.setProperty("--mf-accent", acc);
+    ROOT.style.setProperty("--mf-accent-soft", softHex(acc));
+    ROOT.style.setProperty("--mf-cyan", acc);
+    ROOT.style.setProperty("--mf-cyan-soft", softHex(acc));
+    sync();
+  }
+
+  function sync() {
+    var sel = document.getElementById("cdnd-theme-sel"); if (sel) sel.value = state.theme;
+    var sw = document.querySelectorAll("#cdnd-theme-sw button");
+    sw.forEach(function (b) { b.setAttribute("aria-pressed", String(state.accent !== "auto" && b.getAttribute("data-acc") === state.accent)); });
+    var r = document.getElementById("cdnd-theme-reduce"); if (r) r.setAttribute("aria-pressed", String(!!state.reduce));
+  }
+
+  function build() {
+    var st = document.createElement("style"); st.id = "cdnd-theme-style"; st.textContent = CSS;
+    document.head.appendChild(st);
+
+    var btn = document.createElement("button");
+    btn.id = "cdnd-theme-btn"; btn.title = "Theme"; btn.textContent = "🎨";
+    document.body.appendChild(btn);
+
+    var pop = document.createElement("div");
+    pop.id = "cdnd-theme-pop";
+    var themeOpts = THEMES.map(function (t) { return '<option value="' + t[0] + '">' + t[1] + "</option>"; }).join("");
+    var swatches = ["#00e5cc", "#d4a637", "#b33a2f", "#9b59d0", "#2ecc71"].map(function (c) {
+      return '<button data-acc="' + c + '" style="background:' + c + '"></button>';
+    }).join("");
+    pop.innerHTML =
+      "<h4>🎨 Theme</h4>" +
+      '<div><label>Theme</label><select id="cdnd-theme-sel">' + themeOpts + "</select></div>" +
+      '<div><label>Accent</label><div id="cdnd-theme-sw">' + swatches + "</div></div>" +
+      '<div id="cdnd-theme-row"><span>Reduce Animations</span><button id="cdnd-theme-reduce" aria-pressed="false"></button></div>' +
+      '<button id="cdnd-theme-reset">Reset to Default</button>';
+    document.body.appendChild(pop);
+
+    btn.addEventListener("click", function () { pop.classList.toggle("open"); });
+    document.addEventListener("click", function (e) {
+      if (!pop.contains(e.target) && e.target !== btn) pop.classList.remove("open");
+    });
+    document.getElementById("cdnd-theme-sel").addEventListener("change", function (e) { state.theme = e.target.value; save(state); apply(); });
+    pop.querySelectorAll("#cdnd-theme-sw button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var c = b.getAttribute("data-acc");
+        state.accent = (state.accent === c) ? "auto" : c; save(state); apply();
+      });
+    });
+    document.getElementById("cdnd-theme-reduce").addEventListener("click", function () { state.reduce = !state.reduce; save(state); apply(); });
+    document.getElementById("cdnd-theme-reset").addEventListener("click", function () { state = { theme: "dark-fantasy", accent: "auto", reduce: false }; save(state); apply(); });
+    sync();
+  }
+
+  apply(); // apply saved theme ASAP (before UI) to avoid a flash
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", build);
+  else build();
+
+  console.log("[CasualDnD theme] picker loaded");
+})();
+</script>
 </body>
 </html>
