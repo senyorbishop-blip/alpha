@@ -174,11 +174,18 @@ def sanitize_profile_for_websocket(profile: Any) -> Any:
     out["portrait_url"] = portrait_url
     out["thumb_url"] = thumb_url or portrait_url
     out["asset_sync"] = {"embedded_assets": False, "lazy_assets": True}
-    if json_size(out) > PROFILE_SYNC_MAX_BYTES:
+    sync_size = json_size(out)
+    if sync_size > PROFILE_SYNC_MAX_BYTES:
         # Last-resort safety: keep common summary/canonical roots but drop large import/raw documents.
         for key in ("sourceDocument", "rawDocument", "pdf", "pdfData", "importRaw", "rawText"):
             if key in out:
                 out[key] = {"omitted_from_sync": True, "lazy": True}
+        profile_label = str(out.get("id") or out.get("name") or "?")
+        final_size = json_size(out)
+        logger.warning(
+            "[char_profile_assets] large_profile_sync profile=%s bytes=%s cap=%s bytes_after_strip=%s",
+            profile_label, sync_size, PROFILE_SYNC_MAX_BYTES, final_size,
+        )
     return out
 
 

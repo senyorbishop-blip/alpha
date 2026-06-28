@@ -88,9 +88,11 @@ def top_level_payload_sizes(message: dict[str, Any], *, limit: int = 8) -> list[
     return sizes[:limit]
 
 
-def log_top_level_payload_keys(logger: logging.Logger, *, session_id: str, recipient_user_id: str, recipient_role: str, message: dict[str, Any]) -> None:
+def log_top_level_payload_keys(logger: logging.Logger, *, session_id: str, recipient_user_id: str, recipient_role: str, message: dict[str, Any], byte_size: int = 0) -> None:
     message_type = str((message or {}).get("type") or "")
     if message_type not in {"state_sync", "char_profiles_sync"}:
+        return
+    if byte_size and byte_size <= PAYLOAD_WARN_BYTES:
         return
     top = top_level_payload_sizes(message)
     if not top:
