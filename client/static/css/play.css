@@ -2,19 +2,19 @@
       --bg: #0a0b0f;
       --panel: #13160f;
       --panel2: #1a1408;
-      --border: rgba(0,229,204,0.18);
-      --gold: #00e5cc;
-      --gold-dim: rgba(0,229,204,0.5);
-      --cyan: #00e5cc;
-      --parchment: #e8dcc8;
-      --parchment-dim: rgba(200,169,110,0.5);
+      --border: var(--mf-border-cyan, rgba(0,229,204,0.18));
+      --gold: var(--mf-accent, #00e5cc);
+      --gold-dim: var(--mf-accent-soft, rgba(0,229,204,0.5));
+      --cyan: var(--mf-accent, #00e5cc);
+      --parchment: var(--mf-text, #e8dcc8);
+      --parchment-dim: var(--mf-text-muted, rgba(200,169,110,0.5));
       --blood: #8b1a1a;
       --blood-dim: rgba(139,26,26,0.4);
-      --dm-color: #d4a637;
-      --player-color: #00e5cc;
-      --viewer-color: #9b59b6;
-      --success: #2ecc71;
-      --canvas-bg: #0a0b0f;
+      --dm-color: var(--mf-role-dm, #d4a637);
+      --player-color: var(--mf-role-player, #00e5cc);
+      --viewer-color: var(--mf-role-viewer, #9b59b6);
+      --success: var(--mf-hp-high, #2ecc71);
+      --canvas-bg: var(--mf-bg-void, #0a0b0f);
       --grid-color: rgba(0,229,204,0.07);
 
       /* ── Design tokens (spacing / typography / motion / radius) ── */
