@@ -37001,6 +37001,11 @@ function saveItemLibraryEntry() {
   const entry = getItemLibraryDraft();
   sendWS({ type: 'item_library_upsert', payload: entry });
   _itemLibrarySelectedId = entry.id;
+  // Clear rarity/category filters so the saved item is visible immediately on sync
+  const rarityEl = document.getElementById('itemlib-filter-rarity');
+  const categoryEl = document.getElementById('itemlib-filter-category');
+  if (rarityEl) rarityEl.value = '';
+  if (categoryEl) categoryEl.value = '';
   showToast(`Saved ${entry.name} to item library`);
 }
 
