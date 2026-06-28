@@ -19615,6 +19615,7 @@ function closeDiceOverlay() {
   ensureRollVisualPortal();
   _diceIsDismissing = false;
   _dicePhysicsActive = false;
+  const _hadDeferredCombatRender = !!_renderCombatDebounceTmr;
   clearTimeout(_renderCombatDebounceTmr);
   _renderCombatDebounceTmr = null;
   document.getElementById('dice-overlay-bg').classList.remove('open');
@@ -19630,6 +19631,13 @@ function closeDiceOverlay() {
   _hideDiceRollBanner();
   if (window.DicePhysics3D && window.DicePhysics3D.isReady()) {
     window.DicePhysics3D.close();
+  }
+  // If a combat re-render was deferred while dice physics was active, the
+  // debounce timer above was just cancelled. Flush it now so the initiative
+  // tracker (and full combat panel) reflects the authoritative state that
+  // arrived during the roll animation.
+  if (_hadDeferredCombatRender && typeof forceCombatStateUISync === 'function') {
+    forceCombatStateUISync();
   }
 }
 // ═══════════════════════════════════════════════════════════════════
