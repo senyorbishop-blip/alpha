@@ -15,6 +15,7 @@ import json
 import logging
 import re
 import sys
+import time
 from copy import deepcopy
 from typing import Any
 
@@ -22,6 +23,20 @@ from server.asset_pipeline import sha256_hex
 from server.paths import ASSETS_DIR, ensure_data_dirs
 
 logger = logging.getLogger(__name__)
+
+# Rate-limit repeated large-profile warnings to once per interval per profile.
+_LARGE_PROFILE_LOG_INTERVAL_S = 300.0
+_large_profile_log_last: dict[str, float] = {}
+
+
+def _large_profile_log_allowed(profile_label: str, kind: str) -> bool:
+    key = f"{kind}:{profile_label}"
+    now = time.monotonic()
+    if now - _large_profile_log_last.get(key, 0.0) >= _LARGE_PROFILE_LOG_INTERVAL_S:
+        _large_profile_log_last[key] = now
+        return True
+    return False
+
 
 DATA_IMAGE_RE = re.compile(r"^data:(image/[a-zA-Z0-9.+-]+);base64,(.*)$", re.S)
 
@@ -206,11 +221,12 @@ def sanitize_profile_for_websocket(profile: Any) -> Any:
                         stripped_keys.append(f"nativeRuntime.{k}({sz})")
 
         final_size = json_size(out)
-        logger.warning(
-            "[char_profile_assets] large_profile_sync profile=%s bytes=%s cap=%s bytes_after_strip=%s stripped=%s",
-            profile_label, sync_size, PROFILE_SYNC_MAX_BYTES, final_size,
-            ",".join(stripped_keys) if stripped_keys else "none",
-        )
+        if _large_profile_log_allowed(profile_label, "sync"):
+            logger.warning(
+                "[char_profile_assets] large_profile_sync profile=%s bytes=%s cap=%s bytes_after_strip=%s stripped=%s",
+                profile_label, sync_size, PROFILE_SYNC_MAX_BYTES, final_size,
+                ",".join(stripped_keys) if stripped_keys else "none",
+            )
     return out
 
 
@@ -420,10 +436,11 @@ def enforce_profile_size_caps(profile: Any, *, profile_label: str = "", string_c
     total = json_size(profile)
     if total > profile_cap:
         warnings.append({"path": "$profile", "bytes": total, "cap": profile_cap})
-        logger.warning(
-            "[char_profile_assets] large_profile profile=%s bytes=%s cap=%s",
-            profile_label or "?", total, profile_cap,
-        )
+        if _large_profile_log_allowed(profile_label or "?", "persist"):
+            logger.warning(
+                "[char_profile_assets] large_profile profile=%s bytes=%s cap=%s",
+                profile_label or "?", total, profile_cap,
+            )
     return warnings
 
 
