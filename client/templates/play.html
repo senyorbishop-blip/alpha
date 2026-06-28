@@ -38030,7 +38030,7 @@ function renderInventoryPanel() {
   if (stashWidget) stashWidget.style.display = ROLE === 'viewer' || isEssentials ? 'none' : 'flex';
   if (equipSummary) equipSummary.style.display = ROLE === 'player' ? 'block' : 'none';
   if (actionFeedback) actionFeedback.style.display = ROLE === 'player' ? (String(_inventoryActionFeedback?.message || '').trim() ? 'block' : 'none') : 'none';
-  if (lootSection) lootSection.style.display = isEssentials ? 'none' : 'flex';
+  if (lootSection) lootSection.style.display = (isEssentials && ROLE !== 'dm') ? 'none' : 'flex';
   if (toolsNote) {
     toolsNote.textContent = ROLE === 'dm'
       ? 'Add manual items to inventories, award gold directly, save reusable item-library entries, and give items to connected players.'
