@@ -37001,11 +37001,6 @@ function saveItemLibraryEntry() {
   const entry = getItemLibraryDraft();
   sendWS({ type: 'item_library_upsert', payload: entry });
   _itemLibrarySelectedId = entry.id;
-  // Clear rarity/category filters so the saved item is visible immediately on sync
-  const rarityEl = document.getElementById('itemlib-filter-rarity');
-  const categoryEl = document.getElementById('itemlib-filter-category');
-  if (rarityEl) rarityEl.value = '';
-  if (categoryEl) categoryEl.value = '';
   showToast(`Saved ${entry.name} to item library`);
 }
 
@@ -37055,6 +37050,17 @@ function openItemLibraryModal(mode) {
       refreshInventoryAwardTargetSelect('itemlib-pick-target', 'itemlib-pick-target-wrap');
     }
   }
+  // Reset filters so all items are visible on open
+  const searchEl = document.getElementById('itemlib-search');
+  const rarityEl = document.getElementById('itemlib-filter-rarity');
+  const categoryEl = document.getElementById('itemlib-filter-category');
+  if (searchEl) searchEl.value = '';
+  if (rarityEl) rarityEl.value = '';
+  if (categoryEl) categoryEl.value = '';
+  ['itemlib-filter-attunement','itemlib-filter-spells','itemlib-filter-weapons','itemlib-filter-armor','itemlib-filter-consumables'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.checked = false;
+  });
   modal.style.display = 'flex';
   renderItemLibraryList();
   renderItemLibraryEditor();
