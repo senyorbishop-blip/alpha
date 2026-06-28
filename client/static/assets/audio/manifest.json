@@ -1,355 +1,1101 @@
 {
-  "version": "20260328",
+  "version": "20260701",
+  "schema": 2,
+  "loudness_target_lufs": -16,
+  "crossfade_ms_default": 2500,
+  "auto_scene_music": true,
   "tracks": {
     "forest": {
       "label": "Forest",
+      "family": "wilderness",
+      "fallback": "procedural_wilderness",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "terrain": [
+          "grass",
+          "forest"
+        ],
+        "poi_types": [
+          "wilds",
+          "grove"
+        ],
+        "tags": [
+          "wilderness",
+          "day"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/forest_day_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/bird_call_1.ogg",
+            "/static/assets/audio/detail/bird_call_2.ogg",
+            "/static/assets/audio/detail/branch_creak.ogg",
+            "/static/assets/audio/detail/leaf_rustle.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        },
+        "texture": {
+          "file": "/static/assets/audio/texture/wind_soft.ogg",
+          "gain": 0.3,
+          "loop": true
+        }
+      },
+      "music": {
+        "file": "/static/assets/audio/music/forest_theme.ogg",
+        "gain": 0.5,
+        "loop": true,
+        "stream": true
+      },
       "files": [
-        "/static/assets/audio/forest_loop_20260328.wav"
-      ],
-      "family": "forest",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_forest",
-      "asset_probe": "enabled"
+        "/static/assets/audio/beds/forest_day_bed.ogg"
+      ]
     },
     "wilderness_night": {
       "label": "Wilderness Night",
+      "family": "wilderness",
+      "fallback": "procedural_wilderness",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "terrain": [
+          "grass",
+          "forest"
+        ],
+        "tags": [
+          "wilderness",
+          "night"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/forest_night_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/owl_hoot.ogg",
+            "/static/assets/audio/detail/cricket_swell.ogg",
+            "/static/assets/audio/detail/distant_howl.ogg",
+            "/static/assets/audio/detail/twig_snap.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        },
+        "texture": {
+          "file": "/static/assets/audio/texture/wind_soft.ogg",
+          "gain": 0.3,
+          "loop": true
+        }
+      },
       "files": [
-        "/static/assets/audio/forest_loop_20260328.wav"
-      ],
-      "family": "forest",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_forest",
-      "asset_probe": "enabled"
+        "/static/assets/audio/beds/forest_night_bed.ogg"
+      ]
     },
     "swamp": {
       "label": "Swamp",
+      "family": "wilderness",
+      "fallback": "procedural_wilderness",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "terrain": [
+          "swamp",
+          "marsh"
+        ],
+        "tags": [
+          "wilderness"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/swamp_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/frog_croak.ogg",
+            "/static/assets/audio/detail/bubble_pop.ogg",
+            "/static/assets/audio/detail/insect_drone.ogg",
+            "/static/assets/audio/detail/water_drip.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        },
+        "texture": {
+          "file": "/static/assets/audio/texture/wind_low.ogg",
+          "gain": 0.3,
+          "loop": true
+        }
+      },
       "files": [
-        "/static/assets/audio/forest_loop_20260328.wav"
-      ],
-      "family": "forest",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_forest",
-      "asset_probe": "enabled"
+        "/static/assets/audio/beds/swamp_bed.ogg"
+      ]
     },
     "mountain_pass": {
       "label": "Mountain Pass",
+      "family": "wilderness",
+      "fallback": "procedural_wilderness",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "terrain": [
+          "mountain",
+          "snow"
+        ],
+        "poi_types": [
+          "pass",
+          "peak"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/mountain_wind_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/rock_clatter.ogg",
+            "/static/assets/audio/detail/eagle_cry.ogg",
+            "/static/assets/audio/detail/gust_swell.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        },
+        "texture": {
+          "file": "/static/assets/audio/texture/wind_high.ogg",
+          "gain": 0.3,
+          "loop": true
+        }
+      },
+      "music": {
+        "file": "/static/assets/audio/music/mountain_theme.ogg",
+        "gain": 0.5,
+        "loop": true,
+        "stream": true
+      },
       "files": [
-        "/static/assets/audio/forest_loop_20260328.wav"
-      ],
-      "family": "forest",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_forest",
-      "asset_probe": "enabled"
+        "/static/assets/audio/beds/mountain_wind_bed.ogg"
+      ]
     },
-    "tavern": {
-      "label": "Tavern",
+    "coastal": {
+      "label": "Coastline",
+      "family": "wilderness",
+      "fallback": "procedural_wilderness",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "terrain": [
+          "beach",
+          "coast"
+        ],
+        "poi_types": [
+          "shore"
+        ],
+        "tags": [
+          "water"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/seashore_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/gull_cry.ogg",
+            "/static/assets/audio/detail/wave_break.ogg",
+            "/static/assets/audio/detail/rope_creak.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        },
+        "texture": {
+          "file": "/static/assets/audio/texture/wind_sea.ogg",
+          "gain": 0.3,
+          "loop": true
+        }
+      },
+      "music": {
+        "file": "/static/assets/audio/music/coast_theme.ogg",
+        "gain": 0.5,
+        "loop": true,
+        "stream": true
+      },
       "files": [
-        "/static/assets/audio/tavern_loop_20260328.wav"
-      ],
-      "family": "tavern",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_tavern",
-      "asset_probe": "enabled"
-    },
-    "inn_night": {
-      "label": "Inn Night",
-      "files": [
-        "/static/assets/audio/tavern_loop_20260328.wav"
-      ],
-      "family": "tavern",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_tavern",
-      "asset_probe": "enabled"
-    },
-    "marketplace": {
-      "label": "Marketplace",
-      "files": [
-        "/static/assets/audio/tavern_loop_20260328.wav"
-      ],
-      "family": "tavern",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_tavern",
-      "asset_probe": "enabled"
-    },
-    "city": {
-      "label": "City",
-      "files": [
-        "/static/assets/audio/tavern_loop_20260328.wav"
-      ],
-      "family": "tavern",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_tavern",
-      "asset_probe": "enabled"
-    },
-    "harbor": {
-      "label": "Harbor",
-      "files": [
-        "/static/assets/audio/tavern_loop_20260328.wav"
-      ],
-      "family": "tavern",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_tavern",
-      "asset_probe": "enabled"
-    },
-    "campfire": {
-      "label": "Campfire",
-      "files": [
-        "/static/assets/audio/tavern_loop_20260328.wav"
-      ],
-      "family": "tavern",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_tavern",
-      "asset_probe": "enabled"
-    },
-    "dungeon": {
-      "label": "Dungeon",
-      "files": [
-        "/static/assets/audio/dungeon_loop_20260328.wav"
-      ],
-      "family": "dungeon",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_dungeon",
-      "asset_probe": "enabled"
-    },
-    "crypt": {
-      "label": "Crypt",
-      "files": [
-        "/static/assets/audio/dungeon_loop_20260328.wav"
-      ],
-      "family": "dungeon",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_dungeon",
-      "asset_probe": "enabled"
+        "/static/assets/audio/beds/seashore_bed.ogg"
+      ]
     },
     "cave": {
       "label": "Cave",
+      "family": "wilderness",
+      "fallback": "procedural_wilderness",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "terrain": [
+          "cave",
+          "underground"
+        ],
+        "poi_types": [
+          "cave",
+          "cavern"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/cave_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/water_drip.ogg",
+            "/static/assets/audio/detail/pebble_fall.ogg",
+            "/static/assets/audio/detail/distant_rumble.ogg",
+            "/static/assets/audio/detail/bat_flutter.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        },
+        "texture": {
+          "file": "/static/assets/audio/texture/cave_air.ogg",
+          "gain": 0.3,
+          "loop": true
+        }
+      },
       "files": [
-        "/static/assets/audio/dungeon_loop_20260328.wav"
-      ],
+        "/static/assets/audio/beds/cave_bed.ogg"
+      ]
+    },
+    "tavern": {
+      "label": "Tavern",
+      "family": "settlement",
+      "fallback": "procedural_settlement",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "poi_types": [
+          "tavern",
+          "inn",
+          "alehouse"
+        ],
+        "terrain": [
+          "interior"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/tavern_room_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/mug_clink.ogg",
+            "/static/assets/audio/detail/crowd_laugh.ogg",
+            "/static/assets/audio/detail/chair_scrape.ogg",
+            "/static/assets/audio/detail/coin_drop.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        },
+        "texture": {
+          "file": "/static/assets/audio/texture/hearth_crackle.ogg",
+          "gain": 0.3,
+          "loop": true
+        }
+      },
+      "music": {
+        "file": "/static/assets/audio/music/tavern_theme.ogg",
+        "gain": 0.5,
+        "loop": true,
+        "stream": true
+      },
+      "files": [
+        "/static/assets/audio/beds/tavern_room_bed.ogg"
+      ]
+    },
+    "inn_night": {
+      "label": "Inn at Night",
+      "family": "settlement",
+      "fallback": "procedural_settlement",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "poi_types": [
+          "inn"
+        ],
+        "tags": [
+          "interior",
+          "night"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/inn_quiet_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/floor_creak.ogg",
+            "/static/assets/audio/detail/ember_pop.ogg",
+            "/static/assets/audio/detail/distant_snore.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        },
+        "texture": {
+          "file": "/static/assets/audio/texture/hearth_crackle.ogg",
+          "gain": 0.3,
+          "loop": true
+        }
+      },
+      "music": {
+        "file": "/static/assets/audio/music/tavern_theme.ogg",
+        "gain": 0.5,
+        "loop": true,
+        "stream": true
+      },
+      "files": [
+        "/static/assets/audio/beds/inn_quiet_bed.ogg"
+      ]
+    },
+    "marketplace": {
+      "label": "Marketplace",
+      "family": "settlement",
+      "fallback": "procedural_settlement",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "poi_types": [
+          "market",
+          "bazaar"
+        ],
+        "tags": [
+          "settlement"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/market_crowd_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/vendor_call.ogg",
+            "/static/assets/audio/detail/cart_wheel.ogg",
+            "/static/assets/audio/detail/crate_thud.ogg",
+            "/static/assets/audio/detail/haggle_murmur.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        }
+      },
+      "music": {
+        "file": "/static/assets/audio/music/town_theme.ogg",
+        "gain": 0.5,
+        "loop": true,
+        "stream": true
+      },
+      "files": [
+        "/static/assets/audio/beds/market_crowd_bed.ogg"
+      ]
+    },
+    "city": {
+      "label": "City Streets",
+      "family": "settlement",
+      "fallback": "procedural_settlement",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "poi_types": [
+          "city",
+          "town",
+          "district"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/city_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/bell_toll.ogg",
+            "/static/assets/audio/detail/footsteps_pass.ogg",
+            "/static/assets/audio/detail/door_close.ogg",
+            "/static/assets/audio/detail/dog_bark.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        }
+      },
+      "music": {
+        "file": "/static/assets/audio/music/town_theme.ogg",
+        "gain": 0.5,
+        "loop": true,
+        "stream": true
+      },
+      "files": [
+        "/static/assets/audio/beds/city_bed.ogg"
+      ]
+    },
+    "harbor": {
+      "label": "Harbor",
+      "family": "settlement",
+      "fallback": "procedural_settlement",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "poi_types": [
+          "harbor",
+          "dock",
+          "port"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/harbor_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/gull_cry.ogg",
+            "/static/assets/audio/detail/ship_bell.ogg",
+            "/static/assets/audio/detail/rope_creak.ogg",
+            "/static/assets/audio/detail/crate_thud.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        },
+        "texture": {
+          "file": "/static/assets/audio/texture/wind_sea.ogg",
+          "gain": 0.3,
+          "loop": true
+        }
+      },
+      "music": {
+        "file": "/static/assets/audio/music/coast_theme.ogg",
+        "gain": 0.5,
+        "loop": true,
+        "stream": true
+      },
+      "files": [
+        "/static/assets/audio/beds/harbor_bed.ogg"
+      ]
+    },
+    "campfire": {
+      "label": "Campfire",
+      "family": "settlement",
+      "fallback": "procedural_settlement",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "poi_types": [
+          "camp",
+          "rest"
+        ],
+        "tags": [
+          "rest"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/camp_night_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/fire_pop.ogg",
+            "/static/assets/audio/detail/cricket_swell.ogg",
+            "/static/assets/audio/detail/gear_shift.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        },
+        "texture": {
+          "file": "/static/assets/audio/texture/hearth_crackle.ogg",
+          "gain": 0.3,
+          "loop": true
+        }
+      },
+      "music": {
+        "file": "/static/assets/audio/music/rest_theme.ogg",
+        "gain": 0.5,
+        "loop": true,
+        "stream": true
+      },
+      "files": [
+        "/static/assets/audio/beds/camp_night_bed.ogg"
+      ]
+    },
+    "dungeon": {
+      "label": "Dungeon",
       "family": "dungeon",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
       "fallback": "procedural_dungeon",
-      "asset_probe": "enabled"
+      "asset_probe": "enabled",
+      "scene_match": {
+        "terrain": [
+          "dungeon",
+          "stone"
+        ],
+        "poi_types": [
+          "dungeon",
+          "ruin"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/dungeon_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/chain_rattle.ogg",
+            "/static/assets/audio/detail/stone_grind.ogg",
+            "/static/assets/audio/detail/distant_moan.ogg",
+            "/static/assets/audio/detail/water_drip.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        },
+        "texture": {
+          "file": "/static/assets/audio/texture/dungeon_air.ogg",
+          "gain": 0.3,
+          "loop": true
+        }
+      },
+      "music": {
+        "file": "/static/assets/audio/music/dungeon_theme.ogg",
+        "gain": 0.5,
+        "loop": true,
+        "stream": true
+      },
+      "files": [
+        "/static/assets/audio/beds/dungeon_bed.ogg"
+      ]
+    },
+    "crypt": {
+      "label": "Crypt",
+      "family": "dungeon",
+      "fallback": "procedural_dungeon",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "poi_types": [
+          "crypt",
+          "tomb",
+          "catacomb"
+        ],
+        "tags": [
+          "undead"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/crypt_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/bone_shift.ogg",
+            "/static/assets/audio/detail/whisper_swell.ogg",
+            "/static/assets/audio/detail/dust_fall.ogg",
+            "/static/assets/audio/detail/coffin_creak.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        },
+        "texture": {
+          "file": "/static/assets/audio/texture/dungeon_air.ogg",
+          "gain": 0.3,
+          "loop": true
+        }
+      },
+      "music": {
+        "file": "/static/assets/audio/music/dungeon_theme.ogg",
+        "gain": 0.5,
+        "loop": true,
+        "stream": true
+      },
+      "files": [
+        "/static/assets/audio/beds/crypt_bed.ogg"
+      ]
     },
     "temple": {
       "label": "Temple",
-      "files": [
-        "/static/assets/audio/dungeon_loop_20260328.wav"
-      ],
       "family": "dungeon",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
       "fallback": "procedural_dungeon",
-      "asset_probe": "enabled"
+      "asset_probe": "enabled",
+      "scene_match": {
+        "poi_types": [
+          "temple",
+          "shrine",
+          "sanctum"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/temple_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/choir_swell.ogg",
+            "/static/assets/audio/detail/incense_chime.ogg",
+            "/static/assets/audio/detail/stone_step.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        },
+        "texture": {
+          "file": "/static/assets/audio/texture/temple_air.ogg",
+          "gain": 0.3,
+          "loop": true
+        }
+      },
+      "music": {
+        "file": "/static/assets/audio/music/temple_theme.ogg",
+        "gain": 0.5,
+        "loop": true,
+        "stream": true
+      },
+      "files": [
+        "/static/assets/audio/beds/temple_bed.ogg"
+      ]
     },
     "castle_hall": {
       "label": "Castle Hall",
-      "files": [
-        "/static/assets/audio/dungeon_loop_20260328.wav"
-      ],
       "family": "dungeon",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
       "fallback": "procedural_dungeon",
-      "asset_probe": "enabled"
-    },
-    "tension": {
-      "label": "Tension / Stealth",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "poi_types": [
+          "castle",
+          "keep",
+          "hall",
+          "throne"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/castle_hall_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/armor_clank.ogg",
+            "/static/assets/audio/detail/banner_flap.ogg",
+            "/static/assets/audio/detail/distant_court.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        },
+        "texture": {
+          "file": "/static/assets/audio/texture/hall_air.ogg",
+          "gain": 0.3,
+          "loop": true
+        }
+      },
+      "music": {
+        "file": "/static/assets/audio/music/court_theme.ogg",
+        "gain": 0.5,
+        "loop": true,
+        "stream": true
+      },
       "files": [
-        "/static/assets/audio/dungeon_loop_20260328.wav"
-      ],
-      "family": "dungeon",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_dungeon",
-      "asset_probe": "enabled"
-    },
-    "battle": {
-      "label": "Battle",
-      "files": [
-        "/static/assets/audio/battle_loop_20260328.wav"
-      ],
-      "family": "battle",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_battle",
-      "asset_probe": "enabled"
-    },
-    "boss_battle": {
-      "label": "Boss Battle",
-      "files": [
-        "/static/assets/audio/battle_loop_20260328.wav"
-      ],
-      "family": "battle",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_battle",
-      "asset_probe": "enabled"
-    },
-    "coastal": {
-      "label": "Coastal",
-      "files": [
-        "/static/assets/audio/battle_loop_20260328.wav"
-      ],
-      "family": "battle",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_battle",
-      "asset_probe": "enabled"
-    },
-    "auto": {
-      "label": "Auto",
-      "files": [
-        "/static/assets/audio/battle_loop_20260328.wav"
-      ],
-      "family": "battle",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
-      "fallback": "procedural_battle",
-      "asset_probe": "enabled"
+        "/static/assets/audio/beds/castle_hall_bed.ogg"
+      ]
     },
     "storm": {
       "label": "Storm",
-      "files": [
-        "/static/assets/audio/storm_loop_20260328.wav"
-      ],
       "family": "weather",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
       "fallback": "procedural_weather",
-      "asset_probe": "enabled"
+      "asset_probe": "enabled",
+      "scene_match": {
+        "tags": [
+          "weather",
+          "storm"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/storm_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/thunder_far.ogg",
+            "/static/assets/audio/detail/thunder_near.ogg",
+            "/static/assets/audio/detail/gust_swell.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        },
+        "texture": {
+          "file": "/static/assets/audio/texture/rain_texture.ogg",
+          "gain": 0.3,
+          "loop": true
+        }
+      },
+      "files": [
+        "/static/assets/audio/beds/storm_bed.ogg"
+      ]
     },
     "rain": {
       "label": "Rain",
-      "files": [
-        "/static/assets/audio/storm_loop_20260328.wav"
-      ],
       "family": "weather",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
       "fallback": "procedural_weather",
-      "asset_probe": "enabled"
+      "asset_probe": "enabled",
+      "scene_match": {
+        "tags": [
+          "weather",
+          "rain"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/rain_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/drip_irregular.ogg",
+            "/static/assets/audio/detail/gutter_run.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        }
+      },
+      "files": [
+        "/static/assets/audio/beds/rain_bed.ogg"
+      ]
     },
     "heavy_rain": {
       "label": "Heavy Rain",
-      "files": [
-        "/static/assets/audio/storm_loop_20260328.wav"
-      ],
       "family": "weather",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
       "fallback": "procedural_weather",
-      "asset_probe": "enabled"
+      "asset_probe": "enabled",
+      "scene_match": {
+        "tags": [
+          "weather",
+          "rain",
+          "heavy"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/heavy_rain_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/thunder_far.ogg",
+            "/static/assets/audio/detail/splash_heavy.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        }
+      },
+      "files": [
+        "/static/assets/audio/beds/heavy_rain_bed.ogg"
+      ]
     },
     "blizzard": {
       "label": "Blizzard",
-      "files": [
-        "/static/assets/audio/storm_loop_20260328.wav"
-      ],
       "family": "weather",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
       "fallback": "procedural_weather",
-      "asset_probe": "enabled"
+      "asset_probe": "enabled",
+      "scene_match": {
+        "tags": [
+          "weather",
+          "snow"
+        ],
+        "terrain": [
+          "snow"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/blizzard_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/ice_crack.ogg",
+            "/static/assets/audio/detail/gust_high.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        },
+        "texture": {
+          "file": "/static/assets/audio/texture/wind_high.ogg",
+          "gain": 0.3,
+          "loop": true
+        }
+      },
+      "files": [
+        "/static/assets/audio/beds/blizzard_bed.ogg"
+      ]
     },
     "wind": {
       "label": "Wind",
-      "files": [
-        "/static/assets/audio/storm_loop_20260328.wav"
-      ],
       "family": "weather",
-      "layers": [
-        "bed",
-        "detail",
-        "texture"
-      ],
       "fallback": "procedural_weather",
-      "asset_probe": "enabled"
+      "asset_probe": "enabled",
+      "scene_match": {
+        "tags": [
+          "weather",
+          "wind"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/wind_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/gust_swell.ogg",
+            "/static/assets/audio/detail/whistle_thin.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        }
+      },
+      "files": [
+        "/static/assets/audio/beds/wind_bed.ogg"
+      ]
+    },
+    "tension": {
+      "label": "Tension",
+      "family": "combat",
+      "fallback": "procedural_combat",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "tags": [
+          "tension",
+          "stealth"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/tension_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/heartbeat_low.ogg",
+            "/static/assets/audio/detail/string_swell.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        }
+      },
+      "music": {
+        "file": "/static/assets/audio/music/tension_theme.ogg",
+        "gain": 0.5,
+        "loop": true,
+        "stream": true
+      },
+      "files": [
+        "/static/assets/audio/beds/tension_bed.ogg"
+      ]
+    },
+    "battle": {
+      "label": "Battle",
+      "family": "combat",
+      "fallback": "procedural_combat",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "tags": [
+          "combat"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/battle_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/sword_ring.ogg",
+            "/static/assets/audio/detail/shield_hit.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        }
+      },
+      "music": {
+        "file": "/static/assets/audio/music/battle_theme.ogg",
+        "gain": 0.5,
+        "loop": true,
+        "stream": true
+      },
+      "files": [
+        "/static/assets/audio/beds/battle_bed.ogg"
+      ]
+    },
+    "boss_battle": {
+      "label": "Boss Battle",
+      "family": "combat",
+      "fallback": "procedural_combat",
+      "asset_probe": "enabled",
+      "scene_match": {
+        "tags": [
+          "combat",
+          "boss"
+        ]
+      },
+      "layers": {
+        "bed": {
+          "file": "/static/assets/audio/beds/boss_bed.ogg",
+          "gain": 0.7,
+          "loop": true
+        },
+        "detail": {
+          "oneshots": [
+            "/static/assets/audio/detail/drum_hit.ogg",
+            "/static/assets/audio/detail/horn_blast.ogg"
+          ],
+          "min_gap_s": 7,
+          "max_gap_s": 20,
+          "gain": 0.5
+        }
+      },
+      "music": {
+        "file": "/static/assets/audio/music/boss_theme.ogg",
+        "gain": 0.5,
+        "loop": true,
+        "stream": true
+      },
+      "files": [
+        "/static/assets/audio/beds/boss_bed.ogg"
+      ]
+    },
+    "auto": {
+      "label": "Auto (scene-driven)",
+      "family": "system",
+      "fallback": "procedural_system",
+      "asset_probe": "enabled",
+      "scene_match": {},
+      "layers": {},
+      "files": []
+    }
+  },
+  "combat_tiers": {
+    "battle": {
+      "track": "battle",
+      "trigger": "encounter_start"
+    },
+    "battle_bloodied": {
+      "track": "battle",
+      "music": "/static/assets/audio/music/battle_intense.ogg",
+      "trigger": "party_or_boss_bloodied"
+    },
+    "boss_battle": {
+      "track": "boss_battle",
+      "trigger": "boss_tag"
+    }
+  },
+  "stingers": {
+    "quest_complete": {
+      "file": "/static/assets/audio/stingers/quest_complete.ogg",
+      "gain": 0.9,
+      "duck_ambient_ms": 1800
+    },
+    "quest_accept": {
+      "file": "/static/assets/audio/stingers/quest_accept.ogg",
+      "gain": 0.7,
+      "duck_ambient_ms": 1000
+    },
+    "level_up": {
+      "file": "/static/assets/audio/stingers/level_up.ogg",
+      "gain": 0.9,
+      "duck_ambient_ms": 1800
+    },
+    "treasure": {
+      "file": "/static/assets/audio/stingers/treasure.ogg",
+      "gain": 0.8,
+      "duck_ambient_ms": 1200
+    },
+    "crit_hit": {
+      "file": "/static/assets/audio/stingers/crit.ogg",
+      "gain": 0.8,
+      "duck_ambient_ms": 600
+    },
+    "victory": {
+      "file": "/static/assets/audio/stingers/victory.ogg",
+      "gain": 0.9,
+      "duck_ambient_ms": 2200
+    },
+    "player_down": {
+      "file": "/static/assets/audio/stingers/player_down.ogg",
+      "gain": 0.85,
+      "duck_ambient_ms": 1500
+    }
+  },
+  "sfx": {
+    "dice_roll": {
+      "files": [
+        "/static/sounds/clack1.ogg",
+        "/static/sounds/clack2.ogg",
+        "/static/sounds/clack3.ogg"
+      ],
+      "gain": 1.0
+    },
+    "page_turn": {
+      "file": "/static/assets/audio/sfx/page_turn.ogg",
+      "gain": 0.8
+    },
+    "coin": {
+      "file": "/static/assets/audio/sfx/coin.ogg",
+      "gain": 0.9
+    },
+    "door_open": {
+      "file": "/static/assets/audio/sfx/door_open.ogg",
+      "gain": 0.9
+    },
+    "ui_select": {
+      "file": "/static/assets/audio/sfx/ui_select.ogg",
+      "gain": 0.6
     }
   }
 }
