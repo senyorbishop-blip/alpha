@@ -17,6 +17,20 @@ PAYLOAD_WARN_BYTES = 128 * 1024
 PAYLOAD_ERROR_BYTES = 512 * 1024
 SLOW_SEND_WARN_MS = 250.0
 
+# Oversized frames (e.g. a 5 MB state_sync) otherwise log on EVERY send and on
+# every reconnect. Log each (session, message_type) at most once per interval.
+_PAYLOAD_LOG_INTERVAL_S = 30.0
+_payload_log_last: dict[tuple[str, str], float] = {}
+
+
+def _payload_log_allowed(session_id: str, message_type: str) -> bool:
+    key = (session_id, message_type or "unknown")
+    now = time.monotonic()
+    if now - _payload_log_last.get(key, 0.0) >= _PAYLOAD_LOG_INTERVAL_S:
+        _payload_log_last[key] = now
+        return True
+    return False
+
 # A single send must never be allowed to block the broadcaster indefinitely.
 # A half-open socket (sleeping laptop, dropped wifi, backgrounded phone, NAT
 # idle-timeout) does not fail fast: once the transport buffer fills, send_text
@@ -163,20 +177,22 @@ class ConnectionManager:
             "[ws] outbound_send message_type=%s session_id=%s recipient_user_id=%s "
             "recipient_role=%s byte_size=%s duration_ms=%.2f"
         )
-        if byte_size > PAYLOAD_ERROR_BYTES:
-            logger.error(log_message, *log_args)
-        elif byte_size > PAYLOAD_WARN_BYTES:
-            logger.warning(log_message, *log_args)
+        if byte_size > PAYLOAD_WARN_BYTES:
+            if _payload_log_allowed(session_id, message_type):
+                if byte_size > PAYLOAD_ERROR_BYTES:
+                    logger.error(log_message, *log_args)
+                else:
+                    logger.warning(log_message, *log_args)
+                log_payload_size_diagnostic(
+                    logger,
+                    session_id=session_id,
+                    recipient_user_id=user_id,
+                    recipient_role=role or "unknown",
+                    message_type=message_type or "unknown",
+                    byte_size=byte_size,
+                )
         else:
             logger.debug(log_message, *log_args)
-        log_payload_size_diagnostic(
-            logger,
-            session_id=session_id,
-            recipient_user_id=user_id,
-            recipient_role=role or "unknown",
-            message_type=message_type or "unknown",
-            byte_size=byte_size,
-        )
         if duration_ms > SLOW_SEND_WARN_MS:
             logger.warning(
                 "[ws] outbound_send_slow message_type=%s session_id=%s recipient_user_id=%s "
