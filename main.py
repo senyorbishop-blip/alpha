@@ -1046,4 +1046,4 @@ async def api_srd_item_count():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=PORT, reload=False)
+    uvicorn.run(app, host="0.0.0.0", port=PORT, reload=False, access_log=False)
