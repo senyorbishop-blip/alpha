@@ -48301,5 +48301,56 @@ async function bestiaryMakeVariant() {
   console.log("[CasualDnD SRD fix] armed — will fetch SRD items once state settles");
 })();
 </script>
+
+<!-- Initiative live-repaint fix: repaints the player "My Turn" panel on every
+     combat_state update without requiring a tab switch. -->
+<script>
+(function () {
+  "use strict";
+
+  function isPlayer() { try { return typeof ROLE !== "undefined" && ROLE !== "dm"; } catch (e) { return false; } }
+
+  function repaintPlayer() {
+    try {
+      if (isPlayer() && typeof _renderPlayerMode === "function") {
+        _renderPlayerMode(window._rpPlayerMode || "turn", window._rpPlayerTab);
+      }
+    } catch (e) {}
+  }
+
+  // (1) Wrap forceCombatStateUISync so it also repaints the player panel.
+  function wrap() {
+    if (typeof window.forceCombatStateUISync !== "function") return false;
+    if (window.__cdndInitWrapped) return true;
+    var orig = window.forceCombatStateUISync;
+    window.forceCombatStateUISync = function () {
+      var r;
+      try { r = orig.apply(this, arguments); }
+      finally { repaintPlayer(); setTimeout(repaintPlayer, 60); } // 60ms catches the deferred-microtask render path
+      return r;
+    };
+    window.__cdndInitWrapped = true;
+    return true;
+  }
+  if (!wrap()) { var n = 0, t = setInterval(function () { if (wrap() || ++n > 40) clearInterval(t); }, 250); }
+
+  // (2) Safety poller: repaint the player panel whenever combat state changes.
+  var lastSig = "";
+  setInterval(function () {
+    try {
+      if (!isPlayer()) return;
+      var c = (typeof _combat !== "undefined") ? _combat : null;
+      if (!c) return;
+      var sig = JSON.stringify({
+        r: c.revision, turn: c.turn, active: c.active,
+        o: (c.combatants || []).map(function (x) { return (x && x.id) + ":" + (x && x.initiative); })
+      });
+      if (sig !== lastSig) { lastSig = sig; repaintPlayer(); }
+    } catch (e) {}
+  }, 1000);
+
+  console.log("[CasualDnD initiative fix] live combat-state repaint armed");
+})();
+</script>
 </body>
 </html>
