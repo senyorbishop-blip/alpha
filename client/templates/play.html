@@ -38510,8 +38510,8 @@ function _rpItemsList() {
 
 function _rpSendItemToPlayer(itemIdx) {
   // Collect online players from the session player list (excludes self)
-  const players = (typeof sessionUsers !== 'undefined' && Array.isArray(sessionUsers) ? sessionUsers : [])
-    .filter(u => u && String(u.user_id || u.id || '') !== String(typeof MY_USER_ID !== 'undefined' ? MY_USER_ID : ''));
+  const players = Object.values(typeof users !== 'undefined' ? users || {} : {})
+    .filter(u => u && u.role !== 'viewer' && String(u.user_id || u.id || '') !== String(typeof USER_ID !== 'undefined' ? USER_ID : ''));
   if (!players.length) {
     if (typeof showToast === 'function') showToast('No other players in this session.');
     else alert('No other players in this session.');
