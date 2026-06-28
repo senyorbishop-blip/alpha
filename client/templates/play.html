@@ -41172,6 +41172,10 @@ function forceCombatStateUISync() {
     _forceCombatDomRepaintActive = false;
   }
   if (typeof renderPartyStatusPanel === 'function') renderPartyStatusPanel();
+  // Player role panel ("My Turn" / Initiative order) is the one combat surface
+  // this function never repainted, so players saw stale initiative until a tab
+  // switch or reload. Repaint it with the current mode/tab.
+  if (typeof _rpRerender === 'function') _rpRerender();
   if (typeof refreshBigScreenDisplayOverlay === 'function') refreshBigScreenDisplayOverlay();
   if (typeof refreshTokenBadges === 'function') refreshTokenBadges();
   if (typeof refreshCombatBadges === 'function') refreshCombatBadges();
