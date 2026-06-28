@@ -514,15 +514,22 @@
     const items = _inventorySourceItems(charData || {});
     const bagItem = items[bagIndex];
     if (!bagItem) return;
+    // Resolve the live (server-side) index for the bag so bag_index sent over WS matches the server's array.
+    const liveBagIndex = _resolveLiveInventoryIndex(bagItem);
+    const serverBagIndex = liveBagIndex >= 0 ? liveBagIndex : bagIndex;
     const bagName = _esc(bagItem.name || 'Container');
     const contents = Array.isArray(bagItem.bag_contents) ? bagItem.bag_contents : [];
     const cap = _containerCapacity(bagItem);
     const fill = _containerContentsWeight(bagItem);
     const pct = cap > 0 ? Math.min(100, Math.round((fill / cap) * 100)) : 0;
 
-    // Available items that can be put in (not the bag itself, not already inside)
-    const available = items.map(function (it, idx) { return { it: it, idx: idx }; }).filter(function (e) {
-      return e.idx !== bagIndex && !_isContainer(e.it) && !(e.it.container_name || e.it.container);
+    // Available items that can be put in (not the bag itself, not already inside).
+    // Use the live index for each item so item_index sent over WS matches the server's array.
+    const available = items.map(function (it, idx) {
+      const liveIdx = _resolveLiveInventoryIndex(it);
+      return { it: it, idx: liveIdx >= 0 ? liveIdx : idx };
+    }).filter(function (e) {
+      return e.idx !== serverBagIndex && !_isContainer(e.it) && !(e.it.container_name || e.it.container);
     });
 
     const contentsHtml = contents.length
@@ -565,7 +572,7 @@
       const removeBtn = e.target.closest('[data-modal-remove-ci]');
       if (removeBtn) {
         const ci = parseInt(removeBtn.getAttribute('data-modal-remove-ci') || '-1', 10);
-        if (ci >= 0) _sendInventoryWs('bag_remove_item', { bag_index: bagIndex, content_index: ci, qty: 1 });
+        if (ci >= 0) _sendInventoryWs('bag_remove_item', { bag_index: serverBagIndex, content_index: ci, qty: 1 });
         document.body.removeChild(overlay);
         return;
       }
@@ -574,7 +581,7 @@
         const sel = overlay.querySelector('#rp-container-add-sel');
         const val = sel && sel.value;
         if (!val && val !== 0) return;
-        _sendInventoryWs('bag_add_item', { bag_index: bagIndex, item_index: parseInt(String(val), 10), qty: 1 });
+        _sendInventoryWs('bag_add_item', { bag_index: serverBagIndex, item_index: parseInt(String(val), 10), qty: 1 });
         document.body.removeChild(overlay);
         return;
       }
@@ -634,19 +641,25 @@
       }
       if (action === 'move') {
         const items = _inventorySourceItems(charData || {});
-        const containers = items.map(function (row, idx) { return { row: row, idx: idx }; }).filter(function (entry) { return _isContainer(entry.row); });
+        const sourceItem = items[itemIndex];
+        const liveItemIndex = sourceItem ? _resolveLiveInventoryIndex(sourceItem) : -1;
+        const serverItemIndex = liveItemIndex >= 0 ? liveItemIndex : itemIndex;
+        const containers = items.map(function (row, idx) {
+          const liveIdx = _resolveLiveInventoryIndex(row);
+          return { row: row, idx: liveIdx >= 0 ? liveIdx : idx };
+        }).filter(function (entry) { return _isContainer(entry.row); });
         if (!containers.length) {
           alert('No available containers found.');
           return;
         }
         const choice = prompt('Move to container:\\n' + containers.map(function (entry, n) { return String(n + 1) + '. ' + (entry.row.name || 'Container'); }).join('\\n'), '1');
         const chosen = containers[(parseInt(choice || '0', 10) || 0) - 1];
-        if (chosen) _sendInventoryWs('bag_add_item', { bag_index: chosen.idx, item_index: Math.max(0, itemIndex), qty: 1 });
+        if (chosen) _sendInventoryWs('bag_add_item', { bag_index: chosen.idx, item_index: Math.max(0, serverItemIndex), qty: 1 });
         return;
       }
       if (action === 'send-to-player') {
-        var players = (typeof global.sessionUsers !== 'undefined' && Array.isArray(global.sessionUsers) ? global.sessionUsers : [])
-          .filter(function (u) { return u && String(u.user_id || u.id || '') !== String(typeof global.MY_USER_ID !== 'undefined' ? global.MY_USER_ID : ''); });
+        var players = Object.values(global.users && typeof global.users === 'object' ? global.users : {})
+          .filter(function (u) { return u && u.role !== 'viewer' && String(u.user_id || u.id || '') !== String(global.USER_ID || ''); });
         if (!players.length) { alert('No other players in this session.'); return; }
         var playerList = players.map(function (p, n) { return String(n + 1) + '. ' + (p.name || p.display_name || p.username || 'Player'); }).join('\n');
         var allItems = _inventorySourceItems(charData || {});
