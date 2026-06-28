@@ -509,16 +509,30 @@ def get_bag_contents_weight(bag: dict) -> float:
     return round(get_total_carried_weight(list(bag.get("bag_contents") or []), 0), 2)
 
 
+_KNOWN_CONTAINER_NAMES = (
+    "bag of holding", "handy haversack", "portable hole", "ring of holding",
+)
+
+
 def is_inventory_container(item: dict) -> bool:
-    """True when an item can hold other inventory items."""
+    """True when an item can hold other inventory items.
+
+    Matches the client (isInventoryContainerEntry): explicit flags, a positive
+    capacity, a nested bag_contents list, OR a well-known container name.
+    """
     if not isinstance(item, dict):
         return False
     if item.get("extradimensional") or item.get("is_container"):
         return True
     try:
-        return float(item.get("capacity_lbs") or 0.0) > 0.0
+        if float(item.get("capacity_lbs") or 0.0) > 0.0:
+            return True
     except Exception:
-        return False
+        pass
+    if isinstance(item.get("bag_contents"), list):
+        return True
+    name = str(item.get("name") or "").strip().lower()
+    return any(key in name for key in _KNOWN_CONTAINER_NAMES)
 
 
 def check_extradimensional_conflict(outer: dict, inner: dict) -> bool:
