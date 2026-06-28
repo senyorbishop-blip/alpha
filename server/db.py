@@ -24,6 +24,8 @@ _CAMPAIGN_JSON_FIELD_DEFAULTS = {
     "fog_maps": {},
     "combat": {},
     "journal_entries": [],
+    "codex_entries": [],
+    "codex_links": [],
     "library_entries": [],
     "item_library_entries": [],
     "char_profiles": {},
@@ -367,6 +369,8 @@ def init_db():
             "ALTER TABLE shops ADD COLUMN tts_enabled INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE shops ADD COLUMN greeting_override TEXT NOT NULL DEFAULT ''",
             "ALTER TABLE shop_transactions ADD COLUMN direction TEXT NOT NULL DEFAULT 'buy'",
+            "ALTER TABLE campaigns ADD COLUMN codex_entries TEXT NOT NULL DEFAULT '[]'",
+            "ALTER TABLE campaigns ADD COLUMN codex_links TEXT NOT NULL DEFAULT '[]'",
         ]:
             try:
                 conn.execute(migration)
@@ -388,6 +392,8 @@ def init_db():
             fog_maps TEXT NOT NULL DEFAULT '{}',
             combat TEXT NOT NULL DEFAULT '{}',
             journal_entries TEXT NOT NULL DEFAULT '[]',
+            codex_entries TEXT NOT NULL DEFAULT '[]',
+            codex_links TEXT NOT NULL DEFAULT '[]',
             library_entries TEXT NOT NULL DEFAULT '[]',
             item_library_entries TEXT NOT NULL DEFAULT '[]',
             char_profiles TEXT NOT NULL DEFAULT '{}',
@@ -735,8 +741,8 @@ def _save_campaign_row(conn, session, serialized_fields: dict, persisted_state: 
     """Upsert the main campaigns row."""
     try:
         conn.execute("""
-            INSERT INTO campaigns (id, name, dm_name, player_invite, viewer_invite, created_at, updated_at, map_image_url, dm_map_context, dm_current_map_url, fog_maps, combat, journal_entries, library_entries, item_library_entries, char_profiles, active_char_profiles, player_inventories, player_gold, party_loot_log, editor_layers, editor_walls, editor_props, map_settings, editor_paths, editor_labels, editor_markers, editor_lights, map_documents, viewer_profiles, viewer_pending_actions, viewer_power_catalog, hazard_zones, corpse_states, corpse_dm_config, handouts, discovery_cards, private_story_hooks, encounter_templates, quest_templates, session_quests, quest_board_bindings, sound_state, weather_state, world_state, active_poll, show_viewer_presence, dm_id, dm_player_key)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO campaigns (id, name, dm_name, player_invite, viewer_invite, created_at, updated_at, map_image_url, dm_map_context, dm_current_map_url, fog_maps, combat, journal_entries, codex_entries, codex_links, library_entries, item_library_entries, char_profiles, active_char_profiles, player_inventories, player_gold, party_loot_log, editor_layers, editor_walls, editor_props, map_settings, editor_paths, editor_labels, editor_markers, editor_lights, map_documents, viewer_profiles, viewer_pending_actions, viewer_power_catalog, hazard_zones, corpse_states, corpse_dm_config, handouts, discovery_cards, private_story_hooks, encounter_templates, quest_templates, session_quests, quest_board_bindings, sound_state, weather_state, world_state, active_poll, show_viewer_presence, dm_id, dm_player_key)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 name=excluded.name,
                 updated_at=excluded.updated_at,
@@ -746,6 +752,8 @@ def _save_campaign_row(conn, session, serialized_fields: dict, persisted_state: 
                 fog_maps=excluded.fog_maps,
                 combat=excluded.combat,
                 journal_entries=excluded.journal_entries,
+                codex_entries=excluded.codex_entries,
+                codex_links=excluded.codex_links,
                 library_entries=excluded.library_entries,
                 item_library_entries=excluded.item_library_entries,
                 char_profiles=excluded.char_profiles,
@@ -796,6 +804,8 @@ def _save_campaign_row(conn, session, serialized_fields: dict, persisted_state: 
             serialized_fields["fog_maps"],
             serialized_fields["combat"],
             serialized_fields["journal_entries"],
+            serialized_fields["codex_entries"],
+            serialized_fields["codex_links"],
             serialized_fields["library_entries"],
             serialized_fields["item_library_entries"],
             serialized_fields["char_profiles"],

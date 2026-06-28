@@ -64,6 +64,37 @@ def _normalize_restored_dm_map_state(session: Session, data: dict) -> None:
     session.dm_nav_intent = max(int(session.map_nav_version or 0), max(0, restored_intent))
 
 
+def _migrate_journal_to_codex(session: Session) -> None:
+    """One-time idempotent migration: seed codex_entries from journal_entries if codex is empty."""
+    import time as _time
+    if session.codex_entries:
+        return
+    journal = list(getattr(session, "journal_entries", []) or [])
+    if not journal:
+        return
+    migrated = []
+    for entry in journal:
+        if not isinstance(entry, dict):
+            continue
+        entry_id = str(entry.get("id") or "").strip()[:64]
+        if not entry_id:
+            continue
+        shared = bool(entry.get("shared", False))
+        migrated.append({
+            "id": entry_id,
+            "type": "lore",
+            "visibility": "party" if shared else "dm",
+            "author_id": "__dm__",
+            "title": str(entry.get("title") or "").strip()[:240] or "Untitled",
+            "content_md": str(entry.get("content_md") or entry.get("content") or "")[:16000],
+            "created_at": float(entry.get("created_at") or _time.time()),
+            "updated_at": float(entry.get("updated_at") or _time.time()),
+            "tags": [],
+            "poi_id": str(entry.get("poi_id") or "").strip()[:64] or None,
+        })
+    session.codex_entries = migrated
+
+
 def restore_session_from_db(data: dict):
     """Rebuild a full Session object from persisted DB data.
 
@@ -87,6 +118,9 @@ def restore_session_from_db(data: dict):
         else {"active": False, "turn": 0, "combatants": []}
     )
     session.journal_entries = data.get("journal_entries", []) or []
+    session.codex_entries = data.get("codex_entries", []) or []
+    session.codex_links = data.get("codex_links", []) or []
+    _migrate_journal_to_codex(session)
     session.library_entries = data.get("library_entries", []) or []
     session.item_library_entries = data.get("item_library_entries", []) or []
     session.char_profiles = data.get("char_profiles", {}) or {}

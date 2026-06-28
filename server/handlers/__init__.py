@@ -235,6 +235,12 @@ from server.handlers.pets import (
     handle_pet_acquire,
     handle_pet_release,
 )
+from server.handlers.codex import (
+    handle_codex_upsert,
+    handle_codex_delete,
+    handle_codex_link_set,
+    handle_codex_link_query,
+)
 from server.handlers.token_placement_secure import handle_token_placed_secure
 from server.handlers.ws_permissions import is_ws_message_allowed_for_role
 from server.handlers.inventory_runtime_bridge import install_inventory_runtime_bridge
@@ -458,6 +464,11 @@ async def handle_message(raw: dict, session: Session, user: User):
         "conversation_queue_leave":     handle_conversation_queue_leave,
         "conversation_queue_advance":   handle_conversation_queue_advance,
         "conversation_reaction_set":    handle_conversation_reaction_set,
+        # ── Codex ──────────────────────────────────────────────────────────
+        "codex_upsert":      handle_codex_upsert,
+        "codex_delete":      handle_codex_delete,
+        "codex_link_set":    handle_codex_link_set,
+        "codex_link_query":  handle_codex_link_query,
     }
 
     decision = is_ws_message_allowed_for_role(msg_type, getattr(user, "role", None))
