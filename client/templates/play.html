@@ -38728,7 +38728,8 @@ function _rpActionEconomyHtml() {
 
 // Roll initiative for the player's OWN combatant (the panel button used to call
 // combatRollInitiative() with no id, which silently no-oped).
-function _rpRollMyInitiative() {
+// Exposed on window so onclick="_rpRollMyInitiative()" resolves from the global scope.
+window._rpRollMyInitiative = function _rpRollMyInitiative() {
   const combatants = Array.isArray(_combat && _combat.combatants) ? _combat.combatants : [];
   const mine = combatants.find(c => c && typeof _combatantOwnedByMe === 'function' && _combatantOwnedByMe(c));
   if (!mine) { if (typeof showToast === 'function') showToast('No combatant of yours in the initiative order yet.'); return; }
