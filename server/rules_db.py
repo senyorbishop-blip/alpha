@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import json
+import logging
+import threading
 import time
 import uuid
 from typing import Any, Dict, List
+
+logger = logging.getLogger(__name__)
 
 from server.db import get_conn
 from server.rules_content import OPEN_5E_SPELLS
@@ -1032,6 +1036,56 @@ def init_srd_items_table() -> None:
         conn.commit()
     _seed_srd_items_from_magic_items()
     _seed_srd_mundane_equipment()
+    _maybe_schedule_api_import()
+
+
+def _has_api_sourced_items() -> bool:
+    """Return True if API-imported equipment items (srd_eq_*) exist in the DB.
+
+    The built-in seeder creates srd_mi_* items from the local magic_items table,
+    but only the external API import produces srd_eq_* IDs, so that prefix is the
+    reliable signal that a full API import has already run.
+    """
+    try:
+        with get_conn() as conn:
+            row = conn.execute(
+                "SELECT 1 FROM srd_items WHERE id LIKE 'srd_eq_%' LIMIT 1"
+            ).fetchone()
+            return row is not None
+    except Exception:
+        return False
+
+
+def _run_api_import_background() -> None:
+    """Fetch SRD items from dnd5eapi.co and insert them. Runs in a background thread."""
+    try:
+        from scripts.import_srd_items import fetch_equipment_items, fetch_magic_items
+        logger.info("[SRD] Starting background API import of SRD items…")
+        equipment = fetch_equipment_items()
+        magic = fetch_magic_items()
+        all_items = equipment + magic
+        if all_items:
+            inserted, skipped = insert_srd_items_batch(all_items)
+            logger.info("[SRD] Background import complete: %d inserted, %d skipped.", inserted, skipped)
+            # Bust the LRU cache so clients get the updated item list
+            try:
+                from server.item_library_srd import clear_srd_items_snapshot_cache
+                clear_srd_items_snapshot_cache()
+            except Exception:
+                pass
+        else:
+            logger.warning("[SRD] Background import: no items fetched (network unavailable?).")
+    except Exception as exc:
+        logger.warning("[SRD] Background API import failed: %s", exc)
+
+
+def _maybe_schedule_api_import() -> None:
+    """Spawn a one-shot background thread to import API items if none exist yet."""
+    if _has_api_sourced_items():
+        return
+    t = threading.Thread(target=_run_api_import_background, name="srd-api-import", daemon=True)
+    t.start()
+    logger.info("[SRD] No API-sourced items found — background import started.")
 
 
 def _seed_srd_items_from_magic_items() -> None:
