@@ -246,7 +246,7 @@ class ConnectionManager:
         if ws:
             try:
                 payload, byte_size = self._encode_payload(message)
-                log_top_level_payload_keys(logger, session_id=session_id, recipient_user_id=user_id, recipient_role=self._role_for(session_id, user_id), message=message)
+                log_top_level_payload_keys(logger, session_id=session_id, recipient_user_id=user_id, recipient_role=self._role_for(session_id, user_id), message=message, byte_size=byte_size)
                 await self._send_payload(
                     ws,
                     payload,
