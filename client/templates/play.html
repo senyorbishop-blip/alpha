@@ -38876,7 +38876,7 @@ function _renderPlayerMode(modeId, subTab) {
 
     if (activeTab === 'party') {
       html += _rpBlock('Party', _rpPartyBlock());
-      html += _rpBlock('Initiative order', _rpInitList(), '', "_rpRollMyInitiative()", 'Roll mine');
+      html += _rpBlock('Initiative order', _rpInitList(), '', _combat?.active ? "_rpRollMyInitiative()" : '', _combat?.active ? 'Roll mine' : '');
     } else if (activeTab === 'log') {
       html += _rpBlock('Table log', `<div style="padding:.6rem"><button class="rp-action go" style="width:100%;justify-content:center;" onclick="_rpOpenPanelView('log')">💬 Open table chat & log ▸</button></div>`, 'rp-card');
     } else {
@@ -43792,8 +43792,8 @@ function renderCombat() {
           ? `<span style="font-size:0.62rem;color:var(--parchment-dim);white-space:nowrap;margin-top:0.2rem;">⏳ Waiting for DM decision…</span>`
           : '';
 
-        // Attack row: only show when no pending attack for this user (or DM always)
-        const showAttackRow = ROLE === 'dm' || (canPlayerAct && !pendingAttack);
+        // Attack row: DM only — players use the player-actions-hub instead.
+        const showAttackRow = ROLE === 'dm';
         const attackHtml = showAttackRow ? `<div style="display:flex;gap:0.35rem;flex-wrap:wrap;width:100%;margin-top:0.35rem;align-items:center;">
           <button class="combat-btn small" onclick="combatArmTarget()" ${(ROLE !== 'dm' && !canPlayerAct) ? 'disabled' : ''}>${_combatTargeting ? 'Pick Target…' : 'Select Target'}</button>
           <button class="combat-btn small primary" onclick="combatAttackSelected('weapon')" ${(ROLE !== 'dm' && !canPlayerAct) ? 'disabled' : ''}>Weapon Attack</button>
